@@ -3,6 +3,11 @@
 .session.*
 .*.sw[a-z]
 
+# Python extras #
+#################
+*.pyc
+.*.pyc
+
 # Miscellaneous #
 #################
 send2trash
