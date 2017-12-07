@@ -30,12 +30,11 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
    * Created new `arange` utility. Like `np.arange`, but this is always **endpoint-inclusive**.
    * Created `Formatter` class for ticklabels that renders numbers into the style you'll want 90% of the time.
    * Created `Normalize` class for colored content that allows for the colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `np.arange(-20,51,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
-### Special colormap utilties.
+### Better colormap management
    * On import, colormaps are automatically added from any `.rgb` files in the `cmaps` folder, and can be called by name. For example, `hclBlue.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap="hclBlue")`.
     * Files downloaded from the HCL Wizard should be prefixed with `hcl`.
     * Other formats must be coded into the `plots.py` function to be read properly
-   * Created function `cmapshow` to show off current colormaps in nice plot, automatically saved as `colormaps.pdf` in repository..
+   * Created function `cmapshow` to show off current colormaps in nice plot, automatically saved as `colormaps.pdf` in repository.
 
 ## Numerical Utilities
-
 Need to document these better, decide if this duplicates anything.
