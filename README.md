@@ -11,7 +11,7 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
    * Can pass an array with numbers corresponding to unique subplots for complex grids -- e.g. `py.subplots([[1,2],[1,3]])` creates a grid with one tall plot on the left,
    and two smaller plots on the right.
    * Control spaces between plots and height/width ratios with `wratios`, `hratios`, `wspace`, `hspace`.
-### Complex extras added to `subplots` command.
+### Much-wanted features for multi-axes figures
    * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Can be accessed as member of `Figure` instance.
    * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Can be accessed as member of `Figure` instance.
 ### Integrated mapping toolkits seamlessly
