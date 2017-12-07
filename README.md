@@ -17,6 +17,9 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
 ### Integrated mapping toolkits seamlessly
    * Can pass `projection=<name>` with either `package='basemap'` or `package='cartopy'`. Pass extra map arguments to the `subplots` command directly.
    * This creates axes grids, with each axes a map. Power to choose between cartopy and basemap.
+### More flexible settings management compared to `mpl.rcParams`
+   * Can change settings for various axes objects with `py.setup(dict1, dict2)`; for example `py.setup({'ticklabels':size=5})`.
+   * Settings are applied whenever the `.format` command is called, but can be accessed at any time under `py.settings.ticklabels`, `py.settings.title`, etc.
 ### Added new `format` method-style commands to axes instances generated with `subplots`
    * To customize an axes, most important properties can be passed as kwargs. For example, format an axes with `ax.format(xlabel="foo", ylabel="bar", title="foobar")`.
    * Included some special kwargs that avoid using unpalatable underlying API. For example, draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`.
