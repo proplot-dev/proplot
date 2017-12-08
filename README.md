@@ -30,10 +30,11 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
    These roll data to appropriate longitude range and fix seams on the map edges.
 ### More flexible settings management compared to `mpl.rcParams`
    * Can change settings for various axes objects with `py.setup(dict1, dict2)`; for example `py.setup({'ticklabels':size=5})`.
-   * List of system fontnames available as the `fonts` variable under the imported module.
    * Settings are applied whenever the `format` method is called, kept constant through entire workspace.
    * Settings can be accessed at any time under `py.settings.ticklabels`, `py.settings.title`, etc.
-### Better colormap management
+### Font management
+   * List of system fontnames available as the `fonts` variable under the imported module.
+### Colormap management
    * On import, colormaps are automatically added from any `.rgb` files in the `cmaps` folder, and can be called by name. For example, `hclBlue.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap="hclBlue")`.
       * Files downloaded from the HCL Wizard should be prefixed with `hcl`.
       * Other formats must be coded into the `plots.py` function to be read properly

@@ -15,6 +15,7 @@ import matplotlib.figure as mfigure
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 import matplotlib.text as mtext
+import matplotlib.font_manager as mfonts
 import matplotlib.ticker as mticker
 import matplotlib.gridspec as mgridspec
 import matplotlib.container as mcontainer
@@ -39,8 +40,12 @@ import cartopy.crs as ccrs # crs stands for "coordinate reference system", leadi
 # p.set_edgecolor('face')
 
 #------------------------------------------------------------------------------
-# Colormap stuff and initial stuff
+# Initialization; stuff called on import
+# Adds colormap names and lists available font names
 #------------------------------------------------------------------------------
+# List the system font names
+fonts = mfonts.findSystemFonts(fontpaths=None, fontext='ttf')
+fonts = sorted([font.split('/')[-1].split('.')[0] for font in fonts])
 # Register colormaps immediately on import
 _announcement = False
 for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
