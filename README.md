@@ -1,9 +1,8 @@
 ## Overview
 This library provides extremely helpful plotting utilities to make `matplotlib` less painful,
-and sort-of-helpful-but-still-working-on-it numerical utilities for analysing data.
+and provides sort-of-helpful-but-still-working-on-it numerical utilities for analysing data.
 
 ## Plotting Utilities
-
 Everything here is contained in `plots.py`. Usually I import these as `import pyfuncs.plots as py`. Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` version. Current features:
 ### Improved functionality of `subplots` command
    * Much easier generation of figures with multiple axes.
@@ -26,7 +25,7 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
    * Special `format` functions created for `bottomlegend` and `bottomcolorbar/`rightcolorbar`.
 ### Revised some underlying issues by overwriting existing methods
    * Flipped the unnatural default `0`th dimension of array is `y`-axis, `1`st dimension of array is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
-   * The well-documented white-lines-between-my-solid-contours problem is fixes by automatically changing the edgecolor when `contourf` is called.
+   * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf` is called.
    * Wrappers around the special `Basemap` plotting utilities are added as methods to axes. Can call them with `mcontourf`, `mpcolor`, `mpcolormesh`, and `mcontour`.
    These roll data to appropriate longitude range and fix seams on the map edges.
 ### More flexible settings management compared to `mpl.rcParams`
