@@ -5,19 +5,18 @@ and sort-of-helpful-but-still-working-on-it numerical utilities for analysing da
 ## Plotting Utilities
 
 Everything here is contained in `plots.py`. Usually I import these as `import pyfuncs.plots as py`. Current features:
-### Improved `subplots` command
-   * Instead of `plt.subplots`, use `py.subplots`.
+### Improved `subplots` command compared to pyplot version
    * Much easier generation of figures with multiple axes.
-     * Pass `nrows`/`ncols` kwargs to generate simple grids of axes -- e.g. `nrows=2` creates two rows with one column.
+     * Pass no arguments to generate default single-axes figure (1 row, 1 column).
+     * Pass the `nrows` and/or `ncols` kwarg to generate simple grids of axes -- e.g. `nrows=2` creates two rows with one column.
      * Pass an array with numbers corresponding to unique subplots to generate complex grids -- e.g. `py.subplots([[1,2],[1,3]])` creates a grid with one tall plot on the left,
      and two smaller plots on the right, while `py.subplots([[1,1,1],[2,3,4]])` creates a grid with one long plot on top and three smaller plots on the bottom.
-   * Much more precise size controls.
-     * Control the width and height of figures in **inches** with the `width` and `height` kwargs.
-     * Control spaces between plots again in **inches** with `wspace` and `hspace`.
-     * Control space around the axes with the `bottom`/`left`/`right`/`top` kwargs. Control the width of colorbars (see below) with the `cwidth` kwarg, and space afforded to its ticklabels/labels with the `cspace` kwarg. Control space afforded to the figure legend (see below) with the `lwidth` kwarg.
+   * Much more precise sizing control -- control in **inches** the figure width and/or height, vertical/horizontal space between axes, ratios of axes row heights/axes column widths, extra spacing around outside of leftmost/rightmost columns and bottom/top rows. Suitable submitting publication-quality graphics without needing re-scaling.
+   * Added many new features -- see below.
 ### Much-wanted features for multi-axes figures
    * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Can be accessed as member of `Figure` instance.
    * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Can be accessed as member of `Figure` instance.
+   * Exact widths and spacing 
 ### Integrated mapping toolkits seamlessly
    * Can pass `projection=<name>` with either `package='basemap'` or `package='cartopy'`. Pass extra map arguments to the `subplots` command directly.
    * This creates axes grids, with each axes a map. Power to choose between cartopy and basemap.
