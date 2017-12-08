@@ -6,11 +6,15 @@ and sort-of-helpful-but-still-working-on-it numerical utilities for analysing da
 
 Everything here is contained in `plots.py`. Usually I import these as `import pyfuncs.plots as py`. Current features:
 ### Improved `subplots` command
-   * Instead of `plt.subplot`, use `py.subplot`.
-   * Can pass `nrows`/`ncols` keyword arguments for simple grids.
-   * Can pass an array with numbers corresponding to unique subplots for complex grids -- e.g. `py.subplots([[1,2],[1,3]])` creates a grid with one tall plot on the left,
-   and two smaller plots on the right.
-   * Control spaces between plots and height/width ratios with `wratios`, `hratios`, `wspace`, `hspace`.
+   * Instead of `plt.subplots`, use `py.subplots`.
+   * Much easier generation of figures with multiple axes.
+     * Pass `nrows`/`ncols` kwargs to generate simple grids of axes -- e.g. `nrows=2` creates two rows with one column.
+     * Pass an array with numbers corresponding to unique subplots to generate complex grids -- e.g. `py.subplots([[1,2],[1,3]])` creates a grid with one tall plot on the left,
+     and two smaller plots on the right, while `py.subplots([[1,1,1],[2,3,4]])` creates a grid with one long plot on top and three smaller plots on the bottom.
+   * Much more precise size controls.
+     * Control the width and height of figures in **inches** with the `width` and `height` kwargs.
+     * Control spaces between plots again in **inches** with `wspace` and `hspace`.
+     * Control space around the axes with the `bottom`/`left`/`right`/`top` kwargs. Control the width of colorbars (see below) with the `cwidth` kwarg, and space afforded to its ticklabels/labels with the `cspace` kwarg. Control space afforded to the figure legend (see below) with the `lwidth` kwarg.
 ### Much-wanted features for multi-axes figures
    * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Can be accessed as member of `Figure` instance.
    * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Can be accessed as member of `Figure` instance.
