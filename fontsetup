@@ -10,6 +10,7 @@ mpldir=$(python -c "import matplotlib; print(matplotlib.matplotlib_fname())")
 mfontdir=${mpldir%matplotlibrc}/fonts/ttf
 echo "Transfering .ttf files in \"fonts\" folder to $mfontdir..."
 for font in fonts/*.ttf; do
+  echo $mfontdir/${font##*/}
   if [ ! -r $mfontdir/${font##*/} ]; then
     echo "Adding font \"${font##*/}\"..."
     cp $font $mfontdir/
