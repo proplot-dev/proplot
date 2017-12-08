@@ -10,18 +10,17 @@ mpldir=$(python -c "import matplotlib; print(matplotlib.matplotlib_fname())")
 mfontdir=${mpldir%matplotlibrc}/fonts/ttf
 echo "Transfering .ttf files in \"fonts\" folder to $mfontdir..."
 for font in fonts/*.ttf; do
-  echo $mfontdir/${font##*/}
-  if [ ! -r $mfontdir/${font##*/} ]; then
+  if [ ! -r "$mfontdir/${font##*/}" ]; then
     echo "Adding font \"${font##*/}\"..."
-    cp $font $mfontdir/
+    cp "$font" "$mfontdir/"
   fi
 done
 
 # Then delete the cache; echo each one
 caches=(~/.matplotlib/*.cache)
 for cache in ${caches[@]}; do # might be more than one
-  if [ ! -d $cache ]; then # may be a tex.cache folder
+  if [ ! -d "$cache" ]; then # may be a tex.cache folder
     echo "Deleting cache \"$cache\"..."
-    rm $cache
+    rm "$cache"
   fi
 done
