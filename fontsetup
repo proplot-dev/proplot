@@ -17,6 +17,7 @@ for font in fonts/*.ttf; do
 done
 
 # Then delete the cache; echo each one
+shopt -s nullglob # keep empty if does not exist
 caches=(~/.matplotlib/*.cache)
 for cache in ${caches[@]}; do # might be more than one
   if [ ! -d "$cache" ]; then # may be a tex.cache folder
