@@ -2,8 +2,7 @@
 # This function sets up any .ttf fonts contained in the <fonts> directory to be detected by matplotlib
 # Normally matplotlib just includes a couple open-source .ttf files, but this way we can carry many more
 # options across different systems.
-# See: http://www.claridgechang.net/blog/how-to-use-custom-fonts-in-matplotlib
-# Also: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+# See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
 
 # First add the fonts
 mpldir=$(python -c "import matplotlib; print(matplotlib.matplotlib_fname())")

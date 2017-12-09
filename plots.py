@@ -22,6 +22,7 @@ import matplotlib.container as mcontainer
 import matplotlib.transforms as mtransforms
 import matplotlib.pyplot as plt
 import mpl_toolkits.basemap as mbasemap
+from matplotlib import matplotlib_fname
 # import string # for converting number to a/b/c
 # import matplotlib.pyplot as plt # will attach a suitable backend, make available the figure/axes modules
 import numpy as np # of course
@@ -44,8 +45,15 @@ import cartopy.crs as ccrs # crs stands for "coordinate reference system", leadi
 # Adds colormap names and lists available font names
 #------------------------------------------------------------------------------
 # List the system font names
-fonts = mfonts.findSystemFonts(fontpaths=None, fontext='ttf')
-fonts = sorted([font.split('/')[-1].split('.')[0] for font in fonts])
+# See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
+            mfonts.findSystemFonts(fontpaths=None, fontext='ttf')] + \
+        [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
+            glob(f"{matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf")]
+fonts = sorted(set(fonts))
+# Alternate version, works on Linux but not Mac, because can't find mac system fonts?
+# fonts = mfonts.get_fontconfig_fonts()
+# fonts = [mfonts.FontProperties(fname=fname).get_name() for fname in flist]
 # Register colormaps immediately on import
 _announcement = False
 for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
