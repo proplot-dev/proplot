@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""
+Script to set up magic commands and other notebook properties.
+Just call this in the first cell with "run pyfuncs/notebook". And voila!
+Call with optional directory argument to make that the new working directory.
+Function suppresses output by default: see https://stackoverflow.com/a/40984270/4970632
+"""
+from IPython import get_ipython
+from contextlib import redirect_stdout
+import io
+import os
+import sys
+f = io.StringIO()
+with redirect_stdout(f):
+    if len(sys.argv)>1:
+        curdir = sys.argv[-1] # the current directory
+        curdir = curdir.replace("~", os.environ["HOME"])
+        os.chdir(curdir) # move to this directory
+        print(f"Moved to directory {curdir}.")
+    if get_ipython() is not None:
+        # Basic configuration
+        # ipy.core.display.display(ipy.core.display.HTML(html_format))
+        get_ipython().magic("reload_ext autoreload") # reload instead of load, to avoid annoying message
+        get_ipython().magic("autoreload 2") # turn on expensive autoreloading
+        # Notebook configuration
+        # get_ipython().magic('config InlineBackend.figure_format=\'svg\'')
+        get_ipython().magic("autosave 60") # autosave every 120 seconds
+        get_ipython().magic("config InlineBackend.figure_format=\'retina\'")
+            # retina probably more space efficient (high-res bitmap), but svg is prettiest
+            # and is only one preserving vector graphics
+        get_ipython().magic("config InlineBackend.print_figure_kwargs={'bbox_inches':None}") #bbox_inches=\'tight\', pad_inches=0.1)')
+            # optionally keep figures tight around edges
+        get_ipython().magic("matplotlib inline") # change print_figure_kwargs to  see edges
+# Message management; note errors pass the with group and cancel execution
+prints = f.getvalue().split('\n')
+if prints[0].startswith("Moved to directory"):
+    print(prints[0].strip()) # and strip any whitespace
+print("Notebook is configured.")

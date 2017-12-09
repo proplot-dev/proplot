@@ -12,54 +12,57 @@
 # from .ioutils import *
 # from .sciplotlib import *
 
+#-------------------------------------------------------------------------------
 # IPython session management
-def notebook(stem=None):
-    """
-    Setup up magic commands and other notebook properties.
-    Won't mess things up if we're not in a notebook.
-    Input...
-        stem: the directory stem from HOME directory.
-    """
-    import os
-    from IPython import get_ipython
-    if stem is not None:
-        stem = stem.replace('~',os.environ['HOME'])
-        os.chdir(stem)
-    if get_ipython() is not None:
-        # Basic configuration
-        # ipy.core.display.display(ipy.core.display.HTML(html_format))
-        get_ipython().magic('reload_ext autoreload') # reload instead of load, to avoid annoying message
-        get_ipython().magic('autoreload 2') # turn on expensive autoreloading
-        if getattr(get_ipython(), 'kernel', None) is None:
-            # Nothing else
-            print("Configured ipython session.")
-        else:
-            # Notebook configuration
-            # get_ipython().magic('config InlineBackend.figure_format=\'svg\'')
-            get_ipython().magic('autosave 120') # autosave every 120 seconds
-            get_ipython().magic('config InlineBackend.figure_format=\'retina\'')
-                # retina probably more space efficient (high-res bitmap), but svg is prettiest
-                # and is only one preserving vector graphics
-            get_ipython().magic('config InlineBackend.print_figure_kwargs=dict(bbox_inches=None)') #bbox_inches=\'tight\', pad_inches=0.1)')
-            get_ipython().magic('matplotlib inline') # change print_figure_kwargs to  see edges
-            print("Configured notebook.")
-
-            # CSS modifications; use here, or place in ~/.jupyter/custom/custom.css
-            # import IPython.core.display as display # use these to edit CSS
-            # ipy.core.display.display(ipy.core.display.HTML("<style>.container { width:100% !important; }</style>"))
-            # display.display(display.HTML("<style>"
-            #     + "#notebook { padding-top:0px !important; }" # hashtags refer to ids; dots refer to classes
-            #     + ".container { width:100% !important; } "
-            #     + ".end_space { min-height:0px !important; }"
-            #     + "</style>"))
-            # # icolor, ncolor = "#2b2b25"
-            # # icolor, ncolor = "#f2f2f2", "#f2f2f2"
-            # icolor, ncolor = "#f6f6f6", "#f6f6f6"
-            # display.display(display.HTML("<style>"
-            #     + ".edit_mode .cell.selected .CodeMirror-focused.cm-fat-cursor { background-color: " + ncolor + " !important; } " # normal mode
-            #     + ".edit_mode .cell.selected .CodeMirror-focused:not(.cm-fat-cursor) { background-color: " + icolor + " !important; }" # edit mode
-            #         # the above matches color of ITerm2 settings
-            #     + "</style>")) # <style> denotes CSS code block
+# TODO Now moved to notebook executable, maybe delete this
+#-------------------------------------------------------------------------------
+# def notebook(stem=None):
+#     """
+#     Setup up magic commands and other notebook properties.
+#     Won't mess things up if we're not in a notebook.
+#     Input...
+#         stem: the directory stem from HOME directory.
+#     """
+#     import os
+#     from IPython import get_ipython
+#     if stem is not None:
+#         stem = stem.replace('~',os.environ['HOME'])
+#         os.chdir(stem)
+#     if get_ipython() is not None:
+#         # Basic configuration
+#         # ipy.core.display.display(ipy.core.display.HTML(html_format))
+#         get_ipython().magic('reload_ext autoreload') # reload instead of load, to avoid annoying message
+#         get_ipython().magic('autoreload 2') # turn on expensive autoreloading
+#         if getattr(get_ipython(), 'kernel', None) is None:
+#             # Nothing else
+#             print("Configured ipython session.")
+#         else:
+#             # Notebook configuration
+#             # get_ipython().magic('config InlineBackend.figure_format=\'svg\'')
+#             get_ipython().magic('autosave 120') # autosave every 120 seconds
+#             get_ipython().magic('config InlineBackend.figure_format=\'retina\'')
+#                 # retina probably more space efficient (high-res bitmap), but svg is prettiest
+#                 # and is only one preserving vector graphics
+#             get_ipython().magic('config InlineBackend.print_figure_kwargs=dict(bbox_inches=None)') #bbox_inches=\'tight\', pad_inches=0.1)')
+#             get_ipython().magic('matplotlib inline') # change print_figure_kwargs to  see edges
+#             print("Configured notebook.")
+#
+#             # CSS modifications; use here, or place in ~/.jupyter/custom/custom.css
+#             # import IPython.core.display as display # use these to edit CSS
+#             # ipy.core.display.display(ipy.core.display.HTML("<style>.container { width:100% !important; }</style>"))
+#             # display.display(display.HTML("<style>"
+#             #     + "#notebook { padding-top:0px !important; }" # hashtags refer to ids; dots refer to classes
+#             #     + ".container { width:100% !important; } "
+#             #     + ".end_space { min-height:0px !important; }"
+#             #     + "</style>"))
+#             # # icolor, ncolor = "#2b2b25"
+#             # # icolor, ncolor = "#f2f2f2", "#f2f2f2"
+#             # icolor, ncolor = "#f6f6f6", "#f6f6f6"
+#             # display.display(display.HTML("<style>"
+#             #     + ".edit_mode .cell.selected .CodeMirror-focused.cm-fat-cursor { background-color: " + ncolor + " !important; } " # normal mode
+#             #     + ".edit_mode .cell.selected .CodeMirror-focused:not(.cm-fat-cursor) { background-color: " + icolor + " !important; }" # edit mode
+#             #         # the above matches color of ITerm2 settings
+#             #     + "</style>")) # <style> denotes CSS code block
 
 #------------------------------------------------------------------------------
 # Import contents of __all__ from modules by name
