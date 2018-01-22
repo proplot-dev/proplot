@@ -66,17 +66,26 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
             print(f'Failed to load {_name}.')
             continue
         if (_cmap>1).any(): _cmap = _cmap/255
+        # Register colormap and a reversed version
         plt.register_cmap(name=_name, cmap=mcolors.LinearSegmentedColormap.from_list(name=_name, colors=_cmap, N=256))
         plt.register_cmap(name=_name+'_r', cmap=mcolors.LinearSegmentedColormap.from_list(name=_name+'_r', colors=_cmap[::-1], N=256))
         if not _announcement: # only do this if register at least one new map
             _announcement = True
             print("Registered colormaps.")
+# For retrieving colormap
+def cmapcolors(name, N):
+    """
+    Just spits out colors to be used for e.g. consecutive lines. First argument
+    is the colormap name, second is the number of colors needed.
+    """
+    cmap = plt.cm.get_cmap(name) # the cmap object itself
+    return [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
 # Create class for storing plot settings, and wrapper function that adds class
 # instance as a global variable for this whole module; also declare default settings
 class Settings():
     """
-    This function initializes DEFAULT kwargs for various plot elements; user can
-    UPDATE the defaults by passing dictionaries as kwargs when creating instance.
+    This function initializes DEFAULT kwargs for various plot elements; the user
+    can UPDATE the defaults by passing dictionaries as kwargs when creating instance.
     """
     def __init__(self, color='k', linewidth=0.7, fontname='DejaVu Sans',
             size1=8, size2=9, size3=9, **kwargs): # fontname is matplotlib default
@@ -117,7 +126,10 @@ class Settings():
             # boundary should be thick... for some reason looks skinnier than parallels unless multiply by 2
             # even though (checking after the fact) reveals the linewidths are held
         # Auxilliary elements (set on creation)
-        self.legend   = {'framealpha':0.6, 'fancybox':False, 'frameon':False}
+        # Make sure borderpad = 0.5*labelspacing; this way the multi-row legend without aligning
+        # columns will look like the normal default legend
+        self.legend   = {'framealpha':0.6, 'fancybox':False, 'frameon':False,
+                'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25}
         self.colorbar = {'extend':'both', 'spacing':'uniform'}
             # note font properties for legend will be from ticklables, and for colorbra
             # stuff will be from labels (for clabel) and ticklabels (for cticklabels)
@@ -360,16 +372,30 @@ class Figure(mfigure.Figure):
         #     + f'legend {self.lwidth:.2f}, colorbar {self.cwidth:.2f}.')
 
 #------------------------------------------------------------------------------
-# Helper functions
+# Twin axes override; add our special method to resulting generated axes
 #------------------------------------------------------------------------------
-def _round(x, base=5):
-    # Round to nearest N
-    return base*round(float(x)/base)
+def _twinx(self, **kwargs):
+    ax = self._twinx(**kwargs)
+    ax.format = MethodType(_format, ax)
+    return ax
+def _twiny(self, **kwargs):
+    ax = self._twiny(**kwargs)
+    ax.format = MethodType(_format, ax)
+    return ax
 
-def _autolocate(min_, max_, base=5):
-    # Return auto-generated levels by provided interval
-    return np.arange(_round(min_,base), _round(max_,base)+base/2, base)
-
+#------------------------------------------------------------------------------
+# Helper functions for plot overrides
+# List of stuff in pcolor/contourf that need to be fixed:
+#   * White lines between the edges; cover them by changing edgecolors to 'face'.
+#   * Determination of whether we are using graticule edges/centers; not sure
+#       what default behavior is but harder to debug. My wrapper is nicer.
+#   * Pcolor can't take an extend argument, and colorbar can take an extend argument
+#       but it is ignored when the mappable is a contourf. Make our pcolor wrapper
+#       add an "extend" attribute on the mappable that our colorbar wrapper detects.
+#   * Extend used in contourf causes color-change between in-range values and
+#       out-of-range values, while extend used in colorbar on pcolor has no such
+#       color change. Standardize by messing with the colormap.
+#------------------------------------------------------------------------------
 def _graticule_fix(x, y):
     # THIS FUNCTION IS BROKEN -- NEED TO FIX IT
     # Get graticule; want it to work with e.g. Gaussian-grid model output
@@ -381,7 +407,6 @@ def _graticule_fix(x, y):
         (vec[1:]+vec[:-1])/2,
         vec[-1:]+(vec[-1]-vec[-2])/2))
     return edges(x), edges(y)
-
 def _seam_fix(lon, data, lonmin=-180):
     # Raise errors
     if lon.max()>lon.min()+360:
@@ -392,7 +417,6 @@ def _seam_fix(lon, data, lonmin=-180):
         raise ValueError('Longitudes must fall in range [-360, 360].')
     if lonmin<-360 or lonmin>0:
         raise ValueError('Minimum longitude must fall in range [-360, 0].')
-
     # Establish 360-degree range
     # print(lon)
     lon -= 720
@@ -402,7 +426,6 @@ def _seam_fix(lon, data, lonmin=-180):
         if filter_.sum()==0:
             break
         lon[filter_] += 360
-
     # Roll, accounting for whether ends are identical
     roll = -np.argmin(lon) # always returns FIRST value; if go from 0...359,0 (borders), will
         # return initial value
@@ -412,7 +435,6 @@ def _seam_fix(lon, data, lonmin=-180):
     else:
         lon = np.roll(lon, roll)
     data = np.roll(data, roll, axis=0)
-
     # Fix seams
     # if lon[0]==lonmin:
     if lon[0]==lonmin and lon.size-1==data.shape[0]: # used longitude borders
@@ -440,42 +462,43 @@ def _seam_fix(lon, data, lonmin=-180):
 
     # Return
     return lon, data
-
 def _basemap_fix(m, lon, lat):
     # Convert to 2d x/y by calling basemap object
     lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
     X, Y = m(*np.meshgrid(lon, lat))
     return X, Y
-
 def _pcolor_fix(p, linewidth=0.2):
     # Fill in white lines
     p.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
     p.set_edgecolor('face')
     return p
-
 def _contour_fix(c, linewidth=0.2):
     # Fill in white lines
     for _ in c.collections:
         _.set_edgecolor('face')
         _.set_linewidth(linewidth)
     return c
-
-#------------------------------------------------------------------------------
-# Twin axes override; add our special method to resulting generated axes
-#------------------------------------------------------------------------------
-def _twinx(self, **kwargs):
-    ax = self._twinx(**kwargs)
-    ax.format = MethodType(_format, ax)
-    return ax
-def _twiny(self, **kwargs):
-    ax = self._twiny(**kwargs)
-    ax.format = MethodType(_format, ax)
-    return ax
-
-#------------------------------------------------------------------------------
-# Plot method overrides
-#------------------------------------------------------------------------------
+def _contourflevels(kwargs):
+    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
+    # Using "lut" argument prevents colors in the extention-triangles/rectangles
+    # from being different from the deepest colors with in the range of min(levels) max(levels)
+    if 'levels' in kwargs:
+        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
+        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
+        kwargs['norm'] = BoundaryNorm(kwargs['levels']) # what is wanted 99% of time
+        # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+    return kwargs
+def _pcolorlevels(kwargs):
+    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
+    if 'levels' in kwargs:
+        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
+        levels = kwargs.pop('levels')
+        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
+        kwargs['norm'] = BoundaryNorm(levels)
+        # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+    return kwargs
 def _pcolorcheck(x, y, Z):
+    # Checks that sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
     if Z.shape[0]==x.size and Z.shape[1]==y.size:
         print("Guessing graticule edges from input coordinate centers.")
@@ -485,6 +508,7 @@ def _pcolorcheck(x, y, Z):
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
     return x, y
 def _contourcheck(x, y, Z):
+    # Checks whether sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
     if Z.shape[0]==x.size-1 and Z.shape[1]==y.size-1:
         x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2
@@ -493,17 +517,44 @@ def _contourcheck(x, y, Z):
         raise ValueError(f'X (size {x.size}) and Y (size {y.size}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
     return x, y
+# The linecolorbar method is now self-contained in _cformat method
+# def _linecolorbar(self, handles, values):
+#     # Creates legend from a bunch of lines
+#     if len(handles)!=len(values):
+#         raise ValueError("Number of handles should equal number of levels.")
+#     colors = [h.get_color() for h in handles]
+#     colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors)
+#     mappable = plt.contourf([[0,0],[0,0]], levels=values, cmap=colormap)
+#     return mappable
 
-# Ordinary cartesian plot overrides
+#-------------------------------------------------------------------------------
+# Cartesian plot overrides overrides
+#-------------------------------------------------------------------------------
+# TODO: Fix for pcolormesh/pcolor with set of levels
 def _pcolor(self, x, y, Z, **kwargs):
+    kwargs = _pcolorlevels(kwargs)
     x, y = _pcolorcheck(x, y, Z)
+    if 'extend' in kwargs:
+        extend = kwargs.pop('extend')
+    else:
+        extend = None
     p = self._pcolor(x, y, Z.T, **kwargs)
+    if extend is not None:
+        p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 def _pcolormesh(self, x, y, Z, **kwargs):
+    kwargs = _pcolorlevels(kwargs)
     x, y = _pcolorcheck(x, y, Z)
+    if 'extend' in kwargs:
+        extend = kwargs.pop('extend')
+    else:
+        extend = None
     p = self._pcolormesh(x, y, Z.T, **kwargs)
+    if extend is not None:
+        p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 def _contourf(self, x, y, Z, **kwargs):
+    kwargs = _contourflevels(kwargs)
     x, y = _contourcheck(x, y, Z)
     c = self._contourf(x, y, Z.T, **kwargs)
     return _contour_fix(c)
@@ -512,26 +563,44 @@ def _contour(self, x, y, Z, **kwargs):
     c = self._contour(x, y, Z.T, **kwargs)
     return c
 
-# Basemap overrides; assumes regularly-spaced data
+#-------------------------------------------------------------------------------
+# Basemap overrides
+#-------------------------------------------------------------------------------
+# Assumes regularly spaced data
 def _pcolor_basemap(self, lon, lat, Z, **kwargs):
     # lon, lat = _graticule_fix(lon, lat)
     # lon, lat = _graticule_fix(lon, lat)
+    kwargs = _pcolorlevels(kwargs)
     lon, lat = _pcolorcheck(lon, lat, Z)
     lon, Z = _seam_fix(lon, Z, lonmin=self.lonmin)
     X, Y = _basemap_fix(self, lon, lat)
+    if 'extend' in kwargs:
+        extend = kwargs.pop('extend')
+    else:
+        extend = None
     p = self._pcolor(X, Y, Z.T, **kwargs)
+    if extend is not None:
+        p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 def _pcolormesh_basemap(self, lon, lat, Z, **kwargs):
     # lon, lat = _graticule_fix(lon, lat)
     # print('initial:', lon, lat)
     # print('after shape check:',lon, lat)
     # print('after seam fix:', lon, lat)
+    kwargs = _pcolorlevels(kwargs)
     lon, lat = _pcolorcheck(lon, lat, Z)
     lon, Z = _seam_fix(lon, Z, lonmin=self.lonmin)
     X, Y = _basemap_fix(self, lon, lat)
+    if 'extend' in kwargs:
+        extend = kwargs.pop('extend')
+    else:
+        extend = None
     p = self._pcolormesh(X, Y, Z.T, **kwargs)
+    if extend is not None:
+        p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 def _contourf_basemap(self, lon, lat, Z, **kwargs):
+    kwargs = _contourflevels(kwargs)
     lon, lat = _contourcheck(lon, lat, Z)
     lon, Z = _seam_fix(lon, Z, lonmin=self.lonmin)
     X, Y = _basemap_fix(self, lon, lat)
@@ -547,32 +616,104 @@ def _contour_basemap(self, lon, lat, Z, **kwargs):
 #------------------------------------------------------------------------------
 # Most important stuff
 #------------------------------------------------------------------------------
-def _cformat(self, mappable, cgrid=False, clocator=None, cformatter=None, clabel=None, old=False, **kwargs): #, settings=None):
+def _round(x, base=5):
+    # Round to nearest N
+    return base*round(float(x)/base)
+def _autolocate(min_, max_, base=5):
+    # Return auto-generated levels by provided interval
+    return np.arange(_round(min_,base), _round(max_,base)+base/2, base)
+def _cformat(self, mappable, cgrid=False, clocator=None, cformatter=None, clabel=None, errfix=True,
+        length=0.8, values=None, **kwargs): #, settings=None):
     """
     Function for formatting colorbar-axes (axes that are "filled" by a colorbar).
-    There is an INSANELY WEIRD problem with colorbars when simultaneously passing levels
-    and norm object to a mappable fixed by passing vmin/vmax INSTEAD OF levels 
-    (see: https://stackoverflow.com/q/40116968/4970632); problem is, often WANT levels instead
-    of vmin/vmax to get this (https://stackoverflow.com/q/42723538/4970632) behavior.
-    Solution is to make sure locators are in vmin/vmax range EXCLUSIVELY; cannot match/exceed values.
-    TODO: Issue appears where the normalization vmin/vmax are outside of explicitly declared "levels" minima and maxima
-    ...but that is probaby appropriate. If your levels are all within vmin/vmax, you will get discrete jumps outside of range
-    ...and the triangles at ends of colorbars will be weird.
+    * There is an INSANELY WEIRD problem with colorbars when simultaneously passing levels
+      and norm object to a mappable fixed by passing vmin/vmax INSTEAD OF levels 
+      (see: https://stackoverflow.com/q/40116968/4970632).
+    * Problem is, often WANT levels instead of vmin/vmax to get this
+      (see: https://stackoverflow.com/q/42723538/4970632) behavior.
+    * Solution is to make sure locators are in vmin/vmax range EXCLUSIVELY; cannot match/exceed values.
+    TODO:
+    Issue appears where the normalization vmin/vmax are outside of explicitly declared "levels"
+    minima and maxima but that is probaby appropriate. If your levels are all within vmin/vmax,
+    you will get discrete jumps outside of range and the triangles at ends of colorbars will be weird.
     """
-    # Some settings
-    if self.bottomcolorbar:
-        orientation = 'horizontal'
-    elif self.rightcolorbar:
-        orientation = 'vertical'
+    # TODO: Still experimental, consider fixing
+    # This is a different idea altogether for colorbar
+    if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
+        if self.bottompanel:
+            C = mgridspec.GridSpecFromSubplotSpec(
+                    nrows        = 1,
+                    ncols        = 3,
+                    wspace       = 0,
+                    subplot_spec = self,
+                    width_ratios = ((1-length)/2, length, (1-length)/2)
+                    )
+            cax = self.figure.add_subplot(C[0,1])
+            orientation = 'horizontal'
+        elif self.rightpanel:
+            C = mgridspec.GridSpecFromSubplotSpec(
+                    nrows         = 3,
+                    ncols         = 1,
+                    hspace        = 0,
+                    subplot_spec  = self,
+                    height_ratios = ((1-length)/2, length, (1-length)/2)
+                    )
+            cax = self.figure.add_subplot(C[1,0])
+            orientation = 'vertical'
+        else:
+            raise ValueError("Object does not appear to have been created by subplots method.")
     else:
-        raise ValueError('Axes passed to colorbar-formatting function is not colorbar-dedicated.')
+        cax = self # the axes for drawing
+        if self.bottomcolorbar:
+            orientation = 'horizontal'
+        elif self.rightcolorbar:
+            orientation = 'vertical'
+        else:
+            raise ValueError('Axes passed to colorbar-formatting function is not colorbar-dedicated.')
+    # Test if mappable is iterable; if so, user wants to use colorbar to label lines
+    try: iter(mappable)
+    except TypeError:
+        fromlines = False
+    else: # catch exception: the only iterable matplotlib objects are Container objects
+        if isinstance(mappable, mcontainer.Container):
+            fromlines = False
+        else:
+            fromlines = True
     csettings = settings.colorbar.copy()
-    csettings.update(cax=self, use_gridspec=True, # use space afforded by entire axes
+    csettings.update(cax=cax, use_gridspec=True, # use space afforded by entire axes
             orientation=orientation, drawedges=cgrid) # use ***ticklocation*** arg to set ticks on bottom/top, left/right
     # Update with user-kwargs
     csettings.update(**kwargs)
+    if hasattr(mappable, 'extend'):
+        csettings.update({'extend':mappable.extend})
+    # Special fromlines options
+    # Note the colors are perfect if we don't extend them by dummy color on either side,
+    # but for some reason labels for edge colors appear offset from everything
+    # Too tired to figure out why so just use this workaround
+    if fromlines:
+        if values is None:
+            raise ValueError("Must pass values corresponding to list of handle objects.")
+        if len(mappable)!=len(values):
+            raise ValueError("Number of values should equal number of handles.")
+        values = np.array(values) # needed for below
+        colors = [h.get_color() for h in mappable]
+        colors = ['#ffffff'] + colors + ['#ffffff']
+        colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors)
+        # levels = np.concatenate((values[0]-np.diff(values[:2]), # get "edge" values
+        #     (values[1:]+values[:-1])/2, values[-1]+np.diff(values[-2:])))
+        levels = np.concatenate((values[0]-np.diff(values[:2])/2, # get "edge" values
+            (values[1:]+values[:-1])/2, values[-1]+np.diff(values[-2:])/2))
+        values = np.concatenate((values[:1]-np.diff(levels[:2]), values,
+            values[-1:]+np.diff(levels[-2:]))) # this works empirically; otherwise get
+            # weird situation with edge-labels appearing on either side
+        mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap, extend='neither',
+                norm=BoundaryNorm(values)) # workaround
+        if clocator is None:
+            clocator = values[1:-1] # don't want to label random numbers in-between
+                # but still leaves the option to omit a few labels
+            # clocator = values # restore this if values weren't padded
     # Draw colorbar
-    if not old:
+    if errfix:
         # Simple method; just pass locator to ticks object
         # The other method can get mysterious errors where colorbar reverses directions for no reason, 
         # and the triangle extensions go white, and get some weird Warning; changing vmin/vmax can fix that
@@ -615,7 +756,6 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cformatter=None, clabel
         # First declare
         cb = self.figure.colorbar(mappable, **csettings)
         # cb = self.figure.colorbar(mappable, ticks=[-100,-5,5], **csettings)
-
         # Next, ticks formatters/locators (different from axis_setup version)
         # Account for weird error issue discussed in docstring
         if isinstance(clocator, mticker.Locator):
@@ -669,63 +809,128 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cformatter=None, clabel
 
     return cb
 
-def _lformat(self, handles=None, **kwargs): #, settings=None): # can be updated
+def _lformat(self, handles=None, multi=None, **kwargs): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
     Should update my legend function to CLIP the legend box when it goes outside axes area, so
     the legend-width and bottom/right widths can be chosen propertly/separately.
     """
-    # Setup legend properties
-    candidates = ['linewidth','color'] # candidates for modifying legend objects
+    # TODO: Still experimental, consider fixing
+    # This is a different idea altogether for colorbar
     lsettings = settings.legend.copy()
-    if self.bottomlegend: # is this axes assigned to hold the bottomlegend?
+    if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
+        self = self.figure.add_subplot(self) # easy peasy
+        for s in self.spines.values():
+            s.set_visible(False)
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+        self.patch.set_alpha(0)
+        self.bottomlegend = True # for reading below
+    if self.bottomlegend: # this axes is assigned to hold the bottomlegend?
         if handles is None: # must specify
             raise ValueError('Must input list of handles.')
         lsettings.update( # need to input handles manually, because for separate axes
                 bbox_transform=self.transAxes, # in case user passes bbox_to_anchor
                 borderaxespad=0, loc='upper center', # this aligns top of legend box with top of axes
-                framealpha=0) # make opaque; there will never be lines underneath
-    elif handles is None:
-        handles, _ = self.get_legend_handles_labels()
+                frameon=False) # turn off frame by default
+    else: # not much to do if this is just an axes
+        if handles is None:
+            handles, _ = self.get_legend_handles_labels()
     lsettings.update(**kwargs)
     # Setup legend text properties
     tsettings = settings.ticklabels.copy()
     if 'fontsize' in lsettings:
-        tsettings.pop('size')
+        tsettings['size'] = lsettings['fontsize']
     # Setup legend handle properties
     hsettings = {}
+    candidates = ['linewidth','color'] # candidates for modifying legend objects
     for candidate in candidates:
         if candidate in kwargs:
             hsettings[candidate] = lsettings.pop(candidate)
     # Detect if user wants to specify rows manually
-    try: iter(handles[0])
-    except TypeError:
-        multirow = False
-        handles = [handles]
-    else: # catch exception: only Container objects can be iterated
-        if isinstance(handles[0], mcontainer.Container):
-            multirow = False
-            handles = [handles]
+    # Gives huge latitude for user input:
+    #   1) user can specify nothing and align will be inferred (list of iterables is False,
+    #      use consecutive legends)
+    #   2) user can specify align (needs list of handles for True, list of handles or list
+    #      of iterables for False and if the former, will turn into list of iterables)
+    if multi is None: # automatically guess
+        try: iter(handles[0])
+        except TypeError:
+            multi = False
+        else: # catch exception: the only iterable matplotlib objects are Container objects
+            if isinstance(handles[0], mcontainer.Container):
+                multi = False
+            else:
+                multi = True
+    else: # standardize format based on "multi" input
+        try: iter(handles[0])
+        except TypeError:
+            implied = False # no need to fix
         else:
-            multirow = True
-    # Next draw legend over each row
-    legends = []
-    interval = 1/len(handles) # split up axes
-    for h,hs in enumerate(handles):
-        bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
-        if 'ncol' in lsettings:
-            lsettings.pop('ncol')
-        if 'bbox_to_anchor' in lsettings:
-            lsettings.pop('bbox_to_anchor')
-        leg = self.legend(handles=hs, ncol=len(hs), bbox_to_anchor=bbox, **lsettings)
+            if not isinstance(handles[0], mcontainer.Container):
+                implied = False
+            else:
+                implied = True # no need to fix
+        if multi and not implied: # apply columns
+            if 'ncol' not in lsettings:
+                raise ValueError("Need to specify number of columns with ncol.")
+            handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
+                    for i in range(len(handles))] # to list of iterables
+        elif not multi and implied:
+            handles = [handle for iterable in handles for handle in iterable]
+
+    # Now draw legend, with two options
+    # 1) Normal legend, just draw everything like normal
+    # Re-orders handles to be row-major, is only difference
+    if not multi:
+        if 'ncol' not in lsettings:
+            raise ValueError("Need to specify number of columns with ncol.")
+        newhandles = []
+        ncol = lsettings['ncol'] # number of columns
+        handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
+        nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
+        nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(lsettings['ncol']-nfinalrow)
+            # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
+        for col,nrow in enumerate(nrows): # iterate through cols
+            newhandles.extend(handlesplit[row][col] for row in range(nrow))
+        handles = newhandles
+        # leg = self.legend(handles=handles[0], **lsettings) # includes number columns
+        leg = self.legend(handles=handles, **lsettings) # includes number columns
         leg.legendPatch.update(settings.box) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
         for t in leg.texts:
             t.update(tsettings) # or get_texts()
-        legends.append(leg)
-    for l in legends[:-1]:
-        self.add_artist(l) # because matplotlib deletes them...
+        legends = leg
+    # 2) Separate legend for each row
+    # The labelspacing/borderspacing will be exactly replicated, as if we were
+    # using the original legend command
+    else:
+        legends = []
+        if 'labelspacing' not in lsettings:
+            raise ValueError("Need to know labelspacing before drawing multi-row legends. Add it to settings.")
+        if 'size' not in tsettings:
+            raise ValueError("Need to know fontsize before drawing multi-row legends. Add it to settings.")
+        for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','framealpha']:
+            if override in lsettings:
+                lsettings.pop(override)
+        interval = 1/len(handles) # split up axes
+        interval = ((tsettings['size'] + lsettings['labelspacing']*tsettings['size'])/72) / \
+                (self.figure.get_figheight() * np.diff(self._position.intervaly))
+            # space we want sub-legend to occupy, as fraction of height
+            # don't normally save "height" and "width" of axes so keep here
+        for h,hs in enumerate(handles):
+            bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
+            leg = self.legend(handles=hs, ncol=len(hs), bbox_to_anchor=bbox,
+                frameone=False, borderpad=0, loc='center', **lsettings)
+            leg.legendPatch.update(settings.box) # or get_frame()
+            for obj in leg.legendHandles:
+                obj.update(hsettings)
+            for t in leg.texts:
+                t.update(tsettings) # or get_texts()
+            legends.append(leg)
+        for l in legends[:-1]:
+            self.add_artist(l) # because matplotlib deletes previous ones...
     return legends
 
 def _format(self, transparent=True, 
@@ -966,9 +1171,12 @@ def subplots(array=None, nrows=1, ncols=1,
             # edges of plot for GridSpec object, in inches; left needs a lot of space
         bottomcolorbar=False, rightcolorbar=False, bottomlegend=False,
             # for legend/colorbar referencing multiple subplots
-        bottomcolorbars=False, rightcolorbars=False, 
-            # for colorbar labelling of EACH ROW/EACH COLUMN (have not implemented yet)
-        lwidth=0.15, cwidth=0.2, cspace=0.8, cshrink=0.9,
+        bottompanel=False, bottompanels=False, rightpanel=False, rightpanels=False,
+        bwidth=0.25, bspace=0.8, rwidth=0.25, rspace=0.8,
+            # TODO above is experimental, still working on this
+            # Also need to consider drawing legend *centered* so can put e.g. colorbar next to
+            # legend in a bottompanel and have it not look super weird
+        lwidth=0.15, cwidth=0.25, cspace=0.8, cshrink=0.9,
             # spacing for colorbar text, colorbar axes width, legend axes with, and padding for interior ABC label
         # abcpad=0.1, titlepad=0.1,
         #     # will delete this stuff
@@ -980,24 +1188,21 @@ def subplots(array=None, nrows=1, ncols=1,
     templates for figure-wide legends/colorbars; if you actually want ax smallish panel
     to plot data, just use width/height ratios. don't bother with kwarg dictionaries because
     it is really, really customized; we do use them in formatting function though.
-    
+
     TODO:
-        * for rightcolorbar/bottomcolorbar, include kwarg option "row=<x>" and we can optionally
-        create spare axes for a colorbar to reference EVERY SINGLE ROW/COLUMN
-        * if want **differing spacing** between certain subplots, must use 
+        * If want **differing spacing** between certain subplots, must use 
         GridSpecFromSubplotSpec with its **own** hspace/wspace properties...requires
-        some consideration, but don't worry until you come across it
-        * figure out how to automate fixed aspect ratios for basemap subplots, so
-        don't have to guess/redraw a bunch of times
-        * figure size should be constrained by WIDTH/HEIGHT/ASPECT RATIO OF AXES, 
+        some consideration, but don't worry until you come across it. Could make axes
+        all from scratch instead of with SubplotSpec/GridSpec.
+        * Figure size should be constrained by WIDTH/HEIGHT/ASPECT RATIO OF AXES, 
         with everything else provided; must pick two of these; default, is to pick
         width and aspect, but if height provided, width is ignored instead. no way
         right now to determine aspect by constraining width/height
-        * Start stepping away from SubplotSpec/GridSpec, and make axes from scratch.
-        ...should then be able to seamlessly make differing wspaes/hspaces.
-        * For spanning axes labels, right now only dectect **x labels on bottom**
-        and **ylabels on top**; generalize for all subplot edges
-    
+        * Figure out how to automate fixed aspect ratios for basemap subplots, so
+        don't have to guess/redraw a bunch of times.
+        * For spanning axes labels, right now only detect **x labels on bottom**
+        and **ylabels on top**; generalize for all subplot edges.
+
     NOTE that, because I usually format all subplots with .format() method, shared axes should already
     end up with the same axis limits/scaling/majorlocators/minorlocators... the sharex and sharey detection algorithm
     really is just to get INSTRUCTIONS to make the ticklabels and axis labels INVISIBLE for certain axes.
@@ -1016,7 +1221,10 @@ def subplots(array=None, nrows=1, ncols=1,
         raise ValueError('Can only place a global colorbar **or** global legend on bottom, not both.')
 
     # Spacings due to panel considerations
-    if bottomcolorbar:
+    if bottompanel or bottompanels:
+        bottom_extra_axes = bwidth
+        bottom_extra_hspace = bspace
+    elif bottomcolorbar:
         bottom_extra_axes   = cwidth
         bottom_extra_hspace = cspace
     elif bottomlegend:
@@ -1027,7 +1235,10 @@ def subplots(array=None, nrows=1, ncols=1,
     bottom_extra = bottom_extra_axes + bottom_extra_hspace
 
     # And right spacings
-    if rightcolorbar:
+    if rightpanel or rightpanels:
+        right_extra_axes   = rwidth
+        right_extra_wspace = rspace
+    elif rightcolorbar:
         right_extra_axes   = cwidth
         right_extra_wspace = cspace
     else:
@@ -1102,16 +1313,16 @@ def subplots(array=None, nrows=1, ncols=1,
         height               = axheight_ave_nopanel*nrows + top + bottom + (nrows-1)*hspace + bottom_extra
 
     # Figure size, and some other stuff
+    # The "total" axes width include hspace/wspace 
     axwidth_total  = ncols*axwidth_ave_nopanel + (ncols-1)*wspace
     axheight_total = nrows*axheight_ave_nopanel + (nrows-1)*hspace
     figsize        = (width, height)
 
-    # Convert hspace/wspace/edges to INCHES units
     # Properties for outer GridSpec object, need borders in fractional units
     ileft, ibottom, iright, itop = left, bottom, right, top
     left = left/width
     top  = 1-top/height
-    if bottomlegend or bottomcolorbar:
+    if bottom_extra_axes>0:
         hspace_outer        = bottom/((axheight_total + bottom_extra_axes)/2) # same for main axes and bottom panel, but 'bottom'
         height_ratios_outer = np.array([axheight_total, bottom_extra_axes])/(axheight_total + bottom_extra_axes)
         bottom              = bottom_extra_hspace/height
@@ -1119,7 +1330,7 @@ def subplots(array=None, nrows=1, ncols=1,
         hspace_outer        = 0
         height_ratios_outer = np.array([1])
         bottom              = bottom/height
-    if rightcolorbar:
+    if right_extra_axes:
         width_ratios_outer = np.array([axwidth_total, right_extra_axes])/(axwidth_total + right_extra_axes)
         wspace_outer       = right/((axwidth_total + right_extra_axes)/2) # want space between main axes and panel to be 'right'
         right              = 1-right_extra_wspace/width
@@ -1128,6 +1339,8 @@ def subplots(array=None, nrows=1, ncols=1,
         wspace_outer       = 0
         right              = 1-right/width
     # Properties for inner GridSpec object
+    wspace_orig = wspace
+    hspace_orig = hspace
     wspace = wspace/axwidth_ave_nopanel
     hspace = hspace/axheight_ave_nopanel
     if wratios is not None:
@@ -1141,10 +1354,12 @@ def subplots(array=None, nrows=1, ncols=1,
 
     # Setup up figure and plot areas
     fig = plt.figure(FigureClass=Figure, figsize=figsize)
+    fig.height = height
+    fig.width = width
     # Outer area; includes regions for special panels
     GS = mgridspec.GridSpec(
-            nrows         = 1+int(bottomcolorbar or bottomlegend),
-            ncols         = 1+int(rightcolorbar),
+            nrows         = 1+int(bottom_extra_axes>0),
+            ncols         = 1+int(right_extra_axes>0),
             left          = left,
             bottom        = bottom,
             right         = right, # unique spacing considerations
@@ -1162,6 +1377,7 @@ def subplots(array=None, nrows=1, ncols=1,
     fig.cspace = cspace
     fig.gridspec = GS # add to figure, for later reference
     # Main plotting area
+    # Will draw individual axes within this GridSpec object later
     gs = mgridspec.GridSpecFromSubplotSpec(
             nrows         = nrows,
             ncols         = ncols,
@@ -1176,7 +1392,7 @@ def subplots(array=None, nrows=1, ncols=1,
     # Manage shared axes/axes with spanning labels
     #--------------------------------------------------------------------------
     # Find shared axes; get sets with identical spans in x or y (ignore panels)
-    # ...preliminary stuff
+    # Preliminary stuff
     axes_ids = [np.where(array==i) for i in np.unique(array) if i>0] # 0 stands for empty, -1 for colorbar, -2 for legend
         # note that these locations should be **sorted** by axes id
     yrange = np.array([[xy[0].min(), xy[0].max()+1] for xy in axes_ids]) # yrange is shared columns
@@ -1245,6 +1461,7 @@ def subplots(array=None, nrows=1, ncols=1,
     # Dependent axes
     for i in range(num_axes):
         # Detect if we want to share this axis with another
+        # If so, get that axis
         sharex_ax, sharey_ax = None, None # by default, don't share with other axes objects
         if sharex:
             igroup = np.where([i in g for g in xgroups])[0] # np.where works on lists
@@ -1265,7 +1482,9 @@ def subplots(array=None, nrows=1, ncols=1,
 
         # Draw axes, and add to list
         if ax[i] is not None:
-            # ...special considerations for axes that might, for example, be an x base, but share a y-axis
+            # Axes is a BASE and has already been drawn, but might still need to add
+            # a _sharex or _sharey property; e.g. is bottom-axes of three-column plot
+            # and we want it to share a y-axis
             if ax[i] is not sharex_ax:
                 ax[i]._sharex = sharex_ax
             else:
@@ -1275,8 +1494,10 @@ def subplots(array=None, nrows=1, ncols=1,
             else:
                 sharey_ax = None
         else:
-            # ...virgin axes... these are not an x base or a y base
-            ax[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])], sharex=sharex_ax, sharey=sharey_ax,
+            # Virgin axes; these are not an x base or a y base
+            # We draw them now and pass the sharex/sharey as kwargs
+            ax[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                    sharex=sharex_ax, sharey=sharey_ax,
                     **cartopy_kw)
 
         # Hide tick labels (not default behavior for manual sharex, sharey use)
@@ -1315,10 +1536,108 @@ def subplots(array=None, nrows=1, ncols=1,
             for i in g:
                 if i!=b: ax[i].yaxis.label.set_visible(False)
 
-    #--------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     # Create panel axes
+    # TODO: Fix lformat and cformat methods to apply to SubplotSpec objects
+    # so they can be drawn immediately; can pass the figure handle needed to draw
+    # the axes with add_subplot using a defaulted kwarg fig=fig
+    #---------------------------------------------------------------------------
+    # First the bottompanel options
+    if bottompanel: # one spanning panel
+        bottompanels = [1]*ncols
+    elif bottompanels: # more flexible spec
+        try: iter(bottompanels)
+        except TypeError:
+            bottompanels = [*range(ncols)] # pass True to make panel for each column
+    if bottompanels: # non-empty
+        # First get the number of columns requested and their width 
+        # ratios to align with main plotting area
+        num = bottompanels[0]
+        npanel = len(bottompanels)
+        widths_orig = [axwidth_ave_nopanel*ncols*wratio for wratio in wratios] # assumes wratios normalized
+        widths_new = [widths_orig[0]] # start with this
+        for p,panel in enumerate(bottompanels):
+            if p==0:
+                continue
+            newnum = panel
+            if newnum==num: # same as previous number
+                widths_new[-1] += widths_orig[p] + wspace_orig
+                npanel -= 1 # we want one less panel object
+            else:
+                widths_new += [widths_orig[p]] # add to width
+            num = newnum
+        rratios = [width/sum(widths_new) for width in widths_new] # just normalize it
+        rspace = wspace_orig/(sum(widths_new)/npanel) # divide by new average width
+        # Now create new GridSpec and add each of its
+        # SubplotSpecs to the figure instance
+        P = mgridspec.GridSpecFromSubplotSpec(
+                nrows         = 1,
+                ncols         = npanel,
+                subplot_spec  = GS[1,0],
+                wspace        = rspace, # same as above
+                width_ratios  = rratios,
+                )
+        specs = [P[0,i] for i in range(npanel)] # pass the SubplotSpec objects
+        for s in specs:
+            s.figure = fig
+            s.rightpanel = False
+            s.bottompanel = True
+            s.colorbar = MethodType(_cformat, s)
+            s.legend = MethodType(_lformat, s)
+        if len(specs)==1: specs = specs[0]
+        fig.bottompanel = specs
+            # don't necessarily want to draw axes (e.g. for colorbar
+            # need to make another SubplotSpec from each element)
+    # Next the rightpanel options (very similar)
+    if rightpanel:
+        rightpanels = [1]*nrows
+    elif rightpanels:
+        try: iter(rightpanels)
+        except TypeError:
+            rightpanels = [*range(nrows)] # pass True to make panel for each row
+    if rightpanels: # non-empty
+        # First get the number of columns requested and their width 
+        # ratios to align with main plotting area
+        num = rightpanels[0]
+        npanel = len(rightpanels)
+        heights_orig = [axheight_ave_nopanel*nrows*hratio for hratio in hratios] # assumes wratios normalized
+        heights_new = [heights_orig[0]] # start with this
+        for p,panel in enumerate(rightpanels):
+            if p==0:
+                continue
+            newnum = panel
+            if newnum==num: # same as previous number
+                heights_new[-1] += heights_orig[p] + hspace_orig
+                npanel -= 1 # we want one less panel object
+            else:
+                heights_new += [heights_orig[p]] # add to width
+            num = newnum
+        rratios = [height/sum(heights_new) for height in heights_new] # just normalize it
+        rspace = hspace_orig/(sum(heights_new)/npanel) # divide by new average width
+        # Now create new GridSpec and add each of its
+        # SubplotSpecs to the figure instance
+        P = mgridspec.GridSpecFromSubplotSpec(
+                ncols         = 1,
+                nrows         = npanel,
+                subplot_spec  = GS[0,1],
+                hspace        = rspace,
+                height_ratios = rratios,
+                )
+        specs = [P[i,0] for i in range(npanel)] # pass the SubplotSpec objects
+        for s in specs:
+            s.figure = fig
+            s.rightpanel = True
+            s.bottompanel = False
+            s.colorbar = MethodType(_cformat, s)
+            s.legend = MethodType(_lformat, s)
+        if len(specs)==1: specs = specs[0]
+        fig.rightpanel = specs
+            # don't necessarily want to draw axes (e.g. for colorbar
+            # need to make another SubplotSpec from each element)
+
     #--------------------------------------------------------------------------
-    # Colorbar panels
+    # Create colorbar and legend axes
+    #--------------------------------------------------------------------------
     if bottomcolorbar:
         C = mgridspec.GridSpecFromSubplotSpec(
                 nrows        = 1,
@@ -1406,7 +1725,7 @@ def subplots(array=None, nrows=1, ncols=1,
         # Formatting function
         a.format = MethodType(_format, a) # MethodType approach
         # Legend-drawing on any axes
-        a.legend = MethodType(_lformat, a) # MethodType approach
+        a.axeslegend = MethodType(_lformat, a) # MethodType approach
         # Mapped overrides
         if projection is not None and package=='basemap':
             # Setup basemap
@@ -1469,6 +1788,7 @@ class WarpNorm(mcolors.Normalize):
     """
     Pass as norm=<instance>, when declaring new pcolor or contourf objects.
     Base class for warping either or both sides of colormap.
+    In most cases it may be more suitable to use BoundaryNorm.
     """
     def __init__(self, exp=0, extend='neither', midpoint=None, vmin=None, vmax=None, clip=None):
         # User will use -10 to 10 scale; converted to value used in equation
@@ -1504,8 +1824,7 @@ class WarpNorm(mcolors.Normalize):
         # Get middle point in 0-1 coords, and value
         midpoint_scaled = (midpoint - self.vmin)/(self.vmax - self.vmin)
         value_scaled    = (value - self.vmin)/(self.vmax - self.vmin)
-        try:
-            iter(value_scaled)
+        try: iter(value_scaled)
         except TypeError:
             value_scaled = np.arange(value_scaled)
         value_cmap = np.ma.empty(value_scaled.size)
@@ -1537,11 +1856,11 @@ class MidpointNorm(mcolors.Normalize):
     """
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
         # Default None values so can declare by name in any order
-        # super(Midpoint,self).__init__(self, vmin, vmax, clip)
+        # mcolors.Normalize.__init__(self, vmin, vmax, clip)
+        super().__init__(vmin, vmax, clip)
         self.midpoint = midpoint
         if any(x is None for x in [vmin,vmax,midpoint]):
             raise ValueError("Must declare vmin, vmax, and midpoint explicitly.")
-        mcolors.Normalize.__init__(self, vmin, vmax, clip)
 
     def __call__(self, value, clip=None):
         # How to map data values in range (vmin,vmax) to color indices in colormap
@@ -1560,15 +1879,15 @@ class BoundaryNorm(mcolors.Normalize):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, midpoint=None, clip=False):
+    def __init__(self, levels, midpoint=None, clip=False, **kwargs):
         # Very simple
-        # super(Midpoint,self).__init__(self, vmin, vmax, clip)
         try: iter(levels)
         except TypeError:
             raise ValueError("Must call BoundaryNorm with your boundary vaues.")
+        # mcolors.Normalize.__init__(self, min(levels), max(levels), clip, **kwargs)
+        super().__init__(min(levels), max(levels), clip)
         self.midpoint = midpoint
         self.levels = np.array(levels)
-        mcolors.Normalize.__init__(self, min(levels), max(levels), clip)
 
     def __call__(self, value, clip=None):
         # TOTO: Add optional midpoint; this class will probably end up being one of
@@ -1618,20 +1937,20 @@ def LatFormatter(sigfig=0, sine=False, NS=False):
     Format latitude labels; can convert sine-lats back into lats (for
     areal weighting) and can apply N/S instead of postiive/negative.
     """
-    def f(n, loc, sine=sine, NS=NS, sigfig=sigfig):
+    def f(value, loc, sine=sine, NS=NS, sigfig=sigfig):
         # Convert from sine to latitude number
         if sine:
-            n = np.arcsin(n)*180/np.pi
+            value = np.arcsin(value)*180/np.pi
         # Suffix to apply
-        if NS and n<0:
-            s = 'S'
-            n *= -1
+        if NS and value<0:
+            string = 'S'
+            value *= -1
         elif NS:
-            s = 'N'
+            string = 'N'
         else:
-            s = ''
-        formatstr = f'%.{sigfig:d}f'
-        string = formatstr % (n,)
+            string = ''
+        formatstr = f'%.{sigfig:d}f%s'
+        string = formatstr % (value, string)
         return string
     # And create object
     return mticker.FuncFormatter(f)

@@ -330,8 +330,12 @@ def arange(min_, *args):
 
 def match(v1, v2):
     """
-    Match two 1D vectors; will return starting/ending indices, and 
-    numpy array of their overlap.
+    Match two 1D vectors; will return slices for producing the matching
+    segment from either vector, and the vector itself, so use as follows:
+        i1, i2, vmatch = match(v1, v2)
+        v1[i1] == v2[i2] == vmatch
+    Useful e.g. for matching the time dimensions of 3D or 4D variables collected
+    over different years and months.
     """
     v1, v2 = np.array(v1), np.array(v2)
     if not np.all(v1==np.sort(v1)) or not np.all(v2==np.sort(v2)):
@@ -606,75 +610,114 @@ def derivl(h, y, axis=0, accuracy=2, keepedges=True):
 def deriv1(h, y, axis=0, accuracy=2, keepedges=False):
     """
     First order finite differencing. Can be accurate to h^2, h^4, or h^6.
+    Reduces axis length by "accuracy" amount, except for zero version (special).
     See: https://en.wikipedia.org/wiki/Finite_difference_coefficient
-    REDUCES AXIS LENGTH BY ACCURACY//2.
-    TODO: Option to keep edges.
+        * Check out that fancy recursion!
+        * Uses progressively lower-accuracy methods for edges to preserve shape.
     """
+    # Stuff for unequally-spaced data
+    # try: x[0]
+    # except TypeError:
+    #     if x.ndim>1: # if want x interpreted as vector
+    #         xaxis = axis
+    #     else:
+    #         xaxis = 0
+    # else:
+    #     x = np.tile(np.array([x]), y.shape[axis])
+    # if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
+    #     raise ValueError('x and y dimensions do not match along derivative axis.')
+    # y = _permute(y, axis)
+    # x = _permute(x, xaxis)
     # Simple Euler scheme
     # y = np.rollaxis(y, axis, y.ndim)
+    y = np.array(y) # for safety
     y = _permute(y, axis)
-    if accuracy==2:
+    if accuracy==0:
+        diff = (y[...,1:]-y[...,:-1])/h
+    elif accuracy==2:
         diff = (1/2)*(y[...,2:]-y[...,:-2])/h
-        # if keepedges:
-        #     bdiff = np.diff(y[...,:2], axis=-1)/h
-        #     ediff = np.diff(y[...,-2:], axis=-1)/h
-        #     diff = np.concat((bdiff, bdiff, diff, ediff, ediff), axis=-1)
+        if keepedges:
+            # bdiff = np.diff(y[...,:2], axis=-1)/h
+            # ediff = np.diff(y[...,-2:], axis=-1)/h
+            bdiff = deriv1(h, y[...,:2], axis=-1, keepedges=True, accuracy=0)
+            ediff = deriv1(h, y[...,-2:], axis=-1, keepedges=True, accuracy=0)
+            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     elif accuracy==4:
         diff = (1/12)*(-y[...,4:] + 8*y[...,3:-1] 
                 - 8*y[...,1:-3] + y[...,:-4])/h
         if keepedges:
-            diff = np.concat((bdiff, bdiff, diff, ediff, ediff), axis=-1)
+            bdiff = deriv1(h, y[...,:4], axis=-1, keepedges=True, accuracy=2)
+            ediff = deriv1(h, y[...,-4:], axis=-1, keepedges=True, accuracy=2)
+            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     elif accuracy==6:
         diff = (1/60)*(y[...,6:] - 9*y[...,5:-1] + 45*y[...,4:-2] 
                 - 45*y[...,2:-4] + 9*y[...,1:-5] - y[...,:-6])/h
+        if keepedges:
+            bdiff = deriv1(h, y[...,:6], axis=-1, keepedges=True, accuracy=4)
+            ediff = deriv1(h, y[...,-6:], axis=-1, keepedges=True, accuracy=4)
+            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     else:
         raise ValueError('Invalid accuracy; for now, choose form O(h^2), O(h^4), or O(h^6).')
     # return np.rollaxis(diff, y.ndim-1, axis)
     return _unpermute(diff, axis)
 
-def deriv2(h, y, axis=0, accuracy=2):
-    # Simple Euler scheme
+def deriv2(h, y, axis=0, accuracy=2, keepedges=False):
     """
     Second order finite differencing. Can be accurate to h^2, h^4, or h^6.
     See: https://en.wikipedia.org/wiki/Finite_difference_coefficient
-    REDUCES AXIS LENGTH BY ACCURACY//2.
+        * Here, since there is no comparable midpoint-2nd derivative, need to
+          just pad endpoints with the adjacent derivatives.
+        * Again, check out that fancy recursion!
+    Reduces axis length by "accuracy" amount, except for zero version (special).
     """
     # y = np.rollaxis(y, axis, y.ndim)
     y = _permute(y, axis)
     if accuracy==2:
         diff = (y[...,2:] - 2*y[...,1:-1] + y[...,:-2])/h**2
+        if keepedges:
+            bdiff = diff[...,:1]
+            ediff = diff[...,-1:]
+            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     elif accuracy==4:
         diff = (1/12)*(-y[...,4:] + 16*y[...,3:-1] 
                 - 30*y[...,2:-2] + 16*y[...,1:-3] - y[...,:-4])/h**2
+        if keepedges:
+            bdiff = deriv2(h, y[...,:4], axis=-1, keepedges=True, accuracy=2)
+            ediff = deriv2(h, y[...,-4:], axis=-1, keepedges=True, accuracy=2)
+            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     elif accuracy==6:
         diff = (1/180)*(2*y[...,6:] - 27*y[...,5:-1] + 270*y[...,4:-2] 
                 - 490*y[...,3:-3] + 270*y[...,2:-4] - 27*y[...,1:-5] + 2*y[...,:-6])/h**2
+        if keepedges:
+            bdiff = deriv2(h, y[...,:6], axis=-1, keepedges=True, accuracy=4)
+            ediff = deriv2(h, y[...,-6:], axis=-1, keepedges=True, accuracy=4)
+            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     else:
         raise ValueError('Invalid accuracy; for now, choose form O(h^2), O(h^4), or O(h^6).')
     # return np.rollaxis(diff, y.ndim-1, axis)
     return _unpermute(diff, axis)
 
-def deriv_uneven(x, y, axis=0):
+def deriv_uneven(x, y, axis=0, keepedges=False):
     """
     Central numerical differentiation, uneven/even spacing.
     Equation: (((x1-x0)/(x2-x1))(y2-y1) + ((x2-x1)/(x1-x0))(y1-y0)) / (x2-x0)
-    ...reduces to standard (y2-y0)/(x2-x0) for even spcing, and for uneven
-    ...weights the slope closer to center point more heavily; want weighted average
-    ...of forward/backward Euler, with weights 1 minus percentage of total x2-x0 interval.
-    REDUCES AXIS LENGTH BY 2.
+        * reduces to standard (y2-y0)/(x2-x0) for even spcing, and for uneven
+          weights the slope closer to center point more heavily
+        * want weighted average of forward/backward Euler, with weights 1 minus
+          percentage of total x2-x0 interval
+    Reduces axis length by 2.
     """
     # Preliminary stuff
+    x = np.array(x) # precaution
+    y = np.array(y)
     if x.ndim>1: # if want x interpreted as vector
         xaxis = axis
     else:
         xaxis = 0
     if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
         raise ValueError('x and y dimensions do not match along derivative axis.')
-    # y = np.rollaxis(y, axis, y.ndim) # broadcasting rules will then help us out
-    # x = np.rollaxis(x, xaxis, x.ndim)
     y = _permute(y, axis)
     x = _permute(x, xaxis)
-    # print(x.shape, y.shape)
     # Get derivative
     x0 = x[...,:-2]
     x1 = x[...,1:-1]
@@ -684,13 +727,18 @@ def deriv_uneven(x, y, axis=0):
     y2 = y[...,2:]
     f = (x2 - x1)/(x2 - x0)
     diff = (1-f)*(y2 - y1)/(x2 - x1) + f*(y1 - y0)/(x1 - x0)
-    # return np.rollaxis(diff, y.ndim-1, axis)
+    if keepedges:
+        bh = np.diff(x[...,:2], axis=-1)
+        bdiff = deriv1(bh, y[...,:2], axis=-1, keepedges=True, accuracy=0)
+        eh = np.diff(x[...,-2:], axis=-1)
+        ediff = deriv1(eh, y[...,-2:], axis=-1, keepedges=True, accuracy=0)
+        diff = np.concatenate((bdiff, diff, ediff), axis=-1)
     return _unpermute(diff, axis)
 
 def diff(x, y, axis=0):
     """
     Trivial differentiation onto half levels.
-    REDUCES AXIS LENGTH BY 1.
+    Reduces axis length by 1.
     """
     # Preliminary stuff
     if x.ndim>1: # if want x interpreted as vector
@@ -1122,7 +1170,9 @@ def lowpass(x, k=4, axis=-1): #n=np.inf, kmin=0, kmax=np.inf): #, kscale=1, kran
 
 def lanczos(alpha, J):
     """
-    Lanczos filtering of data.
+    Lanczos filtering of data; gives an abrupt high-frequency (low wavenumber)
+    cutoff at omega = alpha*pi,
+    the number of datapoints needed.
     """
     C0 = alpha # integral of cutoff-response function is alpha*pi/pi
     Ck = np.sin(alpha*np.pi*np.arange(1,J+1))*(1/(np.pi*np.arange(1,J+1)))
@@ -1221,4 +1271,130 @@ def cps(x, y, M=72, wintype='boxcar', param=None, centerphase=np.pi):
     p[p < centerphase-np.pi] += 2*np.pi
     freq = np.fft.fftfreq(M)[:pm] # frequency
     return freq, Coh, p
+
+def spectral(fnm, nm, data, norm=True, win=501, 
+            freq_scale=1, scale='days',
+            xlog=True, ylog=False, mc='k',
+            xticks=None,
+            rcolors=('C3','C6'), pcolors=('C0','C1'), alpha=0.99, marker=None,
+            xlim=None, ylim=None, # optional override
+            linewidth=1.5,
+            red_discrete=True, red_contin=True, manual=True, welch=True):
+    # Iniital stuff
+    N = len(data)
+    pm = int((win-1)/2)
+    fig, a = plt.subplots(figsize=(15,5))
+            
+    # Confidence intervals
+    dof_num = 1.2*2*2*(N/(win/2))
+    trans = 0.5
+    exp = 1
+    F99 = st.f.ppf(1-(1-alpha)**exp,dof_num,1000)
+    F01 = st.f.ppf((1-alpha)**exp,dof_num,1000)
+    print('F stats:',F01,F99)
+    rho = np.corrcoef(data[1:],data[:-1])[0,1]
+    kr = np.arange(0,win//2+1)
+    fr = freq_scale*kr/win
+    
+    def xtrim(f):
+        if xlim is None:
+            return np.ones(f.size, dtype=bool)
+        else:            
+            return ((f>=xlim[0]) & (f<=xlim[-1]))
+    
+    # Power spectra
+    if manual:
+        label = 'power spectrum'
+        if welch: label = 'manual method'
+        # Now, manual method with proper overlapping etc.
+        if False:
+            data = data[:(N//pm)*pm]
+        loc = np.linspace(pm,N-pm-1,2*int(np.round(N/win))).round().astype(int) # sample loctaions
+        han = np.hanning(win)
+        han = han/han.sum()
+        phi = np.empty((len(loc),win//2))
+        for i,l in enumerate(loc):
+            pm = int((win-1)/2)
+            C = np.fft.fft(han*sig.detrend(data[l-pm:l+pm+1]))
+    #         C = 2*C[1:win//2+1]
+            phii = np.abs(C)**2/2
+            phii = 2*phii[1:win//2+1]
+            phi[i,:] = phii
+        phi = phi.mean(axis=0)
+        print('phi sum:',phi.sum())   
+        f = np.fft.fftfreq(win)[1:win//2+1]*freq_scale
+        if norm: phi = phi/phi.sum()
+        f, phi = f[xtrim(f)], phi[xtrim(f)] # trim
+        a.plot(f, phi, label=label, 
+               mec=mc, mfc=mc, mew=linewidth,
+               marker=marker, color=pcolors[0], linewidth=linewidth)
+        if xlim is None: xlim = ((f*freq_scale).min(), (f*freq_scale).max())
+        if ylim is None: ylim = ((phi.min()*0.95, phi.max()*1.05))   
+            
+    if welch:
+        label = 'power spectrum'
+        if manual: label = 'welch method'
+        # Welch
+        fw, phi_w = sig.welch(data, nperseg=win, detrend='linear', window='hanning', scaling='spectrum', 
+                              return_onesided=False)
+        fw, phi_w = fw[1:win//2+1]*freq_scale, phi_w[1:win//2+1]
+        if norm: phi_w = phi_w/phi_w.sum()
+        fw, phi_w = fw[xtrim(fw)], phi_w[xtrim(fw)] # trim
+        print('phiw sum:',phi_w.sum()) 
+        a.plot(fw, phi_w, label=label, 
+              mec=mc, mfc=mc, mew=linewidth,
+               marker=marker, color=pcolors[-1], linewidth=linewidth)
+        if xlim is None: xlim = ((fw).min(), (fw).max())
+        if ylim is None: ylim = (phi_w.min()*0.95, phi_w.max()*1.05)
+
+    
+    # Best fit red noise spectrum
+    if red_discrete:
+        print('Autocorrelation',rho)
+        phi_r1 = (1-rho**2)/(1+rho**2-2*rho*np.cos(kr*np.pi/(win//2)))
+        print('phi_r1 sum:',phi_r1.sum()) 
+        if norm: phi_r1 = phi_r1/phi_r1.sum()
+        frp, phi_r1 = fr[xtrim(fr)], phi_r1[xtrim(fr)]
+        a.plot(fr[xtrim(fr)], phi_r1, label=r'red noise, $\rho(\Delta t)$',
+               marker=None, color=rcolors[0], linewidth=linewidth)
+        a.plot(frp, phi_r1*F99, linestyle='--', 
+               marker=None, alpha=trans, color=rcolors[0], linewidth=linewidth)
+#         a.plot(frp, phi_r1*F01, linestyle='--', 
+#                marker=None, alpha=trans, color=rcolors[0], linewidth=linewidth)
+    
+    # Alternate best fit
+    if red_contin:
+        Te = -1/np.log(rho)
+        omega = (kr/win)*np.pi*2
+        phi_r2 = 2*Te/(1+(Te**2)*(omega**2))
+        print('phi_r2 sum:',phi_r2.sum()) 
+        if norm: phi_r2 = phi_r2/phi_r2.sum()
+        frp, phi_r2 = fr[xtrim(fr)], phi_r2[xtrim(fr)]
+        a.plot(frp, phi_r2, label=r'red noise, $T_e$',
+               marker=None, color=rcolors[1], linewidth=linewidth)
+        a.plot(frp, phi_r2*F99, linestyle='--', 
+               marker=None, alpha=trans, color=rcolors[-1], linewidth=linewidth)
+#         a.plot(frp, phi_r2*F01, linestyle='--', 
+#                marker=None, alpha=trans, color=rcolors[-1], linewidth=linewidth)
+        
+    # Variance
+    print('true variance:',data.std()**2)
+    
+    # Figure formatting
+    a.legend()
+    if ylog:
+        a.set_yscale('log')
+    if xlog:
+        a.set_xscale('log')
+#     a.set_ylim((1e-5,1.05*max(phi.max(),phi_w.max())))
+    a.set_title('%s power spectrum' % nm)
+#     a.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
+    a.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%5.3g'))
+    a.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    if xticks is None: xticks = a.get_xticks()
+    my.format(a, xlabel=('frequency (%s${}^{-1}$)' % scale), ylabel='proportion variance explained',
+             xlim=xlim, ylim=ylim, xticks=xticks)
+    suffix = 'pdf'
+    fig.savefig('a5_' + fnm + '.' + suffix, format=suffix, dpi='figure')
+    plt.show()
 
