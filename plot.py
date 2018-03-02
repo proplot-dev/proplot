@@ -312,7 +312,7 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
     # Save
     fig.savefig(f'{os.path.dirname(__file__)}/colormaps.pdf',
             bbox_inches='tight', format='pdf')
-    return
+    return fig
 
 #------------------------------------------------------------------------------
 # Function used often in plotting context but kind of unrelated
@@ -366,13 +366,18 @@ class Figure(mfigure.Figure):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs) # python 3 only
 
-    def save(self, filename, tight=True, pad=0.05): #, desktop=True):
+    def save(self, filename, squeeze=None, tight=None, pad=0.05): #, desktop=True):
         """
         Echo some helpful information before saving.
         Note that the gridspec object must be updated before figure is printed to screen
         in interactive environment... will fail to update after that. Seems to be glitch,
         should open thread on GitHub.
         """
+        # Parse input
+        if squeeze is None and tight is None:
+            tight = True
+        if squeeze is None and tight is not None:
+            tight = squeeze
         # Get bounding box, from axes
         # Unfortunately this does not find annotations either
         xs, ys = [], []
@@ -931,7 +936,8 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     the legend-width and bottom/right widths can be chosen propertly/separately.
     """
     # TODO: Still experimental, consider fixing
-    # This is a different idea altogether for colorbar
+    # This is a different idea altogether for bottom and right PANELS; in this case
+    # the lformat function is called on a subplotspec object and axes drawn after the fact
     lsettings = settings.legend.copy()
     if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
         self = self.figure.add_subplot(self) # easy peasy
@@ -942,15 +948,17 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
         self.patch.set_alpha(0)
         self.bottomlegend = True # for reading below
     if self.bottomlegend: # this axes is assigned to hold the bottomlegend?
-        if handles is None: # must specify
+        if not handles: # must specify
             raise ValueError('Must input list of handles.')
         lsettings.update( # need to input handles manually, because for separate axes
                 bbox_transform=self.transAxes, # in case user passes bbox_to_anchor
                 borderaxespad=0, loc='upper center', # this aligns top of legend box with top of axes
                 frameon=False) # turn off frame by default
     else: # not much to do if this is just an axes
-        if handles is None:
+        if not handles: # test if any user input
             handles, _ = self.get_legend_handles_labels()
+        if not handles: # just test if Falsey
+            raise ValueError('Must input list of handles or pass "label" attributes to your plot calls.')
     lsettings.update(**kwargs)
     # Setup legend text properties
     tsettings = settings.ticklabels.copy()
@@ -1107,7 +1115,8 @@ def _format(self,
         elif suptitlepos is not None:
             fig.suptitle.update({'position':suptitlepos})
     # Create axes title
-    self.title.update({**settings.title, 'text':title})
+    # Input needs to be emptys string
+    self.title.update({**settings.title, 'text':title or ''})
     if titlepos=='left':
         self.title.update({'position':(0,1), 'ha':'left'})
     elif titlepos=='right':
