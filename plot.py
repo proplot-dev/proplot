@@ -144,11 +144,9 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
       rcParam settings**.
     * Use this function to temporarily change settings, but only the specified settings.
     """
-    # Minor helper function
-    # Pop special properties from kwargs
+    # Create dictionary of settings; revert to default if user requested
     d = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9, 'fontname':'DejaVu Sans'}
     for name in d.keys():
-        # Create some special kwargs
         d[name] = kwargs.pop(name,None) or d[name]
     if everything:
         # Make a cycler
@@ -203,8 +201,13 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         rc('lonlatlines', linewidth=d['linewidth'], linestyle=':', color=d['color'], alpha=0.2)
         rc('spine', color=d['color'], linewidth=d['linewidth'])
         rc('outline', edgecolor=d['color'], linewidth=d['linewidth'])
+    # Overrides
+    for key,value in kwargs.items():
+        if not isinstance(value, dict):
+            raise ValueError("Can only pass dictionaries.")
+        rc(key, **value) # update dictionary
 # Now call the function to configure params
-setup(True, silent=True)
+setup(True)
 
 #------------------------------------------------------------------------------
 # Colormap display
@@ -680,7 +683,10 @@ def _text(self, x, y, text, transform='axes', fancy=False, black=True, edgewidth
     So far no other features implemented.
     """
     if type(transform) is not str:
-        raise ValueError("Just name the transform with string \"axes\" or \"data\".")
+        pass # leave alone
+        # raise ValueError("Just name the transform with string \"axes\" or \"data\".")
+    elif transform=='figure':
+        transform = self.figure.transFigure
     elif transform=='axes':
         transform = self.transAxes
     elif transform=='data':
@@ -1096,6 +1102,8 @@ def _format(self,
         xpos = fig.left/fig.width + .5*(fig.width - fig.left - fig.right)/fig.width
         ypos = (self.title._transform.transform(self.title.get_position())[1]/fig.dpi \
                 + self.title._linespacing*self.title.get_size()/72)/fig.height
+        if not title: # just place along axes if no title here
+            ypos -= (self.title._linespacing*self.title.get_size()/72)/fig.height
         # default linespacing is 1.2; it has no getter, only a setter; see:
         # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
         # print(self.title.get_size()/72, ypos/fig.height)
