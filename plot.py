@@ -87,13 +87,23 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
             _announcement = True
             print("Registered colormaps.")
 # For retrieving colormap
-def cmapcolors(name, N):
+def cmapcolors(name, N, vmin=None, vmax=None):
     """
     Just spits out colors to be used for e.g. consecutive lines. First argument
     is the colormap name, second is the number of colors needed.
+    Optionally can input a list, and the colors will be scaled by their relative
+    position in vmin/vmax. This is still useful sometimes.
     """
     cmap = plt.cm.get_cmap(name) # the cmap object itself
-    return [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
+    try: iter(N)
+    except TypeError:
+        colors = [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
+    else:
+        if vmin is None or vmax is None:
+            raise ValueError("If you input a vector, you must specify the color range for that data with \"vmin\" and \"vmax\".")
+        # print('Indices:', [(v-vmin)/(vmax-vmin) for v in N])
+        colors = [cmap((v-vmin)/(vmax-vmin)) for v in N]
+    return colors
 # Used to create this neat class but it was a stupid idea. Work with existing
 # API, not against it. Just create a function that sets rcParam defaults with
 # optional override. Then, better to make the format function add actual information
@@ -775,14 +785,22 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     # cax.xaxis.set_tick_params(which='both', bottom=False, top=False)
     # cax.yaxis.set_tick_params(which='both', bottom=False, top=False)
     # Test if mappable is iterable; if so, user wants to use colorbar to label lines
+    fromlines, fromcolors = False, False
     try: iter(mappable)
     except TypeError:
-        fromlines = False
+        pass
     else: # catch exception: the only iterable matplotlib objects are Container objects
         if isinstance(mappable, mcontainer.Container):
-            fromlines = False
+            pass
         else:
-            fromlines = True
+            if isinstance(mappable, str):
+                fromcolors = True # we passed a bunch of color strings
+            else:
+                try: iter(mappable[0])
+                except TypeError:
+                    fromlines = True # we passed a bunch of handles
+                else:
+                    fromcolors = True # we passed a bunch of color tuples
     csettings = {'spacing':'uniform', 'cax':cax, 'use_gridspec':True, # use space afforded by entire axes
         'extend':'both', 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
@@ -793,13 +811,18 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     # * Note the colors are perfect if we don't extend them by dummy color on either side,
     #   but for some reason labels for edge colors appear offset from everything
     # * Too tired to figure out why so just use this workaround
-    if fromlines:
+    if fromcolors: # we passed the colors directly
+        colors = mappable
         if values is None:
-            raise ValueError("Must pass values corresponding to list of handle objects.")
+            raise ValueError("Must pass \"values\", corresponding to list of colors.")
+    if fromlines: # the lines
+        if values is None:
+            raise ValueError("Must pass \"values\", corresponding to list of handles.")
         if len(mappable)!=len(values):
-            raise ValueError("Number of values should equal number of handles.")
+            raise ValueError("Number of \"values\" should equal number of handles.")
         values = np.array(values) # needed for below
         colors = [h.get_color() for h in mappable]
+    if fromlines or fromcolors:
         colors = ['#ffffff'] + colors + ['#ffffff']
         colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors)
         # levels = np.concatenate((values[0]-np.diff(values[:2]), # get "edge" values
