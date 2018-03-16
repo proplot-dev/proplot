@@ -98,18 +98,39 @@ def cmapcolors(name, N, vmin=None, vmax=None):
         # print('Indices:', [(v-vmin)/(vmax-vmin) for v in N])
         colors = [cmap((v-vmin)/(vmax-vmin)) for v in N]
     return colors
-# Create class for storing plot settings, and wrapper function that adds class
-# instance as a global variable for this whole module; also declare default settings
-class Settings():
+# Used to create this neat class but it was a stupid idea. Work with existing
+# API, not against it. Just create a function that sets rcParam defaults with
+# optional override. Then, better to make the format function add actual information
+# to the plot and do nothing to change its style/color/etc.
+def rc(name, *args, silent=False, **kwargs):
+    for arg in args:
+        try:
+            kwargs = {**kwargs, **arg}
+        except TypeError:
+            raise ValueError("Extra arguments must be dictionaries.")
+    if kwargs: # if non-empty
+        for key,value in kwargs.items():
+            if f'{name}.{key}' in mpl.rcParams:
+                mpl.rcParams[f'{name}.{key}'] = value
+            else:
+                # if f'{name}.{key}' not in mpl.rcExtras and not silent:
+                #     print(f"Adding {name}.{key} to rcExtras.")
+                if not hasattr(mpl, 'rcExtras'):
+                    mpl.rcExtras = {}
+                mpl.rcExtras[f'{name}.{key}'] = value
+        return None
+    else: # if empty
+        dictionary = {}
+        for key,value in {**mpl.rcParams, **mpl.rcExtras}.items():
+            if key.split('.')[0]==name:
+                dictionary[key.split('.')[1]] = value
+        if not dictionary:
+            raise ValueError(f"Could not find settings for {name}.")
+        return dictionary
+def setup(everything=True, **kwargs): # fontname is matplotlib default
     """
-    This function initializes DEFAULT kwargs for various plot elements; the user
-    can UPDATE the defaults by passing dictionaries as kwargs when creating instance.
-    TODO: Consider ELIMINATING this function.
-    * In general this function contains stuff we will ALMOST NEVER OR RARELY want
-      to vary between axes, while the format function contains stuff we OFTEN VARY.
-      So 'color' actually is something that should not be here.
-    * And need to COMPLETELY OVERHAUL this to just use the rcParams method, since that
-      often contains the funtionality we wanted. Current list:
+    See this page: https://matplotlib.org/users/customizing.html
+    Quick list of rcParam categories:
         "lines", "patch", "hatch", "legend"
         "font", "text", "mathtext"
             includes usetex for making all matplotlib fonts latex
@@ -126,9 +147,18 @@ class Settings():
         "animation"
     * Problem is the settings in rcParams are scattershot and missing some important
       ones we want, but should use it when we can; options won't be rescinded in future versions
+    * Currently features that can't be rcParam'ed are *gridminor* properties, the
+      *cgrid* idea (lines between colorbar colors), the continent/coastlines/lonlatlines
+      settings, and some legend settings.
+    * One idea might be to **derive custom settings from existing matplotlib
+      rcParam settings**.
+    * Use this function to temporarily change settings, but only the specified settings.
     """
-    def __init__(self, color='k', linewidth=0.7, rcparams={},
-            fontname='DejaVu Sans', ssize=8, bsize=9, **kwargs): # fontname is matplotlib default
+    # Create dictionary of settings; revert to default if user requested
+    d = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9, 'fontname':'DejaVu Sans'}
+    for name in d.keys():
+        d[name] = kwargs.pop(name,None) or d[name]
+    if everything:
         # Make a cycler
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
             '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
@@ -136,100 +166,58 @@ class Settings():
                 + cycler('linestyle', [i for i in ('-', '--', ':', '-.') for n in range(10)])
             # + cycler('dashes', [i for i in ((), (1,1), (3,2), (6,3)) for n in range(10)])
         # Reset the rcParams
-        mpl.rcdefaults()
-        # Set the rcParams
-        # rcParams['hatch.color'] = 'r' # ignored for some reason
-        # rcParams['lines.linewidth'] = linewidth*4
-        # rcParams['lines.linewidth'] = linewidth*4
-        # + cycler('linestyle', [i for i in ('-','--','--','--') for n in range(10)])
-        mpl.rc('patch', linewidth=linewidth, edgecolor=color) # e.g. bars?
-        mpl.rc('hatch', linewidth=linewidth, color=color)
-        mpl.rc('lines', linewidth=linewidth*2, markersize=linewidth*4, markeredgewidth=0)
-        mpl.rc('markers', fillstyle='full')
-        mpl.rc('scatter', marker='o')
-        mpl.rc('grid', linewidth=linewidth/2, alpha=0.1, color=color)
-        mpl.rc('font', size=ssize) # when user calls .text()
-        mpl.rc('text', color=color) # when user calls .text()
-        mpl.rc('axes', xmargin=0, ymargin=0, labelsize=ssize, titlesize=bsize,
-                edgecolor=color, labelcolor=color,
-                grid=True, linewidth=linewidth,
+        mpl.rcdefaults() # reset defaults
+        mpl.rcExtras = {}
+        # Included settings
+        rc('axes', xmargin=0, ymargin=0, labelsize=d['ssize'], titlesize=d['bsize'],
+                edgecolor=d['color'], labelcolor=d['color'],
+                grid=True, linewidth=d['linewidth'],
                 labelpad=3, prop_cycle=propcycle)
+        rc('font', {'size':d['ssize'], 'family':'sans-serif', 'sans-serif':d['fontname']}) # when user calls .text()
+        rc('text', color=d['color']) # when user calls .text()
+        rc('grid', linewidth=d['linewidth']/2, alpha=0.1, color=d['color'])
         for xy in 'xy':
-            # mpl.rc(f'{xy}tick', labelsize=ssize, color=color,
-            # **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
-            mpl.rc(f'{xy}tick', labelsize=ssize, color=color)
-            mpl.rc(f'{xy}tick.major', pad=2, width=linewidth, size=4) # tick length is size
-            mpl.rc(f'{xy}tick.minor', pad=2, width=linewidth, visible=True, size=2)
-        # Overrides of rcParams
-        for k,v in rcparams.items():
-            mpl.rcParams[k] = v # standard notation; not rc method here
-        # Some more complicated settings that aren't included in the
-        # default rcParams
-        if any(type(kwarg) is not dict for kwarg in kwargs.values()):
-            for kwarg in kwargs.values():
-                print(f"{type(kwarg)}: {kwarg}.")
-            raise ValueError("Arguments passed to settings must be dictionary objects.")
-        # self.tickminor = {'length':2, 'direction':'in', 'width':linewidth, 'color':color}
-        # self.tick      = {'length':4, 'direction':'in', 'width':linewidth, 'color':color}
-        # self.ctick     = {'length':4, 'direction':'out', 'width':linewidth, 'color':color}
-        self.tickminor  = {'length':2, 'width':linewidth, 'color':color}
-        self.tick       = {'length':4, 'width':linewidth, 'color':color}
-        self.ctickminor = {'length':2, 'width':linewidth, 'color':color}
-        self.ctick      = {'length':4, 'width':linewidth, 'color':color}
-            # lengths here are in points (i.e. 1/72in)
-        self.spine = {'linewidth':linewidth, 'color':color} # spine keyword
-        self.outline = {'linewidth':linewidth, 'edgecolor':color} # spine keyword
-        # Text (updated, or set on creation)
-        self.ticklabels = {'size':ssize, 'weight':'normal', 'color':color, 'fontname':fontname}
-        self.label      = {'size':ssize, 'weight':'normal', 'color':color, 'fontname':fontname}
-        self.title      = {'size':bsize, 'weight':'normal', 'color':color, 'fontname':fontname}
-        self.abc        = {'size':bsize, 'weight':'bold', 'color':color, 'fontname':fontname}
-        # Grid lines (set on creation; should make half-as-wide as axes)
-        self.grid      = {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1}
-        self.gridminor = {'linestyle':':', 'linewidth':linewidth/2, 'color':color, 'alpha':0.05}
-        self.cgrid     = {'color':color, 'linewidth':linewidth}
-        # Axes scale special properties (set on creation)
-        self.xscale = {}
-        self.yscale = {}
-        # Geographic features look (set on creation)
-        # self.continents  = {'color':'#cccccc'}
-        # self.continents  = {'color':'#eeeeee'}
+            rc(f'{xy}tick', labelsize=d['ssize'], color=d['color'], direction='out')
+            rc(f'{xy}tick.major', pad=2, width=d['linewidth'], size=4, # tick length is size
+                **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
+            rc(f'{xy}tick.minor', pad=2, width=d['linewidth'], visible=True, size=2,
+                **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
+        rc('legend', framealpha=0.6, fancybox=False, frameon=False,
+            labelspacing=0.5, columnspacing=1, handletextpad=0.5, borderpad=0.25)
+        rc('patch', linewidth=d['linewidth'],   edgecolor=d['color']) # e.g. bars?
+        rc('hatch', linewidth=d['linewidth'],   color=d['color'])
+        rc('lines', linewidth=d['linewidth']*2, markersize=d['linewidth']*4, markeredgewidth=0)
+        rc('markers', fillstyle='full')
+        rc('scatter', marker='o')
+        # Custom settings
+        # Should begin to delete these and control things with rcParams whenever possible
+        # Remember original motivation was realization that some rcParams can't be changes
+        # by passing a kwarg (don't remember any examples)
+        rc('abc', size=d['bsize'], weight='bold', color=d['color'])
+        rc('title', size=d['bsize'], weight='normal', color=d['color'], fontname=d['fontname'])
+        rc('label', size=d['ssize'], weight='normal', color=d['color'], fontname=d['fontname'])
+        rc('ticklabels', size=d['ssize'], weight='normal', color=d['color'], fontname=d['fontname'])
+        rc('gridminor', linestyle=':', linewidth=d['linewidth']/2, color=d['color'], alpha=0.05)
+        rc('cgrid', color=d['color'], linewidth=d['linewidth'])
+        # rc('xscale')
+        # rc('yscale')
+        rc('continents', color=d['color'])
+        rc('tickminor', length=2, width=d['linewidth'], color=d['color'])
+        rc('tick', length=4, width=d['linewidth'], color=d['color'])
+        rc('ctickminor', length=2, width=d['linewidth'], color=d['color'])
+        rc('ctick', length=4, width=d['linewidth'], color=d['color'])
         # self.continents  = {'color':'moccasin'}
-        self.continents  = {'color':color} # best looking
-        self.coastlines  = {'linewidth':linewidth, 'color':color}
-        self.lonlatlines = {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2}
-            # 'dashes':(linewidth,linewidth)}
-        # Auxilliary elements (set on creation)
-        # Make sure borderpad = 0.5*labelspacing; this way the multi-row legend without aligning
-        # columns will look like the normal default legend
-        self.legend   = {'framealpha':0.6, 'fancybox':False, 'frameon':False,
-                'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25}
-        # self.colorbar = {'extend':'both', 'spacing':'uniform'}
-        #     # note font properties for legend will be from ticklables, and for colorbra
-        #     # stuff will be from labels (for clabel) and ticklabels (for cticklabels)
-        # User-specified updated properties (provided as 'attribute_kw')
-        # for attr in (attr for attr in dir(self) if not attr.startswith('__')):
-        for attr, settings in self.__dict__.items():
-            settings.update(kwargs.pop(attr+'_kw', {}))
-            settings.update(kwargs.pop(attr, {}))
-        if kwargs: # non-empty
-            raise ValueError(f'Unknown kwarg-settings: {", ".join(kwargs.keys())}.')
-    def __repr__(self):
-        string = ['Current settings...']
-        for n,v in self.__dict__.items():
-            intro = f'{n}:'.ljust(15) # add whitespace to right
-            info = ', '.join(f'{n}={v}' for n,v in v.items())
-            string.append(intro + info)
-        return '\n'.join(string)
-# Now the wrapper function, and start
-def setup(message="", **kwargs):
-    if type(message) is not str: # because user called it manually, probably didn't declare
-        # message, and passed something as an *arg without keyword
-        raise ValueError("Plot settings can only be updated by keyword-dictionary pairs.")
-    global settings # global w.r.t. this module
-    settings = Settings(**kwargs)
-    if message: print(message) # if non-empty
-setup() # call function
+        rc('coastlines', linewidth=d['linewidth'], color=d['color'])
+        rc('lonlatlines', linewidth=d['linewidth'], linestyle=':', color=d['color'], alpha=0.2)
+        rc('spine', color=d['color'], linewidth=d['linewidth'])
+        rc('outline', edgecolor=d['color'], linewidth=d['linewidth'])
+    # Overrides
+    for key,value in kwargs.items():
+        if not isinstance(value, dict):
+            raise ValueError("Can only pass dictionaries.")
+        rc(key, **value) # update dictionary
+# Now call the function to configure params
+setup(True)
 
 #------------------------------------------------------------------------------
 # Colormap display
@@ -698,19 +686,30 @@ def _pcolormesh_basemap(self, lon, lat, Z, **kwargs):
 # Formatting functions, assigned using MethodType onto various Axes
 # instances and GirdSpec instances
 #------------------------------------------------------------------------------
-def _text(self, x, y, text, fancy=False, black=True, edgewidth=2, **kwarg):
+def _text(self, x, y, text, transform='axes', fancy=False, black=True, edgewidth=2, **kwarg):
     """
     Wrapper around original text method.
     If requested, can return specially created black-on-white text.
     So far no other features implemented.
     """
-    t = self._text(x, y, text, **kwarg)
+    if type(transform) is not str:
+        pass # leave alone
+        # raise ValueError("Just name the transform with string \"axes\" or \"data\".")
+    elif transform=='figure':
+        transform = self.figure.transFigure
+    elif transform=='axes':
+        transform = self.transAxes
+    elif transform=='data':
+        transform = self.transData
+    else:
+        raise ValueError("Unknown transform name. Use string \"axes\" or \"data\".")
+    t = self._text(x, y, text, transform=transform, **kwarg)
     if fancy:
         fcolor, bcolor = 'wk'[black], 'kw'[black]
-        # t.update({'size':11, 'zorder':1e10,
-        #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
         t.update({'color':fcolor, 'zorder':1e10, # have to update after-the-fact for path effects
             'path_effects': [mpatheffects.Stroke(linewidth=2, foreground=bcolor), mpatheffects.Normal()]})
+        # t.update({'size':11, 'zorder':1e10,
+        #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
     return t
 
 def _autolocate(min_, max_, base=5):
@@ -797,8 +796,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
                 else:
                     fromcolors = True # we passed a bunch of color tuples
     csettings = {'spacing':'uniform', 'cax':cax, 'use_gridspec':True, # use space afforded by entire axes
-            'extend':'both', # pass this, but replace with mappable settings
-            'orientation':orientation, 'drawedges':cgrid} # also consider ticklocation
+        'extend':'both', 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
     csettings.update(**kwargs)
     if hasattr(mappable, 'extend'):
@@ -917,9 +915,9 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     cb = self.figure.colorbar(mappable, ticks=locators[0], format=cformatter, **csettings)
     # The ticks/ticklabels basic properties
     for t in axis.get_ticklabels(which='major'):
-        t.update(settings.ticklabels)
-    axis.set_tick_params(which='major', **settings.ctick)
-    axis.set_tick_params(which='minor', **settings.ctickminor)
+        t.update(rc('ticklabels'))
+    axis.set_tick_params(which='major', **rc('ctick'))
+    axis.set_tick_params(which='minor', **rc('ctickminor'))
         # properties are obscure; would have to use hidden methods to do this manually; 
         # using update method (inhereted from Artist) doesn't work
     # The locators and formatters
@@ -936,16 +934,16 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     axis.set_ticks(mappable.norm(np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))), minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # Set up the label
-    axis.label.update(settings.label)
+    axis.label.update(rc('label'))
     if clabel is not None:
-        axis.label.set(text=clabel) # before, used set_label_text
+        axis.label.update({'text':clabel})
     # Fix pesky white lines between levels + misalignment with border due to rasterized blocks
     cb.solids.set_rasterized(False)
     cb.solids.set_edgecolor('face')
     # Make edges/dividers consistent with axis edges
     if cb.dividers is not None:
-        cb.dividers.update(settings.cgrid)
-    cb.outline.update(settings.outline)
+        cb.dividers.update(rc('cgrid'))
+    cb.outline.update(rc('outline'))
     # Update the tickers colorbar
     # cb.formatter = cformatter # fucks shit up -- why?
     # cb.update_ticks() # doesn't actually update the formatter
@@ -958,10 +956,12 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     Should update my legend function to CLIP the legend box when it goes outside axes area, so
     the legend-width and bottom/right widths can be chosen propertly/separately.
     """
+    # First get legend settings (usually just one per plot so don't need to declare
+    # this dynamically/globally)
+    lsettings = rc('legend')
     # TODO: Still experimental, consider fixing
     # This is a different idea altogether for bottom and right PANELS; in this case
     # the lformat function is called on a subplotspec object and axes drawn after the fact
-    lsettings = settings.legend.copy()
     if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
         self = self.figure.add_subplot(self) # easy peasy
         for s in self.spines.values():
@@ -984,7 +984,7 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
             raise ValueError('Must input list of handles or pass "label" attributes to your plot calls.')
     lsettings.update(**kwargs)
     # Setup legend text properties
-    tsettings = settings.ticklabels.copy()
+    tsettings = rc('ticklabels')
     if 'fontsize' in lsettings:
         tsettings['size'] = lsettings['fontsize']
     # Setup legend handle properties
@@ -1046,7 +1046,7 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
             leg = self._legend(handles=handles, **lsettings) # includes number columns
         else: # this Method did not override the original "legend" method
             leg = self.legend(handles=handles, **lsettings) # includes number columns
-        leg.legendPatch.update(settings.outline) # or get_frame()
+        leg.legendPatch.update(rc('outline')) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
         for t in leg.texts:
@@ -1055,6 +1055,7 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     # 2) Separate legend for each row
     # The labelspacing/borderspacing will be exactly replicated, as if we were
     # using the original legend command
+    # Means we also have to overhaul some settings
     else:
         legends = []
         if 'labelspacing' not in lsettings:
@@ -1077,7 +1078,7 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
             else:
                 leg = self.legend(handles=hs, ncol=len(hs), bbox_to_anchor=bbox,
                     frameon=False, borderpad=0, loc='center', **lsettings) # not overriding original Method
-            leg.legendPatch.update(settings.outline) # or get_frame()
+            leg.legendPatch.update(rc('outline')) # or get_frame()
             for obj in leg.legendHandles:
                 obj.update(hsettings)
             for t in leg.texts:
@@ -1124,12 +1125,14 @@ def _format(self,
         xpos = fig.left/fig.width + .5*(fig.width - fig.left - fig.right)/fig.width
         ypos = (self.title._transform.transform(self.title.get_position())[1]/fig.dpi \
                 + self.title._linespacing*self.title.get_size()/72)/fig.height
+        if not title: # just place along axes if no title here
+            ypos -= (self.title._linespacing*self.title.get_size()/72)/fig.height
         # default linespacing is 1.2; it has no getter, only a setter; see:
         # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
         # print(self.title.get_size()/72, ypos/fig.height)
         fig.suptitle = self.text(xpos,ypos,suptitle,
                 transform=fig.transFigure) # title
-        fig.suptitle.update({'ha':'center', 'va':'baseline', **settings.title})
+        fig.suptitle.update({'ha':'center', 'va':'baseline', **rc('title')})
         if suptitlepos=='title': # not elevated
             ypos = self.title._transform.transform(self.title.get_position())[1]/fig.dpi/fig.height
             fig.suptitle.update({'position':(xpos,ypos)})
@@ -1139,7 +1142,7 @@ def _format(self,
             fig.suptitle.update({'position':suptitlepos})
     # Create axes title
     # Input needs to be emptys string
-    self.title.update({**settings.title, 'text':title or ''})
+    self.title.update({**rc('title'), 'text':title or ''})
     if titlepos=='left':
         self.title.update({'position':(0,1), 'ha':'left'})
     elif titlepos=='right':
@@ -1156,7 +1159,7 @@ def _format(self,
         abcedges = abcformat.split('a')
         self.abc = self.text(0, 1, abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1],
                 transform=self.title._transform) # optionally include paren
-        self.abc.update({'ha':'left', 'va':'baseline', **settings.abc})
+        self.abc.update({'ha':'left', 'va':'baseline', **rc('abc')})
         if abcpos=='inside':
             self.abc.update({'position':(padding/self.width, 1-padding/self.height),
                 'transform':self.transAxes, 'ha':'left', 'va':'top'})
@@ -1186,9 +1189,9 @@ def _format(self,
         # Coastlines, parallels, meridians
         m = self.m
         if coastlines:
-            p = m.drawcoastlines(**settings.coastlines)
+            p = m.drawcoastlines(**rc('coastlines'))
         if continents:
-            p = m.fillcontinents(**settings.continents)
+            p = m.fillcontinents(**rc('continents'))
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
@@ -1200,10 +1203,10 @@ def _format(self,
             for pi in p.values(): # returns dict, where each one is tuple
                 for _ in [i for j in pi for i in j]: # magic
                     if isinstance(_, mtext.Text):
-                        _.update(settings.ticklabels)
+                        _.update(rc('ticklabels'))
                     else:
                         _.set_clip_on(True) # no gridlines past boundary
-                        _.update(settings.lonlatlines)
+                        _.update(rc('lonlatlines'))
                         # _.set_linestyle(linestyle)
                 # tried passing clip_on to the above, but it does nothing; must set
                 # for lines created after the fact
@@ -1215,10 +1218,10 @@ def _format(self,
             for pi in p.values():
                 for _ in [i for j in pi for i in j]: # magic
                     if isinstance(_, mtext.Text):
-                        _.update(settings.ticklabels)
+                        _.update(rc('ticklabels'))
                     else:
                         _.set_clip_on(True) # no gridlines past boundary
-                        _.update(settings.lonlatlines)
+                        _.update(rc('lonlatlines'))
                         # _.set_linestyle(linestyle)
         # Map boundary
         # * First have to MANUALLY REPLACE the old boundary by just deleting
@@ -1232,22 +1235,22 @@ def _format(self,
             m._mapboundarydrawn.remove()
         if m.projection in m._pseudocyl:
             self.patch.set_alpha(0) # make patch invisible
-            p = m.drawmapboundary(fill_color=color, **settings.spine) # set fill_color to 'none' to make transparent
+            p = m.drawmapboundary(fill_color=color, **rc('spine')) # set fill_color to 'none' to make transparent
             p.set_rasterized(False) # not sure about this; might be rasterized
             p.set_clip_on(False) # so edges of LINE denoting boundary aren't cut off
         else: # use the settings to apply to Axes patch; the basemap API fails here
             self.patch.set_facecolor(color)
             self.patch.set_edgecolor('none')
             for spine in self.spines.values():
-                spine.update(settings.spine)
+                spine.update(rc('spine'))
         # p.set_zorder(-1) # is already zero so this is dumb
         # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
     # Cartopy axes setup
     if isinstance(self, cgeoaxes.GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
         print("WARNING: Cartopy axes setup not yet implemented.")
-        # self.add_feature(cfeature.COASTLINE, **settings.box)
-        # self.outline_patch.update(settings.box)
+        # self.add_feature(cfeature.COASTLINE, **rc('outline'))
+        # self.outline_patch.update(rc('outline'))
         return
 
     #--------------------------------------------------------------------------
@@ -1255,8 +1258,10 @@ def _format(self,
     #--------------------------------------------------------------------------
     # Axes scaling, limits, and reversal options (alternatively, supply
     # your own xlim/ylim that go from high to low)
-    if xscale is not None: self.set_xscale(xscale, **settings.xscale)
-    if yscale is not None: self.set_yscale(yscale, **settings.yscale)
+    # if xscale is not None: self.set_xscale(xscale, **rc('xscale'))
+    # if yscale is not None: self.set_yscale(yscale, **rc('yscale'))
+    if xscale is not None: self.set_xscale(xscale)
+    if yscale is not None: self.set_yscale(yscale)
     if xlim is None: xlim = self.get_xlim()
     if ylim is None: ylim = self.get_ylim()
     if xreverse: xlim = xlim[::-1]
@@ -1275,7 +1280,7 @@ def _format(self,
         # May change settings if twin axes is present
         for spine, side in zip((self.spines[s] for s in sides), sides):
             # Line properties
-            spine.update(settings.spine)
+            spine.update(rc('spine'))
             if axis==self.xaxis and self.xspine_override is not None:
                 spineloc = self.xspine_override
             if axis==self.yaxis and self.yspine_override is not None:
@@ -1313,19 +1318,19 @@ def _format(self,
             sides_kw = {side: self.spines[side].get_visible() and side in ticklocs for side in sides}
         grid_kw = {} if grid is None else {'gridOn': grid}
         gridminor_kw = {} if gridminor is None else {'gridOn': gridminor and tickminor}
-        major_kw = settings.tick if tickdir is None else dict(settings.tick, direction=tickdir)
-        minor_kw = settings.tickminor if tickdir is None else dict(settings.tickminor, direction=tickdir)
+        major_kw = rc('tick') if tickdir is None else dict(rc('tick'), direction=tickdir)
+        minor_kw = rc('tickminor') if tickdir is None else dict(rc('tickminor'), direction=tickdir)
         axis.set_tick_params(which='major', **sides_kw, **grid_kw, **major_kw)
         axis.set_tick_params(which='minor', **sides_kw, **gridminor_kw, **minor_kw) # have length
         for tick in axis.majorTicks:
-            tick.gridline.update(settings.grid)
+            tick.gridline.update(rc('grid'))
         for tick in axis.minorTicks:
-            tick.gridline.update(settings.gridminor)
+            tick.gridline.update(rc('gridminor'))
             if tickminor is not None:
                 tick.set_visible(tickminor)
 
         # Label properties
-        axis.label.update(settings.label)
+        axis.label.update(rc('label'))
         if label is not None:
             axis.label.set_text(label)
 
@@ -1366,7 +1371,7 @@ def _format(self,
             # axis.set_ticklabels(tickformatter) # ...FixedFormatter alone has issues
             axis.set_major_formatter(mticker.FixedFormatter(tickformatter)) # list of strings
         for t in axis.get_ticklabels():
-            t.update(settings.ticklabels)
+            t.update(rc('ticklabels'))
     return # we're done
 
 #-------------------------------------------------------------------------------
@@ -2220,7 +2225,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None,
             # can't override original name of axes object, because m.pcolor calls m.ax.pcolor
             if projection in a.m._pseudocyl:
                 a.m.drawmapboundary() # just initialize (see above)
-            # b = a.m.drawmapboundary() # **settings().line)
+            # b = a.m.drawmapboundary() # **rc('line')
             # b.set_zorder(-10) # make sure is in back
         elif package=='cartopy':
             print("WARNING: Use of this library with cartopy projections untested. May need work.")
