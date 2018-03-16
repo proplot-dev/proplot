@@ -29,14 +29,19 @@ import matplotlib.gridspec as mgridspec
 import matplotlib.container as mcontainer
 import matplotlib.transforms as mtransforms
 import matplotlib.pyplot as plt
-import mpl_toolkits.basemap as mbasemap
-from matplotlib import matplotlib_fname
+try:
+    import mpl_toolkits.basemap as mbasemap
+except ModuleNotFoundError:
+    print("WARNING: Basemap is not available.")
+try:
+    import cartopy.crs as ccrs # crs stands for "coordinate reference system", leading c is "cartopy"
+    import cartopy.feature as cfeature
+    import cartopy.mpl.geoaxes as cgeoaxes
+except ModuleNotFoundError:
+    print("Warning: cartopy is not available.")
 # import string # for converting number to a/b/c
 # import matplotlib.pyplot as plt # will attach a suitable backend, make available the figure/axes modules
 import numpy as np # of course
-import cartopy.crs as ccrs # crs stands for "coordinate reference system", leading c is "cartopy"
-import cartopy.feature as cfeature
-import cartopy.mpl.geoaxes as cgeoaxes
 # __all__ = [
 #     'Figure',
 #     'subplots', 'cmapload', 'settings', # basic setup
@@ -54,6 +59,7 @@ import cartopy.mpl.geoaxes as cgeoaxes
 #------------------------------------------------------------------------------
 # List the system font names
 # See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+from matplotlib import matplotlib_fname
 fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
             mfonts.findSystemFonts(fontpaths=None, fontext='ttf')] + \
         [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
@@ -1224,11 +1230,15 @@ def _format(self,
         # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
     # Cartopy axes setup
-    if isinstance(self, cgeoaxes.GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
-        print("WARNING: Cartopy axes setup not yet implemented.")
-        # self.add_feature(cfeature.COASTLINE, **rc('outline'))
-        # self.outline_patch.update(rc('outline'))
-        return
+    try: cgeoaxes
+    except NameError:
+        pass # not even available, so this is not a cartpoy axes
+    else:
+        if isinstance(self, cgeoaxes.GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
+            print("WARNING: Cartopy axes setup not yet implemented.")
+            # self.add_feature(cfeature.COASTLINE, **rc('outline'))
+            # self.outline_patch.update(rc('outline'))
+            return
 
     #--------------------------------------------------------------------------
     # Process normal axes, various x/y settings individually
@@ -1330,6 +1340,8 @@ def _format(self,
             axis.set_minor_locator(mticker.FixedLocator(tickminorlocator))
 
         # Next, major tick formatters (enforce Null, always, for minor ticks), and text styling
+        # Includes option for %-formatting of numbers and dates, passing a list of strings
+        # for explicitly overwriting the text
         axis.set_minor_formatter(mticker.NullFormatter())
         if tickformatter in ['lat']:
             axis.set_major_formatter(LatFormatter(sine=False))
@@ -1345,8 +1357,8 @@ def _format(self,
             if dates: axis.set_major_formatter(mdates.DateFormatter(tickformatter)) # %-style, dates
             else: axis.set_major_formatter(mticker.FormatStrFormatter(tickformatter)) # %-style, numbers
         else: # list of strings
-            # axis.set_ticklabels(tickformatter) # ...FixedFormatter alone has issues
             axis.set_major_formatter(mticker.FixedFormatter(tickformatter)) # list of strings
+            # axis.set_ticklabels(tickformatter) # no issues with FixedFormatter so far
         for t in axis.get_ticklabels():
             t.update(rc('ticklabels'))
     return # we're done
