@@ -175,7 +175,7 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         mpl.rcdefaults() # reset defaults
         mpl.rcExtras = {}
         # Included settings
-        rc('axes', xmargin=0, ymargin=0, labelsize=d['ssize'], titlesize=d['bsize'],
+        rc('axes', xmargin=0, ymargin=0.05, labelsize=d['ssize'], titlesize=d['bsize'],
                 edgecolor=d['color'], labelcolor=d['color'],
                 grid=True, linewidth=d['linewidth'],
                 labelpad=3, prop_cycle=propcycle)
@@ -183,11 +183,10 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         rc('text', color=d['color']) # when user calls .text()
         rc('grid', linewidth=d['linewidth']/2, alpha=0.1, color=d['color'])
         for xy in 'xy':
+            tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
             rc(f'{xy}tick', labelsize=d['ssize'], color=d['color'], direction='out')
-            rc(f'{xy}tick.major', pad=2, width=d['linewidth'], size=4, # tick length is size
-                **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
-            rc(f'{xy}tick.minor', pad=2, width=d['linewidth'], visible=True, size=2,
-                **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
+            rc(f'{xy}tick.major', pad=2, width=d['linewidth'], size=4, **tickloc) # size==length
+            rc(f'{xy}tick.minor', pad=2, width=d['linewidth'], visible=True, size=2, **tickloc)
         rc('legend', framealpha=0.6, fancybox=False, frameon=False,
             labelspacing=0.5, columnspacing=1, handletextpad=0.5, borderpad=0.25)
         rc('patch', linewidth=d['linewidth'],   edgecolor=d['color']) # e.g. bars?
@@ -195,6 +194,9 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         rc('lines', linewidth=d['linewidth']*2, markersize=d['linewidth']*4, markeredgewidth=0)
         rc('markers', fillstyle='full')
         rc('scatter', marker='o')
+        rc('mathtext', default='regular', bf='sans:bold', it='sans:it')
+            # no italicization; this can only be accomplished with rcParams --
+            # impossible to specify on-the-fly!
         # Custom settings
         # Should begin to delete these and control things with rcParams whenever possible
         # Remember original motivation was realization that some rcParams can't be changes
@@ -285,7 +287,7 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():
                 s.set_visible(False)
-            ax.patch.set_alpha(0)
+            ax.patch.set_alpha(1)
             ax.set_xticks([])
             ax.set_yticks([])
             # Draw colormap
@@ -557,17 +559,19 @@ def _contourflevels(kwargs):
     if 'levels' in kwargs:
         if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
         kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
-        kwargs['norm'] = BoundaryNorm(kwargs['levels']) # what is wanted 99% of time
-        # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = BoundaryNorm(kwargs['levels']) # what is wanted 99% of time
+            # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
     return kwargs
 def _pcolorlevels(kwargs):
     # Processes keyword-arguments to allow levels for pcolor/pcolormesh
     if 'levels' in kwargs:
         if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
-        levels = kwargs.pop('levels')
+        levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
         kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
-        kwargs['norm'] = BoundaryNorm(levels)
-        # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = BoundaryNorm(levels)
+            # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
     return kwargs
 def _pcolorcheck(x, y, Z):
     # Checks that sizes match up, checks whether graticule was input
@@ -815,6 +819,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         colors = mappable
         if values is None:
             raise ValueError("Must pass \"values\", corresponding to list of colors.")
+        values = np.array(values) # needed for below
     if fromlines: # the lines
         if values is None:
             raise ValueError("Must pass \"values\", corresponding to list of handles.")
@@ -1095,7 +1100,7 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     return legends
 
 def _format(self,
-    transparent=True, hatch=None, color='w',
+    alpha=1, hatch=None, color='w', # control figure/axes background; hatch just applies to axes
     coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
@@ -1174,16 +1179,15 @@ def _format(self,
         elif abcpos is not None:
             self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
     # Color setup, optional hatching in background of axes
-    self.figure.patch.set_alpha(0) # make transparent by default
-    self.patch.set_alpha(1) # make not transparent
+    self.figure.patch.set_alpha(alpha) # make transparent by default
+    self.patch.set_alpha(alpha) # make not transparent
+    self.figure.patch.set_color(color)
+    self.patch.set_color(color) # color
+    self.patch.set_zorder(-1)
+    self.patch.set_clip_on(False)
     if hatch: # non-empty string or not none
-        self.fill_between([0,1], 0, 1, hatch=hatch,
-                facecolor='none', edgecolor='k', 
-                transform=self.transAxes) # fill hatching in background
-    else: # fill with color instead
-        self.patch.set_color(color)
-        self.patch.set_zorder(-1)
-        self.patch.set_clip_on(False)
+        self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
+            facecolor='none', edgecolor='k', transform=self.transAxes)
 
     #--------------------------------------------------------------------------
     # Process projection/map axes
@@ -2358,7 +2362,7 @@ class MidpointNorm(mcolors.Normalize):
 class BoundaryNorm(mcolors.Normalize):
     """
     Like the default BoundaryNorm, except instead of declaring level integers
-    from the exact RGB file, this interpolates from between 0 and 1 for each level.
+    from the exact RGB file, this *interpolates* from between 0 and 1 for each level.
     Example: Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.

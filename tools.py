@@ -3,7 +3,10 @@
 #------------------------------------------------------------------------------
 import os
 import numpy as np
-import ecmwfapi as ecmwf
+try:
+    import ecmwfapi as ecmwf
+except ModuleNotFoundError:
+    print("Warning: ECMWF API unavailable.")
 import xarray as xr
 import scipy.signal as sig
 import scipy.stats as st
