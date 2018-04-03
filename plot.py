@@ -29,14 +29,19 @@ import matplotlib.gridspec as mgridspec
 import matplotlib.container as mcontainer
 import matplotlib.transforms as mtransforms
 import matplotlib.pyplot as plt
-import mpl_toolkits.basemap as mbasemap
-from matplotlib import matplotlib_fname
+try:
+    import mpl_toolkits.basemap as mbasemap
+except ModuleNotFoundError:
+    print("WARNING: Basemap is not available.")
+try:
+    import cartopy.crs as ccrs # crs stands for "coordinate reference system", leading c is "cartopy"
+    import cartopy.feature as cfeature
+    import cartopy.mpl.geoaxes as cgeoaxes
+except ModuleNotFoundError:
+    print("Warning: cartopy is not available.")
 # import string # for converting number to a/b/c
 # import matplotlib.pyplot as plt # will attach a suitable backend, make available the figure/axes modules
 import numpy as np # of course
-import cartopy.crs as ccrs # crs stands for "coordinate reference system", leading c is "cartopy"
-import cartopy.feature as cfeature
-import cartopy.mpl.geoaxes as cgeoaxes
 # __all__ = [
 #     'Figure',
 #     'subplots', 'cmapload', 'settings', # basic setup
@@ -54,6 +59,7 @@ import cartopy.mpl.geoaxes as cgeoaxes
 #------------------------------------------------------------------------------
 # List the system font names
 # See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+from matplotlib import matplotlib_fname
 fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
             mfonts.findSystemFonts(fontpaths=None, fontext='ttf')] + \
         [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
@@ -172,7 +178,7 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         mpl.rcdefaults() # reset defaults
         mpl.rcExtras = {}
         # Included settings
-        rc('axes', xmargin=0, ymargin=0, labelsize=d['ssize'], titlesize=d['bsize'],
+        rc('axes', xmargin=0, ymargin=0.05, labelsize=d['ssize'], titlesize=d['bsize'],
                 edgecolor=d['color'], labelcolor=d['color'],
                 grid=True, linewidth=d['linewidth'],
                 labelpad=3, prop_cycle=propcycle)
@@ -180,11 +186,10 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         rc('text', color=d['color']) # when user calls .text()
         rc('grid', linewidth=d['linewidth']/2, alpha=0.1, color=d['color'])
         for xy in 'xy':
+            tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
             rc(f'{xy}tick', labelsize=d['ssize'], color=d['color'], direction='out')
-            rc(f'{xy}tick.major', pad=2, width=d['linewidth'], size=4, # tick length is size
-                **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
-            rc(f'{xy}tick.minor', pad=2, width=d['linewidth'], visible=True, size=2,
-                **{'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy])
+            rc(f'{xy}tick.major', pad=2, width=d['linewidth'], size=4, **tickloc) # size==length
+            rc(f'{xy}tick.minor', pad=2, width=d['linewidth'], visible=True, size=2, **tickloc)
         rc('legend', framealpha=0.6, fancybox=False, frameon=False,
             labelspacing=0.5, columnspacing=1, handletextpad=0.5, borderpad=0.25)
         rc('patch', linewidth=d['linewidth'],   edgecolor=d['color']) # e.g. bars?
@@ -192,6 +197,9 @@ def setup(everything=True, **kwargs): # fontname is matplotlib default
         rc('lines', linewidth=d['linewidth']*2, markersize=d['linewidth']*4, markeredgewidth=0)
         rc('markers', fillstyle='full')
         rc('scatter', marker='o')
+        rc('mathtext', default='regular', bf='sans:bold', it='sans:it')
+            # no italicization; this can only be accomplished with rcParams --
+            # impossible to specify on-the-fly!
         # Custom settings
         # Should begin to delete these and control things with rcParams whenever possible
         # Remember original motivation was realization that some rcParams can't be changes
@@ -556,17 +564,19 @@ def _contourflevels(kwargs):
     if 'levels' in kwargs:
         if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
         kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
-        kwargs['norm'] = BoundaryNorm(kwargs['levels']) # what is wanted 99% of time
-        # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = BoundaryNorm(kwargs['levels']) # what is wanted 99% of time
+            # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
     return kwargs
 def _pcolorlevels(kwargs):
     # Processes keyword-arguments to allow levels for pcolor/pcolormesh
     if 'levels' in kwargs:
         if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
-        levels = kwargs.pop('levels')
+        levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
         kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
-        kwargs['norm'] = BoundaryNorm(levels)
-        # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = BoundaryNorm(levels)
+            # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
     return kwargs
 def _pcolorcheck(x, y, Z):
     # Checks that sizes match up, checks whether graticule was input
@@ -814,6 +824,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         colors = mappable
         if values is None:
             raise ValueError("Must pass \"values\", corresponding to list of colors.")
+        values = np.array(values) # needed for below
     if fromlines: # the lines
         if values is None:
             raise ValueError("Must pass \"values\", corresponding to list of handles.")
@@ -1094,7 +1105,7 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     return legends
 
 def _format(self,
-    transparent=True, hatch=None, color='w',
+    alpha=1, hatch=None, color='w', # control figure/axes background; hatch just applies to axes
     coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
@@ -1173,16 +1184,15 @@ def _format(self,
         elif abcpos is not None:
             self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
     # Color setup, optional hatching in background of axes
-    self.figure.patch.set_alpha(0) # make transparent by default
-    self.patch.set_alpha(1) # make not transparent
+    self.figure.patch.set_alpha(alpha) # make transparent by default
+    self.patch.set_alpha(alpha) # make not transparent
+    self.figure.patch.set_color(color)
+    self.patch.set_color(color) # color
+    self.patch.set_zorder(-1)
+    self.patch.set_clip_on(False)
     if hatch: # non-empty string or not none
-        self.fill_between([0,1], 0, 1, hatch=hatch,
-                facecolor='none', edgecolor='k', 
-                transform=self.transAxes) # fill hatching in background
-    else: # fill with color instead
-        self.patch.set_color(color)
-        self.patch.set_zorder(-1)
-        self.patch.set_clip_on(False)
+        self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
+            facecolor='none', edgecolor='k', transform=self.transAxes)
 
     #--------------------------------------------------------------------------
     # Process projection/map axes
@@ -1252,11 +1262,15 @@ def _format(self,
         # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
     # Cartopy axes setup
-    if isinstance(self, cgeoaxes.GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
-        print("WARNING: Cartopy axes setup not yet implemented.")
-        # self.add_feature(cfeature.COASTLINE, **rc('outline'))
-        # self.outline_patch.update(rc('outline'))
-        return
+    try: cgeoaxes
+    except NameError:
+        pass # not even available, so this is not a cartpoy axes
+    else:
+        if isinstance(self, cgeoaxes.GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
+            print("WARNING: Cartopy axes setup not yet implemented.")
+            # self.add_feature(cfeature.COASTLINE, **rc('outline'))
+            # self.outline_patch.update(rc('outline'))
+            return
 
     #--------------------------------------------------------------------------
     # Process normal axes, various x/y settings individually
@@ -1358,6 +1372,8 @@ def _format(self,
             axis.set_minor_locator(mticker.FixedLocator(tickminorlocator))
 
         # Next, major tick formatters (enforce Null, always, for minor ticks), and text styling
+        # Includes option for %-formatting of numbers and dates, passing a list of strings
+        # for explicitly overwriting the text
         axis.set_minor_formatter(mticker.NullFormatter())
         if tickformatter in ['lat']:
             axis.set_major_formatter(LatFormatter(sine=False))
@@ -1373,8 +1389,8 @@ def _format(self,
             if dates: axis.set_major_formatter(mdates.DateFormatter(tickformatter)) # %-style, dates
             else: axis.set_major_formatter(mticker.FormatStrFormatter(tickformatter)) # %-style, numbers
         else: # list of strings
-            # axis.set_ticklabels(tickformatter) # ...FixedFormatter alone has issues
             axis.set_major_formatter(mticker.FixedFormatter(tickformatter)) # list of strings
+            # axis.set_ticklabels(tickformatter) # no issues with FixedFormatter so far
         for t in axis.get_ticklabels():
             t.update(rc('ticklabels'))
     return # we're done
@@ -2351,7 +2367,7 @@ class MidpointNorm(mcolors.Normalize):
 class BoundaryNorm(mcolors.Normalize):
     """
     Like the default BoundaryNorm, except instead of declaring level integers
-    from the exact RGB file, this interpolates from between 0 and 1 for each level.
+    from the exact RGB file, this *interpolates* from between 0 and 1 for each level.
     Example: Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.

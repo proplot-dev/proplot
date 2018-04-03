@@ -6,7 +6,7 @@ import numpy as np
 try:
     import ecmwfapi as ecmwf
 except ModuleNotFoundError:
-    print("WARNING: ECMWF API unavailable.")
+    print("Warning: ECMWF API unavailable.")
 import xarray as xr
 import scipy.signal as sig
 import scipy.stats as st
