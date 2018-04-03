@@ -3,7 +3,10 @@
 #------------------------------------------------------------------------------
 import os
 import numpy as np
-import ecmwfapi as ecmwf
+try:
+    import ecmwfapi as ecmwf
+except ModuleNotFoundError:
+    print("WARNING: ECMWF API unavailable.")
 import xarray as xr
 import scipy.signal as sig
 import scipy.stats as st
@@ -723,7 +726,7 @@ def derivl(h, y, axis=0, accuracy=2, keepedges=True):
     # return np.rollaxis(diff, y.ndim-1, axis)
     return _unpermute(diff, axis)
 
-def deriv1(h, y, axis=0, accuracy=2, keepedges=False):
+def deriv1(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=False):
     """
     First order finite differencing. Can be accurate to h^2, h^4, or h^6.
     Reduces axis length by "accuracy" amount, except for zero version (special).
@@ -744,34 +747,39 @@ def deriv1(h, y, axis=0, accuracy=2, keepedges=False):
     #     raise ValueError('x and y dimensions do not match along derivative axis.')
     # y = _permute(y, axis)
     # x = _permute(x, xaxis)
+    # Initial stuff
+    ldiff, rdiff = (), ()
+    if keepedges:
+        keepleft = keepright = True
     # Simple Euler scheme
     # y = np.rollaxis(y, axis, y.ndim)
     y = np.array(y) # for safety
     y = _permute(y, axis)
     if accuracy==0:
-        diff = (y[...,1:]-y[...,:-1])/h
+        diff = (y[...,1:]-y[...,:-1])/h # keepleft and keepright are immaterial
     elif accuracy==2:
         diff = (1/2)*(y[...,2:]-y[...,:-2])/h
-        if keepedges:
-            # bdiff = np.diff(y[...,:2], axis=-1)/h
-            # ediff = np.diff(y[...,-2:], axis=-1)/h
-            bdiff = deriv1(h, y[...,:2], axis=-1, keepedges=True, accuracy=0)
-            ediff = deriv1(h, y[...,-2:], axis=-1, keepedges=True, accuracy=0)
-            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+        if keepleft:
+            ldiff = deriv1(h, y[...,:2], axis=-1, keepleft=True, accuracy=0), # one-tuple
+        if keepright:
+            rdiff = deriv1(h, y[...,-2:], axis=-1, keepright=True, accuracy=0),
+        diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==4:
         diff = (1/12)*(-y[...,4:] + 8*y[...,3:-1] 
                 - 8*y[...,1:-3] + y[...,:-4])/h
-        if keepedges:
-            bdiff = deriv1(h, y[...,:4], axis=-1, keepedges=True, accuracy=2)
-            ediff = deriv1(h, y[...,-4:], axis=-1, keepedges=True, accuracy=2)
-            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+        if keepleft:
+            ldiff = deriv1(h, y[...,:3], axis=-1, keepleft=True, accuracy=2), # one-tuple
+        if keepright:
+            rdiff = deriv1(h, y[...,-3:], axis=-1, keepright=True, accuracy=2),
+        diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==6:
         diff = (1/60)*(y[...,6:] - 9*y[...,5:-1] + 45*y[...,4:-2] 
                 - 45*y[...,2:-4] + 9*y[...,1:-5] - y[...,:-6])/h
-        if keepedges:
-            bdiff = deriv1(h, y[...,:6], axis=-1, keepedges=True, accuracy=4)
-            ediff = deriv1(h, y[...,-6:], axis=-1, keepedges=True, accuracy=4)
-            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+        if keepleft:
+            ldiff = deriv1(h, y[...,:5], axis=-1, keepleft=True, accuracy=4), # one-tuple
+        if keepright:
+            rdiff = deriv1(h, y[...,-5:], axis=-1, keepright=True, accuracy=4),
+        diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     else:
         raise ValueError('Invalid accuracy; for now, choose form O(h^2), O(h^4), or O(h^6).')
     # return np.rollaxis(diff, y.ndim-1, axis)

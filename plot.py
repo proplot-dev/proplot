@@ -102,30 +102,33 @@ def cmapcolors(name, N, vmin=None, vmax=None):
 # API, not against it. Just create a function that sets rcParam defaults with
 # optional override. Then, better to make the format function add actual information
 # to the plot and do nothing to change its style/color/etc.
-def rc(name, *args, silent=False, **kwargs):
+def rc(category, *args, silent=False, **kwargs):
+    # Set some rcParams and custom params saved in rcExtras, or just echo one of them
+    # If you one of your rcParams itself contains a 'dot', pass it as a dictionary instead
+    # of using subcategory=value
     for arg in args:
         try:
             kwargs = {**kwargs, **arg}
         except TypeError:
             raise ValueError("Extra arguments must be dictionaries.")
     if kwargs: # if non-empty
-        for key,value in kwargs.items():
-            if f'{name}.{key}' in mpl.rcParams:
-                mpl.rcParams[f'{name}.{key}'] = value
+        for subcategory,value in kwargs.items():
+            if f'{category}.{subcategory}' in mpl.rcParams:
+                mpl.rcParams[f'{category}.{subcategory}'] = value
             else:
-                # if f'{name}.{key}' not in mpl.rcExtras and not silent:
-                #     print(f"Adding {name}.{key} to rcExtras.")
+                # if f'{category}.{subcategory}' not in mpl.rcExtras and not silent:
+                #     print(f"Adding {category}.{subcategory} to rcExtras.")
                 if not hasattr(mpl, 'rcExtras'):
                     mpl.rcExtras = {}
-                mpl.rcExtras[f'{name}.{key}'] = value
+                mpl.rcExtras[f'{category}.{subcategory}'] = value
         return None
     else: # if empty
         dictionary = {}
-        for key,value in {**mpl.rcParams, **mpl.rcExtras}.items():
-            if key.split('.')[0]==name:
-                dictionary[key.split('.')[1]] = value
+        for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
+            if catstring.split('.')[0]==category:
+                dictionary[catstring.split('.')[1]] = value
         if not dictionary:
-            raise ValueError(f"Could not find settings for {name}.")
+            raise ValueError(f"Could not find settings for {category}.")
         return dictionary
 def setup(everything=True, **kwargs): # fontname is matplotlib default
     """
@@ -265,7 +268,7 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
     for cat in ignore:
         nmaps -= (twidth + len(categories[cat])) # reduce size
     fig = plt.figure(figsize=(5,.3*nmaps))
-    fig.subplots_adjust(top=0.99, bottom=0.01, left=0.2, right=0.99)
+    fig.subplots_adjust(top=0.99, bottom=0.01, left=0.15, right=0.99)
     # Make plot
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
     cats = [cat for cat in categories if cat not in ignore]
@@ -273,13 +276,15 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
         # Space for title
         ntitles += twidth # two axes-widths
         for i,m in enumerate(categories[cat]):
+            if i+ntitles+nplots>nmaps:
+                break
             # Get object
             cmap = plt.get_cmap(m, lut=N)
             # Draw, and make invisible
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():
                 s.set_visible(False)
-            ax.patch.set_alpha(0)
+            ax.patch.set_alpha(1)
             ax.set_xticks([])
             ax.set_yticks([])
             # Draw colormap
