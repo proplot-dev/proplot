@@ -1001,8 +1001,8 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     lsettings.update(**kwargs)
     # Setup legend text properties
     tsettings = rc('ticklabels')
-    if 'fontsize' in lsettings:
-        tsettings['size'] = lsettings['fontsize']
+    # if 'fontsize' in lsettings: # messes things up because fontsize can be a string e.g. 'medium'
+    #     tsettings['size'] = lsettings['fontsize']
     # Setup legend handle properties
     hsettings = {}
     candidates = ['linewidth','color'] # candidates for modifying legend objects
