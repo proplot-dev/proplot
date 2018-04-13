@@ -364,6 +364,39 @@ def arange(min_, *args):
             # gives the next FLOATING POINT, in direction of the second argument
             # ...forget this; round-off errors from continually adding step to min mess this up
     return np.arange(min_, max_, step)
+def autolevels(min_, max_, N=50):
+    """
+    Function for rounding to nearest <base>.
+    """
+    def round_(x, base=5): return base*round(float(x)/base)
+    # Get the optimal units bases on the range of min to max
+    # numbers; N is the number of contour intervals we want to shoot for
+    max_tens = np.log10(np.abs(max_))//1
+    min_tens = np.log10(np.abs(min_))//1 # e.g. .003 returns -2.7..., -2.7//1 = -3
+    if np.isnan(min_tens): min_tens = max_tens
+    if np.isnan(max_tens): max_tens = min_tens
+        # and 542 returns 2.5..., 2.5//1 = 2
+    # And choose a nice, human-readable range from min-to-max
+    # for spacing in [tens/2, tens/5, tens/10, tens/20, tens/50,
+    #         tens/100, tens/200, tens/500, tens/1000]:
+    tens = 10**max(min_tens, max_tens)
+    locators, levels = [], []
+    factors = [2, 5, 10, 20, 50, 100, 200, 500, 1000]
+    for factor in factors:
+        spacing = tens/factor
+        if str(factor)[0]=='5':
+            locator = 5*tens/factor
+        else:
+            locator = 10*tens/factor
+        locators.append(locator)
+        levels.append(plot.arange(round_(min_,spacing),round_(max_,spacing),spacing))
+        # print(f"For spacing {spacing:.0f}, resulting length: {len(levels[-1]):.0f}")
+    lengths = [level.size for level in levels]
+    diffs = [abs(length-N) for length in lengths]
+    levels = levels[diffs.index(min(diffs))]
+    locator = locators[diffs.index(min(diffs))]
+    # print(f"From range {min_:.3e} to {max_:.3e}, number of levels: {len(levels):d}")
+    return levels, locator
 
 #------------------------------------------------------------------------------
 # Important class
@@ -377,7 +410,7 @@ class Figure(mfigure.Figure):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs) # python 3 only
 
-    def save(self, filename, squeeze=None, tight=None, pad=0.05): #, desktop=True):
+    def save(self, filename, squeeze=None, tight=None, pad=0.05, silent=False): #, desktop=True):
         """
         Echo some helpful information before saving.
         Note that the gridspec object must be updated before figure is printed to screen
@@ -405,7 +438,7 @@ class Figure(mfigure.Figure):
         ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
         x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
         width, height = ox[1], oy[1] # desired save-width
-        print(f'Extra border space: left {x1:.2f}, bottom {y1:.2f}, right {x2:.2f}, top {y2:.2f}.')
+        if not silent: print(f'Extra border space: left {x1:.2f}, bottom {y1:.2f}, right {x2:.2f}, top {y2:.2f}.')
         # Echo some information
         # print('Axes-inferred intervals: ', xa, ya)
         # print('Figure intervals: ', x, y)
@@ -420,7 +453,7 @@ class Figure(mfigure.Figure):
             right = f'cspace {self.cspace-x2:.2f}'
         else:
             right = f'right {self.right-x2:.2f}'
-        print(f'Try these params to avoid adjustment: {left}, {bottom}, {right}, {top}.')
+        if not silent: print(f'Try these params to avoid adjustment: {left}, {bottom}, {right}, {top}.')
         # Apply adjustment
         if tight:
             self.gridspec.left -= (x1-pad)/width
@@ -431,7 +464,7 @@ class Figure(mfigure.Figure):
         # Finally, save
         if filename.split('.pdf')[-1]!='':
             filename = f'{filename}.pdf'
-        print(f'Saving to {filename}.')
+        if not silent: print(f'Saving to {filename}.')
         self.savefig(filename, dpi=300, pad_inches=0, format='pdf') # specify DPI for embedded raster objects
         # print(f'Original sizing: left {self.left:.2f}, bottom {self.bottom:.2f}, right {self.right:.2f}, top {self.top:.2f}, '\
         #     + f'legend {self.lwidth:.2f}, colorbar {self.cwidth:.2f}.')
@@ -1399,7 +1432,7 @@ def _format(self,
 # Primary plotting function; must be used to create figure/axes if user wants
 # to use the other features
 #-------------------------------------------------------------------------------
-def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None,
+def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silent=False,
         tight=False, # whether to set up tight bbox from gridspec object
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True, spany=True, # custom setting; share axis labels for axes with same xmin/ymin extents
@@ -1511,7 +1544,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None,
         projectionkw.update({'fix_aspect':True})
         mexample = mbasemap.Basemap(projection=projection, **projectionkw)
         aspect = (mexample.urcrnrx-mexample.llcrnrx)/(mexample.urcrnry-mexample.llcrnry)
-        print(f"Forcing aspect ratio: {aspect:.3g}")
+        if not silent: print(f"Forcing aspect ratio: {aspect:.3g}")
     # Cartopy stuff; get crs instance, and create dictionary to add to add_subplot calls
     cartopy_kw = {}
     if maps and package=='cartopy':
@@ -2263,7 +2296,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None,
     #--------------------------------------------------------------------------
     # Return results
     #--------------------------------------------------------------------------
-    print('Figure setup complete.')
+    if not silent: print('Figure setup complete.')
     if len(ax)==1:
         ax = ax[0]
     if len(ax_panels)==1:
