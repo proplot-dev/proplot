@@ -10,9 +10,8 @@ except ModuleNotFoundError:
 import xarray as xr
 import scipy.signal as sig
 import scipy.stats as st
-import time as T
-    # have some big algorithms here; want to guage how long they take
-from . import CONSTANTS as c
+import time as T # have some big algorithms here; want to guage how long they take
+from . import const
 # from . import geoutils as geo
 # from . import basics
 # __all__ = [
@@ -525,8 +524,8 @@ class Properties():
         # Area weights (function of latitude only)
         # ...includes the latitude correction
         self.weights = self.dphi[None,:]*self.dtheta[:,None]*np.cos(self.phic[None,:])
-        self.areas = self.dphi[None,:]*self.dtheta[:,None]*np.cos(self.phic[None,:])*(c.a**2)
-        # areas = dphi*dtheta*np.cos(phic)*(c.a**2)[None,:]
+        self.areas = self.dphi[None,:]*self.dtheta[:,None]*np.cos(self.phic[None,:])*(const.a**2)
+        # areas = dphi*dtheta*np.cos(phic)*(const.a**2)[None,:]
             # close approximation to area; cosine is extremely accurate
             # make lon by lat, so broadcasting rules can apply
 
@@ -645,7 +644,7 @@ def haversine(lon1, lat1, lon2, lat2):
         d: ndarray of distances in km
     """
     # Earth radius, in km
-    R = c.a*1e-3
+    R = const.a*1e-3
     # Convert to radians, get differences
     lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
@@ -747,12 +746,11 @@ def deriv1(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=
     #     raise ValueError('x and y dimensions do not match along derivative axis.')
     # y = _permute(y, axis)
     # x = _permute(x, xaxis)
-    # Initial stuff
+    # Simple Euler scheme
+    # y = np.rollaxis(y, axis, y.ndim)
     ldiff, rdiff = (), ()
     if keepedges:
         keepleft = keepright = True
-    # Simple Euler scheme
-    # y = np.rollaxis(y, axis, y.ndim)
     y = np.array(y) # for safety
     y = _permute(y, axis)
     if accuracy==0:
@@ -785,7 +783,7 @@ def deriv1(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=
     # return np.rollaxis(diff, y.ndim-1, axis)
     return _unpermute(diff, axis)
 
-def deriv2(h, y, axis=0, accuracy=2, keepedges=False):
+def deriv2(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=False):
     """
     Second order finite differencing. Can be accurate to h^2, h^4, or h^6.
     See: https://en.wikipedia.org/wiki/Finite_difference_coefficient
@@ -794,28 +792,36 @@ def deriv2(h, y, axis=0, accuracy=2, keepedges=False):
         * Again, check out that fancy recursion!
     Reduces axis length by "accuracy" amount, except for zero version (special).
     """
+    # Simple Euler scheme
     # y = np.rollaxis(y, axis, y.ndim)
+    ldiff, rdiff = (), ()
+    if keepedges:
+        keepleft = keepright = True
+    y = np.array(y) # for safety
     y = _permute(y, axis)
     if accuracy==2:
         diff = (y[...,2:] - 2*y[...,1:-1] + y[...,:-2])/h**2
-        if keepedges:
-            bdiff = diff[...,:1]
-            ediff = diff[...,-1:]
-            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+        if keepleft: # just append the leftmost 2nd deriv
+            ldiff = diff[...,:1],
+        if keepright: # just append the rightmost 2nd deriv
+            rdiff = diff[...,-1:],
+        diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==4:
         diff = (1/12)*(-y[...,4:] + 16*y[...,3:-1] 
                 - 30*y[...,2:-2] + 16*y[...,1:-3] - y[...,:-4])/h**2
-        if keepedges:
-            bdiff = deriv2(h, y[...,:4], axis=-1, keepedges=True, accuracy=2)
-            ediff = deriv2(h, y[...,-4:], axis=-1, keepedges=True, accuracy=2)
-            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+        if keepleft:
+            ldiff = deriv2(h, y[...,:3], axis=-1, keepleft=True, accuracy=2),
+        if keepright:
+            rdiff = deriv2(h, y[...,-3:], axis=-1, keepright=True, accuracy=2),
+        diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==6:
         diff = (1/180)*(2*y[...,6:] - 27*y[...,5:-1] + 270*y[...,4:-2] 
                 - 490*y[...,3:-3] + 270*y[...,2:-4] - 27*y[...,1:-5] + 2*y[...,:-6])/h**2
-        if keepedges:
-            bdiff = deriv2(h, y[...,:6], axis=-1, keepedges=True, accuracy=4)
-            ediff = deriv2(h, y[...,-6:], axis=-1, keepedges=True, accuracy=4)
-            diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+        if keepleft:
+            ldiff = deriv2(h, y[...,:5], axis=-1, keepleft=True, accuracy=4),
+        if keepright:
+            rdiff = deriv2(h, y[...,-5:], axis=-1, keepright=True, accuracy=4),
+        diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     else:
         raise ValueError('Invalid accuracy; for now, choose form O(h^2), O(h^4), or O(h^6).')
     # return np.rollaxis(diff, y.ndim-1, axis)
@@ -896,9 +902,9 @@ def laplacian(lon, lat, data, accuracy=4):
     for i in range(2,data.ndim):
         phi = phi[...,None]
     laplacian = ( # below avoids repeating finite differencing scheme
-            (1/(c.a**2 * np.cos(phi)**2)) * deriv2(h_theta, data[:,npad:-npad,...], axis=0, accuracy=accuracy) # unpad latitudes
-            + (-np.tan(phi)/(c.a**2)) * deriv1(h_phi, data[npad:-npad,...], axis=1, accuracy=accuracy) # unpad longitudes
-            + (1/(c.a**2)) * deriv2(h_phi, data[npad:-npad,...], axis=1, accuracy=accuracy) # unpad longitudes
+            (1/(const.a**2 * np.cos(phi)**2)) * deriv2(h_theta, data[:,npad:-npad,...], axis=0, accuracy=accuracy) # unpad latitudes
+            + (-np.tan(phi)/(const.a**2)) * deriv1(h_phi, data[npad:-npad,...], axis=1, accuracy=accuracy) # unpad longitudes
+            + (1/(const.a**2)) * deriv2(h_phi, data[npad:-npad,...], axis=1, accuracy=accuracy) # unpad longitudes
             ) # note, no axis rolling required here; the deriv schemes do that
     return laplacian
 
@@ -945,7 +951,7 @@ def eqlat(lon, lat, q, skip=10, sigma=None, fix=False): #n=1001, skip=10):
             f = (q[:,:,k] <= q_bands[0,n,k]) # filter
             if sigma is None: # normal weighting
                 # Get sine of eqlat, and correct for rounding errors
-                sin = areas[f].sum()/(2*np.pi*c.a**2)-1
+                sin = areas[f].sum()/(2*np.pi*const.a**2)-1
                 if sin>1: sin = 1
                 if sin<-1: sin = -1
                 bands[0,n,k] = np.arcsin(sin)*180/np.pi
@@ -974,7 +980,7 @@ def waqlocal(lon, lat, q,
             # negated q, so monotonically increasing "northward"
     grid = Properties(lon, lat)
     areas, dphi, phib = grid.areas, grid.dphi, grid.phib
-    integral = c.a*phib[None,:]
+    integral = const.a*phib[None,:]
 
     # Flatten (eqlat can do this, but not necessary here)
     q, shape = _flatten(q, end=2) # flatten
@@ -1005,7 +1011,7 @@ def waqlocal(lon, lat, q,
                 mid = np.where((phib[:-1] <= band) & (phib[1:] > band))[0] # want scalar id (might be zero)
                 if mid.size>0:
                     f_pos_mid = (anom[:,mid] >= 0) # longitudes where positive
-                    p_int, m_int = c.a*(band-phib[mid]), c.a*(phib[mid+1]-band)
+                    p_int, m_int = const.a*(band-phib[mid]), const.a*(phib[mid+1]-band)
                         # partial integrals, positive and negative
                 for l in range(L):
                     # Get individual integral
@@ -1104,7 +1110,7 @@ def waq(lon, lat, q, sigma=None, omega=None,
                             - qint[~f_pos_mid,mid].sum()*(areas[mid]*p_dphi/dphi[mid])
                             )
                 # Put it all together
-                waq_k[n] = (integral + integral_extra)/(2*np.pi*c.a*np.cos(band))
+                waq_k[n] = (integral + integral_extra)/(2*np.pi*const.a*np.cos(band))
         # Interpolate
         nanfilt = np.isnan(waq_k)
         if sum(~nanfilt)==0:
@@ -1133,14 +1139,14 @@ def pt(lev, T, axis=2):
             lev = lev[None,...]
         for i in range(T.ndim-1-axis):
             lev = lev[...,None]
-    return T*(c.p0/lev)**c.kappa # ...each p here should be in mb/hPa
+    return T*(const.p0/lev)**const.kappa # ...each p here should be in mb/hPa
 
 def absvo(lat, Zeta):
     """
     Gets absolute vorticity from latitude and vorticity.
     """
     # Get Coriolis force
-    f = 2*c.Omega*np.sin(lat*np.pi/180)[None,:,None]
+    f = 2*const.Omega*np.sin(lat*np.pi/180)[None,:,None]
     for i in range(3, Zeta.ndim): f = f[...,None] # add extra dimensions
 
     # Final answer; account for levels lost in finite difference
@@ -1158,12 +1164,12 @@ def pv(lat, theta, P, Zeta, uneven=True):
     """
     # Get dp/dtheta
     if uneven:
-        sigma = -(1/c.g)*deriv_uneven(theta, P, axis=2) # use our differentiation method; reduces size along axis=2 by 2
+        sigma = -(1/const.g)*deriv_uneven(theta, P, axis=2) # use our differentiation method; reduces size along axis=2 by 2
     else:
-        sigma = -(1/c.g)*diff(theta, P, axis=2)
+        sigma = -(1/const.g)*diff(theta, P, axis=2)
 
     # Get Coriolis force
-    f = 2*c.Omega*np.sin(lat*np.pi/180)[None,:,None]
+    f = 2*const.Omega*np.sin(lat*np.pi/180)[None,:,None]
     for i in range(3, P.ndim): f = f[...,None] # add extra dimensions
 
     # Final answer; account for levels lost in finite difference
@@ -1188,15 +1194,15 @@ def qgpv(lon, lat, lev, TT, Phi,
     log-derivative in height, so the (d/dz)'s in the right-hand term cancel.
     """
     # Dimensions, and preparations
-    Z = -c.H*np.log(lev/c.p0)
+    Z = -const.H*np.log(lev/const.p0)
     if not all(Tsh==psh for Tsh,psh in zip(TT.shape, Phi.shape)):
         raise ValueError('Temperature and vorticity parameter have different shapes.')
     if lev.size<=3:
         raise ValueError('Need at least three levels to take vertical derivative.')
 
     # The simple 1-D params
-    f = 2*c.Omega*np.sin(lat*np.pi/180)[None,:,None] # goes into full qgpv formula
-    rho0 = np.exp(-Z/c.H)[None,None,:] # ...actually is propto, but constants next to exp cancel out below
+    f = 2*const.Omega*np.sin(lat*np.pi/180)[None,:,None] # goes into full qgpv formula
+    rho0 = np.exp(-Z/const.H)[None,None,:] # ...actually is propto, but constants next to exp cancel out below
     for i in range(3, TT.ndim): # ...add in extra dimensions
         f, rho0 = f[...,None], rho0[...,None]
         
