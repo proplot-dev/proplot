@@ -87,7 +87,7 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
             _announcement = True
             print("Registered colormaps.")
 # For retrieving colormap
-def cmapcolors(name, N, vmin=None, vmax=None):
+def cmapcolors(name, N=None, vmin=None, vmax=None, left=False, centered=False):
     """
     Just spits out colors to be used for e.g. consecutive lines. First argument
     is the colormap name, second is the number of colors needed.
@@ -95,23 +95,32 @@ def cmapcolors(name, N, vmin=None, vmax=None):
     position in vmin/vmax. This is still useful sometimes.
     """
     cmap = plt.cm.get_cmap(name) # the cmap object itself
+    if N is None: N = cmap.N # use the builtin N
     try: iter(N)
     except TypeError:
-        colors = [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
+        if centered:
+            samples = np.linspace(1/(2*N), 1-1/(2*N), N) # N samples, from centers
+        elif left:
+            samples = np.linspace(0, 1-1/N, N)
+        else:
+            samples = np.linspace(0, 1, N) # N samples, from edge to edge
+        colors = [cmap(s) for s in samples] # choose these samples
+        # colors = [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
     else:
         if vmin is None or vmax is None:
             raise ValueError("If you input a vector, you must specify the color range for that data with \"vmin\" and \"vmax\".")
-        # print('Indices:', [(v-vmin)/(vmax-vmin) for v in N])
         colors = [cmap((v-vmin)/(vmax-vmin)) for v in N]
     return colors
-# Used to create this neat class but it was a stupid idea. Work with existing
+# I used to create this neat class but it was a stupid idea. Work with existing
 # API, not against it. Just create a function that sets rcParam defaults with
 # optional override. Then, better to make the format function add actual information
 # to the plot and do nothing to change its style/color/etc.
 def rc(category, *args, silent=False, **kwargs):
-    # Set some rcParams and custom params saved in rcExtras, or just echo one of them
-    # If you one of your rcParams itself contains a 'dot', pass it as a dictionary instead
-    # of using subcategory=value
+    """
+    *Set* or *Retrieve* some rcParams and custom params saved in rcExtras belonging
+    to the category 'category' (i.e. category.subcategory = value); if you one of your
+    rcParams itself contains a 'dot', pass it as a dictionary instead of using subcategory=value
+    """
     for arg in args:
         try:
             kwargs = {**kwargs, **arg}
@@ -138,6 +147,8 @@ def rc(category, *args, silent=False, **kwargs):
         return dictionary
 def setup(everything=True, **kwargs): # fontname is matplotlib default
     """
+    Future: instead of running through each *rcparam*, we should run through
+    *global settings* and apply them sucessively to different options.
     See this page: https://matplotlib.org/users/customizing.html
     Quick list of rcParam categories:
         "lines", "patch", "hatch", "legend"
@@ -999,7 +1010,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     # axis.set_major_formatter(cformatter) # fucks shit up -- why?
     return cb
 
-def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, settings=None): # can be updated
+def _lformat(self, handles=None, align=None, handlefix=False, **kwargs): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
     Should update my legend function to CLIP the legend box when it goes outside axes area, so
@@ -1050,15 +1061,15 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     #      use consecutive legends)
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
-    if multi is None: # automatically guess
+    if align is None: # automatically guess
         try: iter(handles[0])
         except TypeError:
-            multi = False
+            align = True
         else: # catch exception: the only iterable matplotlib objects are Container objects
             if isinstance(handles[0], mcontainer.Container):
-                multi = False
+                align = True
             else:
-                multi = True
+                align = False
     else: # standardize format based on "multi" input
         try: iter(handles[0])
         except TypeError:
@@ -1068,20 +1079,26 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
                 implied = False
             else:
                 implied = True # no need to fix
-        if multi and not implied: # apply columns
+        if not align and not implied: # apply columns
             if 'ncol' not in lsettings:
                 raise ValueError("Need to specify number of columns with ncol.")
             handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
                     for i in range(len(handles))] # to list of iterables
-        elif not multi and implied:
+        elif not align and implied:
             handles = [handle for iterable in handles for handle in iterable]
 
     # Now draw legend, with two options
-    # 1) Normal legend, just draw everything like normal
-    # Re-orders handles to be row-major, is only difference
-    if not multi:
-        if 'ncol' not in lsettings:
-            raise ValueError("Need to specify number of columns with ncol.")
+    # 1) Normal legend, just draw everything like normal and columns
+    # will be aligned; we re-order handles to be row-major, is only difference
+    if align:
+        try: iter(handles[0])
+        except TypeError:
+            if 'ncol' not in lsettings:
+                raise ValueError("Need to specify number of columns with ncol.")
+        else:
+            # lengths = np.unique([len(subl) for subl in handles])
+            lsettings['ncol'] = len(handles[0]) # choose this for column length
+            handles = [h for subl in handles for h in subl] # expand
         newhandles = []
         ncol = lsettings['ncol'] # number of columns
         handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
@@ -1108,9 +1125,9 @@ def _lformat(self, handles=None, multi=None, handlefix=False, **kwargs): #, sett
     else:
         legends = []
         if 'labelspacing' not in lsettings:
-            raise ValueError("Need to know labelspacing before drawing multi-row legends. Add it to settings.")
+            raise ValueError("Need to know labelspacing before drawing unaligned-column legends. Add it to settings.")
         if 'size' not in tsettings:
-            raise ValueError("Need to know fontsize before drawing multi-row legends. Add it to settings.")
+            raise ValueError("Need to know fontsize before drawing unaligned-column legends. Add it to settings.")
         for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
             if override in lsettings:
                 lsettings.pop(override)
@@ -1450,41 +1467,49 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             # legend in a bottompanel and have it not look super weird
         lwidth=0.15, cwidth=0.25, cspace=0.8, cshrink=0.9,
             # spacing for colorbar text, colorbar axes width, legend axes with, and padding for interior ABC label
-        # abcpad=0.1, titlepad=0.1,
-        #     # will delete this stuff
         innerpanels=None, # same as below; list of numbers where we want subplotspecs
         whichpanels=None, hsep=None, wsep=None, hwidth=None, wwidth=None,
         maps=None, # set maps to True for maps everywhere, or to list of numbers
         package='basemap', projection='cyl', projectiondict={}, **projectionkw): # for projections; can be 'basemap' or 'cartopy'
     """
     Special creation of subplots grids, allowing for arbitrarily overlapping 
-    axes objects. Will return figure handle and axes object. Can also use exaclty as
-    plt.subplot, with some added convenience features. Use panelx, panely as 
-    templates for figure-wide legends/colorbars; if you actually want ax smallish panel
-    to plot data, just use width/height ratios. don't bother with kwarg dictionaries because
-    it is really, really customized; we do use them in formatting function though.
+    axes objects. Will return figure handle and axes objects. Need to finish
+    the documentation of this; extremely feature rich.
+    * Easiest way to create subplots is with nrows=1 and ncols=1. If you want extra space
+      between a row or column, specify the row/column number that you want to be 'empty' with
+      emptyrows=row/emptycolumn=column, and adjust wratios/hratios for the desired width of that space.
+    * For more complicated plots, can pass e.g. array=[[1,2,3,4],[0,5,5,0]] to create a grid
+      of 4 plots on the top, single plot spanning the middle 2-columns on the bottom, and empty
+      spaces where the 0 appears.
+    * Use bottompanel/bottompanels to make several or multiple panels on the bottom
+      that can be populated with multiple colorbars/legend; bottompanels=True will
+      just make one 'space' for every column, and bottompanels=[1,1,2] for example will
+      make a panel spanning the first two columns, then a single panel for the final column.
+      This will add a bottompanel attribute to the figure; can index that attribute if there
+      are multiple places for colorbars/legend.
+    * Use rightpanel/rightpanels in the same way.
+    * Use bottomcolorbar/bottomlegend/rightcolorbar convenience features to create empty
+      axes, from which you can create objects with ax.bottomcolorbar.format and ax.bottomlegend.format;
+      this was the old API before idea for 'panels' was hatched.
+    * Create extra panels *within* a grid of subplots (e.g. a 2x2 grid, each of which has a teeny
+      panel attached) innerpanels=True, and optionally filter to subplot numbers with whichpanels=[list];
+      then use hsep/wsep/hwidth/wwidth to control the separation and widths of the subpanels.
+    * Initialize cartopy plots with package='basemap' or package='cartopy'. Can control which plots
+      we want to be maps with maps=True (everything) or maps=[numbers] (the specified subplot numbers).
 
     NOTES:
         * Matplotlib set_aspect option seems to behave strangely on some plots (trend-plots from
         SST paper); for this reason we override the fix_aspect option provided by basemap and
-        just draw figure with appropriate aspect ratio to begin with.
-        * Otherwise get weird differently-shaped subplots that seem to make no sense.
-
+        just draw figure with appropriate aspect ratio to begin with. Otherwise get weird
+        differently-shaped subplots that seem to make no sense.
+        * Shared axes will generally end up with the same axis limits/scaling/majorlocators/minorlocators;
+        the sharex and sharey detection algorithm really is just to get instructions to make the
+        ticklabels/axis labels invisible for certain axes.
     TODO:
-        * If want **differing spacing** between certain subplots, must use 
-        GridSpecFromSubplotSpec with its **own** hspace/wspace properties...requires
-        some consideration, but don't worry until you come across it. Could make axes
-        all from scratch instead of with SubplotSpec/GridSpec.
-        * Figure size should be constrained by WIDTH/HEIGHT/ASPECT RATIO OF AXES, 
-        with everything else provided; must pick two of these; default, is to pick
-        width and aspect, but if height provided, width is ignored instead. no way
-        right now to determine aspect by constraining width/height
         * For spanning axes labels, right now only detect **x labels on bottom**
         and **ylabels on top**; generalize for all subplot edges.
-
-    NOTE that, because I usually format all subplots with .format() method, shared axes should already
-    end up with the same axis limits/scaling/majorlocators/minorlocators... the sharex and sharey detection algorithm
-    really is just to get INSTRUCTIONS to make the ticklabels and axis labels INVISIBLE for certain axes.
+        * Figure size should be constrained by the dimensions of the axes, not vice
+        versa; might make things easier.
     """
     # Fill in some basic required settings
     if package not in ['basemap','cartopy']:
@@ -1629,6 +1654,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     # Fixing width, determine aspect ratio
     else:
         # print(width, left, right, ncols, wspace, right_extra, ncols)
+        # print(width, left, right, ncols, wspace, right_extra)
         axwidth_ave_nopanel = (width - left - right - (ncols-1)*wspace - right_extra)/ncols
         if axwidth_ave_nopanel<0:
             raise ValueError('Not enough room for axes. Reduce left/bottom/wspace.')
@@ -2091,7 +2117,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             s.bottompanel = True
             s.colorbar = MethodType(_cformat, s)
             s.legend = MethodType(_lformat, s)
-        if len(specs)==1: specs = specs[0]
+        if len(specs)==1: specs = specs[0] # no indexing of singleton panels
         fig.bottompanel = specs
             # don't necessarily want to draw axes (e.g. for colorbar
             # need to make another SubplotSpec from each element)

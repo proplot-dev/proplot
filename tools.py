@@ -46,11 +46,13 @@ def _permute(data, axis=-1):
     """
     return np.rollaxis(data, axis, data.ndim)
 
-def _unpermute(data, axis=-1):
+def _unpermute(data, axis=-1, select=-1):
     """
     Undoes action of permute; permutes LAST dimension back onto original axis.
+    Rolls axis <select> until it lies "before" (i.e. to the left) of axis <axis>.
     """
-    return np.rollaxis(data, data.ndim-1, axis)
+    if select<0: select = data.ndim+select
+    return np.rollaxis(data, select, axis)
 
 #-------------------------------------------------------------------------------
 # NetCDF loading tools
@@ -480,10 +482,14 @@ def sin(x):
     return np.sin(x*np.pi/180)
 def cos(x):
     return np.cos(x*np.pi/180)
+def tan(x):
+    return np.tan(x*np.pi/180)
 def arcsin(x):
     return np.arcsin(x)*180/np.pi
 def arccos(x):
     return np.arccos(x)*180/np.pi
+def arctan(x):
+    return np.arctan(x)*180/np.pi
 
 # Other stuff
 class Properties():
@@ -633,15 +639,14 @@ def haversine(lon1, lat1, lon2, lat2):
     Calculate the great circle distance between two points
     on the earth (specified in decimal degrees)
     
-    Input...
-        lon1, lat1, lon2, lat2 (positional): ndarrays of longitude and latitude
-        in degrees...
-            -each **pair** should have identical shape
-            -if both pairs are non-scalar, they must **also** be identically shaped
-            -if one pair is scalar, distances are calculated between the scalar pair
-                and each element of the non-scalar pari.
-    Output...
-        d: ndarray of distances in km
+    Input:
+    lon1, lat1, lon2, lat2 (positional): ndarrays of longitude and latitude in degrees
+    * Each **pair** should have identical shape
+    * If both pairs are non-scalar, they must **also** be identically shaped
+    * If one pair is scalar, distances are calculated between the scalar pair
+        and each element of the non-scalar pari.
+    Output:
+    d: ndarray of distances in km
     """
     # Earth radius, in km
     R = const.a*1e-3
@@ -659,7 +664,9 @@ def haversine(lon1, lat1, lon2, lat2):
 # Statistics
 #------------------------------------------------------------------------------
 def gaussian(mean, sigma): 
-    """Returns sample points on Gaussian curve."""
+    """
+    Returns sample points on Gaussian curve.
+    """
     norm = st.norm(loc=mean, scale=sigma)
     x = np.linspace(norm.ppf(0.0001), norm.ppf(0.9999), 1000) # get x through percentile range
     pdf = norm.pdf(x)
@@ -670,15 +677,36 @@ def gaussian(mean, sigma):
 #------------------------------------------------------------------------------
 def rolling(data, window=5, axis=-1):
     """
+    Read this: https://stackoverflow.com/a/4947453/4970632
     Generates rolling numpy window along final axis; can then operate with 
     functions like polyfit or mean along the new last axis of output.
+    Just creates *view* of original array, without duplicating data, so no worries
+    about efficiency.
+    * Will generate a new axis in the -1 position that is a running representation
+      of value in axis numver <axis>.
+    * Strides are apparently the 'number of bytes' one has to skip in memory
+      to move to next position *on the given axis*. For example, a 5 by 5
+      array of 64bit (8byte) values will have array.strides == (40,8).
+    * Should consider using swapaxes instead of these _permute and _unpermute
+      functions, might be simpler.
+    TODO: Add option that preserves *edges* i.e. does not reduces length
+    of dimension to be 'rolled' by (window-1).
     """
-    # Roll axis, reshape, and 
+    # Roll axis, reshape, and get generate running dimension
     # data = np.rollaxis(data, axis, data.ndim)
+    if axis<0: axis = data.ndims+axis # e.g. if 3 dims, and want to axis dim -1, this is dim number 2
     data = _permute(data, axis)
-    shape = data.shape[:-1] + (data.shape[-1]-window+1, window)
-    strides = data.strides + (data.strides[-1],)
-    return np.lib.stride_tricks.as_strided(data, shape=shape, strides=strides)
+    shape = data.shape[:-1] + (data.shape[-1]-(window-1), window)
+    strides = [*data.strides, data.strides[-1]] # repeat striding on end
+    data = np.lib.stride_tricks.as_strided(data, shape=shape, strides=strides)
+    return _unpermute(data, axis, select=-2) # want to 'put back' axis -2;
+        # axis -1 is our new "rolling"/"averaging" dimension, keep that in same position
+
+def running(*args, **kwargs):
+    """
+    Easier to remember name.
+    """
+    return rolling(*args, **kwargs)
 
 def roots(poly):
     """
@@ -711,19 +739,20 @@ def slope(x, y, axis=-1):
 #------------------------------------------------------------------------------
 # Finite-difference schemes
 #------------------------------------------------------------------------------
-def derivl(h, y, axis=0, accuracy=2, keepedges=True):
-    """
-    Differentiation using left-assignment.
-    Will keep edges by default (this is supposed to be quick and easy method).
-    """
-    # Simple Euler scheme
-    # y = np.rollaxis(y, axis, y.ndim)
-    y = _permute(y, axis)
-    diff = (y[...,1:]-y[...,:-1])/h
-    if keepedges:
-        diff = np.concat((diff, diff[...,-1:]), axis=-1) # repeat it
-    # return np.rollaxis(diff, y.ndim-1, axis)
-    return _unpermute(diff, axis)
+# def derivl(h, y, axis=0, accuracy=2, keepedges=True):
+#     """
+#     Differentiation using left-assignment.
+#     Will keep edges by default (this is supposed to be quick and easy method).
+#     Should forget this and just use centered differencing instead.
+#     """
+#     # Simple Euler scheme
+#     # y = np.rollaxis(y, axis, y.ndim)
+#     y = _permute(y, axis)
+#     diff = (y[...,1:]-y[...,:-1])/h
+#     if keepedges:
+#         diff = np.concat((diff, diff[...,-1:]), axis=-1) # repeat it
+#     # return np.rollaxis(diff, y.ndim-1, axis)
+#     return _unpermute(diff, axis)
 
 def deriv1(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=False):
     """
@@ -838,31 +867,91 @@ def deriv_uneven(x, y, axis=0, keepedges=False):
     Reduces axis length by 2.
     """
     # Preliminary stuff
-    x = np.array(x) # precaution
-    y = np.array(y)
-    if x.ndim>1: # if want x interpreted as vector
-        xaxis = axis
-    else:
-        xaxis = 0
+    x, y = np.array(x), np.array(y) # precaution
+    xaxis = (axis if x.ndim>1 else 0) # if want x interpreted as vector
     if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
         raise ValueError('x and y dimensions do not match along derivative axis.')
-    y = _permute(y, axis)
-    x = _permute(x, xaxis)
-    # Get derivative
-    x0 = x[...,:-2]
-    x1 = x[...,1:-1]
-    x2 = x[...,2:]
-    y0 = y[...,:-2]
-    y1 = y[...,1:-1]
-    y2 = y[...,2:]
-    f = (x2 - x1)/(x2 - x0)
-    diff = (1-f)*(y2 - y1)/(x2 - x1) + f*(y1 - y0)/(x1 - x0)
-    if keepedges:
+    x, y = _permute(x, xaxis), _permute(y, axis)
+    # Formulation from stackoverflow, shown to be equivalent to the
+    # one referenced below, but use x's instead of h's, and don't separte out terms
+    # Original from this link: http://www.m-hikari.com/ijma/ijma-password-2009/ijma-password17-20-2009/bhadauriaIJMA17-20-2009.pdf
+    x0, x1, x2 = x[...,:-2], x[...,1:-1], x[...,2:]
+    y0, y1, y2 = y[...,:-2], y[...,1:-1], y[...,2:]
+    h1, h2 = x1-x0, x2-x1 # the x-steps
+    # f = (x2 - x1)/(x2 - x0)
+    # diff = (1-f)*(y2 - y1)/(x2 - x1) + f*(y1 - y0)/(x1 - x0) # version 1
+    diff = -h2*y0/(h1*(h1+h2)) - (h1-h2)*y1/(h1*h2) + h1*y2/(h2*(h1+h2))
+    if keepedges: # pad with simple differences on edges
         bh = np.diff(x[...,:2], axis=-1)
-        bdiff = deriv1(bh, y[...,:2], axis=-1, keepedges=True, accuracy=0)
         eh = np.diff(x[...,-2:], axis=-1)
+        bdiff = deriv1(bh, y[...,:2], axis=-1, keepedges=True, accuracy=0)
         ediff = deriv1(eh, y[...,-2:], axis=-1, keepedges=True, accuracy=0)
         diff = np.concatenate((bdiff, diff, ediff), axis=-1)
+    return _unpermute(diff, axis)
+
+def deriv1_uneven(*args, **kwargs):
+    """
+    Defined for name consistency.
+    """
+    return deriv_uneven(*args, **kwargs)
+
+def deriv2_uneven(x, y, axis=0, keepedges=False): # alternative
+    """
+    Second derivative adapted from Euler's method using the same technique as above.
+    """
+    # Preliminary stuff
+    x, y = np.array(x), np.array(y) # precaution
+    xaxis = (axis if x.ndim>1 else 0) # if want x interpreted as vector
+    if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
+        raise ValueError('x and y dimensions do not match along derivative axis.')
+    x, y = _permute(x, xaxis), _permute(y, axis)
+    # Formulation from this link: https://mathformeremortals.wordpress.com/2013/01/12/a-numerical-second-derivative-from-three-points/#comments
+    # Identical to this link: http://www.m-hikari.com/ijma/ijma-password-2009/ijma-password17-20-2009/bhadauriaIJMA17-20-2009.pdf
+    x0, x1, x2 = x[...,:-2], x[...,1:-1], x[...,2:]
+    y0, y1, y2 = y[...,:-2], y[...,1:-1], y[...,2:]
+    h1, h2, H = x1-x0, x2-x1, x2-x0 # the x-steps
+    # diff = 2*((x2-x1)*y0 - (x2-x0)*y1 + (x1-x0)*y2) / ((x2-x1)*(x1-x0)*(x2-x0)) # version 1
+    # diff = 2*(y0/((x1-x0)*(x2-x0)) - y1/((x2-x1)*(x1-x0)) + y2/((x2-x1)*(x2-x0))) # version 2
+    diff = 2*(h2*y0 - H*y1 + h1*y2)/(h1*h2*H) # version 3
+    if keepedges: # need 3 points for 2nd derivative; can only pad edges with the nearest 2nd derivs
+        diff = np.concatenate((diff[...,:1], diff, diff[...,-1:]), axis=-1)
+    return _unpermute(diff, axis)
+
+def deriv3_uneven(x, y, axis=0, keepedges=False): # alternative
+    """
+    Second derivative adapted from Euler's method using the same technique as above.
+    """
+    # Preliminary stuff
+    x, y = np.array(x), np.array(y) # precaution
+    xaxis = (axis if x.ndim>1 else 0) # if want x interpreted as vector
+    if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
+        raise ValueError('x and y dimensions do not match along derivative axis.')
+    x, y = _permute(x, xaxis), _permute(y, axis)
+    # Formulation from the same PDF shown above
+    # First 4-point formula, which is uncentered and weird, so don't use it
+    # x0, x1, x2, x3 = x[...,:-3], x[...,1:-2], x[...,2:-1], x[...,3:]
+    # y0, y1, y2, y3 = y[...,:-3], y[...,1:-2], y[...,2:-1], y[...,3:]
+    # h1, h2, h3, H = x1-x0, x2-x1, x3-x2, x3-x0 # the x-steps
+    # diff = (6/h1)*(-y0/(h1*(h1+h2)*H) + y1/(h1*h2*(h1+h3)) - y2/((h1+h2)*h2*h3) + y3/(H*(h2+h3)*h))
+    # Now the 5-point formula, evaluating on the center points
+    # * Changed second line from h1+h3 to h2+h3; this was just by eyeballing the
+    #   coefficients and trying to enforce symmetry.
+    # * Turns out the *paper is incorrect*; original version leads to weird derivative,
+    #   but by changing that term the results are as expected.
+    x0, x1, x2, x3, x4 = x[...,:-4], x[...,1:-3], x[...,2:-2], x[...,3:-1], x[...,4:]
+    y0, y1, y2, y3, y4 = y[...,:-4], y[...,1:-3], y[...,2:-2], y[...,3:-1], y[...,4:]
+    h1, h2, h3, h4 = x1-x0, x2-x1, x3-x2, x4-x3
+    H1, H2, H = h1+h2+h3, h2+h3+h4, h1+h2+h3+h4 # cleaned up their notation a bit; now
+        # just replace H2 with H, and replace H2-h1 with H2; this makes more sense
+    # for h in h1,h2,h3,h4,H1,H2,H: print(h.min(),h.max())
+    # diff = (-.5*y0 + y1 - y3 + .5*y4)/(50e2**3) # Euler method; result is actually normal
+    diff = 6*((h2-2*h3-h4)*y0/(h1*(h1+h2)*H1*H) \
+            - (h1+h2-2*h3-h4)*y1/(h1*h2*(h2+h3)*H2) \
+            + (h1+2*h2-2*h3-h4)*y2/((h1+h2)*h2*h3*(h3+h4)) \
+            - (h1+2*h2-h3-h4)*y3/(H1*(h2+h3)*h3*h4) \
+            + (h1+2*h2-h3)*y4/(H*H2*(h3+h4)*h4)) # holy shitballs
+    if keepedges: # need 5 points for 3rd derivative; can only pad edges with the nearest 3rd derivs
+        diff = np.concatenate((diff[...,:1], diff[...,:1], diff, diff[...,-1:], diff[...,-1:]), axis=-1)
     return _unpermute(diff, axis)
 
 def diff(x, y, axis=0):
