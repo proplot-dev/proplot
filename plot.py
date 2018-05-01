@@ -81,11 +81,18 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
             continue
         if (_cmap>1).any(): _cmap = _cmap/255
         # Register colormap and a reversed version
-        plt.register_cmap(name=_name, cmap=mcolors.LinearSegmentedColormap.from_list(name=_name, colors=_cmap, N=256))
-        plt.register_cmap(name=_name+'_r', cmap=mcolors.LinearSegmentedColormap.from_list(name=_name+'_r', colors=_cmap[::-1], N=256))
+        _catmaps = ['hclRGB'] # add 'category'-style colormaps to this list
+        _catmaps = [] # this was band-aid solution to real problem; for some colormaps want partial
+            # interpolation between segments, but never interpolate between 'breakpoints'; how to code this?
+            # maybe manually add 'breakpoints' associated with each colormap, and in contourf wrapper, can
+            # specially create a colormap with those 'breakpoints' in mind for certain 'cmap' names
+        N = _cmap.shape[0] if _name in _catmaps else 256
+        plt.register_cmap(name=_name, cmap=mcolors.LinearSegmentedColormap.from_list(name=_name, colors=_cmap, N=N))
+        plt.register_cmap(name=_name+'_r', cmap=mcolors.LinearSegmentedColormap.from_list(name=_name+'_r', colors=_cmap[::-1], N=N))
         if not _announcement: # only do this if register at least one new map
             _announcement = True
             print("Registered colormaps.")
+
 # For retrieving colormap
 def cmapcolors(name, N=None, vmin=None, vmax=None, left=False, centered=False):
     """
@@ -111,6 +118,7 @@ def cmapcolors(name, N=None, vmin=None, vmax=None, left=False, centered=False):
             raise ValueError("If you input a vector, you must specify the color range for that data with \"vmin\" and \"vmax\".")
         colors = [cmap((v-vmin)/(vmax-vmin)) for v in N]
     return colors
+
 # I used to create this neat class but it was a stupid idea. Work with existing
 # API, not against it. Just create a function that sets rcParam defaults with
 # optional override. Then, better to make the format function add actual information
@@ -145,6 +153,8 @@ def rc(category, *args, silent=False, **kwargs):
         if not dictionary:
             raise ValueError(f"Could not find settings for {category}.")
         return dictionary
+
+# Initialize rc settings
 def setup(everything=True, **kwargs): # fontname is matplotlib default
     """
     Future: instead of running through each *rcparam*, we should run through
@@ -298,7 +308,8 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
             if i+ntitles+nplots>nmaps:
                 break
             # Get object
-            cmap = plt.get_cmap(m, lut=N)
+            # cmap = plt.get_cmap(m, lut=N)
+            cmap = plt.get_cmap(m) # use default number of colors
             # Draw, and make invisible
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():
@@ -412,6 +423,13 @@ def autolevels(min_, max_, N=50):
 #------------------------------------------------------------------------------
 # Important class
 #------------------------------------------------------------------------------
+def close():
+    """
+    Close all figures 'open' in memory. This does not delete images printed
+    in an ipython notebook; those are rendered versions of the abstract figure objects.
+    This prevents us having to call the method in ipython notebook.
+    """
+    plt.close('all') # easy peasy
 class Figure(mfigure.Figure):
     """
     Subclass of the mfigure.Figure class, with lots of special formatting
@@ -868,20 +886,19 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         colors = mappable
         if values is None:
             raise ValueError("Must pass \"values\", corresponding to list of colors.")
-        values = np.array(values) # needed for below
     if fromlines: # the lines
         if values is None:
             raise ValueError("Must pass \"values\", corresponding to list of handles.")
         if len(mappable)!=len(values):
             raise ValueError("Number of \"values\" should equal number of handles.")
-        values = np.array(values) # needed for below
         colors = [h.get_color() for h in mappable]
     if fromlines or fromcolors:
+        values = np.array(values) # needed for below
         colors = ['#ffffff'] + colors + ['#ffffff']
-        colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors)
-        # levels = np.concatenate((values[0]-np.diff(values[:2]), # get "edge" values
-        #     (values[1:]+values[:-1])/2, values[-1]+np.diff(values[-2:])))
-        levels = np.concatenate((values[0]-np.diff(values[:2])/2, # get "edge" values
+        colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors, N=len(colors)) # note that
+            # the 'N' is critical; default 'N' is otherwise 256, and can get weird artifacts due to
+            # unintentionally sampling some 'new' colormap colors; very bad!
+        levels = np.concatenate((values[0]-np.diff(values[:2])/2, # get "edge" values between centers desired
             (values[1:]+values[:-1])/2, values[-1]+np.diff(values[-2:])/2))
         values = np.concatenate((values[:1]-np.diff(levels[:2]), values,
             values[-1:]+np.diff(levels[-2:]))) # this works empirically; otherwise get
@@ -1379,18 +1396,21 @@ def _format(self,
         #   group of left/right or top/bottom
         # * Includes option to draw spines but not draw ticks on that spine, e.g.
         #   on the left/right edges
-        # * Weirdly gridOn is undocumented feature
+        # * Weirdly gridOn is undocumented feature; that's because it doesn't fucking
+        #   work dummy. Don't use that method.
         ticklocs = sides if tickloc=='both' else () if tickloc=='neither' else tickloc
         if ticklocs is None: # only turn off ticks if the spine is invisible; don't explicitly turn on
             sides_kw = {side: False for side in sides if not self.spines[side].get_visible()}
         else:
             sides_kw = {side: self.spines[side].get_visible() and side in ticklocs for side in sides}
-        grid_kw = {} if grid is None else {'gridOn': grid}
-        gridminor_kw = {} if gridminor is None else {'gridOn': gridminor and tickminor}
         major_kw = rc('tick') if tickdir is None else dict(rc('tick'), direction=tickdir)
         minor_kw = rc('tickminor') if tickdir is None else dict(rc('tickminor'), direction=tickdir)
-        axis.set_tick_params(which='major', **sides_kw, **grid_kw, **major_kw)
-        axis.set_tick_params(which='minor', **sides_kw, **gridminor_kw, **minor_kw) # have length
+        axis.set_tick_params(which='major', **sides_kw, **major_kw)
+        axis.set_tick_params(which='minor', **sides_kw, **minor_kw) # have length
+        if type(grid) is bool:
+            axis.grid(grid, which='major')
+        if type(gridminor) is bool:
+            axis.grid(gridminor and tickminor, which='minor') # ignore if no minor ticks
         for tick in axis.majorTicks:
             tick.gridline.update(rc('grid'))
         for tick in axis.minorTicks:
@@ -1968,20 +1988,20 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         return axmain, axlist
 
     # Base axes; to be shared with other axes as ._sharex, ._sharey attributes
-    ax_panels = [] # empty for now
-    ax = num_axes*[None] # list of axes
+    axps = [] # empty for now
+    axs = num_axes*[None] # list of axes
     allgroups_base = []
     if sharex: allgroups_base += xgroups_base
     if sharey: allgroups_base += ygroups_base
     for i in allgroups_base: # this is just list of indices in axes_ids, yrange, etc.
-        if ax[i] is None: # not created as a x-base already, for example
+        if axs[i] is None: # not created as a x-base already, for example
             if i in innerpanels_ids:
-                ax[i], axp = panelfactory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                axs[i], axp = panelfactory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         **cartopy_kw) # main axes handle
-                ax_panels.append(axp) # panels in list; items are lists themselves
+                axps.append(axp) # panels in list; items are lists themselves
                     # if user wanted more than one panels, e.g. left and bottom
             else:
-                ax[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         **cartopy_kw)
 
     # Dependent axes
@@ -1992,7 +2012,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         if sharex:
             igroup = np.where([i in g for g in xgroups])[0] # np.where works on lists
             if igroup.size==1:
-                sharex_ax = ax[xgroups_base[igroup[0]]]
+                sharex_ax = axs[xgroups_base[igroup[0]]]
                 if sharex_ax is None:
                     raise ValueError('Something went wrong; shared x axes was not already drawn.')
             elif igroup.size>1:
@@ -2000,74 +2020,74 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         if sharey:
             igroup = np.where([i in g for g in ygroups])[0] # np.where works on lists
             if igroup.size==1:
-                sharey_ax = ax[ygroups_base[igroup[0]]]
+                sharey_ax = axs[ygroups_base[igroup[0]]]
                 if sharey_ax is None:
                     raise ValueError('Something went wrong; shared x axes was not already drawn.')
             elif igroup.size>1:
                 raise ValueError(f'Something went wrong; axis {i:d} belongs to multiple groups.')
 
         # Draw axes, and add to list
-        if ax[i] is not None:
+        if axs[i] is not None:
             # Axes is a BASE and has already been drawn, but might still need to add
             # a _sharex or _sharey property; e.g. is bottom-axes of three-column plot
             # and we want it to share a y-axis
-            if ax[i] is not sharex_ax:
-                ax[i]._sharex = sharex_ax
+            if axs[i] is not sharex_ax:
+                axs[i]._sharex = sharex_ax
             else:
                 sharex_ax = None
-            if ax[i] is not sharey_ax:
-                ax[i]._sharey = sharey_ax
+            if axs[i] is not sharey_ax:
+                axs[i]._sharey = sharey_ax
             else:
                 sharey_ax = None
         else:
             # Virgin axes; these are not an x base or a y base
             # We draw them now and pass the sharex/sharey as kwargs
             if i in innerpanels_ids:
-                ax[i], axp = panelfactory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                axs[i], axp = panelfactory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         sharex=sharex_ax, sharey=sharey_ax,
                         **cartopy_kw)
-                ax_panels.append(axp) # panels in list; items are lists themselves
+                axps.append(axp) # panels in list; items are lists themselves
                     # if user wanted more than one panels, e.g. left and bottom
             else:
-                ax[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         sharex=sharex_ax, sharey=sharey_ax,
                         **cartopy_kw)
 
         # Hide tick labels (not default behavior for manual sharex, sharey use)
         if sharex_ax is not None:
-            for t in ax[i].xaxis.get_ticklabels(): t.set_visible(False)
-            ax[i].xaxis.label.set_visible(False)
+            for t in axs[i].xaxis.get_ticklabels(): t.set_visible(False)
+            axs[i].xaxis.label.set_visible(False)
         if sharey_ax is not None:
-            for t in ax[i].yaxis.get_ticklabels(): t.set_visible(False)
-            ax[i].yaxis.label.set_visible(False)
+            for t in axs[i].yaxis.get_ticklabels(): t.set_visible(False)
+            axs[i].yaxis.label.set_visible(False)
 
     # Spanning axes; allow xlabels/ylabels to span them
     if spanx and len(xgroups_span)>0:
         for g, b in zip(xgroups_span, xgroups_span_base):
-            ax[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
+            axs[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
                     fig.transFigure, mtransforms.IdentityTransform()
                     ))
                 # specify x, y transform in Figure coordinates
-            xmin = min(ax[i].get_position().xmin for i in g)
-            xmax = max(ax[i].get_position().xmax for i in g)
+            xmin = min(axs[i].get_position().xmin for i in g)
+            xmax = max(axs[i].get_position().xmax for i in g)
                 # get min/max positions, in figure coordinates, of spanning axes
             # print('Group:', g, 'Base:', b, 'Span:', xmin, xmax)
-            ax[b].xaxis.label.set_position(((xmin+xmax)/2, 0))
+            axs[b].xaxis.label.set_position(((xmin+xmax)/2, 0))
                 # this is the shared xlabel
             for i in g:
-                if i!=b: ax[i].xaxis.label.set_visible(False)
+                if i!=b: axs[i].xaxis.label.set_visible(False)
     if spany and len(ygroups_span)>0:
         for g, b in zip(ygroups_span, ygroups_span_base):
-            ax[b].yaxis.label.set_transform(mtransforms.blended_transform_factory(
+            axs[b].yaxis.label.set_transform(mtransforms.blended_transform_factory(
                     mtransforms.IdentityTransform(), fig.transFigure # specify x, y transform
                     ))
-            ymin = min(ax[i].get_position().ymin for i in g)
-            ymax = max(ax[i].get_position().ymax for i in g)
+            ymin = min(axs[i].get_position().ymin for i in g)
+            ymax = max(axs[i].get_position().ymax for i in g)
             # print('Group:', g, 'Base:', b, 'Span:', ymin, ymax)
-            ax[b].yaxis.label.set_position((0, (ymin+ymax)/2))
+            axs[b].yaxis.label.set_position((0, (ymin+ymax)/2))
                 # this is the shared ylabel
             for i in g:
-                if i!=b: ax[i].yaxis.label.set_visible(False)
+                if i!=b: axs[i].yaxis.label.set_visible(False)
 
     #---------------------------------------------------------------------------
     # Create panel axes
@@ -2231,8 +2251,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         self.height = np.diff(self._position.intervaly)*height
         self.m = None # optional basemap instance
         # Set up some methods
-        # TODO Note severe change; change twiny to mean "share the x-axis but
-        # now make two y-axes"; this makes way more sense to me than default
+        # TODO Note severe change; twiny now means "share the x-axis but
+        # now make two y-axes"; this makes way more sense to me than default behavior
         self._legend = self.legend # custom legend drawing on any axes
         self._twinx  = self.twinx
         self._twiny  = self.twiny
@@ -2244,6 +2264,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         self.format  = MethodType(_format, self)
     def _twinx(self, **kwargs):
         # Create secondary x-axes
+        # Format function will read extra properties and *enforce* (ignoring
+        # user settings) the spine locations.
         a = self._twiny(**kwargs)
         _setup(a) # basic setup
         self.xspine_override = 'top'
@@ -2260,7 +2282,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         return a
     # Create some attributes; analagous to default behavior where title 'exists' but is not visible
     # or is empty string, methods in _format will make them visible
-    for i,a in enumerate(ax):
+    for i,a in enumerate(axs):
         # Basic setup
         _setup(a) # default methods and stuff
         a.number = i+1 # know axes number ahead of time; start at 1
@@ -2312,26 +2334,24 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             pass # TODO nothing so far
     # Repeat some of the above for the panel axes
     # Will only need the format method really
-    for axp in ax_panels:
+    for axp in axps:
         try: iter(axp)
         except TypeError:
             axp = [axp]
-        for a in axp:
-            _setup(a)
-
+        for a in axp: _setup(a)
     #--------------------------------------------------------------------------
     # Return results
     #--------------------------------------------------------------------------
     if not silent: print('Figure setup complete.')
-    if len(ax)==1:
-        ax = ax[0]
-    if len(ax_panels)==1:
-        ax_panels = ax_panels[0] # this might itself be a list, if user e.g.
+    if len(axs)==1:
+        axs = axs[0]
+    if len(axps)==1:
+        axps = axps[0] # this might itself be a list, if user e.g.
             # used the panel-API to create a single axes with bordering left/right panels
     if innerpanels:
-        return fig, ax, ax_panels
+        return fig, axs, axps
     else:
-        return fig, ax
+        return fig, axs
 
 #------------------------------------------------------------------------------
 # Classes and Formatters
