@@ -56,6 +56,16 @@ import numpy as np # of course
 #------------------------------------------------------------------------------
 # Initialization; stuff called on import
 # Adds colormap names and lists available font names
+# * If leave 'name' empty in register_cmap, name will be taken from the
+#   Colormap instance. So do that.
+# * Note that **calls to cmap instance do not interpolate values**; this is only
+#   done by specifying levels in contourf call, specifying lut in get_cmap,
+#   and using LinearSegmentedColormap.from_list with some N.
+# * The cmap object itself only **picks colors closest to the "correct" one
+#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
+#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
+# * If you want to always disable interpolation, use ListedColormap. This type
+#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
 #------------------------------------------------------------------------------
 # List the system font names
 # See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
@@ -74,7 +84,7 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
     # Load each colormap
     _name = os.path.basename(_file).replace('.rgb','')
     if _name not in plt.colormaps(): # don't want to re-register every time
-        _load = {'skiprows':1, 'delimiter':','} if _name.startswith('hcl') else {}
+        _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
         try: _cmap = np.loadtxt(_file, **_load)
         except:
             print(f'Failed to load {_name}.')
@@ -87,8 +97,8 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
             # maybe manually add 'breakpoints' associated with each colormap, and in contourf wrapper, can
             # specially create a colormap with those 'breakpoints' in mind for certain 'cmap' names
         N = _cmap.shape[0] if _name in _catmaps else 256
-        plt.register_cmap(name=_name, cmap=mcolors.LinearSegmentedColormap.from_list(name=_name, colors=_cmap, N=N))
-        plt.register_cmap(name=_name+'_r', cmap=mcolors.LinearSegmentedColormap.from_list(name=_name+'_r', colors=_cmap[::-1], N=N))
+        plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, N))
+        plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], N))
         if not _announcement: # only do this if register at least one new map
             _announcement = True
             print("Registered colormaps.")
@@ -254,7 +264,7 @@ setup(True)
 #------------------------------------------------------------------------------
 # Colormap display
 #------------------------------------------------------------------------------
-def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
+def cmapshow(N=11, ignore=['Miscellaneous','Sequential Alt']):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -263,29 +273,40 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
     See: http://matplotlib.org/examples/color/colormaps_reference.html
     """
     # Have colormaps separated into categories:
-    categories = { 'HCL': [], 'Custom': [], # will add to these lists
+    categories = { 'HCL': [], 'Custom': [], 'NCL': [], 'ColorBrewer':[], 'Dave':[], # will add to these lists
         'Perceptually Uniform Sequential': ('viridis', 'plasma', 'inferno', 'magma'),
-        'Diverging': ('PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
-            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic'),
-        'Sequential': ('Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+        'Diverging': ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic'],
+        'Sequential': ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
             'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-            'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'),
-        'Sequential Alt': ('binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+            'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'],
+        'Sequential Alt': ['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
             'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-            'hot', 'afmhot', 'gist_heat', 'copper'),
-        'Qualitative': ('Pastel1', 'Pastel2', 'Paired', 'Accent',
-            'Dark2', 'Set1', 'Set2', 'Set3', 'Vega10', 'Vega20', 'Vega20b', 'Vega20c'),
-        'Miscellaneous': ('flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-                'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'spectral',
-                'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar') }
+            'hot', 'afmhot', 'gist_heat', 'copper'],
+        'Qualitative': ['Pastel1', 'Pastel2', 'Paired', 'Accent',
+            'Dark2', 'Set1', 'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c'],
+        'Miscellaneous': ['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+            'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'spectral',
+            'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar']}
     cmaps = [m for m in plt.colormaps() if not m.endswith('_r')]
     cmaps_known = []
+    cmaps_custom = ['HCL','Custom','NCL','ColorBrewer']
     for v in categories.values(): # big list of all colormaps
         cmaps_known += v # add to this existing list
     for cm in cmaps: # add to 'Custom' if not in above dictionary
         if cm not in cmaps_known:
-            if cm.startswith('hcl'):
+            if 'Vega' in cm:
+                continue # deprecated
+            elif cm.startswith('hcl'):
                 categories['HCL'].append(cm)
+            elif cm.startswith('ncl'):
+                categories['NCL'].append(cm)
+            elif cm.startswith('cb'):
+                categories['ColorBrewer'].append(cm)
+            elif cm.startswith('dave'):
+                categories['Dave'].append(cm)
+            # elif cm.startswith('tab'): # otherwise end up in Custom
+            #     categories['Qualitative'].append(cm)
             else:
                 categories['Custom'].append(cm)
     # Array for producing visualization with imshow
@@ -319,7 +340,7 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
             ax.set_yticks([])
             # Draw colormap
             ax.imshow(a, aspect='auto', cmap=cmap, origin='lower')
-            if cat not in ('Custom','HCL'):
+            if cat not in cmaps_custom:
                 cmaps_known.remove(m)
             # Category title
             if i==0:
@@ -338,7 +359,7 @@ def cmapshow(N=11, ignore=['Qualitative','Miscellaneous','Sequential Alt']):
     # Check
     for cat in ignore:
         for m in categories[cat]:
-            if cat not in ('Custom','HCL'):
+            if cat not in cmaps_custom:
                 cmaps_known.remove(m)
     if len(cmaps_known)>0:
         print(f'Colormaps in dictionary, but not found: {", ".join(cmaps_known)}')
