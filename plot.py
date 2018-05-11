@@ -695,7 +695,7 @@ def _contourcheck(x, y, Z):
 #     return mappable
 
 #-------------------------------------------------------------------------------
-# Cartesian plot overrides overrides
+# Cartesian plot overrides; they each reference common helper functions
 #-------------------------------------------------------------------------------
 # TODO: Fix for pcolormesh/pcolor with set of levels
 def _contour(self, x, y, Z, **kwargs):
@@ -729,6 +729,10 @@ def _pcolormesh(self, x, y, Z, **kwargs):
     if extend is not None:
         p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
+def _quiver(self, x, y, Z, **kwargs): # this function can plot
+        # unpredictable vectors if your array orientation is wrong, and will
+        # not rais an error; also the options are fairly confusing; needs wrapper
+    pass
 
 #-------------------------------------------------------------------------------
 # Basemap overrides
