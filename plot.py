@@ -420,7 +420,8 @@ def shade(color, value=1, saturation=1):
     color = mcolors.hsv_to_rgb(color)
     return mcolors.to_hex(color) # hex codes are nice, mmkay
 
-def colorshow(string=None, ncols=4, nbreak=12, cycle=False, space=1, swatch=1):
+def colorshow(string=None, ncols=4, nbreak=12, minsat=0.1,
+        cycle=False, space=1, swatch=1):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
@@ -430,7 +431,7 @@ def colorshow(string=None, ncols=4, nbreak=12, cycle=False, space=1, swatch=1):
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map (see soure code; is just a dictionary wrapper
     # on some simple lists)
-    string = string or 'css'
+    string = string or 'open'
     if string.lower()=='css':
         colors = mcolors.CSS4_COLORS # forget base colors, have them already; e.g. 'r' equals 'red'
     elif string.lower()=='xkcd':
@@ -454,7 +455,7 @@ def colorshow(string=None, ncols=4, nbreak=12, cycle=False, space=1, swatch=1):
     # Old, clunky method
     if string not in ('all','xkcd','open'):
         # Sort values
-        by_hsv = sorted((tuple(mcolors.rgb_to_hsv(mcolors.to_rgba(color)[:3])), name)
+        by_hsv = sorted( (tuple(mcolors.rgb_to_hsv(mcolors.to_rgba(color)[:3])), name) # an RGBtuple,name tuple
             for name,color in colors.items()) # sorts by first element in HSV tuple if different; then second; then third
         sorted_names = [name for hsv,name in by_hsv]
         # Create plot with mysterious methods
@@ -480,7 +481,8 @@ def colorshow(string=None, ncols=4, nbreak=12, cycle=False, space=1, swatch=1):
     # New method, that groups colors together by discrete range of hue then sorts by value
     else:
         # Fancy sort by grouping into hue categories, then sorting values; easy peasy
-        if string in ['open']: # group manually
+        # if string in ['open']: # group manually
+        if string in ['open']:
             space = 0.5
             swatch = 1.5
             names = ["gray", "red", "pink", "grape", "violet", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "orange"]
@@ -488,17 +490,23 @@ def colorshow(string=None, ncols=4, nbreak=12, cycle=False, space=1, swatch=1):
             sorted_names = [[name+str(i) for i in range(nrows)] for name in names]
         else: # group
             ncols = nbreak-1 # group by breakpoint
-            sorted_hsv = [] # initialize
             colors_hsv = {k:tuple(mcolors.rgb_to_hsv(mcolors.to_rgb(v))) for k,v in colors.items()}
             breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
-            for start,end in zip(breakpoints[:-1], breakpoints[1:]):
-                test = (lambda x: start<=x<=end) if end is breakpoints[-1] \
+            sorted_names = [] # initialize
+            testsat = (lambda x: x<minsat) # test saturation
+            for n in range(len(breakpoints)):
+                if n==0: # grays
+                    fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
+                        if testsat(hsv[1])]
+                else: # colors
+                    start, end = breakpoints[n-1], breakpoints[n]
+                    testhue = (lambda x: start<=x<=end) if end is breakpoints[-1] \
                         else (lambda x: start<=x<end) # two possible tests
-                fcolors = [(name,hsv) for name,hsv in colors_hsv.items() if test(hsv[0])]
+                    fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
+                        if testhue(hsv[0]) and not testsat(hsv[1])] # grays have separate category
                 sorted_index = np.argsort([v[1][-1] for v in fcolors]) # indices to build sorted list
-                sorted_hsv.append([fcolors[i] for i in sorted_index]) # append sorted list
-            sorted_names = [[name for name,hsv in huelist] for huelist in sorted_hsv]
-            nrows = max(len(huelist) for huelist in sorted_hsv) # number of rows
+                sorted_names.append([fcolors[i][0] for i in sorted_index]) # append sorted list
+            nrows = max(len(huelist) for huelist in sorted_names) # number of rows
         # Create plot by iterating over columns 
         figsize = (8*space*(ncols/4), 5*(nrows/40)) # 5in tall with 40 colors in column
         fig, ax = plt.subplots(figsize=figsize)
