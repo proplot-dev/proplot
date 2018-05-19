@@ -1600,7 +1600,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             width = 11.4*cm2in
         elif width=='pnas3':
             width = 17.8*cm2in
-        elif width=='ams1': # https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/?utm_source=Pubs&utm_content=figure%20formatting%20info&&utm_campaign=StandingWords
+        elif width=='ams1': # https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
             width = 3.2
         elif width=='ams2':
             width = 4.5
