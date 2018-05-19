@@ -7,6 +7,7 @@
 # everywhere else until you start new instance
 #------------------------------------------------------------------------------
 # from .basics import Dict, arange
+import time
 import os # need for saving figures
 import copy # for copying Settings
 from types import MethodType
@@ -53,83 +54,9 @@ import numpy as np # of course
 # p = ax.pcolormesh(linewidth=0)
 # p.set_edgecolor('face')
 
-#------------------------------------------------------------------------------
-# Initialization; stuff called on import
-# Adds colormap names and lists available font names
-# * If leave 'name' empty in register_cmap, name will be taken from the
-#   Colormap instance. So do that.
-# * Note that **calls to cmap instance do not interpolate values**; this is only
-#   done by specifying levels in contourf call, specifying lut in get_cmap,
-#   and using LinearSegmentedColormap.from_list with some N.
-# * The cmap object itself only **picks colors closest to the "correct" one
-#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
-#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
-# * If you want to always disable interpolation, use ListedColormap. This type
-#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
-#------------------------------------------------------------------------------
-# List the system font names
-# See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-from matplotlib import matplotlib_fname
-fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
-            mfonts.findSystemFonts(fontpaths=None, fontext='ttf')] + \
-        [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
-            glob(f"{matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf")]
-fonts = sorted(set(fonts))
-# Alternate version, works on Linux but not Mac, because can't find mac system fonts?
-# fonts = mfonts.get_fontconfig_fonts()
-# fonts = [mfonts.FontProperties(fname=fname).get_name() for fname in flist]
-# Register colormaps immediately on import
-_announcement = False
-for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*.rgb'):
-    # Load each colormap
-    _name = os.path.basename(_file).replace('.rgb','')
-    if _name not in plt.colormaps(): # don't want to re-register every time
-        _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
-        try: _cmap = np.loadtxt(_file, **_load)
-        except:
-            print(f'Failed to load {_name}.')
-            continue
-        if (_cmap>1).any(): _cmap = _cmap/255
-        # Register colormap and a reversed version
-        _catmaps = ['hclRGB'] # add 'category'-style colormaps to this list
-        _catmaps = [] # this was band-aid solution to real problem; for some colormaps want partial
-            # interpolation between segments, but never interpolate between 'breakpoints'; how to code this?
-            # maybe manually add 'breakpoints' associated with each colormap, and in contourf wrapper, can
-            # specially create a colormap with those 'breakpoints' in mind for certain 'cmap' names
-        # N = _cmap.shape[0] if _name in _catmaps else 256
-        N = _cmap.shape[0] # always
-        plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, N))
-        plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], N))
-        if not _announcement: # only do this if register at least one new map
-            _announcement = True
-            print("Registered colormaps.")
-
-# For retrieving colormap
-def cmapcolors(name, N=None, vmin=None, vmax=None, left=False, centered=False):
-    """
-    Just spits out colors to be used for e.g. consecutive lines. First argument
-    is the colormap name, second is the number of colors needed.
-    Optionally can input a list, and the colors will be scaled by their relative
-    position in vmin/vmax. This is still useful sometimes.
-    """
-    cmap = plt.cm.get_cmap(name) # the cmap object itself
-    if N is None: N = cmap.N # use the builtin N
-    try: iter(N)
-    except TypeError:
-        if centered:
-            samples = np.linspace(1/(2*N), 1-1/(2*N), N) # N samples, from centers
-        elif left:
-            samples = np.linspace(0, 1-1/N, N)
-        else:
-            samples = np.linspace(0, 1, N) # N samples, from edge to edge
-        colors = [cmap(s) for s in samples] # choose these samples
-        # colors = [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
-    else:
-        if vmin is None or vmax is None:
-            raise ValueError("If you input a vector, you must specify the color range for that data with \"vmin\" and \"vmax\".")
-        colors = [cmap((v-vmin)/(vmax-vmin)) for v in N]
-    return colors
-
+#-------------------------------------------------------------------------------
+# Settings management
+#-------------------------------------------------------------------------------
 # I used to create this neat class but it was a stupid idea. Work with existing
 # API, not against it. Just create a function that sets rcParam defaults with
 # optional override. Then, better to make the format function add actual information
@@ -172,6 +99,8 @@ def globals(*args, **kwargs):
     * Currently features that can't be rcParam'ed are *gridminor* properties, the
       *cgrid* idea (lines between colorbar colors), the continent/coastlines/lonlatlines
       settings, and some legend settings.
+    TODO: Change default background axes color to 0072B2, from seaborn colorblind, just
+    a bit darker than figure background; is nice.
     """
     # Helper function; adds stuff to rcParams or rcExtras in the
     # stylesheet style of category.subcategory = value, or very
@@ -187,7 +116,8 @@ def globals(*args, **kwargs):
                 mpl.rcExtras[f'{category}.{subcategory}'] = value
     # Mange input, and intialization
     category = None # not necessarily anything
-    defaults = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9, 'fontname':'DejaVu Sans'}
+    defaults = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9,
+            'fontname':'DejaVu Sans', 'ticklen':4, 'cycle':'default'}
     if args and type(args[0]) is str: # second part of 'and' only tested if first part true
         category, *args = args # pull out category; but args might be a bunch of dictionaries
     for arg in args:
@@ -226,7 +156,7 @@ def globals(*args, **kwargs):
     else: # category in ('globals',None) and kwargs
         for k in kwargs.keys():
             if k not in defaults:
-                raise ValueError(f"Key \"{key}\" unknown. Not a global property like 'color' or 'linewidth'.")
+                raise ValueError(f"Key \"{k}\" unknown. Not a global property like \"color\" or \"linewidth\".")
         defaults = {k:(v if v!='default' else defaults[k]) for k,v in kwargs.items()}
         add('globals', defaults)
     # Apply global settings; if this function was not called without arguments, then
@@ -234,12 +164,28 @@ def globals(*args, **kwargs):
     d = globals('globals') # the dictionary
     if defaults: # only if there were any new ones
         # Make a cycler for drawing a bunch of lines
-        # + cycler('dashes', [i for i in ((), (1,1), (3,2), (6,3)) for n in range(10)])
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-            '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-        propcycle = cycler('color', [colors[i%10] for i in range(40)]) \
-                + cycler('linestyle', [i for i in ('-', '--', ':', '-.') for n in range(10)])
+        # Will add the color cycles from all the 
+        dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
+        colors = cycles.get(d['cycle'],None) # load colors from cyclers
+        if colors is None:
+            raise ValueError("Unknown color cycler designator \"{d['cycle']}\".")
+        if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
+            colors = [f'#{color}' for color in colors]
+        propcycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
+            + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
+        # if not isinstance(colors[0], str) and any(v>1 for v in colors[0]): # convert to hex
+        # In this *extra special instance*, search for all currently active
+        # figures and apply set_prop_cycle on every single axes
+        # Calling plt.figure with 'num' as first argument or 'num=<num>' just
+        # brings that figure to foreground
+        # Tested this and it takes 1ms; no big deal
+        figs = list(map(plt.figure, plt.get_fignums())) # from: https://stackoverflow.com/a/26485683/4970632
+        t = time.time()
+        for fig in figs:
+            for ax in fig.axes:
+                ax.set_prop_cycle(propcycle)
         # First the rcParam settings
+        # Ones related to plot "scaffolding"
         add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':d['ssize'], 'titlesize':d['bsize'],
             'edgecolor':d['color'], 'labelcolor':d['color'], 'grid':True, 'linewidth':d['linewidth'],
             'labelpad':3, 'prop_cycle':propcycle})
@@ -251,16 +197,23 @@ def globals(*args, **kwargs):
             add(f'{xy}tick',       {'labelsize':d['ssize'], 'color':d['color'], 'direction':'out'})
             add(f'{xy}tick.major', {'pad':2, 'width':d['linewidth'], 'size':d['ticklen'], **tickloc}) # size==length
             add(f'{xy}tick.minor', {'pad':2, 'width':d['linewidth'], 'visible':True, 'size':d['ticklen']/2, **tickloc})
+        # Ones related to stuff plotted inside axes
+        # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
         add('patch',    {'linewidth':d['linewidth'],   'edgecolor':d['color']}) # e.g. bars?
         add('hatch',    {'linewidth':d['linewidth'],   'color':d['color']})
-        add('lines',    {'linewidth':d['linewidth']*2, 'markersize':d['linewidth']*4, 'markeredgewidth':0})
+        add('lines',    {'linewidth':d['linewidth']*2,
+            'markersize':d['linewidth']*4, 'markeredgewidth':0,
+            'dash_joinstyle':'miter', 'dash_capstyle':'projecting', # joinstyle opts: miter, round, bevel
+            'solid_joinstyle':'miter', 'solid_capstyle':'projecting'}) # capstyle opts: butt, round, projecting
         add('markers',  {'fillstyle':'full'})
         add('scatter',  {'marker':'o'})
-        add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'})
-            # no italicization; this can only be accomplished with rcParams; impossible to specify with API!
-        add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
-            'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
-            # many complicated legend settings
+        add('legend',   {'framealpha':1, 'fancybox':False, 'frameon':False, # see: https://matplotlib.org/api/legend_api.html
+            'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':2, 'columnspacing':1,
+            'borderpad':0.3, 'borderaxespad':0, 'numpoints':1, 'facecolor':'inherit'})
+        # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
+        #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
+        add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
+            # this can only be accomplished with rcParams; impossible to specify with API!
         # Next the settings with custom names
         # Some might be redundant, and should consider eliminating
         # Should begin to delete these and control things with rcParams whenever possible
@@ -282,13 +235,66 @@ def globals(*args, **kwargs):
         add('spine',       {'color':d['color'], 'linewidth':d['linewidth']})
         add('outline',     {'edgecolor':d['color'], 'linewidth':d['linewidth']})
         # add('xscale'); add('yscale'); add('contents', color='moccasin')
-# Now call the function to configure params
-globals() # without arguments, will start defaults
 
 #------------------------------------------------------------------------------
-# Colormap display
+# Colormap stuff
 #------------------------------------------------------------------------------
-def cmapshow(N=11, ignore=['Miscellaneous']):
+def cmapfactory(levels, colors, extend='neither'):
+    """
+    Generate colormap instance from list of levels and colors.
+    * Generally don't want these kinds of colorbars to 'extend', but you can.
+    * Object will assume one color between individual levels; for example,
+      if levels are [0,0.5,0.6,1], the first and last color-zones will be way thicker.
+    * If you want unevenly space intervals but evenly spaced boundaries, use custom
+      Norm instead of default.
+    * This is *one way* to create a colormap from list of colors; another way is
+      to just pass a list of colors to any _cformat method. That method will
+      also generate levels that are always equally spaced.
+    """
+    # Use builtin method
+    if len(levels)!=len(colors)+1:
+        raise ValueError(f"Have {len(levels):d} levels and {len(colors):d} colors. Need ncolors+1==nlevels.")
+    if extend=='min':
+        colors = ['w', *colors] # add dummy color
+    elif extend=='max':
+        colors = [*colors, 'w'] # add dummy color
+    elif extend=='both':
+        colors = ['w', *colors, 'w']
+    elif extend!='neither':
+        raise ValueError("Unknown extend option \"{extend}\".")
+    cmap, norm = mcolors.from_levels_and_colors(levels, colors, extend=extend)
+    return cmap
+
+def cmapcolors(name, N=None, vmin=None, vmax=None, left=False, centered=False):
+    """
+    Get individual colors from a discrete colormap, use for e.g. consecutive lines.
+    The opposite of this is cmapfactory, which builds a colormap from list of colors.
+    Can also pass list of colors directly to _cformat, to build a colormap; but this
+    is sometimes backwards, because will get colors with cmapcolors then build the
+    colormap back up again; kind of silly. Consider changing.
+    * First argument is the colormap name, second is the number of colors needed.
+    * Optionally can input a list, and the colors will be scaled by their relative
+      position in vmin/vmax. This is still useful sometimes.
+    """
+    cmap = plt.cm.get_cmap(name) # the cmap object itself
+    if N is None: N = cmap.N # use the builtin N
+    try: iter(N)
+    except TypeError:
+        if centered:
+            samples = np.linspace(1/(2*N), 1-1/(2*N), N) # N samples, from centers
+        elif left:
+            samples = np.linspace(0, 1-1/N, N)
+        else:
+            samples = np.linspace(0, 1, N) # N samples, from edge to edge
+        colors = [cmap(s) for s in samples] # choose these samples
+        # colors = [cmap(i/(N-1)) for i in range(N)] # from smallest to biggest numbers
+    else:
+        if vmin is None or vmax is None:
+            raise ValueError("If you input a vector, you must specify the color range for that data with \"vmin\" and \"vmax\".")
+        colors = [cmap((v-vmin)/(vmax-vmin)) for v in N]
+    return colors
+
+def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -299,11 +305,12 @@ def cmapshow(N=11, ignore=['Miscellaneous']):
     # Have colormaps separated into categories:
     cmaps = [m for m in plt.colormaps() if not m.endswith('_r')]
     cmaps_known = []
-    cmaps_custom = ['HCL','NCL','ColorBrewer','Dave','Other']
+    cmaps_custom = ['ColorPicker','HCL','ColorBrewer','Dave','NCL']
     categories = { **{category:[] for category in cmaps_custom}, # initialize as empty lists
         'Perceptually Uniform Sequential': ('viridis', 'plasma', 'inferno', 'magma'),
-        'Diverging': ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
-            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic'],
+        'Diverging1': ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+            'RdYlBu', 'RdYlGn', 'Spectral'],
+        'Diverging2': ['coolwarm', 'bwr', 'seismic'],
         'Sequential1': ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
             'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
             'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'],
@@ -318,28 +325,30 @@ def cmapshow(N=11, ignore=['Miscellaneous']):
     # print(categories) # for testing
     for v in categories.values(): # big list of all colormaps
         cmaps_known += v # add to this existing list
-    for cm in cmaps: # add to 'Custom' if not in above dictionary
+    for i,cm in enumerate(cmaps): # add to 'Custom' if not in above dictionary
         if cm not in cmaps_known:
             if 'Vega' in cm:
                 continue # deprecated
-            elif cm.startswith('hcl'):
+            elif cm[:3]=='hcl':
                 categories['HCL'].append(cm)
-            elif cm.startswith('ncl'):
+            elif cm[:3]=='ncl':
                 categories['NCL'].append(cm)
-            elif cm.startswith('cb'):
+            elif cm[:2]=='cb':
                 categories['ColorBrewer'].append(cm)
-            elif cm.startswith('dave'):
+            elif cm[:2]=='cp':
+                categories['ColorPicker'].append(cm)
+            elif cm[:4]=='dave':
                 categories['Dave'].append(cm)
-            # elif cm.startswith('tab'): # otherwise end up in Custom
-            #     categories['Qualitative'].append(cm)
             else:
-                categories['Custom'].append(cm)
+                print(f"Colormap \"{cm}\" has unknown category.")
+                # categories['Custom'].append(cm)
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
     # Figure
-    twidth = 2 # number of axes-widths to allocate for titles
-    nmaps = len(cmaps) + len(categories)*twidth # title for each category
+    twidth = 1 # number of axes-widths to allocate for titles
+    # nmaps = len(cmaps) + len(categories)*twidth # title for each category
+    nmaps = len([item for group in categories.values() for item in group]) + len(categories)*twidth
     for cat in ignore:
         nmaps -= (twidth + len(categories[cat])) # reduce size
     fig = plt.figure(figsize=(5,.3*nmaps))
@@ -381,6 +390,7 @@ def cmapshow(N=11, ignore=['Miscellaneous']):
             yl.set_va('center')
         # Space for plots
         nplots += len(categories[cat])
+    fig.subplots_adjust(top=0.99, bottom=0.00, left=0.15, right=0.99)
     # Check
     for cat in ignore:
         for m in categories[cat]:
@@ -394,7 +404,151 @@ def cmapshow(N=11, ignore=['Miscellaneous']):
     return fig
 
 #------------------------------------------------------------------------------
-# Function used often in plotting context but kind of unrelated
+# Color stuff
+#------------------------------------------------------------------------------
+def shade(color, value=1, saturation=1):
+    """
+    Modify a color.
+    """
+    if isinstance(color,str): # will recognize names and hex strings
+        color = mcolors.to_rgb(color)
+    if any(v>1 for v in color):
+        color = (np.array(color)/255).tolist()
+    color = mcolors.rgb_to_hsv(color)
+    color[2] = max(min(color[2]*value,1),0) # lighten/darken?
+    color[1] = max(min(color[1]*saturation,1),0) # saturate/pastelify?
+    color = mcolors.hsv_to_rgb(color)
+    return mcolors.to_hex(color) # hex codes are nice, mmkay
+
+def colorshow(string=None, ncols=4, nbreak=12, cycle=False, space=1, swatch=1):
+    """
+    Visualize all possible named colors. Wheee!
+    Modified from: https://matplotlib.org/examples/color/named_colors.html
+    * Special Note: The 'Tableau Colors' are just the *default matplotlib
+      color cycle colors*! So don't bother iterating over them.
+    """
+    # Get colors explicitly defined in _colors_full_map, or the default
+    # components of that map (see soure code; is just a dictionary wrapper
+    # on some simple lists)
+    string = string or 'css'
+    if string.lower()=='css':
+        colors = mcolors.CSS4_COLORS # forget base colors, have them already; e.g. 'r' equals 'red'
+    elif string.lower()=='xkcd':
+        colors = mcolors.XKCD_COLORS
+    elif string.lower()=='open':
+        colors = mcolors.OPEN_COLORS
+    # elif string.lower()=='all':
+    #     colors = {**mcolors.CSS4_COLORS, **mcolors.XKCD_COLORS}
+    else:
+        raise ValueError(f"Unknown category \"{string}\".")
+    # colors = {**mcolors.XKCD_COLORS}
+    # Optionally cycle colors; they are not in the _colors_full_map list, so must add manually
+    # But probably better to use cycleshow for this
+    if cycle:
+        seen = set() # trickery
+        cyclecolors = mpl.rcParams['axes.prop_cycle'].by_key()['color']
+        cyclecolors = [color for color in cyclecolors if not (color in seen or seen.add(color))] # trickery
+        colors = {**colors, **{f'C{i}':v for i,v in enumerate(cyclecolors)}}
+    # colors = {**mcolors.BASE_COLORS, **mcolors.XKCD_COLORS}
+    # Sort colors by hue, saturation, value and name; then plot
+    # Old, clunky method
+    if string not in ('all','xkcd','open'):
+        # Sort values
+        by_hsv = sorted((tuple(mcolors.rgb_to_hsv(mcolors.to_rgba(color)[:3])), name)
+            for name,color in colors.items()) # sorts by first element in HSV tuple if different; then second; then third
+        sorted_names = [name for hsv,name in by_hsv]
+        # Create plot with mysterious methods
+        figsize = (8, 5*(len(colors)/ncols)/40) # default is 5 inches tall when 40 colors present
+        fig, ax = plt.subplots(figsize=figsize)
+        nrows = len(sorted_names) // ncols + 1
+        X, Y = fig.get_dpi() * fig.get_size_inches()
+        h = Y/(nrows + 1)
+        w = X/ncols
+        for i,name in enumerate(sorted_names):
+            col = i % ncols
+            row = i // ncols
+            y   = Y - (row * h) - h
+            xi_line = w*(col + 0.05)
+            xf_line = w*(col + 0.25)
+            xi_text = w*(col + 0.3)
+            displayname = name.split('xkcd:')[-1]
+            n_names = len([n for n in sorted_names if n==displayname])
+            if n_names>1:
+                print(f"Warning: \"{name}\" appears {n_names} times.")
+            ax.text(xi_text, y, displayname, fontsize=h*0.8, ha='left', va='center')
+            ax.hlines(y + h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
+    # New method, that groups colors together by discrete range of hue then sorts by value
+    else:
+        # Fancy sort by grouping into hue categories, then sorting values; easy peasy
+        if string in ['open']: # group manually
+            space = 0.5
+            swatch = 1.5
+            names = ["gray", "red", "pink", "grape", "violet", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "orange"]
+            nrows, ncols = 10, len(names) # rows and columns
+            sorted_names = [[name+str(i) for i in range(nrows)] for name in names]
+        else: # group
+            ncols = nbreak-1 # group by breakpoint
+            sorted_hsv = [] # initialize
+            colors_hsv = {k:tuple(mcolors.rgb_to_hsv(mcolors.to_rgb(v))) for k,v in colors.items()}
+            breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
+            for start,end in zip(breakpoints[:-1], breakpoints[1:]):
+                test = (lambda x: start<=x<=end) if end is breakpoints[-1] \
+                        else (lambda x: start<=x<end) # two possible tests
+                fcolors = [(name,hsv) for name,hsv in colors_hsv.items() if test(hsv[0])]
+                sorted_index = np.argsort([v[1][-1] for v in fcolors]) # indices to build sorted list
+                sorted_hsv.append([fcolors[i] for i in sorted_index]) # append sorted list
+            sorted_names = [[name for name,hsv in huelist] for huelist in sorted_hsv]
+            nrows = max(len(huelist) for huelist in sorted_hsv) # number of rows
+        # Create plot by iterating over columns 
+        figsize = (8*space*(ncols/4), 5*(nrows/40)) # 5in tall with 40 colors in column
+        fig, ax = plt.subplots(figsize=figsize)
+        X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
+        h, w = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
+        for col,huelist in enumerate(sorted_names):
+            for row,name in enumerate(huelist): # list of colors in hue category
+                y = Y - (row * h) - h
+                xi_line = w*(col + 0.05)
+                xf_line = w*(col + 0.25*swatch)
+                xi_text = w*(col + 0.25*swatch + 0.05)
+                print_name = name.split('xkcd:')[-1] # make sure no xkcd:
+                ax.text(xi_text, y, print_name, fontsize=h*0.8, ha='left', va='center')
+                ax.hlines(y+h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
+    ax.set_xlim(0,X)
+    ax.set_ylim(0,Y)
+    ax.set_axis_off()
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
+    plt.show()
+    # Save
+    fig.savefig(f'{os.path.dirname(__file__)}/colors.pdf',
+            bbox_inches='tight', format='pdf')
+    return fig
+
+def cycleshow():
+    """
+    Show off the different color cycles.
+    Wrote this one myself, so it uses the custom API.
+    """
+    fig, axs = subplots(ncols=2, nrows=len(cycles)//2+len(cycles)%2, aspect=2.5, width=7,
+        left=.1, right=.1, bottom=.1, top=.3, hspace=.3)
+    state = np.random.RandomState(123412)
+    def testplot(ax,cycle):
+        seen = set()
+        cycler = globals('axes', 'prop_cycle')
+        colors = [color for color in cycler.by_key()['color'] if not (color in seen or seen.add(color))]
+        lines = ax.plot(state.rand(10,len(colors)), lw=5, ls='-')
+        for i,l in enumerate(lines):
+            l.set_zorder(len(lines)-i) # make first lines have big zorder
+        ax.format(xlim=(-0.5,10), title=f'{cycle}: {len(colors)} colors', yformatter='', xformatter='')
+    for i,cycle in enumerate(cycles.keys()):
+        globals(cycle=cycle)
+        testplot(axs[i],cycle)
+    # Save
+    fig.savefig(f'{os.path.dirname(__file__)}/cycles.pdf',
+            bbox_inches='tight', format='pdf')
+    return fig
+
+#------------------------------------------------------------------------------
+# Helper functions, often needed in plotting context so included in this library
 #------------------------------------------------------------------------------
 def arange(min_, *args):
     """
@@ -426,12 +580,13 @@ def arange(min_, *args):
         max_ += 1
     # Input is float or mixed; cast all to float64, then get new "max"
     else:
+        # Get the next FLOATING POINT, in direction of the second argument
+        # Forget this; round-off errors from continually adding step to min mess this up
+        # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
-        # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
-            # gives the next FLOATING POINT, in direction of the second argument
-            # ...forget this; round-off errors from continually adding step to min mess this up
     return np.arange(min_, max_, step)
+
 def autolevels(min_, max_, N=50):
     """
     Function for rounding to nearest <base>.
@@ -467,13 +622,13 @@ def autolevels(min_, max_, N=50):
     return levels, locator
 
 #------------------------------------------------------------------------------
-# Important class
+# Custom figure class
 #------------------------------------------------------------------------------
 def close():
     """
     Close all figures 'open' in memory. This does not delete images printed
     in an ipython notebook; those are rendered versions of the abstract figure objects.
-    This prevents us having to call the method in ipython notebook.
+    This prevents us having to load pyplot explicitly in ipython notebook.
     """
     plt.close('all') # easy peasy
 class Figure(mfigure.Figure):
@@ -673,8 +828,8 @@ def _contourflevels(kwargs):
         if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
         kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
         if 'norm' not in kwargs:
-            kwargs['norm'] = BoundaryNorm(kwargs['levels']) # what is wanted 99% of time
-            # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+            kwargs['norm'] = Norm(kwargs['levels']) # what is wanted 99% of time
+            # kwargs['norm'] = Norm(levels, ncolors=kwargs['cmap'].N, clip=True)
     return kwargs
 def _pcolorlevels(kwargs):
     # Processes keyword-arguments to allow levels for pcolor/pcolormesh
@@ -683,8 +838,8 @@ def _pcolorlevels(kwargs):
         levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
         kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
         if 'norm' not in kwargs:
-            kwargs['norm'] = BoundaryNorm(levels)
-            # kwargs['norm'] = BoundaryNorm(levels, ncolors=kwargs['cmap'].N, clip=True)
+            kwargs['norm'] = Norm(levels)
+            # kwargs['norm'] = Norm(levels, ncolors=kwargs['cmap'].N, clip=True)
     return kwargs
 def _pcolorcheck(x, y, Z):
     # Checks that sizes match up, checks whether graticule was input
@@ -707,20 +862,28 @@ def _contourcheck(x, y, Z):
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
     return x, y
-# The linecolorbar method is now self-contained in _cformat method
-# def _linecolorbar(self, handles, values):
-#     # Creates legend from a bunch of lines
-#     if len(handles)!=len(values):
-#         raise ValueError("Number of handles should equal number of levels.")
-#     colors = [h.get_color() for h in handles]
-#     colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors)
-#     mappable = plt.contourf([[0,0],[0,0]], levels=values, cmap=colormap)
-#     return mappable
 
 #-------------------------------------------------------------------------------
 # Cartesian plot overrides; they each reference common helper functions
-#-------------------------------------------------------------------------------
 # TODO: Fix for pcolormesh/pcolor with set of levels
+#-------------------------------------------------------------------------------
+def _quiver(self, x, y, Z, **kwargs): # quiver plot
+    # * Options confusing, so needs wrapper.
+    # * Function can plot unpredictable vectors if your array orientation is wrong, and will
+    #   not raise an error.
+    pass
+def _histogram(self, *args, **kwargs): # histogram
+    # * Should be able to apply transparency so histograms can be overlaid
+    pass
+def _box(self, *args, **kwargs): # box whisker plot\
+    # * Should be able to make grouped boxes
+    pass
+def _violin(self, *args, **kwargs): # violin plot
+    # * Ditto with box plot function
+    pass
+def _bar(self, *args, **kwargs): # bar plot with different color options
+    # * Perhaps by default cycle through color cycle, otherwise use input color
+    pass
 def _contour(self, x, y, Z, **kwargs):
     x, y = _contourcheck(x, y, Z)
     c = self._contour(x, y, Z.T, **kwargs)
@@ -752,21 +915,18 @@ def _pcolormesh(self, x, y, Z, **kwargs):
     if extend is not None:
         p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
-def _quiver(self, x, y, Z, **kwargs): # this function can plot
-        # unpredictable vectors if your array orientation is wrong, and will
-        # not rais an error; also the options are fairly confusing; needs wrapper
-    pass
 
 #-------------------------------------------------------------------------------
 # Basemap overrides
-# Will convert coordinates to longitude latitude
+# Will convert longitude latitude coordinates to projected coordinates
 #-------------------------------------------------------------------------------
 # Dummy ones that just set latlon True by default
 def _plot_basemap(self, *args, **kwargs):
     return self._plot(*args, **kwargs, latlon=True)
 def _scatter_basemap(self, *args, **kwargs):
     return self._scatter(*args, **kwargs, latlon=True)
-# Assumes regularly spaced data
+
+# More complex ones; assume regularly spaced data
 def _contour_basemap(self, lon, lat, Z, **kwargs):
     lon, lat = _contourcheck(lon, lat, Z)
     lon, lat, Z = _seam_fix(self, lon, lat, Z)
@@ -860,7 +1020,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
       and norm object to a mappable; fixed by passing vmin/vmax INSTEAD OF levels 
       (see: https://stackoverflow.com/q/40116968/4970632).
     * Problem is, often WANT levels instead of vmin/vmax, while simultaneously
-      using a BoundaryNorm (for example) to determine colors between the levels
+      using a Norm (for example) to determine colors between the levels
       (see: https://stackoverflow.com/q/42723538/4970632).
     * Workaround is to make sure locators are in vmin/vmax range EXCLUSIVELY;
       cannot match/exceed values.
@@ -954,7 +1114,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
             values[-1:]+np.diff(levels[-2:]))) # this works empirically; otherwise get
             # weird situation with edge-labels appearing on either side
         mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap, extend='neither',
-                norm=BoundaryNorm(values)) # workaround
+                norm=Norm(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
             # clocator = values # restore this if values weren't padded
             clocator = values[1:-1]
@@ -2438,13 +2598,60 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         return fig, axs
 
 #------------------------------------------------------------------------------
-# Classes and Formatters
+# Normalization classes for mapping data to colors (i.e. colormaps)
 #------------------------------------------------------------------------------
+class Norm(mcolors.Normalize):
+    """
+    Like the default BoundaryNorm, except instead of drawing color 'x' directly
+    from RGB array, out of n colors for n+1 levels, this *interpolates* from an RGB
+    array at point '(level_index+0.5)/num_levels' along the array.
+    Example: Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
+    even [0, 10, 12, 20, 22], but center "colors" are always at colormap
+    coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
+    """
+    def __init__(self, levels, midpoint=None, clip=False, **kwargs):
+        # Very simple
+        try: iter(levels)
+        except TypeError:
+            raise ValueError("Must call Norm with your boundary vaues.")
+        # mcolors.Normalize.__init__(self, min(levels), max(levels), clip, **kwargs)
+        super().__init__(min(levels), max(levels), clip)
+        self.midpoint = midpoint
+        self.levels = np.array(levels)
+
+    def __call__(self, value, clip=None):
+        # TOTO: Add optional midpoint; this class will probably end up being one of
+        # my most used if so; midpoint would just ensure <value> corresponds to 0.5 in cmap
+        # Some checks (maybe not necessary)
+        try: iter(value)
+        except TypeError:
+            value = np.array([value])
+        if value.ndim>1:
+            raise ValueError("Array is multi-dimensional... not sure what to do.")
+        # Map data values in range (vmin,vmax) to color indices in colormap
+        nvalues = np.empty(value.shape)
+        for i,v in enumerate(value.flat):
+            if np.isnan(v):
+                continue
+            locs = np.where(v>=self.levels)[0]
+            if locs.size==0:
+                nvalues[i] = 0
+            elif locs.size==self.levels.size:
+                nvalues[i] = 1
+            else:
+                interpolee = self.levels[[locs[-1],locs[-1]+1]] # the boundary level values
+                interpolant = np.array([locs[-1],locs[-1]+1])/(self.levels.size-1) # the boundary level integers
+                    # so if 11 levels and between ids 9 and 10, interpolant is between .9 and 1
+                nvalues[i] = np.interp(v, interpolee, interpolant)
+                # nvalues[i] = max(0, nvalues[i]-.5/(self.levels.size-1))
+                # print(self.vmin, self.vmax, min(self.levels), max(self.levels))
+        return np.ma.masked_array(nvalues, np.isnan(value))
+
 class WarpNorm(mcolors.Normalize):
     """
     Pass as norm=<instance>, when declaring new pcolor or contourf objects.
     Base class for warping either or both sides of colormap.
-    In most cases it may be more suitable to use BoundaryNorm.
+    In most cases it may be more suitable to use Norm.
     """
     def __init__(self, exp=0, extend='neither', midpoint=None, vmin=None, vmax=None, clip=None):
         # User will use -10 to 10 scale; converted to value used in equation
@@ -2527,52 +2734,9 @@ class MidpointNorm(mcolors.Normalize):
         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
         return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
 
-class BoundaryNorm(mcolors.Normalize):
-    """
-    Like the default BoundaryNorm, except instead of declaring level integers
-    from the exact RGB file, this *interpolates* from between 0 and 1 for each level.
-    Example: Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
-    even [0, 10, 12, 20, 22], but center "colors" are always at colormap
-    coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
-    """
-    def __init__(self, levels, midpoint=None, clip=False, **kwargs):
-        # Very simple
-        try: iter(levels)
-        except TypeError:
-            raise ValueError("Must call BoundaryNorm with your boundary vaues.")
-        # mcolors.Normalize.__init__(self, min(levels), max(levels), clip, **kwargs)
-        super().__init__(min(levels), max(levels), clip)
-        self.midpoint = midpoint
-        self.levels = np.array(levels)
-
-    def __call__(self, value, clip=None):
-        # TOTO: Add optional midpoint; this class will probably end up being one of
-        # my most used if so; midpoint would just ensure <value> corresponds to 0.5 in cmap
-        # Some checks (maybe not necessary)
-        try: iter(value)
-        except TypeError:
-            value = np.array([value])
-        if value.ndim>1:
-            raise ValueError("Array is multi-dimensional... not sure what to do.")
-        # Map data values in range (vmin,vmax) to color indices in colormap
-        nvalues = np.empty(value.shape)
-        for i,v in enumerate(value.flat):
-            if np.isnan(v):
-                continue
-            locs = np.where(v>=self.levels)[0]
-            if locs.size==0:
-                nvalues[i] = 0
-            elif locs.size==self.levels.size:
-                nvalues[i] = 1
-            else:
-                interpolee = self.levels[[locs[-1],locs[-1]+1]] # the boundary level values
-                interpolant = np.array([locs[-1],locs[-1]+1])/(self.levels.size-1) # the boundary level integers
-                    # so if 11 levels and between ids 9 and 10, interpolant is between .9 and 1
-                nvalues[i] = np.interp(v, interpolee, interpolant)
-                # nvalues[i] = max(0, nvalues[i]-.5/(self.levels.size-1))
-                # print(self.vmin, self.vmax, min(self.levels), max(self.levels))
-        return np.ma.masked_array(nvalues, np.isnan(value))
-
+#-------------------------------------------------------------------------------
+# Formatting classes for mapping numbers (axis ticks) to formatted strings
+#-------------------------------------------------------------------------------
 def Formatter(sigfig=3, tickrange=None):
     """
     Format as a number, with N sigfigs, and trimming trailing zeros.
@@ -2677,3 +2841,112 @@ def FracFormatter(fact=np.pi, symbol=r'\pi'):
     # And create FuncFormatter class
     return mticker.FuncFormatter(f)
 
+#------------------------------------------------------------------------------
+# Initialization; stuff called on import
+# Adds colormap names and lists available font names
+# * If leave 'name' empty in register_cmap, name will be taken from the
+#   Colormap instance. So do that.
+# * Note that **calls to cmap instance do not interpolate values**; this is only
+#   done by specifying levels in contourf call, specifying lut in get_cmap,
+#   and using LinearSegmentedColormap.from_list with some N.
+# * The cmap object itself only **picks colors closest to the "correct" one
+#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
+#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
+# * If you want to always disable interpolation, use ListedColormap. This type
+#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
+#------------------------------------------------------------------------------
+# List the current font names, original version; works on Linux but not Mac, because can't find mac system fonts?
+# fonts = mfonts.get_fontconfig_fonts()
+# fonts = [mfonts.FontProperties(fname=fname).get_name() for fname in flist]
+# List the system font names, smarter version
+# See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
+            mfonts.findSystemFonts(fontpaths=None, fontext='ttf')] + \
+        [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
+            glob(f"{mpl.matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf")]
+fonts = sorted(set(fonts)) # unique ones only
+# Register colors by adding them to _colors_full_map
+# * First, will make xkcd colors no longer prefixed by xkcd:
+# * Next register the 
+_announcement = False
+_opencolors = { "gray":   ["#f8f9fa", "#f1f3f5", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057", "#343a40", "#212529"],
+      "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
+      "pink":   ["#fff0f6", "#ffdeeb", "#fcc2d7", "#faa2c1", "#f783ac", "#f06595", "#e64980", "#d6336c", "#c2255c", "#a61e4d"],
+      "grape":  ["#f8f0fc", "#f3d9fa", "#eebefa", "#e599f7", "#da77f2", "#cc5de8", "#be4bdb", "#ae3ec9", "#9c36b5", "#862e9c"],
+      "violet": ["#f3f0ff", "#e5dbff", "#d0bfff", "#b197fc", "#9775fa", "#845ef7", "#7950f2", "#7048e8", "#6741d9", "#5f3dc4"],
+      "indigo": ["#edf2ff", "#dbe4ff", "#bac8ff", "#91a7ff", "#748ffc", "#5c7cfa", "#4c6ef5", "#4263eb", "#3b5bdb", "#364fc7"],
+      "blue":   ["#e7f5ff", "#d0ebff", "#a5d8ff", "#74c0fc", "#4dabf7", "#339af0", "#228be6", "#1c7ed6", "#1971c2", "#1864ab"],
+      "cyan":   ["#e3fafc", "#c5f6fa", "#99e9f2", "#66d9e8", "#3bc9db", "#22b8cf", "#15aabf", "#1098ad", "#0c8599", "#0b7285"],
+      "teal":   ["#e6fcf5", "#c3fae8", "#96f2d7", "#63e6be", "#38d9a9", "#20c997", "#12b886", "#0ca678", "#099268", "#087f5b"],
+      "green":  ["#ebfbee", "#d3f9d8", "#b2f2bb", "#8ce99a", "#69db7c", "#51cf66", "#40c057", "#37b24d", "#2f9e44", "#2b8a3e"],
+      "lime":   ["#f4fce3", "#e9fac8", "#d8f5a2", "#c0eb75", "#a9e34b", "#94d82d", "#82c91e", "#74b816", "#66a80f", "#5c940d"],
+      "yellow": ["#fff9db", "#fff3bf", "#ffec99", "#ffe066", "#ffd43b", "#fcc419", "#fab005", "#f59f00", "#f08c00", "#e67700"],
+      "orange": ["#fff4e6", "#ffe8cc", "#ffd8a8", "#ffc078", "#ffa94d", "#ff922b", "#fd7e14", "#f76707", "#e8590c", "#d9480f"]}
+mcolors.OPEN_COLORS = {} # create separate dictionary for them
+for _name,_colors in _opencolors.items(): # iterate through json values
+    for _i,_color in enumerate(_colors):
+        mcolors.OPEN_COLORS[_name+str(_i)] = _color
+colors = {**mcolors.XKCD_COLORS, **mcolors.OPEN_COLORS} # initialize the color dictionary
+for name,value in colors.items():
+    _color = name.split('xkcd:')[-1] # for now this is it
+    if _color not in mcolors._colors_full_map:
+        mcolors._colors_full_map[_color] = value # no more xkcd: now call them directly
+        if not _announcement: # only do this if adding at least one new color
+            _announcement = True
+            print("Registered colors.")
+# Register color new color styles
+cycles = {'default':['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'], # default V2 matplotlib
+    # copied from stylesheets; stylesheets just add color themese from every
+    # possible tool, not already present as a colormap
+    'ggplot':['E24A33', '348ABD', '988ED5', '777777', 'FBC15E', '8EBA42', 'FFB5B8'],
+    'bmh': ['348ABD', 'A60628', '7A68A6', '467821', 'D55E00', 'CC79A7', '56B4E9', '009E73', 'F0E442', '0072B2'],
+    'solarized': ['268BD2', '2AA198', '859900', 'B58900', 'CB4B16', 'DC322F', 'D33682', '6C71C4'],
+    '538': ['008fd5', 'fc4f30', 'e5ae38', '6d904f', '8b8b8b', '810f7c'],
+    'seaborn': ['4C72B0', '55A868', 'C44E52', '8172B2', 'CCB974', '64B5CD'],
+    'colorblind': ['0072B2', 'D55E00', '009E73', 'CC79A7', 'F0E442', '56B4E9'],
+    'pastel': ['92C6FF', '97F0AA', 'FF9F9A', 'D0BBFF', 'FFFEA3', 'B0E0E6'],
+    'deep': ['4C72B0', '55A868', 'C44E52', '8172B2', 'CCB974', '64B5CD'],
+    'muted': ['4878CF', '6ACC65', 'D65F5F', 'B47CC7', 'C4AD66', '77BEDB'],
+    # copied using digital color meter from papers with pretty plots
+    'colorblind2':[shade(color, saturation=1.3) for color in # appears to just be pale colorblind sheme
+        [(68,139,177), (200,126,72), (68,163,137), (229,220,124), (205,154,182)]],
+    # created with online tools
+    'cinematic': [(51,92,103), (255,243,176), (224,159,62), (158,42,43), (84,11,14)],
+    'cinematic2': [[1,116,152], [231,80,0], [123,65,75], [197,207,255], [241,255,47]],
+    }
+cycles = {**cycles, **{_cycle.lower():cmapcolors(_cycle) for _cycle in
+    ['Accent','Dark2','Set2','Set3','Paired','cbLines1','cbLines2']}} # add in the colormap cycles
+for _cycle in cycles.values():
+    if isinstance(_cycle[0],str) and _cycle[0][0]!='#': # fix; absolutely necessary (try without)
+        _cycle[:] = [f'#{_}' for _ in _cycle] # modify contents; super cool trick
+    if not isinstance(_cycle[0],str) and any(c>1 for tup in _cycle for c in tup):
+        _cycle[:] = [tuple(np.array(_)/255) for _ in _cycle] # tuple of decimal RGB values
+    _cycle[:] = [mcolors.to_hex(_, keep_alpha=False) for _ in _cycle] # standardize; will also convert hes to lower case
+# Register colormaps immediately on import
+_announcement = False
+for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
+    if '.rgb' in _file or '.hex' in _file:
+        _name = os.path.basename(_file)[:-4]
+        if _name not in plt.colormaps(): # don't want to re-register every time
+            if '.rgb' in _file: # table or RGB values
+                _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
+                try: _cmap = np.loadtxt(_file, **_load)
+                except:
+                    print(f'Failed to load {_name}.')
+                    continue
+                if (_cmap>1).any(): _cmap = _cmap/255
+            else: # list of hex strings
+                _cmap = [*open(_file)][0] # just a single line
+                _cmap = _cmap.strip().split(',') # csv hex strings
+                _cmap = np.array([mcolors.to_rgb(_) for _ in _cmap]) # from list of tuples
+            _N = len(_cmap) # simple as that; number of rows of colors
+            if 'lines' not in _name.lower():
+                _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
+            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
+            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
+            if not _announcement: # only do this if register at least one new map
+                _announcement = True
+                print("Registered colormaps.")
+# Now call the function to configure params
+# Without arguments, will just apply my defaults
+globals()
