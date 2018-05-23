@@ -407,6 +407,22 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
 #------------------------------------------------------------------------------
 # Color stuff
 #------------------------------------------------------------------------------
+def hcl(c, degrees=False, gamma=3): # gamma is default
+    """
+    Convert color to HCL space.
+    See wiki page: https://en.wikipedia.org/wiki/HCL_color_space
+    """
+    rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
+    alpha = (min(rgb)/max(rgb))/100 # intermediary
+    q = np.exp(alpha*gamma) # intermediary
+    r, g, b = rgb # expand out, easier
+    h = np.arctan2(g-b, r-g)
+    h = 2*np.pi+h if h<0 else h # make positive
+    h = h*180/np.pi if degrees else h/(2*np.pi) # normalize to 0-1 possibly
+    c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
+    l = (q*max(rgb) + (1-q)*min(rgb))/2
+    return (h,c,l)
+
 def shade(color, value=1, saturation=1):
     """
     Modify a color.
