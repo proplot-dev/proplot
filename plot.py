@@ -187,7 +187,7 @@ def globals(*args, **kwargs):
                 mpl.rcExtras[f'{category}.{subcategory}'] = value
     # Mange input, and intialization
     category = None # not necessarily anything
-    defaults = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9, 'fontname':'DejaVu Sans'}
+    defaults = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9, 'fontname':'DejaVu Sans', 'ticklen':4}
     if args and type(args[0]) is str: # second part of 'and' only tested if first part true
         category, *args = args # pull out category; but args might be a bunch of dictionaries
     for arg in args:
@@ -270,7 +270,7 @@ def globals(*args, **kwargs):
         add('title',       {'size':d['bsize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
         add('label',       {'size':d['ssize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
         add('ticklabels',  {'size':d['ssize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
-        add('gridminor',   {'linestyle':':', 'linewidth':d['linewidth']/2, 'color':d['color'], 'alpha':0.05})
+        add('gridminor',   {'linestyle':'-', 'linewidth':d['linewidth']/2, 'color':d['color'], 'alpha':0.1})
         add('cgrid',       {'color':d['color'], 'linewidth':d['linewidth']})
         add('continents',  {'color':d['color']})
         add('tickminor',   {'length':d['ticklen']/2, 'width':d['linewidth'], 'color':d['color']})
@@ -1457,16 +1457,19 @@ def _format(self,
         minor_kw = globals('tickminor') if tickdir is None else dict(globals('tickminor'), direction=tickdir)
         axis.set_tick_params(which='major', **sides_kw, **major_kw)
         axis.set_tick_params(which='minor', **sides_kw, **minor_kw) # have length
-        if type(grid) is bool:
+        # Major ticks/grids
+        if type(grid) is bool: # grid changes must be after tick
             axis.grid(grid, which='major')
-        if type(gridminor) is bool:
-            axis.grid(gridminor and tickminor, which='minor') # ignore if no minor ticks
         for tick in axis.majorTicks:
             tick.gridline.update(globals('grid'))
+        # Minor ticks/grids
         for tick in axis.minorTicks:
-            tick.gridline.update(globals('gridminor'))
             if tickminor is not None:
                 tick.set_visible(tickminor)
+        if type(gridminor) is bool:
+            axis.grid(gridminor, which='minor', alpha=1) # ignore if no minor ticks
+        for tick in axis.minorTicks:
+            tick.gridline.update(globals('gridminor'))
 
         # Label properties
         axis.label.update(globals('label'))
@@ -1954,7 +1957,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             hwidth = 0.5
         if wwidth is None:
             wwidth = 0.5
-        if any(s not in 'tblr' for s in whichpanels) or whichpanels=='':
+        if any(s.lower() not in 'tblr' for s in whichpanels) or whichpanels=='':
             raise ValueError("Whichpanels argument can contain characters l (left), r (right), "
                     "b (bottom), or t (top).")
         # Determine number of rows/columns, position of the
@@ -1963,9 +1966,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         nrows_i, ncols_i = 1, 1
         for s in whichpanels:
             if s in ('b','t'):
-                ncols_i += 1
-            if s in ('l','r'):
                 nrows_i += 1
+            if s in ('l','r'):
+                ncols_i += 1
         bad_pos = []
         main_pos = [0,0]
         if 't' in whichpanels:
