@@ -2897,6 +2897,32 @@ fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
             glob(f"{mpl.matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf")]
 fonts = sorted(set(fonts)) # unique ones only
 #-------------------------------------------------------------------------------
+# Register new colormaps; must come before registering the color cycles
+_announcement = False
+for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
+    if '.rgb' in _file or '.hex' in _file:
+        _name = os.path.basename(_file)[:-4]
+        if _name not in plt.colormaps(): # don't want to re-register every time
+            if '.rgb' in _file: # table or RGB values
+                _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
+                try: _cmap = np.loadtxt(_file, **_load)
+                except:
+                    print(f'Failed to load {_name}.')
+                    continue
+                if (_cmap>1).any(): _cmap = _cmap/255
+            else: # list of hex strings
+                _cmap = [*open(_file)][0] # just a single line
+                _cmap = _cmap.strip().split(',') # csv hex strings
+                _cmap = np.array([mcolors.to_rgb(_) for _ in _cmap]) # from list of tuples
+            _N = len(_cmap) # simple as that; number of rows of colors
+            if 'lines' not in _name.lower():
+                _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
+            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
+            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
+            if not _announcement: # only do this if register at least one new map
+                _announcement = True
+                print("Registered colormaps.")
+#-------------------------------------------------------------------------------
 # Register colors by adding them to _colors_full_map
 # * So far register opencolors and the "N most popular" xkcd colors; downloaded
 #   them directly from the txt file.
@@ -2959,31 +2985,6 @@ for _cycle in cycles.values():
     if not isinstance(_cycle[0],str) and any(c>1 for tup in _cycle for c in tup):
         _cycle[:] = [tuple(np.array(_)/255) for _ in _cycle] # tuple of decimal RGB values
     _cycle[:] = [mcolors.to_hex(_, keep_alpha=False) for _ in _cycle] # standardize; will also convert hes to lower case
-#-------------------------------------------------------------------------------
-_announcement = False
-for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
-    if '.rgb' in _file or '.hex' in _file:
-        _name = os.path.basename(_file)[:-4]
-        if _name not in plt.colormaps(): # don't want to re-register every time
-            if '.rgb' in _file: # table or RGB values
-                _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
-                try: _cmap = np.loadtxt(_file, **_load)
-                except:
-                    print(f'Failed to load {_name}.')
-                    continue
-                if (_cmap>1).any(): _cmap = _cmap/255
-            else: # list of hex strings
-                _cmap = [*open(_file)][0] # just a single line
-                _cmap = _cmap.strip().split(',') # csv hex strings
-                _cmap = np.array([mcolors.to_rgb(_) for _ in _cmap]) # from list of tuples
-            _N = len(_cmap) # simple as that; number of rows of colors
-            if 'lines' not in _name.lower():
-                _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
-            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
-            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
-            if not _announcement: # only do this if register at least one new map
-                _announcement = True
-                print("Registered colormaps.")
 #-------------------------------------------------------------------------------
 # Now call the function to configure params
 # Without arguments, will just apply my defaults
