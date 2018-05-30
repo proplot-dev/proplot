@@ -1289,13 +1289,15 @@ def lanczos(alpha, J):
     # a2.plot(omega, Romegatilde, color=colors[j], label=('J=%d' % J))
     # return
 
-def butterworth(*args, **kwargs):
+def butterworth(order, *args, **kwargs):
     """
     Return Butterworth filter.
     Wraps around the builtin scipy method.
     """
-    b, a = signal.butter(*args, **kwargs)
+    kwargs.update({'analog':True}) # must be analog or something
+    b, a = signal.butter(order-1, *args, **kwargs)
     return b/a # gives numerate/demoninator of coefficients; we just want floating points
+        # an order of N will return N+1 denominator values; we fix this
 
 def window(wintype, M=100):
     """
