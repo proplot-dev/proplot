@@ -8,8 +8,8 @@ try:
 except ModuleNotFoundError:
     print("Warning: ECMWF API unavailable.")
 import xarray as xr
-import scipy.signal as sig
-import scipy.stats as st
+import scipy.signal as signal
+import scipy.stats as stats
 import time as T # have some big algorithms here; want to guage how long they take
 from . import const
 # from . import geoutils as geo
@@ -155,45 +155,45 @@ def eraint(params, stream, levtype,
         filename='eraint.nc'):
     """
     Retrieves ERA-Interim DATA using the provided API. User MUST have, in home
-    directory, a file named '.ecmwfapirc'; see API documentation, but should look like...
+    directory, a file named '.ecmwfapirc'; see API documentation, but should look like:
         {
         "url"   : "https://api.ecmwf.int/v1",
         "key"   : "960dbe61271d3902c8b0f768d69d679f",
         "email" : "email@gmail.com"
         }
-    ...with the key found on your user/profile page on the ecmwf website.
-    
+    with the key found on your user/profile page on the ecmwf website.
+
     Time range arguments:
     years/yearrange -- list of range of years
     months/monthrange -- list or range of months
     daterange -- range of dates/datetimes
 
     Other input arguments:
-    params: can be either of...
+    params: can be either of:
         list/tuple of variable string names
         individual variable string
     *** Must know MARS id for requested params; can add to dictionary in code below using
         https://rda.ucar.edu/datasets/ds627.0/docs/era_interim_grib_table.html
-    stream: can be any of...
+    stream: can be any of:
         'synoptic' (6 hourly DATA)
         'monthly' (monthly mean)
-    levtype: can be any of...
+    levtype: can be any of:
         'pl' (pressure levels)
         'sfc' (earth surface)
         'pt' (potential temperature)
         'pv' (2pvu surface)
-    levrange: can be either of...
+    levrange: can be either of:
         length-2 tuple/list of pressure/pt levels; retrieves all available levels between these
         single number, to pick individual level
-    levs: can be either of...
+    levs: can be either of:
         list/tuple of multiple levels; retrieves each level in list
-        single number, to pick individual level 
-    hours: can be either of...
+        single number, to pick individual level
+    hours: can be either of:
         list/tuple of integer hours (should be in [0,6,12,18])
         single number, to pick individual hour
     res: desired output resolution; not sure if this is arbitrary, or if ERA-interim only has
         a select few valid resolution options.
-    box: can be either of...
+    box: can be either of:
         string name for particular region, e.g. "europe" (see documentation)
         the West/South/East/North boundaries (so lower-left corner, upper-right corner), as a length-4 list/tuple
     filename: name of file output
@@ -288,7 +288,7 @@ def eraint(params, stream, levtype,
                 '/'.join('%04d%02d%02d' % (y,m,i+1) for i in range(calendar.monthrange(y,m)[1]))
                 for m in months)
                 for y in years)
-            
+
     # Level selection as RANGE or LIST
     # Update this list if you modify script for ERA5, etc.
     levchoices = {
@@ -329,15 +329,15 @@ def eraint(params, stream, levtype,
     hours = '/'.join(str(h).zfill(2) for h in hours) # zfill padds 0s on left
 
     # Server instructions
-    # Not really sure what happens in some situations: list so far...
-    # 1) evidently if you provide with variable string-name instead of numeric ID, 
+    # Not really sure what happens in some situations: list so far:
+    # 1) evidently if you provide with variable string-name instead of numeric ID,
     #       MARS will search for correct one; if there is name ambiguity/conflict will throw error
     # 2) on GUI framework, ECMWF only offers a few resolution options, but program seems
     #       to run when requesting custom resolutions like 5deg/5deg
     retrieve = {
         'class':    'ei', # ecmwf classifiction; choose ERA-Interim
         'expver':   '1',
-        'dataset':  'interim', # ...thought we already did that; *shrug*
+        'dataset':  'interim', # thought we already did that; *shrug*
         'type':     'an', # type of field; analysis 'an' or forecast 'fc'
         'resol':    'av', # prevents truncation before transformation to geo grid
         'step':     '0', # number of hours forecast has been run into future from 'time'
@@ -347,7 +347,7 @@ def eraint(params, stream, levtype,
         'format':   'grib', # can also spit raw output into GRIB; apparently
             # ERA-Interim uses bilinear interpolation to make grid of point obs,
             # which makes sense, because their reanalysis model just picks out point observations
-            # from spherical harmonics... so maybe grid cell concept is dumb? maybe need to focus
+            # from spherical harmonics; so maybe grid cell concept is dumb? maybe need to focus
             # on just using cosine weightings, forget about rest?
         # 'grid':     'N32',
         'stream':   stream, # product monthly, raw, etc.
@@ -390,11 +390,11 @@ def arange(min_, *args):
     """
     Duplicate behavior of np.arange, except with inclusive endpoints; dtype is
     controlled very carefully, so should be 'most precise' among min/max/step args.
-    Input...
+    Input:
         stop
         start, stop, [step]
-        ...just like np.arange
-    Output...
+        just like np.arange
+    Output:
         the array sequence
     """
     # Optional arguments just like np.arange
@@ -420,7 +420,7 @@ def arange(min_, *args):
         max_ += step/2
         # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
             # gives the next FLOATING POINT, in direction of the second argument
-            # ...forget this; round-off errors from continually adding step to min mess this up
+            # forget this; round-off errors from continually adding step to min mess this up
     return np.arange(min_, max_, step)
 
 def match(*args):
@@ -502,33 +502,33 @@ class Properties():
         dlon1, dlon2, dlat1, dlat2 = lon[1]-lon[0], lon[-1]-lon[-2], lat[1]-lat[0], lat[-1]-lat[-2]
         self.latb = np.concatenate((lat[:1]-dlat1/2, (lat[1:]+lat[:-1])/2, lat[-1:]+dlat2/2))
         self.lonb = np.concatenate((lon[:1]-dlon1/2, (lon[1:]+lon[:-1])/2, lon[-1:]+dlon2/2))
-        
+
         # Cell centers
         self.latc, self.lonc = lat.copy(), lon.copy()
 
         # Corrections
-        # ...switch
+        # Switch
         has90 = True if lat[-1]==90 else False
         hasm90 = True if lat[0]==-90 else False # need these switches later
-        # ...use corrections for dumb grids with 'centers' at poles
+        # Use corrections for dumb grids with 'centers' at poles
         if hasm90:
             self.latc[0], self.latb[0] = -90+dlat1/4, -90
         if has90:
             self.latc[-1], self.latb[-1] = 90-dlat2/4, 90
-        # ...corrected grid widths (cells half as tall near pole)
+        # Corrected grid widths (cells half as tall near pole)
         self.dlon = self.lonb[1:]-self.lonb[:-1]
         self.dlat = self.latb[1:]-self.latb[:-1]
         if hasm90:
             self.dlat[0] /= 2
         if has90:
             self.dlat[-1] /= 2
-        
+
         # Theta/phi coordinates
         self.phic, self.phib, self.dphi = self.latc*np.pi/180, self.latb*np.pi/180, self.dlat*np.pi/180
         self.thetac, self.thetab, self.dtheta = self.lonc*np.pi/180, self.lonb*np.pi/180, self.dlon*np.pi/180
 
         # Area weights (function of latitude only)
-        # ...includes the latitude correction
+        # Includes the latitude correction
         self.weights = self.dphi[None,:]*self.dtheta[:,None]*np.cos(self.phic[None,:])
         self.areas = self.dphi[None,:]*self.dtheta[:,None]*np.cos(self.phic[None,:])*(const.a**2)
         # areas = dphi*dtheta*np.cos(phic)*(const.a**2)[None,:]
@@ -550,7 +550,7 @@ class Properties():
 
 def geopad(lon, lat, data, nlon=1, nlat=0):
     """
-    Returns array padded circularly along lons, and 
+    Returns array padded circularly along lons, and
     over the earth pole, for finite difference methods.
     """
     # Get padded array
@@ -579,7 +579,7 @@ def geomean(lon, lat, data, box=(None,None,None,None),
     Takes area mean of data time series; zone and F are 2d, but data is 3d.
     Since array is masked, this is super easy... just use the masked array
     implementation of the mean, and it will adjust weights accordingly.
-    
+
     lon: grid longitude centers
     lat: grid latitude centers
     mode: weight by land/sea coverage, or not at all
@@ -589,7 +589,7 @@ def geomean(lon, lat, data, box=(None,None,None,None),
         the grid cells that do -- haven't bothered to account for partial coverage, because
         it would be pain in the butt and not that useful.
     weights: extra, custom weights to apply to data -- could be land/ocean fractions, for example.
-    
+
     Data should be loaded with myfuncs.ncutils.ncload, and provide this function
     with metadata in 'm' structure.
     """
@@ -618,18 +618,18 @@ def geomean(lon, lat, data, box=(None,None,None,None),
         weights = weights[...,None]
     weights = np.tile(weights, (1,1,*data.shape[2:])) # has to be tiled, to match shape of data exactly
 
-    # And apply; note that np.ma.average was tested to be slower than the 
+    # And apply; note that np.ma.average was tested to be slower than the
     # three-step procedure for NaN ndarrays used below
     if type(data) is np.ma.MaskedArray:
         data = data.filled(np.nan)
     isvalid = np.isfinite(data) # boolean function extremely fast
     data[~isvalid] = 0 # scalar assignment extremely fast
     try: ave = np.average(data, weights=weights*isvalid, axis=(0,1))
-    except ZeroDivisionError:  
+    except ZeroDivisionError:
         ave = np.nan # weights sum to zero
 
     # Return, optionally restoring the lon/lat dimensions to singleton
-    if keepdims: 
+    if keepdims:
         return ave[None,None,...]
     else:
         return ave
@@ -638,7 +638,7 @@ def haversine(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
     on the earth (specified in decimal degrees)
-    
+
     Input:
     lon1, lat1, lon2, lat2 (positional): ndarrays of longitude and latitude in degrees
     * Each **pair** should have identical shape
@@ -663,11 +663,11 @@ def haversine(lon1, lat1, lon2, lat2):
 #------------------------------------------------------------------------------
 # Statistics
 #------------------------------------------------------------------------------
-def gaussian(mean, sigma): 
+def gaussian(mean, sigma):
     """
     Returns sample points on Gaussian curve.
     """
-    norm = st.norm(loc=mean, scale=sigma)
+    norm = stats.norm(loc=mean, scale=sigma)
     x = np.linspace(norm.ppf(0.0001), norm.ppf(0.9999), 1000) # get x through percentile range
     pdf = norm.pdf(x)
     return x, pdf
@@ -678,7 +678,7 @@ def gaussian(mean, sigma):
 def rolling(data, window=5, axis=-1):
     """
     Read this: https://stackoverflow.com/a/4947453/4970632
-    Generates rolling numpy window along final axis; can then operate with 
+    Generates rolling numpy window along final axis; can then operate with
     functions like polyfit or mean along the new last axis of output.
     Just creates *view* of original array, without duplicating data, so no worries
     about efficiency.
@@ -729,10 +729,10 @@ def slope(x, y, axis=-1):
     y = np.reshape(y, (yshape[0], np.prod(yshape[1:])), order='F')
     # Next, supply to polyfit
     coeff = np.polyfit(x, y, deg=1) # is ok with 2d input data
-        # DOES NOT accept more than 2d; also, much faster than loop with st.linregress
+        # DOES NOT accept more than 2d; also, much faster than loop with stats.linregress
     # And finally, make
     slopes = coeff[0,:]
-        # ...coefficients are returned in reverse; e.g. 2-deg fit gives c[0]*x^2 + c[1]*x + c[2]
+        # Coefficients are returned in reverse; e.g. 2-deg fit gives c[0]*x^2 + c[1]*x + c[2]
     slopes = np.reshape(slopes, (1, y.shape[1:]), order='F').T
     return np.rollaxis(slopes, y.ndim-1, axis)
 
@@ -792,7 +792,7 @@ def deriv1(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=
             rdiff = deriv1(h, y[...,-2:], axis=-1, keepright=True, accuracy=0),
         diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==4:
-        diff = (1/12)*(-y[...,4:] + 8*y[...,3:-1] 
+        diff = (1/12)*(-y[...,4:] + 8*y[...,3:-1]
                 - 8*y[...,1:-3] + y[...,:-4])/h
         if keepleft:
             ldiff = deriv1(h, y[...,:3], axis=-1, keepleft=True, accuracy=2), # one-tuple
@@ -800,7 +800,7 @@ def deriv1(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=
             rdiff = deriv1(h, y[...,-3:], axis=-1, keepright=True, accuracy=2),
         diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==6:
-        diff = (1/60)*(y[...,6:] - 9*y[...,5:-1] + 45*y[...,4:-2] 
+        diff = (1/60)*(y[...,6:] - 9*y[...,5:-1] + 45*y[...,4:-2]
                 - 45*y[...,2:-4] + 9*y[...,1:-5] - y[...,:-6])/h
         if keepleft:
             ldiff = deriv1(h, y[...,:5], axis=-1, keepleft=True, accuracy=4), # one-tuple
@@ -836,7 +836,7 @@ def deriv2(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=
             rdiff = diff[...,-1:],
         diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==4:
-        diff = (1/12)*(-y[...,4:] + 16*y[...,3:-1] 
+        diff = (1/12)*(-y[...,4:] + 16*y[...,3:-1]
                 - 30*y[...,2:-2] + 16*y[...,1:-3] - y[...,:-4])/h**2
         if keepleft:
             ldiff = deriv2(h, y[...,:3], axis=-1, keepleft=True, accuracy=2),
@@ -844,7 +844,7 @@ def deriv2(h, y, axis=0, accuracy=2, keepleft=False, keepright=False, keepedges=
             rdiff = deriv2(h, y[...,-3:], axis=-1, keepright=True, accuracy=2),
         diff = np.concatenate((*ldiff, diff, *rdiff), axis=-1)
     elif accuracy==6:
-        diff = (1/180)*(2*y[...,6:] - 27*y[...,5:-1] + 270*y[...,4:-2] 
+        diff = (1/180)*(2*y[...,6:] - 27*y[...,5:-1] + 270*y[...,4:-2]
                 - 490*y[...,3:-3] + 270*y[...,2:-4] - 27*y[...,1:-5] + 2*y[...,:-6])/h**2
         if keepleft:
             ldiff = deriv2(h, y[...,:5], axis=-1, keepleft=True, accuracy=4),
@@ -977,9 +977,9 @@ def laplacian(lon, lat, data, accuracy=4):
     """
     Get Laplacian over geographic grid.
     Input is longitude, latitude, and data in any units.
-    Equation: del^2 = (1/a^2*cos^2(phi))(d/dtheta)^2 + 
+    Equation: del^2 = (1/a^2*cos^2(phi))(d/dtheta)^2 +
                 (1/a^2*cos(phi))(d/dphi)(cos(phi)*d/dphi)
-        ...this is the geographic coordinate version.
+        This is the geographic coordinate version.
     """
     # Setup
     npad = accuracy//2 # need +/-1 for O(h^2) approx, +/-2 for O(h^4), etc.
@@ -1014,17 +1014,17 @@ def eqlat(lon, lat, q, skip=10, sigma=None, fix=False): #n=1001, skip=10):
     # Initial stuff
     areas = Properties(lon, lat).areas
         # delivers grid areas, as function of latitude
-    
+
     # Flatten
     q, shape = _flatten(q, end=2) # gives current q, and former shape
-    
+
     # And consider mass-weighting this stuff
     if sigma is not None:
         mass = _flatten(sigma, end=2)*areas[...,None]
             # note that at least singleton dimension is added
         masscum = mass.cumsum(axis=1).sum(axis=0, keepdims=True)
             # cumulative mass from pole
-    
+
     # Determing Q contour values for evaluating eqlat (no interpolation; too slow)
     K = q.shape[-1] # number of extra dims
     N = (np.prod(shape[:2])-1)//skip + 1 # e.g. // counts number of complete length-<skip> blocks after index 0, then add 0 position
@@ -1053,7 +1053,7 @@ def eqlat(lon, lat, q, skip=10, sigma=None, fix=False): #n=1001, skip=10):
     # Reshape, and return
     return _unflatten(bands, shape, end=2), _unflatten(q_bands, shape, end=2)
 
-def waqlocal(lon, lat, q, 
+def waqlocal(lon, lat, q,
         nh=True, skip=10):
     """
     Get local wave activity measure.
@@ -1064,7 +1064,7 @@ def waqlocal(lon, lat, q,
         * skip, the interval of sorted q you choose (passed to eqlat)
     """
     # Grid considerations
-    if nh: 
+    if nh:
         lat, q = -np.flipud(lat), -np.flip(q, axis=1)
             # negated q, so monotonically increasing "northward"
     grid = Properties(lon, lat)
@@ -1077,7 +1077,7 @@ def waqlocal(lon, lat, q,
     # Get equivalent latiitudes
     bands, q_bands = eqlat(lon, lat, q, skip=skip) # note w is just lonbylat
     L, M, N, K = q.shape[0], q.shape[1], bands.shape[1], q.shape[-1] # number of eqlats, number of extra dims
-    
+
     # Get local wave activity measure, as simple line integrals
     waq = np.empty((L, M, K))
     percent = 0
@@ -1104,7 +1104,7 @@ def waqlocal(lon, lat, q,
                         # partial integrals, positive and negative
                 for l in range(L):
                     # Get individual integral
-                    integral_pos = (anom[l,f_pos[l,:]]*integral[:,f_pos[l,:]]).sum() 
+                    integral_pos = (anom[l,f_pos[l,:]]*integral[:,f_pos[l,:]]).sum()
                     integral_neg = -(anom[l,f_neg[l,:]]*integral[:,f_neg[l,:]]).sum() # minus a negative
                     if mid.size>0:
                         if f_pos_mid[l]: # if positive at this latitude, we add anomaly
@@ -1123,7 +1123,7 @@ def waqlocal(lon, lat, q,
     if nh: waq = np.flip(waq, axis=1)
     return _unflatten(waq, shape)
 
-def waq(lon, lat, q, sigma=None, omega=None, 
+def waq(lon, lat, q, sigma=None, omega=None,
         nh=True, skip=10): #, ignore=None): #N=1001, ignore=None):
     """
     Get finite-amplitude wave activity.
@@ -1137,7 +1137,7 @@ def waq(lon, lat, q, sigma=None, omega=None,
         * nh (bool)
     """
     # Grid considerations
-    if nh: 
+    if nh:
         lat, q = -np.flipud(lat), -np.flip(q, axis=1)
         if omega is not None: omega = -np.flip(omega, axis=1)
         if sigma is not None: sigma = np.flipd(sigma, axis=1)
@@ -1213,7 +1213,308 @@ def waq(lon, lat, q, sigma=None, omega=None,
     return _unflatten(waq, shape)
 
 #------------------------------------------------------------------------------
-# Physical meteorological quantities
+# Changing phase space (to EOFs, spectral decomposition, etc.)
+#------------------------------------------------------------------------------
+def eof(data, neof=5):
+    """
+    Calculates the temporal EOFs, using most efficient method.
+    """
+    return
+
+def autocorr():
+    """
+    Gets the autocorrelation spectrum at successive lags.
+    """
+    return
+
+def rednoisefit():
+    """
+    Returns a best-fit rednoise autocorrelation spectrum.
+    """
+    return
+
+def lowpass(x, k=4, axis=-1): #n=np.inf, kmin=0, kmax=np.inf): #, kscale=1, krange=None, k=None):
+    """
+    Extracts the time series associated with cycle, given by the first k
+    Fourier harmonics for the time series.
+    Does not apply any windowing.
+    """
+    # Naively remove certain frequencies
+    # p = np.abs(fft)**2
+    # f = np.where((freq[1:]>=kmin) | (freq[1:]<=kmax))
+    #     # should ignore first coefficient, the mean
+    # if n==np.inf: fremove = f
+    # else: fremove = f[np.argpartition(p, -n)[-n:]]
+    #         # gets indices of n largest values
+
+    # # And filter back
+    # fft[fremove+1], fft[-fremove-1] = 0+0j, 0+0j
+    #     # fft should be symmetric, so remove locations at corresponding negative freqs
+
+    # Get fourier transform
+    # x = np.rollaxis(x, axis, x.ndim)
+    x = _permute(x, axis)
+    fft = np.fft.fft(x, axis=-1)
+    # freq = np.fft.fftfreq(x.size)*scale
+
+    # Remove the edge case frequencies
+    fft[...,0] = 0
+    fft[...,k+1:-k] = 0
+    # return np.rollaxis(np.fft.ifft(fft).real, x.ndim-1, axis)
+    return _unpermute(np.fft.ifft(fft).real, axis)
+        # FFT will have some error, and give non-zero imaginary components;
+        # just naively cast to real
+
+def lanczos(alpha, J):
+    """
+    Lanczos filtering of data; gives an abrupt high-frequency (low wavenumber)
+    cutoff at omega = alpha*pi, the number of datapoints needed.
+    """
+    C0 = alpha # integral of cutoff-response function is alpha*pi/pi
+    Ck = np.sin(alpha*np.pi*np.arange(1,J+1))*(1/(np.pi*np.arange(1,J+1)))
+    Cktilde = Ck*np.sin(np.pi*np.arange(1,J+1)/J)/(np.pi*np.arange(1,J+1)/J)
+    filt = np.concatenate((np.flipud(Cktilde), np.array([C0]), Cktilde))
+    return filt/filt.sum()
+    # for j,J in enumerate(Jsamp):
+    #     pass
+    # R = lambda Cfunc, omega: C0 + np.sum(
+    #         Cfunc(alpha)*np.cos(omega*np.arange(1,J+1))
+    #         ) # C_tau * cos(omega*tau)
+    # omega = np.linspace(0,np.pi,1000)
+    # Romega = np.empty(omega.size)
+    # Romegatilde = np.empty(omega.size)
+    # for i,o in enumerate(omega): Romega[i] = R(Ck, o)
+    # for i,o in enumerate(omega): Romegatilde[i] = R(Cktilde, o)
+    # a1.plot(omega, Romega, color=colors[j], label=('J=%d' % J))
+    # a2.plot(omega, Romegatilde, color=colors[j], label=('J=%d' % J))
+    # return
+
+def butterworth(*args, **kwargs):
+    """
+    Return Butterworth filter.
+    Wraps around the builtin scipy method.
+    """
+    b, a = signal.butter(*args, **kwargs)
+    return b/a # gives numerate/demoninator of coefficients; we just want floating points
+
+def window(wintype, M=100):
+    """
+    Retrieves weighting function window.
+    """
+    # Prepare window
+    if wintype=='boxcar':
+        win = np.ones(M)
+    elif wintype=='hanning':
+        win = np.hanning(M) # window
+    elif wintype=='hamming':
+        win = np.hamming(M)
+    elif wintype=='blakman':
+        win = np.blackman(M)
+    elif wintype=='kaiser':
+        win = np.kaiser(M, param)
+    elif wintype=='lanczos':
+        win = lanczos(M, param)
+    elif wintype=='butterworth':
+        win = butterworth(M, param)
+    else:
+        raise ValueError('Unknown window type: %s' % (wintype,))
+    return win/win.sum()
+
+def spectrum(x, M=72, wintype='boxcar', param=None, axis=-1):
+    """
+    Gets the spectral decomposition for particular windowing technique.
+    """
+    # Initital stuff; get integer number of half-overlapped windows
+    N = x.size
+    pm = M//2
+    Nround = pm*(N//pm)
+    x = x[:Nround]
+    if N-Nround>0: print(f'Points removed: {N-Nround:d}.')
+
+    # Get copsectrum, quadrature spectrum, and powers for each window
+    win = window(wintype, M)
+    loc = np.arange(pm, Nround-pm+pm//2, pm) # jump by half window length
+    Cx = np.empty((loc.size, pm)) # have half/window size number of freqs
+    for i,l in enumerate(loc):
+        Cx[i,:] = np.abs(np.fft.fft(win*signal.detrend(x[l-pm:l+pm]))[:pm])**2
+        # numpy fft gives power A+Bi, so want sqrt(A^2 + B^2)/2 for +/- wavenumbers
+    freq = np.fft.fftfreq(M)[:pm] # frequency
+    return freq, Cx.mean(axis=0)
+
+def cspectrum(x, y, M=72, wintype='boxcar', param=None, centerphase=np.pi):
+    """
+    Calculates the cross spectrum for particular windowing technique; kwargs
+    are passed to scipy.signal.cpd
+    """
+    # Iniital stuff; get integer number of half-overlapped windows
+    N = x.size
+    pm = M//2
+    Nround = pm*(N//pm)
+    x, y = x[:Nround], y[:Nround]
+    if N-Nround>0: print(f'Points removed: {N-Nround:d}.')
+
+    # Get copsectrum, quadrature spectrum, and powers for each window
+    win = window(wintype, M)
+    loc = np.arange(pm, Nround-pm+pm//2, pm) # jump by half window length
+    shape = (loc.size, pm) # have half window size number of freqs
+    Fxx, Fyy, CO, Q = np.empty(shape), np.empty(shape), np.empty(shape), np.empty(shape)
+    for i,l in enumerate(loc):
+        Cx = np.fft.fft(win*signal.detrend(x[l-pm:l+pm]))[:pm]
+        Cy = np.fft.fft(win*signal.detrend(y[l-pm:l+pm]))[:pm]
+        Fxx[i,:] = np.abs(Cx)**2
+        Fyy[i,:] = np.abs(Cy)**2
+        CO[i,:] = Cx.real*Cy.real + Cx.imag*Cy.imag
+        Q[i,:] = Cx.real*Cy.imag - Cy.real*Cx.imag
+
+    # Get average cospectrum and other stuff, return
+    Fxx, Fyy, CO, Q = Fxx.mean(0), Fyy.mean(0), CO.mean(0), Q.mean(0)
+    Coh = (CO**2 + Q**2)/(Fxx*Fyy) # coherence
+    p = np.arctan2(Q, CO) # phase
+    p[p >= centerphase+np.pi] -= 2*np.pi
+    p[p < centerphase-np.pi] += 2*np.pi
+    freq = np.fft.fftfreq(M)[:pm] # frequency
+    return freq, Coh, p
+
+def autospectrum():
+    """
+    Uses scipy.signal.welch windowing method to generate an estimate of the spectrum.
+    """
+    return
+
+def autocspectrum():
+    """
+    Uses scipy.signal.cpd automated method to generate cross-spectrum estimate.
+    """
+    return
+
+#-------------------------------------------------------------------------------
+# TODO: Finish harvesting this original function written for the Objective
+# Analysis assignment. Consider deleting it.
+#-------------------------------------------------------------------------------
+def spectral(fnm, nm, data, norm=True, win=501,
+            freq_scale=1, scale='days',
+            xlog=True, ylog=False, mc='k',
+            xticks=None,
+            rcolors=('C3','C6'), pcolors=('C0','C1'), alpha=0.99, marker=None,
+            xlim=None, ylim=None, # optional override
+            linewidth=1.5,
+            red_discrete=True, red_contin=True, manual=True, welch=True):
+    '''
+    Spectral transform function. Needs work; was copied from OA
+    assignment and right now just plots a bunch of stuff.
+    '''
+    # Iniital stuff
+    N = len(data)
+    pm = int((win-1)/2)
+    fig, a = plt.subplots(figsize=(15,5))
+
+    # Confidence intervals
+    dof_num = 1.2*2*2*(N/(win/2))
+    trans = 0.5
+    exp = 1
+    F99 = stats.f.ppf(1-(1-alpha)**exp,dof_num,1000)
+    F01 = stats.f.ppf((1-alpha)**exp,dof_num,1000)
+    print('F stats:',F01,F99)
+    rho = np.corrcoef(data[1:],data[:-1])[0,1]
+    kr = np.arange(0,win//2+1)
+    fr = freq_scale*kr/win
+
+    def xtrim(f):
+        if xlim is None:
+            return np.ones(f.size, dtype=bool)
+        else:
+            return ((f>=xlim[0]) & (f<=xlim[-1]))
+
+    # Power spectra
+    if manual:
+        label = 'power spectrum'
+        if welch: label = 'manual method'
+        # Now, manual method with proper overlapping etc.
+        if False:
+            data = data[:(N//pm)*pm]
+        loc = np.linspace(pm,N-pm-1,2*int(np.round(N/win))).round().astype(int) # sample loctaions
+        han = np.hanning(win)
+        han = han/han.sum()
+        phi = np.empty((len(loc),win//2))
+        for i,l in enumerate(loc):
+            pm = int((win-1)/2)
+            C = np.fft.fft(han*signal.detrend(data[l-pm:l+pm+1]))
+            phii = np.abs(C)**2/2
+            phii = 2*phii[1:win//2+1]
+            phi[i,:] = phii
+        phi = phi.mean(axis=0)
+        print('phi sum:',phi.sum())
+        f = np.fft.fftfreq(win)[1:win//2+1]*freq_scale
+        if norm: phi = phi/phi.sum()
+        f, phi = f[xtrim(f)], phi[xtrim(f)] # trim
+        a.plot(f, phi, label=label,
+               mec=mc, mfc=mc, mew=linewidth,
+               marker=marker, color=pcolors[0], linewidth=linewidth)
+        if xlim is None: xlim = ((f*freq_scale).min(), (f*freq_scale).max())
+        if ylim is None: ylim = ((phi.min()*0.95, phi.max()*1.05))
+
+    if welch:
+        label = 'power spectrum'
+        if manual: label = 'welch method'
+        # Welch
+        fw, phi_w = signal.welch(data, nperseg=win, detrend='linear', window='hanning', scaling='spectrum',
+                              return_onesided=False)
+        fw, phi_w = fw[1:win//2+1]*freq_scale, phi_w[1:win//2+1]
+        if norm: phi_w = phi_w/phi_w.sum()
+        fw, phi_w = fw[xtrim(fw)], phi_w[xtrim(fw)] # trim
+        print('phiw sum:',phi_w.sum())
+        a.plot(fw, phi_w, label=label,
+              mec=mc, mfc=mc, mew=linewidth,
+               marker=marker, color=pcolors[-1], linewidth=linewidth)
+        if xlim is None: xlim = ((fw).min(), (fw).max())
+        if ylim is None: ylim = (phi_w.min()*0.95, phi_w.max()*1.05)
+
+    # Best fit red noise spectrum
+    if red_discrete:
+        print('Autocorrelation',rho)
+        phi_r1 = (1-rho**2)/(1+rho**2-2*rho*np.cos(kr*np.pi/(win//2)))
+        print('phi_r1 sum:',phi_r1.sum())
+        if norm: phi_r1 = phi_r1/phi_r1.sum()
+        frp, phi_r1 = fr[xtrim(fr)], phi_r1[xtrim(fr)]
+        a.plot(fr[xtrim(fr)], phi_r1, label=r'red noise, $\rho(\Delta t)$',
+               marker=None, color=rcolors[0], linewidth=linewidth)
+        a.plot(frp, phi_r1*F99, linestyle='--',
+               marker=None, alpha=trans, color=rcolors[0], linewidth=linewidth)
+
+    # Alternate best fit
+    if red_contin:
+        Te = -1/np.log(rho)
+        omega = (kr/win)*np.pi*2
+        phi_r2 = 2*Te/(1+(Te**2)*(omega**2))
+        print('phi_r2 sum:',phi_r2.sum())
+        if norm: phi_r2 = phi_r2/phi_r2.sum()
+        frp, phi_r2 = fr[xtrim(fr)], phi_r2[xtrim(fr)]
+        a.plot(frp, phi_r2, label=r'red noise, $T_e$',
+               marker=None, color=rcolors[1], linewidth=linewidth)
+        a.plot(frp, phi_r2*F99, linestyle='--',
+               marker=None, alpha=trans, color=rcolors[-1], linewidth=linewidth)
+    # Variance
+    print('true variance:',data.std()**2)
+    # Figure formatting
+    a.legend()
+    if ylog:
+        a.set_yscale('log')
+    if xlog:
+        a.set_xscale('log')
+    a.set_title('%s power spectrum' % nm)
+    a.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%5.3g'))
+    a.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    if xticks is None: xticks = a.get_xticks()
+    my.format(a, xlabel=('frequency (%s${}^{-1}$)' % scale), ylabel='proportion variance explained',
+             xlim=xlim, ylim=ylim, xticks=xticks)
+    suffix = 'pdf'
+    fig.savefig('a5_' + fnm + '.' + suffix, format=suffix, dpi='figure')
+    plt.show()
+
+#------------------------------------------------------------------------------
+# TODO: Physical meteorological quantities
+# This sections is *very limited*, and should consider deleting it
+# Should probably be replaced with *climate.py* stuff
 #------------------------------------------------------------------------------
 def pt(lev, T, axis=2):
     print(lev.shape, T.shape)
@@ -1273,11 +1574,11 @@ def qgpv(lon, lat, lev, TT, Phi,
         * Input uneven (bool) says if we use uneven vs. even finite differencing in height.
         * Input forward (bool) says whether we use forward or backward Euler, if not doing uneven method
         * Input fill (bool) says whether we fill points near poles/equator with NaN.
-        ...if the former, input geopotential heights in m; 
-        ...if the latter, input geopotential (NOT heights, actual geopotential)
+        If the former, input geopotential heights in m;
+        If the latter, input geopotential (NOT heights, actual geopotential)
     Equation: qg = f + zeta + (f/rho0)(d/dz)(rho0*(theta-thetabar)/(d/dz)thetabar)
     REDUCES HEIGHT DIMENSION LENGTH BY 4, PRESERVES LON/LAT DIMENSIONS BY WRAPPING; RETURNS
-    ADJUSTED METADATA. 
+    ADJUSTED METADATA.
 
     * Note that, with Z = -Hln(p/p0), have dZ = -H(p0/p)(dp/p0) = -Hd(ln(p)) simply
     log-derivative in height, so the (d/dz)'s in the right-hand term cancel.
@@ -1291,13 +1592,13 @@ def qgpv(lon, lat, lev, TT, Phi,
 
     # The simple 1-D params
     f = 2*const.Omega*np.sin(lat*np.pi/180)[None,:,None] # goes into full qgpv formula
-    rho0 = np.exp(-Z/const.H)[None,None,:] # ...actually is propto, but constants next to exp cancel out below
-    for i in range(3, TT.ndim): # ...add in extra dimensions
+    rho0 = np.exp(-Z/const.H)[None,None,:] # actually is propto, but constants next to exp cancel out below
+    for i in range(3, TT.ndim): # add in extra dimensions
         f, rho0 = f[...,None], rho0[...,None]
-        
+
     # Calculate theta
     theta = pt(lev, TT) # simple as that
-    
+
     # Start clock
     t = T.clock()
 
@@ -1313,9 +1614,12 @@ def qgpv(lon, lat, lev, TT, Phi,
 
     # The giant "stretching" term
     # First, the slice
-    if uneven:     slice_outer, slice_inner = slice(2,-2), slice(1,-1) # used deriv_uneven above
-    elif forward:  slice_outer, slice_inner = slice(None,-2), slice(None,-1) # used diff above above
-    else:          slice_outer, slice_inner = slice(2,None), slice(1,None)
+    if uneven:
+        slice_outer, slice_inner = slice(2,-2), slice(1,-1) # used deriv_uneven above
+    elif forward:
+        slice_outer, slice_inner = slice(None,-2), slice(None,-1) # used diff above above
+    else:
+        slice_outer, slice_inner = slice(2,None), slice(1,None)
     # And calculate
     h = (f/rho0)[:,:,slice_outer,...] * deriv_uneven(Z[slice_inner], (rho0*(theta-thetabar))[:,:,slice_inner,...]/dthetabar_dz, axis=2)
         # try simple differentiation instead
@@ -1333,7 +1637,7 @@ def qgpv(lon, lat, lev, TT, Phi,
         zetag = (1/f)*laplacian(lon, lat, Phi[:,:,2:,...], accuracy=2)
     t, tb = T.clock(), t
     print('Geostrophic vorticity: %s seconds' % (t-tb))
-    
+
     # Adjust for the middle ones, and return
     # if nanfill: q[:,i,...] = np.nan
     # else: q[:,i,...] = q[:,i,...].mean(axis=0, keepdims=True) # will broadcast
@@ -1345,275 +1649,4 @@ def qgpv(lon, lat, lev, TT, Phi,
             if (np.abs(l)<=latmin) or (np.abs(l)>=latmax): q[:,i,...] = q[:,i,...].mean(axis=0,keepdims=True)
     # Return, finally
     return q
-
-#------------------------------------------------------------------------------
-# Changing phase space (to EOFs, spectral decomposition, etc.)
-#------------------------------------------------------------------------------
-def eof(data, neof=5):
-    """
-    Calculates the temporal EOFs, using most efficient method.
-    """
-    # What
-    return
-
-def lowpass(x, k=4, axis=-1): #n=np.inf, kmin=0, kmax=np.inf): #, kscale=1, krange=None, k=None):
-    """
-    Extracts the time series associated with cycle, given by the first k
-    Fourier harmonics for the time series.
-    """
-    # Naively remove certain frequencies
-    # p = np.abs(fft)**2
-    # f = np.where((freq[1:]>=kmin) | (freq[1:]<=kmax))
-    #     # ...should ignore first coefficient, the mean
-    # if n==np.inf: fremove = f
-    # else: fremove = f[np.argpartition(p, -n)[-n:]]
-    #         # ...gets indices of n largest values
-    
-    # # And filter back
-    # fft[fremove+1], fft[-fremove-1] = 0+0j, 0+0j
-    #     # ...fft should be symmetric, so remove locations at corresponding negative freqs
-
-    # Get fourier transform
-    # x = np.rollaxis(x, axis, x.ndim)
-    x = _permute(x, axis)
-    fft = np.fft.fft(x, axis=-1)
-    # freq = np.fft.fftfreq(x.size)*scale
-    
-    # Remove the edge case frequencies
-    fft[...,0] = 0
-    fft[...,k+1:-k] = 0
-    # return np.rollaxis(np.fft.ifft(fft).real, x.ndim-1, axis)
-    return _unpermute(np.fft.ifft(fft).real, axis)
-        # FFT will have some error, and give non-zero imaginary components; 
-        # just naively cast to real
-
-def lanczos(alpha, J):
-    """
-    Lanczos filtering of data; gives an abrupt high-frequency (low wavenumber)
-    cutoff at omega = alpha*pi,
-    the number of datapoints needed.
-    """
-    C0 = alpha # integral of cutoff-response function is alpha*pi/pi
-    Ck = np.sin(alpha*np.pi*np.arange(1,J+1))*(1/(np.pi*np.arange(1,J+1)))
-    Cktilde = Ck*np.sin(np.pi*np.arange(1,J+1)/J)/(np.pi*np.arange(1,J+1)/J)
-    filt = np.concatenate((np.flipud(Cktilde), np.array([C0]), Cktilde))
-    return filt/filt.sum()
-    # return filt
-    # for j,J in enumerate(Jsamp):
-    #     pass
-    # R = lambda Cfunc, omega: C0 + np.sum(
-    #         Cfunc(alpha)*np.cos(omega*np.arange(1,J+1))
-    #         ) # C_tau * cos(omega*tau)
-    # omega = np.linspace(0,np.pi,1000)
-    # Romega = np.empty(omega.size)
-    # Romegatilde = np.empty(omega.size)
-    # for i,o in enumerate(omega): Romega[i] = R(Ck, o)
-    # for i,o in enumerate(omega): Romegatilde[i] = R(Cktilde, o)
-    # a1.plot(omega, Romega, color=colors[j], label=('J=%d' % J))
-    # a2.plot(omega, Romegatilde, color=colors[j], label=('J=%d' % J))
-    # return
-
-def window(wintype, M=100):
-    """
-    Retrieves weighting function window.
-    """
-    # Prepare window
-    if wintype=='boxcar':
-        win = np.ones(M)
-    elif wintype=='hanning':
-        win = np.hanning(M) # window
-    elif wintype=='hamming':
-        win = np.hamming(M)
-    elif wintype=='blakman':
-        win = np.blackman(M)
-    elif wintype=='kaiser':
-        win = np.kaiser(M, param)
-    elif wintype=='lanczos':
-        win = lanczos(M, param)
-    else:
-        raise ValueError('Unknown window type: %s' % (wintype,))
-    return win/win.sum()
-
-def power(x, M=72, wintype='boxcar', param=None, axis=-1):
-    """
-    Gets the spectral decomposition for particular windowing technique; kwargs
-    are passed to scipy.signal.welch
-    """
-    # Iniital stuff; get integer number of half-overlapped windows
-    N = x.size
-    pm = M//2
-    Nround = pm*(N//pm)
-    x = x[:Nround]
-    # print('Points removed: %d' % (N-Nround,))
-
-    # Get copsectrum, quadrature spectrum, and powers for each window
-    win = window(wintype, M)
-    loc = np.arange(pm, Nround-pm+pm//2, pm) # jump by half window length
-    Cx = np.empty((loc.size, pm)) # have half/window size number of freqs
-    for i,l in enumerate(loc):
-        Cx[i,:] = np.abs(np.fft.fft(win*sig.detrend(x[l-pm:l+pm]))[:pm])**2
-        # ...numpy fft gives power A+Bi, so want sqrt(A^2 + B^2)/2 for +/- wavenumbers
-    freq = np.fft.fftfreq(M)[:pm] # frequency
-    return freq, Cx.mean(axis=0)
-
-# def cps(x, y, **kwargs):
-def cps(x, y, M=72, wintype='boxcar', param=None, centerphase=np.pi):
-    """
-    Calculates the cross spectrum for particular windowing technique; kwargs
-    are passed to scipy.signal.cpd
-    """
-    # Iniital stuff; get integer number of half-overlapped windows
-    N = x.size
-    pm = M//2
-    Nround = pm*(N//pm)
-    x, y = x[:Nround], y[:Nround]
-    print('Points removed: %d' % (N-Nround,))
-
-    # Get copsectrum, quadrature spectrum, and powers for each window
-    win = window(wintype, M)
-    loc = np.arange(pm, Nround-pm+pm//2, pm) # jump by half window length
-    shape = (loc.size, pm) # have half window size number of freqs
-    Fxx, Fyy, CO, Q = np.empty(shape), np.empty(shape), np.empty(shape), np.empty(shape)
-    for i,l in enumerate(loc):
-        Cx = np.fft.fft(win*sig.detrend(x[l-pm:l+pm]))[:pm]
-        Cy = np.fft.fft(win*sig.detrend(y[l-pm:l+pm]))[:pm]
-        Fxx[i,:] = np.abs(Cx)**2
-        Fyy[i,:] = np.abs(Cy)**2
-        CO[i,:] = Cx.real*Cy.real + Cx.imag*Cy.imag
-        Q[i,:] = Cx.real*Cy.imag - Cy.real*Cx.imag
-        
-    # Get average cospectrum and other stuff, return
-    Fxx, Fyy, CO, Q = Fxx.mean(0), Fyy.mean(0), CO.mean(0), Q.mean(0)
-    Coh = (CO**2 + Q**2)/(Fxx*Fyy) # coherence
-    p = np.arctan2(Q, CO) # phase
-    p[p >= centerphase+np.pi] -= 2*np.pi
-    p[p < centerphase-np.pi] += 2*np.pi
-    freq = np.fft.fftfreq(M)[:pm] # frequency
-    return freq, Coh, p
-
-def spectral(fnm, nm, data, norm=True, win=501, 
-            freq_scale=1, scale='days',
-            xlog=True, ylog=False, mc='k',
-            xticks=None,
-            rcolors=('C3','C6'), pcolors=('C0','C1'), alpha=0.99, marker=None,
-            xlim=None, ylim=None, # optional override
-            linewidth=1.5,
-            red_discrete=True, red_contin=True, manual=True, welch=True):
-    # Iniital stuff
-    N = len(data)
-    pm = int((win-1)/2)
-    fig, a = plt.subplots(figsize=(15,5))
-            
-    # Confidence intervals
-    dof_num = 1.2*2*2*(N/(win/2))
-    trans = 0.5
-    exp = 1
-    F99 = st.f.ppf(1-(1-alpha)**exp,dof_num,1000)
-    F01 = st.f.ppf((1-alpha)**exp,dof_num,1000)
-    print('F stats:',F01,F99)
-    rho = np.corrcoef(data[1:],data[:-1])[0,1]
-    kr = np.arange(0,win//2+1)
-    fr = freq_scale*kr/win
-    
-    def xtrim(f):
-        if xlim is None:
-            return np.ones(f.size, dtype=bool)
-        else:            
-            return ((f>=xlim[0]) & (f<=xlim[-1]))
-    
-    # Power spectra
-    if manual:
-        label = 'power spectrum'
-        if welch: label = 'manual method'
-        # Now, manual method with proper overlapping etc.
-        if False:
-            data = data[:(N//pm)*pm]
-        loc = np.linspace(pm,N-pm-1,2*int(np.round(N/win))).round().astype(int) # sample loctaions
-        han = np.hanning(win)
-        han = han/han.sum()
-        phi = np.empty((len(loc),win//2))
-        for i,l in enumerate(loc):
-            pm = int((win-1)/2)
-            C = np.fft.fft(han*sig.detrend(data[l-pm:l+pm+1]))
-    #         C = 2*C[1:win//2+1]
-            phii = np.abs(C)**2/2
-            phii = 2*phii[1:win//2+1]
-            phi[i,:] = phii
-        phi = phi.mean(axis=0)
-        print('phi sum:',phi.sum())   
-        f = np.fft.fftfreq(win)[1:win//2+1]*freq_scale
-        if norm: phi = phi/phi.sum()
-        f, phi = f[xtrim(f)], phi[xtrim(f)] # trim
-        a.plot(f, phi, label=label, 
-               mec=mc, mfc=mc, mew=linewidth,
-               marker=marker, color=pcolors[0], linewidth=linewidth)
-        if xlim is None: xlim = ((f*freq_scale).min(), (f*freq_scale).max())
-        if ylim is None: ylim = ((phi.min()*0.95, phi.max()*1.05))   
-            
-    if welch:
-        label = 'power spectrum'
-        if manual: label = 'welch method'
-        # Welch
-        fw, phi_w = sig.welch(data, nperseg=win, detrend='linear', window='hanning', scaling='spectrum', 
-                              return_onesided=False)
-        fw, phi_w = fw[1:win//2+1]*freq_scale, phi_w[1:win//2+1]
-        if norm: phi_w = phi_w/phi_w.sum()
-        fw, phi_w = fw[xtrim(fw)], phi_w[xtrim(fw)] # trim
-        print('phiw sum:',phi_w.sum()) 
-        a.plot(fw, phi_w, label=label, 
-              mec=mc, mfc=mc, mew=linewidth,
-               marker=marker, color=pcolors[-1], linewidth=linewidth)
-        if xlim is None: xlim = ((fw).min(), (fw).max())
-        if ylim is None: ylim = (phi_w.min()*0.95, phi_w.max()*1.05)
-
-    
-    # Best fit red noise spectrum
-    if red_discrete:
-        print('Autocorrelation',rho)
-        phi_r1 = (1-rho**2)/(1+rho**2-2*rho*np.cos(kr*np.pi/(win//2)))
-        print('phi_r1 sum:',phi_r1.sum()) 
-        if norm: phi_r1 = phi_r1/phi_r1.sum()
-        frp, phi_r1 = fr[xtrim(fr)], phi_r1[xtrim(fr)]
-        a.plot(fr[xtrim(fr)], phi_r1, label=r'red noise, $\rho(\Delta t)$',
-               marker=None, color=rcolors[0], linewidth=linewidth)
-        a.plot(frp, phi_r1*F99, linestyle='--', 
-               marker=None, alpha=trans, color=rcolors[0], linewidth=linewidth)
-#         a.plot(frp, phi_r1*F01, linestyle='--', 
-#                marker=None, alpha=trans, color=rcolors[0], linewidth=linewidth)
-    
-    # Alternate best fit
-    if red_contin:
-        Te = -1/np.log(rho)
-        omega = (kr/win)*np.pi*2
-        phi_r2 = 2*Te/(1+(Te**2)*(omega**2))
-        print('phi_r2 sum:',phi_r2.sum()) 
-        if norm: phi_r2 = phi_r2/phi_r2.sum()
-        frp, phi_r2 = fr[xtrim(fr)], phi_r2[xtrim(fr)]
-        a.plot(frp, phi_r2, label=r'red noise, $T_e$',
-               marker=None, color=rcolors[1], linewidth=linewidth)
-        a.plot(frp, phi_r2*F99, linestyle='--', 
-               marker=None, alpha=trans, color=rcolors[-1], linewidth=linewidth)
-#         a.plot(frp, phi_r2*F01, linestyle='--', 
-#                marker=None, alpha=trans, color=rcolors[-1], linewidth=linewidth)
-        
-    # Variance
-    print('true variance:',data.std()**2)
-    
-    # Figure formatting
-    a.legend()
-    if ylog:
-        a.set_yscale('log')
-    if xlog:
-        a.set_xscale('log')
-#     a.set_ylim((1e-5,1.05*max(phi.max(),phi_w.max())))
-    a.set_title('%s power spectrum' % nm)
-#     a.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(10))
-    a.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%5.3g'))
-    a.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
-    if xticks is None: xticks = a.get_xticks()
-    my.format(a, xlabel=('frequency (%s${}^{-1}$)' % scale), ylabel='proportion variance explained',
-             xlim=xlim, ylim=ylim, xticks=xticks)
-    suffix = 'pdf'
-    fig.savefig('a5_' + fnm + '.' + suffix, format=suffix, dpi='figure')
-    plt.show()
 
