@@ -43,6 +43,7 @@ except ModuleNotFoundError:
 # import string # for converting number to a/b/c
 # import matplotlib.pyplot as plt # will attach a suitable backend, make available the figure/axes modules
 import numpy as np # of course
+import pandas as pd
 # __all__ = [
 #     'Figure',
 #     'subplots', 'cmapload', 'settings', # basic setup
@@ -223,7 +224,7 @@ def globals(*args, **kwargs):
         add('title',       {'size':d['bsize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
         add('label',       {'size':d['ssize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
         add('ticklabels',  {'size':d['ssize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
-        add('gridminor',   {'linestyle':':', 'linewidth':d['linewidth']/2, 'color':d['color'], 'alpha':0.05})
+        add('gridminor',   {'linestyle':'-', 'linewidth':d['linewidth']/2, 'color':d['color'], 'alpha':0.1})
         add('cgrid',       {'color':d['color'], 'linewidth':d['linewidth']})
         add('continents',  {'color':d['color']})
         add('tickminor',   {'length':d['ticklen']/2, 'width':d['linewidth'], 'color':d['color']})
@@ -406,6 +407,22 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
 #------------------------------------------------------------------------------
 # Color stuff
 #------------------------------------------------------------------------------
+def hcl(c, degrees=False, gamma=3): # gamma is default
+    """
+    Convert color to HCL space.
+    See wiki page: https://en.wikipedia.org/wiki/HCL_color_space
+    """
+    rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
+    alpha = (min(rgb)/max(rgb))/100 # intermediary
+    q = np.exp(alpha*gamma) # intermediary
+    r, g, b = rgb # expand out, easier
+    h = np.arctan2(g-b, r-g)
+    h = 2*np.pi+h if h<0 else h # make positive
+    h = h*180/np.pi if degrees else h/(2*np.pi) # normalize to 0-1 possibly
+    c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
+    l = (q*max(rgb) + (1-q)*min(rgb))/2
+    return (h,c,l)
+
 def shade(color, value=1, saturation=1):
     """
     Modify a color.
@@ -420,8 +437,7 @@ def shade(color, value=1, saturation=1):
     color = mcolors.hsv_to_rgb(color)
     return mcolors.to_hex(color) # hex codes are nice, mmkay
 
-def colorshow(string=None, ncols=4, nbreak=12, minsat=0.1,
-        cycle=False, space=1, swatch=1):
+def colorshow(ncols=4, nbreak=12, minsat=0.1, cycle=False):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
@@ -431,105 +447,109 @@ def colorshow(string=None, ncols=4, nbreak=12, minsat=0.1,
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map (see soure code; is just a dictionary wrapper
     # on some simple lists)
-    string = string or 'open'
-    if string.lower()=='css':
-        colors = mcolors.CSS4_COLORS # forget base colors, have them already; e.g. 'r' equals 'red'
-    elif string.lower()=='xkcd':
-        colors = mcolors.XKCD_COLORS
-    elif string.lower()=='open':
-        colors = mcolors.OPEN_COLORS
-    # elif string.lower()=='all':
-    #     colors = {**mcolors.CSS4_COLORS, **mcolors.XKCD_COLORS}
-    else:
-        raise ValueError(f"Unknown category \"{string}\".")
-    # colors = {**mcolors.XKCD_COLORS}
-    # Optionally cycle colors; they are not in the _colors_full_map list, so must add manually
-    # But probably better to use cycleshow for this
-    if cycle:
-        seen = set() # trickery
-        cyclecolors = mpl.rcParams['axes.prop_cycle'].by_key()['color']
-        cyclecolors = [color for color in cyclecolors if not (color in seen or seen.add(color))] # trickery
-        colors = {**colors, **{f'C{i}':v for i,v in enumerate(cyclecolors)}}
-    # colors = {**mcolors.BASE_COLORS, **mcolors.XKCD_COLORS}
-    # Sort colors by hue, saturation, value and name; then plot
-    # Old, clunky method
-    if string not in ('all','xkcd','open'):
-        # Sort values
-        by_hsv = sorted( (tuple(mcolors.rgb_to_hsv(mcolors.to_rgba(color)[:3])), name) # an RGBtuple,name tuple
-            for name,color in colors.items()) # sorts by first element in HSV tuple if different; then second; then third
-        sorted_names = [name for hsv,name in by_hsv]
-        # Create plot with mysterious methods
-        figsize = (8, 5*(len(colors)/ncols)/40) # default is 5 inches tall when 40 colors present
-        fig, ax = plt.subplots(figsize=figsize)
-        nrows = len(sorted_names) // ncols + 1
-        X, Y = fig.get_dpi() * fig.get_size_inches()
-        h = Y/(nrows + 1)
-        w = X/ncols
-        for i,name in enumerate(sorted_names):
-            col = i % ncols
-            row = i // ncols
-            y   = Y - (row * h) - h
-            xi_line = w*(col + 0.05)
-            xf_line = w*(col + 0.25)
-            xi_text = w*(col + 0.3)
-            displayname = name.split('xkcd:')[-1]
-            n_names = len([n for n in sorted_names if n==displayname])
-            if n_names>1:
-                print(f"Warning: \"{name}\" appears {n_names} times.")
-            ax.text(xi_text, y, displayname, fontsize=h*0.8, ha='left', va='center')
-            ax.hlines(y + h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
-    # New method, that groups colors together by discrete range of hue then sorts by value
-    else:
-        # Fancy sort by grouping into hue categories, then sorting values; easy peasy
-        # if string in ['open']: # group manually
-        if string in ['open']:
-            space = 0.5
-            swatch = 1.5
-            names = ["gray", "red", "pink", "grape", "violet", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "orange"]
-            nrows, ncols = 10, len(names) # rows and columns
-            sorted_names = [[name+str(i) for i in range(nrows)] for name in names]
-        else: # group
-            ncols = nbreak-1 # group by breakpoint
-            colors_hsv = {k:tuple(mcolors.rgb_to_hsv(mcolors.to_rgb(v))) for k,v in colors.items()}
-            breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
-            sorted_names = [] # initialize
-            testsat = (lambda x: x<minsat) # test saturation
-            for n in range(len(breakpoints)):
-                if n==0: # grays
-                    fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
-                        if testsat(hsv[1])]
-                else: # colors
-                    start, end = breakpoints[n-1], breakpoints[n]
-                    testhue = (lambda x: start<=x<=end) if end is breakpoints[-1] \
-                        else (lambda x: start<=x<end) # two possible tests
-                    fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
-                        if testhue(hsv[0]) and not testsat(hsv[1])] # grays have separate category
-                sorted_index = np.argsort([v[1][-1] for v in fcolors]) # indices to build sorted list
-                sorted_names.append([fcolors[i][0] for i in sorted_index]) # append sorted list
-            nrows = max(len(huelist) for huelist in sorted_names) # number of rows
-        # Create plot by iterating over columns 
-        figsize = (8*space*(ncols/4), 5*(nrows/40)) # 5in tall with 40 colors in column
-        fig, ax = plt.subplots(figsize=figsize)
-        X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
-        h, w = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
-        for col,huelist in enumerate(sorted_names):
-            for row,name in enumerate(huelist): # list of colors in hue category
-                y = Y - (row * h) - h
+    figs = []
+    for string in ['open','xkcd']:
+        string = string or 'open'
+        if string.lower()=='css':
+            colors = mcolors.CSS4_COLORS # forget base colors, have them already; e.g. 'r' equals 'red'
+        elif string.lower()=='xkcd':
+            colors = mcolors.XKCD_SORTED
+        elif string.lower()=='open':
+            colors = mcolors.OPEN_COLORS
+        else:
+            raise ValueError(f"Unknown category \"{string}\".")
+        # colors = {**mcolors.XKCD_SORTED}
+        # Optionally cycle colors; they are not in the _colors_full_map list, so must add manually
+        # But probably better to use cycleshow for this
+        if cycle:
+            seen = set() # trickery
+            cyclecolors = mpl.rcParams['axes.prop_cycle'].by_key()['color']
+            cyclecolors = [color for color in cyclecolors if not (color in seen or seen.add(color))] # trickery
+            colors = {**colors, **{f'C{i}':v for i,v in enumerate(cyclecolors)}}
+        # colors = {**mcolors.BASE_COLORS, **mcolors.XKCD_SORTED}
+        # Sort colors by hue, saturation, value and name; then plot
+        # Old, clunky method
+        if string not in ('all','xkcd','open'):
+            # Sort values
+            by_hsv = sorted( (tuple(mcolors.rgb_to_hsv(mcolors.to_rgba(color)[:3])), name) # an RGBtuple,name tuple
+                for name,color in colors.items()) # sorts by first element in HSV tuple if different; then second; then third
+            sorted_names = [name for hsv,name in by_hsv]
+            # Create plot with mysterious methods
+            figsize = (8, 5*(len(colors)/ncols)/40) # default is 5 inches tall when 40 colors present
+            fig, ax = plt.subplots(figsize=figsize)
+            nrows = len(sorted_names) // ncols + 1
+            X, Y = fig.get_dpi() * fig.get_size_inches()
+            h = Y/(nrows + 1)
+            w = X/ncols
+            for i,name in enumerate(sorted_names):
+                col = i % ncols
+                row = i // ncols
+                y   = Y - (row * h) - h
                 xi_line = w*(col + 0.05)
-                xf_line = w*(col + 0.25*swatch)
-                xi_text = w*(col + 0.25*swatch + 0.05)
-                print_name = name.split('xkcd:')[-1] # make sure no xkcd:
-                ax.text(xi_text, y, print_name, fontsize=h*0.8, ha='left', va='center')
-                ax.hlines(y+h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
-    ax.set_xlim(0,X)
-    ax.set_ylim(0,Y)
-    ax.set_axis_off()
-    fig.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
-    plt.show()
-    # Save
-    fig.savefig(f'{os.path.dirname(__file__)}/colors.pdf',
-            bbox_inches='tight', format='pdf')
-    return fig
+                xf_line = w*(col + 0.25)
+                xi_text = w*(col + 0.3)
+                displayname = name.split('xkcd:')[-1]
+                n_names = len([n for n in sorted_names if n==displayname])
+                if n_names>1:
+                    print(f"Warning: \"{name}\" appears {n_names} times.")
+                ax.text(xi_text, y, displayname, fontsize=h*0.8, ha='left', va='center')
+                ax.hlines(y + h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
+        # New method, that groups colors together by discrete range of hue then sorts by value
+        else:
+            # Fancy sort by grouping into hue categories, then sorting values; easy peasy
+            # if string in ['open']: # group manually
+            if string in ['open']:
+                space = 0.5
+                swatch = 1.5
+                names = ["gray", "red", "pink", "grape", "violet", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "orange"]
+                nrows, ncols = 10, len(names) # rows and columns
+                sorted_names = [[name+str(i) for i in range(nrows)] for name in names]
+            else: # just xkcd right now
+                space = 1
+                swatch = 1
+                ncols = nbreak-1 # group by breakpoint
+                colors_hsv = {k:tuple(mcolors.rgb_to_hsv(mcolors.to_rgb(v))) for k,v in colors.items()}
+                breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
+                sorted_names = [] # initialize
+                testsat = (lambda x: x<minsat) # test saturation
+                for n in range(len(breakpoints)):
+                    if n==0: # grays
+                        fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
+                            if testsat(hsv[1])]
+                        sortfunc = lambda x: 3*x[2]+x[0]
+                    else: # colors
+                        start, end = breakpoints[n-1], breakpoints[n]
+                        testhue = (lambda x: start<=x<=end) if end is breakpoints[-1] \
+                            else (lambda x: start<=x<end) # two possible tests
+                        fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
+                            if testhue(hsv[0]) and not testsat(hsv[1])] # grays have separate category
+                        sortfunc = lambda x: 3*x[2]+x[1]
+                    sorted_index = np.argsort([sortfunc(v[1]) for v in fcolors]) # indices to build sorted list
+                    sorted_names.append([fcolors[i][0] for i in sorted_index]) # append sorted list
+                nrows = max(len(huelist) for huelist in sorted_names) # number of rows
+            # Create plot by iterating over columns 
+            figsize = (8*space*(ncols/4), 5*(nrows/40)) # 5in tall with 40 colors in column
+            fig, ax = plt.subplots(figsize=figsize)
+            X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
+            h, w = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
+            for col,huelist in enumerate(sorted_names):
+                for row,name in enumerate(huelist): # list of colors in hue category
+                    y = Y - (row * h) - h
+                    xi_line = w*(col + 0.05)
+                    xf_line = w*(col + 0.25*swatch)
+                    xi_text = w*(col + 0.25*swatch + 0.03*swatch)
+                    print_name = name.split('xkcd:')[-1] # make sure no xkcd:
+                    ax.text(xi_text, y, print_name, fontsize=h*0.8, ha='left', va='center')
+                    ax.hlines(y+h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
+        ax.set_xlim(0,X)
+        ax.set_ylim(0,Y)
+        ax.set_axis_off()
+        fig.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
+        # Save
+        fig.savefig(f'{os.path.dirname(__file__)}/colors_{string}.pdf',
+                bbox_inches='tight', format='pdf')
+        figs += [fig]
+    return figs
 
 def cycleshow():
     """
@@ -1625,16 +1645,19 @@ def _format(self,
         minor_kw = globals('tickminor') if tickdir is None else dict(globals('tickminor'), direction=tickdir)
         axis.set_tick_params(which='major', **sides_kw, **major_kw)
         axis.set_tick_params(which='minor', **sides_kw, **minor_kw) # have length
-        if type(grid) is bool:
+        # Major ticks/grids
+        if type(grid) is bool: # grid changes must be after tick
             axis.grid(grid, which='major')
-        if type(gridminor) is bool:
-            axis.grid(gridminor and tickminor, which='minor') # ignore if no minor ticks
         for tick in axis.majorTicks:
             tick.gridline.update(globals('grid'))
+        # Minor ticks/grids
         for tick in axis.minorTicks:
-            tick.gridline.update(globals('gridminor'))
             if tickminor is not None:
                 tick.set_visible(tickminor)
+        if type(gridminor) is bool:
+            axis.grid(gridminor, which='minor', alpha=1) # ignore if no minor ticks
+        for tick in axis.minorTicks:
+            tick.gridline.update(globals('gridminor'))
 
         # Label properties
         axis.label.update(globals('label'))
@@ -2122,7 +2145,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             hwidth = 0.5
         if wwidth is None:
             wwidth = 0.5
-        if any(s not in 'tblr' for s in whichpanels) or whichpanels=='':
+        if any(s.lower() not in 'tblr' for s in whichpanels) or whichpanels=='':
             raise ValueError("Whichpanels argument can contain characters l (left), r (right), "
                     "b (bottom), or t (top).")
         # Determine number of rows/columns, position of the
@@ -2131,9 +2154,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         nrows_i, ncols_i = 1, 1
         for s in whichpanels:
             if s in ('b','t'):
-                ncols_i += 1
-            if s in ('l','r'):
                 nrows_i += 1
+            if s in ('l','r'):
+                ncols_i += 1
         bad_pos = []
         main_pos = [0,0]
         if 't' in whichpanels:
@@ -2873,9 +2896,36 @@ fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
         [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
             glob(f"{mpl.matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf")]
 fonts = sorted(set(fonts)) # unique ones only
+#-------------------------------------------------------------------------------
+# Register new colormaps; must come before registering the color cycles
+_announcement = False
+for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
+    if '.rgb' in _file or '.hex' in _file:
+        _name = os.path.basename(_file)[:-4]
+        if _name not in plt.colormaps(): # don't want to re-register every time
+            if '.rgb' in _file: # table or RGB values
+                _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
+                try: _cmap = np.loadtxt(_file, **_load)
+                except:
+                    print(f'Failed to load {_name}.')
+                    continue
+                if (_cmap>1).any(): _cmap = _cmap/255
+            else: # list of hex strings
+                _cmap = [*open(_file)][0] # just a single line
+                _cmap = _cmap.strip().split(',') # csv hex strings
+                _cmap = np.array([mcolors.to_rgb(_) for _ in _cmap]) # from list of tuples
+            _N = len(_cmap) # simple as that; number of rows of colors
+            if 'lines' not in _name.lower():
+                _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
+            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
+            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
+            if not _announcement: # only do this if register at least one new map
+                _announcement = True
+                print("Registered colormaps.")
+#-------------------------------------------------------------------------------
 # Register colors by adding them to _colors_full_map
-# * First, will make xkcd colors no longer prefixed by xkcd:
-# * Next register the 
+# * So far register opencolors and the "N most popular" xkcd colors; downloaded
+#   them directly from the txt file.
 _announcement = False
 _opencolors = { "gray":   ["#f8f9fa", "#f1f3f5", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057", "#343a40", "#212529"],
       "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
@@ -2894,7 +2944,11 @@ mcolors.OPEN_COLORS = {} # create separate dictionary for them
 for _name,_colors in _opencolors.items(): # iterate through json values
     for _i,_color in enumerate(_colors):
         mcolors.OPEN_COLORS[_name+str(_i)] = _color
-colors = {**mcolors.XKCD_COLORS, **mcolors.OPEN_COLORS} # initialize the color dictionary
+_xkcdcolors = pd.read_csv(f"{os.path.dirname(__file__)}/xkcd.txt",
+    delimiter='\t', header=None, usecols=(0,1)).values.tolist() # load myself so can sort by popularity
+mcolors.XKCD_SORTED = {tup[0]:tup[1] for i,tup in enumerate(_xkcdcolors[::-1])
+    if i<256} # filter to N most popular
+colors = {**mcolors.XKCD_SORTED, **mcolors.OPEN_COLORS} # initialize the color dictionary
 for name,value in colors.items():
     _color = name.split('xkcd:')[-1] # for now this is it
     if _color not in mcolors._colors_full_map:
@@ -2902,6 +2956,7 @@ for name,value in colors.items():
         if not _announcement: # only do this if adding at least one new color
             _announcement = True
             print("Registered colors.")
+#-------------------------------------------------------------------------------
 # Register color new color styles
 cycles = {'default':['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'], # default V2 matplotlib
     # copied from stylesheets; stylesheets just add color themese from every
@@ -2930,31 +2985,7 @@ for _cycle in cycles.values():
     if not isinstance(_cycle[0],str) and any(c>1 for tup in _cycle for c in tup):
         _cycle[:] = [tuple(np.array(_)/255) for _ in _cycle] # tuple of decimal RGB values
     _cycle[:] = [mcolors.to_hex(_, keep_alpha=False) for _ in _cycle] # standardize; will also convert hes to lower case
-# Register colormaps immediately on import
-_announcement = False
-for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
-    if '.rgb' in _file or '.hex' in _file:
-        _name = os.path.basename(_file)[:-4]
-        if _name not in plt.colormaps(): # don't want to re-register every time
-            if '.rgb' in _file: # table or RGB values
-                _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
-                try: _cmap = np.loadtxt(_file, **_load)
-                except:
-                    print(f'Failed to load {_name}.')
-                    continue
-                if (_cmap>1).any(): _cmap = _cmap/255
-            else: # list of hex strings
-                _cmap = [*open(_file)][0] # just a single line
-                _cmap = _cmap.strip().split(',') # csv hex strings
-                _cmap = np.array([mcolors.to_rgb(_) for _ in _cmap]) # from list of tuples
-            _N = len(_cmap) # simple as that; number of rows of colors
-            if 'lines' not in _name.lower():
-                _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
-            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
-            plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
-            if not _announcement: # only do this if register at least one new map
-                _announcement = True
-                print("Registered colormaps.")
+#-------------------------------------------------------------------------------
 # Now call the function to configure params
 # Without arguments, will just apply my defaults
 globals()
