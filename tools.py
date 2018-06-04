@@ -150,7 +150,7 @@ def eraint(params, stream, levtype,
         daterange=None, yearrange=None, monthrange=None, dayrange=None,
         years=None, months=None, # can specify list
         levrange=None, levs=None,
-        hours=(0,6,12,18),
+        hours=(0,6,12,18), hour=None,
         res=1.0, box=None,
         filename='eraint.nc'):
     """
@@ -246,7 +246,7 @@ def eraint(params, stream, levtype,
         if stream=='moda':
             y0, m0, y1, m1 = daterange[0].year, daterange[0].month, daterange[1].year, daterange[1].month
             N = max(y1-y0-1, 0)*12 + (13-m0) + m1 # number of months in range
-            dates = '/'.join('%04d%02d00' % (y0 + (m0+n-1)//12, (m0+n-1)%12 + 1) for m in range(N))
+            dates = '/'.join('%04d%02d00' % (y0 + (m0+n-1)//12, (m0+n-1)%12 + 1) for n in range(N))
         else:
             dates = '/to/'.join(d.strftime('%Y%m%d') for d in daterange) # MARS will get calendar days in range
     # Alternative; list the years/months desired, and if synoptic, get all calendar days within
@@ -650,10 +650,12 @@ def haversine(lon1, lat1, lon2, lat2):
     """
     # Earth radius, in km
     R = const.a*1e-3
+
     # Convert to radians, get differences
     lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
     dlat = lat2 - lat1
+
     # Haversine, in km
     km = 2.*R*np.arcsin(np.sqrt(
         np.sin(dlat/2.)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2.)**2
@@ -727,12 +729,14 @@ def slope(x, y, axis=-1):
     y = np.rollaxis(y, axis, y.ndim).T # reverses dimension order
     yshape = y.shape # save shape
     y = np.reshape(y, (yshape[0], np.prod(yshape[1:])), order='F')
+
     # Next, supply to polyfit
     coeff = np.polyfit(x, y, deg=1) # is ok with 2d input data
         # DOES NOT accept more than 2d; also, much faster than loop with stats.linregress
+
     # And finally, make
+    # Coefficients are returned in reverse; e.g. 2-deg fit gives c[0]*x^2 + c[1]*x + c[2]
     slopes = coeff[0,:]
-        # Coefficients are returned in reverse; e.g. 2-deg fit gives c[0]*x^2 + c[1]*x + c[2]
     slopes = np.reshape(slopes, (1, y.shape[1:]), order='F').T
     return np.rollaxis(slopes, y.ndim-1, axis)
 
@@ -905,6 +909,7 @@ def deriv2_uneven(x, y, axis=0, keepedges=False): # alternative
     if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
         raise ValueError('x and y dimensions do not match along derivative axis.')
     x, y = _permute(x, xaxis), _permute(y, axis)
+
     # Formulation from this link: https://mathformeremortals.wordpress.com/2013/01/12/a-numerical-second-derivative-from-three-points/#comments
     # Identical to this link: http://www.m-hikari.com/ijma/ijma-password-2009/ijma-password17-20-2009/bhadauriaIJMA17-20-2009.pdf
     x0, x1, x2 = x[...,:-2], x[...,1:-1], x[...,2:]
@@ -927,6 +932,7 @@ def deriv3_uneven(x, y, axis=0, keepedges=False): # alternative
     if x.shape[xaxis] != y.shape[axis]: # allow broadcasting rules to be used along other axes
         raise ValueError('x and y dimensions do not match along derivative axis.')
     x, y = _permute(x, xaxis), _permute(y, axis)
+
     # Formulation from the same PDF shown above
     # First 4-point formula, which is uncentered and weird, so don't use it
     # x0, x1, x2, x3 = x[...,:-3], x[...,1:-2], x[...,2:-1], x[...,3:]
@@ -959,7 +965,6 @@ def diff(x, y, axis=0):
     Trivial differentiation onto half levels.
     Reduces axis length by 1.
     """
-    # Preliminary stuff
     if x.ndim>1: # if want x interpreted as vector
         xaxis = axis
     else:
@@ -970,7 +975,6 @@ def diff(x, y, axis=0):
     # x = np.rollaxis(x, xaxis, x.ndim)
     y = _permute(y, axis)
     x = _permute(x, xaxis)
-    # Get forward difference
     return _unpermute((y[...,1:] - y[...,:-1])/(x[...,1:] - x[...,:-1]), axis)
 
 def laplacian(lon, lat, data, accuracy=4):
