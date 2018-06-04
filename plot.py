@@ -140,14 +140,16 @@ def globals(*args, **kwargs):
         if not dictionary:
             raise ValueError(f"Could not find settings for \"{category}\".")
         return dictionary
-    # Double check if any args left; then this was misused
+    # Now the section that applies settings
     if args:
         raise ValueError(f"Improper use of globals(). Only supply extra *args without any **kwargs.")
+    changed = False
     # *Initialize* default settings; that is, both rcParams and rcExtras
     # Requires processing in lines below
     if category is None and not kwargs: # default settings
         mpl.rcdefaults() # apply *builtin* default settings
         add('globals', defaults) # apply *custom* default settings
+        changed = True # changed defaults
     # *Apply* rcParam settings; all we have to do is add them to rcParams or rcExtras
     # Requires processing in lines below (in case category was 'globals')
     elif category not in ('globals',None) and kwargs:
@@ -160,16 +162,20 @@ def globals(*args, **kwargs):
                 raise ValueError(f"Key \"{k}\" unknown. Not a global property like \"color\" or \"linewidth\".")
         defaults = {k:(v if v!='default' else defaults[k]) for k,v in kwargs.items()}
         add('globals', defaults)
+        changed = True
     # Apply global settings; if this function was not called without arguments, then
     # only settings specifically requested to be changed, will be changed
-    d = globals('globals') # the dictionary
-    if defaults: # only if there were any new ones
+    if changed: # only if there were any new ones
+        # Load up globals and apply what they mean to *actual* rcParam settings
+        print('Re-setting defaults.')
+        d = globals('globals') # the dictionary
         # Make a cycler for drawing a bunch of lines
         # Will add the color cycles from all the 
         dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
         colors = cycles.get(d['cycle'],None) # load colors from cyclers
         if colors is None:
-            raise ValueError("Unknown color cycler designator \"{d['cycle']}\".")
+            raise ValueError(f"Unknown color cycler designator \"{d['cycle']}\". Options are: "
+                + ', '.join(f'"{k}"' for k in cycles.keys()) + '.') # cat strings
         if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
             colors = [f'#{color}' for color in colors]
         propcycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
@@ -1791,7 +1797,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             width = 11.4*cm2in
         elif width=='pnas3':
             width = 17.8*cm2in
-        elif width=='ams1': # https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/?utm_source=Pubs&utm_content=figure%20formatting%20info&&utm_campaign=StandingWords
+        elif width=='ams1': # https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
             width = 3.2
         elif width=='ams2':
             width = 4.5
@@ -2802,6 +2808,7 @@ def LatFormatter(sigfig=0, sine=False, cardinal=True):
     def f(value, location, sine=sine, cardinal=cardinal, sigfig=sigfig):
         # Convert from sine to latitude number
         if sine:
+            if abs(value)>1: raise ValueError("Sine latitudes must be in range [-1,1].")
             value = np.arcsin(value)*180/np.pi
         # Suffix to apply
         if cardinal and value<0:
