@@ -63,7 +63,7 @@ import pandas as pd
 # optional override. Then, better to make the format function add actual information
 # to the plot and do nothing to change its style/color/etc.
 # def globals(**kwargs): # fontname is matplotlib default
-def globals(*args, **kwargs):
+def globals(*args, verbose=False, **kwargs):
     """
     TODO: Expand idea of default 'color', 'linewidth', whatever and create more
     dictionaries with defaults settings, then update them. No more hardcoded values
@@ -115,19 +115,24 @@ def globals(*args, **kwargs):
                 mpl.rcParams[f'{category}.{subcategory}'] = value
             else:
                 mpl.rcExtras[f'{category}.{subcategory}'] = value
-    # Mange input, and intialization
+    # Manage input, and intialization
     category = None # not necessarily anything
-    defaults = {'color':'k', 'linewidth':0.7, 'ssize':8, 'bsize':9,
+    defaults = {'color':'k', 'linewidth':0.7, 'small':8, 'big':9,
             'fontname':'DejaVu Sans', 'ticklen':4, 'cycle':'default'}
     if args and type(args[0]) is str: # second part of 'and' only tested if first part true
         category, *args = args # pull out category; but args might be a bunch of dictionaries
+    newargs = [] # new list
     for arg in args:
-        try: kwargs = {**kwargs, **arg} # add dictionary
-        except TypeError:
-            pass # just means we want to retrieve individual arguments
+        if isinstance(arg,dict):
+            kwargs = {**kwargs, **arg} # add dictionary
+        else:
+            newargs += [args] # just means we want to retrieve individual arguments
+    args = newargs # retain old ones
     # *Retrieve* settings without changing any, if user passed a string 'category' name
     # and did not pass any kwargs for assignment as new settings
     if category is not None and not kwargs:
+        if category=='globals':
+            return {key.split('.')[-1]:val for key,val in mpl.rcExtras.items() if 'globals.' in key}
         dictionary = {}
         for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
             if catstring.split('.')[0]==category:
@@ -143,105 +148,122 @@ def globals(*args, **kwargs):
     # Now the section that applies settings
     if args:
         raise ValueError(f"Improper use of globals(). Only supply extra *args without any **kwargs.")
-    changed = False
+    #--------------------------------------------------------------------------#
     # *Initialize* default settings; that is, both rcParams and rcExtras
     # Requires processing in lines below
-    if category is None and not kwargs: # default settings
+    category = category or 'globals' # None defaults to globals in this section
+    if category=='globals' and not kwargs: # default settings
+        if verbose: print('Resetting to defaults.')
         mpl.rcdefaults() # apply *builtin* default settings
+        mpl.rcExtras = {} # reset extras
         add('globals', defaults) # apply *custom* default settings
-        changed = True # changed defaults
-    # *Apply* rcParam settings; all we have to do is add them to rcParams or rcExtras
-    # Requires processing in lines below (in case category was 'globals')
-    elif category not in ('globals',None) and kwargs:
-        add(category, kwargs) # easy peasy
-    # *Refresh* existing global settings, maybe just one at a time (e.g. color) and
-    # allow user to pass color='default' for example, to restore defaults
-    else: # category in ('globals',None) and kwargs
-        for k in kwargs.keys():
-            if k not in defaults:
-                raise ValueError(f"Key \"{k}\" unknown. Not a global property like \"color\" or \"linewidth\".")
-        defaults = {k:(v if v!='default' else defaults[k]) for k,v in kwargs.items()}
-        add('globals', defaults)
-        changed = True
-    # Apply global settings; if this function was not called without arguments, then
+    #--------------------------------------------------------------------------#
+    # *Update* rcParam settings or global settings; just add them to rcParams or rcExtras
+    # If one of the 'global' settings was changed, requires processing in lines below
+    # Also if any 'value' is a dictionary, update properties with that key as a
+    # 'category' and each key-value air in the dictionary as kwargs
+    else:
+        updated = False
+        for key,value in kwargs.items():
+            if isinstance(value,dict):
+                add(key, value) # add the 'value' as a kwarg dictionary
+                if verbose: print(f"Added settings to category '{key}':", value)
+            elif category=='globals' and key not in defaults:
+                raise ValueError(f"Key \"{key}\" unknown. Not a global property like \"color\" or \"linewidth\".")
+            else:
+                value = value if value!='default' or category!='globals' else defaults[key]
+                add(category, {key:value}) # easy peasy
+                updated = True
+                if verbose: print(f"Added setting to category '{category}':", {key:value})
+        if category!='globals' or (category=='globals' and not updated):
+            if verbose: print('No global properties changed.')
+            return None # don't need to re-apply the globals
+    #--------------------------------------------------------------------------#
+    # *Apply* global settings; if this function was not called without arguments, then
     # only settings specifically requested to be changed, will be changed
-    if changed: # only if there were any new ones
-        # Load up globals and apply what they mean to *actual* rcParam settings
-        print('Re-setting defaults.')
-        d = globals('globals') # the dictionary
-        # Make a cycler for drawing a bunch of lines
-        # Will add the color cycles from all the 
-        dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
-        colors = cycles.get(d['cycle'],None) # load colors from cyclers
-        if colors is None:
-            raise ValueError(f"Unknown color cycler designator \"{d['cycle']}\". Options are: "
-                + ', '.join(f'"{k}"' for k in cycles.keys()) + '.') # cat strings
-        if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
-            colors = [f'#{color}' for color in colors]
-        propcycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
-            + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
-        # if not isinstance(colors[0], str) and any(v>1 for v in colors[0]): # convert to hex
-        # In this *extra special instance*, search for all currently active
-        # figures and apply set_prop_cycle on every single axes
-        # Calling plt.figure with 'num' as first argument or 'num=<num>' just
-        # brings that figure to foreground
-        # Tested this and it takes 1ms; no big deal
-        figs = list(map(plt.figure, plt.get_fignums())) # from: https://stackoverflow.com/a/26485683/4970632
-        t = time.time()
-        for fig in figs:
-            for ax in fig.axes:
-                ax.set_prop_cycle(propcycle)
-        # First the rcParam settings
-        # Ones related to plot "scaffolding"
-        add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':d['ssize'], 'titlesize':d['bsize'],
-            'edgecolor':d['color'], 'labelcolor':d['color'], 'grid':True, 'linewidth':d['linewidth'],
-            'labelpad':3, 'prop_cycle':propcycle})
-        add('font', {'size':d['ssize'], 'family':'sans-serif', 'sans-serif':d['fontname']}) # when user calls .text()
-        add('text', {'color':d['color']}) # when user calls .text()
-        add('grid', {'linewidth':d['linewidth']/2, 'alpha':0.1, 'color':d['color']})
-        for xy in 'xy':
-            tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
-            add(f'{xy}tick',       {'labelsize':d['ssize'], 'color':d['color'], 'direction':'out'})
-            add(f'{xy}tick.major', {'pad':2, 'width':d['linewidth'], 'size':d['ticklen'], **tickloc}) # size==length
-            add(f'{xy}tick.minor', {'pad':2, 'width':d['linewidth'], 'visible':True, 'size':d['ticklen']/2, **tickloc})
-        # Ones related to stuff plotted inside axes
-        # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
-        add('patch',    {'linewidth':d['linewidth'],   'edgecolor':d['color']}) # e.g. bars?
-        add('hatch',    {'linewidth':d['linewidth'],   'color':d['color']})
-        add('lines',    {'linewidth':d['linewidth']*2,
-            'markersize':d['linewidth']*4, 'markeredgewidth':0,
-            'dash_joinstyle':'miter', 'dash_capstyle':'projecting', # joinstyle opts: miter, round, bevel
-            'solid_joinstyle':'miter', 'solid_capstyle':'projecting'}) # capstyle opts: butt, round, projecting
-        add('markers',  {'fillstyle':'full'})
-        add('scatter',  {'marker':'o'})
-        add('legend',   {'framealpha':1, 'fancybox':False, 'frameon':False, # see: https://matplotlib.org/api/legend_api.html
-            'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':2, 'columnspacing':1,
-            'borderpad':0.3, 'borderaxespad':0, 'numpoints':1, 'facecolor':'inherit'})
-        # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
-        #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
-        add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
-            # this can only be accomplished with rcParams; impossible to specify with API!
-        # Next the settings with custom names
-        # Some might be redundant, and should consider eliminating
-        # Should begin to delete these and control things with rcParams whenever possible
-        # Remember original motivation was realization that some rcParams can't be changes
-        # by passing a kwarg (don't remember any examples)
-        add('abc',         {'size':d['bsize'], 'weight':'bold', 'color':d['color']})
-        add('title',       {'size':d['bsize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
-        add('label',       {'size':d['ssize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
-        add('ticklabels',  {'size':d['ssize'], 'weight':'normal', 'color':d['color'], 'fontname':d['fontname']})
-        add('gridminor',   {'linestyle':'-', 'linewidth':d['linewidth']/2, 'color':d['color'], 'alpha':0.1})
-        add('cgrid',       {'color':d['color'], 'linewidth':d['linewidth']})
-        add('continents',  {'color':d['color']})
-        add('tickminor',   {'length':d['ticklen']/2, 'width':d['linewidth'], 'color':d['color']})
-        add('tick',        {'length':d['ticklen'], 'width':d['linewidth'], 'color':d['color']})
-        add('ctickminor',  {'length':d['ticklen']/2, 'width':d['linewidth'], 'color':d['color']})
-        add('ctick',       {'length':d['ticklen'], 'width':d['linewidth'], 'color':d['color']})
-        add('coastlines',  {'linewidth':d['linewidth'], 'color':d['color']})
-        add('lonlatlines', {'linewidth':d['linewidth'], 'linestyle':':', 'color':d['color'], 'alpha':0.2})
-        add('spine',       {'color':d['color'], 'linewidth':d['linewidth']})
-        add('outline',     {'edgecolor':d['color'], 'linewidth':d['linewidth']})
-        # add('xscale'); add('yscale'); add('contents', color='moccasin')
+    current = globals('globals') # the dictionary
+    # Make a cycler for drawing a bunch of lines
+    # Will add the color cycles from all the 
+    dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
+    colors = cycles.get(current['cycle'],None) # load colors from cyclers
+    if colors is None:
+        raise ValueError(f"Unknown color cycler designator \"{current['cycle']}\". Options are: "
+            + ', '.join(f'"{k}"' for k in cycles.keys()) + '.') # cat strings
+    if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
+        colors = [f'#{color}' for color in colors]
+    propcycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
+        + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
+    # if not isinstance(colors[0], str) and any(v>1 for v in colors[0]): # convert to hex
+    #--------------------------------------------------------------------------#
+    # In this *extra special instance*, search for all currently active
+    # figures and apply set_prop_cycle on every single axes
+    # * Calling plt.figure with 'num' as first argument or 'num=<num>' just
+    #   brings that figure to foreground
+    # * Tested this and it takes 1ms; no big deal
+    figs = list(map(plt.figure, plt.get_fignums())) # from: https://stackoverflow.com/a/26485683/4970632
+    t = time.time()
+    for fig in figs:
+        for ax in fig.axes:
+            ax.set_prop_cycle(propcycle)
+    #--------------------------------------------------------------------------#
+    # First the rcParam settings
+    # Ones related to plot "scaffolding"
+    color, linewidth, ticklen, small, big, fontname = \
+        current['color'], current['linewidth'], current['ticklen'], current['small'], current['big'], current['fontname']
+    add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':small, 'titlesize':big,
+        'edgecolor':color, 'labelcolor':color, 'grid':True, 'linewidth':linewidth,
+        'labelpad':3, 'prop_cycle':propcycle})
+    add('font', {'size':small, 'family':'sans-serif', 'sans-serif':fontname}) # when user calls .text()
+    add('text', {'color':color}) # when user calls .text()
+    add('grid', {'linewidth':linewidth/2, 'alpha':0.1, 'color':color})
+    for xy in 'xy':
+        tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
+        add(f'{xy}tick',       {'labelsize':small, 'color':color, 'direction':'out'})
+        add(f'{xy}tick.major', {'pad':2, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
+        add(f'{xy}tick.minor', {'pad':2, 'width':linewidth, 'visible':True, 'size':ticklen/2, **tickloc})
+    #--------------------------------------------------------------------------#
+    # Ones related to stuff plotted inside axes
+    # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
+    add('patch',    {'linewidth':linewidth,   'edgecolor':color}) # e.g. bars?
+    add('hatch',    {'linewidth':linewidth,   'color':color})
+    add('lines',    {'linewidth':linewidth*2,
+        'markersize':linewidth*4, 'markeredgewidth':0,
+        'dash_joinstyle':'miter', 'dash_capstyle':'projecting', # joinstyle opts: miter, round, bevel
+        'solid_joinstyle':'miter', 'solid_capstyle':'projecting'}) # capstyle opts: butt, round, projecting
+    add('markers',  {'fillstyle':'full'})
+    add('scatter',  {'marker':'o'})
+    add('legend',   {'framealpha':1, 'fancybox':False, 'frameon':False, # see: https://matplotlib.org/api/legend_api.html
+        'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':2, 'columnspacing':1,
+        'borderpad':0.3, 'borderaxespad':0, 'numpoints':1, 'facecolor':'inherit'})
+    # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
+    #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
+    add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
+        # this can only be accomplished with rcParams; impossible to specify with API!
+    #--------------------------------------------------------------------------#
+    # Next the settings with custom names
+    # Some might be redundant, and should consider eliminating
+    # Should begin to delete these and control things with rcParams whenever possible
+    # Remember original motivation was realization that some rcParams can't be changes
+    # by passing a kwarg (don't remember any examples)
+    add('abc',         {'size':big, 'weight':'bold', 'color':color})
+    add('title',       {'size':big, 'weight':'normal', 'color':color, 'fontname':fontname})
+    add('suptitle',    {'size':big, 'weight':'normal', 'color':color, 'fontname':fontname})
+    add('label',       {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
+    add('ticklabels',  {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
+    add('gridminor',   {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1})
+    add('cgrid',       {'color':color, 'linewidth':linewidth})
+    add('continents',  {'color':color})
+    add('tickminor',   {'length':ticklen/2, 'width':linewidth, 'color':color})
+    add('tick',        {'length':ticklen, 'width':linewidth, 'color':color})
+    add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})
+    add('ctick',       {'length':ticklen, 'width':linewidth, 'color':color})
+    add('coastlines',  {'linewidth':linewidth, 'color':color})
+    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2})
+    add('spine',       {'color':color, 'linewidth':linewidth})
+    add('outline',     {'edgecolor':color, 'linewidth':linewidth})
+    # add('xscale'); add('yscale'); add('contents', color='moccasin')
+    if verbose: print('Applied global properties.')
+    return None
 
 #------------------------------------------------------------------------------
 # Colormap stuff
@@ -717,7 +739,7 @@ class Figure(mfigure.Figure):
             right = f'cspace {self.cspace-x2:.2f}'
         else:
             right = f'right {self.right-x2:.2f}'
-        if not silent: print(f'Try these params to avoid adjustment: {left}, {bottom}, {right}, {top}.')
+        if not silent: print(f'Call subplots with: {left}, {bottom}, {right}, {top}.')
         # Apply adjustment
         if tight:
             self.gridspec.left -= (x1-pad)/width
@@ -1314,8 +1336,8 @@ def _lformat(self, handles=None, align=None, handlefix=False, **kwargs): #, sett
     for candidate in candidates:
         if candidate in kwargs:
             hsettings[candidate] = lsettings.pop(candidate)
-    if not handlefix:
-        hsettings = {}
+    # if not handlefix:
+    #     hsettings = {}
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
     #   1) user can specify nothing and align will be inferred (list of iterables is False,
@@ -1459,7 +1481,7 @@ def _format(self,
         # print(self.title.get_size()/72, ypos/fig.height)
         fig.suptitle = self.text(xpos,ypos,suptitle,
                 transform=fig.transFigure) # title
-        fig.suptitle.update({'ha':'center', 'va':'baseline', **globals('title')})
+        fig.suptitle.update({'ha':'center', 'va':'baseline', **globals('suptitle')})
         if suptitlepos=='title': # not elevated
             ypos = self.title._transform.transform(self.title.get_position())[1]/fig.dpi/fig.height
             fig.suptitle.update({'position':(xpos,ypos)})
@@ -1657,9 +1679,6 @@ def _format(self,
         for tick in axis.majorTicks:
             tick.gridline.update(globals('grid'))
         # Minor ticks/grids
-        for tick in axis.minorTicks:
-            if tickminor is not None:
-                tick.set_visible(tickminor)
         if type(gridminor) is bool:
             axis.grid(gridminor, which='minor', alpha=1) # ignore if no minor ticks
         for tick in axis.minorTicks:
@@ -1681,6 +1700,8 @@ def _format(self,
             axis.set_major_locator(mticker.FixedLocator(ticklocator))
 
         # Next, minor tick locators (toggle visibility later)
+        if tickminor is not None and not tickminor:
+            axis.set_minor_locator(mticker.NullLocator())
         if isinstance(tickminorlocator, mticker.Locator):
             axis.set_minor_locator(tickminorlocator) # pass locator class/subclass (all documented ones subclass the parent class, mticker.Locator)
         elif tickminorlocator is not None:
@@ -2995,4 +3016,4 @@ for _cycle in cycles.values():
 #-------------------------------------------------------------------------------
 # Now call the function to configure params
 # Without arguments, will just apply my defaults
-globals()
+globals(verbose=True)
