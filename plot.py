@@ -69,16 +69,16 @@ def globals(*args, verbose=False, **kwargs):
     dictionaries with defaults settings, then update them. No more hardcoded values
     in the main text below.
     This has multiple uses, all rolled up into one function.
-    * INITIALIZE everything with default settings. Creates special rcExtras
-      dictionary assigned to 'mpl' module, just like rcParams, except the values
-      in rcExtras have my own special naming and are read by my _format function.
-    * SET rcParams and rcExtras parameters belonging to some category with a single dictionary,
-      list of dictionaries, kwarg pairs, or all of the above.
-    * SET special global params that are applied to a bunch of different
-      rcParams and rcExtras (e.g. 'color'), while leaving others (e.g. 'linewidth') alone.
-    * RETRIEVE a single value belong to a category.subcategory, or a dictionary
-      of *all* or *filtered/selected* subcategory=value pairs for subcategories
-      belonging to 'category'.
+    1. *Initialize* everything with default settings. Creates special rcExtras
+       dictionary assigned to 'mpl' module, just like rcParams, except the values
+       in rcExtras have my own special naming and are read by my _format function.
+    2. *Set* rcParams and rcExtras parameters belonging to some category with a single dictionary,
+       list of dictionaries, kwarg pairs, or all of the above.
+    3. *Set* special global params that are applied to a bunch of different
+       rcParams and rcExtras (e.g. 'color'), while leaving others (e.g. 'linewidth') alone.
+    4. *Retrieve* a single value belong to a category.subcategory, or a dictionary
+       of *all* or *filtered/selected* subcategory=value pairs for subcategories
+       belonging to 'category'.
     Here's a quick list of rcParam categories (see: https://matplotlib.org/users/customizing.html)
         "lines", "patch", "hatch", "legend"
         "font", "text", "mathtext"
@@ -95,6 +95,11 @@ def globals(*args, verbose=False, **kwargs):
         "debug", "keymap", "examples"
         "animation"
     Some other notes:
+    * Note the figure settings are used when printing interactively or just making
+      the figure object, but the savefig ones are used when calling savefig.
+    * Note that if *autoreload* is triggered/global defauls are reset, it seems that
+      any options set with InlineBackend in ipython are ***ignored***. But if you query
+      settings, options still present -- you just need to call nbsetup again.
     * Problem is the settings in rcParams are scattershot and missing some important
       ones we want, but should use it when we can; options won't be rescinded in future versions
     * Currently features that can't be rcParam'ed are *gridminor* properties, the
@@ -207,9 +212,13 @@ def globals(*args, verbose=False, **kwargs):
             ax.set_prop_cycle(propcycle)
     #--------------------------------------------------------------------------#
     # First the rcParam settings
-    # Ones related to plot "scaffolding"
+    # Here are ones related to axes and figure properties
     color, linewidth, ticklen, small, big, fontname = \
         current['color'], current['linewidth'], current['ticklen'], current['small'], current['big'], current['fontname']
+    add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,
+        'directory':'', 'pad_inches':0, 'bbox':'standard', 'format':'pdf'}) # empty means current directory
+    add('figure', {'facecolor':(.95,.95,.95,1), 'dpi':90, # matches nbsetup
+        'max_open_warning':1, 'constrained_layout':False, 'autolayout':False})
     add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':small, 'titlesize':big,
         'edgecolor':color, 'labelcolor':color, 'grid':True, 'linewidth':linewidth,
         'labelpad':3, 'prop_cycle':propcycle})
@@ -270,6 +279,7 @@ def globals(*args, verbose=False, **kwargs):
 #------------------------------------------------------------------------------
 def cmapfactory(levels, colors, extend='neither'):
     """
+    ***Inverse of cmapcolors.***
     Generate colormap instance from list of levels and colors.
     * Generally don't want these kinds of colorbars to 'extend', but you can.
     * Object will assume one color between individual levels; for example,
@@ -296,8 +306,8 @@ def cmapfactory(levels, colors, extend='neither'):
 
 def cmapcolors(name, N=None, vmin=None, vmax=None, left=False, centered=False):
     """
+    ***Inverse of cmapfactory.***
     Get individual colors from a discrete colormap, use for e.g. consecutive lines.
-    The opposite of this is cmapfactory, which builds a colormap from list of colors.
     Can also pass list of colors directly to _cformat, to build a colormap; but this
     is sometimes backwards, because will get colors with cmapcolors then build the
     colormap back up again; kind of silly. Consider changing.
@@ -398,7 +408,7 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():
                 s.set_visible(False)
-            ax.patch.set_alpha(1)
+            # ax.patch.set_alpha(0)
             ax.set_xticks([])
             ax.set_yticks([])
             # Draw colormap
@@ -428,8 +438,10 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
     if len(cmaps_known)>0:
         print(f'Colormaps in dictionary, but not found: {", ".join(cmaps_known)}')
     # Save
-    fig.savefig(f'{os.path.dirname(__file__)}/colormaps.pdf',
-            bbox_inches='tight', format='pdf')
+    # fig.patch.set_alpha(0)
+    filename = f'{os.path.dirname(__file__)}/colormaps.pdf'
+    print(f"Saving figure to: {filename}.")
+    fig.savefig(filename, bbox_inches='tight')
     return fig
 
 #------------------------------------------------------------------------------
@@ -751,7 +763,7 @@ class Figure(mfigure.Figure):
         if filename.split('.pdf')[-1]!='':
             filename = f'{filename}.pdf'
         if not silent: print(f'Saving to {filename}.')
-        self.savefig(filename, dpi=300, pad_inches=0, format='pdf') # specify DPI for embedded raster objects
+        self.savefig(filename) # specify DPI for embedded raster objects
         # print(f'Original sizing: left {self.left:.2f}, bottom {self.bottom:.2f}, right {self.right:.2f}, top {self.top:.2f}, '\
         #     + f'legend {self.lwidth:.2f}, colorbar {self.cwidth:.2f}.')
 
@@ -1438,7 +1450,7 @@ def _lformat(self, handles=None, align=None, handlefix=False, **kwargs): #, sett
     return legends
 
 def _format(self,
-    alpha=1, hatch=None, color='w', # control figure/axes background; hatch just applies to axes
+    alpha=None, hatch=None, color=None, # control figure/axes background; hatch just applies to axes
     coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
@@ -1517,10 +1529,12 @@ def _format(self,
         elif abcpos is not None:
             self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
     # Color setup, optional hatching in background of axes
-    self.figure.patch.set_alpha(alpha) # make transparent by default
-    self.patch.set_alpha(alpha) # make not transparent
-    self.figure.patch.set_color(color)
-    self.patch.set_color(color) # color
+    if alpha is not None:
+        self.figure.patch.set_alpha(alpha) # make transparent by default
+        self.patch.set_alpha(alpha) # make not transparent
+    if alpha is not None:
+        self.figure.patch.set_color(color)
+        self.patch.set_color(color) # color
     self.patch.set_zorder(-1)
     self.patch.set_clip_on(False)
     if hatch: # non-empty string or not none
@@ -2956,18 +2970,18 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
 #   them directly from the txt file.
 _announcement = False
 _opencolors = { "gray":   ["#f8f9fa", "#f1f3f5", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057", "#343a40", "#212529"],
-      "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
-      "pink":   ["#fff0f6", "#ffdeeb", "#fcc2d7", "#faa2c1", "#f783ac", "#f06595", "#e64980", "#d6336c", "#c2255c", "#a61e4d"],
-      "grape":  ["#f8f0fc", "#f3d9fa", "#eebefa", "#e599f7", "#da77f2", "#cc5de8", "#be4bdb", "#ae3ec9", "#9c36b5", "#862e9c"],
-      "violet": ["#f3f0ff", "#e5dbff", "#d0bfff", "#b197fc", "#9775fa", "#845ef7", "#7950f2", "#7048e8", "#6741d9", "#5f3dc4"],
-      "indigo": ["#edf2ff", "#dbe4ff", "#bac8ff", "#91a7ff", "#748ffc", "#5c7cfa", "#4c6ef5", "#4263eb", "#3b5bdb", "#364fc7"],
-      "blue":   ["#e7f5ff", "#d0ebff", "#a5d8ff", "#74c0fc", "#4dabf7", "#339af0", "#228be6", "#1c7ed6", "#1971c2", "#1864ab"],
-      "cyan":   ["#e3fafc", "#c5f6fa", "#99e9f2", "#66d9e8", "#3bc9db", "#22b8cf", "#15aabf", "#1098ad", "#0c8599", "#0b7285"],
-      "teal":   ["#e6fcf5", "#c3fae8", "#96f2d7", "#63e6be", "#38d9a9", "#20c997", "#12b886", "#0ca678", "#099268", "#087f5b"],
-      "green":  ["#ebfbee", "#d3f9d8", "#b2f2bb", "#8ce99a", "#69db7c", "#51cf66", "#40c057", "#37b24d", "#2f9e44", "#2b8a3e"],
-      "lime":   ["#f4fce3", "#e9fac8", "#d8f5a2", "#c0eb75", "#a9e34b", "#94d82d", "#82c91e", "#74b816", "#66a80f", "#5c940d"],
-      "yellow": ["#fff9db", "#fff3bf", "#ffec99", "#ffe066", "#ffd43b", "#fcc419", "#fab005", "#f59f00", "#f08c00", "#e67700"],
-      "orange": ["#fff4e6", "#ffe8cc", "#ffd8a8", "#ffc078", "#ffa94d", "#ff922b", "#fd7e14", "#f76707", "#e8590c", "#d9480f"]}
+  "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
+  "pink":   ["#fff0f6", "#ffdeeb", "#fcc2d7", "#faa2c1", "#f783ac", "#f06595", "#e64980", "#d6336c", "#c2255c", "#a61e4d"],
+  "grape":  ["#f8f0fc", "#f3d9fa", "#eebefa", "#e599f7", "#da77f2", "#cc5de8", "#be4bdb", "#ae3ec9", "#9c36b5", "#862e9c"],
+  "violet": ["#f3f0ff", "#e5dbff", "#d0bfff", "#b197fc", "#9775fa", "#845ef7", "#7950f2", "#7048e8", "#6741d9", "#5f3dc4"],
+  "indigo": ["#edf2ff", "#dbe4ff", "#bac8ff", "#91a7ff", "#748ffc", "#5c7cfa", "#4c6ef5", "#4263eb", "#3b5bdb", "#364fc7"],
+  "blue":   ["#e7f5ff", "#d0ebff", "#a5d8ff", "#74c0fc", "#4dabf7", "#339af0", "#228be6", "#1c7ed6", "#1971c2", "#1864ab"],
+  "cyan":   ["#e3fafc", "#c5f6fa", "#99e9f2", "#66d9e8", "#3bc9db", "#22b8cf", "#15aabf", "#1098ad", "#0c8599", "#0b7285"],
+  "teal":   ["#e6fcf5", "#c3fae8", "#96f2d7", "#63e6be", "#38d9a9", "#20c997", "#12b886", "#0ca678", "#099268", "#087f5b"],
+  "green":  ["#ebfbee", "#d3f9d8", "#b2f2bb", "#8ce99a", "#69db7c", "#51cf66", "#40c057", "#37b24d", "#2f9e44", "#2b8a3e"],
+  "lime":   ["#f4fce3", "#e9fac8", "#d8f5a2", "#c0eb75", "#a9e34b", "#94d82d", "#82c91e", "#74b816", "#66a80f", "#5c940d"],
+  "yellow": ["#fff9db", "#fff3bf", "#ffec99", "#ffe066", "#ffd43b", "#fcc419", "#fab005", "#f59f00", "#f08c00", "#e67700"],
+  "orange": ["#fff4e6", "#ffe8cc", "#ffd8a8", "#ffc078", "#ffa94d", "#ff922b", "#fd7e14", "#f76707", "#e8590c", "#d9480f"]}
 mcolors.OPEN_COLORS = {} # create separate dictionary for them
 for _name,_colors in _opencolors.items(): # iterate through json values
     for _i,_color in enumerate(_colors):
@@ -2989,15 +3003,15 @@ for name,value in colors.items():
 cycles = {'default':['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'], # default V2 matplotlib
     # copied from stylesheets; stylesheets just add color themese from every
     # possible tool, not already present as a colormap
-    'ggplot':['E24A33', '348ABD', '988ED5', '777777', 'FBC15E', '8EBA42', 'FFB5B8'],
-    'bmh': ['348ABD', 'A60628', '7A68A6', '467821', 'D55E00', 'CC79A7', '56B4E9', '009E73', 'F0E442', '0072B2'],
-    'solarized': ['268BD2', '2AA198', '859900', 'B58900', 'CB4B16', 'DC322F', 'D33682', '6C71C4'],
-    '538': ['008fd5', 'fc4f30', 'e5ae38', '6d904f', '8b8b8b', '810f7c'],
-    'seaborn': ['4C72B0', '55A868', 'C44E52', '8172B2', 'CCB974', '64B5CD'],
-    'colorblind': ['0072B2', 'D55E00', '009E73', 'CC79A7', 'F0E442', '56B4E9'],
-    'pastel': ['92C6FF', '97F0AA', 'FF9F9A', 'D0BBFF', 'FFFEA3', 'B0E0E6'],
-    'deep': ['4C72B0', '55A868', 'C44E52', '8172B2', 'CCB974', '64B5CD'],
-    'muted': ['4878CF', '6ACC65', 'D65F5F', 'B47CC7', 'C4AD66', '77BEDB'],
+    'ggplot':['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
+    'bmh': ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'],
+    'solarized': ['#268BD2', '#2AA198', '#859900', '#B58900', '#CB4B16', '#DC322F', '#D33682', '#6C71C4'],
+    '538': ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
+    'seaborn': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
+    'colorblind': ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
+    'pastel': ['#92C6FF', '#97F0AA', '#FF9F9A', '#D0BBFF', '#FFFEA3', '#B0E0E6'],
+    'deep': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
+    'muted': ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'],
     # copied using digital color meter from papers with pretty plots
     'colorblind2':[shade(color, saturation=1.3) for color in # appears to just be pale colorblind sheme
         [(68,139,177), (200,126,72), (68,163,137), (229,220,124), (205,154,182)]],

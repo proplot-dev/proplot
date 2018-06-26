@@ -3,6 +3,12 @@
 .session.*
 .*.sw[a-z]
 
+# Other stuff #
+###############
+*.pdf
+empty*
+sample*
+
 # Python extras #
 #################
 *.pyc
