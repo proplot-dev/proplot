@@ -723,6 +723,9 @@ def intersection(x, segment1, segment2, xlog=False):
     #--------------------------------------------------------------------------#
     # Get intersection
     diff = segment1 - segment2
+    if (diff>0).all() or (diff<0).all():
+        print("Warning: No intersections found.")
+        return np.nan, np.nan
     idx = np.where(diff>0)[0][0]
     x, y = diff[idx-1:idx+1], func(x[idx-1:idx+1]) # two-element vectors
     px = ifunc(y[0] + (0-x[0])*((y[1]-y[0])/(x[1]-x[0])))
@@ -1097,31 +1100,46 @@ def eof(data, neof=5):
     """
     return
 
-def autocorr(data, nlag, axis=-1, verbose=True):
+def autocorr(data, nlag=None, lag=None, verbose=False, axis=0):
     """
     Gets the autocorrelation spectrum at successive lags.
-    See: https://en.wikipedia.org/wiki/Autocorrelation#Estimation
-    Estimator is: ((n-k)*sigma^2)^-1 * sum_i^(n-k)[X_t - mu][X_t+k - mu]
+      * Estimator is: ((n-k)*sigma^2)^-1 * sum_i^(n-k)[X_t - mu][X_t+k - mu]
+        See: https://en.wikipedia.org/wiki/Autocorrelation#Estimation
+      * By default, includes lag-zero values; if user just wants single lag
+        will, however, throw out those values.
     """
     #--------------------------------------------------------------------------#
     # Preparation, and stdev/means
+    data = np.array(data)
     naxis = data.shape[axis] # length
-    if nlag>=naxis/2:
+    if (nlag is None and lag is None) or (nlag is not None and lag is not None):
+        raise ValueError(f"Must specify *either* a lag (\"lag=x\") or range of lags (\"nlag=y\").")
+    if nlag is not None and nlag>=naxis/2:
         raise ValueError(f"Lag {nlag} must be greater than axis length {naxis}.")
     if verbose:
-        print(f"Calculating autocorrelation spectrum up to lag {nlag} for axis length {naxis}.")
+        if nlag is None:
+            print(f"Calculating lag-{lag} autocorrelation.")
+        else:
+            print(f"Calculating autocorrelation spectrum up to lag {nlag} for axis length {naxis}.")
     data = _permute(data, axis)
     mean = data.mean(axis=-1, keepdims=True) # keepdims for broadcasting in (data minus mean)
     var = data.var(axis=-1, keepdims=False) # this is divided by the summation term, so should have annihilated axis
     #--------------------------------------------------------------------------#
     # Loop through lags
-    autocorrs = np.empty((*data.shape[:-1], nlag+1)) # will include the zero-lag autocorrelation
-    autocorrs[...,0] = 1 # lag-0 autocorrelation
-    for lag in range(1,nlag+1):
-        autocorrs[...,lag] = np.sum((data[...,:-lag]-mean)*(data[...,lag:]-mean),axis=-1)/((naxis-lag)*var)
+    # Include an extra lag under some circumstances
+    if nlag is None and lag==0:
+        autocorrs = np.ones((*data.shape[:-1],1))
+    elif nlag is None:
+        autocorrs = np.sum((data[...,:-lag]-mean)*(data[...,lag:]-mean),axis=-1)/((naxis-lag)*var)
+        autocorrs = autocorrs[...,None] # add dimension back in
+    else:
+        autocorrs = np.empty((*data.shape[:-1], nlag+1)) # will include the zero-lag autocorrelation
+        autocorrs[...,0] = 1 # lag-0 autocorrelation
+        for i,lag in enumerate(range(1,nlag+1)):
+            autocorrs[...,i+1] = np.sum((data[...,:-lag]-mean)*(data[...,lag:]-mean),axis=-1)/((naxis-lag)*var)
     return _unpermute(autocorrs, axis)
 
-def rednoisefit(data, nlag, axis=-1, lag1=False, series=False, verbose=True):
+def rednoisefit(data, nlag=None, axis=-1, lag1=False, series=False, verbose=False):
     """
     Returns a best-fit red noise autocorrelation spectrum.
     * If 'series' is True, return the red noise spectrum full series.
@@ -1130,11 +1148,17 @@ def rednoisefit(data, nlag, axis=-1, lag1=False, series=False, verbose=True):
     Go up to nlag-timestep autocorrelation.
     """
     #--------------------------------------------------------------------------#
-    # First get the autocorrelation spectrum, and flatten leading dimensions
-    # Dimensions will need to be flat because we gotta loop through each 'time series'
-    # and perform curve fits.
+    # Initial stuff
+    if nlag is None:
+        raise ValueError(f"Must declare \"nlag\" argument; number of points to use for fit.")
     nflat = data.ndim-1
     data = _lead_flatten(_permute(data, axis), nflat)
+    # if len(time)!=data.shape[-1]:
+    #     raise ValueError(f"Got {len(time)} time values, but {data.shape[-1]} timesteps for data.")
+    #--------------------------------------------------------------------------#
+    # First get the autocorrelation spectrum, and flatten leading dimensions
+    # Dimensions will need to be flat because we gotta loop through each 'time series' and get curve fits.
+    # time = time[:nlag+1] # for later
     autocorrs = autocorr(data, nlag, axis=-1, verbose=verbose)
     #--------------------------------------------------------------------------#
     # Next iterate over the flattened dimensions, and perform successive curve fits
@@ -1144,6 +1168,7 @@ def rednoisefit(data, nlag, axis=-1, lag1=False, series=False, verbose=True):
     time = np.arange(autocorrs.shape[-1]) # time series for curve fit
     for i in range(autocorrs.shape[0]): # iterate along first dimension; each row is an autocorrelation spectrum
         if lag1:
+            # dt = time[1]-time[0] # use this for time diff
             p = [-1/np.log(autocorrs[i,1])] # -ve inverse natural log of lag-1 autocorrelation
         else:
             p, _ = optimize.curve_fit(lambda t,tau: np.exp(-t/tau), time, autocorrs[i,:])
