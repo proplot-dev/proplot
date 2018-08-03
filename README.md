@@ -15,7 +15,7 @@ Quick summary of features:
 
 The **most notable** feature is the `format` method added to axes instances. Now, you control the look of your axes with a single function, that accepts a plethora of kwarg pairs. Why do this?
 
-  * With the default API, to modify an axis property or title, you often have to remember **three things**: 1) the object containing the method you want to use (e.g. axes vs. an invidual axis), 2) the name of the method, and 3) the keyword-arguments and their meaning. It can get quite messy, quite verbose, and inevitably results in lots of copy-paste code!
+  * With the default API, to modify an axes property, you generally have to remember **three things**: 1) the object containing the method you want to use (e.g. axes vs. an individual axis), 2) the name of the method, and 3) the keyword-arguments and their meaning. It can get quite messy, quite verbose, and inevitably results in lots of copy-paste code!
   * Now, you just have to remember **one** thing: the name of the keyword-argument passed to `ax.format()`.
 
 For more information on the `plot` features, see below.
