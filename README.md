@@ -3,7 +3,23 @@ This library provides extremely helpful plotting utilities to make `matplotlib` 
 and provides sort-of-helpful-but-still-working-on-it numerical utilities for analysing data.
 
 ## Plotting Utilities
-Everything here is contained in `plots.py`. Usually I import these as `import pyfuncs.plots as py`. Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` version. Current features:
+Everything here is contained in `plots`. Usually I import these as `from pyfuncs import plot`. Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` version.
+
+Quick summary of features:
+
+  * Total control over subplot aspect ratios, figure sizes in inches, spacing between subplots and around edges in inches.
+  * Tools to generate panels around `edges` of primary subplots, suitable for global legends/global colorbars/
+  * Axis labels spanning subplots and no more duplicate tick labels.
+  * Inner subplot panels, e.g. for displaying averages across the x/y axis.
+  * Integration with basemap/cartopy.
+
+The **most notable** feature is the `format` method added to axes instances. Now, you control the look of your axes with a single function, that accepts a plethora of kwarg pairs. Why do this?
+
+  * With the default API, to modify an axis property or title, you often have to remember **three things**: 1) the object containing the method you want to use (e.g. axes vs. an invidual axis), 2) the name of the method, and 3) the keyword-arguments and their meaning. It can get quite messy, quite verbose, and inevitably results in lots of copy-paste code!
+  * Now, you just have to remember **one** thing: the name of the keyword-argument passed to `ax.format()`.
+
+For more information on the `plot` features, see below.
+
 ### Improved functionality of `subplots` command
    * Much easier generation of figures with multiple axes.
      * Pass no arguments to generate default single-axes figure (1 row, 1 column).
@@ -22,7 +38,7 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
 ### Added new `format` method-style commands to axes instances generated with `subplots`
    * To customize an axes, most important properties can be passed as kwargs. For example, format an axes with `ax.format(xlabel="foo", ylabel="bar", title="foobar")`.
    * Included some special kwargs that avoid using unpalatable underlying API. For example, draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`.
-   * Special `format` functions created for `bottomlegend` and `bottomcolorbar/`rightcolorbar`.
+   * Special `format` functions created for `bottomlegend` and `bottomcolorbar`/`rightcolorbar`.
 ### Revised some underlying issues by overwriting existing methods
    * Flipped the unnatural default `0`th dimension of array is `y`-axis, `1`st dimension of array is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
@@ -46,3 +62,5 @@ Everything here is contained in `plots.py`. Usually I import these as `import py
 
 ## Numerical Utilities
 Need to document these better, decide if this duplicates anything.
+
+
