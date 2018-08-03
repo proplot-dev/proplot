@@ -1,0 +1,101 @@
+let SessionLoad = 1
+if &cp | set nocp | endif
+let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
+let v:this_session=expand("<sfile>:p")
+silent only
+cd ~/pyfuncs
+if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
+  let s:wipebuf = bufnr('%')
+endif
+set shortmess=aoO
+badd +1 tools.py
+badd +1430 tools/all.py
+args tools.py tools/all.py
+edit tools.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+28,36fold
+38,47fold
+49,53fold
+55,63fold
+65,69fold
+71,77fold
+91,99fold
+82,171fold
+176,397fold
+402,408fold
+410,416fold
+418,453fold
+455,479fold
+510,511fold
+512,513fold
+514,515fold
+516,517fold
+518,519fold
+520,521fold
+529,565fold
+567,578fold
+524,578fold
+580,603fold
+605,664fold
+666,692fold
+697,704fold
+709,734fold
+736,761fold
+763,767fold
+769,778fold
+780,797fold
+817,873fold
+875,917fold
+919,950fold
+952,956fold
+958,979fold
+981,1017fold
+1019,1034fold
+1036,1058fold
+1063,1095fold
+1097,1101fold
+1103,1140fold
+1142,1179fold
+1181,1211fold
+1213,1235fold
+1237,1245fold
+1247,1268fold
+1270,1289fold
+1291,1323fold
+1325,1329fold
+1331,1335fold
+let s:l = 1335 - ((12 * winheight(0) + 15) / 30)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+1335
+normal! 0
+tabnext 1
+if exists('s:wipebuf')
+  silent exe 'bwipe ' . s:wipebuf
+endif
+unlet! s:wipebuf
+set winheight=1 winwidth=20 shortmess=filnxtToO
+let s:sx = expand("<sfile>:p:r")."x.vim"
+if file_readable(s:sx)
+  exe "source " . fnameescape(s:sx)
+endif
+let &so = s:so_save | let &siso = s:siso_save
+let g:this_session = v:this_session
+let g:this_obsession = v:this_session
+let g:this_obsession_status = 2
+doautoall SessionLoadPost
+unlet SessionLoad
+" vim: set ft=vim :

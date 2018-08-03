@@ -102,7 +102,7 @@ class StretchNorm(mcolors.Normalize):
             value_scaled = np.arange(value_scaled)
         value_cmap = np.ma.empty(value_scaled.size)
         for i,v in enumerate(value_scaled):
-            # ...get values, accounting for midpoints
+            # Get values, accounting for midpoints
             if v < 0: v = 0
             if v > 1: v = 1
             if v >= midpoint_scaled:

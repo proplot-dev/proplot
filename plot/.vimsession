@@ -168,12 +168,12 @@ normal! zc
 normal! zc
 1445
 normal! zc
-let s:l = 1593 - ((29 * winheight(0) + 30) / 61)
+let s:l = 951 - ((6 * winheight(0) + 30) / 61)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-1593
-normal! 020|
+951
+normal! 018|
 tabedit proj.py
 set splitbelow splitright
 wincmd t
@@ -398,7 +398,7 @@ exe s:l
 normal! zt
 1
 normal! 0
-tabnext 2
+tabnext 8
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf
 endif

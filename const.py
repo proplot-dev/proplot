@@ -16,7 +16,7 @@ Md = 28.9645e-3 # dry air molar mass; kg mol-1
 Mw = 18.0153e-3 # water vapor molar mass; kg mol-1
 cp = 1.005e3 # specific heat at T=300K, surface press; J kg-1 K-1
 p0 = 1013.25
-# Derivable
+# Derivative constants
 kb = R/Na # Boltzmann constant; J K-1
 sigma = (2*(pi**5)*(kb**4))/(15*(h**3)*(c**2)) # Stefan-boltzmann constant (see WIKIPEDIA); W m-2 K-4
 Rd = R/Md # dry air gas constant; J K-1 kg-1
