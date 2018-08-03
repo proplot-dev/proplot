@@ -12,6 +12,7 @@ import matplotlib.font_manager as mfonts
 from glob import glob
 from cycler import cycler
 from matplotlib import matplotlib_fname
+from types import MethodType
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 import matplotlib as mpl
@@ -231,7 +232,7 @@ def globals(*args, verbose=False, **kwargs):
     add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})
     add('ctick',       {'length':ticklen, 'width':linewidth, 'color':color})
     add('coastlines',  {'linewidth':linewidth, 'color':color})
-    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2})
+    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.5})
     add('spine',       {'color':color, 'linewidth':linewidth})
     add('outline',     {'edgecolor':color, 'linewidth':linewidth})
     # add('xscale'); add('yscale'); add('contents', color='moccasin')
@@ -324,6 +325,13 @@ for name,value in colors.items():
         if not _announcement: # only do this if adding at least one new color
             _announcement = True
             print("Registered colors.")
+
+#-------------------------------------------------------------------------------
+# Helper function that returns global cycles
+# Append it to pyplot module
+def _gen_cycles():
+    return cycles
+plt.cycles = _gen_cycles
 
 #-------------------------------------------------------------------------------
 # Register color new color styles

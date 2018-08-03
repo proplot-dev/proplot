@@ -42,6 +42,7 @@ except ModuleNotFoundError:
     print("Warning: cartopy is not available.")
 # Local modules
 from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
+from .rc import globals
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -941,9 +942,8 @@ def _format(self,
             facecolor='none', edgecolor='k', transform=self.transAxes)
 
     #--------------------------------------------------------------------------
-    # Process projection/map axes
-    #--------------------------------------------------------------------------
     # Basemap axes setup
+    #--------------------------------------------------------------------------
     # For now force background to never be transparent, logic being that the background
     # itself contains information (e.g. "this is ocean" or "this is land")
     if getattr(self, 'm', None) is not None: # the attribute exists and isn't None
@@ -1007,12 +1007,20 @@ def _format(self,
         # p.set_zorder(-1) # is already zero so this is dumb
         # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
+
+    #--------------------------------------------------------------------------
     # Cartopy axes setup
+    #--------------------------------------------------------------------------
     if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
-        print("Warning: Cartopy axes setup not yet implemented.")
-        return
+        # Boundary
+        self.outline_patch.update(globals('outline'))
+        # Gridlines with locators; if None, cartopy will draw defaults
+        self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
+        # Add features 
         # self.add_feature(cfeature.COASTLINE, **globals('outline'))
-        # self.outline_patch.update(globals('outline'))
+        # self.add_feature(cfeature.LAND)
+        # self.add_feature(cfeature.OCEAN)
+        return # skip everything else!
 
     #--------------------------------------------------------------------------
     # Process normal axes, various x/y settings individually
