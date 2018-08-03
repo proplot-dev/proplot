@@ -1,0 +1,417 @@
+let SessionLoad = 1
+if &cp | set nocp | endif
+let s:so_save = &so | let s:siso_save = &siso | set so=0 siso=0
+let v:this_session=expand("<sfile>:p")
+silent only
+cd ~/pyfuncs/plot
+if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
+  let s:wipebuf = bufnr('%')
+endif
+set shortmess=aoO
+badd +6 __init__.py
+badd +1 ~/pyfuncs/plot/base.py
+badd +0 axis.py
+badd +0 colors.py
+badd +0 utils.py
+badd +0 rc.py
+badd +0 proj.py
+badd +105 ~/.tmux.conf
+badd +0 ../tools/all.py
+args __init__.py
+edit __init__.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal nofen
+silent! normal! zE
+let s:l = 9 - ((8 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+9
+normal! 033|
+tabedit ~/pyfuncs/plot/base.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal nofen
+silent! normal! zE
+49,55fold
+62,63fold
+65,124fold
+56,124fold
+139,148fold
+149,169fold
+170,254fold
+255,259fold
+260,264fold
+265,270fold
+271,281fold
+282,291fold
+292,302fold
+303,312fold
+319,324fold
+325,326fold
+327,328fold
+331,335fold
+336,338fold
+339,341fold
+342,344fold
+345,347fold
+351,355fold
+356,361fold
+362,372fold
+373,383fold
+390,391fold
+392,393fold
+396,401fold
+402,408fold
+409,422fold
+423,436fold
+442,466fold
+468,474fold
+476,705fold
+707,849fold
+851,1143fold
+1445,2109fold
+49
+normal! zc
+56
+normal! zo
+62
+normal! zc
+65
+normal! zc
+56
+normal! zc
+139
+normal! zc
+149
+normal! zc
+170
+normal! zc
+255
+normal! zc
+260
+normal! zc
+265
+normal! zc
+271
+normal! zc
+282
+normal! zc
+292
+normal! zc
+303
+normal! zc
+319
+normal! zc
+325
+normal! zc
+327
+normal! zc
+331
+normal! zc
+336
+normal! zc
+339
+normal! zc
+342
+normal! zc
+345
+normal! zc
+351
+normal! zc
+356
+normal! zc
+362
+normal! zc
+373
+normal! zc
+390
+normal! zc
+392
+normal! zc
+396
+normal! zc
+402
+normal! zc
+409
+normal! zc
+423
+normal! zc
+442
+normal! zc
+468
+normal! zc
+476
+normal! zc
+707
+normal! zc
+851
+normal! zc
+1445
+normal! zc
+let s:l = 1593 - ((29 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+1593
+normal! 020|
+tabedit proj.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+17,21fold
+23,25fold
+14,25fold
+28,33fold
+35,36fold
+27,36fold
+40,45fold
+47,48fold
+39,48fold
+55,59fold
+14
+normal! zo
+27
+normal! zo
+39
+normal! zo
+let s:l = 47 - ((46 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+47
+normal! 09|
+tabedit ../tools/all.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+28,36fold
+38,47fold
+49,53fold
+55,63fold
+65,69fold
+71,77fold
+91,99fold
+82,171fold
+176,397fold
+402,408fold
+410,416fold
+418,453fold
+455,479fold
+510,511fold
+512,513fold
+514,515fold
+516,517fold
+518,519fold
+520,521fold
+529,565fold
+567,578fold
+524,578fold
+580,603fold
+605,664fold
+666,692fold
+697,704fold
+709,734fold
+736,761fold
+763,767fold
+769,778fold
+780,797fold
+817,873fold
+875,917fold
+919,950fold
+952,956fold
+958,979fold
+981,1017fold
+1019,1034fold
+1036,1058fold
+1063,1095fold
+1097,1101fold
+1103,1140fold
+1142,1179fold
+1181,1211fold
+1213,1235fold
+1237,1245fold
+1247,1268fold
+1270,1289fold
+1291,1323fold
+1325,1329fold
+1331,1335fold
+1369,1373fold
+1341,1459fold
+let s:l = 12 - ((11 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+12
+normal! 029|
+tabedit rc.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+82,89fold
+33,239fold
+33
+normal! zo
+let s:l = 6 - ((5 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+6
+normal! 0
+tabedit utils.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+12,47fold
+53,53fold
+49,81fold
+let s:l = 76 - ((54 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+76
+normal! 0
+tabedit colors.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+15,40fold
+42,73fold
+75,184fold
+189,203fold
+205,217fold
+219,331fold
+341,348fold
+333,355fold
+let s:l = 344 - ((44 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+344
+normal! 038|
+tabedit axis.py
+set splitbelow splitright
+wincmd t
+set winheight=1 winwidth=1
+argglobal
+setlocal fdm=manual
+setlocal fde=SimpylFold#FoldExpr(v:lnum)
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=99
+setlocal fml=1
+setlocal fdn=10
+setlocal fen
+silent! normal! zE
+22,30fold
+32,58fold
+13,58fold
+67,74fold
+78,91fold
+76,122fold
+60,122fold
+130,136fold
+138,145fold
+124,145fold
+156,172fold
+150,174fold
+181,201fold
+176,203fold
+210,226fold
+205,228fold
+235,251fold
+230,252fold
+60
+normal! zo
+let s:l = 1 - ((0 * winheight(0) + 30) / 61)
+if s:l < 1 | let s:l = 1 | endif
+exe s:l
+normal! zt
+1
+normal! 0
+tabnext 2
+if exists('s:wipebuf')
+  silent exe 'bwipe ' . s:wipebuf
+endif
+unlet! s:wipebuf
+set winheight=1 winwidth=20 shortmess=filnxtToO
+let s:sx = expand("<sfile>:p:r")."x.vim"
+if file_readable(s:sx)
+  exe "source " . fnameescape(s:sx)
+endif
+let &so = s:so_save | let &siso = s:siso_save
+let g:this_session = v:this_session
+let g:this_obsession = v:this_session
+let g:this_obsession_status = 2
+doautoall SessionLoadPost
+unlet SessionLoad
+" vim: set ft=vim :
