@@ -8,6 +8,8 @@
 *.pdf
 empty*
 sample*
+notes*
+  # just for jotting stuff down
 
 # Python extras #
 #################

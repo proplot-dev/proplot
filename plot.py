@@ -2738,18 +2738,18 @@ class WarpNorm(mcolors.Normalize):
         # Function
         def warp(x, exp, exp_max=4):
             # Returns indices stretched so neutral/low values are sampled more heavily
-            # ...will artifically use exp to signify stretching away from neutral vals,
-            # ...or compressing toward neutral vals
+            # Will artifically use exp to signify stretching away from neutral vals,
+            # Or compressing toward neutral vals
             if exp > 0:
                 invert = True
             else:
                 invert, exp = False, -exp
             exp = exp*(exp_max/10)
-            # ...apply function; approaches x=1 as a-->Inf, x=x as a-->0
+            # Apply function; approaches x=1 as a-->Inf, x=x as a-->0
             if invert: x = 1-x
             value =  (x-1+(np.exp(x)-x)**exp)/(np.e-1)**exp
             if invert: value = 1-value # flip on y-axis
-            # ...and return
+            # And return
             return value
         # Initial stuff
         if self.midpoint is None:
@@ -2764,7 +2764,7 @@ class WarpNorm(mcolors.Normalize):
             value_scaled = np.arange(value_scaled)
         value_cmap = np.ma.empty(value_scaled.size)
         for i,v in enumerate(value_scaled):
-            # ...get values, accounting for midpoints
+            # Get values, accounting for midpoints
             if v < 0: v = 0
             if v > 1: v = 1
             if v >= midpoint_scaled:
