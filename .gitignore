@@ -1,6 +1,7 @@
 # VIM extras #
 ##############
-.session.*
+.session.vim
+.vimsession
 .*.sw[a-z]
 
 # Other stuff #
