@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 #------------------------------------------------------------------------------#
 # Imports
+# WARNING: Can't make this module depend on base.subplots, or end up
+# with circular imports! Make plots the old-fashioned way.
 #------------------------------------------------------------------------------#
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.ticker as mticker
 from matplotlib import rcParams
-from .base import subplots
+from .rc import globals
 
 #------------------------------------------------------------------------------
 # Colormap stuff
@@ -335,8 +338,10 @@ def cycleshow():
     Show off the different color cycles.
     Wrote this one myself, so it uses the custom API.
     """
-    fig, axs = subplots(ncols=2, nrows=len(cycles)//2+len(cycles)%2, aspect=2.5, width=7,
-        left=.1, right=.1, bottom=.1, top=.3, hspace=.3)
+    cycles = plt.cycles() # function should have been added by the rc plugin
+    fig, axs = plt.subplots(figsize=(7,10), ncols=2, nrows=len(cycles)//2+len(cycles)%2)
+    axs = [ax for sub in axs for ax in sub]
+    fig.subplots_adjust(top=.95, bottom=.05, left=.05, right=0.95, hspace=.5, wspace=.05)
     state = np.random.RandomState(123412)
     def testplot(ax,cycle):
         seen = set()
@@ -345,7 +350,11 @@ def cycleshow():
         lines = ax.plot(state.rand(10,len(colors)), lw=5, ls='-')
         for i,l in enumerate(lines):
             l.set_zorder(len(lines)-i) # make first lines have big zorder
-        ax.format(xlim=(-0.5,10), title=f'{cycle}: {len(colors)} colors', yformatter='', xformatter='')
+        ax.set_xlim((-0.5,10))
+        ax.set_title(f'{cycle}: {len(colors)} colors')
+        for axis in 'xy':
+            ax.tick_params(axis=axis, which='both', labelbottom=False, labelleft=False,
+                    bottom=False, top=False, left=False, right=False)
     for i,cycle in enumerate(cycles.keys()):
         globals(cycle=cycle)
         testplot(axs[i],cycle)
@@ -353,8 +362,4 @@ def cycleshow():
     fig.savefig(f'{os.path.dirname(__file__)}/cycles.pdf',
             bbox_inches='tight', format='pdf')
     return fig
-
-#------------------------------------------------------------------------------#
-# Initialize everything
-#------------------------------------------------------------------------------#
 

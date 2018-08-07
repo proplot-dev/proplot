@@ -42,6 +42,7 @@ except ModuleNotFoundError:
     print("Warning: cartopy is not available.")
 # Local modules
 from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
+from .rc import globals
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -941,9 +942,8 @@ def _format(self,
             facecolor='none', edgecolor='k', transform=self.transAxes)
 
     #--------------------------------------------------------------------------
-    # Process projection/map axes
-    #--------------------------------------------------------------------------
     # Basemap axes setup
+    #--------------------------------------------------------------------------
     # For now force background to never be transparent, logic being that the background
     # itself contains information (e.g. "this is ocean" or "this is land")
     if getattr(self, 'm', None) is not None: # the attribute exists and isn't None
@@ -1007,12 +1007,20 @@ def _format(self,
         # p.set_zorder(-1) # is already zero so this is dumb
         # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
+
+    #--------------------------------------------------------------------------
     # Cartopy axes setup
+    #--------------------------------------------------------------------------
     if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
-        print("Warning: Cartopy axes setup not yet implemented.")
-        return
+        # Boundary
+        self.outline_patch.update(globals('outline'))
+        # Gridlines with locators; if None, cartopy will draw defaults
+        self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
+        # Add features 
         # self.add_feature(cfeature.COASTLINE, **globals('outline'))
-        # self.outline_patch.update(globals('outline'))
+        # self.add_feature(cfeature.LAND)
+        # self.add_feature(cfeature.OCEAN)
+        return # skip everything else!
 
     #--------------------------------------------------------------------------
     # Process normal axes, various x/y settings individually
@@ -1463,7 +1471,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         innerpanels=None, # same as below; list of numbers where we want subplotspecs
         whichpanels=None, hsep=None, wsep=None, hwidth=None, wwidth=None,
         maps=None, # set maps to True for maps everywhere, or to list of numbers
-        package='basemap', projection='cyl', projection_dict={}, **projection_kwargs): # for projections; can be 'basemap' or 'cartopy'
+        package='basemap', projection=None, projection_dict={}, **projection_kwargs): # for projections; can be 'basemap' or 'cartopy'
     """
     Special creation of subplots grids, allowing for arbitrarily overlapping 
     axes objects. Will return figure handle and axes objects. Need to finish
@@ -1561,7 +1569,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         # To do this need to instantiate basemap object which has dual utility of
         # telling us before draw-time whether any kwpair in projection_kwargs is bad
         projection_kwargs.update({'fix_aspect':True})
+        projection = projection or 'cyl' # cylindrical by default
         mexample = mbasemap.Basemap(projection=projection, **projection_kwargs)
+        # Override aspect ratio
         aspect = (mexample.urcrnrx-mexample.llcrnrx)/(mexample.urcrnry-mexample.llcrnry)
         if not silent: print(f"Forcing aspect ratio: {aspect:.3g}")
 
@@ -1570,6 +1580,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     if maps and package=='cartopy':
         # Get the projection instance from a string and determine the
         # correct aspect ratio (TODO) also prevent auto-scaling
+        projection = projection or 'cyl'
         crs_dict = {
             **{key: ccrs.PlateCarree for key in ('cyl','rectilinear','pcarree','platecarree')},
             **{key: ccrs.Mollweide for key in ('moll','mollweide')},
@@ -1590,10 +1601,12 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             raise ValueError(f"For cartopy, projection must be one of the following: {', '.join(crs_dict.keys())}.")
         init_kwargs = {crs_translate.get(key,key):value for key,value in projection_kwargs.items() if key not in geoaxes_keys}
         projection_kwargs = {key:value for key,value in projection_kwargs.items() if key in geoaxes_keys}
-        cartopy_kwargs = {'projection': crs_dict[projection](**init_kwargs)}
-        cartopy_kwargs['projection']._threshold = 1
-    elif not maps:
-        projection = None
+        projection = crs_dict[projection](**init_kwargs)
+        cartopy_kwargs = {'projection': projection}
+        # Override aspect ratio
+        aspect = (np.diff(projection.x_limits)/np.diff(projection.y_limits))[0]
+        if not silent: print(f"Forcing aspect ratio: {aspect:.3g}")
+
     # Aspect ratio test
     if maps:
         wtest = [0] if wratios is None else wratios
