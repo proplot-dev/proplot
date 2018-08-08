@@ -1410,6 +1410,9 @@ def _panel_factory(fig, subspec, width, height,
 #------------------------------------------------------------------------------#
 # Custom settings for various journals
 # Add to this throughout your career, or as standards change
+# PNAS info: http://www.pnas.org/page/authors/submission
+# AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
+# AGU info: https://publications.agu.org/author-resource-center/figures-faq/
 #------------------------------------------------------------------------------#
 def _journal_sizes(width, height):
     # User wants to define their own size
@@ -1418,34 +1421,29 @@ def _journal_sizes(width, height):
     # Determine automatically
     cm2in = 0.3937
     mm2in = 0.03937
-    if width=='pnas1': # http://www.pnas.org/page/authors/submission
-        width = 8.7*cm2in
-    elif width=='pnas2':
-        width = 11.4*cm2in
-    elif width=='pnas3':
-        width = 17.8*cm2in
-    elif width=='ams1': # https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
-        width = 3.2
-    elif width=='ams2':
-        width = 4.5
-    elif width=='ams3':
-        width = 5.5
-    elif width=='ams4':
-        width = 6.5
-    elif width=='agu1': # https://publications.agu.org/author-resource-center/figures-faq/
-        width = 95*mm2in
-        height = 115*mm2in
-    elif width=='agu2': # spans two columns, half-page
-        width = 190*mm2in
-        height = 115*mm2in
-    elif width=='agu3': # entire column, half-page
-        width = 95*mm2in
-        height = 230*mm2in
-    elif width=='agu4': # full page
-        width = 190*mm2in
-        height = 230*mm2in
+    table = {
+        'pnas1': 8.7*cm2in,
+        'pnas2': 11.4*cm2in,
+        'pnas3': 17.8*cm2in,
+        'ams1': 3.2,
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': (95*mm2in, 115*mm2in),
+        'agu2': (190*mm2in, 115*mm2in),
+        'agu3': (95*mm2in, 230*mm2in),
+        'agu4': (190*mm2in, 230*mm2in),
+        }
+    value = table.get(width, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
+                          'Options are: ' + ', '.join(table.keys()))
+    # Output width, and optionally also specify height
+    try: iter(value)
+    except TypeError:
+        width = value
     else:
-        raise ValueError(f"Unknown journal figure width specifier \"{width}\".")
+        width, height = value
     return width, height
 
 #-------------------------------------------------------------------------------
