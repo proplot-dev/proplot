@@ -75,16 +75,8 @@ class Figure(mfigure.Figure):
             tight = True
         if squeeze is None and tight is not None:
             tight = squeeze
-        # Get bounding box, older method or something
-        # xs, ys = [], []
-        # for ax in self.axes: # try this method
-        #     abbox = ax.get_tightbbox(self.canvas.get_renderer())
-        #     abbox = mtransforms.TransformedBbox(abbox, mtransforms.Affine2D().scale(1./self.dpi))
-        #     xs.append(abbox.intervalx)
-        #     ys.append(abbox.intervaly)
-        # xa = [min(x[0] for x in xs), max(x[1] for x in xs)]
-        # ya = [min(y[0] for y in ys), max(y[1] for y in ys)]
-        # Get bounding box
+        # Get bounding box that encompasses *all artists*, compare to bounding
+        # box used for saving *figure*
         obbox = self.bbox_inches # original bbox
         bbox = self.get_tightbbox(self.canvas.get_renderer())
         ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
@@ -466,7 +458,7 @@ def _text(self, x, y, text, transform='axes', fancy=False, black=True, edgewidth
         #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
     return t
 
-def _autolocate(min_, max_, base=5):
+def _auto_locate(min_, max_, base=5):
     """
     Return auto-generated levels in the provided interval. Minimum and maximum
     values will be rounded to the nearest number divisible by the specified base.
@@ -474,8 +466,8 @@ def _autolocate(min_, max_, base=5):
     _round = lambda x: base*round(float(x)/base)
     return np.arange(_round(min_), _round(max_)+base/2, base)
 
-def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
-        cformatter=None, clabel=None, errfix=True, extend=.15, # in inches
+def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
+        cformatter=None, clabel=None, errfix=True, extend='neither', triangles=.15, # in inches
         length=0.8, values=None, **kwargs): #, settings=None):
     """
     Function for formatting colorbar-axes (axes that are "filled" by a colorbar).
@@ -491,6 +483,8 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
       (see: https://stackoverflow.com/q/42723538/4970632).
     * Workaround is to make sure locators are in vmin/vmax range EXCLUSIVELY;
       cannot match/exceed values.
+    * The 'extend' kwarg is used for the case when you are manufacturing colorbar
+      from list of colors or lines. Most of the time want 'neither'.
     TODO:
     Issue appears where the normalization vmin/vmax are outside of explicitly declared "levels"
     minima and maxima but that is probaby appropriate. If your levels are all within vmin/vmax,
@@ -541,16 +535,16 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         if isinstance(mappable, mcontainer.Container):
             pass
         else:
-            if isinstance(mappable, str):
+            if isinstance(mappable[0], str):
                 fromcolors = True # we passed a bunch of color strings
             else:
                 try: iter(mappable[0])
                 except TypeError:
-                    fromlines = True # we passed a bunch of handles
+                    fromlines = True  # we passed a bunch of handles
                 else:
                     fromcolors = True # we passed a bunch of color tuples
     csettings = {'spacing':'uniform', 'cax':cax, 'use_gridspec':True, # use space afforded by entire axes
-        'extend':'both', 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
+        'extend':extend, 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
     csettings.update(**kwargs)
     if hasattr(mappable, 'extend'):
@@ -571,7 +565,8 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         colors = [h.get_color() for h in mappable]
     if fromlines or fromcolors:
         values = np.array(values) # needed for below
-        colors = ['#ffffff'] + colors + ['#ffffff']
+        # colors = ['#ffffff'] + colors + ['#ffffff']
+        colors = colors[:1] + colors + colors[-1:]
         colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors, N=len(colors)) # note that
             # the 'N' is critical; default 'N' is otherwise 256, and can get weird artifacts due to
             # unintentionally sampling some 'new' colormap colors; very bad!
@@ -580,29 +575,29 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         values = np.concatenate((values[:1]-np.diff(levels[:2]), values,
             values[-1:]+np.diff(levels[-2:]))) # this works empirically; otherwise get
             # weird situation with edge-labels appearing on either side
-        mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap, extend='neither',
-                norm=Norm(values)) # workaround
+        mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap,
+                extend=extend, norm=Norm(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
-            # clocator = values # restore this if values weren't padded
             clocator = values[1:-1]
+            # clocator = values # restore this if values weren't padded
     # Determine tick locators for major/minor ticks
     # Can pass clocator/cminorlocator as the *jump values* between the mappables
     # vmin/vmax if desired
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
-    for locator in (clocator,cminorlocator):
+    for i,locator in enumerate((clocator,cminorlocator)):
         # Create a preliminary object first
         if isinstance(locator, mticker.Locator):
             pass # nothing to do
-        elif locator is None: # final; if cminorlocator wasn't set, don't bother at all
-            if locator is cminorlocator:
-                locators.append(mticker.NullLocator()) # don't set it
-                continue
-            locator = mticker.AutoLocator() # really basic
+        elif locator is None and i==1: # means we never wanted minor ticks
+            locators.append(mticker.NullLocator())
+            continue
+        elif locator is None:
+            locator = mticker.AutoLocator() # determine automatically
         else: # set based on user input
             try: iter(locator)
             except TypeError:
-                locator = _autolocate(mappable.norm.vmin, mappable.norm.vmax, locator)
+                locator = _auto_locate(mappable.norm.vmin, mappable.norm.vmax, locator)
             locator = mticker.FixedLocator(np.array(locator)) # basic
         # Then modify to work around that mysterious error, and to prevent annoyance
         # where minor ticks extend beyond the "extend" triangles
@@ -665,8 +660,8 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     # THE MAJOR FORMATTER/LOCATOR TO COLORBAR COMMMAND and DIRETLY EDIT the 
     # minor locators/formatters; update_ticks after the fact ignores the major formatter
     # cb = self.figure.colorbar(mappable, **csettings)
-    extend = extend/(cax.figure.width*np.diff(getattr(cax.get_position(),interval))[0]-2*extend)
-    csettings.update({'extendfrac':extend}) # width of colorbar axes and stuff
+    triangles = triangles/(cax.figure.width*np.diff(getattr(cax.get_position(),interval))[0]-2*triangles)
+    csettings.update({'extendfrac':triangles}) # width of colorbar axes and stuff
     cb = self.figure.colorbar(mappable, ticks=locators[0], format=cformatter, **csettings)
     # The ticks/ticklabels basic properties
     for t in axis.get_ticklabels(which='major'):
@@ -705,7 +700,7 @@ def _cformat(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
     # axis.set_major_formatter(cformatter) # fucks shit up -- why?
     return cb
 
-def _lformat(self, handles=None, align=None, handlefix=False, **kwargs): #, settings=None): # can be updated
+def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
     Should update my legend function to CLIP the legend box when it goes outside axes area, so
@@ -835,7 +830,7 @@ def _lformat(self, handles=None, align=None, handlefix=False, **kwargs): #, sett
             bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
             if hasattr(self, '_legend'):
                 leg = self._legend(handles=hs, ncol=len(hs), bbox_to_anchor=bbox,
-                    frameon=False, borderpad=0, loc='center', **lsettings) # _lformat is overriding original legend Method
+                    frameon=False, borderpad=0, loc='center', **lsettings) # _format_legend is overriding original legend Method
             else:
                 leg = self.legend(handles=hs, ncol=len(hs), bbox_to_anchor=bbox,
                     frameon=False, borderpad=0, loc='center', **lsettings) # not overriding original Method
@@ -849,7 +844,7 @@ def _lformat(self, handles=None, align=None, handlefix=False, **kwargs): #, sett
             self.add_artist(l) # because matplotlib deletes previous ones...
     return legends
 
-def _format(self,
+def _format_axes(self,
     alpha=None, hatch=None, color=None, # control figure/axes background; hatch just applies to axes
     coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
@@ -959,7 +954,7 @@ def _format(self,
         if latlocator is not None:
             try: iter(latlocator)
             except TypeError:
-                latlocator = _autolocate(m.latmin+latlocator, m.latmax-latlocator, latlocator)
+                latlocator = _auto_locate(m.latmin+latlocator, m.latmax-latlocator, latlocator)
             p = m.drawparallels(latlocator, labels=latlabels)
             for pi in p.values(): # returns dict, where each one is tuple
                 for _ in [i for j in pi for i in j]: # magic
@@ -974,7 +969,7 @@ def _format(self,
         if lonlocator is not None:
             try: iter(lonlocator)
             except TypeError:
-                lonlocator = _autolocate(m.lonmin+lonlocator, m.lonmax-lonlocator, lonlocator)
+                lonlocator = _auto_locate(m.lonmin+lonlocator, m.lonmax-lonlocator, lonlocator)
             p = m.drawmeridians(lonlocator, labels=lonlabels)
             for pi in p.values():
                 for _ in [i for j in pi for i in j]: # magic
@@ -1015,6 +1010,12 @@ def _format(self,
         # Boundary
         self.outline_patch.update(globals('outline'))
         # Gridlines with locators; if None, cartopy will draw defaults
+        if xlocator is not None:
+            try: iter(xlocator)
+            except TypeError: xlocator = _auto_locate(-180, 180, xlocator)
+        if ylocator is not None:
+            try: iter(ylocator)
+            except TypeError: ylocator = _auto_locate(-90, 90, ylocator)
         self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
         # Add features 
         # self.add_feature(cfeature.COASTLINE, **globals('outline'))
@@ -1074,7 +1075,7 @@ def _format(self,
         # Tick/tick gridline properties
         # * Some weird issue seems to cause set_tick_params to reset/forget that the grid
         #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
-        #   So calling _format() a second time will remove the lines
+        #   So calling _format_axes() a second time will remove the lines
         # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
         #   group of left/right or top/bottom
         # * Includes option to draw spines but not draw ticks on that spine, e.g.
@@ -1112,7 +1113,7 @@ def _format(self,
             axis.set_major_locator(ticklocator)
         elif ticklocator is not None:
             try: iter(ticklocator)
-            except TypeError: ticklocator = _autolocate(lim[0], lim[1], ticklocator)
+            except TypeError: ticklocator = _auto_locate(lim[0], lim[1], ticklocator)
             # axis.set_ticks(ticklocator)
             axis.set_major_locator(mticker.FixedLocator(ticklocator))
 
@@ -1123,7 +1124,7 @@ def _format(self,
             axis.set_minor_locator(tickminorlocator) # pass locator class/subclass (all documented ones subclass the parent class, mticker.Locator)
         elif tickminorlocator is not None:
             try: iter(tickminorlocator)
-            except TypeError: tickminorlocator = _autolocate(lim[0], lim[1], tickminorlocator) # use **spacing/setp** as specified
+            except TypeError: tickminorlocator = _auto_locate(lim[0], lim[1], tickminorlocator) # use **spacing/setp** as specified
             axis.set_minor_locator(mticker.FixedLocator(tickminorlocator))
 
         # Next, major tick formatters (enforce Null, always, for minor ticks), and text styling
@@ -1181,11 +1182,11 @@ def _atts_global(self, width, height):
     self._twinx  = self.twinx
     self._twiny  = self.twiny
     self._text   = self.text
-    self.legend  = MethodType(_lformat, self) # MethodType approach
+    self.legend  = MethodType(_format_legend, self) # MethodType approach
     self.twinx   = MethodType(_twinx, self)
     self.twiny   = MethodType(_twiny, self)
     self.text    = MethodType(_text, self)
-    self.format  = MethodType(_format, self)
+    self.format  = MethodType(_format_axes, self)
 
 def _atts_special(self, maps, package, projection, **kwargs):
     # Instantiate the Basemap object and add contouring methods
@@ -1206,6 +1207,8 @@ def _atts_special(self, maps, package, projection, **kwargs):
         # line from 0 to 360 degrees longitude, fails; gotta use axes coordiantes
         if isinstance(self, GeoAxes) and any(isinstance(self.projection, projection) \
             for projection in (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)):
+            # self.projection.threshold = \
+            #     kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
             latmin = kwargs.pop('latmin', 0)
             latmin = kwargs.pop('lat_min', latmin) # also try this guy
             self.set_extent([-180,180,latmin,90], Transform) # use platecarree transform
@@ -1596,11 +1599,11 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             'lon0':  'central_longitude',
             'lon_0': 'central_longitude',
             }
-        geoaxes_keys = ('latmin', 'lat_min') # will be processed down the line
+        postprocess_keys = ('latmin', 'lat_min', 'threshold') # will be processed down the line
         if projection not in crs_dict:
             raise ValueError(f"For cartopy, projection must be one of the following: {', '.join(crs_dict.keys())}.")
-        init_kwargs = {crs_translate.get(key,key):value for key,value in projection_kwargs.items() if key not in geoaxes_keys}
-        projection_kwargs = {key:value for key,value in projection_kwargs.items() if key in geoaxes_keys}
+        init_kwargs = {crs_translate.get(key,key):value for key,value in projection_kwargs.items() if key not in postprocess_keys}
+        projection_kwargs = {key:value for key,value in projection_kwargs.items() if key in postprocess_keys}
         projection = crs_dict[projection](**init_kwargs)
         cartopy_kwargs = {'projection': projection}
         # Override aspect ratio
@@ -1993,8 +1996,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             s.figure = fig
             s.rightpanel = False
             s.bottompanel = True
-            s.colorbar = MethodType(_cformat, s)
-            s.legend = MethodType(_lformat, s)
+            s.colorbar = MethodType(_format_colorbar, s)
+            s.legend = MethodType(_format_legend, s)
         if len(specs)==1: specs = specs[0] # no indexing of singleton panels
         fig.bottompanel = specs
             # don't necessarily want to draw axes (e.g. for colorbar
@@ -2039,8 +2042,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             s.figure = fig
             s.rightpanel = True
             s.bottompanel = False
-            s.colorbar = MethodType(_cformat, s)
-            s.legend = MethodType(_lformat, s)
+            s.colorbar = MethodType(_format_colorbar, s)
+            s.legend = MethodType(_format_legend, s)
         if len(specs)==1: specs = specs[0]
         fig.rightpanel = specs
             # don't necessarily want to draw axes (e.g. for colorbar
@@ -2059,9 +2062,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
                 )
         c = fig.add_subplot(C[0,1])
         c.bottomlegend, c.bottomcolorbar, c.rightcolorbar = False, True, False
-        c.format = MethodType(_cformat, c) # MethodType approach
+        c.format = MethodType(_format_colorbar, c) # MethodType approach
         fig.bottomcolorbar = c
-        # fig.bottomcolorbar = MethodType(_cformat, c)
+        # fig.bottomcolorbar = MethodType(_format_colorbar, c)
         # fig.colorbar = c
     if rightcolorbar:
         C = mgridspec.GridSpecFromSubplotSpec(
@@ -2073,9 +2076,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
                 )
         c = fig.add_subplot(C[1,0])
         c.bottomlegend, c.bottomcolorbar, c.rightcolorbar = False, False, True
-        c.format = MethodType(_cformat, c) # MethodType approach
+        c.format = MethodType(_format_colorbar, c) # MethodType approach
         fig.rightcolorbar = c
-        # fig.rightcolorbar = MethodType(_cformat, c)
+        # fig.rightcolorbar = MethodType(_format_colorbar, c)
         # fig.colorbar = c
     # Bottom legend panel
     if bottomlegend:
@@ -2086,13 +2089,13 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         l.xaxis.set_visible(False)
         l.yaxis.set_visible(False)
         l.patch.set_alpha(0)
-        l.format = MethodType(_lformat, l) # MethodType approach
+        l.format = MethodType(_format_legend, l) # MethodType approach
         fig.bottomlegend = l # had to set some properties first
-        # fig.bottomlegend = MethodType(_lformat, l)
+        # fig.bottomlegend = MethodType(_format_legend, l)
         # fig.legend = l
 
     # Set up attributes and methods
-    # or is empty string, methods in _format will make them visible
+    # or is empty string, methods in _format_axes will make them visible
     for i,ax in enumerate(axs):
         # Basic setup
         _atts_global(ax, width, height) # default methods and stuff
