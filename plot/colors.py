@@ -8,9 +8,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import matplotlib.ticker as mticker
 from matplotlib import rcParams
-from .rc import globals
+from cycler import cycler
 
 #------------------------------------------------------------------------------
 # Colormap stuff
@@ -110,9 +109,9 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
         if cm not in cmaps_known:
             if 'Vega' in cm:
                 continue # deprecated
-            elif cm[:3]=='hcl':
+            elif cm[:2]=='hc':
                 categories['HCL'].append(cm)
-            elif cm[:3]=='ncl':
+            elif cm[:2]=='nc':
                 categories['NCL'].append(cm)
             elif cm[:2]=='cb':
                 categories['ColorBrewer'].append(cm)
@@ -245,9 +244,9 @@ def colorshow(ncols=4, nbreak=12, minsat=0.1, cycle=False):
         # But probably better to use cycleshow for this
         if cycle:
             seen = set() # trickery
-            cyclecolors = rcParams['axes.prop_cycle'].by_key()['color']
-            cyclecolors = [color for color in cyclecolors if not (color in seen or seen.add(color))] # trickery
-            colors = {**colors, **{f'C{i}':v for i,v in enumerate(cyclecolors)}}
+            cycle_colors = rcParams['axes.prop_cycle'].by_key()['color']
+            cycle_colors = [color for color in cycle_colors if not (color in seen or seen.add(color))] # trickery
+            colors = {**colors, **{f'C{i}':v for i,v in enumerate(cycle_colors)}}
         # colors = {**mcolors.BASE_COLORS, **mcolors.XKCD_SORTED}
         # Sort colors by hue, saturation, value and name; then plot
         # Old, clunky method
@@ -343,21 +342,20 @@ def cycleshow():
     axs = [ax for sub in axs for ax in sub]
     fig.subplots_adjust(top=.95, bottom=.05, left=.05, right=0.95, hspace=.5, wspace=.05)
     state = np.random.RandomState(123412)
-    def testplot(ax,cycle):
+    cycles_keys   = [*cycles.keys()]
+    cycles_values = [*cycles.values()]
+    for i,ax in enumerate(axs):
         seen = set()
-        cycler = globals('axes', 'prop_cycle')
-        colors = [color for color in cycler.by_key()['color'] if not (color in seen or seen.add(color))]
-        lines = ax.plot(state.rand(10,len(colors)), lw=5, ls='-')
+        propcycle = cycler('color', cycles_values[i])
+        ax.set_prop_cycle(propcycle)
+        lines = ax.plot(state.rand(10,len(cycles_values[i])), lw=5, ls='-')
         for i,l in enumerate(lines):
             l.set_zorder(len(lines)-i) # make first lines have big zorder
         ax.set_xlim((-0.5,10))
-        ax.set_title(f'{cycle}: {len(colors)} colors')
+        ax.set_title(f'{cycles_keys[i]}: {len(cycles_values[i])} colors')
         for axis in 'xy':
             ax.tick_params(axis=axis, which='both', labelbottom=False, labelleft=False,
                     bottom=False, top=False, left=False, right=False)
-    for i,cycle in enumerate(cycles.keys()):
-        globals(cycle=cycle)
-        testplot(axs[i],cycle)
     # Save
     fig.savefig(f'{os.path.dirname(__file__)}/cycles.pdf',
             bbox_inches='tight', format='pdf')

@@ -280,7 +280,9 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
         _name = os.path.basename(_file)[:-4]
         if _name not in plt.colormaps(): # don't want to re-register every time
             if '.rgb' in _file: # table or RGB values
-                _load = {'hc':{'skiprows':1, 'delimiter':','}, 'cb':{'delimiter':','}}.get(_name[:2],{}) # default empty
+                _load = {'hc':{'skiprows':1, 'delimiter':','},
+                         'cb':{'delimiter':','},
+                         'nc':{'skiprows':2}}.get(_name[:2],{}) # default empty
                 try: _cmap = np.loadtxt(_file, **_load)
                 except:
                     print(f'Failed to load {_name}.')
