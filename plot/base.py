@@ -38,11 +38,11 @@ try: # crs stands for "coordinate reference system", leading c is "cartopy"
     Transform = ccrs.PlateCarree() # global variable
 except ModuleNotFoundError:
     GeoAxes = None
-    Transform = None # global variable
+    Transform = None # note, never pass transform=None! default is mtransforms.IdentityTransform()
     print("Warning: cartopy is not available.")
 # Local modules
-from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
 from .rc import globals
+from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -310,15 +310,15 @@ def _contour_check(x, y, Z):
 #-------------------------------------------------------------------------------
 # Dummy ones that just detect cartopy projection
 def _cartopy_kwargs(self, kwargs):
-    if not isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
-        kwargs['transform'] = None
-    elif 'transform' not in kwargs: # user can override below
+    if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
         kwargs['transform'] = Transform # default is PlateCarree (what you want 99% of time)
     return kwargs
 def _plot(self, *args, **kwargs):
-    return self._plot(*args, **_cartopy_kwargs(self, kwargs))
+    lines = self._plot(*args, **_cartopy_kwargs(self, kwargs))
+    return lines
 def _scatter(self, *args, **kwargs):
-    return self._scatter(*args, **_cartopy_kwargs(self, kwargs))
+    points = self._scatter(*args, **_cartopy_kwargs(self, kwargs))
+    return points
 
 # TODO TODO TODO special wrapper functions to write!
 def _quiver(self, x, y, Z, **kwargs): # quiver plot
@@ -430,7 +430,7 @@ def _pcolormesh_basemap(self, lon, lat, Z, **kwargs):
 
 #------------------------------------------------------------------------------
 # Formatting functions, assigned using MethodType onto various Axes
-# instances and GirdSpec instances
+# instances and GridSpec instances
 #------------------------------------------------------------------------------
 def _text(self, x, y, text, transform='axes', fancy=False, black=True, edgewidth=2, **kwarg):
     """
@@ -747,8 +747,8 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     #     hsettings = {}
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
-    #   1) user can specify nothing and align will be inferred (list of iterables is False,
-    #      use consecutive legends)
+    #   1) user can specify nothing and align will be inferred (list of iterables
+    #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
     if align is None: # automatically guess
@@ -760,21 +760,22 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
                 align = True
             else:
                 align = False
-    else: # standardize format based on "multi" input
+    else: # standardize format based on input
         try: iter(handles[0])
         except TypeError:
             implied = False # no need to fix
         else:
-            if not isinstance(handles[0], mcontainer.Container):
+            if isinstance(handles[0], mcontainer.Container):
                 implied = False
             else:
                 implied = True # no need to fix
-        if not align and not implied: # apply columns
+        if not align and not implied: # separate into columns
             if 'ncol' not in lsettings:
-                raise ValueError("Need to specify number of columns with ncol.")
+                lsettings['ncol'] = 3
+                # raise ValueError("Need to specify number of columns with ncol.")
             handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
                     for i in range(len(handles))] # to list of iterables
-        elif not align and implied:
+        if align and implied: # unfurl, because we just want one legend!
             handles = [handle for iterable in handles for handle in iterable]
 
     # Now draw legend, with two options
@@ -784,7 +785,8 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
         try: iter(handles[0])
         except TypeError:
             if 'ncol' not in lsettings:
-                raise ValueError("Need to specify number of columns with ncol.")
+                lsettings['ncol'] = 3
+                # raise ValueError("Need to specify number of columns with ncol.")
         else:
             # lengths = np.unique([len(subl) for subl in handles])
             lsettings['ncol'] = len(handles[0]) # choose this for column length

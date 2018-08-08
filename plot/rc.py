@@ -17,11 +17,19 @@ from types import MethodType
 # alongside rcParams
 import matplotlib as mpl
 # Local dependencies
-from .colors import shade, cmapcolors
+from   .colors import shade, cmapcolors
 # Default settings to be loaded when globals() is
 # called without any arguments
-rcDefaults = {'color':'k', 'linewidth':0.7, 'small':8, 'big':9,
-    'fontname':'DejaVu Sans', 'ticklen':4, 'cycle':'colorblind'}
+rcDefaults = {
+    'linewidth': 0.7,
+    'color':     'k',
+    'small':     8,
+    'medium':    8,
+    'large':     9,
+    'ticklen':   4,
+    'fontname':  'DejaVu Sans',
+    'cycle':     'colorblind',
+    }
 
 #-------------------------------------------------------------------------------
 # Settings management function
@@ -33,13 +41,10 @@ rcDefaults = {'color':'k', 'linewidth':0.7, 'small':8, 'big':9,
 # def globals(**kwargs): # fontname is matplotlib default
 def globals(*args, verbose=False, **kwargs):
     """
-    TODO: Expand idea of default 'color', 'linewidth', whatever and create more
-    dictionaries with defaults settings, then update them. No more hardcoded values
-    in the main text below.
     This has multiple uses, all rolled up into one function.
     1. *Initialize* everything with default settings. Creates special rcExtras
        dictionary assigned to 'mpl' module, just like rcParams, except the values
-       in rcExtras have my own special naming and are read by my _format function.
+       in rcExtras have my own special naming and are read by my _format() function.
     2. *Set* rcParams and rcExtras parameters belonging to some category with a single dictionary,
        list of dictionaries, kwarg pairs, or all of the above.
     3. *Set* special global params that are applied to a bunch of different
@@ -75,6 +80,9 @@ def globals(*args, verbose=False, **kwargs):
       settings, and some legend settings.
     TODO: Change default background axes color to 0072B2, from seaborn colorblind, just
     a bit darker than figure background; is nice.
+    TODO: Expand idea of default 'color', 'linewidth', whatever and create more
+    dictionaries with defaults settings, then update them. No more hardcoded values
+    in the main text below.
     """
     # Helper function; adds stuff to rcParams or rcExtras in the
     # stylesheet style of category.subcategory = value, or very
@@ -170,7 +178,7 @@ def globals(*args, verbose=False, **kwargs):
     # figures and apply set_prop_cycle on every single axes
     # * Calling plt.figure with 'num' as first argument or 'num=<num>' just
     #   brings that figure to foreground
-    # * Tested this and it takes 1ms; no big deal
+    # * Tested this and it takes 1ms; no large deal
     figs = list(map(plt.figure, plt.get_fignums())) # from: https://stackoverflow.com/a/26485683/4970632
     for fig in figs:
         for ax in fig.axes:
@@ -178,13 +186,13 @@ def globals(*args, verbose=False, **kwargs):
     #--------------------------------------------------------------------------#
     # First the rcParam settings
     # Here are ones related to axes and figure properties
-    color, linewidth, ticklen, small, big, fontname = \
-        current['color'], current['linewidth'], current['ticklen'], current['small'], current['big'], current['fontname']
+    color, linewidth, ticklen, small, large, fontname = \
+        current['color'], current['linewidth'], current['ticklen'], current['small'], current['large'], current['fontname']
     add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,
         'directory':'', 'pad_inches':0, 'bbox':'standard', 'format':'pdf'}) # empty means current directory
     add('figure', {'facecolor':(.95,.95,.95,1), 'dpi':90, # matches nbsetup
         'max_open_warning':0, 'constrained_layout':False, 'autolayout':False}) # zero disables max open warning
-    add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':small, 'titlesize':big,
+    add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':small, 'titlesize':large,
         'edgecolor':color, 'labelcolor':color, 'grid':True, 'linewidth':linewidth,
         'labelpad':3, 'prop_cycle':propcycle})
     add('font', {'size':small, 'family':'sans-serif', 'sans-serif':fontname}) # when user calls .text()
@@ -219,9 +227,9 @@ def globals(*args, verbose=False, **kwargs):
     # Should begin to delete these and control things with rcParams whenever possible
     # Remember original motivation was realization that some rcParams can't be changes
     # by passing a kwarg (don't remember any examples)
-    add('abc',         {'size':big, 'weight':'bold', 'color':color})
-    add('title',       {'size':big, 'weight':'normal', 'color':color, 'fontname':fontname})
-    add('suptitle',    {'size':big, 'weight':'normal', 'color':color, 'fontname':fontname})
+    add('abc',         {'size':large, 'weight':'bold', 'color':color})
+    add('title',       {'size':large, 'weight':'normal', 'color':color, 'fontname':fontname})
+    add('suptitle',    {'size':large, 'weight':'normal', 'color':color, 'fontname':fontname})
     add('label',       {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
     add('ticklabels',  {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
     add('gridminor',   {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1})
