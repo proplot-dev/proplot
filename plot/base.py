@@ -40,9 +40,10 @@ except ModuleNotFoundError:
     GeoAxes = None
     Transform = None # note, never pass transform=None! default is mtransforms.IdentityTransform()
     print("Warning: cartopy is not available.")
-# Local modules
+# Local modules, projection sand formatters and stuff
 from .rc import globals
 from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
+from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -160,7 +161,7 @@ def _cartopy_seams(self, lon, lat, data):
         lon = np.array((*lon, lon[0]+360)) # make longitudes circular
         data = np.concatenate((data, data[:1,:]), axis=0) # make data circular
     return lon, lat, data
-def _basemap_seams(basemap, lon, lat, data):
+def _m_seams(basemap, lon, lat, data):
     # Get some params
     lonmin, lonmax = basemap.lonmin, basemap.lonmax
     # Raise errors
@@ -245,7 +246,7 @@ def _basemap_seams(basemap, lon, lat, data):
     else:
         raise ValueError('Longitude length does not match data length along dimension 0.')
     return lon, lat, data
-def _basemap_coords(m, lon, lat):
+def _m_coords(m, lon, lat):
     # Convert to 2d x/y by calling basemap object
     lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
     X, Y = m(*np.meshgrid(lon, lat))
@@ -285,10 +286,10 @@ def _pcolor_levels(kwargs):
 def _pcolor_check(x, y, Z):
     # Checks that sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
-    if Z.shape[0]==x.size and Z.shape[1]==y.size:
-        # print("Guessing graticule edges from input coordinate centers.")
-        x, y = _graticule_fix(x, y)
-    elif Z.shape[0]!=x.size-1 or Z.shape[1]!=y.size-1:
+    xlen, ylen = x.shape[0], y.shape[-1]
+    if Z.shape[0]==xlen and Z.shape[1]==ylen:
+        x, y = _graticule_fix(x, y) # guess edges, given centers
+    elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
         raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
@@ -296,9 +297,10 @@ def _pcolor_check(x, y, Z):
 def _contour_check(x, y, Z):
     # Checks whether sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
-    if Z.shape[0]==x.size-1 and Z.shape[1]==y.size-1:
-        x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2
-    elif Z.shape[0]!=x.size or Z.shape[1]!=y.size:
+    xlen, ylen = x.shape[0], y.shape[-1]
+    if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
+        x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # guess centers, given edges
+    elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
         raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
@@ -341,6 +343,9 @@ def _bar(self, *args, **kwargs): # bar plot with different color options
 
 # Wrappers that check dimensionality, give better error messages, and change
 # the convention so dim1 is always x-axis, dim2 is always y-axis
+# WARNING: m.pcolormesh and ax.pcolormesh call m.pcolor and ax.pcolor
+# respectively, so ***cannot*** override pcolor! Get weird errors. Since
+# pcolor alone returns PolyCollection objects, call it pcolorpoly.
 def _contour(self, x, y, Z, **kwargs):
     x, y = _contour_check(x, y, Z)
     x, y, Z = _cartopy_seams(self, x, y, Z)
@@ -352,25 +357,31 @@ def _contourf(self, x, y, Z, **kwargs):
     x, y, Z = _cartopy_seams(self, x, y, Z)
     c = self._contourf(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
     return _contour_fix(c)
-def _pcolor(self, x, y, Z, **kwargs):
+def _pcolormesh(self, x, y, Z, **kwargs):
     kwargs = _pcolor_levels(kwargs)
+    # print(x.shape, y.shape)
     x, y = _pcolor_check(x, y, Z)
+    # print(x.shape, y.shape)
     if 'extend' in kwargs:
         extend = kwargs.pop('extend')
     else:
         extend = None
-    p = self._pcolor(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
+    # print('mesh')
+    p = self._pcolormesh(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
     if extend is not None:
         p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
-def _pcolormesh(self, x, y, Z, **kwargs):
+def _pcolorpoly(self, x, y, Z, **kwargs):
     kwargs = _pcolor_levels(kwargs)
+    # print(x.shape, y.shape)
     x, y = _pcolor_check(x, y, Z)
+    # print(x.shape, y.shape)
     if 'extend' in kwargs:
         extend = kwargs.pop('extend')
     else:
         extend = None
-    p = self._pcolormesh(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
+    # print('pcolor')
+    p = self.pcolor(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
     if extend is not None:
         p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
@@ -380,50 +391,50 @@ def _pcolormesh(self, x, y, Z, **kwargs):
 # Will convert longitude latitude coordinates to projected coordinates
 #-------------------------------------------------------------------------------
 # Dummy ones that just set latlon True by default
-def _plot_basemap(self, *args, **kwargs):
+def _m_plot(self, *args, **kwargs):
     return self._plot(*args, **kwargs, latlon=True)
-def _scatter_basemap(self, *args, **kwargs):
+def _m_scatter(self, *args, **kwargs):
     return self._scatter(*args, **kwargs, latlon=True)
 
 # More complex ones; assume regularly spaced data
-def _contour_basemap(self, lon, lat, Z, **kwargs):
+def _m_contour(self, lon, lat, Z, **kwargs):
     lon, lat = _contour_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
     c = self._contour(X, Y, Z.T, **kwargs)
     return c
-def _contourf_basemap(self, lon, lat, Z, **kwargs):
+def _m_contourf(self, lon, lat, Z, **kwargs):
     kwargs = _contourf_levels(kwargs)
     lon, lat = _contour_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
     c = self._contourf(X, Y, Z.T, **kwargs)
     return _contour_fix(c)
-def _pcolor_basemap(self, lon, lat, Z, **kwargs):
+def _m_pcolormesh(self, lon, lat, Z, **kwargs):
     # lon, lat = _graticule_fix(lon, lat)
     kwargs = _pcolor_levels(kwargs)
     lon, lat = _pcolor_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    p = self._pcolor(X, Y, Z.T, **kwargs)
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
-    return _pcolor_fix(p)
-def _pcolormesh_basemap(self, lon, lat, Z, **kwargs):
-    # lon, lat = _graticule_fix(lon, lat)
-    kwargs = _pcolor_levels(kwargs)
-    lon, lat = _pcolor_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
     if 'extend' in kwargs:
         extend = kwargs.pop('extend')
     else:
         extend = None
     p = self._pcolormesh(X, Y, Z.T, **kwargs)
+    if extend is not None:
+        p.extend = extend # add attribute to be used in colorbar creation
+    return _pcolor_fix(p)
+def _m_pcolorpoly(self, lon, lat, Z, **kwargs):
+    # lon, lat = _graticule_fix(lon, lat)
+    kwargs = _pcolor_levels(kwargs)
+    lon, lat = _pcolor_check(lon, lat, Z)
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
+    if 'extend' in kwargs:
+        extend = kwargs.pop('extend')
+    else:
+        extend = None
+    p = self.pcolor(X, Y, Z.T, **kwargs)
     if extend is not None:
         p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
@@ -1193,13 +1204,15 @@ def _atts_special(self, maps, package, projection, **kwargs):
             self.set_boundary(circle, transform=self.transAxes)
         # Employ some simple overrides
         # Will save the *original* versions in _<method name>
+        # WARNING: m.pcolormesh and ax.pcolormesh call m.pcolor and ax.pcolor
+        # respectively, so ***cannot*** override pcolor! Get weird errors. Since
+        # pcolor alone returns PolyCollection objects, call it pcolorpoly.
         self._pcolormesh = self.pcolormesh
-        self._pcolor     = self.pcolor
         self._contourf   = self.contourf
         self._contour    = self.contour
         self._scatter    = self.scatter
         self._plot       = self.plot
-        self.pcolor      = MethodType(_pcolor, self)
+        self.pcolorpoly  = MethodType(_pcolorpoly, self)
         self.pcolormesh  = MethodType(_pcolormesh, self)
         self.contourf    = MethodType(_contourf, self)
         self.contour     = MethodType(_contour, self)
@@ -1213,17 +1226,16 @@ def _atts_special(self, maps, package, projection, **kwargs):
         self.m.projection  = projection # save projection here
         self.m._pseudocyl  = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
         self.m._pcolormesh = self.m.pcolormesh
-        self.m._pcolor     = self.m.pcolor
         self.m._contour    = self.m.contour
         self.m._contourf   = self.m.contourf # save old methods
         self.m._scatter    = self.m.scatter
         self.m._plot       = self.m.plot
-        self.m.pcolormesh  = MethodType(_pcolormesh_basemap, self.m) # function calls the old methods
-        self.m.pcolor      = MethodType(_pcolor_basemap, self.m)
-        self.m.contour     = MethodType(_contour_basemap, self.m)
-        self.m.contourf    = MethodType(_contourf_basemap, self.m)
-        self.m.scatter     = MethodType(_scatter_basemap, self.m)
-        self.m.plot        = MethodType(_plot_basemap, self.m)
+        self.m.pcolormesh  = MethodType(_m_pcolormesh, self.m) # function calls the old methods
+        self.m.pcolorpoly  = MethodType(_m_pcolorpoly, self.m)
+        self.m.contour     = MethodType(_m_contour, self.m)
+        self.m.contourf    = MethodType(_m_contourf, self.m)
+        self.m.scatter     = MethodType(_m_scatter, self.m)
+        self.m.plot        = MethodType(_m_plot, self.m)
         # Initialize map boundary if pseudocylindrical projection
         # Initialization has to happen here (see above)
         if projection in self.m._pseudocyl:
@@ -1561,15 +1573,19 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         # correct aspect ratio (TODO) also prevent auto-scaling
         projection = projection or 'cyl'
         crs_dict = {
-            **{key: ccrs.PlateCarree for key in ('cyl','rectilinear','pcarree','platecarree')},
-            **{key: ccrs.Mollweide for key in ('moll','mollweide')},
+            **{key: ccrs.PlateCarree   for key in ('cyl','rectilinear','pcarree','platecarree')},
+            **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
             **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
             'robinson': ccrs.Robinson,
             'ortho':    ccrs.Orthographic,
             'aeqd':     ccrs.AzimuthalEquidistant,
             'aeqa':     ccrs.LambertAzimuthalEqualArea,
+            'wintri': WinkelTripel,
+            'hammer': Hammer,
+            'aitoff': Aitoff,
+            'kav7':   KavrayskiyVII,
             }
-        crs_translate = {
+        crs_translate = { # less verbose keywords, actually match proj4 keywords and similar to basemap
             'lat0':  'central_latitude',
             'lat_0': 'central_latitude',
             'lon0':  'central_longitude',

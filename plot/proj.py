@@ -24,7 +24,22 @@ class Hammer(ccrs._WarpedRectangularProjection):
         # return self._threshold
         return 1e4
 
+class Aitoff(ccrs._WarpedRectangularProjection):
+    __name__ = 'aitoff'
+    name = 'aitoff'
+    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
+        # self._threshold = threshold
+        proj4_params = [('proj', 'aitoff'), ('lon_0', central_longitude)]
+        proj4_params = {'proj':'aitoff', 'lon_0':central_longitude}
+        super().__init__(proj4_params, central_longitude, globe=globe)
+    @property
+    def threshold(self): # how finely to interpolate line data, etc.
+        # return self._threshold
+        return 1e4
+
 class KavrayskiyVII(ccrs._WarpedRectangularProjection):
+    __name__ = 'kavrayskiyVII'
+    name = 'kavrayskiyVII'
     def __init__(self, central_longitude=0, globe=None):
         proj4_params = [('proj', 'kav7'), ('lon_0', central_longitude)]
         super(KavrayskiyVII, self).__init__(
@@ -37,6 +52,8 @@ class KavrayskiyVII(ccrs._WarpedRectangularProjection):
 
 # TODO: Check this, but should be pretty much identical to above
 class WinkelTripel(ccrs._WarpedRectangularProjection):
+    __name__ = 'winkeltripel'
+    name = 'winkeltripel'
     def __init__(self, central_longitude=0, globe=None):
         proj4_params = [('proj', 'wintri'), ('lon_0', central_longitude)]
         super(WinkelTripel, self).__init__(
