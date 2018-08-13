@@ -981,7 +981,6 @@ def _format_axes(self,
             self.add_feature(cfeature.COASTLINE, **globals('coastlines'))
         if continents:
             # self.add_feature(cfeature.LAND, **globals('continents'))
-            print('yoyoyo!')
             self.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '50m'), **globals('continents'), linewidth=0)
         if oceans:
             self.add_feature(cfeature.OCEAN, **globals('oceans'))
