@@ -22,7 +22,7 @@ import matplotlib.colors as mcolors
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.gridspec as mgridspec
-import matplotlib.container as mcontainer
+import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.pyplot as plt
 # Optionally import mapping toolboxes
@@ -526,23 +526,14 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # Make sure to eliminate ticks
     # cax.xaxis.set_tick_params(which='both', bottom=False, top=False)
     # cax.yaxis.set_tick_params(which='both', bottom=False, top=False)
-    # Test if mappable is iterable; if so, user wants to use colorbar to label lines
+    # Test if we were given a mappable, or iterable of stuff; note Container and
+    # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
-    try: iter(mappable)
-    except TypeError:
-        pass
-    else: # catch exception: the only iterable matplotlib objects are Container objects
-        if isinstance(mappable, mcontainer.Container):
-            pass
+    if not isinstance(mappable, martist.Artist):
+        if isinstance(mappable[0], martist.Artist):
+            fromlines = True # we passed a bunch of line handles; just use their colors
         else:
-            if isinstance(mappable[0], str):
-                fromcolors = True # we passed a bunch of color strings
-            else:
-                try: iter(mappable[0])
-                except TypeError:
-                    fromlines = True  # we passed a bunch of handles
-                else:
-                    fromcolors = True # we passed a bunch of color tuples
+            fromcolors = True # we passed a bunch of color strings or tuples
     csettings = {'spacing':'uniform', 'cax':cax, 'use_gridspec':True, # use space afforded by entire axes
         'extend':extend, 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
@@ -741,29 +732,23 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     for candidate in candidates:
         if candidate in kwargs:
             hsettings[candidate] = lsettings.pop(candidate)
-    # Parse input
-    try: iter(handles[0])
-    except TypeError:
-        list_of_lists = True
-    else: # catch exception: the only iterable matplotlib objects are Container objects
-        list_of_lists = not isinstance(handles[0], mcontainer.Container)
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
     #   1) user can specify nothing and align will be inferred (list of iterables
     #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
+    list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
         align = not list_of_lists
     else: # standardize format based on input
-        align_implied = not list_of_lists
-        if not align and not align_implied: # separate into columns
+        if not align and not list_of_lists: # separate into columns
+            # raise ValueError("Need to specify number of columns with ncol.")
             if 'ncol' not in lsettings:
                 lsettings['ncol'] = 3
-                # raise ValueError("Need to specify number of columns with ncol.")
             handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
-                    for i in range(len(handles))] # to list of iterables
-        if align and align_implied: # unfurl, because we just want one legend!
+                        for i in range(len(handles))] # to list of iterables
+        if align and list_of_lists: # unfurl, because we just want one legend!
             handles = [handle for iterable in handles for handle in iterable]
 
     # Now draw legend, with two options
