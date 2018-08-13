@@ -735,16 +735,18 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     lsettings.update(**kwargs)
     # Setup legend text properties
     tsettings = globals('ticklabels')
-    # if 'fontsize' in lsettings: # messes things up because fontsize can be a string e.g. 'medium'
-    #     tsettings['size'] = lsettings['fontsize']
     # Setup legend handle properties
     hsettings = {}
     candidates = ['linewidth','color'] # candidates for modifying legend objects
     for candidate in candidates:
         if candidate in kwargs:
             hsettings[candidate] = lsettings.pop(candidate)
-    # if not handlefix:
-    #     hsettings = {}
+    # Parse input
+    try: iter(handles[0])
+    except TypeError:
+        list_of_lists = True
+    else: # catch exception: the only iterable matplotlib objects are Container objects
+        list_of_lists = not isinstance(handles[0], mcontainer.Container)
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
     #   1) user can specify nothing and align will be inferred (list of iterables
@@ -752,45 +754,31 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
     if align is None: # automatically guess
-        try: iter(handles[0])
-        except TypeError:
-            align = True
-        else: # catch exception: the only iterable matplotlib objects are Container objects
-            if isinstance(handles[0], mcontainer.Container):
-                align = True
-            else:
-                align = False
+        align = not list_of_lists
     else: # standardize format based on input
-        try: iter(handles[0])
-        except TypeError:
-            implied = False # no need to fix
-        else:
-            if isinstance(handles[0], mcontainer.Container):
-                implied = False
-            else:
-                implied = True # no need to fix
-        if not align and not implied: # separate into columns
+        align_implied = not list_of_lists
+        if not align and not align_implied: # separate into columns
             if 'ncol' not in lsettings:
                 lsettings['ncol'] = 3
                 # raise ValueError("Need to specify number of columns with ncol.")
             handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
                     for i in range(len(handles))] # to list of iterables
-        if align and implied: # unfurl, because we just want one legend!
+        if align and align_implied: # unfurl, because we just want one legend!
             handles = [handle for iterable in handles for handle in iterable]
 
     # Now draw legend, with two options
     # 1) Normal legend, just draw everything like normal and columns
     # will be aligned; we re-order handles to be row-major, is only difference
     if align:
-        try: iter(handles[0])
-        except TypeError:
-            if 'ncol' not in lsettings:
-                lsettings['ncol'] = 3
-                # raise ValueError("Need to specify number of columns with ncol.")
-        else:
-            # lengths = np.unique([len(subl) for subl in handles])
+        # Prepare settings
+        if list_of_lists:
             lsettings['ncol'] = len(handles[0]) # choose this for column length
-            handles = [h for subl in handles for h in subl] # expand
+        elif 'ncol' not in lsettings:
+            # raise ValueError("Need to specify number of columns with ncol.")
+            lsettings['ncol'] = 3
+        # Split up into rows and columns -- by default matplotlib will
+        # sort them in ***column-major*** order but that's dumb, we want row-major!
+        # See: https://stackoverflow.com/q/10101141/4970632
         newhandles = []
         ncol = lsettings['ncol'] # number of columns
         handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
@@ -800,10 +788,12 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
         for col,nrow in enumerate(nrows): # iterate through cols
             newhandles.extend(handlesplit[row][col] for row in range(nrow))
         handles = newhandles
+        # Finally draw legend, mimicking row-major ordering
         if hasattr(self, '_legend'): # this Method was renamed to "legend" on an Axes; old version is in _legend
             leg = self._legend(handles=handles, **lsettings) # includes number columns
         else: # this Method did not override the original "legend" method
-            leg = self.legend(handles=handles, **lsettings) # includes number columns
+            leg = self.legend(handles=handles, **lsettings)
+        # Format handles, text, and legend patch
         leg.legendPatch.update(globals('outline')) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
@@ -1560,6 +1550,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     #--------------------------------------------------------------------------
     # Projection setup
     #--------------------------------------------------------------------------
+    # Allow user to pass projection dictionary, cause sometimes kwargs overlap
     # First make sure user didn't mess up
     projection_kwargs.update(projection_dict)
     if projection_kwargs and not maps:
