@@ -367,7 +367,7 @@ def _pcolorpoly(self, x, y, Z, **kwargs):
 def _pcolormesh(self, x, y, Z, **kwargs):
     # Not allowed if cartopy GeoAxes
     if isinstance(self, GeoAxes):
-        raise ValueError('Mesh version of pcolor fails for map projections! Use pcolorpoly instead.')
+        raise ValueError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
     kwargs = _pcolor_levels(kwargs)
     x, y = _pcolor_check(x, y, Z)
     extend = kwargs.pop('extend',None)
@@ -410,7 +410,7 @@ def _m_pcolorpoly(self, lon, lat, Z, **kwargs):
     return _pcolor_fix(p)
 def _m_pcolormesh(self, lon, lat, Z, **kwargs):
     # Dummy function, this is not allowed
-    raise ValueError('Mesh version of pcolor fails for map projections! Use pcolorpoly instead.')
+    raise ValueError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
 
 #------------------------------------------------------------------------------
 # Formatting functions, assigned using MethodType onto various Axes
@@ -807,7 +807,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 
 def _format_axes(self,
     alpha=None, hatch=None, color=None, # control figure/axes background; hatch just applies to axes
-    coastlines=True, continents=False, # coastlines and continents
+    oceans=False, coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings
@@ -960,8 +960,6 @@ def _format_axes(self,
             self.patch.set_edgecolor('none')
             for spine in self.spines.values():
                 spine.update(globals('spine'))
-        # p.set_zorder(-1) # is already zero so this is dumb
-        # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
 
     #--------------------------------------------------------------------------
@@ -978,11 +976,16 @@ def _format_axes(self,
             try: iter(ylocator)
             except TypeError: ylocator = _auto_locate(-90, 90, ylocator)
         self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
-        # Add features 
-        # self.add_feature(cfeature.COASTLINE, **globals('outline'))
-        # self.add_feature(cfeature.LAND)
-        # self.add_feature(cfeature.OCEAN)
-        return # skip everything else!
+        # Add geographic features
+        if coastlines:
+            self.add_feature(cfeature.COASTLINE, **globals('coastlines'))
+        if continents:
+            # self.add_feature(cfeature.LAND, **globals('continents'))
+            print('yoyoyo!')
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '50m'), **globals('continents'), linewidth=0)
+        if oceans:
+            self.add_feature(cfeature.OCEAN, **globals('oceans'))
+        return # skip everything else
 
     #--------------------------------------------------------------------------
     # Process normal axes, various x/y settings individually
@@ -1246,9 +1249,9 @@ def _panel_factory(fig, subspec, width, height,
     if whichpanels is None:
         whichpanels = 'b' # default is a bottom panel, cuz why not
     if hsep is None:
-        hsep = 0.1
+        hsep = 0.15
     if wsep is None:
-        wsep = 0.1
+        wsep = 0.15
     if hwidth is None:
         hwidth = 0.5
     if wwidth is None:
