@@ -357,33 +357,22 @@ def _contourf(self, x, y, Z, **kwargs):
     x, y, Z = _cartopy_seams(self, x, y, Z)
     c = self._contourf(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
     return _contour_fix(c)
-def _pcolormesh(self, x, y, Z, **kwargs):
-    kwargs = _pcolor_levels(kwargs)
-    # print(x.shape, y.shape)
-    x, y = _pcolor_check(x, y, Z)
-    # print(x.shape, y.shape)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    # print('mesh')
-    p = self._pcolormesh(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
-    return _pcolor_fix(p)
 def _pcolorpoly(self, x, y, Z, **kwargs):
     kwargs = _pcolor_levels(kwargs)
-    # print(x.shape, y.shape)
     x, y = _pcolor_check(x, y, Z)
-    # print(x.shape, y.shape)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    # print('pcolor')
+    extend = kwargs.pop('extend',None)
     p = self.pcolor(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
+    p.extend = extend # add attribute to be used in colorbar creation
+    return _pcolor_fix(p)
+def _pcolormesh(self, x, y, Z, **kwargs):
+    # Not allowed if cartopy GeoAxes
+    if isinstance(self, GeoAxes):
+        raise ValueError('Mesh version of pcolor fails for map projections! Use pcolorpoly instead.')
+    kwargs = _pcolor_levels(kwargs)
+    x, y = _pcolor_check(x, y, Z)
+    extend = kwargs.pop('extend',None)
+    p = self._pcolormesh(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
+    p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 
 #-------------------------------------------------------------------------------
@@ -410,34 +399,18 @@ def _m_contourf(self, lon, lat, Z, **kwargs):
     X, Y = _m_coords(self, lon, lat)
     c = self._contourf(X, Y, Z.T, **kwargs)
     return _contour_fix(c)
-def _m_pcolormesh(self, lon, lat, Z, **kwargs):
-    # lon, lat = _graticule_fix(lon, lat)
-    kwargs = _pcolor_levels(kwargs)
-    lon, lat = _pcolor_check(lon, lat, Z)
-    lon, lat, Z = _m_seams(self, lon, lat, Z)
-    X, Y = _m_coords(self, lon, lat)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    p = self._pcolormesh(X, Y, Z.T, **kwargs)
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
-    return _pcolor_fix(p)
 def _m_pcolorpoly(self, lon, lat, Z, **kwargs):
-    # lon, lat = _graticule_fix(lon, lat)
     kwargs = _pcolor_levels(kwargs)
     lon, lat = _pcolor_check(lon, lat, Z)
     lon, lat, Z = _m_seams(self, lon, lat, Z)
     X, Y = _m_coords(self, lon, lat)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
+    extend = kwargs.pop('extend',None)
     p = self.pcolor(X, Y, Z.T, **kwargs)
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
+    p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
+def _m_pcolormesh(self, lon, lat, Z, **kwargs):
+    # Dummy function, this is not allowed
+    raise ValueError('Mesh version of pcolor fails for map projections! Use pcolorpoly instead.')
 
 #------------------------------------------------------------------------------
 # Formatting functions, assigned using MethodType onto various Axes
@@ -549,7 +522,7 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
         'extend':extend, 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
     csettings.update(**kwargs)
-    if hasattr(mappable, 'extend'):
+    if hasattr(mappable, 'extend') and mappable.extend is not None:
         csettings.update({'extend':mappable.extend})
     # Option to generate colorbar/colormap from line handles
     # * Note the colors are perfect if we don't extend them by dummy color on either side,

@@ -240,7 +240,7 @@ def globals(*args, verbose=False, **kwargs):
     add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})
     add('ctick',       {'length':ticklen, 'width':linewidth, 'color':color})
     add('coastlines',  {'linewidth':linewidth, 'color':color})
-    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.3})
+    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2})
     add('spine',       {'color':color, 'linewidth':linewidth})
     add('outline',     {'edgecolor':color, 'linewidth':linewidth})
     # add('xscale'); add('yscale'); add('contents', color='moccasin')
