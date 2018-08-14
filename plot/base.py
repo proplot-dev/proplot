@@ -977,13 +977,17 @@ def _format_axes(self,
             except TypeError: ylocator = _auto_locate(-90, 90, ylocator)
         self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
         # Add geographic features
+        # Use the NaturalEarthFeature to get more configurable resolution; can choose
+        # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
         if coastlines:
-            self.add_feature(cfeature.COASTLINE, **globals('coastlines'))
+            # self.add_feature(cfeature.COASTLINE, **globals('coastlines'))
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'coastline', '50m'), **globals('coastlines'))
         if continents:
             # self.add_feature(cfeature.LAND, **globals('continents'))
-            self.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '50m'), **globals('continents'), linewidth=0)
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '50m'), **globals('continents'))
         if oceans:
-            self.add_feature(cfeature.OCEAN, **globals('oceans'))
+            # self.add_feature(cfeature.OCEAN, **globals('oceans'))
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m'), **globals('oceans'))
         return # skip everything else
 
     #--------------------------------------------------------------------------
