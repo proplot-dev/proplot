@@ -186,6 +186,8 @@ def globals(*args, verbose=False, **kwargs):
     #--------------------------------------------------------------------------#
     # First the rcParam settings
     # Here are ones related to axes and figure properties
+    # NOTE the figure and axes colors will not be reset on saving if
+    # you specify them explicitly, even if you use transparent True.
     color, linewidth, ticklen, small, large, fontname = \
         current['color'], current['linewidth'], current['ticklen'], current['small'], current['large'], current['fontname']
     add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,

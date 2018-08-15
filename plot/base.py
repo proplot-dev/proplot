@@ -64,18 +64,15 @@ class Figure(mfigure.Figure):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs) # python 3 only
 
-    def save(self, filename, squeeze=None, tight=None, pad=0.05, silent=False): #, desktop=True):
+    def save(self, filename, silent=False, pad=None, **kwargs):
         """
         Echo some helpful information before saving.
         Note that the gridspec object must be updated before figure is printed to screen
-        in interactive environment... will fail to update after that. Seems to be glitch,
+        in interactive environment; will fail to update after that. Seems to be glitch,
         should open thread on GitHub.
+        Note to color axes patches, you will have to explicitly pass the
+        transparent=False kwarg.
         """
-        # Parse input
-        if squeeze is None and tight is None:
-            tight = True
-        if squeeze is None and tight is not None:
-            tight = squeeze
         # Get bounding box that encompasses *all artists*, compare to bounding
         # box used for saving *figure*
         obbox = self.bbox_inches # original bbox
@@ -101,21 +98,17 @@ class Figure(mfigure.Figure):
             formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
             print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
                   f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
-        # Apply adjustment
-        if tight:
+        # Perform gridspec adjustment with some padding
+        if pad is not None:
             self.gridspec.left   -= (x1-pad)/width
             self.gridspec.bottom -= (y1-pad)/height
             self.gridspec.right  += (x2-pad)/width
             self.gridspec.top    += (y2-pad)/height
             self.gridspec.update()
         # Finally, save
-        # if filename.split('.pdf')[-1]!='':
-        #     filename = f'{filename}.pdf'
         if not silent:
             print(f'Saving to "{filename}".')
-        self.savefig(filename) # specify DPI for embedded raster objects
-        # print(f'Original sizing: left {self.left:.2f}, bottom {self.bottom:.2f}, right {self.right:.2f}, top {self.top:.2f}, '\
-        #     + f'legend {self.lwidth:.2f}, colorbar {self.cwidth:.2f}.')
+        self.savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
 #------------------------------------------------------------------------------
 # Helper functions for plot overrides
@@ -806,7 +799,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     return legends
 
 def _format_axes(self,
-    alpha=None, hatch=None, color=None, # control figure/axes background; hatch just applies to axes
+    hatch=None, color=None, # control figure/axes background; hatch just applies to axes
     oceans=False, coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
@@ -885,12 +878,10 @@ def _format_axes(self,
         elif abcpos is not None:
             self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
     # Color setup, optional hatching in background of axes
-    if alpha is not None:
-        self.figure.patch.set_alpha(alpha) # make transparent by default
-        self.patch.set_alpha(alpha) # make not transparent
-    if alpha is not None:
-        self.figure.patch.set_color(color)
-        self.patch.set_color(color) # color
+    # You should control transparency by passing transparent=True or False
+    # to the savefig command
+    if color is not None:
+        self.patch.set_color(color)
     self.patch.set_zorder(-1)
     self.patch.set_clip_on(False)
     if hatch: # non-empty string or not none
@@ -968,6 +959,13 @@ def _format_axes(self,
     if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
         # Boundary
         self.outline_patch.update(globals('outline'))
+        # Make background patch invisible, so can color axes patch instead
+        # See: https://stackoverflow.com/a/32208700/4970632
+        # self.background_patch.set_fill(False)
+        # This doesn't seem to work because axes patch is always invisible and has
+        # been overridden by background patch, so will just show underlying figure color
+        if color is not None:
+            self.background_patch.set_facecolor(color)
         # Gridlines with locators; if None, cartopy will draw defaults
         if xlocator is not None:
             try: iter(xlocator)
