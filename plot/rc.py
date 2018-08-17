@@ -185,6 +185,8 @@ def globals(*args, verbose=False, **kwargs):
     #--------------------------------------------------------------------------#
     # First the rcParam settings
     # Here are ones related to axes and figure properties
+    # NOTE the figure and axes colors will not be reset on saving if
+    # you specify them explicitly, even if you use transparent True.
     color, linewidth, ticklen, small, large, fontname = \
         current['color'], current['linewidth'], current['ticklen'], current['small'], current['large'], current['fontname']
     add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,
@@ -233,13 +235,13 @@ def globals(*args, verbose=False, **kwargs):
     add('ticklabels',  {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
     add('gridminor',   {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1})
     add('cgrid',       {'color':color, 'linewidth':linewidth})
-    add('continents',  {'color':color})
+    add('continents',  {'color':color, 'linewidth':0}) # make sure no lines!
     add('tickminor',   {'length':ticklen/2, 'width':linewidth, 'color':color})
     add('tick',        {'length':ticklen, 'width':linewidth, 'color':color})
     add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})
     add('ctick',       {'length':ticklen, 'width':linewidth, 'color':color})
     add('coastlines',  {'linewidth':linewidth, 'color':color})
-    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.5})
+    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2})
     add('spine',       {'color':color, 'linewidth':linewidth})
     add('outline',     {'edgecolor':color, 'linewidth':linewidth})
     # add('xscale'); add('yscale'); add('contents', color='moccasin')

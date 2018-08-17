@@ -403,54 +403,18 @@ def year(dt):
     """
     Gets year from numpy datetime object (used e.g. by xarray, pandas).
     """
-    return dt.astype('datetime64[Y]').astype(np.int32)+1970 # the astype(int) is actually super fast (ns)
-        # and the above in general is faster than list comprehension with container of datetime objects
-        # UNIX time starts at 1970-01-01 00:00:00
+    # The astype(int) is actually super fast (ns), and below is in general
+    # faster than list comprehension with container of datetime objects
+    # UNIX time starts at 1970-01-01 00:00:00
+    return dt.astype('datetime64[Y]').astype(np.int32)+1970
 
 def month(dt):
     """
     Gets month from numpy datetime object (used e.g. by xarray, pandas).
     """
+    # Below will convert datetime64 units from [ns] (default) to months, then spit out months relative to year
+    # UNIX time starts at 1970-01-01 00:00:00
     return dt.astype('datetime64[M]').astype(np.int32)%12 + 1
-        # will convert datetime64 units from [ns] (default) to months, then spit out months relative to year
-        # UNIX time starts at 1970-01-01 00:00:00
-
-def arange(min_, *args):
-    """
-    Duplicate behavior of np.arange, except with inclusive endpoints; dtype is
-    controlled very carefully, so should be 'most precise' among min/max/step args.
-    Input:
-        stop
-        start, stop, [step]
-        just like np.arange
-    Output:
-        the array sequence
-    """
-    # Optional arguments just like np.arange
-    if len(args)==0:
-        max_ = min_
-        min_ = 0 # this re-assignes the NAME "min_" to 0
-        step = 1
-    elif len(args)==1:
-        max_ = args[0]
-        step = 1
-    elif len(args)==2:
-        max_ = args[0]
-        step = args[1]
-    else:
-        raise ValueError('Function takes from one to three arguments.')
-    # All input is integer? Get new "max"
-    if min_//1==min_ and max_//1==max_ and step//1==step:
-        min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
-        max_ += 1
-    # Input is float or mixed; cast all to float64, then get new "max"
-    else:
-        min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
-        max_ += step/2
-        # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
-            # gives the next FLOATING POINT, in direction of the second argument
-            # forget this; round-off errors from continually adding step to min mess this up
-    return np.arange(min_, max_, step)
 
 def match(*args):
     """

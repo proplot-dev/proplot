@@ -22,7 +22,7 @@ import matplotlib.colors as mcolors
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.gridspec as mgridspec
-import matplotlib.container as mcontainer
+import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.pyplot as plt
 # Optionally import mapping toolboxes
@@ -40,9 +40,10 @@ except ModuleNotFoundError:
     GeoAxes = None
     Transform = None # note, never pass transform=None! default is mtransforms.IdentityTransform()
     print("Warning: cartopy is not available.")
-# Local modules
+# Local modules, projection sand formatters and stuff
 from .rc import globals
 from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
+from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -63,18 +64,15 @@ class Figure(mfigure.Figure):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs) # python 3 only
 
-    def save(self, filename, squeeze=None, tight=None, pad=0.05, silent=False): #, desktop=True):
+    def save(self, filename, silent=False, pad=None, **kwargs):
         """
         Echo some helpful information before saving.
         Note that the gridspec object must be updated before figure is printed to screen
-        in interactive environment... will fail to update after that. Seems to be glitch,
+        in interactive environment; will fail to update after that. Seems to be glitch,
         should open thread on GitHub.
+        Note to color axes patches, you will have to explicitly pass the
+        transparent=False kwarg.
         """
-        # Parse input
-        if squeeze is None and tight is None:
-            tight = True
-        if squeeze is None and tight is not None:
-            tight = squeeze
         # Get bounding box that encompasses *all artists*, compare to bounding
         # box used for saving *figure*
         obbox = self.bbox_inches # original bbox
@@ -100,21 +98,17 @@ class Figure(mfigure.Figure):
             formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
             print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
                   f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
-        # Apply adjustment
-        if tight:
+        # Perform gridspec adjustment with some padding
+        if pad is not None:
             self.gridspec.left   -= (x1-pad)/width
             self.gridspec.bottom -= (y1-pad)/height
             self.gridspec.right  += (x2-pad)/width
             self.gridspec.top    += (y2-pad)/height
             self.gridspec.update()
         # Finally, save
-        # if filename.split('.pdf')[-1]!='':
-        #     filename = f'{filename}.pdf'
         if not silent:
             print(f'Saving to "{filename}".')
-        self.savefig(filename) # specify DPI for embedded raster objects
-        # print(f'Original sizing: left {self.left:.2f}, bottom {self.bottom:.2f}, right {self.right:.2f}, top {self.top:.2f}, '\
-        #     + f'legend {self.lwidth:.2f}, colorbar {self.cwidth:.2f}.')
+        self.savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
 #------------------------------------------------------------------------------
 # Helper functions for plot overrides
@@ -160,7 +154,7 @@ def _cartopy_seams(self, lon, lat, data):
         lon = np.array((*lon, lon[0]+360)) # make longitudes circular
         data = np.concatenate((data, data[:1,:]), axis=0) # make data circular
     return lon, lat, data
-def _basemap_seams(basemap, lon, lat, data):
+def _m_seams(basemap, lon, lat, data):
     # Get some params
     lonmin, lonmax = basemap.lonmin, basemap.lonmax
     # Raise errors
@@ -245,7 +239,7 @@ def _basemap_seams(basemap, lon, lat, data):
     else:
         raise ValueError('Longitude length does not match data length along dimension 0.')
     return lon, lat, data
-def _basemap_coords(m, lon, lat):
+def _m_coords(m, lon, lat):
     # Convert to 2d x/y by calling basemap object
     lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
     X, Y = m(*np.meshgrid(lon, lat))
@@ -285,10 +279,10 @@ def _pcolor_levels(kwargs):
 def _pcolor_check(x, y, Z):
     # Checks that sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
-    if Z.shape[0]==x.size and Z.shape[1]==y.size:
-        # print("Guessing graticule edges from input coordinate centers.")
-        x, y = _graticule_fix(x, y)
-    elif Z.shape[0]!=x.size-1 or Z.shape[1]!=y.size-1:
+    xlen, ylen = x.shape[0], y.shape[-1]
+    if Z.shape[0]==xlen and Z.shape[1]==ylen:
+        x, y = _graticule_fix(x, y) # guess edges, given centers
+    elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
         raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
@@ -296,9 +290,10 @@ def _pcolor_check(x, y, Z):
 def _contour_check(x, y, Z):
     # Checks whether sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
-    if Z.shape[0]==x.size-1 and Z.shape[1]==y.size-1:
-        x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2
-    elif Z.shape[0]!=x.size or Z.shape[1]!=y.size:
+    xlen, ylen = x.shape[0], y.shape[-1]
+    if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
+        x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # guess centers, given edges
+    elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
         raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
@@ -341,6 +336,9 @@ def _bar(self, *args, **kwargs): # bar plot with different color options
 
 # Wrappers that check dimensionality, give better error messages, and change
 # the convention so dim1 is always x-axis, dim2 is always y-axis
+# WARNING: m.pcolormesh and ax.pcolormesh call m.pcolor and ax.pcolor
+# respectively, so ***cannot*** override pcolor! Get weird errors. Since
+# pcolor alone returns PolyCollection objects, call it pcolorpoly.
 def _contour(self, x, y, Z, **kwargs):
     x, y = _contour_check(x, y, Z)
     x, y, Z = _cartopy_seams(self, x, y, Z)
@@ -352,27 +350,22 @@ def _contourf(self, x, y, Z, **kwargs):
     x, y, Z = _cartopy_seams(self, x, y, Z)
     c = self._contourf(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
     return _contour_fix(c)
-def _pcolor(self, x, y, Z, **kwargs):
+def _pcolorpoly(self, x, y, Z, **kwargs):
     kwargs = _pcolor_levels(kwargs)
     x, y = _pcolor_check(x, y, Z)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    p = self._pcolor(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
+    extend = kwargs.pop('extend',None)
+    p = self.pcolor(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
+    p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 def _pcolormesh(self, x, y, Z, **kwargs):
+    # Not allowed if cartopy GeoAxes
+    if isinstance(self, GeoAxes):
+        raise ValueError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
     kwargs = _pcolor_levels(kwargs)
     x, y = _pcolor_check(x, y, Z)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
+    extend = kwargs.pop('extend',None)
     p = self._pcolormesh(x, y, Z.T, **_cartopy_kwargs(self, kwargs))
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
+    p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 
 #-------------------------------------------------------------------------------
@@ -380,53 +373,37 @@ def _pcolormesh(self, x, y, Z, **kwargs):
 # Will convert longitude latitude coordinates to projected coordinates
 #-------------------------------------------------------------------------------
 # Dummy ones that just set latlon True by default
-def _plot_basemap(self, *args, **kwargs):
+def _m_plot(self, *args, **kwargs):
     return self._plot(*args, **kwargs, latlon=True)
-def _scatter_basemap(self, *args, **kwargs):
+def _m_scatter(self, *args, **kwargs):
     return self._scatter(*args, **kwargs, latlon=True)
 
 # More complex ones; assume regularly spaced data
-def _contour_basemap(self, lon, lat, Z, **kwargs):
+def _m_contour(self, lon, lat, Z, **kwargs):
     lon, lat = _contour_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
     c = self._contour(X, Y, Z.T, **kwargs)
     return c
-def _contourf_basemap(self, lon, lat, Z, **kwargs):
+def _m_contourf(self, lon, lat, Z, **kwargs):
     kwargs = _contourf_levels(kwargs)
     lon, lat = _contour_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
     c = self._contourf(X, Y, Z.T, **kwargs)
     return _contour_fix(c)
-def _pcolor_basemap(self, lon, lat, Z, **kwargs):
-    # lon, lat = _graticule_fix(lon, lat)
+def _m_pcolorpoly(self, lon, lat, Z, **kwargs):
     kwargs = _pcolor_levels(kwargs)
     lon, lat = _pcolor_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    p = self._pcolor(X, Y, Z.T, **kwargs)
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
+    lon, lat, Z = _m_seams(self, lon, lat, Z)
+    X, Y = _m_coords(self, lon, lat)
+    extend = kwargs.pop('extend',None)
+    p = self.pcolor(X, Y, Z.T, **kwargs)
+    p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
-def _pcolormesh_basemap(self, lon, lat, Z, **kwargs):
-    # lon, lat = _graticule_fix(lon, lat)
-    kwargs = _pcolor_levels(kwargs)
-    lon, lat = _pcolor_check(lon, lat, Z)
-    lon, lat, Z = _basemap_seams(self, lon, lat, Z)
-    X, Y = _basemap_coords(self, lon, lat)
-    if 'extend' in kwargs:
-        extend = kwargs.pop('extend')
-    else:
-        extend = None
-    p = self._pcolormesh(X, Y, Z.T, **kwargs)
-    if extend is not None:
-        p.extend = extend # add attribute to be used in colorbar creation
-    return _pcolor_fix(p)
+def _m_pcolormesh(self, lon, lat, Z, **kwargs):
+    # Dummy function, this is not allowed
+    raise ValueError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
 
 #------------------------------------------------------------------------------
 # Formatting functions, assigned using MethodType onto various Axes
@@ -526,28 +503,19 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # Make sure to eliminate ticks
     # cax.xaxis.set_tick_params(which='both', bottom=False, top=False)
     # cax.yaxis.set_tick_params(which='both', bottom=False, top=False)
-    # Test if mappable is iterable; if so, user wants to use colorbar to label lines
+    # Test if we were given a mappable, or iterable of stuff; note Container and
+    # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
-    try: iter(mappable)
-    except TypeError:
-        pass
-    else: # catch exception: the only iterable matplotlib objects are Container objects
-        if isinstance(mappable, mcontainer.Container):
-            pass
+    if not isinstance(mappable, martist.Artist):
+        if isinstance(mappable[0], martist.Artist):
+            fromlines = True # we passed a bunch of line handles; just use their colors
         else:
-            if isinstance(mappable[0], str):
-                fromcolors = True # we passed a bunch of color strings
-            else:
-                try: iter(mappable[0])
-                except TypeError:
-                    fromlines = True  # we passed a bunch of handles
-                else:
-                    fromcolors = True # we passed a bunch of color tuples
+            fromcolors = True # we passed a bunch of color strings or tuples
     csettings = {'spacing':'uniform', 'cax':cax, 'use_gridspec':True, # use space afforded by entire axes
         'extend':extend, 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
     csettings.update(**kwargs)
-    if hasattr(mappable, 'extend'):
+    if hasattr(mappable, 'extend') and mappable.extend is not None:
         csettings.update({'extend':mappable.extend})
     # Option to generate colorbar/colormap from line handles
     # * Note the colors are perfect if we don't extend them by dummy color on either side,
@@ -735,62 +703,44 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     lsettings.update(**kwargs)
     # Setup legend text properties
     tsettings = globals('ticklabels')
-    # if 'fontsize' in lsettings: # messes things up because fontsize can be a string e.g. 'medium'
-    #     tsettings['size'] = lsettings['fontsize']
     # Setup legend handle properties
     hsettings = {}
     candidates = ['linewidth','color'] # candidates for modifying legend objects
     for candidate in candidates:
         if candidate in kwargs:
             hsettings[candidate] = lsettings.pop(candidate)
-    # if not handlefix:
-    #     hsettings = {}
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
     #   1) user can specify nothing and align will be inferred (list of iterables
     #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
+    list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
-        try: iter(handles[0])
-        except TypeError:
-            align = True
-        else: # catch exception: the only iterable matplotlib objects are Container objects
-            if isinstance(handles[0], mcontainer.Container):
-                align = True
-            else:
-                align = False
+        align = not list_of_lists
     else: # standardize format based on input
-        try: iter(handles[0])
-        except TypeError:
-            implied = False # no need to fix
-        else:
-            if isinstance(handles[0], mcontainer.Container):
-                implied = False
-            else:
-                implied = True # no need to fix
-        if not align and not implied: # separate into columns
+        if not align and not list_of_lists: # separate into columns
+            # raise ValueError("Need to specify number of columns with ncol.")
             if 'ncol' not in lsettings:
                 lsettings['ncol'] = 3
-                # raise ValueError("Need to specify number of columns with ncol.")
             handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
-                    for i in range(len(handles))] # to list of iterables
-        if align and implied: # unfurl, because we just want one legend!
+                        for i in range(len(handles))] # to list of iterables
+        if align and list_of_lists: # unfurl, because we just want one legend!
             handles = [handle for iterable in handles for handle in iterable]
 
     # Now draw legend, with two options
     # 1) Normal legend, just draw everything like normal and columns
     # will be aligned; we re-order handles to be row-major, is only difference
     if align:
-        try: iter(handles[0])
-        except TypeError:
-            if 'ncol' not in lsettings:
-                lsettings['ncol'] = 3
-                # raise ValueError("Need to specify number of columns with ncol.")
-        else:
-            # lengths = np.unique([len(subl) for subl in handles])
+        # Prepare settings
+        if list_of_lists:
             lsettings['ncol'] = len(handles[0]) # choose this for column length
-            handles = [h for subl in handles for h in subl] # expand
+        elif 'ncol' not in lsettings:
+            # raise ValueError("Need to specify number of columns with ncol.")
+            lsettings['ncol'] = 3
+        # Split up into rows and columns -- by default matplotlib will
+        # sort them in ***column-major*** order but that's dumb, we want row-major!
+        # See: https://stackoverflow.com/q/10101141/4970632
         newhandles = []
         ncol = lsettings['ncol'] # number of columns
         handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
@@ -800,10 +750,12 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
         for col,nrow in enumerate(nrows): # iterate through cols
             newhandles.extend(handlesplit[row][col] for row in range(nrow))
         handles = newhandles
+        # Finally draw legend, mimicking row-major ordering
         if hasattr(self, '_legend'): # this Method was renamed to "legend" on an Axes; old version is in _legend
             leg = self._legend(handles=handles, **lsettings) # includes number columns
         else: # this Method did not override the original "legend" method
-            leg = self.legend(handles=handles, **lsettings) # includes number columns
+            leg = self.legend(handles=handles, **lsettings)
+        # Format handles, text, and legend patch
         leg.legendPatch.update(globals('outline')) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
@@ -847,8 +799,8 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     return legends
 
 def _format_axes(self,
-    alpha=None, hatch=None, color=None, # control figure/axes background; hatch just applies to axes
-    coastlines=True, continents=False, # coastlines and continents
+    hatch=None, color=None, # control figure/axes background; hatch just applies to axes
+    oceans=False, coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings
@@ -926,12 +878,10 @@ def _format_axes(self,
         elif abcpos is not None:
             self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
     # Color setup, optional hatching in background of axes
-    if alpha is not None:
-        self.figure.patch.set_alpha(alpha) # make transparent by default
-        self.patch.set_alpha(alpha) # make not transparent
-    if alpha is not None:
-        self.figure.patch.set_color(color)
-        self.patch.set_color(color) # color
+    # You should control transparency by passing transparent=True or False
+    # to the savefig command
+    if color is not None:
+        self.patch.set_color(color)
     self.patch.set_zorder(-1)
     self.patch.set_clip_on(False)
     if hatch: # non-empty string or not none
@@ -1001,8 +951,6 @@ def _format_axes(self,
             self.patch.set_edgecolor('none')
             for spine in self.spines.values():
                 spine.update(globals('spine'))
-        # p.set_zorder(-1) # is already zero so this is dumb
-        # p.set_facecolor(None) # don't do this as it will change the color
         return # skip everything else
 
     #--------------------------------------------------------------------------
@@ -1011,6 +959,13 @@ def _format_axes(self,
     if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
         # Boundary
         self.outline_patch.update(globals('outline'))
+        # Make background patch invisible, so can color axes patch instead
+        # See: https://stackoverflow.com/a/32208700/4970632
+        # self.background_patch.set_fill(False)
+        # This doesn't seem to work because axes patch is always invisible and has
+        # been overridden by background patch, so will just show underlying figure color
+        if color is not None:
+            self.background_patch.set_facecolor(color)
         # Gridlines with locators; if None, cartopy will draw defaults
         if xlocator is not None:
             try: iter(xlocator)
@@ -1019,11 +974,19 @@ def _format_axes(self,
             try: iter(ylocator)
             except TypeError: ylocator = _auto_locate(-90, 90, ylocator)
         self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
-        # Add features 
-        # self.add_feature(cfeature.COASTLINE, **globals('outline'))
-        # self.add_feature(cfeature.LAND)
-        # self.add_feature(cfeature.OCEAN)
-        return # skip everything else!
+        # Add geographic features
+        # Use the NaturalEarthFeature to get more configurable resolution; can choose
+        # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
+        if coastlines:
+            # self.add_feature(cfeature.COASTLINE, **globals('coastlines'))
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'coastline', '50m'), **globals('coastlines'))
+        if continents:
+            # self.add_feature(cfeature.LAND, **globals('continents'))
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '50m'), **globals('continents'))
+        if oceans:
+            # self.add_feature(cfeature.OCEAN, **globals('oceans'))
+            self.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m'), **globals('oceans'))
+        return # skip everything else
 
     #--------------------------------------------------------------------------
     # Process normal axes, various x/y settings individually
@@ -1218,13 +1181,15 @@ def _atts_special(self, maps, package, projection, **kwargs):
             self.set_boundary(circle, transform=self.transAxes)
         # Employ some simple overrides
         # Will save the *original* versions in _<method name>
+        # WARNING: m.pcolormesh and ax.pcolormesh call m.pcolor and ax.pcolor
+        # respectively, so ***cannot*** override pcolor! Get weird errors. Since
+        # pcolor alone returns PolyCollection objects, call it pcolorpoly.
         self._pcolormesh = self.pcolormesh
-        self._pcolor     = self.pcolor
         self._contourf   = self.contourf
         self._contour    = self.contour
         self._scatter    = self.scatter
         self._plot       = self.plot
-        self.pcolor      = MethodType(_pcolor, self)
+        self.pcolorpoly  = MethodType(_pcolorpoly, self)
         self.pcolormesh  = MethodType(_pcolormesh, self)
         self.contourf    = MethodType(_contourf, self)
         self.contour     = MethodType(_contour, self)
@@ -1238,17 +1203,16 @@ def _atts_special(self, maps, package, projection, **kwargs):
         self.m.projection  = projection # save projection here
         self.m._pseudocyl  = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
         self.m._pcolormesh = self.m.pcolormesh
-        self.m._pcolor     = self.m.pcolor
         self.m._contour    = self.m.contour
         self.m._contourf   = self.m.contourf # save old methods
         self.m._scatter    = self.m.scatter
         self.m._plot       = self.m.plot
-        self.m.pcolormesh  = MethodType(_pcolormesh_basemap, self.m) # function calls the old methods
-        self.m.pcolor      = MethodType(_pcolor_basemap, self.m)
-        self.m.contour     = MethodType(_contour_basemap, self.m)
-        self.m.contourf    = MethodType(_contourf_basemap, self.m)
-        self.m.scatter     = MethodType(_scatter_basemap, self.m)
-        self.m.plot        = MethodType(_plot_basemap, self.m)
+        self.m.pcolormesh  = MethodType(_m_pcolormesh, self.m) # function calls the old methods
+        self.m.pcolorpoly  = MethodType(_m_pcolorpoly, self.m)
+        self.m.contour     = MethodType(_m_contour, self.m)
+        self.m.contourf    = MethodType(_m_contourf, self.m)
+        self.m.scatter     = MethodType(_m_scatter, self.m)
+        self.m.plot        = MethodType(_m_plot, self.m)
         # Initialize map boundary if pseudocylindrical projection
         # Initialization has to happen here (see above)
         if projection in self.m._pseudocyl:
@@ -1286,9 +1250,9 @@ def _panel_factory(fig, subspec, width, height,
     if whichpanels is None:
         whichpanels = 'b' # default is a bottom panel, cuz why not
     if hsep is None:
-        hsep = 0.1
+        hsep = 0.15
     if wsep is None:
-        wsep = 0.1
+        wsep = 0.15
     if hwidth is None:
         hwidth = 0.5
     if wwidth is None:
@@ -1413,6 +1377,9 @@ def _panel_factory(fig, subspec, width, height,
 #------------------------------------------------------------------------------#
 # Custom settings for various journals
 # Add to this throughout your career, or as standards change
+# PNAS info: http://www.pnas.org/page/authors/submission
+# AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
+# AGU info: https://publications.agu.org/author-resource-center/figures-faq/
 #------------------------------------------------------------------------------#
 def _journal_sizes(width, height):
     # User wants to define their own size
@@ -1421,34 +1388,29 @@ def _journal_sizes(width, height):
     # Determine automatically
     cm2in = 0.3937
     mm2in = 0.03937
-    if width=='pnas1': # http://www.pnas.org/page/authors/submission
-        width = 8.7*cm2in
-    elif width=='pnas2':
-        width = 11.4*cm2in
-    elif width=='pnas3':
-        width = 17.8*cm2in
-    elif width=='ams1': # https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
-        width = 3.2
-    elif width=='ams2':
-        width = 4.5
-    elif width=='ams3':
-        width = 5.5
-    elif width=='ams4':
-        width = 6.5
-    elif width=='agu1': # https://publications.agu.org/author-resource-center/figures-faq/
-        width = 95*mm2in
-        height = 115*mm2in
-    elif width=='agu2': # spans two columns, half-page
-        width = 190*mm2in
-        height = 115*mm2in
-    elif width=='agu3': # entire column, half-page
-        width = 95*mm2in
-        height = 230*mm2in
-    elif width=='agu4': # full page
-        width = 190*mm2in
-        height = 230*mm2in
+    table = {
+        'pnas1': 8.7*cm2in,
+        'pnas2': 11.4*cm2in,
+        'pnas3': 17.8*cm2in,
+        'ams1': 3.2,
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': (95*mm2in, 115*mm2in),
+        'agu2': (190*mm2in, 115*mm2in),
+        'agu3': (95*mm2in, 230*mm2in),
+        'agu4': (190*mm2in, 230*mm2in),
+        }
+    value = table.get(width, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
+                          'Options are: ' + ', '.join(table.keys()))
+    # Output width, and optionally also specify height
+    try: iter(value)
+    except TypeError:
+        width = value
     else:
-        raise ValueError(f"Unknown journal figure width specifier \"{width}\".")
+        width, height = value
     return width, height
 
 #-------------------------------------------------------------------------------
@@ -1562,6 +1524,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     #--------------------------------------------------------------------------
     # Projection setup
     #--------------------------------------------------------------------------
+    # Allow user to pass projection dictionary, cause sometimes kwargs overlap
     # First make sure user didn't mess up
     projection_kwargs.update(projection_dict)
     if projection_kwargs and not maps:
@@ -1587,15 +1550,19 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         # correct aspect ratio (TODO) also prevent auto-scaling
         projection = projection or 'cyl'
         crs_dict = {
-            **{key: ccrs.PlateCarree for key in ('cyl','rectilinear','pcarree','platecarree')},
-            **{key: ccrs.Mollweide for key in ('moll','mollweide')},
+            **{key: ccrs.PlateCarree   for key in ('cyl','rectilinear','pcarree','platecarree')},
+            **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
             **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
             'robinson': ccrs.Robinson,
             'ortho':    ccrs.Orthographic,
             'aeqd':     ccrs.AzimuthalEquidistant,
             'aeqa':     ccrs.LambertAzimuthalEqualArea,
+            'wintri': WinkelTripel,
+            'hammer': Hammer,
+            'aitoff': Aitoff,
+            'kav7':   KavrayskiyVII,
             }
-        crs_translate = {
+        crs_translate = { # less verbose keywords, actually match proj4 keywords and similar to basemap
             'lat0':  'central_latitude',
             'lat_0': 'central_latitude',
             'lon0':  'central_longitude',
