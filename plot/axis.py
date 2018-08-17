@@ -2,6 +2,7 @@
 #------------------------------------------------------------------------------#
 # Imports
 #------------------------------------------------------------------------------#
+import re
 import numpy as np
 from fractions import Fraction
 import matplotlib.colors as mcolors
@@ -146,39 +147,48 @@ class MidpointNorm(mcolors.Normalize):
 
 #-------------------------------------------------------------------------------
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
+# Create pseudo-class functions that actually return auto-generated formatting
+# classes by passing function references to Funcformatter
 #-------------------------------------------------------------------------------
-def Formatter(sigfig=3, tickrange=None):
+def Formatter(precision=None, tickrange=None):
     """
     Format as a number, with N sigfigs, and trimming trailing zeros.
     Recall, must pass function in terms of n (number) and loc.
+    For minus sign scaling, see: https://tex.stackexchange.com/a/79158/73149
     """
     # Format definition
-    def f(value, location, sigfig=sigfig, tickrange=tickrange):
+    precision = 3 if precision is None else precision
+    def f(value, location):
         # Exit if not in tickrange
         if tickrange is not None:
-            eps = value/1000
-            if value<tickrange[0]-eps or value>tickrange[1]+eps:
-                return '' # the data
+            eps = abs(value)/1000
+            if (value+eps)<tickrange[0] or (value-eps)>tickrange[1]:
+                return '' # avoid some ticks
         # Return special string
         # * Note CANNOT use "g" because "g" precision operator specifies count of
         #   significant digits, not places after decimal place.
         # * There is no format that specifies digits after decimal place AND trims trailing zeros.
         # print(string)
-        string = f'{{{0}:.{sigfig:d}f}}'.format(value) # f-string compiled, then format run
+        string = f'{{{0}:.{precision:d}f}}'.format(value) # f-string compiled, then format run
         if '.' in string: # g-style trimming
             string = string.rstrip('0').rstrip('.')
         if string=='-0': # special case
             string = '0'
+        string = re.sub('-', '−', string) # pure unicode minus
+        # string = re.sub('-', '${-}$', string) # latex version
+        # string = re.sub('-', u'\u002d', string) # unicode hyphen minus, looks same as hyphen
+        # string = re.sub('-', r'\scalebox{0.75}[1.0]{$-$}', string)
         return string
     # And create object
     return mticker.FuncFormatter(f)
 
-def LatFormatter(sigfig=0, sine=False, cardinal=True):
+def LatFormatter(precision=None, sine=False, cardinal=True):
     """
     Format latitude labels; can convert sine-lats back into lats (for
     areal weighting) and can apply N/S instead of postiive/negative.
     """
-    def f(value, location, sine=sine, cardinal=cardinal, sigfig=sigfig):
+    precision = 0 if precision is None else precision
+    def f(value, location):
         # Convert from sine to latitude number
         if sine:
             if abs(value)>1: raise ValueError("Sine latitudes must be in range [-1,1].")
@@ -193,7 +203,7 @@ def LatFormatter(sigfig=0, sine=False, cardinal=True):
             suffix = ''
         # string = formatstr % (value, string)
         # Return special string, as in Formatter method
-        string = f'{{{0}:.{sigfig:d}f}}'.format(value) # f-string compiled, then call format
+        string = f'{{{0}:.{precision:d}f}}'.format(value) # f-string compiled, then call format
         if '.' in string: # g-style trimming
             string = string.rstrip('0').rstrip('.')
         if string=='-0': # special case
@@ -202,12 +212,13 @@ def LatFormatter(sigfig=0, sine=False, cardinal=True):
     # And create object
     return mticker.FuncFormatter(f)
 
-def LonFormatter(sigfig=0, cardinal=True):
+def LonFormatter(precision=None, cardinal=True):
     """
     Format latitude labels; can convert sine-lats back into lats (for
     areal weighting) and can apply N/S instead of postiive/negative.
     """
-    def f(value, location, cardinal=cardinal, sigfig=sigfig):
+    precision = 0 if precision is None else precision
+    def f(value, location):
         # Suffix to apply
         if cardinal and value<0:
             value *= -1
@@ -218,7 +229,7 @@ def LonFormatter(sigfig=0, cardinal=True):
             suffix = ''
         # string = formatstr % (value, string)
         # Return special string, as in Formatter method
-        string = f'{{{0}:.{sigfig:d}f}}'.format(value) # f-string compiled, then call format
+        string = f'{{{0}:.{precision:d}f}}'.format(value) # f-string compiled, then call format
         if '.' in string: # g-style trimming
             string = string.rstrip('0').rstrip('.')
         if string=='-0': # special case
@@ -232,7 +243,7 @@ def FracFormatter(fact=np.pi, symbol=r'\pi'):
     Format as fractions, multiples of some value.
     """
     # Start with fraction definition
-    def f(n, loc, fact=fact, symbol=symbol): # must accept location argument
+    def f(n, loc): # must accept location argument
         frac = Fraction(n/fact).limit_denominator()
         if n==0: # zero
             return '0'
@@ -250,3 +261,4 @@ def FracFormatter(fact=np.pi, symbol=r'\pi'):
         else: # otherwise
             return r'$%d%s/%d$' % (frac.numerator, symbol, frac.denominator)
     # And create FuncFormatter class
+    return mticker.FuncFormatter(f)
