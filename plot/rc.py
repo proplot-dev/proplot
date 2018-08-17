@@ -132,7 +132,6 @@ def globals(*args, verbose=False, **kwargs):
     # Requires processing in lines below
     category = category or 'globals' # None defaults to globals in this section
     if category=='globals' and not kwargs: # default settings
-        if verbose: print('Resetting to defaults.')
         mpl.rcdefaults() # apply *builtin* default settings
         mpl.rcExtras = {} # reset extras
         add('globals', rcDefaults) # apply *custom* default settings
