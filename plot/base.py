@@ -1131,15 +1131,15 @@ def _circle(N):
 # * TODO WARNING: If drawing more than x lines and don't explicitly set every item below
 #   its value will revert to the cycler; this may give unexpected results
 # * To print current cycle, use list(next(ax._get_lines.prop_cycler)['color'] for i in range(10))
-def _atts_global(self, width, height):
+def _atts_global(self):
     # Set up some properties
     # self.set_prop_cycle(propcycle)
     self.m = None # optional basemap instance
     self.bottomlegend, self.bottomcolorbar, self.rightcolorbar = False, False, False # identifiers
     self.xspine_override, self.yspine_override = None, None
     self.number = None # default
-    self.width  = np.diff(self._position.intervalx)*width # position is in figure units
-    self.height = np.diff(self._position.intervaly)*height
+    self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
+    self.height = np.diff(self._position.intervaly)*self.figure.height
     # Set up some methods
     # TODO Note severe change; twiny now means "share the x-axis but
     # now make two y-axes"; this makes way more sense to me than default behavior
@@ -1218,25 +1218,26 @@ def _atts_special(self, maps, package, projection, **kwargs):
         if projection in self.m._pseudocyl:
             self.m.drawmapboundary()
 
-def _twinx(self, width, height, **kwargs):
+def _twinx(self, **kwargs):
     # Create secondary x-axes
     # Format function will read extra properties and *enforce* (ignoring
     # user settings) the spine locations.
-    a = self._twiny(**kwargs)
-    _atts_global(a, width, height) # basic setup
+    ax = self._twiny(**kwargs)
+    _atts_global(ax) # basic setup
     self.xspine_override = 'top'
-    a.xspine_override = 'bottom'
-    a.yspine_override = 'neither'
-    return a
+    ax.xspine_override = 'bottom'
+    ax.yspine_override = 'neither'
+    return ax
 
-def _twiny(self, width, height, **kwargs):
+def _twiny(self, **kwargs):
     # Create secondary y-axes
-    a = self._twinx(**kwargs)
-    _atts_global(a, width, height) # basic setup
+    # Same as above
+    ax = self._twinx(**kwargs)
+    _atts_global(ax) # basic setup
     self.yspine_override = 'left'
-    a.yspine_override = 'right'
-    a.xspine_override = 'neither'
-    return a
+    ax.yspine_override = 'right'
+    ax.xspine_override = 'neither'
+    return ax
 
 # Helper function for creating panelled axes
 # Will take in some arguments from parent function so don't have to pass them
@@ -1367,8 +1368,6 @@ def _panel_factory(fig, subspec, width, height,
                     iax._sharex = ax_xbase
                     for t in iax.xaxis.get_ticklabels(): t.set_visible(False)
                     iax.xaxis.label.set_visible(False)
-    if len(axlist)==1:
-        axlist = axlist[0] # so user doesn't have to unnecessarily index
     # Then should add panels as children of the main axes
     # * Can gain access to panel
     # * Unsure how the hell to do this
@@ -1684,11 +1683,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     else:
         hratios = np.ones(nrows)/nrows
 
-    # Setup up figure and plot areas
+    # Create figure
     fig = plt.figure(FigureClass=Figure, figsize=figsize)
-    fig.height = height
-    fig.width = width
-    # Outer area; includes regions for special panels
+    # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     GS = mgridspec.GridSpec(
             nrows         = 1+int(bottom_extra_axes>0),
             ncols         = 1+int(right_extra_axes>0),
@@ -1702,26 +1699,28 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             height_ratios = height_ratios_outer
             ) # set wspace/hspace to match the top/bottom spaces
     # Initialize some stuff
-    fig.left = ileft
-    fig.bottom = ibottom
-    fig.right = iright
-    fig.top = itop
-    fig.lwidth = lwidth
-    fig.cwidth = lwidth
-    fig.cspace = cspace
-    fig.bwidth = bwidth
-    fig.bspace = bspace
-    fig.rwidth = rwidth
-    fig.rspace = rspace
+    fig.left     = ileft
+    fig.bottom   = ibottom
+    fig.right    = iright
+    fig.top      = itop
+    fig.lwidth   = lwidth
+    fig.cwidth   = lwidth
+    fig.cspace   = cspace
+    fig.bwidth   = bwidth
+    fig.bspace   = bspace
+    fig.rwidth   = rwidth
+    fig.rspace   = rspace
+    fig.height   = height
+    fig.width    = width
     fig.gridspec = GS # add to figure, for later reference
     # Initialize some more stuff
-    fig.bottomlegend = None
+    fig.bottomlegend   = None
     fig.bottomcolorbar = None
-    fig.rightcolorbar = None
-    fig.bottompanel = None
-    fig.rightpanel = None
-    # Main plotting area
-    # Will draw individual axes within this GridSpec object later
+    fig.rightcolorbar  = None
+    fig.bottompanel    = None
+    fig.rightpanel     = None
+    # Create axes within the 'main' plotting area
+    # Will draw individual axes using this GridSpec object later
     gs = mgridspec.GridSpecFromSubplotSpec(
             nrows         = nrows,
             ncols         = ncols,
@@ -2066,28 +2065,27 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     # Set up attributes and methods
     # or is empty string, methods in _format_axes will make them visible
     for i,ax in enumerate(axs):
-        # Basic setup
-        _atts_global(ax, width, height) # default methods and stuff
+        _atts_global(ax) # default methods and stuff
         _atts_special(ax, maps, package, projection, **projection_kwargs) # default methods and stuff
         ax.number = i+1 # know axes number ahead of time; start at 1
 
     # Repeat some of the above for the panel axes
     # Will only need the format method really
     for axp in axps:
-        try: iter(axp)
-        except TypeError:
-            axp = [axp]
-        for ax in axp: _atts_global(ax, width, height)
+        for ax in axp:
+            _atts_global(ax)
 
     #--------------------------------------------------------------------------
     # Return results
+    # Will square singleton arrays
     #--------------------------------------------------------------------------
-    if not silent: print('Figure setup complete.')
+    if not silent:
+        print('Figure setup complete.')
     if len(axs)==1:
         axs = axs[0]
-    if len(axps)==1:
-        axps = axps[0] # this might itself be a list, if user e.g.
-            # used the panel-API to create a single axes with bordering left/right panels
+    axps = [axp[0] if len(axp)==1 else axp for axp in axps]
+    if len(axps)==1: # will be list if have panels on more than one side
+        axps = axps[0]
     if innerpanels:
         return fig, axs, axps
     else:
