@@ -18,8 +18,6 @@ The **most notable** feature is the `format` method added to axes instances. Now
   * With the default API, to modify an axes property, you generally have to remember **three things**: 1) the object containing the method you want to use (e.g. axes vs. an individual axis), 2) the name of the method, and 3) the keyword-arguments and their meaning. It can get quite messy, quite verbose, and inevitably results in lots of copy-paste code!
   * Now, you just have to remember **one** thing: the name of the keyword-argument passed to `ax.format()`.
 
-For more information on the `plot` features, see below.
-
 ### Improved functionality of `subplots` command
    * Much easier generation of figures with multiple axes.
      * Pass no arguments to generate default single-axes figure (1 row, 1 column).

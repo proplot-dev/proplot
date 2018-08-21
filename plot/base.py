@@ -1589,8 +1589,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     # Panel considerations; keep things general for future imporvements
     #--------------------------------------------------------------------------
     # Detect conflicts
-    if bottomcolorbar and rightcolorbar:
-        raise ValueError('You can only specify one global colorbar.')
+    # Or Ignore dat shit.
+    # if bottomcolorbar and rightcolorbar:
+    #     raise ValueError('You can only specify one global colorbar.')
     if bottomcolorbar and bottomlegend:
         raise ValueError('Can only place a global colorbar **or** global legend on bottom, not both.')
 
