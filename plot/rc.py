@@ -145,16 +145,19 @@ def globals(*args, verbose=False, **kwargs):
         for key,value in kwargs.items():
             if isinstance(value,dict):
                 add(key, value) # add the 'value' as a kwarg dictionary
-                if verbose: print(f"Added settings to category '{key}':", value)
+                if verbose:
+                    print(f"Added settings to category '{key}':", value)
             elif category=='globals' and key not in rcDefaults:
                 raise ValueError(f"Key \"{key}\" unknown. Not a global property like \"color\" or \"linewidth\".")
             else:
                 value = value if value!='default' or category!='globals' else rcDefaults[key]
                 add(category, {key:value}) # easy peasy
                 updated = True
-                if verbose: print(f"Added setting to category '{category}':", {key:value})
+                if verbose:
+                    print(f"Added setting to category '{category}':", {key:value})
         if category!='globals' or (category=='globals' and not updated):
-            if verbose: print('No global properties changed.')
+            if verbose:
+                print('No global properties changed.')
             return None # don't need to re-apply the globals
     #--------------------------------------------------------------------------#
     # *Apply* global settings; if this function was not called without arguments, then
@@ -244,8 +247,8 @@ def globals(*args, verbose=False, **kwargs):
     add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2})
     add('spine',       {'color':color, 'linewidth':linewidth})
     add('outline',     {'edgecolor':color, 'linewidth':linewidth})
-    # add('xscale'); add('yscale'); add('contents', color='moccasin')
-    if verbose: print('Applied global properties.')
+    if verbose:
+        print('Global properties set.')
     return None
 
 #------------------------------------------------------------------------------
@@ -339,10 +342,10 @@ for name,value in colors.items():
 
 #-------------------------------------------------------------------------------
 # Helper function that returns global cycles
-# Append it to pyplot module
-def _gen_cycles():
+# Append it to pyplot module, so can use it just like plt.cmaps
+def _get_cycles():
     return cycles
-plt.cycles = _gen_cycles
+plt.get_cycles = _get_cycles
 
 #-------------------------------------------------------------------------------
 # Register color new color styles

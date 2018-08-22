@@ -409,12 +409,14 @@ def _m_pcolormesh(self, lon, lat, Z, **kwargs):
 # Formatting functions, assigned using MethodType onto various Axes
 # instances and GridSpec instances
 #------------------------------------------------------------------------------
-def _text(self, x, y, text, transform='axes', fancy=False, black=True, edgewidth=2, **kwarg):
+def _text(self, x, y, text, transform='axes', fancy=False, black=True,
+        linewidth=2, lw=None, **kwarg): # linewidth is for the border
     """
     Wrapper around original text method.
     If requested, can return specially created black-on-white text.
     So far no other features implemented.
     """
+    linewidth = lw or linewidth
     if type(transform) is not str:
         pass # leave alone
         # raise ValueError("Just name the transform with string \"axes\" or \"data\".")
@@ -430,7 +432,7 @@ def _text(self, x, y, text, transform='axes', fancy=False, black=True, edgewidth
     if fancy:
         fcolor, bcolor = 'wk'[black], 'kw'[black]
         t.update({'color':fcolor, 'zorder':1e10, # have to update after-the-fact for path effects
-            'path_effects': [mpatheffects.Stroke(linewidth=2, foreground=bcolor), mpatheffects.Normal()]})
+            'path_effects': [mpatheffects.Stroke(linewidth=linewidth, foreground=bcolor), mpatheffects.Normal()]})
         # t.update({'size':11, 'zorder':1e10,
         #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
     return t
@@ -811,7 +813,8 @@ def _format_axes(self,
     xtickrange=None, ytickrange=None, # limit regions where we assign ticklabels to major-ticks
     xlim=None, ylim=None, xscale=None, yscale=None, xreverse=False, yreverse=False, # special properties
     xlabel=None, ylabel=None, # axis labels
-    suptitle=None, suptitlepos=None, title=None, titlepos=None, abc=False, abcpos=None, abcformat='', padding=0.1,
+    suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
+    abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
     # TODO: add options for allowing UNLABELLED major ticklines -- maybe pass a special Formatter?
     xlocator=None, xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
     xformatter=None, yformatter=None): # formatter
@@ -853,12 +856,13 @@ def _format_axes(self,
     # Create axes title
     # Input needs to be emptys string
     self.title.update({**globals('title'), 'text':title or ''})
+    self.title.update(titledict)
     if titlepos=='left':
         self.title.update({'position':(0,1), 'ha':'left'})
     elif titlepos=='right':
         self.title.update({'position':(1,1), 'ha':'right'})
     elif titlepos=='inside':
-        self.title.update({'position':(0.5,1-padding/self.height),
+        self.title.update({'position':(0.5,1-titlepad/self.height),
             'transform':self.transAxes, 'va':'top'})
     elif isinstance(titlepos,str):
         raise ValueError(f"Unknown title position: {titlepos}.")
@@ -868,10 +872,10 @@ def _format_axes(self,
     if self.number is not None and abc:
         abcedges = abcformat.split('a')
         self.abc = self.text(0, 1, abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1],
-                transform=self.title._transform) # optionally include paren
+                transform=self.title._transform, **abcdict) # optionally include paren
         self.abc.update({'ha':'left', 'va':'baseline', **globals('abc')})
         if abcpos=='inside':
-            self.abc.update({'position':(padding/self.width, 1-padding/self.height),
+            self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
                 'transform':self.transAxes, 'ha':'left', 'va':'top'})
         elif isinstance(abcpos,str):
             raise ValueError(f"Unknown abc position: {abcpos}.")

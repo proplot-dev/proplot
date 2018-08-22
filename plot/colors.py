@@ -218,6 +218,16 @@ def shade(color, value=1, saturation=1):
     color = mcolors.hsv_to_rgb(color)
     return mcolors.to_hex(color) # hex codes are nice, mmkay
 
+def cyclecolors(qcycle):
+    """
+    Just get the cycle colors.
+    """
+    cycles = plt.get_cycles()
+    cycle  = cycles.get(qcycle,None) # query
+    if cycle is None:
+        raise ValueError(f'Unknown cycle \"{qcycle}\". Options are: ' + ', '.join(cycles.keys()))
+    return cycle
+
 def colorshow(ncols=4, nbreak=12, minsat=0.1, cycle=False):
     """
     Visualize all possible named colors. Wheee!
@@ -337,7 +347,7 @@ def cycleshow():
     Show off the different color cycles.
     Wrote this one myself, so it uses the custom API.
     """
-    cycles = plt.cycles() # function should have been added by the rc plugin
+    cycles = plt.get_cycles() # function should have been added by the rc plugin
     fig, axs = plt.subplots(figsize=(7,10), ncols=2, nrows=len(cycles)//2+len(cycles)%2)
     axs = [ax for sub in axs for ax in sub]
     fig.subplots_adjust(top=.95, bottom=.05, left=.05, right=0.95, hspace=.5, wspace=.05)
