@@ -507,10 +507,14 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
     if not isinstance(mappable, martist.Artist):
-        if isinstance(mappable[0], martist.Artist):
-            fromlines = True # we passed a bunch of line handles; just use their colors
+        try: mappable[0]
+        except TypeError:
+            pass
         else:
-            fromcolors = True # we passed a bunch of color strings or tuples
+            if isinstance(mappable[0], martist.Artist):
+                fromlines = True # we passed a bunch of line handles; just use their colors
+            else:
+                fromcolors = True # we passed a bunch of color strings or tuples
     csettings = {'spacing':'uniform', 'cax':cax, 'use_gridspec':True, # use space afforded by entire axes
         'extend':extend, 'orientation':orientation, 'drawedges':cgrid} # this is default case unless mappable has special props
     # Update with user-kwargs
@@ -727,6 +731,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
                         for i in range(len(handles))] # to list of iterables
         if align and list_of_lists: # unfurl, because we just want one legend!
             handles = [handle for iterable in handles for handle in iterable]
+            list_of_lists = False # no longer is list of lists
 
     # Now draw legend, with two options
     # 1) Normal legend, just draw everything like normal and columns
@@ -800,7 +805,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 
 def _format_axes(self,
     hatch=None, color=None, # control figure/axes background; hatch just applies to axes
-    oceans=False, coastlines=True, continents=False, # coastlines and continents
+    oceans=False, coastlines=False, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings
