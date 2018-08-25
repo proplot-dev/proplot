@@ -30,7 +30,7 @@ The **most notable** feature is the `format` method added to axes instances. Now
    * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Can be accessed as member of `Figure` instance.
    * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Can be accessed as member of `Figure` instance.
    * Exact widths and spacings can be controlled in inches.
-### Integrated mapping toolkits seamlessly
+### Integration with mapping toolkits
    * Can pass `projection=<name>` with either `package='basemap'` or `package='cartopy'`. Pass extra map arguments to the `subplots` command directly.
    * This creates axes grids, with each axes a map. Power to choose between cartopy and basemap.
 ### Added new `format` method-style commands to axes instances generated with `subplots`
