@@ -723,11 +723,12 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     else: # standardize format based on input
         if not align and not list_of_lists: # separate into columns
             # raise ValueError("Need to specify number of columns with ncol.")
-            if 'ncol' not in lsettings:
-                lsettings['ncol'] = 3
+            list_of_lists = True
+            lsettings['ncol'] = lsettings.get('ncol',3)
             handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
                         for i in range(len(handles))] # to list of iterables
         if align and list_of_lists: # unfurl, because we just want one legend!
+            list_of_lists = False
             handles = [handle for iterable in handles for handle in iterable]
 
     # Now draw legend, with two options
