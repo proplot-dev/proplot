@@ -23,7 +23,7 @@ The **most notable** feature is the `format` method added to axes instances. Now
      * Pass no arguments to generate default single-axes figure (1 row, 1 column).
      * Pass the `nrows` and/or `ncols` kwarg to generate simple grids of axes -- e.g. `nrows=2` creates two rows with one column.
      * Pass an array with numbers corresponding to unique subplots to generate complex grids -- e.g. `py.subplots([[1,2],[1,3]])` creates a grid with one tall plot on the left,
-     and two smaller plots on the right, while `py.subplots([[1,1,1],[2,3,4]])` creates a grid with one long plot on top and three smaller plots on the bottom.
+     and two smaller plots on the right, while `py.subplots([[1,1,1],[2,3,4]])` creates a grid with one long plot on top and three smaller plots on the bottom. User **zero** to indicate that you want a subplot slot to be empty.
    * Much more precise sizing control -- control in **inches** the figure width and/or height, vertical/horizontal space between axes, ratios of axes row heights/axes column widths, extra spacing around outside of leftmost/rightmost columns and bottom/top rows. Allows making publication-quality graphics without the publishers needing to re-scale them.
    * Added many new features -- see below.
 ### Much-wanted features for multi-axes figures
