@@ -1,9 +1,5 @@
 ## Overview
-This library provides extremely helpful plotting utilities to make `matplotlib` less painful,
-and provides sort-of-helpful-but-still-working-on-it numerical utilities for analysing data.
-
-## Plotting Utilities
-Everything here is contained in `plots`. Usually I import these as `from pyfuncs import plot`. Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` version.
+This library provides extremely helpful plotting utilities to make `matplotlib` less painful. I recommend importing the utilities with `import pubplot as plot`. Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` command of the same name.
 
 Quick summary of features:
 
@@ -57,8 +53,4 @@ The **most notable** feature is the `format` method added to axes instances. Now
    * Created new `arange` utility. Like `np.arange`, but this is always **endpoint-inclusive**.
    * Created `Formatter` class for ticklabels that renders numbers into the style you'll want 90% of the time.
    * Created `Normalize` class for colored content that allows for the colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `np.arange(-20,51,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
-
-## Numerical Utilities
-Need to document these better, decide if this duplicates anything.
-
 
