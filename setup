@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# For sharing package in 'pip', see:
+# https://uoftcoders.github.io/studyGroup/lessons/python/packages/lesson/
+# Alternatively can install with:
+# pip install git+https://github.com/lukelbd/pubplot.git#egg=pubplot
+python setup.py sdist
+python setup.py register
+python setup.py sdist upload

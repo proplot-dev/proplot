@@ -5,7 +5,6 @@
 # First just make sure some dependencies are loaded
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.font_manager as mfonts
@@ -327,8 +326,8 @@ mcolors.OPEN_COLORS = {} # create separate dictionary for them
 for _name,_colors in _opencolors.items(): # iterate through json values
     for _i,_color in enumerate(_colors):
         mcolors.OPEN_COLORS[_name+str(_i)] = _color
-_xkcdcolors = pd.read_csv(f"{os.path.dirname(__file__)}/xkcd.txt",
-    delimiter='\t', header=None, usecols=(0,1)).values.tolist() # note numpy loadtxt fails
+_xkcdcolors = np.genfromtxt(f'{os.path.dirname(__file__)}/xkcd.txt',
+    delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
 mcolors.XKCD_SORTED = {tup[0]:tup[1] for i,tup in enumerate(_xkcdcolors[::-1])
     if i<256} # filter to N most popular
 colors = {**mcolors.XKCD_SORTED, **mcolors.OPEN_COLORS} # initialize the color dictionary
