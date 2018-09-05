@@ -22,6 +22,8 @@ __pycache__
 # Miscellaneous #
 #################
 send2trash
+*.ipynb
+.ipynb_checkpoints
 
 # Compiled source #
 ###################
