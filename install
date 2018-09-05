@@ -8,3 +8,5 @@ exit
 python setup.py sdist
 python setup.py register
 python setup.py sdist upload
+# Then install with
+pip install pubplot
