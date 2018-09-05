@@ -14,7 +14,7 @@ setup(
     # *Strongly* suggested for sharing
     version = '0.1',
     # The license can be anything you like
-    license          = open('LICENSE').read(),
+    license          = 'LICENSE.txt',
     description      = 'Tricked out matplotlib wrapper for making clear, compact, publication-quality graphics quickly and easily.',
     long_description = open('README.md').read(),
 )
