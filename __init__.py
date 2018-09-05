@@ -1,3 +1,6 @@
 #!/usr/bin/env python3
-# To make package importable for local usage
+#------------------------------------------------------------------------------#
+# This makes package locally importable, as long as
+# this directory is on PYTHONPATH.
+#------------------------------------------------------------------------------#
 from .pubplot import *
