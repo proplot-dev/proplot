@@ -7,6 +7,8 @@ setup(
     author_email = 'lukelbd@gmail.com',
     # Needed to actually package something
     packages = ['pubplot'],
+    # Command-line scripts
+    scripts = ['scripts/fontsetup'],
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing
