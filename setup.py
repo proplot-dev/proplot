@@ -1,12 +1,16 @@
 from setuptools import setup
+# For including non-python data, see:
+# https://stackoverflow.com/a/1857436/4970632
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name         = 'PubPlot',
     url          = 'https://github.com/lukelbd/pubplot',
     author       = 'Luke Davis',
     author_email = 'lukelbd@gmail.com',
-    # Needed to actually package something
-    packages = ['pubplot'],
+    # Package stuff
+    # Also include package data
+    packages     = ['pubplot'],
+    package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
     scripts = ['scripts/fontsetup'],
     # Needed for dependencies

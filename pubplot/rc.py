@@ -326,7 +326,7 @@ mcolors.OPEN_COLORS = {} # create separate dictionary for them
 for _name,_colors in _opencolors.items(): # iterate through json values
     for _i,_color in enumerate(_colors):
         mcolors.OPEN_COLORS[_name+str(_i)] = _color
-_xkcdcolors = np.genfromtxt(f'{os.path.dirname(__file__)}/xkcd.txt',
+_xkcdcolors = np.genfromtxt(f'{os.path.dirname(__file__)}/colors/xkcd.txt',
     delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
 mcolors.XKCD_SORTED = {tup[0]:tup[1] for i,tup in enumerate(_xkcdcolors[::-1])
     if i<256} # filter to N most popular
