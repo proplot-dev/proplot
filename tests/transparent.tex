@@ -1,0 +1,23 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This tex document was made to simply demonstrate that PDF figures
+% saved with transparent axes/figures, even though assigned a white background
+% in Mac Preview mode, are *indeed* transparent when included in documents.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \documentclass{standalone}
+\documentclass[varwidth,border=3mm]{standalone} % varwidth needed for itemize environments
+\usepackage[utf8]{inputenc} % disallows weird characters for unexpected behavior
+\usepackage[T1]{fontenc} % interpret accented characters better
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+% \usepackage[active, tightpage]{preview}
+% \usepackage{pgfplots}
+\begin{document}
+  \pagecolor{black!20} % shade white
+  This is a teeny tiny example document.
+  \begin{center}
+    \includegraphics{/Users/ldavis/pyfuncs/sample.png}
+  \end{center}
+\end{document}
+

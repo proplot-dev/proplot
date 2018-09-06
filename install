@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Install latest version directly from github
+# See: https://uoftcoders.github.io/studyGroup/lessons/python/packages/lesson/
+pip install git+https://github.com/lukelbd/pubplot.git#egg=pubplot
+exit
+# Formally upload to pip
+# See: https://uoftcoders.github.io/studyGroup/lessons/python/packages/lesson/
+python setup.py sdist
+python setup.py register
+python setup.py sdist upload
+# Then install with
+pip install pubplot

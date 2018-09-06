@@ -23,7 +23,7 @@ __pycache__
 #################
 send2trash
 *.ipynb
-    # ignore python notebooks; these are for playing around
+.ipynb_checkpoints
 
 # Compiled source #
 ###################
