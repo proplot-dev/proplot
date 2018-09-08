@@ -50,5 +50,5 @@ The **two most important** features are the `subplots` command and the `format` 
 ### Misc tools
    * New `arange` utility -- like `np.arange`, but **endpoint-inclusive**.
    * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time. Also use `LatFormatter` or `LonFormatter` for coordinate axes. Former can be used to draw sine-weighted latitude axes.
-   * New `Normalize` class allows colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `np.arange(-20,51,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
+   * New `Normalize` class allows colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `arange(-20,50,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
 
