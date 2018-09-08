@@ -3,54 +3,52 @@ This library provides extremely helpful plotting utilities to make `matplotlib` 
 
 Quick summary of features:
 
-  * Total control over subplot aspect ratios, figure sizes in inches, spacing between subplots and around edges in inches.
-  * Tools to generate panels around `edges` of primary subplots, suitable for global legends/global colorbars/
-  * Axis labels spanning subplots and no more duplicate tick labels.
-  * Inner subplot panels, e.g. for displaying averages across the x/y axis.
-  * Integration with basemap/cartopy.
+  * Shared and spanning axes: axis labels spanning subplots, shared axis tick labels.
+  * Side panels: Outer panels spanning multiple rows/columns, suitable for shared legends or colorbars.
+  * New and improved legend/colorbar: More flexible inputs, new features.
+  * Sizing: Control over subplot axes ratios; set subplot spacing and panel sizes in inches (no more relative units).
+  * Projection subplots: Integration with basemap/cartopy.
+  * Colors: New colormaps, new colors, new color cycles, and functions for previewing them.
 
-The **most notable** feature is the `format` method added to axes instances. Now, you control the look of your axes with a single function, that accepts a plethora of kwarg pairs. Why do this?
+The **two most important** features are the `subplots` command and the `format` method. Use `subplots` to generate a scaffolding of axes and panels with rigid spacing, then use the new `format` method assigned to each axes instance to control the look of your axes in one line with a plethora of keyword arguments. Why do this?
 
-  * With the default API, to modify an axes property, you generally have to remember **three things**: 1) the object containing the method you want to use (e.g. axes vs. an individual axis), 2) the name of the method, and 3) the keyword-arguments and their meaning. It can get quite messy, quite verbose, and inevitably results in lots of copy-paste code!
-  * Now, you just have to remember **one** thing: the name of the keyword-argument passed to `ax.format()`.
+  * To modify an axes property (e.g. an x-axis label) with the default API, you normally have to use a bunch of one-liner `pyplot` commands (or method calls on axes/axis objects). This can get repetitive and quite verbose, resulting in lost of copy-paste code.
+  * Now, you can pass all of these settings to `format`. Instead of having to remember the name of the function, whether it's attached to `pyplot` or an object instance, and the order/names of the arguments, you just have to remember one thing -- the name of the keyword argument. The method also abstracts away some irritating inconsistencies -- now, There's Only One (obvious) Way To Do It.
 
-### Improved functionality of `subplots` command
-   * Much easier generation of figures with multiple axes.
+### Overview of `subplots`
+   * Generate grids of subplots:
      * Pass no arguments to generate default single-axes figure (1 row, 1 column).
      * Pass the `nrows` and/or `ncols` kwarg to generate simple grids of axes -- e.g. `nrows=2` creates two rows with one column.
-     * Pass an array with numbers corresponding to unique subplots to generate complex grids -- e.g. `py.subplots([[1,2],[1,3]])` creates a grid with one tall plot on the left,
-     and two smaller plots on the right, while `py.subplots([[1,1,1],[2,3,4]])` creates a grid with one long plot on top and three smaller plots on the bottom. User **zero** to indicate that you want a subplot slot to be empty.
-   * Much more precise sizing control -- control in **inches** the figure width and/or height, vertical/horizontal space between axes, ratios of axes row heights/axes column widths, extra spacing around outside of leftmost/rightmost columns and bottom/top rows. Allows making publication-quality graphics without the publishers needing to re-scale them.
-   * Added many new features -- see below.
-### Much-wanted features for multi-axes figures
-   * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Can be accessed as member of `Figure` instance.
-   * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Can be accessed as member of `Figure` instance.
-   * Exact widths and spacings can be controlled in inches.
-### Integration with mapping toolkits
-   * Can pass `projection=<name>` with either `package='basemap'` or `package='cartopy'`. Pass extra map arguments to the `subplots` command directly.
-   * This creates axes grids, with each axes a map. Power to choose between cartopy and basemap.
-### Added new `format` method to axes instances generated with `subplots`
-   * To customize an axes, most important properties can be passed as kwargs. For example, format an axes with `ax.format(xlabel="foo", ylabel="bar", title="foobar")`.
-   * Included some special kwargs that avoid using unpalatable underlying API. For example, draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`.
-   * Special `format` functions created for `bottomlegend` and `bottomcolorbar`/`rightcolorbar`.
-### Revised some underlying issues by overwriting existing methods
+     * To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to alot empty space. For example, `subplots(array=[[1,2],[1,3]])` creates a grid with one tall plot on the left,
+     and two smaller plots on the right, while `subplots(array=[[1,1,1],[2,0,4]])` creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle.
+   * Precise control of layout: control figure width/height with kwargs `width/height`, vertical/horizontal space between axes with `wspace/hspace`, panel widths with `lwidth/cwidth/bwidth/rwidth`, inner-panel widths with `ihwidth/iwwidth`, inner-panel spacing with `ihspace/iwspace`, ratios for axes column widths (row heights) with `wratios/hratios`, ...
+   * Automatic sizing: specify a width (height) with a subplot aspect ratio, and `subplot` will automatically determine the necessary height (width).
+   * Integrated journal standards: for example, `width='ams1'` selects the smallest American Meteorological Society standard figure width.
+### Useful features for multi-axes figures
+   * Use `[bottom|right]panel=True` to alot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to alot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to alot space for panels that can span adjacent columns (rows) -- for example, if your subplot has 3 columns, passing `bottompanels=[1,2,2]` draws one panel for the first column and a second panel spanning the next two.
+   * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Instantiate the colorbar with `<figure>.bottomcolorbar.format(mappable, ...)`. This is a convenience feature.
+   * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Instantiate the legend with `<figure>.bottomlegend.format(handles, ...)`. This is a convenience feature.
+### The `format` command
+   * To set axes properties, just pass kwargs to `format`. For example: `ax.format(xlabel="foo", ylabel="bar", title="foobar")`.
+   * Includes special kwargs that avoid using unpalatable underlying API. For example, draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`, instead of digging into `matplotlib.ticker.<Locator>` classes.
+### Mapping toolkit integration
+   * For projection subplots, specify `projection='<name>'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.<Projection>` classes (the relevant cartopy class will be selected based on the `'<name>'` string).
+   * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if array was not declared explicitly (i.e. the figure is a simple grid), the subplots are automatically numbered from 1 to n (row major).
+   * `Basemap` instances are added as the attribute `m` their corresponding axes; create plots with (e.g.) `<axis>.m.contourf`. These instances are also overwritten to fix issues with `seams` on the edge of the map -- data will be circularly rolled and interpolated to map edges, so that seams are eliminated.
+### Revised underlying issues with contour and pcolor commands
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
-   * Wrappers around the special `Basemap` plotting utilities are added as methods to axes. Can call them with `mcontourf`, `mpcolor`, `mpcolormesh`, and `mcontour`.
-   These roll data to appropriate longitude range and fix seams on the map edges.
-### More flexible settings management compared to `mpl.rcParams`
-   * Can change settings for various axes objects with `py.setup(dict1, dict2)`; for example `py.setup({'ticklabels':size=5})`.
-   * Settings are applied whenever the `format` method is called, kept constant through entire workspace.
-   * Settings can be accessed at any time under `py.settings.ticklabels`, `py.settings.title`, etc.
+### Enhanced settings management
+   * Added the new `globals` command to change various settings. This command controls entries to the built-in `matplotlib.rcParams` dictionary along with the new, custom-built `matplotlib.rcExtras` dictionary.
+   * Special arguments **integrate** settings across a wide range of pyplot objects -- for example, `globals(linewidth=1, small=8, large=9)` makes all axis back ground lines (axes spines, tick marks, colorbar edges, legend boxes, ...) have 1pt linewidth, makes the `small` size font (used for tick labels, axis legends, ...) 8pt, and makes the `large` size font (used for titles, 'abc' subplot labelling, ...) 9pt.
 ### Font management
    * List of system fontnames available as the `fonts` variable under the imported module.
-### Colormap management
-   * On import, colormaps are automatically added from any `.rgb` files in the `cmaps` folder, and can be called by name. For example, `hclBlue.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap="hclBlue")`.
-      * Files downloaded from the HCL Wizard should be prefixed with `hcl`.
-      * Other formats must be coded into the `plots.py` function to be read properly
-   * Created function `cmapshow` to show off current colormaps in nice plot, automatically saved as `colormaps.pdf` in repository.
-### Extra tools
-   * Created new `arange` utility. Like `np.arange`, but this is always **endpoint-inclusive**.
-   * Created `Formatter` class for ticklabels that renders numbers into the style you'll want 90% of the time.
-   * Created `Normalize` class for colored content that allows for the colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `np.arange(-20,51,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
+### Pretty colors
+   * All colormaps from `.rgb` files in the `cmaps` folder can be called by name. For example, `hclBlue.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap="hclBlue")`.
+   * Added many new colors, including XKCD colors and Open Color web-design color palette. Added different color "cycles" (i.e. the automatic color order when drawing multiple lines), which can be set with `globals(cycle='<name>')`.
+   * Use functions `cmapshow`, `colorshow`, and `cycleshow` to visualize available colormaps, named colors, and color palettes. Functions will automatically save PDFs in the package directory.
+### Misc tools
+   * New `arange` utility -- like `np.arange`, but **endpoint-inclusive**.
+   * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time. Also use `LatFormatter` or `LonFormatter` for coordinate axes. Former can be used to draw sine-weighted latitude axes.
+   * New `Normalize` class allows colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `np.arange(-20,51,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
 

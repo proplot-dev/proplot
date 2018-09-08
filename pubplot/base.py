@@ -1440,7 +1440,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         lwidth=0.15, cwidth=0.25, cspace=0.5, cshrink=0.9,
             # spacing for colorbar text, colorbar axes width, legend axes with, and padding for interior ABC label
         innerpanels=None, # same as below; list of numbers where we want subplotspecs
-        whichpanels=None, hsep=None, wsep=None, hwidth=None, wwidth=None,
+        whichpanels=None, ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
         maps=None, # set maps to True for maps everywhere, or to list of numbers
         package='basemap', projection=None, projection_dict={}, **projection_kwargs): # for projections; can be 'basemap' or 'cartopy'
     """
