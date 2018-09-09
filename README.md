@@ -18,14 +18,15 @@ The **two most important** features are the `subplots` command and the `format` 
 ### The `subplots` command
    * Generate grids of subplots:
      * Pass no arguments to generate default single-axes figure (1 row, 1 column).
-     * Pass the `nrows` and/or `ncols` kwarg to generate simple grids of axes -- e.g. `nrows=2` creates two rows with one column.
-     * To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to alot empty space. For example, `subplots(array=[[1,2],[1,3]])` creates a grid with one tall plot on the left,
+     * Use `nrows` and `ncols` to generate simple subplot grids -- e.g. `nrows=2` creates two rows with one column.
+     * To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to allot empty space. For example, `subplots(array=[[1,2],[1,3]])` creates a grid with one tall plot on the left,
      and two smaller plots on the right, while `subplots(array=[[1,1,1],[2,0,4]])` creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle.
+   * Returns two arguments: the figure, and a list of axes. If only one axes was drawn, returns the axes instead of a singleton list.
    * Precise control of layout: control figure width/height with kwargs `width/height`, vertical/horizontal space between axes with `wspace/hspace`, panel widths with `lwidth/cwidth/bwidth/rwidth`, inner-panel widths with `ihwidth/iwwidth`, inner-panel spacing with `ihspace/iwspace`, ratios for axes column widths (row heights) with `wratios/hratios`, ...
    * Automatic sizing: specify a width (height) with a subplot aspect ratio, and `subplot` will automatically determine the necessary height (width).
    * Integrated journal standards: for example, `width='ams1'` selects the smallest American Meteorological Society standard figure width.
 ### Useful features for multi-axes figures
-   * Use `[bottom|right]panel=True` to alot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to alot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to alot space for panels that can span adjacent columns (rows) -- for example, if your subplot has 3 columns, passing `bottompanels=[1,2,2]` draws one panel for the first column and a second panel spanning the next two.
+   * Use `[bottom|right]panel=True` to allot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to allot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to allot space for panels that can span adjacent columns (rows) -- for example, if your subplot has 3 columns, passing `bottompanels=[1,2,2]` draws one panel for the first column and a second panel spanning the next two.
    * Use `bottomcolorbar=True` and `rightcolorbar=True` to create special axes-spanning colorbars on your plots. Instantiate the colorbar with `<figure>.bottomcolorbar.format(mappable, ...)`. This is a convenience feature.
    * Use `bottomlegend=True` to create axes-spanning legend at the bottom. Instantiate the legend with `<figure>.bottomlegend.format(handles, ...)`. This is a convenience feature.
 ### The `format` command
@@ -33,7 +34,7 @@ The **two most important** features are the `subplots` command and the `format` 
    * Includes special kwargs that avoid using unpalatable underlying API. For example, draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`, instead of digging into `matplotlib.ticker.<Locator>` classes.
 ### Mapping toolkit integration
    * For projection subplots, specify `projection='<name>'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.<Projection>` classes (the relevant cartopy class will be selected based on the `'<name>'` string).
-   * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if array was not declared explicitly (i.e. the figure is a simple grid), the subplots are automatically numbered from 1 to n (row major).
+   * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if axes numbers were not declared with `array`, the subplots are automatically numbered from 1 to n (row major).
    * `Basemap` instances are added as the attribute `m` their corresponding axes; create plots with (e.g.) `<axis>.m.contourf`. These instances are also overwritten to fix issues with `seams` on the edge of the map -- data will be circularly rolled and interpolated to map edges, so that seams are eliminated.
 ### Revised underlying issues with contour and pcolor commands
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
