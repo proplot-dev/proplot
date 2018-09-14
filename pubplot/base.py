@@ -16,6 +16,7 @@ import matplotlib.figure as mfigure
 # import matplotlib.axes as maxes
 # import matplotlib.cm as mcm
 import matplotlib.path as mpath
+import matplotlib.contour as mcontour
 import matplotlib.patheffects as mpatheffects
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
@@ -508,7 +509,7 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
-    if not isinstance(mappable, martist.Artist):
+    if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
         if isinstance(mappable[0], martist.Artist):
             fromlines = True # we passed a bunch of line handles; just use their colors
         else:
@@ -1248,17 +1249,17 @@ def _twiny(self, **kwargs):
 # Will take in some arguments from parent function so don't have to pass them
 # every time
 def _panel_factory(fig, subspec, width, height,
-        whichpanels=None, hsep=None, wsep=None, hwidth=None, wwidth=None,
+        whichpanels=None, hspace=None, wspace=None, hwidth=None, wwidth=None,
         **kwargs):
     # Checks and defaults
     # Defaults format the plot to have tiny spaces between subplots
     # and narrow panels
     if whichpanels is None:
         whichpanels = 'b' # default is a bottom panel, cuz why not
-    if hsep is None:
-        hsep = 0.15
-    if wsep is None:
-        wsep = 0.15
+    if hspace is None:
+        hspace = 0.15
+    if wspace is None:
+        wspace = 0.15
     if hwidth is None:
         hwidth = 0.5
     if wwidth is None:
@@ -1290,12 +1291,12 @@ def _panel_factory(fig, subspec, width, height,
     # on the subspec object to determine physical width of axes to be created
     # * Consider writing some convenience funcs to automate this unit conversion
     bbox_i = subspec.get_position(fig) # valid since axes not drawn yet
-    if hsep is not None:
-        height_i = np.diff(bbox_i.intervaly)[0]*height - hsep*(nrows_i-1)
-        hsep = hsep/(height_i/nrows_i)
-    if wsep is not None:
-        width_i = np.diff(bbox_i.intervalx)[0]*width - wsep*(ncols_i-1)
-        wsep = wsep/(width_i/ncols_i)
+    if hspace is not None:
+        height_i = np.diff(bbox_i.intervaly)[0]*height - hspace*(nrows_i-1)
+        hspace = hspace/(height_i/nrows_i)
+    if wspace is not None:
+        width_i = np.diff(bbox_i.intervalx)[0]*width - wspace*(ncols_i-1)
+        wspace = wspace/(width_i/ncols_i)
     # Figure out hratios/wratios
     # Will enforce (main_width + panel_width)/total_width = 1
     wwidth_ratios = [width_i-wwidth*(ncols_i-1)]*ncols_i
@@ -1337,8 +1338,8 @@ def _panel_factory(fig, subspec, width, height,
             nrows         = nrows_i,
             ncols         = ncols_i,
             subplot_spec  = subspec,
-            wspace        = wsep,
-            hspace        = hsep,
+            wspace        = wspace,
+            hspace        = hspace,
             width_ratios  = wwidth_ratios,
             height_ratios = hwidth_ratios,
             )
@@ -1465,7 +1466,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
       this was the old API before idea for 'panels' was hatched.
     * Create extra panels *within* a grid of subplots (e.g. a 2x2 grid, each of which has a teeny
       panel attached) innerpanels=True, and optionally filter to subplot numbers with whichpanels=[list];
-      then use hsep/wsep/hwidth/wwidth to control the separation and widths of the subpanels.
+      then use ihspace/iwspace/ihwidth/iwwidth to control the separation and widths of the subpanels.
     * Initialize cartopy plots with package='basemap' or package='cartopy'. Can control which plots
       we want to be maps with maps=True (everything) or maps=[numbers] (the specified subplot numbers).
     Notes:
@@ -1822,7 +1823,9 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     # Draw axes
     #--------------------------------------------------------------------------
     # For panels
-    panel_kwargs = {'whichpanels':whichpanels, 'hsep':hsep, 'wsep':wsep, 'hwidth':hwidth, 'wwidth':wwidth}
+    panel_kwargs = {'whichpanels':whichpanels,
+            'hspace':ihspace, 'wspace':iwspace,
+            'hwidth':ihwidth, 'wwidth':iwwidth}
 
     # Base axes; to be shared with other axes as ._sharex, ._sharey attributes
     axps = [] # empty for now
