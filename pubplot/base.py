@@ -36,6 +36,7 @@ try: # crs stands for "coordinate reference system", leading c is "cartopy"
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
     from cartopy.mpl.geoaxes import GeoAxes
+    from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
     Transform = ccrs.PlateCarree() # global variable
 except ModuleNotFoundError:
     GeoAxes = None
@@ -74,6 +75,12 @@ class Figure(mfigure.Figure):
         Note to color axes patches, you will have to explicitly pass the
         transparent=False kwarg.
         """
+        # Some kwarg translations, to pass to savefig
+        # Note almost never want an 'edgecolor' for the figure frame, though it can be set
+        if 'alpha' in kwargs:
+            kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
+        if 'color' in kwargs:
+            kwargs['facecolor'] = kwargs.pop('color') # the color
         # Get bounding box that encompasses *all artists*, compare to bounding
         # box used for saving *figure*
         obbox = self.bbox_inches # original bbox
@@ -703,6 +710,11 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
             handles, _ = self.get_legend_handles_labels()
         if not handles: # just test if Falsey
             raise ValueError('Must input list of handles or pass "label" attributes to your plot calls.')
+    # Interpret kwargs, and apply them
+    if 'ncols' in kwargs:
+        kwargs['ncol'] = kwargs.pop('ncols') # pyplot subplot uses 'ncols', but legend uses 'ncol'... annoying!
+    if 'frame' in kwargs: # again, confusing choice
+        kwargs['frameon'] = kwargs.pop('frame')
     lsettings.update(**kwargs)
     # Setup legend text properties
     tsettings = globals('ticklabels')
@@ -805,7 +817,8 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 def _format_axes(self,
     hatch=None, color=None, # control figure/axes background; hatch just applies to axes
     oceans=False, coastlines=True, continents=False, # coastlines and continents
-    latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
+    latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels (left, right, bottom, top)
+    latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
@@ -909,9 +922,8 @@ def _format_axes(self,
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
-        if latlocator is not None:
-            try: iter(latlocator)
-            except TypeError:
+        if ylocator is not None:
+            if not hasattr(latlocator,'__iter__'):
                 latlocator = _auto_locate(m.latmin+latlocator, m.latmax-latlocator, latlocator)
             p = m.drawparallels(latlocator, labels=latlabels)
             for pi in p.values(): # returns dict, where each one is tuple
@@ -925,8 +937,9 @@ def _format_axes(self,
                 # tried passing clip_on to the above, but it does nothing; must set
                 # for lines created after the fact
         if lonlocator is not None:
-            try: iter(lonlocator)
-            except TypeError:
+            latlabels[2:] = lablabels[2:][::-1] # default is left/right/top/bottom which is dumb
+            lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
+            if not hasattr(lonlocator,'__iter__'):
                 lonlocator = _auto_locate(m.lonmin+lonlocator, m.lonmax-lonlocator, lonlocator)
             p = m.drawmeridians(lonlocator, labels=lonlabels)
             for pi in p.values():
@@ -972,14 +985,28 @@ def _format_axes(self,
         # been overridden by background patch, so will just show underlying figure color
         if color is not None:
             self.background_patch.set_facecolor(color)
-        # Gridlines with locators; if None, cartopy will draw defaults
-        if xlocator is not None:
-            try: iter(xlocator)
-            except TypeError: xlocator = _auto_locate(-180, 180, xlocator)
-        if ylocator is not None:
-            try: iter(ylocator)
-            except TypeError: ylocator = _auto_locate(-90, 90, ylocator)
-        self.gridlines(xlocs=xlocator, ylocs=ylocator, **globals('lonlatlines'))
+        # Draw gridlines
+        # WARNING: For some reason very weird side effects happen if you try
+        # to call gridlines() twice on same axes. Can't do it. Which is why
+        # we do this nonsense with the formatter below, instead of drawing 'major'
+        # grid lines and 'minor' grid lines.
+        lonvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*_auto_locate(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*_auto_locate(-90,90,v)]
+        lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
+        lonlines = lonminorlocator or lonlocator # where we draw gridlines
+        latlines = latminorlocator or latlocator
+        # First take care of gridlines
+        draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
+        gl = self.gridlines(crs=self.projection, **globals('lonlatlines'), draw_labels=draw_labels)
+        gl.xlocator = mticker.FixedLocator(lonlines)
+        gl.ylocator = mticker.FixedLocator(latlines)
+        # Now take care of labels
+        lonfunc = lambda x,y: LONGITUDE_FORMATTER(x) if x in lonvec(lonlocator) else ''
+        latfunc = lambda x,y: LATITUDE_FORMATTER(x) if x in latvec(latlocator) else ''
+        gl.xformatter = mticker.FuncFormatter(lonfunc)
+        gl.yformatter = mticker.FuncFormatter(latfunc)
+        gl.xlabels_bottom, gl.xlabels_top = latlabels[2:]
+        gl.ylabels_left, gl.ylabels_right = lonlabels[:2]
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
@@ -1489,8 +1516,12 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     width, height = _journal_sizes(width, height) # if user passed width=<string>, will use that journal size
     if width is None and height is None: # at least one must have value
         width = 5
-    if aspect is None:
-        aspect = 1.5 # try this as a default; square plots (1) look too tall to me
+    if aspect is None: # aspect is width to height ratio
+        aspect = 1.5   # try this as a default; square plots (1) look too tall to me
+    if wratios is not None:
+        aspect = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
+    if hratios is not None:
+        aspect = aspect*(hratios[0]/np.mean(hratios))
     # Automatically generate array of first *arg not provided, or use nrows/ncols
     if array is None:
         array = np.arange(1,nrows*ncols+1)[...,None]
@@ -1558,6 +1589,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             **{key: ccrs.PlateCarree   for key in ('cyl','rectilinear','pcarree','platecarree')},
             **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
             **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
+            'mercator': ccrs.Mercator,
             'robinson': ccrs.Robinson,
             'ortho':    ccrs.Orthographic,
             'aeqd':     ccrs.AzimuthalEquidistant,

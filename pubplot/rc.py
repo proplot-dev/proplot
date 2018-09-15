@@ -16,7 +16,7 @@ from types import MethodType
 # alongside rcParams
 import matplotlib as mpl
 # Local dependencies
-from   .colors import shade, cmapcolors
+from .colors import shade, cmapcolors
 # Default settings to be loaded when globals() is
 # called without any arguments
 rcDefaults = {
@@ -218,8 +218,8 @@ def globals(*args, verbose=False, **kwargs):
     add('markers',  {'fillstyle':'full'})
     add('scatter',  {'marker':'o'})
     add('legend',   {'framealpha':1, 'fancybox':False, 'frameon':False, # see: https://matplotlib.org/api/legend_api.html
-        'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':2, 'columnspacing':1,
-        'borderpad':0.3, 'borderaxespad':0, 'numpoints':1, 'facecolor':'inherit'})
+        'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':1.5, 'columnspacing':1,
+        'borderpad':0.5,    'borderaxespad':0,   'numpoints':1,    'facecolor':'inherit'})
     # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
     #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
     add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
@@ -238,6 +238,7 @@ def globals(*args, verbose=False, **kwargs):
     add('gridminor',   {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1})
     add('cgrid',       {'color':color, 'linewidth':linewidth})
     add('continents',  {'color':color, 'linewidth':0}) # make sure no lines!
+    add('oceans',      {'color':'w', 'linewidth':0}) # make sure no lines!
     add('tickminor',   {'length':ticklen/2, 'width':linewidth, 'color':color})
     add('tick',        {'length':ticklen, 'width':linewidth, 'color':color})
     add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})
