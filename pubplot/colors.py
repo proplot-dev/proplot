@@ -359,10 +359,11 @@ def cycleshow():
         propcycle = cycler('color', cycles_values[i])
         ax.set_prop_cycle(propcycle)
         lines = ax.plot(state.rand(10,len(cycles_values[i])), lw=5, ls='-')
-        for i,l in enumerate(lines):
-            l.set_zorder(len(lines)-i) # make first lines have big zorder
+        for j,l in enumerate(lines):
+            l.set_zorder(len(lines)-j) # make first lines have big zorder
+        title = f'{cycles_keys[i]}: {len(cycles_values[i])} colors'
         ax.set_xlim((-0.5,10))
-        ax.set_title(f'{cycles_keys[i]}: {len(cycles_values[i])} colors')
+        ax.set_title(title)
         for axis in 'xy':
             ax.tick_params(axis=axis, which='both', labelbottom=False, labelleft=False,
                     bottom=False, top=False, left=False, right=False)

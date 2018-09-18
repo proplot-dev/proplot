@@ -8,6 +8,7 @@
 #------------------------------------------------------------------------------
 # Global module dependencies
 # from .basics import Dict, arange
+import os
 import numpy as np
 # from string import ascii_uppercase
 from string import ascii_lowercase
@@ -116,7 +117,7 @@ class Figure(mfigure.Figure):
         # Finally, save
         if not silent:
             print(f'Saving to "{filename}".')
-        self.savefig(filename, **kwargs) # specify DPI for embedded raster objects
+        self.savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
 
 #------------------------------------------------------------------------------
 # Helper functions for plot overrides
@@ -993,20 +994,26 @@ def _format_axes(self,
         lonvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*_auto_locate(-180,180,v)]
         latvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*_auto_locate(-90,90,v)]
         lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
+        lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
         latlines = latminorlocator or latlocator
         # First take care of gridlines
         draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
-        gl = self.gridlines(crs=self.projection, **globals('lonlatlines'), draw_labels=draw_labels)
+        if latlines[0]==-90:
+            latlines[0] += 0.001
+        if lonlines[0]==-90:
+            lonlines[0] -= 0.001
+        gl = self.gridlines(**globals('lonlatlines'), draw_labels=draw_labels)
         gl.xlocator = mticker.FixedLocator(lonlines)
         gl.ylocator = mticker.FixedLocator(latlines)
         # Now take care of labels
-        lonfunc = lambda x,y: LONGITUDE_FORMATTER(x) if x in lonvec(lonlocator) else ''
-        latfunc = lambda x,y: LATITUDE_FORMATTER(x) if x in latvec(latlocator) else ''
-        gl.xformatter = mticker.FuncFormatter(lonfunc)
-        gl.yformatter = mticker.FuncFormatter(latfunc)
-        gl.xlabels_bottom, gl.xlabels_top = latlabels[2:]
-        gl.ylabels_left, gl.ylabels_right = lonlabels[:2]
+        if draw_labels:
+            lonfunc = lambda x,y: LONGITUDE_FORMATTER(x) if x in lonlocator else ''
+            latfunc = lambda x,y: LATITUDE_FORMATTER(x) if x in latlocator else ''
+            gl.xformatter = mticker.FuncFormatter(lonfunc)
+            gl.yformatter = mticker.FuncFormatter(latfunc)
+            gl.xlabels_bottom, gl.xlabels_top = latlabels[2:]
+            gl.ylabels_left, gl.ylabels_right = lonlabels[:2]
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
@@ -1019,6 +1026,7 @@ def _format_axes(self,
         if oceans:
             # self.add_feature(cfeature.OCEAN, **globals('oceans'))
             self.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m'), **globals('oceans'))
+        # return asdfs
         return # skip everything else
 
     #--------------------------------------------------------------------------
@@ -1860,7 +1868,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             'hwidth':ihwidth, 'wwidth':iwwidth}
 
     # Base axes; to be shared with other axes as ._sharex, ._sharey attributes
-    axps = [] # empty for now
+    axps = num_axes*[None] # empty for now
     axs = num_axes*[None] # list of axes
     allgroups_base = []
     if sharex: allgroups_base += xgroups_base
@@ -1868,10 +1876,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
     for i in allgroups_base: # this is just list of indices in axes_ids, yrange, etc.
         if axs[i] is None: # not created as a x-base already, for example
             if i in innerpanels_ids:
-                axs[i], axp = _panel_factory(fig, gs[slice(*yrange[i,:]), slice(*xrange[i,:])], width, height,
+                axs[i], axps[i] = _panel_factory(fig, gs[slice(*yrange[i,:]), slice(*xrange[i,:])], width, height,
                         **panel_kwargs) # main axes handle
-                axps.append(axp) # panels in list; items are lists themselves
-                    # if user wanted more than one panels, e.g. left and bottom
             else:
                 axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         **cartopy_kwargs) # main axes can be a cartopy projection
@@ -1915,10 +1921,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             # Virgin axes; these are not an x base or a y base
             # We draw them now and pass the sharex/sharey as kwargs
             if i in innerpanels_ids:
-                axs[i], axp = _panel_factory(fig, gs[slice(*yrange[i,:]), slice(*xrange[i,:])], width, height,
+                axs[i], axps[i] = _panel_factory(fig, gs[slice(*yrange[i,:]), slice(*xrange[i,:])], width, height,
                         sharex=sharex_ax, sharey=sharey_ax, **panel_kwargs)
-                axps.append(axp) # panels in list; items are lists themselves
-                                 # if user wanted more than one panels, e.g. left and bottom
             else:
                 axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         sharex=sharex_ax, sharey=sharey_ax, **cartopy_kwargs) # main axes can be a cartopy projection
@@ -2112,6 +2116,8 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
 
     # Repeat some of the above for the panel axes
     # Will only need the format method really
+    # Also eliminate from the list axes for which no panels are drawn
+    axps = [axp for axp in axps if axp is not None]
     for axp in axps:
         for ax in axp:
             _atts_global(ax)
