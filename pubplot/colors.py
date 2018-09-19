@@ -348,9 +348,10 @@ def cycleshow():
     Wrote this one myself, so it uses the custom API.
     """
     cycles = plt.get_cycles() # function should have been added by the rc plugin
-    fig, axs = plt.subplots(figsize=(7,10), ncols=2, nrows=len(cycles)//2+len(cycles)%2)
+    nrows = len(cycles)//2+len(cycles)%2
+    fig, axs = plt.subplots(figsize=(8,nrows*2), ncols=2, nrows=nrows)
     axs = [ax for sub in axs for ax in sub]
-    fig.subplots_adjust(top=.95, bottom=.05, left=.05, right=0.95, hspace=.5, wspace=.05)
+    fig.subplots_adjust(top=.98, bottom=.02, left=.02, right=0.98, hspace=.2, wspace=.02)
     state = np.random.RandomState(123412)
     cycles_keys   = [*cycles.keys()]
     cycles_values = [*cycles.values()]
