@@ -45,7 +45,7 @@ except ModuleNotFoundError:
     print("Warning: cartopy is not available.")
 # Local modules, projection sand formatters and stuff
 from .rc import globals
-from .axis import Norm, Formatter, LatFormatter, LonFormatter # default axis norm and formatter
+from .axis import Norm, Formatter, LatFormatter, LonFormatter, AutoLocate # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 
 #------------------------------------------------------------------------------
@@ -446,14 +446,6 @@ def _text(self, x, y, text, transform='axes', fancy=False, black=True,
         #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
     return t
 
-def _auto_locate(min_, max_, base=5):
-    """
-    Return auto-generated levels in the provided interval. Minimum and maximum
-    values will be rounded to the nearest number divisible by the specified base.
-    """
-    _round = lambda x: base*round(float(x)/base)
-    return np.arange(_round(min_), _round(max_)+base/2, base)
-
 def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         cformatter=None, clabel=None, errfix=True, extend='neither', triangles=.15, # in inches
         length=0.8, values=None, **kwargs): #, settings=None):
@@ -576,7 +568,7 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
         else: # set based on user input
             try: iter(locator)
             except TypeError:
-                locator = _auto_locate(mappable.norm.vmin, mappable.norm.vmax, locator)
+                locator = AutoLocate(mappable.norm.vmin, mappable.norm.vmax, locator)
             locator = mticker.FixedLocator(np.array(locator)) # basic
         # Then modify to work around that mysterious error, and to prevent annoyance
         # where minor ticks extend beyond the "extend" triangles
@@ -821,7 +813,7 @@ def _format_axes(self,
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels (left, right, bottom, top)
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
     xgrid=None, ygrid=None, # gridline toggle
-    xdates=False, ydates=False, # whether to format axis labels as long datetime strings
+    xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
     xspineloc=None, yspineloc=None, # deals with spine options
     xtickloc=None, ytickloc=None, # tick location
@@ -840,10 +832,11 @@ def _format_axes(self,
     Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
     colorbar or basemap axes. By default, simply applies the dictionary values from settings() above,
     but can supply many kwargs to further modify things.
+    TODO:
     * Add options for datetime handling; note possible date axes handles are TimeStamp (pandas),
       np.datetime64, DateTimeIndex; can fix with fig.autofmt_xdate() or manually set options; uses
-      ax.is_last_row() or ax.is_first_column(), so should look that up.
-    * Problem is there is no autofmt_ydate(), so really should implement my own version of this.
+      ax.is_last_row() or ax.is_first_column(), so should look that up. Problem is there
+      is no autofmt_ydate(), so really should implement my own version of this.
     """
     #---------------------------------------------------------------------------
     # Preliminary stuff, stuff that also applies to basemap
@@ -925,7 +918,7 @@ def _format_axes(self,
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
         if ylocator is not None:
             if not hasattr(latlocator,'__iter__'):
-                latlocator = _auto_locate(m.latmin+latlocator, m.latmax-latlocator, latlocator)
+                latlocator = AutoLocate(m.latmin+latlocator, m.latmax-latlocator, latlocator)
             p = m.drawparallels(latlocator, labels=latlabels)
             for pi in p.values(): # returns dict, where each one is tuple
                 for _ in [i for j in pi for i in j]: # magic
@@ -941,7 +934,7 @@ def _format_axes(self,
             latlabels[2:] = lablabels[2:][::-1] # default is left/right/top/bottom which is dumb
             lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
             if not hasattr(lonlocator,'__iter__'):
-                lonlocator = _auto_locate(m.lonmin+lonlocator, m.lonmax-lonlocator, lonlocator)
+                lonlocator = AutoLocate(m.lonmin+lonlocator, m.lonmax-lonlocator, lonlocator)
             p = m.drawmeridians(lonlocator, labels=lonlabels)
             for pi in p.values():
                 for _ in [i for j in pi for i in j]: # magic
@@ -991,8 +984,8 @@ def _format_axes(self,
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*_auto_locate(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*_auto_locate(-90,90,v)]
+        lonvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*AutoLocate(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if hasattr(v,'__iter__') else [*AutoLocate(-90,90,v)]
         lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
         lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
@@ -1052,8 +1045,7 @@ def _format_axes(self,
             (xgrid, ygrid), (xlocator, ylocator), (xformatter, yformatter), # major ticks
             (xtickrange, ytickrange), # range in which we label major ticks
             (xtickdir, ytickdir)): # tick direction
-        # Axis spine and tick locations
-        # May change settings if twin axes is present
+        # Axis spine visibility and location
         for spine, side in zip((self.spines[s] for s in sides), sides):
             # Line properties
             spine.update(globals('spine'))
@@ -1070,43 +1062,48 @@ def _format_axes(self,
                 b = True if side==spineloc else False
                 spine.set_visible(b)
             elif spineloc is not None:
-                # Special location
+                # Special spine location
+                # Note special 'spine location' options include 'zero', 'center',
+                # and tuple with (units, location) where units can be axes, data, or outward
                 if side==sides[0]: # move the left/bottom spine onto the specified location, with set_position
                     spine.set_visible(True)
-                    spine.set_position(spineloc) # just gets passed to the function; options include 
-                        # 'zero', 'center', and tuple with (units, location) where units can be axes, data, or outward
+                    spine.set_position(spineloc)
                 else:
                     spine.set_visible(False)
 
-        # Tick/tick gridline properties
+        # Tick properties
         # * Some weird issue seems to cause set_tick_params to reset/forget that the grid
         #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
+        #   Since gridOn is undocumented feature, don't use it.
         #   So calling _format_axes() a second time will remove the lines
         # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
         #   group of left/right or top/bottom
         # * Includes option to draw spines but not draw ticks on that spine, e.g.
         #   on the left/right edges
-        # * Weirdly gridOn is undocumented feature; that's because it doesn't fucking
-        #   work dummy. Don't use that method.
         ticklocs = sides if tickloc=='both' else () if tickloc=='neither' else tickloc
         if ticklocs is None: # only turn off ticks if the spine is invisible; don't explicitly turn on
-            sides_kw = {side: False for side in sides if not self.spines[side].get_visible()}
+            ticks_sides = {side: False for side in sides if not self.spines[side].get_visible()}
         else:
-            sides_kw = {side: self.spines[side].get_visible() and side in ticklocs for side in sides}
-        major_kw = globals('tick') if tickdir is None else dict(globals('tick'), direction=tickdir)
-        minor_kw = globals('tickminor') if tickdir is None else dict(globals('tickminor'), direction=tickdir)
-        axis.set_tick_params(which='major', **sides_kw, **major_kw)
-        axis.set_tick_params(which='minor', **sides_kw, **minor_kw) # have length
-        # Major ticks/grids
-        if type(grid) is bool: # grid changes must be after tick
-            axis.grid(grid, which='major')
-        for tick in axis.majorTicks:
-            tick.gridline.update(globals('grid'))
-        # Minor ticks/grids
-        if type(gridminor) is bool:
-            axis.grid(gridminor, which='minor', alpha=1) # ignore if no minor ticks
-        for tick in axis.minorTicks:
-            tick.gridline.update(globals('gridminor'))
+            ticks_sides = {side: self.spines[side].get_visible() and side in ticklocs for side in sides}
+        ticks_major = globals('tick') if tickdir is None else dict(globals('tick'), direction=tickdir)
+        ticks_minor = globals('tickminor') if tickdir is None else dict(globals('tickminor'), direction=tickdir)
+        axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
+        axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
+
+        # Gridline activation and setting (necessary because rcParams has no 'minorgrid'
+        # property, must be set in rcExtras)
+        if grid is not None: # grid changes must be after tick
+            axis.grid(grid, which='major', **globals('grid'))
+        if gridminor is not None:
+            axis.grid(gridminor, which='minor', **globals('gridminor')) # ignore if no minor ticks
+        # if type(grid) is bool: # grid changes must be after tick
+        #     axis.grid(grid, which='major')
+        # for tick in axis.majorTicks:
+        #     tick.gridline.update(globals('grid'))
+        # if type(gridminor) is bool:
+        #     axis.grid(gridminor, which='minor', alpha=1) # ignore if no minor ticks
+        # for tick in axis.minorTicks:
+        #     tick.gridline.update(globals('gridminor'))
 
         # Label properties
         axis.label.update(globals('label'))
@@ -1119,7 +1116,7 @@ def _format_axes(self,
             axis.set_major_locator(ticklocator)
         elif ticklocator is not None:
             try: iter(ticklocator)
-            except TypeError: ticklocator = _auto_locate(lim[0], lim[1], ticklocator)
+            except TypeError: ticklocator = AutoLocate(lim[0], lim[1], ticklocator)
             # axis.set_ticks(ticklocator)
             axis.set_major_locator(mticker.FixedLocator(ticklocator))
 
@@ -1130,7 +1127,7 @@ def _format_axes(self,
             axis.set_minor_locator(tickminorlocator) # pass locator class/subclass (all documented ones subclass the parent class, mticker.Locator)
         elif tickminorlocator is not None:
             try: iter(tickminorlocator)
-            except TypeError: tickminorlocator = _auto_locate(lim[0], lim[1], tickminorlocator) # use **spacing/setp** as specified
+            except TypeError: tickminorlocator = AutoLocate(lim[0], lim[1], tickminorlocator) # use **spacing/setp** as specified
             axis.set_minor_locator(mticker.FixedLocator(tickminorlocator))
 
         # Next, major tick formatters (enforce Null, always, for minor ticks), and text styling
@@ -1265,9 +1262,9 @@ def _twinx(self, **kwargs):
     # user settings) the spine locations.
     ax = self._twiny(**kwargs)
     _atts_global(ax) # basic setup
-    self.xspine_override = 'top'
-    ax.xspine_override = 'bottom'
+    self.xspine_override = 'bottom' # original axis ticks on bottom
     ax.yspine_override = 'neither'
+    ax.xspine_override = 'top' # new axis ticks on top
     return ax
 
 def _twiny(self, **kwargs):
@@ -1275,9 +1272,9 @@ def _twiny(self, **kwargs):
     # Same as above
     ax = self._twinx(**kwargs)
     _atts_global(ax) # basic setup
-    self.yspine_override = 'left'
-    ax.yspine_override = 'right'
+    self.yspine_override = 'left' # original axis ticks on left
     ax.xspine_override = 'neither'
+    ax.yspine_override = 'right' # new axis ticks on right
     return ax
 
 # Helper function for creating panelled axes
@@ -1286,6 +1283,8 @@ def _twiny(self, **kwargs):
 def _panel_factory(fig, subspec, width, height,
         whichpanels=None, hspace=None, wspace=None, hwidth=None, wwidth=None,
         **kwargs):
+    # TODO: Standardize the order that panels are delivered (e.g. in a list
+    # [None, axh, None, axh]), then *fix axis sharing across multiple panels*!
     # Checks and defaults
     # Defaults format the plot to have tiny spaces between subplots
     # and narrow panels
@@ -1383,8 +1382,8 @@ def _panel_factory(fig, subspec, width, height,
         kwargs.pop('sharex')
     if 'sharey' in kwargs:
         kwargs.pop('sharey')
-    for r in range(nrows_i)[::-1]:
-        for c in range(ncols_i):
+    for r in range(nrows_i)[::-1]: # order is bottom-top
+        for c in range(ncols_i): # order is left-right
             if (r,c) not in bad_pos:
                 # Add the subplot first
                 iax = fig.add_subplot(gs_i[r,c], **kwargs)
