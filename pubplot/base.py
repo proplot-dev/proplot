@@ -819,7 +819,8 @@ def _format_axes(self,
     xtickloc=None, ytickloc=None, # tick location
     xtickdir=None, ytickdir=None, # change ytick/xtick location; can be in, out, or inout (left-right-up-down depends on spine to which this applied)
     xtickrange=None, ytickrange=None, # limit regions where we assign ticklabels to major-ticks
-    xlim=None, ylim=None, xscale=None, yscale=None, xreverse=False, yreverse=False, # special properties
+    xlim=None, ylim=None, xscale=None, yscale=None, xscale_kwargs={}, yscale_kwargs={},
+    xreverse=False, yreverse=False, # special properties
     xlabel=None, ylabel=None, # axis labels
     suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
     abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
@@ -1027,10 +1028,8 @@ def _format_axes(self,
     #--------------------------------------------------------------------------
     # Axes scaling, limits, and reversal options (alternatively, supply
     # your own xlim/ylim that go from high to low)
-    # if xscale is not None: self.set_xscale(xscale, **globals('xscale'))
-    # if yscale is not None: self.set_yscale(yscale, **globals('yscale'))
-    if xscale is not None: self.set_xscale(xscale)
-    if yscale is not None: self.set_yscale(yscale)
+    if xscale is not None: self.set_xscale(xscale, **xscale_kwargs)
+    if yscale is not None: self.set_yscale(yscale, **yscale_kwargs)
     if xlim is None: xlim = self.get_xlim()
     if ylim is None: ylim = self.get_ylim()
     if xreverse: xlim = xlim[::-1]

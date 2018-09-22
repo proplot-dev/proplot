@@ -449,6 +449,8 @@ class InverseLocator(mticker.MultipleLocator):
         vmin, vmax = self.axis.get_view_interval()
         ticklocs = np.reciprocal(np.linspace(1/vmax, 1/vmin, self.numticks))
         return self.raise_if_exceeds(ticklocs)
+    def tick_values(vmin, vmax):
+        pass
 
 #-------------------------------------------------------------------------------
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
@@ -478,6 +480,8 @@ def Formatter(precision=None, tickrange=None):
             string = string.rstrip('0').rstrip('.')
         if string=='-0': # special case
             string = '0'
+        if value>0 and string=='0':
+            raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
         string = re.sub('-', '−', string) # pure unicode minus
         # string = re.sub('-', '${-}$', string) # latex version
         # string = re.sub('-', u'\u002d', string) # unicode hyphen minus, looks same as hyphen
