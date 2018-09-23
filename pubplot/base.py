@@ -58,6 +58,11 @@ def close():
     This prevents us having to load pyplot explicitly in ipython notebook.
     """
     plt.close('all') # easy peasy
+def show():
+    """
+    Show all figures.
+    """
+    plt.show()
 class Figure(mfigure.Figure):
     """
     Subclass of the mfigure.Figure class, with lots of special formatting
@@ -1069,46 +1074,6 @@ def _format_axes(self,
                     spine.set_position(spineloc)
                 else:
                     spine.set_visible(False)
-
-        # Tick properties
-        # * Some weird issue seems to cause set_tick_params to reset/forget that the grid
-        #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
-        #   Since gridOn is undocumented feature, don't use it.
-        #   So calling _format_axes() a second time will remove the lines
-        # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
-        #   group of left/right or top/bottom
-        # * Includes option to draw spines but not draw ticks on that spine, e.g.
-        #   on the left/right edges
-        ticklocs = sides if tickloc=='both' else () if tickloc=='neither' else tickloc
-        if ticklocs is None: # only turn off ticks if the spine is invisible; don't explicitly turn on
-            ticks_sides = {side: False for side in sides if not self.spines[side].get_visible()}
-        else:
-            ticks_sides = {side: self.spines[side].get_visible() and side in ticklocs for side in sides}
-        ticks_major = globals('tick') if tickdir is None else dict(globals('tick'), direction=tickdir)
-        ticks_minor = globals('tickminor') if tickdir is None else dict(globals('tickminor'), direction=tickdir)
-        axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
-        axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
-
-        # Gridline activation and setting (necessary because rcParams has no 'minorgrid'
-        # property, must be set in rcExtras)
-        if grid is not None: # grid changes must be after tick
-            axis.grid(grid, which='major', **globals('grid'))
-        if gridminor is not None:
-            axis.grid(gridminor, which='minor', **globals('gridminor')) # ignore if no minor ticks
-        # if type(grid) is bool: # grid changes must be after tick
-        #     axis.grid(grid, which='major')
-        # for tick in axis.majorTicks:
-        #     tick.gridline.update(globals('grid'))
-        # if type(gridminor) is bool:
-        #     axis.grid(gridminor, which='minor', alpha=1) # ignore if no minor ticks
-        # for tick in axis.minorTicks:
-        #     tick.gridline.update(globals('gridminor'))
-
-        # Label properties
-        axis.label.update(globals('label'))
-        if label is not None:
-            axis.label.set_text(label)
-
         # First, major tick locators (should not affect limits)
         lim = axis.get_view_interval() # to be used, automatically
         if isinstance(ticklocator, mticker.Locator):
@@ -1117,7 +1082,7 @@ def _format_axes(self,
             try: iter(ticklocator)
             except TypeError: ticklocator = AutoLocate(lim[0], lim[1], ticklocator)
             # axis.set_ticks(ticklocator)
-            axis.set_major_locator(mticker.FixedLocator(ticklocator))
+            axis.set_major_locator(mticker.FixedLocator(np.sort(ticklocator)))
 
         # Next, minor tick locators (toggle visibility later)
         if tickminor is not None and not tickminor:
@@ -1151,7 +1116,53 @@ def _format_axes(self,
             # axis.set_ticklabels(tickformatter) # no issues with FixedFormatter so far
         for t in axis.get_ticklabels():
             t.update(globals('ticklabels'))
-    return # we're done
+
+        # Tick properties
+        # * Some weird issue seems to cause set_tick_params to reset/forget that the grid
+        #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
+        #   Since gridOn is undocumented feature, don't use it.
+        #   So calling _format_axes() a second time will remove the lines
+        # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
+        #   group of left/right or top/bottom
+        # * Includes option to draw spines but not draw ticks on that spine, e.g.
+        #   on the left/right edges
+        ticklocs = sides if tickloc=='both' else () if tickloc=='neither' else tickloc
+        if ticklocs is None: # only turn off ticks if the spine is invisible; don't explicitly turn on
+            ticks_sides = {side: False for side in sides if not self.spines[side].get_visible()}
+        else:
+            ticks_sides = {side: self.spines[side].get_visible() and side in ticklocs for side in sides}
+        ticks_major, ticks_minor = globals('tick'), globals('tickminor')
+        if tickdir is not None:
+            ticks_major.update({'direction':tickdir})
+            ticks_minor.update({'direction':tickdir})
+        axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
+        axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
+
+        # Gridline activation and setting (necessary because rcParams has no 'minorgrid'
+        # property, must be set in rcExtras)
+        # NOTE: Inexplicably, for a twinx axis, could only get the minor gridlines
+        # to disappear if we changed the 'visible' property on each one.
+        # Fugly way, which lets us not explicitly turn on/off gridlines if
+        # user did not specify (by updating objects directly)
+        for tick in axis.majorTicks:
+            if grid is not None:
+                tick.gridline.set_visible(grid)
+            tick.gridline.update(globals('grid'))
+        for tick in axis.minorTicks:
+            if gridminor is not None:
+                tick.gridline.set_visible(gridminor)
+            tick.gridline.update(globals('gridminor'))
+        # Traditional method
+        # if grid is not None: # grid changes must be after tick
+        #     axis.grid(grid, which='major', **globals('grid'))
+        # if gridminor is not None:
+        #     axis.grid(gridminor, which='minor', **globals('gridminor')) # ignore if no minor ticks
+
+        # Label properties
+        axis.label.update(globals('label'))
+        if label is not None:
+            axis.label.set_text(label)
+
 
 #------------------------------------------------------------------------------#
 # Other special methods and attributes for our custom axes

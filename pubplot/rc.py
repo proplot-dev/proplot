@@ -51,7 +51,8 @@ def globals(*args, verbose=False, **kwargs):
     4. *Retrieve* a single value belong to a category.subcategory, or a dictionary
        of *all* or *filtered/selected* subcategory=value pairs for subcategories
        belonging to 'category'.
-    Here's a quick list of rcParam categories (see: https://matplotlib.org/users/customizing.html)
+    See: https://matplotlib.org/users/customizing.html
+    Here's a quick list of rcParam categories:
         "lines", "patch", "hatch", "legend"
         "font", "text", "mathtext"
             includes usetex for making all matplotlib fonts latex
@@ -129,11 +130,18 @@ def globals(*args, verbose=False, **kwargs):
     #--------------------------------------------------------------------------#
     # *Initialize* default settings; that is, both rcParams and rcExtras
     # Requires processing in lines below
+    # WARNING: rcdefaults() changes the backend! Inline plotting will fail for
+    # rest of notebook session if you call rcdefaults before drawing a figure!!!!
+    # After first figure made, backend property is 'sticky', never changes!
     category = category or 'globals' # None defaults to globals in this section
     if category=='globals' and not kwargs: # default settings
-        mpl.rcdefaults() # apply *builtin* default settings
-        mpl.rcExtras = {} # reset extras
-        add('globals', rcDefaults) # apply *custom* default settings
+        # See: https://stackoverflow.com/a/48322150/4970632
+        # backend_save = mpl.rcParams['backend']
+        # mpl.rcdefaults() # apply *builtin* default settings
+        # mpl.rcParams['backend'] = backend_save
+        mpl.style.use('default') # mpl.style does not change the backend
+        mpl.rcExtras = {} # reset extra settings
+        add('globals', rcDefaults) # apply *global* settings
     #--------------------------------------------------------------------------#
     # *Update* rcParam settings or global settings; just add them to rcParams or rcExtras
     # If one of the 'global' settings was changed, requires processing in lines below

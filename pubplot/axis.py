@@ -2,6 +2,13 @@
 """
 Define various axis scales, locators, and formatters. Also define normalizers
 generally used for colormap scaling. Below is rough overview of API.
+General Notes:
+  * Want to try to avoid **using the Formatter to scale/transform values, and
+    passing the locator an array of scaled/transformed values**. Makes more sense
+    to instead define separate **axis transforms**, then can use locators and
+    formatters like normal, as they were intended to be used. This way, if e.g.
+    matching frequency-axis with wavelength-axis, just conver the **axis limits**
+    so they match, then you're good.
 Scales:
   * These are complicated. See: https://matplotlib.org/_modules/matplotlib/scale.html#ScaleBase
     Use existing ones as inspiration -- e.g. InverseScale modeled after LogScale.
@@ -308,6 +315,9 @@ class InverseScale(mscale.ScaleBase):
     """
     Similar to LogScale, but this scales to be linear in *inverse* of x. Very
     useful e.g. to plot wavelengths on twin axis with wavenumbers.
+    Important note: Unlike log-scale, we can't just warp the space between
+    the axis limits -- have to actually change axis limits. This scale will
+    invert and swap the limits you provide. Weird! But works great!
     """
     # Declare name
     name = 'inverse'
@@ -322,11 +332,14 @@ class InverseScale(mscale.ScaleBase):
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         # *Hard* limit on axis boundaries
-        return (self.minpos if vmin <= 0 else vmin,
-                self.minpos if vmax <= 0 else vmax)
+        # Also can potentially *override* the axis limits.
+        vmin = self.minpos if vmin<=0 else vmin
+        vmax = self.minpos if vmax<=0 else vmax
+        return 1.0/vmax, 1.0/vmin # also *reverses* the axis direction, for some reason (not sure how, because we swap vmin/vmax here)
 
     def set_default_locators_and_formatters(self, axis):
         # Consider changing this
+        # TODO: fix minor locator issue
         axis.set_major_locator(mticker.LogLocator(base=10, subs=[1]))
         axis.set_major_formatter(mticker.LogFormatter())
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
@@ -413,7 +426,8 @@ def Locator(locator, *args, axis='major', **kwargs):
         locator = mticker.MultipleLocator(locator)
     else:
         # Fixed tickmarks
-        locator = mticker.FixedLocator(np.array(locator)) # basic
+        locator = mticker.FixedLocator(np.sort(locator)) # not necessary
+        # locator = mticker.FixedLocator(np.array(locator))
     return locator
 
 def AutoLocate(min_, max_, base=5):
@@ -488,6 +502,18 @@ def Formatter(precision=None, tickrange=None):
         # string = re.sub('-', r'\scalebox{0.75}[1.0]{$-$}', string)
         return string
     # And create object
+    return mticker.FuncFormatter(f)
+
+def LambdaFormatter(transform, *args, **kwargs):
+    """
+    Arbitrary formatter to run value through some operation, the
+    transform lambda function, before passing to Formatter.
+    """
+    # Format defintion
+    def f(value, location):
+        value = transform(value) # take the inverse
+        formatter = Formatter(*args, **kwargs)
+        return formatter(value, location)
     return mticker.FuncFormatter(f)
 
 def InverseFormatter(*args, **kwargs):
@@ -565,14 +591,14 @@ def LonFormatter(precision=None, cardinal=False, degree=True):
     # And create object
     return mticker.FuncFormatter(f)
 
-def FracFormatter(fact=np.pi, symbol=r'\pi'):
+def PiFormatter(number=np.pi, symbol=r'\pi'):
     """
     Format as fractions, multiples of some value.
     Note: Since everything is put inside LaTeX math mode the hyphens
     should be converted to unicode minus.
     """
     def f(n, loc): # must accept location argument
-        frac = Fraction(n/fact).limit_denominator()
+        frac = Fraction(n/number).limit_denominator()
         minus = '−' # pure unicode minus
         if n==0: # zero
             return '0'
@@ -588,7 +614,7 @@ def FracFormatter(fact=np.pi, symbol=r'\pi'):
         elif frac.numerator==-1:
             return f'${{-}}{symbol:s}/{frac.denominator:d}$'
         else: # and again make sure we use unicode minus!
-            return f'${frac.numerator:d}{symbol:s}/{frac.denominoator:d}$'
+            return f'${frac.numerator:d}{symbol:s}/{frac.denominator:d}$'
     # And create FuncFormatter class
     return mticker.FuncFormatter(f)
 
