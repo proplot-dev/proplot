@@ -821,8 +821,9 @@ def _format_axes(self,
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
     xspineloc=None, yspineloc=None, # deals with spine options
-    xtickloc=None, ytickloc=None, # tick location
-    xtickdir=None, ytickdir=None, # change ytick/xtick location; can be in, out, or inout (left-right-up-down depends on spine to which this applied)
+    xtickloc=None, ytickloc=None, # which spines to draw ticks on
+    xtickdir=None, ytickdir=None, # which direction ('in', 'our', or 'inout')
+    xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
     xtickrange=None, ytickrange=None, # limit regions where we assign ticklabels to major-ticks
     xlim=None, ylim=None, xscale=None, yscale=None, xscale_kwargs={}, yscale_kwargs={},
     xreverse=False, yreverse=False, # special properties
@@ -1042,13 +1043,13 @@ def _format_axes(self,
     self.set_xlim(xlim)
     self.set_ylim(ylim)
     for axis, label, dates, sides, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
-            grid, ticklocator, tickformatter, tickrange, tickdir in \
+            grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir in \
         zip((self.xaxis, self.yaxis), (xlabel, ylabel), (xdates, ydates), \
             (('bottom','top'),('left','right')), (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
             (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
             (xgrid, ygrid), (xlocator, ylocator), (xformatter, yformatter), # major ticks
             (xtickrange, ytickrange), # range in which we label major ticks
-            (xtickdir, ytickdir)): # tick direction
+            (xtickdir, ytickdir), (xticklabeldir, yticklabeldir)): # tick direction
         # Axis spine visibility and location
         for spine, side in zip((self.spines[s] for s in sides), sides):
             # Line properties
@@ -1135,6 +1136,13 @@ def _format_axes(self,
         if tickdir is not None:
             ticks_major.update({'direction':tickdir})
             ticks_minor.update({'direction':tickdir})
+        if tickdir=='in':
+            ticks_major.update({'pad':1}) # should be much closer
+            ticks_minor.update({'pad':1})
+        if ticklabeldir=='in': # put tick labels inside the plot; sometimes might actually want this
+            pad = globals('globals', 'tickpad') + globals('globals', 'small') + globals('globals', 'ticklen')
+            ticks_major.update({'pad':-pad})
+            ticks_minor.update({'pad':-pad})
         axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
         axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
 
@@ -1144,11 +1152,13 @@ def _format_axes(self,
         # to disappear if we changed the 'visible' property on each one.
         # Fugly way, which lets us not explicitly turn on/off gridlines if
         # user did not specify (by updating objects directly)
-        for tick in axis.majorTicks:
+        # for tick in axis.majorTicks:
+        for tick in axis.get_major_ticks():
             if grid is not None:
                 tick.gridline.set_visible(grid)
             tick.gridline.update(globals('grid'))
-        for tick in axis.minorTicks:
+        # for tick in axis.minorTicks:
+        for tick in axis.get_minor_ticks():
             if gridminor is not None:
                 tick.gridline.set_visible(gridminor)
             tick.gridline.update(globals('gridminor'))

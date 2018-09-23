@@ -332,10 +332,13 @@ class InverseScale(mscale.ScaleBase):
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         # *Hard* limit on axis boundaries
-        # Also can potentially *override* the axis limits.
-        vmin = self.minpos if vmin<=0 else vmin
-        vmax = self.minpos if vmax<=0 else vmax
-        return 1.0/vmax, 1.0/vmin # also *reverses* the axis direction, for some reason (not sure how, because we swap vmin/vmax here)
+        # vmin = self.minpos if vmin<=0 else vmin
+        # vmax = self.minpos if vmax<=0 else vmax
+        # print(vmax, vmin)
+        # return 1.0/vmax, 1.0/vmin # also *reverses* the axis direction, for some reason (not sure how, because we swap vmin/vmax here)
+        # Above was dumb, see LogScale example; this should set the limits
+        # in *scaled coordinates* (e.g. log uses -1000, meaning 10^(-1000))
+        return vmin, vmax
 
     def set_default_locators_and_formatters(self, axis):
         # Consider changing this
@@ -495,7 +498,8 @@ def Formatter(precision=None, tickrange=None):
         if string=='-0': # special case
             string = '0'
         if value>0 and string=='0':
-            raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
+            pass
+            # raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
         string = re.sub('-', '−', string) # pure unicode minus
         # string = re.sub('-', '${-}$', string) # latex version
         # string = re.sub('-', u'\u002d', string) # unicode hyphen minus, looks same as hyphen

@@ -26,6 +26,7 @@ rcDefaults = {
     'medium':    8,
     'large':     9,
     'ticklen':   4,
+    'tickpad':   2, # distance between ticks and labels
     'fontname':  'DejaVu Sans',
     'cycle':     'colorblind',
     }
@@ -110,12 +111,15 @@ def globals(*args, verbose=False, **kwargs):
     # *Retrieve* settings without changing any, if user passed a string 'category' name
     # and did not pass any kwargs for assignment as new settings
     if category is not None and not kwargs:
+        # Get dictionary
         if category=='globals':
-            return {key.split('.')[-1]:val for key,val in mpl.rcExtras.items() if 'globals.' in key}
-        dictionary = {}
-        for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
-            if catstring.split('.')[0]==category:
-                dictionary[catstring.split('.')[1]] = value
+            dictionary = {key.split('.')[-1]:val for key,val in mpl.rcExtras.items() if 'globals.' in key}
+        else:
+            dictionary = {}
+            for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
+                if catstring.split('.')[0]==category:
+                    dictionary[catstring.split('.')[1]] = value
+        # Optionally filter results, or just return one value
         if args: # filter them
             dictionary = {k:v for k,v in dictionary.items() if k in args}
             if len(dictionary)==1:
@@ -197,8 +201,8 @@ def globals(*args, verbose=False, **kwargs):
     # Here are ones related to axes and figure properties
     # NOTE the figure and axes colors will not be reset on saving if
     # you specify them explicitly, even if you use transparent True.
-    color, linewidth, ticklen, small, large, fontname = \
-        current['color'], current['linewidth'], current['ticklen'], current['small'], current['large'], current['fontname']
+    color, linewidth, ticklen, tickpad, small, large, fontname = \
+        current['color'], current['linewidth'], current['ticklen'], current['tickpad'], current['small'], current['large'], current['fontname']
     add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,
         'directory':'', 'pad_inches':0, 'bbox':'standard', 'format':'pdf'}) # empty means current directory
     add('figure', {'facecolor':(.95,.95,.95,1), 'dpi':90, # matches nbsetup
@@ -212,8 +216,8 @@ def globals(*args, verbose=False, **kwargs):
     for xy in 'xy':
         tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
         add(f'{xy}tick',       {'labelsize':small, 'color':color, 'direction':'out'})
-        add(f'{xy}tick.major', {'pad':2, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
-        add(f'{xy}tick.minor', {'pad':2, 'width':linewidth, 'visible':True, 'size':ticklen/2, **tickloc})
+        add(f'{xy}tick.major', {'pad':tickpad, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
+        add(f'{xy}tick.minor', {'pad':tickpad, 'width':linewidth, 'size':ticklen/2, **tickloc, 'visible':True})
     #--------------------------------------------------------------------------#
     # Ones related to stuff plotted inside axes
     # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
