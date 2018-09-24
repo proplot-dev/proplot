@@ -33,6 +33,7 @@ The **two most important** features are the `subplots` command and the `format` 
 ### The `format` command
    * To set axes properties, just pass kwargs to `format`. For example: `ax.format(xlabel="foo", ylabel="bar", title="foobar")`. Includes special kwargs that avoid using unpalatable underlying API.
    * Axis options:
+   
       `xgrid`, `ygrid`,
       `xdates`, `ydates`,
       `xtickminor`, `ytickminor`, `xgridminor`, `ygridminor`,
@@ -47,13 +48,16 @@ The **two most important** features are the `subplots` command and the `format` 
       `xlocator`, `xminorlocator`, `ylocator`, `yminorlocator`,
       `xformatter`, `yformatter`    
    * Titling options:
+   
       `suptitle`, `suptitlepos`, `title`, `titlepos`, `titlepad`, `titledict`,
       `abc`, `abcpos`, `abcformat`, `abcpad`, `abcdict`        
-   * Mapping options:    
+   * Mapping options:   
+   
       `oceans`, `coastlines`, `continents`,
       `latlabels`, `lonlabels`,
       `latlocator`, `latminorlocator`, `lonlocator`, `lonminorlocator` 
    * Axes canvas options:    
+   
        `hatch`, `color`      
    * Example: draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`, instead of digging into `matplotlib.ticker.Locator` classes.
 ### Mapping toolkit integration
