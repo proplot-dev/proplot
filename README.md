@@ -33,7 +33,6 @@ The **two most important** features are the `subplots` command and the `format` 
 ### The `format` command
    * To set axes properties, just pass kwargs to `format`. For example: `ax.format(xlabel="foo", ylabel="bar", title="foobar")`. Includes special kwargs that avoid using unpalatable underlying API.
    * Axis options:
-   
       `xgrid`, `ygrid`,
       `xdates`, `ydates`,
       `xtickminor`, `ytickminor`, `xgridminor`, `ygridminor`,
@@ -46,24 +45,17 @@ The **two most important** features are the `subplots` command and the `format` 
       `xreverse`, `yreverse`,
       `xlabel`, `ylabel`,
       `xlocator`, `xminorlocator`, `ylocator`, `yminorlocator`,
-      `xformatter`, `yformatter`
-      
-    * Titling options:
-    
+      `xformatter`, `yformatter`    
+   * Titling options:
       `suptitle`, `suptitlepos`, `title`, `titlepos`, `titlepad`, `titledict`,
-      `abc`, `abcpos`, `abcformat`, `abcpad`, `abcdict`   
-      
-    * Mapping options:
-    
+      `abc`, `abcpos`, `abcformat`, `abcpad`, `abcdict`        
+   * Mapping options:    
       `oceans`, `coastlines`, `continents`,
       `latlabels`, `lonlabels`,
       `latlocator`, `latminorlocator`, `lonlocator`, `lonminorlocator` 
-      
-    * Axes canvas options:
-    
-       `hatch`, `color`
-       
-    * Example: draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`, instead of digging into `matplotlib.ticker.Locator` classes.
+   * Axes canvas options:    
+       `hatch`, `color`      
+   * Example: draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`, instead of digging into `matplotlib.ticker.Locator` classes.
 ### Mapping toolkit integration
    * For projection subplots, specify `projection='<name>'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.Projection` classes (the relevant cartopy class will be selected based on the `'<name>'` string).
    * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if axes numbers were not declared with `array`, the subplots are automatically numbered from 1 to n (row major).
