@@ -50,15 +50,18 @@ The **two most important** features are the `subplots` command and the `format` 
     * Titling options:
     
       `suptitle`, `suptitlepos`, `title`, `titlepos`, `titlepad`, `titledict`,
-      `abc`, `abcpos`, `abcformat`, `abcpad`, `abcdict`      
+      `abc`, `abcpos`, `abcformat`, `abcpad`, `abcdict`   
+      
     * Mapping options:
     
       `oceans`, `coastlines`, `continents`,
       `latlabels`, `lonlabels`,
       `latlocator`, `latminorlocator`, `lonlocator`, `lonminorlocator` 
+      
     * Axes canvas options:
     
        `hatch`, `color`
+       
     * Example: draw major ticks every `2` units with `xlocator=2`, or specify a custom range with `xlocator=[0 2 4 8 16]`, instead of digging into `matplotlib.ticker.Locator` classes.
 ### Mapping toolkit integration
    * For projection subplots, specify `projection='<name>'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.Projection` classes (the relevant cartopy class will be selected based on the `'<name>'` string).
