@@ -47,6 +47,7 @@ The **two most important** features are the `subplots` command and the `format` 
       `xlabel`, `ylabel`,
       `xlocator`, `xminorlocator`, `ylocator`, `yminorlocator`,
       `xformatter`, `yformatter`
+      
     * Titling options:
     
       `suptitle`, `suptitlepos`, `title`, `titlepos`, `titlepad`, `titledict`,
