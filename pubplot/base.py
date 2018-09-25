@@ -815,7 +815,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 def _format_axes(self,
     hatch=None, color=None, # control figure/axes background; hatch just applies to axes
     oceans=False, coastlines=True, continents=False, # coastlines and continents
-    latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels (left, right, bottom, top)
+    latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
@@ -1162,11 +1162,12 @@ def _format_axes(self,
             if gridminor is not None:
                 tick.gridline.set_visible(gridminor)
             tick.gridline.update(globals('gridminor'))
-        # Traditional method
-        # if grid is not None: # grid changes must be after tick
-        #     axis.grid(grid, which='major', **globals('grid'))
-        # if gridminor is not None:
-        #     axis.grid(gridminor, which='minor', **globals('gridminor')) # ignore if no minor ticks
+        # For some insane reasion, these are ***both*** needed
+        # Without this below stuff, e.g. gridminor=True doesn't draw gridlines
+        if grid is not None: # grid changes must be after tick
+            axis.grid(grid, which='major', **globals('grid'))
+        if gridminor is not None:
+            axis.grid(gridminor, which='minor', **globals('gridminor')) # ignore if no minor ticks
 
         # Label properties
         axis.label.update(globals('label'))
