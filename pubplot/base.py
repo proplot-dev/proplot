@@ -741,6 +741,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
         if align and list_of_lists: # unfurl, because we just want one legend!
             list_of_lists = False
             handles = [handle for iterable in handles for handle in iterable]
+            list_of_lists = False # no longer is list of lists
 
     # Now draw legend, with two options
     # 1) Normal legend, just draw everything like normal and columns
@@ -814,9 +815,14 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 
 def _format_axes(self,
     hatch=None, color=None, # control figure/axes background; hatch just applies to axes
+<<<<<<< HEAD
+    oceans=False, coastlines=False, continents=False, # coastlines and continents
+    latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
+=======
     oceans=False, coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
+>>>>>>> 6a1dadbde97d977c242df00f57a9192e87b152e3
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
