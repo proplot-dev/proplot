@@ -16,7 +16,7 @@ from types import MethodType
 # alongside rcParams
 import matplotlib as mpl
 # Local dependencies
-from   .colors import shade, cmapcolors
+from .colors import shade, cmapcolors
 # Default settings to be loaded when globals() is
 # called without any arguments
 rcDefaults = {
@@ -26,6 +26,7 @@ rcDefaults = {
     'medium':    8,
     'large':     9,
     'ticklen':   4,
+    'tickpad':   2, # distance between ticks and labels
     'fontname':  'DejaVu Sans',
     'cycle':     'colorblind',
     }
@@ -51,7 +52,8 @@ def globals(*args, verbose=False, **kwargs):
     4. *Retrieve* a single value belong to a category.subcategory, or a dictionary
        of *all* or *filtered/selected* subcategory=value pairs for subcategories
        belonging to 'category'.
-    Here's a quick list of rcParam categories (see: https://matplotlib.org/users/customizing.html)
+    See: https://matplotlib.org/users/customizing.html
+    Here's a quick list of rcParam categories:
         "lines", "patch", "hatch", "legend"
         "font", "text", "mathtext"
             includes usetex for making all matplotlib fonts latex
@@ -109,12 +111,15 @@ def globals(*args, verbose=False, **kwargs):
     # *Retrieve* settings without changing any, if user passed a string 'category' name
     # and did not pass any kwargs for assignment as new settings
     if category is not None and not kwargs:
+        # Get dictionary
         if category=='globals':
-            return {key.split('.')[-1]:val for key,val in mpl.rcExtras.items() if 'globals.' in key}
-        dictionary = {}
-        for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
-            if catstring.split('.')[0]==category:
-                dictionary[catstring.split('.')[1]] = value
+            dictionary = {key.split('.')[-1]:val for key,val in mpl.rcExtras.items() if 'globals.' in key}
+        else:
+            dictionary = {}
+            for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
+                if catstring.split('.')[0]==category:
+                    dictionary[catstring.split('.')[1]] = value
+        # Optionally filter results, or just return one value
         if args: # filter them
             dictionary = {k:v for k,v in dictionary.items() if k in args}
             if len(dictionary)==1:
@@ -129,11 +134,18 @@ def globals(*args, verbose=False, **kwargs):
     #--------------------------------------------------------------------------#
     # *Initialize* default settings; that is, both rcParams and rcExtras
     # Requires processing in lines below
+    # WARNING: rcdefaults() changes the backend! Inline plotting will fail for
+    # rest of notebook session if you call rcdefaults before drawing a figure!!!!
+    # After first figure made, backend property is 'sticky', never changes!
     category = category or 'globals' # None defaults to globals in this section
     if category=='globals' and not kwargs: # default settings
-        mpl.rcdefaults() # apply *builtin* default settings
-        mpl.rcExtras = {} # reset extras
-        add('globals', rcDefaults) # apply *custom* default settings
+        # See: https://stackoverflow.com/a/48322150/4970632
+        # backend_save = mpl.rcParams['backend']
+        # mpl.rcdefaults() # apply *builtin* default settings
+        # mpl.rcParams['backend'] = backend_save
+        mpl.style.use('default') # mpl.style does not change the backend
+        mpl.rcExtras = {} # reset extra settings
+        add('globals', rcDefaults) # apply *global* settings
     #--------------------------------------------------------------------------#
     # *Update* rcParam settings or global settings; just add them to rcParams or rcExtras
     # If one of the 'global' settings was changed, requires processing in lines below
@@ -189,8 +201,8 @@ def globals(*args, verbose=False, **kwargs):
     # Here are ones related to axes and figure properties
     # NOTE the figure and axes colors will not be reset on saving if
     # you specify them explicitly, even if you use transparent True.
-    color, linewidth, ticklen, small, large, fontname = \
-        current['color'], current['linewidth'], current['ticklen'], current['small'], current['large'], current['fontname']
+    color, linewidth, ticklen, tickpad, small, large, fontname = \
+        current['color'], current['linewidth'], current['ticklen'], current['tickpad'], current['small'], current['large'], current['fontname']
     add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,
         'directory':'', 'pad_inches':0, 'bbox':'standard', 'format':'pdf'}) # empty means current directory
     add('figure', {'facecolor':(.95,.95,.95,1), 'dpi':90, # matches nbsetup
@@ -204,8 +216,8 @@ def globals(*args, verbose=False, **kwargs):
     for xy in 'xy':
         tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
         add(f'{xy}tick',       {'labelsize':small, 'color':color, 'direction':'out'})
-        add(f'{xy}tick.major', {'pad':2, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
-        add(f'{xy}tick.minor', {'pad':2, 'width':linewidth, 'visible':True, 'size':ticklen/2, **tickloc})
+        add(f'{xy}tick.major', {'pad':tickpad, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
+        add(f'{xy}tick.minor', {'pad':tickpad, 'width':linewidth, 'size':ticklen/2, **tickloc, 'visible':True})
     #--------------------------------------------------------------------------#
     # Ones related to stuff plotted inside axes
     # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
@@ -218,8 +230,8 @@ def globals(*args, verbose=False, **kwargs):
     add('markers',  {'fillstyle':'full'})
     add('scatter',  {'marker':'o'})
     add('legend',   {'framealpha':1, 'fancybox':False, 'frameon':False, # see: https://matplotlib.org/api/legend_api.html
-        'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':2, 'columnspacing':1,
-        'borderpad':0.3, 'borderaxespad':0, 'numpoints':1, 'facecolor':'inherit'})
+        'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':1.5, 'columnspacing':1,
+        'borderpad':0.5,    'borderaxespad':0,   'numpoints':1,    'facecolor':'inherit'})
     # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
     #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
     add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
@@ -238,6 +250,7 @@ def globals(*args, verbose=False, **kwargs):
     add('gridminor',   {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1})
     add('cgrid',       {'color':color, 'linewidth':linewidth})
     add('continents',  {'color':color, 'linewidth':0}) # make sure no lines!
+    add('oceans',      {'color':'w', 'linewidth':0}) # make sure no lines!
     add('tickminor',   {'length':ticklen/2, 'width':linewidth, 'color':color})
     add('tick',        {'length':ticklen, 'width':linewidth, 'color':color})
     add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})

@@ -12,7 +12,7 @@ setup(
     packages     = ['pubplot'],
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
-    scripts = ['scripts/fontsetup'],
+    scripts = ['scripts/pubplot_fonts'],
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing
