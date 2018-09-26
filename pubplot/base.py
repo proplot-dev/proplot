@@ -11,11 +11,11 @@
 import os
 import numpy as np
 # from string import ascii_uppercase
+# import matplotlib.axes as maxes
+# import matplotlib.cm as mcm
 from string import ascii_lowercase
 from types import MethodType
 import matplotlib.figure as mfigure
-# import matplotlib.axes as maxes
-# import matplotlib.cm as mcm
 import matplotlib.path as mpath
 import matplotlib.contour as mcontour
 import matplotlib.patheffects as mpatheffects
@@ -329,7 +329,7 @@ def _scatter(self, *args, **kwargs):
     points = self._scatter(*args, **_cartopy_kwargs(self, kwargs))
     return points
 
-# TODO TODO TODO special wrapper functions to write!
+# TODO: special wrapper functions to write!
 def _quiver(self, x, y, Z, **kwargs): # quiver plot
     # * Options confusing, so needs wrapper.
     # * Function can plot unpredictable vectors if your array orientation is wrong, and will
@@ -815,14 +815,9 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 
 def _format_axes(self,
     hatch=None, color=None, # control figure/axes background; hatch just applies to axes
-<<<<<<< HEAD
-    oceans=False, coastlines=False, continents=False, # coastlines and continents
-    latlabels=[0,0,0,0], lonlabels=[0,0,0,0], latlocator=None, lonlocator=None, # latlocator/lonlocator work just like xlocator/ylocator
-=======
     oceans=False, coastlines=True, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
->>>>>>> 6a1dadbde97d977c242df00f57a9192e87b152e3
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off

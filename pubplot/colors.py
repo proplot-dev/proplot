@@ -74,7 +74,7 @@ def cmapcolors(name, N=None, interp=False, vmin=None, vmax=None, sample='center'
     colors = colors[:N] # trim in case we had extra points
     return colors
 
-def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
+def cmapshow(N=11, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -87,7 +87,8 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
     cmaps_known = []
     cmaps_custom = ['ColorPicker','HCL','ColorBrewer','Dave','NCL']
     categories = { **{category:[] for category in cmaps_custom}, # initialize as empty lists
-        'Perceptually Uniform Sequential': ('viridis', 'plasma', 'inferno', 'magma'),
+        'Cycles': mcolors.CYCLES_CMAPS, # colormaps that are sequences of colors, not gradations
+        'Perceptually Uniform Sequential': ['viridis', 'cividis', 'plasma', 'inferno', 'magma'],
         'Diverging1': ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
             'RdYlBu', 'RdYlGn', 'Spectral'],
         'Diverging2': ['coolwarm', 'bwr', 'seismic'],
@@ -97,13 +98,11 @@ def cmapshow(N=11, ignore=['Miscellaneous','Sequential2','Diverging2']):
         'Sequential2': ['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
             'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
             'hot', 'afmhot', 'gist_heat', 'copper'],
-        'Qualitative': ['Pastel1', 'Pastel2', 'Paired', 'Accent',
-            'Dark2', 'Set1', 'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c'],
         'Miscellaneous': ['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
             'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv', 'spectral',
             'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar']}
     # print(categories) # for testing
-    for v in categories.values(): # big list of all colormaps
+    for k,v in categories.items(): # big list of all colormaps
         cmaps_known += v # add to this existing list
     for i,cm in enumerate(cmaps): # add to 'Custom' if not in above dictionary
         if cm not in cmaps_known:
@@ -222,7 +221,8 @@ def cyclecolors(qcycle):
     """
     Just get the cycle colors.
     """
-    cycles = plt.get_cycles()
+    # cycles = plt.get_cycles()
+    cycles = mcolors.CYCLES
     cycle  = cycles.get(qcycle,None) # query
     if cycle is None:
         raise ValueError(f'Unknown cycle \"{qcycle}\". Options are: ' + ', '.join(cycles.keys()))
@@ -347,27 +347,28 @@ def cycleshow():
     Show off the different color cycles.
     Wrote this one myself, so it uses the custom API.
     """
-    cycles = plt.get_cycles() # function should have been added by the rc plugin
+    # cycles = plt.get_cycles() # function should have been added by the rc plugin
+    cycles = mcolors.CYCLES
     nrows = len(cycles)//2+len(cycles)%2
-    fig, axs = plt.subplots(figsize=(8,nrows*2), ncols=2, nrows=nrows)
+    fig, axs = plt.subplots(figsize=(6,nrows*1.5), ncols=2, nrows=nrows)
     axs = [ax for sub in axs for ax in sub]
-    fig.subplots_adjust(top=.98, bottom=.02, left=.02, right=0.98, hspace=.2, wspace=.02)
+    fig.subplots_adjust(top=.99, bottom=.01, left=.02, right=0.98, hspace=.2, wspace=.02)
     state = np.random.RandomState(123412)
-    cycles_keys   = [*cycles.keys()]
-    cycles_values = [*cycles.values()]
-    for i,ax in enumerate(axs):
+    for i,(ax,(key,value)) in enumerate(zip(axs,cycles.items())):
         seen = set()
-        propcycle = cycler('color', cycles_values[i])
+        propcycle = cycler('color', value)
         ax.set_prop_cycle(propcycle)
-        lines = ax.plot(state.rand(10,len(cycles_values[i])), lw=5, ls='-')
+        lines = ax.plot(state.rand(10,len(value)), lw=5, ls='-')
         for j,l in enumerate(lines):
             l.set_zorder(len(lines)-j) # make first lines have big zorder
-        title = f'{cycles_keys[i]}: {len(cycles_values[i])} colors'
+        title = f'{key}: {len(value)} colors'
         ax.set_xlim((-0.5,10))
         ax.set_title(title)
         for axis in 'xy':
             ax.tick_params(axis=axis, which='both', labelbottom=False, labelleft=False,
                     bottom=False, top=False, left=False, right=False)
+    if len(cycles)%2==1:
+        axs[-1].set_visible(False)
     # Save
     fig.savefig(f'{os.path.dirname(__file__)}/cycles.pdf',
             bbox_inches='tight', format='pdf')

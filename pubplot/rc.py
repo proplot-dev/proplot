@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 #------------------------------------------------------------------------------#
 # This configures the global working environment
+# TODO: Allow ***seamless*** transitioning between color line cycles and
+# colormaps. Can just register all colormaps with 10 'shades' that sample points
+# alont the map, call with e.g. color='hclBlue0' or switch to that cycler with
+# plot.globals('globals', cycle='hclBlue'), and maybe optionally use tuple-named
+# cycles to configure sampling N times along that cycle. Work on this while on
+# the plane! For colormaps/cycles without natural gradations, will just number
+# along each index.
+# TODO: Why don't I just use seaborn? Because that is meant to make *quick* and
+# *pretty* plots, but my philosophy is exact opposite -- make tweaking stuff to
+# perfection as painless as possible. Also they try to sort of replicate R, not
+# exactly the same demographic as us -- just want easy statistics plots where you
+# pass a dataset and everything else is abstracted away. I just need to make
+# a simple violin plot/split violin plot API, a 1-D and 2-D kernel density API,
+# a histogram API, and a boxplot API. Or, actually, could steal Seaborn source
+# code and just make my own functions.
 #------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
 import os
@@ -21,12 +36,12 @@ from .colors import shade, cmapcolors
 # called without any arguments
 rcDefaults = {
     'linewidth': 0.7,
-    'color':     'k',
     'small':     8,
     'medium':    8,
     'large':     9,
     'ticklen':   4,
     'tickpad':   2, # distance between ticks and labels
+    'color':     'k',
     'fontname':  'DejaVu Sans',
     'cycle':     'colorblind',
     }
@@ -177,10 +192,10 @@ def globals(*args, verbose=False, **kwargs):
     # Make a cycler for drawing a bunch of lines
     # Will add the color cycles from all the 
     dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
-    colors = cycles.get(current['cycle'],None) # load colors from cyclers
+    colors = mcolors.CYCLES.get(current['cycle'],None) # load colors from cyclers
     if colors is None:
         raise ValueError(f"Unknown color cycler designator \"{current['cycle']}\". Options are: "
-            + ', '.join(f'"{k}"' for k in cycles.keys()) + '.') # cat strings
+            + ', '.join(f'"{k}"' for k in mcolors.CYCLES.keys()) + '.') # cat strings
     if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
         colors = [f'#{color}' for color in colors]
     propcycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
@@ -289,6 +304,77 @@ fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
 fonts = sorted(set(fonts)) # unique ones only
 
 #-------------------------------------------------------------------------------
+# Create open colors
+# _opencolors = \
+mcolors.OPEN_COLORS = {
+    f'{prefix}{i}':color for prefix,colors in {"gray":   ["#f8f9fa", "#f1f3f5", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057", "#343a40", "#212529"],
+  "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
+  "pink":   ["#fff0f6", "#ffdeeb", "#fcc2d7", "#faa2c1", "#f783ac", "#f06595", "#e64980", "#d6336c", "#c2255c", "#a61e4d"],
+  "grape":  ["#f8f0fc", "#f3d9fa", "#eebefa", "#e599f7", "#da77f2", "#cc5de8", "#be4bdb", "#ae3ec9", "#9c36b5", "#862e9c"],
+  "violet": ["#f3f0ff", "#e5dbff", "#d0bfff", "#b197fc", "#9775fa", "#845ef7", "#7950f2", "#7048e8", "#6741d9", "#5f3dc4"],
+  "indigo": ["#edf2ff", "#dbe4ff", "#bac8ff", "#91a7ff", "#748ffc", "#5c7cfa", "#4c6ef5", "#4263eb", "#3b5bdb", "#364fc7"],
+  "blue":   ["#e7f5ff", "#d0ebff", "#a5d8ff", "#74c0fc", "#4dabf7", "#339af0", "#228be6", "#1c7ed6", "#1971c2", "#1864ab"],
+  "cyan":   ["#e3fafc", "#c5f6fa", "#99e9f2", "#66d9e8", "#3bc9db", "#22b8cf", "#15aabf", "#1098ad", "#0c8599", "#0b7285"],
+  "teal":   ["#e6fcf5", "#c3fae8", "#96f2d7", "#63e6be", "#38d9a9", "#20c997", "#12b886", "#0ca678", "#099268", "#087f5b"],
+  "green":  ["#ebfbee", "#d3f9d8", "#b2f2bb", "#8ce99a", "#69db7c", "#51cf66", "#40c057", "#37b24d", "#2f9e44", "#2b8a3e"],
+  "lime":   ["#f4fce3", "#e9fac8", "#d8f5a2", "#c0eb75", "#a9e34b", "#94d82d", "#82c91e", "#74b816", "#66a80f", "#5c940d"],
+  "yellow": ["#fff9db", "#fff3bf", "#ffec99", "#ffe066", "#ffd43b", "#fcc419", "#fab005", "#f59f00", "#f08c00", "#e67700"],
+  "orange": ["#fff4e6", "#ffe8cc", "#ffd8a8", "#ffc078", "#ffa94d", "#ff922b", "#fd7e14", "#f76707", "#e8590c", "#d9480f"]
+    }.items() for i,color in enumerate(colors)}
+#------------------------------------------------------------------------------#
+# Create XKCD colors
+# Use the "N most popular" xkcd colors; downloaded them directly from the txt file.
+_xkcdcolors = np.genfromtxt(f'{os.path.dirname(__file__)}/colors/xkcd.txt',
+    delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
+mcolors.XKCD_SORTED = {tup[0]:tup[1] for i,tup in enumerate(_xkcdcolors[::-1]) if i<256} # filter to N most popular
+#------------------------------------------------------------------------------#
+# Register colors by string name
+# Uses undocumented part of API, dangerous!
+_announcement = False
+_colors = {**mcolors.XKCD_SORTED, **mcolors.OPEN_COLORS} # initialize the color dictionary
+for name,value in _colors.items():
+    _color = name.split('xkcd:')[-1] # for now this is it
+    if _color not in mcolors._colors_full_map:
+        mcolors._colors_full_map[_color] = value # no more xkcd: now call them directly
+        if not _announcement: # only do this if adding at least one new color
+            _announcement = True
+            print("Registered colors.")
+
+#-------------------------------------------------------------------------------
+# Register new color cyclers
+mcolors.CYCLES_CMAPS = ['Pastel1', 'Pastel2', 'Paired',
+    'Accent', 'Dark2', 'cbLines1', 'cbLines2', 'Dark2', 'Set1', 'Set2', 'Set3',
+    'tab10', 'tab20', 'tab20b', 'tab20c']
+mcolors.CYCLES = \
+    {'default':['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'], # default V2 matplotlib
+    # copied from stylesheets; stylesheets just add color themese from every
+    # possible tool, not already present as a colormap
+    'ggplot':['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
+    'bmh': ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'],
+    'solarized': ['#268BD2', '#2AA198', '#859900', '#B58900', '#CB4B16', '#DC322F', '#D33682', '#6C71C4'],
+    '538': ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
+    'seaborn': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
+    'pastel': ['#92C6FF', '#97F0AA', '#FF9F9A', '#D0BBFF', '#FFFEA3', '#B0E0E6'],
+    'deep': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
+    'muted': ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'],
+    'colorblind': ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
+    # copied using digital color meter from papers with pretty plots
+    # note shade is a function from .colors
+    'colorblind2':[shade(color, saturation=1.3) for color in # appears to just be pale colorblind sheme
+        [(68,139,177), (200,126,72), (68,163,137), (229,220,124), (205,154,182)]],
+    # created with online tools
+    'cinematic': [(51,92,103), (255,243,176), (224,159,62), (158,42,43), (84,11,14)],
+    'cinematic2': [[1,116,152], [231,80,0], [123,65,75], [197,207,255], [241,255,47]],
+    }
+mcolors.CYCLES.update({_cycle.lower():cmapcolors(_cycle) for _cycle in mcolors.CYCLES_CMAPS}) # add in the colormap cycles
+for _cycle in mcolors.CYCLES.values():
+    if isinstance(_cycle[0],str) and _cycle[0][0]!='#': # fix; absolutely necessary (try without)
+        _cycle[:] = [f'#{_}' for _ in _cycle] # modify contents; super cool trick
+    if not isinstance(_cycle[0],str) and any(c>1 for tup in _cycle for c in tup):
+        _cycle[:] = [tuple(np.array(_)/255) for _ in _cycle] # tuple of decimal RGB values
+    _cycle[:] = [mcolors.to_hex(_, keep_alpha=False) for _ in _cycle] # standardize; will also convert hes to lower case
+
+#-------------------------------------------------------------------------------
 # Register new colormaps; must come before registering the color cycles
 _announcement = False
 for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
@@ -316,79 +402,6 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
             if not _announcement: # only do this if register at least one new map
                 _announcement = True
                 print("Registered colormaps.")
-
-#-------------------------------------------------------------------------------
-# Register colors by adding them to _colors_full_map
-# * So far register opencolors and the "N most popular" xkcd colors; downloaded
-#   them directly from the txt file.
-_announcement = False
-_opencolors = { "gray":   ["#f8f9fa", "#f1f3f5", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057", "#343a40", "#212529"],
-  "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
-  "pink":   ["#fff0f6", "#ffdeeb", "#fcc2d7", "#faa2c1", "#f783ac", "#f06595", "#e64980", "#d6336c", "#c2255c", "#a61e4d"],
-  "grape":  ["#f8f0fc", "#f3d9fa", "#eebefa", "#e599f7", "#da77f2", "#cc5de8", "#be4bdb", "#ae3ec9", "#9c36b5", "#862e9c"],
-  "violet": ["#f3f0ff", "#e5dbff", "#d0bfff", "#b197fc", "#9775fa", "#845ef7", "#7950f2", "#7048e8", "#6741d9", "#5f3dc4"],
-  "indigo": ["#edf2ff", "#dbe4ff", "#bac8ff", "#91a7ff", "#748ffc", "#5c7cfa", "#4c6ef5", "#4263eb", "#3b5bdb", "#364fc7"],
-  "blue":   ["#e7f5ff", "#d0ebff", "#a5d8ff", "#74c0fc", "#4dabf7", "#339af0", "#228be6", "#1c7ed6", "#1971c2", "#1864ab"],
-  "cyan":   ["#e3fafc", "#c5f6fa", "#99e9f2", "#66d9e8", "#3bc9db", "#22b8cf", "#15aabf", "#1098ad", "#0c8599", "#0b7285"],
-  "teal":   ["#e6fcf5", "#c3fae8", "#96f2d7", "#63e6be", "#38d9a9", "#20c997", "#12b886", "#0ca678", "#099268", "#087f5b"],
-  "green":  ["#ebfbee", "#d3f9d8", "#b2f2bb", "#8ce99a", "#69db7c", "#51cf66", "#40c057", "#37b24d", "#2f9e44", "#2b8a3e"],
-  "lime":   ["#f4fce3", "#e9fac8", "#d8f5a2", "#c0eb75", "#a9e34b", "#94d82d", "#82c91e", "#74b816", "#66a80f", "#5c940d"],
-  "yellow": ["#fff9db", "#fff3bf", "#ffec99", "#ffe066", "#ffd43b", "#fcc419", "#fab005", "#f59f00", "#f08c00", "#e67700"],
-  "orange": ["#fff4e6", "#ffe8cc", "#ffd8a8", "#ffc078", "#ffa94d", "#ff922b", "#fd7e14", "#f76707", "#e8590c", "#d9480f"]}
-mcolors.OPEN_COLORS = {} # create separate dictionary for them
-for _name,_colors in _opencolors.items(): # iterate through json values
-    for _i,_color in enumerate(_colors):
-        mcolors.OPEN_COLORS[_name+str(_i)] = _color
-_xkcdcolors = np.genfromtxt(f'{os.path.dirname(__file__)}/colors/xkcd.txt',
-    delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
-mcolors.XKCD_SORTED = {tup[0]:tup[1] for i,tup in enumerate(_xkcdcolors[::-1])
-    if i<256} # filter to N most popular
-colors = {**mcolors.XKCD_SORTED, **mcolors.OPEN_COLORS} # initialize the color dictionary
-for name,value in colors.items():
-    _color = name.split('xkcd:')[-1] # for now this is it
-    if _color not in mcolors._colors_full_map:
-        mcolors._colors_full_map[_color] = value # no more xkcd: now call them directly
-        if not _announcement: # only do this if adding at least one new color
-            _announcement = True
-            print("Registered colors.")
-
-#-------------------------------------------------------------------------------
-# Helper function that returns global cycles
-# Append it to pyplot module, so can use it just like plt.cmaps
-def _get_cycles():
-    return cycles
-plt.get_cycles = _get_cycles
-
-#-------------------------------------------------------------------------------
-# Register color new color styles
-cycles = {'default':['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'], # default V2 matplotlib
-    # copied from stylesheets; stylesheets just add color themese from every
-    # possible tool, not already present as a colormap
-    'ggplot':['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
-    'bmh': ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'],
-    'solarized': ['#268BD2', '#2AA198', '#859900', '#B58900', '#CB4B16', '#DC322F', '#D33682', '#6C71C4'],
-    '538': ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
-    'seaborn': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
-    'pastel': ['#92C6FF', '#97F0AA', '#FF9F9A', '#D0BBFF', '#FFFEA3', '#B0E0E6'],
-    'deep': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
-    'muted': ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'],
-    'colorblind': ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
-    # copied using digital color meter from papers with pretty plots
-    # note shade is a function from .colors
-    'colorblind2':[shade(color, saturation=1.3) for color in # appears to just be pale colorblind sheme
-        [(68,139,177), (200,126,72), (68,163,137), (229,220,124), (205,154,182)]],
-    # created with online tools
-    'cinematic': [(51,92,103), (255,243,176), (224,159,62), (158,42,43), (84,11,14)],
-    'cinematic2': [[1,116,152], [231,80,0], [123,65,75], [197,207,255], [241,255,47]],
-    }
-cycles = {**cycles, **{_cycle.lower():cmapcolors(_cycle) for _cycle in
-    ['Accent','Dark2','Set2','Set3','Paired','cbLines1','cbLines2']}} # add in the colormap cycles
-for _cycle in cycles.values():
-    if isinstance(_cycle[0],str) and _cycle[0][0]!='#': # fix; absolutely necessary (try without)
-        _cycle[:] = [f'#{_}' for _ in _cycle] # modify contents; super cool trick
-    if not isinstance(_cycle[0],str) and any(c>1 for tup in _cycle for c in tup):
-        _cycle[:] = [tuple(np.array(_)/255) for _ in _cycle] # tuple of decimal RGB values
-    _cycle[:] = [mcolors.to_hex(_, keep_alpha=False) for _ in _cycle] # standardize; will also convert hes to lower case
 
 #-------------------------------------------------------------------------------
 # Now call the function to configure params with default values
