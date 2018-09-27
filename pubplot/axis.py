@@ -283,9 +283,10 @@ class SineLatitudeScale(mscale.ScaleBase):
             mtransforms.Transform.__init__(self)
         def transform_non_affine(self, a):
             # Transformation
-            m = (a < -90) | (a > 90)
-            if m.any():
-                aa = ma.masked_where(m, a)
+            with np.errstate(invalid='ignore'): # NaNs will always be False
+                m = (a >= -90) & (a <= 90)
+            if not m.all():
+                aa = ma.masked_where(~m, a)
                 return ma.sin(np.deg2rad(aa))
             else:
                 return np.sin(np.deg2rad(a))
