@@ -14,7 +14,7 @@ from cycler import cycler
 #------------------------------------------------------------------------------
 # Colormap stuff
 #------------------------------------------------------------------------------
-def cmapfactory(levels, colors, extend='neither'):
+def cmapfactory(colors, levels=None, extend='neither'):
     """
     ***Inverse of cmapcolors.***
     Generate colormap instance from list of levels and colors.
@@ -28,6 +28,8 @@ def cmapfactory(levels, colors, extend='neither'):
       also generate levels that are always equally spaced.
     """
     # Use builtin method
+    if levels is None:
+        levels = np.linspace(0,1,len(colors)+1)
     if len(levels)!=len(colors)+1:
         raise ValueError(f"Have {len(levels):d} levels and {len(colors):d} colors. Need ncolors+1==nlevels.")
     if extend=='min':
