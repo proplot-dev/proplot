@@ -5,6 +5,13 @@
 # for a first time; import statements elsewhere in script during process just point
 # to the already loaded module), settings rcParams here will change properties
 # everywhere else until you start new instance
+# TODO: Add inner panels as attributes to axes, instead of as seperate
+# return arguments
+# TODO: Standardize the order that panels are delivered (e.g. in a list
+# [None, axh, None, axh]), then *fix axis sharing across multiple panels*!
+# TODO: Note severe change; twiny now means "share the x-axis but
+# now make two y-axes"; this makes way more sense to me than default behavior
+# perhaps should undo this
 #------------------------------------------------------------------------------
 # Global module dependencies
 # from .basics import Dict, arange
@@ -26,6 +33,7 @@ import matplotlib.ticker as mticker
 import matplotlib.gridspec as mgridspec
 import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
+import matplotlib.collections as mcollections
 import matplotlib.pyplot as plt
 # Optionally import mapping toolboxes
 # Main conda distro says they are incompatible, so make sure not required!
@@ -45,8 +53,9 @@ except ModuleNotFoundError:
     print("Warning: cartopy is not available.")
 # Local modules, projection sand formatters and stuff
 from .rc import globals
-from .axis import Norm, Formatter, LatFormatter, LonFormatter, AutoLocate # default axis norm and formatter
+from .axis import Formatter, LatFormatter, LonFormatter, AutoLocate # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
+from .colors import Normalize
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -137,16 +146,72 @@ class Figure(mfigure.Figure):
 #       out-of-range values, while extend used in colorbar on pcolor has no such
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
+def _pcolor_fix(p, linewidth=0.2):
+    # Fill in white lines
+    p.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+    p.set_edgecolor('face')
+    return p
+def _contour_fix(c, linewidth=0.2):
+    # Fill in white lines
+    for _ in c.collections:
+        _.set_edgecolor('face')
+        _.set_linewidth(linewidth)
+    return c
+def _contourf_levels(kwargs):
+    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
+    # Using "lut" argument prevents colors in the extention-triangles/rectangles
+    # from being different from the deepest colors with in the range of min(levels) max(levels)
+    if 'levels' in kwargs:
+        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
+        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = Normalize(kwargs['levels']) # what is wanted 99% of time
+            # kwargs['norm'] = Normalize(levels, ncolors=kwargs['cmap'].N, clip=True)
+    return kwargs
+def _pcolor_levels(kwargs):
+    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
+    if 'levels' in kwargs:
+        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
+        levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
+        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = Normalize(levels)
+            # kwargs['norm'] = Normalize(levels, ncolors=kwargs['cmap'].N, clip=True)
+    return kwargs
+def _pcolor_check(x, y, Z):
+    # Checks that sizes match up, checks whether graticule was input
+    x, y, Z = np.array(x), np.array(y), np.array(Z)
+    xlen, ylen = x.shape[0], y.shape[-1]
+    if Z.shape[0]==xlen and Z.shape[1]==ylen:
+        x, y = _graticule_fix(x, y) # guess edges, given centers
+    elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
+        raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
+                f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
+                f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+    return x, y
+def _contour_check(x, y, Z):
+    # Checks whether sizes match up, checks whether graticule was input
+    x, y, Z = np.array(x), np.array(y), np.array(Z)
+    xlen, ylen = x.shape[0], y.shape[-1]
+    if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
+        x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # guess centers, given edges
+    elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
+        raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
+                f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
+                f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+    return x, y
 def _graticule_fix(x, y):
     # Get graticule; want it to work with e.g. Gaussian-grid model output
-    # dx, dy = x[1]-x[0], y[1]-y[0]
-    # xb, yb = np.arange(x[0]-dx/2, x[-1]+dx, dx), np.arange(y[0]-dy/2, y[-1]+dy, dy)
-    #     # can just use arange, because don't care about propagating float errors
-    # return xb, yb
-    edges = lambda vec: np.concatenate((vec[:1]-(vec[1]-vec[0])/2,
-        (vec[1:]+vec[:-1])/2,
-        vec[-1:]+(vec[-1]-vec[-2])/2))
+    edges = lambda v: np.concatenate((
+        v[:1] - (v[1] - v[0])/2,
+        (v[1:] + v[:-1])/2,
+        v[-1:] + (v[-1] - v[-2])/2))
     return edges(x), edges(y)
+def _cartopy_kwargs(self, kwargs):
+    # Just add the transform
+    if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
+        kwargs['transform'] = Transform # default is PlateCarree (what you want 99% of time)
+    return kwargs
 def _cartopy_seams(self, lon, lat, data):
     # The todo list for cartopy is much shorter, as we don't have to worry
     # about longitudes going from 0 to 360, -180 to 180, etc.; projection handles all that
@@ -168,6 +233,11 @@ def _cartopy_seams(self, lon, lat, data):
         lon = np.array((*lon, lon[0]+360)) # make longitudes circular
         data = np.concatenate((data, data[:1,:]), axis=0) # make data circular
     return lon, lat, data
+def _m_coords(m, lon, lat):
+    # Convert to 2d x/y by calling basemap object
+    lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
+    X, Y = m(*np.meshgrid(lon, lat))
+    return X, Y
 def _m_seams(basemap, lon, lat, data):
     # Get some params
     lonmin, lonmax = basemap.lonmin, basemap.lonmax
@@ -195,7 +265,6 @@ def _m_seams(basemap, lon, lat, data):
     else:
         lon = np.roll(lon, roll)
     data = np.roll(data, roll, axis=0)
-    # print("After roll 1:", lon)
     # 3) Roll in same direction some more, if some points on right-edge
     # extend more than 360 above the minimum longitude; THEY should be the
     # ones on west/left-hand-side of map
@@ -205,7 +274,6 @@ def _m_seams(basemap, lon, lat, data):
         lon = np.roll(lon, roll) # need to roll foreward
         data = np.roll(data, roll, axis=0) # roll again
         lon[:roll] -= 360 # retains monotonicity
-    # print("After roll 2:", lon)
     # 4) Set NaN where data not in range lonmin, lonmax
     # This needs to be done for some regional smaller projections or otherwise
     # might get weird side-effects due to having valid data way outside of the
@@ -253,100 +321,85 @@ def _m_seams(basemap, lon, lat, data):
     else:
         raise ValueError('Longitude length does not match data length along dimension 0.')
     return lon, lat, data
-def _m_coords(m, lon, lat):
-    # Convert to 2d x/y by calling basemap object
-    lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
-    X, Y = m(*np.meshgrid(lon, lat))
-    return X, Y
-def _pcolor_fix(p, linewidth=0.2):
-    # Fill in white lines
-    p.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
-    p.set_edgecolor('face')
-    return p
-def _contour_fix(c, linewidth=0.2):
-    # Fill in white lines
-    for _ in c.collections:
-        _.set_edgecolor('face')
-        _.set_linewidth(linewidth)
-    return c
-def _contourf_levels(kwargs):
-    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
-    # Using "lut" argument prevents colors in the extention-triangles/rectangles
-    # from being different from the deepest colors with in the range of min(levels) max(levels)
-    if 'levels' in kwargs:
-        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
-        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
-        if 'norm' not in kwargs:
-            kwargs['norm'] = Norm(kwargs['levels']) # what is wanted 99% of time
-            # kwargs['norm'] = Norm(levels, ncolors=kwargs['cmap'].N, clip=True)
-    return kwargs
-def _pcolor_levels(kwargs):
-    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
-    if 'levels' in kwargs:
-        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
-        levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
-        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
-        if 'norm' not in kwargs:
-            kwargs['norm'] = Norm(levels)
-            # kwargs['norm'] = Norm(levels, ncolors=kwargs['cmap'].N, clip=True)
-    return kwargs
-def _pcolor_check(x, y, Z):
-    # Checks that sizes match up, checks whether graticule was input
-    x, y, Z = np.array(x), np.array(y), np.array(Z)
-    xlen, ylen = x.shape[0], y.shape[-1]
-    if Z.shape[0]==xlen and Z.shape[1]==ylen:
-        x, y = _graticule_fix(x, y) # guess edges, given centers
-    elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
-        raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-    return x, y
-def _contour_check(x, y, Z):
-    # Checks whether sizes match up, checks whether graticule was input
-    x, y, Z = np.array(x), np.array(y), np.array(Z)
-    xlen, ylen = x.shape[0], y.shape[-1]
-    if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
-        x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # guess centers, given edges
-    elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
-        raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-    return x, y
 
 #-------------------------------------------------------------------------------
-# Cartesian plot overrides; they each reference common helper functions
-# TODO: Fix for pcolormesh/pcolor with set of levels
-#-------------------------------------------------------------------------------
-# Dummy ones that just detect cartopy projection
-def _cartopy_kwargs(self, kwargs):
-    if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
-        kwargs['transform'] = Transform # default is PlateCarree (what you want 99% of time)
-    return kwargs
-def _plot(self, *args, **kwargs):
-    lines = self._plot(*args, **_cartopy_kwargs(self, kwargs))
+# Plot overrides; they each reference common helper functions
+def _plot(self, *args, cmap=None, norm=None, values=None, nsample=10, **kwargs):
+    # Make normal boring lines
+    if cmap is None:
+        return self._plot(*args, **_cartopy_kwargs(self, kwargs))
+    # Make special colormap lines
+    # See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
+    # First manage input more strictly, hard to generalize as much as builtin plot func
+    if values is None:
+        raise ValueError('Values must be provided with cmap, keyword "values".')
+    values = np.atleast_1d(values) if values is not None else values
+    cmap = np.atleast_1d(cmap) if cmap is not None else cmap # creates array where strings stored in elements
+    if len(args) not in (1,2):
+        raise ValueError(f'Input only 1 or 2 arguments please.')
+    y = np.atleast_1d(args[-1])
+    x = np.arange(y.shape[-1]) if len(args)==1 else np.atleast_1d(args[0])
+    y = y[:,None] if y.ndim==1 else y
+    values = values[:,None] if values.ndim==1 else y
+    if x.ndim!=1:
+        raise ValueError(f'Input x is {x.ndim}-dimensional.')
+    if cmap.ndim!=1:
+        raise ValueError(f'Input cmap is {y.ndim}-dimensional.')
+    if y.ndim not in (1,2):
+        raise ValueError(f'Input y is {y.ndim}-dimensional.')
+    if values.ndim not in (1,2):
+        raise ValueError(f'Input values is {y.ndim}-dimensional.')
+    if cmap.size!=y.shape[1]:
+        raise ValueError(f'Input cmap shape {cmap.shape}, y shape {y.shape}.')
+    if values.shape[1]!=y.shape[1] or values.shape[0]!=y.shape[0]:
+        raise ValueError(f'Input values shape {values.shape}, y shape {y.shape}.')
+    # Next draw the lines
+    # Will *interpolate* between segments so that coloring doesn't have
+    # so many discrete jumps, and even make sure that interpolation is linear in
+    # the colormap normalization space (e.g. so no jumpiness if it's a log
+    # normalizer), super neato dude
+    lines = []
+    for i in range(y.shape[1]):
+        newx, newy, newvalues = [], [], []
+        norm = norm or mcolors.Normalize(values[:,i].min(), values[:,i].max())
+        for j in range(y.shape[0]-1):
+            newx.extend(np.linspace(x[j], x[j+1], nsample+2))
+            newy.extend(np.linspace(y[j,i], y[j+1,i], nsample+2))
+            newvalues.extend(norm.inverse(np.linspace(norm(values[j,i]), norm(values[j+1,i]), nsample+2)))
+        newvalues = np.array(newvalues)
+        points = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        collection = mcollections.LineCollection(segments, cmap=cmap[i], norm=norm)
+        collection.set_array(newvalues)
+        collection.update({k:v for k,v in kwargs.items() if k not in ['color']})
+        line = self.add_collection(collection)
+        lines += [line]
     return lines
+
+# Dummy ones that just detect cartopy projection
 def _scatter(self, *args, **kwargs):
+    # Dummy
+    kwargs['c'] = kwargs.pop('markercolor', kwargs.pop('c', None))
+    kwargs['s'] = kwargs.pop('markersize', kwargs.pop('s', None))
     points = self._scatter(*args, **_cartopy_kwargs(self, kwargs))
     return points
-
-# TODO: special wrapper functions to write!
 def _quiver(self, x, y, Z, **kwargs): # quiver plot
-    # * Options confusing, so needs wrapper.
-    # * Function can plot unpredictable vectors if your array orientation is wrong, and will
-    #   not raise an error.
-    pass
-def _histogram(self, *args, **kwargs): # histogram
-    # * Should be able to apply transparency so histograms can be overlaid
-    pass
-def _box(self, *args, **kwargs): # box whisker plot\
-    # * Should be able to make grouped boxes
-    pass
-def _violin(self, *args, **kwargs): # violin plot
-    # * Ditto with box plot function
-    pass
+    # Options confusing, so needs wrapper.
+    # Function can plot unpredictable vectors if your array orientation is
+    # wrong, and will not raise an error.
+    raise NotImplementedError()
 def _bar(self, *args, **kwargs): # bar plot with different color options
-    # * Perhaps by default cycle through color cycle, otherwise use input color
-    pass
+    # Perhaps by default cycle through color cycle, otherwise use input color
+    raise NotImplementedError()
+def _hist(self, *args, **kwargs): # histogram
+    # Should be able to apply transparency so histograms can be overlaid
+    raise NotImplementedError()
+def _violinplot(self, *args, **kwargs): # violin plot
+    # Ditto with box plot function
+    raise NotImplementedError()
+def _boxplot(self, *args, **kwargs): # box whisker plot\
+    # Should be able to make grouped boxes
+    raise NotImplementedError()
 
 # Wrappers that check dimensionality, give better error messages, and change
 # the convention so dim1 is always x-axis, dim2 is always y-axis
@@ -382,17 +435,14 @@ def _pcolormesh(self, x, y, Z, **kwargs):
     p.extend = extend # add attribute to be used in colorbar creation
     return _pcolor_fix(p)
 
-#-------------------------------------------------------------------------------
 # Basemap overrides
 # Will convert longitude latitude coordinates to projected coordinates
-#-------------------------------------------------------------------------------
-# Dummy ones that just set latlon True by default
+# First, dummy ones that just set latlon True by default
 def _m_plot(self, *args, **kwargs):
     return self._plot(*args, **kwargs, latlon=True)
 def _m_scatter(self, *args, **kwargs):
     return self._scatter(*args, **kwargs, latlon=True)
-
-# More complex ones; assume regularly spaced data
+# Next, complex ones; assume regularly spaced data
 def _m_contour(self, lon, lat, Z, **kwargs):
     lon, lat = _contour_check(lon, lat, Z)
     lon, lat, Z = _m_seams(self, lon, lat, Z)
@@ -453,7 +503,7 @@ def _text(self, x, y, text, transform='axes', fancy=False, black=True,
 
 def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         cformatter=None, clabel=None, errfix=True, extend='neither', triangles=.15, # in inches
-        length=0.8, values=None, **kwargs): #, settings=None):
+        length=1, values=None, **kwargs): #, settings=None):
     """
     Function for formatting colorbar-axes (axes that are "filled" by a colorbar).
     * There are options on the colorbar object (cb.locator, cb.formatter with cb.update_ticks)
@@ -466,16 +516,14 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     * Problem is, often WANT levels instead of vmin/vmax, while simultaneously
       using a Norm (for example) to determine colors between the levels
       (see: https://stackoverflow.com/q/42723538/4970632).
-    * Workaround is to make sure locators are in vmin/vmax range EXCLUSIVELY;
+    * Workaround is to make sure locators are in vmin/vmax range exclusively;
       cannot match/exceed values.
     * The 'extend' kwarg is used for the case when you are manufacturing colorbar
       from list of colors or lines. Most of the time want 'neither'.
-    TODO:
-    Issue appears where the normalization vmin/vmax are outside of explicitly declared "levels"
+    TODO: Issue appears where the normalization vmin/vmax are outside of explicitly declared "levels"
     minima and maxima but that is probaby appropriate. If your levels are all within vmin/vmax,
     you will get discrete jumps outside of range and the triangles at ends of colorbars will be weird.
     """
-    # TODO: Still experimental, consider fixing
     # This is a different idea altogether for colorbar
     if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
         if self.bottompanel:
@@ -500,6 +548,7 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
             orientation = 'vertical'
         else:
             raise ValueError("Object does not appear to have been created by subplots method.")
+    # Old idea here
     else:
         cax = self # the axes for drawing
         if self.bottomcolorbar:
@@ -552,7 +601,7 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
             values[-1:]+np.diff(levels[-2:]))) # this works empirically; otherwise get
             # weird situation with edge-labels appearing on either side
         mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap,
-                extend=extend, norm=Norm(values)) # workaround
+                extend=extend, norm=Normalize(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values[1:-1]
             # clocator = values # restore this if values weren't padded
@@ -632,13 +681,13 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
         axis = cax.yaxis
         interval = 'intervaly'
     # Draw the colorbar
-    # TODO: For WHATEVER REASON the only way to avoid bugs seems to be to PASS
-    # THE MAJOR FORMATTER/LOCATOR TO COLORBAR COMMMAND and DIRETLY EDIT the 
+    # TODO: For whatever reason the only way to avoid bugs seems to be to pass
+    # the major formatter/locator to colorbar commmand and directly edit the
     # minor locators/formatters; update_ticks after the fact ignores the major formatter
-    # cb = self.figure.colorbar(mappable, **csettings)
     triangles = triangles/(cax.figure.width*np.diff(getattr(cax.get_position(),interval))[0]-2*triangles)
     csettings.update({'extendfrac':triangles}) # width of colorbar axes and stuff
     cb = self.figure.colorbar(mappable, ticks=locators[0], format=cformatter, **csettings)
+    # cb = self.figure.colorbar(mappable, **csettings)
     # The ticks/ticklabels basic properties
     for t in axis.get_ticklabels(which='major'):
         t.update(globals('ticklabels'))
@@ -685,7 +734,6 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
     # First get legend settings (usually just one per plot so don't need to declare
     # this dynamically/globally)
     lsettings = globals('legend')
-    # TODO: Still experimental, consider fixing
     # This is a different idea altogether for bottom and right PANELS; in this case
     # the lformat function is called on a subplotspec object and axes drawn after the fact
     if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
@@ -696,14 +744,16 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
         self.yaxis.set_visible(False)
         self.patch.set_alpha(0)
         self.bottomlegend = True # for reading below
-    if self.bottomlegend: # this axes is assigned to hold the bottomlegend?
+    # Apply old method
+    elif self.bottomlegend: # this axes is assigned to hold the bottomlegend?
         if not handles: # must specify
             raise ValueError('Must input list of handles.')
         lsettings.update( # need to input handles manually, because for separate axes
                 bbox_transform=self.transAxes, # in case user passes bbox_to_anchor
                 borderaxespad=0, loc='upper center', # this aligns top of legend box with top of axes
                 frameon=False) # turn off frame by default
-    else: # not much to do if this is just an axes
+    # This is an axes instance, look up handles
+    else:
         if not handles: # test if any user input
             handles, _ = self.get_legend_handles_labels()
         if not handles: # just test if Falsey
@@ -831,7 +881,6 @@ def _format_axes(self,
     xlabel=None, ylabel=None, # axis labels
     suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
     abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
-    # TODO: add options for allowing UNLABELLED major ticklines -- maybe pass a special Formatter?
     xlocator=None, xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
     xformatter=None, yformatter=None): # formatter
     # legend=False, handles=None, # legend options; if declared and have no handles with 'label', does nothing
@@ -840,11 +889,10 @@ def _format_axes(self,
     Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
     colorbar or basemap axes. By default, simply applies the dictionary values from settings() above,
     but can supply many kwargs to further modify things.
-    TODO:
-    * Add options for datetime handling; note possible date axes handles are TimeStamp (pandas),
-      np.datetime64, DateTimeIndex; can fix with fig.autofmt_xdate() or manually set options; uses
-      ax.is_last_row() or ax.is_first_column(), so should look that up. Problem is there
-      is no autofmt_ydate(), so really should implement my own version of this.
+    TODO: Add options for datetime handling; note possible date axes handles are TimeStamp (pandas),
+    np.datetime64, DateTimeIndex; can fix with fig.autofmt_xdate() or manually set options; uses
+    ax.is_last_row() or ax.is_first_column(), so should look that up. Problem is there
+    is no autofmt_ydate(), so really should implement my own version of this.
     """
     #---------------------------------------------------------------------------
     # Preliminary stuff, stuff that also applies to basemap
@@ -1188,21 +1236,15 @@ def _circle(N):
     return mpath.Path(verts * radius + center)
 
 # Some functions that need to be declared here
-# * TODO WARNING: If drawing more than x lines and don't explicitly set every item below
-#   its value will revert to the cycler; this may give unexpected results
-# * To print current cycle, use list(next(ax._get_lines.prop_cycler)['color'] for i in range(10))
 def _atts_global(self):
     # Set up some properties
-    # self.set_prop_cycle(propcycle)
     self.m = None # optional basemap instance
-    self.bottomlegend, self.bottomcolorbar, self.rightcolorbar = False, False, False # identifiers
     self.xspine_override, self.yspine_override = None, None
+    self.bottomlegend, self.bottomcolorbar, self.rightcolorbar = False, False, False # identifiers
     self.number = None # default
     self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
     self.height = np.diff(self._position.intervaly)*self.figure.height
     # Set up some methods
-    # TODO Note severe change; twiny now means "share the x-axis but
-    # now make two y-axes"; this makes way more sense to me than default behavior
     self._legend = self.legend # custom legend drawing on any axes
     self._twinx  = self.twinx
     self._twiny  = self.twiny
@@ -1239,22 +1281,30 @@ def _atts_special(self, maps, package, projection, **kwargs):
             self.set_extent([-180,180,latmin,90], Transform) # use platecarree transform
             circle = _circle(100)
             self.set_boundary(circle, transform=self.transAxes)
-        # Employ some simple overrides
-        # Will save the *original* versions in _<method name>
-        # WARNING: m.pcolormesh and ax.pcolormesh call m.pcolor and ax.pcolor
-        # respectively, so ***cannot*** override pcolor! Get weird errors. Since
-        # pcolor alone returns PolyCollection objects, call it pcolorpoly.
+        # Save *original* versions of functions in _<method name>
+        self._plot       = self.plot
+        self._scatter    = self.scatter
+        self._bar        = self.bar
+        self._hist       = self.hist
+        self._boxplot    = self.boxplot
+        self._violinplot = self.violinplot
         self._pcolormesh = self.pcolormesh
         self._contourf   = self.contourf
         self._contour    = self.contour
-        self._scatter    = self.scatter
-        self._plot       = self.plot
-        self.pcolorpoly  = MethodType(_pcolorpoly, self)
-        self.pcolormesh  = MethodType(_pcolormesh, self)
-        self.contourf    = MethodType(_contourf, self)
-        self.contour     = MethodType(_contour, self)
-        self.scatter     = MethodType(_scatter, self)
-        self.plot        = MethodType(_plot, self)
+        # Employ some simple overrides
+        # WARNING: m.pcolormesh and ax.pcolormesh call m.pcolor and ax.pcolor
+        # respectively, so ***cannot*** override pcolor! Get weird errors. Since
+        # pcolor alone returns PolyCollection objects, call it pcolorpoly.
+        self.plot       = MethodType(_plot, self)
+        self.scatter    = MethodType(_scatter, self)
+        self.bar        = MethodType(_bar, self)
+        self.hist       = MethodType(_hist, self)
+        self.boxplot    = MethodType(_boxplot, self)
+        self.violinplot = MethodType(_violinplot, self)
+        self.pcolorpoly = MethodType(_pcolorpoly, self)
+        self.pcolormesh = MethodType(_pcolormesh, self)
+        self.contourf   = MethodType(_contourf, self)
+        self.contour    = MethodType(_contour, self)
     else:
         # Always need to plot with the basemap versions
         # These cannot be passed directly as elements of a, for some reason
@@ -1305,11 +1355,7 @@ def _twiny(self, **kwargs):
 def _panel_factory(fig, subspec, width, height,
         whichpanels=None, hspace=None, wspace=None, hwidth=None, wwidth=None,
         **kwargs):
-    # TODO: Standardize the order that panels are delivered (e.g. in a list
-    # [None, axh, None, axh]), then *fix axis sharing across multiple panels*!
-    # Checks and defaults
-    # Defaults format the plot to have tiny spaces between subplots
-    # and narrow panels
+    # Format the plot to have tiny spaces between subplots and narrow panels by default
     if whichpanels is None:
         whichpanels = 'b' # default is a bottom panel, cuz why not
     if hspace is None:

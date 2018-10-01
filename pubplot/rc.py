@@ -190,28 +190,16 @@ def globals(*args, verbose=False, **kwargs):
     # only settings specifically requested to be changed, will be changed
     current = globals('globals') # the dictionary
     # Make a cycler for drawing a bunch of lines
-    # Will add the color cycles from all the 
     dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
     colors = mcolors.CYCLES.get(current['cycle'],None) # load colors from cyclers
     if colors is None:
-        raise ValueError(f"Unknown color cycler designator \"{current['cycle']}\". Options are: "
+        raise ValueError(f'Unknown cycle designator "{current["cycle"]}". Options are: '
             + ', '.join(f'"{k}"' for k in mcolors.CYCLES.keys()) + '.') # cat strings
     if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
         colors = [f'#{color}' for color in colors]
-    propcycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
-        + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
-    # if not isinstance(colors[0], str) and any(v>1 for v in colors[0]): # convert to hex
-    #--------------------------------------------------------------------------#
-    # In this *extra special instance*, search for all currently active
-    # figures and apply set_prop_cycle on every single axes
-    # * Calling plt.figure with 'num' as first argument or 'num=<num>' just
-    #   brings that figure to foreground
-    # * Tested this and it takes 1ms; no large deal
-    figs = list(map(plt.figure, plt.get_fignums())) # from: https://stackoverflow.com/a/26485683/4970632
-    for fig in figs:
-        for ax in fig.axes:
-            ax.set_prop_cycle(propcycle)
-    #--------------------------------------------------------------------------#
+    cycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
+          + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
+    [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
     # First the rcParam settings
     # Here are ones related to axes and figure properties
     # NOTE the figure and axes colors will not be reset on saving if
@@ -224,7 +212,7 @@ def globals(*args, verbose=False, **kwargs):
         'max_open_warning':0, 'constrained_layout':False, 'autolayout':False}) # zero disables max open warning
     add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':small, 'titlesize':large,
         'edgecolor':color, 'labelcolor':color, 'grid':True, 'linewidth':linewidth,
-        'labelpad':3, 'prop_cycle':propcycle})
+        'labelpad':3, 'prop_cycle':cycle})
     add('font', {'size':small, 'family':'sans-serif', 'sans-serif':fontname}) # when user calls .text()
     add('text', {'color':color}) # when user calls .text()
     add('grid', {'linewidth':linewidth/2, 'alpha':0.1, 'color':color})
@@ -233,7 +221,6 @@ def globals(*args, verbose=False, **kwargs):
         add(f'{xy}tick',       {'labelsize':small, 'color':color, 'direction':'out'})
         add(f'{xy}tick.major', {'pad':tickpad, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
         add(f'{xy}tick.minor', {'pad':tickpad, 'width':linewidth, 'size':ticklen/2, **tickloc, 'visible':True})
-    #--------------------------------------------------------------------------#
     # Ones related to stuff plotted inside axes
     # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
     add('patch',    {'linewidth':linewidth,   'edgecolor':color}) # e.g. bars?
