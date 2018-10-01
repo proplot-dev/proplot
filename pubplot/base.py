@@ -1000,9 +1000,9 @@ def _format_axes(self,
         latlines = latminorlocator or latlocator
         # First take care of gridlines
         draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
-        if latlines[0]==-90:
+        if latlines and latlines[0]==-90:
             latlines[0] += 0.001
-        if lonlines[0]==-90:
+        if lonlines and lonlines[0]==-90:
             lonlines[0] -= 0.001
         gl = self.gridlines(**globals('lonlatlines'), draw_labels=draw_labels)
         gl.xlocator = mticker.FixedLocator(lonlines)
