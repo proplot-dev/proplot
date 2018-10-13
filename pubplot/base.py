@@ -922,8 +922,8 @@ def _format_axes(self,
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
-    xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
     xspineloc=None, yspineloc=None, # deals with spine options
+    xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
     xtickloc=None, ytickloc=None, # which spines to draw ticks on
     xtickdir=None, ytickdir=None, # which direction ('in', 'our', or 'inout')
     xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
@@ -1139,10 +1139,18 @@ def _format_axes(self,
     #--------------------------------------------------------------------------
     # Axes scaling, limits, and reversal options (alternatively, supply
     # your own xlim/ylim that go from high to low)
-    if xscale is not None: self.set_xscale(xscale, **xscale_kwargs)
-    if yscale is not None: self.set_yscale(yscale, **yscale_kwargs)
-    if xlim is None: xlim = self.get_xlim()
-    if ylim is None: ylim = self.get_ylim()
+    if xscale is not None:
+        if hasattr(xscale,'name'):
+            xscale = xscale.name
+        self.set_xscale(xscale, **xscale_kwargs)
+    if yscale is not None:
+        if hasattr(yscale,'name'):
+            yscale = yscale.name
+        self.set_yscale(yscale, **yscale_kwargs)
+    if xlim is None:
+        xlim = self.get_xlim()
+    if ylim is None:
+        ylim = self.get_ylim()
     if xreverse: xlim = xlim[::-1]
     if yreverse: ylim = ylim[::-1]
     self.set_xlim(xlim)
@@ -1580,6 +1588,11 @@ def _journal_sizes(width, height):
 # Primary plotting function; must be used to create figure/axes if user wants
 # to use the other features
 #-------------------------------------------------------------------------------
+def figure(*args, **kwargs):
+    """
+    Simple alias for 'subplots', perhaps more intuitive.
+    """
+    return subplots(*args, **kwargs)
 def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
         tight=False, # whether to set up tight bbox from gridspec object
@@ -1650,6 +1663,8 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     width, height = _journal_sizes(width, height) # if user passed width=<string>, will use that journal size
     if width is None and height is None: # at least one must have value
         width = 5
+    if width is not None and height is not None: # specify exact size
+        aspect = width/height
     if aspect is None: # aspect is width to height ratio
         aspect = 1.5   # try this as a default; square plots (1) look too tall to me
     if wratios is not None:
