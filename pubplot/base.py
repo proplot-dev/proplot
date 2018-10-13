@@ -920,19 +920,19 @@ def _format_axes(self,
     oceans=False, coastlines=False, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
+    suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
+    abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
     xgrid=None, ygrid=None, # gridline toggle
     xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
+    xlim=None, ylim=None, xscale=None, yscale=None, xscale_kwargs={}, yscale_kwargs={},
+    xreverse=False, yreverse=False, # special properties
+    xlabel=None, ylabel=None, # axis labels
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
     xspineloc=None, yspineloc=None, # deals with spine options
     xtickloc=None, ytickloc=None, # which spines to draw ticks on
     xtickdir=None, ytickdir=None, # which direction ('in', 'our', or 'inout')
     xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
-    xtickrange=None, ytickrange=None, # limit regions where we assign ticklabels to major-ticks
-    xlim=None, ylim=None, xscale=None, yscale=None, xscale_kwargs={}, yscale_kwargs={},
-    xreverse=False, yreverse=False, # special properties
-    xlabel=None, ylabel=None, # axis labels
-    suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
-    abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
+    xtickrange=None, ytickrange=None, # limit regions where we assign ticklabels to major-ticks (non-trivial, so we wrap this here)
     xlocator=None, xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
     xformatter=None, yformatter=None): # formatter
     # legend=False, handles=None, # legend options; if declared and have no handles with 'label', does nothing

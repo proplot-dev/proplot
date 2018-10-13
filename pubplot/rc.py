@@ -200,7 +200,8 @@ def globals(*args, verbose=False, **kwargs):
         colors = [f'#{color}' for color in colors]
     cycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
           + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
-    [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
+    # Update existing plots, but that is kind of dumb
+    # [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
     # First the rcParam settings
     # Here are ones related to axes and figure properties
     # NOTE the figure and axes colors will not be reset on saving if
