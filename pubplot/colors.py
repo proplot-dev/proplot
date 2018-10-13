@@ -6,14 +6,51 @@
 #------------------------------------------------------------------------------#
 import os
 import numpy as np
+import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.cm as mcm
 from matplotlib import rcParams
 from cycler import cycler
+# hello
 
 #------------------------------------------------------------------------------
 # Colormap stuff
 #------------------------------------------------------------------------------
+def cmap(name, samples=None, levels=None, norm=None):
+    """
+    Just wrapper around get_cmap, makes it accessible without needing pyplot import.
+    WARNING: Below fails! Lookup table refers to integer values indexing the
+    integer list of colors.
+    """
+    # Previous incorrect attempt
+    # lut = levels
+    # if hasattr(levels,'__iter__'):
+    #     lut = min(levels) + [l/(max(levels)-min(levels)) for l in levels]
+    # cmap = mcm.get_cmap(name=name)
+    # Hacky way that works
+    if norm is None:
+        norm = mcolors.Normalize(0,1)
+    elif not hasattr(norm,'__call__'):
+        raise ValueError('Norm has to be callable.')
+    elif not isinstance(norm,mcolors.Normalize):
+        raise ValueError('Norm has to be an mcolors.Normalize class or subclass.')
+    if samples is not None: # use these as the *centers*!
+        samples = np.array(samples)
+        samples = norm(samples)
+        if samples[1]<samples[0]:
+            samples = samples[::-1]
+            name = name[:-2] if name.endswith('_r') else f'{name}_r'
+        idelta = samples[1]-samples[0]
+        fdelta = samples[-1]-samples[-2]
+        levels = [samples[0]-idelta/2, *((samples[1:]+samples[:-1])/2), samples[-1]+fdelta/2]
+        levels = norm.inverse(levels)
+    elif levels[1]<levels[0]: # reversed
+        levels = levels[::-1]
+        name = name[:-2] if name.endswith('_r') else f'{name}_r'
+    m = plt.contourf([0,0], [0,0], np.nan*np.ones((2,2)), cmap=name, levels=levels)
+    return m
+
 def cmapfactory(colors, levels=None, extend='neither'):
     """
     ***Inverse of cmapcolors.***
@@ -55,7 +92,7 @@ def cmapcolors(name, N=None, interp=False, vmin=None, vmax=None, sample='center'
       position in vmin/vmax. This is still useful sometimes.
     * Sample can be 'center', 'left', or 'full'.
     """
-    cmap = plt.cm.get_cmap(name) # the cmap object itself
+    cmap = mcm.get_cmap(name) # the cmap object itself
     nsample = N 
     if N is None or not interp: nsample = cmap.N # use the builtin N
     try: iter(nsample)
@@ -144,8 +181,12 @@ def cmapshow(N=11, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2'])
             if i+ntitles+nplots>nmaps:
                 break
             # Get object
-            # cmap = plt.get_cmap(m, lut=N) # interpolate lookup table by calling m(values)
-            cmap = plt.get_cmap(m) # use default number of colors
+            # cmap = mcm.get_cmap(m, lut=N) # interpolate lookup table by calling m(values)
+            try:
+                cmap = mcm.get_cmap(m) # use default number of colors
+            except ValueError:
+                print(f'Warning: colormap {m} not found.')
+                continue
             # Draw, and make invisible
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():
@@ -198,44 +239,65 @@ class Normalize(mcolors.Normalize):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, midpoint=None, clip=False, **kwargs):
+    def __init__(self, levels, bins=False, clip=False, **kwargs):
         # Very simple
         try: iter(levels)
         except TypeError:
             raise ValueError("Must call Norm with your boundary vaues.")
-        # mcolors.Normalize.__init__(self, min(levels), max(levels), clip, **kwargs)
-        super().__init__(min(levels), max(levels), clip)
-        self.midpoint = midpoint
-        self.levels = np.array(levels)
+        levels = np.atleast_1d(levels)
+        if np.any((levels[1:]-levels[:-1])<=0):
+            raise ValueError('Levels passed to Normalize() must be monotonically increasing.')
+        super().__init__(np.nanmin(levels), np.nanmax(levels), clip)
+        self.levels = levels
+        self.bins   = bins
+        # self.midpoint = midpoint
 
     def __call__(self, value, clip=None):
-        # TOTO: Add optional midpoint; this class will probably end up being one of
+        # TODO: Add optional midpoint; this class will probably end up being one of
         # my most used if so; midpoint would just ensure <value> corresponds to 0.5 in cmap
-        # Some checks (maybe not necessary)
-        try: iter(value)
-        except TypeError:
-            value = np.array([value])
-        if value.ndim>1:
-            raise ValueError("Array is multi-dimensional... not sure what to do.")
         # Map data values in range (vmin,vmax) to color indices in colormap
-        nvalues = np.empty(value.shape)
+        # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
+        value = np.atleast_1d(value)
+        norm  = np.empty(value.shape)
         for i,v in enumerate(value.flat):
             if np.isnan(v):
                 continue
+            idxs = np.linspace(0, 1, self.levels.size)
             locs = np.where(v>=self.levels)[0]
             if locs.size==0:
-                nvalues[i] = 0
+                norm[i] = 0
             elif locs.size==self.levels.size:
-                nvalues[i] = 1
+                norm[i] = 1
+            elif self.bins: # simply map to current 'bin', whose color value is determined by the center
+                cutoff  = locs[-1]
+                norm[i] = (idxs[cutoff] + idxs[cutoff+1])/2
+            elif not self.bins:
+                cutoff      = locs[-1]
+                interpolant = idxs[cutoff:cutoff+2] # the 0-1 normalization
+                interpolee  = self.levels[cutoff:cutoff+2] # the boundary level values
+                # interpolant = np.array([cutoff, cutoff+1])/(self.levels.size-1) # the 0-1 normalization
+                norm[i]     = np.interp(v, interpolee, interpolant) # interpolate between 2 points
+        return ma.masked_array(norm, np.isnan(value))
+
+    def inverse(self, norm):
+        # Performs inverse operation of __call__
+        norm  = np.atleast_1d(norm)
+        value = np.empty(norm.shape)
+        for i,n in enumerate(norm.flat):
+            if np.isnan(n):
+                continue
+            idxs = np.linspace(0, 1, self.levels.size)
+            locs = np.where(n>=idxs)[0]
+            if locs.size==0:
+                value[i] = np.nanmin(self.levels)
+            elif locs.size==self.levels.size:
+                value[i] = np.nanmax(self.levels)
             else:
-                # Define the boundary level integers
-                # So if 11 levels and between ids 9 and 10, interpolant is between .9 and 1
-                interpolee = self.levels[[locs[-1],locs[-1]+1]] # the boundary level values
-                interpolant = np.array([locs[-1],locs[-1]+1])/(self.levels.size-1)
-                nvalues[i] = np.interp(v, interpolee, interpolant)
-                # nvalues[i] = max(0, nvalues[i]-.5/(self.levels.size-1))
-                # print(self.vmin, self.vmax, min(self.levels), max(self.levels))
-        return ma.masked_array(nvalues, np.isnan(value))
+                cutoff = locs[-1]
+                interpolee  = idxs[cutoff:cutoff+2] # the 0-1 normalization
+                interpolant = self.levels[cutoff:cutoff+2] # the boundary level values
+                value[i]    = np.interp(n, interpolee, interpolant) # interpolate between 2 points
+        return ma.masked_array(value, np.isnan(norm))
 
 class StretchNorm(mcolors.Normalize):
     """

@@ -23,6 +23,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.font_manager as mfonts
+import matplotlib.cm as mcm
 from glob import glob
 from cycler import cycler
 from matplotlib import matplotlib_fname
@@ -315,8 +316,8 @@ for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
     _N = len(_cmap) # simple as that; number of rows of colors
     if 'lines' not in _name.lower():
         _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
-    plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
-    plt.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
+    mcm.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name, _cmap, _N))
+    mcm.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
     if not _announcement: # only do this if register at least one new map
         _announcement = True
         print("Registered colormaps.")

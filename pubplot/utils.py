@@ -9,6 +9,29 @@ import numpy as np
 #------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
+def edges(values, axis=-1):
+    """
+    Get approximate edge values along arbitrary axis.
+    """
+    # First permute
+    values = np.array(values)
+    values = np.swapaxes(values, axis, -1)
+    # Next operate
+    flip = False
+    if values[...,1]<values[...,0]:
+        flip = True
+        values = np.flip(values, axis=-1)
+    values = np.concatenate((
+        values[...,:1] - (values[...,1]-values[...,0])/2,
+        (values[...,1:] + values[...,:-1])/2,
+        values[...,-1:] + (values[...,-1]-values[...,-2])/2,
+        ), axis=-1)
+    if flip:
+        values = np.flip(values, axis=-1)
+    # Permute back and return
+    values = np.swapaxes(values, axis, -1)
+    return values
+
 def arange(min_, *args):
     """
     Duplicate behavior of np.arange, except with inclusive endpoints; dtype is

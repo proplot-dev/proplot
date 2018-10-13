@@ -12,6 +12,16 @@
 # TODO: Note severe change; twiny now means "share the x-axis but
 # now make two y-axes"; this makes way more sense to me than default behavior
 # perhaps should undo this
+# TODO: Add feature for multiple (stacked) bottompanels and rightpanels, useful for having
+# different colorbars on same figure, or legend and colorbar
+# TODO: Add feature to draw axes in *row-major* or *column-major* mode
+# TODO: Add options to axes formatter to *disable* the 'quiet' formatting steps
+# that normally take place, e.g. colorizing the label and title, formatters, setting
+# linewidths, etc. This way can, for example, change color of spines only, then call
+# format again with new globals() settings and xlabels/ylabels/stuff are different
+# colors. In general *allow overwriting globals() settings* perhaps. Should make
+# globals a *convenience feature* but *not necessary* to change certain properties, 
+# everything should *also* be accessible with format function.
 #------------------------------------------------------------------------------
 # Global module dependencies
 # from .basics import Dict, arange
@@ -34,6 +44,7 @@ import matplotlib.gridspec as mgridspec
 import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
+import matplotlib.cm as mcm
 import matplotlib.pyplot as plt
 # Optionally import mapping toolboxes
 # Main conda distro says they are incompatible, so make sure not required!
@@ -55,7 +66,8 @@ except ModuleNotFoundError:
 from .rc import globals
 from .axis import Formatter, LatFormatter, LonFormatter, AutoLocate # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
-from .colors import Normalize
+from . import colors
+from . import utils
 
 #------------------------------------------------------------------------------
 # Custom figure class
@@ -151,33 +163,6 @@ def _pcolor_fix(p, linewidth=0.2):
     p.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
     p.set_edgecolor('face')
     return p
-def _contour_fix(c, linewidth=0.2):
-    # Fill in white lines
-    for _ in c.collections:
-        _.set_edgecolor('face')
-        _.set_linewidth(linewidth)
-    return c
-def _contourf_levels(kwargs):
-    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
-    # Using "lut" argument prevents colors in the extention-triangles/rectangles
-    # from being different from the deepest colors with in the range of min(levels) max(levels)
-    if 'levels' in kwargs:
-        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
-        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
-        if 'norm' not in kwargs:
-            kwargs['norm'] = Normalize(kwargs['levels']) # what is wanted 99% of time
-            # kwargs['norm'] = Normalize(levels, ncolors=kwargs['cmap'].N, clip=True)
-    return kwargs
-def _pcolor_levels(kwargs):
-    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
-    if 'levels' in kwargs:
-        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
-        levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
-        kwargs['cmap'] = plt.cm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
-        if 'norm' not in kwargs:
-            kwargs['norm'] = Normalize(levels)
-            # kwargs['norm'] = Normalize(levels, ncolors=kwargs['cmap'].N, clip=True)
-    return kwargs
 def _pcolor_check(x, y, Z):
     # Checks that sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
@@ -189,6 +174,22 @@ def _pcolor_check(x, y, Z):
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
     return x, y
+def _pcolor_levels(kwargs):
+    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
+    if 'levels' in kwargs:
+        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
+        levels = kwargs.pop('levels') # pcolor can't actually have 'levels'
+        kwargs['cmap'] = mcm.get_cmap(kwargs['cmap'], lut=len(levels)-1)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = colors.Normalize(levels)
+            # kwargs['norm'] = colors.Normalize(levels, ncolors=kwargs['cmap'].N, clip=True)
+    return kwargs
+def _contour_fix(c, linewidth=0.2):
+    # Fill in white lines
+    for _ in c.collections:
+        _.set_edgecolor('face')
+        _.set_linewidth(linewidth)
+    return c
 def _contour_check(x, y, Z):
     # Checks whether sizes match up, checks whether graticule was input
     x, y, Z = np.array(x), np.array(y), np.array(Z)
@@ -200,13 +201,20 @@ def _contour_check(x, y, Z):
                 f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                 f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
     return x, y
+def _contourf_levels(kwargs):
+    # Processes keyword-arguments to allow levels for pcolor/pcolormesh
+    # Using "lut" argument prevents colors in the extention-triangles/rectangles
+    # from being different from the deepest colors with in the range of min(levels) max(levels)
+    if 'levels' in kwargs:
+        if 'cmap' not in kwargs: kwargs['cmap'] = 'viridis'
+        kwargs['cmap'] = mcm.get_cmap(kwargs['cmap'], lut=len(kwargs['levels'])-1)
+        if 'norm' not in kwargs:
+            kwargs['norm'] = colors.Normalize(kwargs['levels']) # what is wanted 99% of time
+            # kwargs['norm'] = colors.Normalize(levels, ncolors=kwargs['cmap'].N, clip=True)
+    return kwargs
 def _graticule_fix(x, y):
     # Get graticule; want it to work with e.g. Gaussian-grid model output
-    edges = lambda v: np.concatenate((
-        v[:1] - (v[1] - v[0])/2,
-        (v[1:] + v[:-1])/2,
-        v[-1:] + (v[-1] - v[-2])/2))
-    return edges(x), edges(y)
+    return utils.edges(x), utils.edges(y)
 def _cartopy_kwargs(self, kwargs):
     # Just add the transform
     if isinstance(self, GeoAxes): # the main GeoAxes class; others like GeoAxesSubplot subclass this
@@ -324,7 +332,7 @@ def _m_seams(basemap, lon, lat, data):
 
 #-------------------------------------------------------------------------------
 # Plot overrides; they each reference common helper functions
-def _plot(self, *args, cmap=None, norm=None, values=None, nsample=10, **kwargs):
+def _plot(self, *args, cmap=None, norm=None, values=None, nsample=1, **kwargs):
     # Make normal boring lines
     if cmap is None:
         return self._plot(*args, **_cartopy_kwargs(self, kwargs))
@@ -360,27 +368,61 @@ def _plot(self, *args, cmap=None, norm=None, values=None, nsample=10, **kwargs):
     # normalizer), super neato dude
     lines = []
     for i in range(y.shape[1]):
+        # Draw lines
         newx, newy, newvalues = [], [], []
-        norm = norm or mcolors.Normalize(values[:,i].min(), values[:,i].max())
+        edges = utils.edges(values[:,i])
+        norm = colors.Normalize(edges, bins=True) # get edges
         for j in range(y.shape[0]-1):
             newx.extend(np.linspace(x[j], x[j+1], nsample+2))
             newy.extend(np.linspace(y[j,i], y[j+1,i], nsample+2))
-            newvalues.extend(norm.inverse(np.linspace(norm(values[j,i]), norm(values[j+1,i]), nsample+2)))
+            interp = np.linspace(np.asscalar(norm(values[j,i])), np.asscalar(norm(values[j+1,i])), nsample+2)
+            newvalues.extend(norm.inverse(interp))
         newvalues = np.array(newvalues)
         points = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        collection = mcollections.LineCollection(segments, cmap=cmap[i], norm=norm)
+        collection = mcollections.LineCollection(segments, cmap=cmap[i], norm=norm, linestyles='-')
         collection.set_array(newvalues)
-        collection.update({k:v for k,v in kwargs.items() if k not in ['color']})
-        line = self.add_collection(collection)
+        kwargs = {k:v for k,v in kwargs.items() if k not in ['color']}
+        collection.update(kwargs)
+        line = self.add_collection(collection) # FIXME: for some reason this results in colorbar with color cutoffs at values
+        line = colors.cmap(cmap[i], values[:,i], norm=norm) # use hacky mchackerson instead
         lines += [line]
+        # Also add 'joints' where the user input points were
+        # kwargs.update({'zorder':100, 'color':'k'})
+        # if newx[1]<newx[0]:
+        #     newx = newx[::-1]
+        # for ix,iy in zip(x,y):
+        #     idx = np.argmin(np.abs(newx-ix)) # accounts for random weird floating point shit perhaps but maybe impossible
+        #     if idx==0:
+        #         idx = idx+1
+        #     elif idx==len(newx)-1:
+        #         idx = idx-1
+        #     eps = .3
+        #     xmin, xmax = newx[idx-1], newx[idx+1]
+        #     ymin, ymax = newy[idx-1], newy[idx+1]
+        #     xmin, xmax = xmin + eps*(xmax-xmin), xmin + (1-eps)*(xmax-xmin)
+        #     ymax, ymin = ymin + eps*(ymax-ymin), ymin + (1-eps)*(ymax-ymin)
+        #     self._plot([xmin,xmax], [ymin,ymax], **kwargs)
+    # Create mappable object suitable for data
+    # Otherwise, colorbar() will try to infer colormap from line segment colors
     return lines
 
 # Dummy ones that just detect cartopy projection
 def _scatter(self, *args, **kwargs):
     # Dummy
+    if len(args)>4:
+        raise ValueError('We accept x, y, sizes, and colors as non-keyword arguments.')
+    args = [*args]
+    if len(args)>3:
+        kwargs['c'] = args.pop(3)
+    if len(args)>2:
+        kwargs['s'] = args.pop(2)
     kwargs['c'] = kwargs.pop('markercolor', kwargs.pop('c', None))
     kwargs['s'] = kwargs.pop('markersize', kwargs.pop('s', None))
+    kwargs['linewidths'] = kwargs.pop('lw', kwargs.pop('linewidths', None))
+    kwargs['linewidths'] = kwargs.pop('linewidth', kwargs.pop('linewidths', None))
+    kwargs['linewidths'] = kwargs.pop('markeredgewidth', kwargs.pop('linewidths', None))
+    kwargs['edgecolors'] = kwargs.pop('markeredgecolor', kwargs.pop('edgecolors', None))
     points = self._scatter(*args, **_cartopy_kwargs(self, kwargs))
     return points
 def _quiver(self, x, y, Z, **kwargs): # quiver plot
@@ -503,6 +545,7 @@ def _text(self, x, y, text, transform='axes', fancy=False, black=True,
 
 def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=None,
         cformatter=None, clabel=None, errfix=True, extend='neither', triangles=.15, # in inches
+        inner=False, outer=False,
         length=1, values=None, **kwargs): #, settings=None):
     """
     Function for formatting colorbar-axes (axes that are "filled" by a colorbar).
@@ -514,7 +557,7 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
       and norm object to a mappable; fixed by passing vmin/vmax INSTEAD OF levels 
       (see: https://stackoverflow.com/q/40116968/4970632).
     * Problem is, often WANT levels instead of vmin/vmax, while simultaneously
-      using a Norm (for example) to determine colors between the levels
+      using a Normalize (for example) to determine colors between the levels
       (see: https://stackoverflow.com/q/42723538/4970632).
     * Workaround is to make sure locators are in vmin/vmax range exclusively;
       cannot match/exceed values.
@@ -527,34 +570,44 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # This is a different idea altogether for colorbar
     if isinstance(self, mgridspec.SubplotSpec): # self is a SubplotSpec object
         if self.bottompanel:
+            nrows = 2 if (inner or outer) else 1
             C = mgridspec.GridSpecFromSubplotSpec(
-                    nrows        = 1,
+                    nrows        = nrows,
                     ncols        = 3,
                     wspace       = 0,
+                    hspace       = 0,
                     subplot_spec = self,
                     width_ratios = ((1-length)/2, length, (1-length)/2)
                     )
-            cax = self.figure.add_subplot(C[0,1])
+            index = 1 if outer else 0
+            ticklocation = 'top' if inner else 'bottom'
+            cax = self.figure.add_subplot(C[index,1])
             orientation = 'horizontal'
         elif self.rightpanel:
+            ncols = 2 if (inner or outer) else 1
             C = mgridspec.GridSpecFromSubplotSpec(
                     nrows         = 3,
-                    ncols         = 1,
+                    ncols         = ncols,
                     hspace        = 0,
+                    wspace        = 0,
                     subplot_spec  = self,
                     height_ratios = ((1-length)/2, length, (1-length)/2)
                     )
-            cax = self.figure.add_subplot(C[1,0])
+            index = 1 if outer else 0
+            ticklocation = 'left' if inner else 'right'
+            cax = self.figure.add_subplot(C[1,index])
             orientation = 'vertical'
         else:
             raise ValueError("Object does not appear to have been created by subplots method.")
-    # Old idea here
+    # The old API here
     else:
         cax = self # the axes for drawing
         if self.bottomcolorbar:
             orientation = 'horizontal'
+            ticklocation = 'bottom'
         elif self.rightcolorbar:
             orientation = 'vertical'
+            ticklocation = 'right'
         else:
             raise ValueError('Axes passed to colorbar-formatting function is not colorbar-dedicated.')
     # Make sure to eliminate ticks
@@ -595,13 +648,10 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
         colormap = mcolors.LinearSegmentedColormap.from_list('tmp', colors, N=len(colors)) # note that
             # the 'N' is critical; default 'N' is otherwise 256, and can get weird artifacts due to
             # unintentionally sampling some 'new' colormap colors; very bad!
-        levels = np.concatenate((values[0]-np.diff(values[:2])/2, # get "edge" values between centers desired
-            (values[1:]+values[:-1])/2, values[-1]+np.diff(values[-2:])/2))
-        values = np.concatenate((values[:1]-np.diff(levels[:2]), values,
-            values[-1:]+np.diff(levels[-2:]))) # this works empirically; otherwise get
-            # weird situation with edge-labels appearing on either side
+        levels = utils.edges(values) # get "edge" values between centers desired
+        values = utils.edges(values) # this works empirically; otherwise get weird situation with edge-labels appearing on either side
         mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap,
-                extend=extend, norm=Normalize(values)) # workaround
+                extend=extend, norm=colors.Normalize(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values[1:-1]
             # clocator = values # restore this if values weren't padded
@@ -686,7 +736,8 @@ def _format_colorbar(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # minor locators/formatters; update_ticks after the fact ignores the major formatter
     triangles = triangles/(cax.figure.width*np.diff(getattr(cax.get_position(),interval))[0]-2*triangles)
     csettings.update({'extendfrac':triangles}) # width of colorbar axes and stuff
-    cb = self.figure.colorbar(mappable, ticks=locators[0], format=cformatter, **csettings)
+    cb = self.figure.colorbar(mappable, ticks=locators[0], ticklocation=ticklocation,
+            format=cformatter, **csettings)
     # cb = self.figure.colorbar(mappable, **csettings)
     # The ticks/ticklabels basic properties
     for t in axis.get_ticklabels(which='major'):
@@ -744,13 +795,14 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
         self.yaxis.set_visible(False)
         self.patch.set_alpha(0)
         self.bottomlegend = True # for reading below
-    # Apply old method
-    elif self.bottomlegend: # this axes is assigned to hold the bottomlegend?
+    # Custom settings method
+    if self.bottomlegend: # this axes is assigned to hold the bottomlegend?
         if not handles: # must specify
             raise ValueError('Must input list of handles.')
         lsettings.update( # need to input handles manually, because for separate axes
                 bbox_transform=self.transAxes, # in case user passes bbox_to_anchor
-                borderaxespad=0, loc='upper center', # this aligns top of legend box with top of axes
+                borderaxespad=0, # want zero padding
+                loc='upper center', # this aligns top of legend box with top of axes
                 frameon=False) # turn off frame by default
     # This is an axes instance, look up handles
     else:
@@ -865,7 +917,7 @@ def _format_legend(self, handles=None, align=None, handlefix=False, **kwargs): #
 
 def _format_axes(self,
     hatch=None, color=None, # control figure/axes background; hatch just applies to axes
-    oceans=False, coastlines=True, continents=False, # coastlines and continents
+    oceans=False, coastlines=False, continents=False, # coastlines and continents
     latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
     latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
     xgrid=None, ygrid=None, # gridline toggle
@@ -1035,6 +1087,8 @@ def _format_axes(self,
         # been overridden by background patch, so will just show underlying figure color
         if color is not None:
             self.background_patch.set_facecolor(color)
+        else:
+            self.background_patch.set_facecolor('w')
         # Draw gridlines
         # WARNING: For some reason very weird side effects happen if you try
         # to call gridlines() twice on same axes. Can't do it. Which is why
@@ -1068,14 +1122,16 @@ def _format_axes(self,
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
         if coastlines:
             # self.add_feature(cfeature.COASTLINE, **globals('coastlines'))
+            print('Add coastlines.')
             self.add_feature(cfeature.NaturalEarthFeature('physical', 'coastline', '50m'), **globals('coastlines'))
         if continents:
+            print('Add continents.')
             # self.add_feature(cfeature.LAND, **globals('continents'))
             self.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '50m'), **globals('continents'))
         if oceans:
+            print('Add oceans.')
             # self.add_feature(cfeature.OCEAN, **globals('oceans'))
             self.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m'), **globals('oceans'))
-        # return asdfs
         return # skip everything else
 
     #--------------------------------------------------------------------------
@@ -1524,7 +1580,8 @@ def _journal_sizes(width, height):
 # Primary plotting function; must be used to create figure/axes if user wants
 # to use the other features
 #-------------------------------------------------------------------------------
-def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silent=False,
+def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
+        nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
         tight=False, # whether to set up tight bbox from gridspec object
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True, spany=True, # custom setting; share axis labels for axes with same xmin/ymin extents
@@ -1537,6 +1594,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         bottomcolorbar=False, rightcolorbar=False, bottomlegend=False,
             # for legend/colorbar referencing multiple subplots
         bottompanel=False, bottompanels=False, rightpanel=False, rightpanels=False,
+        bottompanelrows=1, rightpanelcols=1,
         bwidth=0.25, bspace=0.5, rwidth=0.25, rspace=0.5, # default to no space between panels
             # also need to consider drawing legend *centered* so can put e.g. colorbar next to
             # legend in a bottompanel and have it not look super weird
@@ -1544,6 +1602,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             # spacing for colorbar text, colorbar axes width, legend axes with, and padding for interior ABC label
         innerpanels=None, # same as below; list of numbers where we want subplotspecs
         whichpanels=None, ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
+        silent=False, # setting
         maps=None, # set maps to True for maps everywhere, or to list of numbers
         package='basemap', projection=None, projection_dict={}, **projection_kwargs): # for projections; can be 'basemap' or 'cartopy'
     """
@@ -1602,6 +1661,10 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         array = np.arange(1,nrows*ncols+1)[...,None]
         array = array.reshape((nrows, ncols)) # numpy is row-major, remember
     array = np.array(array) # enforce array type
+    if array.ndim==1:
+        array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
+    elif not rowmajor:
+        array = np.reshape(array.flatten(), (array.shape[0],array.shape[1]), order='F') # make column major
     array[array==None] = 0 # use zero for placeholder; otherwise have issues
     # Include functionality to declare certian rows/columns empty, if user requested it
     # Useful if user wants to include extra space between some columns greater than the
@@ -2065,12 +2128,13 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         # Now create new GridSpec and add each of its
         # SubplotSpecs to the figure instance
         P = mgridspec.GridSpecFromSubplotSpec(
-                nrows         = 1,
+                nrows         = bottompanelrows,
                 ncols         = npanel,
                 subplot_spec  = GS[1,0],
                 wspace        = rspace, # same as above
                 width_ratios  = rratios,
                 )
+        # TODO: Does commenting out the following break anything?
         specs = [P[0,i] for i in range(npanel)] # pass the SubplotSpec objects
         for s in specs:
             s.figure = fig
@@ -2078,7 +2142,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             s.bottompanel = True
             s.colorbar = MethodType(_format_colorbar, s)
             s.legend = MethodType(_format_legend, s)
-        if len(specs)==1: specs = specs[0] # no indexing of singleton panels
+        if bottompanel: specs = specs[0] # no indexing if user specified single panel, but does mean indexing if specified bottompanels=True with single column grid
         fig.bottompanel = specs
             # don't necessarily want to draw axes (e.g. for colorbar
             # need to make another SubplotSpec from each element)
@@ -2111,7 +2175,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
         # Now create new GridSpec and add each of its
         # SubplotSpecs to the figure instance
         P = mgridspec.GridSpecFromSubplotSpec(
-                ncols         = 1,
+                ncols         = rightpanelcols,
                 nrows         = npanel,
                 subplot_spec  = GS[0,1],
                 hspace        = rspace,
@@ -2124,7 +2188,7 @@ def subplots(array=None, nrows=1, ncols=1, emptycols=None, emptyrows=None, silen
             s.bottompanel = False
             s.colorbar = MethodType(_format_colorbar, s)
             s.legend = MethodType(_format_legend, s)
-        if len(specs)==1: specs = specs[0]
+        if rightpanel: specs = specs[0]
         fig.rightpanel = specs
             # don't necessarily want to draw axes (e.g. for colorbar
             # need to make another SubplotSpec from each element)
