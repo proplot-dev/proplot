@@ -567,8 +567,6 @@ class Axes(maxes.Axes):
         self.number = None
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
-        self.xspine_override = None
-        self.yspine_override = None
 
     def format(self,
         hatch=None, color=None, # control figure/axes background; hatch just applies to axes
@@ -1050,15 +1048,20 @@ class AxesXY(Axes):
 
     def twiny(self, **kwargs):
         """
-        Create second y-axis extending from shared ("twin") x-axis
+        Create second x-axis extending from shared ("twin") y-axis
+        Note: Cannot wrap twiny() because then the axes created will be
+        instantiated from the parent class, which doesn't have format() method.
+        Instead, use hidden method _make_twin_axes.
         """
-        # Format function will read extra properties and *enforce* (ignoring
-        # user settings) the spine locations.
-        # NOTE: See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
-        # By default the twin axes should be same projection as this one, so
-        # should have same overridden methods.
-        print(self, 'twiny', super().twiny)
-        ax = super().twiny(**kwargs)
+        # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
+        ax = self._make_twin_axes(sharey=self, projection=self.name)
+        self.xaxis.tick_bottom()
+        ax.xaxis.tick_top()
+        ax.xaxis.set_label_position('top')
+        ax.set_autoscaley_on(self.get_autoscaley_on())
+        ax.yaxis.set_visible(False)
+        ax.patch.set_visible(False)
+        # Special settings, force spine locations when format() called
         self.xspine_override = 'bottom' # original axis ticks on bottom
         ax.xspine_override   = 'top' # new axis ticks on top
         ax.yspine_override   = 'neither'
@@ -1066,10 +1069,22 @@ class AxesXY(Axes):
 
     def twinx(self, **kwargs):
         """
-        Create second x-axis extending from shared ("twin") y-axis
+        Create second y-axis extending from shared ("twin") x-axis
+        Note: Cannot wrap twinx() because then the axes created will be
+        instantiated from the parent class, which doesn't have format() method.
+        Instead, use hidden method _make_twin_axes.
         """
-        print(self, 'twinx', super().twinx)
-        ax = super().twinx(**kwargs)
+        # As above
+        print(self.name)
+        ax = self._make_twin_axes(sharex=self, projection='xy')
+        self.yaxis.tick_left()
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position('right')
+        ax.yaxis.set_offset_position('right')
+        ax.set_autoscalex_on(self.get_autoscalex_on())
+        ax.xaxis.set_visible(False)
+        ax.patch.set_visible(False)
+        # Special settings, force spine locations when format() called
         self.yspine_override = 'left' # original axis ticks on left
         ax.yspine_override   = 'right' # new axis ticks on right
         ax.xspine_override   = 'neither'
@@ -1376,44 +1391,6 @@ class AxesCartopy(Axes):
 mprojections.register_projection(AxesXY)
 mprojections.register_projection(AxesBasemap)
 mprojections.register_projection(AxesCartopy)
-
-#------------------------------------------------------------------------------#
-# Custom settings for various journals
-# Add to this throughout your career, or as standards change
-# PNAS info: http://www.pnas.org/page/authors/submission
-# AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
-# AGU info: https://publications.agu.org/author-resource-center/figures-faq/
-#------------------------------------------------------------------------------#
-def journalsize(width, height):
-    # User wants to define their own size
-    if type(width) is not str:
-        return width, height
-    # Determine automatically
-    cm2in = 0.3937
-    mm2in = 0.03937
-    table = {
-        'pnas1': 8.7*cm2in,
-        'pnas2': 11.4*cm2in,
-        'pnas3': 17.8*cm2in,
-        'ams1': 3.2,
-        'ams2': 4.5,
-        'ams3': 5.5,
-        'ams4': 6.5,
-        'agu1': (95*mm2in, 115*mm2in),
-        'agu2': (190*mm2in, 115*mm2in),
-        'agu3': (95*mm2in, 230*mm2in),
-        'agu4': (190*mm2in, 230*mm2in),
-        }
-    value = table.get(width, None)
-    if value is None:
-        raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
-                          'Options are: ' + ', '.join(table.keys()))
-    # Output width, and optionally also specify height
-    if not hasattr(value,'__iter__'):
-        width = value
-    else:
-        width, height = value
-    return width, height
 
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
@@ -1770,6 +1747,44 @@ def colorbar_factory(self, mappable, cgrid=False, clocator=None, cminorlocator=N
     # cb.update_ticks() # doesn't actually update the formatter
     # axis.set_major_formatter(cformatter) # fucks shit up -- why?
     return cb
+
+#------------------------------------------------------------------------------#
+# Custom settings for various journals
+# Add to this throughout your career, or as standards change
+# PNAS info: http://www.pnas.org/page/authors/submission
+# AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
+# AGU info: https://publications.agu.org/author-resource-center/figures-faq/
+#------------------------------------------------------------------------------#
+def journalsize(width, height):
+    # User wants to define their own size
+    if type(width) is not str:
+        return width, height
+    # Determine automatically
+    cm2in = 0.3937
+    mm2in = 0.03937
+    table = {
+        'pnas1': 8.7*cm2in,
+        'pnas2': 11.4*cm2in,
+        'pnas3': 17.8*cm2in,
+        'ams1': 3.2,
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': (95*mm2in, 115*mm2in),
+        'agu2': (190*mm2in, 115*mm2in),
+        'agu3': (95*mm2in, 230*mm2in),
+        'agu4': (190*mm2in, 230*mm2in),
+        }
+    value = table.get(width, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
+                          'Options are: ' + ', '.join(table.keys()))
+    # Output width, and optionally also specify height
+    if not hasattr(value,'__iter__'):
+        width = value
+    else:
+        width, height = value
+    return width, height
 
 #-------------------------------------------------------------------------------
 # Primary plotting function; must be used to create figure/axes if user wants
