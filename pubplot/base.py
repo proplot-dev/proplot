@@ -96,26 +96,6 @@ try: # crs stands for "coordinate reference system", leading c is "cartopy"
     from cartopy.mpl.geoaxes import GeoAxes
     from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
     PlateCarree = ccrs.PlateCarree() # global variable
-    # global stuff
-    crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
-    crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
-        'lat0': 'central_latitude',  'lat_0': 'central_latitude',
-        'lon0': 'central_longitude', 'lon_0': 'central_longitude',
-        }
-    crs_dict = { # interpret string, create cartopy projection
-        **{key: ccrs.PlateCarree   for key in ('cyl','rectilinear','pcarree','platecarree')},
-        **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
-        **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
-        'mercator': ccrs.Mercator,
-        'robinson': ccrs.Robinson,
-        'ortho':    ccrs.Orthographic,
-        'aeqd':     ccrs.AzimuthalEquidistant,
-        'aeqa':     ccrs.LambertAzimuthalEqualArea,
-        'wintri': WinkelTripel,
-        'hammer': Hammer,
-        'aitoff': Aitoff,
-        'kav7':   KavrayskiyVII,
-        }
 except ModuleNotFoundError:
     GeoAxes = None
     PlateCarree = None # note, never pass transform=None! default is mtransforms.IdentityTransform()
@@ -804,6 +784,13 @@ class Axes(maxes.Axes):
                 facecolor='none', edgecolor='k', transform=self.transAxes)
         return self
 
+    # Create legend creation method
+    def legend(self, *args, **kwargs):
+        """
+        Call custom legend() function.
+        """
+        return legend_factory(self, *args, **kwargs)
+
     # Fancy wrappers
     def text(self, x, y, text, transform='axes', fancy=False, black=True,
             linewidth=2, lw=None, **kwarg): # linewidth is for the border
@@ -917,13 +904,6 @@ class Axes(maxes.Axes):
                 line = colors.cmap(cmap[i], values[:,i], norm=norm) # use hacky mchackerson instead
                 lines += [line]
         return lines
-
-    # Create legend creation method
-    def legend(self, *args, **kwargs):
-        """
-        Call custom legend() function.
-        """
-        return legend_factory(self, *args, **kwargs)
 
     # Apply some simple enhancements
     # These just fix the white edges between patch objects, and optionally
@@ -1587,7 +1567,7 @@ class BasemapAxes(MapAxes):
 
 @docstring_fix
 # class CartopyAxes(GeoAxes, MapAxes):
-class CartopyAxes(MapAxes, GeoAxes): # ours has to be higher priority, so the methods can overwrite stuff
+class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so the methods can overwrite stuff
     """
     Cartopy subclass.
     Some notes:
@@ -1622,6 +1602,7 @@ class CartopyAxes(MapAxes, GeoAxes): # ours has to be higher priority, so the me
         self._done_img_factory = False
         self._boundary()
         # Apply circle boundary
+        crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
             self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree) # use platecarree transform
@@ -1645,7 +1626,7 @@ class CartopyAxes(MapAxes, GeoAxes): # ours has to be higher priority, so the me
         Add documentation here.
         """
         # Pass stuff to parent formatter, e.g. title and abc labeling
-        super(MapAxes, self).format(**kwargs)
+        super().format(**kwargs)
         # Boundary for projection regoin
         self.outline_patch.update(globals('outline'))
         # Make background patch invisible, so can color axes patch instead
@@ -1818,6 +1799,40 @@ mprojections.register_projection(CartopyAxes)
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
 #------------------------------------------------------------------------------#
+def projection_factory(package, projection, **kwargs):
+    """
+    Returns Basemap object or cartopy ccrs instance.
+    """
+    # Initial stuff
+    silent = kwargs.pop('silent', False)
+    crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
+        **{k:'central_latitude'  for k in ['lat0','lat_0']},
+        **{k:'central_longitude' for k in ['lon0', 'lon_0']},
+        }
+    crs_dict = { # interpret string, create cartopy projection
+        **{key: ccrs.PlateCarree   for key in ['cyl','rectilinear','pcarree','platecarree']},
+        **{key: ccrs.Mollweide     for key in ['moll','mollweide']},
+        **{key: ccrs.Stereographic for key in ['stereo','stereographic']},
+        'aeqd': ccrs.AzimuthalEquidistant, 'aeqa': ccrs.LambertAzimuthalEqualArea,
+        'mercator': ccrs.Mercator, 'robinson': ccrs.Robinson, 'ortho': ccrs.Orthographic,
+        'hammer': Hammer,       'aitoff': Aitoff,
+        'wintri': WinkelTripel, 'kav7':   KavrayskiyVII,
+        }
+    # Create projection and determine required aspect ratio
+    if package=='basemap':
+        projection = mbasemap.Basemap(projection=(projection or 'cyl'), **{**kwargs, 'fix_aspect':True}) # cylindrical by default
+        aspect = (projection.urcrnrx - projection.llcrnrx)/(projection.urcrnry - projection.llcrnry)
+    # Get the projection instance from a string and determine required aspect ratio
+    elif package=='cartopy':
+        projection = projection or 'cyl'
+        if projection not in crs_dict:
+            raise ValueError(f'For cartopy, projection must be one of the following: {", ".join(crs_dict.keys())}.')
+        projection = crs_dict[projection](**{crs_translate.get(key,key):value for key,value in kwargs.items()})
+        aspect = (np.diff(projection.x_limits)/np.diff(projection.y_limits))[0]
+    if not silent:
+        print(f'Forcing aspect ratio: {aspect:.3g}')
+    return projection, aspect
+
 def legend_factory(ax, handles=None, align=None, handlefix=False, **kwargs): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
@@ -2283,52 +2298,15 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     #--------------------------------------------------------------------------
     # Projection setup
     #--------------------------------------------------------------------------
-    # Allow user to pass projection dictionary, cause sometimes kwargs overlap
-    # First make sure user didn't mess up
+    # Get basemap.Basemap or cartopy.CRS instances
     map_kwargs = {}
-    if projection_kwargs and not maps:
-        raise ValueError(f'Unknown keyword args: {", ".join(projection_kwargs.keys())}. If you want to create maps, you must change the "maps" kwarg.')
-    projection_kwargs.update(projection_dict) # another way to pass projection kwargs explicitly
-
-    # Basemap stuff
-    if maps and package=='basemap':
-        # Just determine the correct aspect ratio
-        # To do this need to instantiate basemap object which has dual utility of
-        # telling us before draw-time whether any kwpair in projection_kwargs is bad
-        # t = time.time()
-        projection = mbasemap.Basemap(projection=(projection or 'cyl'), **{**projection_kwargs, 'fix_aspect':True}) # cylindrical by default
-        # t = time.time()-t
-        # print('Total time for making basemap:', t)
-        # Override aspect ratio
-        aspect = (projection.urcrnrx - projection.llcrnrx)/(projection.urcrnry - projection.llcrnry)
-        if not silent:
-            print(f'Forcing aspect ratio: {aspect:.3g}')
-        # Determine projection
-        map_kwargs = {'projection':'basemap', 'map_projection':projection}
-
-    # Cartopy stuff; get crs instance, and create dictionary to add to add_subplot calls
-    if maps and package=='cartopy':
-        # Get the projection instance from a string and determine the
-        # correct aspect ratio (TODO) also prevent auto-scaling
-        projection = projection or 'cyl'
-        postprocess_keys = ('latmin', 'lat_min', 'threshold') # will be processed down the line
-        if projection not in crs_dict:
-            raise ValueError(f'For cartopy, projection must be one of the following: {", ".join(crs_dict.keys())}.')
-        init_kwargs = {crs_translate.get(key,key):value for key,value in projection_kwargs.items() if key not in postprocess_keys}
-        projection_kwargs = {key:value for key,value in projection_kwargs.items() if key in postprocess_keys}
-        projection = crs_dict[projection](**init_kwargs)
-        # Override aspect ratio
-        aspect = (np.diff(projection.x_limits)/np.diff(projection.y_limits))[0]
-        if not silent:
-            print(f'Forcing aspect ratio: {aspect:.3g}')
-        map_kwargs = {'projection':'cartopy', 'map_projection':projection}
-
-    # Aspect ratio test
+    if maps and (wratios is not None or hratios is not None):
+        raise NotImplementedError('Not yet possible.')
+    if not maps and projection_kwargs:
+        raise ValueError(f'Unknown kwargs: {", ".join(projection_kwargs.keys())}. If you want to create maps, you must change the "maps" kwarg.')
     if maps:
-        wtest = [0] if wratios is None else wratios
-        htest = [0] if hratios is None else hratios
-        if any(w!=wtest[0] for w in wtest) or any(h!=htest[0] for h in htest):
-           raise ValueError("Cannot set wratios or hratios when plotting map projections.")
+        map_projection, aspect = projection_factory(package, projection, **{**projection_kwargs, **projection_dict})
+        map_kwargs = {'projection':package, 'map_projection':map_projection}
 
     #--------------------------------------------------------------------------
     # Panel considerations; keep things general for future imporvements
