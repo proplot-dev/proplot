@@ -346,7 +346,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 class StretchNorm(mcolors.Normalize):
     """
     Class that can 'stretch' and 'compress' either side of a colormap about
-    some midpoint; proceeds exponentially (exp>0) or logarithmically (exp<0)
+    some midpoint, proceeding exponentially (exp>0) or logarithmically (exp<0)
     down the linear colormap from the center point. Default midpoint is vmin, i.e.
     we just stretch to the right. For diverging colormaps, use midpoint 0.5.
     """

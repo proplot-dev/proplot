@@ -202,112 +202,91 @@ def counter(func):
 #       out-of-range values, while extend used in colorbar on pcolor has no such
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
-def pcolor_wrap(func):
-    """
-    Check shape of arguments passed to pcolor, and fix result.
-    """
-    @wraps(func)
-    def wrapper(self, x, y, Z, clipcolors=False, **kwargs):
-        # Checks that sizes match up, checks whether graticule was input
-        x, y, Z = np.array(x), np.array(y), np.array(Z)
-        xlen, ylen = x.shape[0], y.shape[-1]
-        if Z.shape[0]==xlen and Z.shape[1]==ylen:
-            x, y = utils.edges(x), utils.edges(y)
-        elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
-            raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                    f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                    f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        # Call function and fix the normalizer; want the *default* to be the *indices* of levels
-        # vector interpolate the colormap linearly, not their values (for weirdly spaced, but monotonic, levels)
-        # TODO: Can alternatively use BoundaryNorm with full resolution colormap
-        levels = kwargs.pop('levels', None)
-        extend = kwargs.pop('extend', None)
-        result = func(self, x, y, Z.T, **kwargs)
-        result.extend = extend # will be read by colorbar_factory function
-        # print(levels)
-        # print(len(levels)-1)
-        if 'norm' not in kwargs and levels is not None:
-            print('setting discrete normalizer!')
-            # result.set_norm(mcolors.BoundaryNorm(levels, ncolors=len(levels)-1, clip=False))
-            result.set_norm(colors.DiscreteNorm(levels))
-        # Let pcolors have 'levels' selected from smooth high-res colormap.
-        # By default the colorbar will always use every color available
-        # Also pcolor makes it very difficult to have separate color for the
-        # extendlength/out of bounds data (whereas this is default behavior in
-        # contourf). So, do this manually. See: https://stackoverflow.com/a/48614231/4970632
-        if levels is None:
-            levels = getattr(result.norm, 'levels', None)
-        if levels is not None and not clipcolors:
-            result.set_cmap(mcm.get_cmap(result.cmap.name, lut=len(levels)-1))
-        # Fix edges and stuff next
-        result.set_edgecolor('face')
-        result.set_linewidth(0.2) # seems to do the trick, without dots in corner being visible
-        return result
-    return wrapper
-
-def contour_wrap(func):
+def fix_centers(func):
     """
     Check shape of arguments passed to contour, and fix result.
     """
     @wraps(func)
-    def wrapper(self, x, y, Z, clipcolors=False, **kwargs):
+    def wrapper(self, x, y, *args, **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
-        # Argument 'clipcolors' specifies whether to use separate color for the
-        # 'out of bounds' data in the extendlength of colorbar.
-        x, y, Z = np.array(x), np.array(y), np.array(Z)
+        x, y = np.array(x), np.array(y)
+        args = [np.array(Z) for Z in args]
         xlen, ylen = x.shape[0], y.shape[-1]
-        if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
-            x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # get centers, given edges
-        elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
-            raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                    f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                    f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        # Call function
-        # Also fix the normalizer; want the *default* to be the *indices* of levels
-        # vector interpolate the colormap linearly, not their values (for weirdly spaced, but monotonic, levels)
-        result = func(self, x, y, Z.T, **kwargs)
-        if 'norm' not in kwargs:
-            result.set_norm(colors.DiscreteNorm(result.levels))
-        # Fix colorbar; using "lut" argument prevents colors in the
-        # extention-extendlength/rectangles from being different from the deepest
-        # colors with in the range of min(levels) max(levels)
-        # NOTE: This shouldn't mess up normal contour() calls because if we
-        # specify color=<color>, should override cmap instance anyway.
-        if not clipcolors:
-            result.set_cmap(mcm.get_cmap(result.cmap.name, lut=len(result.levels)-1))
-        # Fix white lines between filled contours
-        if getattr(result, 'filled', None):
-            for contour in result.collections:
-                contour.set_edgecolor('face')
-                contour.set_linewidth(0.2)
-        return result
-    return wrapper
-
-def uvwrap(func):
-    """
-    Wrapper for quiver() and barbs() plots. We will enforce x/y are input
-    and allow for optional color grid in args.
-    """
-    @wraps(func)
-    def wrapper(x, y, U, V, *args, **kwargs):
-        if len(args)>1:
-            raise ValueError('Only 1 additional non-keyword argument allowed, the color array.')
-        # Proceed as in contour_check()
-        x, y, U, V = np.array(x), np.array(y), np.array(Z), np.array(V)
-        xlen, ylen = x.shape[0], y.shape[-1]
-        for string,Z in zip(('U','V'),(U,V)):
+        for Z in args:
             if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
                 x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # get centers, given edges
             elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        return func(x, y, U, V, *args, **kwargs)
+        args = [Z.T for Z in args]
+        return func(self, x, y, *args, **kwargs)
+    return wrapper
+
+def fix_edges(func):
+    """
+    Check shape of arguments passed to pcolor, and fix result.
+    """
+    @wraps(func)
+    def wrapper(self, x, y, *args, **kwargs):
+        # Checks that sizes match up, checks whether graticule was input
+        x, y = np.array(x), np.array(y)
+        args = [np.array(Z) for Z in args]
+        xlen, ylen = x.shape[0], y.shape[-1]
+        for Z in args:
+            if Z.shape[0]==xlen and Z.shape[1]==ylen:
+                x, y = utils.edges(x), utils.edges(y)
+            elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
+                raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
+                        f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
+                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+        args = [Z.T for Z in args]
+        return func(self, x, y, *args, **kwargs)
+    return wrapper
+
+def fix_colors(func):
+    """
+    Manage output of contour and pcolor functions. Also allow new
+    feature where separate color for out-of-bounds data can be toggled.
+    Also see: https://stackoverflow.com/a/48614231/4970632
+    """
+    @wraps(func)
+    def wrapper(*args, clipcolors=True, **kwargs):
+        # Call function with special args removed
+        name = func.__name__
+        if 'contour' in name:
+            levels = kwargs.get('levels', None)
+            extend = kwargs.get('extend', None)
+        else:
+            levels = kwargs.pop('levels', None)
+            extend = kwargs.pop('extend', None)
+        result = func(*args, **kwargs)
+        result.extend = extend
+        # Set discrete normalizer
+        if 'pcolor' in name and levels is not None and 'norm' not in kwargs:
+            result.norm = colors.DiscreteNorm(levels)
+        # Optionally use same color for data in 'edge bins' as 'out of bounds' data
+        # NOTE: This shouldn't mess up normal contour() calls because if we
+        # specify color=<color>, should override cmap instance anyway
+        if levels is None:
+            levels = getattr(result.norm, 'levels', None)
+        if levels is not None and not clipcolors:
+            result.set_cmap(mcm.get_cmap(result.cmap.name, lut=len(levels)-1))
+        # Fix white lines between filled contours/mesh
+        linewidth = 0.2
+        if name=='contourf':
+            for contour in result.collections:
+                contour.set_edgecolor('face')
+                contour.set_linewidth(linewidth)
+        elif not utils.isiterable(result):
+            result.set_edgecolor('face')
+            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+        return result
     return wrapper
 
 #------------------------------------------------------------------------------#
 # Helper functions for basemap and cartopy plot overrides
-# NOTE: These wrappers should be invoked *after* contour_wrap and pcolor_wrap,
+# NOTE: These wrappers should be invoked *after* fix_centers and fix_edges,
 # which perform basic shape checking and permute the data array, so the data
 # will now be y by x (or lat by lon) instead of lon by lat.
 #------------------------------------------------------------------------------#
@@ -337,7 +316,7 @@ def norecurse(func):
         return result
     return wrapper
 
-def cartopy_wrap(func):
+def fix_cartopy(func):
     """
     Apply default transform and fix discontinuities in grid.
     """
@@ -362,7 +341,7 @@ def cartopy_wrap(func):
         return result
     return wrapper
 
-def basemap_wrap(func):
+def fix_basemap(func):
     """
     Interpret coordinates and fix discontinuities in grid.
     """
@@ -660,12 +639,12 @@ class Figure(mfigure.Figure):
             setattr(axmain, f'{translate[string]}panel', panel) # access 'bottompanel', 'toppanel', 'leftpanel', and 'rightpanel'
         return axmain
 
-    @timer
-    def draw(self, *args, **kwargs):
-        """
-        Wrapper so we can time stuff.
-        """
-        return super().draw(*args, **kwargs)
+    # @timer
+    # def draw(self, *args, **kwargs):
+    #     """
+    #     Wrapper so we can time stuff.
+    #     """
+    #     return super().draw(*args, **kwargs)
 
     @timer
     def save(self, filename, silent=False, pad=None, **kwargs):
@@ -727,6 +706,7 @@ class Axes(maxes.Axes):
     * Cartopy projections should use same methods as for ordinary 'cartesian'
       plot, so we put a bunch of definition overrides in here.
     """
+    # Initial stuff
     name = 'base'
     def __init__(self, *args, **kwargs):
         """
@@ -736,13 +716,6 @@ class Axes(maxes.Axes):
         self.number = None
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
-
-    # Custom legend
-    def legend(self, *args, **kwargs):
-        """
-        Call custom legend() function.
-        """
-        return legend_factory(self, *args, **kwargs)
 
     # New convenience feature
     def format(self,
@@ -782,6 +755,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f"Unknown suptitle position: {suptitlepos}.")
             elif suptitlepos is not None:
                 fig.suptitle.update({'position':suptitlepos})
+
         # Create axes title
         # Input needs to be emptys string
         self.title.update({**globals('title'), 'text':title or ''})
@@ -797,6 +771,7 @@ class Axes(maxes.Axes):
             raise ValueError(f'Unknown title position: {titlepos}.')
         elif titlepos is not None: 
             self.title.update({'position':titlepos, 'ha':'center', 'va':'center'})
+
         # Create axes numbering
         if self.number is not None and abc:
             abcedges = abcformat.split('a')
@@ -810,6 +785,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Unknown abc position: {abcpos}.')
             elif abcpos is not None:
                 self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
+
         # Color setup, optional hatching in background of axes
         # You should control transparency by passing transparent=True or False
         # to the savefig command
@@ -820,6 +796,7 @@ class Axes(maxes.Axes):
         if hatch: # non-empty string or not none
             self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
                 facecolor='none', edgecolor='k', transform=self.transAxes)
+        return self
 
     # Fancy wrappers
     def text(self, x, y, text, transform='axes', fancy=False, black=True,
@@ -849,6 +826,28 @@ class Axes(maxes.Axes):
             # t.update({'size':11, 'zorder':1e10,
             #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
         return t
+
+    def scatter(self, *args, **kwargs):
+        """
+        Scatter with some more consistent keyword arguments.
+        """
+        # Manage input arguments
+        if len(args)>4:
+            raise ValueError(f'Function accepts up to 4 args, received {len(args)}.')
+        args = [*args]
+        if len(args)>3:
+            kwargs['c'] = args.pop(3)
+        if len(args)>2:
+            kwargs['s'] = args.pop(2)
+        # Apply some aliases for keyword arguments
+        aliases = {'c': ['markercolor'], 's': ['markersize'],
+        'linewidths': ['lw','linewidth','markeredgewidth'],
+        'edgecolors': ['markeredgecolor']}
+        for name,options in aliases.items():
+            for option in options:
+                if option in kwargs:
+                    kwargs[name] = kwargs.pop(option)
+        return super().scatter(*args, **kwargs)
 
     def plot(self, *args, cmap=None, norm=None, values=None, bins=True, nsample=1, **kwargs):
         """
@@ -913,31 +912,148 @@ class Axes(maxes.Axes):
                 lines += [line]
         return lines
 
-    def scatter(self, *args, **kwargs):
+    # Create legend creation method
+    def legend(self, *args, **kwargs):
         """
-        Scatter with some more consistent keyword arguments.
-        """ + super().scatter.__doc__
-        # Dummy
-        if len(args)>4:
-            raise ValueError('We accept x, y, sizes, and colors as non-keyword arguments.')
-        args = [*args]
-        if len(args)>3:
-            kwargs['c'] = args.pop(3)
-        if len(args)>2:
-            kwargs['s'] = args.pop(2)
-        kwargs['c'] = kwargs.pop('markercolor', kwargs.pop('c', None))
-        kwargs['s'] = kwargs.pop('markersize', kwargs.pop('s', None))
-        kwargs['linewidths'] = kwargs.pop('lw', kwargs.pop('linewidths', None))
-        kwargs['linewidths'] = kwargs.pop('linewidth', kwargs.pop('linewidths', None))
-        kwargs['linewidths'] = kwargs.pop('markeredgewidth', kwargs.pop('linewidths', None))
-        kwargs['edgecolors'] = kwargs.pop('markeredgecolor', kwargs.pop('edgecolors', None))
-        return super().scatter(*args, **kwargs)
+        Call custom legend() function.
+        """
+        return legend_factory(self, *args, **kwargs)
+
+    # Apply some simple enhancements
+    # These just fix the white edges between patch objects, and optionally
+    # enable using same color for data in 'edge bins' as 'out of bounds' data
+    @fix_colors
+    def contour(self, *args, **kwargs):
+        return super().contour(*args, **kwargs)
+
+    @fix_colors
+    def contourf(self, *args, **kwargs):
+        return super().contourf(*args, **kwargs)
+
+    @fix_colors
+    def pcolorpoly(self, *args, **kwargs):
+        return super().pcolor(*args, **kwargs)
+
+    @fix_colors
+    def pcolormesh(self, *args, **kwargs):
+        return super().pcolor(*args, **kwargs)
+
+    # Matrix visualizations
+    @fix_colors
+    def matshow(self, *args, **kwargs):
+        return super().matshow(*args, **kwargs)
+
+    @fix_colors
+    def imshow(self, *args, **kwargs):
+        return super().imshow(*args, **kwargs)
+
+    @fix_colors
+    def spy(self, *args, **kwargs):
+        return super().spy(*args, **kwargs)
+
+    # Stuff that needs to be worked on
+    def polar(self, *args, **kwargs): # dunno
+        return super().polar(*args, **kwargs)
+
+    def bar(self, *args, **kwargs): # have bar plot cycle through default color cycle
+        return super().bar(*args, **kwargs)
+
+    def barh(self, *args, **kwargs):
+        return super().barh(*args, **kwargs)
+
+    def hist(self, *args, **kwargs): # expand so we can apply transparency to histograms, so they can be overlaid
+        return super().hist(*args, **kwargs)
+
+    def hist2d(self, *args, **kwargs): # expand to allow 2D kernel
+        return super().hist2d(*args, **kwargs)
+
+    def errorbar(self, *args, **kwargs):
+        return super().errorbar(*args, **kwargs)
+
+    def boxplot(self, *args, **kwargs): # box whisker plot
+        return super().boxplot(*args, **kwargs)
+
+    def violinplot(self, *args, **kwargs): # ditto with box plot function
+        return super().violinplot(*args, **kwargs)
+
+    # Redundant stuff that want to cancel
+    @property
+    def plot_date(self): # use xdates=True or ydates=True
+        raise NotImplementedError()
+    @property
+    def semilogx(self): # use xscale='log' instead, this is dumb!
+        raise NotImplementedError()
+    @property
+    def semilogy(self):
+        raise NotImplementedError()
+    @property
+    def loglog(self):
+        raise NotImplementedError()
+
+    # Weird stuff that probably will not wrap
+    @property
+    def pie(self): # dunno
+        raise NotImplementedError()
+    @property
+    def table(self): # dude... fugly
+        raise NotImplementedError()
+    @property
+    def hexbin(self): # expand to allow making grouped boxes
+        raise NotImplementedError()
+    @property
+    def eventplot(self):
+        raise NotImplementedError()
+    @property
+    def triplot(self):
+        raise NotImplementedError()
+    @property
+    def tricontour(self):
+        raise NotImplementedError()
+    @property
+    def tricontourf(self):
+        raise NotImplementedError()
+    @property
+    def tripcolor(self):
+        raise NotImplementedError()
+
+    # Disable spectral and triangular features
+    # See: https://stackoverflow.com/a/23126260/4970632
+    # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_axes.py
+    # for all Axes methods ordered logically in class declaration.
+    @property
+    def xcorr(self):
+        raise NotImplementedError()
+    @property
+    def acorr(self):
+        raise NotImplementedError()
+    @property
+    def psd(self):
+        raise NotImplementedError()
+    @property
+    def csd(self):
+        raise NotImplementedError()
+    @property
+    def magnitude_spectrum(self):
+        raise NotImplementedError()
+    @property
+    def angle_spectrum(self):
+        raise NotImplementedError()
+    @property
+    def phase_spectrum(self):
+        raise NotImplementedError()
+    @property
+    def cohere(self):
+        raise NotImplementedError()
+    @property
+    def specgram(self):
+        raise NotImplementedError()
 
 @docstring_fix
 class XYAxes(Axes):
     """
     Subclass for ordinary Cartesian-grid axes.
     """
+    # Initialize
     name = 'xy'
     def __init__(self, *args, **kwargs):
         """
@@ -945,6 +1061,7 @@ class XYAxes(Axes):
         """
         super().__init__(*args, **kwargs)
 
+    # Cool overrides
     def format(self,
         xgrid=None,      ygrid=None,      # gridline toggle
         xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
@@ -1062,10 +1179,9 @@ class XYAxes(Axes):
                 t.update(globals('ticklabels'))
 
             # Tick properties
-            # * Some weird issue seems to cause set_tick_params to reset/forget that the grid
+            # * Weird issue seems to cause set_tick_params to reset/forget that the grid
             #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
-            #   Since gridOn is undocumented feature, don't use it.
-            #   So calling _format_axes() a second time will remove the lines
+            #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
             # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
             #   group of left/right or top/bottom
             # * Includes option to draw spines but not draw ticks on that spine, e.g.
@@ -1116,6 +1232,9 @@ class XYAxes(Axes):
             if label is not None:
                 axis.label.set_text(label)
 
+        # Finished
+        return self
+
     def twiny(self, **kwargs):
         """
         Create second x-axis extending from shared ("twin") y-axis
@@ -1162,58 +1281,150 @@ class XYAxes(Axes):
         ax.xspine_override   = 'neither'
         return ax
 
+    def make_inset_locator(self, bounds, trans):
+        """
+        Helper function, had to be copied from private matplotlib version.
+        """
+        def inset_locator(ax, renderer):
+            bbox = mtransforms.Bbox.from_bounds(*bounds)
+            bb = mtransforms.TransformedBbox(bbox, trans)
+            tr = self.figure.transFigure.inverted()
+            bb = mtransforms.TransformedBbox(bb, tr)
+        return bb
+
+    def inset_axes(self, bounds, *, transform=None, zorder=5,
+            **kwargs):
+        """
+        Create inset of same type.
+        """
+        # Defaults
+        if transform is None:
+            transform = self.transAxes
+        label = kwargs.pop('label', 'inset_axes')
+        # This puts the rectangle into figure-relative coordinates.
+        locator = self.make_inset_locator(bounds, transform)
+        bb = locator(None, None)
+        ax = AxesXY(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
+        ax.set_axes_locator(locator)
+        self.add_child_axes(ax)
+        return ax
+
+
     # Wrappers that check dimensionality, give better error messages, and change
     # the convention so dim1 is always x-axis, dim2 is always y-axis
-    @contour_wrap
-    def contour(self, x, y, Z, **kwargs):
-        return super().contour(x, y, Z, **kwargs)
+    @fix_centers
+    def contour(self, *args, **kwargs):
+        return super().contour(*args, **kwargs)
 
-    @contour_wrap
-    def contourf(self, x, y, Z, **kwargs):
-        return super().contourf(x, y, Z, **kwargs)
+    @fix_centers
+    def contourf(self, *args, **kwargs):
+        return super().contourf(*args, **kwargs)
 
-    @pcolor_wrap
-    def pcolorpoly(self, x, y, Z, **kwargs):
-        return super().pcolor(x, y, Z, **kwargs)
+    @fix_centers
+    def quiver(self, *args, **kwargs):
+        return super().quiver(*args, **kwargs)
 
-    @pcolor_wrap
-    def pcolormesh(self, x, y, Z, **kwargs):
-        return super().pcolormesh(x, y, Z, **kwargs)
+    @fix_centers
+    def streamplot(self, *args, **kwargs):
+        return super().streamplot(*args, **kwargs)
 
-    # Wrappers that need to be created stuff
-    @contour_wrap
-    def quiver(self, x, y, Z, **kwargs):
-        # Note: Function can plot unpredictable vectors if your array orientation is wrong, and will not raise an error
+    @fix_centers
+    def barbs(self, *args, **kwargs):
+        return super().barbs(*args, **kwargs)
+
+    @fix_edges
+    def pcolorpoly(self, *args, **kwargs):
+        return super().pcolor(*args, **kwargs)
+
+    @fix_edges
+    def pcolormesh(self, *args, **kwargs):
+        return super().pcolormesh(*args, **kwargs)
+
+class MapAxes(Axes):
+    """
+    Dummy intermediate class that just disables a bunch of methods
+    inappropriate for map projections.
+    """
+    # This one we want to work, but it doesn't
+    # Property decorators mean error will be raised right after method invoked,
+    # will not raise error on account of args/kwargs, see: https://stackoverflow.com/a/23126260/4970632
+    @property
+    def pcolormesh(self):
+        raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
+    # Disable some methods to prevent weird shit from happening
+    @property
+    def matshow(self):
         raise NotImplementedError()
-
-    def streamplot(self, x, y, Z, **kwargs):
-        raise NotImplementedError('Streamlines wrapper still needs to be developed.')
-
-    def barbs(self, x, y, Z, **kwargs):
-        raise NotImplementedError('Streamlines wrapper still needs to be developed.')
-
-    def bar(self, *args, **kwargs): # bar plot with different color options
-        # Perhaps by default cycle through color cycle, otherwise use input color
+    @property
+    def imshow(self):
         raise NotImplementedError()
-
-    def hist(self, *args, **kwargs): # histogram
-        # Expand so we can apply transparency to histograms, so they can be overlaid
+    @property
+    def spy(self):
         raise NotImplementedError()
-
-    def hist2d(self, *args, **kwargs): # histogram
-        # Expand so we can apply transparency to histograms, so they can be overlaid
+    @property
+    def polar(self):
         raise NotImplementedError()
-
-    def boxplot(self, *args, **kwargs): # box whisker plot\
-        # Expand to allow making grouped boxes
+    @property
+    def bar(self):
         raise NotImplementedError()
-
-    def violinplot(self, *args, **kwargs): # violin plot
-        # Ditto with box plot function
+    @property
+    def barh(self):
+        raise NotImplementedError()
+    @property
+    def hist(self):
+        raise NotImplementedError()
+    @property
+    def hist2d(self):
+        raise NotImplementedError()
+    @property
+    def errorbar(self):
+        raise NotImplementedError()
+    @property
+    def boxplot(self):
+        raise NotImplementedError()
+    @property
+    def violinplot(self):
+        raise NotImplementedError()
+    @property
+    def step(self):
+        raise NotImplementedError()
+    @property
+    def stem(self):
+        raise NotImplementedError()
+    @property
+    def hlines(self):
+        raise NotImplementedError()
+    @property
+    def vlines(self):
+        raise NotImplementedError()
+    @property
+    def axhline(self):
+        raise NotImplementedError()
+    @property
+    def axvline(self):
+        raise NotImplementedError()
+    @property
+    def axhspan(self):
+        raise NotImplementedError()
+    @property
+    def axvspan(self):
+        raise NotImplementedError()
+    @property
+    def fill_between(self):
+        raise NotImplementedError()
+    @property
+    def fill_betweenx(self):
+        raise NotImplementedError()
+    @property
+    def fill(self):
+        raise NotImplementedError()
+    @property
+    def stackplot(self):
         raise NotImplementedError()
 
 @docstring_fix
-class BasemapAxes(Axes):
+class BasemapAxes(MapAxes):
     """
     Axes subclass for basemap plotting.
     """
@@ -1311,6 +1522,7 @@ class BasemapAxes(Axes):
             self.patch.set_edgecolor('none')
             for spine in self.spines.values():
                 spine.update(globals('spine'))
+        return self
 
     # Basemap overrides
     # The decorators assure that, when method is called the second time by
@@ -1326,57 +1538,47 @@ class BasemapAxes(Axes):
         return self.m.scatter(*args, ax=self, latlon=True, **kwargs)
 
     @norecurse
-    @contour_wrap
-    @basemap_wrap
-    def contour(self, x, y, Z, **kwargs):
-        return self.m.contour(x, y, Z, ax=self, **kwargs)
+    @fix_centers
+    @fix_basemap
+    @fix_colors
+    def contour(self, *args, **kwargs):
+        return self.m.contour(*args, ax=self, **kwargs)
 
     @norecurse
-    @contour_wrap
-    @basemap_wrap
-    def contourf(self, x, y, Z, **kwargs):
-        return self.m.contourf(x, y, Z, ax=self, **kwargs)
+    @fix_centers
+    @fix_basemap
+    @fix_colors
+    def contourf(self, *args, **kwargs):
+        return self.m.contourf(*args, ax=self, **kwargs)
 
     @norecurse
-    @pcolor_wrap
-    @basemap_wrap
-    def pcolorpoly(self, x, y, Z, **kwargs):
-        return self.m.pcolor(x, y, Z, ax=self, **kwargs)
+    @fix_edges
+    @fix_basemap
+    @fix_colors
+    def pcolorpoly(self, *args, **kwargs):
+        return self.m.pcolor(*args, ax=self, **kwargs)
 
-    # Next wrappers that need to be created
-    def quiver(self, x, y, Z, **kwargs):
-        raise NotImplementedError(f'{__name__.title()} wrapper still needs to be developed.')
+    @norecurse
+    @fix_centers
+    @fix_basemap
+    def barbs(self, *args, **kwargs):
+        return super().barbs(*args, **kwargs)
 
-    def hexbin(self, x, y, Z, **kwargs):
-        raise NotImplementedError(f'{__name__.title()} wrapper still needs to be developed.')
+    @norecurse
+    @fix_centers
+    @fix_basemap
+    def quiver(self, *args, **kwargs):
+        return super().quiver(*args, **kwargs)
 
-    def barbs(self, x, y, Z, **kwargs):
-        raise NotImplementedError(f'{__name__.title()} wrapper still needs to be developed.')
-
-    def imshow(self, x, y, Z, **kwargs):
-        raise NotImplementedError(f'{__name__.title()} wrapper still needs to be developed.')
-
-    def streamplot(self, x, y, Z, **kwargs):
-        raise NotImplementedError(f'{__name__.title()} wrapper still needs to be developed.')
-
-    # Functions that shouldn't be allowed allowed for map projections
-    def pcolormesh(self, x, y, Z, **kwargs):
-        raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
-
-    def bar(self, *args, **kwargs): # bar plot
-        raise NotImplementedError()
-
-    def hist(self, *args, **kwargs): # histogram
-        raise NotImplementedError()
-
-    def boxplot(self, *args, **kwargs): # box whisker plot\
-        raise NotImplementedError()
-
-    def violinplot(self, *args, **kwargs): # violin plot
-        raise NotImplementedError()
+    @norecurse
+    @fix_centers
+    @fix_basemap
+    def streamplot(self, *args, **kwargs):
+        return super().streamplot(*args, **kwargs)
 
 @docstring_fix
-class CartopyAxes(Axes, GeoAxes):
+# class CartopyAxes(GeoAxes):
+class CartopyAxes(GeoAxes, MapAxes):
     """
     Cartopy subclass.
     Some notes:
@@ -1430,6 +1632,7 @@ class CartopyAxes(Axes, GeoAxes):
         **kwargs):
         """
         Format cartopy GeoAxes.
+        Add documentation here.
         """
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
@@ -1487,6 +1690,7 @@ class CartopyAxes(Axes, GeoAxes):
             print('Add oceans.')
             # self.add_feature(cfeature.OCEAN, **globals('oceans'))
             self.add_feature(cfeature.NaturalEarthFeature('physical', 'ocean', '50m'), **globals('oceans'))
+        return self
 
     # Cartopy overrides
     # Does some simple manipulation and adds the default transform PlateCarree if not declared.
@@ -1496,32 +1700,30 @@ class CartopyAxes(Axes, GeoAxes):
     def scatter(self, *args, transform=PlateCarree, **kwargs):
         return super().scatter(*args, transform=transform, **kwargs)
 
-    @contour_wrap
-    @cartopy_wrap
-    def contour(self, x, y, Z, **kwargs):
-        return super().contour(x, y, Z, **kwargs)
+    @fix_centers
+    @fix_cartopy
+    def contour(self, *args, **kwargs):
+        return super().contour(*args, **kwargs)
 
-    @contour_wrap
-    @cartopy_wrap
-    def contourf(self, x, y, Z, **kwargs):
-        return super().contourf(x, y, Z, **kwargs)
+    @fix_centers
+    @fix_cartopy
+    def contourf(self, *args, **kwargs):
+        return super().contourf(*args, **kwargs)
 
-    @pcolor_wrap
-    @cartopy_wrap
-    def pcolorpoly(self, x, y, Z, **kwargs):
-        return super().pcolor(x, y, Z, **kwargs)
+    @fix_edges
+    @fix_cartopy
+    def pcolorpoly(self, *args, **kwargs):
+        return super().pcolor(*args, **kwargs)
+
+    def pcolormesh(self, *args, **kwargs): # TODO: pcolormesh is actually overridden by GeoAxes with some kind of patch, so maybe it actually works?
+        raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
 
     # Next wrappers that need to be created
-    def quiver(self, x, y, Z, **kwargs):
+    def quiver(self, *args, **kwargs):
         raise NotImplementedError('Quiver wrapper still needs to be developed.')
 
-    def streamplot(self, x, y, Z, **kwargs):
+    def streamplot(self, *args, **kwargs):
         raise NotImplementedError('Streamlines wrapper still needs to be developed.')
-
-    # Functions that shouldn't be allowed allowed for map projections
-    # TODO: pcolormesh is actually overridden by GeoAxes with some kind of patch, so maybe it actually works?
-    def pcolormesh(self, x, y, Z, **kwargs):
-        raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
 
     def bar(self, *args, **kwargs): # bar plot
         raise NotImplementedError()
@@ -1791,7 +1993,7 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values
     if clocator is None:
-        clocator = mappable.norm.levels
+        clocator = getattr(mappable.norm, 'levels', None)
 
     # Determine tick locators for major/minor ticks
     # Can pass clocator/cminorlocator as the *jump values* between the mappables
@@ -2399,16 +2601,16 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     # Spanning axes; allow xlabels/ylabels to span them
     if spanx and len(xgroups_span)>0:
         for g, b in zip(xgroups_span, xgroups_span_base):
+            # Specify x, y transform in Figure coordinates
             axs[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
                     fig.transFigure, mtransforms.IdentityTransform()
                     ))
-                # specify x, y transform in Figure coordinates
+            # Get min/max positions, in figure coordinates, of spanning axes
             xmin = min(axs[i].get_position().xmin for i in g)
             xmax = max(axs[i].get_position().xmax for i in g)
-                # get min/max positions, in figure coordinates, of spanning axes
+            # This is the shared xlabel
             # print('Group:', g, 'Base:', b, 'Span:', xmin, xmax)
             axs[b].xaxis.label.set_position(((xmin+xmax)/2, 0))
-                # this is the shared xlabel
             for i in g:
                 if i!=b: axs[i].xaxis.label.set_visible(False)
     if spany and len(ygroups_span)>0:
