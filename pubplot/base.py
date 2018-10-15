@@ -983,44 +983,46 @@ class Axes(maxes.Axes):
         return super().violinplot(*args, **kwargs)
 
     # Redundant stuff that want to cancel
+    message1 = 'Redundant function has been disabled.'
     @property
     def plot_date(self): # use xdates=True or ydates=True
-        raise NotImplementedError()
+        raise NotImplementedError(self.message1)
     @property
     def semilogx(self): # use xscale='log' instead, this is dumb!
-        raise NotImplementedError()
+        raise NotImplementedError(self.message1)
     @property
     def semilogy(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message1)
     @property
     def loglog(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message1)
 
     # Weird stuff that probably will not wrap
+    message2 = 'Unsupported plotting function.'
     @property
     def pie(self): # dunno
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def table(self): # dude... fugly
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def hexbin(self): # expand to allow making grouped boxes
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def eventplot(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def triplot(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def tricontour(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def tricontourf(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def tripcolor(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
 
     # Disable spectral and triangular features
     # See: https://stackoverflow.com/a/23126260/4970632
@@ -1028,31 +1030,31 @@ class Axes(maxes.Axes):
     # for all Axes methods ordered logically in class declaration.
     @property
     def xcorr(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def acorr(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def psd(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def csd(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def magnitude_spectrum(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def angle_spectrum(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def phase_spectrum(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def cohere(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
     @property
     def specgram(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message2)
 
 @docstring_fix
 class XYAxes(Axes):
@@ -1359,75 +1361,76 @@ class MapAxes(Axes):
     def pcolormesh(self):
         raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
     # Disable some methods to prevent weird shit from happening
+    message = 'Invalid plotting function for map projection axes.'
     @property
     def matshow(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def imshow(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def spy(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def polar(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def bar(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def barh(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def hist(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def hist2d(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def errorbar(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def boxplot(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def violinplot(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def step(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def stem(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def hlines(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def vlines(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def axhline(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def axvline(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def axhspan(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def axvspan(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def fill_between(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def fill_betweenx(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def fill(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
     @property
     def stackplot(self):
-        raise NotImplementedError()
+        raise NotImplementedError(self.message)
 
 @docstring_fix
 class BasemapAxes(MapAxes):
