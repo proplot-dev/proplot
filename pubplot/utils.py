@@ -9,6 +9,12 @@ import numpy as np
 #------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
+def isiterable(item):
+    """
+    Test if item is iterable.
+    """
+    return (hasattr(item,'__iter__') or hasattr(item,'__getitem__'))
+
 def edges(values, axis=-1):
     """
     Get approximate edge values along arbitrary axis.

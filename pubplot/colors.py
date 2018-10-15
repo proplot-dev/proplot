@@ -12,7 +12,6 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from matplotlib import rcParams
 from cycler import cycler
-# hello
 
 #------------------------------------------------------------------------------
 # Colormap stuff
@@ -25,7 +24,7 @@ def cmap(name, samples=None, levels=None, norm=None):
     """
     # Previous incorrect attempt
     # lut = levels
-    # if hasattr(levels,'__iter__'):
+    # if utils.isiterable(levels):
     #     lut = min(levels) + [l/(max(levels)-min(levels)) for l in levels]
     # cmap = mcm.get_cmap(name=name)
     # Hacky way that works
@@ -229,32 +228,29 @@ def cmapshow(N=11, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2'])
 
 #------------------------------------------------------------------------------
 # Normalization classes for mapping data to colors (i.e. colormaps)
+# WARNING: Many methods in ColorBarBase tests for class membership, crucially
+# including _process_values(), which if it doesn't detect BoundaryNorm will
+# end up trying to infer boundaries from inverse() method
 #------------------------------------------------------------------------------
-class Normalize(mcolors.Normalize):
+class ContinuousNorm(mcolors.Normalize):
     """
-    Like the default BoundaryNorm, except instead of drawing color 'x' directly
-    from RGB array, out of n colors for n+1 levels, this *interpolates* from an RGB
-    array at point '(level_index+0.5)/num_levels' along the array.
-    Example: Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
-    even [0, 10, 12, 20, 22], but center "colors" are always at colormap
-    coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
+    As in BoundaryNorm case, but instead we linearly *interpolate* colors
+    between the provided boundary indices. Use this e.g. if you want to
+    have the gradation from 0-1 'zoomed in' and gradation from 0-10 'zoomed out'.
+    In this case, can control number of colors by setting the *lookup table*
+    when declaring colormap.
     """
-    def __init__(self, levels, bins=False, clip=False, **kwargs):
+    def __init__(self, levels=None, midpoint=None, clip=False, ncolors=None, **kwargs):
         # Very simple
-        try: iter(levels)
-        except TypeError:
-            raise ValueError("Must call Norm with your boundary vaues.")
         levels = np.atleast_1d(levels)
         if np.any((levels[1:]-levels[:-1])<=0):
-            raise ValueError('Levels passed to Normalize() must be monotonically increasing.')
-        super().__init__(np.nanmin(levels), np.nanmax(levels), clip)
-        self.levels = levels
-        self.bins   = bins
-        # self.midpoint = midpoint
+            raise ValueError(f'Levels passed to ContinuousNorm must be monotonically increasing.')
+        super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
+        self.levels = levels # alias for boundaries
 
     def __call__(self, value, clip=None):
-        # TODO: Add optional midpoint; this class will probably end up being one of
-        # my most used if so; midpoint would just ensure <value> corresponds to 0.5 in cmap
+        # TODO: Add optional midpoint, this class will probably end up being one of
+        # my most used if so. Midpoint would just ensure <value> corresponds to 0.5 in cmap
         # Map data values in range (vmin,vmax) to color indices in colormap
         # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
         value = np.atleast_1d(value)
@@ -268,14 +264,10 @@ class Normalize(mcolors.Normalize):
                 norm[i] = 0
             elif locs.size==self.levels.size:
                 norm[i] = 1
-            elif self.bins: # simply map to current 'bin', whose color value is determined by the center
-                cutoff  = locs[-1]
-                norm[i] = (idxs[cutoff] + idxs[cutoff+1])/2
-            elif not self.bins:
+            else:
                 cutoff      = locs[-1]
                 interpolant = idxs[cutoff:cutoff+2] # the 0-1 normalization
                 interpolee  = self.levels[cutoff:cutoff+2] # the boundary level values
-                # interpolant = np.array([cutoff, cutoff+1])/(self.levels.size-1) # the 0-1 normalization
                 norm[i]     = np.interp(v, interpolee, interpolant) # interpolate between 2 points
         return ma.masked_array(norm, np.isnan(value))
 
@@ -298,6 +290,58 @@ class Normalize(mcolors.Normalize):
                 interpolant = self.levels[cutoff:cutoff+2] # the boundary level values
                 value[i]    = np.interp(n, interpolee, interpolant) # interpolate between 2 points
         return ma.masked_array(value, np.isnan(norm))
+
+class DiscreteNorm(mcolors.BoundaryNorm):
+    """
+    Simple normalizer that *interpolates* from an RGB array at point
+    (level_idx/num_levels) along the array, instead of choosing color
+    from (transform(level_value)-transform(vmin))/(transform(vmax)-transform(vmin))
+    where transform can be linear, logarithmic, etc.
+    TODO:
+    * Allow this to accept transforms too, which will help prevent level edges
+      from being skewed toward left or right in case of logarithmic/exponential data.
+    Example: Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
+    even [0, 10, 12, 20, 22], but center "colors" are always at colormap
+    coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
+    """
+    def __init__(self, levels=None, midpoint=None, bins=False, clip=False, ncolors=None, **kwargs):
+        # Don't need to call partent initializer, this is own implementation; just need
+        # it to be subclass so ColorbarBase methods will detect it
+        # See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
+        levels = np.atleast_1d(levels)
+        if np.any((levels[1:]-levels[:-1])<=0):
+            raise ValueError('Levels passed to Normalize() must be monotonically increasing.')
+        self.N = len(levels)
+        self.levels = levels
+        self.boundaries = levels # alias read by other functions
+        self.vmin = levels[0]
+        self.vmax = levels[-1]
+        self.clip = clip
+
+    def __call__(self, value, clip=None):
+        # TODO: Add optional midpoint, this class will probably end up being one of
+        # my most used if so. Midpoint would just ensure <value> corresponds to 0.5 in cmap
+        # Map data values in range (vmin,vmax) to color indices in colormap
+        # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
+        value = np.atleast_1d(value)
+        norm  = np.empty(value.shape)
+        for i,v in enumerate(value.flat):
+            if np.isnan(v):
+                continue
+            idxs = np.linspace(0, 1, self.levels.size)
+            locs = np.where(v>=self.levels)[0]
+            if locs.size==0:
+                norm[i] = 0
+            elif locs.size==self.levels.size:
+                norm[i] = 1
+            else:
+                cutoff  = locs[-1]
+                norm[i] = (idxs[cutoff] + idxs[cutoff+1])/2
+        return ma.masked_array(norm, np.isnan(value))
+
+    def inverse(self, norm):
+        # Not possible
+        raise ValueError('Normalize is not invertible in "bins" mode.')
 
 class StretchNorm(mcolors.Normalize):
     """
@@ -347,9 +391,11 @@ class StretchNorm(mcolors.Normalize):
         value_cmap = ma.empty(value_scaled.size)
         for i,v in enumerate(value_scaled):
             # Get values, accounting for midpoints
-            if v < 0: v = 0
-            if v > 1: v = 1
-            if v >= midpoint_scaled:
+            if v<0:
+                v = 0
+            if v>1:
+                v = 1
+            if v>=midpoint_scaled:
                 block_width = 1 - midpoint_scaled
                 value_cmap[i] = (midpoint_scaled + 
                     block_width*warp((v - midpoint_scaled)/block_width, self.exp)
@@ -364,27 +410,6 @@ class StretchNorm(mcolors.Normalize):
         if self.extend=='both' or self.extend=='min':
             value_cmap[value_cmap<0] = 0
         return value_cmap
-
-class MidpointNorm(mcolors.Normalize):
-    """
-    Pass as norm=<instance>, when declaring new pcolor or contourf objects.
-    Creates new normalization of existing registered cmap by changing midpoint
-    away from (vmin+vmax)/2.
-    """
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        # Default None values so can declare by name in any order
-        # mcolors.Normalize.__init__(self, vmin, vmax, clip)
-        super().__init__(vmin, vmax, clip)
-        self.midpoint = midpoint
-        if any(x is None for x in [vmin,vmax,midpoint]):
-            raise ValueError("Must declare vmin, vmax, and midpoint explicitly.")
-        if self.midpoint<self.vmin or self.midpoint>self.vmax:
-            raise ValueError('Midpoint {self.midpoint} is not between vmin {self.vmin} and vmax {self.vmax}.')
-
-    def __call__(self, value, clip=None):
-        # How to map data values in range (vmin,vmax) to color indices in colormap
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-        return ma.masked_array(np.interp(value, x, y), np.isnan(value))
 
 #------------------------------------------------------------------------------
 # Color stuff
