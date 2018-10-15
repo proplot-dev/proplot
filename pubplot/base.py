@@ -49,9 +49,11 @@
 # This tool preserve __name__ metadata.
 # from .basics import Dict, arange
 import os
+import io
 import numpy as np
 import warnings
 import time
+from contextlib import redirect_stdout
 from matplotlib.cbook import mplDeprecation
 from string import ascii_lowercase
 from types import MethodType, FunctionType
@@ -117,7 +119,7 @@ try: # crs stands for "coordinate reference system", leading c is "cartopy"
 except ModuleNotFoundError:
     GeoAxes = None
     PlateCarree = None # note, never pass transform=None! default is mtransforms.IdentityTransform()
-    print("Warning: cartopy is not available.")
+    print('Warning: cartopy is not available.')
 
 #------------------------------------------------------------------------------#
 # Create matplotlib.Path objects
@@ -336,7 +338,11 @@ def fix_cartopy(func):
         lon = np.array((*lon, lon[0]+360)) # make longitudes circular
         Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Call function
-        result = func(self, lon, lat, Z, transform=transform, **kwargs)
+        _ = io.StringIO() # message has a bunch of unnecessary newlines; will modify it
+        with redirect_stdout(_):
+        # with warnings.catch_warnings():
+        #     warnings.simplefilter('ignore')
+            result = func(self, lon, lat, Z, transform=transform, **kwargs)
         # Call function
         return result
     return wrapper
@@ -1577,8 +1583,8 @@ class BasemapAxes(MapAxes):
         return super().streamplot(*args, **kwargs)
 
 @docstring_fix
-# class CartopyAxes(GeoAxes):
-class CartopyAxes(GeoAxes, MapAxes):
+# class CartopyAxes(GeoAxes, MapAxes):
+class CartopyAxes(MapAxes, GeoAxes): # ours has to be higher priority, so the methods can overwrite stuff
     """
     Cartopy subclass.
     Some notes:
@@ -1603,14 +1609,15 @@ class CartopyAxes(GeoAxes, MapAxes):
         # same base classes, might get some repitition or weird errors if try to do both.
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=(cartopy.crs.Projection instance).')
-        super().__init__(*args, map_projection=map_projection, **kwargs)
-        # super().__init__(*args, **kwargs)
-        self.projection = map_projection # attribute used extensively by GeoAxes methods
+        # super().__init__(*args, map_projection=map_projection, **kwargs)
+        self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
+        super(GeoAxes, self).__init__(*args, **kwargs)
         self.outline_patch = None    # patch that provides the line bordering the projection.
         self.background_patch = None # patch that provides the filled background of the projection
+        self.img_factories = []
         self._gridliners = []
         self._done_img_factory = False
-        self.img_factories = []
+        self._boundary()
         # Apply circle boundary
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
@@ -1635,7 +1642,7 @@ class CartopyAxes(GeoAxes, MapAxes):
         Add documentation here.
         """
         # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().format(**kwargs)
+        super(MapAxes, self).format(**kwargs)
         # Boundary for projection regoin
         self.outline_patch.update(globals('outline'))
         # Make background patch invisible, so can color axes patch instead
@@ -1713,29 +1720,22 @@ class CartopyAxes(GeoAxes, MapAxes):
     @fix_edges
     @fix_cartopy
     def pcolorpoly(self, *args, **kwargs):
-        return super().pcolor(*args, **kwargs)
+        return super().pcolorpoly(*args, **kwargs)
 
-    def pcolormesh(self, *args, **kwargs): # TODO: pcolormesh is actually overridden by GeoAxes with some kind of patch, so maybe it actually works?
-        raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
+    @fix_centers
+    @fix_cartopy
+    def barbs(self, *args, **kwargs):
+        return super().barbs(*args, **kwargs)
 
-    # Next wrappers that need to be created
+    @fix_centers
+    @fix_cartopy
     def quiver(self, *args, **kwargs):
-        raise NotImplementedError('Quiver wrapper still needs to be developed.')
+        return super().quiver(*args, **kwargs)
 
+    @fix_centers
+    @fix_cartopy
     def streamplot(self, *args, **kwargs):
-        raise NotImplementedError('Streamlines wrapper still needs to be developed.')
-
-    def bar(self, *args, **kwargs): # bar plot
-        raise NotImplementedError()
-
-    def hist(self, *args, **kwargs): # histogram
-        raise NotImplementedError()
-
-    def boxplot(self, *args, **kwargs): # box whisker plot\
-        raise NotImplementedError()
-
-    def violinplot(self, *args, **kwargs): # violin plot
-        raise NotImplementedError()
+        return super().streamplot(*args, **kwargs)
 
 class OuterPanel(object):
     """
