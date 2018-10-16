@@ -49,11 +49,11 @@
 # This tool preserve __name__ metadata.
 # from .basics import Dict, arange
 import os
-import io
 import numpy as np
 import warnings
 import time
-from contextlib import redirect_stdout
+# import io
+# from contextlib import redirect_stdout
 from matplotlib.cbook import mplDeprecation
 from string import ascii_lowercase
 from types import MethodType, FunctionType
@@ -97,8 +97,7 @@ try: # crs stands for "coordinate reference system", leading c is "cartopy"
     from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
     PlateCarree = ccrs.PlateCarree() # global variable
 except ModuleNotFoundError:
-    GeoAxes = None
-    PlateCarree = None # note, never pass transform=None! default is mtransforms.IdentityTransform()
+    GeoAxes = PlateCarree = object
     print('Warning: cartopy is not available.')
 
 #------------------------------------------------------------------------------#
@@ -313,16 +312,16 @@ def fix_cartopy(func):
         lat = np.concatenate(([-90], lat, [90]))
         Z = np.concatenate((Z_south, Z, Z_north), axis=0)
         # 2) Fix seams at map boundary; this time the fancy projection will
-        # handle issues with pcolor seams that we'd hvae with basemap, but still
+        # handle issues with pcolor seams that we'd have with basemap, but still
         # have to ensure *circular* coverage if doing e.g. contourf
         lon = np.array((*lon, lon[0]+360)) # make longitudes circular
         Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Call function
-        _ = io.StringIO() # message has a bunch of unnecessary newlines; will modify it
-        with redirect_stdout(_):
+        # _ = io.StringIO() # message has a bunch of unnecessary newlines; will modify it
+        # with redirect_stdout(_):
         # with warnings.catch_warnings():
         #     warnings.simplefilter('ignore')
-            result = func(self, lon, lat, Z, transform=transform, **kwargs)
+        result = func(self, lon, lat, Z, transform=transform, **kwargs)
         # Call function
         return result
     return wrapper

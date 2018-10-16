@@ -27,7 +27,7 @@ import matplotlib.cm as mcm
 from glob import glob
 from cycler import cycler
 from matplotlib import matplotlib_fname
-from types import MethodType
+from functools import wraps
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 import matplotlib as mpl
@@ -36,16 +36,90 @@ from .colors import shade, cmapcolors
 # Default settings to be loaded when globals() is
 # called without any arguments
 rcDefaults = {
-    'linewidth': 0.7,
-    'small':     8,
-    'medium':    8,
-    'large':     9,
-    'ticklen':   4,
-    'tickpad':   2, # distance between ticks and labels
+    'linewidth': 0.7, # points
+    'small':     8, # inches
+    'medium':    8, # inches
+    'large':     9, # inches
+    'ticklen':   4, # points
+    'tickpad':   2, # points (distance between ticks and labels)
     'color':     'k',
-    'fontname':  'DejaVu Sans',
     'cycle':     'colorblind',
+    'fontname':  'DejaVu Sans',
     }
+# Set up dictionary of default parameters
+base_context = {
+    'font.size':         12,
+    'axes.labelsize':    12,
+    'axes.titlesize':    12,
+    'xtick.labelsize':   11,
+    'ytick.labelsize':   11,
+    'legend.fontsize':   11,
+    'axes.linewidth':    1.25,
+    'grid.linewidth':    1,
+    'lines.linewidth':   1.5,
+    'lines.markersize':  6,
+    'patch.linewidth':   1,
+    'xtick.major.width': 1.25,
+    'ytick.major.width': 1.25,
+    'xtick.minor.width': 1,
+    'ytick.minor.width': 1,
+    'xtick.major.size':  6,
+    'ytick.major.size':  6,
+    'xtick.minor.size':  4,
+    'ytick.minor.size':  4,
+    }
+# Name keys
+context_keys = [*base_context.keys()]
+font_keys = ['axes.labelsize',  'axes.titlesize',  'legend.fontsize',
+             'xtick.labelsize', 'ytick.labelsize', 'font.size']
+
+#------------------------------------------------------------------------------#
+# Contextual settings management
+# Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
+#------------------------------------------------------------------------------#
+class PlottingContext(dict):
+    # Helper functions
+    _keys = context_keys
+    @staticmethod
+    def _set(context=None, font_scale=1, rc=None):
+        context_object = plotting_context(context, font_scale, rc)
+        mpl.rcParams.update(context_object)
+    # Necessary methods for creating 'with' block
+    def __enter__(self):
+        rc = mpl.rcParams
+        self._orig = {k: rc[k] for k in self._keys}
+        self._set(self)
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._set(self._orig)
+    def __call__(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
+        return wrapper
+
+def plotting_context(context=None, font_scale=1, rc=None):
+    if context is None:
+        context_dict = {k: mpl.rcParams[k] for k in context_keys}
+    elif isinstance(context, dict):
+        context_dict = context
+    else:
+        contexts = ["paper", "notebook", "talk", "poster"]
+        if context not in contexts:
+            raise ValueError("context must be in %s" % ", ".join(contexts))
+        # Scale all the parameters by the same factor depending on the context
+        scaling = dict(paper=.8, notebook=1, talk=1.5, poster=2)[context]
+        context_dict = {k: v * scaling for k, v in base_context.items()}
+        # Now independently scale the fonts
+        font_dict = {k: context_dict[k]*font_scale for k in font_keys}
+        context_dict.update(font_dict)
+    # Override these settings with the provided rc dictionary
+    if rc is not None:
+        rc = {k: v for k, v in rc.items() if k in context_keys}
+        context_dict.update(rc)
+    # Wrap in a PlottingContext object so this can be used in a with statement
+    context_object = PlottingContext(context_dict)
+    return context_object
 
 #-------------------------------------------------------------------------------
 # Settings management function
