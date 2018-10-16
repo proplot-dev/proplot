@@ -6,6 +6,7 @@
 # Private files
 *.pdf
 *.log
+*.tex
 empty*
 sample*
 notes*
