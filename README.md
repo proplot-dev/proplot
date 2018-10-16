@@ -19,6 +19,12 @@ The **two most important** features are the `subplots` command and the `format` 
   * To modify an axes property (e.g. an x-axis label) with the default API, you normally have to use a bunch of one-liner `pyplot` commands (or method calls on axes/axis objects). This can get repetitive and quite verbose, resulting in lost of copy-paste code.
   * Now, you can pass all of these settings to `format`. Instead of having to remember the name of the function, whether it's attached to `pyplot` or an object instance, and the order/names of the arguments, you just have to remember one thing -- the name of the keyword argument. The method also abstracts away some irritating inconsistencies -- now, There's Only One (obvious) Way To Do It.
 
+## Installation
+```
+pip install git+https://github.com/lukelbd/pubplot.git#egg=pubplot
+```
+
+## Documentation
 ### The `subplots` command
    * Generate grids of subplots:
      * Pass no arguments to generate default single-axes figure (1 row, 1 column).
