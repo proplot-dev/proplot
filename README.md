@@ -1,5 +1,9 @@
 ## Overview
-This library provides helpful plotting utilities to make `matplotlib` less painful. I recommend importing the utilities with `import pubplot as plot`. Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` command of the same name.
+This library provides helpful and versatile plotting utilities to make the process of crafting publication-quality graphics with `matplotlib` smoother. I recommend importing the package with
+```
+import pubplot as plot
+```
+Most of the features below derive from the **`subplots`** command, a wrapper around the `pyplot` command of the same name.
 
 Quick summary of features:
 
