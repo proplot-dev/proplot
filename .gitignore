@@ -14,6 +14,7 @@ trash*
 # Ignore top-level init used on my machine to make package importable as long
 # as $HOME is in $PYTHONPATH (see: https://stackoverflow.com/a/3637678/4970632)
 /__init__.py
+install
 
 # Python extras
 *.pyc
@@ -24,6 +25,7 @@ __pycache__
 # Notebooks
 *.ipynb
 .ipynb_checkpoints
+!showcase.ipynb
 
 # OS generated files
 .DS_Store
