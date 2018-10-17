@@ -56,7 +56,7 @@ import time
 # from contextlib import redirect_stdout
 from matplotlib.cbook import mplDeprecation
 from string import ascii_lowercase
-from types import MethodType, FunctionType
+from types import FunctionType
 from functools import wraps
 from inspect import cleandoc
 import matplotlib.figure as mfigure
@@ -77,7 +77,7 @@ import matplotlib.cm as mcm
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
 from .rc import globals
-from .axis import Formatter, LatFormatter, LonFormatter, AutoLocate # default axis norm and formatter
+from .axis import Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colors
 from . import utils
@@ -841,67 +841,64 @@ class Axes(maxes.Axes):
                     kwargs[name] = kwargs.pop(option)
         return super().scatter(*args, **kwargs)
 
-    def plot(self, *args, cmap=None, norm=None, values=None, bins=True, nsample=1, **kwargs):
+    def cmapline(*args, cmap=None, values=None, norm=None, bins=True, nsample=1):
+        """
+        Create lines with colormap.
+        """
+        # First error check
+        x = np.array(x).squeeze()
+        y = np.array(y).squeeze()
+        values = np.array(values).squeeze()
+        y = np.atleast_1d(args[-1])
+        x = np.arange(y.shape[-1]) if len(args)==1 else np.atleast_1d(args[0])
+        # Error checks
+        if x.ndim!=1 or y.ndim!=1 or values.ndim!=1:
+            raise ValueError(f'Input x is {x.ndim}-dimensional.')
+        if y.ndim not in (1,2):
+            raise ValueError(f'Input y is {y.ndim}-dimensional.')
+        if values.ndim not in (1,2):
+            raise ValueError(f'Input values is {y.ndim}-dimensional.')
+        # Next draw the line
+        # Interpolate values to optionally allow for smooth gradations between
+        # values (bins=True) or color switchover halfway between points (bins=False)
+        newx, newy, newvalues = [], [], []
+        edges = utils.edges(values[:,i])
+        if bins:
+            norm = colors.DiscreteNorm(edges)
+        else:
+            norm = colors.ContinuousNorm(edges)
+        for j in range(y.shape[0]-1):
+            newx.extend(np.linspace(x[j], x[j+1], nsample+2))
+            newy.extend(np.linspace(y[j,i], y[j+1,i], nsample+2))
+            interp = np.linspace(np.asscalar(norm(values[j,i])), np.asscalar(norm(values[j+1,i])), nsample+2)
+            newvalues.extend(norm.inverse(interp))
+        # Create LineCollection and update with values
+        newvalues = np.array(newvalues)
+        points = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        collection = mcollections.LineCollection(segments, cmap=cmap[i], norm=norm, linestyles='-')
+        collection.set_array(newvalues)
+        collection.update({k:v for k,v in kwargs.items() if k not in ['color']})
+        line = self.add_collection(collection) # FIXME: for some reason using 'line' as the mappable results in colorbar with color *cutoffs* at values, instead of centered levels at values
+        line = colors.cmap(cmap[i], values[:,i], norm=norm) # use hacky mchackerson instead
+        return line,
+
+    def plot(self, *args, cmap=None, values=None, **kwargs):
         """
         Expand functionality of plot to also make LineCollection lines, i.e. lines
         whose colors change as a function of some key/indicator.
         """
-        if cmap is None:
+        if cmap is None and values is None:
             # Make normal boring lines
             lines = super().plot(*args, **kwargs)
-        else:
+        elif cmap is not None and values is not None:
             # Make special colormap lines
             # See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
             # First manage input more strictly, hard to generalize as much as builtin plot func
-            if values is None:
-                raise ValueError('For line with cmap, must provide <values>.')
-            values = np.atleast_1d(values) if values is not None else values
-            cmap = np.atleast_1d(cmap) if cmap is not None else cmap # creates array where strings stored in elements
-            if len(args) not in (1,2):
-                raise ValueError(f'Input only 1-2 positional args, not {len(args)}.')
-            y = np.atleast_1d(args[-1])
-            x = np.arange(y.shape[-1]) if len(args)==1 else np.atleast_1d(args[0])
-            y = y[:,None] if y.ndim==1 else y
-            values = values[:,None] if values.ndim==1 else y
-            # Error checks
-            if x.ndim!=1:
-                raise ValueError(f'Input x is {x.ndim}-dimensional.')
-            if cmap.ndim!=1:
-                raise ValueError(f'Input cmap is {y.ndim}-dimensional.')
-            if y.ndim not in (1,2):
-                raise ValueError(f'Input y is {y.ndim}-dimensional.')
-            if values.ndim not in (1,2):
-                raise ValueError(f'Input values is {y.ndim}-dimensional.')
-            if cmap.size!=y.shape[1]:
-                raise ValueError(f'Input cmap shape {cmap.shape}, y shape {y.shape}.')
-            if values.shape[1]!=y.shape[1] or values.shape[0]!=y.shape[0]:
-                raise ValueError(f'Input values shape {values.shape}, y shape {y.shape}.')
-            # Next draw the lines
-            lines = []
-            for i in range(y.shape[1]):
-                # Interpolate values to optionally allow for smooth gradations between
-                # values (bins=True) or color switchover halfway between points (bins=False)
-                newx, newy, newvalues = [], [], []
-                edges = utils.edges(values[:,i])
-                if bins:
-                    norm = colors.DiscreteNorm(edges)
-                else:
-                    norm = colors.ContinuousNorm(edges)
-                for j in range(y.shape[0]-1):
-                    newx.extend(np.linspace(x[j], x[j+1], nsample+2))
-                    newy.extend(np.linspace(y[j,i], y[j+1,i], nsample+2))
-                    interp = np.linspace(np.asscalar(norm(values[j,i])), np.asscalar(norm(values[j+1,i])), nsample+2)
-                    newvalues.extend(norm.inverse(interp))
-                # Create linecollection and update with values
-                newvalues = np.array(newvalues)
-                points = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
-                segments = np.concatenate([points[:-1], points[1:]], axis=1)
-                collection = mcollections.LineCollection(segments, cmap=cmap[i], norm=norm, linestyles='-')
-                collection.set_array(newvalues)
-                collection.update({k:v for k,v in kwargs.items() if k not in ['color']})
-                line = self.add_collection(collection) # FIXME: for some reason using 'line' as the mappable results in colorbar with color *cutoffs* at values, instead of centered levels at values
-                line = colors.cmap(cmap[i], values[:,i], norm=norm) # use hacky mchackerson instead
-                lines += [line]
+            lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
+        else:
+            # Error
+            raise ValueError('To draw colormap line, must provide kwargs "values" and "cmap".')
         return lines
 
     # Apply some simple enhancements
@@ -1053,7 +1050,7 @@ class XYAxes(Axes):
         xgrid=None,      ygrid=None,      # gridline toggle
         xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
         xspineloc=None,  yspineloc=None,  # deals with spine options
-        xtickminor=None, ytickminor=None, # minor ticks on/off
+        xtickminor=True, ytickminor=True, # minor ticks on/off
         xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
         xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
         xtickdir=None,   ytickdir=None,   # which direction ('in', 'our', or 'inout')
@@ -1072,6 +1069,7 @@ class XYAxes(Axes):
         """
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
+
         # Set axis scaling and limits
         if xscale is not None:
             if hasattr(xscale,'name'):
@@ -1091,16 +1089,18 @@ class XYAxes(Axes):
             ylim = ylim[::-1]
         self.set_xlim(xlim)
         self.set_ylim(ylim)
+
         # Control axis ticks and labels and stuff
-        for xy, axis, label, dates, sides, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
+        for xy, axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir in \
-            zip('xy', (self.xaxis, self.yaxis), (xlabel, ylabel), (xdates, ydates), \
-                (('bottom','top'),('left','right')), (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
+            zip('xy', (self.xaxis, self.yaxis), (xlabel, ylabel), \
+                (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
                 (xgrid, ygrid), (xlocator, ylocator), (xformatter, yformatter), # major ticks
                 (xtickrange, ytickrange), # range in which we label major ticks
                 (xtickdir, ytickdir), (xticklabeldir, yticklabeldir)): # tick direction
             # Axis spine visibility and location
+            sides = ('left','right') if xy=='x' else ('bottom','top')
             for spine, side in zip((self.spines[s] for s in sides), sides):
                 # Line properties
                 spine.update(globals('spine'))
@@ -1122,46 +1122,20 @@ class XYAxes(Axes):
                         spine.set_position(spineloc)
                     else:
                         spine.set_visible(False)
-            # First, major tick locators (should not affect limits)
-            lim = axis.get_view_interval() # to be used, automatically
-            if isinstance(ticklocator, mticker.Locator):
-                axis.set_major_locator(ticklocator)
-            elif ticklocator is not None:
-                if not utils.isiterable(ticklocator):
-                    ticklocator = AutoLocate(lim[0], lim[1], ticklocator)
-                # axis.set_ticks(ticklocator)
-                axis.set_major_locator(mticker.FixedLocator(np.sort(ticklocator)))
 
-            # Next, minor tick locators (toggle visibility later)
-            if tickminor is not None and not tickminor:
-                axis.set_minor_locator(mticker.NullLocator())
-            if isinstance(tickminorlocator, mticker.Locator):
-                axis.set_minor_locator(tickminorlocator) # pass locator class/subclass (all documented ones subclass the parent class, mticker.Locator)
-            elif tickminorlocator is not None:
-                if not utils.isiterable(tickminorlocator):
-                    tickminorlocator = AutoLocate(lim[0], lim[1], tickminorlocator) # use **spacing/setp** as specified
-                axis.set_minor_locator(mticker.FixedLocator(tickminorlocator))
-
-            # Next, major tick formatters (enforce Null, always, for minor ticks), and text styling
-            # Includes option for %-formatting of numbers and dates, passing a list of strings
-            # for explicitly overwriting the text
+            # Set the major and minor locators and formatters
+            # Also automatically detect whether axis is a 'time axis' (i.e.
+            # whether user has plotted something with x/y as datetime/date/np.datetime64
+            # objects, and matplotlib automatically set the unit converter)
+            time = isinstance(axis.converter, mdates.DateConverter)
+            axis.set_major_locator(Locator(ticklocator, time=time))
+            axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time))
+            if not tickminor and tickminorlocator is None:
+                axis.set_minor_locator(Locator('null'))
+            else:
+                axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time))
             axis.set_minor_formatter(mticker.NullFormatter())
-            if tickformatter in ['lat']:
-                axis.set_major_formatter(LatFormatter(sine=False))
-            elif tickformatter in ['sine']:
-                axis.set_major_formatter(LatFormatter(sine=True))
-            elif tickformatter is None: # default use my special super cool formatter
-                axis.set_major_formatter(Formatter(2, tickrange))
-            elif tickformatter in ['none','None','NONE']: # eliminate labels
-                axis.set_major_formatter(mticker.NullFormatter())
-            elif isinstance(tickformatter, mticker.Formatter): # formatter object
-                axis.set_major_formatter(tickformatter)
-            elif isinstance(tickformatter, str): # a %-style formatter
-                if dates: axis.set_major_formatter(mdates.DateFormatter(tickformatter)) # %-style, dates
-                else: axis.set_major_formatter(mticker.FormatStrFormatter(tickformatter)) # %-style, numbers
-            else: # list of strings
-                axis.set_major_formatter(mticker.FixedFormatter(tickformatter)) # list of strings
-                # axis.set_ticklabels(tickformatter) # no issues with FixedFormatter so far
+            # FIXME: Is this necessary, or shouldn't rcParams have taken care of it?
             for t in axis.get_ticklabels():
                 t.update(globals('ticklabels'))
 
@@ -2012,30 +1986,21 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     if clocator is None:
         clocator = getattr(mappable.norm, 'levels', None)
 
-    # Determine tick locators for major/minor ticks
+    # Determine major formatters and major/minor tick locators
     # Can pass clocator/cminorlocator as the *jump values* between the mappables
     # vmin/vmax if desired
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
     for i,locator in enumerate((clocator,cminorlocator)):
-        # Create a preliminary object first
-        if isinstance(locator, mticker.Locator):
-            pass # nothing to do
-        elif i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
-            locators.append(mticker.NullLocator())
-            continue
-        elif locator is None:
-            locator = mticker.AutoLocator() # determine automatically
-        else:
-            if not utils.isiterable(locator): # set based on user input
-                locator = AutoLocate(mappable.norm.vmin, mappable.norm.vmax, locator)
-            locator = mticker.FixedLocator(np.array(locator)) # basic
-        # Then modify to work around that mysterious error, and to prevent annoyance
+        # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendlength
         # * Need to use tick_values instead of accessing "locs" attribute because
         #   many locators don't have these attributes; require norm.vmin/vmax as input
         # * Previously the below block was unused; consider changing?
-        values = np.array(locator.tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
+            locators.append(Locator('null'))
+            continue
+        values = np.array(Locator(locator).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         values_min = np.where(values>=mappable.norm.vmin)[0]
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
@@ -2045,16 +2010,8 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         if values[0]==mappable.norm.vmin:
             normfix = True
         locators.append(mticker.FixedLocator(values)) # final locator object
-    # Figure out the tickformatter
-    if isinstance(cformatter, mticker.Formatter):
-        pass # just use that
-    elif cformatter is None:
-        cformatter = Formatter() # default formatter is my special one
-    else:
-        if isinstance(cformatter, str):
-            cformatter = mticker.FormatStrFormatter(cformatter) # %-style, numbers
-        else:
-            cformatter = mticker.FixedFormatter(cformatter) # manually set list of strings
+    # Next the formatter
+    formatter = Formatter(cformatter)
 
     # Fix the norm object
     # Check out the *insanely weird error* that occurs when you comment out this block!

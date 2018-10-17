@@ -13,7 +13,8 @@ def isiterable(item):
     """
     Test if item is iterable.
     """
-    return (hasattr(item,'__iter__') or hasattr(item,'__getitem__'))
+    # return (hasattr(item,'__iter__') or hasattr(item,'__getitem__')) # integers have this!
+    return hasattr(item,'__iter__')
 
 def edges(values, axis=-1):
     """
