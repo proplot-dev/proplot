@@ -1993,7 +1993,9 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     locators = [] # put them here
     for i,locator in enumerate((clocator,cminorlocator)):
         # Modify ticks to work around mysterious error, and to prevent annoyance
-        # where minor ticks extend beyond extendlength
+        # where minor ticks extend beyond extendlength (we need to figure out the
+        # numbers that will eventually be rendered to solve the error, so we will
+        # always use a fixedlocator)
         # * Need to use tick_values instead of accessing "locs" attribute because
         #   many locators don't have these attributes; require norm.vmin/vmax as input
         # * Previously the below block was unused; consider changing?
@@ -2004,12 +2006,15 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         values_min = np.where(values>=mappable.norm.vmin)[0]
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
-            raise ValueError(f'Ticks are not within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
+            raise ValueError(f'No ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
         values_min, values_max = values_min[0], values_max[-1]
         values = values[values_min:values_max+1]
         if values[0]==mappable.norm.vmin:
             normfix = True
+        if i==1: # prevent annoying major/minor overlaps where one is slightly shifted left/right
+            values = [v for v in values if not any(v>=o-abs(v)/1000 and v<=o+abs(v)/1000 for o in values_old)] # floating point weirdness is fixed below
         locators.append(mticker.FixedLocator(values)) # final locator object
+        values_old = values
     # Next the formatter
     formatter = Formatter(cformatter)
 
