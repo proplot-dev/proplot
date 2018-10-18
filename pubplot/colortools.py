@@ -20,7 +20,18 @@
 #   high-resolution LinearSegmentedColormap, but distinct contour levels. Maybe
 #   you shouldn't pass a discrete normalizer since contour takes care of this
 #   task itself.
-# See: https://stackoverflow.com/q/48613920/4970632 (pcolor example, with get_cmap hack)
+# Pcolor stuff: see https://stackoverflow.com/q/48613920/4970632
+#------------------------------------------------------------------------------#
+# Here are some useful tools for creating colormaps and cycles
+# https://nrlmry.navy.mil/TC.html
+# http://help.mail.colostate.edu/tt_o365_imap.aspx
+# http://schumacher.atmos.colostate.edu/resources/archivewx.php
+# https://coolors.co/
+# http://tristen.ca/hcl-picker/#/hlc/12/0.99/C6F67D/0B2026
+# http://gka.github.io/palettes/#diverging|c0=darkred,deeppink,lightyellow|c1=lightyellow,lightgreen,teal|steps=13|bez0=1|bez1=1|coL0=1|coL1=1
+# https://flowingdata.com/tag/color/
+# http://tools.medialab.sciences-po.fr/iwanthue/index.php
+# https://learntocodewith.me/posts/color-palette-tools/
 #------------------------------------------------------------------------------#
 import os
 import re
@@ -208,7 +219,8 @@ def Colormap(*args, levels=None, light=True, extremes=True, **kwargs):
                     cmap = light_cmap(cmap, **kwargs)
                 else:
                     cmap = dark_cmap(cmap, **kwargs)
-        elif type(cmap) is dict: # dictionary of hue/sat/luminance values
+        elif type(cmap) is dict:
+            # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
             cmap = hsluv_cmap(**cmap)
         else:
             # List of colors
@@ -390,6 +402,7 @@ def smooth_cmap(colors, n=256, name='custom', input='rgb'):
     """
     colors = [color_to_rgb(color, input) for color in colors]
     cmap   = mcolors.LinearSegmentedColormap.from_list(name, colors, n)
+    mcm.cmap_d[name] = cmap # 'register' the colormap
     return cmap
 
 def merge_cmaps(cmaps, n=256, name='merged'):
@@ -402,6 +415,7 @@ def merge_cmaps(cmaps, n=256, name='merged'):
     colors = [Colormap(cmap)(samples) for cmap in cmaps]
     colors = [color for sublist in colors for color in sublist]
     cmap = mcolors.LinearSegmentedColormap.from_list(name, colors)
+    mcm.cmap_d[name] = cmap # 'register' the cmap
     return cmap
 
 def light_cmap(color, n=256, reverse=False, input='rgb'):
@@ -421,10 +435,16 @@ def dark_cmap(color, n=256, reverse=False, input='rgb', black='#111111'):
     colors = [color, black] if reverse else [black, color]
     return smooth_cmap(colors, n)
 
-def hsluv_cmap(n=256, h=(0.05,1), l=(0.2,1), s=0.9):
+def hsluv_cmap(n=256, h=(0.05,1), l=(0.2,1), s=0.9, name='hsluv'):
     """
     Linearly vary between two or more of the parameters in HSLuv space.
     Preferable to HCL in many respects, becuase no truncation of colors.
+    Q: Why not do this for HCL space?
+    A: HCL space space has "dead zones" where you have impossible colors, so you
+    can't just pick arbitrary numbers and draw a line (or will have to raise
+    errors when we do this). HSLuv is just *scaled* HCL where chroma is
+    represented as a percentage of the maximum possible chroma for that
+    hue/luminance combo.
     """
     if not utils.isiterable(h):
         h = [h, h]
@@ -432,11 +452,40 @@ def hsluv_cmap(n=256, h=(0.05,1), l=(0.2,1), s=0.9):
         s = [s, s]
     if not utils.isiterable(l):
         l = [l, l]
-    hues = 360*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    sats = 100*np.linspace(l[0], l[1], n+1)
-    lums = 100*np.linspace(l[0], l[1], n+1)
+    # hues = 360*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
+    # sats = 100*np.linspace(l[0], l[1], n+1)
+    # lums = 100*np.linspace(l[0], l[1], n+1)
+    hues = 359*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
+    sats = 99*np.linspace(l[0], l[1], n+1) # dunnot why max has to be 99
+    lums = 99*np.linspace(l[0], l[1], n+1)
     colors = [colormath.hsluv_to_rgb(h,s,l) for h,s,l in zip(hues,sats,lums)]
-    return smooth_cmap(colors)
+    return smooth_cmap(colors, name=name)
+
+def hcl_cmap(n=256, h=(0.05,1), l=(0.2,1), c=0.9, name='hcl'):
+    """
+    Linearly vary between two or more of the parameters in HSLuv space.
+    Preferable to HCL in many respects, becuase no truncation of colors.
+    Q: Why not do this for HCL space?
+    A: HCL space space has "dead zones" where you have impossible colors, so you
+    can't just pick arbitrary numbers and draw a line (or will have to raise
+    errors when we do this). HSLuv is just *scaled* HCL where chroma is
+    represented as a percentage of the maximum possible chroma for that
+    hue/luminance combo.
+    """
+    if not utils.isiterable(h):
+        h = [h, h]
+    if not utils.isiterable(c):
+        c = [c, c]
+    if not utils.isiterable(l):
+        l = [l, l]
+    # hues = 360*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
+    # sats = 100*np.linspace(l[0], l[1], n+1)
+    # lums = 100*np.linspace(l[0], l[1], n+1)
+    hues = 359*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
+    lums = 99*np.linspace(l[0], l[1], n+1)
+    chromas = 99*np.linspace(l[0], l[1], n+1) # dunnot why max has to be 99
+    colors = [colormath.hsluv_to_rgb(h,c,l) for h,c,l in zip(hues,chromas,lums)]
+    return smooth_cmap(colors, name=name)
 
 #------------------------------------------------------------------------------
 # Normalization classes for mapping data to colors (i.e. colormaps)
@@ -767,7 +816,7 @@ def cycle_show():
             bbox_inches='tight', format='pdf')
     return fig
 
-def cmap_show(N=11, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']):
+def cmap_show(N=31, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -843,12 +892,14 @@ def cmap_show(N=11, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']
             if i+ntitles+nplots>nmaps:
                 break
             # Get object
-            # cmap = mcm.get_cmap(m, lut=N) # interpolate lookup table by calling m(values)
-            try:
-                cmap = mcm.get_cmap(m) # use default number of colors
-            except ValueError:
+            # NOTE: viridis, cividis, plasma, inferno, and magma are all
+            # listed colormaps for some reason
+            if m not in mcm.cmap_d:
                 print(f'Warning: colormap {m} not found.')
                 continue
+            cmap = mcm.get_cmap(m, N) # interpolate
+            # if isinstance(mcm.cmap_d[m], mcolors.LinearSegmentedColormap):
+            # if isinstance(mcm.cmap_d[m], mcolors.ListedColormap):
             # Draw, and make invisible
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():

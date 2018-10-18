@@ -105,7 +105,7 @@ def rgb_prepare(triple):
     for ch in triple:
         ch = round(ch, 3)
         if ch < -0.0001 or ch > 1.0001:
-            raise Exception("Illegal RGB value %f" % ch)
+            raise Exception(f'Illegal RGB value {ch:f}.')
         if ch < 0:
             ch = 0
         if ch > 1:
@@ -134,7 +134,7 @@ def max_chroma(L, H):
     cosH = (math.cos(hrad))
     sub1 = (math.pow(L + 16, 3.0) / 1560896.0)
     sub2 = sub1 if sub1 > 0.008856 else (L / 903.3)
-    result = float("inf")
+    result = float('inf')
     for row in m:
         m1 = row[0]
         m2 = row[1]
@@ -220,7 +220,8 @@ def hcl_to_hpluv(triple):
 # Converting to CIE official colorspace coordinates
 #------------------------------------------------------------------------------#
 def dot_product(a, b):
-    return sum(map(operator.mul, a, b))
+    return sum(i*j for i,j in zip(a,b))
+    # return sum(map(operator.mul, a, b))
 
 def from_linear(c):
     if c <= 0.0031308:

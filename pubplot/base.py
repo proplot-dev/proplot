@@ -240,7 +240,7 @@ def cmap_features(func):
         if levels is None:
             levels = getattr(norm, 'levels', None)
         # Specify colormap
-        if type(cmap) is str:
+        if type(cmap) is str or type(cmap) is dict:
             cmap = cmap, # make a tuple
         cmap = colortools.Colormap(*cmap, levels=levels, extremes=extremes) # pass as arguments to generalized colormap constructor
         # Call function with special args removed
@@ -1126,7 +1126,7 @@ class XYAxes(Axes):
                 (xtickrange, ytickrange), # range in which we label major ticks
                 (xtickdir, ytickdir), (xticklabeldir, yticklabeldir)): # tick direction
             # Axis spine visibility and location
-            sides = ('left','right') if xy=='x' else ('bottom','top')
+            sides = ('bottom','top') if xy=='x' else ('left','right')
             for spine, side in zip((self.spines[s] for s in sides), sides):
                 # Line properties
                 spine.update(globals('spine'))
