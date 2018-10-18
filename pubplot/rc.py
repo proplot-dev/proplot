@@ -22,17 +22,15 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import matplotlib.font_manager as mfonts
 import matplotlib.cm as mcm
 from glob import glob
 from cycler import cycler
-from matplotlib import matplotlib_fname
 from functools import wraps
+from . import colortools
+from . import utils
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 import matplotlib as mpl
-# Local dependencies
-from .palettes import cmap_colors
 # Default settings to be loaded when globals() is
 # called without any arguments
 rcDefaults = {
@@ -78,6 +76,9 @@ font_keys = ['axes.labelsize',  'axes.titlesize',  'legend.fontsize',
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 #------------------------------------------------------------------------------#
 class PlottingContext(dict):
+    """
+    Plotting context object.
+    """
     # Helper functions
     _keys = context_keys
     @staticmethod
@@ -99,15 +100,18 @@ class PlottingContext(dict):
         return wrapper
 
 def plotting_context(context=None, font_scale=1, rc=None):
-    # Create contesxt
+    """
+    Returns plotting context object.
+    """
+    # Create context
     if context is None: # this is the PlottingContext instance
         context_dict = {k: mpl.rcParams[k] for k in context_keys}
     elif isinstance(context, dict):
         context_dict = context
     else:
-        contexts = ["paper", "notebook", "talk", "poster"]
+        contexts = ['paper', 'notebook', 'talk', 'poster']
         if context not in contexts:
-            raise ValueError("context must be in %s" % ", ".join(contexts))
+            raise ValueError(f'Context must be in {join(contexts)}.')
         # Scale all the parameters by the same factor depending on the context
         scaling = dict(paper=.8, notebook=1, talk=1.5, poster=2)[context]
         context_dict = {k:v*scaling for k, v in base_context.items()}
@@ -176,10 +180,12 @@ def globals(*args, verbose=False, **kwargs):
     dictionaries with defaults settings, then update them. No more hardcoded values
     in the main text below.
     """
+    #--------------------------------------------------------------------------#
     # Helper function; adds stuff to rcParams or rcExtras in the
     # stylesheet style of category.subcategory = value, or very
     # occasionally category.subcategory.subsubcategory = value, in which case
     # user should input a dictionary {'subcategory.subsubcategory':value}
+    #--------------------------------------------------------------------------#
     def add(category, kwargs): # pass
         if not hasattr(mpl, 'rcExtras'):
             mpl.rcExtras = {} # initialize empty dictionary
@@ -224,6 +230,7 @@ def globals(*args, verbose=False, **kwargs):
         raise ValueError(f"Improper use of globals(). Only supply extra *args without any **kwargs.")
     #--------------------------------------------------------------------------#
     # *Initialize* default settings; that is, both rcParams and rcExtras
+    #--------------------------------------------------------------------------#
     # Requires processing in lines below
     # WARNING: rcdefaults() changes the backend! Inline plotting will fail for
     # rest of notebook session if you call rcdefaults before drawing a figure!!!!
@@ -239,6 +246,7 @@ def globals(*args, verbose=False, **kwargs):
         add('globals', rcDefaults) # apply *global* settings
     #--------------------------------------------------------------------------#
     # *Update* rcParam settings or global settings; just add them to rcParams or rcExtras
+    #--------------------------------------------------------------------------#
     # If one of the 'global' settings was changed, requires processing in lines below
     # Also if any 'value' is a dictionary, update properties with that key as a
     # 'category' and each key-value air in the dictionary as kwargs
@@ -264,18 +272,18 @@ def globals(*args, verbose=False, **kwargs):
     #--------------------------------------------------------------------------#
     # *Apply* global settings; if this function was not called without arguments, then
     # only settings specifically requested to be changed, will be changed
+    #--------------------------------------------------------------------------#
     current = globals('globals') # the dictionary
     # Make a cycler for drawing a bunch of lines
-    dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
-    colors = mcolors.CYCLES.get(current['cycle'],None) # load colors from cyclers
-    if colors is None:
-        raise ValueError(f'Unknown cycle designator "{current["cycle"]}". Options are: '
-            + ', '.join(f'"{k}"' for k in mcolors.CYCLES.keys()) + '.') # cat strings
-    if isinstance(colors[0],str) and colors[0][0]!='#': # fix; absolutely necessary (try without)
-        colors = [f'#{color}' for color in colors]
-    cycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
-          + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
-    [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
+    # dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
+    # cycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
+    #       + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
+    # [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
+    cycle = current['cycle']
+    if not utils.isiterable(cycle) or type(cycle) is str:
+        cycle = cycle,
+    colors = colortools.Cycle(*cycle)
+    cycle  = cycler('color', colors)
     # First the rcParam settings
     # Here are ones related to axes and figure properties
     # NOTE the figure and axes colors will not be reset on saving if
@@ -312,9 +320,8 @@ def globals(*args, verbose=False, **kwargs):
         'borderpad':0.5,    'borderaxespad':0,   'numpoints':1,    'facecolor':'inherit'})
     # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
     #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
+    # This can only be accomplished with rcParams; impossible to specify with API!
     add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
-        # this can only be accomplished with rcParams; impossible to specify with API!
-    #--------------------------------------------------------------------------#
     # Next the settings with custom names
     # Some might be redundant, and should consider eliminating
     # Should begin to delete these and control things with rcParams whenever possible
@@ -341,138 +348,6 @@ def globals(*args, verbose=False, **kwargs):
         print('Global properties set.')
     return None
 
-#------------------------------------------------------------------------------
-# Initialization; stuff called on import
-# Adds colormap names and lists available font names
-# * If leave 'name' empty in register_cmap, name will be taken from the
-#   Colormap instance. So do that.
-# * Note that **calls to cmap instance do not interpolate values**; this is only
-#   done by specifying levels in contourf call, specifying lut in get_cmap,
-#   and using LinearSegmentedColormap.from_list with some N.
-# * The cmap object itself only **picks colors closest to the "correct" one
-#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
-#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
-# * If you want to always disable interpolation, use ListedColormap. This type
-#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
-#------------------------------------------------------------------------------
-# List the current font names, original version; works on Linux but not Mac, because can't find mac system fonts?
-#------------------------------------------------------------------------------#
-# fonts = mfonts.get_fontconfig_fonts()
-# fonts = [mfonts.FontProperties(fname=fname).get_name() for fname in flist]
-# List the system font names, smarter version
-# See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-fonts = [font.split('/')[-1].split('.')[0] for font in # system fonts
-            mfonts.findSystemFonts(fontpaths=None, fontext='ttf')] + \
-        [os.path.basename(font.rstrip('.ttf')) for font in # hack-installed fonts
-            glob(f"{matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf")]
-fonts = sorted(set(fonts)) # unique ones only
-
-#-------------------------------------------------------------------------------
-# Register new colormaps; must come before registering the color cycles
-#------------------------------------------------------------------------------#
-announcement = False
-for _file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
-    if not ('.rgb' in _file or '.hex' in _file):
-        continue
-    _name = os.path.basename(_file)[:-4]
-    if _name in plt.colormaps(): # don't want to re-register every time
-        continue
-    if '.rgb' in _file: # table or RGB values
-        _load = {'hc':{'skiprows':1, 'delimiter':','},
-                    'cb':{'delimiter':','},
-                    'nc':{'skiprows':2}}.get(_name[:2],{}) # default empty
-        try: _cmap = np.loadtxt(_file, **_load)
-        except:
-            print(f'Failed to load {_name}.')
-            continue
-        if (_cmap>1).any(): _cmap = _cmap/255
-    else: # list of hex strings
-        _cmap = [*open(_file)][0] # just a single line
-        _cmap = _cmap.strip().split(',') # csv hex strings
-        _cmap = np.array([mcolors.to_rgb(_) for _ in _cmap]) # from list of tuples
-    _N = len(_cmap) # simple as that; number of rows of colors
-    if 'lines' not in _name.lower():
-        _N = 256-len(_cmap)%1 # do this until figure out why colors get segmented
-    mcm.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name,      _cmap, _N))
-    mcm.register_cmap(cmap=mcolors.LinearSegmentedColormap.from_list(_name+'_r', _cmap[::-1], _N))
-    if not announcement: # only do this if register at least one new map
-        announcement = True
-        print('Registered colormaps.')
-
-#-------------------------------------------------------------------------------
-# Register new colors
-#------------------------------------------------------------------------------#
-# Crayons were copied from seaborn
-# Use the "N most popular" xkcd colors; downloaded them directly from the txt file.
-# For "open colors" see: https://github.com/yeun/open-color
-mcolors.OPEN_COLORS = {
-    f'{prefix}{i}':color for prefix,colors in {"gray":   ["#f8f9fa", "#f1f3f5", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057", "#343a40", "#212529"],
-  "red":    ["#fff5f5", "#ffe3e3", "#ffc9c9", "#ffa8a8", "#ff8787", "#ff6b6b", "#fa5252", "#f03e3e", "#e03131", "#c92a2a"],
-  "pink":   ["#fff0f6", "#ffdeeb", "#fcc2d7", "#faa2c1", "#f783ac", "#f06595", "#e64980", "#d6336c", "#c2255c", "#a61e4d"],
-  "grape":  ["#f8f0fc", "#f3d9fa", "#eebefa", "#e599f7", "#da77f2", "#cc5de8", "#be4bdb", "#ae3ec9", "#9c36b5", "#862e9c"],
-  "violet": ["#f3f0ff", "#e5dbff", "#d0bfff", "#b197fc", "#9775fa", "#845ef7", "#7950f2", "#7048e8", "#6741d9", "#5f3dc4"],
-  "indigo": ["#edf2ff", "#dbe4ff", "#bac8ff", "#91a7ff", "#748ffc", "#5c7cfa", "#4c6ef5", "#4263eb", "#3b5bdb", "#364fc7"],
-  "blue":   ["#e7f5ff", "#d0ebff", "#a5d8ff", "#74c0fc", "#4dabf7", "#339af0", "#228be6", "#1c7ed6", "#1971c2", "#1864ab"],
-  "cyan":   ["#e3fafc", "#c5f6fa", "#99e9f2", "#66d9e8", "#3bc9db", "#22b8cf", "#15aabf", "#1098ad", "#0c8599", "#0b7285"],
-  "teal":   ["#e6fcf5", "#c3fae8", "#96f2d7", "#63e6be", "#38d9a9", "#20c997", "#12b886", "#0ca678", "#099268", "#087f5b"],
-  "green":  ["#ebfbee", "#d3f9d8", "#b2f2bb", "#8ce99a", "#69db7c", "#51cf66", "#40c057", "#37b24d", "#2f9e44", "#2b8a3e"],
-  "lime":   ["#f4fce3", "#e9fac8", "#d8f5a2", "#c0eb75", "#a9e34b", "#94d82d", "#82c91e", "#74b816", "#66a80f", "#5c940d"],
-  "yellow": ["#fff9db", "#fff3bf", "#ffec99", "#ffe066", "#ffd43b", "#fcc419", "#fab005", "#f59f00", "#f08c00", "#e67700"],
-  "orange": ["#fff4e6", "#ffe8cc", "#ffd8a8", "#ffc078", "#ffa94d", "#ff922b", "#fd7e14", "#f76707", "#e8590c", "#d9480f"]
-    }.items() for i,color in enumerate(colors)}
-mcolors.CRAYONS = {tup[0]:tup[1] for tup in
-    np.genfromtxt(f'{os.path.dirname(__file__)}/colors/crayons.txt',
-    delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()}
-mcolors.XKCD_SORTED = {tup[0]:tup[1] for i,tup in
-    enumerate(np.genfromtxt(f'{os.path.dirname(__file__)}/colors/xkcd.txt',
-    delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()) if i<256} # filter to N most popular
-# Register colors by string name
-# Uses undocumented part of API, dangerous!
-announcement = False
-for _color,_value in {**mcolors.XKCD_SORTED, **mcolors.OPEN_COLORS, **mcolors.CRAYONS}.items():
-# for _color,_value in {**mcolors.OPEN_COLORS, **mcolors.CRAYONS}.items():
-    if _color in mcolors._colors_full_map:
-        # print('duplicate name', _color)
-        continue
-    mcolors._colors_full_map[_color] = _value # no more xkcd: now call them directly
-    if not announcement: # only do this if adding at least one new color
-        announcement = True
-        print('Registered colors.')
-
-#-------------------------------------------------------------------------------
-# Register new color cyclers, including ones that are actually listed
-# colormap colors
-#------------------------------------------------------------------------------#
-mcolors.CYCLES = \
-    {'default':['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'], # default V2 matplotlib
-    # copied from stylesheets; stylesheets just add color themese from every
-    # possible tool, not already present as a colormap
-    'ggplot':['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
-    'bmh': ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'],
-    'solarized': ['#268BD2', '#2AA198', '#859900', '#B58900', '#CB4B16', '#DC322F', '#D33682', '#6C71C4'],
-    '538': ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
-    'seaborn': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
-    'pastel': ['#92C6FF', '#97F0AA', '#FF9F9A', '#D0BBFF', '#FFFEA3', '#B0E0E6'],
-    'deep': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
-    'muted': ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'],
-    'colorblind': ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
-    # created with online tools
-    'cinematic': [(51,92,103), (255,243,176), (224,159,62), (158,42,43), (84,11,14)],
-    'cinematic2': [[1,116,152], [231,80,0], [123,65,75], [197,207,255], [241,255,47]],
-    }
-_listed_cmaps = ['Pastel1', 'Pastel2', 'Paired',
-    'Accent', 'Dark2', 'cbLines1', 'cbLines2',
-    'Set1', 'Set2', 'Set3',
-    'tab10', 'tab20', 'tab20b', 'tab20c']
-mcolors.CYCLES.update({_cycle.lower():cmap_colors(_cycle) for _cycle in _listed_cmaps}) # add in the colormap cycles
-for _cycle in mcolors.CYCLES.values():
-    if isinstance(_cycle[0],str) and _cycle[0][0]!='#': # fix; absolutely necessary (try without)
-        _cycle[:] = [f'#{_}' for _ in _cycle] # modify contents; super cool trick
-    if not isinstance(_cycle[0],str) and any(c>1 for tup in _cycle for c in tup):
-        _cycle[:] = [tuple(np.array(_)/255) for _ in _cycle] # tuple of decimal RGB values
-    _cycle[:] = [mcolors.to_hex(_, keep_alpha=False) for _ in _cycle] # standardize; will also convert hes to lower case
-
-#-------------------------------------------------------------------------------
 # Now call the function to configure params with default values
 globals(verbose=True)
 

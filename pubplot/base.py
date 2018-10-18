@@ -79,7 +79,7 @@ import matplotlib.pyplot as plt
 from .rc import globals
 from .axis import Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
-from . import colors
+from . import colortools
 from . import utils
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -183,7 +183,7 @@ def counter(func):
 #       out-of-range values, while extend used in colorbar on pcolor has no such
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
-def fix_centers(func):
+def check_centers(func):
     """
     Check shape of arguments passed to contour, and fix result.
     """
@@ -204,7 +204,7 @@ def fix_centers(func):
         return func(self, x, y, *args, **kwargs)
     return wrapper
 
-def fix_edges(func):
+def check_edges(func):
     """
     Check shape of arguments passed to pcolor, and fix result.
     """
@@ -225,34 +225,34 @@ def fix_edges(func):
         return func(self, x, y, *args, **kwargs)
     return wrapper
 
-def fix_colors(func):
+def cmap_features(func):
     """
     Manage output of contour and pcolor functions. Also allow new
     feature where separate color for out-of-bounds data can be toggled.
     Also see: https://stackoverflow.com/a/48614231/4970632
     """
     @wraps(func)
-    def wrapper(*args, clipcolors=True, **kwargs):
-        # Call function with special args removed
+    def wrapper(self, *args, cmap=None, norm=None, extremes=True, levels=None, extend=None, **kwargs):
+        # Specify normalizer
         name = func.__name__
+        default = ('continuous' if 'contour' in name else 'discrete')
+        norm = colortools.Norm(norm, default=default, levels=levels)
+        if levels is None:
+            levels = getattr(norm, 'levels', None)
+        # Specify colormap
+        if type(cmap) is str:
+            cmap = cmap, # make a tuple
+        cmap = colortools.Colormap(*cmap, levels=levels, extremes=extremes) # pass as arguments to generalized colormap constructor
+        # Call function with special args removed
+        kwextra = dict()
         if 'contour' in name:
-            levels = kwargs.get('levels', None)
-            extend = kwargs.get('extend', None)
-        else:
-            levels = kwargs.pop('levels', None)
-            extend = kwargs.pop('extend', None)
-        result = func(*args, **kwargs)
-        result.extend = extend
-        # Set discrete normalizer
-        if 'pcolor' in name and levels is not None and 'norm' not in kwargs:
-            result.norm = colors.DiscreteNorm(levels)
+            kwextra = dict(levels=levels, extend=extend)
+        result = func(self, *args, cmap=cmap, norm=norm, **kwextra, **kwargs)
+        if 'pcolor' in name:
+            result.extend = extend
         # Optionally use same color for data in 'edge bins' as 'out of bounds' data
         # NOTE: This shouldn't mess up normal contour() calls because if we
         # specify color=<color>, should override cmap instance anyway
-        if levels is None:
-            levels = getattr(result.norm, 'levels', None)
-        if levels is not None and not clipcolors:
-            result.set_cmap(mcm.get_cmap(result.cmap.name, lut=len(levels)-1))
         # Fix white lines between filled contours/mesh
         linewidth = 0.2
         if name=='contourf':
@@ -265,9 +265,27 @@ def fix_colors(func):
         return result
     return wrapper
 
+def cycle_features(func):
+    """
+    Allow specification of color cycler at plot-time. Will simply set the axes
+    property cycler, and if it differs from user input, update it.
+    See: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py
+    The set_prop_cycle command modifies underlying _get_lines and _get_patches_for_fill.
+    """
+    @wraps(func)
+    def wrapper(self, *args, cycle=None, **kwargs):
+        # Determine and temporarily set cycler
+        if cycle is not None:
+            if not utils.isiterable(cycle) or type(cycle) is str:
+                cycle = cycle,
+            cycle = colortools.Cycle(*cycle)
+            self.set_prop_cycle(color=cycle)
+        return func(self, *args, **kwargs)
+    return wrapper
+
 #------------------------------------------------------------------------------#
 # Helper functions for basemap and cartopy plot overrides
-# NOTE: These wrappers should be invoked *after* fix_centers and fix_edges,
+# NOTE: These wrappers should be invoked *after* check_centers and check_edges,
 # which perform basic shape checking and permute the data array, so the data
 # will now be y by x (or lat by lon) instead of lon by lat.
 #------------------------------------------------------------------------------#
@@ -297,7 +315,7 @@ def norecurse(func):
         return result
     return wrapper
 
-def fix_cartopy(func):
+def gridfix_cartopy(func):
     """
     Apply default transform and fix discontinuities in grid.
     """
@@ -326,7 +344,7 @@ def fix_cartopy(func):
         return result
     return wrapper
 
-def fix_basemap(func):
+def gridfix_basemap(func):
     """
     Interpret coordinates and fix discontinuities in grid.
     """
@@ -819,9 +837,10 @@ class Axes(maxes.Axes):
             #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
         return t
 
+    @cycle_features
     def scatter(self, *args, **kwargs):
         """
-        Scatter with some more consistent keyword arguments.
+        Just add some more consistent keyword argument options.
         """
         # Manage input arguments
         if len(args)>4:
@@ -832,57 +851,59 @@ class Axes(maxes.Axes):
         if len(args)>2:
             kwargs['s'] = args.pop(2)
         # Apply some aliases for keyword arguments
-        aliases = {'c': ['markercolor'], 's': ['markersize'],
-        'linewidths': ['lw','linewidth','markeredgewidth'],
-        'edgecolors': ['markeredgecolor']}
+        aliases = {'c':   ['markercolor', 'color'],
+                   's':   ['markersize', 'size'],
+            'linewidths': ['lw','linewidth','markeredgewidth', 'markeredgewidths'],
+            'edgecolors': ['markeredgecolor', 'markeredgecolors']}
         for name,options in aliases.items():
             for option in options:
                 if option in kwargs:
                     kwargs[name] = kwargs.pop(option)
         return super().scatter(*args, **kwargs)
 
+    @cmap_features
     def cmapline(*args, cmap=None, values=None, norm=None, bins=True, nsample=1):
         """
         Create lines with colormap.
+        See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
+        Will manage input more strictly, this is harder to generalize.
         """
         # First error check
-        x = np.array(x).squeeze()
-        y = np.array(y).squeeze()
+        if len(args) not in (1,2):
+            raise ValueError(f'Function requires 1-2 arguments, got {len(args)}.')
+        if cmap is None or values is None:
+            raise ValueError(f'Function requires "cmap" and "values" kwargs.')
+        y = np.array(args[-1]).squeeze()
+        x = np.arange(y.shape[-1]) if len(args)==1 else np.array(args[0]).squeeze()
         values = np.array(values).squeeze()
-        y = np.atleast_1d(args[-1])
-        x = np.arange(y.shape[-1]) if len(args)==1 else np.atleast_1d(args[0])
-        # Error checks
         if x.ndim!=1 or y.ndim!=1 or values.ndim!=1:
-            raise ValueError(f'Input x is {x.ndim}-dimensional.')
-        if y.ndim not in (1,2):
-            raise ValueError(f'Input y is {y.ndim}-dimensional.')
-        if values.ndim not in (1,2):
-            raise ValueError(f'Input values is {y.ndim}-dimensional.')
+            raise ValueError(f'Input x ({x.ndim}D), y ({y.ndim}D), and values ({values.ndim}D) must be 1-dimensional.')
         # Next draw the line
         # Interpolate values to optionally allow for smooth gradations between
         # values (bins=True) or color switchover halfway between points (bins=False)
         newx, newy, newvalues = [], [], []
-        edges = utils.edges(values[:,i])
+        edges = utils.edges(values)
         if bins:
-            norm = colors.DiscreteNorm(edges)
+            norm = colortools.DiscreteNorm(edges)
         else:
-            norm = colors.ContinuousNorm(edges)
+            norm = colortools.ContinuousNorm(edges)
         for j in range(y.shape[0]-1):
             newx.extend(np.linspace(x[j], x[j+1], nsample+2))
-            newy.extend(np.linspace(y[j,i], y[j+1,i], nsample+2))
-            interp = np.linspace(np.asscalar(norm(values[j,i])), np.asscalar(norm(values[j+1,i])), nsample+2)
+            newy.extend(np.linspace(y[j], y[j+1], nsample+2))
+            interp = np.linspace(np.asscalar(norm(values[j])), np.asscalar(norm(values[j+1])), nsample+2)
             newvalues.extend(norm.inverse(interp))
         # Create LineCollection and update with values
-        newvalues = np.array(newvalues)
-        points = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        collection = mcollections.LineCollection(segments, cmap=cmap[i], norm=norm, linestyles='-')
+        newvalues  = np.array(newvalues)
+        points     = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
+        segments   = np.concatenate([points[:-1], points[1:]], axis=1)
+        collection = mcollections.LineCollection(segments, cmap=cmap, norm=norm, linestyles='-')
         collection.set_array(newvalues)
         collection.update({k:v for k,v in kwargs.items() if k not in ['color']})
         line = self.add_collection(collection) # FIXME: for some reason using 'line' as the mappable results in colorbar with color *cutoffs* at values, instead of centered levels at values
-        line = colors.cmap(cmap[i], values[:,i], norm=norm) # use hacky mchackerson instead
+        line = colortools.mappable(cmap, values, norm=norm) # use hacky mchackerson instead
         return line,
 
+    @cycle_features
     def plot(self, *args, cmap=None, values=None, **kwargs):
         """
         Expand functionality of plot to also make LineCollection lines, i.e. lines
@@ -893,8 +914,6 @@ class Axes(maxes.Axes):
             lines = super().plot(*args, **kwargs)
         elif cmap is not None and values is not None:
             # Make special colormap lines
-            # See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
-            # First manage input more strictly, hard to generalize as much as builtin plot func
             lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
         else:
             # Error
@@ -904,59 +923,66 @@ class Axes(maxes.Axes):
     # Apply some simple enhancements
     # These just fix the white edges between patch objects, and optionally
     # enable using same color for data in 'edge bins' as 'out of bounds' data
-    @fix_colors
+    @cmap_features
     def contour(self, *args, **kwargs):
         return super().contour(*args, **kwargs)
 
-    @fix_colors
+    @cmap_features
     def contourf(self, *args, **kwargs):
         return super().contourf(*args, **kwargs)
 
-    @fix_colors
+    @cmap_features
     def pcolorpoly(self, *args, **kwargs):
         return super().pcolor(*args, **kwargs)
 
-    @fix_colors
+    @cmap_features
     def pcolormesh(self, *args, **kwargs):
         return super().pcolor(*args, **kwargs)
 
     # Matrix visualizations
-    @fix_colors
+    @cmap_features
     def matshow(self, *args, **kwargs):
         return super().matshow(*args, **kwargs)
 
-    @fix_colors
+    @cmap_features
     def imshow(self, *args, **kwargs):
         return super().imshow(*args, **kwargs)
 
-    @fix_colors
+    @cmap_features
     def spy(self, *args, **kwargs):
         return super().spy(*args, **kwargs)
 
-    # Stuff that needs to be worked on
-    def polar(self, *args, **kwargs): # dunno
-        return super().polar(*args, **kwargs)
-
-    def bar(self, *args, **kwargs): # have bar plot cycle through default color cycle
-        return super().bar(*args, **kwargs)
-
-    def barh(self, *args, **kwargs):
-        return super().barh(*args, **kwargs)
-
-    def hist(self, *args, **kwargs): # expand so we can apply transparency to histograms, so they can be overlaid
-        return super().hist(*args, **kwargs)
-
+    @cmap_features
     def hist2d(self, *args, **kwargs): # expand to allow 2D kernel
         return super().hist2d(*args, **kwargs)
 
-    def errorbar(self, *args, **kwargs):
-        return super().errorbar(*args, **kwargs)
+    # Stuff that needs to be worked on
+    @cycle_features
+    def polar(self, *args, **kwargs): # dunno
+        return super().polar(*args, **kwargs)
 
+    @cycle_features
+    def bar(self, *args, **kwargs): # have bar plot cycle through default color cycle
+        return super().bar(*args, **kwargs)
+
+    @cycle_features
+    def barh(self, *args, **kwargs):
+        return super().barh(*args, **kwargs)
+
+    @cycle_features
+    def hist(self, *args, **kwargs): # expand so we can apply transparency to histograms, so they can be overlaid
+        return super().hist(*args, **kwargs)
+
+    @cycle_features
     def boxplot(self, *args, **kwargs): # box whisker plot
         return super().boxplot(*args, **kwargs)
 
+    @cycle_features
     def violinplot(self, *args, **kwargs): # ditto with box plot function
         return super().violinplot(*args, **kwargs)
+
+    def errorbar(self, *args, **kwargs):
+        return super().errorbar(*args, **kwargs)
 
     # Redundant stuff that want to cancel
     message1 = 'Redundant function has been disabled.'
@@ -1274,31 +1300,31 @@ class XYAxes(Axes):
 
     # Wrappers that check dimensionality, give better error messages, and change
     # the convention so dim1 is always x-axis, dim2 is always y-axis
-    @fix_centers
+    @check_centers
     def contour(self, *args, **kwargs):
         return super().contour(*args, **kwargs)
 
-    @fix_centers
+    @check_centers
     def contourf(self, *args, **kwargs):
         return super().contourf(*args, **kwargs)
 
-    @fix_centers
+    @check_centers
     def quiver(self, *args, **kwargs):
         return super().quiver(*args, **kwargs)
 
-    @fix_centers
+    @check_centers
     def streamplot(self, *args, **kwargs):
         return super().streamplot(*args, **kwargs)
 
-    @fix_centers
+    @check_centers
     def barbs(self, *args, **kwargs):
         return super().barbs(*args, **kwargs)
 
-    @fix_edges
+    @check_edges
     def pcolorpoly(self, *args, **kwargs):
         return super().pcolor(*args, **kwargs)
 
-    @fix_edges
+    @check_edges
     def pcolormesh(self, *args, **kwargs):
         return super().pcolormesh(*args, **kwargs)
 
@@ -1500,41 +1526,38 @@ class BasemapAxes(MapAxes):
         return self.m.scatter(*args, ax=self, latlon=True, **kwargs)
 
     @norecurse
-    @fix_centers
-    @fix_basemap
-    @fix_colors
+    @check_centers
+    @gridfix_basemap
     def contour(self, *args, **kwargs):
         return self.m.contour(*args, ax=self, **kwargs)
 
     @norecurse
-    @fix_centers
-    @fix_basemap
-    @fix_colors
+    @check_centers
+    @gridfix_basemap
     def contourf(self, *args, **kwargs):
         return self.m.contourf(*args, ax=self, **kwargs)
 
     @norecurse
-    @fix_edges
-    @fix_basemap
-    @fix_colors
+    @check_edges
+    @gridfix_basemap
     def pcolorpoly(self, *args, **kwargs):
         return self.m.pcolor(*args, ax=self, **kwargs)
 
     @norecurse
-    @fix_centers
-    @fix_basemap
+    @check_centers
+    @gridfix_basemap
     def barbs(self, *args, **kwargs):
         return super().barbs(*args, **kwargs)
 
     @norecurse
-    @fix_centers
-    @fix_basemap
+    @check_centers
+    @gridfix_basemap
     def quiver(self, *args, **kwargs):
         return super().quiver(*args, **kwargs)
 
     @norecurse
-    @fix_centers
-    @fix_basemap
+    @check_centers
+    @gridfix_basemap
     def streamplot(self, *args, **kwargs):
         return super().streamplot(*args, **kwargs)
 
@@ -1664,33 +1687,33 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     def scatter(self, *args, transform=PlateCarree, **kwargs):
         return super().scatter(*args, transform=transform, **kwargs)
 
-    @fix_centers
-    @fix_cartopy
+    @check_centers
+    @gridfix_cartopy
     def contour(self, *args, **kwargs):
         return super().contour(*args, **kwargs)
 
-    @fix_centers
-    @fix_cartopy
+    @check_centers
+    @gridfix_cartopy
     def contourf(self, *args, **kwargs):
         return super().contourf(*args, **kwargs)
 
-    @fix_edges
-    @fix_cartopy
+    @check_edges
+    @gridfix_cartopy
     def pcolorpoly(self, *args, **kwargs):
         return super().pcolorpoly(*args, **kwargs)
 
-    @fix_centers
-    @fix_cartopy
+    @check_centers
+    @gridfix_cartopy
     def barbs(self, *args, **kwargs):
         return super().barbs(*args, **kwargs)
 
-    @fix_centers
-    @fix_cartopy
+    @check_centers
+    @gridfix_cartopy
     def quiver(self, *args, **kwargs):
         return super().quiver(*args, **kwargs)
 
-    @fix_centers
-    @fix_cartopy
+    @check_centers
+    @gridfix_cartopy
     def streamplot(self, *args, **kwargs):
         return super().streamplot(*args, **kwargs)
 
@@ -1960,6 +1983,8 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     # * Note the colors are perfect if we don't extend them by dummy color on either side,
     #   but for some reason labels for edge colors appear offset from everything
     # * Too tired to figure out why so just use this workaround
+    # TODO TODO TODO: This should be abstracted away into the colormap
+    # retrieval routines in colortools.py
     if fromcolors: # we passed the colors directly
         colors = mappable
         if values is None:
@@ -1980,7 +2005,7 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         levels = utils.edges(values) # get "edge" values between centers desired
         values = utils.edges(values) # this works empirically; otherwise get weird situation with edge-labels appearing on either side
         mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap,
-                extend='neither', norm=colors.DiscreteNorm(values)) # workaround
+                extend='neither', norm=colortools.DiscreteNorm(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values
     if clocator is None:
@@ -1992,17 +2017,17 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
     for i,locator in enumerate((clocator,cminorlocator)):
-        # Modify ticks to work around mysterious error, and to prevent annoyance
-        # where minor ticks extend beyond extendlength (we need to figure out the
-        # numbers that will eventually be rendered to solve the error, so we will
-        # always use a fixedlocator)
-        # * Need to use tick_values instead of accessing "locs" attribute because
-        #   many locators don't have these attributes; require norm.vmin/vmax as input
-        # * Previously the below block was unused; consider changing?
+        # Get the locator values
+        # Need to use tick_values instead of accessing 'locs' attribute because
+        # many locators don't have these attributes; require norm.vmin/vmax as input
         if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
             locators.append(Locator('null'))
             continue
         values = np.array(Locator(locator).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        # Modify ticks to work around mysterious error, and to prevent annoyance
+        # where minor ticks extend beyond extendlength.
+        # We need to figure out the numbers that will eventually be rendered to
+        # solve the error, so we will always use a fixedlocator.
         values_min = np.where(values>=mappable.norm.vmin)[0]
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
@@ -2012,9 +2037,9 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         if values[0]==mappable.norm.vmin:
             normfix = True
         if i==1: # prevent annoying major/minor overlaps where one is slightly shifted left/right
-            values = [v for v in values if not any(v>=o-abs(v)/1000 and v<=o+abs(v)/1000 for o in values_old)] # floating point weirdness is fixed below
-        locators.append(mticker.FixedLocator(values)) # final locator object
-        values_old = values
+            values = [v for v in values if not any(v>=o-abs(v)/1000 and v<=o+abs(v)/1000 for o in fixed)] # floating point weirdness is fixed below
+        fixed = values # record as new variable
+        locators.append(Locator(fixed)) # final locator object
     # Next the formatter
     formatter = Formatter(cformatter)
 
@@ -2029,14 +2054,13 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     #   warning to be printed (related to same issue I guess). So we keep this.
     #   The culprit for all of this seems to be the colorbar API line:
     #        z = np.take(y, i0) + (xn - np.take(b, i0)) * dy / db
-    # * Also strange that minorticks extending BELOW the minimum
+    # * Also strange that minorticks extending *below* the minimum
     #   don't raise the error. It is only when they are exaclty on the minimum.
     # * Note that when changing the levels attribute, need to make sure the
     #   levels datatype is float; otherwise division will be truncated and bottom
     #   level will still lie on same location, so error will occur
-    # else: # need to just use the vmax/vmin
     if normfix:
-        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/1000
+        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/10000
     if hasattr(mappable.norm,'levels'):
         mappable.norm.levels = np.atleast_1d(mappable.norm.levels).astype(np.float)
         if normfix:

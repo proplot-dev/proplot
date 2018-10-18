@@ -613,7 +613,8 @@ def eFormatter():
     """
     return FracFormatter(np.exp(1), 'e')
 
-# Declare dictionary
+# Declare dictionaries
+# Includes some custom classes, so has to go at end
 locators = {
     'none':        mticker.NullLocator,
     'null':        mticker.NullLocator,
@@ -656,4 +657,3 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'deglat':    LatFormatter,
     'deglon':    LonFormatter,
     }
-
