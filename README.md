@@ -70,9 +70,13 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
    * For projection subplots, specify `projection='<name>'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.Projection` classes (the relevant cartopy class will be selected based on the `'<name>'` string).
    * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if axes numbers were not declared with `array`, the subplots are automatically numbered from 1 to n (row major).
    * `Basemap` instances are added as the attribute `m` their corresponding axes; create plots with (e.g.) `ax.m.contourf`. These instances are also overwritten to fix issues with `seams` on the edge of the map -- data will be circularly rolled and interpolated to map edges, so that seams are eliminated.
-### Axis scaling
+### New x/y axis scales
    * Added scale for **sine-weighted** x or y-axes. Invoke with `xscale='sine'` and `yscale='sine'`.
    * Added arbitrary scale factory that can create scales with custom cutoffs.
+### Tick formatters/locators
+   * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
+   * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols
+   * Pass `locator=[string]` to use any of the `matplotlib.ticker` locators, e.g. `locator='lon'`, `locator='month'`, `locator='linear'`.
 ### Revised underlying issues with contour and pcolor commands
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
@@ -84,8 +88,5 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
    * Added many new colors, including XKCD colors and Open Color web-design color palette. Added different color "cycles" (i.e. the automatic color order when drawing multiple lines), which can be set with `plot.rc(cycle='name')` or by passing `cycle='name'` to any command that plots lines/patches (`plot`, `bar`, etc.).
    * Use functions `cmapshow`, `colorshow`, and `cycleshow` to visualize available colormaps, named colors, and color palettes. Functions will automatically save PDFs in the package directory.
    * List of system fontnames available as the `fonts` variable under the imported module.
-### Misc tools
+### Miscellaneous
    * New `plot.arange` utility -- like `np.arange`, but **endpoint-inclusive**.
-   * Default `plot.Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time. Also have `LatFormatter` or `LonFormatter` for coordinate axes.
-   * New `Normalize` class allows colormap data limits to have `cmin != cmax`. For example, you can create contours with levels `arange(-20,50,10)` and keep the midpoint of the colormap at `0`, with either ends fully saturated.
-
