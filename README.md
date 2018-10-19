@@ -37,8 +37,11 @@ pip install git+https://github.com/lukelbd/pubplot.git#egg=pubplot
    * Integrated journal standards: for example, `width='ams1'` selects the smallest American Meteorological Society standard figure width.
 ### Inner and outer "panels"
 Use `[bottom|right]panel=True` to allot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to allot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to allot space for panels that can span adjacent columns (rows) -- for example, if your subplot has 3 columns, passing `bottompanels=[1,2,2]` draws one panel for the first column and a second panel spanning the next two.
-   * The above adds the `fig.[bottom|right]panel` attributes to figure object `fig`. These attributes are actually `SubplotSpec` instances. If your panel has more than one space, use `fig.[bottom|right]panel[n]` to access the nth space.
-   * Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the panel width and spacing to be *suitable for colorbars/legends*, e.g. `rightcolorbar=True`.
+
+The above adds the `fig.[bottom|right]panel` attributes to figure object `fig`. These attributes are actually `SubplotSpec` instances. If your panel has more than one space, use `fig.[bottom|right]panel[n]` to access the nth space.
+
+Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the panel width and spacing to be *suitable for colorbars/legends*, e.g. `rightcolorbar=True`.
+
    * Use `fig.[bottom|right]panel.[legend|colorbar]` to fill the `SubplotSpec` with a legend or colorbar. Note: You must supply the legend command with a list of handles/supply the colorbar command with a mappable instance (e.g. `m = ax.contourf(...)`, `fig.bottompanel.colorbar(m, ...)`).
    * Use `fig.[bottom|right]panel` with any other plotting method (`plot`, `contourf`, etc.) to fill the `SubplotSpec` with an axes, then draw stuff on those axes.
 ### The `format` command
