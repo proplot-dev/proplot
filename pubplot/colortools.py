@@ -225,9 +225,7 @@ def Colormap(*args, levels=None, light=True, extend='both', **kwargs):
             cmap = f'C{cmap}' # use current color cycle
         elif type(cmap) is dict:
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            # cmap = hcl_cmap(**cmap)
-            # cmap = space_cmap(**cmap)
-            cmap = hsluv_cmap(**cmap)
+            cmap = colorspace_cmap(**cmap)
         # (len(cmap)==2 and type(cmap[0]) is str and type(cmap[1]) is dict):
         elif type(cmap) is str:
             # Map name or color for generating monochrome gradiation
@@ -361,7 +359,7 @@ def smooth_cmap(colors, n=256, name='custom', input='rgb'):
     mcm.cmap_d[name] = cmap # 'register' the colormap
     return cmap
 
-def space_cmap(n=256, h=[0.05,1], s=1.0, c=None, l=[0.2,1], input='hsluv', name=None, reverse=False):
+def colorspace_cmap(n=256, h=[0.05,1], s=1.0, l=[0.2,1], c=None, input='hsluv', name=None, reverse=False):
     """
     Linearly vary between two or more of the parameters in some colorspace; can
     choose from HSL (where L is not actually perceptually uniform), HSLuv (where
@@ -379,11 +377,12 @@ def space_cmap(n=256, h=[0.05,1], s=1.0, c=None, l=[0.2,1], input='hsluv', name=
     scales = (359, 99, 99)
     if input in ['hsl', 'hsv']:
         space_to_rgb = colormath.hsl_to_rgb
+        scales = (1, 1, 1)
     elif input in ['hsluv']:
         space_to_rgb = colormath.hsluv_to_rgb
     elif input in ['hcl', 'hcluv']:
         space_to_rgb = colormath.hcluv_to_rgb
-        scales = (1, 1, 1)
+        # scales = (1, 1, 1)
     # Get length-2 tuples specifying colorspace gradations
     # if s is not None and c is not None:
     #     raise ValueError('Can only specify either "s" or "c".')
@@ -407,35 +406,6 @@ def space_cmap(n=256, h=[0.05,1], s=1.0, c=None, l=[0.2,1], input='hsluv', name=
         colors = colors[::-1]
     return smooth_cmap(colors, name=name)
 
-def hsluv_cmap(n=256, h=[0.05,1], s=1.0, l=[0.2,1], name='hsluv', reverse=False):
-    """
-    Linearly vary between two or more of the parameters in HSLuv space.
-    Preferable to HCL in many respects, becuase no truncation of colors.
-    Q: Why not do this for HCL space?
-    A: HCL space space has "dead zones" where you have impossible colors, so you
-    can't just pick arbitrary numbers and draw a line (or will have to raise
-    errors when we do this). HSLuv is just *scaled* HCL where chroma is
-    represented as a percentage of the maximum possible chroma for that
-    hue/luminance combo.
-    """
-    if not utils.isiterable(h):
-        h = [h, h]
-    if not utils.isiterable(s):
-        s = [s, s]
-    if not utils.isiterable(l):
-        l = [l, l]
-    # hues = 360*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    # sats = 100*np.linspace(l[0], l[1], n+1)
-    # lums = 100*np.linspace(l[0], l[1], n+1)
-    hues = 359*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    sats = 99*(np.linspace(s[0], s[1], n+1)) # dunnot why max has to be 99
-    lums = 99*(np.linspace(l[0], l[1], n+1))
-    colors = [colormath.hsluv_to_rgb(h,s,l) for h,s,l in zip(hues,sats,lums)]
-    colors = clip(colors)
-    if reverse:
-        colors = colors[::-1]
-    return smooth_cmap(colors, name=name)
-
 def light_cmap(color, n=256, reverse=False, input='rgb', white='#eeeeee'):
     """
     Make a sequential colormap that blends from color to light.
@@ -444,7 +414,7 @@ def light_cmap(color, n=256, reverse=False, input='rgb', white='#eeeeee'):
     _, _, w = colormath.rgb_to_hsluv(*color_to_rgb(white))
     h, s, l = colormath.rgb_to_hsluv(*color_to_rgb(color, input))
     h, s, l, w = h/359.0, s/99.0, l/99.0, w/99.0
-    return hsluv_cmap(n, h, s, ([w,l] if reverse else [l,w]))
+    return colorspace_cmap(n, h, s, ([w,l] if reverse else [l,w]))
 
 def dark_cmap(color, n=256, reverse=False, input='rgb', black='#111111'):
     """
@@ -453,7 +423,7 @@ def dark_cmap(color, n=256, reverse=False, input='rgb', black='#111111'):
     _, _, b = colormath.rgb_to_hsluv(*color_to_rgb(black))
     h, s, l = colormath.rgb_to_hsluv(*color_to_rgb(color, input))
     h, s, l, b = h/359.0, s/99.0, l/99.0, b/99.0
-    return space_cmap(n, h, s, ([l,b] if reverse else [b,l]))
+    return colorspace_cmap(n, h, s, ([l,b] if reverse else [b,l]))
 
 def clip(colors):
     """
@@ -461,6 +431,7 @@ def clip(colors):
     """
     under = {}
     over = {}
+    colors = [list(rgb) for rgb in colors] # so we can overwrite
     for rgb in colors:
         for i,(c,n) in enumerate(zip(rgb,'rgb')):
             if c<0:

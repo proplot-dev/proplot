@@ -109,6 +109,14 @@ def lchuv_to_rgb(l, c, h):
 def rgb_to_lchuv(r, g, b):
     return CIEluv_to_lchuv(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
 
+# Alternative ordering of hcl colors
+def hcluv_to_rgb(h, c, l):
+    return CIExyz_to_rgb(CIEluv_to_CIExyz(lchuv_to_CIEluv([l, c, h])))
+
+def rgb_to_hcluv(r, g, b):
+    l, c, h = CIEluv_to_lchuv(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
+    return h, c, l
+
 #------------------------------------------------------------------------------#
 # RGB to HEX conversions
 #------------------------------------------------------------------------------#
