@@ -133,8 +133,8 @@ def plotting_context(context=None, font_scale=1, rc=None):
 # API, not against it. Just create a function that sets rcParam defaults with
 # optional override. Then, better to make the format function add actual information
 # to the plot and do nothing to change its style/color/etc.
-# def globals(**kwargs): # fontname is matplotlib default
-def globals(*args, verbose=False, **kwargs):
+# def rc(**kwargs): # fontname is matplotlib default
+def rc(*args, verbose=False, **kwargs):
     """
     This has multiple uses, all rolled up into one function.
     1. *Initialize* everything with default settings. Creates special rcExtras
@@ -227,7 +227,7 @@ def globals(*args, verbose=False, **kwargs):
         return dictionary
     # Now the section that applies settings
     if args:
-        raise ValueError(f"Improper use of globals(). Only supply extra *args without any **kwargs.")
+        raise ValueError(f'Improper use of rc(). Only supply extra *args without any **kwargs.')
     #--------------------------------------------------------------------------#
     # *Initialize* default settings; that is, both rcParams and rcExtras
     #--------------------------------------------------------------------------#
@@ -273,7 +273,7 @@ def globals(*args, verbose=False, **kwargs):
     # *Apply* global settings; if this function was not called without arguments, then
     # only settings specifically requested to be changed, will be changed
     #--------------------------------------------------------------------------#
-    current = globals('globals') # the dictionary
+    current = rc('globals') # the dictionary
     # Make a cycler for drawing a bunch of lines
     # dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
     # cycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
@@ -349,5 +349,5 @@ def globals(*args, verbose=False, **kwargs):
     return None
 
 # Now call the function to configure params with default values
-globals(verbose=True)
+rc(verbose=True)
 

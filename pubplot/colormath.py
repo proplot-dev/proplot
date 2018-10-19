@@ -7,8 +7,8 @@ Already provided by matplotlib:
   rgb_to_hsv
   hsv_to_rgb
 New utilities:
-  hcl_to_rgb
-  rgb_to_hcl
+  lchuv_to_rgb
+  rgb_to_lchuv
   hsluv_to_rgb
   rgb_to_hsluv
 For info on colorspaces see:
@@ -21,9 +21,10 @@ Adapted from:
     https://github.com/hsluv/hsluv-python/blob/master/hsluv.py
 """
 # Imports (below functions are just meant to be used by user)
+# See: https://stackoverflow.com/a/2353265/4970632
+# The HLS is actually HCL
 import math
 from colorsys import hls_to_rgb, rgb_to_hls, hsv_to_rgb, rgb_to_hsv
-hsl_to_rgb, rgb_to_hsl = hls_to_rgb, rgb_to_hls # different naming conventions
 # Coefficients or something
 m = [
     [3.2406, -1.5372, -0.4986],
@@ -47,55 +48,66 @@ lab_k = 903.3
 #------------------------------------------------------------------------------#
 # First my custom functions
 #------------------------------------------------------------------------------#
-# def hcl_to_rgb(c, gamma=3, normalize=False): # gamma is default
-#     """
-#     Convert color to HCL space.
-#     Copied from wiki page, but the below conversions more accurate.
-#     """
-#     rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
-#     alpha = (min(rgb)/max(rgb))/100 # intermediary
-#     q = np.exp(alpha*gamma) # intermediary
-#     r, g, b = rgb # expand out, easier
-#     h = np.arctan2(g-b, r-g)
-#     h = 2*np.pi+h if h<0 else h # make positive
-#     h = h*180/np.pi if not normalize else h/(2*np.pi) # normalize to 0-1 possibly
-#     c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
-#     l = (q*max(rgb) + (1-q)*min(rgb))/2
-#     return (h,c,l)
+def rgb_to_hcl(c, gamma=3, normalize=False): # gamma is default
+    """
+    Convert color to HCL space.
+    Copied from wiki page, but the below conversions more accurate.
+    """
+    rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
+    alpha = (min(rgb)/max(rgb))/100 # intermediary
+    q = np.exp(alpha*gamma) # intermediary
+    r, g, b = rgb # expand out, easier
+    h = np.arctan2(g-b, r-g)
+    h = 2*np.pi+h if h<0 else h # make positive
+    h = h*180/np.pi if not normalize else h/(2*np.pi) # normalize to 0-1 possibly
+    c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
+    l = (q*max(rgb) + (1-q)*min(rgb))/2
+    return (h,c,l)
+
+#------------------------------------------------------------------------------#
+# Modifications
+#------------------------------------------------------------------------------#
+def hsl_to_rgb(h, s, l):
+    r, g, b = hls_to_rgb(h, l, s)
+    return r, g, b
+
+def rgb_to_hsl(r, g, b):
+    h, l, s = rgb_to_hls(r, g, b)
+    return h, s, l
 
 #------------------------------------------------------------------------------#
 # Primary conversion tools
 #------------------------------------------------------------------------------#
 # Public API
 def hsluv_to_rgb(h, s, l):
-    return hcl_to_rgb(*hsluv_to_hcl([h, s, l]))
+    return lchuv_to_rgb(*hsluv_to_lchuv([h, s, l]))
 
 def hsluv_to_hex(h, s, l):
     return rgb_to_hex(hsluv_to_rgb(h, s, l))
 
 def rgb_to_hsluv(r, g, b):
-    return hcl_to_hsluv(rgb_to_hcl(r, g, b))
+    return lchuv_to_hsluv(rgb_to_lchuv(r, g, b))
 
 def hex_to_hsluv(hex):
     return rgb_to_hsluv(*hex_to_rgb(hex))
 
 def hpluv_to_rgb(h, s, l):
-    return hcl_to_rgb(*hpluv_to_hcl([h, s, l]))
+    return lchuv_to_rgb(*hpluv_to_lchuv([h, s, l]))
 
 def hpluv_to_hex(h, s, l):
     return rgb_to_hex(hpluv_to_rgb(h, s, l))
 
 def rgb_to_hpluv(r, g, b):
-    return hcl_to_hpluv(rgb_to_hcl(r, g, b))
+    return lchuv_to_hpluv(rgb_to_lchuv(r, g, b))
 
 def hex_to_hpluv(hex):
     return rgb_to_hpluv(*hex_to_rgb(hex))
 
-def hcl_to_rgb(l, c, h):
-    return CIExyz_to_rgb(CIEluv_to_CIExyz(hcl_to_CIEluv([l, c, h])))
+def lchuv_to_rgb(l, c, h):
+    return CIExyz_to_rgb(CIEluv_to_CIExyz(lchuv_to_CIEluv([l, c, h])))
 
-def rgb_to_hcl(r, g, b):
-    return CIEluv_to_hcl(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
+def rgb_to_lchuv(r, g, b):
+    return CIEluv_to_lchuv(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
 
 #------------------------------------------------------------------------------#
 # RGB to HEX conversions
@@ -176,44 +188,48 @@ def max_chroma_pastel(L):
     H = math.degrees(hrad_extremum(L))
     return max_chroma(L, H)
 
-def hsluv_to_hcl(triple):
+def hsluv_to_lchuv(triple):
     H, S, L = triple
     if L > 99.9999999:
         return [100, 0.0, H]
     if L < 0.00000001:
         return [0.0, 0.0, H]
     mx = max_chroma(L, H)
-    C = mx / 100.0 * S
+    C = mx * S / 100.0
+    # if C > 100.0:
+    #     raise ValueError(f'HSL color {triple} is outside LCH colorspace.')
     return [L, C, H]
 
-def hcl_to_hsluv(triple):
+def lchuv_to_hsluv(triple):
     L, C, H = triple
     if L > 99.9999999:
         return [H, 0.0, 100.0]
     if L < 0.00000001:
         return [H, 0.0, 0.0]
     mx = max_chroma(L, H)
-    S = C / mx * 100.0
+    S = 100.0 * C / mx
     return [H, S, L]
 
-def hpluv_to_hcl(triple):
+def hpluv_to_lchuv(triple):
     H, S, L = triple
     if L > 99.9999999:
         return [100, 0.0, H]
     if L < 0.00000001:
         return [0.0, 0.0, H]
     mx = max_chroma_pastel(L)
-    C = mx / 100.0 * S
+    C = mx * S / 100.0
+    # if C > 100.0:
+    #     raise ValueError(f'HPL color {triple} is outside LCH colorspace.')
     return [L, C, H]
 
-def hcl_to_hpluv(triple):
+def lchuv_to_hpluv(triple):
     L, C, H = triple
     if L > 99.9999999:
         return [H, 0.0, 100.0]
     if L < 0.00000001:
         return [H, 0.0, 0.0]
     mx = max_chroma_pastel(L)
-    S = C / mx * 100.0
+    S = 100.0 * C / mx
     return [H, S, L]
 
 #------------------------------------------------------------------------------#
@@ -244,7 +260,7 @@ def rgb_to_CIExyz(triple):
     rgbl = list(map(to_linear, triple))
     return list(map(lambda row: dot_product(row, rgbl), m_inv))
 
-def CIEluv_to_hcl(triple):
+def CIEluv_to_lchuv(triple):
     L, U, V = triple
     C = (math.pow(math.pow(U, 2) + math.pow(V, 2), (1.0 / 2.0)))
     hrad = (math.atan2(V, U))
@@ -253,7 +269,7 @@ def CIEluv_to_hcl(triple):
         H = 360.0 + H
     return [L, C, H]
 
-def hcl_to_CIEluv(triple):
+def lchuv_to_CIEluv(triple):
     L, C, H = triple
     Hrad = math.radians(H)
     U = (math.cos(Hrad) * C)

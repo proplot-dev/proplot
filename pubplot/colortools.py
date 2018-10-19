@@ -22,7 +22,15 @@
 #   task itself.
 # Pcolor stuff: see https://stackoverflow.com/q/48613920/4970632
 #------------------------------------------------------------------------------#
-# Here are some useful tools for creating colormaps and cycles
+# Here's some useful info on colorspaces
+# https://en.wikipedia.org/wiki/HSL_and_HSV
+# http://www.hclwizard.org/color-scheme/
+# http://www.hsluv.org/comparison/ compares lch, hsluv (scaled lch), and hpluv (truncated lch)
+# Info on the CIE conventions
+# https://en.wikipedia.org/wiki/CIE_1931_color_space
+# https://en.wikipedia.org/wiki/CIELUV
+# https://en.wikipedia.org/wiki/CIELAB_color_space
+# And some useful tools for creating colormaps and cycles
 # https://nrlmry.navy.mil/TC.html
 # http://help.mail.colostate.edu/tt_o365_imap.aspx
 # http://schumacher.atmos.colostate.edu/resources/archivewx.php
@@ -179,8 +187,8 @@ def register_colors(nmax=256):
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
         for i,(name,color) in enumerate(data): # is list of name, color tuples
-            if i>nmax:
-                break
+            # if i>nmax:
+            #     break
             mcolors._colors_full_map[name] = color
         custom_colors[category] = data
 
@@ -196,9 +204,15 @@ print('Registered colors and stuff.')
 #------------------------------------------------------------------------------#
 # Generalized colormap/cycle constructors
 #------------------------------------------------------------------------------#
-def Colormap(*args, levels=None, light=True, extremes=True, **kwargs):
+def Colormap(*args, levels=None, light=True, extend='both', **kwargs):
     """
     Convenience function for generating colormaps in a variety of ways.
+    The 'extend' property will be used to resample LinearSegmentedColormap
+    if we don't intend to use both out-of-bounds colors; otherwise we lose
+    the strongest colors at either end of the colormap.
+    You can still use extend='neither' in Colormap() call with extend='both'
+    in contour or colorbar call, just means that colors at ends of the main
+    region will be same as out-of-bounds colors.
     """
     if len(args)==0:
         raise ValueError('Function requires at least 1 positional arg.')
@@ -209,25 +223,52 @@ def Colormap(*args, levels=None, light=True, extremes=True, **kwargs):
             continue
         if not utils.isiterable(cmap):
             cmap = f'C{cmap}' # use current color cycle
+        elif type(cmap) is dict:
+            # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
+            # cmap = hcl_cmap(**cmap)
+            # cmap = space_cmap(**cmap)
+            cmap = hsluv_cmap(**cmap)
+        # (len(cmap)==2 and type(cmap[0]) is str and type(cmap[1]) is dict):
         elif type(cmap) is str:
             # Map name or color for generating monochrome gradiation
+            # if type(cmap) is not str:
+            #     cmap, cmap_kw = cmap[0], {**cmap_kw, **cmap[1]}
             if cmap in mcm.cmap_d:
                 cmap = mcm.cmap_d[cmap] # get the instance
             else:
+                # Parse extra options
+                cmap_kw = kwargs.copy() # may be different for each cmap in *args
+                regex = '_([rlwdb]+)$'
+                match = re.search(regex, cmap) # declare options with _[flags]
+                cmap = re.sub(regex, '', cmap) # remove options
+                options = '' if not match else match.group(1)
+                if 'r' in options:
+                    cmap_kw.update({'reverse':True})
+                if 'w' in options or 'l' in options:
+                    light = True
+                    if 'w' in options:
+                        cmap_kw.update({'white':'white'}) # use *actual* white
+                if 'd' in options or 'b' in options:
+                    light = False
+                    if 'b' in options:
+                        cmap_kw.update({'black':'black'}) # use *actual* black
+                # Build colormap
                 cmap = color_to_rgb(cmap) # to ensure is hex code/registered color
                 if light:
-                    cmap = light_cmap(cmap, **kwargs)
+                    cmap = light_cmap(cmap, **cmap_kw)
                 else:
-                    cmap = dark_cmap(cmap, **kwargs)
-        elif type(cmap) is dict:
-            # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            cmap = hsluv_cmap(**cmap)
+                    cmap = dark_cmap(cmap, **cmap_kw)
         else:
             # List of colors
             cmap = mcolors.ListedColormap(cmap)
         # Optionally make extremes same color as map
-        if not extremes and isinstance(cmap, mcolors.LinearSegmentedColormap) and levels is not None:
-            cmap = mcm.get_cmap(cmap.name, lut=len(levels)-1)
+        offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
+        if extend not in offset:
+            raise ValueError(f'Unknown extend option {extend}.')
+        if extend!='both' and isinstance(cmap, mcolors.LinearSegmentedColormap):
+            if levels is None:
+                raise ValueError('You must pass levels to Colormap() function when extend!="both", so lookup table can be resampled.')
+            cmap = mcm.get_cmap(cmap.name, lut=len(levels)-offset[extend])
             # cmap = mcolors.LinearSegmentedColormap.from_list(cmap(np.linspace(0,1,len(levels-1)))) # another idea
         cmaps += [cmap]
     return merge_cmaps(cmaps)
@@ -259,104 +300,6 @@ def Cycle(*args, vmin=0, vmax=1):
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     return colors
-
-# TODO: Figure out if this is still useful
-# ***Inverse of cycle_factory.***
-# Generate colormap instance from list of levels and colors.
-# * Generally don't want these kinds of colorbars to 'extend', but you can.
-# * Object will assume one color between individual levels; for example,
-#   if levels are [0,0.5,0.6,1], the first and last color-zones will be way thicker.
-# * If you want unevenly space intervals but evenly spaced boundaries, use custom
-#   Norm instead of default.
-# * This is *one way* to create a colormap from list of colors; another way is
-#   to just pass a list of colors to any _cformat method. That method will
-#   also generate levels that are always equally spaced.
-# if levels is None:
-#     levels = np.linspace(0,1,len(colors)+1)
-# if len(levels)!=len(colors)+1:
-#     raise ValueError(f"Have {len(levels):d} levels and {len(colors):d} colors. Need ncolors+1==nlevels.")
-# if extend=='min':
-#     colors = ['w', *colors] # add dummy color
-# elif extend=='max':
-#     colors = [*colors, 'w'] # add dummy color
-# elif extend=='both':
-#     colors = ['w', *colors, 'w']
-# elif extend!='neither':
-#     raise ValueError("Unknown extend option \"{extend}\".")
-# cmap, norm = mcolors.from_levels_and_colors(levels, colors, extend=extend) # creates ListedColormap!!!
-# return cmap
-
-# def Mappable(cmap, samples=None, levels=None, norm=None):
-#     """
-#     Generalized function for retreiving colormaps.
-#     Just wrapper around get_cmap, makes it accessible without needing pyplot import.
-#     Returns same colormap as is automatically generated when calling contourf.
-#     """
-#     # Previous incorrect attempt
-#     # Lookup table refers to integer values indexing the integer list of colors.
-#     # lut = levels
-#     # if utils.isiterable(levels):
-#     #     lut = min(levels) + [l/(max(levels)-min(levels)) for l in levels]
-#     # cmap = mcm.get_cmap(name=name)
-#     # Hacky way that works
-#     cmap = cmap_factory(cmap)
-#     if norm is None:
-#         norm = mcolors.Normalize(0,1)
-#     elif not hasattr(norm,'__call__'):
-#         raise ValueError('Norm has to be callable.')
-#     elif not isinstance(norm,mcolors.Normalize):
-#         raise ValueError('Norm has to be an mcolors.Normalize class or subclass.')
-#     # Specify the *centers*, then interpolate to *edges* according to normalizer
-#     if samples is not None:
-#         samples = np.array(samples)
-#         if not isinstance(cmap, mcolors.BoundaryNorm):
-#             samples = norm(samples) # translate to normalized-space (e.g. LogNorm)
-#         if samples[1]<samples[0]:
-#             samples = samples[::-1]
-#             reverse = True
-#         idelta = samples[1]-samples[0]
-#         fdelta = samples[-1]-samples[-2]
-#         levels = [samples[0]-idelta/2, *((samples[1:]+samples[:-1])/2), samples[-1]+fdelta/2]
-#         if not isinstance(cmap, mcolors.BoundaryNorm):
-#             levels = norm.inverse(levels) # translate back from normalized-space
-#     # Optionally reverse the colormap
-#     if levels[1]<levels[0]: # specify the *levels*
-#         levels = levels[::-1]
-#         reverse = True
-#     if reverse:
-#         cmap = cmap.reversed() # reverse the cmap
-#     m = plt.contourf([0,0], [0,0], np.nan*np.ones((2,2)), cmap=cmap, levels=levels, norm=norm)
-#     return m
-
-#------------------------------------------------------------------------------#
-# Helper function
-#------------------------------------------------------------------------------#
-# def shade(color, value=1, saturation=1):
-#     """
-#     Modify a color. My old function; makes more sense to just convert
-#     to more sensible colorspace
-#     """
-#     if isinstance(color,str): # will recognize names and hex strings
-#         color = mcolors.to_rgb(color)
-#     if any(v>1 for v in color):
-#         color = (np.array(color)/255).tolist()
-#     color = colormath.rgb_to_hsv(color)
-#     color[2] = max(min(color[2]*value,1),0) # lighten/darken?
-#     color[1] = max(min(color[1]*saturation,1),0) # saturate/pastelify?
-#     color = colormath.hsv_to_rgb(color)
-#     return mcolors.to_hex(color) # hex codes are nice, mmkay
-
-def hsl_modify(color, h=None, l=None, s=None):  # noqa
-    """
-    Manipulate individual channels for given color in hsl space.
-    """
-    color = mcolors.to_rgb(color)
-    channels = [*colormath.rgb_to_hsl(*color)]
-    for i,ch in enumerate([h, l, s]):
-        if ch is not None:
-            channels[i] = ch
-    color = colormath.hsl_to_rgb(*channels)
-    return color
 
 #------------------------------------------------------------------------------#
 # Cycle helper functions
@@ -395,16 +338,6 @@ def rename_colors(cycle='colorblind'):
 #------------------------------------------------------------------------------#
 # Colormap constructors
 #------------------------------------------------------------------------------#
-def smooth_cmap(colors, n=256, name='custom', input='rgb'):
-    """
-    Create colormap that smoothly blends between list of colors (in RGB
-    space, so should't be too drastic).
-    """
-    colors = [color_to_rgb(color, input) for color in colors]
-    cmap   = mcolors.LinearSegmentedColormap.from_list(name, colors, n)
-    mcm.cmap_d[name] = cmap # 'register' the colormap
-    return cmap
-
 def merge_cmaps(cmaps, n=256, name='merged'):
     """
     Merge arbitrary colormaps.
@@ -418,24 +351,63 @@ def merge_cmaps(cmaps, n=256, name='merged'):
     mcm.cmap_d[name] = cmap # 'register' the cmap
     return cmap
 
-def light_cmap(color, n=256, reverse=False, input='rgb'):
+def smooth_cmap(colors, n=256, name='custom', input='rgb'):
     """
-    Make a sequential colormap that blends from color to light.
+    Create colormap that smoothly blends between list of colors (in RGB
+    space, so should't be too drastic).
     """
-    color = color_to_rgb(color, input)
-    light = hsl_modify(color, l=.95)  # noqa
-    colors = [light, color] if reverse else [color, color]
-    return smooth_cmap(colors, n)
+    colors = [color_to_rgb(color, input) for color in colors]
+    cmap   = mcolors.LinearSegmentedColormap.from_list(name, colors, n)
+    mcm.cmap_d[name] = cmap # 'register' the colormap
+    return cmap
 
-def dark_cmap(color, n=256, reverse=False, input='rgb', black='#111111'):
+def space_cmap(n=256, h=[0.05,1], s=1.0, c=None, l=[0.2,1], input='hsluv', name=None, reverse=False):
     """
-    Make a sequential palette that blends from dark to color.
+    Linearly vary between two or more of the parameters in some colorspace; can
+    choose from HSL (where L is not actually perceptually uniform), HSLuv (where
+    L is perceptually uniform but S not always), and LCH (where it is uniform).
+    See: http://www.hsluv.org/comparison/
+    Preferable to HCL in many respects, becuase no truncation of colors.
+    Q: Why avoid doing this for HCL space?
+    A: HCL space space has "dead zones" where you have impossible colors, so you
+    can't just pick arbitrary numbers and draw a line (or will have to raise
+    errors when we do this). HSLuv is just *scaled* HCL where chroma is
+    represented as a percentage of the maximum possible chroma for that
+    hue/luminance combo.
     """
-    color = color_to_rgb(color, input)
-    colors = [color, black] if reverse else [black, color]
-    return smooth_cmap(colors, n)
+    # Figure out transform function
+    scales = (359, 99, 99)
+    if input in ['hsl', 'hsv']:
+        space_to_rgb = colormath.hsl_to_rgb
+    elif input in ['hsluv']:
+        space_to_rgb = colormath.hsluv_to_rgb
+    elif input in ['hcl', 'hcluv']:
+        space_to_rgb = colormath.hcluv_to_rgb
+        scales = (1, 1, 1)
+    # Get length-2 tuples specifying colorspace gradations
+    # if s is not None and c is not None:
+    #     raise ValueError('Can only specify either "s" or "c".')
+    name = name or input # default to just naming colormap after input
+    if c is not None: # by default, overwrite
+        s = c
+    if not utils.isiterable(h):
+        h = [h, h]
+    if not utils.isiterable(s):
+        s = [s, s]
+    if not utils.isiterable(l):
+        l = [l, l]
+    # Next calculate stuff
+    # NOTE: Before these were all minus 1, dunno why
+    hues = scales[0]*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
+    sats = scales[1]*(np.linspace(s[0], s[1], n+1)) # dunnot why max has to be 99
+    lums = scales[2]*(np.linspace(l[0], l[1], n+1))
+    colors = [space_to_rgb(h,s,l) for h,s,l in zip(hues,sats,lums)]
+    colors = clip(colors)
+    if reverse:
+        colors = colors[::-1]
+    return smooth_cmap(colors, name=name)
 
-def hsluv_cmap(n=256, h=(0.05,1), l=(0.2,1), s=0.9, name='hsluv'):
+def hsluv_cmap(n=256, h=[0.05,1], s=1.0, l=[0.2,1], name='hsluv', reverse=False):
     """
     Linearly vary between two or more of the parameters in HSLuv space.
     Preferable to HCL in many respects, becuase no truncation of colors.
@@ -456,36 +428,52 @@ def hsluv_cmap(n=256, h=(0.05,1), l=(0.2,1), s=0.9, name='hsluv'):
     # sats = 100*np.linspace(l[0], l[1], n+1)
     # lums = 100*np.linspace(l[0], l[1], n+1)
     hues = 359*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    sats = 99*np.linspace(l[0], l[1], n+1) # dunnot why max has to be 99
-    lums = 99*np.linspace(l[0], l[1], n+1)
+    sats = 99*(np.linspace(s[0], s[1], n+1)) # dunnot why max has to be 99
+    lums = 99*(np.linspace(l[0], l[1], n+1))
     colors = [colormath.hsluv_to_rgb(h,s,l) for h,s,l in zip(hues,sats,lums)]
+    colors = clip(colors)
+    if reverse:
+        colors = colors[::-1]
     return smooth_cmap(colors, name=name)
 
-def hcl_cmap(n=256, h=(0.05,1), l=(0.2,1), c=0.9, name='hcl'):
+def light_cmap(color, n=256, reverse=False, input='rgb', white='#eeeeee'):
     """
-    Linearly vary between two or more of the parameters in HSLuv space.
-    Preferable to HCL in many respects, becuase no truncation of colors.
-    Q: Why not do this for HCL space?
-    A: HCL space space has "dead zones" where you have impossible colors, so you
-    can't just pick arbitrary numbers and draw a line (or will have to raise
-    errors when we do this). HSLuv is just *scaled* HCL where chroma is
-    represented as a percentage of the maximum possible chroma for that
-    hue/luminance combo.
+    Make a sequential colormap that blends from color to light.
+    Will do so linearly in luminance-space.
     """
-    if not utils.isiterable(h):
-        h = [h, h]
-    if not utils.isiterable(c):
-        c = [c, c]
-    if not utils.isiterable(l):
-        l = [l, l]
-    # hues = 360*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    # sats = 100*np.linspace(l[0], l[1], n+1)
-    # lums = 100*np.linspace(l[0], l[1], n+1)
-    hues = 359*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    lums = 99*np.linspace(l[0], l[1], n+1)
-    chromas = 99*np.linspace(l[0], l[1], n+1) # dunnot why max has to be 99
-    colors = [colormath.hsluv_to_rgb(h,c,l) for h,c,l in zip(hues,chromas,lums)]
-    return smooth_cmap(colors, name=name)
+    _, _, w = colormath.rgb_to_hsluv(*color_to_rgb(white))
+    h, s, l = colormath.rgb_to_hsluv(*color_to_rgb(color, input))
+    h, s, l, w = h/359.0, s/99.0, l/99.0, w/99.0
+    return hsluv_cmap(n, h, s, ([w,l] if reverse else [l,w]))
+
+def dark_cmap(color, n=256, reverse=False, input='rgb', black='#111111'):
+    """
+    Make a sequential palette that blends from dark to color.
+    """
+    _, _, b = colormath.rgb_to_hsluv(*color_to_rgb(black))
+    h, s, l = colormath.rgb_to_hsluv(*color_to_rgb(color, input))
+    h, s, l, b = h/359.0, s/99.0, l/99.0, b/99.0
+    return space_cmap(n, h, s, ([l,b] if reverse else [b,l]))
+
+def clip(colors):
+    """
+    Clip channels that get oversaturated.
+    """
+    under = {}
+    over = {}
+    for rgb in colors:
+        for i,(c,n) in enumerate(zip(rgb,'rgb')):
+            if c<0:
+                rgb[i] = 0
+                if n not in under:
+                    under[n] = True
+                    print(f'Warning: Clipping {n} channel (<0).')
+            if c>1:
+                rgb[i] = 1
+                if n not in over:
+                    over[n] = True
+                    print(f'Warning: Clipping {n} channel (>1).')
+    return colors
 
 #------------------------------------------------------------------------------
 # Normalization classes for mapping data to colors (i.e. colormaps)
@@ -959,3 +947,59 @@ normalizers = {
     'power':      mcolors.PowerNorm,
     'symlog':     mcolors.SymLogNorm,
     }
+
+# TODO: Figure out if this is still useful
+# ***Inverse of cycle_factory.***
+# Generate colormap instance from list of levels and colors.
+# * Generally don't want these kinds of colorbars to 'extend', but you can.
+# * Object will assume one color between individual levels; for example,
+#   if levels are [0,0.5,0.6,1], the first and last color-zones will be way thicker.
+# * If you want unevenly space intervals but evenly spaced boundaries, use custom
+#   Norm instead of default.
+# * This is *one way* to create a colormap from list of colors; another way is
+#   to just pass a list of colors to any _cformat method. That method will
+#   also generate levels that are always equally spaced.
+# if levels is None:
+#     levels = np.linspace(0,1,len(colors)+1)
+# if len(levels)!=len(colors)+1:
+#     raise ValueError(f"Have {len(levels):d} levels and {len(colors):d} colors. Need ncolors+1==nlevels.")
+# if extend=='min':
+#     colors = ['w', *colors] # add dummy color
+# elif extend=='max':
+#     colors = [*colors, 'w'] # add dummy color
+# elif extend=='both':
+#     colors = ['w', *colors, 'w']
+# elif extend!='neither':
+#     raise ValueError("Unknown extend option \"{extend}\".")
+# cmap, norm = mcolors.from_levels_and_colors(levels, colors, extend=extend) # creates ListedColormap!!!
+# return cmap
+# Generate mappable using contourf
+# def Mappable(cmap, samples=None, levels=None, norm=None):
+# cmap = cmap_factory(cmap)
+# if norm is None:
+#     norm = mcolors.Normalize(0,1)
+# elif not hasattr(norm,'__call__'):
+#     raise ValueError('Norm has to be callable.')
+# elif not isinstance(norm,mcolors.Normalize):
+#     raise ValueError('Norm has to be an mcolors.Normalize class or subclass.')
+# # Specify the *centers*, then interpolate to *edges* according to normalizer
+# if samples is not None:
+#     samples = np.array(samples)
+#     if not isinstance(cmap, mcolors.BoundaryNorm):
+#         samples = norm(samples) # translate to normalized-space (e.g. LogNorm)
+#     if samples[1]<samples[0]:
+#         samples = samples[::-1]
+#         reverse = True
+#     idelta = samples[1]-samples[0]
+#     fdelta = samples[-1]-samples[-2]
+#     levels = [samples[0]-idelta/2, *((samples[1:]+samples[:-1])/2), samples[-1]+fdelta/2]
+#     if not isinstance(cmap, mcolors.BoundaryNorm):
+#         levels = norm.inverse(levels) # translate back from normalized-space
+# # Optionally reverse the colormap
+# if levels[1]<levels[0]: # specify the *levels*
+#     levels = levels[::-1]
+#     reverse = True
+# if reverse:
+#     cmap = cmap.reversed() # reverse the cmap
+# m = plt.contourf([0,0], [0,0], np.nan*np.ones((2,2)), cmap=cmap, levels=levels, norm=norm)
+# return m
