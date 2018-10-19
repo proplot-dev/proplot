@@ -17,7 +17,7 @@ Quick summary of features:
 The **two most important** features are the `subplots` command and the `format` method. Use `subplots` to generate a scaffolding of axes and panels with rigid spacing, then use the new `format` method assigned to each axes instance to control the look of your axes in one line with a plethora of keyword arguments. Why do this?
 
   * To modify an axes property (e.g. an x-axis label) with the default API, you normally have to use a bunch of one-liner `pyplot` commands (or method calls on axes/axis objects). This can get repetitive and quite verbose, resulting in lots of copy-paste code.
-  * Now, you can pass all of these settings to `format`. Instead of having to remember the name of the function, whether it's attached to `pyplot` or an object instance, and the order/names of the arguments, you just have to remember one thing -- the name of the keyword argument. The method also abstracts away some irritating inconsistencies -- now, There's Only One (obvious) Way To Do It.
+  * Now, you can pass all of these settings to `format`. Instead of having to remember the name of the function, whether it's attached to `pyplot` or an object instance, and the order/names of the arguments, you just have to remember one thing -- the name of the keyword argument. The method also abstracts away some irritating inconsistencies and redundancies -- now, There's Only One (obvious) Way To Do It.
 
 ## Installation
 ```
