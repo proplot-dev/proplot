@@ -1748,9 +1748,14 @@ class Panel(object):
     Goal of this is to have generalized panel class suitable for both 'inner'
     and 'outer' panels.
     """
-    def __init__(self, figure, subspec, side='bottom', length=1, n=1):
+    def __init__(self, figure, subspec, side, n=1, length=1):
+    # def __init__(self, figure, subspec, n=1, length=1, side='bottom', projection=None):
         """
-        Force attributes to refer to attributes on panel.
+        Initialize abstract panel object.
+        Behavior depends on which attribute you access first:
+            * Try to access colorbar or legend, and this is a default
+              axes.Axes instance.
+            * Try to access anything else, and this is 
         """
         # Assignments
         npanel = n
@@ -1810,17 +1815,22 @@ class Panel(object):
           * A colorbar (optionally shrunken relative to subplotspec length)
           * A normal axes (for plotting and stuff)
         """
-        # Instantiate axes
+        # First, if trying to access attribute (not method) of the panel,
+        # do not do anything
         getter = super().__getattribute__
+        if attribute in getter('__dict__'):
+            return getter(attribute)
+        # Next, instantiate axes
         if not getter('axs')[getter('index')]: # use super-class method
             getter('instantiate')(attribute)
         # Now that axes are initiated, optionally return a couple
         # overridden functions and methods here here
-        if attribute in ('colorbar','legend') or attribute in getter('__dict__'):
+        if attribute in ('colorbar','legend'):
             return getter(attribute, *args)
         else:
             return getter('axs')[getter('index')].__getattribute__(attribute, *args)
 
+    # def instantiate(self):
     def instantiate(self, attribute):
         """
         Function for instantiating axes belonging to this panel.
@@ -1834,6 +1844,7 @@ class Panel(object):
         index      = getter('index')
         figure     = getter('figure')
         subspecs   = getter('subspecs')
+        # projection = getter('projection')
         projection = None if attribute in ('colorbar','legend') else 'xy'
         axs[index] = figure.add_subplot(subspecs[index], projection=projection)
 
@@ -2286,7 +2297,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
       then use ihspace/iwspace/ihwidth/iwwidth to control the separation and widths of the subpanels.
     * Initialize cartopy plots with package='basemap' or package='cartopy'. Can control which plots
       we want to be maps with maps=True (everything) or maps=[numbers] (the specified subplot numbers).
-    NOTES:
+    Notes:
         * Matplotlib set_aspect option seems to behave strangely on some plots (trend-plots from
         SST paper); for this reason we override the fix_aspect option provided by basemap and
         just draw figure with appropriate aspect ratio to begin with. Otherwise get weird
@@ -2295,7 +2306,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         the sharex and sharey detection algorithm really is just to get instructions to make the
         ticklabels/axis labels invisible for certain axes.
         * We create the cartopy axes on.
-    TODO:
+    Todo:
         * For spanning axes labels, right now only detect **x labels on bottom**
         and **ylabels on top**; generalize for all subplot edges.
         * Figure size should be constrained by the dimensions of the axes, not vice
