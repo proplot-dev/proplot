@@ -77,11 +77,11 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
 ### Enhanced settings management
-   * Added the new `globals` command to change various settings. This command controls entries to the built-in `matplotlib.rcParams` dictionary along with the new, custom-built `matplotlib.rcExtras` dictionary.
-   * Special arguments **integrate** settings across a wide range of pyplot objects -- for example, `globals(linewidth=1, small=8, large=9)` makes all axis back ground lines (axes spines, tick marks, colorbar edges, legend boxes, ...) have 1pt linewidth, makes the `small` size font (used for tick labels, axis legends, ...) 8pt, and makes the `large` size font (used for titles, 'abc' subplot labelling, ...) 9pt.
+   * Added the new `rc` command to change various settings. This command controls entries to the built-in `matplotlib.rcParams` dictionary along with the new, custom-built `matplotlib.rcExtras` dictionary.
+   * Special arguments **integrate** settings across a wide range of pyplot objects -- for example, `plot.rc(linewidth=1, small=8, large=9)` makes all axis back ground lines (axes spines, tick marks, colorbar edges, legend boxes, ...) have 1pt linewidth, makes the `small` size font (used for tick labels, axis legends, ...) 8pt, and makes the `large` size font (used for titles, 'abc' subplot labelling, ...) 9pt.
 ### Colors and fonts
    * All colormaps from `.rgb` files in the `cmaps` folder can be called by name. For example, `hclBlue.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap="hclBlue")`.
-   * Added many new colors, including XKCD colors and Open Color web-design color palette. Added different color "cycles" (i.e. the automatic color order when drawing multiple lines), which can be set with `globals(cycle='<name>')`.
+   * Added many new colors, including XKCD colors and Open Color web-design color palette. Added different color "cycles" (i.e. the automatic color order when drawing multiple lines), which can be set with `plot.rc(cycle='name')` or by passing `cycle='name'` to any command that plots lines/patches (`plot`, `bar`, etc.).
    * Use functions `cmapshow`, `colorshow`, and `cycleshow` to visualize available colormaps, named colors, and color palettes. Functions will automatically save PDFs in the package directory.
    * List of system fontnames available as the `fonts` variable under the imported module.
 ### Misc tools
