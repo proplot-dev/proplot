@@ -49,19 +49,20 @@
 # This tool preserve __name__ metadata.
 # from .basics import Dict, arange
 import os
+import re
 import numpy as np
 import warnings
 import time
 # import io
 # from contextlib import redirect_stdout
 from matplotlib.cbook import mplDeprecation
+from matplotlib.projections import register_projection, PolarAxes
 from string import ascii_lowercase
 from types import FunctionType
 from functools import wraps
 from inspect import cleandoc
 import matplotlib.figure as mfigure
 import matplotlib.axes as maxes
-import matplotlib.projections as mprojections
 import matplotlib.path as mpath
 import matplotlib.contour as mcontour
 import matplotlib.patheffects as mpatheffects
@@ -500,8 +501,8 @@ class Figure(mfigure.Figure):
         self.gridspec = gridspec
         super().__init__(**kwargs) # python 3 only
 
-    def panel_factory(self, subspec, width, height,
-            whichpanels=None, hspace=None, wspace=None, hwidth=None, wwidth=None,
+    def panel_factory(self, subspec, width, height, whichpanels=None,
+            hspace=0.15, wspace=0.15, hwidth=0.5, wwidth=0.5,
             **kwargs):
         """
         Helper function for creating panelled axes
@@ -509,144 +510,132 @@ class Figure(mfigure.Figure):
         every time.
         """
         # Format the plot to have tiny spaces between subplots and narrow panels by default
-        if whichpanels is None:
-            whichpanels = 'b' # default is a bottom panel, cuz why not
-        if hspace is None:
-            hspace = 0.15
-        if wspace is None:
-            wspace = 0.15
-        if hwidth is None:
-            hwidth = 0.5
+        whichpanels = whichpanels or 'r'
         if wwidth is None:
             wwidth = 0.5
-        if any(s.lower() not in 'tblr' for s in whichpanels) or whichpanels=='':
-            raise ValueError('Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top).')
-        # Determine number of rows/columns, position of the
-        # main/primary axes, and potential position of corners that
-        # we want to ignore for now
-        nrows_i, ncols_i = 1, 1
-        for s in whichpanels:
-            if s in ('b','t'):
-                nrows_i += 1
-            if s in ('l','r'):
-                ncols_i += 1
-        empty_pos = []
-        main_pos = [0,0]
-        if 't' in whichpanels:
-            main_pos[0] += 1
-        if 'l' in whichpanels:
-            main_pos[1] += 1
-        corners = {'tl':(0,0),             'tr':(0,main_pos[1]+1),
-                'bl':(main_pos[0]+1,0), 'br':(main_pos[0]+1,main_pos[1]+1)}
-        for corner,position in corners.items():
-            if all(s in whichpanels for s in corner):
-                empty_pos.append(position)
+        if hwidth is None:
+            hwidth = 0.5
+        if wspace is None:
+            wspace = 0.15
+        if hspace is None:
+            hspace = 0.15
+        if any(s.lower() not in 'lrbt' for s in whichpanels):
+            raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
+
+        # Determine rows/columns and indices
+        nrows = 1 + sum(1 for i in whichpanels if i in 'bt')
+        ncols = 1 + sum(1 for i in whichpanels if i in 'lr')
+        sides_lr = [l for l in ['l',None,'r'] if not l or l in whichpanels]
+        sides_bt = [l for l in ['t',None,'b'] if not l or l in whichpanels]
+        # Detect empty positions and main axes position
+        main_pos  = (int('t' in whichpanels), int('l' in whichpanels))
+        corners   = {'tl':(0,0),             'tr':(0,main_pos[1]+1),
+                     'bl':(main_pos[0]+1,0), 'br':(main_pos[0]+1,main_pos[1]+1)}
+        empty_pos = [position for corner,position in corners.items() if
+                     corner[0] in whichpanels and corner[1] in whichpanels]
+
         # Fix wspace/hspace in inches, using the Bbox from get_postition
         # on the subspec object to determine physical width of axes to be created
         # * Consider writing some convenience funcs to automate this unit conversion
-        bbox_i = subspec.get_position(self) # valid since axes not drawn yet
+        bbox = subspec.get_position(self) # valid since axes not drawn yet
         if hspace is not None:
-            height_i = np.diff(bbox_i.intervaly)[0]*height - hspace*(nrows_i-1)
-            hspace = hspace/(height_i/nrows_i)
+            height = np.diff(bbox.intervaly)[0]*height - hspace*(nrows-1)
+            hspace = hspace/(height/nrows)
         if wspace is not None:
-            width_i = np.diff(bbox_i.intervalx)[0]*width - wspace*(ncols_i-1)
-            wspace = wspace/(width_i/ncols_i)
+            width = np.diff(bbox.intervalx)[0]*width - wspace*(ncols-1)
+            wspace = wspace/(width/ncols)
+
         # Figure out hratios/wratios
         # Will enforce (main_width + panel_width)/total_width = 1
-        wwidth_ratios = [width_i-wwidth*(ncols_i-1)]*ncols_i
+        wwidth_ratios = [width-wwidth*(ncols-1)]*ncols
         if wwidth_ratios[0]<0:
-            raise ValueError(f'Panel wwidth is too large. Must be less than {width_i/(nrows_i-1):.3f}.')
-        for i in range(ncols_i):
+            raise ValueError(f'Panel wwidth is too large. Must be less than {width/(nrows-1):.3f}.')
+        for i in range(ncols):
             if i!=main_pos[1]: # this is a panel entry
                 wwidth_ratios[i] = wwidth
-        hwidth_ratios = [height_i-hwidth*(nrows_i-1)]*nrows_i
+        hwidth_ratios = [height-hwidth*(nrows-1)]*nrows
         if hwidth_ratios[0]<0:
-            raise ValueError(f'Panel hwidth is too large. Must be less than {height_i/(ncols_i-1):.3f}.')
-        for i in range(nrows_i):
+            raise ValueError(f'Panel hwidth is too large. Must be less than {height/(ncols-1):.3f}.')
+        for i in range(nrows):
             if i!=main_pos[0]: # this is a panel entry
                 hwidth_ratios[i] = hwidth
+
         # Determine axes to be shared
-        if ncols_i==1:
-            ybase = ()
+        if ncols==1:
+            ybase  = ()
             yshare = []
         elif 'l' in whichpanels:
-            ybase = (main_pos[0], main_pos[1]-1) # the base axes
-            yshare = [(main_pos[0], main_pos[1]+i) for i in range(ncols_i-1)]
+            ybase  = (main_pos[0], main_pos[1]-1) # the base axes
+            yshare = [(main_pos[0], main_pos[1]+i) for i in range(ncols-1)]
         else:
-            ybase = (main_pos[0], main_pos[1]) # the base axes
-            yshare = [(main_pos[0], main_pos[1]+i+1) for i in range(ncols_i-1)]
-        if nrows_i==1:
-            xbase = ()
+            ybase  = (main_pos[0], main_pos[1]) # the base axes
+            yshare = [(main_pos[0], main_pos[1]+i+1) for i in range(ncols-1)]
+        if nrows==1:
+            xbase  = ()
             xshare = []
         elif 'b' in whichpanels:
-            xbase = (main_pos[0]+1, main_pos[1]) # the base axes
-            xshare = [(main_pos[0]-i, main_pos[1]) for i in range(nrows_i-1)]
+            xbase  = (main_pos[0]+1, main_pos[1]) # the base axes
+            xshare = [(main_pos[0]-i, main_pos[1]) for i in range(nrows-1)]
         else:
-            xbase = (main_pos[0], main_pos[1]) # the base axes
-            xshare = [(main_pos[0]-i-1, main_pos[1]) for i in range(nrows_i-1)]
+            xbase  = (main_pos[0], main_pos[1]) # the base axes
+            xshare = [(main_pos[0]-i-1, main_pos[1]) for i in range(nrows-1)]
+
         # Create subplotspec and draw the axes
         # Will create axes in order of rows/columns so that the "base" axes
         # are always built before the axes to be "shared" with them
         panels = []
-        gs_i = mgridspec.GridSpecFromSubplotSpec(
-                nrows         = nrows_i,
-                ncols         = ncols_i,
+        kwargs.pop('sharex', None) # we do this ourselves
+        kwargs.pop('sharey', None)
+        gs = mgridspec.GridSpecFromSubplotSpec(
+                nrows         = nrows,
+                ncols         = ncols,
                 subplot_spec  = subspec,
                 wspace        = wspace,
                 hspace        = hspace,
                 width_ratios  = wwidth_ratios,
                 height_ratios = hwidth_ratios,
                 )
-        ax_ybase, ax_xbase = None, None
-        if 'sharex' in kwargs:
-            kwargs.pop('sharex')
-        if 'sharey' in kwargs:
-            kwargs.pop('sharey')
-        # Create panel axes
-        for r in range(nrows_i)[::-1]: # order is bottom-top
-            for c in range(ncols_i):   # order is left-right
+        axmain = self.add_subplot(gs[main_pos[0],main_pos[1]], **kwargs)
+        kwargs = {**kwargs, 'projection':'xy'} # override
+        translate = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}
+        for r,side_bt in enumerate(sides_bt): # iterate top-bottom
+            r = nrows-r-1 # go bottom-top so will have drawn dependent axes already
+            for c,side_lr in enumerate(sides_lr): # iterate left-right
+                # Test which index we are on
                 if (r,c) in empty_pos:
                     continue
-                main = (r==main_pos[0] and c==main_pos[1])
-                # Add the subplot first
-                # Also, we optionally allow for *projection axes* with *panels*, which
-                # would make sense for pseudo-cylindrical or rectangular projections
-                if main:
-                    ax_kwargs = kwargs
+                main = ((r,c)==main_pos)
+                side = side_bt or side_lr # will never both be non-zero
+                side = translate.get(side,None)
+                # Draw panel, and add to main axes
+                # Will have to manually assert using default projection
+                if (r,c)==main_pos:
+                    ax = axmain
                 else:
-                    ax_kwargs = kwargs.copy()
-                    ax_kwargs['projection'] = 'xy'
-                    ax_kwargs.pop('transform', None)
-                ax = self.add_subplot(gs_i[r,c], **ax_kwargs) # make this my custom XY axes
-                if r==main_pos[0] and c==main_pos[1]:
-                    axmain = ax
-                else:
-                    panels += [ax]
+                    panel = Panel(self, gs[r,c], side)
+                    setattr(axmain, side + 'panel', panel)
+                    # ax = panel.axs[0] # get axes
                 # Configure shared axes
-                if (r,c) == ybase:
-                    ax_ybase = ax
-                if (r,c) == xbase:
-                    ax_xbase = ax
-                if (r,c) in yshare:
-                    if ax_ybase is None:
-                        raise ValueError("Axes with base for x-axis not drawn.")
-                    ax._sharey = ax_ybase
-                    for t in ax.yaxis.get_ticklabels(): t.set_visible(False)
-                    ax.yaxis.label.set_visible(False)
-                if (r,c) in xshare:
-                    if ax_xbase is None:
-                        raise ValueError("Axes with base for x-axis not drawn.")
-                    ax._sharex = ax_xbase
-                    for t in ax.xaxis.get_ticklabels(): t.set_visible(False)
-                    ax.xaxis.label.set_visible(False)
-        # Add panels as children of main axes, and return main axes
-        if len(panels)!=len(whichpanels):
-            raise ValueError(f'Created {len(panels)} panels but {len(whichpanels)} panels ("{whichpanels}") were requested.')
-        translate = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}
-        # axmain.panel = {} # alternative
-        for panel,string in zip(panels,whichpanels):
-            # axmain.panel[string] = panel # access panel['b'], panel['t'], et cetera
-            setattr(axmain, f'{translate[string]}panel', panel) # access 'bottompanel', 'toppanel', 'leftpanel', and 'rightpanel'
+                # This is way better
+                # if (r,c) == ybase:
+                #     ybase = ax
+                # if (r,c) == xbase:
+                #     xbase = ax
+                # if (r,c) in yshare:
+                #     if ybase is None:
+                #         raise ValueError("Axes with base for x-axis not drawn.")
+                #     ax._sharey = ybase
+                #     for t in ax.yaxis.get_ticklabels():
+                #         t.set_visible(False)
+                #     ax.yaxis.label.set_visible(False)
+                # if (r,c) in xshare:
+                #     if xbase is None:
+                #         raise ValueError("Axes with base for x-axis not drawn.")
+                #     ax._sharex = xbase
+                #     for t in ax.xaxis.get_ticklabels():
+                #         t.set_visible(False)
+                #     ax.xaxis.label.set_visible(False)
+
         return axmain
 
     # @timer
@@ -1020,6 +1009,9 @@ class Axes(maxes.Axes):
     @property
     def loglog(self):
         raise NotImplementedError(self.message1)
+    @property
+    def polar(self):
+        raise NotImplementedError('Just use projection="polar" instead.')
 
     # Weird stuff that probably will not wrap
     message2 = 'Unsupported plotting function.'
@@ -1373,9 +1365,6 @@ class MapAxes(Axes):
     def spy(self):
         raise NotImplementedError(self.message)
     @property
-    def polar(self):
-        raise NotImplementedError(self.message)
-    @property
     def bar(self):
         raise NotImplementedError(self.message)
     @property
@@ -1475,12 +1464,14 @@ class BasemapAxes(MapAxes):
         """
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
+
         # Basemap axes setup
         # Coastlines, parallels, meridians
         if coastlines:
             p = self.m.drawcoastlines(**rc('coastlines'), ax=self)
         if continents:
             p = self.m.fillcontinents(**rc('continents'), ax=self)
+
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
@@ -1512,6 +1503,7 @@ class BasemapAxes(MapAxes):
                         _.set_clip_on(True) # no gridlines past boundary
                         _.update(rc('lonlatlines'))
                         # _.set_linestyle(linestyle)
+
         # Map boundary
         # * First have to *manually replace* the old boundary by just deleting
         #   the original one; note this requires drawmapboundary() was called
@@ -1645,7 +1637,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         """
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
-        # Boundary for projection regoin
+
+        # Boundary for projection region
         self.outline_patch.update(rc('outline'))
         # Make background patch invisible, so can color axes patch instead
         # See: https://stackoverflow.com/a/32208700/4970632
@@ -1656,6 +1649,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             self.background_patch.set_facecolor(color)
         else:
             self.background_patch.set_facecolor('w')
+
         # Draw gridlines
         # WARNING: For some reason very weird side effects happen if you try
         # to call gridlines() twice on same axes. Can't do it. Which is why
@@ -1667,6 +1661,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
         latlines = latminorlocator or latlocator
+
         # First take care of gridlines
         draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
         if latlines and latlines[0]==-90:
@@ -1676,6 +1671,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         gl = self.gridlines(**rc('lonlatlines'), draw_labels=draw_labels)
         gl.xlocator = mticker.FixedLocator(lonlines)
         gl.ylocator = mticker.FixedLocator(latlines)
+
         # Now take care of labels
         if draw_labels:
             lonfunc = lambda x,y: LONGITUDE_FORMATTER(x) if x in lonlocator else ''
@@ -1684,6 +1680,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             gl.yformatter = mticker.FuncFormatter(latfunc)
             gl.xlabels_bottom, gl.xlabels_top = latlabels[2:]
             gl.ylabels_left, gl.ylabels_right = lonlabels[:2]
+
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
@@ -1739,6 +1736,14 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     def streamplot(self, *args, **kwargs):
         return super().streamplot(*args, **kwargs)
 
+@docstring_fix
+class PolarAxes(MapAxes, PolarAxes):
+    """
+    Thin wrapper around PolarAxes with my new plotting features.
+    So far just meant to mix the two classes.
+    """
+    name = 'newpolar'
+
 class Panel(object):
     """
     Helper class for 'dummy axes' that defers drawing until user attempts
@@ -1748,17 +1753,22 @@ class Panel(object):
     Goal of this is to have generalized panel class suitable for both 'inner'
     and 'outer' panels.
     """
-    def __init__(self, figure, subspec, side, n=1, length=1):
+    def __init__(self, figure, subspec, side, n=1, length=1,
+                       instantiate=False, projection=None, **kwargs):
     # def __init__(self, figure, subspec, n=1, length=1, side='bottom', projection=None):
         """
         Initialize abstract panel object.
         Behavior depends on which attribute you access first:
             * Try to access colorbar or legend, and this is a default
               axes.Axes instance.
-            * Try to access anything else, and this is 
+            * Try to access anything else, and this is a normal XYAxes
+              like everything else.
+        Why do this? This way user can do whatever they want with panels, no
+        extra kwargs necessary during subplots() call.
         """
         # Assignments
         npanel = n
+        self.projection = projection # optionally specify this manually
         self.npanel  = npanel # number of panels stacked together
         self.drawn   = False # defer drawing these panels
         self.figure  = figure
@@ -1791,6 +1801,12 @@ class Panel(object):
             self.subspecs = [gridspec[1,i] for i in range(npanel)]
         else:
             raise ValueError(f'Invalid panel side "{side}".')
+        # Optionally instantiate all the axes right away
+        # Do this by setting the index each time
+        if instantiate:
+            for index in range(npanel):
+                self.index = index
+                super().__getattribute__('instantiate')(**kwargs)
 
     def __getitem__(self, key):
         """
@@ -1821,17 +1837,26 @@ class Panel(object):
         if attribute in getter('__dict__'):
             return getter(attribute)
         # Next, instantiate axes
-        if not getter('axs')[getter('index')]: # use super-class method
+        index = getter('index')
+        instantiated = False
+        if not getter('axs')[index]: # use super-class method
+            instantiated = True
             getter('instantiate')(attribute)
         # Now that axes are initiated, optionally return a couple
         # overridden functions and methods here here
-        if attribute in ('colorbar','legend'):
-            return getter(attribute, *args)
-        else:
-            return getter('axs')[getter('index')].__getattribute__(attribute, *args)
+        try:
+            if attribute in ('colorbar','legend'):
+                return getter(attribute, *args)
+            else:
+                return getter('axs')[index].__getattribute__(attribute, *args)
+        except AttributeError:
+            if instantiated:
+                getter('axs')[index].set_visible(False)
+                getter('axs')[index] = None # remove reference
+            raise
 
     # def instantiate(self):
-    def instantiate(self, attribute):
+    def instantiate(self, *args, **kwargs):
         """
         Function for instantiating axes belonging to this panel.
         Will read from the 'n' attribute to figure out how many
@@ -1840,13 +1865,20 @@ class Panel(object):
         # This function is invoked from within __getattribute__
         # so need to make sure we don't trigger infinite loops
         getter = super().__getattribute__
-        axs        = getter('axs')
-        index      = getter('index')
+        axs    = getter('axs')
+        index  = getter('index')
+        if axs[index]:
+            return axs[index]
         figure     = getter('figure')
         subspecs   = getter('subspecs')
+        projection = getter('projection')
         # projection = getter('projection')
-        projection = None if attribute in ('colorbar','legend') else 'xy'
-        axs[index] = figure.add_subplot(subspecs[index], projection=projection)
+        attribute  = None if len(args)==0 else args[0]
+        if not projection:
+            if attribute not in ('colorbar','legend'):
+                projection = 'xy' # otherwise use the default projection
+        axs[index] = figure.add_subplot(subspecs[index], projection=projection, **kwargs)
+        return axs[index]
 
     def legend(self, handles, **kwargs):
         """
@@ -1886,9 +1918,10 @@ class Panel(object):
         return ax, colorbar_factory(ax, *args, **kwargs)
 
 # Register the projection
-mprojections.register_projection(XYAxes)
-mprojections.register_projection(BasemapAxes)
-mprojections.register_projection(CartopyAxes)
+register_projection(XYAxes)
+register_projection(PolarAxes)
+register_projection(BasemapAxes)
+register_projection(CartopyAxes)
 
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
@@ -2260,18 +2293,25 @@ def journalsize(width, height):
 # to use the other features
 #-------------------------------------------------------------------------------
 def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
+        nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
         tight=False,  # whether to set up tight bbox from gridspec object
         silent=False, # how much stuff to print
-        nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
-        spanx=True, spany=True,   # custom setting, optionally share axis labels for axes with same xmin/ymin extents
-        aspect=1, height=None, width=None,                  # for controlling aspect ratio, default is control for width
-        hspace=0.4, wspace=0.2, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
-        left=0.5, bottom=0.5, right=0.15, top=0.3,          # spaces around edge of main plotting area, in inches
-        bottompanel=False, bottompanels=False, rightpanel=False, rightpanels=False, bottompanelrows=1, rightpanelcols=1, # optionally draw extra rows
+        spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
+        aspect=1,    height=None, width=None,   # for controlling aspect ratio, default is control for width
+        hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
+        left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
+        bwidth=None, bspace=None, rwidth=None, rspace=None, # default to no space between panels
+        bottompanel=False,    bottompanels=False,    rightpanel=False,    rightpanels=False,    bottompanelrows=1,  rightpanelcols=1,    # optionally draw extra rows
         bottomcolorbar=False, bottomcolorbars=False, rightcolorbar=False, rightcolorbars=False, bottomlegend=False, bottomlegends=False,
-        bwidth=0.17, bspace=0.5, rwidth=0.17, rspace=0.5, # default to no space between panels
-        innerpanels=None, whichpanels=None, # same as below; list of numbers where we want subplotspecs
+        space_title = 0.3, # extra space for title/suptitle
+        space_inner = 0.2, # just have ticks, no labeels
+        space_top = 0.4, # extra room for titles
+        space_legend = 0.25, # default legend space (bottom of figure)
+        space_cbar = 0.17, # default colorbar width
+        space_labs = 0.5,  # default space wherever we expect tick and axis labels
+        space_nolabs = 0.15, # only ticks
+        innerpanels=None, innercolorbars=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
         ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
         maps=None, # set maps to True for maps everywhere, or to list of numbers
         package='basemap', projection=None, projection_dict={}, **projection_kwargs): # for projections; can be 'basemap' or 'cartopy'
@@ -2312,23 +2352,49 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         * Figure size should be constrained by the dimensions of the axes, not vice
         versa; might make things easier.
     """
-    # Translate some arguments
+    # First translate arguments and set context dependent defaults
     # This is convenience feature to get more sensible default spacing
+    default = lambda x,y: x if x is not None else y
     if rightcolorbar or rightcolorbars:
-        rwidth = 0.17
-        rspace = 0.5
-        rightpanel = rightcolorbar
+        rwidth = default(rwidth, space_cbar)
+        rspace = default(rspace, space_labs)
+        rightpanel  = rightcolorbar
         rightpanels = rightcolorbars
     if bottomcolorbar or bottomcolorbars:
-        bwidth = 0.17
-        bspace = 0.5
-        bottompanel = bottomcolorbar
+        bwidth = default(bwidth, space_cbar)
+        bspace = default(bspace, space_labs)
+        bottompanel  = bottomcolorbar
         bottompanels = bottomcolorbars
     if bottomlegend or bottomlegends:
-        bwidth = 0.25
-        bspace = 0
-        bottompanel = bottomlegend
+        bwidth = default(bwidth, space_legend)
+        bspace = default(bspace, 0)
+        bottompanel  = bottomlegend
         bottompanels = bottomlegends
+    if innercolorbars is not None:
+        innerpanels = innercolorbars
+        if re.search('[bt]', whichpanels):
+            ihwidth = default(ihwidth, space_cbar)
+            hspace  = default(hspace, space_labs)
+            if 'b' in whichpanels: bottom = default(bottom, space_labs)
+            if 't' in whichpanels: top = default(top, space_labs)
+        elif re.search('[lr]', whichpanels):
+            iwwidth = default(iwwidth, space_cbar)
+            wspace  = default(wspace,  space_labs)
+            if 'l' in whichpanels: left = default(left, space_labs)
+            if 'r' in whichpanels: right = default(right, space_labs)
+    # Next the general defaults
+    hspace = default(hspace, space_top)
+    wspace = default(wspace, space_inner)
+    left   = default(left, space_labs)
+    bottom = default(bottom, space_labs)
+    right  = default(right, space_nolabs)
+    top    = default(top, space_title)
+    bwidth = default(bwidth, space_cbar)
+    rwidth = default(rwidth, space_cbar)
+    bspace = default(bspace, space_labs)
+    rspace = default(rspace, space_labs)
+    # spaces around edge of main plotting area, in inches
+    # Apply remaining defaults
     # Fill in some basic required settings
     if package not in ['basemap','cartopy']:
         raise ValueError("Plotting package must be one of basemap or cartopy.")
@@ -2379,17 +2445,21 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     #             number += 1
 
     #--------------------------------------------------------------------------
-    # Projection setup
+    # Get basemap.Basemap or cartopy.CRS instances for map
+    # projection axes
     #--------------------------------------------------------------------------
-    # Get basemap.Basemap or cartopy.CRS instances
     map_kwargs = {}
     if maps and (wratios is not None or hratios is not None):
         raise NotImplementedError('Not yet possible.')
     if not maps and projection_kwargs:
         raise ValueError(f'Unknown kwargs: {", ".join(projection_kwargs.keys())}. If you want to create maps, you must change the "maps" kwarg.')
     if maps:
-        map_projection, aspect = projection_factory(package, projection, **{**projection_kwargs, **projection_dict})
-        map_kwargs = {'projection':package, 'map_projection':map_projection}
+        if projection=='polar':
+            map_kwargs = {'projection':'newpolar'}
+        else:
+            proj_kwargs = {**projection_kwargs, **projection_dit}
+            map_projection, aspect = projection_factory(package, projection, **proj_kwargs)
+            map_kwargs = {'projection':package, 'map_projection':map_projection}
 
     #--------------------------------------------------------------------------
     # Panel considerations; keep things general for future imporvements
