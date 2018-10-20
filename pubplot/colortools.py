@@ -241,6 +241,7 @@ def Colormap(*args, levels=None, light=True, extend='both', **kwargs):
     if len(args)==0:
         raise ValueError('Function requires at least 1 positional arg.')
     cmaps = []
+    # if type(args[-1])==1:
     for cmap in args:
         if isinstance(cmap, mcolors.Colormap):
             cmaps += [cmap]
@@ -918,7 +919,7 @@ def cycle_show():
     return fig
 
 # def cmap_show(N=31, ignore=['Miscellaneous','Sequential2','Diverging2']):
-def cmap_show(N=30, ignore=['B-List','Miscellaneous']):
+def cmap_show(N=31, ignore=['Diverging Alt', 'Sequential Alt', 'Rainbow Alt', 'Miscellaneous']):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -942,24 +943,26 @@ def cmap_show(N=30, ignore=['B-List','Miscellaneous']):
             and (not isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) and cmap not in exceptions)]
     categories = { # initialize as empty lists
         'Custom': [], # should come first
-        'ColorBrewer': [], # should come second
-        'MultiHue':
-            ['cubehelix', *sorted(['viridis', 'cividis', 'plasma', 'inferno', 'magma'])],
+        # 'ColorBrewer': [], # actually *every single colorbrewer map* is implemented already by default, just different names
+        'Rainbow':
+            sorted(['viridis', 'plasma', 'inferno', 'magma']),
+        'Rainbow Alt':
+            sorted(['multi', 'cubehelix', 'cividis']),
         'Diverging':
             sorted(['piyg', 'prgn', 'brbg', 'puor', 'rdgy', 'rdbu', 'rdylbu', 'rdylgn', 'spectral']),
-        # 'Diverging B-List': ['coolwarm', 'bwr', 'seismic'],
         'Sequential':
             sorted(['greys', 'purples', 'blues', 'greens', 'oranges', 'reds',
             'ylorbr', 'ylorrd', 'orrd', 'purd', 'rdpu', 'bupu',
             'gnbu', 'pubu', 'ylgnbu', 'pubugn', 'bugn', 'ylgn']),
-        'B-List':
+        'Sequential Alt':
             sorted(['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
             'spring', 'summer', 'autumn', 'winter', 'cool', 'wistia',
             'coolwarm', 'bwr', 'seismic', # diverging ones
-            'hot', 'afmhot', 'gist_heat', 'copper']),
+            'afmhot', 'gist_heat', 'copper']),
+        'Diverging Alt': sorted(['coolwarm', 'bwr', 'seismic']),
         'Miscellaneous':
             sorted(['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-            'gnuplot', 'gnuplot2', 'cmrmap', 'cubehelix', 'brg', 'hsv',
+            'gnuplot', 'gnuplot2', 'cmrmap', 'brg', 'hsv',
             'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
@@ -968,8 +971,9 @@ def cmap_show(N=30, ignore=['B-List','Miscellaneous']):
     cmaps_known   = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap in cmaps_all]
     cmaps_missing = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap not in cmaps_all]
     cmaps_custom  = [cmap for cmap in cmaps_all if cmap not in cmaps_known and cmap not in cmaps_ignore]
-    categories['Custom'] = [cmap for cmap in cmaps_custom if cmap[:2]!='cb']
-    categories['ColorBrewer'] = [cmap for cmap in cmaps_custom if cmap[:2]=='cb']
+    categories['Custom'] = cmaps_custom
+    # categories['Custom'] = [cmap for cmap in cmaps_custom if cmap[:2]!='cb']
+    # categories['ColorBrewer'] = [cmap for cmap in cmaps_custom if cmap[:2]=='cb']
     if cmaps_missing:
         print(f'Missing colormaps: {", ".join(cmaps_missing)}')
     if cmaps_ignore:
@@ -983,7 +987,7 @@ def cmap_show(N=30, ignore=['B-List','Miscellaneous']):
     extra = 1 # number of axes-widths to allocate for titles
     nmaps = len(cmaps_known) + len(cmaps_custom) + len(categories)*extra
     fig = plt.figure(figsize=(5,0.3*nmaps))
-    fig.subplots_adjust(top=0.99, bottom=0.01, left=0.15, right=0.99)
+    fig.subplots_adjust(top=0.98, bottom=0.01, left=0.15, right=0.99)
     # Make plot
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
     for cat in categories:
@@ -1016,7 +1020,6 @@ def cmap_show(N=30, ignore=['B-List','Miscellaneous']):
             yl.set_va('center')
         # Space for plots
         nplots += len(categories[cat])
-    fig.subplots_adjust(top=0.99, bottom=0.00, left=0.15, right=0.99)
     # Save
     filename = f'{os.path.dirname(__file__)}/colormaps.pdf'
     print(f"Saving figure to: {filename}.")

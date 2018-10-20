@@ -257,7 +257,6 @@ def cmap_features(func):
             print(f'Saving colormap "{savename}" to disk.')
             file = f'{os.path.dirname(__file__)}/cmaps/{savename}'
             with open(file, 'w') as h: # overwrites if exists; otherwise us 'a'
-                print(dir(cmap))
                 h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
             mcm.cmap_d[cmap.name] = cmap
             if re.search('[A-Z]', cmap.name):
