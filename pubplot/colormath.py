@@ -11,14 +11,14 @@ New utilities:
   rgb_to_lchuv
   hsluv_to_rgb
   rgb_to_hsluv
+Adapted from:
+    https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py
+    https://github.com/hsluv/hsluv-python/blob/master/hsluv.py
 For info on colorspaces see:
     https://en.wikipedia.org/wiki/CIELUV
     https://en.wikipedia.org/wiki/CIE_1931_color_space
     https://en.wikipedia.org/wiki/HCL_color_space
     http://www.hsluv.org/implementations/
-Adapted from:
-    https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py
-    https://github.com/hsluv/hsluv-python/blob/master/hsluv.py
 """
 # Imports (below functions are just meant to be used by user)
 # See: https://stackoverflow.com/a/2353265/4970632
@@ -110,10 +110,10 @@ def rgb_to_lchuv(r, g, b):
     return CIEluv_to_lchuv(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
 
 # Alternative ordering of hcl colors
-def hcluv_to_rgb(h, c, l):
+def hcl_to_rgb(h, c, l):
     return CIExyz_to_rgb(CIEluv_to_CIExyz(lchuv_to_CIEluv([l, c, h])))
 
-def rgb_to_hcluv(r, g, b):
+def rgb_to_hcl(r, g, b):
     l, c, h = CIEluv_to_lchuv(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
     return h, c, l
 
@@ -167,6 +167,7 @@ def max_chroma(L, H):
             C = (L * (top - 1.05122 * t) / (bottom + 0.17266 * sinH * t))
             if C > 0.0 and C < result:
                 result = C
+    # print('maxima', result)
     return result
 
 def hrad_extremum(L):
@@ -189,13 +190,13 @@ def hrad_extremum(L):
                 result = hrad
     return result
 
-#------------------------------------------------------------------------------#
-# Converting between the fancy colorspaces
-#------------------------------------------------------------------------------#
 def max_chroma_pastel(L):
     H = math.degrees(hrad_extremum(L))
     return max_chroma(L, H)
 
+#------------------------------------------------------------------------------#
+# Converting between the fancy colorspaces
+#------------------------------------------------------------------------------#
 def hsluv_to_lchuv(triple):
     H, S, L = triple
     if L > 99.9999999:

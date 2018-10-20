@@ -78,7 +78,7 @@ import matplotlib.cm as mcm
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
-from .axis import Locator, Formatter # default axis norm and formatter
+from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colortools
 from . import utils
@@ -239,7 +239,7 @@ def cmap_features(func):
     Also see: https://stackoverflow.com/a/48614231/4970632
     """
     @wraps(func)
-    def wrapper(self, *args, cmap=None, norm=None, levels=None, extend='neither', extremes=True, **kwargs):
+    def wrapper(self, *args, cmap=None, norm=None, levels=None, cmapsave=False, extend='neither', extremes=True, **kwargs):
         # Specify normalizer
         name = func.__name__
         default = ('continuous' if 'contour' in name else 'discrete')
@@ -251,6 +251,17 @@ def cmap_features(func):
             cmap = cmap, # make a tuple
         cmap_extend = 'neither' if not extremes else extend
         cmap = colortools.Colormap(*cmap, levels=levels, extend=cmap_extend) # pass as arguments to generalized colormap constructor
+        # Optionally register and save colormap to disk
+        if cmapsave:
+            savename = f'{cmap.name}.hex'
+            print(f'Saving colormap "{savename}" to disk.')
+            file = f'{os.path.dirname(__file__)}/cmaps/{savename}'
+            with open(file, 'w') as h: # overwrites if exists; otherwise us 'a'
+                print(dir(cmap))
+                h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
+            mcm.cmap_d[cmap.name] = cmap
+            if re.search('[A-Z]', cmap.name):
+                mcm.cmap_d[cmap.name.lower()] = cmap
         # Call function with special args removed
         kwextra = dict()
         if 'contour' in name:
@@ -1099,8 +1110,12 @@ class XYAxes(Axes):
         xreverse=False, yreverse=False, # special properties
         xlabel=None,    ylabel=None,    # axis labels
         xlim=None,      ylim=None,
-        xscale=None,    yscale=None,    xscale_kwargs={},    yscale_kwargs={},
-        xlocator=None,   xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
+        xscale=None,    yscale=None,
+        xlocator=None,  xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
+        xscale_kwargs={}, yscale_kwargs={},
+        xlocator_kwargs={}, ylocator_kwargs={},
+        xformatter_kwargs={}, yformatter_kwargs={},
+        xminorlocator_kwargs={}, yminorlocator_kwargs={},
         xformatter=None, yformatter=None,
         **kwargs): # formatter
         """
@@ -1114,11 +1129,11 @@ class XYAxes(Axes):
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
-            self.set_xscale(xscale, **xscale_kwargs)
+            self.set_xscale(Scale(xscale, **xscale_kwargs))
         if yscale is not None:
             if hasattr(yscale,'name'):
                 yscale = yscale.name
-            self.set_yscale(yscale, **yscale_kwargs)
+            self.set_yscale(Scale(yscale, **yscale_kwargs))
         if xlim is None:
             xlim = self.get_xlim()
         if ylim is None:
@@ -1132,13 +1147,17 @@ class XYAxes(Axes):
 
         # Control axis ticks and labels and stuff
         for xy, axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
-                grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir in \
+                grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
+                formatter_kwargs, locator_kwargs, minorlocator_kwargs in \
             zip('xy', (self.xaxis, self.yaxis), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
-                (xgrid, ygrid), (xlocator, ylocator), (xformatter, yformatter), # major ticks
+                (xgrid, ygrid),
+                (xlocator, ylocator), (xformatter, yformatter), # major ticks
                 (xtickrange, ytickrange), # range in which we label major ticks
-                (xtickdir, ytickdir), (xticklabeldir, yticklabeldir)): # tick direction
+                (xtickdir, ytickdir), (xticklabeldir, yticklabeldir), # tick direction
+                (xformatter_kwargs, yformatter_kwargs), (xlocator_kwargs, ylocator_kwargs), (xminorlocator_kwargs, yminorlocator_kwargs),
+                ):
             # Axis spine visibility and location
             sides = ('bottom','top') if xy=='x' else ('left','right')
             for spine, side in zip((self.spines[s] for s in sides), sides):
@@ -1168,12 +1187,12 @@ class XYAxes(Axes):
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
             time = isinstance(axis.converter, mdates.DateConverter)
-            axis.set_major_locator(Locator(ticklocator, time=time))
-            axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time))
+            axis.set_major_locator(Locator(ticklocator, time=time, **locator_kwargs))
+            axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kwargs))
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(Locator('null'))
             else:
-                axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time))
+                axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time, **minorlocator_kwargs))
             axis.set_minor_formatter(mticker.NullFormatter())
             # FIXME: Is this necessary, or shouldn't rcParams have taken care of it?
             for t in axis.get_ticklabels():
@@ -2304,12 +2323,11 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         bwidth=None, bspace=None, rwidth=None, rspace=None, # default to no space between panels
         bottompanel=False,    bottompanels=False,    rightpanel=False,    rightpanels=False,    bottompanelrows=1,  rightpanelcols=1,    # optionally draw extra rows
         bottomcolorbar=False, bottomcolorbars=False, rightcolorbar=False, rightcolorbars=False, bottomlegend=False, bottomlegends=False,
-        space_title = 0.3, # extra space for title/suptitle
-        space_inner = 0.2, # just have ticks, no labeels
-        space_top = 0.4, # extra room for titles
+        space_title = 0.4,   # extra space for title/suptitle
+        space_inner = 0.2,   # just have ticks, no labeels
         space_legend = 0.25, # default legend space (bottom of figure)
-        space_cbar = 0.17, # default colorbar width
-        space_labs = 0.5,  # default space wherever we expect tick and axis labels
+        space_cbar = 0.17,   # default colorbar width
+        space_labs = 0.5,    # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
         space_nolabs = 0.15, # only ticks
         innerpanels=None, innercolorbars=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
         ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
@@ -2383,7 +2401,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
             if 'l' in whichpanels: left = default(left, space_labs)
             if 'r' in whichpanels: right = default(right, space_labs)
     # Next the general defaults
-    hspace = default(hspace, space_top)
+    hspace = default(hspace, space_title)
     wspace = default(wspace, space_inner)
     left   = default(left, space_labs)
     bottom = default(bottom, space_labs)

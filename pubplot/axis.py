@@ -82,7 +82,20 @@ import matplotlib.transforms as mtransforms
 #------------------------------------------------------------------------------#
 # Tick scales
 #------------------------------------------------------------------------------#
-def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
+scales = ['linear','log','symlog','logit']
+def Scale(scale, *args, **kwargs):
+    """
+    Generate arbitrary scale object.
+    """
+    if scale in scales:
+        pass # already registered
+    elif scale=='cutoff':
+        scale = CutoffScaleFactory(*args, **kwargs)
+    else:
+        raise ValueError(f'Unknown scale {scale}.')
+    return scale
+
+def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
     """
     Constructer for scale with custom cutoffs. Three options here:
       1. Put a 'cliff' between two numbers (default).
@@ -97,7 +110,7 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
     is because actual cutoffs were 0.1 away (and tick locs are 0.2 apart).
     """
     scale_name = name # have to copy to different name
-    class CustomScale(mscale.ScaleBase):
+    class CutoffScale(mscale.ScaleBase):
         # Declare name
         name = scale_name
         def __init__(self, axis, **kwargs):
@@ -105,12 +118,12 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
             self.name = scale_name
 
         def get_transform(self):
-            return self.CustomTransform()
+            return self.CutoffTransform()
 
         def set_default_locators_and_formatters(self, axis):
             pass # for now default can be same as for ScaleBase
 
-        class CustomTransform(mtransforms.Transform):
+        class CutoffTransform(mtransforms.Transform):
             # Create transform object
             input_dims = 1
             output_dims = 1
@@ -135,9 +148,9 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
             def transform_non_affine(self, a):
                 return self.transform(a)
             def inverted(self):
-                return CustomScale.InvertedCustomTransform()
+                return CutoffScale.InvertedCutoffTransform()
 
-        class InvertedCustomTransform(mtransforms.Transform):
+        class InvertedCutoffTransform(mtransforms.Transform):
             input_dims = 1
             output_dims = 1
             is_separable = True
@@ -161,12 +174,12 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
             def transform_non_affine(self, a):
                 return self.transform(a)
             def inverted(self):
-                return CustomScale.CustomTransform()
+                return CutoffScale.CutoffTransform()
 
     # Register and return
-    mscale.register_scale(CustomScale)
+    mscale.register_scale(CutoffScale)
     print(f'Registered scale "{scale_name}".')
-    return CustomScale
+    return CutoffScale
 
 class MercatorLatitudeScale(mscale.ScaleBase):
     """

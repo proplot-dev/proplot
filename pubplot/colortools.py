@@ -81,28 +81,55 @@ seaborn_cycles = ['colorblind', 'deep', 'muted', 'bright']
 cmap_cycles = ['Pastel1', 'Pastel2', 'Paired',
     'Accent', 'Dark2', 'Set1', 'Set2', 'Set3',
     'tab10', 'tab20', 'tab20b', 'tab20c']
+# Finally some names
+cspace_names = {
+    'hsv': ['hsv'],
+    'hpl': ['hpl','hpluv'],
+    'hsl': ['hsl','hsluv'],
+    'hcl': ['hcl','lch']
+    }
 
 #------------------------------------------------------------------------------#
 # More generalized utility for retrieving colors
 #------------------------------------------------------------------------------#
-def color_to_rgb(color, input='rgb'):
+def to_rgb(color, input='rgb'):
     """
-    Convert color of arbitrary space to rgb.
+    Generalization of mcolors.to_rgb to translate color tuple
+    from any colorspace to rgb.
+    Convert color of arbitrary space to RGB.
     """
-    if input=='hsl':
+    if input in cspace_names['hsv']:
         color = colormath.hsl_to_rgb(*color)
-    elif input=='hsluv':
+    elif input in cspace_names['hpl']:
+        color = colormath.hpluv_to_rgb(*color)
+    elif input in cspace_names['hsl']:
         color = colormath.hsluv_to_rgb(*color)
-    elif input=='hcl':
+    elif input in cspace_names['hcl']:
         color = colormath.hcl_to_rgb(*color)
     elif type(color) is str:
         color = mcolors.to_rgb(color) # ensure is valid color
     elif utils.isiterable(color):
         if any(_>1 for _ in color):
-            color = [_/255 for _ in color]
-        color = mcolors.to_rgb(color)
+            color = [_/255 for _ in color] # scale to within 0-1
+        color = mcolors.to_rgb(color) # trim the alpha channel
     else:
         raise ValueError('Invalid RGB value.')
+    return color
+
+def to_xyz(color, input):
+    """
+    Inverse of above, translate to some colorspace.
+    """
+    if input in cspace_names['hsv']:
+        color = colormath.rgb_to_hsl(*color)
+    elif input in cspace_names['hpl']:
+        color = colormath.rgb_to_hpluv(*color)
+    elif input in cspace_names['hsl']:
+        color = colormath.rgb_to_hsluv(*color)
+    elif input in cspace_names['hcl']:
+        color = colormath.rgb_to_hcl(*color)
+    else:
+        raise ValueError(f'Invalid colorspace {input}.')
     return color
 
 #------------------------------------------------------------------------------#
@@ -133,12 +160,9 @@ def register_cmaps():
         # if name in mcm.cmap_d: # don't want to re-register every time
         #     continue
         if re.search('.rgb$', file):
-            load = {'hc': dict(skiprows=1, delimiter=','),
-                    'cb': dict(delimiter=','),
-                    'nc': dict(skiprows=2)}.get(name[:2],{})
-            try: cmap = np.loadtxt(file, **load)
+            try: cmap = np.loadtxt(file, delimiter=',') # simple
             except:
-                print(f'Failed to load {name}.')
+                print(f'Failed to load {os.path.basename(file)}.')
                 continue
             if (cmap>1).any():
                 cmap = cmap/255
@@ -174,8 +198,8 @@ def register_cycles():
     """
     # Simply register them as ListedColormaps
     for name,colors in cycles.items():
-        mcm.cmap_d[name]        = mcolors.ListedColormap([color_to_rgb(color) for color in colors])
-        mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([color_to_rgb(color) for color in colors[::-1]])
+        mcm.cmap_d[name]        = mcolors.ListedColormap([to_rgb(color) for color in colors])
+        mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([to_rgb(color) for color in colors[::-1]])
 
 def register_colors(nmax=256):
     """
@@ -199,7 +223,7 @@ custom_cmaps  = {}
 register_colors()
 register_cmaps()
 register_cycles()
-print('Registered colors and stuff.')
+print('Registered colors and colormaps.')
 
 #------------------------------------------------------------------------------#
 # Generalized colormap/cycle constructors
@@ -225,7 +249,7 @@ def Colormap(*args, levels=None, light=True, extend='both', **kwargs):
             cmap = f'C{cmap}' # use current color cycle
         elif type(cmap) is dict:
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            cmap = colorspace_cmap(**cmap)
+            cmap = cspace_cmap(**cmap)
         # (len(cmap)==2 and type(cmap[0]) is str and type(cmap[1]) is dict):
         elif type(cmap) is str:
             # Map name or color for generating monochrome gradiation
@@ -251,7 +275,7 @@ def Colormap(*args, levels=None, light=True, extend='both', **kwargs):
                     if 'b' in options:
                         cmap_kw.update({'black':'black'}) # use *actual* black
                 # Build colormap
-                cmap = color_to_rgb(cmap) # to ensure is hex code/registered color
+                cmap = to_rgb(cmap) # to ensure is hex code/registered color
                 if light:
                     cmap = light_cmap(cmap, **cmap_kw)
                 else:
@@ -305,6 +329,14 @@ def Cycle(*args, vmin=0, vmax=1):
 def set_cycle(cmap, samples=None, rename=False):
     """
     Set the color cycler.
+    Arguments
+    ---------
+        cmap :
+            Name of colormap or colormap instance from which we draw list of colors.
+        samples :
+            Array of values from 0-1 or number indicating number of evenly spaced
+            samples from 0-1 from which to draw colormap colors. Will be ignored
+            if the colormap is a ListedColormap (interpolation not possible).
     """
     colors = Cycle(cmap, samples)
     cyl = cycler('color', colors)
@@ -317,8 +349,9 @@ def rename_colors(cycle='colorblind'):
     """
     Calling this will change how shorthand codes like "b" or "g"
     are interpreted by matplotlib in subsequent plots.
-    Arguments:
-        palette: {deep, muted, pastel, dark, bright, colorblind}
+    Arguments
+    ---------
+        cycle : {deep, muted, pastel, dark, bright, colorblind}
             Named seaborn palette to use as the source of colors.
     """
     if cycle=='reset':
@@ -336,9 +369,17 @@ def rename_colors(cycle='colorblind'):
 #------------------------------------------------------------------------------#
 # Colormap constructors
 #------------------------------------------------------------------------------#
-def merge_cmaps(cmaps, n=256, name='merged'):
+def merge_cmaps(cmaps, n=512, name='merged'):
     """
     Merge arbitrary colormaps.
+    Arguments
+    ---------
+        cmaps : 
+            List of colormap strings or instances for merging.
+        n :
+            Number of lookup table colors desired for output colormap.
+        name :
+            Name of output colormap.
     """
     if len(cmaps)==1:
         return cmaps[0] # needed to avoid recursion!
@@ -349,102 +390,203 @@ def merge_cmaps(cmaps, n=256, name='merged'):
     mcm.cmap_d[name] = cmap # 'register' the cmap
     return cmap
 
-def smooth_cmap(colors, n=256, name='custom', input='rgb'):
+def smooth_cmap(colors, n=512, name='custom', input='rgb'):
     """
     Create colormap that smoothly blends between list of colors (in RGB
     space, so should't be too drastic).
+    Input
+    -----
+        colors :
+            List of colors.
+        n :
+            Number of lookup table colors desired for output colormap.
+        name :
+            Name of output colormap.
+        input :
+            If input is color tuple, indicates colorspace to which this
+            color belongs (e.g. rgb, hcl).
     """
-    colors = [color_to_rgb(color, input) for color in colors]
+    colors = [to_rgb(color,input) for color in colors]
     cmap   = mcolors.LinearSegmentedColormap.from_list(name, colors, n)
     mcm.cmap_d[name] = cmap # 'register' the colormap
     return cmap
 
-def colorspace_cmap(n=256, h=[0.05,1], s=1.0, l=[0.2,1], c=None, input='hsluv', name=None, reverse=False):
+def cspace_cmap(n=256, h=[0.05,1], s=1.0, l=[0.2,1], c=None,
+                    input='hsl', name=None, reverse=False, mask=True):
     """
-    Linearly vary between two or more of the parameters in some colorspace; can
-    choose from HSL (where L is not actually perceptually uniform), HSLuv (where
-    L is perceptually uniform but S not always), and LCH (where it is uniform).
+    Linearly vary between one or more of the parameters in some colorspace.
+    Input
+    -----
+        n : (int) number of colors
+        h : (scalar, string) scalar hue or color-string from which we draw hue
+            pass a length-2 tuple to request gradiation between two hues
+        s : (scalar, string) as above, for saturation/chroma
+        l : (scalar, string) as above, for lightness/luminance
+    Options
+    -------
+        input :
+            (str) colorspace from which you're creating your map, choose
+            from 'hsv', 'hsl'/'hsluv', and 'hcl'/'hcluv'
+        name :
+            (str) name of colormap, default is same as "input"
+        reverse :
+            (bool) optionally reverse the map
+        mask :
+            (bool) whether to mask out (True) or clip (False) out-of-bounds or
+            "imaginary" colors when making 'hcl' colormap
+    --------------------------------------------------------------------------
+    Choose from the following:
+        * HSL (where L is not actually perceptually uniform)
+        * HSLuv (where L is perceptually uniform but S is not always)
+        * LCH (where it is uniform)
     See: http://www.hsluv.org/comparison/
-    Preferable to HCL in many respects, becuase no truncation of colors.
-    Q: Why avoid doing this for HCL space?
+    Q: Default is HSLuv. Why not HCL space?
     A: HCL space space has "dead zones" where you have impossible colors, so you
     can't just pick arbitrary numbers and draw a line (or will have to raise
-    errors when we do this). HSLuv is just *scaled* HCL where chroma is
-    represented as a percentage of the maximum possible chroma for that
-    hue/luminance combo.
+    errors when we do this). Channels end up being clipped, which may cause
+    strange/unexpected gradiations.
+    HSLuv is just *scaled* HCL where chroma is represented as a percentage of
+    the maximum possible chroma for that hue/luminance combo.
     """
     # Figure out transform function
-    scales = (359, 99, 99)
-    if input in ['hsl', 'hsv']:
-        space_to_rgb = colormath.hsl_to_rgb
-        scales = (1, 1, 1)
-    elif input in ['hsluv']:
-        space_to_rgb = colormath.hsluv_to_rgb
-    elif input in ['hcl', 'hcluv']:
-        space_to_rgb = colormath.hcluv_to_rgb
-        # scales = (1, 1, 1)
+    scale = (359, 99, 99)
+    if input=='hsv':
+        scale = (1, 1, 1) # hsv just scales everything within 1
+    # Helper function; gets channel value from string color-name, and optionally offsets this value
+    def channel(color, i):
+        if type(color) is not str:
+            return color
+        offset = 0
+        regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
+        match = re.search(regex, color)
+        if match:
+            try:
+                offset = float(match.group(0))
+            except ValueError as err:
+                raise type(err)(f'Invalid channel identifier "{color}".')
+            color  = color[:match.start()]
+        return offset + to_xyz(to_rgb(color), input)[i]/scale[i]
     # Get length-2 tuples specifying colorspace gradations
+    # Make sure we don't modify underlying vector
     # if s is not None and c is not None:
     #     raise ValueError('Can only specify either "s" or "c".')
     name = name or input # default to just naming colormap after input
     if c is not None: # by default, overwrite
         s = c
-    if not utils.isiterable(h):
+    if not utils.isiterable(h) or type(h) is str:
         h = [h, h]
-    if not utils.isiterable(s):
+    else:
+        h = [*h]
+    if not utils.isiterable(s) or type(s) is str:
         s = [s, s]
-    if not utils.isiterable(l):
+    else:
+        s = [*s]
+    if not utils.isiterable(l) or type(l) is str:
         l = [l, l]
+    else:
+        l = [*l]
+    for i in range(2):
+        h[i] = channel(h[i], 0)
+        s[i] = channel(s[i], 1)
+        l[i] = channel(l[i], 2)
     # Next calculate stuff
     # NOTE: Before these were all minus 1, dunno why
-    hues = scales[0]*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
-    sats = scales[1]*(np.linspace(s[0], s[1], n+1)) # dunnot why max has to be 99
-    lums = scales[2]*(np.linspace(l[0], l[1], n+1))
-    colors = [space_to_rgb(h,s,l) for h,s,l in zip(hues,sats,lums)]
-    colors = clip(colors)
+    hues = scale[0]*(np.linspace(h[0], h[1], n+1) % 1) # before these were all minus 1, dunno why
+    sats = scale[1]*(np.linspace(s[0], s[1], n+1)) # dunnot why max has to be 99
+    lums = scale[2]*(np.linspace(l[0], l[1], n+1))
+    colors = [to_rgb((h,s,l),input) for h,s,l in zip(hues,sats,lums)]
+    colors = clip_colors(colors, mask=mask)
     if reverse:
         colors = colors[::-1]
     return smooth_cmap(colors, name=name)
 
-def light_cmap(color, n=256, reverse=False, input='rgb', white='#eeeeee'):
+def clip_colors(colors, mask=True):
     """
-    Make a sequential colormap that blends from color to light.
-    Will do so linearly in luminance-space.
-    """
-    _, _, w = colormath.rgb_to_hsluv(*color_to_rgb(white))
-    h, s, l = colormath.rgb_to_hsluv(*color_to_rgb(color, input))
-    h, s, l, w = h/359.0, s/99.0, l/99.0, w/99.0
-    return colorspace_cmap(n, h, s, ([w,l] if reverse else [l,w]))
-
-def dark_cmap(color, n=256, reverse=False, input='rgb', black='#111111'):
-    """
-    Make a sequential palette that blends from dark to color.
-    """
-    _, _, b = colormath.rgb_to_hsluv(*color_to_rgb(black))
-    h, s, l = colormath.rgb_to_hsluv(*color_to_rgb(color, input))
-    h, s, l, b = h/359.0, s/99.0, l/99.0, b/99.0
-    return colorspace_cmap(n, h, s, ([l,b] if reverse else [b,l]))
-
-def clip(colors):
-    """
-    Clip channels that get oversaturated.
+    Arguments
+    ---------
+        colors :
+            List of length-3 RGB color tuples.
+        mask : (bool)
+            Whether to mask out (set to some dark gray color) or clip (limit
+            range of each channel to [0,1]) out-of-range RGB channels.
     """
     under = {}
     over = {}
+    message = 'Invalid value for' if mask else 'Clipping'
     colors = [list(rgb) for rgb in colors] # so we can overwrite
+    gray = 0.2 # RGB values for gray color
     for rgb in colors:
         for i,(c,n) in enumerate(zip(rgb,'rgb')):
             if c<0:
-                rgb[i] = 0
+                if mask:
+                    rgb[-1] = 0
+                    for j in range(3):
+                        rgb[j] = gray
+                else:
+                    rgb[i] = 0
                 if n not in under:
                     under[n] = True
-                    print(f'Warning: Clipping {n} channel (<0).')
+                    print(f'Warning: {message} channel {n} (<0).')
             if c>1:
-                rgb[i] = 1
+                if mask:
+                    rgb[-1] = 1 # full alpha
+                    for j in range(3):
+                        rgb[j] = gray
+                else:
+                    rgb[i] = 1 # keep
                 if n not in over:
                     over[n] = True
-                    print(f'Warning: Clipping {n} channel (>1).')
+                    print(f'Warning: {message} channel {n} (>1).')
     return colors
+
+def light_cmap(color, n=512, reverse=False, input='hsl', white='#eeeeee', light=None):
+    """
+    Make a sequential colormap that blends from color to near-white.
+    Arguments
+    ---------
+        color :
+            Build colormap by varying the luminance of some RGB color while
+            keeping its saturation and hue constant.
+    Optional
+    --------
+        n : (512)
+            Number of lookup table colors desired for output colormap.
+        reverse : (False)
+            Optionally reverse colormap.
+        input : ('hsl')
+            Colorspace in which we vary luminance.
+    """
+    white = light or white
+    _, ws, wl = to_xyz(to_rgb(white), input)
+    h, s, l = to_xyz(to_rgb(color), input)
+    h, s, l, ws, wl = h/359.0, s/99.0, l/99.0, ws/99.0, wl/99.0
+    ws = s # perhaps don't change the chroma by default
+    index = slice(None,None,-1) if reverse else slice(None)
+    return cspace_cmap(n, h, [s,ws][index], [l,wl][index], input=input)
+
+def dark_cmap(color, n=512, reverse=False, input='hsl', black='#444444', dark=None, gray=None, grey=None):
+    """
+    Make a sequential colormap that blends from gray to color.
+    Arguments
+    ---------
+        color :
+            Build colormap by varying the luminance of some RGB color while
+            keeping its saturation and hue constant.
+    Optional
+    --------
+        n : (512)
+            Number of lookup table colors desired for output colormap.
+        reverse : (False)
+            Optionally reverse colormap.
+        input : ('hsl')
+            Colorspace in which we vary luminance.
+    """
+    black = grey or gray or dark or black # alternative kwargs
+    _, bs, bl = to_xyz(to_rgb(black), input)
+    h, s, l = to_xyz(to_rgb(color), input)
+    h, s, l, bs, bl = h/359.0, s/99.0, l/99.0, bs/99.0, bl/99.0
+    index = slice(None,None,-1) if reverse else slice(None)
+    return cspace_cmap(n, h, [bs,s][index], [bl,l][index], input=input)
 
 #------------------------------------------------------------------------------
 # Normalization classes for mapping data to colors (i.e. colormaps)
@@ -775,7 +917,8 @@ def cycle_show():
             bbox_inches='tight', format='pdf')
     return fig
 
-def cmap_show(N=31, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']):
+# def cmap_show(N=31, ignore=['Miscellaneous','Sequential2','Diverging2']):
+def cmap_show(N=30, ignore=['B-List','Miscellaneous']):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -784,101 +927,87 @@ def cmap_show(N=31, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']
     See: http://matplotlib.org/examples/color/colormaps_reference.html
     """
     # Have colormaps separated into categories:
-    cmaps = [m for m in plt.colormaps() if not m.endswith('_r')]
-    cmaps_known = []
-    cmaps_custom = ['ColorPicker','HCL','ColorBrewer','Dave','NCL']
-    categories = { **{category:[] for category in cmaps_custom}, # initialize as empty lists
-        'Cycles': cmap_cycles, # colormaps that are sequences of colors, not gradations
-        'Perceptually Uniform Sequential':
-            ['viridis', 'cividis', 'plasma', 'inferno', 'magma'],
-        'Diverging1':
-            ['piyg', 'prgn', 'brbg', 'puor', 'rdgy', 'rdbu', 'rdylbu', 'rdylgn', 'spectral'],
-        'Diverging2':
-            ['coolwarm', 'bwr', 'seismic'],
-        'Sequential1':
-            ['greys', 'purples', 'blues', 'greens', 'oranges', 'reds',
+    # NOTE: viridis, cividis, plasma, inferno, and magma are all
+    # listed colormaps for some reason
+    exceptions = ['viridis','cividis','plasma','inferno','magma']
+    cmaps_all = [cmap for cmap in mcm.cmap_d.keys() if
+            not cmap.endswith('_r')
+            and not re.search('[A-Z]',cmap)
+            and 'Vega' not in cmap
+            and (isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) or cmap in exceptions)]
+    cmaps_listed = [cmap for cmap in mcm.cmap_d.keys() if
+            not cmap.endswith('_r')
+            and not re.search('[A-Z]',cmap)
+            and 'Vega' not in cmap
+            and (not isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) and cmap not in exceptions)]
+    categories = { # initialize as empty lists
+        'Custom': [], # should come first
+        'ColorBrewer': [], # should come second
+        'MultiHue':
+            ['cubehelix', *sorted(['viridis', 'cividis', 'plasma', 'inferno', 'magma'])],
+        'Diverging':
+            sorted(['piyg', 'prgn', 'brbg', 'puor', 'rdgy', 'rdbu', 'rdylbu', 'rdylgn', 'spectral']),
+        # 'Diverging B-List': ['coolwarm', 'bwr', 'seismic'],
+        'Sequential':
+            sorted(['greys', 'purples', 'blues', 'greens', 'oranges', 'reds',
             'ylorbr', 'ylorrd', 'orrd', 'purd', 'rdpu', 'bupu',
-            'gnbu', 'pubu', 'ylgnbu', 'pubugn', 'bugn', 'ylgn'],
-        'Sequential2':
-            ['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+            'gnbu', 'pubu', 'ylgnbu', 'pubugn', 'bugn', 'ylgn']),
+        'B-List':
+            sorted(['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
             'spring', 'summer', 'autumn', 'winter', 'cool', 'wistia',
-            'hot', 'afmhot', 'gist_heat', 'copper'],
+            'coolwarm', 'bwr', 'seismic', # diverging ones
+            'hot', 'afmhot', 'gist_heat', 'copper']),
         'Miscellaneous':
-            ['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-            'gnuplot', 'gnuplot2', 'cmrmap', 'cubehelix', 'brg', 'hsv', 'spectral',
-            'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar']}
-    # print(categories) # for testing
-    for k,v in categories.items(): # big list of all colormaps
-        cmaps_known += [_.lower() for _ in v] # add to this existing list
-    for i,cm in enumerate(cmaps): # add to 'Custom' if not in above dictionary
-        if re.search('[A-Z]',cm):
-            continue
-        if cm in cmaps_known:
-            continue
-        if 'Vega' in cm:
-            continue # deprecated
-        if cm[:2]=='hc':
-            categories['HCL'].append(cm)
-        elif cm[:2]=='nc':
-            categories['NCL'].append(cm)
-        elif cm[:2]=='cb':
-            categories['ColorBrewer'].append(cm)
-        elif cm[:2]=='cp':
-            categories['ColorPicker'].append(cm)
-        elif cm[:4]=='dave':
-            categories['Dave'].append(cm)
-        else:
-            print(f'Colormap "{cm}" has unknown category.')
-            # categories['Custom'].append(cm)
+            sorted(['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+            'gnuplot', 'gnuplot2', 'cmrmap', 'cubehelix', 'brg', 'hsv',
+            'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
+    # Detect unknown/manually created colormaps, and filter out
+    # colormaps belonging to certain section
+    cmaps_ignore  = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cat in ignore]
+    categories    = {cat:cmaps for cat,cmaps in categories.items() if cat not in ignore}
+    cmaps_known   = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap in cmaps_all]
+    cmaps_missing = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap not in cmaps_all]
+    cmaps_custom  = [cmap for cmap in cmaps_all if cmap not in cmaps_known and cmap not in cmaps_ignore]
+    categories['Custom'] = [cmap for cmap in cmaps_custom if cmap[:2]!='cb']
+    categories['ColorBrewer'] = [cmap for cmap in cmaps_custom if cmap[:2]=='cb']
+    if cmaps_missing:
+        print(f'Missing colormaps: {", ".join(cmaps_missing)}')
+    if cmaps_ignore:
+        print(f'Ignored colormaps: {", ".join(cmaps_ignore)}')
+    # print(f'Custom colormaps: {", ".join(cmaps_custom)}')
+    # print(f'Listed colormaps: {", ".join(cmaps_listed)}')
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
     # Figure
-    twidth = 1 # number of axes-widths to allocate for titles
-    nmaps = len([item for group in categories.values() for item in group]) + len(categories)*twidth
-    # nmaps = len(cmaps) + len(categories)*twidth # title for each category
-    for cat in ignore:
-        nmaps -= (twidth + len(categories[cat])) # reduce size
-    fig = plt.figure(figsize=(5,.3*nmaps))
+    extra = 1 # number of axes-widths to allocate for titles
+    nmaps = len(cmaps_known) + len(cmaps_custom) + len(categories)*extra
+    fig = plt.figure(figsize=(5,0.3*nmaps))
     fig.subplots_adjust(top=0.99, bottom=0.01, left=0.15, right=0.99)
     # Make plot
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
-    cats = [cat for cat in categories if cat not in ignore]
-    for cat in cats:
+    for cat in categories:
         # Space for title
-        ntitles += twidth # two axes-widths
+        ntitles += extra # two axes-widths
         for i,m in enumerate(categories[cat]):
+            # Checks
             if i+ntitles+nplots>nmaps:
                 break
-            # Get object
-            # NOTE: viridis, cividis, plasma, inferno, and magma are all
-            # listed colormaps for some reason
-            if m not in mcm.cmap_d:
-                print(f'Warning: colormap {m} not found.')
+            if m not in mcm.cmap_d or m not in cmaps_all: # i.e. the expected builtin colormap is missing
                 continue
+            # Draw, and make axes invisible
             cmap = mcm.get_cmap(m, N) # interpolate
-            # if isinstance(mcm.cmap_d[m], mcolors.LinearSegmentedColormap):
-            # if isinstance(mcm.cmap_d[m], mcolors.ListedColormap):
-            # Draw, and make invisible
             ax = plt.subplot(nmaps,1,i+ntitles+nplots)
             for s in ax.spines.values():
                 s.set_visible(False)
-            # ax.patch.set_alpha(0)
             ax.set_xticks([])
             ax.set_yticks([])
-            # Draw colormap
             ax.imshow(a, aspect='auto', cmap=cmap, origin='lower')
-            if cat not in cmaps_custom:
-                if m in cmaps_known:
-                    cmaps_known.remove(m)
-                else:
-                    print(f'Warning: tried removing {m}.')
-            # Category title
+            # Category title and colorbar label
             if i==0:
                 t = ax.title
                 t.set_text(cat) # category name
                 t.set_visible(True)
-            # Label
             yl = ax.yaxis.label
             yl.set_text(m) # map name
             yl.set_visible(True)
@@ -888,18 +1017,7 @@ def cmap_show(N=31, ignore=['Cycles','Miscellaneous','Sequential2','Diverging2']
         # Space for plots
         nplots += len(categories[cat])
     fig.subplots_adjust(top=0.99, bottom=0.00, left=0.15, right=0.99)
-    # Check
-    for cat in ignore:
-        for m in categories[cat]:
-            if cat not in cmaps_custom:
-                if m in cmaps_known:
-                    cmaps_known.remove(m)
-                else:
-                    print(f'Warning: tried removing {m}.')
-    if len(cmaps_known)>0:
-        print(f'Colormaps in dictionary, but not found: {", ".join(cmaps_known)}')
     # Save
-    # fig.patch.set_alpha(0)
     filename = f'{os.path.dirname(__file__)}/colormaps.pdf'
     print(f"Saving figure to: {filename}.")
     fig.savefig(filename, bbox_inches='tight')
