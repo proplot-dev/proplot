@@ -76,7 +76,7 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
 ### Tick formatters/locators
    * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
    * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols
-   * Pass `locator=[string]` to use any of the `matplotlib.ticker` locators, e.g. `locator='lon'`, `locator='month'`, `locator='linear'`.
+   * Pass `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='lon'`, `locator='month'`, `locator='linear'`.
 ### Revised underlying issues with contour and pcolor commands
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
