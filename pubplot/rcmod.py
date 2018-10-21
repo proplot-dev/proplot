@@ -280,7 +280,7 @@ def rc(*args, verbose=False, **kwargs):
     #       + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
     # [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
     cycle = current['cycle']
-    if not utils.isiterable(cycle) or type(cycle) is str:
+    if utils.isscalar(cycle):
         cycle = cycle,
     colors = colortools.Cycle(*cycle)
     cycle  = cycler('color', colors)
@@ -290,60 +290,61 @@ def rc(*args, verbose=False, **kwargs):
     # you specify them explicitly, even if you use transparent True.
     color, linewidth, ticklen, tickpad, small, large, fontname = \
         current['color'], current['linewidth'], current['ticklen'], current['tickpad'], current['small'], current['large'], current['fontname']
-    add('savefig', {'transparent':True, 'facecolor':'w', 'dpi':300,
-        'directory':'', 'pad_inches':0, 'bbox':'standard', 'format':'pdf'}) # empty means current directory
-    add('figure', {'facecolor':(.95,.95,.95,1), 'dpi':90, # matches nbsetup
-        'max_open_warning':0, 'constrained_layout':False, 'autolayout':False}) # zero disables max open warning
-    add('axes', {'xmargin':0, 'ymargin':0.05, 'labelsize':small, 'titlesize':large,
-        'edgecolor':color, 'labelcolor':color, 'grid':True, 'linewidth':linewidth,
-        'labelpad':3, 'prop_cycle':cycle})
-    add('font', {'size':small, 'family':'sans-serif', 'sans-serif':fontname}) # when user calls .text()
-    add('text', {'color':color}) # when user calls .text()
-    add('grid', {'linewidth':linewidth/2, 'alpha':0.1, 'color':color})
+    add('savefig', dict(transparent=True, facecolor='w', dpi=300,
+        directory='', pad_inches=0, bbox='standard', format='pdf')) # empty means current directory
+    add('figure', dict(facecolor=(.95,.95,.95,1), dpi=90, # matches nbsetup
+        max_open_warning=0, constrained_layout=False, autolayout=False)) # zero disables max open warning
+    add('axes', dict(xmargin=0, ymargin=0.05, labelsize=small, titlesize=large,
+        edgecolor=color, labelcolor=color, grid=True, linewidth=linewidth,
+        labelpad=3, prop_cycle=cycle))
+    add('font', dict({'sans-serif':fontname}, size=small, family='sans-serif')) # when user calls .text()
+    add('text', dict(color=color)) # when user calls .text()
+    add('grid', dict(linewidth=linewidth/2, alpha=0.1, color=color))
     for xy in 'xy':
-        tickloc = {'x':{'bottom':True,'top':False},'y':{'left':True,'right':False}}[xy]
-        add(f'{xy}tick',       {'labelsize':small, 'color':color, 'direction':'out'})
-        add(f'{xy}tick.major', {'pad':tickpad, 'width':linewidth, 'size':ticklen, **tickloc}) # size==length
-        add(f'{xy}tick.minor', {'pad':tickpad, 'width':linewidth, 'size':ticklen/2, **tickloc, 'visible':True})
+        tickloc = {'x':dict(bottom=True, top=False),'y':dict(left=True,right=False)}[xy]
+        add(f'{xy}tick',       dict(labelsize=small, color=color, direction='out'))
+        add(f'{xy}tick.major', dict(pad=tickpad, width=linewidth, size=ticklen, **tickloc)) # size==length
+        add(f'{xy}tick.minor', dict(pad=tickpad, width=linewidth, size=ticklen/2, **tickloc, visible=True))
     # Ones related to stuff plotted inside axes
     # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
-    add('patch',    {'linewidth':linewidth,   'edgecolor':color}) # e.g. bars?
-    add('hatch',    {'linewidth':linewidth,   'color':color})
-    add('lines',    {'linewidth':linewidth*2,
-        'markersize':linewidth*4, 'markeredgewidth':0,
-        'dash_joinstyle':'miter', 'dash_capstyle':'projecting', # joinstyle opts: miter, round, bevel
-        'solid_joinstyle':'miter', 'solid_capstyle':'projecting'}) # capstyle opts: butt, round, projecting
-    add('markers',  {'fillstyle':'full'})
-    add('scatter',  {'marker':'o'})
-    add('legend',   {'framealpha':1, 'fancybox':False, 'frameon':False, # see: https://matplotlib.org/api/legend_api.html
-        'labelspacing':0.5, 'handletextpad':0.5, 'handlelength':1.5, 'columnspacing':1,
-        'borderpad':0.5,    'borderaxespad':0,   'numpoints':1,    'facecolor':'inherit'})
+    add('image', dict(cmap='sunset', lut=256))         # colormap stuff
+    add('patch', dict(linewidth=linewidth, edgecolor=color)) # e.g. bars?
+    add('hatch', dict(linewidth=linewidth, color=color))
+    add('lines', dict(linewidth=linewidth*2,
+        markersize=linewidth*4,  markeredgewidth=0,
+        dash_joinstyle='miter',  dash_capstyle='projecting',   # joinstyle opts= miter, round, bevel
+        solid_joinstyle='miter', solid_capstyle='projecting')) # capstyle opts= butt, round, projecting
+    add('markers',  dict(fillstyle='full'))
+    add('scatter',  dict(marker='o'))
+    add('legend',   dict(framealpha=1, fancybox=False, frameon=False, # see= https=//matplotlib.org/api/legend_api.html
+        labelspacing=0.5, handletextpad=0.5, handlelength=1.5, columnspacing=1,
+        borderpad=0.5,    borderaxespad=0,   numpoints=1,      facecolor='inherit'))
     # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
     #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
     # This can only be accomplished with rcParams; impossible to specify with API!
-    add('mathtext', {'default':'regular', 'bf':'sans:bold', 'it':'sans:it'}) # no italicization
+    add('mathtext', dict(default='regular', bf='sans:bold', it='sans:it')) # no italicization
     # Next the settings with custom names
     # Some might be redundant, and should consider eliminating
     # Should begin to delete these and control things with rcParams whenever possible
     # Remember original motivation was realization that some rcParams can't be changes
     # by passing a kwarg (don't remember any examples)
-    add('abc',         {'size':large, 'weight':'bold', 'color':color})
-    add('title',       {'size':large, 'weight':'normal', 'color':color, 'fontname':fontname})
-    add('suptitle',    {'size':large, 'weight':'normal', 'color':color, 'fontname':fontname})
-    add('label',       {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
-    add('ticklabels',  {'size':small, 'weight':'normal', 'color':color, 'fontname':fontname})
-    add('gridminor',   {'linestyle':'-', 'linewidth':linewidth/2, 'color':color, 'alpha':0.1})
-    add('cgrid',       {'color':color, 'linewidth':linewidth})
-    add('continents',  {'color':color, 'linewidth':0}) # make sure no lines!
-    add('oceans',      {'color':'w', 'linewidth':0}) # make sure no lines!
-    add('tickminor',   {'length':ticklen/2, 'width':linewidth, 'color':color})
-    add('tick',        {'length':ticklen, 'width':linewidth, 'color':color})
-    add('ctickminor',  {'length':ticklen/2, 'width':linewidth, 'color':color})
-    add('ctick',       {'length':ticklen, 'width':linewidth, 'color':color})
-    add('coastlines',  {'linewidth':linewidth, 'color':color})
-    add('lonlatlines', {'linewidth':linewidth, 'linestyle':':', 'color':color, 'alpha':0.2})
-    add('spine',       {'color':color, 'linewidth':linewidth})
-    add('outline',     {'edgecolor':color, 'linewidth':linewidth})
+    add('abc',         dict(size=large, weight='bold', color=color))
+    add('title',       dict(size=large, weight='normal', color=color, fontname=fontname))
+    add('suptitle',    dict(size=large, weight='normal', color=color, fontname=fontname))
+    add('label',       dict(size=small, weight='normal', color=color, fontname=fontname))
+    add('ticklabels',  dict(size=small, weight='normal', color=color, fontname=fontname))
+    add('gridminor',   dict(linestyle='-', linewidth=linewidth/2, color=color, alpha=0.1))
+    add('cgrid',       dict(color=color, linewidth=linewidth))
+    add('continents',  dict(color=color, linewidth=0)) # make sure no lines!
+    add('oceans',      dict(color='w', linewidth=0)) # make sure no lines!
+    add('tickminor',   dict(length=ticklen/2, width=linewidth, color=color))
+    add('tick',        dict(length=ticklen, width=linewidth, color=color))
+    add('ctickminor',  dict(length=ticklen/2, width=linewidth, color=color))
+    add('ctick',       dict(length=ticklen, width=linewidth, color=color))
+    add('coastlines',  dict(linewidth=linewidth, color=color))
+    add('lonlatlines', dict(linewidth=linewidth, linestyle='=', color=color, alpha=0.2))
+    add('spine',       dict(color=color, linewidth=linewidth))
+    add('outline',     dict(edgecolor=color, linewidth=linewidth))
     if verbose:
         print('Global properties set.')
     return None

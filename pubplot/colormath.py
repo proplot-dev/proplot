@@ -46,23 +46,23 @@ lab_e = 0.008856
 lab_k = 903.3
 
 #------------------------------------------------------------------------------#
-# First my custom functions
+# Previous custom function implemented directly from wikipedia page
 #------------------------------------------------------------------------------#
-def rgb_to_hcl(c, gamma=3, normalize=False): # gamma is default
-    """
-    Convert color to HCL space.
-    Copied from wiki page, but the below conversions more accurate.
-    """
-    rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
-    alpha = (min(rgb)/max(rgb))/100 # intermediary
-    q = np.exp(alpha*gamma) # intermediary
-    r, g, b = rgb # expand out, easier
-    h = np.arctan2(g-b, r-g)
-    h = 2*np.pi+h if h<0 else h # make positive
-    h = h*180/np.pi if not normalize else h/(2*np.pi) # normalize to 0-1 possibly
-    c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
-    l = (q*max(rgb) + (1-q)*min(rgb))/2
-    return (h,c,l)
+# def rgb_to_hcl(c, gamma=3, normalize=False): # gamma is default
+#     """
+#     Convert color to HCL space.
+#     Copied from wiki page, but the below conversions more accurate.
+#     """
+#     rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
+#     alpha = (min(rgb)/max(rgb))/100 # intermediary
+#     q = np.exp(alpha*gamma) # intermediary
+#     r, g, b = rgb # expand out, easier
+#     h = np.arctan2(g-b, r-g)
+#     h = 2*np.pi+h if h<0 else h # make positive
+#     h = h*180/np.pi if not normalize else h/(2*np.pi) # normalize to 0-1 possibly
+#     c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
+#     l = (q*max(rgb) + (1-q)*min(rgb))/2
+#     return (h,c,l)
 
 #------------------------------------------------------------------------------#
 # Modifications

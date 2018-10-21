@@ -239,22 +239,27 @@ def cmap_features(func):
     Also see: https://stackoverflow.com/a/48614231/4970632
     """
     @wraps(func)
-    def wrapper(self, *args, cmap=None, norm=None, levels=None, cmapsave=False, extend='neither', extremes=True, **kwargs):
+    def wrapper(self, *args, cmap=None, norm=None, levels=None,
+                cmapname='custom', cmapsave=False, cmapratios=1, cmapresample=False,
+                extend='neither',  extremes=True, **kwargs):
         # Specify normalizer
-        name = func.__name__
-        default = ('continuous' if 'contour' in name else 'discrete')
-        norm = colortools.Norm(norm, default=default, levels=levels)
-        if levels is None:
-            levels = getattr(norm, 'levels', None)
+        cmapextend = 'neither' if not extremes else extend
+        if cmapresample:
+            N = len(levels) if levels is not None else 31 # convervative number
+            norm = colortools.Norm('segmented', levels=levels)
+        else:
+            N = None
+            norm = colortools.Norm('step', levels=levels, extend=cmapextend)
         # Specify colormap
         if any(isinstance(cmap,t) for t in (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
-        cmap_extend = 'neither' if not extremes else extend
-        cmap = colortools.Colormap(*cmap, levels=levels, extend=cmap_extend) # pass as arguments to generalized colormap constructor
+        cmap = colortools.Colormap(*cmap, # pass as arguments to generalized colormap constructor
+                name=cmapname, extend=cmapextend, ratios=cmapratios,
+                N=N, resample=cmapresample)
         # Optionally register and save colormap to disk
         if cmapsave:
             savename = f'{cmap.name}.hex'
-            print(f'Saving colormap "{savename}" to disk.')
+            print(f'Saving colormap "{savename}".')
             file = f'{os.path.dirname(__file__)}/cmaps/{savename}'
             with open(file, 'w') as h: # overwrites if exists; otherwise us 'a'
                 h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
@@ -262,6 +267,7 @@ def cmap_features(func):
             if re.search('[A-Z]', cmap.name):
                 mcm.cmap_d[cmap.name.lower()] = cmap
         # Call function with special args removed
+        name = func.__name__
         kwextra = dict()
         if 'contour' in name:
             kwextra = dict(levels=levels, extend=extend)
@@ -277,7 +283,7 @@ def cmap_features(func):
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
-        elif not utils.isiterable(result):
+        elif utils.isnumber(result):
             result.set_edgecolor('face')
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
@@ -294,7 +300,7 @@ def cycle_features(func):
     def wrapper(self, *args, cycle=None, **kwargs):
         # Determine and temporarily set cycler
         if cycle is not None:
-            if not utils.isiterable(cycle) or type(cycle) is str:
+            if utils.isscalar(cycle):
                 cycle = cycle,
             cycle = colortools.Cycle(*cycle)
             self.set_prop_cycle(color=cycle)
@@ -509,6 +515,10 @@ class Figure(mfigure.Figure):
         self.width    = width
         self.height   = height
         self.gridspec = gridspec
+        self.leftpanel    = None
+        self.bottompanel  = None
+        self.rightpanel   = None
+        self.toppanel     = None
         super().__init__(**kwargs) # python 3 only
 
     def panel_factory(self, subspec, width, height, whichpanels=None,
@@ -1494,7 +1504,7 @@ class BasemapAxes(MapAxes):
         # Make sure to turn off clipping by invisible axes boundary; otherwise
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
         if latlocator is not None:
-            if not utils.isiterable(latlocator):
+            if utils.isnumber(latlocator):
                 latlocator = AutoLocate(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
             p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
@@ -1510,7 +1520,7 @@ class BasemapAxes(MapAxes):
         if lonlocator is not None:
             latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
             lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
-            if not utils.isiterable(lonlocator):
+            if utils.isnumber(lonlocator):
                 lonlocator = AutoLocate(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
             p = self.m.drawmeridians(lonlocator, labels=lonlabels, ax=self)
             for pi in p.values():
@@ -1673,8 +1683,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if utils.isiterable(v) else [*AutoLocate(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if utils.isiterable(v) else [*AutoLocate(-90,90,v)]
+        lonvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*AutoLocate(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*AutoLocate(-90,90,v)]
         lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
         lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
@@ -2219,6 +2229,8 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     # TODO: For whatever reason the only way to avoid bugs seems to be to pass
     # the major formatter/locator to colorbar commmand and directly edit the
     # minor locators/formatters; update_ticks after the fact ignores the major formatter
+    # axis.set_major_locator(locators[0]) # does absolutely nothing
+    # axis.set_major_formatter(cformatter)
     if orientation=='horizontal':
         axis = ax.xaxis
         scale = ax.figure.width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
@@ -2232,6 +2244,7 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
             format=cformatter, **csettings)
 
     # The ticks/ticklabels basic properties
+    # print('skip!'); cb = ax.figure.colorbar(mappable, ticks=locators[0], ticklocation=ticklocation, format=cformatter, **csettings); return
     for t in axis.get_ticklabels(which='major'):
         t.update(rc('ticklabels'))
     axis.set_tick_params(which='major', **rc('ctick'))
@@ -2245,11 +2258,18 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     #   in question, for whatever reason
     # * The major locator and formatter settings here are also not ideal since we'd have to
     #   update_ticks which might throw off the minor ticks again
-    # axis.set_major_locator(locators[0])
-    # axis.set_major_formatter(cformatter)
-    # axis.set_ticks(locators[1].locs, minor=True)
-    # axis.set_minor_locator(locators[1])
-    axis.set_ticks(mappable.norm(np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))), minor=True)
+    # WARNING: If functionality of BoundaryNorm is modified so data is transformed
+    # by some linear transformation before getting binned, below may fail.
+    # cb.minorticks_on() # alternative, but can't control the god damn spacing/set our own version
+    # axis.set_minor_locator(locators[1]) # does absolutely nothing
+    minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
+    if isinstance(mappable.norm, mcolors.BoundaryNorm): # including my own version
+        vmin, vmax = mappable.norm.vmin, mappable.norm.vmax
+        minorvals = (minorvals-vmin)/(vmax-vmin)
+    else:
+        minorvals = mappable.norm(minorvals)
+    axis.set_ticks(minorvals, minor=True)
+    # axis.set_ticks(mappable.norm(majorvals), minor=False)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # Set up the label
     axis.label.update(rc('label'))
@@ -2300,7 +2320,7 @@ def journalsize(width, height):
         raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
                           'Options are: ' + ', '.join(table.keys()))
     # Output width, and optionally also specify height
-    if not utils.isiterable(value):
+    if utils.isnumber(value):
         width = value
     else:
         width, height = value
@@ -2438,12 +2458,12 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     # Useful if user wants to include extra space between some columns greater than the
     # spaces between axes in other columns
     if emptycols is not None:
-        if not utils.isiterable(emptycols):
+        if utils.isnumber(emptycols):
             emptycols = [emptycols]
         for col in emptycols:
             array[:,col-1] = 0
     if emptyrows is not None:
-        if not utils.isiterable(emptyrows):
+        if utils.isnumber(emptyrows):
             emptyrows = [emptyrows]
         for row in emptyrows:
             array[row-1,:] = 0
@@ -2612,7 +2632,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     if maps is not None:
         if maps is True:
             maps = [*np.unique(array)]
-        if not utils.isiterable(maps):
+        if utils.isnumber(maps):
             maps = [maps] # just want a single map
         else:
             maps = [*maps] # force into list, not array
@@ -2627,7 +2647,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     if innerpanels is not None:
         if innerpanels is True:
             innerpanels = [*np.unique(array)]
-        if not utils.isiterable(innerpanels):
+        if utils.isnumber(innerpanels):
             innerpanels = [innerpanels]
         else:
             innerpanels = [*innerpanels] # force into list, not array
@@ -2787,7 +2807,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     if bottompanel: # one spanning panel
         bottompanels = [1]*ncols
     elif bottompanels: # more flexible spec
-        if not utils.isiterable(bottompanels):
+        if utils.isnumber(bottompanels):
             bottompanels = [*range(ncols)] # pass True to make panel for each column
     if bottompanels: # non-empty
         # First get the number of columns requested and their width 
@@ -2826,7 +2846,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     if rightpanel:
         rightpanels = [1]*nrows
     elif rightpanels:
-        if not utils.isiterable(rightpanels):
+        if utils.isnumber(rightpanels):
             rightpanels = [*range(nrows)] # pass True to make panel for each row
     if rightpanels: # non-empty
         # First get the number of columns requested and their width 
