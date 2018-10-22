@@ -183,7 +183,7 @@ def to_xyz(color, space):
     # Run tuple conversions
     color = mcolors.to_rgb(color) # convert string and/or trim alpha channel
     if space=='hsv':
-        color = colormath.rgb_to_hsl(*color)
+        color = colormath.rgb_to_hsl(*color) # rgb_to_hsv would also work
     elif space=='hpl':
         color = colormath.rgb_to_hpluv(*color)
     elif space=='hsl':
@@ -545,7 +545,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         if 'alpha' in self._segmentdata:
             self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'], 1)
         # Make hues circular
-        self._lut[:-3,0] %= 359 # mod
+        self._lut[:-3,0] %= 359
         # if key=='hue':
         #     print('initial hue array', array)
         #     array[:,1:] = array[:,1:] % 1 # allow circular hues
@@ -561,7 +561,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         """
         Return a new color map with *N* entries.
         """
-        return PerceptuallyUniformColormap(self.name, self._segmentdata, scale=False, space=self.space, N=N)
+        return PerceptuallyUniformColormap(self.name, self._segmentdata, space=self.space, scale=False, N=N)
 
     @staticmethod
     def from_hsl(name, h=1.0, s=1.0, l=[1,0.2], c=None, a=None, **kwargs):
@@ -631,20 +631,22 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
 def make_mapping_array(N, data, gamma=1.0):
     """
-    Carbon copy of matplotlib version, but this one doesn't clip values.
+    Carbon copy of matplotlib version, but this one doesn't clip values to
+    the range 0-1. Allows HSL values (which range from 0-359, 0-99, 0-99) and
+    permits circular hue gradations.
     """
     # Get array
     try:
-        adata = np.array(data)
+        data = np.array(data)
     except Exception:
-        raise TypeError("data must be convertible to an array")
-    shape = adata.shape
+        raise TypeError('Data must be convertible to an array.')
+    shape = data.shape
     if len(shape) != 2 or shape[1] != 3:
-        raise ValueError("data must be nx3 format")
+        raise ValueError('Data must be nx3 format.')
     # Get indices
-    x  = adata[:, 0]
-    y0 = adata[:, 1]
-    y1 = adata[:, 2]
+    x  = data[:, 0]
+    y0 = data[:, 1]
+    y1 = data[:, 2]
     if x[0] != 0.0 or x[-1] != 1.0:
         raise ValueError('Data mapping points must start with x=0 and end with x=1')
     if (np.diff(x) < 0).any():

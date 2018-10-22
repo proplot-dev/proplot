@@ -7,10 +7,14 @@ Already provided by matplotlib:
   rgb_to_hsv
   hsv_to_rgb
 New utilities:
-  lchuv_to_rgb
-  rgb_to_lchuv
-  hsluv_to_rgb
+  rgb_to_hsl   (should be same as rgb_to_hsv)
+  hsl_to_rgb   (should be same as hsv_to_rgb)
+  hcl_to_rgb   (hcl)
+  rgb_to_hcl
+  hsluv_to_rgb (hcl scaled by max chroma)
   rgb_to_hsluv
+  hpluv_to_rgb (hcl cut-off at min of max chromas, so pastel colors only)
+  rgb_to_hpluv
 Adapted from:
     https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py
     https://github.com/hsluv/hsluv-python/blob/master/hsluv.py
