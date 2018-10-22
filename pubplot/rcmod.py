@@ -307,7 +307,7 @@ def rc(*args, verbose=False, **kwargs):
         add(f'{xy}tick.minor', dict(pad=tickpad, width=linewidth, size=ticklen/2, **tickloc, visible=True))
     # Ones related to stuff plotted inside axes
     # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
-    add('image', dict(cmap='sunset', lut=256))         # colormap stuff
+    add('image', dict(cmap='sunset', lut=256)) # colormap stuff
     add('patch', dict(linewidth=linewidth, edgecolor=color)) # e.g. bars?
     add('hatch', dict(linewidth=linewidth, color=color))
     add('lines', dict(linewidth=linewidth*2,

@@ -10,6 +10,19 @@ from numbers import Number
 #------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
+def isvector(item):
+    """
+    Just test if is iterable, but not a string (we almost never mean this).
+    """
+    # return hasattr(item, '__iter__') and not isinstance(item, str)
+    return np.iterable(item) and not isinstance(item, str)
+
+def isnumber(item):
+    """
+    Just test if number.
+    """
+    return isinstance(item, Number)
+
 def isscalar(item):
     """
     Test if item is a number or a string, as opposed to list/tuple/array.
@@ -21,18 +34,6 @@ def isscalar(item):
     # return (hasattr(item,'__iter__') or hasattr(item,'__getitem__')) # integers have this!
     # return hasattr(item,'__iter__')
     return isinstance(item, Number) or isinstance(item, str)
-
-def isvector(item):
-    """
-    Just test if is iterable, but not a string (we almost never mean this).
-    """
-    return hasattr(item, '__iter__') and not isinstance(item, str)
-
-def isnumber(item):
-    """
-    Just test if number.
-    """
-    return isinstance(item, Number)
 
 def edges(values, axis=-1):
     """

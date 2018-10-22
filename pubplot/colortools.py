@@ -82,12 +82,27 @@ cmap_cycles = ['Pastel1', 'Pastel2', 'Paired',
     'Accent', 'Dark2', 'Set1', 'Set2', 'Set3',
     'tab10', 'tab20', 'tab20b', 'tab20c']
 # Finally some names
-cspace_names = {
-    'hsv': ['hsv'],
-    'hpl': ['hpl','hpluv'],
-    'hsl': ['hsl','hsluv'],
-    'hcl': ['hcl','lch']
+space_aliases = {
+    'rgb':   'rgb',
+    'hsv':   'hsv',
+    'hpl':   'hpl',
+    'hpluv': 'hpl',
+    'hsl':   'hsl',
+    'hsluv': 'hsl',
+    'hcl':   'hcl',
+    'lch':   'hcl',
     }
+# Scale
+space_scales = {
+    'rgb': (1,1,1,1),
+    'hsv': (1,1,1,1),
+    'hsl': (359,99,99,1),
+    'hpl': (359,99,99,1),
+    'hcl': (359,99,99,1),
+    }
+# Aliases
+channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2, 'alpha': 3,
+                'h':   0, 's':          1, 'c':      1, 'l':         2}
 # Names of builtin colormaps
 categories_default = { # initialize as empty lists
     'Builtin Rainbow':
@@ -117,26 +132,46 @@ categories_default = { # initialize as empty lists
 #------------------------------------------------------------------------------#
 # More generalized utility for retrieving colors
 #------------------------------------------------------------------------------#
+def get_space(space):
+    """
+    Verify requested colorspace is valid.
+    """
+    space = space_aliases.get(space, None)
+    if space is None:
+        raise ValueError(f'Unknown colorspace "{space}".')
+    return space
+
+def get_scale(space):
+    """
+    Get scales.
+    """
+    return space_scales[get_space(space)]
+
 def to_rgb(color, space='rgb'):
     """
     Generalization of mcolors.to_rgb to translate color tuple
-    from any colorspace to rgb.
-    Convert color of arbitrary space to RGB.
+    from any colorspace to rgb. Also will convert color strings to tuple.
     """
-    if space in cspace_names['hsv']:
-        color = colormath.hsl_to_rgb(*color)
-    elif space in cspace_names['hpl']:
-        color = colormath.hpluv_to_rgb(*color)
-    elif space in cspace_names['hsl']:
-        color = colormath.hsluv_to_rgb(*color)
-    elif space in cspace_names['hcl']:
-        color = colormath.hcl_to_rgb(*color)
-    elif type(color) is str:
+    # First the RGB input
+    if type(color) is str:
         color = mcolors.to_rgb(color) # ensure is valid color
-    elif utils.isvector(color):
-        if any(_>1 for _ in color):
-            color = [_/255 for _ in color] # scale to within 0-1
-        color = mcolors.to_rgb(color) # trim the alpha channel
+    elif space=='rgb':
+        color = color[:3] # trim alpha
+        if any(c>1 for c in color):
+            color = [c/255 for c in color] # scale to within 0-1
+    # Next the perceptually uniform versions
+    elif space=='hsv':
+        color = colormath.hsl_to_rgb(*color)
+    elif space=='hpl':
+        color = colormath.hpluv_to_rgb(*color)
+    elif space=='hsl':
+        color = colormath.hsluv_to_rgb(*color)
+    elif space=='hcl':
+        color = colormath.hcl_to_rgb(*color)
+    elif space=='rgb':
+        color = color[:3] # trim alpha
+        if any(c>1 for c in color):
+            color = [c/255 for c in color] # scale to within 0-1
     else:
         raise ValueError('Invalid RGB value.')
     return color
@@ -145,17 +180,75 @@ def to_xyz(color, space):
     """
     Inverse of above, translate to some colorspace.
     """
-    if space in cspace_names['hsv']:
+    # Run tuple conversions
+    color = mcolors.to_rgb(color) # convert string and/or trim alpha channel
+    if space=='hsv':
         color = colormath.rgb_to_hsl(*color)
-    elif space in cspace_names['hpl']:
+    elif space=='hpl':
         color = colormath.rgb_to_hpluv(*color)
-    elif space in cspace_names['hsl']:
+    elif space=='hsl':
         color = colormath.rgb_to_hsluv(*color)
-    elif space in cspace_names['hcl']:
+    elif space=='hcl':
         color = colormath.rgb_to_hcl(*color)
+    elif space=='rgb':
+        color = color # do nothing
     else:
         raise ValueError(f'Invalid colorspace {space}.')
     return color
+
+def add_alpha(color):
+    """
+    Ensures presence of alpha channel.
+    """
+    if not utils.isvector(color):
+        raise ValueError('Input must be color tuple.')
+    if len(color)==3:
+        color = [*color, 1.0]
+    elif len(color)==4:
+        color = [*color] # copy, and put into list
+    else:
+        raise ValueError(f'Tuple length must be 3 or 4, got {len(color)}.')
+    return color
+
+def get_channel(color, channel, space='hsl', scale=True):
+    """
+    Get hue, saturation, or luminance from string color name. If input
+    is not string, will just scale it appropriately for the colorspace.
+    Arguments
+    ---------
+        color : scalar numeric ranging from 0-1, or string color name, optionally
+            with offset specified as '+x' or '-x' at the end of the string for
+            arbitrary float x.
+        channel : channel number (can be 0, 1, or 2).
+    Optional
+    --------
+        scale : whether input tuples need to be scaled to full ranges
+            i.e. multiply by 99, 99, 359 for most HSl colorspaces.
+    """
+    # Interpret channel
+    channel = channel_idxs.get(channel, channel)
+    if channel not in (0,1,2,3):
+        raise ValueError('Channel must be in [0,1,2].')
+    # Bail out
+    if utils.isvector(color):
+        raise TypeError('Input should be string or scalar number.')
+    if type(color) is not str:
+        scales = get_scale(space) if scale else (1,1,1,1)
+        return color*scales[channel]
+    if channel==3:
+        raise ValueError(f'Cannot specify alpha channel with color string.')
+    # Interpret string
+    scales = get_scale(space)
+    offset = 0
+    regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
+    match = re.search(regex, color)
+    if match:
+        try:
+            offset = float(match.group(0))
+        except ValueError as err:
+            raise type(err)(f'Invalid channel identifier "{color}".')
+        color = color[:match.start()]
+    return scales[channel]*offset + to_xyz(to_rgb(color), space)[channel]
 
 #------------------------------------------------------------------------------#
 # Register new colormaps; must come before registering the color cycles
@@ -299,7 +392,8 @@ def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
                 cmap = f'C{cmap}' # use current color cycle
             if type(cmap) is dict:
                 # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-                cmap = space_cmap(name=name, **cmap)
+                cmap = PerceptuallyUniformColormap.from_hsl(name, **cmap)
+                # cmap = space_cmap(name=name, **cmap)
             # (len(cmap)==2 and type(cmap[0]) is str and type(cmap[1]) is dict):
             elif type(cmap) is str:
                 # Map name or color for generating monochrome gradiation
@@ -388,6 +482,185 @@ def Cycle(*args, vmin=0, vmax=1):
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     return colors
 
+class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
+    """
+    Generate LinearSegmentedColormap in perceptually uniform colorspace --
+    i.e. either HSLuv, HCL, or HPLuv. Adds handy feature where *channel
+    value for string-name color is looked up*.
+
+    Example
+    -------
+    dict(hue        = [[0, 'red', 'red'], [1, 'blue', 'blue']],
+         saturation = [[0, 1, 1], [1, 1, 1]],
+         luminance  = [[0, 1, 1], [1, 0.2, 0.2]])
+    """
+    def __init__(self, name, segmentdata, space='hsl', scale=True, mask=False, **kwargs):
+        """
+        Initialize with dictionary of values.
+        Arguments
+        ---------
+            scale : The input hues, saturations, and luminances should all be
+                normalized to the range 0-1. To disable this behavior, set
+                scale=False.
+            mask : Whether to mask out-of-range colors as black, or just clip
+                the RGB values (distinct from colormap clipping the extremes).
+        """
+        # Attributes
+        space = get_space(space)
+        self.space = space
+        self.mask  = mask
+        # First sanitize the segmentdata by converting color strings to their
+        # corresponding channel values
+        keys   = {*segmentdata.keys()}
+        target = {'hue', 'saturation', 'luminance'}
+        if keys != target and keys != {*target, 'alpha'}:
+            raise ValueError('Invalid segmentdata dictionary.')
+        for key,array in segmentdata.items():
+            for i,xyy in enumerate(array):
+                xyy = list(xyy) # make copy!
+                for j,y in enumerate(xyy[1:]):
+                    j += 1 # fix
+                    xyy[j] = get_channel(y, key, space, scale) # also *scales* values to 99, 99, 359
+                segmentdata[key][i] = xyy
+        # Initialize
+        super().__init__(name, segmentdata, **kwargs)
+        # self.cdict = dict(hue={}, saturation={}, luminance={}) # to minimize string-name lookup
+
+    def _init(self):
+        """
+        As with LinearSegmentedColormap, but convert each value
+        in the lookup table from 'input' to RGB.
+        """
+        # First generate the lookup table
+        scale = get_scale(self.space)
+        self._lut = np.ones((self.N+3, 4), float) # fill
+        for i,key in enumerate(('hue','saturation','luminance')):
+            array       = np.array(self._segmentdata[key])
+            array[:,1:] = array[:,1:]
+            # /scale[i] # scale the y-values
+            # if key=='hue':
+            #     print('initial hue array', array)
+            #     array[:,1:] = array[:,1:] % 1 # allow circular hues
+            self._lut[:-3,i] = make_mapping_array(self.N, array, self._gamma)
+        if 'alpha' in self._segmentdata:
+            self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'], 1)
+        # Make hues circular
+        self._lut[:-3,0] %= 359 # mod
+        # if key=='hue':
+        #     print('initial hue array', array)
+        #     array[:,1:] = array[:,1:] % 1 # allow circular hues
+        # Set extremes
+        self._isinit = True
+        self._set_extremes() # generally just used end values in segmentdata
+        # Now convert values to RGBA, and clip colors
+        for i in range(self.N+3):
+            self._lut[i,:3] = to_rgb(self._lut[i,:3], self.space)
+        self._lut[:,:3] = clip_colors(self._lut[:,:3], self.mask)
+
+    def _resample(self, N):
+        """
+        Return a new color map with *N* entries.
+        """
+        return PerceptuallyUniformColormap(self.name, self._segmentdata, scale=False, space=self.space, N=N)
+
+    @staticmethod
+    def from_hsl(name, h=1.0, s=1.0, l=[1,0.2], c=None, a=None, **kwargs):
+        """
+        Simply wrapper for from_list. Constructs list of colors from user
+        input h=hues, s=saturations, l=luminances.
+        """
+        # Get channels from keyword arguments
+        if c is not None:
+            s = c
+        if a is None:
+            a = 1.0
+        nlevs = {len(c) for c in (s,h,l) if utils.isvector(c)} # set
+        if 1 in nlevs:
+            nlevs.remove(1)
+        if len(nlevs)==0:
+            raise ValueError('At least one channel level specifier has to be non-scalar.')
+        elif len(nlevs)!=1:
+            raise ValueError(f'Got {len(h)} hue, {len(s)} saturation, {len(l)} luminance values.')
+        nlevs = nlevs.pop()
+        nsegs = nlevs-1
+        hues   = [h]*nlevs if utils.isscalar(h) else [*h]
+        sats   = [s]*nlevs if utils.isscalar(s) else [*s]
+        lums   = [l]*nlevs if utils.isscalar(l) else [*l]
+        alphas = [a]*nlevs if utils.isscalar(a) else [*a]
+        # Now build hsl tuples and pass
+        colors = [[h,s,l,a] for h,s,l,a in zip(hues,sats,lums,alphas)]
+        return PerceptuallyUniformColormap.from_list(name, colors, **kwargs)
+
+    @staticmethod
+    def from_list(name, colors, ratios=None, **kwargs):
+        """
+        Make linear segmented colormap from list of color tuples. The values
+        in a tuple can be strings, in which case that corresponding color-name
+        channel value is deduced.
+
+        Optional
+        --------
+            ratios : simple way to specify x-coordinates for listed color
+                transitions -- bigger number is slower transition, smaller
+                number is faster transition.
+            space : colorspace of hue-saturation-luminance style input
+                color tuples.
+        """
+        # Check input
+        if not np.iterable(colors):
+            raise TypeError('Colors must be iterable.')
+        if ratios is not None:
+            xvals = np.atleast_1d(ratios) # could be ratios=1, i.e. dummy
+            if len(xvals) != len(colors) - 1:
+                raise ValueError(f'Got {len(colors)} colors, but {len(ratios)} ratios.')
+            xvals = np.concatenate(([0], np.cumsum(xvals)))
+            xvals = xvals/np.max(xvals) # normalize to 0-1
+        else:
+            xvals = np.linspace(0,1,len(colors))
+        # Build dictionary
+        cdict = dict(hue=[], saturation=[], luminance=[], alpha=[])
+        for x,color in zip(xvals,colors):
+            # Assign after ensuring alpha channel exists
+            color = add_alpha(color)
+            h, s, l, a = color # get values
+            cdict['hue'].append((x, h, h))
+            cdict['saturation'].append((x, s, s))
+            cdict['luminance'].append((x, l, l))
+            cdict['alpha'].append((x, a, a))
+        return PerceptuallyUniformColormap(name, cdict, **kwargs)
+
+def make_mapping_array(N, data, gamma=1.0):
+    """
+    Carbon copy of matplotlib version, but this one doesn't clip values.
+    """
+    # Get array
+    try:
+        adata = np.array(data)
+    except Exception:
+        raise TypeError("data must be convertible to an array")
+    shape = adata.shape
+    if len(shape) != 2 or shape[1] != 3:
+        raise ValueError("data must be nx3 format")
+    # Get indices
+    x  = adata[:, 0]
+    y0 = adata[:, 1]
+    y1 = adata[:, 2]
+    if x[0] != 0.0 or x[-1] != 1.0:
+        raise ValueError('Data mapping points must start with x=0 and end with x=1')
+    if (np.diff(x) < 0).any():
+        raise ValueError('Data mapping points must have x in increasing order')
+    # Begin generation of lookup table
+    x    = x * (N - 1)
+    lut  = np.zeros((N,), float)
+    xind = (N - 1) * np.linspace(0, 1, N) ** gamma
+    ind  = np.searchsorted(x, xind)[1:-1]
+    # Calculate
+    distance = (xind[1:-1] - x[ind - 1]) / (x[ind] - x[ind - 1])
+    lut[1:-1] = distance * (y0[ind] - y1[ind - 1]) + y1[ind - 1]
+    lut[0] = y1[0]
+    lut[-1] = y0[-1]
+    return lut
+
 #------------------------------------------------------------------------------#
 # Colormap constructors
 #------------------------------------------------------------------------------#
@@ -430,146 +703,85 @@ def merge_cmaps(cmaps, n=512, name='merged', ratios=1, **kwargs):
         colors = [color for cmap.colors in cmaps for color in cmap.colors]
         cmap = mcolors.ListedColormap(colors, name=name, N=len(colors))
     elif all(isinstance(cmap,mcolors.LinearSegmentedColormap) for cmap in cmaps):
+        kinds = {type(cmap) for cmap in cmaps}
+        if len(kinds)>1:
+            raise ValueError(f'Got mixed colormap types.')
+        kind = kinds.pop() # colormap kind
+        keys = {key for cmap in cmaps for key in cmap._segmentdata.keys()}
+        if len(keys) not in (3,4):
+            raise ValueError(f'Got mixed segmentdata keys: {keys}.')
         ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
         coords = np.concatenate([[0], np.cumsum(ratios)])
         widths = coords[1:] - coords[:-1]
         segmentdata = {}
-        for c in ('red','green','blue'):
+        for key in keys:
             datas = []
-            for start,width,cmap in zip(coords[:-1],widths,cmaps):
-                # print(cmap._segmentdata)
-                data = np.array(cmap._segmentdata[c])
-                data[:,0] = start + width*data[:,0]
+            for x,width,cmap in zip(coords[:-1],widths,cmaps):
+                data = np.array(cmap._segmentdata[key])
+                data[:,0] = x + width*data[:,0]
                 datas.append(data)
             data = np.concatenate(datas, axis=0)
             data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum 1
-            segmentdata[c] = data
-        cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=n)
+            segmentdata[key] = data
+        kwargs = dict(N=n)
+        if kind is PerceptuallyUniformColormap:
+            spaces = {cmap.space for cmap in cmaps}
+            if len(spaces)>1:
+                raise ValueError(f'Trying to merge colormaps with different HSL spaces {repr(spaces)}.')
+            kwargs.update(dict(space=spaces.pop(), scale=False))
+        cmap = kind(name, segmentdata, **kwargs)
     else:
         raise ValueError('All colormaps should be of the same type (Listed or LinearSegmented).')
     return cmap
 
-def smooth_cmap(colors, n=512, name='custom', space='rgb'):
+def light_cmap(color, reverse=False, space='hsl', white='#eeeeee', light=None, **kwargs):
     """
-    Create colormap that smoothly blends between list of colors (in RGB
-    space, so should't be too drastic).
-    Input
-    -----
-        colors :
-            List of colors.
-        n :
-            Number of lookup table colors desired for output colormap.
-        name :
-            Name of output colormap.
-        space :
-            If input is color tuple, indicates colorspace to which this
-            color belongs (e.g. rgb, hcl).
+    Make a sequential colormap that blends from color to near-white.
+    Arguments
+    ---------
+        color :
+            Build colormap by varying the luminance of some RGB color while
+            keeping its saturation and hue constant.
+    Optional
+    --------
+        reverse : (False)
+            Optionally reverse colormap.
+        space : ('hsl')
+            Colorspace in which we vary luminance.
     """
-    colors = [to_rgb(color,space) for color in colors]
-    cmap   = mcolors.LinearSegmentedColormap.from_list(name, colors, n)
-    # cmap   = mcolors.LinearSegmentedColormap.from_list(name, cmap(np.linspace(0,1,n)), n)
-    return cmap
+    white = light or white
+    space = get_space(space)
+    _, ws, wl = to_xyz(to_rgb(white), space)
+    h, s, l = to_xyz(to_rgb(color), space)
+    h, s, l, ws, wl = h/359.0, s/99.0, l/99.0, ws/99.0, wl/99.0
+    ws = s # perhaps don't change the chroma by default
+    index = slice(None,None,-1) if reverse else slice(None)
+    return PerceptuallyUniformColormap.from_hsl(h, [s,ws][index], [l,wl][index], space=space, **kwargs)
+    # return space_cmap(n, h, [s,ws][index], [l,wl][index], space=space, **kwargs)
 
-def space_cmap(n=512, h=[0.05,1], s=1.0, l=[0.2,1], c=None, ratios=1,
-                    space='hsl', name=None, reverse=False, mask=False):
+def dark_cmap(color, reverse=False, space='hsl', black='#444444', dark=None, gray=None, grey=None, **kwargs):
     """
-    Linearly vary between one or more of the parameters in some colorspace.
-    Input
-    -----
-        n : (int) number of colors
-        h : (scalar, string) scalar hue or color-string from which we draw hue
-            pass a length-n tuple to request linear gradiations between n hues
-        s : (scalar, string) as above, for saturation/chroma
-        l : (scalar, string) as above, for lightness/luminance
-    Notes
-    -----
-        When tuples are passed, the length of each tuple must be the same,
-        e.g. space_cmap(h=[0,0.2,1], )
-    Options
-    -------
-        space :
-            (str) colorspace from which you're creating your map, choose
-            from 'hsv', 'hsl'/'hsluv', and 'hcl'/'hcluv'
-        name :
-            (str) name of colormap, default is same as "space"
-        ratios :
-            (iterable) ratios occupied by the gradations represented by
-            the tuples; should be the length of channel tuples minus 1
-        reverse :
-            (bool) optionally reverse the map
-        mask :
-            (bool) whether to mask out (True) or clip (False) out-of-bounds or
-            "imaginary" colors when making 'hcl' colormap
-    --------------------------------------------------------------------------
-    Choose from the following:
-        * HSL (where L is not actually perceptually uniform)
-        * HSLuv (where L is perceptually uniform but S is not always)
-        * LCH (where it is uniform)
-    See: http://www.hsluv.org/comparison/
-    Q: Default is HSLuv. Why not HCL space?
-    A: HCL space space has "dead zones" where you have impossible colors, so you
-    can't just pick arbitrary numbers and draw a line (or will have to raise
-    errors when we do this). Channels end up being clipped, which may cause
-    strange/unexpected gradiations.
-    HSLuv is just *scaled* HCL where chroma is represented as a percentage of
-    the maximum possible chroma for that hue/luminance combo.
+    Make a sequential colormap that blends from gray to color.
+    Arguments
+    ---------
+        color :
+            Build colormap by varying the luminance of some RGB color while
+            keeping its saturation and hue constant.
+    Optional
+    --------
+        reverse : (False)
+            Optionally reverse colormap.
+        space : ('hsl')
+            Colorspace in which we vary luminance.
     """
-    # Check channel input
-    if c is not None:
-        s = c
-    nlevs = {len(channel) for channel in (s,h,l) if utils.isvector(channel)} # set
-    if 1 in nlevs:
-        nlevs.remove(1)
-    if len(nlevs)==0:
-        raise ValueError('At least one channel level specifier has to be non-scalar.')
-    elif len(nlevs)!=1:
-        raise ValueError(f'Got {len(h)} hue, {len(s)} saturation, {len(l)} luminance values.')
-    nlevs = nlevs.pop()
-    nsegs = nlevs-1
-    hues = [h]*nlevs if utils.isscalar(h) else [*h]
-    sats = [s]*nlevs if utils.isscalar(s) else [*s]
-    lums = [l]*nlevs if utils.isscalar(l) else [*l]
-    # Parse ratios
-    ratios = ratios or 1
-    if utils.isscalar(ratios):
-        ratios = [ratios]*nsegs
-    ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
-    if len(ratios)!=nsegs:
-        raise ValueError(f'Got {len(ratios)} ratios for gradiation regions, but {nlevs} gradiation levels.')
-    # Interpret strings/numbers as their corresponding channel values
-    scale = (1,1,1) if space=='hsv' else (359,99,99)
-    def channel(color, i):
-        if type(color) is not str:
-            return color*scale[i]
-        offset = 0
-        regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
-        match = re.search(regex, color)
-        if match:
-            try:
-                offset = float(match.group(0))
-            except ValueError as err:
-                raise type(err)(f'Invalid channel identifier "{color}".')
-            color  = color[:match.start()]
-        return offset + to_xyz(to_rgb(color), space)[i]
-    hues = [channel(h,0) for h in hues]
-    sats = [channel(s,1) for s in sats]
-    lums = [channel(l,2) for l in lums]
-    # Construct line segments in HSL space
-    colors = []
-    for i,r in enumerate(ratios):
-        m = int(r*n) # number of sample colors in this segment
-        for j in range(m+1):
-            frac = j/m
-            if j==m and i!=nsegs-1: # if we are *not* on the last segment, skip the end color, so we don't duplicate colors in the middle
-                continue
-            color = [col[i] + frac*(col[i+1]-col[i]) for col in (hues,sats,lums)]
-            colors.append(to_rgb(color, space))
-    # Minor changes, and save
-    colors = clip_colors(colors, mask=mask)
-    if reverse:
-        colors = colors[::-1]
-    name = name or space # default to just naming colormap after space
-    return smooth_cmap(colors, n=n, name=name)
+    black = grey or gray or dark or black # alternative kwargs
+    space = get_space(space)
+    _, bs, bl = to_xyz(to_rgb(black), space)
+    h, s, l = to_xyz(to_rgb(color), space)
+    h, s, l, bs, bl = h/359.0, s/99.0, l/99.0, bs/99.0, bl/99.0
+    index = slice(None,None,-1) if reverse else slice(None)
+    return PerceptuallyUniformColormap.from_hsl(h, [bs,s][index], [bl,l][index], space=space, **kwargs)
+    # return space_cmap(n, h, [bs,s][index], [bl,l][index], space=space, **kwargs)
 
 def clip_colors(colors, mask=True):
     """
@@ -614,55 +826,6 @@ def clip_colors(colors, mask=True):
                     over[n] = True
                     print(f'Warning: {message} channel {n} (>1).')
     return colors
-
-def light_cmap(color, n=512, reverse=False, space='hsl', white='#eeeeee', light=None, **kwargs):
-    """
-    Make a sequential colormap that blends from color to near-white.
-    Arguments
-    ---------
-        color :
-            Build colormap by varying the luminance of some RGB color while
-            keeping its saturation and hue constant.
-    Optional
-    --------
-        n : (512)
-            Number of lookup table colors desired for output colormap.
-        reverse : (False)
-            Optionally reverse colormap.
-        space : ('hsl')
-            Colorspace in which we vary luminance.
-    """
-    white = light or white
-    _, ws, wl = to_xyz(to_rgb(white), space)
-    h, s, l = to_xyz(to_rgb(color), space)
-    h, s, l, ws, wl = h/359.0, s/99.0, l/99.0, ws/99.0, wl/99.0
-    ws = s # perhaps don't change the chroma by default
-    index = slice(None,None,-1) if reverse else slice(None)
-    return space_cmap(n, h, [s,ws][index], [l,wl][index], space=space, **kwargs)
-
-def dark_cmap(color, n=512, reverse=False, space='hsl', black='#444444', dark=None, gray=None, grey=None, **kwargs):
-    """
-    Make a sequential colormap that blends from gray to color.
-    Arguments
-    ---------
-        color :
-            Build colormap by varying the luminance of some RGB color while
-            keeping its saturation and hue constant.
-    Optional
-    --------
-        n : (512)
-            Number of lookup table colors desired for output colormap.
-        reverse : (False)
-            Optionally reverse colormap.
-        space : ('hsl')
-            Colorspace in which we vary luminance.
-    """
-    black = grey or gray or dark or black # alternative kwargs
-    _, bs, bl = to_xyz(to_rgb(black), space)
-    h, s, l = to_xyz(to_rgb(color), space)
-    h, s, l, bs, bl = h/359.0, s/99.0, l/99.0, bs/99.0, bl/99.0
-    index = slice(None,None,-1) if reverse else slice(None)
-    return space_cmap(n, h, [bs,s][index], [bl,l][index], space=space, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Cycle helper functions
