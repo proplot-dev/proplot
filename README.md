@@ -83,10 +83,15 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
 ### Enhanced settings management
    * Added the new `rc` command to change various settings. This command controls entries to the built-in `matplotlib.rcParams` dictionary along with the new, custom-built `matplotlib.rcExtras` dictionary.
    * Special arguments **integrate** settings across a wide range of pyplot objects -- for example, `plot.rc(linewidth=1, small=8, large=9)` makes all axis back ground lines (axes spines, tick marks, colorbar edges, legend boxes, ...) have 1pt linewidth, makes the `small` size font (used for tick labels, axis legends, ...) 8pt, and makes the `large` size font (used for titles, 'abc' subplot labelling, ...) 9pt.
-### Colors and fonts
-   * All colormaps from `.rgb` files in the `cmaps` folder can be called by name. For example, `hclBlue.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap="hclBlue")`.
-   * Added many new colors, including XKCD colors and Open Color web-design color palette. Added different color "cycles" (i.e. the automatic color order when drawing multiple lines), which can be set with `plot.rc(cycle='name')` or by passing `cycle='name'` to any command that plots lines/patches (`plot`, `bar`, etc.).
-   * Use functions `cmapshow`, `colorshow`, and `cycleshow` to visualize available colormaps, named colors, and color palettes. Functions will automatically save PDFs in the package directory.
-   * List of system fontnames available as the `fonts` variable under the imported module.
+### Colormaps, color cycles, and color names
+   * Added **new colormap class** analagous to `LinearSegmentedColormap`, called `PerceptuallyUniformColormap`, which interpolates through hue, saturation, and luminance space (with hues allowed to vary circularly). Choose from either of 4 HSV-like colorspaces: classic HSV, perceptually uniform HCL, or HSLuv/HPLuv (which are forms of HCL adapted for convenient use with colormaps; see [this link](http://www.hsluv.org/comparison/)).
+   * Generate perceptually uniformly varying colormaps on-the-fly by passing a **dictionary** to any plotting function that accepts the `cmap`keyword argument -- for example, `ax.contourf(..., cmap=dict(h=hues, l=lums, s=sats))`. The arguments can be lists of numbers or **color strings**, in which case the corresponding channel value (hue, saturation, or luminance) for that color will be looked up and applied.
+   * Create single-hue colormaps on-the-fly by passing a string that looks like `cmap='name_[mode]'`, where `name` is any registered color string (the corresponding hue will be looked up). The colormap mode can be either of `l` (vary color from its current lightness to near-white), `d` (vary color/chroma from its current lightness/saturation to pure gray), `w` (as in `l`, but use pure white), and `b` (as in `d`, but use pure black). 
+   * The `.rgb` and `.hex` files in the `cmaps` folder will be loaded and registered as `LinearSegmentedColormaps`. 
+   , `Sunset.rgb` can be used in a contour plot with `ax.contourf(x,y,z,cmap='sunset')` (note cmap selection is also case insensitive now).
+   * Added several new color "cycles" (i.e. the automatic color order when drawing multiple lines). Cycler can be set with `plot.rc(cycle='name')` or by passing `cycle='name'` to any command that plots lines/patches (`plot`, `bar`, etc.).
+   * The definition of "colormaps" and "color cyclers" is now fluid -- all color cycles are defined as `ListedColormaps`, and cycles can be generated on the fly from `LinearSegmentedColormaps` by just specifying the colormap name as the cycler. 
+   * Registered many new colors names, including XKCD colors, crayon colors, and Open Color web-design color palette.
+   * Use functions `cmapshow`, `colorshow`, and `cycleshow` to visualize available colormaps, named colors, and color cycles. Functions will automatically save PDFs in the package directory.
 ### Miscellaneous
    * New `plot.arange` utility -- like `np.arange`, but **endpoint-inclusive**.
