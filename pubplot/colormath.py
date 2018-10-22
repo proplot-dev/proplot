@@ -40,7 +40,7 @@ m_inv = [
     [0.2126, 0.7152, 0.0722],
     [0.0193, 0.1192, 0.9505]
     ]
-# Hard-coded D65 illuminant
+# Hard-coded D65 illuminant (whatever that means)
 refX  = 0.95047
 refY  = 1.00000
 refZ  = 1.08883
@@ -69,20 +69,9 @@ lab_k = 903.3
 #     return (h,c,l)
 
 #------------------------------------------------------------------------------#
-# Modifications
-#------------------------------------------------------------------------------#
-def hsl_to_rgb(h, s, l):
-    r, g, b = hls_to_rgb(h, l, s)
-    return r, g, b
-
-def rgb_to_hsl(r, g, b):
-    h, l, s = rgb_to_hls(r, g, b)
-    return h, s, l
-
-#------------------------------------------------------------------------------#
-# Primary conversion tools
-#------------------------------------------------------------------------------#
 # Public API
+#------------------------------------------------------------------------------#
+# Basic conversion
 def hsluv_to_rgb(h, s, l):
     return lchuv_to_rgb(*hsluv_to_lchuv([h, s, l]))
 
@@ -113,7 +102,14 @@ def lchuv_to_rgb(l, c, h):
 def rgb_to_lchuv(r, g, b):
     return CIEluv_to_lchuv(CIExyz_to_CIEluv(rgb_to_CIExyz([r, g, b])))
 
-# Alternative ordering of hcl colors
+# Make ordering of channels consistent with above functions
+def hsl_to_rgb(h, s, l):
+    return  hls_to_rgb(h, l, s)
+
+def rgb_to_hsl(r, g, b):
+    h, l, s = rgb_to_hls(r, g, b)
+    return h, s, l
+
 def hcl_to_rgb(h, c, l):
     return CIExyz_to_rgb(CIEluv_to_CIExyz(lchuv_to_CIEluv([l, c, h])))
 

@@ -239,41 +239,42 @@ def cmap_features(func):
     Also see: https://stackoverflow.com/a/48614231/4970632
     """
     @wraps(func)
-    def wrapper(self, *args, cmap=None, norm=None, levels=None,
-                cmapname='custom', cmapsave=False, cmapratios=1, cmapresample=False,
-                extend='neither',  extremes=True, **kwargs):
-        # Specify normalizer
-        cmapextend = 'neither' if not extremes else extend
-        if cmapresample:
-            N = len(levels) if levels is not None else 31 # convervative number
-            norm = colortools.Norm('segmented', levels=levels)
-        else:
-            N = None
-            norm = colortools.Norm('step', levels=levels, extend=cmapextend)
-        # Specify colormap
-        if any(isinstance(cmap,t) for t in (str,dict,mcolors.Colormap)):
-            cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, # pass as arguments to generalized colormap constructor
-                name=cmapname, extend=cmapextend, ratios=cmapratios,
-                N=N, resample=cmapresample)
-        # Optionally register and save colormap to disk
-        if cmapsave:
-            savename = f'{cmap.name}.hex'
-            print(f'Saving colormap "{savename}".')
-            file = f'{os.path.dirname(__file__)}/cmaps/{savename}'
-            with open(file, 'w') as h: # overwrites if exists; otherwise us 'a'
-                h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
-            mcm.cmap_d[cmap.name] = cmap
-            if re.search('[A-Z]', cmap.name):
-                mcm.cmap_d[cmap.name.lower()] = cmap
+    def wrapper(self, *args, cmap=None, cmap_kw=dict(),
+                norm=None, levels=None, extremes=True,
+                extend='neither', **kwargs):
         # Call function with special args removed
         name = func.__name__
         kwextra = dict()
         if 'contour' in name:
             kwextra = dict(levels=levels, extend=extend)
-        result = func(self, *args, cmap=cmap, norm=norm, **kwextra, **kwargs)
+        # result = func(self, *args, cmap=cmap, norm=norm, **kwextra, **kwargs)
+        result = func(self, *args, **kwextra, **kwargs)
         if 'pcolor' in name:
             result.extend = extend
+        # Get levels, if they were None
+        if levels is None and hasattr(result, 'levels'):
+            # print('Automatically selected levels.')
+            levels = result.levels
+        elif levels is None:
+            # print('Resampling colormap instead of using normalizer.')
+            cmap_kw.update({'resample':True}) # default pcolormesh behavior is just to resample
+        # Set normalizer
+        if cmap_kw.get('resample',None):
+            N = len(levels) if levels is not None else 31 # convervative number
+            if levels is not None:
+                norm = colortools.Norm('segmented', levels=levels)
+            else:
+                norm = result.norm # just use the default normalizer
+        else:
+            N = None
+            norm = colortools.Norm('step', levels=levels,
+                   extend=cmap_kw.get('extend', extend)) # use extend='neither' to prevent triangles from being different color
+        result.set_norm(norm)
+        # Specify colormap
+        if any(isinstance(cmap,t) for t in (str,dict,mcolors.Colormap)):
+            cmap = cmap, # make a tuple
+        cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
+        result.set_cmap(cmap)
         # Optionally use same color for data in 'edge bins' as 'out of bounds' data
         # NOTE: This shouldn't mess up normal contour() calls because if we
         # specify color=<color>, should override cmap instance anyway
@@ -2262,11 +2263,14 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     # by some linear transformation before getting binned, below may fail.
     # cb.minorticks_on() # alternative, but can't control the god damn spacing/set our own version
     # axis.set_minor_locator(locators[1]) # does absolutely nothing
+    # WARNING: For some reason, pcolor mappables need to take *un-normalized
+    # ticks* when set_ticks is called, while contourf mappables need to
+    # take *normalized* data (verify by printing)
     minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
     if isinstance(mappable.norm, mcolors.BoundaryNorm): # including my own version
         vmin, vmax = mappable.norm.vmin, mappable.norm.vmax
         minorvals = (minorvals-vmin)/(vmax-vmin)
-    else:
+    elif hasattr(mappable, 'levels'):
         minorvals = mappable.norm(minorvals)
     axis.set_ticks(minorvals, minor=True)
     # axis.set_ticks(mappable.norm(majorvals), minor=False)

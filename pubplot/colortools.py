@@ -106,7 +106,7 @@ channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2, 'alpha':
 # Names of builtin colormaps
 categories_default = { # initialize as empty lists
     'Builtin Rainbow':
-        sorted(['viridis', 'plasma', 'inferno', 'magma']),
+        sorted(['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted', 'cubehelix']),
     'Rainbow Alt':
         sorted(['multi', 'cubehelix', 'cividis']),
     'Custom Sequential': [], # should come first
@@ -246,110 +246,15 @@ def get_channel(color, channel, space='hsl', scale=True):
         try:
             offset = float(match.group(0))
         except ValueError as err:
-            raise type(err)(f'Invalid channel identifier "{color}".')
+            raise ValueError(f'Invalid channel identifier "{color}".')
         color = color[:match.start()]
     return scales[channel]*offset + to_xyz(to_rgb(color), space)[channel]
-
-#------------------------------------------------------------------------------#
-# Register new colormaps; must come before registering the color cycles
-# * If leave 'name' empty in register_cmap, name will be taken from the
-#   Colormap instance. So do that.
-# * Note that **calls to cmap instance do not interpolate values**; this is only
-#   done by specifying levels in contourf call, specifying lut in get_cmap,
-#   and using LinearSegmentedColormap.from_list with some N.
-# * The cmap object itself only **picks colors closest to the "correct" one
-#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
-#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
-# * If you want to always disable interpolation, use ListedColormap. This type
-#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
-#------------------------------------------------------------------------------#
-def register_colors(nmax=256):
-    """
-    Register new color names. Will only read first n of these
-    colors, since XKCD library is massive (they should be sorted by popularity
-    so later ones are no loss).
-    """
-    for file in glob(f'{os.path.dirname(__file__)}/colors/*.txt'):
-        category, _ = os.path.splitext(os.path.basename(file))
-        data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
-        for i,(name,color) in enumerate(data): # is list of name, color tuples
-            # if i>nmax:
-            #     break
-            mcolors._colors_full_map[name] = color
-        custom_colors[category] = data
-
-def register_cmaps():
-    """
-    Register colormaps and cycles in the cmaps directory.
-    Note all of those methods simply modify the dictionary mcm.cmap_d.
-    """
-    # First read from file
-    for file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
-        # Read table of RGB values
-        if not re.search('.rgb$', file) and not re.search('.hex$', file):
-            continue
-        name = os.path.basename(file)[:-4]
-        # Comment this out to overwrite existing ones
-        # if name in mcm.cmap_d: # don't want to re-register every time
-        #     continue
-        if re.search('.rgb$', file):
-            try: cmap = np.loadtxt(file, delimiter=',') # simple
-            except:
-                print(f'Failed to load {os.path.basename(file)}.')
-                continue
-            if (cmap>1).any():
-                cmap = cmap/255
-        # Read list of hex strings
-        else:
-            cmap = [*open(file)] # just a single line
-            if len(cmap)==0:
-                continue # file is empty
-            cmap = cmap[0].strip().split(',') # csv hex strings
-            cmap = np.array([mcolors.to_rgb(c) for c in cmap]) # from list of tuples
-        # Register as ListedColormap or LinearSegmentedColormap
-        if 'lines' in name.lower():
-            cmap   = mcolors.ListedColormap(cmap)
-            cmap_r = cmap.reversed() # default name is name+'_r'
-            custom_cycles[name] = cmap
-        else:
-            N = len(cmap) # simple as that; number of rows of colors
-            cmap   = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
-            cmap_r = cmap.reversed() # default name is name+'_r'
-            custom_cmaps[name] = cmap
-        # Register maps (this is just what register_cmap does)
-        mcm.cmap_d[cmap.name]   = cmap
-        mcm.cmap_d[cmap_r.name] = cmap_r
-    # Next register names so that they can be invoked ***without capitalization***
-    # This always bugged me! Note cannot change dictionary during iteration.
-    ignorecase = {}
-    for name,cmap in mcm.cmap_d.items():
-        if re.search('[A-Z]',name):
-            ignorecase[name.lower()] = cmap
-    mcm.cmap_d.update(ignorecase)
-
-def register_cycles():
-    """
-    Register cycles defined right here by dictionaries.
-    """
-    # Simply register them as ListedColormaps
-    for name,colors in cycles.items():
-        mcm.cmap_d[name]        = mcolors.ListedColormap([to_rgb(color) for color in colors])
-        mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([to_rgb(color) for color in colors[::-1]])
-
-# Register stuff when this module is imported
-custom_colors = {} # initialize
-custom_cycles = {}
-custom_cmaps  = {}
-register_colors()
-register_cmaps()
-register_cycles()
-print('Registered colors and colormaps.')
 
 #------------------------------------------------------------------------------#
 # Generalized colormap/cycle constructors
 #------------------------------------------------------------------------------#
 def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
-        name='custom', register=True, N=None, **kwargs):
+        name='custom', register=True, save=False, N=None, **kwargs):
     """
     Convenience function for generating colormaps in a variety of ways.
     The 'extend' property will be used to resample LinearSegmentedColormap
@@ -387,46 +292,43 @@ def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
         raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
         # Retrieve Colormap instance
-        if not isinstance(cmap, mcolors.Colormap):
-            if utils.isnumber(cmap):
-                cmap = f'C{cmap}' # use current color cycle
-            if type(cmap) is dict:
-                # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-                cmap = PerceptuallyUniformColormap.from_hsl(name, **cmap)
-                # cmap = space_cmap(name=name, **cmap)
-            # (len(cmap)==2 and type(cmap[0]) is str and type(cmap[1]) is dict):
-            elif type(cmap) is str:
-                # Map name or color for generating monochrome gradiation
-                # if type(cmap) is not str:
-                #     cmap, cmap_kw = cmap[0], {**cmap_kw, **cmap[1]}
-                if cmap in mcm.cmap_d:
-                    cmap = mcm.cmap_d[cmap] # get the instance
-                else:
-                    # Parse extra options
-                    cmap_kw = kwargs.copy() # may be different for each cmap in *args
-                    regex = '_([rlwdb]+)$'
-                    match = re.search(regex, cmap) # declare options with _[flags]
-                    cmap = re.sub(regex, '', cmap) # remove options
-                    options = '' if not match else match.group(1)
-                    if 'r' in options:
-                        cmap_kw.update({'reverse':True})
-                    if 'w' in options or 'l' in options:
-                        light = True
-                        if 'w' in options:
-                            cmap_kw.update({'white':'white'}) # use *actual* white
-                    if 'd' in options or 'b' in options:
-                        light = False
-                        if 'b' in options:
-                            cmap_kw.update({'black':'black'}) # use *actual* black
-                    # Build colormap
-                    cmap = to_rgb(cmap) # to ensure is hex code/registered color
-                    if light:
-                        cmap = light_cmap(cmap, name=name, **cmap_kw)
-                    else:
-                        cmap = dark_cmap(cmap, name=name, **cmap_kw)
+        if utils.isnumber(cmap):
+            cmap = f'C{cmap}' # use current color cycle
+        if isinstance(cmap, mcolors.Colormap):
+            # Do nothing
+            pass
+        elif type(cmap) is dict:
+            # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
+            cmap = PerceptuallyUniformColormap.from_hsl(name, **cmap)
+        elif type(cmap) is not str:
+            # List of colors
+            cmap = mcolors.ListedColormap(cmap, name=name)
+        elif cmap in mcm.cmap_d:
+            # Map name or color for generating monochrome gradiation
+            cmap = mcm.cmap_d[cmap] # get the instance
+        else:
+            # Parse extra options
+            cmap_kw = kwargs.copy() # may be different for each cmap in *args
+            regex = '_([rlwdb]+)$'
+            match = re.search(regex, cmap) # declare options with _[flags]
+            cmap = re.sub(regex, '', cmap) # remove options
+            options = '' if not match else match.group(1)
+            if 'r' in options:
+                cmap_kw.update({'reverse':True})
+            if 'w' in options or 'l' in options:
+                light = True
+                if 'w' in options:
+                    cmap_kw.update({'white':'white'}) # use *actual* white
+            if 'd' in options or 'b' in options:
+                light = False
+                if 'b' in options:
+                    cmap_kw.update({'black':'black'}) # use *actual* black
+            # Build colormap
+            cmap = to_rgb(cmap) # to ensure is hex code/registered color
+            if light:
+                cmap = light_cmap(cmap, name=name, **cmap_kw)
             else:
-                # List of colors
-                cmap = mcolors.ListedColormap(cmap, name=name)
+                cmap = dark_cmap(cmap, name=name, **cmap_kw)
         cmaps += [cmap]
     cmap = merge_cmaps(cmaps, name=name, ratios=ratios, **kwargs)
     name = cmap.name # just to make sure
@@ -435,11 +337,12 @@ def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
     if extend not in offset:
         raise ValueError(f'Unknown extend option {extend}.')
     if isinstance(cmap, mcolors.LinearSegmentedColormap):
+        # TODO: This only works for forcing separate triangle colors for contours
+        # Figure out workaround eventually
         if resample:
             cmap = cmap._resample(N-offset[extend]) # see mcm.get_cmap source
         else:
             pass
-            # cmap = pad_cmap(cmap, 1/float(N), extend=extend)
     # Optionally register a colormap
     if name and register:
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in categories_default.items()
@@ -452,6 +355,17 @@ def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
         if re.search('[A-Z]',name):
             mcm.cmap_d[name.lower()] = cmap
         # print(f'Registered name {name}.') # not necessary
+    # Optionally save colormap to disk
+    if name and save:
+        # Save segment data directly
+        basename = f'{cmap.name}.npy'
+        filename = f'{os.path.dirname(__file__)}/cmaps/{basename}'
+        print(f'Saving colormap "{basename}".')
+        np.save(filename, dict(cmap._segmentdata, space=cmap.space))
+        # Save list of hex colors
+        # basename = f'{cmap.name}.hex'
+        # with open(filename, 'w') as h: # overwrites if exists; otherwise us 'a'
+        #     h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
     return cmap
 
 def Cycle(*args, vmin=0, vmax=1):
@@ -523,7 +437,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                     xyy[j] = get_channel(y, key, space, scale) # also *scales* values to 99, 99, 359
                 segmentdata[key][i] = xyy
         # Initialize
-        super().__init__(name, segmentdata, **kwargs)
+        super().__init__(name, segmentdata, gamma=1.0, **kwargs)
         # self.cdict = dict(hue={}, saturation={}, luminance={}) # to minimize string-name lookup
 
     def _init(self):
@@ -659,7 +573,7 @@ def make_mapping_array(N, data, gamma=1.0):
     # Calculate
     distance = (xind[1:-1] - x[ind - 1]) / (x[ind] - x[ind - 1])
     lut[1:-1] = distance * (y0[ind] - y1[ind - 1]) + y1[ind - 1]
-    lut[0] = y1[0]
+    lut[0]  = y1[0]
     lut[-1] = y0[-1]
     return lut
 
@@ -1334,6 +1248,111 @@ def cmap_show(N=31, ignore=['Diverging Alt', 'Sequential Alt', 'Rainbow Alt', 'M
     fig.savefig(filename, bbox_inches='tight')
     return fig
 
+#------------------------------------------------------------------------------#
+# Register new colormaps; must come before registering the color cycles
+# * If leave 'name' empty in register_cmap, name will be taken from the
+#   Colormap instance. So do that.
+# * Note that **calls to cmap instance do not interpolate values**; this is only
+#   done by specifying levels in contourf call, specifying lut in get_cmap,
+#   and using LinearSegmentedColormap.from_list with some N.
+# * The cmap object itself only **picks colors closest to the "correct" one
+#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
+#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
+# * If you want to always disable interpolation, use ListedColormap. This type
+#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
+#------------------------------------------------------------------------------#
+def register_colors(nmax=256):
+    """
+    Register new color names. Will only read first n of these
+    colors, since XKCD library is massive (they should be sorted by popularity
+    so later ones are no loss).
+    """
+    for file in glob(f'{os.path.dirname(__file__)}/colors/*.txt'):
+        category, _ = os.path.splitext(os.path.basename(file))
+        data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
+        for i,(name,color) in enumerate(data): # is list of name, color tuples
+            # if i>nmax:
+            #     break
+            mcolors._colors_full_map[name] = color
+        custom_colors[category] = data
+
+def register_cmaps():
+    """
+    Register colormaps and cycles in the cmaps directory.
+    Note all of those methods simply modify the dictionary mcm.cmap_d.
+    """
+    # First read from file
+    for file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
+        # Read table of RGB values
+        if not re.search('.(rgb|hex|npy)$', file):
+            continue
+        name = os.path.basename(file)[:-4]
+        # Comment this out to overwrite existing ones
+        # if name in mcm.cmap_d: # don't want to re-register every time
+        #     continue
+        if re.search('.rgb$', file):
+            try: cmap = np.loadtxt(file, delimiter=',') # simple
+            except:
+                print(f'Failed to load {os.path.basename(file)}.')
+                continue
+            if (cmap>1).any():
+                cmap = cmap/255
+        # Read list of hex strings
+        elif re.search('.hex$', file):
+            cmap = [*open(file)] # just a single line
+            if len(cmap)==0:
+                continue # file is empty
+            cmap = cmap[0].strip().split(',') # csv hex strings
+            cmap = np.array([mcolors.to_rgb(c) for c in cmap]) # from list of tuples
+        # Directly read segmentdata of hex strings
+        # Will ensure that HSL colormaps have the 'space' entry
+        else:
+            segmentdata = np.load(file).item() # unpack 0-D array
+            if 'space' in segmentdata:
+                space = segmentdata.pop('space')
+                cmap = PerceptuallyUniformColormap(name, segmentdata, N=N, scale=False, space=space)
+            else:
+                cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=N)
+        # Register as ListedColormap or LinearSegmentedColormap
+        if not isinstance(cmap, mcolors.Colormap): # i.e. we did not load segmentdata directly
+            if 'lines' in name.lower():
+                cmap   = mcolors.ListedColormap(cmap)
+                cmap_r = cmap.reversed() # default name is name+'_r'
+                custom_cycles[name] = cmap
+            else:
+                N = len(cmap) # simple as that; number of rows of colors
+                cmap   = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
+                cmap_r = cmap.reversed() # default name is name+'_r'
+                custom_cmaps[name] = cmap
+        # Register maps (this is just what register_cmap does)
+        mcm.cmap_d[cmap.name]   = cmap
+        mcm.cmap_d[cmap_r.name] = cmap_r
+    # Next register names so that they can be invoked ***without capitalization***
+    # This always bugged me! Note cannot change dictionary during iteration.
+    ignorecase = {}
+    for name,cmap in mcm.cmap_d.items():
+        if re.search('[A-Z]',name):
+            ignorecase[name.lower()] = cmap
+    mcm.cmap_d.update(ignorecase)
+
+def register_cycles():
+    """
+    Register cycles defined right here by dictionaries.
+    """
+    # Simply register them as ListedColormaps
+    for name,colors in cycles.items():
+        mcm.cmap_d[name]        = mcolors.ListedColormap([to_rgb(color) for color in colors])
+        mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([to_rgb(color) for color in colors[::-1]])
+
+# Register stuff when this module is imported
+custom_colors = {} # initialize
+custom_cycles = {}
+custom_cmaps  = {}
+register_colors()
+register_cmaps()
+register_cycles()
+print('Registered colors and colormaps.')
+
 # Finally our dictionary of normalizers
 # Includes some custom classes, so has to go at end
 normalizers = {
@@ -1348,7 +1367,9 @@ normalizers = {
     'symlog':     mcolors.SymLogNorm,
     }
 
+#------------------------------------------------------------------------------#
 # TODO: Figure out if this is still useful
+#------------------------------------------------------------------------------#
 # ***Inverse of cycle_factory.***
 # Generate colormap instance from list of levels and colors.
 # * Generally don't want these kinds of colorbars to 'extend', but you can.
