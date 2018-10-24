@@ -479,9 +479,8 @@ class Delayed(object):
     Notes
     -----
     For inheriting from instantiated object see: https://stackoverflow.com/a/33468799/4970632
-    but this only works for copying attributes, not methods.
-    Goal of this is to have generalized panel class suitable for both 'inner'
-    and 'outer' panels.
+    but this only works for copying attributes, not methods. Goal of this is to
+    have generalized panel class suitable for both 'inner' and 'outer' panels.
     """
     def __init__(self, figure, subspecs, instantiate=False, n=1, **kwargs):
         # Assignments
@@ -499,17 +498,11 @@ class Delayed(object):
             get(self, 'instantiate')(**kwargs)
 
     def __setattr__(self, attr, value):
+        # Add to list of attributes, to be added to axes once instantiated
         index = get(self, '_index')
         get(self, '_attributes')[index].update({attr:value})
 
     def __getattribute__(self, attr, *args):
-        """
-        When method is first invoked, ensure axes are drawn. Depending on
-        which property user accesses first, axes can be allocated as:
-          * A legend box (just dead space for storing a legend)
-          * A colorbar (optionally shrunken relative to subplotspec length)
-          * A normal axes (for plotting and stuff)
-        """
         # Instantiate axes
         init  = False
         index = get(self, '_index')
@@ -533,10 +526,6 @@ class Delayed(object):
             raise
 
     def instantiate(self, *args):
-        """
-        Function for instantiating axes belonging to this panel.
-        Will read from the 'n' attribute to figure out how many panels to draw.
-        """
         # This function is invoked from within __getattribute__
         # so need to make sure we don't trigger infinite loops
         axs    = get(self, '_axs')

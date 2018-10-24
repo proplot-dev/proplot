@@ -4,6 +4,7 @@ import numpy as np
 # import io
 # from contextlib import redirect_stdout
 import matplotlib.gridspec as mgridspec
+import matplotlib.transforms as mtransforms
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
 from . import utils
@@ -71,6 +72,20 @@ def journalsize(width, height):
 # Primary plotting function; must be used to create figure/axes if user wants
 # to use the other features
 #-------------------------------------------------------------------------------
+def share():
+    """
+    Checks group of shared axes, applies shared axes settings to the ones
+    that are already drawn.
+    """
+    pass
+
+def span():
+    """
+    Checks group of spanning axes, applies shared axes settings to the ones
+    that are already drawn.
+    """
+    pass
+
 def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
         tight=False,  # whether to set up tight bbox from gridspec object
@@ -374,7 +389,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
             maps = [maps] # just want a single map
         else:
             maps = [*maps] # force into list, not array
-        maps_ids = [i for i,a in enumerate(np.unique(array).flat) if a in maps]
+        maps_ids = [i for i,n in enumerate(np.unique(array[array>0])) if n in maps]
     else:
         maps_ids = []
     # Find axes that have inner panels
@@ -389,7 +404,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
             innerpanels = [innerpanels]
         else:
             innerpanels = [*innerpanels] # force into list, not array
-        innerpanels_ids = [i for i,a in enumerate(np.unique(array)) if a in innerpanels]
+        innerpanels_ids = [i for i,n in enumerate(np.unique(array[array>0])) if n in innerpanels]
     else:
         innerpanels_ids = []
 
@@ -403,57 +418,61 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     yrange = np.array([[xy[0].min(), xy[0].max()+1] for xy in axes_ids]) # yrange is shared columns
     xrange = np.array([[xy[1].min(), xy[1].max()+1] for xy in axes_ids])
     xmin, ymax = xrange[:,0], yrange[:,1]
-    # xmin = np.array([x[0] for x in xrange])
-    # ymax = np.array([y[1] for y in yrange])
-    # xmin   = np.array([xy[0].min() for xy in axes_ids])
-    # ymax   = np.array([xy[1].max() for xy in axes_ids])
     num_axes = len(axes_ids)
     # Find pairs with edges on same gridspec
     if spanx:
         xgroups_span_base, xgroups_span, grouped = [], [], []
         for i in range(num_axes):
-            matching_axes = np.where(xmin[i]==xmin)[0]
+            matching_axes = np.where(xrange[i,0]==xrange[:,0])[0]
             if i not in grouped and matching_axes.size>1:
+                # Add the axes that is farthest down to control the x-label
                 xgroups_span      += [matching_axes] # add ndarray of ids to list
-                xgroups_span_base += [matching_axes[np.argmin(xmin[matching_axes])]]
-                    # add the axes that is farthest down
+                xgroups_span_base += [matching_axes[np.argmin(xrange[matching_axes,0])]]
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
     if spany:
         ygroups_span_base, ygroups_span, grouped = [], [], []
         for i in range(num_axes):
-            matching_axes = np.where(ymax[i]==ymax)[0]
+            matching_axes = np.where(yrange[i,1]==yrange[:,1])[0]
             if i not in grouped and matching_axes.size>1:
+                # Add the axes that is farthest left
                 ygroups_span      += [matching_axes] # add ndarray of ids to list
-                ygroups_span_base += [matching_axes[np.argmax(ymax[matching_axes])]]
-                    # add the axes that is farthest left
+                ygroups_span_base += [matching_axes[np.argmax(yrange[matching_axes,1])]]
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
     # Shared axes: generate list of base axes-dependent axes pairs
     # That is, find where the minimum-maximum gridspec extent in 'x' for a
     # given axes matches the minimum-maximum gridspec extent for a base axes
     if sharex:
-        xgroups_base, xgroups, grouped = [], [], []
+        xgroups_base, xgroups_sorted, xgroups, grouped = [], [], [], []
         for i in range(num_axes): # axes now have pseudo-numbers from 0 to num_axes-1
-            matches       = (xrange[i:i+1,:]==xrange).all(axis=1) # broadcasting rules work here
+            matches       = (xrange[i,:]==xrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0] # gives ID number of matching_axes, from 0 to num_axes-1
             if i not in grouped and matching_axes.size>1:
                 # Find all axes that have the same gridspec 'x' extents
                 xgroups      += [matching_axes]
                 # Get bottom-most axis with shared x; should be single number
                 xgroups_base += [matching_axes[np.argmax(yrange[matching_axes,1])]]
+                # Sorted group
+                xgroups_sorted += [matching_axes[np.argsort(yrange[matching_axes,1])[::-1]]] # bottom-most axes is first
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
     # Get shared y axes
     if sharey:
-        ygroups_base, ygroups, grouped = [], [], []
+        ygroups_base, ygruops_sorted, ygroups, grouped = [], [], [], []
         for i in range(num_axes):
-            matches       = (yrange[i:i+1,:]==yrange).all(axis=1) # broadcasting rules work here
+            matches       = (yrange[i,:]==yrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0]
             if i not in grouped and matching_axes.size>1:
-                ygroups      += [matching_axes] # add ndarray of ids to list
+                ygroups      += [matching_axes]
                 ygroups_base += [matching_axes[np.argmin(xrange[matching_axes,0])]] # left-most axis with shared y, for matching_axes
+                ygroups_sorted += [matching_axes[np.argsort(xrange[matching_axes,0])]] # left-most axis is first
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
 
     #--------------------------------------------------------------------------
     # Draw axes
+    # TODO: Need to configure to automatically determine 'base' axes based on
+    # what has already been drawn. Not critical but would be nice.
+    # TODO: Need to do something similar for the spanning axes. Also will
+    # allow label to be set on any of the axes, but when this happens, will
+    # set the label on the 'base' spanning axes.
     #--------------------------------------------------------------------------
     # Base axes; to be shared with other axes as ._sharex, ._sharey attributes
     axs = num_axes*[None] # list of axes
@@ -533,32 +552,35 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         #     axs[i].yaxis.label.set_visible(False)
 
     # Spanning axes; allow xlabels/ylabels to span them
-    # if spanx and len(xgroups_span)>0:
-    #     for g, b in zip(xgroups_span, xgroups_span_base):
-    #         # Specify x, y transform in Figure coordinates
-    #         axs[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
-    #                 fig.transFigure, mtransforms.IdentityTransform()
-    #                 ))
-    #         # Get min/max positions, in figure coordinates, of spanning axes
-    #         xmin = min(axs[i].get_position().xmin for i in g)
-    #         xmax = max(axs[i].get_position().xmax for i in g)
-    #         # This is the shared xlabel
-    #         # print('Group:', g, 'Base:', b, 'Span:', xmin, xmax)
-    #         axs[b].xaxis.label.set_position(((xmin+xmax)/2, 0))
-    #         for i in g:
-    #             if i!=b: axs[i].xaxis.label.set_visible(False)
-    # if spany and len(ygroups_span)>0:
-    #     for g, b in zip(ygroups_span, ygroups_span_base):
-    #         axs[b].yaxis.label.set_transform(mtransforms.blended_transform_factory(
-    #                 mtransforms.IdentityTransform(), fig.transFigure # specify x, y transform
-    #                 ))
-    #         ymin = min(axs[i].get_position().ymin for i in g)
-    #         ymax = max(axs[i].get_position().ymax for i in g)
-    #         # print('Group:', g, 'Base:', b, 'Span:', ymin, ymax)
-    #         axs[b].yaxis.label.set_position((0, (ymin+ymax)/2))
-    #             # this is the shared ylabel
-    #         for i in g:
-    #             if i!=b: axs[i].yaxis.label.set_visible(False)
+    if spanx and len(xgroups_span)>0:
+        for g,b in zip(xgroups_span, xgroups_span_base):
+            # Specify x, y transform in Figure coordinates
+            axs[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
+                    fig.transFigure, mtransforms.IdentityTransform()
+                    ))
+            # Get min/max positions, in figure coordinates, of spanning axes
+            xmin = min(axs[i].get_position().xmin for i in g)
+            xmax = max(axs[i].get_position().xmax for i in g)
+            # This is the shared xlabel
+            # print('Group:', g, 'Base:', b, 'Span:', xmin, xmax)
+            # axs[b].xaxis.label.set_visible(True)
+            axs[b].xaxis.label.set_position(((xmin+xmax)/2, 0))
+            for i in g:
+                if i!=b:
+                    axs[i].xaxis.label.set_visible(False)
+    if spany and len(ygroups_span)>0:
+        for g,b in zip(ygroups_span, ygroups_span_base):
+            axs[b].yaxis.label.set_transform(mtransforms.blended_transform_factory(
+                    mtransforms.IdentityTransform(), fig.transFigure # specify x, y transform
+                    ))
+            ymin = min(axs[i].get_position().ymin for i in g)
+            ymax = max(axs[i].get_position().ymax for i in g)
+            # print('Group:', g, 'Base:', b, 'Span:', ymin, ymax)
+            # This is the shared ylabel
+            axs[b].yaxis.label.set_position((0, (ymin+ymax)/2))
+            for i in g:
+                if i!=b:
+                    axs[i].yaxis.label.set_visible(False)
 
     #---------------------------------------------------------------------------
     # Create panel axes
