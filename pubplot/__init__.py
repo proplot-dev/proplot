@@ -6,6 +6,7 @@
 #------------------------------------------------------------------------------#
 name = 'PubPlot'
 from .base import *   # basic tools
+from .subplots import *
 from .colortools import * # color tools
 from .fonttools import * # fonts
 from .proj import *   # cartopy projections and whatnot

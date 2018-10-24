@@ -1,24 +1,49 @@
 #!/usr/bin/env python3
 #------------------------------------------------------------------------------#
 # This configures the global working environment
-# TODO: Allow ***seamless*** transitioning between color line cycles and
-# colormaps. Can just register all colormaps with 10 'shades' that sample points
-# alont the map, call with e.g. color='hclBlue0' or switch to that cycler with
-# plot.globals('globals', cycle='hclBlue'), and maybe optionally use tuple-named
-# cycles to configure sampling N times along that cycle. Work on this while on
-# the plane! For colormaps/cycles without natural gradations, will just number
-# along each index.
-# TODO: Why don't I just use seaborn? Because that is meant to make *quick* and
-# *pretty* plots, but my philosophy is exact opposite -- make tweaking stuff to
-# perfection as painless as possible. Also they try to sort of replicate R, not
-# exactly the same demographic as us -- just want easy statistics plots where you
-# pass a dataset and everything else is abstracted away. I just need to make
-# a simple violin plot/split violin plot API, a 1-D and 2-D kernel density API,
-# a histogram API, and a boxplot API. Or, actually, could steal Seaborn source
-# code and just make my own functions.
+"""
+See: https://matplotlib.org/users/customizing.html
+Here's a quick list of rcParam categories:
+    "lines", "patch", "hatch", "legend"
+    "font", "text", "mathtext"
+        includes usetex for making all matplotlib fonts latex
+        and includes settings options for mathmode math, e.g. sf=sans
+    "axes", "figure"
+        includes tons of options
+    "date", "xtick", "ytick", "grid"
+        includes autoformatter
+    "contour", "image"
+        include lut for size of colormap table
+    "boxplot", "errorbar", "hist", "scatter"
+    "path", "savefig", "ps", "tk", "pdf", "svg"
+    "debug", "keymap", "examples"
+    "animation"
+
+Notes
+-----
+* Note the figure settings are used when printing interactively or just making
+    the figure object, but the savefig ones are used when calling savefig.
+* Note that if *autoreload* is triggered/global defauls are reset, it seems that
+    any options set with InlineBackend in ipython are ***ignored***. But if you query
+    settings, options still present -- you just need to call nbsetup again.
+* Problem is the settings in rcParams are scattershot and missing some important
+    ones we want, but should use it when we can; options won't be rescinded in future versions
+* Currently features that can't be rcParam'ed are *gridminor* properties, the
+    *cgrid* idea (lines between colorbar colors), the continent/coastlines/lonlatlines
+    settings, and some legend settings.
+
+Todo
+-----
+* Change default background axes color to 0072B2, from seaborn colorblind, just
+    a bit darker than figure background; is nice.
+* Expand idea of default 'color', 'linewidth', whatever and create more
+    dictionaries with defaults settings, then update them. No more hardcoded values
+    in the main text below.
+"""
 #------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
 import os
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -31,324 +56,304 @@ from . import utils
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 import matplotlib as mpl
-# Default settings to be loaded when globals() is
-# called without any arguments
+# Default settings
+# Roughly speaking, these tend to apply across multiple rc settings
 rcDefaults = {
-    'linewidth': 0.7, # points
-    'small':     8, # inches
-    'medium':    8, # inches
-    'large':     9, # inches
-    'ticklen':   4, # points
-    'tickpad':   2, # points (distance between ticks and labels)
-    'color':     'k',
-    'cycle':     'colorblind',
-    'fontname':  'DejaVu Sans',
+    'axes_color':          'k',
+    'grid_color':          'k',
+    'grid_alpha':          0.1,
+    'patch_color':         'k',
+    'patch_linewidth':     1.0,
+    'figure_facecolor': (0.95,0.95,0.95,1),
+    'axes_facecolor':   (1,1,1,1),
+    'cmap':                'sunset',
+    'cycle':               'colorblind',
+    'fontname':            'DejaVu Sans',
+    'fontsize_small':      8, # inches
+    'fontsize_large':      9, # inches
+    'axes_linewidth':      0.8, # points
+    'grid_linewidth':      0.6, # a bit thinner
+    'gridminor_linewidth': 0.4, # a bit thinner still
+    'plot_linewidth':      1.3,
+    'major_ticklen':       4.0,
+    'minor_ticklen':       2.0, # points
+    'tickpad' :            2.0, # points (distance between ticks and labels)
+    'labelpad' :           3.0, # points (distance between ticks and labels)
+    'markersize' :         3.0,
     }
-# Set up dictionary of default parameters
-base_context = {
-    'font.size':         12,
-    'axes.labelsize':    12,
-    'axes.titlesize':    12,
-    'xtick.labelsize':   11,
-    'ytick.labelsize':   11,
-    'legend.fontsize':   11,
-    'axes.linewidth':    1.25,
-    'grid.linewidth':    1,
-    'lines.linewidth':   1.5,
-    'lines.markersize':  6,
-    'patch.linewidth':   1,
-    'xtick.major.width': 1.25,
-    'ytick.major.width': 1.25,
-    'xtick.minor.width': 1,
-    'ytick.minor.width': 1,
-    'xtick.major.size':  6,
-    'ytick.major.size':  6,
-    'xtick.minor.size':  4,
-    'ytick.minor.size':  4,
-    }
-# Name keys
-context_keys = [*base_context.keys()]
-font_keys = ['axes.labelsize',  'axes.titlesize',  'legend.fontsize',
-             'xtick.labelsize', 'ytick.labelsize', 'font.size']
+# rcDefaults = {
+#     'axes_color':          'b',
+#     'grid_color':          'b',
+#     'grid_alpha':          0.7,
+#     'patch_color':         'green',
+#     'cmap':                'Greys',
+#     'cycle':               'cinematic1',
+#     'fontname':            'DejaVu Sans',
+#     'fontsize_small':      16, # inches
+#     'fontsize_large':      25, # inches
+#     'axes_linewidth':      2, # points
+#     'grid_linewidth':      4, # a bit thinner
+#     'gridminor_linewidth': 6, # a bit thinner still
+#     'plot_linewidth':      8,
+#     'patch_linewidth':     10,
+#     'major_ticklen':       12,
+#     'minor_ticklen':       14, # points
+#     'tickpad' :            5, # points (distance between ticks and labels)
+#     'labelpad' :           8, # points (distance between ticks and labels)
+#     'markersize' :         8,
+#     }
 
 #------------------------------------------------------------------------------#
 # Contextual settings management
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 #------------------------------------------------------------------------------#
-class PlottingContext(dict):
+class rc_context(object):
     """
-    Plotting context object.
+    Context object.
     """
-    # Helper functions
-    _keys = context_keys
-    @staticmethod
-    def _set(context=None, font_scale=1, rc=None):
-        context_object = plotting_context(context, font_scale, rc)
-        mpl.rcParams.update(context_object)
-    # Necessary methods for creating 'with' block
+    def __init__(self, *args, **kwargs):
+        """
+        Save user input.
+        """
+        self._args = args
+        self._kwargs = kwargs
+        self._rcSpecial = rc._rcSpecial.copy()
+        self._rcParams = mpl.rcParams.copy()
+
     def __enter__(self):
-        rc = mpl.rcParams
-        self._orig = {k: rc[k] for k in self._keys}
-        self._set(self)
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self._set(self._orig)
-    def __call__(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            with self:
-                return func(*args, **kwargs)
-        return wrapper
+        """
+        Apply them.
+        """
+        for key,value in self._kwargs.items():
+            rc.__setattr__(key, value)
 
-def plotting_context(context=None, font_scale=1, rc=None):
-    """
-    Returns plotting context object.
-    """
-    # Create context
-    if context is None: # this is the PlottingContext instance
-        context_dict = {k: mpl.rcParams[k] for k in context_keys}
-    elif isinstance(context, dict):
-        context_dict = context
-    else:
-        contexts = ['paper', 'notebook', 'talk', 'poster']
-        if context not in contexts:
-            raise ValueError(f'Context must be in {join(contexts)}.')
-        # Scale all the parameters by the same factor depending on the context
-        scaling = dict(paper=.8, notebook=1, talk=1.5, poster=2)[context]
-        context_dict = {k:v*scaling for k, v in base_context.items()}
-        # Now independently scale the fonts
-        font_dict = {k: context_dict[k]*font_scale for k in font_keys}
-        context_dict.update(font_dict)
-    # Override these settings with the provided rc dictionary
-    if rc is not None:
-        rc = {k: v for k, v in rc.items() if k in context_keys}
-        context_dict.update(rc)
-    # Wrap in a PlottingContext object so this can be used in a with statement
-    context_object = PlottingContext(context_dict)
-    return context_object
+    def __exit__(self, _type, _value, _traceback):
+        """
+        Return to previous state.
+        """
+        for key,value in self._rcParams.items():
+            mpl.rcParams[key] = value
+        for key,value in self._rcSpecial.items():
+            rc._rcSpecial[key] = value
 
 #-------------------------------------------------------------------------------
-# Settings management function
+# Settings management
 #-------------------------------------------------------------------------------
-# I used to create this neat class but it was a stupid idea. Work with existing
-# API, not against it. Just create a function that sets rcParam defaults with
-# optional override. Then, better to make the format function add actual information
-# to the plot and do nothing to change its style/color/etc.
-# def rc(**kwargs): # fontname is matplotlib default
-def rc(*args, verbose=False, **kwargs):
+class rcConfigurator(object):
     """
-    This has multiple uses, all rolled up into one function.
-    1. *Initialize* everything with default settings. Creates special rcExtras
-       dictionary assigned to 'mpl' module, just like rcParams, except the values
-       in rcExtras have my own special naming and are read by my _format() function.
-    2. *Set* rcParams and rcExtras parameters belonging to some category with a single dictionary,
-       list of dictionaries, kwarg pairs, or all of the above.
-    3. *Set* special global params that are applied to a bunch of different
-       rcParams and rcExtras (e.g. 'color'), while leaving others (e.g. 'linewidth') alone.
-    4. *Retrieve* a single value belong to a category.subcategory, or a dictionary
-       of *all* or *filtered/selected* subcategory=value pairs for subcategories
-       belonging to 'category'.
-    See: https://matplotlib.org/users/customizing.html
-    Here's a quick list of rcParam categories:
-        "lines", "patch", "hatch", "legend"
-        "font", "text", "mathtext"
-            includes usetex for making all matplotlib fonts latex
-            and includes settings options for mathmode math, e.g. sf=sans
-        "axes", "figure"
-            includes tons of options
-        "date", "xtick", "ytick", "grid"
-            includes autoformatter
-        "contour", "image"
-            include lut for size of colormap table
-        "boxplot", "errorbar", "hist", "scatter"
-        "path", "savefig", "ps", "tk", "pdf", "svg"
-        "debug", "keymap", "examples"
-        "animation"
-    Some other notes:
-    * Note the figure settings are used when printing interactively or just making
-      the figure object, but the savefig ones are used when calling savefig.
-    * Note that if *autoreload* is triggered/global defauls are reset, it seems that
-      any options set with InlineBackend in ipython are ***ignored***. But if you query
-      settings, options still present -- you just need to call nbsetup again.
-    * Problem is the settings in rcParams are scattershot and missing some important
-      ones we want, but should use it when we can; options won't be rescinded in future versions
-    * Currently features that can't be rcParam'ed are *gridminor* properties, the
-      *cgrid* idea (lines between colorbar colors), the continent/coastlines/lonlatlines
-      settings, and some legend settings.
-    TODO: Change default background axes color to 0072B2, from seaborn colorblind, just
-    a bit darker than figure background; is nice.
-    TODO: Expand idea of default 'color', 'linewidth', whatever and create more
-    dictionaries with defaults settings, then update them. No more hardcoded values
-    in the main text below.
+    Abstract class for handling settings.
     """
-    #--------------------------------------------------------------------------#
-    # Helper function; adds stuff to rcParams or rcExtras in the
-    # stylesheet style of category.subcategory = value, or very
-    # occasionally category.subcategory.subsubcategory = value, in which case
-    # user should input a dictionary {'subcategory.subsubcategory':value}
-    #--------------------------------------------------------------------------#
-    def add(category, kwargs): # pass
-        if not hasattr(mpl, 'rcExtras'):
-            mpl.rcExtras = {} # initialize empty dictionary
-        for subcategory,value in kwargs.items():
-            if f'{category}.{subcategory}' in mpl.rcParams:
-                mpl.rcParams[f'{category}.{subcategory}'] = value
-            else:
-                mpl.rcExtras[f'{category}.{subcategory}'] = value
-    # Manage input, and intialization
-    category = None # not necessarily anything
-    if args and type(args[0]) is str: # second part of 'and' only tested if first part true
-        category, *args = args # pull out category; but args might be a bunch of dictionaries
-    newargs = [] # new list
-    for arg in args:
-        if isinstance(arg,dict):
-            kwargs = {**kwargs, **arg} # add dictionary
-        else:
-            newargs += [arg] # just means we want to retrieve individual arguments
-    args = newargs # retain old ones
-    # *Retrieve* settings without changing any, if user passed a string 'category' name
-    # and did not pass any kwargs for assignment as new settings
-    if category is not None and not kwargs:
-        # Get dictionary
-        if category=='globals':
-            dictionary = {key.split('.')[-1]:val for key,val in mpl.rcExtras.items() if 'globals.' in key}
-        else:
-            dictionary = {}
-            for catstring,value in {**mpl.rcParams, **mpl.rcExtras}.items():
-                if catstring.split('.')[0]==category:
-                    dictionary[catstring.split('.')[1]] = value
-        # Optionally filter results, or just return one value
-        if args: # filter them
-            dictionary = {k:v for k,v in dictionary.items() if k in args}
-            if len(dictionary)==1:
-                value, = dictionary.values() # turn a single value
-                return value # early return, ugly
-        if not dictionary:
-            raise ValueError(f"Could not find settings for \"{category}\".")
-        return dictionary
-    # Now the section that applies settings
-    if args:
-        raise ValueError(f'Improper use of rc(). Only supply extra *args without any **kwargs.')
-    #--------------------------------------------------------------------------#
-    # *Initialize* default settings; that is, both rcParams and rcExtras
-    #--------------------------------------------------------------------------#
-    # Requires processing in lines below
-    # WARNING: rcdefaults() changes the backend! Inline plotting will fail for
-    # rest of notebook session if you call rcdefaults before drawing a figure!!!!
-    # After first figure made, backend property is 'sticky', never changes!
-    category = category or 'globals' # None defaults to globals in this section
-    if category=='globals' and not kwargs: # default settings
-        # See: https://stackoverflow.com/a/48322150/4970632
-        # backend_save = mpl.rcParams['backend']
-        # mpl.rcdefaults() # apply *builtin* default settings
-        # mpl.rcParams['backend'] = backend_save
+    def __init__(self):
+        """
+        Initialize.
+
+        Notes
+        -----
+        Note rcdefaults() changes the backend! Inline plotting will fail for
+        rest of notebook session if you call rcdefaults before drawing a figure!
+        After first figure made, backend property is 'sticky', never changes!
+        See: https://stackoverflow.com/a/48322150/4970632
+        """
+        # First initialize matplotlib
         mpl.style.use('default') # mpl.style does not change the backend
-        mpl.rcExtras = {} # reset extra settings
-        add('globals', rcDefaults) # apply *global* settings
-    #--------------------------------------------------------------------------#
-    # *Update* rcParam settings or global settings; just add them to rcParams or rcExtras
-    #--------------------------------------------------------------------------#
-    # If one of the 'global' settings was changed, requires processing in lines below
-    # Also if any 'value' is a dictionary, update properties with that key as a
-    # 'category' and each key-value air in the dictionary as kwargs
-    else:
-        updated = False
-        for key,value in kwargs.items():
-            if isinstance(value,dict):
-                add(key, value) # add the 'value' as a kwarg dictionary
-                if verbose:
-                    print(f"Added settings to category '{key}':", value)
-            elif category=='globals' and key not in rcDefaults:
-                raise ValueError(f"Key \"{key}\" unknown. Not a global property like \"color\" or \"linewidth\".")
-            else:
-                value = value if value!='default' or category!='globals' else rcDefaults[key]
-                add(category, {key:value}) # easy peasy
-                updated = True
-                if verbose:
-                    print(f"Added setting to category '{category}':", {key:value})
-        if category!='globals' or (category=='globals' and not updated):
-            if verbose:
-                print('No global properties changed.')
-            return None # don't need to re-apply the globals
-    #--------------------------------------------------------------------------#
-    # *Apply* global settings; if this function was not called without arguments, then
-    # only settings specifically requested to be changed, will be changed
-    #--------------------------------------------------------------------------#
-    current = rc('globals') # the dictionary
-    # Make a cycler for drawing a bunch of lines
-    # dashes = ('-', '--', ':', '-.') # dash cycles; these succeed color changes
-    # cycle = cycler('color', [colors[i%len(colors)] for i in range(len(colors)*len(dashes))]) \
-    #       + cycler('linestyle', [i for i in dashes for n in range(len(colors))])
-    # [ax.set_prop_cycle(cycle) for fig in map(plt.figure, plt.get_fignums()) for ax in fig.axes]
-    cycle = current['cycle']
-    if utils.isscalar(cycle):
-        cycle = cycle,
-    colors = colortools.Cycle(*cycle)
-    cycle  = cycler('color', colors)
-    # First the rcParam settings
-    # Here are ones related to axes and figure properties
-    # NOTE the figure and axes colors will not be reset on saving if
-    # you specify them explicitly, even if you use transparent True.
-    color, linewidth, ticklen, tickpad, small, large, fontname = \
-        current['color'], current['linewidth'], current['ticklen'], current['tickpad'], current['small'], current['large'], current['fontname']
-    add('savefig', dict(transparent=True, facecolor='w', dpi=300,
-        directory='', pad_inches=0, bbox='standard', format='pdf')) # empty means current directory
-    add('figure', dict(facecolor=(.95,.95,.95,1), dpi=90, # matches nbsetup
-        max_open_warning=0, constrained_layout=False, autolayout=False)) # zero disables max open warning
-    add('axes', dict(xmargin=0, ymargin=0.05, labelsize=small, titlesize=large,
-        edgecolor=color, labelcolor=color, grid=True, linewidth=linewidth,
-        labelpad=3, prop_cycle=cycle))
-    add('font', dict({'sans-serif':fontname}, size=small, family='sans-serif')) # when user calls .text()
-    add('text', dict(color=color)) # when user calls .text()
-    add('grid', dict(linewidth=linewidth/2, alpha=0.1, color=color))
-    for xy in 'xy':
-        tickloc = {'x':dict(bottom=True, top=False),'y':dict(left=True,right=False)}[xy]
-        add(f'{xy}tick',       dict(labelsize=small, color=color, direction='out'))
-        add(f'{xy}tick.major', dict(pad=tickpad, width=linewidth, size=ticklen, **tickloc)) # size==length
-        add(f'{xy}tick.minor', dict(pad=tickpad, width=linewidth, size=ticklen/2, **tickloc, visible=True))
-    # Ones related to stuff plotted inside axes
-    # For styles, see: https://matplotlib.org/examples/api/joinstyle.html
-    add('image', dict(cmap='sunset', lut=256)) # colormap stuff
-    add('patch', dict(linewidth=linewidth, edgecolor=color)) # e.g. bars?
-    add('hatch', dict(linewidth=linewidth, color=color))
-    add('lines', dict(linewidth=linewidth*2,
-        markersize=linewidth*4,  markeredgewidth=0,
-        dash_joinstyle='miter',  dash_capstyle='projecting',   # joinstyle opts= miter, round, bevel
-        solid_joinstyle='miter', solid_capstyle='projecting')) # capstyle opts= butt, round, projecting
-    add('markers',  dict(fillstyle='full'))
-    add('scatter',  dict(marker='o'))
-    add('legend',   dict(framealpha=1, fancybox=False, frameon=False, # see= https=//matplotlib.org/api/legend_api.html
-        labelspacing=0.5, handletextpad=0.5, handlelength=1.5, columnspacing=1,
-        borderpad=0.5,    borderaxespad=0,   numpoints=1,      facecolor='inherit'))
-    # add('legend',   {'framealpha':0.6, 'fancybox':False, 'frameon':False,
-    #     'labelspacing':0.5, 'columnspacing':1, 'handletextpad':0.5, 'borderpad':0.25})
-    # This can only be accomplished with rcParams; impossible to specify with API!
-    add('mathtext', dict(default='regular', bf='sans:bold', it='sans:it')) # no italicization
-    # Next the settings with custom names
-    # Some might be redundant, and should consider eliminating
-    # Should begin to delete these and control things with rcParams whenever possible
-    # Remember original motivation was realization that some rcParams can't be changes
-    # by passing a kwarg (don't remember any examples)
-    add('abc',         dict(size=large, weight='bold', color=color))
-    add('title',       dict(size=large, weight='normal', color=color, fontname=fontname))
-    add('suptitle',    dict(size=large, weight='normal', color=color, fontname=fontname))
-    add('label',       dict(size=small, weight='normal', color=color, fontname=fontname))
-    add('ticklabels',  dict(size=small, weight='normal', color=color, fontname=fontname))
-    add('gridminor',   dict(linestyle='-', linewidth=linewidth/2, color=color, alpha=0.1))
-    add('cgrid',       dict(color=color, linewidth=linewidth))
-    add('continents',  dict(color=color, linewidth=0)) # make sure no lines!
-    add('oceans',      dict(color='w', linewidth=0)) # make sure no lines!
-    add('tickminor',   dict(length=ticklen/2, width=linewidth, color=color))
-    add('tick',        dict(length=ticklen, width=linewidth, color=color))
-    add('ctickminor',  dict(length=ticklen/2, width=linewidth, color=color))
-    add('ctick',       dict(length=ticklen, width=linewidth, color=color))
-    add('coastlines',  dict(linewidth=linewidth, color=color))
-    add('lonlatlines', dict(linewidth=linewidth, linestyle='=', color=color, alpha=0.2))
-    add('spine',       dict(color=color, linewidth=linewidth))
-    add('outline',     dict(edgecolor=color, linewidth=linewidth))
-    if verbose:
-        print('Global properties set.')
-    return None
+        mpl.rcPubPlot = {} # reset extra settings
+        # Next add global attributes
+        self._settings = rcDefaults.copy()
+        self._rcSpecial  = {}
+        # Finally add these attributes to rcParams
+        self._apply()
 
-# Now call the function to configure params with default values
-rc(verbose=True)
+    def reset(self): # user can use this
+        self.__init__()
+
+    def __str__(self, item):
+        print(self._settings)
+
+    def __repr__(self, item):
+        print(repr(self._settings))
+
+    def _set_rcparam(self, category, kwargs):
+        """
+        Input
+        -----
+            category : the rcParams category
+            kwargs : ditionary of subcategory-value pairsk
+
+        Description
+        -----------
+        Adds values rcParams or rcPubPlot in the style:
+            category.subcategory = value
+        or very occasionally
+            category.subcategory.subsubcategory = value
+        in which case the 'category' should be 'category.subcategory'.
+        """
+        for subcategory,value in kwargs.items():
+            key = category+'.'+subcategory
+            if key in mpl.rcParams:
+                mpl.rcParams[key] = value
+            else:
+                raise ValueError(f'Invalid rcParam: "{key}".')
+
+    def _set_special(self, category, kwargs):
+        """
+        Input
+        -----
+            category : settings
+
+        Description
+        -----------
+        Add stuff to special dictionary.
+        """
+        for subcategory,value in kwargs.items():
+            key = category+'.'+subcategory
+            self._rcSpecial[key] = value
+
+    def __getitem__(self, item):
+        """
+        Gets arbitrary stuff.
+        """
+        # Get dictionary
+        params = {}
+        for d in (mpl.rcParams, self._rcSpecial):
+            for category,value in d.items():
+                if re.match(f'^{item}$', category):
+                    return mpl.rcParams[item]
+                elif re.search(f'^{item}\.', category):
+                    subcategory = re.sub(f'^{item}.', '', category)
+                    if subcategory and '.' not in subcategory:
+                        params[subcategory] = d[category]
+        if not params:
+            raise ValueError(f'Invalid key "{item}".')
+        return params
+
+    def __setitem__(self, item, kwargs):
+        """
+        Apply to rcParams.
+        """
+        if isinstance(kwargs, dict):
+            updated = False
+            for key,value in kwargs.items():
+                key = f'{item}.{key}'
+                if key in rcParams:
+                    rcParams[key] = item
+                elif key in self._rcSpecial:
+                    self._rcSpecial[key] = item
+                else:
+                    raise ValueError(f'Invalid key "{key}" for parameter "{item}".')
+
+    def __getattr__(self, attr):
+        """
+        Get an rc setting.
+        """
+        if attr.startswith('_') or attr=='reset':
+            return super().__getattr__(attr)
+        elif attr not in rcDefaults:
+            raise ValueError(f'Invalid global rcparam. Options are: {", ".join(rcDefaults.keys())}.')
+        else:
+            return self._settings[attr]
+
+    def __setattr__(self, attr, value):
+        """
+        Set an rc setting.
+        """
+        if attr.startswith('_') or attr=='reset':
+            super().__setattr__(attr, value)
+        elif attr not in rcDefaults:
+            print(attr)
+            raise ValueError(f'Invalid global rcparam. Options are: {", ".join(rcDefaults.keys())}.')
+        else:
+            self._settings[attr] = value
+            self._apply()
+
+    def _apply(self, verbose=False):
+        """
+        Apply global settings.
+
+        Note
+        ----
+        The figure colors will not be reset on saving if you specify them
+        explicitly, even if you use transparent True! Only works if they
+        remain 'None' until saving.
+        """
+        # Figure settings
+        self._set_rcparam('savefig', dict(transparent=True, facecolor=self.axes_facecolor,
+            dpi=300, pad_inches=0, directory='', # empty means current directory
+            bbox='standard', format='pdf'))
+        self._set_rcparam('figure', dict(facecolor=self.figure_facecolor, dpi=90,
+            titlesize=self.fontsize_large, titleweight='bold', # for suptitle
+            max_open_warning=0, # zero disables max open warning
+            autolayout=False))
+
+        # Axes settings (note the gridminor one is special)
+        # First get cycler, then apply
+        cycle = self.cycle
+        if utils.isscalar(cycle):
+            cycle = cycle,
+        colors = colortools.Cycle(*cycle)
+        prop_cycle = cycler('color', colors)
+        self._set_special('gridminor', dict(linestyle='-', linewidth=self.gridminor_linewidth,
+            color=self.grid_color, alpha=self.grid_alpha))
+        self._set_rcparam('grid', dict(linestyle='-', linewidth=self.grid_linewidth,
+            color=self.grid_color, alpha=self.grid_alpha))
+        self._set_special('abc',  dict(size=self.fontsize_large, weight='bold',
+            color=self.axes_color))
+        self._set_rcparam('axes', dict(xmargin=0, ymargin=0.05,
+            titlesize=self.fontsize_large, titleweight='normal',
+            labelsize=self.fontsize_small, labelweight='bold', labelcolor=self.axes_color,
+            linewidth=self.axes_linewidth, edgecolor=self.axes_color,
+            labelpad=self.labelpad, grid=True,
+            prop_cycle=prop_cycle)) # consider adding linestyle cycle
+
+        # Text settings
+        # The mathtext stuff can only be accomplished with rcParams; impossible
+        # to specify with API!
+        self._set_rcparam('font', dict({'sans-serif':self.fontname}, size=self.fontsize_small, family='sans-serif'))
+        self._set_rcparam('text', dict(color=self.axes_color)) # when user calls .text()
+        self._set_rcparam('mathtext', dict(default='regular', bf='sans:bold', it='sans:it')) # no italicization
+
+        # Tick marks
+        tickloc = {'x':dict(bottom=True, top=False), 'y':dict(left=True,right=False)}
+        for xy in 'xy':
+            self._set_rcparam(xy+'tick', dict(labelsize=self.fontsize_small,
+                color=self.axes_color, direction='out'))
+            self._set_rcparam(xy+'tick.minor', dict(tickloc[xy], visible=True,
+                pad=self.tickpad,
+                width=self.gridminor_linewidth, size=self.minor_ticklen))
+            self._set_rcparam(xy+'tick.major', dict(tickloc[xy],
+                pad=self.tickpad,
+                width=self.grid_linewidth, size=self.major_ticklen))
+
+        # Hatching and colorsmaps and stuff
+        self._set_rcparam('image', dict(cmap=self.cmap, lut=256)) # colormap stuff
+        self._set_rcparam('patch', dict(linewidth=self.patch_linewidth, edgecolor=self.patch_color))
+        self._set_rcparam('hatch', dict(linewidth=self.patch_linewidth, color=self.patch_color))
+
+        # Lines and markers
+        # For join/cap styles, see: https://matplotlib.org/examples/api/joinstyle.html
+        self._set_rcparam('markers', dict(fillstyle='full'))
+        self._set_rcparam('scatter', dict(marker='o'))
+        self._set_rcparam('lines', dict(linewidth=self.plot_linewidth, color='C0',
+            markeredgewidth=0, markersize=self.markersize,
+            dash_joinstyle='miter',  dash_capstyle='projecting',   # joinstyle opts= miter, round, bevel
+            solid_joinstyle='miter', solid_capstyle='projecting')) # capstyle opts= butt, round, projecting
+
+        # Legend settings
+        # See: https://matplotlib.org/api/legend_api.html
+        self._set_rcparam('legend',   dict(framealpha=1, fancybox=False, frameon=False,
+            fontsize=self.fontsize_small,
+            labelspacing=0.5, handletextpad=0.5,   handlelength=1.5,
+            columnspacing=1,  facecolor='inherit', numpoints=1,
+            borderpad=0.5,    borderaxespad=0))
+
+        # Geographic stuff (these are custom)
+        self._set_special('coastlines',  dict(linewidth=self.axes_linewidth, color=self.axes_color))
+        self._set_special('land',        dict(linewidth=0, color=self.axes_color)) # no lines!
+        self._set_special('oceans',      dict(linewidth=0, color='w')) # no lines!
+        self._set_special('lonlatlines', dict(linewidth=self.grid_linewidth, color=self.axes_color,
+            linestyle='=', alpha=self.grid_alpha))
+        if verbose:
+            print('Updated global settings.')
+
+# Instantiate object
+rc = rcConfigurator()
 

@@ -254,7 +254,7 @@ def get_channel(color, channel, space='hsl', scale=True):
 # Generalized colormap/cycle constructors
 #------------------------------------------------------------------------------#
 def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
-        name='custom', register=True, save=False, N=None, **kwargs):
+        name=None, register=True, save=False, N=None, **kwargs):
     """
     Convenience function for generating colormaps in a variety of ways.
     The 'extend' property will be used to resample LinearSegmentedColormap
@@ -331,7 +331,6 @@ def Colormap(*args, light=True, extend='both', ratios=1, resample=False,
                 cmap = dark_cmap(cmap, name=name, **cmap_kw)
         cmaps += [cmap]
     cmap = merge_cmaps(cmaps, name=name, ratios=ratios, **kwargs)
-    name = cmap.name # just to make sure
     # Optionally make extremes same color as map
     offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
     if extend not in offset:
@@ -383,14 +382,16 @@ def Cycle(*args, vmin=0, vmax=1):
     if isinstance(cmap, mcolors.ListedColormap):
         # Just get the colors
         colors = cmap.colors
-    elif isinstance(cmap, mcolors.LinearSegmentedColormap):
+    elif isinstance(cmap, mcolors.LinearSegmentedColormap): # or subclass
         # Employ ***more flexible*** version of get_cmap() method, which does this:
         # LinearSegmentedColormap(self.name, self._segmentdata, lutsize)
         if utils.isnumber(samples):
             # samples = np.linspace(0, 1-1/nsample, nsample) # from 'centers'
             samples = np.linspace(0, 1, samples) # from edge to edge
-        else:
+        elif utils.isvector(samples):
             samples = np.array(samples)
+        else:
+            raise ValueError(f'Invalid samples {samples}.')
         colors = cmap((samples-vmin)/(vmax-vmin))
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
