@@ -94,4 +94,4 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
    * Registered many new colors names, including XKCD colors, crayon colors, and Open Color web-design color palette.
    * Use functions `cmapshow`, `colorshow`, and `cycleshow` to visualize available colormaps, named colors, and color cycles. Functions will automatically save PDFs in the package directory.
 ### Miscellaneous
-   * New `plot.arange` utility -- like `np.arange`, but **endpoint-inclusive**.
+   * New `plot.arange` utility -- like `np.arange`, but **endpoint-inclusive**. This is useful for, e.g., designating tick positions and contour levels.
