@@ -258,7 +258,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
             map_kwargs = {'projection':'newpolar'}
         else:
             proj_kwargs = {**projection_kwargs, **projection_dict}
-            map_projection, aspect = base.projection_factory(package, projection, **proj_kwargs)
+            map_projection, aspect = base.map_projection_factory(package, projection, **proj_kwargs)
             map_kwargs = {'projection':package, 'map_projection':map_projection}
 
     #--------------------------------------------------------------------------
@@ -450,13 +450,14 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 # Find all axes that have the same gridspec 'x' extents
                 xgroups      += [matching_axes]
                 # Get bottom-most axis with shared x; should be single number
+                # xgroups_base += [matching_axes[np.argmax(yrange[matching_axes,1])]]
                 xgroups_base += [matching_axes[np.argmax(yrange[matching_axes,1])]]
                 # Sorted group
                 xgroups_sorted += [matching_axes[np.argsort(yrange[matching_axes,1])[::-1]]] # bottom-most axes is first
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
     # Get shared y axes
     if sharey:
-        ygroups_base, ygruops_sorted, ygroups, grouped = [], [], [], []
+        ygroups_base, ygroups_sorted, ygroups, grouped = [], [], [], []
         for i in range(num_axes):
             matches       = (yrange[i,:]==yrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0]
@@ -485,14 +486,13 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         ax_kwargs = map_kwargs if i in maps_ids else {'projection':'xy'}
         if axs[i] is not None: # already created
             continue
+        # print('base', i)
         if i in innerpanels_ids:
             axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])], width, height,
                     **ax_kwargs, **panel_kwargs) # main axes handle
         else:
-            axs[i] = fig.axes_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+            axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                     **ax_kwargs) # main axes can be a cartopy projection
-            # axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
-            #         **ax_kwargs) # main axes can be a cartopy projection
 
     # Dependent axes
     for i in range(num_axes):
@@ -524,32 +524,34 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
             # and we want it to share a y-axis
             if sharex_ax is not None and axs[i] is not sharex_ax:
                 axs[i]._sharex = sharex_ax
+                axs[i]._shared_x_axes.join(axs[i], sharex_ax)
             else:
                 sharex_ax = None
             if sharey_ax is not None and axs[i] is not sharey_ax:
                 axs[i]._sharey = sharey_ax
+                axs[i]._shared_y_axes.join(axs[i], sharey_ax)
             else:
                 sharey_ax = None
         else:
             # Virgin axes; these are not an x base or a y base
             # We draw them now and add the sharex/sharey attributes
-            # NOTE: Don't yet call with sharex=[something] because that
-            # triggers a bunch of other commands that require the shared
-            # axes to be drawn, which we want to delay.
+            # print('panel', i, sharex_ax)
             if i in innerpanels_ids:
                 axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         width, height, sharex=sharex_ax, sharey=sharey_ax, **ax_kwargs, **panel_kwargs)
             else:
-                axs[i] = fig.axes_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         sharex=sharex_ax, sharey=sharey_ax, **ax_kwargs) # main axes can be a cartopy projection
 
-        # # Hide tick labels (not default behavior for manual sharex, sharey use)
-        # if sharex_ax is not None:
-        #     for t in axs[i].xaxis.get_ticklabels(): t.set_visible(False)
-        #     axs[i].xaxis.label.set_visible(False)
-        # if sharey_ax is not None:
-        #     for t in axs[i].yaxis.get_ticklabels(): t.set_visible(False)
-        #     axs[i].yaxis.label.set_visible(False)
+        # Hide tick labels (not default behavior for manual sharex, sharey use)
+        if sharex_ax is not None:
+            for t in axs[i].xaxis.get_ticklabels():
+                t.set_visible(False)
+            axs[i].xaxis.label.set_visible(False)
+        if sharey_ax is not None:
+            for t in axs[i].yaxis.get_ticklabels():
+                t.set_visible(False)
+            axs[i].yaxis.label.set_visible(False)
 
     # Spanning axes; allow xlabels/ylabels to span them
     if spanx and len(xgroups_span)>0:
@@ -622,7 +624,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 wspace        = rspace, # same as above
                 width_ratios  = rratios,
                 )
-        panels = [base.DelayedPanel(fig, P[0,i], 'bottom') for i in range(npanel)]
+        panels = [fig.add_subplot(P[0,i], side='bottom', erase=True, projection='panel') for i in range(npanel)]
         if bottompanel:
             panels = panels[0] # no indexing if user specified single panel, but does mean indexing if specified bottompanels=True with single column grid
         fig.bottompanel = panels
@@ -661,7 +663,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 hspace        = rspace,
                 height_ratios = rratios,
                 )
-        panels = [base.DelayedPanel(fig, P[i,0], 'right') for i in range(npanel)] # pass the SubplotSpec objects
+        panels = [fig.add_subplot(P[0,i], side='right', erase=True, projection='panel') for i in range(npanel)]
         if rightpanel:
             panels = panels[0]
         fig.rightpanel = panels
