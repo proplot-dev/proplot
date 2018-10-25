@@ -149,8 +149,8 @@ rcDefaults = {
 # Special settings, should be thought of as extension of rcParams
 rcSpecial = {
     # These ones just need to be present, will get reset by globals
-    'abc.fontsize':          None,
-    'gridminor.linewidth':   None,
+    'abc.fontsize':          rcGlobals['large'],
+    'gridminor.linewidth':   rcGlobals['linewidth']*rcGlobals['minorwidth'],
     # The rest can be applied as-is
     'abc.weight':            'bold',
     'gridminor.color':       'k',
@@ -167,54 +167,49 @@ rcSpecial = {
     }
 
 #------------------------------------------------------------------------------#
-# Contextual settings that are stupid and annoying, just 
+# Contextual settings tool
+# Using this in day-to-day plotting is annoying and unnecessary, so we abstract
+# that away by permitting axes-specific changes requested by .format() input
 #------------------------------------------------------------------------------#
-# def rc_update(axs):
-#     """
-#     Update rcParams for every single axes (i.e. spines, ticks, title settings,
-#     but not plotted contents).
-#     """
-#     # axs = [plt.gca()] # the last one where we plotted stuff
-#     axs = [axs] if not utils.isvector(axs) else axs
-#     for ax in axs:
-#         if hasattr(ax, '_rcupdate'):
-#             print('updating...', ax)
-#             ax._rcupdate()
-#         else:
-#             print(f'Warning: ax {ax} has no _rcupdate() method!')
-
 class rc_context(object):
     """
     Context object.
     """
-    def __init__(self, axs, *args, **kwargs):
+    def __init__(self, ax, *args, **kwargs):
         """
         Save user input.
         """
+        # Parse input and detect if anything changed (to save time, since in the
+        # vact majority of the time, when this is called by format(), we are
+        # not going to change any settings)
         for arg in args:
             if not isinstance(arg, dict):
                 raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
             kwargs.update(arg)
-        self._kwargs = kwargs
-        self._special = rc._rcSpecial.copy()
-        self._rcparams = rcParams.copy()
-        self._axs = axs
+        if not kwargs:
+            self._nochange = True
+        else:
+            self._nochange = False
+            self._kwargs = kwargs
+            self._special = rc._rcSpecial.copy()
+            self._rcparams = rcParams.copy()
+            self._ax = ax
 
     def __enter__(self):
         """
         Apply them, then update all figures.
         """
-        for key,value in self._kwargs.items():
-            rc[key] = value # applies globally linked and individual settings
+        if not self._nochange:
+            for key,value in self._kwargs.items():
+                rc[key] = value # applies globally linked and individual settings
 
     def __exit__(self, _type, _value, _traceback):
         """
         Return to previous state.
         """
-        # rc_update(self._axs)
-        # rc_update() # apply after-the-fact, since plotting command will have made the relevant axes 'active'
-        for key,value in {**self._rcparams, **self._special}.items():
-            rc[key] = value
+        if not self._nochange:
+            for key,value in {**self._rcparams, **self._special}.items():
+                rc[key] = value
 
 #------------------------------------------------------------------------------#
 # Contextual settings management
@@ -314,6 +309,7 @@ class rc_configurator(object):
                     ratio = value
                 rcParams['xtick.minor.width'] = tickwidth*ratio
                 rcParams['ytick.minor.width'] = tickwidth*ratio
+                self._rcSpecial['gridminor.linewidth'] = tickwidth*ratio
             # Finally the special settings that correspond to a list of values
             for name in rcGlobals_children.get(key,[]):
                 if name in rcParams:

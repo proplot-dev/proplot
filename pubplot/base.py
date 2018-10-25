@@ -79,6 +79,7 @@ from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colortools
 from . import utils
+rc_context_rcmod = rc_context # so it won't be overritten
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
 warnings.filterwarnings('ignore', category=mplDeprecation)
@@ -499,32 +500,39 @@ class Figure(mfigure.Figure):
     def __init__(self, left=None,   bottom=None,   right=None,  top=None,
         bwidth=None,   bspace=None, rwidth=None,   rspace=None,
         width=None,    height=None, gridspec=None,
+        rcreset=True,
         **kwargs):
         """
         Add a few extra attributes, accessed by other methods.
         """
+        # rc settings
+        self.rcreset  = rcreset
+        # Gridspec information
+        self.gridspec = gridspec
         self.left     = left
         self.bottom   = bottom
         self.right    = right
         self.top      = top
-        self.bwidth   = bwidth
-        self.bspace   = bspace
-        self.rwidth   = rwidth
-        self.rspace   = rspace
+        # Figure dimensions
         self.width    = width
         self.height   = height
-        self.gridspec = gridspec
+        # Panels
         self.leftpanel    = None
         self.bottompanel  = None
         self.rightpanel   = None
         self.toppanel     = None
+        # Panel settings
+        self.bwidth   = bwidth
+        self.bspace   = bspace
+        self.rwidth   = rwidth
+        self.rspace   = rspace
         super().__init__(**kwargs) # python 3 only
 
     def draw(self, *args, **kwargs):
         """
         Reset the rcparams when a figure is displayed; usually means we have
         """
-        if not rc._init:
+        if not rc._init and self.rcreset:
             print('Resetting rcparams.')
             rc.reset()
         return super().draw(*args, **kwargs)
@@ -763,6 +771,13 @@ class BaseAxes(maxes.Axes):
         else:
             raise IndexError('Figure contains only one subplot.')
 
+    # Context item
+    def rc_context(self, *args, **kwargs):
+        """
+        Temporarily change rcParams for drawings on this axes.
+        """
+        return rc_context_rcmod(self, *args, **kwargs)
+
     # Update rcParams
     def _rcupdate(self, **kwargs):
         """
@@ -770,7 +785,6 @@ class BaseAxes(maxes.Axes):
         Will be called automatically for all axes on the current figure
         whenever the plotting context is changed.
         """
-        # with rc_context(self, **kwargs):
         # Update the title rcParams
         self.title.update(dict(fontsize=rc['axes.titlesize'], weight=rc['axes.titleweight']))
         if hasattr(self,'_suptitle'):
@@ -780,10 +794,10 @@ class BaseAxes(maxes.Axes):
 
     # New convenience feature
     def format(self,
-        hatch=None, color=None, # control figure/axes background; hatch just applies to axes
+        hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
         abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
-        # **kwargs,
+        rcdict={}, **kwargs,
         ):
         """
         Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
@@ -798,8 +812,11 @@ class BaseAxes(maxes.Axes):
         * Problem is there is no autofmt_ydate(), so really should implement my own
           version of this.
         """
-        # First update
-        self._rcupdate()
+        # First update (note that this will call _rcupdate overridden by child
+        # classes, which can in turn call the parent class version, so we only
+        # need to call this from the base class, and all settings will be applied)
+        with self.rc_context(rcdict, **kwargs):
+            self._rcupdate()
         # self._rcupdate(**kwargs)
         # Create figure title
         fig = self.figure # the figure
@@ -859,8 +876,8 @@ class BaseAxes(maxes.Axes):
         # Color setup, optional hatching in background of axes
         # You should control transparency by passing transparent=True or False
         # to the savefig command
-        if color is not None:
-            self.patch.set_color(color)
+        if facecolor is not None:
+            self.patch.set_color(facecolor)
         self.patch.set_zorder(-1)
         self.patch.set_clip_on(False)
         if hatch: # non-empty string or not none
@@ -1155,7 +1172,6 @@ class XYAxes(BaseAxes):
         """
         Update the rcParams according to user input.
         """
-        # with rc_context(self, **kwargs):
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
             spine.update(dict(linewidth=rc['axes.linewidth'], color=rc['axes.edgecolor']))
@@ -1208,8 +1224,6 @@ class XYAxes(BaseAxes):
         Format the x/y labels, tick locators, tick formatters, and more.
         Needs more documentation.
         """
-        # First update
-        self._rcupdate()
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
         # Set axis scaling and limits
