@@ -20,6 +20,7 @@ dir=$(abspath ${0%/*}) # this script's directory
 base=$dir/../pubplot/fonts
 mpldir=$(python -c "import matplotlib; print(matplotlib.matplotlib_fname())")
 mfontdir=${mpldir%matplotlibrc}/fonts/ttf
+echo $mfontdir
 echo "Transfering .ttf files in \"fonts\" folder to $mfontdir..."
 for font in $base/*.ttf; do
   if [ ! -r "$mfontdir/${font##*/}" ]; then
@@ -32,6 +33,7 @@ done
 # For get_cachedir see: https://stackoverflow.com/a/24196416/4970632
 shopt -s nullglob # keep empty if does not exist
 cachedir=$(python -c "import matplotlib; print(matplotlib.get_cachedir())")
+rm $cachedir/font* 2>/dev/null
 caches=($cachedir/*.cache) # may be more than one
 for cache in ${caches[@]}; do # might be more than one
   if [ ! -d "$cache" ]; then # may be a tex.cache folder

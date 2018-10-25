@@ -69,6 +69,7 @@ rcGlobals = {
     'minorwidth': 0.7, # ratio of major-to-minor tick width
     'tickpad':    2.0,
     'inout' :     'out',
+    'fontname':   'DejaVu Sans', # simple alias
     }
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
@@ -76,6 +77,7 @@ rcGlobals_children = {
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
     'linewidth':  ['axes.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
+    'fontname':   ['font.sans-serif'],
     # Less important ones
     'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
     'top':        ['xtick.major.top',     'xtick.minor.top'],
@@ -118,6 +120,7 @@ rcDefaults = {
     'mathtext.default':        'regular', # no italics
     'mathtext.bf' :            'sans:bold',
     'mathtext.it' :            'sans:it',
+    'text.latex.preamble':      r'\usepackage{cmbright}', # https://stackoverflow.com/a/16345065/4970632
     'image.cmap':              'sunset',
     'image.lut':               256,
     'patch.facecolor':         'C0',
@@ -165,6 +168,10 @@ rcSpecial = {
     'lonlatlines.alpha':     0.2,
     'lonlatlines.color':     'k',
     }
+# Generate list of categories
+rc_categories = {
+    re.sub('\..*$', '', name) for name in rcParams.keys()
+    }
 
 #------------------------------------------------------------------------------#
 # Contextual settings tool
@@ -211,20 +218,19 @@ class rc_context(object):
             for key,value in {**self._rcparams, **self._special}.items():
                 rc[key] = value
 
-#------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------
 # Contextual settings management
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
-#------------------------------------------------------------------------------#
-# Neat class
+#-------------------------------------------------------------------------------
 class AttributeDict(dict):
-    def __getattr__(self, attr):
+    """
+    Dictionary elements are attributes too.
+    """
+    def __getattr__(self, attr): # invoked only if __getattribute__ fails
         return self[attr]
     def __setattr__(self, attr, value):
         self[attr] = value
 
-#-------------------------------------------------------------------------------
-# Settings management
-#-------------------------------------------------------------------------------
 class rc_configurator(object):
     """
     Abstract class for handling settings.
@@ -262,6 +268,7 @@ class rc_configurator(object):
         if item in self._rcGlobals:
             return self._rcGlobals[item]
         # Get dictionary of sub-categories
+        # Allow access to dictionary contents through attributes
         params = AttributeDict()
         for d in (rcParams, self._rcSpecial):
             for category,value in d.items():

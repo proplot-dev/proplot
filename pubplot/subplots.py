@@ -417,26 +417,28 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     # note that these locations should be **sorted** by axes id
     yrange = np.array([[xy[0].min(), xy[0].max()+1] for xy in axes_ids]) # yrange is shared columns
     xrange = np.array([[xy[1].min(), xy[1].max()+1] for xy in axes_ids])
-    xmin, ymax = xrange[:,0], yrange[:,1]
+    # xmin, ymax = xrange[:,0], yrange[:,1] # wrong! the x/y coordinates are not sorted
+    xmin   = np.array([xy[0].min() for xy in axes_ids])
+    ymax   = np.array([xy[1].max() for xy in axes_ids])
     num_axes = len(axes_ids)
     # Find pairs with edges on same gridspec
     if spanx:
         xgroups_span_base, xgroups_span, grouped = [], [], []
         for i in range(num_axes):
-            matching_axes = np.where(xrange[i,0]==xrange[:,0])[0]
+            matching_axes = np.where(xmin[i]==xmin)[0]
             if i not in grouped and matching_axes.size>1:
                 # Add the axes that is farthest down to control the x-label
                 xgroups_span      += [matching_axes] # add ndarray of ids to list
-                xgroups_span_base += [matching_axes[np.argmin(xrange[matching_axes,0])]]
+                xgroups_span_base += [matching_axes[np.argmin(xmin[matching_axes])]]
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
     if spany:
         ygroups_span_base, ygroups_span, grouped = [], [], []
         for i in range(num_axes):
-            matching_axes = np.where(yrange[i,1]==yrange[:,1])[0]
+            matching_axes = np.where(ymax[i]==ymax)[0]
             if i not in grouped and matching_axes.size>1:
                 # Add the axes that is farthest left
                 ygroups_span      += [matching_axes] # add ndarray of ids to list
-                ygroups_span_base += [matching_axes[np.argmax(yrange[matching_axes,1])]]
+                ygroups_span_base += [matching_axes[np.argmax(ymax[matching_axes])]]
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
     # Shared axes: generate list of base axes-dependent axes pairs
     # That is, find where the minimum-maximum gridspec extent in 'x' for a
@@ -557,6 +559,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     if spanx and len(xgroups_span)>0:
         for g,b in zip(xgroups_span, xgroups_span_base):
             # Specify x, y transform in Figure coordinates
+            axs[b].text(0.5,0.5,'This is a spanning axis!')
             axs[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
                     fig.transFigure, mtransforms.IdentityTransform()
                     ))

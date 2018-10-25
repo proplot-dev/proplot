@@ -562,7 +562,7 @@ class Figure(mfigure.Figure):
         nrows = 1 + sum(1 for i in whichpanels if i in 'bt')
         ncols = 1 + sum(1 for i in whichpanels if i in 'lr')
         sides_lr = [l for l in ['l',None,'r'] if not l or l in whichpanels]
-        sides_bt = [l for l in ['t',None,'b'] if not l or l in whichpanels]
+        sides_tb = [l for l in ['t',None,'b'] if not l or l in whichpanels]
         # Detect empty positions and main axes position
         main_pos  = (int('t' in whichpanels), int('l' in whichpanels))
         corners   = {'tl':(0,0),             'tr':(0,main_pos[1]+1),
@@ -635,8 +635,8 @@ class Figure(mfigure.Figure):
         sharex_ax, sharey_ax = None, None
         kwpanels = dict(kwargs, projection='panel') # override projection
         translate = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}
-        for r,side_bt in enumerate(sides_bt): # iterate top-bottom
-            r = nrows-r-1 # go bottom-top so will have drawn dependent axes already
+        for r,side_bt in enumerate(sides_tb[::-1]): # iterate top-bottom
+            r = nrows-r-1 # the actual gridspec index (0 is top, n is bottom)
             for c,side_lr in enumerate(sides_lr): # iterate left-right
                 # Test which index we are on
                 if (r,c) in empty_pos:
@@ -794,10 +794,12 @@ class BaseAxes(maxes.Axes):
 
     # New convenience feature
     def format(self,
+        abc=False, abcpos=None, abcformat='',
         hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
-        suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
-        abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
-        rcdict={}, **kwargs,
+        suptitle=None, suptitlepos=None, title=None, titlepos=None,
+        titlepad=0.1, title_kwargs={},
+        abcpad=0.1, abc_kwargs={},
+        rc_kwargs={}, **kwargs,
         ):
         """
         Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
@@ -815,7 +817,7 @@ class BaseAxes(maxes.Axes):
         # First update (note that this will call _rcupdate overridden by child
         # classes, which can in turn call the parent class version, so we only
         # need to call this from the base class, and all settings will be applied)
-        with self.rc_context(rcdict, **kwargs):
+        with self.rc_context(rc_kwargs, **kwargs):
             self._rcupdate()
         # self._rcupdate(**kwargs)
         # Create figure title
@@ -845,7 +847,7 @@ class BaseAxes(maxes.Axes):
         # Create axes title
         # Input needs to be emptys string
         if title is not None:
-            self.title.update(dict(titledict, text=title))
+            self.title.update(dict(title_kwargs, text=title))
             if titlepos=='left':
                 self.title.update({'position':(0,1), 'ha':'left'})
             elif titlepos=='right':
@@ -864,7 +866,7 @@ class BaseAxes(maxes.Axes):
             self.abc = self.text(0, 1,
                     abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1],
                     transform=self.title._transform) # optionally include parentheses
-            self.abc.update({'ha':'left', 'va':'baseline', **abcdict, **rc['abc']})
+            self.abc.update({'ha':'left', 'va':'baseline', **abc_kwargs, **rc['abc']})
             if abcpos=='inside':
                 self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
                     'transform':self.transAxes, 'ha':'left', 'va':'top'})
@@ -1176,15 +1178,22 @@ class XYAxes(BaseAxes):
         for spine in self.spines.values():
             spine.update(dict(linewidth=rc['axes.linewidth'], color=rc['axes.edgecolor']))
         # Axis settings
-        for axis in (self.xaxis, self.yaxis):
+        for xy,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Axis label
-            axis.label.update(dict(color=rc['axes.edgecolor'], fontsize=rc['axes.labelsize']))
+            axis.label.update(dict(color=rc['axes.edgecolor'],
+                fontsize=rc['axes.labelsize'],
+                weight=rc['axes.labelweight']))
             # Tick labels
             for t in axis.get_ticklabels():
-                t.update(dict(color=rc['axes.edgecolor'], fontsize=rc['xtick.labelsize']))
+                t.update(dict(color=rc['axes.edgecolor'], fontsize=rc[xy+'tick.labelsize']))
             # Tick marks
-            major, minor = rc['xtick.major'], rc['xtick.minor']
+            # NOTE: We decide that tick location should be controlled only
+            # by format(), so don't override that here.
+            major, minor = rc[xy+'tick.major'], rc[xy+'tick.minor']
             minor.pop('visible') # don't toggle that yet
+            major = {key:value for key,value in major.items() if key not in ('bottom','top','left','right')}
+            minor = {key:value for key,value in minor.items() if key not in ('bottom','top','left','right')}
+            # Apply the settings
             major.update({'color':rc['axes.edgecolor']})
             minor.update({'color':rc['axes.edgecolor']})
             axis.set_tick_params(which='major', **major)
@@ -1203,8 +1212,8 @@ class XYAxes(BaseAxes):
         xgrid=None,      ygrid=None,      # gridline toggle
         xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
         xspineloc=None,  yspineloc=None,  # deals with spine options
-        xtickminor=True, ytickminor=True, # minor ticks on/off
-        xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
+        tickminor=None, xtickminor=True, ytickminor=True, # minor ticks on/off
+        gridminor=None, xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
         xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
         xtickdir=None,   ytickdir=None,   # which direction ('in', 'our', or 'inout')
         xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
@@ -1247,6 +1256,10 @@ class XYAxes(BaseAxes):
         self.set_ylim(ylim)
 
         # Control axis ticks and labels and stuff
+        xtickminor = tickminor or xtickminor
+        ytickminor = tickminor or ytickminor
+        xgridminor = gridminor or xgridminor
+        ygridminor = gridminor or ygridminor
         for xy, axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 formatter_kwargs, locator_kwargs, minorlocator_kwargs in \

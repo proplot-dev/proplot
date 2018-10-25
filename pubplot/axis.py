@@ -83,11 +83,15 @@ import matplotlib.transforms as mtransforms
 # Tick scales
 #------------------------------------------------------------------------------#
 scales = ['linear','log','symlog','logit']
-def Scale(scale, *args, **kwargs):
+def Scale(scale, **kwargs):
     """
     Generate arbitrary scale object.
     """
-    if scale in scales:
+    args = []
+    if utils.isvector(scale):
+        scale, args = scale[0], scale[1:]
+    print('scale', scale, args)
+    if scale in scales and not args:
         pass # already registered
     elif scale=='cutoff':
         scale = CutoffScaleFactory(*args, **kwargs)
@@ -179,7 +183,7 @@ def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
     # Register and return
     mscale.register_scale(CutoffScale)
     print(f'Registered scale "{scale_name}".')
-    return CutoffScale
+    return scale_name
 
 class MercatorLatitudeScale(mscale.ScaleBase):
     """
