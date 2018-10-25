@@ -60,15 +60,15 @@ rcGlobals = {
     'small':      8,
     'large':      9,
     'linewidth':  0.6,
-    'minorwidth': 0.4,
     'bottom':     True,
     'top':        False,
     'left':       True,
     'right':      False,
-    'majorlen':   4.0,
-    'minorlen':   2.0,
-    'inout' :     'out',
+    'ticklen':    4.0,
+    'tickratio':  0.5, # ratio of major-to-minor tick size
+    'minorwidth': 0.7, # ratio of major-to-minor tick width
     'tickpad':    2.0,
+    'inout' :     'out',
     }
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
@@ -77,13 +77,11 @@ rcGlobals_children = {
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
     'linewidth':  ['axes.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
     # Less important ones
-    'minorwidth': ['gridminor.linewidth', 'xtick.minor.width',   'ytick.minor.width'],
     'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
     'top':        ['xtick.major.top',     'xtick.minor.top'],
     'left':       ['ytick.major.left',    'ytick.minor.left'],
     'right':      ['ytick.major.right',   'ytick.minor.right'],
-    'majorlen':   ['xtick.major.size',    'ytick.major.size'],
-    'minorlen':   ['xtick.minor.size',    'ytick.minor.size'],
+    'ticklen' :   ['xtick.major.size',    'ytick.major.size'],
     'inout':      ['xtick.direction',     'ytick.direction'],
     'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
     }
@@ -171,19 +169,19 @@ rcSpecial = {
 #------------------------------------------------------------------------------#
 # Contextual settings that are stupid and annoying, just 
 #------------------------------------------------------------------------------#
-def rc_update(axs):
-    """
-    Update rcParams for every single axes (i.e. spines, ticks, title settings,
-    but not plotted contents).
-    """
-    # axs = [plt.gca()] # the last one where we plotted stuff
-    axs = [axs] if not utils.isvector(axs) else axs
-    for ax in axs:
-        if hasattr(ax, '_rcupdate'):
-            print('updating...', ax)
-            ax._rcupdate()
-        else:
-            print(f'Warning: ax {ax} has no _rcupdate() method!')
+# def rc_update(axs):
+#     """
+#     Update rcParams for every single axes (i.e. spines, ticks, title settings,
+#     but not plotted contents).
+#     """
+#     # axs = [plt.gca()] # the last one where we plotted stuff
+#     axs = [axs] if not utils.isvector(axs) else axs
+#     for ax in axs:
+#         if hasattr(ax, '_rcupdate'):
+#             print('updating...', ax)
+#             ax._rcupdate()
+#         else:
+#             print(f'Warning: ax {ax} has no _rcupdate() method!')
 
 class rc_context(object):
     """
@@ -208,13 +206,12 @@ class rc_context(object):
         """
         for key,value in self._kwargs.items():
             rc[key] = value # applies globally linked and individual settings
-        # rc_update()
 
     def __exit__(self, _type, _value, _traceback):
         """
         Return to previous state.
         """
-        rc_update(self._axs)
+        # rc_update(self._axs)
         # rc_update() # apply after-the-fact, since plotting command will have made the relevant axes 'active'
         for key,value in {**self._rcparams, **self._special}.items():
             rc[key] = value
@@ -255,8 +252,11 @@ class rc_configurator(object):
             rcParams[key] = value
         # Apply linked attributes to rcParams
         # The __setitem__ method takes care of details
+        self['cycle'] = 'colorblind' # default cycler
         for key,value in self._rcGlobals.items():
             self[key] = value
+        # Test if module is in its initial state
+        self._init = True
 
     def __getitem__(self, item):
         # Can get a whole bunch of different things
@@ -294,7 +294,28 @@ class rc_configurator(object):
         # Apply global settings
         elif key in self._rcGlobals:
             self._rcGlobals[key] = value
-            for name in rcGlobals_children[key]:
+            # First smarter controls on minor tick length
+            if key in ('ticklen','tickratio'):
+                if key=='tickratio':
+                    ticklen = self._rcGlobals['ticklen']
+                    ratio = value
+                else:
+                    ticklen = value
+                    ratio = self._rcGlobals['tickratio']
+                rcParams['xtick.minor.size'] = ticklen*ratio
+                rcParams['ytick.minor.size'] = ticklen*ratio
+            # And on tick width
+            if key in ('linewidth','minorwidth'):
+                if key=='linewidth':
+                    tickwidth = value
+                    ratio = self._rcGlobals['minorwidth']
+                else:
+                    tickwidth = self._rcGlobals['linewidth']
+                    ratio = value
+                rcParams['xtick.minor.width'] = tickwidth*ratio
+                rcParams['ytick.minor.width'] = tickwidth*ratio
+            # Finally the special settings that correspond to a list of values
+            for name in rcGlobals_children.get(key,[]):
                 if name in rcParams:
                     rcParams[name] = value
                 elif name in self._rcSpecial:
@@ -320,6 +341,7 @@ class rc_configurator(object):
                     self._rcSpecial[name] = value
                 else:
                     raise ValueError(f'Invalid key "{name}" for parameter "{key}".')
+        self._init = False # no longer in initial state
 
     def __getattribute__(self, attr):
         # Alias to getitem
@@ -333,7 +355,7 @@ class rc_configurator(object):
         if attr.startswith('_') or attr=='reset':
             super().__setattr__(attr, value)
         else:
-            self.__setitem__(attr)
+            self.__setitem__(attr, value)
 
     def __repr__(self):
         # Nice string representation

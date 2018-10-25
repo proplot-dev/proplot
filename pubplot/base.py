@@ -74,7 +74,7 @@ import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
-from .rcmod import rc
+from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colortools
@@ -520,6 +520,15 @@ class Figure(mfigure.Figure):
         self.toppanel     = None
         super().__init__(**kwargs) # python 3 only
 
+    def draw(self, *args, **kwargs):
+        """
+        Reset the rcparams when a figure is displayed; usually means we have
+        """
+        if not rc._init:
+            print('Resetting rcparams.')
+            rc.reset()
+        return super().draw(*args, **kwargs)
+
     def panel_factory(self, subspec, width, height, whichpanels=None,
             hspace=0.15, wspace=0.15, hwidth=0.5, wwidth=0.5,
             **kwargs):
@@ -755,12 +764,13 @@ class BaseAxes(maxes.Axes):
             raise IndexError('Figure contains only one subplot.')
 
     # Update rcParams
-    def _rcupdate(self):
+    def _rcupdate(self, **kwargs):
         """
         Similar to format(), but this updates from rcparams.
         Will be called automatically for all axes on the current figure
         whenever the plotting context is changed.
         """
+        # with rc_context(self, **kwargs):
         # Update the title rcParams
         self.title.update(dict(fontsize=rc['axes.titlesize'], weight=rc['axes.titleweight']))
         if hasattr(self,'_suptitle'):
@@ -773,7 +783,7 @@ class BaseAxes(maxes.Axes):
         hatch=None, color=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
         abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
-        # **kwargs, # go to _rcupdate
+        # **kwargs,
         ):
         """
         Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
@@ -790,6 +800,7 @@ class BaseAxes(maxes.Axes):
         """
         # First update
         self._rcupdate()
+        # self._rcupdate(**kwargs)
         # Create figure title
         fig = self.figure # the figure
         if not hasattr(fig,'_suptitle') or fig._suptitle is None:
@@ -1140,10 +1151,11 @@ class XYAxes(BaseAxes):
         """
         super().__init__(*args, **kwargs)
 
-    def _rcupdate(self):
+    def _rcupdate(self, **kwargs):
         """
-        Update the rcParams. Includes a *bonus* -- the 
+        Update the rcParams according to user input.
         """
+        # with rc_context(self, **kwargs):
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
             spine.update(dict(linewidth=rc['axes.linewidth'], color=rc['axes.edgecolor']))
