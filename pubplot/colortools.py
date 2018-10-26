@@ -372,12 +372,13 @@ def Cycle(*args, vmin=0, vmax=1):
     Convenience function to draw colors from arbitrary ListedColormap or
     LinearSegmentedColormap. Use vmin/vmax to scale your samples.
     """
+    samples = 10
+    if utils.isnumber(args[-1]):
+        args, samples = args[:-1], args[-1]
+    elif len(args)>1:
+        args = [args] # presumably send a list of colors
     if len(args)==0:
         raise ValueError('Function requires at least 1 positional arg.')
-    if len(args)==1:
-        samples = 10
-    else:
-        args, samples = args[:-1], args[-1]
     cmap = Colormap(*args) # the cmap object itself
     if isinstance(cmap, mcolors.ListedColormap):
         # Just get the colors
