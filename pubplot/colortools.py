@@ -1032,7 +1032,7 @@ class StretchNorm(mcolors.Normalize):
 #------------------------------------------------------------------------------#
 # Visualizations
 #------------------------------------------------------------------------------#
-def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=15, minsat=0.1):
+def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.1):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
@@ -1044,6 +1044,7 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=15, minsat=0.
     # on some simple lists)
     figs = []
     for group in groups:
+        # Get group colors
         group = group or 'open'
         if type(group) is str:
             group = [group]
@@ -1058,53 +1059,63 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=15, minsat=0.
             # Read custom defined colors
             else:
                 colors.update({name:color for name,color in custom_colors[name]}) # convert from list of length-2 tuples to dictionary
+
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
         if 'open' in group:
+            # Sorted color columns and plot settings
             space = 0.5
             swatch = 1.5
             names = ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange']
             nrows, ncols = 10, len(names) # rows and columns
-            sorted_names = [[name+str(i) for i in range(nrows)] for name in names]
+            plot_names = [[name+str(i) for i in range(nrows)] for name in names]
         # For other palettes this is necessary
         else:
-            # Keep in separate columns
+            # Get colors in perceptally uniform space
+            # colors_hsv = {k: tuple(colormath.rgb_to_hsv(*mcolors.to_rgb(v))) for k,v in colors.items()}
             space = 1
             swatch = 1
-            ncols = nbreak-1 # group by breakpoint
-            colors_hsv = {k:tuple(colormath.rgb_to_hsv(*mcolors.to_rgb(v))) for k,v in colors.items()}
+            colors_hsv = {k: [channel/scale for channel,scale in 
+                zip(colormath.rgb_to_hcl(*mcolors.to_rgb(v)), (359,99,99))]
+                for k,v in colors.items()}
+
+            # Keep in separate columns
             breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
-            sorted_names = [] # initialize
-            testsat = (lambda x: x<minsat) # test saturation
+            plot_names = [] # initialize
+            sat_test = (lambda x: x<minsat) # test saturation for 'grays'
             for n in range(len(breakpoints)):
-                if n==0: # grays
-                    fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
-                        if testsat(hsv[1])]
-                    sortfunc = lambda x: 3*x[2]+x[0]
-                else: # colors
-                    start, end = breakpoints[n-1], breakpoints[n]
-                    testhue = (lambda x: start<=x<=end) if end is breakpoints[-1] \
-                        else (lambda x: start<=x<end) # two possible tests
-                    fcolors = [(name,hsv) for name,hsv in colors_hsv.items()
-                        if testhue(hsv[0]) and not testsat(hsv[1])] # grays have separate category
-                    sortfunc = lambda x: 3*x[2]+x[1]
-                sorted_index = np.argsort([sortfunc(v[1]) for v in fcolors]) # indices to build sorted list
-                sorted_names.append([fcolors[i][0] for i in sorted_index]) # append sorted list
-            nrows = max(len(huelist) for huelist in sorted_names) # number of rows
-            # Now concatenate those columns so get nice rectangle
-            names = [i for sublist in sorted_names for i in sublist]
-            sorted_names = [[]]
+                # Get 'grays' column
+                if n==0:
+                    hue_colors = [(name,hsv) for name,hsv in colors_hsv.items()
+                                  if sat_test(hsv[1])]
+                # Get column for nth color
+                else:
+                    b1, b2 = breakpoints[n-1], breakpoints[n]
+                    hue_test   = ((lambda x: b1<=x<=b2) if b2 is breakpoints[-1]
+                                   else (lambda x: b1<=x<b2))
+                    hue_colors = [(name,hsv) for name,hsv in colors_hsv.items() if
+                            hue_test(hsv[0]) and not sat_test(hsv[1])] # grays have separate category
+                # Get indices to build sorted list, then append sorted list
+                sorted_index = np.argsort([pair[1][2] for pair in hue_colors])
+                plot_names.append([hue_colors[i][0] for i in sorted_index])
+            # Concatenate those columns so get nice rectangle
+            # nrows = max(len(huelist) for huelist in plot_names) # number of rows
+            ncols = nbreak-1
+            names = [i for sublist in plot_names for i in sublist]
+            plot_names = [[]]
             nrows = len(names)//ncols+1
             for i,name in enumerate(names):
                 if ((i + 1) % nrows)==0:
-                    sorted_names.append([]) # add new empty list
-                sorted_names[-1].append(name)
+                    plot_names.append([]) # add new empty list
+                plot_names[-1].append(name)
+
         # Create plot by iterating over columns 
+        # Easy peasy
         figsize = (8*space*(ncols/4), 5*(nrows/40)) # 5in tall with 40 colors in column
         fig, ax = plt.subplots(figsize=figsize)
         X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
         h, w = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
-        for col,huelist in enumerate(sorted_names):
+        for col,huelist in enumerate(plot_names):
             for row,name in enumerate(huelist): # list of colors in hue category
                 y = Y - (row * h) - h
                 xi_line = w*(col + 0.05)
@@ -1117,9 +1128,10 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=15, minsat=0.
         ax.set_ylim(0,Y)
         ax.set_axis_off()
         fig.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
-        # Save
+
+        # Save figure
         fig.savefig(f'{os.path.dirname(__file__)}/colors_{"-".join(group)}.pdf',
-                bbox_inches='tight', format='pdf')
+                bbox_inches='tight', format='pdf', transparent=False)
         figs += [fig]
     return figs
 
