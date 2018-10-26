@@ -1,27 +1,7 @@
 #!/usr/bin/env python3
 #------------------------------------------------------------------------------
-# Imports, all
-# Note that because of how matplotlib imports work (a module is only imported
-# for a first time; import statements elsewhere in script during process just point
-# to the already loaded module), settings rcParams here will change properties
-# everywhere else until you start new instance
-# TODO: Add inner panels as attributes to axes, instead of as seperate
-# return arguments
-# TODO: Standardize the order that panels are delivered (e.g. in a list
-# [None, axh, None, axh]), then *fix axis sharing across multiple panels*!
-# TODO: Note severe change; twiny now means "share the x-axis but
-# now make two y-axes"; this makes way more sense to me than default behavior
-# perhaps should undo this
-# TODO: Add feature for multiple (stacked) bottompanels and rightpanels, useful for having
-# different colorbars on same figure, or legend and colorbar
+# Declare all the subclasses and method overrides central to this library
 # TODO: Add feature to draw axes in *row-major* or *column-major* mode
-# TODO: Add options to axes formatter to *disable* the 'quiet' formatting steps
-# that normally take place, e.g. colorizing the label and title, formatters, setting
-# linewidths, etc. This way can, for example, change color of spines only, then call
-# format again with new rc() settings and xlabels/ylabels/stuff are different
-# colors. In general *allow overwriting rc() settings* perhaps. Should make
-# globals a *convenience feature* but *not necessary* to change certain properties, 
-# everything should *also* be accessible with format function.
 #------------------------------------------------------------------------------#
 # Decorators used a lot here; below is very simple example that demonstrates
 # how simple decorator decorators work
@@ -43,17 +23,14 @@
 #     print('hello world!')
 # hello()
 #------------------------------------------------------------------------------
-# Global module dependencies
 # Recommended using functools.wraps from comment:
 # https://stackoverflow.com/a/739665/4970632
 # This tool preserve __name__ metadata.
-# from .basics import Dict, arange
+# Builtin module requirements
 import os
 import numpy as np
 import warnings
 import time
-# import io
-# from contextlib import redirect_stdout
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
 from string import ascii_lowercase
@@ -79,7 +56,7 @@ from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colortools
 from . import utils
-rc_context_rcmod = rc_context # so it won't be overritten
+rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
 warnings.filterwarnings('ignore', category=mplDeprecation)
@@ -496,31 +473,33 @@ class Figure(mfigure.Figure):
     Subclass of the mfigure.Figure class, with lots of special formatting
     options. Can be called by using pyplot.figure(FigureClass=Figure) kwargument
     in my subplots function.
+
+    Features
+    --------
+    Need to document features.
     """
     def __init__(self, left=None,   bottom=None,   right=None,  top=None,
         bwidth=None,   bspace=None, rwidth=None,   rspace=None,
         width=None,    height=None, gridspec=None,
-        rcreset=True,
+        rcreset=True, # reset rcParams whenever a figure is drawn (e.g. after an ipython notebook cell finishes executing)?
         **kwargs):
-        """
-        Add a few extra attributes, accessed by other methods.
-        """
+        # Initialize figure with some custom attributes.
         # rc settings
         self.rcreset  = rcreset
         # Gridspec information
-        self.gridspec = gridspec
-        self.left     = left
+        self.gridspec = gridspec # gridspec encompassing drawing area
+        self.left     = left # gridspec bounds
         self.bottom   = bottom
         self.right    = right
         self.top      = top
         # Figure dimensions
-        self.width    = width
+        self.width    = width # dimensions
         self.height   = height
         # Panels
-        self.leftpanel    = None
-        self.bottompanel  = None
-        self.rightpanel   = None
-        self.toppanel     = None
+        self.leftpanel   = None
+        self.bottompanel = None
+        self.rightpanel  = None
+        self.toppanel    = None
         # Panel settings
         self.bwidth   = bwidth
         self.bspace   = bspace
@@ -529,32 +508,28 @@ class Figure(mfigure.Figure):
         super().__init__(**kwargs) # python 3 only
 
     def draw(self, *args, **kwargs):
-        """
-        Reset the rcparams when a figure is displayed; usually means we have
-        """
+        # Reset the rcparams when a figure is displayed; usually means we have
+        # finished executing a notebook cell
         if not rc._init and self.rcreset:
             print('Resetting rcparams.')
             rc.reset()
         return super().draw(*args, **kwargs)
 
     def panel_factory(self, subspec, width, height, whichpanels=None,
-            hspace=0.15, wspace=0.15, hwidth=0.5, wwidth=0.5,
+            hspace=None, wspace=None, hwidth=None, wwidth=None,
             **kwargs):
-        """
-        Helper function for creating panelled axes
-        Will take in some arguments from parent function so don't have to pass them
-        every time.
-        """
-        # Format the plot to have tiny spaces between subplots and narrow panels by default
+        # Helper function for creating paneled axes.
+        translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
+        whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
         if wwidth is None:
             wwidth = 0.5
         if hwidth is None:
             hwidth = 0.5
         if wspace is None:
-            wspace = 0.15
+            wspace = 0.10
         if hspace is None:
-            hspace = 0.15
+            hspace = 0.10
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 
@@ -598,7 +573,7 @@ class Figure(mfigure.Figure):
 
         # Determine axes to be shared
         if ncols==1:
-            ybase  = ()
+            ybase  = main_pos
             yshare = []
         elif 'l' in whichpanels:
             ybase  = (main_pos[0], main_pos[1]-1) # the base axes
@@ -607,7 +582,7 @@ class Figure(mfigure.Figure):
             ybase  = (main_pos[0], main_pos[1]) # the base axes
             yshare = [(main_pos[0], main_pos[1]+i+1) for i in range(ncols-1)]
         if nrows==1:
-            xbase  = ()
+            xbase  = main_pos
             xshare = []
         elif 'b' in whichpanels:
             xbase  = (main_pos[0]+1, main_pos[1]) # the base axes
@@ -622,6 +597,8 @@ class Figure(mfigure.Figure):
         panels = []
         sharex_outside = kwargs.pop('sharex', None) # we do this ourselves
         sharey_outside = kwargs.pop('sharey', None)
+        spanx_outside = kwargs.pop('spanx', None)
+        spany_outside = kwargs.pop('spany', None)
         gs = mgridspec.GridSpecFromSubplotSpec(
                 nrows         = nrows,
                 ncols         = ncols,
@@ -631,74 +608,43 @@ class Figure(mfigure.Figure):
                 width_ratios  = wwidth_ratios,
                 height_ratios = hwidth_ratios,
                 )
+        # Draw main axes
+        ax = self.add_subplot(gs[main_pos[0], main_pos[1]], **kwargs)
+        axmain = ax
+        # Draw axes
         panels = {}
-        sharex_ax, sharey_ax = None, None
-        kwpanels = dict(kwargs, projection='panel') # override projection
-        translate = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}
-        for r,side_bt in enumerate(sides_tb[::-1]): # iterate top-bottom
-            r = nrows-r-1 # the actual gridspec index (0 is top, n is bottom)
+        kwpanels = {**kwargs, 'projection':'panel'} # override projection
+        kwpanels.pop('number', None) # don't want numbering on panels
+        translate = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'} # inverse
+        for r,side_tb in enumerate(sides_tb): # iterate top-bottom
             for c,side_lr in enumerate(sides_lr): # iterate left-right
-                # Test which index we are on
-                if (r,c) in empty_pos:
+                if (r,c) in empty_pos or (r,c)==main_pos:
                     continue
-                side = side_bt or side_lr # will never both be non-zero
-                side = translate.get(side,None)
-                # Configure shared axes
-                kwshare = {}
-                # if (r,c) in xshare or (r,c)==main_pos:
-                if (r,c) in xshare:
-                    if sharex_ax is None:
-                        raise ValueError('Axes with base for x-axis not drawn.')
-                    kwshare.update({'sharex': sharex_outside or sharex_ax})
-                # if (r,c) in yshare or (r,c)==main_pos:
-                if (r,c) in yshare:
-                    if sharey_ax is None:
-                        raise ValueError('Axes with base for x-axis not drawn.')
-                    kwshare.update({'sharey': sharey_outside or sharey_ax})
-                # Draw panel, and add to main axes
-                # Will have to manually assert using default projection
-                if (r,c)==main_pos:
-                    # if 'sharex' not in kwshare:
-                    #     kwshare['sharex'] = sharex_outside
-                    # if 'sharey' not in kwshare:
-                    #     kwshare['sharey'] = sharey_outside
-                    ax = self.add_subplot(gs[r,c], **kwshare, **kwargs)
-                    axmain = ax
-                else:
-                    ax = self.add_subplot(gs[r,c], side=side, **kwshare, **kwpanels)
-                    panels[side] = ax
-                # Detect base axes
-                if (r,c) == ybase:
-                    sharey_ax = ax
-                if (r,c) == xbase:
-                    sharex_ax = ax
-                # Hide tick labels (not default behavior for manual sharex, sharey use)
-                if 'sharex' in kwshare:
-                    for t in ax.xaxis.get_ticklabels():
-                        t.set_visible(False)
-                    ax.xaxis.label.set_visible(False)
-                if 'sharey' in kwshare:
-                    for t in ax.yaxis.get_ticklabels():
-                        t.set_visible(False)
-                    ax.yaxis.label.set_visible(False)
+                side = translate.get(side_tb or side_lr, None)
+                ax = self.add_subplot(gs[r,c], panelside=side, panelparent=axmain, **kwpanels)
+                panels[side] = ax
 
-        # Finally add as attributes
-        for side,panel in panels.items():
-            setattr(axmain, side+'panel', panel)
+        # Finally add as attributes, and set up axes sharing
+        # In subplots() script, need to run _panel_setup() after spanning
+        # axes are drawn, so comment out to avoid calling it twice
+        axmain.bottompanel = panels.get('bottom', None)
+        axmain.toppanel    = panels.get('top', None)
+        axmain.leftpanel   = panels.get('left', None)
+        axmain.rightpanel  = panels.get('right', None)
+        # axmain._panel_setup() # TODO: don't know why commenting this out doens't mess things up
+        axmain._sharex_setup(sharex_outside)
+        axmain._sharey_setup(sharey_outside)
         return axmain
 
     @timer
     def save(self, filename, silent=False, pad=None, **kwargs):
-        """
-        Echo some helpful information before saving.
-        Note that the gridspec object must be updated before figure is printed to screen
-        in interactive environment; will fail to update after that. Seems to be glitch,
-        should open thread on GitHub.
-        Note to color axes patches, you will have to explicitly pass the
-        transparent=False kwarg.
-        """
-        # Some kwarg translations, to pass to savefig
-        # Note almost never want an 'edgecolor' for the figure frame, though it can be set
+        # Notes:
+        # * That the gridspec object must be updated before figure is printed to
+        #     screen in interactive environment; will fail to update after that.
+        #     Seems to be glitch, should open thread on GitHub.
+        # * To color axes patches, you may have to explicitly pass the
+        #     transparent=False kwarg.
+        #     Some kwarg translations, to pass to savefig
         if 'alpha' in kwargs:
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
@@ -735,6 +681,16 @@ class Figure(mfigure.Figure):
         if not silent:
             print(f'Saving to "{filename}".')
         self.savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
+    # Note: set_size_inches is called by draw(), so can't override; also forget
+    # set_figwidth and set_figheight for consistency.
+    _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
+    'ratios are *static*, and must be set at creation time using pubplot.subplots().'
+    def subplots_adjust(self, *args, **kwargs):
+        raise ValueError(self._message_strongarm)
+
+    def tight_layout(self, *args, **kwargs):
+        raise ValueError(self._message_strongarm)
+
 
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
@@ -752,39 +708,168 @@ class BaseAxes(maxes.Axes):
     """
     # Initial stuff
     name = 'base'
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, number=None,
+            sharex=None,      sharey=None,
+            spanx_group=None, spany_group=None,
+            panelparent=None, panelside=None,
+            **kwargs):
+        # Initialize
+        self._spanx = None # always must be present
+        self._spany = None
+        self._spanx_group = []
+        self._spany_group = []
         super().__init__(*args, **kwargs)
-        self.number = None
+        # Panels
+        if panelside not in (None, 'left','right','bottom','top'):
+            raise ValueError(f'Invalid panel side "{panelside}".')
+        self.panelparent = panelparent # used when declaring parent
+        self.panelside = panelside
+        self.bottompanel = None
+        self.toppanel    = None
+        self.leftpanel   = None
+        self.rightpanel  = None
+        # Number and size
+        self.number = number # for abc numbering
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
+        # Default format() settings
+        self.format(abc=True)
+        # Turn off tick labels and axis label for shared axes
+        # Want to do this ***manually*** because want to have the ability to
+        # add shared axes ***after the fact in general***. If the API changes,
+        # will modify the below methods.
+        if sharex:
+            self._sharex_setup(sharex)
+        if sharey:
+            self._sharey_setup(sharey)
+        # Custom idea of 'spanning axes', where x/y axis labels are shared
+        # Also make sure always has attribute
+        if spanx_group:
+            self._spanx_setup(spanx_group)
+        if spany_group:
+            self._spany_setup(spany_group)
 
-    def set_aspect(self, *args, **kwargs):
-        raise ValueError('Error: set_aspect() method disabled. Axes aspect '
-                'ratios for PubPlot figures should be determined as the '
-                'figure is drawn, using e.g. plot.subplots(aspect=1).')
-
-    # Helpful override, to prevent annoying IndexError when user accidentally
-    # tries to index single axes instead of list of axes
     def __getitem__(self, key):
+        # Helpful override, to prevent annoying IndexError when user accidentally
+        # tries to index single axes instead of list of axes
         if key==0:
             return self
         else:
             raise IndexError('Figure contains only one subplot.')
 
-    # Context item
+    def _spanx_setup(self, group):
+        # Specify x, y transform in Figure coordinates
+        self.xaxis.label.set_transform(mtransforms.blended_transform_factory(
+                self.figure.transFigure, mtransforms.IdentityTransform()
+                ))
+        # Get min/max positions, in figure coordinates, of spanning axes
+        xmin = min(ax.get_position().xmin for ax in group)
+        xmax = max(ax.get_position().xmax for ax in group)
+        self.xaxis.label.set_position(((xmin+xmax)/2, 0))
+        # Add attribute for reference, and make this label invisible
+        for ax in group:
+            ax._spanx = self # may be self!
+            ax._spanx_group = group
+            if ax is not self:
+                ax.xaxis.label.set_visible(False)
+            else:
+                # TODO: Delete this, was just useful for bug-fixing
+                ax.xaxis.label.set_visible(True)
+
+    def _spany_setup(self, group):
+        # Specify x, y transform in Figure coordinates
+        # self.text(0.5,0.5,'This is a spanning axis!')
+        self.yaxis.label.set_transform(mtransforms.blended_transform_factory(
+                    mtransforms.IdentityTransform(), self.figure.transFigure
+                    ))
+        # Get min/max positions, in figure coordinates, of spanning axes
+        ymin = min(ax.get_position().ymin for ax in group)
+        ymax = max(ax.get_position().ymax for ax in group)
+        self.yaxis.label.set_position((0, (ymin+ymax)/2))
+        # Add attribute for reference, and make this label invisible
+        for ax in group:
+            ax._spany = self # may say self._spany = self!
+            ax._spany_group = group
+            if ax is not self:
+                ax.yaxis.label.set_visible(True)
+
+    def _sharex_setup(self, sharex):
+        # Share vertical panel x-axes with eachother
+        if sharex is None:
+            return
+        if self is sharex:
+            raise ValueError('Cannot share an axes with itself.')
+        if self.leftpanel and sharex.leftpanel:
+            self.leftpanel._sharex_setup(sharex.leftpanel)
+        if self.rightpanel and sharex.rightpanel:
+            self.rightpanel._sharex_setup(sharex.rightpanel)
+        # Share horizontal panel x-axes with sharex
+        if self.bottompanel and sharex is not self.bottompanel:
+            # print('bottompanel sharing triggered')
+            # self.text(0.5, 0.5, f'sharing axes {sharex.number} with {self.number}', ha='center', va='center')
+            self.bottompanel._sharex_setup(sharex)
+        if self.toppanel and sharex is not self.toppanel:
+            self.toppanel._sharex_setup(sharex)
+            # sharex = self.bottompanel._sharex or self.bottompanel
+        # Builtin features
+        self._sharex = sharex
+        self._shared_x_axes.join(self, sharex)
+        # Simple method for setting up shared axes
+        for t in self.xaxis.get_ticklabels():
+            t.set_visible(False)
+        self.xaxis.label.set_visible(False)
+
+    def _sharey_setup(self, sharey):
+        # Share horizontal panel y-axes with eachother
+        if sharey is None:
+            return
+        if self is sharey:
+            raise ValueError('Cannot share an axes with itself.')
+        if self.bottompanel and sharey.bottompanel:
+            self.bottompanel._sharey_setup(sharey.bottompanel)
+        if self.toppanel and sharey.toppanel:
+            self.toppanel._sharey_setup(sharey.toppanel)
+        # Share vertical panel y-axes with sharey
+        if self.leftpanel:
+            self.leftpanel._sharey_setup(sharey)
+        if self.rightpanel:
+            self.rightpanel._sharey_setup(sharey)
+            # sharey = self.leftpanel._sharey or self.leftpanel
+        # Builtin features
+        self._sharey = sharey
+        self._shared_y_axes.join(self, sharey)
+        # Simple method for setting up shared axes
+        for t in self.yaxis.get_ticklabels():
+            t.set_visible(False)
+        self.yaxis.label.set_visible(False)
+
+    def _panel_setup(self):
+        # Call this once panels are all declared
+        # First fix the sharex/sharey settings
+        if self.bottompanel:
+            self._sharex_setup(self.bottompanel)
+        if self.leftpanel:
+            self._sharey_setup(self.leftpanel)
+        bottom = self.bottompanel or self
+        left = self.leftpanel or self
+        if self.toppanel:
+            self.toppanel._sharex_setup(bottom)
+        if self.rightpanel:
+            self.rightpanel._sharex_setup(left)
+        # Next fix the spanx/spany settings
+        # WARNING: If some axes have panels and some don't, this may cause
+        # some weird stuff to happen
+        if self.bottompanel and self._spanx_group:
+            self.bottompanel._spanx_setup([ax.bottompanel for ax in self._spanx_group if ax.bottompanel is not None])
+        if self.leftpanel and self._spany_group:
+            self.leftpanel._spany_setup([ax.leftpanel for ax in self._spany_group if ax.leftpanel is not None])
+
     def rc_context(self, *args, **kwargs):
-        """
-        Temporarily change rcParams for drawings on this axes.
-        """
+        # Temporarily change rcParams for drawings on this axes.
         return rc_context_rcmod(self, *args, **kwargs)
 
-    # Update rcParams
     def _rcupdate(self, **kwargs):
-        """
-        Similar to format(), but this updates from rcparams.
-        Will be called automatically for all axes on the current figure
-        whenever the plotting context is changed.
-        """
+        # Similar to format(), but this updates from rcparams.
         # Update the title rcParams
         self.title.update(dict(fontsize=rc['axes.titlesize'], weight=rc['axes.titleweight']))
         if hasattr(self,'_suptitle'):
@@ -794,7 +879,7 @@ class BaseAxes(maxes.Axes):
 
     # New convenience feature
     def format(self,
-        abc=False, abcpos=None, abcformat='',
+        abc=True, abcpos=None, abcformat='',
         hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitlepos=None, title=None, titlepos=None,
         titlepad=0.1, title_kwargs={},
@@ -861,19 +946,22 @@ class BaseAxes(maxes.Axes):
                 self.title.update({'position':titlepos, 'ha':'center', 'va':'center'})
 
         # Create axes numbering
-        if self.number is not None and abc:
-            abcedges = abcformat.split('a')
-            self.abc = self.text(0, 1,
-                    abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1],
-                    transform=self.title._transform) # optionally include parentheses
-            self.abc.update({'ha':'left', 'va':'baseline', **abc_kwargs, **rc['abc']})
-            if abcpos=='inside':
-                self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
-                    'transform':self.transAxes, 'ha':'left', 'va':'top'})
-            elif isinstance(abcpos,str):
-                raise ValueError(f'Unknown abc position: {abcpos}.')
-            elif abcpos is not None:
-                self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
+        if self.number is not None:
+            if abc:
+                abcedges = abcformat.split('a')
+                self.abc = self.text(0, 1,
+                        abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1],
+                        transform=self.title._transform) # optionally include parentheses
+                self.abc.update({'ha':'left', 'va':'baseline', **abc_kwargs, **rc['abc']})
+                if abcpos=='inside':
+                    self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
+                        'transform':self.transAxes, 'ha':'left', 'va':'top'})
+                elif isinstance(abcpos,str):
+                    raise ValueError(f'Unknown abc position: {abcpos}.')
+                elif abcpos is not None:
+                    self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
+            elif hasattr(self, 'abc'):
+                self.abc.set_visible(False)
 
         # Color setup, optional hatching in background of axes
         # You should control transparency by passing transparent=True or False
@@ -889,25 +977,20 @@ class BaseAxes(maxes.Axes):
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
-        """
-        Call custom legend() function.
-        """
+        # Call custom legend() function.
         return legend_factory(self, *args, **kwargs)
 
     # Fill entire axes with colorbar
     def colorbar(self, *args, **kwargs):
-        """
-        Call colorbar() function.
-        """
+        # Call colorbar() function.
         return colorbar_factory(self, *args, **kwargs)
 
     # Fancy wrappers
     def text(self, x, y, text, transform='axes', fancy=False, black=True,
             linewidth=2, lw=None, **kwarg): # linewidth is for the border
         """
-        Wrapper around original text method.
-        If requested, can return specially created black-on-white text.
-        So far no other features implemented.
+        Wrapper around original text method. Adds feature for easily drawing
+        text with white border around black text.
         """
         linewidth = lw or linewidth
         if type(transform) is not str:
@@ -1077,50 +1160,57 @@ class BaseAxes(maxes.Axes):
     def errorbar(self, *args, **kwargs):
         return super().errorbar(*args, **kwargs)
 
+    # Methods rendered obsolete by subplots() function
+    _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
+    'ratios are *static*, and must be set at creation time using pubplot.subplots().'
+    @property
+    def set_aspect(self):
+        raise NotImplementedError(self._message_strongarm)
+
     # Redundant stuff that want to cancel
-    message1 = 'Redundant function has been disabled.'
+    _message_redundant = 'Redundant function has been disabled.'
     @property
     def plot_date(self): # use xdates=True or ydates=True
-        raise NotImplementedError(self.message1)
+        raise NotImplementedError(self._message_redundant)
     @property
     def semilogx(self): # use xscale='log' instead, this is dumb!
-        raise NotImplementedError(self.message1)
+        raise NotImplementedError(self._message_redundant)
     @property
     def semilogy(self):
-        raise NotImplementedError(self.message1)
+        raise NotImplementedError(self._message_redundant)
     @property
     def loglog(self):
-        raise NotImplementedError(self.message1)
+        raise NotImplementedError(self._message_redundant)
     @property
     def polar(self):
         raise NotImplementedError('Just use projection="polar" instead.')
 
     # Weird stuff that probably will not wrap
-    message2 = 'Unsupported plotting function.'
+    _message_unsupported = 'Unsupported plotting function.'
     @property
     def pie(self): # dunno
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def table(self): # dude... fugly
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def hexbin(self): # expand to allow making grouped boxes
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def eventplot(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def triplot(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def tricontour(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def tricontourf(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def tripcolor(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
 
     # Disable spectral and triangular features
     # See: https://stackoverflow.com/a/23126260/4970632
@@ -1128,31 +1218,31 @@ class BaseAxes(maxes.Axes):
     # for all Axes methods ordered logically in class declaration.
     @property
     def xcorr(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def acorr(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def psd(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def csd(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def magnitude_spectrum(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def angle_spectrum(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def phase_spectrum(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def cohere(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
     @property
     def specgram(self):
-        raise NotImplementedError(self.message2)
+        raise NotImplementedError(self._message_unsupported)
 
 #------------------------------------------------------------------------------#
 # Specific classes, which subclass the base one
@@ -1165,15 +1255,11 @@ class XYAxes(BaseAxes):
     # Initialize
     name = 'xy'
     def __init__(self, *args, **kwargs):
-        """
-        Create simple x by y subplot.
-        """
+        # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
 
     def _rcupdate(self, **kwargs):
-        """
-        Update the rcParams according to user input.
-        """
+        # Update the rcParams according to user input.
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
             spine.update(dict(linewidth=rc['axes.linewidth'], color=rc['axes.edgecolor']))
@@ -1244,26 +1330,25 @@ class XYAxes(BaseAxes):
             if hasattr(yscale,'name'):
                 yscale = yscale.name
             self.set_yscale(Scale(yscale, **yscale_kwargs))
-        if xlim is None:
-            xlim = self.get_xlim()
-        if ylim is None:
-            ylim = self.get_ylim()
-        if xreverse:
-            xlim = xlim[::-1]
-        if yreverse:
-            ylim = ylim[::-1]
-        self.set_xlim(xlim)
-        self.set_ylim(ylim)
+        if xlim is not None:
+            if xreverse:
+                xlim = xlim[::-1]
+            self.set_xlim(xlim)
+        if ylim is not None:
+            if yreverse:
+                ylim = ylim[::-1]
+            self.set_ylim(ylim)
 
         # Control axis ticks and labels and stuff
         xtickminor = tickminor or xtickminor
         ytickminor = tickminor or ytickminor
         xgridminor = gridminor or xgridminor
         ygridminor = gridminor or ygridminor
-        for xy, axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
+        for xy, axis, share, span, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 formatter_kwargs, locator_kwargs, minorlocator_kwargs in \
-            zip('xy', (self.xaxis, self.yaxis), (xlabel, ylabel), \
+            zip('xy', (self.xaxis, self.yaxis), (self._sharex, self._sharey), \
+                (self._spanx, self._spany), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
                 (xgrid, ygrid),
@@ -1276,7 +1361,7 @@ class XYAxes(BaseAxes):
             sides = ('bottom','top') if xy=='x' else ('left','right')
             for spine, side in zip((self.spines[s] for s in sides), sides):
                 # Line properties
-                spineloc = getattr(self, f'{xy}spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
+                spineloc = getattr(self, xy+'spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
                 # Eliminate sides
                 if spineloc=='neither':
                     spine.set_visible(False)
@@ -1296,6 +1381,24 @@ class XYAxes(BaseAxes):
                         spine.set_visible(False)
             spines = [spine for spine in sides if self.spines[side].get_visible()]
 
+            # Axis label properties
+            # First redirect user request to the correct *shared* axes, then
+            # redirect to the correct *spanning* axes if the label is meant
+            # to span multiple subplot
+            if label is not None:
+                axis_label = axis
+                # while share is not None: # infinite loops are bad, m'kay?
+                if share is not None: # this should have priority
+                    axis_label = getattr(share, xy+'axis')
+                    share2 = getattr(share, '_share'+xy) # one level deeper
+                    share = share2 or share # shared axes
+                    share2 = getattr(share, '_share'+xy) # one level deeper
+                    share = share2 or share # shared axes
+                    span = getattr(share, '_span'+xy, span)
+                if span is not None:
+                    axis_label = getattr(span, xy+'axis')
+                axis_label.label.set_text(label)
+
             # Tick properties
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid
             #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
@@ -1310,7 +1413,7 @@ class XYAxes(BaseAxes):
                 ticks_sides = {side: False for side in sides if side not in spines}
             else:
                 ticks_sides = {side: side in spines and side in ticklocs for side in sides}
-            ticks_sides = dict(ticks_sides, **{f'label{side}':b for side,b in ticks_sides.items()})
+            ticks_sides = dict(ticks_sides, **{'label'+side:b for side,b in ticks_sides.items()})
             # Next basic settings
             ticks_major, ticks_minor = {}, {}
             if tickdir is not None:
@@ -1369,20 +1472,14 @@ class XYAxes(BaseAxes):
             if gridminor is not None:
                 axis.grid(gridminor, which='minor', **rc['gridminor']) # ignore if no minor ticks
 
-            # Label properties
-            if label is not None:
-                axis.label.set_text(label)
-
         # Finished
         return self
 
     def twiny(self, **kwargs):
-        """
-        Create second x-axis extending from shared ("twin") y-axis
-        Note: Cannot wrap twiny() because then the axes created will be
-        instantiated from the parent class, which doesn't have format() method.
-        Instead, use hidden method _make_twin_axes.
-        """
+        # Create second x-axis extending from shared ("twin") y-axis
+        # Note: Cannot wrap twiny() because then the axes created will be
+        # instantiated from the parent class, which doesn't have format() method.
+        # Instead, use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
         ax = self._make_twin_axes(sharey=self, projection=self.name)
         self.xaxis.tick_bottom()
@@ -1399,13 +1496,10 @@ class XYAxes(BaseAxes):
         return ax
 
     def twinx(self, **kwargs):
-        """
-        Create second y-axis extending from shared ("twin") x-axis
-        Note: Cannot wrap twinx() because then the axes created will be
-        instantiated from the parent class, which doesn't have format() method.
-        Instead, use hidden method _make_twin_axes.
-        """
-        # As above
+        # Create second y-axis extending from shared ("twin") x-axis
+        # Note: Cannot wrap twinx() because then the axes created will be
+        # instantiated from the parent class, which doesn't have format() method.
+        # Instead, use hidden method _make_twin_axes.
         ax = self._make_twin_axes(sharex=self, projection=self.name)
         self.yaxis.tick_left()
         ax.yaxis.tick_right()
@@ -1422,9 +1516,7 @@ class XYAxes(BaseAxes):
         return ax
 
     def make_inset_locator(self, bounds, trans):
-        """
-        Helper function, had to be copied from private matplotlib version.
-        """
+        # Helper function, had to be copied from private matplotlib version.
         def inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
             bb = mtransforms.TransformedBbox(bbox, trans)
@@ -1434,9 +1526,7 @@ class XYAxes(BaseAxes):
 
     def inset_axes(self, bounds, *, transform=None, zorder=5,
             **kwargs):
-        """
-        Create inset of same type.
-        """
+        # Create inset of same type.
         # Defaults
         if transform is None:
             transform = self.transAxes
@@ -1499,14 +1589,12 @@ class PanelAxes(XYAxes):
     Also an example: https://stackoverflow.com/q/26236380/4970632
     """
     name = 'panel'
-    def __init__(self, *args, side=None, erase=False, **kwargs):
-        # Initiate and make everything invisible
-        super().__init__(*args, **kwargs)
-        if side is None:
+    def __init__(self, *args, panelside=None, erase=False, **kwargs):
+        # Initiate
+        if panelside is None:
             raise ValueError('Must specify side.')
-        if side not in ['left','right','bottom','top']:
-            raise ValueError(f'Invalid panel side "{side}".')
-        self.side = side
+        super().__init__(*args, panelside=panelside, **kwargs)
+        # Make everything invisible
         if erase:
             self.erase()
 

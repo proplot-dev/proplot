@@ -391,7 +391,11 @@ def Cycle(*args, vmin=0, vmax=1):
         elif utils.isvector(samples):
             samples = np.array(samples)
         else:
-            raise ValueError(f'Invalid samples {samples}.')
+            raise ValueError(f'Invalid samples "{samples}". If you\'re building '
+                    'a colormap on-the-fly, input must be [*args, '
+                    'samples] where *args are passed to the Colormap() constructor '
+                    'and "samples" is either the number of samples desired '
+                    'or a vector of colormap samples within [0,1].')
         colors = cmap((samples-vmin)/(vmax-vmin))
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
@@ -673,7 +677,8 @@ def light_cmap(color, reverse=False, space='hsl', white='#eeeeee', light=None, *
     h, s, l, ws, wl = h/359.0, s/99.0, l/99.0, ws/99.0, wl/99.0
     ws = s # perhaps don't change the chroma by default
     index = slice(None,None,-1) if reverse else slice(None)
-    return PerceptuallyUniformColormap.from_hsl(h, [s,ws][index], [l,wl][index], space=space, **kwargs)
+    name = kwargs.pop('name', None)
+    return PerceptuallyUniformColormap.from_hsl(name, h, [s,ws][index], [l,wl][index], space=space, **kwargs)
     # return space_cmap(n, h, [s,ws][index], [l,wl][index], space=space, **kwargs)
 
 def dark_cmap(color, reverse=False, space='hsl', black='#444444', dark=None, gray=None, grey=None, **kwargs):
@@ -697,7 +702,8 @@ def dark_cmap(color, reverse=False, space='hsl', black='#444444', dark=None, gra
     h, s, l = to_xyz(to_rgb(color), space)
     h, s, l, bs, bl = h/359.0, s/99.0, l/99.0, bs/99.0, bl/99.0
     index = slice(None,None,-1) if reverse else slice(None)
-    return PerceptuallyUniformColormap.from_hsl(h, [bs,s][index], [bl,l][index], space=space, **kwargs)
+    name = kwargs.pop('name', None)
+    return PerceptuallyUniformColormap.from_hsl(name, h, [bs,s][index], [bl,l][index], space=space, **kwargs)
     # return space_cmap(n, h, [bs,s][index], [bl,l][index], space=space, **kwargs)
 
 def clip_colors(colors, mask=True):

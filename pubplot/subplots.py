@@ -104,7 +104,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         space_cbar = 0.17,   # default colorbar width
         space_labs = 0.5,    # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
         space_nolabs = 0.15, # only ticks
-        innerpanels=None, innercolorbars=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
+        innerpanels=None, innercolorbars=None, whichpanel=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
         ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
         maps=None, # set maps to True for maps everywhere, or to list of numbers
         package='basemap', projection=None, projection_dict={}, **projection_kwargs): # for projections; can be 'basemap' or 'cartopy'
@@ -152,6 +152,10 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     * Figure size should be constrained by the dimensions of the axes, not vice
         versa; might make things easier.
     """
+    # Translate whichpanels
+    whichpanels = whichpanel or whichpanels # user can specify either
+    translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
+    whichpanels = translate.get(whichpanels, whichpanels)
     # First translate arguments and set context dependent defaults
     # This is convenience feature to get more sensible default spacing
     default = lambda x,y: x if x is not None else y
@@ -413,17 +417,17 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     #--------------------------------------------------------------------------
     # Find shared axes; get sets with identical spans in x or y (ignore panels)
     # Preliminary stuff
+    # Note that these locations should be **sorted** by axes id
     axes_ids = [np.where(array==i) for i in np.unique(array) if i>0] # 0 stands for empty
-    # note that these locations should be **sorted** by axes id
     yrange = np.array([[xy[0].min(), xy[0].max()+1] for xy in axes_ids]) # yrange is shared columns
     xrange = np.array([[xy[1].min(), xy[1].max()+1] for xy in axes_ids])
-    # xmin, ymax = xrange[:,0], yrange[:,1] # wrong! the x/y coordinates are not sorted
     xmin   = np.array([xy[0].min() for xy in axes_ids])
     ymax   = np.array([xy[1].max() for xy in axes_ids])
     num_axes = len(axes_ids)
+
     # Find pairs with edges on same gridspec
+    xgroups_span_base, xgroups_span, grouped = [], [], []
     if spanx:
-        xgroups_span_base, xgroups_span, grouped = [], [], []
         for i in range(num_axes):
             matching_axes = np.where(xmin[i]==xmin)[0]
             if i not in grouped and matching_axes.size>1:
@@ -431,8 +435,8 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 xgroups_span      += [matching_axes] # add ndarray of ids to list
                 xgroups_span_base += [matching_axes[np.argmin(xmin[matching_axes])]]
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
+    ygroups_span_base, ygroups_span, grouped = [], [], []
     if spany:
-        ygroups_span_base, ygroups_span, grouped = [], [], []
         for i in range(num_axes):
             matching_axes = np.where(ymax[i]==ymax)[0]
             if i not in grouped and matching_axes.size>1:
@@ -440,11 +444,12 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 ygroups_span      += [matching_axes] # add ndarray of ids to list
                 ygroups_span_base += [matching_axes[np.argmax(ymax[matching_axes])]]
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
+
     # Shared axes: generate list of base axes-dependent axes pairs
     # That is, find where the minimum-maximum gridspec extent in 'x' for a
     # given axes matches the minimum-maximum gridspec extent for a base axes
+    xgroups_base, xgroups_sorted, xgroups, grouped = [], [], [], []
     if sharex:
-        xgroups_base, xgroups_sorted, xgroups, grouped = [], [], [], []
         for i in range(num_axes): # axes now have pseudo-numbers from 0 to num_axes-1
             matches       = (xrange[i,:]==xrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0] # gives ID number of matching_axes, from 0 to num_axes-1
@@ -457,9 +462,8 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 # Sorted group
                 xgroups_sorted += [matching_axes[np.argsort(yrange[matching_axes,1])[::-1]]] # bottom-most axes is first
             grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
-    # Get shared y axes
+    ygroups_base, ygroups_sorted, ygroups, grouped = [], [], [], []
     if sharey:
-        ygroups_base, ygroups_sorted, ygroups, grouped = [], [], [], []
         for i in range(num_axes):
             matches       = (yrange[i,:]==yrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0]
@@ -491,15 +495,15 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         # print('base', i)
         if i in innerpanels_ids:
             axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])], width, height,
-                    **ax_kwargs, **panel_kwargs) # main axes handle
+                    number=i+1, **ax_kwargs, **panel_kwargs) # main axes handle
         else:
             axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
-                    **ax_kwargs) # main axes can be a cartopy projection
+                    number=i+1, **ax_kwargs) # main axes can be a cartopy projection
 
     # Dependent axes
     for i in range(num_axes):
-        # Detect if we want to share this axis with another
-        # If so, get that axis
+        # Detect if we want to share this axis with another. If so, get that
+        # axes. Also do some error checking
         sharex_ax, sharey_ax = None, None # by default, don't share with other axes objects
         ax_kwargs = map_kwargs if i in maps_ids else {'projection':'xy'}
         if sharex:
@@ -508,84 +512,55 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 sharex_ax = axs[xgroups_base[igroup[0]]]
                 if sharex_ax is None:
                     raise ValueError('Something went wrong; shared x axes was not already drawn.')
-            elif igroup.size>1:
-                raise ValueError(f'Something went wrong; axis {i:d} belongs to multiple groups.')
         if sharey:
             igroup = np.where([i in g for g in ygroups])[0] # np.where works on lists
             if igroup.size==1:
                 sharey_ax = axs[ygroups_base[igroup[0]]]
                 if sharey_ax is None:
                     raise ValueError('Something went wrong; shared x axes was not already drawn.')
-            elif igroup.size>1:
-                raise ValueError(f'Something went wrong; axis {i:d} belongs to multiple groups.')
 
         # Draw axes, and add to list
         if axs[i] is not None:
-            # Axes is a *base* and has already been drawn, but might still need to add
-            # a _sharex or _sharey property; e.g. is bottom-axes of three-column plot
-            # and we want it to share a y-axis
+            # Axes is a *base* and has already been drawn, but might still
+            # have shared axes (e.g. is bottom-axes of three-column plot
+            # and we want it to share the leftmost y-axis)
             if sharex_ax is not None and axs[i] is not sharex_ax:
-                axs[i]._sharex = sharex_ax
-                axs[i]._shared_x_axes.join(axs[i], sharex_ax)
-            else:
-                sharex_ax = None
+                axs[i]._sharex_setup(sharex_ax)
             if sharey_ax is not None and axs[i] is not sharey_ax:
-                axs[i]._sharey = sharey_ax
-                axs[i]._shared_y_axes.join(axs[i], sharey_ax)
-            else:
-                sharey_ax = None
+                axs[i]._sharey_setup(sharey_ax)
         else:
             # Virgin axes; these are not an x base or a y base
-            # We draw them now and add the sharex/sharey attributes
-            # print('panel', i, sharex_ax)
             if i in innerpanels_ids:
                 axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
-                        width, height, sharex=sharex_ax, sharey=sharey_ax, **ax_kwargs, **panel_kwargs)
+                        width, height, number=i+1,
+                        sharex=sharex_ax, sharey=sharey_ax, **ax_kwargs, **panel_kwargs)
             else:
                 axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                        number=i+1,
                         sharex=sharex_ax, sharey=sharey_ax, **ax_kwargs) # main axes can be a cartopy projection
 
-        # Hide tick labels (not default behavior for manual sharex, sharey use)
-        if sharex_ax is not None:
-            for t in axs[i].xaxis.get_ticklabels():
-                t.set_visible(False)
-            axs[i].xaxis.label.set_visible(False)
-        if sharey_ax is not None:
-            for t in axs[i].yaxis.get_ticklabels():
-                t.set_visible(False)
-            axs[i].yaxis.label.set_visible(False)
-
     # Spanning axes; allow xlabels/ylabels to span them
+    # TODO: The panel setup step has to be called *after* spanx/spany/sharex/sharey
+    # setup is called, but we also need to call spanx/spany setup only *after*
+    # every axes is drawn. Instead, then, we call the panel setup method below
     if spanx and len(xgroups_span)>0:
         for g,b in zip(xgroups_span, xgroups_span_base):
-            # Specify x, y transform in Figure coordinates
-            axs[b].text(0.5,0.5,'This is a spanning axis!')
-            axs[b].xaxis.label.set_transform(mtransforms.blended_transform_factory(
-                    fig.transFigure, mtransforms.IdentityTransform()
-                    ))
-            # Get min/max positions, in figure coordinates, of spanning axes
-            xmin = min(axs[i].get_position().xmin for i in g)
-            xmax = max(axs[i].get_position().xmax for i in g)
-            # This is the shared xlabel
-            # print('Group:', g, 'Base:', b, 'Span:', xmin, xmax)
-            # axs[b].xaxis.label.set_visible(True)
-            axs[b].xaxis.label.set_position(((xmin+xmax)/2, 0))
-            for i in g:
-                if i!=b:
-                    axs[i].xaxis.label.set_visible(False)
+            axs[b]._spanx_setup([axs[i] for i in g])
+
     if spany and len(ygroups_span)>0:
         for g,b in zip(ygroups_span, ygroups_span_base):
-            axs[b].yaxis.label.set_transform(mtransforms.blended_transform_factory(
-                    mtransforms.IdentityTransform(), fig.transFigure # specify x, y transform
-                    ))
-            ymin = min(axs[i].get_position().ymin for i in g)
-            ymax = max(axs[i].get_position().ymax for i in g)
-            # print('Group:', g, 'Base:', b, 'Span:', ymin, ymax)
-            # This is the shared ylabel
-            axs[b].yaxis.label.set_position((0, (ymin+ymax)/2))
-            for i in g:
-                if i!=b:
-                    axs[i].yaxis.label.set_visible(False)
+            axs[b]._spany_setup([axs[i] for i in g])
+
+    # Call panel setup after everything is done
+    for ax in axs:
+        ax._panel_setup()
+
+    # Check that axes don't belong to multiple groups
+    # This should be impossible unless my code is completely wrong...
+    for ax in axs:
+        for name,groups in zip(('sharex', 'sharey', 'spanx', 'spany'), (xgroups, ygroups, xgroups_span, ygroups_span)):
+            if sum(ax in group for group in xgroups)>1:
+                raise ValueError(f'Something went wrong; axis {i:d} belongs to multiple {name} groups.')
 
     #---------------------------------------------------------------------------
     # Create panel axes
@@ -677,8 +652,6 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     #--------------------------------------------------------------------------
     if not silent:
         print('Figure setup complete.')
-    for i,ax in enumerate(axs): # add this dynamically because it's easier
-        ax.number = i+1 # know axes number ahead of time; start at 1
     if len(axs)==1:
         axs = axs[0]
     return fig, axs
