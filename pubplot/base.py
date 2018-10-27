@@ -886,9 +886,9 @@ class BaseAxes(maxes.Axes):
         abc=True, abcpos=None, abcformat='',
         hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitlepos=None, title=None, titlepos=None,
-        titlepad=0.1, title_kwargs={},
-        abcpad=0.1, abc_kwargs={},
-        rc_kwargs={}, **kwargs,
+        titlepad=0.1, title_kw={},
+        abcpad=0.1, abc_kw={},
+        rc_kw={}, **kwargs,
         ):
         """
         Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
@@ -906,7 +906,7 @@ class BaseAxes(maxes.Axes):
         # First update (note that this will call _rcupdate overridden by child
         # classes, which can in turn call the parent class version, so we only
         # need to call this from the base class, and all settings will be applied)
-        with self.rc_context(rc_kwargs, **kwargs):
+        with self.rc_context(rc_kw, **kwargs):
             self._rcupdate()
         # self._rcupdate(**kwargs)
         # Create figure title
@@ -915,14 +915,17 @@ class BaseAxes(maxes.Axes):
             fig.suptitle(suptitle or '')
         if suptitle is not None:
             # First give suptitle smarter position
-            # Note default linespacing is 1.2; it has no get, only a setter; see:
+            # Default linespacing is 1.2; it has no get, only a setter; see:
             # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-            title_height = self.title._linespacing*self.title.get_size()/72
-            title_base = self.title._transform.transform(self.title.get_position())[1]/fig.dpi
+            # NOTE: Try to make suptitle coordinates figure-specific
+            # title_base = self.title._transform.transform(self.title.get_position())[1]/fig.dpi
+            title_height = self.title.get_size()/72
+            line_spacing = self.title._linespacing
+            title_base = (line_spacing-1)*title_height + self.figure.gridspec.top*fig.height
             xpos = fig.left/fig.width + .5*(fig.width - fig.left - fig.right)/fig.width
-            ypos = (title_base + title_height)/fig.height
-            if not title or suptitlepos=='title': # just place along axes if no title here
-                ypos -= (self.title._linespacing*self.title.get_size()/72)/fig.height
+            ypos = (title_base + line_spacing*title_height)/fig.height
+            if suptitlepos=='title': # just place along axes if no title here
+                ypos -= (line_spacing*title_height)/fig.height
             if suptitlepos=='title': # not elevated
                 pass
             elif isinstance(suptitlepos,str):
@@ -930,18 +933,31 @@ class BaseAxes(maxes.Axes):
             elif suptitlepos is not None:
                 xpos, ypos = suptitlepos
             # Next apply
-            # fig.suptitle(suptitle, position=(xpos,ypos), ha='center', va='bottom')
-            fig._suptitle.update({'position':(xpos,ypos), 'ha':'center', 'va':'bottom'})
+            print('getting suptitle yo', xpos, ypos)
+            fig._suptitle.update({'text':suptitle, 'position':(xpos,ypos),
+                'ha':'center', 'va':'bottom'})
 
         # Create axes title
         # Input needs to be emptys string
         if title is not None:
-            self.title.update(dict(title_kwargs, text=title))
+            # Handle overridden text method
+            try:
+                self.title.update({'text':title, **title_kw})
+            except Exception:
+                position = self.title.get_position()
+                transform = self.title.get_transform()
+                ha = self.title.get_ha()
+                va = self.title.get_va()
+                self.title.set_visible(False)
+                self.title = self.text(*position, title, transform=transform,
+                        ha=ha, va=va, **title_kw)
+            # Reposition text
             if titlepos=='left':
                 self.title.update({'position':(0,1), 'ha':'left'})
             elif titlepos=='right':
                 self.title.update({'position':(1,1), 'ha':'right'})
             elif titlepos=='inside':
+                # titlepad = (self.title._linespacing-1)*self.title.get_size()/72
                 self.title.update({'position':(0.5,1-titlepad/self.height),
                     'transform':self.transAxes, 'va':'top'})
             elif isinstance(titlepos,str):
@@ -950,22 +966,28 @@ class BaseAxes(maxes.Axes):
                 self.title.update({'position':titlepos, 'ha':'center', 'va':'center'})
 
         # Create axes numbering
-        if self.number is not None:
-            if abc:
-                abcedges = abcformat.split('a')
-                self.abc = self.text(0, 1,
-                        abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1],
-                        transform=self.title._transform) # optionally include parentheses
-                self.abc.update({'ha':'left', 'va':'baseline', **abc_kwargs, **rc['abc']})
-                if abcpos=='inside':
-                    self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
-                        'transform':self.transAxes, 'ha':'left', 'va':'top'})
-                elif isinstance(abcpos,str):
-                    raise ValueError(f'Unknown abc position: {abcpos}.')
-                elif abcpos is not None:
-                    self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
-            elif hasattr(self, 'abc'):
+        if not hasattr(self, 'abc'):
+            self.abc = self.text(0, 1, '',
+                    transform=self.title._transform)
+        if self.number is not None and abc:
+            abcedges = abcformat.split('a')
+            text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
+            abc_kw = {'text':text, 'ha':'left', 'va':'baseline', **abc_kw, **rc['abc']}
+            try:
+                self.abc.update(abc_kw)
+            except Exception:
                 self.abc.set_visible(False)
+                self.abc = self.text(0, 1, **abc_kw) # call *overridden* text method
+            if abcpos=='inside':
+                # abcpad = (self.abc._linespacing-1)*self.abc.get_size()/72
+                self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
+                    'transform':self.transAxes, 'ha':'left', 'va':'top'})
+            elif isinstance(abcpos,str):
+                raise ValueError(f'Unknown abc position: {abcpos}.')
+            elif abcpos is not None:
+                self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
+        elif hasattr(self, 'abc'):
+            self.abc.set_visible(False)
 
         # Color setup, optional hatching in background of axes
         # You should control transparency by passing transparent=True or False
@@ -1313,10 +1335,10 @@ class XYAxes(BaseAxes):
         xlim=None,      ylim=None,
         xscale=None,    yscale=None,
         xlocator=None,  xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
-        xscale_kwargs={}, yscale_kwargs={},
-        xlocator_kwargs={}, ylocator_kwargs={},
-        xformatter_kwargs={}, yformatter_kwargs={},
-        xminorlocator_kwargs={}, yminorlocator_kwargs={},
+        xscale_kw={}, yscale_kw={},
+        xlocator_kw={}, ylocator_kw={},
+        xformatter_kw={}, yformatter_kw={},
+        xminorlocator_kw={}, yminorlocator_kw={},
         xformatter=None, yformatter=None,
         **kwargs): # formatter
         """
@@ -1329,11 +1351,11 @@ class XYAxes(BaseAxes):
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
-            self.set_xscale(Scale(xscale, **xscale_kwargs))
+            self.set_xscale(Scale(xscale, **xscale_kw))
         if yscale is not None:
             if hasattr(yscale,'name'):
                 yscale = yscale.name
-            self.set_yscale(Scale(yscale, **yscale_kwargs))
+            self.set_yscale(Scale(yscale, **yscale_kw))
         if xlim is not None:
             if xreverse:
                 xlim = xlim[::-1]
@@ -1350,7 +1372,7 @@ class XYAxes(BaseAxes):
         ygridminor = gridminor or ygridminor
         for xy, axis, share, span, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
-                formatter_kwargs, locator_kwargs, minorlocator_kwargs in \
+                formatter_kw, locator_kw, minorlocator_kw in \
             zip('xy', (self.xaxis, self.yaxis), (self._sharex, self._sharey), \
                 (self._spanx, self._spany), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
@@ -1359,7 +1381,7 @@ class XYAxes(BaseAxes):
                 (xlocator, ylocator), (xformatter, yformatter), # major ticks
                 (xtickrange, ytickrange), # range in which we label major ticks
                 (xtickdir, ytickdir), (xticklabeldir, yticklabeldir), # tick direction
-                (xformatter_kwargs, yformatter_kwargs), (xlocator_kwargs, ylocator_kwargs), (xminorlocator_kwargs, yminorlocator_kwargs),
+                (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
                 ):
             # Axis spine visibility and location
             sides = ('bottom','top') if xy=='x' else ('left','right')
@@ -1439,12 +1461,12 @@ class XYAxes(BaseAxes):
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
             time = isinstance(axis.converter, mdates.DateConverter)
-            axis.set_major_locator(Locator(ticklocator, time=time, **locator_kwargs))
-            axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kwargs))
+            axis.set_major_locator(Locator(ticklocator, time=time, **locator_kw))
+            axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(Locator('null'))
             else:
-                axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time, **minorlocator_kwargs))
+                axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw))
             axis.set_minor_formatter(mticker.NullFormatter())
             # Update text, and ensure that we don't have tick labels where
             # there are no ticks!

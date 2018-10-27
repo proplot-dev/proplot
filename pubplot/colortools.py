@@ -214,10 +214,14 @@ def add_alpha(color):
         raise ValueError(f'Tuple length must be 3 or 4, got {len(color)}.')
     return color
 
-def get_channel(color, channel, space='hsl', scale=True):
+def scaled_channel_value(color, channel, space='hsl', scale=True):
     """
-    Get hue, saturation, or luminance from string color name. If input
-    is not string, will just scale it appropriately for the colorspace.
+    Does 2 things:
+        1) Optionally scales color tuple to physical colorspace coordinates,
+            i.e. the range [0,359), [0,99), and [0,99) for the perceptually
+            uniform colorspaces.
+        2) Gets hue, saturation, or luminance channel value from registered
+            string color name.
     Arguments
     ---------
         color : scalar numeric ranging from 0-1, or string color name, optionally
@@ -226,8 +230,7 @@ def get_channel(color, channel, space='hsl', scale=True):
         channel : channel number (can be 0, 1, or 2).
     Optional
     --------
-        scale : whether input tuples need to be scaled to full ranges
-            i.e. multiply by 99, 99, 359 for most HSl colorspaces.
+        scale : whether tuples need to be scaled to colorspace range
     """
     # Interpret channel
     channel = channel_idxs.get(channel, channel)
@@ -454,14 +457,14 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             # Modify callable function to return values in proper range
             # 0-359 for hue, 0-99 for saturation/luminance
             if callable(array):
-                segmentdata[key] = get_channel(array, key, space, scale)
+                segmentdata[key] = scaled_channel_value(array, key, space, scale)
                 continue
             # Modify values directly
             for i,xyy in enumerate(array):
                 xyy = list(xyy) # make copy!
                 for j,y in enumerate(xyy[1:]): # modify the y values
                     j += 1 # fix
-                    xyy[j] = get_channel(y, key, space, scale) # also *scales* values to 99, 99, 359
+                    xyy[j] = scaled_channel_value(y, key, space, scale) # also *scales* values to 99, 99, 359
                 segmentdata[key][i] = xyy
         # Initialize
         super().__init__(name, segmentdata, gamma=1.0, **kwargs)
@@ -509,7 +512,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         cs = ['hue', 'saturation', 'luminance', 'alpha']
         channels = [h, s, l, a]
         for c,channel in zip(cs,channels):
-            cdict[c] = make_data_array(channel, ratios=ratios, reverse=reverse, **kwargs)
+            cdict[c] = make_segmentdata_array(channel, ratios=ratios, reverse=reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
@@ -542,11 +545,11 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             cdict['alpha'] = 1.0 # dummy function that always returns 1.0
         # Build data arrays
         for c,channel in zip(cs,channels):
-            cdict[c] = make_data_array(channel, ratios=ratios, reverse=reverse, **kwargs)
+            cdict[c] = make_segmentdata_array(channel, ratios=ratios, reverse=reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
-def make_data_array(values, ratios=None, reverse=False, **kwargs):
+def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
     """
     Construct a list of linear segments for an individual channel.
     This was made so that user can input e.g. a callable function for

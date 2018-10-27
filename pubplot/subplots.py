@@ -641,7 +641,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 hspace        = rspace,
                 height_ratios = rratios,
                 )
-        panels = [fig.add_subplot(P[0,i], panelside='right', erase=True, projection='panel') for i in range(npanel)]
+        panels = [fig.add_subplot(P[i,0], panelside='right', erase=True, projection='panel') for i in range(npanel)]
         if rightpanel:
             panels = panels[0]
         fig.rightpanel = panels
