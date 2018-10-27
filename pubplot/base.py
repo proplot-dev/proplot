@@ -798,7 +798,8 @@ class BaseAxes(maxes.Axes):
         if sharex is None:
             return
         if self is sharex:
-            raise ValueError('Cannot share an axes with itself.')
+            return
+            # raise ValueError('Cannot share an axes with itself.')
         if self.leftpanel and sharex.leftpanel:
             self.leftpanel._sharex_setup(sharex.leftpanel)
         if self.rightpanel and sharex.rightpanel:
@@ -824,7 +825,8 @@ class BaseAxes(maxes.Axes):
         if sharey is None:
             return
         if self is sharey:
-            raise ValueError('Cannot share an axes with itself.')
+            return
+            # raise ValueError('Cannot share an axes with itself.')
         if self.bottompanel and sharey.bottompanel:
             self.bottompanel._sharey_setup(sharey.bottompanel)
         if self.toppanel and sharey.toppanel:
@@ -1621,7 +1623,7 @@ class PanelAxes(XYAxes):
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec
         self.erase()
-        side = self.side
+        side = self.panelside
         subspec = self.get_subplotspec()
         if n>2:
             raise ValueError('I strongly advise against drawing more than 2 stacked colorbars.')

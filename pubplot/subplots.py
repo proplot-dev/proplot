@@ -602,7 +602,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 wspace        = rspace, # same as above
                 width_ratios  = rratios,
                 )
-        panels = [fig.add_subplot(P[0,i], side='bottom', erase=True, projection='panel') for i in range(npanel)]
+        panels = [fig.add_subplot(P[0,i], panelside='bottom', erase=True, projection='panel') for i in range(npanel)]
         if bottompanel:
             panels = panels[0] # no indexing if user specified single panel, but does mean indexing if specified bottompanels=True with single column grid
         fig.bottompanel = panels
@@ -641,7 +641,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
                 hspace        = rspace,
                 height_ratios = rratios,
                 )
-        panels = [fig.add_subplot(P[0,i], side='right', erase=True, projection='panel') for i in range(npanel)]
+        panels = [fig.add_subplot(P[0,i], panelside='right', erase=True, projection='panel') for i in range(npanel)]
         if rightpanel:
             panels = panels[0]
         fig.rightpanel = panels
