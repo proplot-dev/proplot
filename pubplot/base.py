@@ -215,34 +215,43 @@ def cmap_features(func):
     """
     @wraps(func)
     def decorator(self, *args, cmap=None, cmap_kw=dict(),
-                norm=None, levels=None, extremes=True,
+                levels=None, extremes=True, norm=None,
                 extend='neither', **kwargs):
+        # NOTE: We will normalize the data with whatever is passed, e.g.
+        # logarithmic or whatever
+        # is passed to Norm
         # Call function with special args removed
         name = func.__name__
-        kwextra = dict()
+        kwextra = {}
         if 'contour' in name:
             kwextra = dict(levels=levels, extend=extend)
         # result = func(self, *args, cmap=cmap, norm=norm, **kwextra, **kwargs)
-        result = func(self, *args, **kwextra, **kwargs)
+        norm = colortools.Norm(norm)
+        result = func(self, *args, norm=norm, **kwextra, **kwargs)
         if 'pcolor' in name:
             result.extend = extend
         # Get levels, if they were None
+        # Otherwise we just have to resample the colormap segmentdata, by
+        # default picking enough colors to look like perfectly smooth gradations
         if levels is None and hasattr(result, 'levels'):
             # print('Automatically selected levels.')
             levels = result.levels
         elif levels is None:
-            # print('Resampling colormap instead of using normalizer.')
             cmap_kw.update({'resample':True}) # default pcolormesh behavior is just to resample
         # Set normalizer
         if cmap_kw.get('resample',None):
-            N = len(levels) if levels is not None else 31 # convervative number
             if levels is not None:
-                norm = colortools.Norm('segmented', levels=levels)
+                N = len(levels)
+                norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
             else:
+                if isinstance(cmap, mcolors.ListedColormap):
+                    N = len(cmap.colors)
+                else:
+                    N = 256 # convervative number
                 norm = result.norm # just use the default normalizer
         else:
             N = None
-            norm = colortools.Norm('step', levels=levels,
+            norm = colortools.StepNorm(norm=norm, levels=levels,
                    extend=cmap_kw.get('extend', extend)) # use extend='neither' to prevent triangles from being different color
         result.set_norm(norm)
         # Specify colormap
@@ -250,9 +259,15 @@ def cmap_features(func):
         if isinstance(cmap, (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
         cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
-        # print('segments', cmap._segmentdata)
-        # print('dir', result, dir(result))
         result.set_cmap(cmap)
+        # Fix result
+        # NOTE: Recursion yo!
+        if name=='cmapline':
+            # result = colortools.Mappable(cmap, levels, norm=norm) # use hacky mchackerson instead
+            if levels is None:
+                levels = np.sort(np.unique(result.get_array()))
+            result = self.contourf([0,0], [0,0], np.nan*np.ones((2,2)),
+                cmap=cmap, levels=levels, norm=norm)
         # Optionally use same color for data in 'edge bins' as 'out of bounds' data
         # NOTE: This shouldn't mess up normal contour() calls because if we
         # specify color=<color>, should override cmap instance anyway
@@ -262,7 +277,7 @@ def cmap_features(func):
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
-        elif utils.isnumber(result):
+        elif utils.isscalar(result):
             result.set_edgecolor('face')
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
@@ -933,7 +948,6 @@ class BaseAxes(maxes.Axes):
             elif suptitlepos is not None:
                 xpos, ypos = suptitlepos
             # Next apply
-            print('getting suptitle yo', xpos, ypos)
             fig._suptitle.update({'text':suptitle, 'position':(xpos,ypos),
                 'ha':'center', 'va':'bottom'})
 
@@ -1064,7 +1078,9 @@ class BaseAxes(maxes.Axes):
         return super().scatter(*args, **kwargs)
 
     @cmap_features
-    def cmapline(*args, cmap=None, values=None, norm=None, bins=True, nsample=1):
+    def cmapline(self, *args, cmap=None,
+            values=None, norm=None,
+            bins=True, nbetween=1, **kwargs):
         """
         Create lines with colormap.
         See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
@@ -1073,8 +1089,6 @@ class BaseAxes(maxes.Axes):
         # First error check
         if len(args) not in (1,2):
             raise ValueError(f'Function requires 1-2 arguments, got {len(args)}.')
-        if cmap is None or values is None:
-            raise ValueError(f'Function requires "cmap" and "values" kwargs.')
         y = np.array(args[-1]).squeeze()
         x = np.arange(y.shape[-1]) if len(args)==1 else np.array(args[0]).squeeze()
         values = np.array(values).squeeze()
@@ -1082,28 +1096,43 @@ class BaseAxes(maxes.Axes):
             raise ValueError(f'Input x ({x.ndim}D), y ({y.ndim}D), and values ({values.ndim}D) must be 1-dimensional.')
         # Next draw the line
         # Interpolate values to optionally allow for smooth gradations between
-        # values (bins=True) or color switchover halfway between points (bins=False)
+        # values (bins=False) or color switchover halfway between points (bins=True)
         newx, newy, newvalues = [], [], []
         edges = utils.edges(values)
         if bins:
-            norm = colortools.DiscreteNorm(edges)
+            norm = colortools.StepNorm(edges)
         else:
-            norm = colortools.ContinuousNorm(edges)
+            norm = colortools.LinearSegmentedNorm(edges)
         for j in range(y.shape[0]-1):
-            newx.extend(np.linspace(x[j], x[j+1], nsample+2))
-            newy.extend(np.linspace(y[j], y[j+1], nsample+2))
-            interp = np.linspace(np.asscalar(norm(values[j])), np.asscalar(norm(values[j+1])), nsample+2)
-            newvalues.extend(norm.inverse(interp))
+            newx.extend(np.linspace(x[j], x[j+1], nbetween+2))
+            newy.extend(np.linspace(y[j], y[j+1], nbetween+2))
+            # WARNING: Below breaks everything! Evidently we need the duplicates
+            # if j>0:
+            #     interp = interp[1:] # prevent duplicates
+            # newvalues.extend(interp)
+            # WARNING: Could not get the inverse thing to work properly
+            if not isinstance(norm,mcolors.BoundaryNorm):
+                # Has inverse
+                interp = np.linspace(np.asscalar(norm(values[j])),
+                    np.asscalar(norm(values[j+1])), nbetween+2)
+                newvalues.extend(norm.inverse(interp))
+            else:
+                interp = np.linspace(np.asscalar(values[j]),
+                    np.asscalar(values[j+1]), nbetween+2)
+                newvalues.extend(interp)
         # Create LineCollection and update with values
         newvalues  = np.array(newvalues)
         points     = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
         segments   = np.concatenate([points[:-1], points[1:]], axis=1)
         collection = mcollections.LineCollection(segments, cmap=cmap, norm=norm, linestyles='-')
         collection.set_array(newvalues)
-        collection.update({k:v for k,v in kwargs.items() if k not in ['color']})
-        line = self.add_collection(collection) # FIXME: for some reason using 'line' as the mappable results in colorbar with color *cutoffs* at values, instead of centered levels at values
-        line = colortools.mappable(cmap, values, norm=norm) # use hacky mchackerson instead
-        return line,
+        collection.update({key:value for key,value in kwargs.items() if key not in ['color']})
+        # FIXME: for some reason using 'line' as the mappable results in colorbar
+        # with color *cutoffs* at values, instead of centered levels at values
+        # line = self.add_collection(collection)
+        # line = colortools.mappable(cmap, values, norm=norm) # use hacky mchackerson instead
+        self.add_collection(collection)
+        return collection
 
     @cycle_features
     def plot(self, *args, cmap=None, values=None, **kwargs):
@@ -2312,11 +2341,14 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         levels = utils.edges(values) # get "edge" values between centers desired
         values = utils.edges(values) # this works empirically; otherwise get weird situation with edge-labels appearing on either side
         mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap,
-                extend='neither', norm=colortools.DiscreteNorm(values)) # workaround
+                extend='neither', norm=colortools.StepNorm(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values
     if clocator is None:
-        clocator = getattr(mappable.norm, 'levels', None)
+        # clocator = getattr(mappable.norm, 'levels', None)
+        clocator = getattr(mappable, 'levels', None)
+        step = 1+len(clocator)//20
+        clocator = clocator[::step]
 
     # Determine major formatters and major/minor tick locators
     # Can pass clocator/cminorlocator as the *jump values* between the mappables

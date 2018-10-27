@@ -858,7 +858,7 @@ def Norm(norm, **kwargs):
     if isinstance(norm, mcolors.Normalize):
         pass
     elif norm is None:
-        norm = 'step' # the default case when levels are provided
+        norm = 'linear' # always the default
     elif norm is None:
         norm = mcolors.Normalize() # default is just linear from 0 to 1
     elif type(norm) is not str: # dictionary lookup
@@ -871,19 +871,25 @@ def Norm(norm, **kwargs):
 
 class LinearSegmentedNorm(mcolors.Normalize):
     """
+    Description
+    -----------
     As in BoundaryNorm case, but instead we linearly *interpolate* colors
-    between the provided boundary indices. Use this e.g. if you want to
-    have the gradation from 0-1 'zoomed in' and gradation from 0-10 'zoomed out'.
+    between the provided boundary indices.
+    Use this e.g. if you want to have the gradation from 0-1 'zoomed in' and
+    gradation from 1-10 'zoomed out'.
     In this case, can control number of colors by setting the *lookup table*
     when declaring colormap.
     """
-    def __init__(self, levels, midpoint=None, clip=False, ncolors=None, **kwargs):
+    def __init__(self, levels, norm=None, midpoint=None, clip=False, ncolors=None, **kwargs):
         # Very simple
         levels = np.atleast_1d(levels)
         if np.any((levels[1:]-levels[:-1])<=0):
             raise ValueError(f'Levels passed to LinearSegmentedNorm must be monotonically increasing.')
         super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
+        # if norm:
+        #     levels = norm(levels)
         self.levels = levels # alias for boundaries
+        # self.prenorm = norm # e.g. a log-norm
 
     def __call__(self, value, clip=None):
         # TODO: Add optional midpoint, this class will probably end up being one of
@@ -891,6 +897,8 @@ class LinearSegmentedNorm(mcolors.Normalize):
         # Map data values in range (vmin,vmax) to color indices in colormap
         # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
         value = np.atleast_1d(value)
+        # if self.prenorm:
+        #     value = self.prenorm(value) # e.g. first scale logarithmically
         norm  = np.empty(value.shape)
         for i,v in enumerate(value.flat):
             if np.isnan(v):
@@ -926,6 +934,8 @@ class LinearSegmentedNorm(mcolors.Normalize):
                 interpolee  = idxs[cutoff:cutoff+2] # the 0-1 normalization
                 interpolant = self.levels[cutoff:cutoff+2] # the boundary level values
                 value[i]    = np.interp(n, interpolee, interpolant) # interpolate between 2 points
+        # if self.prenorm:
+        #     value = self.prenorm.inverse(value) # e.g. first scale logarithmically
         return ma.masked_array(value, np.isnan(norm))
 
 class StepNorm(mcolors.BoundaryNorm):
@@ -938,8 +948,8 @@ class StepNorm(mcolors.BoundaryNorm):
     Note
     ----
     If you are using a diverging colormap with extend='max/min', the center
-    will get messed up. But that is very strange usage anyway... so you'll
-    probably be fine.
+    will get messed up. But that is very strange usage anyway... so please
+    just don't do that :)
 
     Todo
     ----
@@ -952,7 +962,7 @@ class StepNorm(mcolors.BoundaryNorm):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, centers=False, clip=False, ncolors=None, extend=None, **kwargs):
+    def __init__(self, levels, norm=None, centers=False, clip=False, ncolors=None, extend=None, **kwargs):
         # Don't need to call partent initializer, this is own implementation; just need
         # it to be subclass so ColorbarBase methods will detect it
         # See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
@@ -965,18 +975,23 @@ class StepNorm(mcolors.BoundaryNorm):
         # Bins were passed, not edges
         if centers:
             levels = utils.edges(levels)
+        # Declare boundaries, vmin, vmax in True coordinates
+        self.boundaries = levels # alias read by other functions
+        self.vmin = levels[0]
+        self.vmax = levels[-1]
+        # These are required/expected
+        self.N = len(levels)
+        self.clip = clip
         # Custom attributes
         offset = {'both':2, 'min':1, 'max':1, 'neither':0}
         slices = {'both':slice(1,-1),   'min':slice(1,None),
                   'max':slice(None,-1), 'neither':slice(None)}
-        self.levels   = levels
+        if norm:
+            levels = norm(levels) # e.g. a logarithm transform
+        self.levels = levels
+        self.prenorm = norm
         self.normvals = np.linspace(0, 1, offset[extend]+levels.size-1)[slices[extend]]
         # Required
-        self.N = len(levels)
-        self.boundaries = levels # alias read by other functions
-        self.vmin = levels[0]
-        self.vmax = levels[-1]
-        self.clip = clip
 
     def __call__(self, value, clip=None):
         # TODO: Add optional midpoint, this class will probably end up being one of
@@ -984,6 +999,8 @@ class StepNorm(mcolors.BoundaryNorm):
         # Map data values in range (vmin,vmax) to color indices in colormap
         # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
         value = np.atleast_1d(value)
+        if self.prenorm:
+            value = self.prenorm(value) # e.g. first scale logarithmically
         norm  = np.empty(value.shape)
         for i,v in enumerate(value.flat):
             if np.isnan(v):
@@ -1003,73 +1020,73 @@ class StepNorm(mcolors.BoundaryNorm):
         # Not possible
         raise ValueError('StepNorm is not invertible.')
 
-class StretchNorm(mcolors.Normalize):
-    """
-    Class that can 'stretch' and 'compress' either side of a colormap about
-    some midpoint, proceeding exponentially (exp>0) or logarithmically (exp<0)
-    down the linear colormap from the center point. Default midpoint is vmin, i.e.
-    we just stretch to the right. For diverging colormaps, use midpoint 0.5.
-    """
-    def __init__(self, exp=0, extend='neither', midpoint=None, vmin=None, vmax=None, clip=None):
-        # User will use -10 to 10 scale; converted to value used in equation
-        if abs(exp) > 10: raise ValueError('Warping scale must be between -10 and 10.')
-        super().__init__(vmin, vmax, clip)
-        self.midpoint = midpoint
-        self.exp = exp
-        self.extend = extend
-        # mcolors.Normalize.__init__(self, vmin, vmax, clip)
-
-    # Function
-    def warp(x, exp, exp_max=4):
-        # Returns indices stretched so neutral/low values are sampled more heavily
-        # Will artifically use exp to signify stretching away from neutral vals,
-        # or compressing toward neutral vals
-        if exp > 0:
-            invert = True
-        else:
-            invert, exp = False, -exp
-        exp = exp*(exp_max/10)
-        # Apply function; approaches x=1 as a-->Inf, x=x as a-->0
-        if invert: x = 1-x
-        value =  (x-1+(np.exp(x)-x)**exp)/(np.e-1)**exp
-        if invert:
-            value = 1-value # flip on y-axis
-        return value
-
-    def __call__(self, value, clip=None):
-        # Initial stuff
-        if self.midpoint is None:
-            midpoint = self.vmin
-        else:
-            midpoint = self.midpoint
-        # Get middle point in 0-1 coords, and value
-        midpoint_scaled = (midpoint - self.vmin)/(self.vmax - self.vmin)
-        value_scaled    = (value - self.vmin)/(self.vmax - self.vmin)
-        try: iter(value_scaled)
-        except TypeError:
-            value_scaled = np.arange(value_scaled)
-        value_cmap = ma.empty(value_scaled.size)
-        for i,v in enumerate(value_scaled):
-            # Get values, accounting for midpoints
-            if v<0:
-                v = 0
-            if v>1:
-                v = 1
-            if v>=midpoint_scaled:
-                block_width = 1 - midpoint_scaled
-                value_cmap[i] = (midpoint_scaled + 
-                    block_width*self.warp((v - midpoint_scaled)/block_width, self.exp)
-                    )
-            else:
-                block_width = midpoint_scaled
-                value_cmap[i] = (midpoint_scaled - 
-                        block_width*self.warp((midpoint_scaled - v)/block_width, self.exp)
-                        )
-        if self.extend=='both' or self.extend=='max':
-            value_cmap[value_cmap>1] = 1
-        if self.extend=='both' or self.extend=='min':
-            value_cmap[value_cmap<0] = 0
-        return value_cmap
+# class StretchNorm(mcolors.Normalize):
+#     """
+#     Class that can 'stretch' and 'compress' either side of a colormap about
+#     some midpoint, proceeding exponentially (exp>0) or logarithmically (exp<0)
+#     down the linear colormap from the center point. Default midpoint is vmin, i.e.
+#     we just stretch to the right. For diverging colormaps, use midpoint 0.5.
+#     """
+#     def __init__(self, exp=0, extend='neither', midpoint=None, vmin=None, vmax=None, clip=None):
+#         # User will use -10 to 10 scale; converted to value used in equation
+#         if abs(exp) > 10: raise ValueError('Warping scale must be between -10 and 10.')
+#         super().__init__(vmin, vmax, clip)
+#         self.midpoint = midpoint
+#         self.exp = exp
+#         self.extend = extend
+#         # mcolors.Normalize.__init__(self, vmin, vmax, clip)
+#
+#     # Function
+#     def warp(x, exp, exp_max=4):
+#         # Returns indices stretched so neutral/low values are sampled more heavily
+#         # Will artifically use exp to signify stretching away from neutral vals,
+#         # or compressing toward neutral vals
+#         if exp > 0:
+#             invert = True
+#         else:
+#             invert, exp = False, -exp
+#         exp = exp*(exp_max/10)
+#         # Apply function; approaches x=1 as a-->Inf, x=x as a-->0
+#         if invert: x = 1-x
+#         value =  (x-1+(np.exp(x)-x)**exp)/(np.e-1)**exp
+#         if invert:
+#             value = 1-value # flip on y-axis
+#         return value
+#
+#     def __call__(self, value, clip=None):
+#         # Initial stuff
+#         if self.midpoint is None:
+#             midpoint = self.vmin
+#         else:
+#             midpoint = self.midpoint
+#         # Get middle point in 0-1 coords, and value
+#         midpoint_scaled = (midpoint - self.vmin)/(self.vmax - self.vmin)
+#         value_scaled    = (value - self.vmin)/(self.vmax - self.vmin)
+#         try: iter(value_scaled)
+#         except TypeError:
+#             value_scaled = np.arange(value_scaled)
+#         value_cmap = ma.empty(value_scaled.size)
+#         for i,v in enumerate(value_scaled):
+#             # Get values, accounting for midpoints
+#             if v<0:
+#                 v = 0
+#             if v>1:
+#                 v = 1
+#             if v>=midpoint_scaled:
+#                 block_width = 1 - midpoint_scaled
+#                 value_cmap[i] = (midpoint_scaled +
+#                     block_width*self.warp((v - midpoint_scaled)/block_width, self.exp)
+#                     )
+#             else:
+#                 block_width = midpoint_scaled
+#                 value_cmap[i] = (midpoint_scaled -
+#                         block_width*self.warp((midpoint_scaled - v)/block_width, self.exp)
+#                         )
+#         if self.extend=='both' or self.extend=='max':
+#             value_cmap[value_cmap>1] = 1
+#         if self.extend=='both' or self.extend=='min':
+#             value_cmap[value_cmap<0] = 0
+#         return value_cmap
 
 #------------------------------------------------------------------------------#
 # Register new colormaps; must come before registering the color cycles
@@ -1521,36 +1538,6 @@ def cmap_show(N=31, ignore=['Diverging Alt', 'Sequential Alt', 'Rainbow Alt', 'M
 #     raise ValueError("Unknown extend option \"{extend}\".")
 # cmap, norm = mcolors.from_levels_and_colors(levels, colors, extend=extend) # creates ListedColormap!!!
 # return cmap
-# Generate mappable using contourf
-# def Mappable(cmap, samples=None, levels=None, norm=None):
-# cmap = cmap_factory(cmap)
-# if norm is None:
-#     norm = mcolors.Normalize(0,1)
-# elif not hasattr(norm,'__call__'):
-#     raise ValueError('Norm has to be callable.')
-# elif not isinstance(norm,mcolors.Normalize):
-#     raise ValueError('Norm has to be an mcolors.Normalize class or subclass.')
-# # Specify the *centers*, then interpolate to *edges* according to normalizer
-# if samples is not None:
-#     samples = np.array(samples)
-#     if not isinstance(cmap, mcolors.BoundaryNorm):
-#         samples = norm(samples) # translate to normalized-space (e.g. LogNorm)
-#     if samples[1]<samples[0]:
-#         samples = samples[::-1]
-#         reverse = True
-#     idelta = samples[1]-samples[0]
-#     fdelta = samples[-1]-samples[-2]
-#     levels = [samples[0]-idelta/2, *((samples[1:]+samples[:-1])/2), samples[-1]+fdelta/2]
-#     if not isinstance(cmap, mcolors.BoundaryNorm):
-#         levels = norm.inverse(levels) # translate back from normalized-space
-# # Optionally reverse the colormap
-# if levels[1]<levels[0]: # specify the *levels*
-#     levels = levels[::-1]
-#     reverse = True
-# if reverse:
-#     cmap = cmap.reversed() # reverse the cmap
-# m = plt.contourf([0,0], [0,0], np.nan*np.ones((2,2)), cmap=cmap, levels=levels, norm=norm)
-# return m
 # This was dumb, just needed to edit normalizer
 # def pad_cmap(cmap, amount, extend='both'):
 #     """
