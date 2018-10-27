@@ -1071,21 +1071,30 @@ def register_colors(nmax=np.inf, threshold=0.10):
     # First register colors
     hcls = np.empty((0,3))
     names = []
-    categories = []
+    categories_list = []
+    categories_set = set()
     for file in glob(f'{os.path.dirname(__file__)}/colors/*.txt'):
+        # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
-        ncolors = min(len(data),nmax)
+        ncolors = min(len(data),nmax-1)
         hcl = np.empty((ncolors,3))
-        categories.extend([category]*ncolors)
+        # Add categories
+        categories_set.add(category)
+        custom_colors[category] = {}
+        filtered_colors[category] = {}
+        # Translate and put in dictionary
         for i,(name,color) in enumerate(data): # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
             hcl[i,:] = colormath.rgb_to_hcl(*mcolors.to_rgb(color))
-            names.append(name)
-            # mcolors._colors_full_map[name] = color
-        custom_colors[category] = {key:value for key,value in data}
+            name = re.sub('grey', 'gray', name)
+            name = re.sub('/', ' ', name)
+            names.append((category, name))
+            custom_colors[category][name] = color
+        # Concatenate HCL arrays
         hcls = np.concatenate((hcls, hcl), axis=0)
+
     # Next remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: unique axis argument requires numpy version >=1.13
     # WARNING: evidently it is ***impossible*** to actually delete colors
@@ -1101,18 +1110,15 @@ def register_colors(nmax=np.inf, threshold=0.10):
             'violet', 'indigo', 'blue', 'coral',
             'cyan', 'teal', 'green', 'lime', 'yellow', 'orange']
     exceptions_regex = '^(' + '|'.join(exceptions) + ')[0-9]?$'
-    # Initialize filtered colors
-    for category in categories:
-        filtered_colors[category] = {}
     # Add colors to filtered colors
-    for i,(category,name) in enumerate(zip(categories,names)):
+    for i,(category,name) in enumerate(names):
         if not re.match(exceptions_regex, name) and i not in index:
             deleted += 1
         else:
             filtered_colors[category][name] = custom_colors[category][name]
     for category,dictionary in filtered_colors.items():
         mcolors._colors_full_map.update(dictionary)
-    print(f'Started with {len(names)} colors, removed similar {deleted} colors.')
+    print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
 
 def register_cmaps():
     """
