@@ -164,7 +164,7 @@ rcSpecial = {
     'land.color':            'k',
     'oceans.linewidth':      0,
     'oceans.color':          'w',
-    'lonlatlines.linestyle': '=',
+    'lonlatlines.linestyle': ':',
     'lonlatlines.alpha':     0.2,
     'lonlatlines.color':     'k',
     }

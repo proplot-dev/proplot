@@ -750,7 +750,7 @@ class BaseAxes(maxes.Axes):
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
         # Default format() settings
-        self.format(abc=True)
+        # self.format(abc=True)
         # Turn off tick labels and axis label for shared axes
         # Want to do this ***manually*** because want to have the ability to
         # add shared axes ***after the fact in general***. If the API changes,
@@ -1218,9 +1218,11 @@ class BaseAxes(maxes.Axes):
     # Methods rendered obsolete by subplots() function
     _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
     'ratios are *static*, and must be set at creation time using pubplot.subplots().'
-    @property
-    def set_aspect(self):
-        raise NotImplementedError(self._message_strongarm)
+    def set_aspect(self, *args, **kwargs):
+        if isinstance(self, MapAxes):
+            return super().set_aspect(*args, **kwargs)
+        else:
+            raise NotImplementedError(self._message_strongarm)
 
     # Redundant stuff that want to cancel
     _message_redundant = 'Redundant function has been disabled.'
@@ -1676,6 +1678,7 @@ class PanelAxes(XYAxes):
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec
         self.erase()
+        figure = self.figure
         side = self.panelside
         subspec = self.get_subplotspec()
         if n>2:
@@ -1703,7 +1706,7 @@ class PanelAxes(XYAxes):
             self.set_visible(False)
         # Allocate axes for drawing colorbar.
         # Returns the axes and the output of colorbar_factory().
-        ax = self.figure.add_subplot(subspec, projection=None)
+        ax = figure.add_subplot(subspec, projection=None)
         if side in ['bottom','top']:
             ticklocation = 'bottom' if i==n-1 else 'top'
             orientation  = 'horizontal'
@@ -1721,9 +1724,9 @@ class MapAxes(BaseAxes):
     # This one we want to work, but it doesn't
     # Property decorators mean error will be raised right after method invoked,
     # will not raise error on account of args/kwargs, see: https://stackoverflow.com/a/23126260/4970632
-    @property
-    def pcolormesh(self):
-        raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
+    # @property
+    # def pcolormesh(self):
+    #     raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
     # Disable some methods to prevent weird shit from happening
     message = 'Invalid plotting function for map projection axes.'
     @property
@@ -1820,11 +1823,12 @@ class BasemapAxes(MapAxes):
         self.m = map_projection
         self.boundary = None
         self.recurred = False # use this so we can override plotting methods
+        self.axesPatch = self.patch
         if map_projection.projection in self.pseudocyl: # otherwise the spines are map boundary
             self.boundary = self.m.drawmapboundary(ax=self)
 
     def format(self, color=None,
-        oceans=False, coastlines=False, continents=False, # coastlines and continents
+        oceans=False, coastlines=False, land=False, # coastlines and land
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None,
         lonlocator=None, lonminorlocator=None,
@@ -1839,14 +1843,18 @@ class BasemapAxes(MapAxes):
         # Basemap axes setup
         # Coastlines, parallels, meridians
         if coastlines:
-            p = self.m.drawcoastlines(**rc['coastlines'], ax=self)
-        if continents:
-            p = self.m.fillcontinents(**rc['continents'], ax=self)
+            props = rc['coastlines']
+            p = self.m.drawcoastlines(**props, ax=self)
+        if land:
+            props = rc['land']
+            p = self.m.fillcontinents(ax=self)
+            for _ in p:
+                _.update(props)
 
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
-        tsettings = {'color':rc['xtick','color'], 'fontsize':rc['xtick','labelsize']}
+        tsettings = {'color':rc['xtick.color'], 'fontsize':rc['xtick.labelsize']}
         if latlocator is not None:
             if utils.isnumber(latlocator):
                 latlocator = AutoLocate(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
@@ -1928,8 +1936,16 @@ class BasemapAxes(MapAxes):
     @norecurse
     @check_edges
     @gridfix_basemap
+    @cmap_features
     def pcolorpoly(self, *args, **kwargs):
         return self.m.pcolor(*args, ax=self, **kwargs)
+
+    @norecurse
+    @check_edges
+    @gridfix_basemap
+    @cmap_features
+    def pcolormesh(self, *args, **kwargs):
+        return self.m.pcolormesh(*args, ax=self, **kwargs)
 
     @norecurse
     @check_centers
@@ -1977,8 +1993,12 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=(cartopy.crs.Projection instance).')
         # super().__init__(*args, map_projection=map_projection, **kwargs)
+        self._hold = None
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
-        super(GeoAxes, self).__init__(*args, **kwargs)
+        # self.number = kwargs.pop('number', None)
+        # super(GeoAxes, self).__init__(*args, **kwargs)
+        # below will call baseaxes, which will call geoaxes as the superclass
+        super().__init__(*args, map_projection=map_projection, **kwargs)
         self.outline_patch = None    # patch that provides the line bordering the projection.
         self.background_patch = None # patch that provides the filled background of the projection
         self.img_factories = []
@@ -2001,7 +2021,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         return geoaxes.GeoAxes, {'map_projection': self}
 
     def format(self, color=None,
-        oceans=False, coastlines=False, continents=False, # coastlines and continents
+        oceans=False, land=False, coastlines=False, # coastlines and continents
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
         **kwargs):
@@ -2014,7 +2034,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
         # Boundary for projection region
         outline = {'linewidth': rc['axes.linewidth'],
-                   'color':     rc['axes.edgecolor']}
+                   'edgecolor': rc['axes.edgecolor']}
         self.outline_patch.update(outline)
         # Make background patch invisible, so can color axes patch instead
         # See: https://stackoverflow.com/a/32208700/4970632
@@ -2065,11 +2085,11 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             print('Add coastlines.')
             feat = cfeature.NaturalEarthFeature('physical', 'coastline', '50m')
             self.add_feature(feat, **rc['coastlines'])
-        if continents:
+        if land:
             # self.add_feature(cfeature.LAND, **rc['continents'])
-            print('Add continents.')
+            print('Add land.')
             feat = cfeature.NaturalEarthFeature('physical', 'land', '50m')
-            self.add_feature(feat, **rc['continents'])
+            self.add_feature(feat, **rc['land'])
         if oceans:
             # self.add_feature(cfeature.OCEAN, **rc['oceans'])
             print('Add oceans.')
@@ -2097,7 +2117,13 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
     @check_edges
     @gridfix_cartopy
+    def pcolormesh(self, *args, **kwargs):
+        return super().pcolormesh(*args, **kwargs)
+
+    @check_edges
+    @gridfix_cartopy
     def pcolorpoly(self, *args, **kwargs):
+        print('Warning: pcolor() likely to be excrutiatingly slow with cartopy. Try pcolormesh() instead.')
         return super().pcolorpoly(*args, **kwargs)
 
     @check_centers
