@@ -250,6 +250,8 @@ def cmap_features(func):
         if isinstance(cmap, (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
         cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
+        # print('segments', cmap._segmentdata)
+        # print('dir', result, dir(result))
         result.set_cmap(cmap)
         # Optionally use same color for data in 'edge bins' as 'out of bounds' data
         # NOTE: This shouldn't mess up normal contour() calls because if we
