@@ -936,7 +936,7 @@ class BaseAxes(maxes.Axes):
             # title_base = self.title._transform.transform(self.title.get_position())[1]/fig.dpi
             title_height = self.title.get_size()/72
             line_spacing = self.title._linespacing
-            title_base = (line_spacing-1)*title_height + self.figure.gridspec.top*fig.height
+            title_base = line_spacing*title_height/2 + self.figure.gridspec.top*fig.height
             xpos = fig.left/fig.width + .5*(fig.width - fig.left - fig.right)/fig.width
             ypos = (title_base + line_spacing*title_height)/fig.height
             if suptitlepos=='title': # just place along axes if no title here
@@ -966,7 +966,9 @@ class BaseAxes(maxes.Axes):
                 self.title = self.text(*position, title, transform=transform,
                         ha=ha, va=va, **title_kw)
             # Reposition text
-            if titlepos=='left':
+            if titlepos=='center':
+                pass # do nothing
+            elif titlepos=='left':
                 self.title.update({'position':(0,1), 'ha':'left'})
             elif titlepos=='right':
                 self.title.update({'position':(1,1), 'ha':'right'})

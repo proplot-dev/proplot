@@ -46,6 +46,7 @@ Todo
 #------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
 import re
+import numpy as np
 import matplotlib.pyplot as plt
 from cycler import cycler
 from . import colortools
@@ -288,11 +289,19 @@ class rc_configurator(object):
         if len(alias)!=0:
             key = alias.pop() # use
         # First the special cycler
+        # NOTE: Generally if user uses 'C0', et cetera, assume they want to
+        # refer to the *default* cycler colors; so first reset
         if key=='cycle':
             if utils.isscalar(value):
                 value = value,
+            colors = colortools.Cycle('colorblind')
+            self['axes.prop_cycle'] = cycler('color', colors)
             colors = colortools.Cycle(*value)
-            rcParams['axes.prop_cycle'] = cycler('color', colors)
+            self['axes.prop_cycle'] = cycler('color', colors)
+            figs = list(map(plt.figure, plt.get_fignums()))
+            for fig in figs:
+                for ax in fig.axes:
+                    ax.set_prop_cycle(cycler('color', colors))
         # Apply global settings
         elif key in self._rcGlobals:
             self._rcGlobals[key] = value
