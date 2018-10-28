@@ -70,13 +70,12 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
    * For projection subplots, specify `projection='name'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.Projection` classes (the relevant cartopy class will be selected based on the `'name'` string).
    * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if axes numbers were not declared with `array`, the subplots are automatically numbered from 1 to n (row major).
    * `Basemap` instances are added as the attribute `m` their corresponding axes; create plots with (e.g.) `ax.m.contourf`. These instances are also overwritten to fix issues with `seams` on the edge of the map -- data will be circularly rolled and interpolated to map edges, so that seams are eliminated.
-### New x/y axis scales
+### New x/y axis scales, tick formatters, and tick locators
    * Added scale for **sine-weighted** x or y-axes. Invoke with `xscale='sine'` and `yscale='sine'`.
    * Added arbitrary scale factory that can create scales with custom cutoffs.
-### New x/y tick formatters and locators
-   * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
-   * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols
-   * Pass `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='linear'`.
+   * The new default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
+   * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols (as denoted by the names).
+   * Pass `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='log'`.
 ### Revised underlying issues with contour and pcolor commands
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
