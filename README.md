@@ -73,7 +73,7 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
 ### New x/y axis scales
    * Added scale for **sine-weighted** x or y-axes. Invoke with `xscale='sine'` and `yscale='sine'`.
    * Added arbitrary scale factory that can create scales with custom cutoffs.
-### Tick formatters/locators
+### New x/y tick formatters and locators
    * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
    * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols
    * Pass `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='lon'`, `locator='month'`, `locator='linear'`.
