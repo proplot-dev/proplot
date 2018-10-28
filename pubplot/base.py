@@ -1731,73 +1731,73 @@ class MapAxes(BaseAxes):
     # def pcolormesh(self):
     #     raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
     # Disable some methods to prevent weird shit from happening
-    message = 'Invalid plotting function for map projection axes.'
+    _message = 'Invalid plotting function for map projection axes.'
     @property
     def matshow(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def imshow(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def spy(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def bar(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def barh(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def hist(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def hist2d(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def errorbar(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def boxplot(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def violinplot(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def step(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def stem(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def hlines(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def vlines(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def axhline(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def axvline(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def axhspan(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def axvspan(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def fill_between(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def fill_betweenx(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def fill(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
     @property
     def stackplot(self):
-        raise NotImplementedError(self.message)
+        raise NotImplementedError(self._message)
 
 @docstring_fix
 class BasemapAxes(MapAxes):
@@ -2372,10 +2372,10 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values
     if clocator is None:
-        # clocator = getattr(mappable.norm, 'levels', None)
         clocator = getattr(mappable, 'levels', None)
-        step = 1+len(clocator)//20
-        clocator = clocator[::step]
+        if clocator is not None:
+            step = 1+len(clocator)//20
+            clocator = clocator[::step]
 
     # Determine major formatters and major/minor tick locators
     # Can pass clocator/cminorlocator as the *jump values* between the mappables

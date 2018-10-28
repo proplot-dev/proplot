@@ -1275,7 +1275,7 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Visualizations
 #------------------------------------------------------------------------------#
-def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.1):
+def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
