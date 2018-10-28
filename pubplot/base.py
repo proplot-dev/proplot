@@ -1669,9 +1669,10 @@ class PanelAxes(XYAxes):
         # Allocate invisible axes for drawing legend.
         # Returns the axes and the output of legend_factory().
         self.erase()
-        kwlegend = {'frameon':False, 'loc':'center',
-                    'borderaxespad':0,
-                    'bbox_transform':self.transAxes}
+        kwlegend = {'borderaxespad':  0,
+                    'frameon':        False,
+                    'loc':            'upper center',
+                    'bbox_transform': self.transAxes}
         kwlegend.update(kwargs)
         return self, legend_factory(self, handles, **kwlegend)
 
@@ -2266,16 +2267,14 @@ def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): 
     # Means we also have to overhaul some settings
     else:
         legends = []
-        if 'labelspacing' not in lsettings:
-            raise ValueError('Need to know labelspacing before drawing unaligned-column legends. Add it to settings.')
         for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
             lsettings.pop(override, None)
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
-        size = kwargs.get('fontsize', None) or globals('legend', 'fontsize')
-        spacing = kwargs.get('labelspacing', None) or globals('legend', 'labelspacing')
+        fontsize = lsettings.get('fontsize', None) or rc['legend.fontsize']
+        spacing = lsettings.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1/len(handles) # split up axes
-        interval = (((1 + labelspacing)*fontsize)/72) / \
+        interval = (((1 + spacing)*fontsize)/72) / \
                 (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
         # Iterate and draw
         for h,hs in enumerate(handles):
