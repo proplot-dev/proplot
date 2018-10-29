@@ -263,7 +263,8 @@ def scaled_channel_value(color, channel, space='hsl', scale=True):
 # Generalized colormap/cycle constructors
 #------------------------------------------------------------------------------#
 def Colormap(*args, light=True, extend='both',
-        ratios=1, resample=False, reverse=False,
+        xi=None, xf=None, # optionally truncate color range by these indices
+        ratios=1, resample=True, reverse=False,
         name=None, register=True, save=False, N=None, **kwargs):
     """
     Convenience function for generating colormaps in a variety of ways.
@@ -345,17 +346,57 @@ def Colormap(*args, light=True, extend='both',
     # Reverse
     if reverse:
         cmap = cmap.reversed()
-    # Optionally make extremes same color as map
-    offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-    if extend not in offset:
-        raise ValueError(f'Unknown extend option {extend}.')
-    if isinstance(cmap, mcolors.LinearSegmentedColormap):
-        # TODO: This only works for forcing separate triangle colors for contours
-        # Figure out workaround eventually
-        if resample:
-            cmap = cmap._resample(N-offset[extend]) # see mcm.get_cmap source
+    # Optionally clip edges or resample map.
+    # TODO: Write this.
+    if xi is not None or xf is not None:
+        if isinstance(cmap, mcolors.ListedColormap):
+            # Just sample indices for listed maps
+            slicer = slice(xi,xf)
+            try:
+                cmap = mcolors.ListedColormap(cmap.colors[slicer])
+            except Exception:
+                raise ValueError('Invalid indices for listed colormap.')
         else:
-            pass
+            # Trickier for segment data maps
+            # First get segmentdata and parse input
+            olddata = cmap._segmentdata
+            newdata = {}
+            if xi is None:
+                xi = 0
+            if xf is None:
+                xf = 1
+            # Next resample the segmentdata arrays
+            for key,xyy in olddata.items():
+                xyy = np.array(xyy)
+                x = xyy[:,0]
+                xleft = np.where(x>xi)[0]
+                xright = np.where(x<xf)[0]
+                if len(xleft)==0:
+                    raise ValueError(f'Invalid x minimum {xi}.')
+                if len(xright)==0:
+                    raise ValueError(f'Invalid x maximum {xf}.')
+                l, r = xleft[0], xright[-1]
+                newxyy = xyy[l:r+1,:].copy()
+                if l>0:
+                    left = xyy[l-1,1:] + (xi - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
+                    newxyy = np.concatenate(([[xi, *left]], newxyy), axis=0)
+                if r<len(x)-1:
+                    right = xyy[r,1:] + (xf - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
+                    newxyy = np.concatenate((newxyy, [[xf, *right]]), axis=0)
+                newxyy[:,0] = (newxyy[:,0] - xi)/(xf - xi)
+                newdata[key] = newxyy
+            # And finally rebuild map
+            kwextra = {}
+            if hasattr(cmap,'space'):
+                kwextra = dict(scale=False)
+            cmap = type(cmap)(cmap.name, newdata, **kwextra)
+    # TODO: This only works for forcing separate triangle colors for contours
+    # Figure out workaround eventually
+    if isinstance(cmap, mcolors.LinearSegmentedColormap) and resample:
+        offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
+        if extend not in offset:
+            raise ValueError(f'Unknown extend option {extend}.')
+        cmap = cmap._resample(N-offset[extend]) # see mcm.get_cmap source
     # Optionally register a colormap
     if name and register:
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in categories_default.items()

@@ -233,13 +233,14 @@ def cmap_features(func):
         # Get levels, if they were None
         # Otherwise we just have to resample the colormap segmentdata, by
         # default picking enough colors to look like perfectly smooth gradations
-        if levels is None and hasattr(result, 'levels'):
+        if not utils.isvector(levels) and hasattr(result, 'levels'):
             # print('Automatically selected levels.')
             levels = result.levels
         elif levels is None:
             cmap_kw.update({'resample':True}) # default pcolormesh behavior is just to resample
         # Set normalizer
         if cmap_kw.get('resample',None):
+            # print('resampled')
             if levels is not None:
                 N = len(levels)
                 norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
@@ -2507,7 +2508,7 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     # alpha, then alpha is applied after.
     # See: https://stackoverflow.com/a/35672224/4970632
     alpha = cb.solids.get_alpha()
-    if alpha<1:
+    if alpha is not None and alpha<1:
         print('Performing manual alpha-blending for colorbar solids.')
         # First get reference color
         reference = mappable.axes.get_facecolor() # the axes facecolor
