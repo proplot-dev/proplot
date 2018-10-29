@@ -57,6 +57,7 @@ from matplotlib import rcParams, style
 # Default settings
 # List of linked settings
 rcGlobals = {
+    # Apply these ones to list of rcParams
     'color' :     'k',
     'small':      8,
     'large':      9,
@@ -66,11 +67,12 @@ rcGlobals = {
     'left':       True,
     'right':      False,
     'ticklen':    4.0,
-    'tickratio':  0.5, # ratio of major-to-minor tick size
-    'minorwidth': 0.8, # ratio of major-to-minor tick width
     'tickpad':    2.0,
     'inout' :     'out',
     'fontname':   'DejaVu Sans', # simple alias
+    # Special ones
+    'tickratio':  0.5, # ratio of major-to-minor tick size
+    'minorwidth': 0.8, # ratio of major-to-minor tick width
     }
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
@@ -110,6 +112,7 @@ rcDefaults = {
     'axes.labelweight':        'normal',
     'axes.grid':               True,
     'axes.labelpad':           3.0,
+    'axes.axisbelow':          False, # for ticks/gridlines *above* patches, *below* lines, use 'lines'
     'xtick.minor.visible' :    True,
     'ytick.minor.visible' :    True,
     'grid.color':              'k',
