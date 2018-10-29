@@ -70,19 +70,20 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
    * For projection subplots, specify `projection='name'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.Projection` classes (the relevant cartopy class will be selected based on the `'name'` string).
    * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if axes numbers were not declared with `array`, the subplots are automatically numbered from 1 to n (row major).
    * `Basemap` instances are added as the attribute `m` their corresponding axes; create plots with (e.g.) `ax.m.contourf`. These instances are also overwritten to fix issues with `seams` on the edge of the map -- data will be circularly rolled and interpolated to map edges, so that seams are eliminated.
-### New x/y axis scales
-   * Added scale for **sine-weighted** x or y-axes. Invoke with `xscale='sine'` and `yscale='sine'`.
+### New x/y axis scales, tick formatters, and tick locators
+   * Added scale for **sine-weighted** and **inverse-weighted** x or y-axes. Invoke with `[x|y]scale='sine'` and `[x|y]scale='inverse'`. The former is useful for plots against geographic latitude, the latter is useful where you wish to have both **wavenumber and wavelength** labeled on the opposite spines.
    * Added arbitrary scale factory that can create scales with custom cutoffs.
-### Tick formatters/locators
-   * Default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
-   * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols
-   * Pass `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='lon'`, `locator='month'`, `locator='linear'`.
+   * The new default `Formatter` class for ticklabels renders numbers into the style you'll want 90% of the time.
+   * Pass `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols (as denoted by the names).
+   * Pass `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='log'`.
 ### Revised underlying issues with contour and pcolor commands
    * Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
    * The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
 ### Enhanced settings management
-   * Added the new `rc` command to change various settings. This command controls entries to the built-in `matplotlib.rcParams` dictionary along with the new, custom-built `matplotlib.rcExtras` dictionary.
-   * Special arguments **integrate** settings across a wide range of pyplot objects -- for example, `plot.rc(linewidth=1, small=8, large=9)` makes all axis back ground lines (axes spines, tick marks, colorbar edges, legend boxes, ...) have 1pt linewidth, makes the `small` size font (used for tick labels, axis legends, ...) 8pt, and makes the `large` size font (used for titles, 'abc' subplot labelling, ...) 9pt.
+   * Added the new `rc_configurator` class suitable for changing global settings. An instance named `rc` is created when `pubplot` is imported, and it can be used to change built-in `matplotlib.rcParams` settings, a few custom "`rcSpecial`" settings, and some special "global" settings that modify several other settings at once.
+   * Example: Use `plot.rc['linewidth'] = 2` or `plot.rc.linewidth = 2` to increase the thickness of axes spines, major tick marks, and minor tick marks. Use `plot.rc['color'] = 'red'` or `plot.rc.color = 'red'` to make all spines, tick marks, tick labels, and axes labels red. There is also `plot.rc['small']` and `plot.rc['large']` to control axes font sizes. Update any arbitrary `rcParams` setting with e.g. `plot.rc['legend.frameon'] = False`.
+   * Use `plot.rc.reset()` to reset everything to the initial state. This is also called every time a figure's `draw` method is invoked (e.g. when a figure is rendered by the matplotlib backend or saved to file).
+   
 ### Colormaps, color cycles, and color names
    * Added **new colormap class** analagous to `LinearSegmentedColormap`, called `PerceptuallyUniformColormap`, which interpolates through hue, saturation, and luminance space (with hues allowed to vary circularly). Choose from either of 4 HSV-like colorspaces: classic HSV, perceptually uniform HCL, or HSLuv/HPLuv (which are forms of HCL adapted for convenient use with colormaps; see [this link](http://www.hsluv.org/comparison/)).
    * Generate perceptually uniformly varying colormaps on-the-fly by passing a **dictionary** to any plotting function that accepts the `cmap`keyword argument -- for example, `ax.contourf(..., cmap=dict(h=hues, l=lums, s=sats))`. The arguments can be lists of numbers or **color strings**, in which case the corresponding channel value (hue, saturation, or luminance) for that color will be looked up and applied.
