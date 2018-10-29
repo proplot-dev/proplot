@@ -260,7 +260,15 @@ def cmap_features(func):
         if isinstance(cmap, (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
         cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
-        result.set_cmap(cmap)
+        try:
+            result.set_cmap(cmap)
+        except Exception:
+            print('Converting to RGBA first.')
+            print(type(cmap))
+            if not cmap._isinit:
+                cmap._init()
+            cmap = mcolors.LinearSegmentedColormap.from_list(cmap.name, cmap._lut)
+            result.set_cmap(cmap)
         # Fix result
         # NOTE: Recursion yo!
         if name=='cmapline':

@@ -297,7 +297,7 @@ def Colormap(*args, light=True, extend='both',
     Since collection API does nothing to underlying data or cmap, must be
     something done by pcolormesh function.
     """
-    N = N or 256 # default
+    N = N or 1024 # default
     cmaps = []
     name = name or 'custom' # must have name, mcolors utilities expect this
     if len(args)==0:
@@ -508,7 +508,25 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                     xyy[j] = scaled_channel_value(y, key, space, scale) # also *scales* values to 99, 99, 359
                 segmentdata[key][i] = xyy
         # Initialize
-        super().__init__(name, segmentdata, gamma=1.0, **kwargs)
+        super().__init__(name, segmentdata, **kwargs)
+
+    def reversed(self, name=None):
+        """
+        Reverse colormap.
+        """
+        if name is None:
+            name = self.name + '_r'
+        def factory(dat):
+            def func_r(x):
+                return dat(1.0 - x)
+            return func_r
+        data_r = {key: (factory(data) if callable(data) else
+                        [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)])
+                  for key, data in self._segmentdata.items()}
+        return PerceptuallyUniformColormap(name, data_r,
+                scale=False,
+                space=self.space,
+                gamma=self._gamma)
 
     def _init(self):
         """
@@ -1257,7 +1275,9 @@ def register_cmaps():
             else:
                 cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=N)
         # Register as ListedColormap or LinearSegmentedColormap
-        if not isinstance(cmap, mcolors.Colormap): # i.e. we did not load segmentdata directly
+        if isinstance(cmap, mcolors.Colormap): # i.e. we did not load segmentdata directly
+            cmap_r = cmap.reversed()
+        else:
             if 'lines' in name.lower():
                 cmap   = mcolors.ListedColormap(cmap)
                 cmap_r = cmap.reversed() # default name is name+'_r'
