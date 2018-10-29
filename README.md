@@ -69,7 +69,7 @@ Convenience feature: `[bottom|right][colorbar|legend][s]=True` to modify the pan
 ### Mapping toolkit integration
    * For projection subplots, specify `projection='name'` with either `package='basemap'` or `package='cartopy'`. Extra arguments to `subplot` will be passed to the `basemap.Basemap` and `cartopy.crs.Projection` classes (the relevant cartopy class will be selected based on the `'name'` string).
    * Control which subplots are projection subplots with `maps=[n1,n2,...]`, where numbers correspond to the subplot array number. Note that if axes numbers were not declared with `array`, the subplots are automatically numbered from 1 to n (row major).
-   * `Basemap` instances are added as the attribute `m` their corresponding axes; create plots with (e.g.) `ax.m.contourf`. These instances are also overwritten to fix issues with `seams` on the edge of the map -- data will be circularly rolled and interpolated to map edges, so that seams are eliminated.
+   * Access basemap plotting utilities directly as an axes method, thanks to the `BasemapAxes` subclass. Several plotting methods are also overridden to fix issues with the "seam" on the edge of the map (data is circularly rolled and interpolated to map edges, so that seams are eliminated).
 ### New x/y axis scales, tick formatters, and tick locators
    * Added scale for **sine-weighted** and **inverse-weighted** x or y-axes. Invoke with `[x|y]scale='sine'` and `[x|y]scale='inverse'`. The former is useful for plots against geographic latitude, the latter is useful where you wish to have both **wavenumber and wavelength** labeled on the opposite spines.
    * Added arbitrary scale factory that can create scales with custom cutoffs.
