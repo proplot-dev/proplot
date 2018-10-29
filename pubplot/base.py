@@ -1705,7 +1705,7 @@ class PanelAxes(XYAxes):
                         )
                 subspec = gridspec[1,i]
             # Next redraw axes
-            self.remove() # save memory
+            # self.remove() # save memory
             self.set_visible(False)
         # Allocate axes for drawing colorbar.
         # Returns the axes and the output of colorbar_factory().
@@ -2213,6 +2213,7 @@ def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): 
     for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
         if candidate in lsettings:
             hsettings[candidate] = lsettings.pop(candidate)
+    hsettings.update({'alpha':1.0}) # always maximimum opacity
 
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
@@ -2222,6 +2223,15 @@ def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): 
     #      of iterables for False and if the former, will turn into list of iterables)
     if handles is None:
         handles = ax.get_legend_handles_labels()[0]
+    for i,handle in enumerate(handles):
+        if hasattr(handle, 'cmap'):
+            # Make sure we sample the *center* of the colormap
+            print('Warning: Creating legend for colormap object.')
+            size = np.mean(handle.get_sizes())
+            handles[i] = ax.scatter([0], [0],
+                                 markersize=size,
+                                 color=[handle.cmap(0.5)],
+                                 label=handle.get_label())
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
         align = not list_of_lists
@@ -2280,14 +2290,18 @@ def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): 
         for h,hs in enumerate(handles):
             bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
             leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs),
+                loc='center',
+                frameon=False,
+                borderpad=0,
                 bbox_to_anchor=bbox,
-                frameon=False, borderpad=0, loc='center', **lsettings) # _format_legend is overriding original legend Method
+                **lsettings) # _format_legend is overriding original legend Method
             legends.append(leg)
         for l in legends[:-1]:
             ax.add_artist(l) # because matplotlib deletes previous ones
     # Properties for legends
     outline = {'linewidth': rc['axes.linewidth'],
-                'color':    rc['axes.edgecolor']}
+               'edgecolor': rc['axes.edgecolor'],
+               'facecolor': rc['axes.facecolor']}
     for leg in legends:
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
@@ -2402,8 +2416,13 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         values = values[values_min:values_max+1]
         if values[0]==mappable.norm.vmin:
             normfix = True
-        if i==1: # prevent annoying major/minor overlaps where one is slightly shifted left/right
-            values = [v for v in values if not any(v>=o-abs(v)/1000 and v<=o+abs(v)/1000 for o in fixed)] # floating point weirdness is fixed below
+        if i==1:
+            # Prevent annoying major/minor overlaps where one is slightly shifted left/right
+            # Consider floating point weirdness too
+            eps = 1e-10
+            length = len(values)
+            values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
+            print(f'Removed {length-len(values)}/{length} minor ticks(s).')
         fixed = values # record as new variable
         locators.append(Locator(fixed)) # final locator object
     # Next the formatter
@@ -2481,6 +2500,29 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     # Set up the label
     if clabel is not None:
         axis.label.update({'text':clabel})
+    # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
+    # because blending will occur, will get colored lines instead of white ones;
+    # need to perform manual alpha blending)
+    # NOTE: For some reason cb solids uses listed colormap with always 1.0
+    # alpha, then alpha is applied after.
+    # See: https://stackoverflow.com/a/35672224/4970632
+    alpha = cb.solids.get_alpha()
+    if alpha<1:
+        print('Performing manual alpha-blending for colorbar solids.')
+        # First get reference color
+        reference = mappable.axes.get_facecolor() # the axes facecolor
+        reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
+        # Next get solids
+        reference = [1,1,1] # override?
+        alpha = 1 - (1 - alpha)**2 # make more colorful
+        colors = cb.solids.get_cmap().colors
+        colors = np.array(colors)
+        for i in range(3): # Do not include the last column!
+            colors[:,i] = (reference[i] - alpha) + alpha*colors[:,i]
+        cmap = mcolors.ListedColormap(colors, name='colorbar-fix')
+        cb.solids.set_cmap(cmap)
+        cb.solids.set_alpha(1.0)
+        # cb.solids.set_cmap()
     # Fix pesky white lines between levels + misalignment with border due to rasterized blocks
     cb.solids.set_linewidth(0.2) # something small
     cb.solids.set_edgecolor('face')

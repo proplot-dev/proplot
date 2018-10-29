@@ -90,7 +90,7 @@ def Scale(scale, **kwargs):
     args = []
     if utils.isvector(scale):
         scale, args = scale[0], scale[1:]
-    print('scale', scale, args)
+    # print('scale', scale, args)
     if scale in scales and not args:
         pass # already registered
     elif scale=='cutoff':
@@ -187,12 +187,15 @@ def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
 
 class MercatorLatitudeScale(mscale.ScaleBase):
     """
+    See: https://matplotlib.org/examples/api/custom_scale_example.html
     The scale function:
         ln(tan(y) + sec(y))
     The inverse scale function:
         atan(sinh(y))
     Applies user-defined threshold below +/-90 degrees above and below which nothing
     will be plotted. See: http://en.wikipedia.org/wiki/Mercator_projection
+    Mercator can actually be useful in some scientific contexts; one of Libby's
+    papers uses it I think.
     """
     name = 'mercator'
     def __init__(self, axis, *, thresh=np.deg2rad(85), **kwargs):
@@ -437,7 +440,6 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     """
     # Do nothing, and return None if locator is None
     if isinstance(locator, mticker.Locator):
-        print('hello!', locator)
         return locator
     # Decipher user input
     if locator is None:
@@ -448,7 +450,10 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         else:
             locator = mticker.AutoLocator(*args, **kwargs)
     elif type(locator) is str: # dictionary lookup
-        if locator not in locators:
+        if locator=='logminor':
+            locator = 'log'
+            kwargs.update({'subs':np.arange(0,10)})
+        elif locator not in locators:
             raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
         locator = locators[locator](*args, **kwargs)
     elif utils.isscalar(locator): # scalar variable
@@ -550,7 +555,32 @@ def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf]):
     # And create object
     return mticker.FuncFormatter(f)
 
+#------------------------------------------------------------------------------#
+# Formatting with prefixes
+#------------------------------------------------------------------------------#
+def PrefixSuffixFormatter(*args, prefix=None, suffix=None, **kwargs):
+    """
+    Arbitrary prefix and suffix in front of values.
+    """
+    prefix = prefix or ''
+    suffix = suffix or ''
+    def f(value, location):
+        # Finally use default formatter
+        func = CustomFormatter(*args, **kwargs)
+        return prefix + func(value, location) + suffix
+    # And create object
+    return mticker.FuncFormatter(f)
+
+def MoneyFormatter(*args, **kwargs):
+    """
+    Arbitrary prefix and suffix in front of values.
+    """
+    # And create object
+    return PrefixSuffixFormatter(*args, prefix='$', **kwargs)
+
+#------------------------------------------------------------------------------#
 # Formatters for dealing with one axis in geographic coordinates
+#------------------------------------------------------------------------------#
 def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
     """
     Generalized function for making LatFormatter and LonFormatter.
@@ -588,7 +618,9 @@ def LonFormatter(*args, **kwargs):
     """
     return CoordinateFormatter(*args, cardinal='WE', **kwargs)
 
+#------------------------------------------------------------------------------#
 # Formatters with fractions
+#------------------------------------------------------------------------------#
 def FracFormatter(number, symbol):
     """
     Format as fractions, multiples of some value, e.g. a physical constant.
@@ -665,6 +697,7 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'logit':     mticker.LogitFormatter,
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
+    '$':         MoneyFormatter,
     'pi':        PiFormatter,
     'e':         eFormatter,
     'deg':       CoordinateFormatter,

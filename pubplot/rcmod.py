@@ -67,7 +67,7 @@ rcGlobals = {
     'right':      False,
     'ticklen':    4.0,
     'tickratio':  0.5, # ratio of major-to-minor tick size
-    'minorwidth': 0.7, # ratio of major-to-minor tick width
+    'minorwidth': 0.8, # ratio of major-to-minor tick width
     'tickpad':    2.0,
     'inout' :     'out',
     'fontname':   'DejaVu Sans', # simple alias
@@ -145,7 +145,7 @@ rcDefaults = {
     'legend.handletextpad' :   0.5,
     'legend.handlelength' :    1.5,
     'legend.columnspacing' :   1,
-    'legend.facecolor' :       'inherit',
+    'legend.facecolor' :       'w',
     'legend.numpoints' :       1,
     'legend.borderpad' :       0.5,
     'legend.borderaxespad' :   0,

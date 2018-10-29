@@ -2,6 +2,7 @@
 .session.vim
 .vimsession
 .*.sw[a-z]
+lottery*
 
 # Private files
 *.pdf
