@@ -264,7 +264,6 @@ def cmap_features(func):
             result.set_cmap(cmap)
         except Exception:
             print('Converting to RGBA first.')
-            print(type(cmap))
             if not cmap._isinit:
                 cmap._init()
             cmap = mcolors.LinearSegmentedColormap.from_list(cmap.name, cmap._lut)

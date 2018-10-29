@@ -98,7 +98,9 @@ space_scales = {
     'rgb': (1,1,1,1),
     'hsv': (1,1,1,1),
     'hsl': (359,99,99,1),
+    # 'hpl': (359,1,99,1),
     'hpl': (359,99,99,1),
+    # 'hpl': (1,1,1,1),
     'hcl': (359,99,99,1),
     }
 # Aliases
@@ -553,7 +555,12 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         """
         Return a new color map with *N* entries.
         """
-        return PerceptuallyUniformColormap(self.name, self._segmentdata, space=self.space, scale=False, N=N)
+        self.N = N # that easy
+        return self
+        # return PerceptuallyUniformColormap(self.name, self._segmentdata,
+        #         space=self.space,
+        #         scale=False,
+        #         N=N)
 
     @staticmethod
     def from_hsl(name, h=1.0, s=1.0, l=[1,0.2], c=None, a=None,
