@@ -15,12 +15,10 @@ Scales:
   * Way to think of these is that *every single value you see on an axes first
     gets secretly converted through some equation*, e.g. logarithm, and plotted
     linearly in that transformation space.
-  * Special:
-      - __init__() not defined on base class but *must* be defined for subclass.
   * Methods include:
       - get_transform(), which should return an mtransforms.Transform instance
       - set_default_locators_and_formatters(), which should return
-        locators and formatters
+        default locators and formatters
       - limit_range_for_scale(), which can be used to raise errors/clip
         stuff not within that range. From Mercator example: unlike the
         autoscaling provided by the tick locators, this range limiting will
@@ -70,9 +68,12 @@ Normalizers:
 # Imports
 #------------------------------------------------------------------------------#
 import re
+from . import utils
+from fractions import Fraction
+from types import FunctionType
 import numpy as np
 import numpy.ma as ma
-from fractions import Fraction
+import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
 import matplotlib.scale as mscale
@@ -81,7 +82,24 @@ import matplotlib.transforms as mtransforms
 #------------------------------------------------------------------------------#
 # Tick scales
 #------------------------------------------------------------------------------#
-def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
+scales = ['linear','log','symlog','logit']
+def Scale(scale, **kwargs):
+    """
+    Generate arbitrary scale object.
+    """
+    args = []
+    if utils.isvector(scale):
+        scale, args = scale[0], scale[1:]
+    # print('scale', scale, args)
+    if scale in scales and not args:
+        pass # already registered
+    elif scale=='cutoff':
+        scale = CutoffScaleFactory(*args, **kwargs)
+    else:
+        raise ValueError(f'Unknown scale {scale}.')
+    return scale
+
+def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
     """
     Constructer for scale with custom cutoffs. Three options here:
       1. Put a 'cliff' between two numbers (default).
@@ -96,7 +114,7 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
     is because actual cutoffs were 0.1 away (and tick locs are 0.2 apart).
     """
     scale_name = name # have to copy to different name
-    class CustomScale(mscale.ScaleBase):
+    class CutoffScale(mscale.ScaleBase):
         # Declare name
         name = scale_name
         def __init__(self, axis, **kwargs):
@@ -104,12 +122,12 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
             self.name = scale_name
 
         def get_transform(self):
-            return self.CustomTransform()
+            return self.CutoffTransform()
 
         def set_default_locators_and_formatters(self, axis):
             pass # for now default can be same as for ScaleBase
 
-        class CustomTransform(mtransforms.Transform):
+        class CutoffTransform(mtransforms.Transform):
             # Create transform object
             input_dims = 1
             output_dims = 1
@@ -134,9 +152,9 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
             def transform_non_affine(self, a):
                 return self.transform(a)
             def inverted(self):
-                return CustomScale.InvertedCustomTransform()
+                return CutoffScale.InvertedCutoffTransform()
 
-        class InvertedCustomTransform(mtransforms.Transform):
+        class InvertedCutoffTransform(mtransforms.Transform):
             input_dims = 1
             output_dims = 1
             is_separable = True
@@ -160,21 +178,24 @@ def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
             def transform_non_affine(self, a):
                 return self.transform(a)
             def inverted(self):
-                return CustomScale.CustomTransform()
+                return CutoffScale.CutoffTransform()
 
     # Register and return
-    mscale.register_scale(CustomScale)
+    mscale.register_scale(CutoffScale)
     print(f'Registered scale "{scale_name}".')
-    return CustomScale
+    return scale_name
 
 class MercatorLatitudeScale(mscale.ScaleBase):
     """
+    See: https://matplotlib.org/examples/api/custom_scale_example.html
     The scale function:
         ln(tan(y) + sec(y))
     The inverse scale function:
         atan(sinh(y))
     Applies user-defined threshold below +/-90 degrees above and below which nothing
     will be plotted. See: http://en.wikipedia.org/wiki/Mercator_projection
+    Mercator can actually be useful in some scientific contexts; one of Libby's
+    papers uses it I think.
     """
     name = 'mercator'
     def __init__(self, axis, *, thresh=np.deg2rad(85), **kwargs):
@@ -394,115 +415,138 @@ mscale.register_scale(SineLatitudeScale)
 mscale.register_scale(MercatorLatitudeScale)
 
 #------------------------------------------------------------------------------#
-# Tick locators
+# Helper functions for instantiating arbitrary Locator and Formatter classes
+# When calling these functions, the format() method should automatically
+# detect presence of date axis by testing if unit converter is on axis is
+# DateConverter instance
+# See: https://matplotlib.org/api/units_api.html
+# And: https://matplotlib.org/api/dates_api.html
+# Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py
+# The axis_date() method just sets the converter to the date one
 #------------------------------------------------------------------------------#
-def Locator(locator, *args, axis='major', **kwargs):
+def Locator(locator, *args, minor=False, time=False, **kwargs):
     """
     Default locator. Can be instantiated with a bunch of
     different objects.
-    Notes:
-     * Default FixedLocator includes 'nbins' option to subsample
-       the points passed so that no more than 'nbins' ticks are selected.
+    Argument:
+        Can be number (specify multiples along which ticks
+        are drawn), list (tick these positions), or string for dictionary
+        lookup of possible locators.
+    Optional:
+        time: whether we want 'datetime' locators
+        kwargs: passed to locator when instantiated
+    Note: Default Locator includes 'nbins' option to subsample
+    the points passed so that no more than 'nbins' ticks are selected.
     """
-    # Declare dictionary
-    locators = {'log': mtransforms.LogLocator,
-        'auto':      mtransforms.AutoLocator,
-        'maxn':      mtransforms.MaxNLocator,
-        'linear':    mtransforms.LinearLocator,
-        'log':       mtransforms.LogLocator,
-        'multiple':  mtransforms.MultipleLocator,
-        'fixed':     mtransforms.FixedLocator,
-        'index':     mtransforms.IndexLocator,
-        'null':      mtransforms.NullLocator,
-        'symmetric': mtransforms.SymmetricalLogLocator,
-        'logit':     mtransforms.LogitLocator,
-        'autominor': mtransforms.AutoMinorLocator,
-        }
-    # Return instance
-    if locator is None or isinstance(locator, mticker.Locator):
-        # Do nothing, and return None if locator is None
-        pass
-    elif type(locator) is str:
-        # Lookup from dictionary
-        locator = locators.get(locator,None)
-        if locator is None:
+    # Do nothing, and return None if locator is None
+    if isinstance(locator, mticker.Locator):
+        return locator
+    # Decipher user input
+    if locator is None:
+        if time:
+            locator = mticker.AutoDateLocator(*args, **kwargs)
+        elif minor:
+            locator = mticker.AutoMinorLocator(*args, **kwargs)
+        else:
+            locator = mticker.AutoLocator(*args, **kwargs)
+    elif type(locator) is str: # dictionary lookup
+        if locator=='logminor':
+            locator = 'log'
+            kwargs.update({'subs':np.arange(0,10)})
+        elif locator not in locators:
             raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
-    elif not hasattr(locator,'__init__'):
-        # Simple multiple of this value
-        locator = mticker.MultipleLocator(locator)
+        locator = locators[locator](*args, **kwargs)
+    elif utils.isscalar(locator): # scalar variable
+        locator = mticker.MultipleLocator(locator, *args, **kwargs)
     else:
-        # Fixed tickmarks
-        locator = mticker.FixedLocator(np.sort(locator)) # not necessary
-        # locator = mticker.FixedLocator(np.array(locator))
+        locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
     return locator
 
-def AutoLocate(min_, max_, base=5):
+def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     """
-    Return auto-generated levels in the provided interval. Minimum and maximum
-    values will be rounded to the nearest number divisible by the specified base.
-    Notes:
-     * This is *outdated*. Instead should just use MultipleLocator. Not
-       necessary!
+    As above, auto-interpret user input.
+    Includes option for %-formatting of numbers and dates, passing a list of strings
+    for explicitly overwriting the text.
+    Argument:
+        can be number (specify max precision of output), list (set
+        the strings on integers of axis), string (for .format() or percent
+        formatting), string for dictionary lookup of possible
+        formatters, Formatter instance, or function.
+    Optional:
+        time: whether we want 'datetime' formatters
+        kwargs: passed to locator when instantiated
     """
-    _round = lambda x: base*round(float(x)/base)
-    return np.arange(_round(min_), _round(max_)+base/2, base)
-
-def LatLocator():
-    """
-    Wrapper around MultipleLocator, chooses points that are somewhere.
-    """
-    return
-
-def LonLocator():
-    """
-    Wrapper around MultipleLocator, chooses points that are somewhere.
-    """
-    return
-
-class InverseLocator(mticker.MultipleLocator):
-    """
-    Locate ticks linear in 1/x.
-    """
-    def __init__(self, numticks=5):
-        self.numticks = numticks
-    def __call__(self):
-        vmin, vmax = self.axis.get_view_interval()
-        ticklocs = np.reciprocal(np.linspace(1/vmax, 1/vmin, self.numticks))
-        return self.raise_if_exceeds(ticklocs)
-    def tick_values(vmin, vmax):
-        pass
+    # Already have a formatter object
+    if isinstance(formatter, mticker.Formatter): # formatter object
+        return formatter
+    # Interpret user input
+    if formatter is None: # by default use my special super cool formatter, better than original
+        if time:
+            formatter = mdates.AutoDateFormatter(*args, **kwargs)
+        else:
+            formatter = CustomFormatter(*args, tickrange=tickrange, **kwargs)
+    elif isinstance(formatter, FunctionType):
+        formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
+    elif type(formatter) is str: # assumption is list of strings
+        if '{x}' in formatter:
+            formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs) # new-style .format() formatter
+        elif '%' in formatter:
+            if time:
+                formatter = mdates.DateFormatter(formatter, *args, **kwargs) # %-style, dates
+            else:
+                formatter = mticker.FormatStrFormatter(formatter, *args, **kwargs) # %-style, numbers
+        else:
+            if formatter not in formatters:
+                raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
+            if formatter in ['deg','deglon','deglat','lon','lat']:
+                kwargs.update({'deg':('deg' in formatter)})
+            formatter = formatters[formatter](*args, **kwargs)
+    elif utils.isscalar(formatter): # interpret scalar number as *precision*
+        formatter = CustomFormatter(formatter, *args, tickrange=tickrange, **kwargs)
+    else:
+        formatter = mticker.IndexFormatter(formatter) # list of strings on the integers
+        # formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
+    return formatter
 
 #-------------------------------------------------------------------------------
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
 # Create pseudo-class functions that actually return auto-generated formatting
 # classes by passing function references to Funcformatter
 #-------------------------------------------------------------------------------
-def Formatter(precision=None, tickrange=None):
+# First the default formatter
+def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf]):
     """
     Format as a number, with N sigfigs, and trimming trailing zeros.
     Recall, must pass function in terms of n (number) and loc.
+    Arguments:
+        precision: max number of digits after decimal place (default 3)
+        tickrange: range [min,max] in which we draw tick labels (allows removing
+            tick labels but keeping ticks in certain region; default [-np.inf,np.inf])
     For minus sign scaling, see: https://tex.stackexchange.com/a/79158/73149
     """
     # Format definition
+    if tickrange is None:
+        tickrange = [-np.inf, np.inf]
+    elif utils.isscalar(tickrange): # use e.g. -1 for no ticks
+        tickrange = [-tickrange, tickrange]
     def f(value, location):
         # Exit if not in tickrange
-        if tickrange is not None:
-            eps = abs(value)/1000
-            if (value+eps)<tickrange[0] or (value-eps)>tickrange[1]:
-                return '' # avoid some ticks
+        eps = abs(value)/1000
+        if (value+eps)<tickrange[0] or (value-eps)>tickrange[1]:
+            return '' # avoid some ticks
         # Return special string
-        # * Note CANNOT use "g" because "g" precision operator specifies count of
+        # * Note *cannot* use 'g' because 'g' precision operator specifies count of
         #   significant digits, not places after decimal place.
         # * There is no format that specifies digits after decimal place AND trims trailing zeros.
-        decimals = precision or 3
-        string = f'{{{0}:.{decimals:d}f}}'.format(value) # f-string compiled, then format run
+        string = f'{{{0}:.{precision:d}f}}'.format(value) # f-string compiled, then format run
         if '.' in string: # g-style trimming
             string = string.rstrip('0').rstrip('.')
         if string=='-0': # special case
             string = '0'
         if value>0 and string=='0':
-            pass
-            # raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
+            raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
+            # pass
+        # Use unicode minus instead of ASCII hyphen (which is default)
         string = re.sub('-', '−', string) # pure unicode minus
         # string = re.sub('-', '${-}$', string) # latex version
         # string = re.sub('-', u'\u002d', string) # unicode hyphen minus, looks same as hyphen
@@ -511,116 +555,154 @@ def Formatter(precision=None, tickrange=None):
     # And create object
     return mticker.FuncFormatter(f)
 
-def LambdaFormatter(transform, *args, **kwargs):
+#------------------------------------------------------------------------------#
+# Formatting with prefixes
+#------------------------------------------------------------------------------#
+def PrefixSuffixFormatter(*args, prefix=None, suffix=None, **kwargs):
     """
-    Arbitrary formatter to run value through some operation, the
-    transform lambda function, before passing to Formatter.
+    Arbitrary prefix and suffix in front of values.
     """
-    # Format defintion
+    prefix = prefix or ''
+    suffix = suffix or ''
     def f(value, location):
-        value = transform(value) # take the inverse
-        formatter = Formatter(*args, **kwargs)
-        return formatter(value, location)
-    return mticker.FuncFormatter(f)
-
-def InverseFormatter(*args, **kwargs):
-    """
-    Just take the inverse, then run through Formatter.
-    """
-    # Format definition
-    def f(value, location):
-        value = 1.0/value # take the inverse
-        formatter = Formatter(*args, **kwargs)
-        return formatter(value, location)
-    return mticker.FuncFormatter(f)
-
-def LatFormatter(precision=None, cardinal=False, sine=False, degree=True):
-    """
-    Format latitude labels; can convert sine-lats back into lats (for
-    areal weighting) and can apply N/S instead of postiive/negative.
-    """
-    def f(value, location):
-        # Convert from sine to latitude number
-        if sine:
-            if abs(value)>1: raise ValueError("Sine latitudes must be in range [-1,1].")
-            value = np.arcsin(value)*180/np.pi
-        # Optional degree symbol
-        suffix = ''
-        if degree:
-            suffix = '\N{DEGREE SIGN}' # Unicode lookup by name
-        # Suffix to apply
-        if cardinal:
-            if value<0:
-                value *= -1
-                suffix += 'S'
-            elif value>0:
-                suffix += 'N'
-        # string = formatstr % (value, string)
-        # Return special string, as in Formatter method
-        decimals = precision or 3
-        string = f'{{{0}:.{decimals:d}f}}'.format(value) # f-string compiled, then call format
-        if '.' in string: # g-style trimming
-            string = string.rstrip('0').rstrip('.')
-        if string=='-0': # special case
-            string = '0'
-        string = re.sub('-', '−', string) # pure unicode minus
-        return string + suffix
+        # Finally use default formatter
+        func = CustomFormatter(*args, **kwargs)
+        return prefix + func(value, location) + suffix
     # And create object
     return mticker.FuncFormatter(f)
 
-def LonFormatter(precision=None, cardinal=False, degree=True):
+def MoneyFormatter(*args, **kwargs):
     """
-    Format latitude labels; can convert sine-lats back into lats (for
-    areal weighting) and can apply N/S instead of postiive/negative.
+    Arbitrary prefix and suffix in front of values.
+    """
+    # And create object
+    return PrefixSuffixFormatter(*args, prefix='$', **kwargs)
+
+#------------------------------------------------------------------------------#
+# Formatters for dealing with one axis in geographic coordinates
+#------------------------------------------------------------------------------#
+def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
+    """
+    Generalized function for making LatFormatter and LonFormatter.
+    Requires only which string to use for points left/right of zero (e.g. W/E, S/N).
     """
     def f(value, location):
         # Optional degree symbol
         suffix = ''
-        if degree:
+        if deg:
             suffix = '\N{DEGREE SIGN}' # Unicode lookup by name
-        # Suffix to apply
-        if cardinal:
+        # Apply suffix if not on equator/prime meridian
+        if isinstance(cardinal,str):
             if value<0:
                 value *= -1
-                suffix += 'W'
+                suffix += cardinal[0]
             elif value>0:
-                suffix += 'E'
-        # string = formatstr % (value, string)
-        # Return special string, as in Formatter method
-        decimals = precision or 3
-        string = f'{{{0}:.{decimals:d}f}}'.format(value) # f-string compiled, then call format
-        if '.' in string: # g-style trimming
-            string = string.rstrip('0').rstrip('.')
-        if string=='-0': # special case
-            string = '0'
-        string = re.sub('-', '−', string) # pure unicode minus
-        return string + suffix
+                suffix += cardinal[1]
+        # Finally use default formatter
+        func = CustomFormatter(*args, **kwargs)
+        return func(value, location) + suffix
     # And create object
     return mticker.FuncFormatter(f)
 
-def PiFormatter(number=np.pi, symbol=r'\pi'):
+def LatFormatter(*args, **kwargs):
     """
-    Format as fractions, multiples of some value.
-    Note: Since everything is put inside LaTeX math mode the hyphens
-    should be converted to unicode minus.
+    Just calls CoordinateFormatter. Note the strings are only used if
+    we set cardinal=True, otherwise just prints negative/positive degrees.
+    """
+    return CoordinateFormatter(*args, cardinal='SN', **kwargs)
+
+def LonFormatter(*args, **kwargs):
+    """
+    Just calls CoordinateFormatter. Note the strings are only used if
+    we set cardinal=True, otherwise just prints negative/positive degrees.
+    """
+    return CoordinateFormatter(*args, cardinal='WE', **kwargs)
+
+#------------------------------------------------------------------------------#
+# Formatters with fractions
+#------------------------------------------------------------------------------#
+def FracFormatter(number, symbol):
+    """
+    Format as fractions, multiples of some value, e.g. a physical constant.
     """
     def f(n, loc): # must accept location argument
         frac = Fraction(n/number).limit_denominator()
-        minus = '−' # pure unicode minus
         if n==0: # zero
-            return '0'
+            string = '0'
         elif frac.denominator==1: # denominator is one
             if frac.numerator==1:
-                return f'${symbol}$'
+                string = f'${symbol}$'
             elif frac.numerator==-1:
-                return f'${{-}}{symbol:s}$'
+                string = f'${{-}}{symbol:s}$'
             else:
-                return f'${frac.numerator:d}{symbol:s}$'
+                string = f'${frac.numerator:d}{symbol:s}$'
         elif frac.numerator==1: # numerator is +/-1
-            return f'${symbol:s}/{frac.denominator:d}$'
+            string = f'${symbol:s}/{frac.denominator:d}$'
         elif frac.numerator==-1:
-            return f'${{-}}{symbol:s}/{frac.denominator:d}$'
+            string = f'${{-}}{symbol:s}/{frac.denominator:d}$'
         else: # and again make sure we use unicode minus!
-            return f'${frac.numerator:d}{symbol:s}/{frac.denominator:d}$'
+            string = f'${frac.numerator:d}{symbol:s}/{frac.denominator:d}$'
+        # string = re.sub('-', '−', string) # minus will be converted to unicode version since it's inside LaTeX math
+        return string
     # And create FuncFormatter class
     return mticker.FuncFormatter(f)
+
+def PiFormatter():
+    """
+    Return FracFormatter, where the number is np.pi and
+    symbol is $\pi$.
+    """
+    return FracFormatter(np.pi, r'\pi')
+
+def eFormatter():
+    """
+    Return FracFormatter, where the number is np.exp(1) and
+    symbol is $e$.
+    """
+    return FracFormatter(np.exp(1), 'e')
+
+# Declare dictionaries
+# Includes some custom classes, so has to go at end
+locators = {
+    'none':        mticker.NullLocator,
+    'null':        mticker.NullLocator,
+    'log':         mticker.LogLocator,
+    'maxn':        mticker.MaxNLocator,
+    'linear':      mticker.LinearLocator,
+    'log':         mticker.LogLocator,
+    'multiple':    mticker.MultipleLocator,
+    'fixed':       mticker.FixedLocator,
+    'index':       mticker.IndexLocator,
+    'symmetric':   mticker.SymmetricalLogLocator,
+    'logit':       mticker.LogitLocator,
+    'minor':       mticker.AutoMinorLocator,
+    'microsecond': mdates.MicrosecondLocator,
+    'second':      mdates.SecondLocator,
+    'minute':      mdates.MinuteLocator,
+    'hour':        mdates.HourLocator,
+    'day':         mdates.DayLocator,
+    'weekday':     mdates.WeekdayLocator,
+    'month':       mdates.MonthLocator,
+    'year':        mdates.YearLocator,
+    }
+formatters = { # note default LogFormatter uses ugly e+00 notation
+    'none':      mticker.NullFormatter,
+    'null':      mticker.NullFormatter,
+    'strmethod': mticker.StrMethodFormatter,
+    'formatstr': mticker.FormatStrFormatter,
+    'scalar':    mticker.ScalarFormatter,
+    'log':       mticker.LogFormatterSciNotation,
+    'eng':       mticker.LogFormatterMathtext,
+    'sci':       mticker.LogFormatterSciNotation,
+    'logit':     mticker.LogitFormatter,
+    'eng':       mticker.EngFormatter,
+    'percent':   mticker.PercentFormatter,
+    '$':         MoneyFormatter,
+    'pi':        PiFormatter,
+    'e':         eFormatter,
+    'deg':       CoordinateFormatter,
+    'lat':       LatFormatter,
+    'lon':       LonFormatter,
+    'deglat':    LatFormatter,
+    'deglon':    LonFormatter,
+    }

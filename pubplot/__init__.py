@@ -6,8 +6,10 @@
 #------------------------------------------------------------------------------#
 name = 'PubPlot'
 from .base import *   # basic tools
-from .colors import * # color tools
+from .subplots import *
+from .colortools import * # color tools
+from .fonttools import * # fonts
 from .proj import *   # cartopy projections and whatnot
 from .axis import *   # locators, normalizers, and formatters
 from .utils import *  # misc stuff
-from .rc import *     # custom configuration implementation
+from .rcmod import *     # custom configuration implementation

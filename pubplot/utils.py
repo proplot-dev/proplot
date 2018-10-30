@@ -5,10 +5,36 @@
 # in the context of making plots.
 #------------------------------------------------------------------------------#
 import numpy as np
+from numbers import Number
 
 #------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
+def isvector(item):
+    """
+    Just test if is iterable, but not a string (we almost never mean this).
+    """
+    # return hasattr(item, '__iter__') and not isinstance(item, str)
+    return np.iterable(item) and not isinstance(item, str)
+
+def isnumber(item):
+    """
+    Just test if number.
+    """
+    return isinstance(item, Number)
+
+def isscalar(item):
+    """
+    Test if item is a number or a string, as opposed to list/tuple/array.
+    See: https://stackoverflow.com/questions/4187185/how-can-i-check-if-my-python-object-is-a-number
+    Note: Numpy numbers have __getitem__ attribute! So cannot test this.
+    Why is this done? So they can be converted to ND singleton numpy arrays
+    easily with number[None,None,...].
+    """
+    # return (hasattr(item,'__iter__') or hasattr(item,'__getitem__')) # integers have this!
+    # return hasattr(item,'__iter__')
+    return isinstance(item, Number) or isinstance(item, str)
+
 def edges(values, axis=-1):
     """
     Get approximate edge values along arbitrary axis.
