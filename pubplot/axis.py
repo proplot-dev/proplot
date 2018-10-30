@@ -81,7 +81,7 @@ import matplotlib.transforms as mtransforms
 #------------------------------------------------------------------------------#
 # Tick scales
 #------------------------------------------------------------------------------#
-def ScaleFactory(l, u, scale=np.inf):
+def ScaleFactory(l, u, scale=np.inf, name='cutoff'):
     """
     Constructer for scale with custom cutoffs. Three options here:
       1. Put a 'cliff' between two numbers (default).
@@ -95,11 +95,13 @@ def ScaleFactory(l, u, scale=np.inf):
     and for this class-based solution. Note the space between 1-9 in Paul's answer
     is because actual cutoffs were 0.1 away (and tick locs are 0.2 apart).
     """
+    scale_name = name # have to copy to different name
     class CustomScale(mscale.ScaleBase):
         # Declare name
-        name = 'cutoff'
+        name = scale_name
         def __init__(self, axis, **kwargs):
             mscale.ScaleBase.__init__(self)
+            self.name = scale_name
 
         def get_transform(self):
             return self.CustomTransform()
@@ -162,7 +164,7 @@ def ScaleFactory(l, u, scale=np.inf):
 
     # Register and return
     mscale.register_scale(CustomScale)
-    print('Registered scale "cutoff".')
+    print(f'Registered scale "{scale_name}".')
     return CustomScale
 
 class MercatorLatitudeScale(mscale.ScaleBase):

@@ -923,9 +923,9 @@ def _format_axes(self,
     suptitle=None, suptitlepos=None, title=None, titlepos=None, titlepad=0.1, titledict={},
     abc=False, abcpos=None, abcformat='', abcpad=0.1, abcdict={},
     xgrid=None, ygrid=None, # gridline toggle
-    xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
     xlim=None, ylim=None, xscale=None, yscale=None, xscale_kwargs={}, yscale_kwargs={},
-    xreverse=False, yreverse=False, # special properties
+    xreverse=False, yreverse=False, # reverse x/y axis
+    xdates=False, ydates=False, # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
     xlabel=None, ylabel=None, # axis labels
     xtickminor=None, ytickminor=None, xgridminor=None, ygridminor=None, # minor ticks/grids; if ticks off, grid will be off
     xspineloc=None, yspineloc=None, # deals with spine options
@@ -1139,10 +1139,18 @@ def _format_axes(self,
     #--------------------------------------------------------------------------
     # Axes scaling, limits, and reversal options (alternatively, supply
     # your own xlim/ylim that go from high to low)
-    if xscale is not None: self.set_xscale(xscale, **xscale_kwargs)
-    if yscale is not None: self.set_yscale(yscale, **yscale_kwargs)
-    if xlim is None: xlim = self.get_xlim()
-    if ylim is None: ylim = self.get_ylim()
+    if xscale is not None:
+        if hasattr(xscale,'name'):
+            xscale = xscale.name
+        self.set_xscale(xscale, **xscale_kwargs)
+    if yscale is not None:
+        if hasattr(yscale,'name'):
+            yscale = yscale.name
+        self.set_yscale(yscale, **yscale_kwargs)
+    if xlim is None:
+        xlim = self.get_xlim()
+    if ylim is None:
+        ylim = self.get_ylim()
     if xreverse: xlim = xlim[::-1]
     if yreverse: ylim = ylim[::-1]
     self.set_xlim(xlim)
@@ -1311,7 +1319,7 @@ def _atts_global(self):
     self.text    = MethodType(_text, self)
     self.format  = MethodType(_format_axes, self)
 
-def _atts_special(self, maps, package, projection, **kwargs):
+def _atts_special(self, maps=False, package='cartopy', projection='pcarree', **kwargs):
     # Instantiate the Basemap object and add contouring methods
     # Note we CANNOT modify the underlying AXES pcolormesh etc. because this
     # this will cause basemap's m.pcolormesh etc. to use my CUSTOM version and
@@ -1384,22 +1392,26 @@ def _atts_special(self, maps, package, projection, **kwargs):
         if projection in self.m._pseudocyl:
             self.m.drawmapboundary()
 
-def _twinx(self, **kwargs):
+# def _twinx(self, **kwargs):
+def _twiny(self, **kwargs):
     # Create secondary x-axes
     # Format function will read extra properties and *enforce* (ignoring
     # user settings) the spine locations.
-    ax = self._twiny(**kwargs)
+    ax = self._twiny(**kwargs) # twiny means two x-axes sharing same y-axis
     _atts_global(ax) # basic setup
+    _atts_special(ax)
     self.xspine_override = 'bottom' # original axis ticks on bottom
     ax.yspine_override = 'neither'
     ax.xspine_override = 'top' # new axis ticks on top
     return ax
 
-def _twiny(self, **kwargs):
+# def _twiny(self, **kwargs):
+def _twinx(self, **kwargs):
     # Create secondary y-axes
     # Same as above
-    ax = self._twinx(**kwargs)
+    ax = self._twinx(**kwargs) # twinx means two y-axes sharing same x-axis
     _atts_global(ax) # basic setup
+    _atts_special(ax)
     self.yspine_override = 'left' # original axis ticks on left
     ax.xspine_override = 'neither'
     ax.yspine_override = 'right' # new axis ticks on right
@@ -1580,6 +1592,11 @@ def _journal_sizes(width, height):
 # Primary plotting function; must be used to create figure/axes if user wants
 # to use the other features
 #-------------------------------------------------------------------------------
+def figure(*args, **kwargs):
+    """
+    Simple alias for 'subplots', perhaps more intuitive.
+    """
+    return subplots(*args, **kwargs)
 def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
         nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
         tight=False, # whether to set up tight bbox from gridspec object
@@ -1650,6 +1667,8 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     width, height = _journal_sizes(width, height) # if user passed width=<string>, will use that journal size
     if width is None and height is None: # at least one must have value
         width = 5
+    if width is not None and height is not None: # specify exact size
+        aspect = width/height
     if aspect is None: # aspect is width to height ratio
         aspect = 1.5   # try this as a default; square plots (1) look too tall to me
     if wratios is not None:
@@ -2242,7 +2261,7 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     # or is empty string, methods in _format_axes will make them visible
     for i,ax in enumerate(axs):
         _atts_global(ax) # default methods and stuff
-        _atts_special(ax, maps, package, projection, **projection_kwargs) # default methods and stuff
+        _atts_special(ax, maps=maps, package=package, projection=projection, **projection_kwargs) # default methods and stuff
         ax.number = i+1 # know axes number ahead of time; start at 1
 
     # Repeat some of the above for the panel axes
