@@ -55,16 +55,17 @@ from glob import glob
 from . import colormath
 from . import utils
 # Define some new palettes
-cycles = {
+# Note the default listed colormaps
+cmap_cycles = ['Accent', 'Dark2',
+    'Set1', 'Set2', 'Set3',
+    'Set4', 'Set5']
+list_cycles = {
     # default matplotlib v2
     'default':      ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
     # copied from stylesheets; stylesheets just add color themese from every possible tool, not already present as a colormap
-    'ggplot':       ['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
-    'bmh':          ['#348ABD', '#A60628', '#7A68A6', '#467821', '#D55E00', '#CC79A7', '#56B4E9', '#009E73', '#F0E442', '#0072B2'],
-    'solarized':    ['#268BD2', '#2AA198', '#859900', '#B58900', '#CB4B16', '#DC322F', '#D33682', '#6C71C4'],
     '538':          ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
-    'seaborn':      ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'],
-    'pastel':       ['#92C6FF', '#97F0AA', '#FF9F9A', '#D0BBFF', '#FFFEA3', '#B0E0E6'],
+    'ggplot':       ['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
+    # the default seaborn ones, they are variations on each other
     'colorblind':   ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
     'deep':         ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'], # similar to colorblind
     'muted':        ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'], # similar to colorblind
@@ -73,15 +74,26 @@ cycles = {
     'deep10':       ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B3", "#937860", "#DA8BC3", "#8C8C8C", "#CCB974", "#64B5CD"],
     'muted10':      ["#4878D0", "#EE854A", "#6ACC64", "#D65F5F", "#956CB4", "#8C613C", "#DC7EC0", "#797979", "#D5BB67", "#82C6E2"],
     'bright10':     ["#023EFF", "#FF7C00", "#1AC938", "#E8000B", "#8B2BE2", "#9F4800", "#F14CC1", "#A3A3A3", "#FFC400", "#00D7FF"],
+    # from the website
+    'flatui':       ["#3498db", "#e74c3c", "#95a5a6", "#34495e", "#2ecc71", "#9b59b6"],
     # created with online tools
-    'cinematic1':   [(51,92,103), (255,243,176), (224,159,62), (158,42,43), (84,11,14)],
-    'cinematic2':   [(1,116,152), (231,80,0), (123,65,75), (197,207,255), (241,255,47)],
+    # add to this!
+    # see: http://tools.medialab.sciences-po.fr/iwanthue/index.php
+    'cinematic':    [(51,92,103), (158,42,43), (255,243,176), (224,159,62), (84,11,14)],
+    'cool':         ["#6C464F", "#9E768F", "#9FA4C4", "#B3CDD1", "#C7F0BD"],
+    'sugar':        ["#007EA7", "#B4654A", "#80CED7", "#B3CDD1", "#003249"],
+    'vibrant':      ["#007EA7", "#D81159", "#B3CDD1", "#FFBC42", "#0496FF"],
+    'office':       ["#252323", "#70798C", "#DAD2BC", "#F5F1ED", "#A99985"],
+    'urban':        ["#38302E", "#6F6866", "#788585", "#BABF95", "#CCDAD1"],
+    'spicy':        ["#0D3B66", "#F95738", "#F4D35E", "#FAF0CA", "#EE964B"],
+    'intersection': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
+    'japanese':     ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
+    # finally, add the Open Colors ones
+    # actually this looks dumb
+    # **{'cycle'+str(i): [color+str(i) for color in ('blue', 'red', 'yellow',
+    #     'cyan', 'pink', 'teal', 'indigo', 'orange', 'grape', 'lime', 'violet',
+    #     'green')] for i in range(10)},
     }
-seaborn_cycles = ['colorblind', 'deep', 'muted', 'bright']
-# Note the default listed colormaps
-cmap_cycles = ['Pastel1', 'Pastel2', 'Paired',
-    'Accent', 'Dark2', 'Set1', 'Set2', 'Set3',
-    'tab10', 'tab20', 'tab20b', 'tab20c']
 # Finally some names
 space_aliases = {
     'rgb':   'rgb',
@@ -556,6 +568,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         Return a new color map with *N* entries.
         """
         self.N = N # that easy
+        self._i_under = self.N
+        self._i_over = self.N + 1
+        self._i_bad = self.N + 2
+        self._init()
         return self
         # return PerceptuallyUniformColormap(self.name, self._segmentdata,
         #         space=self.space,
@@ -890,11 +906,12 @@ def rename_colors(cycle='colorblind'):
         cycle : {deep, muted, pastel, dark, bright, colorblind}
             Named seaborn palette to use as the source of colors.
     """
+    seaborn_cycles = ['colorblind', 'deep', 'muted', 'bright']
     if cycle=='reset':
         colors = [(0.0, 0.0, 1.0), (0.0, .50, 0.0), (1.0, 0.0, 0.0), (.75, .75, 0.0),
                   (.75, .75, 0.0), (0.0, .75, .75), (0.0, 0.0, 0.0)]
     elif cycle in seaborn_cycles:
-        colors = cycles[cycle] + [(.1, .1, .1)]
+        colors = cycles[cycle] + [(0.1, 0.1, 0.1)]
     else:
         raise ValueError(f'Cannot set colors with color cycle {cycle}.')
     for code, color in zip('bgrmyck', colors):
@@ -1288,12 +1305,12 @@ def register_cmaps():
             if 'lines' in name.lower():
                 cmap   = mcolors.ListedColormap(cmap)
                 cmap_r = cmap.reversed() # default name is name+'_r'
-                custom_cycles[name] = cmap
+                # custom_cycles[name] = cmap
             else:
                 N = len(cmap) # simple as that; number of rows of colors
                 cmap   = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
                 cmap_r = cmap.reversed() # default name is name+'_r'
-                custom_cmaps[name] = cmap
+                # custom_cmaps[name] = cmap
         # Register maps (this is just what register_cmap does)
         mcm.cmap_d[cmap.name]   = cmap
         mcm.cmap_d[cmap_r.name] = cmap_r
@@ -1310,19 +1327,29 @@ def register_cycles():
     Register cycles defined right here by dictionaries.
     """
     # Simply register them as ListedColormaps
-    for name,colors in cycles.items():
+    for name,colors in list_cycles.items():
         mcm.cmap_d[name]        = mcolors.ListedColormap([to_rgb(color) for color in colors])
         mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([to_rgb(color) for color in colors[::-1]])
+    # Remove some redundant ones
+    mcm.cmap_d.pop('tab10', None)
+    mcm.cmap_d.pop('tab20', None)
+    mcm.cmap_d.pop('Paired', None)
+    mcm.cmap_d.pop('Pastel1', None)
+    mcm.cmap_d.pop('Pastel2', None)
+    if 'tab20b' in mcm.cmap_d:
+        mcm.cmap_d['Set4'] = mcm.cmap_d.pop('tab20b')
+    if 'tab20c' in mcm.cmap_d:
+        mcm.cmap_d['Set5'] = mcm.cmap_d.pop('tab20c')
 
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly
 # varying LinearSegmentedColormap instances or subclasses thereof
 custom_colors = {} # Downloaded colors categorized by filename
 filtered_colors = {}
-custom_cycles = {} # ListedColormaps
-custom_cmaps  = {} # LinearSegmentedColormaps 
-register_colors()
+# custom_cycles = {} # ListedColormaps
+# custom_cmaps  = {} # LinearSegmentedColormaps
 register_cmaps()
+register_colors()
 register_cycles()
 print('Registered named colors and colormaps.')
 
@@ -1451,22 +1478,30 @@ def cycle_show():
     Show off the different color cycles.
     Wrote this one myself, so it uses the custom API.
     """
-    # cycles = plt.get_cycles() # function should have been added by the rc plugin
-    cycles = mcolors.CYCLES
+    # Get the list of cycles
+    # cycles = plt.get_cyclS
+    cycles = {**{name:mcm.cmap_d[name].colors for name in cmap_cycles},
+              **{name:mcm.cmap_d[name].colors for name in list_cycles.keys()}}
     nrows = len(cycles)//2+len(cycles)%2
+    # Create plot
     fig, axs = plt.subplots(figsize=(6,nrows*1.5), ncols=2, nrows=nrows)
+    fig.subplots_adjust(top=0.99, bottom=0.01, left=0.02, right=0.98,
+            hspace=0.4, wspace=0.02)
     axs = [ax for sub in axs for ax in sub]
-    fig.subplots_adjust(top=.99, bottom=.01, left=.02, right=0.98, hspace=.2, wspace=.02)
     state = np.random.RandomState(123412)
-    for i,(ax,(key,value)) in enumerate(zip(axs,cycles.items())):
-        propcycle = cycler('color', value)
-        ax.set_prop_cycle(propcycle)
-        lines = ax.plot(state.rand(10,len(value)), lw=5, ls='-')
-        for j,l in enumerate(lines):
-            l.set_zorder(len(lines)-j) # make first lines have big zorder
-        title = f'{key}: {len(value)} colors'
-        ax.set_xlim((-0.5,10))
+    for i,(ax,(key,cycle)) in enumerate(zip(axs,cycles.items())):
+        # Draw
+        lw = 4
+        key = key.lower()
+        for j,color in enumerate(cycle):
+            ax.fill_between([0,1], j*lw, (j+1)*lw, facecolor=color)
+            # lines = ax.plot(state.rand(10,len(value)), lw=5, ls='-')
+            # l.set_zorder(len(lines)-j) # make first lines have big zorder
+        title = f'{key}: {len(cycle)} colors'
+        ax.set_xlim((0,1))
+        ax.set_ylim((0,len(cycle)*lw))
         ax.set_title(title)
+        ax.grid(False)
         for axis in 'xy':
             ax.tick_params(axis=axis, which='both', labelbottom=False, labelleft=False,
                     bottom=False, top=False, left=False, right=False)
