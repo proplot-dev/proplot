@@ -1503,11 +1503,13 @@ class XYAxes(BaseAxes):
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
             time = isinstance(axis.converter, mdates.DateConverter)
-            axis.set_major_locator(Locator(ticklocator, time=time, **locator_kw))
-            axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
+            if ticklocator is not None:
+                axis.set_major_locator(Locator(ticklocator, time=time, **locator_kw))
+            if tickformatter is not None:
+                axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(Locator('null'))
-            else:
+            elif tickminorlocator is not None:
                 axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw))
             axis.set_minor_formatter(mticker.NullFormatter())
             # Update text, and ensure that we don't have tick labels where
