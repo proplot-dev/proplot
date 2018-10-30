@@ -56,9 +56,7 @@ from . import colormath
 from . import utils
 # Define some new palettes
 # Note the default listed colormaps
-cmap_cycles = ['Accent', 'Dark2',
-    'Set1', 'Set2', 'Set3',
-    'Set4', 'Set5']
+cmap_cycles = ['Set1', 'Set2', 'Set3', 'Set4', 'Set5']
 list_cycles = {
     # default matplotlib v2
     'default':      ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
@@ -67,13 +65,13 @@ list_cycles = {
     'ggplot':       ['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
     # the default seaborn ones, they are variations on each other
     'colorblind':   ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
-    'deep':         ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'], # similar to colorblind
-    'muted':        ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'], # similar to colorblind
-    'bright':       ["#023EFF", "#1AC938", "#E8000B", "#8B2BE2", "#FFC400", "#00D7FF"], # similar to colorblind
     'colorblind10': ["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"], # versions with more colors
-    'deep10':       ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B3", "#937860", "#DA8BC3", "#8C8C8C", "#CCB974", "#64B5CD"],
-    'muted10':      ["#4878D0", "#EE854A", "#6ACC64", "#D65F5F", "#956CB4", "#8C613C", "#DC7EC0", "#797979", "#D5BB67", "#82C6E2"],
-    'bright10':     ["#023EFF", "#FF7C00", "#1AC938", "#E8000B", "#8B2BE2", "#9F4800", "#F14CC1", "#A3A3A3", "#FFC400", "#00D7FF"],
+    # 'deep':         ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD'], # similar to colorblind
+    # 'deep10':       ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B3", "#937860", "#DA8BC3", "#8C8C8C", "#CCB974", "#64B5CD"],
+    # 'muted':        ['#4878CF', '#6ACC65', '#D65F5F', '#B47CC7', '#C4AD66', '#77BEDB'], # similar to colorblind
+    # 'muted10':      ["#4878D0", "#EE854A", "#6ACC64", "#D65F5F", "#956CB4", "#8C613C", "#DC7EC0", "#797979", "#D5BB67", "#82C6E2"],
+    # 'bright':       ["#023EFF", "#1AC938", "#E8000B", "#8B2BE2", "#FFC400", "#00D7FF"], # similar to colorblind
+    # 'bright10':     ["#023EFF", "#FF7C00", "#1AC938", "#E8000B", "#8B2BE2", "#9F4800", "#F14CC1", "#A3A3A3", "#FFC400", "#00D7FF"],
     # from the website
     'flatui':       ["#3498db", "#e74c3c", "#95a5a6", "#34495e", "#2ecc71", "#9b59b6"],
     # created with online tools
@@ -1336,6 +1334,10 @@ def register_cycles():
     mcm.cmap_d.pop('Paired', None)
     mcm.cmap_d.pop('Pastel1', None)
     mcm.cmap_d.pop('Pastel2', None)
+    mcm.cmap_d.pop('Set1', None)
+    mcm.cmap_d.pop('Dark2', None)
+    if 'Accent' in mcm.cmap_d:
+        mcm.cmap_d['Set1'] = mcm.cmap_d.pop('Accent')
     if 'tab20b' in mcm.cmap_d:
         mcm.cmap_d['Set4'] = mcm.cmap_d.pop('tab20b')
     if 'tab20c' in mcm.cmap_d:
@@ -1485,7 +1487,7 @@ def cycle_show():
     nrows = len(cycles)//2+len(cycles)%2
     # Create plot
     fig, axs = plt.subplots(figsize=(6,nrows*1.5), ncols=2, nrows=nrows)
-    fig.subplots_adjust(top=0.99, bottom=0.01, left=0.02, right=0.98,
+    fig.subplots_adjust(top=0.98, bottom=0.01, left=0.02, right=0.98,
             hspace=0.4, wspace=0.02)
     axs = [ax for sub in axs for ax in sub]
     state = np.random.RandomState(123412)
