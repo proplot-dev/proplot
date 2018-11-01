@@ -82,7 +82,8 @@ import matplotlib.transforms as mtransforms
 #------------------------------------------------------------------------------#
 # Tick scales
 #------------------------------------------------------------------------------#
-scales = ['linear','log','symlog','logit']
+scales = ['linear','log','symlog','logit', # builtin
+          'sine','mercator','inverse'] # custom
 def Scale(scale, **kwargs):
     """
     Generate arbitrary scale object.
@@ -198,11 +199,11 @@ class MercatorLatitudeScale(mscale.ScaleBase):
     papers uses it I think.
     """
     name = 'mercator'
-    def __init__(self, axis, *, thresh=np.deg2rad(85), **kwargs):
+    def __init__(self, axis, *, thresh=85.0, **kwargs):
         # Initialize
         mscale.ScaleBase.__init__(self)
-        if thresh >= np.pi/2:
-            raise ValueError('Threshold "thresh" must be less than pi/2.')
+        if thresh >= 90.0:
+            raise ValueError('Threshold "thresh" must be <=90.')
         self.thresh = thresh
 
     def get_transform(self):
@@ -215,15 +216,9 @@ class MercatorLatitudeScale(mscale.ScaleBase):
 
     def set_default_locators_and_formatters(self, axis):
         # Apply these
-        ticks = np.deg2rad(np.arange(-90, 90, 10))
-        axis.set_major_locator(mticker.FixedLocator(ticks))
-        axis.set_major_formatter(self.DegreeFormatter())
-        axis.set_minor_formatter(mticker.NullFormatter())
-
-    class DegreeFormatter(mticker.Formatter):
-        # For the default formatter, easy
-        def __call__(self, x, pos=None):
-            return f'{np.rad2deg(x):.0f}\N{DEGREE SIGN}'
+        axis.set_major_locator(Locator(20)) # every 10 degrees
+        axis.set_major_formatter(Formatter('deg'))
+        axis.set_minor_formatter(Formatter('null'))
 
     class MercatorLatitudeTransform(mtransforms.Transform):
         # Default attributes
@@ -235,19 +230,19 @@ class MercatorLatitudeScale(mscale.ScaleBase):
             # Initialize, declare attribute
             mtransforms.Transform.__init__(self)
             self.thresh = thresh
-        def transform_non_affine(self, a):
+        def transform_non_affine(self, array):
             # For M N-dimensional transform, transform MxN into result
             # So numbers stay the same, but data will then be linear in the
             # result of the math below.
-            masked = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+            array = np.radians(array) # convert to radians
+            masked = ma.masked_where((array < -self.thresh) | (array > self.thresh), array)
             if masked.mask.any():
                 return ma.log(np.abs(ma.tan(masked) + 1.0 / ma.cos(masked)))
             else:
-                return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
+                return np.log(np.abs(np.tan(array) + 1.0 / np.cos(array)))
         def inverted(self):
             # Just call inverse transform class
-            return MercatorLatitudeScale.InvertedMercatorLatitudeTransform(
-                self.thresh)
+            return MercatorLatitudeScale.InvertedMercatorLatitudeTransform(self.thresh)
 
     class InvertedMercatorLatitudeTransform(mtransforms.Transform):
         # As above, but for the inverse transform
@@ -259,7 +254,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
             mtransforms.Transform.__init__(self)
             self.thresh = thresh
         def transform_non_affine(self, a):
-            return np.arctan(np.sinh(a))
+            return np.degrees(np.arctan(np.sinh(a)))
         def inverted(self):
             return MercatorLatitudeScale.MercatorLatitudeTransform(self.thresh)
 
@@ -287,13 +282,8 @@ class SineLatitudeScale(mscale.ScaleBase):
         # Apply these
         ticks = np.arange(-80, 81, 20)
         axis.set_major_locator(mticker.FixedLocator(ticks))
-        axis.set_major_formatter(self.DegreeFormatter())
+        axis.set_major_formatter(CoordinateFormatter(cardinal=False, deg=True))
         axis.set_minor_formatter(mticker.NullFormatter())
-
-    class DegreeFormatter(mticker.Formatter):
-        # For the default formatter, easy
-        def __call__(self, x, pos=None):
-            return f'{x:.0f}\N{DEGREE SIGN}'
 
     class SineLatitudeTransform(mtransforms.Transform):
         # Default attributes
