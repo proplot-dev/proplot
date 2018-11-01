@@ -2207,7 +2207,7 @@ def map_projection_factory(package, projection, **kwargs):
         print(f'Forcing aspect ratio: {aspect:.3g}')
     return projection, aspect
 
-def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): #, settings=None): # can be updated
+def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
     Should update my legend function to CLIP the legend box when it goes outside axes area, so
@@ -2270,15 +2270,16 @@ def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): 
         # Split up into rows and columns -- by default matplotlib will
         # sort them in ***column-major*** order but that's dumb, we want row-major!
         # See: https://stackoverflow.com/q/10101141/4970632
-        newhandles = []
-        ncol = lsettings['ncol'] # number of columns
-        handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
-        nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
-        nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(lsettings['ncol']-nfinalrow)
-            # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
-        for col,nrow in enumerate(nrows): # iterate through cols
-            newhandles.extend(handlesplit[row][col] for row in range(nrow))
-        handles = newhandles
+        if rowmajor:
+            newhandles = []
+            ncol = lsettings['ncol'] # number of columns
+            handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
+            nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
+            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(lsettings['ncol']-nfinalrow)
+                # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
+            for col,nrow in enumerate(nrows): # iterate through cols
+                newhandles.extend(handlesplit[row][col] for row in range(nrow))
+            handles = newhandles
         # Finally draw legend, mimicking row-major ordering
         leg = super(BaseAxes, ax).legend(handles=handles, **lsettings)
         legends = [leg]
@@ -2298,6 +2299,8 @@ def legend_factory(ax, handles=None, align=None, handlefix=False, **lsettings): 
         interval = (((1 + spacing)*fontsize)/72) / \
                 (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
         # Iterate and draw
+        if not rowmajor:
+            raise ValueError('Using rowmajor=False with align=False does not make sense.')
         for h,hs in enumerate(handles):
             bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
             leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs),

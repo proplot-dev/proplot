@@ -214,12 +214,11 @@ def subplots(array=None, rowmajor=True, # mode 1: specify everything with array
     # Automatically generate array of first *arg not provided, or use nrows/ncols
     if array is None:
         array = np.arange(1,nrows*ncols+1)[...,None]
-        array = array.reshape((nrows, ncols)) # numpy is row-major, remember
+        order = 'C' if rowmajor else 'F' # for column major, use Fortran ordering
+        array = array.reshape((nrows, ncols), order=order) # numpy is row-major, remember
     array = np.array(array) # enforce array type
     if array.ndim==1:
         array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
-    elif not rowmajor:
-        array = np.reshape(array.flatten(), (array.shape[0],array.shape[1]), order='F') # make column major
     array[array==None] = 0 # use zero for placeholder; otherwise have issues
     # Include functionality to declare certian rows/columns empty, if user requested it
     # Useful if user wants to include extra space between some columns greater than the
