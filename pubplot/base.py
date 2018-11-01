@@ -1233,13 +1233,14 @@ class BaseAxes(maxes.Axes):
         return super().errorbar(*args, **kwargs)
 
     # Methods rendered obsolete by subplots() function
-    _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
-    'ratios are *static*, and must be set at creation time using pubplot.subplots().'
-    def set_aspect(self, *args, **kwargs):
-        if isinstance(self, MapAxes):
-            return super().set_aspect(*args, **kwargs)
-        else:
-            raise NotImplementedError(self._message_strongarm)
+    # This messes up super() calls
+    # _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
+    # 'ratios are *static*, and must be set at creation time using pubplot.subplots().'
+    # def set_aspect(self, *args, **kwargs):
+    #     if isinstance(self, MapAxes):
+    #         return super().set_aspect(*args, **kwargs)
+    #     else:
+    #         raise NotImplementedError(self._message_strongarm)
 
     # Redundant stuff that want to cancel
     _message_redundant = 'Redundant function has been disabled.'
