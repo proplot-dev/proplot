@@ -910,6 +910,7 @@ class BaseAxes(maxes.Axes):
         abc=True, abcpos=None, abcformat='',
         hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitlepos=None, title=None, titlepos=None,
+        rowlabels=None, collabels=None, # label rows and columns individually
         titlepad=0.1, title_kw={},
         abcpad=0.1, abc_kw={},
         rc_kw={}, **kwargs,
@@ -1013,6 +1014,11 @@ class BaseAxes(maxes.Axes):
                 self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
         elif hasattr(self, 'abc'):
             self.abc.set_visible(False)
+
+        # Row and column labels -- the column ones can just set the appropriate
+        # titles, rows are slightly more complicated
+        if rowlabels is not None or collabels is not None:
+            raise NotImplementedError('On the todo list.')
 
         # Color setup, optional hatching in background of axes
         # You should control transparency by passing transparent=True or False
