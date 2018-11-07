@@ -35,7 +35,6 @@ from copy import deepcopy
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
 from string import ascii_lowercase
-from types import FunctionType
 from functools import wraps
 from inspect import cleandoc
 import matplotlib.figure as mfigure
@@ -479,7 +478,8 @@ def docstring_fix(child):
     Adapted from: https://stackoverflow.com/a/8101598/4970632
     """
     for name,chfunc in vars(child).items(): # returns __dict__ object
-        if not isinstance(chfunc, FunctionType):
+        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
+        # if not isinstance(chfunc, FunctionType):
             continue
         for parent in getattr(child, '__bases__', ()):
             parfunc = getattr(parent, name, None)
@@ -504,38 +504,32 @@ class Figure(mfigure.Figure):
     --------
     Need to document features.
     """
-    def __init__(self, left=None,   bottom=None,   right=None,  top=None,
-        bwidth=None,   bspace=None, rwidth=None,   rspace=None,
-        width=None,    height=None, gridspec=None,
-        rcreset=True, # reset rcParams whenever a figure is drawn (e.g. after an ipython notebook cell finishes executing)?
-        **kwargs):
+    def __init__(self, width=None, height=None,
+        scaffolding=None, gridspec=None,
+        rcreset=True, **kwargs):
         # Initialize figure with some custom attributes.
-        # rc settings
+        # Whether to reset rcParams wheenver a figure is drawn (e.g. after
+        # ipython notebook finishes executing)
         self.rcreset  = rcreset
         # Gridspec information
         self.gridspec = gridspec # gridspec encompassing drawing area
-        self.left     = left # gridspec bounds
-        self.bottom   = bottom
-        self.right    = right
-        self.top      = top
+        self.scaffolding = scaffolding # extra special settings
         # Figure dimensions
-        self.width    = width # dimensions
-        self.height   = height
-        # Panels
+        self.width  = width # dimensions
+        self.height = height
+        # Panels, initiate as empty
         self.leftpanel   = None
         self.bottompanel = None
         self.rightpanel  = None
         self.toppanel    = None
-        # Panel settings
-        self.bwidth   = bwidth
-        self.bspace   = bspace
-        self.rwidth   = rwidth
-        self.rspace   = rspace
+        # Proceed
         super().__init__(**kwargs) # python 3 only
 
     def draw(self, *args, **kwargs):
-        # Reset the rcparams when a figure is displayed; usually means we have
-        # finished executing a notebook cell
+        # Automatically reset the rcparams when a figure is displayed; usually
+        # means we have finished executing a notebook cell
+        # NOTE: This does not affect the figure or its artists, since they
+        # have obviously been instantiated already.
         if not rc._init and self.rcreset:
             print('Resetting rcparams.')
             rc.reset()
@@ -664,6 +658,9 @@ class Figure(mfigure.Figure):
 
     @timer
     def save(self, filename, silent=False, pad=None, **kwargs):
+        """
+        Add some features.
+        """
         # Notes:
         # * That the gridspec object must be updated before figure is printed to
         #     screen in interactive environment; will fail to update after that.
@@ -684,15 +681,15 @@ class Figure(mfigure.Figure):
         width, height = ox[1], oy[1] # desired save-width
         # Echo some information
         if not silent:
-            x1fix, y2fix = self.left-x1, self.top-y2
+            x1fix, y2fix = self.scaffolding['left']-x1, self.scaffolding['top']-y2
             if self.rightpanel is not None:
-                x2fix = self.rspace - x2
+                x2fix = self.scaffolding['rspace'] - x2
             else:
-                x2fix = self.right  - x2
+                x2fix = self.scaffolding['right']  - x2
             if self.bottompanel is not None:
-                y1fix = self.bspace - y1
+                y1fix = self.scaffolding['bspace'] - y1
             else:
-                y1fix = self.bottom - y1
+                y1fix = self.scaffolding['bottom'] - y1
             formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
             print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
                   f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
@@ -706,7 +703,14 @@ class Figure(mfigure.Figure):
         # Finally, save
         if not silent:
             print(f'Saving to "{filename}".')
-        self.savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
+        return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
+
+    def savefig(*args, **kwargs):
+        """
+        Alias for save.
+        """
+        return self.save(*args, **kwargs)
+
     # Note: set_size_inches is called by draw(), so can't override; also forget
     # set_figwidth and set_figheight for consistency.
     _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
@@ -907,7 +911,7 @@ class BaseAxes(maxes.Axes):
 
     # New convenience feature
     def format(self,
-        abc=True, abcpos=None, abcformat='',
+        abc=False, abcpos=None, abcformat='',
         hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitlepos=None, title=None, titlepos=None,
         rowlabels=None, collabels=None, # label rows and columns individually
@@ -2180,12 +2184,11 @@ register_projection(CartopyAxes)
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
 #------------------------------------------------------------------------------#
-def map_projection_factory(package, projection, **kwargs):
+def map_projection_factory(package, projection, silent=False, **kwargs):
     """
     Returns Basemap object or cartopy ccrs instance.
     """
     # Initial stuff
-    silent = kwargs.pop('silent', False)
     crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
         **{k:'central_latitude'  for k in ['lat0','lat_0']},
         **{k:'central_longitude' for k in ['lon0', 'lon_0']},
@@ -2210,6 +2213,9 @@ def map_projection_factory(package, projection, **kwargs):
             raise ValueError(f'For cartopy, projection must be one of the following: {", ".join(crs_dict.keys())}.')
         projection = crs_dict[projection](**{crs_translate.get(key,key):value for key,value in kwargs.items()})
         aspect = (np.diff(projection.x_limits)/np.diff(projection.y_limits))[0]
+    # Error
+    else:
+        raise ValueError(f'Unknown package "{package}".')
     if not silent:
         print(f'Forcing aspect ratio: {aspect:.3g}')
     return projection, aspect

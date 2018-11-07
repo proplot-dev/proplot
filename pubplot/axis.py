@@ -183,7 +183,7 @@ def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
 
     # Register and return
     mscale.register_scale(CutoffScale)
-    print(f'Registered scale "{scale_name}".')
+    # print(f'Registered scale "{scale_name}".')
     return scale_name
 
 class MercatorLatitudeScale(mscale.ScaleBase):

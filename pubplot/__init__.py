@@ -4,7 +4,10 @@
 # Files are segretated by function, so we don't end up with
 # giant 5,000-line single file
 #------------------------------------------------------------------------------#
+# First set up notebook
+from .notebook import *
 name = 'PubPlot'
+# Then import stuff
 from .base import *   # basic tools
 from .subplots import *
 from .colortools import * # color tools
