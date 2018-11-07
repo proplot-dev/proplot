@@ -118,31 +118,32 @@ channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2, 'alpha':
                 'h':   0, 's':          1, 'c':      1, 'l':         2}
 # Names of builtin colormaps
 categories_default = { # initialize as empty lists
+    # We keep these ones
     'Matplotlib Originals':
-        sorted(['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted']),
+        ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
     'PubPlot Sequential':
         [], # empty at first, fill automatically
     'PubPlot Diverging':
-        sorted(['dave', 'drywet', 'lake']),
-    # 'ColorBrewer': [], # actually *every single colorbrewer map* is implemented already by default, just different names
+        ['Dave', 'Lake', 'DryWet'],
     'cmOcean Sequential':
-        sorted(['oxy', 'thermal', 'haline', 'solar', 'ice', 'gray', 'deep',
-            'dense', 'algae', 'matter', 'turbid', 'speed', 'tempo', 'phase']),
+        ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
+        'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
+        'Amp', 'Solar', 'Phase', 'Phase_shifted'],
     'cmOcean Diverging':
-        sorted(['balance', 'delta', 'curl']),
+        ['Balance', 'Curl', 'Delta'],
     'ColorBrewer2.0 Sequential':
-        sorted([
-        'greys', 'purples', 'blues', 'greens', 'oranges', 'reds',
-        'ylorbr', 'ylorrd', 'orrd', 'purd', 'rdpu', 'bupu',
-        'gnbu', 'pubu', 'ylgnbu', 'pubugn', 'bugn', 'ylgn']),
+        ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+        'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+        'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'],
     'ColorBrewer2.0 Diverging':
-        sorted(['piyg', 'prgn', 'brbg', 'puor', 'rdgy', 'rdbu', 'rdylbu', 'rdylgn', 'spectral']),
+        ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'],
     'Other':
-        sorted(['cubehelix']),
+        ['cubehelix', 'rainbow', 'bwr'],
+    # These ones will be deleted
     'Alt Sequential':
         sorted(['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
-        'spring', 'summer', 'autumn', 'winter', 'cool', 'wistia',
-        'coolwarm', 'bwr', 'seismic', # diverging ones
+        'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+        'coolwarm', 'seismic', # diverging ones
         'afmhot', 'gist_heat', 'copper']),
     'Alt Rainbow':
         sorted(['multi', 'cubehelix', 'cividis']),
@@ -150,8 +151,8 @@ categories_default = { # initialize as empty lists
         sorted(['coolwarm', 'bwr', 'seismic']),
     'Miscellaneous':
         sorted(['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-        'gnuplot', 'gnuplot2', 'cmrmap', 'brg', 'hsv', 'hot',
-        'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
+        'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot',
+        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 categories_ignore = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
 
@@ -873,7 +874,7 @@ def clip_colors(colors, mask=True):
                     rgb[i] = 0
                 if n not in under:
                     under[n] = True
-                    print(f'Warning: {message} channel {n} (<0).')
+                    # print(f'Warning: {message} channel {n} (<0).')
             if c>1:
                 if mask:
                     rgb[-1] = 1 # full alpha
@@ -883,7 +884,7 @@ def clip_colors(colors, mask=True):
                     rgb[i] = 1 # keep
                 if n not in over:
                     over[n] = True
-                    print(f'Warning: {message} channel {n} (>1).')
+                    # print(f'Warning: {message} channel {n} (>1).')
     return colors
 
 #------------------------------------------------------------------------------#
@@ -1220,6 +1221,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
     mcolors._colors_full_map.cache.clear() # clean out!
     mcolors._colors_full_map.update(base1)
     mcolors._colors_full_map.update(base2)
+
     # First register colors
     hcls = np.empty((0,3))
     names = []
@@ -1234,7 +1236,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
         # Add categories
         categories_set.add(category)
         custom_colors[category] = {}
-        filtered_colors[category] = {}
+        custom_colors_filtered[category] = {}
         # Translate and put in dictionary
         for i,(name,color) in enumerate(data): # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
@@ -1247,7 +1249,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
         # Concatenate HCL arrays
         hcls = np.concatenate((hcls, hcl), axis=0)
 
-    # Next remove colors that are 'too similar' by rounding to the nearest n units
+    # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: unique axis argument requires numpy version >=1.13
     # WARNING: evidently it is ***impossible*** to actually delete colors
     # from the custom_colors dictionary (perhaps due to quirk of autoreload,
@@ -1262,13 +1264,14 @@ def register_colors(nmax=np.inf, threshold=0.10):
             'violet', 'indigo', 'blue', 'coral', 'tomato red', 'crimson',
             'cyan', 'teal', 'green', 'lime', 'yellow', 'orange']
     exceptions_regex = '^(' + '|'.join(exceptions) + ')[0-9]?$'
+
     # Add colors to filtered colors
     for i,(category,name) in enumerate(names):
         if not re.match(exceptions_regex, name) and i not in index:
             deleted += 1
         else:
-            filtered_colors[category][name] = custom_colors[category][name]
-    for category,dictionary in filtered_colors.items():
+            custom_colors_filtered[category][name] = custom_colors[category][name]
+    for category,dictionary in custom_colors_filtered.items():
         mcolors._colors_full_map.update(dictionary)
     # print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
 
@@ -1316,27 +1319,73 @@ def register_cmaps():
             if 'lines' in name.lower():
                 cmap   = mcolors.ListedColormap(cmap)
                 cmap_r = cmap.reversed() # default name is name+'_r'
-                # custom_cycles[name] = cmap
+                custom_cycles.add(name)
             else:
                 N = len(cmap) # simple as that; number of rows of colors
                 cmap   = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
                 cmap_r = cmap.reversed() # default name is name+'_r'
-                # custom_cmaps[name] = cmap
+                custom_cmaps.add(name)
         # Register maps (this is just what register_cmap does)
         mcm.cmap_d[cmap.name]   = cmap
         mcm.cmap_d[cmap_r.name] = cmap_r
-    # Finally fix the builtin rainbow colormaps by switching from listed
-    # to linearsegmented -- don't know why matplotlib shifts with these as
+
+    # Fix the builtin rainbow colormaps by switching from Listed to
+    # LinearSegmented -- don't know why matplotlib shifts with these as
     # discrete maps by default, dumb.
     for name in categories_default['Matplotlib Originals']: # initialize as empty lists
-        cmap = mcm.cmap_d[name]
-        if isinstance(cmap, mcolors.ListedColormap):
+        cmap = mcm.cmap_d.get(name,None)
+        if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
+
+    # Swap the order of divering colorbrewer maps, direction of color changes
+    # is opposite from intuition (red to blue, pink to green, etc.)
+    names = []
+    if 'RdBu' in mcm.cmap_d: # only do this once! we modified the content of ColorBrewer Diverging
+        for name in categories_default['ColorBrewer2.0 Diverging']:
+            # Reverse map and name
+            # e.g. RdBu --> BuRd, RdYlBu --> BuYlRd
+            # Note default name PuOr is literally backwards...
+            cmap   = mcm.cmap_d.pop(name, None)
+            cmap_r = mcm.cmap_d.pop(name + '_r', None)
+            if cmap:
+                if name not in ('Spectral','PuOr'):
+                    name = re.sub('^(..)(..)?(..)$', r'\3\2\1', name)
+                mcm.cmap_d[name] = cmap_r
+                mcm.cmap_d[name + '_r'] = cmap
+            names += [name]
+    categories_default['ColorBrewer2.0 Diverging'] = names
+
+    # Add shifted versions of cyclic colormaps, and prevent same colors on ends
+    for name in ['twilight', 'Phase']:
+        cmap = mcm.cmap_d.get(name, None)
+        if cmap and isinstance(cmap, mcolors.LinearSegmentedColormap):
+            data = cmap._segmentdata
+            data_shift = data.copy()
+            for key,array in data.items():
+                array = np.array(array)
+                # Drop an end color
+                array = array[1:,:]
+                array_shift = array.copy()
+                array_shift[:,0] -= 0.5
+                array_shift[:,0] %= 1
+                array_shift = array_shift[array_shift[:,0].argsort(),:]
+                # Normalize x-range
+                array[:,0] -= array[:,0].min()
+                array[:,0] /= array[:,0].max()
+                data[key] = array
+                array_shift[:,0] -= array_shift[:,0].min()
+                array_shift[:,0] /= array_shift[:,0].max()
+                data_shift[key] = array_shift
+            # Register shifted version and original
+            mcm.cmap_d[name] = mcolors.LinearSegmentedColormap(name, data, cmap.N)
+            mcm.cmap_d[name + '_shifted'] = mcolors.LinearSegmentedColormap(name + '_shifted', data_shift, cmap.N)
+
     # Delete ugly ones
     for category in categories_ignore:
         for name in categories_default:
             mcm.cmap_d.pop(name, None)
-    # Next register names so that they can be invoked ***without capitalization***
+
+    # Register names so that they can be invoked ***without capitalization***
     # This always bugged me! Note cannot change dictionary during iteration.
     ignorecase = {}
     ignore = [category for categories in categories_ignore for category in categories]
@@ -1346,6 +1395,8 @@ def register_cmaps():
         elif re.search('[A-Z]',name):
             ignorecase[name.lower()] = cmap
     mcm.cmap_d.update(ignorecase)
+    for key in ignorecase.keys():
+        custom_lower.add(key)
 
 def register_cycles():
     """
@@ -1355,6 +1406,7 @@ def register_cycles():
     for name,colors in list_cycles.items():
         mcm.cmap_d[name]        = mcolors.ListedColormap([to_rgb(color) for color in colors])
         mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([to_rgb(color) for color in colors[::-1]])
+
     # Remove some redundant ones
     mcm.cmap_d.pop('tab10', None)
     mcm.cmap_d.pop('tab20', None)
@@ -1373,10 +1425,11 @@ def register_cycles():
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly
 # varying LinearSegmentedColormap instances or subclasses thereof
-custom_colors = {} # Downloaded colors categorized by filename
-filtered_colors = {}
-# custom_cycles = {} # ListedColormaps
-# custom_cmaps  = {} # LinearSegmentedColormaps
+custom_cmaps = set() # track downloaded colormaps
+custom_cycles = set() # same, but track cycles
+custom_lower = set() # lower-case keys added to dictionary, that we will ignore
+custom_colors = {} # downloaded colors categorized by filename
+custom_colors_filtered = {} # limit to 'sufficiently unique' color names
 register_cmaps()
 register_colors()
 register_cycles()
@@ -1425,7 +1478,7 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.
                 colors.update({f'C{i}':v for i,v in enumerate(cycle_colors)})
             # Read custom defined colors
             else:
-                colors.update(filtered_colors[name]) # add category dictionary
+                colors.update(custom_colors_filtered[name]) # add category dictionary
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
@@ -1560,23 +1613,30 @@ def cmap_show(N=31):
     # NOTE: viridis, cividis, plasma, inferno, and magma are all
     # listed colormaps for some reason
     exceptions = ['viridis','cividis','plasma','inferno','magma']
+    track_lowercase = set()
     cmaps_all = [cmap for cmap in mcm.cmap_d.keys() if
             not cmap.endswith('_r')
-            and not re.search('[A-Z]',cmap)
+            # and not re.search('[A-Z]',cmap)
+            and cmap not in custom_lower
             and 'Vega' not in cmap
             and (isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) or cmap in exceptions)]
     cmaps_listed = [cmap for cmap in mcm.cmap_d.keys() if
             not cmap.endswith('_r')
-            and not re.search('[A-Z]',cmap)
+            and cmap not in custom_lower
+            # and not re.search('[A-Z]',cmap)
             and 'Vega' not in cmap
             and (not isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) and cmap not in exceptions)]
+
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
-    cmaps_ignore  = [cmap for cat,cmaps in categories_default.items() for cmap in cmaps if cat in categories_ignore]
     categories    = {cat:cmaps for cat,cmaps in categories_default.items() if cat not in categories_ignore}
-    cmaps_known   = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap in cmaps_all]
+    cmaps_ignore  = [cmap for cat,cmaps in categories_default.items() for cmap in cmaps if cat in categories_ignore]
     cmaps_missing = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap not in cmaps_all]
+    cmaps_known   = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap in cmaps_all]
     cmaps_custom  = [cmap for cmap in cmaps_all if cmap not in cmaps_known and cmap not in cmaps_ignore]
+
+    # print(cmaps_custom, custom_cmaps)
+    # cmaps_custom = list(custom_cmaps)
     # Attempt to auto-detect diverging colormaps, just sample the points on either end
     # Do this by simply summing the RGB channels to get HSV brightness
     # categories['PubPlot Diverging'][:] = [] # empty list out again
@@ -1596,22 +1656,28 @@ def cmap_show(N=31):
         print(f'Missing colormaps: {", ".join(cmaps_missing)}')
     if cmaps_ignore:
         print(f'Ignored colormaps: {", ".join(cmaps_ignore)}')
+
     # print(f'PubPlot colormaps: {", ".join(cmaps_custom)}')
     # print(f'Listed colormaps: {", ".join(cmaps_listed)}')
     # Attempt sorting based on hue
-    for cat in ['PubPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['PubPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['PubPlot Sequential', 'ColorBrewer2.0 Sequential']:
+    for cat in []:
         hues = [np.mean([to_xyz(to_rgb(color),'hsl')[0]
             for color in mcm.cmap_d[cmap](np.linspace(0.3,1,20))])
             for cmap in categories[cat]]
         categories[cat] = [categories[cat][idx] for idx,cmap in zip(np.argsort(hues),categories[cat])]
+
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
+
     # Figure
     extra = 1 # number of axes-widths to allocate for titles
     nmaps = len(cmaps_known) + len(cmaps_custom) + len(categories)*extra
     fig = plt.figure(figsize=(5,0.3*nmaps))
-    fig.subplots_adjust(top=0.98, bottom=0.01, left=0.15, right=0.99)
+    fig.subplots_adjust(top=0.98, bottom=0.005, left=0.20, right=0.99)
+
     # Make plot
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
     for cat in categories:
@@ -1644,6 +1710,7 @@ def cmap_show(N=31):
             yl.set_va('center')
         # Space for plots
         nplots += len(categories[cat])
+
     # Save
     filename = f'{os.path.dirname(__file__)}/colormaps.pdf'
     print(f"Saving figure to: {filename}.")
