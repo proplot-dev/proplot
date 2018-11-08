@@ -534,9 +534,7 @@ class Figure(mfigure.Figure):
     --------
     Need to document features.
     """
-    def __init__(self, gridspec, gridprops,
-        width=None, height=None,
-        rcreset=True, **kwargs):
+    def __init__(self, figsize, gridspec, gridprops, rcreset=True, **kwargs):
         # Initialize figure with some custom attributes.
         # Whether to reset rcParams wheenver a figure is drawn (e.g. after
         # ipython notebook finishes executing)
@@ -545,15 +543,15 @@ class Figure(mfigure.Figure):
         self.gridspec = gridspec # gridspec encompassing drawing area
         self.gridprops = dot_dict(gridprops) # extra special settings
         # Figure dimensions
-        self.width  = width # dimensions
-        self.height = height
+        self.width  = figsize[0] # dimensions
+        self.height = figsize[1]
         # Panels, initiate as empty
         self.leftpanel   = None
         self.bottompanel = None
         self.rightpanel  = None
         self.toppanel    = None
         # Proceed
-        super().__init__(**kwargs) # python 3 only
+        super().__init__(figsize=figsize, **kwargs) # python 3 only
 
     def draw(self, *args, **kwargs):
         # Automatically reset the rcparams when a figure is displayed; usually
@@ -685,6 +683,41 @@ class Figure(mfigure.Figure):
         axmain._sharex_setup(sharex_outside)
         axmain._sharey_setup(sharey_outside)
         return axmain
+
+    def _tight_gridprops(silent=False, update=True):
+        """
+        Get arguments necessary passed to subplots() to create a tight figure
+        bounding box without screwing aspect ratios, widths/heights, and such.
+        """
+        # Get bounding box that encompasses *all artists*, compare to bounding
+        # box used for saving *figure*
+        obbox = self.bbox_inches # original bbox
+        bbox = self.get_tightbbox(self.canvas.get_renderer())
+        ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
+        x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
+        width, height = ox[1], oy[1] # desired save-width
+
+        # Echo some information
+        x1fix, y2fix = self.gridprops.left-x1, self.gridprops.top-y2
+        if self.rightpanel is not None:
+            x2fix = self.gridprops.rspace - x2
+        else:
+            x2fix = self.gridprops.right  - x2
+        if self.bottompanel is not None:
+            y1fix = self.gridprops.bspace - y1
+        else:
+            y1fix = self.gridprops.bottom - y1
+        formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
+        print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
+                f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
+
+        # Optionally repair
+        if update:
+            self.gridspec.left   -= (x1-pad)/width
+            self.gridspec.bottom -= (y1-pad)/height
+            self.gridspec.right  += (x2-pad)/width
+            self.gridspec.top    += (y2-pad)/height
+            self.gridspec.update()
 
     @timer
     def save(self, filename, silent=False, pad=None, **kwargs):
@@ -1755,10 +1788,16 @@ class PanelAxes(XYAxes):
         # Returns the axes and the output of colorbar_factory().
         ax = figure.add_subplot(subspec, projection=None)
         if side in ['bottom','top']:
-            ticklocation = 'bottom' if i==n-1 else 'top'
+            outside, inside = 'bottom', 'top'
+            if side=='top':
+                outside, inside = inside, outside
+            ticklocation = outside if i==n-1 else inside
             orientation  = 'horizontal'
         elif side in ['left','right']:
-            ticklocation = 'right' if i==n-1 else 'right'
+            outside, inside = 'left', 'right'
+            if side=='right':
+                outside, inside = inside, outside
+            ticklocation = outside if i==n-1 else inside
             orientation  = 'vertical'
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         return ax, colorbar_factory(ax, *args, **kwargs)
@@ -2516,8 +2555,10 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     csettings.update({'extendfrac':extendlength}) # width of colorbar axes and stuff
     # cb = ax.figure.colorbar(mappable, **csettings)
     cb = ax.figure.colorbar(mappable,
-            ticks=locators[0], ticklocation=ticklocation,
-            format=cformatter, **csettings)
+            ticklocation=ticklocation,
+            ticks=locators[0],
+            format=cformatter,
+            **csettings)
 
     # Make edges/dividers consistent with axis edges
     if cb.dividers is not None:
