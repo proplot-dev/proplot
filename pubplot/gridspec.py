@@ -1,7 +1,274 @@
 #!/usr/bin/env python3
 import numpy as np
 import matplotlib.gridspec as mgridspec
+from .rcmod import rc
+from .utils import dot_dict
 default = lambda x,y: x if x is not None else y
+
+# Custom settings for various journals
+# Add to this throughout your career, or as standards change
+# PNAS info: http://www.pnas.org/page/authors/submission
+# AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
+# AGU info: https://publications.agu.org/author-resource-center/figures-faq/
+def journalsize(width, height):
+    # User wants to define their own size
+    if type(width) is not str:
+        return width, height
+    # Determine automatically
+    table = {
+        'pnas1': 8.7*cm2in,
+        'pnas2': 11.4*cm2in,
+        'pnas3': 17.8*cm2in,
+        'ams1': 3.2,
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': (95*mm2in, 115*mm2in),
+        'agu2': (190*mm2in, 115*mm2in),
+        'agu3': (95*mm2in, 230*mm2in),
+        'agu4': (190*mm2in, 230*mm2in),
+        }
+    value = table.get(width, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
+                          'Options are: ' + ', '.join(table.keys()))
+    # Output width, and optionally also specify height
+    if utils.isnumber(value):
+        width = value
+    else:
+        width, height = value
+    return width, height
+
+# Function for processing input and generating necessary keyword args
+def _gridspec_setup(array=None, rowmajor=True, # mode 1: specify everything with array
+    nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
+    aspect=1,    height=None, width=None,   # for controlling aspect ratio, default is control for width
+    hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
+    left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
+    bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
+    bottompanel=False, bottompanels=False, # bottompanelrows=1, # optionally draw extra rows
+    rightpanel=False,  rightpanels=False,  # rightpanelcols=1,
+    leftpanel=False,   leftpanels=False,   # leftpanelcols=1,
+    bottomcolorbar=False, bottomcolorbars=False, bottomlegend=False, bottomlegends=False, # convenient aliases that change default features
+    rightcolorbar=False,  rightcolorbars=False,  rightlegend=False,  rightlegends=False,
+    leftcolorbar=False,   leftcolorbars=False,   leftlegend=False,   leftlegends=False
+    ):
+    """
+    Parses user input and returns required ratios, spacings, and bounding
+    edges for plot.
+    """
+    #--------------------------------------------------------------------------#
+    # Parse complicated input
+    #--------------------------------------------------------------------------#
+    # Handle the convenience feature for specifying the desired width/spacing
+    # for panels as that suitable for a colorbar or legend
+    # NOTE: Ugly but this is mostly boilerplate, shouln't change much
+    def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, space):
+        if colorbar or colorbars:
+            width = default(width, rc.subplots['cbar'])
+            space = default(space, rc.subplots['labs'])
+            panel, panels = colorbar, colorbars
+        elif legend or legends:
+            width = default(width, rc.subplots['legend'])
+            space = default(space, 0)
+            panel, panels = legend, legends
+        return panel, panels, width, space
+    rightpanel, rightpanels, rwidth, rspace, = _panelprops(
+        rightpanel, rightpanels, rightcolorbar, rightcolorbars,
+        rightlegend, rightlegends, rwidth, rspace)
+    leftpanel, leftpanels, lwidth, lspace = _panelprops(
+        leftpanel, leftpanels, leftcolorbar, leftcolorbars,
+        leftlegend, leftlegends, lwidth, lspace)
+    bottompanel, bottompanels, bwidth, bspace = _panelprops(
+        bottompanel, bottompanels, bottomcolorbar, bottomcolorbars,
+        bottomlegend, bottomlegends, bwidth, bspace)
+
+    # Handle the convenience feature for generating one panel per row/column
+    # and one single panel for all rows/columns
+    def _parse(panel, panels, nmax):
+        if panel: # one spanning panel
+            panels = [1]*nmax
+        elif panels not in (None,False): # can't test truthiness, want user to be allowed to pass numpy vector!
+            try:
+                panels = list(panels)
+            except TypeError:
+                panels = [*range(nmax)] # pass True to make panel for each column
+        return panels
+    bottompanels = _parse(bottompanel, bottompanels, ncols)
+    rightpanels  = _parse(rightpanel,  rightpanels,  nrows)
+    leftpanels   = _parse(leftpanel,   leftpanels,   nrows)
+    row_offset = 0
+    col_offset = 1 if leftpanels else 0
+
+    # Apply the general defaults
+    wratios = default(wratios, np.ones(ncols)/ncols)
+    hratios = default(hratios, np.ones(nrows)/nrows)
+    hspace = default(hspace, rc.subplots['title'])
+    wspace = default(wspace, rc.subplots['inner'])
+    left   = default(left,   rc.subplots['labs'])
+    bottom = default(bottom, rc.subplots['labs'])
+    right  = default(right,  rc.subplots['nolabs'])
+    top    = default(top,    rc.subplots['title'])
+    bwidth = default(bwidth, rc.subplots['cbar'])
+    rwidth = default(rwidth, rc.subplots['cbar'])
+    lwidth = default(lwidth, rc.subplots['cbar'])
+    bspace = default(bspace, rc.subplots['labs'])
+    rspace = default(rspace, rc.subplots['labs'])
+    lspace = default(lspace, rc.subplots['labs'])
+
+    # Necessary arguments to reconstruct this grid
+    # NOTE: Use this to reset figure layout with a couple changes!
+    # print('width', width, 'lwidth', lwidth, 'lspace', lspace, 'height', height)
+    input_setup = dot_dict(
+        aspect=aspect, width=width, height=height,
+        nrows=nrows,   ncols=ncols,
+        bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
+        left=left,     bottom=bottom, right=right,   top=top,
+        bwidth=bwidth, bspace=bspace, rwidth=rwidth, rspace=rspace, lwidth=lwidth, lspace=lspace,
+        )
+
+    # Basic figure dimension stuff
+    width, height = journalsize(width, height) # if user passed width=<string>, will use that journal size
+    if width is None and height is None:
+        width = 5 # default behavior is use 1:1 axes, fixed width
+    auto_width  = (width is None and height is not None)
+    auto_height = (height is None and width is not None)
+
+    # Array setup
+    if array is None:
+        array = np.arange(1,nrows*ncols+1)[...,None]
+        order = 'C' if rowmajor else 'F' # for column major, use Fortran ordering
+        array = array.reshape((nrows, ncols), order=order) # numpy is row-major, remember
+    array = np.array(array) # enforce array type
+    if array.ndim==1:
+        array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
+    # Empty rows/columns feature
+    # TODO: Delete, outdated
+    array[array==None] = 0 # use zero for placeholder; otherwise have issues
+    if emptycols is not None:
+        emptycols = np.atleast_1d(emptycols)
+        for col in emptycols.flat:
+            array[:,col-1] = 0
+    if emptyrows is not None:
+        emptyrows = np.atleast_1d(emptyrows)
+        for row in emptyrows.flat:
+            array[row-1,:] = 0
+    nrows = array.shape[0]
+    ncols = array.shape[1]
+
+    # Prepare gridspec
+    try:
+        aspect = aspect[0]/aspect[1]
+    except IndexError:
+        pass # do nothing
+    wspace, hspace = np.atleast_1d(wspace), np.atleast_1d(hspace)
+    if len(wspace)==1:
+        wspace = np.repeat(wspace, (ncols-1,))
+    if len(hspace)==1:
+        hspace = np.repeat(hspace, (nrows-1,))
+    wratios = np.array(wratios)/sum(wratios)
+    hratios = np.array(hratios)/sum(hratios)
+    aspect = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
+    aspect = aspect*(hratios[0]/np.mean(hratios))
+
+    # Automatically generate array of first *arg not provided, or use nrows/ncols
+    if array is None:
+        array = np.arange(1,nrows*ncols+1)[...,None]
+        order = 'C' if rowmajor else 'F' # for column major, use Fortran ordering
+        array = array.reshape((nrows, ncols), order=order) # numpy is row-major, remember
+    array = np.array(array) # enforce array type
+    if array.ndim==1:
+        array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
+    array[array==None] = 0 # use zero for placeholder; otherwise have issues
+    # # Enforce consistent numbering; row-major increasing from 1 every time
+    # # a new axes is encountered; e.g. [[1,2],[1,3],[1,4],[1,4]]
+    # number = 1
+    # newarray = np.zeros(array.shape)
+    # for row in newarray.shape[0]:
+    #     for col in newarray.shape[1]:
+    #         if array[row,col] not in array.flat: # not already declared
+    #             newarray[array==array[row,col]] = number
+    #             number += 1
+    # array = newarray
+
+    #--------------------------------------------------------------------------
+    # Apply aspect ratio to axes, infer hspaces/wspaces/bottom/top/left/right
+    #--------------------------------------------------------------------------
+    # Automatic aspect ratio
+    # TODO: Account for top-left axes occupying multiple subplot slots!
+    # * Try wspace=0.2 for gs with cols=4, axes gs[0,:2] and gs[0,2:] vs. gs
+    #   with cols=2, axes gs[0,0] and gs[0,1], and spacing should differ
+    # * Formula: aspect = ((width - left - right - (ncol-1)*wspace)/ncol)
+    #                   / ((height - top - bottom - (nrow-1)*hspace)/nrow)
+    bpanel_total = bwidth + bspace if bottompanels else 0
+    rpanel_total = rwidth + rspace if rightpanels else 0
+    lpanel_total = lwidth + lspace if leftpanels else 0
+    print('total', aspect, bwidth, bpanel_total, lwidth, lpanel_total, rwidth, rpanel_total)
+    if width is not None:
+        axwidth_ave = (width - left - right - (ncols-1)*np.mean(wspace) - rpanel_total - lpanel_total)/ncols
+    if height is not None:
+        axheight_ave = (height - top - bottom - (nrows-1)*np.mean(hspace) - bpanel_total)/nrows
+    # Fix height and top-left axes aspect ratio
+    if auto_width:
+        axwidth_ave = axheight_ave*aspect
+        width       = axwidth_ave*ncols + left + right + (ncols-1)*np.mean(wspace) + rpanel_total + lpanel_total
+    # Fix width and top-left axes aspect ratio
+    if auto_height:
+        axheight_ave = axwidth_ave/aspect
+        height       = axheight_ave*nrows + top + bottom + (nrows-1)*np.mean(hspace) + bpanel_total
+    # Figure size, and component of space belonging to main plotting area
+    if axwidth_ave<0:
+        raise ValueError("Not enough room for axes. Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
+    if axheight_ave<0:
+        raise ValueError("Not enough room for axes. Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
+    axwidth_ave = (ncols*axwidth_ave + bool(rightpanels)*rwidth + bool(leftpanels)*lwidth) \
+        / (ncols + bool(rightpanels) + bool(leftpanels))
+    axheight_ave = (ncols*axheight_ave + bool(bottompanels)*bwidth) \
+        / (nrows + bool(bottompanels))
+
+    # Properties for outer GridSpec object
+    # Make sure the 'ratios' and 'spaces' are in physical units (we cast the
+    # former to physical units), easier then to add stuff as below
+    wspace,  hspace  = wspace.tolist(), hspace.tolist()
+    wratios, hratios = (wratios*axwidth_ave*ncols).tolist(), (hratios*axheight_ave*nrows).tolist()
+    nrows += int(bool(bottompanels))
+    ncols += int(bool(rightpanels)) + int(bool(leftpanels))
+    if bottompanels: # the 'bottom' space actually goes between subplots and panel
+        hratios = hratios + [bwidth] # easy
+        hspace  = hspace + [bottom]
+        bottom  = bspace
+    if leftpanels:
+        wratios = [lwidth] + wratios
+        wspace  = [left] + wspace
+        left    = lspace
+    if rightpanels:
+        wratios = wratios + [rwidth]
+        rspace  = rspace + [right]
+        right   = rspace
+    # Scale stuff that gridspec needs to be scaled
+    bottom = bottom/height
+    left   = left/width
+    top    = 1-top/height
+    right  = 1-right/width
+    wspace = [w/axwidth_ave for w in wspace]
+    hspace = [h/axheight_ave for h in hspace]
+
+    # Create gridspec for outer plotting regions (divides 'main area' from side panels)
+    offset = (0, 1 if leftpanels else 0)
+    figsize = (width, height)
+    input_gridspec = dict(
+            nrows         = nrows,
+            ncols         = ncols,
+            left          = left,
+            bottom        = bottom,
+            right         = right, # unique spacing considerations
+            top           = top, # so far no panels allowed here
+            wspace        = wspace,
+            hspace        = hspace,
+            width_ratios  = wratios,
+            height_ratios = hratios,
+            ) # set wspace/hspace to match the top/bottom spaces
+    return figsize, array, offset, input_setup, input_gridspec
 
 # Generate custom GridSpec classes that override the GridSpecBase
 # __setitem__ method and the 'base' __init__ method
@@ -25,10 +292,7 @@ def flexible_gridspec_factory(base):
             self._ncols_visible = ncols
             self._nrows = nrows*2-1
             self._ncols = ncols*2-1
-            # print('before', kwargs)
             wratios, hratios, kwargs = self._ratios(**kwargs)
-            # print(self._nrows, self._ncols, len(wratios), len(hratios))
-            # print('after', kwargs)
             return super().__init__(self._nrows, self._ncols,
                     hspace=0, wspace=0, # we implement these as invisible rows/columns
                     width_ratios=wratios,
@@ -79,7 +343,6 @@ def flexible_gridspec_factory(base):
                 else:
                     n = n*2
                 return n
-            # print('nums', nrows, ncols, num1, num2, _adjust(num1), _adjust(num2))
             num1, num2 = _adjust(num1), _adjust(num2)
             return mgridspec.SubplotSpec(self, num1, num2)
 
@@ -108,13 +371,11 @@ def flexible_gridspec_factory(base):
             # Translate height/width spacings, implement as extra columns/rows
             try:
                 if len(wspace)==1:
-                    # print('hi', wspace, ncols)
                     wspace = [wspace[0]]*(ncols-1) # also convert to list
             except TypeError:
                 wspace = [wspace]*(ncols-1)
             try:
                 if len(hspace)==1:
-                    # print('bye', hspace, nrows)
                     hspace = [hspace[0]]*(nrows-1)
             except TypeError:
                 hspace = [hspace]*(nrows-1)
@@ -140,15 +401,17 @@ def flexible_gridspec_factory(base):
             # Handle special hspace/wspace arguments, and just set the simple
             # left/right/top/bottom attributes
             wratios, hratios, kwargs = self._ratios(**kwargs)
-            self.set_width_ratios(wratios)
-            self.set_height_ratios(hratios)
             for key,value in kwargs.items():
                 setattr(self,key,value)
-            return super().update()
+            super().update()
+            self.set_width_ratios(wratios)
+            self.set_height_ratios(hratios)
 
     return _GridSpec
 
 # Make classes
 FlexibleGridSpec = flexible_gridspec_factory(mgridspec.GridSpec)
+FlexibleGridSpec.__name__ = 'FlexibleGridSpec'
 FlexibleGridSpecFromSubplotSpec = flexible_gridspec_factory(mgridspec.GridSpecFromSubplotSpec)
+FlexibleGridSpecFromSubplotSpec.__name__ = 'FlexibleGridSpecFromSubplotSpec'
 

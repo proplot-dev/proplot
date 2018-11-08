@@ -168,9 +168,15 @@ rcSpecial = {
     'land.color':            'k',
     'oceans.linewidth':      0,
     'oceans.color':          'w',
-    'lonlatlines.linestyle': ':',
+    'lonlatlines.linestyle': ':                                                                                                                                ',
     'lonlatlines.alpha':     0.2,
     'lonlatlines.color':     'k',
+    'subplots.title' :       0.4, # extra space for title/suptitle
+    'subplots.inner' :       0.2, # just have ticks, no labeels
+    'subplots.legend' :      0.25, # default legend space (bottom of figure)
+    'subplots.cbar' :        0.17, # default colorbar width
+    'subplots.labs' :        0.5, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    'subplots.nolabs' :      0.15, # only ticks
     }
 # Generate list of categories
 rc_categories = {

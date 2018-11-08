@@ -51,12 +51,13 @@ import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
-from .gridspec import FlexibleGridSpecFromSubplotSpec
+from .gridspec import _gridspec_setup, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colortools
 from . import utils
+from .utils import dot_dict
 rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -514,15 +515,6 @@ def docstring_fix(child):
             break # only do this for the first parent class
     return child
 
-class dot_dict(dict):
-    """
-    Simple class for accessing elements with dot notation.
-    See: https://stackoverflow.com/a/23689767/4970632
-    """
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
 @docstring_fix
 class Figure(mfigure.Figure):
     """
@@ -534,14 +526,14 @@ class Figure(mfigure.Figure):
     --------
     Need to document features.
     """
-    def __init__(self, figsize, gridspec, gridprops, rcreset=True, **kwargs):
+    def __init__(self, figsize, gridspec, input, rcreset=True, **kwargs):
         # Initialize figure with some custom attributes.
         # Whether to reset rcParams wheenver a figure is drawn (e.g. after
         # ipython notebook finishes executing)
         self.rcreset  = rcreset
         # Gridspec information
         self.gridspec = gridspec # gridspec encompassing drawing area
-        self.gridprops = dot_dict(gridprops) # extra special settings
+        self.input = dot_dict(input) # extra special settings
         # Figure dimensions
         self.width  = figsize[0] # dimensions
         self.height = figsize[1]
@@ -563,10 +555,11 @@ class Figure(mfigure.Figure):
             rc.reset()
         return super().draw(*args, **kwargs)
 
-    def panel_factory(self, subspec, width, height, whichpanels=None,
+    def panel_factory(self, subspec, whichpanels=None,
             hspace=None, wspace=None, hwidth=None, wwidth=None,
             **kwargs):
         # Helper function for creating paneled axes.
+        width, height = self.width, self.height
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
         whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
@@ -684,7 +677,7 @@ class Figure(mfigure.Figure):
         axmain._sharey_setup(sharey_outside)
         return axmain
 
-    def _tight_gridprops(self, adjust=True, silent=False, update=True, pad=0.1):
+    def _tight_grid(self, adjust=True, silent=False, update=True, pad=0.1):
         """
         Get arguments necessary passed to subplots() to create a tight figure
         bounding box without screwing aspect ratios, widths/heights, and such.
@@ -697,31 +690,37 @@ class Figure(mfigure.Figure):
         x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
         width, height = ox[1], oy[1] # desired save-width
 
+        # Crude adjustment with default update method
         # Return dict
-        if adjust:
-            self.gridspec.left   -= (x1-pad)/width
-            self.gridspec.bottom -= (y1-pad)/height
-            self.gridspec.right  += (x2-pad)/width
-            self.gridspec.top    += (y2-pad)/height
-            self.gridspec.update()
+        # if adjust:
+        #     print(width, x1, x2, (x1-pad)/width)
+        #     self.gridspec.left   -= (x1-pad)/width
+        #     self.gridspec.bottom -= (y1-pad)/height
+        #     self.gridspec.right  += (x2-pad)/width
+        #     self.gridspec.top    += (y2-pad)/height
+        #     mgridspec.GridSpec.update(self.gridspec)
 
-        # Determine appropriate values
-        if not silent:
-            x1fix, y2fix = self.gridprops.left-x1, self.gridprops.top-y2
-            if self.rightpanel is not None:
-                x2fix = self.gridprops.rspace - x2
-            else:
-                x2fix = self.gridprops.right  - x2
-            if self.bottompanel is not None:
-                y1fix = self.gridprops.bspace - y1
-            else:
-                y1fix = self.gridprops.bottom - y1
-            formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
-            print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
-                    f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
+        # Apply new settings
+        lname = 'lspace' if self.leftpanel else 'left'
+        rname = 'rspace' if self.rightpanel else 'right'
+        bname = 'bspace' if self.bottompanel else 'bottom'
+        tname = 'top'
+        left   = getattr(self.input, lname) - x1 + pad
+        right  = getattr(self.input, rname) - x2 + pad
+        bottom = getattr(self.input, bname) - y1 + pad
+        top    = getattr(self.input, tname) - y2 + pad
+        # formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
+        # print(f'Graphics bounded by L{formatter(left,x1)} R{formatter(right,x2)} '
+        #         f'B{formatter(bottom,y1)} T{formatter(top,y2)}.')
+        print('Applying tight boundary.')
+        self.input.update({lname:left, rname:right, bname:bottom, tname:top})
+        # print('input', self.input)
+        figsize, *_, kwargs = _gridspec_setup(**self.input)
+        self.gridspec.update(**kwargs)
+        self.set_size_inches(figsize)
 
     @timer
-    def save(self, filename, adjust=False, silent=False, pad=0.1, **kwargs):
+    def save(self, filename, adjust=False, silent=False, tight=False, pad=0.1, **kwargs):
         """
         Add some features.
         """
@@ -736,7 +735,8 @@ class Figure(mfigure.Figure):
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
-        self._tight_gridprops()
+        if tight:
+            self._tight_grid()
         # Finally, save
         if not silent:
             print(f'Saving to "{filename}".')
@@ -980,7 +980,7 @@ class BaseAxes(maxes.Axes):
             title_height = self.title.get_size()/72
             line_spacing = self.title._linespacing
             title_base = line_spacing*title_height/2 + self.figure.gridspec.top*fig.height
-            xpos = fig.gridprops.left/fig.width + 0.5*(fig.width - fig.gridprops.left - fig.gridprops.right)/fig.width
+            xpos = fig.input.left/fig.width + 0.5*(fig.width - fig.input.left - fig.input.right)/fig.width
             ypos = (title_base + line_spacing*title_height)/fig.height
             if suptitlepos=='title': # just place along axes if no title here
                 ypos -= (line_spacing*title_height)/fig.height
@@ -2484,7 +2484,7 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
             eps = 1e-10
             length = len(values)
             values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
-            print(f'Removed {length-len(values)}/{length} minor ticks(s).')
+            # print(f'Removed {length-len(values)}/{length} minor ticks(s).')
         fixed = values # record as new variable
         locators.append(Locator(fixed)) # final locator object
     # Next the formatter

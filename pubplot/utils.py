@@ -8,6 +8,18 @@ import numpy as np
 from numbers import Number
 
 #------------------------------------------------------------------------------#
+# Helper class
+#------------------------------------------------------------------------------#
+class dot_dict(dict):
+    """
+    Simple class for accessing elements with dot notation.
+    See: https://stackoverflow.com/a/23689767/4970632
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+#------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
 def isvector(item):
@@ -94,38 +106,4 @@ def arange(min_, *args):
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
     return np.arange(min_, max_, step)
-
-def autolevels(min_, max_, N=50):
-    """
-    Function for rounding to nearest <base>.
-    """
-    def round_(x, base=5): return base*round(float(x)/base)
-    # Get the optimal units bases on the range of min to max
-    # numbers; N is the number of contour intervals we want to shoot for
-    max_tens = np.log10(np.abs(max_))//1
-    min_tens = np.log10(np.abs(min_))//1 # e.g. .003 returns -2.7..., -2.7//1 = -3
-    if np.isnan(min_tens): min_tens = max_tens
-    if np.isnan(max_tens): max_tens = min_tens
-        # and 542 returns 2.5..., 2.5//1 = 2
-    # And choose a nice, human-readable range from min-to-max
-    # for spacing in [tens/2, tens/5, tens/10, tens/20, tens/50,
-    #         tens/100, tens/200, tens/500, tens/1000]:
-    tens = 10**max(min_tens, max_tens)
-    locators, levels = [], []
-    factors = [2, 5, 10, 20, 50, 100, 200, 500, 1000]
-    for factor in factors:
-        spacing = tens/factor
-        if str(factor)[0]=='5':
-            locator = 5*tens/factor
-        else:
-            locator = 10*tens/factor
-        locators.append(locator)
-        levels.append(arange(round_(min_,spacing),round_(max_,spacing),spacing))
-        # print(f"For spacing {spacing:.0f}, resulting length: {len(levels[-1]):.0f}")
-    lengths = [level.size for level in levels]
-    diffs = [abs(length-N) for length in lengths]
-    levels = levels[diffs.index(min(diffs))]
-    locator = locators[diffs.index(min(diffs))]
-    # print(f"From range {min_:.3e} to {max_:.3e}, number of levels: {len(levels):d}")
-    return levels, locator
 
