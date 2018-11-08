@@ -46,6 +46,7 @@ import os
 import sys
 import socket
 from .rcmod import rc
+from matplotlib import rcParams
 
 # @block_printing
 def nbsetup(directory=None, backend='inline'):
@@ -54,6 +55,9 @@ def nbsetup(directory=None, backend='inline'):
     home = os.path.expanduser('~')
     hostname = socket.gethostname().split('.')[0]
     autosave = 30
+
+    # Rc initial
+    # rcinit = rcParams.copy()
 
     # Make sure we are in session
     ipython = get_ipython() # save session
@@ -100,6 +104,12 @@ def nbsetup(directory=None, backend='inline'):
 
     # For some reason this is necessary, even with rc['savefig.bbox'] = 'standard'
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") #bbox_inches=\'tight\', pad_inches=0.1)')
+
+    # Print difference
+    # rcfinal = rcParams.copy()
+    # print({key:(value1,value2) for key,value1,value2 in
+    #     zip(rcParams.keys(), rcinit.values(), rcfinal.values())
+    #     if value1 != value2})
 
     # Re-assert defaults (some get overwritten on inline initiatoin)
     rc.reset()

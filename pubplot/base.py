@@ -51,6 +51,7 @@ import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
+from .gridspec import FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
@@ -159,25 +160,44 @@ def counter(func):
 #       out-of-range values, while extend used in colorbar on pcolor has no such
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
+def _parse_args(args):
+    """
+    Parse arguments for check centers/edges.
+    """
+    if len(args)>2:
+        x, y = args[:2]
+        Zs = args[2:]
+    else:
+        Zs = args
+        x = np.arange(Zs[0].shape[0])
+        y = np.arange(Zs[0].shape[1])
+    Zs = [np.array(Z) for Z in Zs]
+    return np.array(x), np.array(y), Zs
+
 def check_centers(func):
     """
     Check shape of arguments passed to contour, and fix result.
+    Optional numbers of arguments:
+      * Z
+      * U, V
+      * x, y, Z
+      * x, y, U, V
     """
     @wraps(func)
-    def decorator(self, x, y, *args, **kwargs):
+    def decorator(self, *args, **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
-        x, y = np.array(x), np.array(y)
-        args = [np.array(Z) for Z in args]
+        x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[0], y.shape[-1]
-        for Z in args:
+        for Z in Zs:
             if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
                 x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # get centers, given edges
             elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        args = [Z.T for Z in args]
-        return func(self, x, y, *args, **kwargs)
+        Zs = [Z.T for Z in Zs]
+        result = func(self, x, y, *Zs, **kwargs)
+        return result
     return decorator
 
 def check_edges(func):
@@ -185,20 +205,21 @@ def check_edges(func):
     Check shape of arguments passed to pcolor, and fix result.
     """
     @wraps(func)
-    def decorator(self, x, y, *args, **kwargs):
+    def decorator(self, *args, **kwargs):
         # Checks that sizes match up, checks whether graticule was input
-        x, y = np.array(x), np.array(y)
-        args = [np.array(Z) for Z in args]
+        x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[0], y.shape[-1]
-        for Z in args:
+        for Z in Zs:
             if Z.shape[0]==xlen and Z.shape[1]==ylen:
                 x, y = utils.edges(x), utils.edges(y)
             elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        args = [Z.T for Z in args]
-        return func(self, x, y, *args, **kwargs)
+        Zs = [Z.T for Z in Zs]
+        result = func(self, x, y, *Zs, **kwargs)
+        return result
+        # return func(self, x, y, *Zs, **kwargs)
     return decorator
 
 def cmap_features(func):
@@ -493,6 +514,15 @@ def docstring_fix(child):
             break # only do this for the first parent class
     return child
 
+class dot_dict(dict):
+    """
+    Simple class for accessing elements with dot notation.
+    See: https://stackoverflow.com/a/23689767/4970632
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 @docstring_fix
 class Figure(mfigure.Figure):
     """
@@ -504,8 +534,8 @@ class Figure(mfigure.Figure):
     --------
     Need to document features.
     """
-    def __init__(self, width=None, height=None,
-        scaffolding=None, gridspec=None,
+    def __init__(self, gridspec, gridprops,
+        width=None, height=None,
         rcreset=True, **kwargs):
         # Initialize figure with some custom attributes.
         # Whether to reset rcParams wheenver a figure is drawn (e.g. after
@@ -513,7 +543,7 @@ class Figure(mfigure.Figure):
         self.rcreset  = rcreset
         # Gridspec information
         self.gridspec = gridspec # gridspec encompassing drawing area
-        self.scaffolding = scaffolding # extra special settings
+        self.gridprops = dot_dict(gridprops) # extra special settings
         # Figure dimensions
         self.width  = width # dimensions
         self.height = height
@@ -619,7 +649,7 @@ class Figure(mfigure.Figure):
         sharey_outside = kwargs.pop('sharey', None)
         spanx_outside = kwargs.pop('spanx', None)
         spany_outside = kwargs.pop('spany', None)
-        gs = mgridspec.GridSpecFromSubplotSpec(
+        gs = FlexibleGridSpecFromSubplotSpec(
                 nrows         = nrows,
                 ncols         = ncols,
                 subplot_spec  = subspec,
@@ -681,15 +711,15 @@ class Figure(mfigure.Figure):
         width, height = ox[1], oy[1] # desired save-width
         # Echo some information
         if not silent:
-            x1fix, y2fix = self.scaffolding['left']-x1, self.scaffolding['top']-y2
+            x1fix, y2fix = self.gridprops.left-x1, self.gridprops.top-y2
             if self.rightpanel is not None:
-                x2fix = self.scaffolding['rspace'] - x2
+                x2fix = self.gridprops.rspace - x2
             else:
-                x2fix = self.scaffolding['right']  - x2
+                x2fix = self.gridprops.right  - x2
             if self.bottompanel is not None:
-                y1fix = self.scaffolding['bspace'] - y1
+                y1fix = self.gridprops.bspace - y1
             else:
-                y1fix = self.scaffolding['bottom'] - y1
+                y1fix = self.gridprops.bottom - y1
             formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
             print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
                   f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
@@ -778,14 +808,6 @@ class BaseAxes(maxes.Axes):
             self._spanx_setup(spanx_group)
         if spany_group:
             self._spany_setup(spany_group)
-
-    def __getitem__(self, key):
-        # Helpful override, to prevent annoying IndexError when user accidentally
-        # tries to index single axes instead of list of axes
-        if key==0:
-            return self
-        else:
-            raise IndexError('Figure contains only one subplot.')
 
     def _spanx_setup(self, group):
         # Specify x, y transform in Figure coordinates
@@ -951,7 +973,7 @@ class BaseAxes(maxes.Axes):
             title_height = self.title.get_size()/72
             line_spacing = self.title._linespacing
             title_base = line_spacing*title_height/2 + self.figure.gridspec.top*fig.height
-            xpos = fig.left/fig.width + .5*(fig.width - fig.left - fig.right)/fig.width
+            xpos = fig.gridprops.left/fig.width + 0.5*(fig.width - fig.gridprops.left - fig.gridprops.right)/fig.width
             ypos = (title_base + line_spacing*title_height)/fig.height
             if suptitlepos=='title': # just place along axes if no title here
                 ypos -= (line_spacing*title_height)/fig.height
@@ -1670,16 +1692,16 @@ class PanelAxes(XYAxes):
     Also an example: https://stackoverflow.com/q/26236380/4970632
     """
     name = 'panel'
-    def __init__(self, *args, panelside=None, erase=False, **kwargs):
+    def __init__(self, *args, panelside=None, invisible=False, **kwargs):
         # Initiate
         if panelside is None:
             raise ValueError('Must specify side.')
         super().__init__(*args, panelside=panelside, **kwargs)
         # Make everything invisible
-        if erase:
-            self.erase()
+        if invisible:
+            self.invisible()
 
-    def erase(self):
+    def invisible(self):
         # Make axes invisible
         for s in self.spines.values():
             s.set_visible(False)
@@ -1690,7 +1712,7 @@ class PanelAxes(XYAxes):
     def legend(self, handles, **kwargs):
         # Allocate invisible axes for drawing legend.
         # Returns the axes and the output of legend_factory().
-        self.erase()
+        self.invisible()
         kwlegend = {'borderaxespad':  0,
                     'frameon':        False,
                     'loc':            'upper center',
@@ -1702,7 +1724,7 @@ class PanelAxes(XYAxes):
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec
-        self.erase()
+        self.invisible()
         figure = self.figure
         side = self.panelside
         subspec = self.get_subplotspec()
@@ -1711,18 +1733,18 @@ class PanelAxes(XYAxes):
         if length!=1 or n!=1:
             # First get gridspec
             if side in ['bottom','top']:
-                gridspec = mgridspec.GridSpecFromSubplotSpec(
-                        subplot_spec=subspec,
+                gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=n,  ncols=3,
                         wspace=0, hspace=0,
+                        subplot_spec=subspec,
                         width_ratios=((1-length)/2, length, (1-length)/2)
                         )
                 subspec = gridspec[i,1]
             elif side in ['left','right']:
-                gridspec = mgridspec.GridSpecFromSubplotSpec(
-                        subplot_spec=subspec,
+                gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=3,  ncols=n,
                         hspace=0, wspace=0,
+                        subplot_spec=subspec,
                         height_ratios=((1-length)/2, length, (1-length)/2)
                         )
                 subspec = gridspec[1,i]

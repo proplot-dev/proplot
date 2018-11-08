@@ -124,7 +124,7 @@ categories_default = { # initialize as empty lists
     'PubPlot Sequential':
         [], # empty at first, fill automatically
     'PubPlot Diverging':
-        ['Dave', 'Lake', 'DryWet'],
+        ['ColdHot', 'Ocean', 'Lake', 'DryWet'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
@@ -138,7 +138,8 @@ categories_default = { # initialize as empty lists
     'ColorBrewer2.0 Diverging':
         ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'],
     'Other':
-        ['cubehelix', 'rainbow', 'bwr'],
+        ['cubehelix', 'bwr'],
+        # ['cubehelix', 'rainbow', 'bwr'],
     # These ones will be deleted
     'Alt Sequential':
         sorted(['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
@@ -151,7 +152,7 @@ categories_default = { # initialize as empty lists
         sorted(['coolwarm', 'bwr', 'seismic']),
     'Miscellaneous':
         sorted(['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-        'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot',
+        'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
         'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 categories_ignore = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
@@ -427,7 +428,8 @@ def Colormap(*args, light=True, extend='both',
     if name and register:
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in categories_default.items()
                     for cat_cmap in cat_cmaps if 'PubPlot' not in cat]:
-            raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
+            print(f'Warning: Overwriting existing colormap "{name}".')
+            # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
         elif name in mcm.cmap_d:
             pass # no warning necessary
             # print(f'Warning: Overwriting existing colormap "{name}".')
