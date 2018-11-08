@@ -117,7 +117,7 @@ def flexible_gridspec_factory(base):
             # Adjust numbers to account for 'invisible' rows/columns
             def _adjust(n):
                 if n<0:
-                    n = nrows*ncols - n
+                    n = nrows*ncols + n
                 n = n*2 # skips the empty rows and columns
                 col = n%ncols
                 row = n//ncols # e.g. 3 rows and columns, index 3 is position [1,0]
