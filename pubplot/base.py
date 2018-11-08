@@ -684,7 +684,7 @@ class Figure(mfigure.Figure):
         axmain._sharey_setup(sharey_outside)
         return axmain
 
-    def _tight_gridprops(silent=False, update=True):
+    def _tight_gridprops(self, adjust=True, silent=False, update=True, pad=0.1):
         """
         Get arguments necessary passed to subplots() to create a tight figure
         bounding box without screwing aspect ratios, widths/heights, and such.
@@ -697,30 +697,31 @@ class Figure(mfigure.Figure):
         x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
         width, height = ox[1], oy[1] # desired save-width
 
-        # Echo some information
-        x1fix, y2fix = self.gridprops.left-x1, self.gridprops.top-y2
-        if self.rightpanel is not None:
-            x2fix = self.gridprops.rspace - x2
-        else:
-            x2fix = self.gridprops.right  - x2
-        if self.bottompanel is not None:
-            y1fix = self.gridprops.bspace - y1
-        else:
-            y1fix = self.gridprops.bottom - y1
-        formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
-        print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
-                f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
-
-        # Optionally repair
-        if update:
+        # Return dict
+        if adjust:
             self.gridspec.left   -= (x1-pad)/width
             self.gridspec.bottom -= (y1-pad)/height
             self.gridspec.right  += (x2-pad)/width
             self.gridspec.top    += (y2-pad)/height
             self.gridspec.update()
 
+        # Determine appropriate values
+        if not silent:
+            x1fix, y2fix = self.gridprops.left-x1, self.gridprops.top-y2
+            if self.rightpanel is not None:
+                x2fix = self.gridprops.rspace - x2
+            else:
+                x2fix = self.gridprops.right  - x2
+            if self.bottompanel is not None:
+                y1fix = self.gridprops.bspace - y1
+            else:
+                y1fix = self.gridprops.bottom - y1
+            formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
+            print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
+                    f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
+
     @timer
-    def save(self, filename, silent=False, pad=None, **kwargs):
+    def save(self, filename, adjust=False, silent=False, pad=0.1, **kwargs):
         """
         Add some features.
         """
@@ -735,34 +736,7 @@ class Figure(mfigure.Figure):
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
-        # Get bounding box that encompasses *all artists*, compare to bounding
-        # box used for saving *figure*
-        obbox = self.bbox_inches # original bbox
-        bbox = self.get_tightbbox(self.canvas.get_renderer())
-        ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
-        x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
-        width, height = ox[1], oy[1] # desired save-width
-        # Echo some information
-        if not silent:
-            x1fix, y2fix = self.gridprops.left-x1, self.gridprops.top-y2
-            if self.rightpanel is not None:
-                x2fix = self.gridprops.rspace - x2
-            else:
-                x2fix = self.gridprops.right  - x2
-            if self.bottompanel is not None:
-                y1fix = self.gridprops.bspace - y1
-            else:
-                y1fix = self.gridprops.bottom - y1
-            formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
-            print(f'Graphics bounded by L{formatter(x1fix,x1)} R{formatter(x2fix,x2)} '
-                  f'B{formatter(y1fix,y1)} T{formatter(y2fix,y2)}.')
-        # Perform gridspec adjustment with some padding
-        if pad is not None:
-            self.gridspec.left   -= (x1-pad)/width
-            self.gridspec.bottom -= (y1-pad)/height
-            self.gridspec.right  += (x2-pad)/width
-            self.gridspec.top    += (y2-pad)/height
-            self.gridspec.update()
+        self._tight_gridprops()
         # Finally, save
         if not silent:
             print(f'Saving to "{filename}".')
