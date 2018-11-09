@@ -101,8 +101,6 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     col_offset = 1 if leftpanels else 0
 
     # Apply the general defaults
-    wratios = default(wratios, np.ones(ncols)/ncols)
-    hratios = default(hratios, np.ones(nrows)/nrows)
     hspace = default(hspace, rc.subplots['title'])
     wspace = default(wspace, rc.subplots['inner'])
     left   = default(left,   rc.subplots['labs'])
@@ -115,24 +113,6 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     bspace = default(bspace, rc.subplots['labs'])
     rspace = default(rspace, rc.subplots['labs'])
     lspace = default(lspace, rc.subplots['labs'])
-
-    # Necessary arguments to reconstruct this grid
-    # NOTE: Use this to reset figure layout with a couple changes!
-    subplots_kw = dot_dict(
-        hspace=hspace, wspace=wspace,
-        aspect=aspect, width=width, height=height,
-        nrows=nrows,   ncols=ncols,
-        bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
-        left=left,     bottom=bottom, right=right,   top=top,
-        bwidth=bwidth, bspace=bspace, rwidth=rwidth, rspace=rspace, lwidth=lwidth, lspace=lspace,
-        )
-
-    # Basic figure dimension stuff
-    width, height = journalsize(width, height) # if user passed width=<string>, will use that journal size
-    if width is None and height is None:
-        width = 5 # default behavior is use 1:1 axes, fixed width
-    auto_width  = (width is None and height is not None)
-    auto_height = (height is None and width is not None)
 
     # Array setup
     if array is None:
@@ -155,11 +135,31 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
             array[row-1,:] = 0
     nrows = array.shape[0]
     ncols = array.shape[1]
+    wratios = default(wratios, np.ones(ncols)/ncols) # only do this ones rows/columns figured out
+    hratios = default(hratios, np.ones(nrows)/nrows)
+
+    # Necessary arguments to reconstruct this grid
+    # NOTE: Use this to reset figure layout with a couple changes!
+    subplots_kw = dot_dict(array=array,
+        hspace=hspace, wspace=wspace,
+        aspect=aspect, width=width, height=height,
+        nrows=nrows,   ncols=ncols,
+        bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
+        left=left,     bottom=bottom, right=right,   top=top,
+        bwidth=bwidth, bspace=bspace, rwidth=rwidth, rspace=rspace, lwidth=lwidth, lspace=lspace,
+        )
+
+    # Basic figure dimension stuff
+    width, height = journalsize(width, height) # if user passed width=<string>, will use that journal size
+    if width is None and height is None:
+        width = 5 # default behavior is use 1:1 axes, fixed width
+    auto_width  = (width is None and height is not None)
+    auto_height = (height is None and width is not None)
 
     # Prepare gridspec
     try:
         aspect = aspect[0]/aspect[1]
-    except IndexError:
+    except (IndexError,TypeError):
         pass # do nothing
     wspace, hspace = np.atleast_1d(wspace), np.atleast_1d(hspace)
     if len(wspace)==1:

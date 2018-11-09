@@ -1087,7 +1087,6 @@ class BaseAxes(maxes.Axes):
         if hatch: # non-empty string or not none
             self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
                 facecolor='none', edgecolor='k', transform=self.transAxes)
-        return self
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
@@ -1606,9 +1605,6 @@ class XYAxes(BaseAxes):
             if gridminor is not None:
                 axis.grid(gridminor, which='minor', **rc['gridminor']) # ignore if no minor ticks
 
-        # Finished
-        return self
-
     def twiny(self, **kwargs):
         # Create second x-axis extending from shared ("twin") y-axis
         # Note: Cannot wrap twiny() because then the axes created will be
@@ -1990,7 +1986,6 @@ class BasemapAxes(MapAxes):
             self.patch.set_edgecolor('none')
             for spine in self.spines.values():
                 spine.update(outline)
-        return self
 
     # Basemap overrides
     # The decorators assure that, when method is called the second time by
@@ -2179,7 +2174,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             print('Add oceans.')
             feat = cfeature.NaturalEarthFeature('physical', 'ocean', '50m')
             self.add_feature(feat, **rc['oceans'])
-        return self
 
     # Cartopy overrides
     # Does some simple manipulation and adds the default transform PlateCarree if not declared.

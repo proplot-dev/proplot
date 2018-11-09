@@ -70,7 +70,9 @@ class axes_list(list):
             def iterator(*args, **kwargs):
                 ret = []
                 for ax in self:
-                    ret += [getattr(ax,attr)(*args, **kwargs)]
+                    res = getattr(ax,attr)(*args, **kwargs)
+                    if res is not None:
+                        ret += [res]
                 return ret
             return iterator
         elif all(not callable(value) for value in values):
@@ -78,7 +80,8 @@ class axes_list(list):
         else:
             raise AttributeError('Mixed methods found.')
 
-def subplots(tight=True, rcreset=True, silent=True, # arguments for figure instantiation
+def subplots(array=None, # allow calling with subplots(array)
+        tight=True, rcreset=True, silent=True, # arguments for figure instantiation
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
@@ -156,7 +159,7 @@ def subplots(tight=True, rcreset=True, silent=True, # arguments for figure insta
     whichpanels = translate.get(whichpanels, whichpanels)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
-    figsize, array, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(**kwargs)
+    figsize, array, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(array=array, **kwargs)
     row_offset, col_offset = offset
     gs = FlexibleGridSpec(**gridspec_kw)
     fig = plt.figure(figsize=figsize, tight=tight, rcreset=rcreset,
