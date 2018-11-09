@@ -28,6 +28,7 @@
 # This tool preserve __name__ metadata.
 # Builtin module requirements
 import os
+import re
 import numpy as np
 import warnings
 import time
@@ -51,7 +52,7 @@ import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
-from .gridspec import _gridspec_setup, FlexibleGridSpecFromSubplotSpec
+from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
@@ -93,6 +94,28 @@ def circle(N):
 #------------------------------------------------------------------------------#
 # Misc tools
 #------------------------------------------------------------------------------#
+def docstring_fix(child):
+    """
+    Decorator function for appending documentation from overridden method
+    onto the overriding method docstring.
+    Adapted from: https://stackoverflow.com/a/8101598/4970632
+    """
+    for name,chfunc in vars(child).items(): # returns __dict__ object
+        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
+        # if not isinstance(chfunc, FunctionType):
+            continue
+        for parent in getattr(child, '__bases__', ()):
+            parfunc = getattr(parent, name, None)
+            if not getattr(parfunc, '__doc__', None):
+                continue
+            if not getattr(chfunc, '__doc__', None):
+                chfunc.__doc__ = '' # in case it's None
+            cmessage = f'Full name: {parfunc.__qualname__}()'
+            pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
+            chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+            break # only do this for the first parent class
+    return child
+
 def fancy_decorator(decorator):
     """
     Normally to make a decorator that accepts arguments, you have to create
@@ -256,13 +279,11 @@ def cmap_features(func):
         # Otherwise we just have to resample the colormap segmentdata, by
         # default picking enough colors to look like perfectly smooth gradations
         if not utils.isvector(levels) and hasattr(result, 'levels'):
-            # print('Automatically selected levels.')
             levels = result.levels
         elif levels is None:
             cmap_kw.update({'resample':True}) # default pcolormesh behavior is just to resample
         # Set normalizer
         if cmap_kw.get('resample',None):
-            # print('resampled')
             if levels is not None:
                 N = len(levels)
                 norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
@@ -402,7 +423,6 @@ def gridfix_basemap(func):
         # print('lon', lon, 'lat', lat, 'Z', Z)
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
         if lon.max()>lon.min()+360:
-            print(lon.max()-lon.min())
             raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
         if lon.min()<-360 or lon.max()>360:
             raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Must fall in range [-360, 360].')
@@ -493,27 +513,19 @@ def gridfix_basemap(func):
 #------------------------------------------------------------------------------
 # Custom figure class
 #------------------------------------------------------------------------------
-def docstring_fix(child):
+class EmptyPanel(object):
     """
-    Decorator function for appending documentation from overridden method
-    onto the overriding method docstring.
-    Adapted from: https://stackoverflow.com/a/8101598/4970632
+    Dummy object to put in place when an axes or figure panel does not exist.
+    Makes nicer error message than if we just put 'None' or nothing there.
     """
-    for name,chfunc in vars(child).items(): # returns __dict__ object
-        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
-        # if not isinstance(chfunc, FunctionType):
-            continue
-        for parent in getattr(child, '__bases__', ()):
-            parfunc = getattr(parent, name, None)
-            if not getattr(parfunc, '__doc__', None):
-                continue
-            if not getattr(chfunc, '__doc__', None):
-                chfunc.__doc__ = '' # in case it's None
-            cmessage = f'Full name: {parfunc.__qualname__}()'
-            pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-            chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
-            break # only do this for the first parent class
-    return child
+    def __bool__(self):
+        return False # it's empty, so this is 'falsey'
+
+    def __getattribute__(self, attr, *args):
+        if re.match('^__.*__$', attr):
+            return object.__getattribute__(self, attr, *args)
+        else:
+            raise ValueError('Panel does not exist.')
 
 @docstring_fix
 class Figure(mfigure.Figure):
@@ -525,34 +537,60 @@ class Figure(mfigure.Figure):
     Features
     --------
     Need to document features.
+        rcreset (True):
+            when figure is drawn, reset rc settings to defaults?
+        tight (True):
     """
-    def __init__(self, figsize, gridspec, input, rcreset=True, **kwargs):
+    def __init__(self, figsize,
+            gridspec=None, subplots_kw=None,
+            rcreset=True, tight=True, pad=0.1,
+            **kwargs):
+        """
+        Matplotlib figure with some pizzazz.
+        Requires:
+            figsize:
+                figure size (width, height) in inches
+            subplots_kw:
+                dictionary-like container of the keyword arguments used to
+                initialize
+        Optional:
+            rcreset (True):
+                when figure is drawn, reset rc settings to defaults?
+            tight (True):
+                when figure is drawn, trim the gridspec edges without messing
+                up axes aspect ratios and internal spacing?
+        """
         # Initialize figure with some custom attributes.
         # Whether to reset rcParams wheenver a figure is drawn (e.g. after
         # ipython notebook finishes executing)
-        self.rcreset  = rcreset
+        self._rcreset  = rcreset
+        self._smart_pad = pad
+        self._smart_tight = tight # note name _tight already taken!
+        self._smart_tight_init = True # is figure in its initial state?
         # Gridspec information
-        self.gridspec = gridspec # gridspec encompassing drawing area
-        self.input = dot_dict(input) # extra special settings
+        self._gridspec = gridspec # gridspec encompassing drawing area
+        self._subplots_kw = dot_dict(subplots_kw) # extra special settings
         # Figure dimensions
         self.width  = figsize[0] # dimensions
         self.height = figsize[1]
         # Panels, initiate as empty
-        self.leftpanel   = None
-        self.bottompanel = None
-        self.rightpanel  = None
-        self.toppanel    = None
+        self.leftpanel   = EmptyPanel()
+        self.bottompanel = EmptyPanel()
+        self.rightpanel  = EmptyPanel()
+        self.toppanel    = EmptyPanel()
         # Proceed
         super().__init__(figsize=figsize, **kwargs) # python 3 only
 
     def draw(self, *args, **kwargs):
-        # Automatically reset the rcparams when a figure is displayed; usually
-        # means we have finished executing a notebook cell
-        # NOTE: This does not affect the figure or its artists, since they
-        # have obviously been instantiated already.
-        if not rc._init and self.rcreset:
+        # If rc settings have been changed, reset them when the figure is
+        # displayed (usually means we have finished executing a notebook cell).
+        if not rc._init and self._rcreset:
             print('Resetting rcparams.')
             rc.reset()
+        # If we haven't already, compress edges
+        if self._smart_tight_init and self._smart_tight:
+            print('Tightening gridspec.')
+            self.smart_tight_layout()
         return super().draw(*args, **kwargs)
 
     def panel_factory(self, subspec, whichpanels=None,
@@ -677,55 +715,43 @@ class Figure(mfigure.Figure):
         axmain._sharey_setup(sharey_outside)
         return axmain
 
-    def _tight_grid(self, adjust=True, silent=False, update=True, pad=0.1):
+    def smart_tight_layout(self, adjust=True, silent=False, update=True, pad=None):
         """
         Get arguments necessary passed to subplots() to create a tight figure
         bounding box without screwing aspect ratios, widths/heights, and such.
         """
         # Get bounding box that encompasses *all artists*, compare to bounding
         # box used for saving *figure*
+        if pad is None:
+            pad = self._smart_pad
+        if self._subplots_kw is None or self._gridspec is None:
+            raise ValueError("Initialize figure with 'subplots_kw' and 'gridspec' to draw tight grid.")
         obbox = self.bbox_inches # original bbox
         bbox = self.get_tightbbox(self.canvas.get_renderer())
         ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
         x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
         width, height = ox[1], oy[1] # desired save-width
 
-        # Crude adjustment with default update method
-        # Return dict
-        # if adjust:
-        #     print(width, x1, x2, (x1-pad)/width)
-        #     self.gridspec.left   -= (x1-pad)/width
-        #     self.gridspec.bottom -= (y1-pad)/height
-        #     self.gridspec.right  += (x2-pad)/width
-        #     self.gridspec.top    += (y2-pad)/height
-        #     mgridspec.GridSpec.update(self.gridspec)
-
         # Apply new settings
         lname = 'lspace' if self.leftpanel else 'left'
         rname = 'rspace' if self.rightpanel else 'right'
         bname = 'bspace' if self.bottompanel else 'bottom'
         tname = 'top'
-        left   = getattr(self.input, lname) - x1 + pad
-        right  = getattr(self.input, rname) - x2 + pad
-        bottom = getattr(self.input, bname) - y1 + pad
-        top    = getattr(self.input, tname) - y2 + pad
-        # formatter = lambda x,y: f'{x:.2f} ({-y:+.2f})'
-        # print(f'Graphics bounded by L{formatter(left,x1)} R{formatter(right,x2)} '
-        #         f'B{formatter(bottom,y1)} T{formatter(top,y2)}.')
-        print('Applying tight boundary.')
-        self.input.update({lname:left, rname:right, bname:bottom, tname:top})
-        # print('input', self.input)
-        figsize, *_, kwargs = _gridspec_setup(**self.input)
-        self.gridspec.update(**kwargs)
+        subplots_kw = self._subplots_kw
+        left   = getattr(subplots_kw, lname) - x1 + pad
+        right  = getattr(subplots_kw, rname) - x2 + pad
+        bottom = getattr(subplots_kw, bname) - y1 + pad
+        top    = getattr(subplots_kw, tname) - y2 + pad
+        subplots_kw.update({lname:left, rname:right, bname:bottom, tname:top})
+        figsize, *_, gridspec_kw = _gridspec_kwargs(**subplots_kw)
+        self._smart_tight_init = False
+        self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
 
     @timer
     def save(self, filename, adjust=False, silent=False, tight=False, pad=0.1, **kwargs):
-        """
-        Add some features.
-        """
         # Notes:
-        # * That the gridspec object must be updated before figure is printed to
+        # * Gridspec object must be updated before figure is printed to
         #     screen in interactive environment; will fail to update after that.
         #     Seems to be glitch, should open thread on GitHub.
         # * To color axes patches, you may have to explicitly pass the
@@ -736,16 +762,14 @@ class Figure(mfigure.Figure):
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
         if tight:
-            self._tight_grid()
+            self.smart_tight_layout()
         # Finally, save
         if not silent:
             print(f'Saving to "{filename}".')
         return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
 
     def savefig(*args, **kwargs):
-        """
-        Alias for save.
-        """
+        # Alias for save.
         return self.save(*args, **kwargs)
 
     # Note: set_size_inches is called by draw(), so can't override; also forget
@@ -791,10 +815,10 @@ class BaseAxes(maxes.Axes):
             raise ValueError(f'Invalid panel side "{panelside}".')
         self.panelparent = panelparent # used when declaring parent
         self.panelside = panelside
-        self.bottompanel = None
-        self.toppanel    = None
-        self.leftpanel   = None
-        self.rightpanel  = None
+        self.bottompanel = EmptyPanel()
+        self.toppanel    = EmptyPanel()
+        self.leftpanel   = EmptyPanel()
+        self.rightpanel  = EmptyPanel()
         # Number and size
         self.number = number # for abc numbering
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
@@ -979,8 +1003,8 @@ class BaseAxes(maxes.Axes):
             # title_base = self.title._transform.transform(self.title.get_position())[1]/fig.dpi
             title_height = self.title.get_size()/72
             line_spacing = self.title._linespacing
-            title_base = line_spacing*title_height/2 + self.figure.gridspec.top*fig.height
-            xpos = fig.input.left/fig.width + 0.5*(fig.width - fig.input.left - fig.input.right)/fig.width
+            title_base = line_spacing*title_height/2 + self.figure._gridspec.top*fig.height
+            xpos = fig._subplots_kw.left/fig.width + 0.5*(fig.width - fig._subplots_kw.left - fig._subplots_kw.right)/fig.width
             ypos = (title_base + line_spacing*title_height)/fig.height
             if suptitlepos=='title': # just place along axes if no title here
                 ypos -= (line_spacing*title_height)/fig.height
@@ -2572,8 +2596,8 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
     # See: https://stackoverflow.com/a/35672224/4970632
     alpha = cb.solids.get_alpha()
     if alpha is not None and alpha<1:
-        print('Performing manual alpha-blending for colorbar solids.')
         # First get reference color
+        print('Performing manual alpha-blending for colorbar solids.')
         reference = mappable.axes.get_facecolor() # the axes facecolor
         reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
         # Next get solids

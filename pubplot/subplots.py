@@ -6,9 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
-from .gridspec import _gridspec_setup, FlexibleGridSpec
+from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import utils
 from . import base
+from functools import wraps
 # Conversions
 cm2in = 0.3937
 mm2in = cm2in/10.0
@@ -61,17 +62,23 @@ class axes_list(list):
     def __getattribute__(self, attr):
         # Stealthily return dummy function that actually iterates
         # through each attribute here
-        for ax in self:
-            if not hasattr(ax,attr) or not callable(getattr(ax,attr)):
-                raise AttributeError(f"'{type(ax)}' object has no method '{attr}'.")
-        def iterator(*args, **kwargs):
-            ret = []
-            for ax in self:
-                ret += [getattr(ax,attr)(*args, **kwargs)]
-            return ret
-        return iterator
+        values = [getattr(ax,attr,None) for ax in self]
+        if None in values:
+            raise AttributeError(f"'{type(self[0])}' object has no method '{attr}'.")
+        elif all(callable(value) for value in values):
+            @wraps(values[0])
+            def iterator(*args, **kwargs):
+                ret = []
+                for ax in self:
+                    ret += [getattr(ax,attr)(*args, **kwargs)]
+                return ret
+            return iterator
+        elif all(not callable(value) for value in values):
+            return values # just return the attribute list
+        else:
+            raise AttributeError('Mixed methods found.')
 
-def subplots(silent=True,
+def subplots(tight=True, rcreset=True, silent=True, # arguments for figure instantiation
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
@@ -149,13 +156,11 @@ def subplots(silent=True,
     whichpanels = translate.get(whichpanels, whichpanels)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
-    figsize, array, offset, input, kwargs = _gridspec_setup(**kwargs)
-    # print('result', input)
+    figsize, array, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(**kwargs)
     row_offset, col_offset = offset
-    gs = FlexibleGridSpec(**kwargs)
-    fig = plt.figure(gridspec=gs,
-        figsize=figsize,
-        input=input,
+    gs = FlexibleGridSpec(**gridspec_kw)
+    fig = plt.figure(figsize=figsize, tight=tight, rcreset=rcreset,
+        gridspec=gs, subplots_kw=subplots_kw,
         FigureClass=base.Figure,
         )
 
@@ -193,7 +198,7 @@ def subplots(silent=True,
     projection = proj or projection
     projection_kw = proj_kw or projection_kw
     if maps:
-        wratios, hratios = np.atleast_1d(kwargs.get('wratios',1)), np.atleast_1d(kwargs.get('hratios',1))
+        wratios, hratios = np.atleast_1d(gridspec_kw.get('wratios',1)), np.atleast_1d(gridspec_kw.get('hratios',1))
         if {*wratios.flat} != {1} or {*hratios.flat} != {1}:
             raise NotImplementedError('Not yet possible.')
         if projection=='polar':
@@ -375,9 +380,9 @@ def subplots(silent=True,
             axp = fig.add_subplot(subspec, panelside=side, invisible=True, projection='panel')
             axsp += [axp]
         setattr(fig, name, axes_list(axsp))
-    _paneladd('bottompanel', input.bottompanels)
-    _paneladd('rightpanel',  input.rightpanels)
-    _paneladd('leftpanel',   input.leftpanels)
+    _paneladd('bottompanel', subplots_kw.bottompanels)
+    _paneladd('rightpanel',  subplots_kw.rightpanels)
+    _paneladd('leftpanel',   subplots_kw.leftpanels)
 
     #--------------------------------------------------------------------------
     # Return results

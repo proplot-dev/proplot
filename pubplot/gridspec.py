@@ -40,7 +40,7 @@ def journalsize(width, height):
     return width, height
 
 # Function for processing input and generating necessary keyword args
-def _gridspec_setup(array=None, rowmajor=True, # mode 1: specify everything with array
+def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything with array
     nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
     aspect=1,    height=None, width=None,   # for controlling aspect ratio, default is control for width
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
@@ -118,8 +118,8 @@ def _gridspec_setup(array=None, rowmajor=True, # mode 1: specify everything with
 
     # Necessary arguments to reconstruct this grid
     # NOTE: Use this to reset figure layout with a couple changes!
-    # print('width', width, 'lwidth', lwidth, 'lspace', lspace, 'height', height)
-    input_setup = dot_dict(
+    subplots_kw = dot_dict(
+        hspace=hspace, wspace=wspace,
         aspect=aspect, width=width, height=height,
         nrows=nrows,   ncols=ncols,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
@@ -203,7 +203,6 @@ def _gridspec_setup(array=None, rowmajor=True, # mode 1: specify everything with
     bpanel_total = bwidth + bspace if bottompanels else 0
     rpanel_total = rwidth + rspace if rightpanels else 0
     lpanel_total = lwidth + lspace if leftpanels else 0
-    print('total', aspect, bwidth, bpanel_total, lwidth, lpanel_total, rwidth, rpanel_total)
     if width is not None:
         axwidth_ave = (width - left - right - (ncols-1)*np.mean(wspace) - rpanel_total - lpanel_total)/ncols
     if height is not None:
@@ -256,7 +255,7 @@ def _gridspec_setup(array=None, rowmajor=True, # mode 1: specify everything with
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     offset = (0, 1 if leftpanels else 0)
     figsize = (width, height)
-    input_gridspec = dict(
+    gridspec_kw = dict(
             nrows         = nrows,
             ncols         = ncols,
             left          = left,
@@ -268,7 +267,7 @@ def _gridspec_setup(array=None, rowmajor=True, # mode 1: specify everything with
             width_ratios  = wratios,
             height_ratios = hratios,
             ) # set wspace/hspace to match the top/bottom spaces
-    return figsize, array, offset, input_setup, input_gridspec
+    return figsize, array, offset, subplots_kw, gridspec_kw
 
 # Generate custom GridSpec classes that override the GridSpecBase
 # __setitem__ method and the 'base' __init__ method
@@ -397,15 +396,15 @@ def flexible_gridspec_factory(base):
                 hratios_final[1::2] = list(hspace)
             return wratios_final, hratios_final, kwargs # bring extra kwargs back
 
-        def update(self, **kwargs):
+        def update(self, **gridspec_kw):
             # Handle special hspace/wspace arguments, and just set the simple
             # left/right/top/bottom attributes
-            wratios, hratios, kwargs = self._ratios(**kwargs)
-            for key,value in kwargs.items():
-                setattr(self,key,value)
-            super().update()
+            wratios, hratios, edges_kw = self._ratios(**gridspec_kw)
+            edges_kw = {key:value for key,value in edges_kw.items()
+                if key not in ('nrows','ncols')} # cannot be changed
             self.set_width_ratios(wratios)
             self.set_height_ratios(hratios)
+            super().update(**edges_kw) # should just be left/right/top/bottom
 
     return _GridSpec
 
