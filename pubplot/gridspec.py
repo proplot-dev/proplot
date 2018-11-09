@@ -139,10 +139,10 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     hratios = default(hratios, np.ones(nrows)/nrows)
 
     # Necessary arguments to reconstruct this grid
-    # NOTE: Use this to reset figure layout with a couple changes!
-    subplots_kw = dot_dict(array=array,
+    # Can follow some of the pre-processing
+    subplots_kw = dot_dict(array=array, width=width, height=height,
         hspace=hspace, wspace=wspace,
-        aspect=aspect, width=width, height=height,
+        hratios=hratios, wratios=wratios,
         nrows=nrows,   ncols=ncols,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
         left=left,     bottom=bottom, right=right,   top=top,
@@ -196,25 +196,21 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     #--------------------------------------------------------------------------
     # Automatic aspect ratio
     # TODO: Account for top-left axes occupying multiple subplot slots!
-    # * Try wspace=0.2 for gs with cols=4, axes gs[0,:2] and gs[0,2:] vs. gs
-    #   with cols=2, axes gs[0,0] and gs[0,1], and spacing should differ
-    # * Formula: aspect = ((width - left - right - (ncol-1)*wspace)/ncol)
-    #                   / ((height - top - bottom - (nrow-1)*hspace)/nrow)
     bpanel_total = bwidth + bspace if bottompanels else 0
     rpanel_total = rwidth + rspace if rightpanels else 0
     lpanel_total = lwidth + lspace if leftpanels else 0
     if width is not None:
-        axwidth_ave = (width - left - right - (ncols-1)*np.mean(wspace) - rpanel_total - lpanel_total)/ncols
+        axwidth_ave = (width - left - right - sum(wspace) - rpanel_total - lpanel_total)/ncols
     if height is not None:
-        axheight_ave = (height - top - bottom - (nrows-1)*np.mean(hspace) - bpanel_total)/nrows
+        axheight_ave = (height - top - bottom - sum(hspace) - bpanel_total)/nrows
     # Fix height and top-left axes aspect ratio
     if auto_width:
         axwidth_ave = axheight_ave*aspect
-        width       = axwidth_ave*ncols + left + right + (ncols-1)*np.mean(wspace) + rpanel_total + lpanel_total
+        width       = axwidth_ave*ncols + left + right + sum(wspace) + rpanel_total + lpanel_total
     # Fix width and top-left axes aspect ratio
     if auto_height:
         axheight_ave = axwidth_ave/aspect
-        height       = axheight_ave*nrows + top + bottom + (nrows-1)*np.mean(hspace) + bpanel_total
+        height       = axheight_ave*nrows + top + bottom + sum(hspace) + bpanel_total
     # Figure size, and component of space belonging to main plotting area
     if axwidth_ave<0:
         raise ValueError("Not enough room for axes. Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
@@ -242,7 +238,7 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
         left    = lspace
     if rightpanels:
         wratios = wratios + [rwidth]
-        rspace  = rspace + [right]
+        wspace  = wspace + [right]
         right   = rspace
     # Scale stuff that gridspec needs to be scaled
     bottom = bottom/height

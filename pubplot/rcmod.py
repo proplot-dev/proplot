@@ -112,6 +112,7 @@ rcDefaults = {
     'axes.labelweight':        'normal',
     'axes.grid':               True,
     'axes.labelpad':           3.0,
+    'axes.titlepad':           3.0,
     'axes.axisbelow':          False, # for ticks/gridlines *above* patches, *below* lines, use 'lines'
     'xtick.minor.visible' :    True,
     'ytick.minor.visible' :    True,

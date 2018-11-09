@@ -73,7 +73,7 @@ class axes_list(list):
                     res = getattr(ax,attr)(*args, **kwargs)
                     if res is not None:
                         ret += [res]
-                return ret
+                return ret or None
             return iterator
         elif all(not callable(value) for value in values):
             return values # just return the attribute list

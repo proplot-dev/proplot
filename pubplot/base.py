@@ -581,7 +581,79 @@ class Figure(mfigure.Figure):
         # Proceed
         super().__init__(figsize=figsize, **kwargs) # python 3 only
 
+    def _rowlabels(self, labels, **kwargs):
+        # Assign rowlabels
+        axs = []
+        for ax in self.axes:
+            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax.cols[0]==0:
+                axs.append(ax)
+        if isinstance(labels,str): # common during testing
+            labels = [labels]*len(axs)
+        if len(labels)!=len(axs):
+            raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
+        axs = [ax for _,ax in sorted(zip([ax.rows[0] for ax in axs],axs))]
+        for ax,label in zip(axs,labels):
+            if label and not ax.rowlabel.get_text():
+                # Create a CompositeTransform that converts coordinates to
+                # universal dots, then back to axes
+                label_to_ax = ax.yaxis.label.get_transform() + ax.transAxes.inverted()
+                x, _ = label_to_ax.transform(ax.yaxis.label.get_position())
+                ax.rowlabel.set_visible(True)
+                # Add text
+                ax.rowlabel.update({'text':label, 'position':[x,0.5],
+                    'ha':'right', 'va':'center', **kwargs})
+
+    def _collabels(self, labels, **kwargs):
+        # Assign collabels
+        axs = []
+        for ax in self.axes:
+            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax.rows[0]==0:
+                axs.append(ax)
+        if isinstance(labels,str):
+            labels = [labels]*len(axs)
+        if len(labels)!=len(axs):
+            raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} columns.')
+        axs = [ax for _,ax in sorted(zip([ax.cols[0] for ax in axs],axs))]
+        for ax,label in zip(axs,labels):
+            if label and not ax.collabel.get_text():
+                ax.collabel.update({'text':label, **kwargs})
+
+    def _suptitle_setup(self, offset=False, **kwargs):
+        # Intelligently determine supertitle position:
+        # 1) Determine x by the underlying gridspec structure, where main axes lie.
+        # 2) Determine y by whether titles exist on top-row axes.
+        # NOTE: Default linespacing is 1.2; it has no get, only a setter; see
+        # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+        if not hasattr(self,'_suptitle') or self._suptitle is None:
+            self.suptitle('')
+        title_height = self.axes[0].title.get_size()/72
+        line_spacing = self.axes[0].title._linespacing
+        base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
+        left = self._subplots_kw.left
+        right = self._subplots_kw.right
+        if self.leftpanel:
+            left += (self._subplots_kw.lwidth + self._subplots_kw.lspace)
+        if self.rightpanel:
+            right += (self._subplots_kw.rwidth + self._subplots_kw.rspace)
+        xpos = left/self.width + 0.5*(self.width - left - right)/self.width
+        if offset:
+            offset = line_spacing*title_height
+        else:
+            offset = 0
+        ypos = (base + offset)/self.height
+        self._suptitle.update({'position':(xpos, ypos), 'ha':'center', 'va':'bottom', **kwargs})
+
     def draw(self, *args, **kwargs):
+        # Special: Figure out if other titles are present, and if not
+        # bring suptitle close to center
+        offset = False
+        for ax in self.axes:
+            if isinstance(ax, BaseAxes) and ax.rows[0]==0 \
+                and ((ax.title.get_text() and not ax._title_inside)
+                or (ax.rowlabel and ax.collabel)):
+                offset = True
+                break
+        self._suptitle_setup(offset=offset) # just applies the spacing
         # If rc settings have been changed, reset them when the figure is
         # displayed (usually means we have finished executing a notebook cell).
         if not rc._init and self._rcreset:
@@ -589,7 +661,7 @@ class Figure(mfigure.Figure):
             rc.reset()
         # If we haven't already, compress edges
         if self._smart_tight_init and self._smart_tight:
-            print('Tightening gridspec.')
+            print('Adjusting gridspec.')
             self.smart_tight_layout()
         return super().draw(*args, **kwargs)
 
@@ -772,17 +844,6 @@ class Figure(mfigure.Figure):
         # Alias for save.
         return self.save(*args, **kwargs)
 
-    # Note: set_size_inches is called by draw(), so can't override; also forget
-    # set_figwidth and set_figheight for consistency.
-    _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
-    'ratios are *static*, and must be set at creation time using pubplot.subplots().'
-    def subplots_adjust(self, *args, **kwargs):
-        raise ValueError(self._message_strongarm)
-
-    def tight_layout(self, *args, **kwargs):
-        raise ValueError(self._message_strongarm)
-
-
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
 #------------------------------------------------------------------------------#
@@ -809,7 +870,16 @@ class BaseAxes(maxes.Axes):
         self._spany = None
         self._spanx_group = []
         self._spany_group = []
+        self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         super().__init__(*args, **kwargs)
+        # Add special row/column labels (can only be filled with text if axes
+        # is on leftmost column/topmost row)
+        self.collabel = self.text(*self.title.get_position(), '',
+                weight=rc['axes.titleweight'], size=rc['axes.titlesize'],
+                va='baseline', ha='center', transform=self.title.get_transform())
+        self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
+                weight=rc['axes.titleweight'], size=rc['axes.titlesize'],
+                va='center', ha='right', transform=self.transAxes)
         # Panels
         if panelside not in (None, 'left','right','bottom','top'):
             raise ValueError(f'Invalid panel side "{panelside}".')
@@ -820,6 +890,10 @@ class BaseAxes(maxes.Axes):
         self.leftpanel   = EmptyPanel()
         self.rightpanel  = EmptyPanel()
         # Number and size
+        subspec = self.get_subplotspec()
+        nrows, ncols = subspec.get_gridspec().get_geometry()
+        self.rows = (subspec.num1 // ncols, subspec.num2 // ncols)
+        self.cols = (subspec.num1 % ncols,  subspec.num2 % ncols)
         self.number = number # for abc numbering
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
@@ -949,10 +1023,6 @@ class BaseAxes(maxes.Axes):
         if self.leftpanel and self._spany_group:
             self.leftpanel._spany_setup([ax.leftpanel for ax in self._spany_group if ax.leftpanel is not None])
 
-    def rc_context(self, *args, **kwargs):
-        # Temporarily change rcParams for drawings on this axes.
-        return rc_context_rcmod(self, *args, **kwargs)
-
     def _rcupdate(self, **kwargs):
         # Similar to format(), but this updates from rcparams.
         # Update the title rcParams
@@ -962,14 +1032,48 @@ class BaseAxes(maxes.Axes):
         if hasattr(self,'abc'):
             self.abc.update(dict(fontsize=rc['abc.fontsize'], weight=rc['abc.weight']))
 
+    def _title_pos(self, pos, **kwargs):
+        # Position arbitrary text to left/middle/right either inside or outside
+        # of axes (default is center, outside)
+        pad = (rc['axes.titlepad']/72)/self.height # to inches --> to axes relative
+        ipad = pad*1.5 # needs a bit more room to look ok
+        pos = pos or 'oc'
+        if not any(c in pos for c in 'lcr'):
+            pos += 'c'
+        if not any(c in pos for c in 'oi'):
+            pos += 'o'
+        if 'c' in pos:
+            x = 0.5
+            ha = 'center'
+        elif 'l' in pos:
+            x = 0 + ipad*('i' in pos)
+            ha = 'left'
+        elif 'r' in pos:
+            x = 1 - ipad*('i' in pos)
+            ha = 'right'
+        if 'o' in pos:
+            y = 1 + pad
+            va = 'baseline'
+            self._title_inside = False
+        elif 'i' in pos:
+            y = 1 - ipad
+            va = 'top'
+            self._title_inside = True
+        return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va}
+
+    def rc_context(self, *args, **kwargs):
+        # Temporarily change rcParams for drawings on this axes.
+        return rc_context_rcmod(self, *args, **kwargs)
+
     # New convenience feature
+    # The title position can be a mix of 'l/c/r' and 'i/o'
     def format(self,
-        abc=False, abcpos=None, abcformat='',
         hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
-        suptitle=None, suptitlepos=None, title=None, titlepos=None,
-        rowlabels=None, collabels=None, # label rows and columns individually
-        titlepad=0.1, title_kw={},
-        abcpad=0.1, abc_kw={},
+        suptitle=None, suptitle_kw={},
+        collabels=None, collabels_kw={},
+        rowlabels=None, rowlabels_kw={}, # label rows and columns
+        title=None, titlepos=None, title_kw={},
+        abc=False, abcpos=None, abcformat='', abc_kw={},
         rc_kw={}, **kwargs,
         ):
         """
@@ -990,69 +1094,38 @@ class BaseAxes(maxes.Axes):
         # need to call this from the base class, and all settings will be applied)
         with self.rc_context(rc_kw, **kwargs):
             self._rcupdate()
-        # self._rcupdate(**kwargs)
+
+        # NOTE: These next two are actually *figure-wide* settings, but that
+        # line seems to get blurred -- where we have shared axes, spanning
+        # labels, and whatnot. May result in redundant assignments if formatting
+        # more than one axes, but operations are fast so some redundancy is nbd.
         # Create figure title
         fig = self.figure # the figure
-        if not hasattr(fig,'_suptitle') or fig._suptitle is None:
-            fig.suptitle(suptitle or '')
         if suptitle is not None:
-            # First give suptitle smarter position
-            # Default linespacing is 1.2; it has no get, only a setter; see:
-            # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-            # NOTE: Try to make suptitle coordinates figure-specific
-            # title_base = self.title._transform.transform(self.title.get_position())[1]/fig.dpi
-            title_height = self.title.get_size()/72
-            line_spacing = self.title._linespacing
-            title_base = line_spacing*title_height/2 + self.figure._gridspec.top*fig.height
-            xpos = fig._subplots_kw.left/fig.width + 0.5*(fig.width - fig._subplots_kw.left - fig._subplots_kw.right)/fig.width
-            ypos = (title_base + line_spacing*title_height)/fig.height
-            if suptitlepos=='title': # just place along axes if no title here
-                ypos -= (line_spacing*title_height)/fig.height
-            if suptitlepos=='title': # not elevated
-                pass
-            elif isinstance(suptitlepos,str):
-                raise ValueError(f"Unknown suptitle position: {suptitlepos}.")
-            elif suptitlepos is not None:
-                xpos, ypos = suptitlepos
-            # Next apply
-            fig._suptitle.update({'text':suptitle, 'position':(xpos,ypos),
-                'ha':'center', 'va':'bottom'})
+            fig._suptitle_setup(text=suptitle, **suptitle_kw)
+        if rowlabels is not None:
+            fig._rowlabels(rowlabels, **rowlabels_kw)
+        if collabels is not None:
+            fig._collabels(collabels, **collabels_kw)
 
         # Create axes title
         # Input needs to be emptys string
         if title is not None:
-            # Handle overridden text method
+            # Allow user to use my *special* text method for
+            # making title, e.g. fancy=True
             try:
                 self.title.update({'text':title, **title_kw})
             except Exception:
-                position = self.title.get_position()
-                transform = self.title.get_transform()
-                ha = self.title.get_ha()
-                va = self.title.get_va()
                 self.title.set_visible(False)
-                self.title = self.text(*position, title, transform=transform,
-                        ha=ha, va=va, **title_kw)
+                self.title = self.text(0, 0, title, **title_kw)
             # Reposition text
-            if titlepos=='center':
-                pass # do nothing
-            elif titlepos=='left':
-                self.title.update({'position':(0,1), 'ha':'left'})
-            elif titlepos=='right':
-                self.title.update({'position':(1,1), 'ha':'right'})
-            elif titlepos=='inside':
-                # titlepad = (self.title._linespacing-1)*self.title.get_size()/72
-                self.title.update({'position':(0.5,1-titlepad/self.height),
-                    'transform':self.transAxes, 'va':'top'})
-            elif isinstance(titlepos,str):
-                raise ValueError(f'Unknown title position: {titlepos}.')
-            elif titlepos is not None: 
-                self.title.update({'position':titlepos, 'ha':'center', 'va':'center'})
+            self.title.update(self._title_pos(titlepos or 'oc'))
 
         # Create axes numbering
         if not hasattr(self, 'abc'):
-            self.abc = self.text(0, 1, '',
-                    transform=self.title._transform)
+            self.abc = self.text(0, 0, '')
         if self.number is not None and abc:
+            # Get text
             abcedges = abcformat.split('a')
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
             abc_kw = {'text':text, 'ha':'left', 'va':'baseline', **abc_kw, **rc['abc']}
@@ -1060,22 +1133,12 @@ class BaseAxes(maxes.Axes):
                 self.abc.update(abc_kw)
             except Exception:
                 self.abc.set_visible(False)
-                self.abc = self.text(0, 1, **abc_kw) # call *overridden* text method
-            if abcpos=='inside':
-                # abcpad = (self.abc._linespacing-1)*self.abc.get_size()/72
-                self.abc.update({'position':(abcpad/self.width, 1-abcpad/self.height),
-                    'transform':self.transAxes, 'ha':'left', 'va':'top'})
-            elif isinstance(abcpos,str):
-                raise ValueError(f'Unknown abc position: {abcpos}.')
-            elif abcpos is not None:
-                self.abc.update({'position':abcpos, 'ha':'left', 'va':'top'})
+                self.abc = self.text(0, 0, **abc_kw) # call *overridden* text method
+            # Reposition text
+            self.abc.update(self._title_pos(abcpos or 'ol'))
         elif hasattr(self, 'abc'):
+            # Hide
             self.abc.set_visible(False)
-
-        # Row and column labels -- the column ones can just set the appropriate
-        # titles, rows are slightly more complicated
-        if rowlabels is not None or collabels is not None:
-            raise NotImplementedError('On the todo list.')
 
         # Color setup, optional hatching in background of axes
         # You should control transparency by passing transparent=True or False
