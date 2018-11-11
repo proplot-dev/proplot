@@ -272,7 +272,8 @@ def get_channel_value(color, channel, space='hsl'):
 def Colormap(*args, extend='both',
         xi=None, xf=None, # optionally truncate color range by these indices
         ratios=1, resample=True, reverse=False,
-        name=None, register=True, save=False, N=None, **kwargs):
+        gamma=None, gamma1=None, gamma2=None,
+        name=None, register=False, save=False, N=None, **kwargs):
     """
     Convenience function for generating colormaps in a variety of ways.
     The 'extend' property will be used to resample LinearSegmentedColormap
@@ -311,22 +312,31 @@ def Colormap(*args, extend='both',
         raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
         # Retrieve Colormap instance
+        if isinstance(cmap,str) and cmap in mcm.cmap_d:
+            cmap = mcm.cmap_d[cmap]
         if isinstance(cmap, mcolors.Colormap):
-            # Do nothing
-            pass
-        elif type(cmap) is dict:
+            # Allow gamma override, otherwise do nothing
+            if isinstance(cmap, PerceptuallyUniformColormap):
+                if gamma1 or gamma2:
+                    segmentdata = cmap._segmentdata.copy()
+                    if gamma1:
+                        segmentdata['gamma1'] = gamma1
+                    if gamma2:
+                        segmentdata['gamma2'] = gamma2
+                    cmap = type(cmap)(cmap.name, segmentdata, space=cmap.space, mask=cmap.mask)
+            elif isinstance(cmap, mcolors.LinearSegmentedColormap):
+                if gamma:
+                    cmap._gamma = gamma
+                    cmap._init()
+        elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
             cmap = PerceptuallyUniformColormap.from_hsl(name, **cmap)
-        elif type(cmap) is not str:
+        elif not isinstance(cmap, str):
             # List of colors
             cmap = mcolors.ListedColormap(cmap, name=name)
-        elif cmap in mcm.cmap_d:
-            # Map name or color for generating monochrome gradiation
-            cmap = mcm.cmap_d[cmap] # get the instance
         else:
-            # Parse extra options
+            # Monochrome colormap based from input color (i.e. single hue)
             light = True # by default
-            cmap_kw = kwargs.copy() # may be different for each cmap in *args
             regex = '([0-9].)$'
             match = re.search(regex, cmap) # declare options with _[flags]
             cmap = re.sub(regex, '', cmap) # remove options
@@ -398,6 +408,7 @@ def Colormap(*args, extend='both',
 
     # Optionally register a colormap
     if name and register:
+        print(name, 'Registering')
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _categories_default.items()
                     for cat_cmap in cat_cmaps if 'PubPlot' not in cat]:
             print(f'Warning: Overwriting existing colormap "{name}".')
