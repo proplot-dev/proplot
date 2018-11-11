@@ -443,7 +443,7 @@ def Colormap(*args, light=True, extend='both',
     if name and save:
         # Save segment data directly
         basename = f'{cmap.name}.npy'
-        filename = f'{os.path.dirname(__file__)}/cmaps/{basename}'
+        filename = f'{os.path.dirname(__file__)}/../cmaps/{basename}'
         np.save(filename, dict(cmap._segmentdata, space=cmap.space))
         print(f'Saved colormap to "{basename}".')
         # Save list of hex colors
@@ -1229,7 +1229,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
     names = []
     categories_list = []
     categories_set = set()
-    for file in glob(f'{os.path.dirname(__file__)}/colors/*.txt'):
+    for file in glob(f'{os.path.dirname(__file__)}/../colors/*.txt'):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
@@ -1283,7 +1283,7 @@ def register_cmaps():
     Note all of those methods simply modify the dictionary mcm.cmap_d.
     """
     # First read from file
-    for file in glob(f'{os.path.dirname(__file__)}/cmaps/*'):
+    for file in glob(f'{os.path.dirname(__file__)}/../cmaps/*'):
         # Read table of RGB values
         if not re.search('.(rgb|hex|npy)$', file):
             continue
@@ -1552,7 +1552,7 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.
         fig.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
 
         # Save figure
-        fig.savefig(f'{os.path.dirname(__file__)}/colors_{"-".join(group)}.pdf',
+        fig.savefig(f'{os.path.dirname(__file__)}/../colors/colors_{"-".join(group)}.pdf',
                 bbox_inches='tight', format='pdf', transparent=False)
         figs += [fig]
     return figs
@@ -1575,20 +1575,14 @@ def cycle_show():
     axs = [ax for sub in axs for ax in sub]
     state = np.random.RandomState(528)
     for i,(ax,(key,cycle)) in enumerate(zip(axs,cycles.items())):
-        # Draw
         lw = 4
         key = key.lower()
         array = state.rand(20,len(cycle)) - 0.5
-        # array = array[:,:1] + (array.cumsum(axis=0) + 0.5).cumsum(axis=1) + np.arange(0,len(cycle))
         array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
         for j,color in enumerate(cycle):
             l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
             l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
-            # ax.fill_between([0,1], j*lw, (j+1)*lw, facecolor=color)
-            # lines = ax.plot(state.rand(10,len(value)), lw=5, ls='-')
         title = f'{key}: {len(cycle)} colors'
-        # ax.set_xlim((0,1))
-        # ax.set_ylim((0,len(cycle)*lw))
         ax.set_title(title)
         ax.grid(True)
         for axis in 'xy':
@@ -1598,7 +1592,7 @@ def cycle_show():
     if len(cycles)%2==1:
         axs[-1].set_visible(False)
     # Save
-    fig.savefig(f'{os.path.dirname(__file__)}/cycles.pdf',
+    fig.savefig(f'{os.path.dirname(__file__)}/../cmaps/cycles.pdf',
             bbox_inches='tight', format='pdf')
     return fig
 
@@ -1618,14 +1612,12 @@ def cmap_show(N=31):
     track_lowercase = set()
     cmaps_all = [cmap for cmap in mcm.cmap_d.keys() if
             not cmap.endswith('_r')
-            # and not re.search('[A-Z]',cmap)
             and cmap not in custom_lower
             and 'Vega' not in cmap
             and (isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) or cmap in exceptions)]
     cmaps_listed = [cmap for cmap in mcm.cmap_d.keys() if
             not cmap.endswith('_r')
             and cmap not in custom_lower
-            # and not re.search('[A-Z]',cmap)
             and 'Vega' not in cmap
             and (not isinstance(mcm.cmap_d[cmap],mcolors.LinearSegmentedColormap) and cmap not in exceptions)]
 
@@ -1637,11 +1629,9 @@ def cmap_show(N=31):
     cmaps_known   = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap in cmaps_all]
     cmaps_custom  = [cmap for cmap in cmaps_all if cmap not in cmaps_known and cmap not in cmaps_ignore]
 
-    # print(cmaps_custom, custom_cmaps)
-    # cmaps_custom = list(custom_cmaps)
     # Attempt to auto-detect diverging colormaps, just sample the points on either end
     # Do this by simply summing the RGB channels to get HSV brightness
-    # categories['PubPlot Diverging'][:] = [] # empty list out again
+    # categories['PubPlot Diverging'][:] = []
     categories['PubPlot Sequential'][:] = []
     for cmap in cmaps_custom:
         m = mcm.cmap_d[cmap]
@@ -1651,16 +1641,11 @@ def cmap_show(N=31):
         # if cmap.lower() in custom_diverging:
             # categories['PubPlot Diverging'] += [cmap]
         # else:
-    # categories['PubPlot'] = cmaps_custom
-    # categories['PubPlot'] = [cmap for cmap in cmaps_custom if cmap[:2]!='cb']
-    # categories['ColorBrewer'] = [cmap for cmap in cmaps_custom if cmap[:2]=='cb']
     if cmaps_missing:
         print(f'Missing colormaps: {", ".join(cmaps_missing)}')
     if cmaps_ignore:
         print(f'Ignored colormaps: {", ".join(cmaps_ignore)}')
 
-    # print(f'PubPlot colormaps: {", ".join(cmaps_custom)}')
-    # print(f'Listed colormaps: {", ".join(cmaps_listed)}')
     # Attempt sorting based on hue
     # for cat in ['PubPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
     # for cat in ['PubPlot Sequential', 'ColorBrewer2.0 Sequential']:
@@ -1714,7 +1699,7 @@ def cmap_show(N=31):
         nplots += len(categories[cat])
 
     # Save
-    filename = f'{os.path.dirname(__file__)}/colormaps.pdf'
+    filename = f'{os.path.dirname(__file__)}/../cmaps/colormaps.pdf'
     print(f"Saving figure to: {filename}.")
     fig.savefig(filename, bbox_inches='tight')
     return fig

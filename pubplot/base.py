@@ -748,9 +748,12 @@ class Figure(mfigure.Figure):
             print('Resetting rcparams.')
             rc.reset()
         # If we haven't already, compress edges
-        if self._smart_tight_init and self._smart_tight:
+        # NOTE: Currently for cartopy axes with non-global edges, this can
+        # erroneously identify invisible edges of map as being part of boundary
+        if self._smart_tight_init and self._smart_tight and \
+            not any(isinstance(ax, MapAxes) for ax in self.axes):
             print('Adjusting gridspec.')
-            # self.smart_tight_layout()
+            self.smart_tight_layout()
         return super().draw(*args, **kwargs)
 
     def panel_factory(self, subspec, whichpanels=None,
@@ -2009,13 +2012,11 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         return obj
 
     def _rcupdate(self):
-        ic()
         # Update properties controlled by custom rc settings
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
         self.background_patch.update({'facecolor': rc['axes.facecolor']})
         self.outline_patch.update({'edgecolor': rc['axes.edgecolor'],
                                    'linewidth': rc['axes.linewidth']})
-
         # Call parent
         super()._rcupdate()
 
