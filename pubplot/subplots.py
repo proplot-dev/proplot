@@ -183,7 +183,6 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     if isinstance(proj, str):
         proj = {range(1,num_axes+1): proj}
     proj = axes_dict(proj)
-    ic(axes_kw, proj)
     for num,name in proj.items():
         # Builtin matplotlib polar axes, just use my overridden version
         if name=='polar':
@@ -239,7 +238,6 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
                 innerpanels_kw[num]['wwidth'] = rc.subplots['cbar']
             if not kwargs.get('wspace',None):
                 kwargs['wspace'] = rc.subplots['lab']
-    ic(innerpanels_kw, axes_kw)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)

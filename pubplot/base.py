@@ -111,7 +111,7 @@ _line_methods = ( # basemap methods you want to wrap that aren't 2D grids
     'plot', 'scatter'
     )
 _edge_methods = (
-    'pcolorpoly', 'pcolormesh',
+    'pcolor', 'pcolorpoly', 'pcolormesh',
     )
 _center_methods = (
     'contour', 'contourf', 'quiver', 'streamplot', 'barbs',
@@ -316,7 +316,7 @@ def _cmap_features(self, func):
     """
     @wraps(func)
     def decorator(*args, cmap=None, cmap_kw={},
-                levels=None, extremes=True, norm=None,
+                levels=11, extremes=True, norm=None,
                 extend='neither', **kwargs):
         # NOTE: We will normalize the data with whatever is passed, e.g.
         # logarithmic or whatever
@@ -334,10 +334,11 @@ def _cmap_features(self, func):
         # Get levels, if they were None
         # Otherwise we just have to resample the colormap segmentdata, by
         # default picking enough colors to look like perfectly smooth gradations
-        if not utils.isvector(levels) and hasattr(result, 'levels'):
-            levels = result.levels
-        elif levels is None:
-            cmap_kw.update({'resample':True}) # default pcolormesh behavior is just to resample
+        if not utils.isvector(levels):
+            if hasattr(result, 'levels'):
+                levels = result.levels
+            else:
+                levels = np.linspace(*result.get_clim(), levels)
         # Set normalizer
         if cmap_kw.get('resample',None):
             if levels is not None:
@@ -398,13 +399,19 @@ def _cmap_features(self, func):
 # Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
 # this will cause basemap's self.m.pcolormesh etc. to use my *custom* version and
 # cause a suite of weird errors. Prevent this recursion with the below decorator.
-# def _no_recurse(self, func):
+def _m_call(self, func):
+    """
+    Call the basemap version of the function of the same name.
+    """
+    name = func.__name__
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
+    return decorator
+
 def _no_recurse(self, func):
     """
     Decorator to prevent recursion in Basemap method overrides.
-    This will (1) call the Basemap method of the same name, then (2) once
-    the Basemap method internally calls the parent axes method, call the
-    super-class method of the same name.
     See: https://stackoverflow.com/a/37675810/4970632
     """
     @wraps(func)
@@ -419,35 +426,11 @@ def _no_recurse(self, func):
         else:
             # Actually return the basemap version
             self._recurred = True
-            ic(args, kwargs)
-            result = self.m.__getattribute__(name)(ax=self, *args, **kwargs)
-            # result = func(ax=self, *args, **kwargs)
-            # result = func(name)(ax=self, *args, **kwargs)
+            # result = self.m.__getattribute__(name)(ax=self, *args, **kwargs)
+            result = func(*args, **kwargs)
         self._recurred = False # cleanup, in case recursion never occurred
         return result
     return decorator
-# def norecurse(func):
-#     """
-#     Decorator to prevent recursion in Basemap method overrides.
-#     This will call the function 'func' on the first run (which does some stuff,
-#     then calls the basemap method), and will call the super-class method of the
-#     same name on the second run. See: https://stackoverflow.com/a/37675810/4970632
-#     """
-#     @wraps(func)
-#     def decorator(self, *args, **kwargs):
-#         name = getattr(func, '__name__')
-#         if self.recurred:
-#             self.recurred = False
-#             call = getattr(super(BasemapAxes,self), name) # don't call func again, now we want to call the parent function
-#             obj = () # this time 'self' is repeated in position args[0]
-#         else:
-#             self.recurred = True
-#             call = func
-#             obj = self,
-#         result = call(*obj, *args, **kwargs)
-#         self.recurred = False # cleanup
-#         return result
-#     return decorator
 
 def _linefix_basemap(self, func):
     """
@@ -1132,26 +1115,30 @@ class BaseAxes(maxes.Axes):
         pad = (rc['axes.titlepad']/72)/self.height # to inches --> to axes relative
         ipad = pad*1.5 # needs a bit more room to look ok
         pos = pos or 'oc'
-        if not any(c in pos for c in 'lcr'):
-            pos += 'c'
-        if not any(c in pos for c in 'oi'):
-            pos += 'o'
-        if 'c' in pos:
-            x = 0.5
-            ha = 'center'
-        elif 'l' in pos:
-            x = 0 + ipad*('i' in pos)
-            ha = 'left'
-        elif 'r' in pos:
-            x = 1 - ipad*('i' in pos)
-            ha = 'right'
-        if 'o' in pos:
-            y = 1 + pad
-            va = 'baseline'
-            self._title_inside = False
-        elif 'i' in pos:
-            y = 1 - ipad
-            va = 'top'
+        if not isinstance(pos, str):
+            ha = va = 'center'
+            x, y = pos
+        else:
+            if not any(c in pos for c in 'lcr'):
+                pos += 'c'
+            if not any(c in pos for c in 'oi'):
+                pos += 'o'
+            if 'c' in pos:
+                x = 0.5
+                ha = 'center'
+            elif 'l' in pos:
+                x = 0 + ipad*('i' in pos)
+                ha = 'left'
+            elif 'r' in pos:
+                x = 1 - ipad*('i' in pos)
+                ha = 'right'
+            if 'o' in pos:
+                y = 1 + pad
+                va = 'baseline'
+                self._title_inside = False
+            elif 'i' in pos:
+                y = 1 - ipad
+                va = 'top'
             self._title_inside = True
         return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va}
 
@@ -1218,7 +1205,6 @@ class BaseAxes(maxes.Axes):
         # Create axes numbering
         if self.number is not None and abc:
             # Get text
-            print('abc on!')
             abcedges = abcformat.split('a')
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
             abc_kw = {'text':text, 'ha':'left', 'va':'baseline', **abc_kw, **rc['abc']}
@@ -1842,39 +1828,26 @@ class BasemapAxes(MapAxes):
             self.boundary = self.m.drawmapboundary(ax=self)
 
     # Basemap overrides
-    # Fixes coordinates for 1D and 2D visualizations
     # WARNING: Never ever try to just make blanket methods on the Basemap
     # instance accessible from axes instance! Can of worms and had bunch of
     # weird errors! Just pick the ones you think user will want to use.
     def __getattribute__(self, attr, *args):
-        if attr=='pcolorpoly':
+        if attr=='pcolorpoly': # need to specify this again to access the .m method
             attr = 'pcolor' # use alias so don't run into recursion issues due to internal pcolormesh calls to pcolor()
         obj = super().__getattribute__(attr, *args)
-        if attr in _line_methods:
-            obj = _linefix_basemap(self, obj)
+        if attr in _line_methods or attr in _edge_methods or attr in _center_methods:
+            obj = _m_call(self, obj) # this must be the *last* step!
+            if attr in _line_methods:
+                obj = _cycle_features(self, obj)
+                obj = _linefix_basemap(self, obj)
+            elif attr in _edge_methods or attr in _center_methods:
+                obj = _cmap_features(self, obj)
+                obj = _gridfix_basemap(self, obj)
+                if attr in _edge_methods:
+                    obj = _check_edges(obj)
+                else:
+                    obj = _check_centers(obj)
             obj = _no_recurse(self, obj)
-        elif attr in _edge_methods or attr in _center_methods:
-            obj = _gridfix_basemap(self, obj)
-            if attr in _edge_methods:
-                obj = _check_edges(obj)
-            else:
-                obj = _check_centers(obj)
-            obj = _no_recurse(self, obj)
-        # try:
-        #     m = super().__getattribute__('m')
-        #     # m = object.__getattribute__(self, 'm')
-        # except AttributeError:
-        #     m = None
-        # if attr=='contourf':
-        #     ic('hi')
-        # if m and (attr in m.__dict__ or attr in type(m).__dict__):
-        #     obj = m.__getattribute__(attr)
-        #     if attr=='contourf':
-        #         ic('recurse', obj)
-        #     if callable(obj):
-        #         obj = _no_recurse(self, obj) # should this go first or last?
-        # ic(object.__getattribute__(self, 'm').__dict__)
-        # if callable(obj): # so wrap *every single basemap method*
         return obj
 
     # Format basemap axes
@@ -1979,7 +1952,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Do the GeoAxes initialization steps manually (there are very few)
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=(cartopy.crs.Projection instance).')
-        self._hold = None
+        self._hold = None # dunno
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
 
         # Below will call BaseAxes, which will call GeoAxes as the superclass
@@ -1988,6 +1961,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         super().__init__(*args, map_projection=map_projection, **kwargs)
 
         # Apply circle boundary
+        self._land = None
+        self._ocean = None
+        self._coastlines = None
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
@@ -2093,21 +2069,24 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
-        if coastlines:
+        if coastlines and not self._coastlines:
             # self.add_feature(cfeature.COASTLINE, **rc['coastlines'])
             print('Add coastlines.')
             feat = cfeature.NaturalEarthFeature('physical', 'coastline', '50m')
             self.add_feature(feat, **rc['coastlines'])
-        if land:
+            self._coastlines = feat
+        if land and not self._land:
             # self.add_feature(cfeature.LAND, **rc['continents'])
             print('Add land.')
             feat = cfeature.NaturalEarthFeature('physical', 'land', '50m')
             self.add_feature(feat, **rc['land'])
-        if oceans:
+            self._land = feat
+        if oceans and not self._ocean:
             # self.add_feature(cfeature.OCEAN, **rc['oceans'])
             print('Add oceans.')
             feat = cfeature.NaturalEarthFeature('physical', 'ocean', '50m')
             self.add_feature(feat, **rc['oceans'])
+            self._ocean = feat
 
 
 @docstring_fix
