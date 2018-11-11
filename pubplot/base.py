@@ -61,9 +61,8 @@ from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
 from . import colortools
 from . import utils
-from .utils import dot_dict
+from .utils import dot_dict, fill
 rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
-ifNone = lambda x,y: x if x is not None else y
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -753,10 +752,10 @@ class Figure(mfigure.Figure):
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
         whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
-        hspace = ifNone(hspace, 0.13) # teeny space
-        wspace = ifNone(wspace, 0.13)
-        hwidth = ifNone(hwidth, 0.3) # default is panels for plotting stuff, not colorbars
-        wwidth = ifNone(wwidth, 0.3)
+        hspace = utils.fill(hspace, 0.13) # teeny space
+        wspace = utils.fill(wspace, 0.13)
+        hwidth = utils.fill(hwidth, 0.3) # default is panels for plotting stuff, not colorbars
+        wwidth = utils.fill(wwidth, 0.3)
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 

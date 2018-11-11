@@ -22,6 +22,8 @@ class dot_dict(dict):
 #------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
+fill = (lambda x,y: x if x is not None else y)
+
 def isvector(item):
     """
     Just test if is iterable, but not a string (we almost never mean this).

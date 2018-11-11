@@ -54,12 +54,14 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
+from icecream import ic
 from functools import wraps
 from matplotlib import rcParams
 from cycler import cycler
 from glob import glob
 from . import colormath
 from . import utils
+from .utils import fill
 # Define some new palettes
 # Note the default listed colormaps
 cmap_cycles = ['Set1', 'Set2', 'Set3', 'Set4', 'Set5']
@@ -362,6 +364,9 @@ def Colormap(*args, extend='both',
                 xf = 1
             # Next resample the segmentdata arrays
             for key,xyy in olddata.items():
+                if key in ('gamma1', 'gamma2', 'space'):
+                    newdata[key] = xyy
+                    continue
                 xyy = np.array(xyy)
                 x = xyy[:,0]
                 xleft = np.where(x>xi)[0]
@@ -409,6 +414,7 @@ def Colormap(*args, extend='both',
 
     # Optionally save colormap to disk
     if name and save:
+        print('Save cmap!')
         # Save segment data directly
         basename = f'{cmap.name}.npy'
         filename = f'{os.path.dirname(__file__)}/../cmaps/{basename}'
@@ -468,7 +474,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
          luminance  = [[0, 1, 1], [1, 0.2, 0.2]])
     """
     def __init__(self, name, segmentdata,
-            space='hsl', gamma1=1.0, gamma2=1.0,
+            space='hsl', gamma1=None, gamma2=None,
             mask=False, **kwargs):
         """
         Initialize with dictionary of values. Note that hues should lie in
@@ -493,23 +499,25 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         # NOTE: Don't allow power scaling for hue because that would be weird.
         # Idea is want to allow skewing so dark/saturated colors are
         # more isolated/have greater intensity.
-        # Hue is more like a 'flavor' and shouldn't need to weight one more
-        # than the other
+        # NOTE: We add gammas to the segmentdata dictionary so it can be
+        # pickled into .npy file
         space = get_space(space)
-        gamma2 = 1.0 # try this
-        self._gammas = (1.0, gamma1, gamma2)
-        self._reverse = (False, False, True) # weight lower or higher magnitudes more?
-        self._channels = ('hue','saturation','luminance')
+        if 'gamma' in kwargs:
+            raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
+        segmentdata['gamma1'] = fill(gamma1, fill(segmentdata.get('gamma1', None), 1.0))
+        segmentdata['gamma2'] = fill(gamma2, fill(segmentdata.get('gamma2', None), 1.0))
         self.space = space
         self.mask  = mask
         # First sanitize the segmentdata by converting color strings to their
         # corresponding channel values
         keys   = {*segmentdata.keys()}
-        target = {'hue', 'saturation', 'luminance'}
+        target = {'hue', 'saturation', 'luminance', 'gamma1', 'gamma2'}
         if keys != target and keys != {*target, 'alpha'}:
             raise ValueError('Invalid segmentdata dictionary.')
         for key,array in segmentdata.items():
             # Allow specification of channels using registered string color names
+            if 'gamma' in key:
+                continue
             if callable(array):
                 continue
             for i,xyy in enumerate(array):
@@ -520,8 +528,6 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         # Initialize
         # NOTE: Our gamma1 and gamma2 scaling is just fancy per-channel
         # gamma scaling, so disable the standard version.
-        if 'gamma' in kwargs:
-            raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
         super().__init__(name, segmentdata, gamma=1.0, **kwargs)
 
     def reversed(self, name=None):
@@ -534,13 +540,18 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             def func_r(x):
                 return dat(1.0 - x)
             return func_r
-        data_r = {key: (factory(data) if callable(data) else
-                        [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)])
-                  for key, data in self._segmentdata.items()}
-        return PerceptuallyUniformColormap(name, data_r,
-                space=self.space,
-                gamma1=self._gammas[1],
-                gamma2=self._gammas[2])
+        data_r = {}
+        for key,xyy in self._segmentdata.items():
+            if key in ('gamma1', 'gamma2', 'space'):
+                if 'gamma' in key: # optional per-segment gamma
+                    xyy = np.atleast_1d(xyy)[::-1]
+                data_r[key] = xyy
+                continue
+            elif callable(xyy):
+                data_r[key] = factory(xyy)
+            else:
+                data_r[key] = [[1.0 - x, y1, y0] for x, y0, y1 in reversed(xyy)]
+        return PerceptuallyUniformColormap(name, data_r, space=self.space)
 
     def _init(self):
         """
@@ -548,8 +559,11 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         in the lookup table from 'input' to RGB.
         """
         # First generate the lookup table
+        channels = ('hue','saturation','luminance')
+        reverse = (False, False, True) # gamma weights *low chroma* and *high luminance*
+        gammas = (1.0, self._segmentdata['gamma1'], self._segmentdata['gamma2'])
         self._lut = np.ones((self.N+3, 4), float) # fill
-        for i,(channel,gamma,reverse) in enumerate(zip(self._channels, self._gammas, self._reverse)):
+        for i,(channel,gamma,reverse) in enumerate(zip(channels, gammas, reverse)):
             self._lut[:-3,i] = make_mapping_array(self.N, self._segmentdata[channel], gamma, reverse)
         if 'alpha' in self._segmentdata:
             self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'])
@@ -572,9 +586,6 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         self._i_bad = self.N + 2
         self._init()
         return self
-        # return PerceptuallyUniformColormap(self.name, self._segmentdata,
-        #         space=self.space,
-        #         N=N)
 
     @staticmethod
     def from_hsl(name, h, s=100, l=[100, 20], c=None, a=None,
@@ -643,6 +654,7 @@ def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
     if len(values)==1:
         value = values[0]
         return [(0, value, value), (1, value, value)] # just return a constant transition
+
     # Get x coordinates
     if not np.iterable(values):
         raise TypeError('Colors must be iterable.')
@@ -654,6 +666,7 @@ def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
         xvals = xvals/np.max(xvals) # normalize to 0-1
     else:
         xvals = np.linspace(0,1,len(values))
+
     # Build vector
     array = []
     slicer = slice(None,None,-1) if reverse else slice(None)
@@ -673,12 +686,16 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
     """
     # Optionally allow for ***callable*** instead of linearly interpolating
     # between line segments
-    if gamma < 0.01 or gamma > 10:
+    gammas = np.atleast_1d(gamma)
+    if (gammas < 0.01).any() or (gammas > 10).any():
         raise ValueError('Gamma can only be in range [0.01,10].')
     if callable(data):
+        if len(gammas)>1:
+            raise ValueError('Only one gamma allowed for functional segmentdata.')
         x = np.linspace(0, 1, N)**gamma
         lut = np.array(data(x), dtype=float)
         return lut
+
     # Get array
     try:
         data = np.array(data)
@@ -687,6 +704,11 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
     shape = data.shape
     if len(shape) != 2 or shape[1] != 3:
         raise ValueError('Data must be nx3 format.')
+    if len(gammas)!=1 and len(gammas)!=shape[0]-1:
+        raise ValueError(f'Need {shape[0]-1} gammas for {shape[0]}-level mapping array, but got {len(gamma)}.')
+    if len(gammas)==1:
+        gammas = np.repeat(gammas, shape[:1])
+
     # Get indices
     x  = data[:, 0]
     y0 = data[:, 1]
@@ -696,28 +718,30 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
     if (np.diff(x) < 0).any():
         raise ValueError('Data mapping points must have x in increasing order.')
     x = x*(N - 1)
+
     # Get distances from the segmentdata entry to the *left* for each requested
     # level, excluding ends at (0,1), which must exactly match segmentdata ends
     xq = (N - 1)*np.linspace(0, 1, N)
     ind = np.searchsorted(x, xq)[1:-1] # where xq[i] must be inserted so it is larger than x[ind[i]-1] but smaller than x[ind[i]]
     distance = (xq[1:-1] - x[ind - 1])/(x[ind] - x[ind - 1])
     # Scale distances in each segment by input gamma
-    if gamma != 1:
-        _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
-        # print('Segment data', data)
-        # print(ind)
-        for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
-            # By default, weight toward a *lower* channel value (i.e. bigger
-            # exponent implies more colors at lower value)
-            ir = ((y0[i + 1] - y1[i]) < 0) # by default want to weight toward a *lower* channel value
-            if reverse:
-                ir = (not ir)
-            # print('Left value', y1[i], 'Right value', y0[i + 1], 'Reverse', ir)
-            if ir:
-                distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
-            else:
-                distance[ui:ui + ci] **= gamma
-        # print('New distance', distance)
+    _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
+    for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
+        # Test if 1
+        gamma = gammas[i]
+        if gamma==1:
+            continue
+        # By default, weight toward a *lower* channel value (i.e. bigger
+        # exponent implies more colors at lower value)
+        ir = ((y0[i + 1] - y1[i]) < 0) # by default want to weight toward a *lower* channel value
+        if reverse:
+            ir = (not ir)
+        # print('Left value', y1[i], 'Right value', y0[i + 1], 'Reverse', ir)
+        if ir:
+            distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
+        else:
+            distance[ui:ui + ci] **= gamma
+
     # Perform successive linear interpolations all rolled up into one equation
     lut = np.zeros((N,), float)
     lut[1:-1] = distance*(y0[ind] - y1[ind - 1]) + y1[ind - 1]
@@ -1075,7 +1099,6 @@ class StepNorm(mcolors.BoundaryNorm):
         self.levels = levels
         self.prenorm = norm
         self.normvals = np.linspace(0, 1, offset[extend]+levels.size-1)[slices[extend]]
-        # Required
 
     def __call__(self, value, clip=None):
         # TODO: Add optional midpoint, this class will probably end up being one of

@@ -16,7 +16,6 @@ cm2in = 0.3937
 mm2in = cm2in/10.0
 in2cm = 1.0/cm2in
 in2mm = 1.0/mm2in
-ifNone = lambda x,y: x if x is not None else y
 
 #------------------------------------------------------------------------------#
 # Miscellaneous helper functions

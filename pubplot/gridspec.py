@@ -2,8 +2,7 @@
 import numpy as np
 import matplotlib.gridspec as mgridspec
 from .rcmod import rc
-from .utils import dot_dict
-ifNone = lambda x,y: x if x is not None else y
+from .utils import dot_dict, fill
 
 # Custom settings for various journals
 # Add to this throughout your career, or as standards change
@@ -57,12 +56,12 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     # NOTE: Ugly but this is mostly boilerplate, shouln't change much
     def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, space):
         if colorbar or colorbars:
-            width = ifNone(width, rc.subplots['cbar'])
-            space = ifNone(space, rc.subplots['lab'])
+            width = fill(width, rc.subplots['cbar'])
+            space = fill(space, rc.subplots['lab'])
             panel, panels = colorbar, colorbars
         elif legend or legends:
-            width = ifNone(width, rc.subplots['legend'])
-            space = ifNone(space, 0)
+            width = fill(width, rc.subplots['legend'])
+            space = fill(space, 0)
             panel, panels = legend, legends
         return panel, panels, width, space
     rightpanel, rightpanels, rwidth, rspace, = _panelprops(
@@ -98,10 +97,10 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         aspect = aspect[0]/aspect[1]
     except (IndexError,TypeError):
         pass # do nothing
-    wratios = np.atleast_1d(ifNone(wratios, 1))
-    hratios = np.atleast_1d(ifNone(hratios, 1))
-    hspace = np.atleast_1d(ifNone(hspace, rc.subplots['title']))
-    wspace = np.atleast_1d(ifNone(wspace, rc.subplots['inner']))
+    wratios = np.atleast_1d(fill(wratios, 1))
+    hratios = np.atleast_1d(fill(hratios, 1))
+    hspace = np.atleast_1d(fill(hspace, rc.subplots['title']))
+    wspace = np.atleast_1d(fill(wspace, rc.subplots['inner']))
     if len(wratios)==1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios)==1:
@@ -110,16 +109,16 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
-    left   = ifNone(left,   rc.subplots['lab'])
-    bottom = ifNone(bottom, rc.subplots['lab'])
-    right  = ifNone(right,  rc.subplots['nolab'])
-    top    = ifNone(top,    rc.subplots['title'])
-    bwidth = ifNone(bwidth, rc.subplots['cbar'])
-    rwidth = ifNone(rwidth, rc.subplots['cbar'])
-    lwidth = ifNone(lwidth, rc.subplots['cbar'])
-    bspace = ifNone(bspace, rc.subplots['lab'])
-    rspace = ifNone(rspace, rc.subplots['lab'])
-    lspace = ifNone(lspace, rc.subplots['lab'])
+    left   = fill(left,   rc.subplots['lab'])
+    bottom = fill(bottom, rc.subplots['lab'])
+    right  = fill(right,  rc.subplots['nolab'])
+    top    = fill(top,    rc.subplots['title'])
+    bwidth = fill(bwidth, rc.subplots['cbar'])
+    rwidth = fill(rwidth, rc.subplots['cbar'])
+    lwidth = fill(lwidth, rc.subplots['cbar'])
+    bspace = fill(bspace, rc.subplots['lab'])
+    rspace = fill(rspace, rc.subplots['lab'])
+    lspace = fill(lspace, rc.subplots['lab'])
 
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing
@@ -289,12 +288,12 @@ def flexible_gridspec_factory(base):
             # Parse flexible input
             nrows = self._nrows_visible
             ncols = self._ncols_visible
-            hratios = ifNone(height_ratios, hratios)
-            wratios = ifNone(width_ratios,  wratios)
-            hratios = np.atleast_1d(ifNone(hratios, 1))
-            wratios = np.atleast_1d(ifNone(wratios, 1))
-            hspace = np.atleast_1d(ifNone(hspace, np.mean(hratios)*0.10)) # this is relative to axes
-            wspace = np.atleast_1d(ifNone(wspace, np.mean(wratios)*0.10))
+            hratios = fill(height_ratios, hratios)
+            wratios = fill(width_ratios,  wratios)
+            hratios = np.atleast_1d(fill(hratios, 1))
+            wratios = np.atleast_1d(fill(wratios, 1))
+            hspace = np.atleast_1d(fill(hspace, np.mean(hratios)*0.10)) # this is relative to axes
+            wspace = np.atleast_1d(fill(wspace, np.mean(wratios)*0.10))
             if len(wspace)==1:
                 wspace = np.repeat(wspace, (ncols-1,))
             if len(hspace)==1:
