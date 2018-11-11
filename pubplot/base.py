@@ -339,6 +339,9 @@ def _cmap_features(self, func):
                 levels = result.levels
             else:
                 levels = np.linspace(*result.get_clim(), levels)
+        # TODO: Resampling seems to break a bunch of shit, maybe due to some
+        # changes I made to PerceptuallyUniformColormap? FIXME
+        cmap_kw.update({'resample': False})
         # Set normalizer
         if cmap_kw.get('resample',None):
             if levels is not None:
