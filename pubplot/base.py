@@ -312,7 +312,7 @@ def _cmap_features(self, func):
     Also see: https://stackoverflow.com/a/48614231/4970632
     """
     @wraps(func)
-    def decorator(*args, cmap=None, cmap_kw=dict(),
+    def decorator(*args, cmap=None, cmap_kw={},
                 levels=None, extremes=True, norm=None,
                 extend='neither', **kwargs):
         # NOTE: We will normalize the data with whatever is passed, e.g.
@@ -355,6 +355,7 @@ def _cmap_features(self, func):
         cmap = cmap or rc['image.cmap']
         if isinstance(cmap, (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
+        print(cmap_kw)
         cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
         if not cmap._isinit:
             cmap._init()
@@ -367,7 +368,6 @@ def _cmap_features(self, func):
         # Fix result
         # NOTE: Recursion yo!
         if name=='cmapline':
-            # result = colortools.Mappable(cmap, levels, norm=norm) # use hacky mchackerson instead
             if levels is None:
                 levels = np.sort(np.unique(result.get_array()))
             result = self.contourf([0,0], [0,0], np.nan*np.ones((2,2)),
@@ -376,12 +376,12 @@ def _cmap_features(self, func):
         # NOTE: This shouldn't mess up normal contour() calls because if we
         # specify color=<color>, should override cmap instance anyway
         # Fix white lines between filled contours/mesh
-        linewidth = 0.2
+        linewidth = 0.3 # seems to be lowest threshold where white lines disappear
         if name=='contourf':
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
-        elif utils.isscalar(result):
+        elif name[:6]=='pcolor':
             result.set_edgecolor('face')
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
@@ -750,8 +750,9 @@ class Figure(mfigure.Figure):
         # If we haven't already, compress edges
         # NOTE: Currently for cartopy axes with non-global edges, this can
         # erroneously identify invisible edges of map as being part of boundary
-        if self._smart_tight_init and self._smart_tight and \
-            not any(isinstance(ax, MapAxes) for ax in self.axes):
+        # if self._smart_tight_init and self._smart_tight and \
+        #     not any(isinstance(ax, MapAxes) for ax in self.axes):
+        if self._smart_tight_init and self._smart_tight:
             print('Adjusting gridspec.')
             self.smart_tight_layout()
         return super().draw(*args, **kwargs)

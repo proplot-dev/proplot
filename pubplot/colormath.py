@@ -40,7 +40,10 @@ m_inv = [
     [0.2126, 0.7152, 0.0722],
     [0.0193, 0.1192, 0.9505]
     ]
-# Hard-coded D65 illuminant (whatever that means)
+# Hard-coded D65 illuminant (has to do with expected light intensity and
+# white balance that falls upon the generated color)
+# See: https://en.wikipedia.org/wiki/Illuminant_D65
+# Also: https://github.com/hsluv/hsluv-python/issues/3
 refX  = 0.95047
 refY  = 1.00000
 refZ  = 1.08883
@@ -104,10 +107,16 @@ def rgb_to_lchuv(r, g, b):
 
 # Make ordering of channels consistent with above functions
 def hsl_to_rgb(h, s, l):
+    h /= 360.0
+    s /= 100.0
+    l /= 100.0
     return  hls_to_rgb(h, l, s)
 
 def rgb_to_hsl(r, g, b):
     h, l, s = rgb_to_hls(r, g, b)
+    h *= 360.0
+    s *= 100.0
+    l *= 100.0
     return h, s, l
 
 def hcl_to_rgb(h, c, l):
