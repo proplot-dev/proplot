@@ -59,10 +59,10 @@ class axes_list(list):
             axs = axes_list(axs)
         return axs
 
-    def __getattribute__(self, attr):
+    def __getattr__(self, attr):
         # Stealthily return dummy function that actually iterates
         # through each attribute here
-        values = [getattr(ax,attr,None) for ax in self]
+        values = [getattr(ax, attr, None) for ax in self]
         if None in values:
             raise AttributeError(f"'{type(self[0])}' object has no method '{attr}'.")
         elif all(callable(value) for value in values):
@@ -70,13 +70,13 @@ class axes_list(list):
             def iterator(*args, **kwargs):
                 ret = []
                 for ax in self:
-                    res = getattr(ax,attr)(*args, **kwargs)
+                    res = getattr(ax, attr)(*args, **kwargs)
                     if res is not None:
                         ret += [res]
-                return ret or None
+                return None if not ret else ret[0] if len(ret)==1 else ret
             return iterator
         elif all(not callable(value) for value in values):
-            return values # just return the attribute list
+            return values[0] if len(values)==1 else values # just return the attribute list
         else:
             raise AttributeError('Mixed methods found.')
 
@@ -158,6 +158,26 @@ def subplots(array=None, # allow calling with subplots(array)
     translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
     whichpanels = translate.get(whichpanels, whichpanels)
 
+    # Get basemap.Basemap or cartopy.CRS instances for map, and override aspec tratio
+    map_kw = {}
+    projection = proj or projection
+    projection_kw = proj_kw or projection_kw
+    if maps:
+        wratios = np.atleast_1d(kwargs.get('wratios',None) or 1)
+        hratios = np.atleast_1d(kwargs.get('hratios',None) or 1)
+        if {*wratios.flat} != {1} or {*hratios.flat} != {1}:
+            raise NotImplementedError('Not yet possible.')
+        if projection=='polar':
+            map_kw = {'projection':'newpolar'}
+            kwargs.update(aspect=1)
+        else:
+            package = 'basemap' if basemap else 'cartopy'
+            map_projection, aspect = base.map_projection_factory(package, projection, **projection_kw)
+            map_kw = {'projection':package, 'map_projection':map_projection}
+            if not silent:
+                print(f'Forcing aspect ratio: {aspect:.3g}')
+            kwargs.update(aspect=aspect)
+
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, array, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(array=array, **kwargs)
     row_offset, col_offset = offset
@@ -194,22 +214,6 @@ def subplots(array=None, # allow calling with subplots(array)
         innerpanels_ids = [i for i,n in enumerate(np.unique(array[array>0])) if n in innerpanels]
     else:
         innerpanels_ids = []
-
-    # Get basemap.Basemap or cartopy.CRS instances for map
-    # projection axes
-    map_kw = {}
-    projection = proj or projection
-    projection_kw = proj_kw or projection_kw
-    if maps:
-        wratios, hratios = np.atleast_1d(gridspec_kw.get('wratios',1)), np.atleast_1d(gridspec_kw.get('hratios',1))
-        if {*wratios.flat} != {1} or {*hratios.flat} != {1}:
-            raise NotImplementedError('Not yet possible.')
-        if projection=='polar':
-            map_kw = {'projection':'newpolar'}
-        else:
-            package = 'basemap' if basemap else 'cartopy'
-            map_projection, aspect = base.map_projection_factory(package, projection, **projection_kw)
-            map_kw = {'projection':package, 'map_projection':map_projection}
 
     #--------------------------------------------------------------------------
     # Manage shared axes/axes with spanning labels

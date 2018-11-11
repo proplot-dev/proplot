@@ -32,12 +32,16 @@ import re
 import numpy as np
 import warnings
 import time
-from copy import deepcopy
+try:
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed.
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
 from string import ascii_lowercase
 from functools import wraps
 from inspect import cleandoc
+import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.axes as maxes
 import matplotlib.path as mpath
@@ -47,7 +51,6 @@ import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
-import matplotlib.gridspec as mgridspec
 import matplotlib.artist as martist
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
@@ -68,16 +71,48 @@ warnings.filterwarnings('ignore', category=mplDeprecation)
 try:
     import mpl_toolkits.basemap as mbasemap
 except ModuleNotFoundError:
-    print('Warning: Basemap is not available.')
-try: # crs stands for "coordinate reference system", leading c is "cartopy"
-    import cartopy.crs as ccrs
-    import cartopy.feature as cfeature
+    pass
+try:
     from cartopy.mpl.geoaxes import GeoAxes
-    from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-    PlateCarree = ccrs.PlateCarree() # global variable
+    from cartopy.crs import PlateCarree
+    PlateCarree = PlateCarree() # global variable
 except ModuleNotFoundError:
     GeoAxes = PlateCarree = object
-    print('Warning: cartopy is not available.')
+# Global variables
+# These are used to bulk wrap a bunch of axes methods
+_cycle_methods  = (
+    'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
+    )
+_cmap_methods = (
+    'cmapline',
+    'contour', 'contourf', 'pcolor', 'pcolormesh',
+    'matshow', 'imshow', 'spy', 'hist2d'
+    )
+_disabled_methods = {
+    "Unsupported plotting function {}.":
+        ('pie', 'table', 'hexbin', 'eventplot',
+        'triplot', 'tricontour', 'tricontourf', 'tripcolor',
+        'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
+        'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
+    "Redundant function {} has been disabled.":
+        ('plot_date', 'semilogx', 'semilogy', 'loglog'),
+    "Redundant function {} has been disabled. Just use projection='polar' instead.":
+        ('polar',)
+    }
+_map_disabled_methods = (
+    'matshow', 'imshow', 'spy', 'bar', 'barh',
+    'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
+    'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
+    'fill_between', 'fill_betweenx', 'fill', 'stackplot')
+_line_methods = ( # basemap methods you want to wrap that aren't 2D grids
+    'plot', 'scatter'
+    )
+_edge_methods = (
+    'pcolorpoly', 'pcolormesh',
+    )
+_center_methods = (
+    'contour', 'contourf', 'quiver', 'streamplot', 'barbs',
+    )
 
 #------------------------------------------------------------------------------#
 # Create matplotlib.Path objects
@@ -198,7 +233,7 @@ def _parse_args(args):
     Zs = [np.array(Z) for Z in Zs]
     return np.array(x), np.array(y), Zs
 
-def check_centers(func):
+def _check_centers(func):
     """
     Check shape of arguments passed to contour, and fix result.
     Optional numbers of arguments:
@@ -208,7 +243,7 @@ def check_centers(func):
       * x, y, U, V
     """
     @wraps(func)
-    def decorator(self, *args, **kwargs):
+    def decorator(*args, **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[0], y.shape[-1]
@@ -220,16 +255,16 @@ def check_centers(func):
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
         Zs = [Z.T for Z in Zs]
-        result = func(self, x, y, *Zs, **kwargs)
+        result = func(x, y, *Zs, **kwargs)
         return result
     return decorator
 
-def check_edges(func):
+def _check_edges(func):
     """
     Check shape of arguments passed to pcolor, and fix result.
     """
     @wraps(func)
-    def decorator(self, *args, **kwargs):
+    def decorator(*args, **kwargs):
         # Checks that sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[0], y.shape[-1]
@@ -241,12 +276,30 @@ def check_edges(func):
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
         Zs = [Z.T for Z in Zs]
-        result = func(self, x, y, *Zs, **kwargs)
+        result = func(x, y, *Zs, **kwargs)
         return result
         # return func(self, x, y, *Zs, **kwargs)
     return decorator
 
-def cmap_features(func):
+def _cycle_features(self, func):
+    """
+    Allow specification of color cycler at plot-time. Will simply set the axes
+    property cycler, and if it differs from user input, update it.
+    See: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py
+    The set_prop_cycle command modifies underlying _get_lines and _get_patches_for_fill.
+    """
+    @wraps(func)
+    def decorator(*args, cycle=None, **kwargs):
+        # Determine and temporarily set cycler
+        if cycle is not None:
+            if utils.isscalar(cycle):
+                cycle = cycle,
+            cycle = colortools.Cycle(*cycle)
+            self.set_prop_cycle(color=cycle)
+        return func(*args, **kwargs)
+    return decorator
+
+def _cmap_features(self, func):
     """
     Manage output of contour and pcolor functions.
     New features:
@@ -259,7 +312,7 @@ def cmap_features(func):
     Also see: https://stackoverflow.com/a/48614231/4970632
     """
     @wraps(func)
-    def decorator(self, *args, cmap=None, cmap_kw=dict(),
+    def decorator(*args, cmap=None, cmap_kw=dict(),
                 levels=None, extremes=True, norm=None,
                 extend='neither', **kwargs):
         # NOTE: We will normalize the data with whatever is passed, e.g.
@@ -270,9 +323,9 @@ def cmap_features(func):
         kwextra = {}
         if 'contour' in name:
             kwextra = dict(levels=levels, extend=extend)
-        # result = func(self, *args, cmap=cmap, norm=norm, **kwextra, **kwargs)
         norm = colortools.Norm(norm)
-        result = func(self, *args, norm=norm, **kwextra, **kwargs)
+        result = func(*args, norm=norm, **kwextra, **kwargs)
+        # result = func(self, *args, norm=norm, **kwextra, **kwargs)
         if 'pcolor' in name:
             result.extend = extend
         # Get levels, if they were None
@@ -334,91 +387,86 @@ def cmap_features(func):
         return result
     return decorator
 
-def cycle_features(func):
-    """
-    Allow specification of color cycler at plot-time. Will simply set the axes
-    property cycler, and if it differs from user input, update it.
-    See: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py
-    The set_prop_cycle command modifies underlying _get_lines and _get_patches_for_fill.
-    """
-    @wraps(func)
-    def decorator(self, *args, cycle=None, **kwargs):
-        # Determine and temporarily set cycler
-        if cycle is not None:
-            if utils.isscalar(cycle):
-                cycle = cycle,
-            cycle = colortools.Cycle(*cycle)
-            self.set_prop_cycle(color=cycle)
-        return func(self, *args, **kwargs)
-    return decorator
-
 #------------------------------------------------------------------------------#
 # Helper functions for basemap and cartopy plot overrides
-# NOTE: These wrappers should be invoked *after* check_centers and check_edges,
+# NOTE: These wrappers should be invoked *after* _check_centers and _check_edges,
 # which perform basic shape checking and permute the data array, so the data
 # will now be y by x (or lat by lon) instead of lon by lat.
 #------------------------------------------------------------------------------#
 # Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
 # this will cause basemap's self.m.pcolormesh etc. to use my *custom* version and
 # cause a suite of weird errors. Prevent this recursion with the below decorator.
-def norecurse(func):
+# def _no_recurse(self, func):
+def _no_recurse(self, func):
     """
     Decorator to prevent recursion in Basemap method overrides.
-    This will call the function 'func' on the first run (which does some stuff,
-    then calls the basemap method), and will call the super-class method of the
-    same name on the second run. See: https://stackoverflow.com/a/37675810/4970632
+    This will (1) call the Basemap method of the same name, then (2) once
+    the Basemap method internally calls the parent axes method, call the
+    super-class method of the same name.
+    See: https://stackoverflow.com/a/37675810/4970632
     """
     @wraps(func)
-    def decorator(self, *args, **kwargs):
+    # def decorator(self, *args, **kwargs):
+    def decorator(*args, **kwargs):
         name = getattr(func, '__name__')
-        if self.recurred:
-            self.recurred = False
-            call = getattr(super(BasemapAxes,self), name) # don't call func again, now we want to call the parent function
-            obj = () # this time 'self' is repeated in position args[0]
+        if self._recurred:
+            # Don't call func again, now we want to call the parent function
+            # Note this time 'self' is repeated in position args[0]
+            self._recurred = False
+            result = super(BasemapAxes, self).__getattribute__(name)(*args, **kwargs)
         else:
-            self.recurred = True
-            call = func
-            obj = self,
-        result = call(*obj, *args, **kwargs)
-        self.recurred = False # cleanup
+            # Actually return the basemap version
+            self._recurred = True
+            ic(args, kwargs)
+            result = self.m.__getattribute__(name)(ax=self, *args, **kwargs)
+            # result = func(ax=self, *args, **kwargs)
+            # result = func(name)(ax=self, *args, **kwargs)
+        self._recurred = False # cleanup, in case recursion never occurred
         return result
     return decorator
+# def norecurse(func):
+#     """
+#     Decorator to prevent recursion in Basemap method overrides.
+#     This will call the function 'func' on the first run (which does some stuff,
+#     then calls the basemap method), and will call the super-class method of the
+#     same name on the second run. See: https://stackoverflow.com/a/37675810/4970632
+#     """
+#     @wraps(func)
+#     def decorator(self, *args, **kwargs):
+#         name = getattr(func, '__name__')
+#         if self.recurred:
+#             self.recurred = False
+#             call = getattr(super(BasemapAxes,self), name) # don't call func again, now we want to call the parent function
+#             obj = () # this time 'self' is repeated in position args[0]
+#         else:
+#             self.recurred = True
+#             call = func
+#             obj = self,
+#         result = call(*obj, *args, **kwargs)
+#         self.recurred = False # cleanup
+#         return result
+#     return decorator
 
-def gridfix_cartopy(func):
+def _linefix_basemap(self, func):
     """
-    Apply default transform and fix discontinuities in grid.
+    Simply add an additional kwarg. Needs whole function because we
+    want to @wrap it to preserve documentation.
     """
     @wraps(func)
-    def decorator(self, lon, lat, Z, transform=PlateCarree, **kwargs):
-        # The todo list for cartopy is much shorter, as we don't have to worry
-        # about longitudes going from 0 to 360, -180 to 180, etc.; projection handles all that
-        # 1) Fix holes over poles by *interpolating* there (equivalent to
-        # simple mean of highest/lowest latitude points)
-        Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-        Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-        lat = np.concatenate(([-90], lat, [90]))
-        Z = np.concatenate((Z_south, Z, Z_north), axis=0)
-        # 2) Fix seams at map boundary; this time the fancy projection will
-        # handle issues with pcolor seams that we'd have with basemap, but still
-        # have to ensure *circular* coverage if doing e.g. contourf
-        lon = np.array((*lon, lon[0]+360)) # make longitudes circular
-        Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
-        # Call function
-        # _ = io.StringIO() # message has a bunch of unnecessary newlines; will modify it
-        # with redirect_stdout(_):
-        # with warnings.catch_warnings():
-        #     warnings.simplefilter('ignore')
-        result = func(self, lon, lat, Z, transform=transform, **kwargs)
-        # Call function
-        return result
+    # def decorator(self, *args, **kwargs):
+    def decorator(*args, **kwargs):
+        kwargs.update(latlon=True)
+        return func(*args, **kwargs)
+        # return func(self, *args, **kwargs)
     return decorator
 
-def gridfix_basemap(func):
+def _gridfix_basemap(self, func):
     """
     Interpret coordinates and fix discontinuities in grid.
     """
     @wraps(func)
-    def decorator(self, lon, lat, Z, **kwargs):
+    def decorator(lon, lat, Z, **kwargs):
+    # def decorator(self, lon, lat, Z, **kwargs):
         # Raise errors
         # print('lon', lon, 'lat', lat, 'Z', Z)
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
@@ -507,7 +555,48 @@ def gridfix_basemap(func):
         # resulting path, which raises error because you can't draw on Artist on multiple axes
         self.m._mapboundarydrawn = self.boundary # stored the axes-specific boundary here
         # Call function
-        return func(self, x, y, Z, **kwargs)
+        return func(x, y, Z, **kwargs)
+    return decorator
+
+def _linefix_cartopy(func):
+    """
+    Simply add an additional kwarg. Needs whole function because we
+    want to @wrap it to preserve documentation.
+    """
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        if not kwargs.get('transform', None):
+            kwargs['transform'] = PlateCarree
+        return func(*args, **kwargs)
+    return decorator
+
+def _gridfix_cartopy(func):
+    """
+    Apply default transform and fix discontinuities in grid.
+    """
+    @wraps(func)
+    def decorator(lon, lat, Z, transform=PlateCarree, **kwargs):
+        # The todo list for cartopy is much shorter, as we don't have to worry
+        # about longitudes going from 0 to 360, -180 to 180, etc.; projection handles all that
+        # 1) Fix holes over poles by *interpolating* there (equivalent to
+        # simple mean of highest/lowest latitude points)
+        Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
+        Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
+        lat = np.concatenate(([-90], lat, [90]))
+        Z = np.concatenate((Z_south, Z, Z_north), axis=0)
+        # 2) Fix seams at map boundary; this time the fancy projection will
+        # handle issues with pcolor seams that we'd have with basemap, but still
+        # have to ensure *circular* coverage if doing e.g. contourf
+        lon = np.array((*lon, lon[0]+360)) # make longitudes circular
+        Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
+        # Call function
+        # _ = io.StringIO() # message has a bunch of unnecessary newlines; will modify it
+        # with redirect_stdout(_):
+        # with warnings.catch_warnings():
+        #     warnings.simplefilter('ignore')
+        result = func(lon, lat, Z, transform=transform, **kwargs)
+        # Call function
+        return result
     return decorator
 
 #------------------------------------------------------------------------------
@@ -517,15 +606,14 @@ class EmptyPanel(object):
     """
     Dummy object to put in place when an axes or figure panel does not exist.
     Makes nicer error message than if we just put 'None' or nothing there.
+    Remember: __getattr__ is invoked only when __getattribute__ fails, i.e.
+    when user requests anything that isn't a hidden object() method.
     """
     def __bool__(self):
         return False # it's empty, so this is 'falsey'
 
-    def __getattribute__(self, attr, *args):
-        if re.match('^__.*__$', attr):
-            return object.__getattribute__(self, attr, *args)
-        else:
-            raise ValueError('Panel does not exist.')
+    def __getattr__(self, attr, *args):
+        raise NotImplementedError('Panel does not exist.')
 
 @docstring_fix
 class Figure(mfigure.Figure):
@@ -650,7 +738,7 @@ class Figure(mfigure.Figure):
         for ax in self.axes:
             if isinstance(ax, BaseAxes) and ax.rows[0]==0 \
                 and ((ax.title.get_text() and not ax._title_inside)
-                or (ax.rowlabel and ax.collabel)):
+                or ax.collabel.get_text()):
                 offset = True
                 break
         self._suptitle_setup(offset=offset) # just applies the spacing
@@ -662,7 +750,7 @@ class Figure(mfigure.Figure):
         # If we haven't already, compress edges
         if self._smart_tight_init and self._smart_tight:
             print('Adjusting gridspec.')
-            self.smart_tight_layout()
+            # self.smart_tight_layout()
         return super().draw(*args, **kwargs)
 
     def panel_factory(self, subspec, whichpanels=None,
@@ -722,34 +810,12 @@ class Figure(mfigure.Figure):
             if i!=main_pos[0]: # this is a panel entry
                 hwidth_ratios[i] = hwidth
 
-        # Determine axes to be shared
-        if ncols==1:
-            ybase  = main_pos
-            yshare = []
-        elif 'l' in whichpanels:
-            ybase  = (main_pos[0], main_pos[1]-1) # the base axes
-            yshare = [(main_pos[0], main_pos[1]+i) for i in range(ncols-1)]
-        else:
-            ybase  = (main_pos[0], main_pos[1]) # the base axes
-            yshare = [(main_pos[0], main_pos[1]+i+1) for i in range(ncols-1)]
-        if nrows==1:
-            xbase  = main_pos
-            xshare = []
-        elif 'b' in whichpanels:
-            xbase  = (main_pos[0]+1, main_pos[1]) # the base axes
-            xshare = [(main_pos[0]-i, main_pos[1]) for i in range(nrows-1)]
-        else:
-            xbase  = (main_pos[0], main_pos[1]) # the base axes
-            xshare = [(main_pos[0]-i-1, main_pos[1]) for i in range(nrows-1)]
-
         # Create subplotspec and draw the axes
         # Will create axes in order of rows/columns so that the "base" axes
         # are always built before the axes to be "shared" with them
         panels = []
         sharex_outside = kwargs.pop('sharex', None) # we do this ourselves
         sharey_outside = kwargs.pop('sharey', None)
-        spanx_outside = kwargs.pop('spanx', None)
-        spany_outside = kwargs.pop('spany', None)
         gs = FlexibleGridSpecFromSubplotSpec(
                 nrows         = nrows,
                 ncols         = ncols,
@@ -802,7 +868,7 @@ class Figure(mfigure.Figure):
         bbox = self.get_tightbbox(self.canvas.get_renderer())
         ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
         x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
-        width, height = ox[1], oy[1] # desired save-width
+        # width, height = ox[1], oy[1] # desired save-width
 
         # Apply new settings
         lname = 'lspace' if self.leftpanel else 'left'
@@ -872,6 +938,7 @@ class BaseAxes(maxes.Axes):
         self._spany_group = []
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         super().__init__(*args, **kwargs)
+
         # Add special row/column labels (can only be filled with text if axes
         # is on leftmost column/topmost row)
         self.collabel = self.text(*self.title.get_position(), '',
@@ -880,6 +947,7 @@ class BaseAxes(maxes.Axes):
         self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
                 weight=rc['axes.titleweight'], size=rc['axes.titlesize'],
                 va='center', ha='right', transform=self.transAxes)
+
         # Panels
         if panelside not in (None, 'left','right','bottom','top'):
             raise ValueError(f'Invalid panel side "{panelside}".')
@@ -889,6 +957,7 @@ class BaseAxes(maxes.Axes):
         self.toppanel    = EmptyPanel()
         self.leftpanel   = EmptyPanel()
         self.rightpanel  = EmptyPanel()
+
         # Number and size
         subspec = self.get_subplotspec()
         nrows, ncols = subspec.get_gridspec().get_geometry()
@@ -897,8 +966,7 @@ class BaseAxes(maxes.Axes):
         self.number = number # for abc numbering
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
-        # Default format() settings
-        # self.format(abc=True)
+
         # Turn off tick labels and axis label for shared axes
         # Want to do this ***manually*** because want to have the ability to
         # add shared axes ***after the fact in general***. If the API changes,
@@ -907,12 +975,36 @@ class BaseAxes(maxes.Axes):
             self._sharex_setup(sharex)
         if sharey:
             self._sharey_setup(sharey)
+
         # Custom idea of 'spanning axes', where x/y axis labels are shared
         # Also make sure always has attribute
         if spanx_group:
             self._spanx_setup(spanx_group)
         if spany_group:
             self._spany_setup(spany_group)
+
+        # Re-enforce rc settings (we may have customized versions, e.g. for
+        # CartopyAxes, that __init__ did not configure)
+        if not hasattr(self, 'abc'): # add custom property
+            self.abc = self.text(0, 0, '')
+        self._rcupdate()
+
+    # Apply some simple featueres, and disable spectral and triangular features
+    # See: https://stackoverflow.com/a/23126260/4970632
+    # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_axes.py
+    # for all Axes methods ordered logically in class declaration.
+    def __getattribute__(self, attr, *args):
+        for message,attrs in _disabled_methods.items():
+            if attr in attrs:
+                raise NotImplementedError(message.format(attr))
+        if attr=='pcolorpoly':
+            attr = 'pcolor' # use alias so don't run into recursion issues due to internal pcolormesh calls to pcolor()
+        obj = super().__getattribute__(attr, *args)
+        if attr in _cmap_methods:
+            obj = _cmap_features(self, obj)
+        elif attr in _cycle_methods:
+            obj = _cycle_features(self, obj)
+        return obj
 
     def _spanx_setup(self, group):
         # Specify x, y transform in Figure coordinates
@@ -956,7 +1048,6 @@ class BaseAxes(maxes.Axes):
             return
         if self is sharex:
             return
-            # raise ValueError('Cannot share an axes with itself.')
         if self.leftpanel and sharex.leftpanel:
             self.leftpanel._sharex_setup(sharex.leftpanel)
         if self.rightpanel and sharex.rightpanel:
@@ -968,11 +1059,13 @@ class BaseAxes(maxes.Axes):
             self.bottompanel._sharex_setup(sharex)
         if self.toppanel and sharex is not self.toppanel:
             self.toppanel._sharex_setup(sharex)
-            # sharex = self.bottompanel._sharex or self.bottompanel
         # Builtin features
         self._sharex = sharex
         self._shared_x_axes.join(self, sharex)
         # Simple method for setting up shared axes
+        # WARNING: It turned out setting *another axes' axis label* as
+        # this attribute caused error, because matplotlib tried to add
+        # the same artist instance twice. Can only make it invisible.
         for t in self.xaxis.get_ticklabels():
             t.set_visible(False)
         self.xaxis.label.set_visible(False)
@@ -1023,9 +1116,8 @@ class BaseAxes(maxes.Axes):
         if self.leftpanel and self._spany_group:
             self.leftpanel._spany_setup([ax.leftpanel for ax in self._spany_group if ax.leftpanel is not None])
 
-    def _rcupdate(self, **kwargs):
-        # Similar to format(), but this updates from rcparams.
-        # Update the title rcParams
+    def _rcupdate(self):
+        # Update the titling settings
         self.title.update(dict(fontsize=rc['axes.titlesize'], weight=rc['axes.titleweight']))
         if hasattr(self,'_suptitle'):
             self._suptitle.update(dict(fontsize=rc['figure.titlesize'], weight=rc['figure.titleweight']))
@@ -1068,7 +1160,7 @@ class BaseAxes(maxes.Axes):
     # New convenience feature
     # The title position can be a mix of 'l/c/r' and 'i/o'
     def format(self,
-        hatch=None, facecolor=None, # control figure/axes background; hatch just applies to axes
+        facehatch=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitle_kw={},
         collabels=None, collabels_kw={},
         rowlabels=None, rowlabels_kw={}, # label rows and columns
@@ -1122,10 +1214,9 @@ class BaseAxes(maxes.Axes):
             self.title.update(self._title_pos(titlepos or 'oc'))
 
         # Create axes numbering
-        if not hasattr(self, 'abc'):
-            self.abc = self.text(0, 0, '')
         if self.number is not None and abc:
             # Get text
+            print('abc on!')
             abcedges = abcformat.split('a')
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
             abc_kw = {'text':text, 'ha':'left', 'va':'baseline', **abc_kw, **rc['abc']}
@@ -1139,17 +1230,6 @@ class BaseAxes(maxes.Axes):
         elif hasattr(self, 'abc'):
             # Hide
             self.abc.set_visible(False)
-
-        # Color setup, optional hatching in background of axes
-        # You should control transparency by passing transparent=True or False
-        # to the savefig command
-        if facecolor is not None:
-            self.patch.set_color(facecolor)
-        self.patch.set_zorder(-1)
-        self.patch.set_clip_on(False)
-        if hatch: # non-empty string or not none
-            self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
-                facecolor='none', edgecolor='k', transform=self.transAxes)
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
@@ -1189,7 +1269,24 @@ class BaseAxes(maxes.Axes):
             #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
         return t
 
-    @cycle_features
+    # @_cycle_features
+    def plot(self, *args, cmap=None, values=None, **kwargs):
+        """
+        Expand functionality of plot to also make LineCollection lines, i.e. lines
+        whose colors change as a function of some key/indicator.
+        """
+        if cmap is None and values is None:
+            # Make normal boring lines
+            lines = super().plot(*args, **kwargs)
+        elif cmap is not None and values is not None:
+            # Make special colormap lines
+            lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
+        else:
+            # Error
+            raise ValueError('To draw colormap line, must provide kwargs "values" and "cmap".')
+        return lines
+
+    # @_cycle_features
     def scatter(self, *args, **kwargs):
         """
         Just add some more consistent keyword argument options.
@@ -1213,7 +1310,7 @@ class BaseAxes(maxes.Axes):
                     kwargs[name] = kwargs.pop(option)
         return super().scatter(*args, **kwargs)
 
-    @cmap_features
+    # @_cmap_features
     def cmapline(self, *args, cmap=None,
             values=None, norm=None,
             bins=True, nbetween=1, **kwargs):
@@ -1270,174 +1367,6 @@ class BaseAxes(maxes.Axes):
         self.add_collection(collection)
         return collection
 
-    @cycle_features
-    def plot(self, *args, cmap=None, values=None, **kwargs):
-        """
-        Expand functionality of plot to also make LineCollection lines, i.e. lines
-        whose colors change as a function of some key/indicator.
-        """
-        if cmap is None and values is None:
-            # Make normal boring lines
-            lines = super().plot(*args, **kwargs)
-        elif cmap is not None and values is not None:
-            # Make special colormap lines
-            lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
-        else:
-            # Error
-            raise ValueError('To draw colormap line, must provide kwargs "values" and "cmap".')
-        return lines
-
-    # Apply some simple enhancements
-    # These just fix the white edges between patch objects, and optionally
-    # enable using same color for data in 'edge bins' as 'out of bounds' data
-    @cmap_features
-    def contour(self, *args, **kwargs):
-        return super().contour(*args, **kwargs)
-
-    @cmap_features
-    def contourf(self, *args, **kwargs):
-        return super().contourf(*args, **kwargs)
-
-    @cmap_features
-    def pcolorpoly(self, *args, **kwargs):
-        return super().pcolor(*args, **kwargs)
-
-    @cmap_features
-    def pcolormesh(self, *args, **kwargs):
-        return super().pcolormesh(*args, **kwargs)
-
-    # Matrix visualizations
-    @cmap_features
-    def matshow(self, *args, **kwargs):
-        return super().matshow(*args, **kwargs)
-
-    @cmap_features
-    def imshow(self, *args, **kwargs):
-        return super().imshow(*args, **kwargs)
-
-    @cmap_features
-    def spy(self, *args, **kwargs):
-        return super().spy(*args, **kwargs)
-
-    @cmap_features
-    def hist2d(self, *args, **kwargs): # expand to allow 2D kernel
-        return super().hist2d(*args, **kwargs)
-
-    # Stuff that needs to be worked on
-    @cycle_features
-    def polar(self, *args, **kwargs): # dunno
-        return super().polar(*args, **kwargs)
-
-    @cycle_features
-    def bar(self, *args, **kwargs): # have bar plot cycle through default color cycle
-        return super().bar(*args, **kwargs)
-
-    @cycle_features
-    def barh(self, *args, **kwargs):
-        return super().barh(*args, **kwargs)
-
-    @cycle_features
-    def hist(self, *args, **kwargs): # expand so we can apply transparency to histograms, so they can be overlaid
-        return super().hist(*args, **kwargs)
-
-    @cycle_features
-    def boxplot(self, *args, **kwargs): # box whisker plot
-        return super().boxplot(*args, **kwargs)
-
-    @cycle_features
-    def violinplot(self, *args, **kwargs): # ditto with box plot function
-        return super().violinplot(*args, **kwargs)
-
-    def errorbar(self, *args, **kwargs):
-        return super().errorbar(*args, **kwargs)
-
-    # Methods rendered obsolete by subplots() function
-    # This messes up super() calls
-    # _message_strongarm = 'Error: Method disabled. PubPlot figure sizes and axes aspect '
-    # 'ratios are *static*, and must be set at creation time using pubplot.subplots().'
-    # def set_aspect(self, *args, **kwargs):
-    #     if isinstance(self, MapAxes):
-    #         return super().set_aspect(*args, **kwargs)
-    #     else:
-    #         raise NotImplementedError(self._message_strongarm)
-
-    # Redundant stuff that want to cancel
-    _message_redundant = 'Redundant function has been disabled.'
-    @property
-    def plot_date(self): # use xdates=True or ydates=True
-        raise NotImplementedError(self._message_redundant)
-    @property
-    def semilogx(self): # use xscale='log' instead, this is dumb!
-        raise NotImplementedError(self._message_redundant)
-    @property
-    def semilogy(self):
-        raise NotImplementedError(self._message_redundant)
-    @property
-    def loglog(self):
-        raise NotImplementedError(self._message_redundant)
-    @property
-    def polar(self):
-        raise NotImplementedError('Just use projection="polar" instead.')
-
-    # Weird stuff that probably will not wrap
-    _message_unsupported = 'Unsupported plotting function.'
-    @property
-    def pie(self): # dunno
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def table(self): # dude... fugly
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def hexbin(self): # expand to allow making grouped boxes
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def eventplot(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def triplot(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def tricontour(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def tricontourf(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def tripcolor(self):
-        raise NotImplementedError(self._message_unsupported)
-
-    # Disable spectral and triangular features
-    # See: https://stackoverflow.com/a/23126260/4970632
-    # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_axes.py
-    # for all Axes methods ordered logically in class declaration.
-    @property
-    def xcorr(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def acorr(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def psd(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def csd(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def magnitude_spectrum(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def angle_spectrum(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def phase_spectrum(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def cohere(self):
-        raise NotImplementedError(self._message_unsupported)
-    @property
-    def specgram(self):
-        raise NotImplementedError(self._message_unsupported)
-
 #------------------------------------------------------------------------------#
 # Specific classes, which subclass the base one
 #------------------------------------------------------------------------------#
@@ -1452,7 +1381,16 @@ class XYAxes(BaseAxes):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
 
-    def _rcupdate(self, **kwargs):
+    def __getattribute__(self, attr, *args):
+        # Attribute
+        obj = super().__getattribute__(attr, *args)
+        if attr in _center_methods:
+            obj = _check_centers(obj)
+        elif attr in _edge_methods:
+            obj = _check_edges(obj)
+        return obj
+
+    def _rcupdate(self):
         # Update the rcParams according to user input.
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
@@ -1486,6 +1424,21 @@ class XYAxes(BaseAxes):
             #     axis.grid(grid, which='major', **rc['grid'])
             # if gridminor is not None:
             #     axis.grid(gridminor, which='minor', **rc['gridminor']) # ignore if no minor ticks
+
+        # Update background patch, with optional hatching
+        # Color setup, optional hatching in background of axes
+        # You should control transparency by passing transparent=True or False
+        # to the savefig command
+        self.patch.set_clip_on(False)
+        self.patch.set_zorder(-1)
+        self.patch.update({'facecolor':rc['axes.facecolor']})
+        hatch = rc['axes.facehatch']
+        if hatch: # non-empty string or not none
+            self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
+                facecolor='none', edgecolor='k', transform=self.transAxes)
+
+        # Call parent
+        super()._rcupdate()
 
     # Cool overrides
     def format(self,
@@ -1538,11 +1491,10 @@ class XYAxes(BaseAxes):
         ytickminor = tickminor or ytickminor
         xgridminor = gridminor or xgridminor
         ygridminor = gridminor or ygridminor
-        for xy, axis, share, span, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
+        for xy, axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 formatter_kw, locator_kw, minorlocator_kw in \
-            zip('xy', (self.xaxis, self.yaxis), (self._sharex, self._sharey), \
-                (self._spanx, self._spany), (xlabel, ylabel), \
+            zip('xy', (self.xaxis, self.yaxis), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
                 (xgrid, ygrid),
@@ -1580,17 +1532,29 @@ class XYAxes(BaseAxes):
             # redirect to the correct *spanning* axes if the label is meant
             # to span multiple subplot
             if label is not None:
-                axis_label = axis
-                # while share is not None: # infinite loops are bad, m'kay?
-                if share is not None: # this should have priority
-                    axis_label = getattr(share, xy+'axis')
-                    share2 = getattr(share, '_share'+xy) # one level deeper
-                    share = share2 or share # shared axes
-                    share2 = getattr(share, '_share'+xy) # one level deeper
-                    share = share2 or share # shared axes
-                    span = getattr(share, '_span'+xy, span)
-                if span is not None:
-                    axis_label = getattr(span, xy+'axis')
+                span = getattr(self, '_span' + xy) # spanning labels toggled?
+                share = getattr(self, '_share' + xy)
+                # Shared axes
+                if share:
+                    axis_label = getattr(share, xy + 'axis')
+                else:
+                    axis_label = axis
+                # if span: # seek the edges on the same row/column (will think in terms of an xlabel)
+                #     # Function for getting the 'edge' we want to share (bottom row, or leftmost column)
+                #     # TODO: Possible duplication? Didn't we rename the axes
+                #     # label on 'shared axes' to actually point to their parent
+                #     # axes, or did we not do this?
+                #     axs = []
+                #     edge = lambda ax: getattr(ax, 'rows')[1] if xy=='x' else getattr(ax, 'cols')[0]
+                #     panel = lambda ax: (ax.bottompanel or ax) if xy=='x' else (ax.leftpanel or ax)
+                #     span = lambda ax: getattr(ax, 'cols') if xy=='x' else getattr(ax, 'rows')
+                #     edge_self = edge(self)
+                #     for ax in self.figure.axes:
+                #         if edge_self==edge(ax):
+                #             axs += [panel(ax)]
+                #     # Obtain the axes boundaries
+                #     range = [value for ax in axs for value in span(ax)]
+                #     range = [min(range), max(range)] # the gridspec range
                 axis_label.label.set_text(label)
 
             # Tick properties
@@ -1715,7 +1679,8 @@ class XYAxes(BaseAxes):
             bb = mtransforms.TransformedBbox(bbox, trans)
             tr = self.figure.transFigure.inverted()
             bb = mtransforms.TransformedBbox(bb, tr)
-        return bb
+            return bb
+        return inset_locator
 
     def inset_axes(self, bounds, *, transform=None, zorder=5,
             **kwargs):
@@ -1727,42 +1692,12 @@ class XYAxes(BaseAxes):
         # This puts the rectangle into figure-relative coordinates.
         locator = self.make_inset_locator(bounds, transform)
         bb = locator(None, None)
-        ax = AxesXY(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
         # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         return ax
 
-
-    # Wrappers that check dimensionality, give better error messages, and change
-    # the convention so dim1 is always x-axis, dim2 is always y-axis
-    @check_centers
-    def contour(self, *args, **kwargs):
-        return super().contour(*args, **kwargs)
-
-    @check_centers
-    def contourf(self, *args, **kwargs):
-        return super().contourf(*args, **kwargs)
-
-    @check_centers
-    def quiver(self, *args, **kwargs):
-        return super().quiver(*args, **kwargs)
-
-    @check_centers
-    def streamplot(self, *args, **kwargs):
-        return super().streamplot(*args, **kwargs)
-
-    @check_centers
-    def barbs(self, *args, **kwargs):
-        return super().barbs(*args, **kwargs)
-
-    @check_edges
-    def pcolorpoly(self, *args, **kwargs):
-        return super().pcolor(*args, **kwargs)
-
-    @check_edges
-    def pcolormesh(self, *args, **kwargs):
-        return super().pcolormesh(*args, **kwargs)
 
 @docstring_fix
 class PanelAxes(XYAxes):
@@ -1864,80 +1799,13 @@ class MapAxes(BaseAxes):
     Dummy intermediate class that just disables a bunch of methods that are
     inappropriate for map projections.
     """
-    # This one we want to work, but it doesn't
-    # Property decorators mean error will be raised right after method invoked,
-    # will not raise error on account of args/kwargs, see: https://stackoverflow.com/a/23126260/4970632
-    # @property
-    # def pcolormesh(self):
-    #     raise NotImplementedError('Mesh version of pcolor fails for map projections. Use pcolorpoly instead.')
     # Disable some methods to prevent weird shit from happening
-    _message = 'Invalid plotting function for map projection axes.'
-    @property
-    def matshow(self):
-        raise NotImplementedError(self._message)
-    @property
-    def imshow(self):
-        raise NotImplementedError(self._message)
-    @property
-    def spy(self):
-        raise NotImplementedError(self._message)
-    @property
-    def bar(self):
-        raise NotImplementedError(self._message)
-    @property
-    def barh(self):
-        raise NotImplementedError(self._message)
-    @property
-    def hist(self):
-        raise NotImplementedError(self._message)
-    @property
-    def hist2d(self):
-        raise NotImplementedError(self._message)
-    @property
-    def errorbar(self):
-        raise NotImplementedError(self._message)
-    @property
-    def boxplot(self):
-        raise NotImplementedError(self._message)
-    @property
-    def violinplot(self):
-        raise NotImplementedError(self._message)
-    @property
-    def step(self):
-        raise NotImplementedError(self._message)
-    @property
-    def stem(self):
-        raise NotImplementedError(self._message)
-    @property
-    def hlines(self):
-        raise NotImplementedError(self._message)
-    @property
-    def vlines(self):
-        raise NotImplementedError(self._message)
-    @property
-    def axhline(self):
-        raise NotImplementedError(self._message)
-    @property
-    def axvline(self):
-        raise NotImplementedError(self._message)
-    @property
-    def axhspan(self):
-        raise NotImplementedError(self._message)
-    @property
-    def axvspan(self):
-        raise NotImplementedError(self._message)
-    @property
-    def fill_between(self):
-        raise NotImplementedError(self._message)
-    @property
-    def fill_betweenx(self):
-        raise NotImplementedError(self._message)
-    @property
-    def fill(self):
-        raise NotImplementedError(self._message)
-    @property
-    def stackplot(self):
-        raise NotImplementedError(self._message)
+    # Originally used property decorators for this but way too verbose
+    # See: https://stackoverflow.com/a/23126260/4970632
+    def __getattribute__(self, attr, *args):
+        if attr in _map_disabled_methods:
+            raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
+        return super().__getattribute__(attr, *args)
 
 @docstring_fix
 class BasemapAxes(MapAxes):
@@ -1952,6 +1820,7 @@ class BasemapAxes(MapAxes):
         The 'map_projection' argument sets projection, because this axes itself
         is called from add_subplot using projection='basemap'.
         """
+        import mpl_toolkits.basemap as mbasemap # verify package is available
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
         #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
         #   "limb2" automatically: one for fill and the other for the edges
@@ -1965,21 +1834,55 @@ class BasemapAxes(MapAxes):
         super().__init__(*args, **kwargs)
         self.m = map_projection
         self.boundary = None
-        self.recurred = False # use this so we can override plotting methods
-        self.axesPatch = self.patch
+        self.axesPatch = self.patch # for bugfix
+        self._recurred = False # use this so we can override plotting methods
         if map_projection.projection in self.pseudocyl: # otherwise the spines are map boundary
             self.boundary = self.m.drawmapboundary(ax=self)
 
+    # Basemap overrides
+    # Fixes coordinates for 1D and 2D visualizations
+    # WARNING: Never ever try to just make blanket methods on the Basemap
+    # instance accessible from axes instance! Can of worms and had bunch of
+    # weird errors! Just pick the ones you think user will want to use.
+    def __getattribute__(self, attr, *args):
+        if attr=='pcolorpoly':
+            attr = 'pcolor' # use alias so don't run into recursion issues due to internal pcolormesh calls to pcolor()
+        obj = super().__getattribute__(attr, *args)
+        if attr in _line_methods:
+            obj = _linefix_basemap(self, obj)
+            obj = _no_recurse(self, obj)
+        elif attr in _edge_methods or attr in _center_methods:
+            obj = _gridfix_basemap(self, obj)
+            if attr in _edge_methods:
+                obj = _check_edges(obj)
+            else:
+                obj = _check_centers(obj)
+            obj = _no_recurse(self, obj)
+        # try:
+        #     m = super().__getattribute__('m')
+        #     # m = object.__getattribute__(self, 'm')
+        # except AttributeError:
+        #     m = None
+        # if attr=='contourf':
+        #     ic('hi')
+        # if m and (attr in m.__dict__ or attr in type(m).__dict__):
+        #     obj = m.__getattribute__(attr)
+        #     if attr=='contourf':
+        #         ic('recurse', obj)
+        #     if callable(obj):
+        #         obj = _no_recurse(self, obj) # should this go first or last?
+        # ic(object.__getattribute__(self, 'm').__dict__)
+        # if callable(obj): # so wrap *every single basemap method*
+        return obj
+
+    # Format basemap axes
+    # Add documentation here.
     def format(self, color=None,
         oceans=False, coastlines=False, land=False, # coastlines and land
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None,
         lonlocator=None, lonminorlocator=None,
         **kwargs):
-        """
-        Format basemap axes.
-        Add documentation here.
-        """
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
 
@@ -2000,8 +1903,8 @@ class BasemapAxes(MapAxes):
         tsettings = {'color':rc['xtick.color'], 'fontsize':rc['xtick.labelsize']}
         if latlocator is not None:
             if utils.isnumber(latlocator):
-                latlocator = AutoLocate(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
-            p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
+                latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
+            p = self.drawparallels(latlocator, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
                 for _ in [i for j in pi for i in j]: # magic
                     if isinstance(_, mtext.Text):
@@ -2016,7 +1919,7 @@ class BasemapAxes(MapAxes):
             latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
             lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
             if utils.isnumber(lonlocator):
-                lonlocator = AutoLocate(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
+                lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
             p = self.m.drawmeridians(lonlocator, labels=lonlabels, ax=self)
             for pi in p.values():
                 for _ in [i for j in pi for i in j]: # magic
@@ -2050,103 +1953,38 @@ class BasemapAxes(MapAxes):
             for spine in self.spines.values():
                 spine.update(outline)
 
-    # Basemap overrides
-    # The decorators assure that, when method is called the second time by
-    # the Basemap copy, we will then call the superclass Axes version instead.
-    # For plot/scatter we can just use latlon=True to naively convert to map
-    # coordinates, but want to be safe for contour/pcolor methods.
-    @norecurse
-    def plot(self, *args, **kwargs):
-        return self.m.plot(*args, ax=self, latlon=True, **kwargs) # this will call *itself*
-
-    @norecurse
-    def scatter(self, *args, **kwargs):
-        return self.m.scatter(*args, ax=self, latlon=True, **kwargs)
-
-    @norecurse
-    @check_centers
-    @gridfix_basemap
-    def contour(self, *args, **kwargs):
-        return self.m.contour(*args, ax=self, **kwargs)
-
-    @norecurse
-    @check_centers
-    @gridfix_basemap
-    def contourf(self, *args, **kwargs):
-        return self.m.contourf(*args, ax=self, **kwargs)
-
-    @norecurse
-    @check_edges
-    @gridfix_basemap
-    @cmap_features
-    def pcolorpoly(self, *args, **kwargs):
-        return self.m.pcolor(*args, ax=self, **kwargs)
-
-    @norecurse
-    @check_edges
-    @gridfix_basemap
-    @cmap_features
-    def pcolormesh(self, *args, **kwargs):
-        return self.m.pcolormesh(*args, ax=self, **kwargs)
-
-    @norecurse
-    @check_centers
-    @gridfix_basemap
-    def barbs(self, *args, **kwargs):
-        return super().barbs(*args, **kwargs)
-
-    @norecurse
-    @check_centers
-    @gridfix_basemap
-    def quiver(self, *args, **kwargs):
-        return super().quiver(*args, **kwargs)
-
-    @norecurse
-    @check_centers
-    @gridfix_basemap
-    def streamplot(self, *args, **kwargs):
-        return super().streamplot(*args, **kwargs)
-
 @docstring_fix
-class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so the methods can overwrite stuff
 # class CartopyAxes(GeoAxes, MapAxes):
-    """
-    Cartopy subclass.
-    Some notes:
-    * Cartopy takes advantage of documented feature where any class with method
-      named _as_mpl_axes can be passed as 'projection' object.
-      Feature documented here: https://matplotlib.org/devel/add_new_projection.html
-      Used in Projection parent class here: https://scitools.org.uk/cartopy/docs/v0.13/_modules/cartopy/crs
-    """
+class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so the methods can overwrite stuff
+    # Cartopy takes advantage of documented feature where any class with method
+    # named _as_mpl_axes can be passed as 'projection' object.
+    # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
+    # Used in Projection parent class here: https://scitools.org.uk/cartopy/docs/v0.13/_modules/cartopy/crs
     name = 'cartopy'
     def __init__(self, *args, map_projection=None, circle_center=90, circle_edge=0, **kwargs):
         """
-        Initialize cartopy projection, and allow for *partial* (i.e. not global) coverage for
-        azimuthal projections by zooming into the full projection, then drawing a circle boundary
-        around some latitude away from the center.
+        Initialize cartopy projection, and allow for *partial* (i.e. not global)
+        coverage for azimuthal projections by zooming into the full projection,
+        then drawing a circle boundary around some latitude away from the center.
         * The 'map_projection' argument sets projection, because this axes itself
           is called from add_subplot using projection='basemap'.
-        * Number 'ncircle' controls number of points for drawing circular projection boundary.
-          For more info see: https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html
+        * Number 'ncircle' controls number of points for drawing circular projection
+          boundary. For more info see: https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html
         """
-        # Initialize
-        # Do the GeoAxes initialization steps manually, because there are very few, and since GeoAxes and Axes subclass
-        # same base classes, might get some repitition or weird errors if try to do both.
+        # Dependencies
+        import cartopy.crs as ccrs # verify package is available
+
+        # Do the GeoAxes initialization steps manually (there are very few)
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=(cartopy.crs.Projection instance).')
-        # super().__init__(*args, map_projection=map_projection, **kwargs)
         self._hold = None
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
-        # self.number = kwargs.pop('number', None)
-        # super(GeoAxes, self).__init__(*args, **kwargs)
-        # below will call baseaxes, which will call geoaxes as the superclass
+
+        # Below will call BaseAxes, which will call GeoAxes as the superclass
+        # NOTE: Previously did stuff in __init__ manually, and called self._boundary,
+        # which hides existing border patch and rewrites as None. Don't do that again.
         super().__init__(*args, map_projection=map_projection, **kwargs)
-        self.outline_patch = None    # patch that provides the line bordering the projection.
-        self.background_patch = None # patch that provides the filled background of the projection
-        self.img_factories = []
-        self._gridliners = []
-        self._done_img_factory = False
-        self._boundary()
+
         # Apply circle boundary
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
@@ -2155,46 +1993,79 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             self.set_boundary(circle(100), transform=self.transAxes)
 
     def _as_mpl_axes(self):
-        """
-        See above for details. Since this class is *itself* a projection, we cannot
-        instantiate it with another projection, will get weird error. Instead manually
-        declare this method just like in ccrs.
-        """
-        return geoaxes.GeoAxes, {'map_projection': self}
+        # Don't think this is ever used.
+        return GeoAxes, {'map_projection': self}
 
-    def format(self, color=None,
+    def __getattribute__(self, attr, *args):
+        obj = super().__getattribute__(attr, *args)
+        if attr in _line_methods:
+            obj = _linefix_cartopy(obj)
+        elif attr in _edge_methods or attr in _center_methods:
+            obj = _gridfix_cartopy(obj)
+            if attr in _edge_methods:
+                obj = _check_edges(obj)
+            else:
+                obj = _check_centers(obj)
+        return obj
+
+    def _rcupdate(self):
+        ic()
+        # Update properties controlled by custom rc settings
+        self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
+        self.background_patch.update({'facecolor': rc['axes.facecolor']})
+        self.outline_patch.update({'edgecolor': rc['axes.edgecolor'],
+                                   'linewidth': rc['axes.linewidth']})
+
+        # Call parent
+        super()._rcupdate()
+
+    # Format cartopy GeoAxes.
+    # Add documentation here.
+    def format(self,
+        xlim=None, ylim=None,
         oceans=False, land=False, coastlines=False, # coastlines and continents
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
         **kwargs):
-        """
-        Format cartopy GeoAxes.
-        Add documentation here.
-        """
+        # Dependencies
+        import cartopy.feature as cfeature
+        import cartopy.crs as ccrs # verify package is available
+        from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
 
-        # Boundary for projection region
-        outline = {'linewidth': rc['axes.linewidth'],
-                   'edgecolor': rc['axes.edgecolor']}
-        self.outline_patch.update(outline)
-        # Make background patch invisible, so can color axes patch instead
-        # See: https://stackoverflow.com/a/32208700/4970632
-        # self.background_patch.set_fill(False)
-        # This doesn't seem to work because axes patch is always invisible and has
-        # been overridden by background patch, so will just show underlying figure color
-        if color is not None:
-            self.background_patch.set_facecolor(color)
-        else:
-            self.background_patch.set_facecolor('w')
+        # Configure extents?
+        # WARNING: The set extents method tries to set a *rectangle* between
+        # the *4* (x,y) coordinate pairs (each corner), so something like
+        # (-180,180,-90,90) will result in *vertical line*, causing error!
+        # NOTE: proj4_params stores keyword-arg pairs, proj4_init stores
+        # the shell string passed
+        # NOTE: They may add this in set_xlim and set_ylim in the
+        # near future; see:
+        # https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638
+        if xlim is not None or ylim is not None:
+            xlim = xlim or [None,None]
+            ylim = ylim or [None,None]
+            xlim, ylim = [*xlim], [*ylim]
+            lon_0 = self.projection.proj4_params.get('lon_0', 0)
+            if xlim[0] is None:
+                xlim[0] = lon_0 - 180
+            if xlim[1] is None:
+                xlim[1] = lon_0 + 180
+            if ylim[0] is None:
+                ylim[0] = -90
+            if ylim[1] is None:
+                ylim[1] = 90
+            self.set_extent([*xlim, *ylim], PlateCarree)
 
         # Draw gridlines
         # WARNING: For some reason very weird side effects happen if you try
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*AutoLocate(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*AutoLocate(-90,90,v)]
+        lonvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-90,90,v)]
         lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
         lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
@@ -2238,49 +2109,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             feat = cfeature.NaturalEarthFeature('physical', 'ocean', '50m')
             self.add_feature(feat, **rc['oceans'])
 
-    # Cartopy overrides
-    # Does some simple manipulation and adds the default transform PlateCarree if not declared.
-    def plot(self, *args, transform=PlateCarree, **kwargs):
-        return super().plot(*args, transform=transform, **kwargs) # this will call *itself*
-
-    def scatter(self, *args, transform=PlateCarree, **kwargs):
-        return super().scatter(*args, transform=transform, **kwargs)
-
-    @check_centers
-    @gridfix_cartopy
-    def contour(self, *args, **kwargs):
-        return super().contour(*args, **kwargs)
-
-    @check_centers
-    @gridfix_cartopy
-    def contourf(self, *args, **kwargs):
-        return super().contourf(*args, **kwargs)
-
-    @check_edges
-    @gridfix_cartopy
-    def pcolormesh(self, *args, **kwargs):
-        return super().pcolormesh(*args, **kwargs)
-
-    @check_edges
-    @gridfix_cartopy
-    def pcolorpoly(self, *args, **kwargs):
-        print('Warning: pcolor() likely to be excrutiatingly slow with cartopy. Try pcolormesh() instead.')
-        return super().pcolorpoly(*args, **kwargs)
-
-    @check_centers
-    @gridfix_cartopy
-    def barbs(self, *args, **kwargs):
-        return super().barbs(*args, **kwargs)
-
-    @check_centers
-    @gridfix_cartopy
-    def quiver(self, *args, **kwargs):
-        return super().quiver(*args, **kwargs)
-
-    @check_centers
-    @gridfix_cartopy
-    def streamplot(self, *args, **kwargs):
-        return super().streamplot(*args, **kwargs)
 
 @docstring_fix
 class PolarAxes(MapAxes, PolarAxes):
@@ -2300,30 +2128,32 @@ register_projection(CartopyAxes)
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
 #------------------------------------------------------------------------------#
-def map_projection_factory(package, projection, silent=False, **kwargs):
+def map_projection_factory(package, projection, **kwargs):
     """
     Returns Basemap object or cartopy ccrs instance.
     """
     # Initial stuff
-    crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
-        **{k:'central_latitude'  for k in ['lat0','lat_0']},
-        **{k:'central_longitude' for k in ['lon0', 'lon_0']},
-        }
-    crs_dict = { # interpret string, create cartopy projection
-        **{key: ccrs.PlateCarree   for key in ['cyl','rectilinear','pcarree','platecarree']},
-        **{key: ccrs.Mollweide     for key in ['moll','mollweide']},
-        **{key: ccrs.Stereographic for key in ['stereo','stereographic']},
-        'aeqd': ccrs.AzimuthalEquidistant, 'aeqa': ccrs.LambertAzimuthalEqualArea,
-        'mercator': ccrs.Mercator, 'robinson': ccrs.Robinson, 'ortho': ccrs.Orthographic,
-        'hammer': Hammer,       'aitoff': Aitoff,
-        'wintri': WinkelTripel, 'kav7':   KavrayskiyVII,
-        }
     # Create projection and determine required aspect ratio
     if package=='basemap':
+        import mpl_toolkits.basemap as mbasemap # verify package is available
         projection = mbasemap.Basemap(projection=(projection or 'cyl'), **{**kwargs, 'fix_aspect':True}) # cylindrical by default
         aspect = (projection.urcrnrx - projection.llcrnrx)/(projection.urcrnry - projection.llcrnry)
     # Get the projection instance from a string and determine required aspect ratio
     elif package=='cartopy':
+        import cartopy.crs as ccrs # verify package is importable
+        crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
+            **{k:'central_latitude'  for k in ['lat0','lat_0']},
+            **{k:'central_longitude' for k in ['lon0', 'lon_0']},
+            }
+        crs_dict = { # interpret string, create cartopy projection
+            **{key: ccrs.PlateCarree   for key in ['cyl','rectilinear','pcarree','platecarree']},
+            **{key: ccrs.Mollweide     for key in ['moll','mollweide']},
+            **{key: ccrs.Stereographic for key in ['stereo','stereographic']},
+            'aeqd': ccrs.AzimuthalEquidistant, 'aeqa': ccrs.LambertAzimuthalEqualArea,
+            'mercator': ccrs.Mercator, 'robinson': ccrs.Robinson, 'ortho': ccrs.Orthographic,
+            'hammer': Hammer,       'aitoff': Aitoff,
+            'wintri': WinkelTripel, 'kav7':   KavrayskiyVII,
+            }
         projection = projection or 'cyl'
         if projection not in crs_dict:
             raise ValueError(f'For cartopy, projection must be one of the following: {", ".join(crs_dict.keys())}.')
@@ -2332,8 +2162,6 @@ def map_projection_factory(package, projection, silent=False, **kwargs):
     # Error
     else:
         raise ValueError(f'Unknown package "{package}".')
-    if not silent:
-        print(f'Forcing aspect ratio: {aspect:.3g}')
     return projection, aspect
 
 def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #, settings=None): # can be updated
@@ -2563,13 +2391,13 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
             # Prevent annoying major/minor overlaps where one is slightly shifted left/right
             # Consider floating point weirdness too
             eps = 1e-10
-            length = len(values)
+            # length = len(values)
             values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
             # print(f'Removed {length-len(values)}/{length} minor ticks(s).')
         fixed = values # record as new variable
         locators.append(Locator(fixed)) # final locator object
     # Next the formatter
-    formatter = Formatter(cformatter)
+    cformatter = Formatter(cformatter)
 
     # Fix the norm object
     # Check out the *insanely weird error* that occurs when you comment out this block!

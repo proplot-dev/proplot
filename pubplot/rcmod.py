@@ -59,6 +59,7 @@ from matplotlib import rcParams, style
 rcGlobals = {
     # Apply these ones to list of rcParams
     'color' :     'k',
+    'facecolor':  'w',
     'small':      8,
     'large':      9,
     'linewidth':  0.6,
@@ -77,6 +78,7 @@ rcGlobals = {
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     'color':      ['axes.labelcolor', 'axes.edgecolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'facecolor':  ['axes.facecolor'], # simple alias
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
     'linewidth':  ['axes.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
@@ -160,6 +162,7 @@ rcSpecial = {
     'abc.fontsize':          rcGlobals['large'],
     'gridminor.linewidth':   rcGlobals['linewidth']*rcGlobals['minorwidth'],
     # The rest can be applied as-is
+    'axes.facehatch':        None, # optionally apply background hatching
     'abc.weight':            'bold',
     'gridminor.color':       'k',
     'gridminor.alpha':       0.1,
@@ -169,7 +172,7 @@ rcSpecial = {
     'land.color':            'k',
     'oceans.linewidth':      0,
     'oceans.color':          'w',
-    'lonlatlines.linestyle': ':                                                                                                                                ',
+    'lonlatlines.linestyle': ':',
     'lonlatlines.alpha':     0.2,
     'lonlatlines.color':     'k',
     'subplots.title' :       0.4, # extra space for title/suptitle
@@ -270,27 +273,30 @@ class rc_configurator(object):
         # Test if module is in its initial state
         self._init = True
 
-    def __getitem__(self, item):
+    def __getitem__(self, key):
         # Can get a whole bunch of different things
         # Get full dictionary
-        if not item:
+        if not key:
             return {**rcParams, **self._rcSpecial}
         # Get a global linked value
-        if item in self._rcGlobals:
-            return self._rcGlobals[item]
+        if key in self._rcGlobals:
+            return self._rcGlobals[key]
         # Get dictionary of sub-categories
         # Allow access to dictionary contents through attributes
+        # NOTE: Try to iterate through dictionary only *once* (could do
+        # key in <blank> tests instead of first if statements, but that
+        # would often mean two iterations over almost entire dictionary)
         params = AttributeDict()
-        for d in (rcParams, self._rcSpecial):
+        for i,d in enumerate((rcParams, self._rcSpecial)):
             for category,value in d.items():
-                if re.match(f'^{item}$', category):
-                    return rcParams[item]
-                elif re.search(f'^{item}\.', category):
-                    subcategory = re.sub(f'^{item}.', '', category)
+                if re.match(f'^{key}$', category):
+                    return d[key]
+                elif re.search(f'^{key}\.', category):
+                    subcategory = re.sub(f'^{key}.', '', category)
                     if subcategory and '.' not in subcategory:
                         params[subcategory] = d[category]
         if not params:
-            raise ValueError(f'Invalid key "{item}".')
+            raise ValueError(f'Invalid key "{key}".')
         return params
 
     def __setitem__(self, key, value):
