@@ -2,6 +2,12 @@
 #------------------------------------------------------------------------------#
 # Imports
 # Note colormaps are *callable*, will just deliver the corresponding color, easy.
+# NOTE:
+# * Colormaps generated from HCL space (and cmOcean ones) are indeed perfectly
+#   perceptually uniform, but this still looks bad sometimes -- usually we
+#   *want* to focus on the *extremes*, so want to weight colors more heavily
+#   on the brighters/whiter part of the map! That's what the ColdHot map does,
+#   it's what most of the ColorBrewer maps do, and it's what ColorWizard does.
 # TODO: Still confused over some issues:
 # * Note that by default extremes are stored at end of *lookup table*, not as
 #   separate RGBA values (so look under cmap._lut, indexes cmap._i_over and
@@ -93,7 +99,7 @@ list_cycles = {
     #     'green')] for i in range(10)},
     }
 # Aliases
-space_aliases = {
+_space_aliases = {
     'rgb':   'rgb',
     'hsv':   'hsv',
     'hpl':   'hpl',
@@ -103,17 +109,15 @@ space_aliases = {
     'hcl':   'hcl',
     'lch':   'hcl',
     }
-channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2, 'alpha': 3,
-                'h':   0, 's':          1, 'c':      1, 'l':         2}
 # Names of builtin colormaps
-categories_default = { # initialize as empty lists
+_categories_default = { # initialize as empty lists
     # We keep these ones
     'Matplotlib Originals':
         ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
     'PubPlot Sequential':
-        [], # empty at first, fill automatically
+        ['Bog', 'Forest', 'Sea', 'Pale', 'Sunrise', 'Sunset', 'Vibrant'], # empty at first, fill automatically
     'PubPlot Diverging':
-        ['ColdHot', 'Ocean', 'Lake', 'DryWet'],
+        ['ColdHot', 'DryWet', 'Water'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
@@ -144,7 +148,7 @@ categories_default = { # initialize as empty lists
         'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
         'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
-categories_ignore = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
+_categories_ignore = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
 
 #------------------------------------------------------------------------------#
 # More generalized utility for retrieving colors
@@ -153,7 +157,7 @@ def get_space(space):
     """
     Verify requested colorspace is valid.
     """
-    space = space_aliases.get(space, None)
+    space = _space_aliases.get(space, None)
     if space is None:
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
@@ -164,7 +168,9 @@ def to_rgb(color, space='rgb'):
     from any colorspace to rgb. Also will convert color strings to tuple.
     """
     # First the RGB input
-    if type(color) is str:
+    # NOTE: Need isinstance here because strings stored in numpy arrays
+    # are actually subclasses thereof!
+    if isinstance(color, str):
         try:
             color = mcolors.to_rgb(color) # ensure is valid color
         except Exception:
@@ -239,16 +245,13 @@ def get_channel_value(color, channel, space='hsl'):
             channel number or name (e.g., 0, 1, 2, 'h', 's', 'l')
     """
     # Interpret channel
+    channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2,
+                    'alpha': 3, 'h': 0, 's': 1, 'c': 1, 'l': 2}
     channel = channel_idxs.get(channel, channel)
-    if channel not in (0,1,2,3):
-        raise ValueError('Channel must be in [0,1,2].')
-    if utils.isvector(color):
-        raise TypeError('Input should be string or scalar number.')
-    # Bypass
     if callable(color) or not isinstance(color, str):
         return color
-    if channel==3:
-        raise ValueError(f'Cannot specify alpha channel with color string.')
+    if channel not in (0,1,2):
+        raise ValueError('Channel must be in [0,1,2].')
     # Interpret string
     offset = 0
     regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
@@ -256,7 +259,7 @@ def get_channel_value(color, channel, space='hsl'):
     if match:
         try:
             offset = float(match.group(0))
-        except ValueError as err:
+        except ValueError:
             raise ValueError(f'Invalid channel identifier "{color}".')
         color = color[:match.start()]
     return offset + to_xyz(to_rgb(color), space)[channel]
@@ -306,8 +309,6 @@ def Colormap(*args, extend='both',
         raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
         # Retrieve Colormap instance
-        if utils.isnumber(cmap):
-            cmap = f'C{cmap}' # use current color cycle
         if isinstance(cmap, mcolors.Colormap):
             # Do nothing
             pass
@@ -392,7 +393,7 @@ def Colormap(*args, extend='both',
 
     # Optionally register a colormap
     if name and register:
-        if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in categories_default.items()
+        if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _categories_default.items()
                     for cat_cmap in cat_cmaps if 'PubPlot' not in cat]:
             print(f'Warning: Overwriting existing colormap "{name}".')
             # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
@@ -467,18 +468,38 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
          luminance  = [[0, 1, 1], [1, 0.2, 0.2]])
     """
     def __init__(self, name, segmentdata,
-            space='hsl',
+            space='hsl', gamma1=1.0, gamma2=1.0,
             mask=False, **kwargs):
         """
         Initialize with dictionary of values. Note that hues should lie in
         range [0,360], saturation/luminance in range [0,100].
+
         Arguments
         ---------
-            mask : Whether to mask out-of-range colors as black, or just clip
+            mask :
+                Whether to mask out-of-range colors as black, or just clip
                 the RGB values (distinct from colormap clipping the extremes).
+            gamma1 :
+                Raise the line used to transition from a low chroma value (x=0)
+                to a higher chroma value (x=1) by this power, like HCLWizard.
+            gamma2 :
+                Raise the line used to transition from a high luminance value (x=0)
+                to a lower luminance value (x=1) by this power, like HCLWizard.
+        Why change the direction of transition depending on which value is
+        bigger? Because makes it much easier to e.g. weight the center of
+        a diverging colormap.
         """
         # Attributes
+        # NOTE: Don't allow power scaling for hue because that would be weird.
+        # Idea is want to allow skewing so dark/saturated colors are
+        # more isolated/have greater intensity.
+        # Hue is more like a 'flavor' and shouldn't need to weight one more
+        # than the other
         space = get_space(space)
+        gamma2 = 1.0 # try this
+        self._gammas = (1.0, gamma1, gamma2)
+        self._reverse = (False, False, True) # weight lower or higher magnitudes more?
+        self._channels = ('hue','saturation','luminance')
         self.space = space
         self.mask  = mask
         # First sanitize the segmentdata by converting color strings to their
@@ -488,19 +509,20 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         if keys != target and keys != {*target, 'alpha'}:
             raise ValueError('Invalid segmentdata dictionary.')
         for key,array in segmentdata.items():
-            # Modify callable function to return values in proper range
+            # Allow specification of channels using registered string color names
             if callable(array):
-                segmentdata[key] = get_channel_value(array, key, space)
                 continue
-            # Modify values directly
             for i,xyy in enumerate(array):
                 xyy = list(xyy) # make copy!
                 for j,y in enumerate(xyy[1:]): # modify the y values
-                    j += 1 # fix
-                    xyy[j] = get_channel_value(y, key, space)
+                    xyy[j+1] = get_channel_value(y, key, space)
                 segmentdata[key][i] = xyy
         # Initialize
-        super().__init__(name, segmentdata, **kwargs)
+        # NOTE: Our gamma1 and gamma2 scaling is just fancy per-channel
+        # gamma scaling, so disable the standard version.
+        if 'gamma' in kwargs:
+            raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
+        super().__init__(name, segmentdata, gamma=1.0, **kwargs)
 
     def reversed(self, name=None):
         """
@@ -517,7 +539,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                   for key, data in self._segmentdata.items()}
         return PerceptuallyUniformColormap(name, data_r,
                 space=self.space,
-                gamma=self._gamma)
+                gamma1=self._gammas[1],
+                gamma2=self._gammas[2])
 
     def _init(self):
         """
@@ -526,10 +549,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         """
         # First generate the lookup table
         self._lut = np.ones((self.N+3, 4), float) # fill
-        for i,key in enumerate(('hue','saturation','luminance')):
-            self._lut[:-3,i] = make_mapping_array(self.N, self._segmentdata[key], self._gamma)
+        for i,(channel,gamma,reverse) in enumerate(zip(self._channels, self._gammas, self._reverse)):
+            self._lut[:-3,i] = make_mapping_array(self.N, self._segmentdata[channel], gamma, reverse)
         if 'alpha' in self._segmentdata:
-            self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'], self._gamma)
+            self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'])
         self._lut[:-3,0] %= 360
         # Make hues circular, and set extremes
         self._isinit = True
@@ -554,7 +577,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         #         N=N)
 
     @staticmethod
-    def from_hsl(name, h=1.0, s=1.0, l=[1,0.2], c=None, a=None,
+    def from_hsl(name, h, s=100, l=[100, 20], c=None, a=None,
             ratios=None, reverse=False, **kwargs):
         """
         Make linear segmented colormap by specifying channel values.
@@ -568,7 +591,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         cs = ['hue', 'saturation', 'luminance', 'alpha']
         channels = [h, s, l, a]
         for c,channel in zip(cs,channels):
-            cdict[c] = make_segmentdata_array(channel, ratios=ratios, reverse=reverse, **kwargs)
+            cdict[c] = make_segmentdata_array(channel, ratios, reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
@@ -601,7 +624,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             cdict['alpha'] = 1.0 # dummy function that always returns 1.0
         # Build data arrays
         for c,channel in zip(cs,channels):
-            cdict[c] = make_segmentdata_array(channel, ratios=ratios, reverse=reverse, **kwargs)
+            cdict[c] = make_segmentdata_array(channel, ratios, reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
@@ -616,10 +639,10 @@ def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
         if reverse:
             values = lambda x: values(1-x)
         return values # just return the callable
-    if utils.isnumber(values) or len(values)==1:
-        if not utils.isnumber(values):
-            values = values[0]
-        return [(0, values, values), (1, values, values)] # just return a constant
+    values = np.atleast_1d(values)
+    if len(values)==1:
+        value = values[0]
+        return [(0, value, value), (1, value, value)] # just return a constant transition
     # Get x coordinates
     if not np.iterable(values):
         raise TypeError('Colors must be iterable.')
@@ -638,14 +661,20 @@ def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
         array.append((x, value, value))
     return array
 
-def make_mapping_array(N, data, gamma=1.0):
+def make_mapping_array(N, data, gamma=1.0, reverse=False):
     """
-    Carbon copy of matplotlib version, but this one doesn't clip values to
-    the range 0-1 (which permits HSL values (which range from 0-360, 0-100,
-    0-100) and circular hue gradations).
+    Mostly a copy of matplotlib version, with a few modifications:
+        * Permit ranges outside of 0-1 (i.e. allowing HSL values).
+        * Allow circular hue gradations.
+        * Allow weighting each transition by going from:
+            c = c1 + x*(c2 - c1)
+          for x in range [0-1], to
+            c = c1 + (x**gamma)*(c2 - c1)
     """
     # Optionally allow for ***callable*** instead of linearly interpolating
     # between line segments
+    if gamma < 0.01 or gamma > 10:
+        raise ValueError('Gamma can only be in range [0.01,10].')
     if callable(data):
         x = np.linspace(0, 1, N)**gamma
         lut = np.array(data(x), dtype=float)
@@ -663,17 +692,35 @@ def make_mapping_array(N, data, gamma=1.0):
     y0 = data[:, 1]
     y1 = data[:, 2]
     if x[0] != 0.0 or x[-1] != 1.0:
-        raise ValueError('Data mapping points must start with x=0 and end with x=1')
+        raise ValueError('Data mapping points must start with x=0 and end with x=1.')
     if (np.diff(x) < 0).any():
-        raise ValueError('Data mapping points must have x in increasing order')
-    # Begin generation of lookup table
-    x    = x * (N - 1)
-    lut  = np.zeros((N,), float)
-    xind = (N - 1) * np.linspace(0, 1, N) ** gamma
-    ind  = np.searchsorted(x, xind)[1:-1]
-    # Calculate
-    distance = (xind[1:-1] - x[ind - 1]) / (x[ind] - x[ind - 1])
-    lut[1:-1] = distance * (y0[ind] - y1[ind - 1]) + y1[ind - 1]
+        raise ValueError('Data mapping points must have x in increasing order.')
+    x = x*(N - 1)
+    # Get distances from the segmentdata entry to the *left* for each requested
+    # level, excluding ends at (0,1), which must exactly match segmentdata ends
+    xq = (N - 1)*np.linspace(0, 1, N)
+    ind = np.searchsorted(x, xq)[1:-1] # where xq[i] must be inserted so it is larger than x[ind[i]-1] but smaller than x[ind[i]]
+    distance = (xq[1:-1] - x[ind - 1])/(x[ind] - x[ind - 1])
+    # Scale distances in each segment by input gamma
+    if gamma != 1:
+        _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
+        # print('Segment data', data)
+        # print(ind)
+        for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
+            # By default, weight toward a *lower* channel value (i.e. bigger
+            # exponent implies more colors at lower value)
+            ir = ((y0[i + 1] - y1[i]) < 0) # by default want to weight toward a *lower* channel value
+            if reverse:
+                ir = (not ir)
+            # print('Left value', y1[i], 'Right value', y0[i + 1], 'Reverse', ir)
+            if ir:
+                distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
+            else:
+                distance[ui:ui + ci] **= gamma
+        # print('New distance', distance)
+    # Perform successive linear interpolations all rolled up into one equation
+    lut = np.zeros((N,), float)
+    lut[1:-1] = distance*(y0[ind] - y1[ind - 1]) + y1[ind - 1]
     lut[0]  = y1[0]
     lut[-1] = y0[-1]
     return lut
@@ -731,7 +778,9 @@ def merge_cmaps(cmaps, name='merged', N=512, ratios=1, **kwargs):
         widths = coords[1:] - coords[:-1]
         segmentdata = {}
 
-        # Iterate over channels
+        # Combine the segmentdata, and use the y1/y2 slots at merge points
+        # so the transition is immediate (can never interpolate between end
+        # colors on the two colormaps)
         for key in keys:
             datas = []
             test = [callable(cmap._segmentdata[key]) for cmap in cmaps]
@@ -739,6 +788,9 @@ def merge_cmaps(cmaps, name='merged', N=512, ratios=1, **kwargs):
                 data = np.array(cmap._segmentdata[key])
                 data[:,0] = x + width*data[:,0]
                 datas.append(data)
+            for i in range(len(datas)-1):
+                datas[i][-1,2] = datas[i+1][0,2]
+                datas[i+1] = datas[i+1][1:,:]
             data = np.concatenate(datas, axis=0)
             data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum 1
             segmentdata[key] = data
@@ -895,7 +947,7 @@ def Norm(norm, **kwargs):
         norm = mcolors.Normalize() # default is just linear from 0 to 1
     elif type(norm) is not str: # dictionary lookup
         raise ValueError(f'Unknown norm "{norm}".')
-    if type(norm) is str:
+    if isinstance(norm, str):
         if norm not in normalizers:
             raise ValueError(f'Unknown normalizer "{norm}". Options are {", ".join(normalizers.keys())}.')
         norm = normalizers[norm](**kwargs)
@@ -1265,7 +1317,7 @@ def register_cmaps():
     # Fix the builtin rainbow colormaps by switching from Listed to
     # LinearSegmented -- don't know why matplotlib shifts with these as
     # discrete maps by default, dumb.
-    for name in categories_default['Matplotlib Originals']: # initialize as empty lists
+    for name in _categories_default['Matplotlib Originals']: # initialize as empty lists
         cmap = mcm.cmap_d.get(name,None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
@@ -1274,19 +1326,21 @@ def register_cmaps():
     # is opposite from intuition (red to blue, pink to green, etc.)
     names = []
     if 'RdBu' in mcm.cmap_d: # only do this once! we modified the content of ColorBrewer Diverging
-        for name in categories_default['ColorBrewer2.0 Diverging']:
+        for name in _categories_default['ColorBrewer2.0 Diverging']:
             # Reverse map and name
             # e.g. RdBu --> BuRd, RdYlBu --> BuYlRd
             # Note default name PuOr is literally backwards...
-            cmap   = mcm.cmap_d.pop(name, None)
-            cmap_r = mcm.cmap_d.pop(name + '_r', None)
+            cmap   = mcm.cmap_d.get(name, None)
+            cmap_r = mcm.cmap_d.get(name + '_r', None)
             if cmap:
-                if name not in ('Spectral','PuOr'):
+                if name not in ('Spectral','PuOr','BrBG'):
+                    del mcm.cmap_d[name]
+                    del mcm.cmap_d[name + '_r']
                     name = re.sub('^(..)(..)?(..)$', r'\3\2\1', name)
-                mcm.cmap_d[name] = cmap_r
-                mcm.cmap_d[name + '_r'] = cmap
+                    mcm.cmap_d[name] = cmap_r
+                    mcm.cmap_d[name + '_r'] = cmap
             names += [name]
-    categories_default['ColorBrewer2.0 Diverging'] = names
+    _categories_default['ColorBrewer2.0 Diverging'] = names
 
     # Add shifted versions of cyclic colormaps, and prevent same colors on ends
     for name in ['twilight', 'Phase']:
@@ -1314,14 +1368,14 @@ def register_cmaps():
             mcm.cmap_d[name + '_shifted'] = mcolors.LinearSegmentedColormap(name + '_shifted', data_shift, cmap.N)
 
     # Delete ugly ones
-    for category in categories_ignore:
-        for name in categories_default:
+    for category in _categories_ignore:
+        for name in _categories_default:
             mcm.cmap_d.pop(name, None)
 
     # Register names so that they can be invoked ***without capitalization***
     # This always bugged me! Note cannot change dictionary during iteration.
     ignorecase = {}
-    ignore = [category for categories in categories_ignore for category in categories]
+    ignore = [category for categories in _categories_ignore for category in categories]
     for name,cmap in mcm.cmap_d.items():
         if name in ignore:
             mcm.cmap_d.pop(name, None)
@@ -1399,7 +1453,7 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.
     for group in groups:
         # Get group colors
         group = group or 'open'
-        if type(group) is str:
+        if isinstance(type(group), str):
             group = [group]
         colors = {}
         for name in group:
@@ -1554,28 +1608,23 @@ def cmap_show(N=31):
 
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
-    categories    = {cat:cmaps for cat,cmaps in categories_default.items() if cat not in categories_ignore}
-    cmaps_ignore  = [cmap for cat,cmaps in categories_default.items() for cmap in cmaps if cat in categories_ignore]
+    categories    = {cat:cmaps for cat,cmaps in _categories_default.items() if cat not in _categories_ignore}
+    cmaps_ignore  = [cmap for cat,cmaps in _categories_default.items() for cmap in cmaps if cat in _categories_ignore]
     cmaps_missing = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap not in cmaps_all]
     cmaps_known   = [cmap for cat,cmaps in categories.items() for cmap in cmaps if cmap in cmaps_all]
     cmaps_custom  = [cmap for cmap in cmaps_all if cmap not in cmaps_known and cmap not in cmaps_ignore]
 
     # Attempt to auto-detect diverging colormaps, just sample the points on either end
     # Do this by simply summing the RGB channels to get HSV brightness
-    # categories['PubPlot Diverging'][:] = []
-    categories['PubPlot Sequential'][:] = []
-    for cmap in cmaps_custom:
-        m = mcm.cmap_d[cmap]
-        categories['PubPlot Sequential'] += [cmap]
-        # l = lambda i: to_xyz(to_rgb(m(i)), 'hcl')[2] # get luminance
-        # if (l(0)<l(0.5) and l(1)<l(0.5)): # or (l(0)>l(0.5) and l(1)>l(0.5)):
-        # if cmap.lower() in custom_diverging:
-            # categories['PubPlot Diverging'] += [cmap]
-        # else:
+    # l = lambda i: to_xyz(to_rgb(m(i)), 'hcl')[2] # get luminance
+    # if (l(0)<l(0.5) and l(1)<l(0.5)): # or (l(0)>l(0.5) and l(1)>l(0.5)):
+    # if cmap.lower() in custom_diverging:
     if cmaps_missing:
         print(f'Missing colormaps: {", ".join(cmaps_missing)}')
     if cmaps_ignore:
         print(f'Ignored colormaps: {", ".join(cmaps_ignore)}')
+    if cmaps_custom:
+        print(f'New colormaps: {", ".join(cmaps_custom)}')
 
     # Attempt sorting based on hue
     # for cat in ['PubPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:

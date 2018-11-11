@@ -355,7 +355,6 @@ def _cmap_features(self, func):
         cmap = cmap or rc['image.cmap']
         if isinstance(cmap, (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
-        print(cmap_kw)
         cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
         if not cmap._isinit:
             cmap._init()

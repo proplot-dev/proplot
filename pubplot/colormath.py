@@ -297,15 +297,20 @@ def lchuv_to_CIEluv(triple):
 #------------------------------------------------------------------------------#
 # Converting between different CIE standards
 #------------------------------------------------------------------------------#
+# Try setting gamma from: https://en.wikipedia.org/wiki/HCL_color_space
+# The 3.0 used below should be the same; don't mess with it
+gamma = 3.0 # tunable? nah, get weird stuff
+
+# Functiona
 def CIEfunc(t):
     if t > lab_e:
-        return (math.pow(t, 1.0 / 3.0))
+        return (math.pow(t, 1.0 / gamma))
     else:
         return (7.787 * t + 16.0 / 116.0)
 
 def CIEfunc_inverse(t):
     if math.pow(t, 3.0) > lab_e:
-        return (math.pow(t, 3.0))
+        return (math.pow(t, gamma))
     else:
         return (116.0 * t - 16.0) / lab_k
 

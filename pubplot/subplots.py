@@ -85,7 +85,8 @@ def subplots(array=None, # allow calling with subplots(array)
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
-        innerpanels=None, innercolorbars=None, whichpanel=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
+        innerpanels=None, innercolorbars=None,
+        whichpanel=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
         maps=None, # set maps to True for maps everywhere, or to list of numbers
         basemap=False, proj=None, projection=None, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
@@ -142,17 +143,9 @@ def subplots(array=None, # allow calling with subplots(array)
         if re.search('[bt]', whichpanels):
             ihwidth = default(ihwidth, rc.subplots['cbar'])
             ihspace  = default(ihspace, rc.subplots['labs'])
-            if 'b' in whichpanels:
-                kwargs['bottom'] = default(kwargs['bottom'], rc.subplots['labs'])
-            if 't' in whichpanels:
-                kwargs['top'] = default(kwargs['top'], rc.subplots['labs'])
         elif re.search('[lr]', whichpanels):
             iwwidth = default(iwwidth, rc.subplots['cbar'])
             iwspace  = default(iwspace,  rc.subplots['labs'])
-            if 'l' in whichpanels:
-                kwargs['left'] = default(kwargs['left'], rc.subplots['labs'])
-            if 'r' in whichpanels:
-                kwargs['right'] = default(kwargs['right'], rc.subplots['labs'])
     # Translate whichpanels
     whichpanels = whichpanel or whichpanels # user can specify either
     translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
