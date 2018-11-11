@@ -5,6 +5,7 @@ import numpy as np
 # from contextlib import redirect_stdout
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
+from icecream import ic
 from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import utils
@@ -15,7 +16,7 @@ cm2in = 0.3937
 mm2in = cm2in/10.0
 in2cm = 1.0/cm2in
 in2mm = 1.0/mm2in
-default = lambda x,y: x if x is not None else y
+ifNone = lambda x,y: x if x is not None else y
 
 #------------------------------------------------------------------------------#
 # Miscellaneous helper functions
@@ -80,15 +81,13 @@ class axes_list(list):
         else:
             raise AttributeError('Mixed methods found.')
 
-def subplots(array=None, # allow calling with subplots(array)
+def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with subplots(array)
+        emptycols=[], emptyrows=[], # obsolete?
         tight=True, rcreset=True, silent=True, # arguments for figure instantiation
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
-        ihspace=None, iwspace=None, ihwidth=None, iwwidth=None,
-        innerpanels=None, innercolorbars=None,
-        whichpanel=None, whichpanels='r', # same as below; list of numbers where we want subplotspecs
-        maps=None, # set maps to True for maps everywhere, or to list of numbers
-        basemap=False, proj=None, projection=None, proj_kw={}, projection_kw={},
+        innerpanels={}, innercolorbars={}, innerpanels_kw={},
+        basemap=False, proj={}, projection={}, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
     """
     Summary
@@ -110,10 +109,6 @@ def subplots(array=None, # allow calling with subplots(array)
       make a panel spanning the first two columns, then a single panel for the final column.
       This will add a bottompanel attribute to the figure; can index that attribute if there
       are multiple places for colorbars/legend.
-    * Use rightpanel/rightpanels in the same way.
-    * Create extra panels *within* a grid of subplots (e.g. a 2x2 grid, each of which has a teeny
-      panel attached) innerpanels=True, and optionally filter to subplot numbers with whichpanels=[list];
-      then use ihspace/iwspace/ihwidth/iwwidth to control the separation and widths of the subpanels.
     * Initialize cartopy plots with package='basemap' or package='cartopy'. Can control which plots
       we want to be maps with maps=True (everything) or maps=[numbers] (the specified subplot numbers).
 
@@ -134,45 +129,120 @@ def subplots(array=None, # allow calling with subplots(array)
     * Figure size should be constrained by the dimensions of the axes, not vice
         versa; might make things easier.
     """
-    # Handle the convenience feature for specifying width of inner panels
-    # to be that suitable for a colorbar
-    # Argument can be innercolorbars='b' or innercolorbars=True (means all)
-    # TODO: Add this, but not that important
-    if innercolorbars is not None:
-        innerpanels = innercolorbars
-        if re.search('[bt]', whichpanels):
-            ihwidth = default(ihwidth, rc.subplots['cbar'])
-            ihspace  = default(ihspace, rc.subplots['labs'])
-        elif re.search('[lr]', whichpanels):
-            iwwidth = default(iwwidth, rc.subplots['cbar'])
-            iwspace  = default(iwspace,  rc.subplots['labs'])
-    # Translate whichpanels
-    whichpanels = whichpanel or whichpanels # user can specify either
-    translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
-    whichpanels = translate.get(whichpanels, whichpanels)
+    # Helper functions
+    translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
+    def dict_of_kw(kw):
+        nested = [isinstance(value,dict) for value in kw.values()]
+        if not any(nested): # any([]) == False
+            kw = {range(1,num_axes+1): kw.copy()}
+        elif not all(nested):
+            raise ValueError('Wut.')
+        return kw
+    def axes_dict(kw): # this should switch us to zero-base indexing
+        kw_out = {}
+        for nums,item in kw.items():
+            nums = np.atleast_1d(nums)
+            for num in nums.flat:
+                kw_out[num-1] = item
+        return kw_out
+
+    # Array setup
+    if array is None:
+        array = np.arange(1,nrows*ncols+1)[...,None]
+        order = 'C' if rowmajor else 'F' # for column major, use Fortran ordering
+        array = array.reshape((nrows, ncols), order=order) # numpy is row-major, remember
+    array = np.array(array) # enforce array type
+    if array.ndim==1:
+        array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
+    # Empty rows/columns feature
+    array[array==None] = 0 # use zero for placeholder; otherwise have issues
+    if emptycols:
+        emptycols = np.atleast_1d(emptycols)
+        for col in emptycols.flat:
+            array[:,col-1] = 0
+    if emptyrows:
+        emptyrows = np.atleast_1d(emptyrows)
+        for row in emptyrows.flat:
+            array[row-1,:] = 0
+    # Enforce rule
+    nums = np.unique(array[array!=0])
+    num_axes = len(nums)
+    if tuple(nums.flat) != tuple(range(1,num_axes+1)):
+        raise ValueError('Axes numbers must span integers 1 to num_axes (i.e. cannot skip over numbers).')
+    nrows = array.shape[0]
+    ncols = array.shape[1]
 
     # Get basemap.Basemap or cartopy.CRS instances for map, and override aspec tratio
-    map_kw = {}
-    projection = proj or projection
-    projection_kw = proj_kw or projection_kw
-    if maps:
-        wratios = np.atleast_1d(kwargs.get('wratios',None) or 1)
-        hratios = np.atleast_1d(kwargs.get('hratios',None) or 1)
-        if {*wratios.flat} != {1} or {*hratios.flat} != {1}:
-            raise NotImplementedError('Not yet possible.')
-        if projection=='polar':
-            map_kw = {'projection':'newpolar'}
-            kwargs.update(aspect=1)
-        else:
+    # NOTE: Previously went to some pains (mainly for basemap, something in the
+    # initialization deals with this) to only draw one projection. This is hard
+    # to generalize when want different projections/kwargs, so abandon
+    proj = projection or proj or 'xy'
+    axes_kw = {num:{} for num in range(num_axes)} # stores add_subplot arguments
+    proj_kw = projection_kw or proj_kw # stores cartopy/basemap arguments
+    proj_kw = axes_dict(dict_of_kw(proj_kw))
+    if isinstance(proj, str):
+        proj = {range(1,num_axes+1): proj}
+    proj = axes_dict(proj)
+    ic(axes_kw, proj)
+    for num,name in proj.items():
+        # Builtin matplotlib polar axes, just use my overridden version
+        if name=='polar':
+            axes_kw[num]['projection'] = 'newpolar'
+            if num==1:
+                kwargs.update(aspect=1)
+        # The default, my XYAxes projection
+        elif name=='xy':
+            axes_kw[num]['projection'] = 'xy'
+        # Custom Basemap and Cartopy axes
+        elif name:
             package = 'basemap' if basemap else 'cartopy'
-            map_projection, aspect = base.map_projection_factory(package, projection, **projection_kw)
-            map_kw = {'projection':package, 'map_projection':map_projection}
+            instance, aspect = base.map_projection_factory(package, name, **proj_kw[num])
+            axes_kw[num].update({'projection':package, 'map_projection':instance})
             if not silent:
                 print(f'Forcing aspect ratio: {aspect:.3g}')
-            kwargs.update(aspect=aspect)
+            if num==1:
+                kwargs.update(aspect=aspect)
+        else:
+            raise ValueError('All projection names should be declared. Wut.')
+
+    # Create dictionary of panel toggles and settings
+    # Input can be string e.g. 'rl' or dictionary e.g. {'r':(1,2,3)}
+    # NOTE: Internally we convert array references to 0-base here
+    # First build up a dictionary of kwarg dictionaries for each axes index
+    innerpanels_kw = axes_dict(dict_of_kw(innerpanels_kw))
+    # Next add the 'which' arguments
+    # Optionally change the default panel widths for 'colorbar' panels
+    innerpanels = innerpanels or ''
+    innercolorbars = innercolorbars or ''
+    if isinstance(innerpanels, str):
+        innerpanels = {range(1,num_axes+1): innerpanels}
+    elif not isinstance(innerpanels, dict):
+        raise ValueError('Must pass string of panel sides or dictionary mapping axes numbers to sides.')
+    if isinstance(innercolorbars, str):
+        innercolorbars = {range(1,num_axes+1): innercolorbars}
+    elif not isinstance(innercolorbars, dict):
+        raise ValueError('Must pass string of panel sides or dictionary mapping axes numbers to sides.')
+    innerpanels = axes_dict(innerpanels)
+    innercolorbars = axes_dict(innercolorbars)
+    for num,which in innerpanels.items():
+        innerpanels_kw[num]['whichpanels'] = translate(which)
+    for num,which in innercolorbars.items():
+        which = translate(which)
+        innerpanels_kw[num]['whichpanels'] = which
+        if re.search('[bt]', which):
+            if not innerpanels_kw[num].get('hwidth',None):
+                innerpanels_kw[num]['hwidth'] = rc.subplots['cbar']
+            if not kwargs.get('hspace',None):
+                kwargs['hspace'] = rc.subplots['lab']
+        if re.search('[lr]', which):
+            if not innerpanels_kw[num].get('wwidth',None):
+                innerpanels_kw[num]['wwidth'] = rc.subplots['cbar']
+            if not kwargs.get('wspace',None):
+                kwargs['wspace'] = rc.subplots['lab']
+    ic(innerpanels_kw, axes_kw)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
-    figsize, array, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(array=array, **kwargs)
+    figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)
     row_offset, col_offset = offset
     gs = FlexibleGridSpec(**gridspec_kw)
     fig = plt.figure(figsize=figsize, tight=tight, rcreset=rcreset,
@@ -180,46 +250,16 @@ def subplots(array=None, # allow calling with subplots(array)
         FigureClass=base.Figure,
         )
 
-    # Find axes that use map projections
-    if maps is not None:
-        if maps is True:
-            maps = [*np.unique(array)]
-        if utils.isnumber(maps):
-            maps = [maps] # just want a single map
-        else:
-            maps = [*maps] # force into list, not array
-        maps_ids = [i for i,n in enumerate(np.unique(array[array>0])) if n in maps]
-    else:
-        maps_ids = []
-
-    # Find axes that have inner panels
-    panel_kw = {'whichpanels':whichpanels,
-        'hspace':ihspace, 'wspace':iwspace,
-        'hwidth':ihwidth, 'wwidth':iwwidth,
-        }
-    if innerpanels is not None:
-        if innerpanels is True:
-            innerpanels = [*np.unique(array)]
-        if utils.isnumber(innerpanels):
-            innerpanels = [innerpanels]
-        else:
-            innerpanels = [*innerpanels] # force into list, not array
-        innerpanels_ids = [i for i,n in enumerate(np.unique(array[array>0])) if n in innerpanels]
-    else:
-        innerpanels_ids = []
-
     #--------------------------------------------------------------------------
     # Manage shared axes/axes with spanning labels
     #--------------------------------------------------------------------------
-    # Find shared axes; get sets with identical spans in x or y (ignore panels)
-    # Preliminary stuff
+    # Get some axes properties
     # Note that these locations should be **sorted** by axes id
     axes_ids = [np.where(array==i) for i in np.unique(array) if i>0] # 0 stands for empty
     yrange = row_offset + np.array([[xy[0].min(), xy[0].max()+1] for xy in axes_ids]) # yrange is shared columns
     xrange = col_offset + np.array([[xy[1].min(), xy[1].max()+1] for xy in axes_ids])
     xmin   = np.array([xy[0].min() for xy in axes_ids])
     ymax   = np.array([xy[1].max() for xy in axes_ids])
-    num_axes = len(axes_ids)
 
     # Find pairs with edges on same gridspec
     xgroups_span_base, xgroups_span, grouped = [], [], []
@@ -285,13 +325,12 @@ def subplots(array=None, # allow calling with subplots(array)
     if sharey:
         allgroups_base += ygroups_base
     for i in allgroups_base:
-        ax_kw = map_kw if i in maps_ids else {'projection':'xy'}
+        ax_kw = axes_kw[i]
         if axs[i] is not None: # already created
             continue
-        # print('base', i)
-        if i in innerpanels_ids:
+        if innerpanels_kw[i]['whichpanels']: # non-empty
             axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
-                    number=i+1, **ax_kw, **panel_kw) # main axes handle
+                    number=i+1, **ax_kw, **innerpanels_kw[i]) # main axes handle
         else:
             axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                     number=i+1, **ax_kw) # main axes can be a cartopy projection
@@ -301,7 +340,7 @@ def subplots(array=None, # allow calling with subplots(array)
         # Detect if we want to share this axis with another. If so, get that
         # axes. Also do some error checking
         sharex_ax, sharey_ax = None, None # by default, don't share with other axes objects
-        ax_kw = map_kw if i in maps_ids else {'projection':'xy'}
+        ax_kw = axes_kw[i]
         if sharex:
             igroup = np.where([i in g for g in xgroups])[0]
             if igroup.size==1:
@@ -326,10 +365,10 @@ def subplots(array=None, # allow calling with subplots(array)
                 axs[i]._sharey_setup(sharey_ax)
         else:
             # Virgin axes; these are not an x base or a y base
-            if i in innerpanels_ids:
+            if innerpanels_kw[i]['whichpanels']: # non-empty
                 axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         number=i+1,
-                        sharex=sharex_ax, sharey=sharey_ax, **ax_kw, **panel_kw)
+                        sharex=sharex_ax, sharey=sharey_ax, **ax_kw, **innerpanels_kw[i])
             else:
                 axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         number=i+1,

@@ -63,6 +63,8 @@ from . import colortools
 from . import utils
 from .utils import dot_dict
 rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
+ifNone = lambda x,y: x if x is not None else y
+
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
 warnings.filterwarnings('ignore', category=mplDeprecation)
@@ -78,6 +80,7 @@ try:
     PlateCarree = PlateCarree() # global variable
 except ModuleNotFoundError:
     GeoAxes = PlateCarree = object
+
 # Global variables
 # These are used to bulk wrap a bunch of axes methods
 _cycle_methods  = (
@@ -764,14 +767,10 @@ class Figure(mfigure.Figure):
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
         whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
-        if wwidth is None:
-            wwidth = 0.5
-        if hwidth is None:
-            hwidth = 0.5
-        if wspace is None:
-            wspace = 0.10
-        if hspace is None:
-            hspace = 0.10
+        hspace = ifNone(hspace, 0.13) # teeny space
+        wspace = ifNone(wspace, 0.13)
+        hwidth = ifNone(hwidth, 0.3) # default is panels for plotting stuff, not colorbars
+        wwidth = ifNone(wwidth, 0.3)
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 

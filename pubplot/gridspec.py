@@ -40,9 +40,7 @@ def journalsize(width, height):
     return width, height
 
 # Function for processing input and generating necessary keyword args
-def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything with array
-    autonumber=False,
-    nrows=1, ncols=1, emptycols=None, emptyrows=None, # mode 2: use convenient kwargs for simple grids
+def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     aspect=1,    height=None, width=None,   # for controlling aspect ratio, default is control for width
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
     left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
@@ -54,16 +52,13 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     rightcolorbar=False,  rightcolorbars=False,  rightlegend=False,  rightlegends=False,
     leftcolorbar=False,   leftcolorbars=False,   leftlegend=False,   leftlegends=False
     ):
-    #--------------------------------------------------------------------------#
-    # Parse complicated input
-    #--------------------------------------------------------------------------#
     # Handle the convenience feature for specifying the desired width/spacing
     # for panels as that suitable for a colorbar or legend
     # NOTE: Ugly but this is mostly boilerplate, shouln't change much
     def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, space):
         if colorbar or colorbars:
             width = ifNone(width, rc.subplots['cbar'])
-            space = ifNone(space, rc.subplots['labs'])
+            space = ifNone(space, rc.subplots['lab'])
             panel, panels = colorbar, colorbars
         elif legend or legends:
             width = ifNone(width, rc.subplots['legend'])
@@ -97,37 +92,6 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     row_offset = 0
     col_offset = 1 if leftpanels else 0
 
-    # Array setup
-    if array is None:
-        array = np.arange(1,nrows*ncols+1)[...,None]
-        order = 'C' if rowmajor else 'F' # for column major, use Fortran ordering
-        array = array.reshape((nrows, ncols), order=order) # numpy is row-major, remember
-    array = np.array(array) # enforce array type
-    if array.ndim==1:
-        array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
-    # Empty rows/columns feature
-    array[array==None] = 0 # use zero for placeholder; otherwise have issues
-    if emptycols is not None:
-        emptycols = np.atleast_1d(emptycols)
-        for col in emptycols.flat:
-            array[:,col-1] = 0
-    if emptyrows is not None:
-        emptyrows = np.atleast_1d(emptyrows)
-        for row in emptyrows.flat:
-            array[row-1,:] = 0
-    # Optionally standardize numbering in array
-    if autonumber:
-        number = 1
-        newarray = np.zeros(array.shape)
-        for row in newarray.shape[0]:
-            for col in newarray.shape[1]:
-                if array[row,col] not in array.flat: # not already declared
-                    newarray[array==array[row,col]] = number
-                    number += 1
-        array = newarray
-    nrows = array.shape[0]
-    ncols = array.shape[1]
-
     # Apply the general defaults
     # Need to do this after number of rows/columns figured out
     try:
@@ -146,31 +110,27 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
-    left   = ifNone(left,   rc.subplots['labs'])
-    bottom = ifNone(bottom, rc.subplots['labs'])
-    right  = ifNone(right,  rc.subplots['nolabs'])
+    left   = ifNone(left,   rc.subplots['lab'])
+    bottom = ifNone(bottom, rc.subplots['lab'])
+    right  = ifNone(right,  rc.subplots['nolab'])
     top    = ifNone(top,    rc.subplots['title'])
     bwidth = ifNone(bwidth, rc.subplots['cbar'])
     rwidth = ifNone(rwidth, rc.subplots['cbar'])
     lwidth = ifNone(lwidth, rc.subplots['cbar'])
-    bspace = ifNone(bspace, rc.subplots['labs'])
-    rspace = ifNone(rspace, rc.subplots['labs'])
-    lspace = ifNone(lspace, rc.subplots['labs'])
+    bspace = ifNone(bspace, rc.subplots['lab'])
+    rspace = ifNone(rspace, rc.subplots['lab'])
+    lspace = ifNone(lspace, rc.subplots['lab'])
 
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing
-    subplots_kw = dot_dict(array=array, width=width, height=height, aspect=aspect,
+    subplots_kw = dot_dict(nrows=nrows, ncols=ncols, width=width, height=height, aspect=aspect,
         hspace=hspace, wspace=wspace,
         hratios=hratios, wratios=wratios,
-        nrows=nrows,   ncols=ncols,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
         left=left,     bottom=bottom, right=right,   top=top,
         bwidth=bwidth, bspace=bspace, rwidth=rwidth, rspace=rspace, lwidth=lwidth, lspace=lspace,
         )
 
-    #--------------------------------------------------------------------------
-    # Get necessary keyword arg inputs to FlexibleGridSpec
-    #--------------------------------------------------------------------------
     # If width and height are not fixed, determine necessary width/height to
     # preserve the aspect ratio of specified plot
     if width is None and height is None:
@@ -181,18 +141,9 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
     aspect = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
     aspect = aspect*(hratios[0]/np.mean(hratios))
     # TODO: Account for top-left axes occupying multiple subplot slots!
-    # bpanel_width = 0
-    # rpanel_width = 0
-    # lpanel_width = 0
     bpanel_space = bwidth + bspace if bottompanels else 0
     rpanel_space = rwidth + rspace if rightpanels else 0
     lpanel_space = lwidth + lspace if leftpanels else 0
-    # bpanel_width = bwidth if bottompanels else 0
-    # rpanel_width = rwidth if rightpanels else 0
-    # lpanel_width = lwidth if leftpanels else 0
-    # bpanel_space = bspace if bottompanels else 0
-    # rpanel_space = rspace if rightpanels else 0
-    # lpanel_space = lspace if leftpanels else 0
     if width is not None:
         # axwidth_ave = (width + lpanel_width + rpanel_width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
         axwidth_ave = (width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
@@ -258,7 +209,7 @@ def _gridspec_kwargs(array=None, rowmajor=True, # mode 1: specify everything wit
             width_ratios  = wratios,
             height_ratios = hratios,
             ) # set wspace/hspace to match the top/bottom spaces
-    return figsize, array, offset, subplots_kw, gridspec_kw
+    return figsize, offset, subplots_kw, gridspec_kw
 
 # Generate custom GridSpec classes that override the GridSpecBase
 # __setitem__ method and the 'base' __init__ method
