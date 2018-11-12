@@ -912,14 +912,11 @@ class BaseAxes(maxes.Axes):
     name = 'base'
     def __init__(self, *args, number=None,
             sharex=None,      sharey=None,
-            # spanx_group=None, spany_group=None,
             panelparent=None, panelside=None,
             **kwargs):
         # Initialize
         self._spanx = None # always must be present
         self._spany = None
-        # self._spanx_group = []
-        # self._spany_group = []
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         self._zoom = None # if non-empty, will make invisible
         self._insets = [] # add to these later
@@ -967,13 +964,6 @@ class BaseAxes(maxes.Axes):
         if sharey:
             self._sharey_setup(sharey)
 
-        # Custom idea of 'spanning axes', where x/y axis labels are shared
-        # Also make sure always has attribute
-        # if spanx_group:
-        #     self._spanx_setup(spanx_group)
-        # if spany_group:
-        #     self._spany_setup(spany_group)
-
         # Re-enforce rc settings (we may have customized versions, e.g. for
         # CartopyAxes, that __init__ did not configure)
         if not hasattr(self, 'abc'): # add custom property
@@ -996,42 +986,6 @@ class BaseAxes(maxes.Axes):
         elif attr in _cycle_methods:
             obj = _cycle_features(self, obj)
         return obj
-
-    # def _spanx_setup(self, group):
-    #     # Specify x, y transform in Figure coordinates
-    #     self.xaxis.label.set_transform(mtransforms.blended_transform_factory(
-    #             self.figure.transFigure, mtransforms.IdentityTransform()
-    #             ))
-    #     # Get min/max positions, in figure coordinates, of spanning axes
-    #     xmin = min(ax.get_position().xmin for ax in group)
-    #     xmax = max(ax.get_position().xmax for ax in group)
-    #     self.xaxis.label.set_position(((xmin+xmax)/2, 0))
-    #     # Add attribute for reference, and make this label invisible
-    #     for ax in group:
-    #         ax._spanx = self # may be self!
-    #         ax._spanx_group = group
-    #         if ax is not self:
-    #             ax.xaxis.label.set_visible(False)
-    #         else:
-    #             # TODO: Delete this, was just useful for bug-fixing
-    #             ax.xaxis.label.set_visible(True)
-    #
-    # def _spany_setup(self, group):
-    #     # Specify x, y transform in Figure coordinates
-    #     # self.text(0.5,0.5,'This is a spanning axis!')
-    #     self.yaxis.label.set_transform(mtransforms.blended_transform_factory(
-    #                 mtransforms.IdentityTransform(), self.figure.transFigure
-    #                 ))
-    #     # Get min/max positions, in figure coordinates, of spanning axes
-    #     ymin = min(ax.get_position().ymin for ax in group)
-    #     ymax = max(ax.get_position().ymax for ax in group)
-    #     self.yaxis.label.set_position((0, (ymin+ymax)/2))
-    #     # Add attribute for reference, and make this label invisible
-    #     for ax in group:
-    #         ax._spany = self # may say self._spany = self!
-    #         ax._spany_group = group
-    #         if ax is not self:
-    #             ax.yaxis.label.set_visible(True)
 
     def _sharex_setup(self, sharex):
         # Share vertical panel x-axes with eachother
@@ -1099,13 +1053,6 @@ class BaseAxes(maxes.Axes):
             self.toppanel._sharex_setup(bottom)
         if self.rightpanel:
             self.rightpanel._sharex_setup(left)
-        # Next fix the spanx/spany settings
-        # WARNING: If some axes have panels and some don't, this may cause
-        # some weird stuff to happen
-        if self.bottompanel and self._spanx_group:
-            self.bottompanel._spanx_setup([ax.bottompanel for ax in self._spanx_group if ax.bottompanel is not None])
-        if self.leftpanel and self._spany_group:
-            self.leftpanel._spany_setup([ax.leftpanel for ax in self._spany_group if ax.leftpanel is not None])
 
     def _rcupdate(self):
         # Update the titling settings
@@ -1594,9 +1541,12 @@ class XYAxes(BaseAxes):
                 label = self._shared_axis(xy)
                 if getattr(self, '_span' + xy): # spanning labels toggled?
                     pos_kw = self._span_kwargs(xy)
+                else:
+                    pos_kw = {}
                 # Finally, label the axes
                 label.set_text(label_text)
                 label.update({**pos_kw, **label_kw})
+                # label.set_visible(True)
 
             # Tick properties
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid
