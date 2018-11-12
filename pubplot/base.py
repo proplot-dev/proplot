@@ -1689,7 +1689,7 @@ class XYAxes(BaseAxes):
             return bb
         return inset_locator
 
-    def inset_axes(self, bounds, *, transform=None, zorder=5, zoom=True, **kwargs):
+    def inset_axes(self, bounds, *, transform=None, zorder=5, zoom=True, zoom_kw={}, **kwargs):
         # Carbon copy, but use my custom axes
         # Defaults
         if transform is None:
@@ -1707,24 +1707,42 @@ class XYAxes(BaseAxes):
         # Finally add zoom
         # NOTE: Requirs version >=3.0
         if zoom:
-            ax.indicate_inset_zoom()
+            ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
-    def indicate_inset_zoom(self, **kwargs):
+    def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
         # Custom version that can be *refreshed*
         # Makes more sense to be defined on the inset axes, since parent
         # could have multiple insets
         parent = self._parent
+        alpha = alpha or 1.0
+        linewidth = linewidth or rc['axes.linewidth']
+        edgecolor = color or edgecolor or rc['axes.edgecolor']
         if not parent:
             raise ValueError(f'{self} is not an inset axes.')
         xlim = self.get_xlim()
         ylim = self.get_ylim()
         rect = [xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0]]
+        kwargs.update({'linewidth': linewidth, 'edgecolor':edgecolor, 'alpha':alpha})
         rectpatch, connects = parent.indicate_inset(rect, self, **kwargs)
+        # Adopt properties from old one
         if self._zoom:
-            self._zoom[0].set_visible(False)
-            for line in self._zoom[1]:
-                line.set_visible(False)
+            rectpatch_old, connects_old = self._zoom
+            rectpatch.update_from(rectpatch_old)
+            rectpatch_old.set_visible(False)
+            for line,line_old in zip(connects,connects_old):
+                # Actually want to *preserve* whether line is visible! This
+                # is automatically determined!
+                visible = line.get_visible()
+                line.update_from(line_old)
+                line.set_visible(visible)
+                line_old.set_visible(False)
+        # By default linewidth is only applied to box
+        else:
+            for line in connects:
+                line.set_linewidth(linewidth)
+                line.set_color(edgecolor)
+                line.set_alpha(alpha)
         self._zoom = (rectpatch, connects)
         return (rectpatch, connects)
 
