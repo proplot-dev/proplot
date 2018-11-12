@@ -10,6 +10,7 @@ from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import utils
 from . import base
+from .utils import fill
 from functools import wraps
 # Conversions
 cm2in = 0.3937
@@ -82,7 +83,7 @@ class axes_list(list):
 
 def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with subplots(array)
         emptycols=[], emptyrows=[], # obsolete?
-        auto_adjust=True,
+        tight=None, auto_adjust=True,
         # tight=True, adjust=False,
         rcreset=True, silent=True, # arguments for figure instantiation
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
@@ -132,6 +133,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     """
     # Helper functions
     translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
+    auto_adjust = fill(tight, auto_adjust)
     def dict_of_kw(kw):
         nested = [isinstance(value,dict) for value in kw.values()]
         if not any(nested): # any([]) == False
