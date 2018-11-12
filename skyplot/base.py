@@ -1891,7 +1891,7 @@ class BasemapAxes(MapAxes):
     # Format basemap axes
     # Add documentation here.
     def format(self, color=None,
-        oceans=False, coastlines=False, land=False, # coastlines and land
+        land=False, ocean=False, coastline=False, # coastlines and land
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None,
         lonlocator=None, lonminorlocator=None,
@@ -1901,8 +1901,8 @@ class BasemapAxes(MapAxes):
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
-        if coastlines:
-            props = rc['coastlines']
+        if coastline:
+            props = rc['coastline']
             p = self.m.drawcoastlines(**props, ax=self)
         if land:
             props = rc['land']
@@ -2001,7 +2001,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Apply circle boundary
         self._land = None
         self._ocean = None
-        self._coastlines = None
+        self._coastline = None
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
@@ -2037,7 +2037,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     # Add documentation here.
     def format(self,
         xlim=None, ylim=None,
-        oceans=False, land=False, coastlines=False, # coastlines and continents
+        land=False, ocean=False, land=False, # coastlines and continents
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
         **kwargs):
@@ -2107,12 +2107,12 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
-        if coastlines and not self._coastlines:
+        if coastline and not self._coastline:
             # self.add_feature(cfeature.COASTLINE, **rc['coastlines'])
             print('Add coastlines.')
             feat = cfeature.NaturalEarthFeature('physical', 'coastline', '50m')
-            self.add_feature(feat, **rc['coastlines'])
-            self._coastlines = feat
+            self.add_feature(feat, **rc['coastline'])
+            self._coastline = feat
         if land and not self._land:
             # self.add_feature(cfeature.LAND, **rc['continents'])
             print('Add land.')
@@ -2123,7 +2123,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             # self.add_feature(cfeature.OCEAN, **rc['oceans'])
             print('Add oceans.')
             feat = cfeature.NaturalEarthFeature('physical', 'ocean', '50m')
-            self.add_feature(feat, **rc['oceans'])
+            self.add_feature(feat, **rc['ocean'])
             self._ocean = feat
 
 

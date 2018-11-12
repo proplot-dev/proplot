@@ -68,32 +68,48 @@ To modify an axes property (e.g. an x-axis label) with the default API, you norm
 Now, you can pass all of these settings to `format`. Instead of having to remember the name of the function, whether it's attached to `pyplot` or an object instance, and the order/names of the arguments, you just have to remember one thing -- the name of the keyword argument. The `format` method also abstracts away some inconsistencies and redundancies in the matplotlib API -- now, There's Only One (obvious) Way To Do It.
 
 Example usage:
+
 ```
 ax.format(xlabel='time (seconds)', ylabel='temperature (K)', title='20th century sea-surface temperature')
 ```
+
 Axis options:
-      `xgrid`, `ygrid`,
-      `xdates`, `ydates`,
-      `xtickminor`, `ytickminor`, `xgridminor`, `ygridminor`,
-      `xspineloc`, `yspineloc`,
-      `xtickloc`, `ytickloc`,
-      `xtickdir`, `ytickdir`,
-      `xticklabeldir`, `yticklabeldir`,
-      `xtickrange`, `ytickrange`,
-      `xlim`, `ylim`, `xscale`, `yscale`, `xscale_kwargs`, `yscale_kwargs`,
-      `xreverse`, `yreverse`,
-      `xlabel`, `ylabel`,
-      `xlocator`, `xminorlocator`, `ylocator`, `yminorlocator`,
-      `xformatter`, `yformatter`    
-      
-Titling options: `suptitle`, `suptitlepos`, `title`, `titlepos`, `titlepad`, `titledict`,
-      `abc`, `abcpos`, `abcformat`, `abcpad`, `abcdict`        
 
-Mapping options: `oceans`, `coastlines`, `continents`,
-      `latlabels`, `lonlabels`,
-      `latlocator`, `latminorlocator`, `lonlocator`, `lonminorlocator` 
+```
+xgrid, ygrid,
+xspineloc, yspineloc,
+xtickloc, ytickloc, xtickdir, ytickdir,
+xtickminor, ytickminor, xgridminor, ygridminor,
+xticklabeldir, yticklabeldir,
+xtickrange, ytickrange,
+xlim, ylim, xreverse, yreverse, xdates, ydates,
+xscale, yscale, xscale_kw, yscale_kw,
+xlabel, ylabel, xlabel_kw, ylabel_kw
+xlocator, xminorlocator, xlocator_kw, xminorlocator_kw
+ylocator, yminorlocator, ylocator_kw, yminorlocator_kw
+xformatter, yformatter, xformatter_kw, yformatter_kw
+```
 
-Axes canvas options: `hatch`, `color`, `facecolor`, `linewidth`.    
+Titling options:
+
+```
+suptitle, suptitlepos, title, titlepos, titlepad, title_kw,
+abc, abcpos, abcformat, abc_kw
+```
+
+Mapping options:
+
+```
+latlabels, lonlabels,
+latlocator, latminorlocator, lonlocator, lonminorlocator 
+land, ocean, coastline, oceans, coastlines, continents,
+```
+
+Axes canvas options:
+
+```
+hatch, color, facecolor, linewidth
+```
 
 ## Axis scales, tick formatters, and tick locators
 Added "*inverse*" axis scale -- invoke with `[x|y]scale='inverse'`. Useful for, e.g., having wavenumber and wavelength on opposite sides of the same plot.
