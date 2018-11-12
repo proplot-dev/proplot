@@ -54,7 +54,10 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from icecream import ic
+try:
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed.
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from functools import wraps
 from matplotlib import rcParams
 from cycler import cycler
@@ -62,6 +65,7 @@ from glob import glob
 from . import colormath
 from . import utils
 from .utils import fill
+_data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
 # Define some new palettes
 # Note the default listed colormaps
 cmap_cycles = ['Set1', 'Set2', 'Set3', 'Set4', 'Set5']
@@ -436,7 +440,7 @@ def Colormap(*args, extend='both',
         print('Save cmap!')
         # Save segment data directly
         basename = f'{cmap.name}.npy'
-        filename = f'{os.path.dirname(__file__)}/../cmaps/{basename}'
+        filename = f'{_data}/cmaps/{basename}'
         np.save(filename, dict(cmap._segmentdata, space=cmap.space))
         print(f'Saved colormap to "{basename}".')
         # Save list of hex colors
@@ -1230,7 +1234,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
     names = []
     categories_list = []
     categories_set = set()
-    for file in glob(f'{os.path.dirname(__file__)}/../colors/*.txt'):
+    for file in glob(f'{_data}/colors/*.txt'):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
@@ -1287,7 +1291,7 @@ def register_cmaps():
     Note all of those methods simply modify the dictionary mcm.cmap_d.
     """
     # First read from file
-    for file in glob(f'{os.path.dirname(__file__)}/../cmaps/*'):
+    for file in glob(f'{_data}/cmaps/*'):
         # Read table of RGB values
         if not re.search('.(rgb|hex|npy)$', file):
             continue
@@ -1558,7 +1562,7 @@ def color_show(groups=['open', ['crayons','xkcd']], ncols=4, nbreak=12, minsat=0
         fig.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
 
         # Save figure
-        fig.savefig(f'{os.path.dirname(__file__)}/../colors/colors_{"-".join(group)}.pdf',
+        fig.savefig(f'{_data}/colors/colors_{"-".join(group)}.pdf',
                 bbox_inches='tight', format='pdf', transparent=False)
         figs += [fig]
     return figs
@@ -1598,7 +1602,7 @@ def cycle_show():
     if len(cycles)%2==1:
         axs[-1].set_visible(False)
     # Save
-    fig.savefig(f'{os.path.dirname(__file__)}/../colors/cycles.pdf',
+    fig.savefig(f'{_data}/colors/cycles.pdf',
             bbox_inches='tight', format='pdf')
     return fig
 
@@ -1700,7 +1704,7 @@ def cmap_show(N=31):
         nplots += len(categories[cat])
 
     # Save
-    filename = f'{os.path.dirname(__file__)}/../cmaps/colormaps.pdf'
+    filename = f'{_data}/cmaps/colormaps.pdf'
     print(f"Saving figure to: {filename}.")
     fig.savefig(filename, bbox_inches='tight')
     return fig

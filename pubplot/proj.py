@@ -8,6 +8,16 @@ import cartopy.feature as cfeature
 import matplotlib.path as mpath
 
 #------------------------------------------------------------------------------#
+# Path boundaries for projections
+#------------------------------------------------------------------------------#
+# Circle path suitable for polar stereo/aeqd/lambert conformal projections
+def Circle(ax, N=100):
+    theta = np.linspace(0, 2*np.pi, N)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    return mpath.Path(verts * radius + center)
+
+#------------------------------------------------------------------------------#
 # Simple projections
 # Inspired by source code for Mollweide implementation
 #------------------------------------------------------------------------------#
@@ -67,14 +77,6 @@ class WinkelTripel(ccrs._WarpedRectangularProjection):
 #------------------------------------------------------------------------------#
 # Wrappers around existing projections
 #------------------------------------------------------------------------------#
-# Generate 'circle' path, to be applied in axes coordinates as the new
-# GeoAxes boundary.
-def circle(ax, N=100):
-    theta = np.linspace(0, 2*np.pi, N)
-    center, radius = [0.5, 0.5], 0.5
-    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
-    return mpath.Path(verts * radius + center)
-
 # class LambertAzimuthalEqualArea(ccrs.LambertAzimuthalEqualArea)
 #     def __init__(self, *args, **kwargs):
 #         super(LambertAzimuthalEqualArea, self)
@@ -82,5 +84,3 @@ def circle(ax, N=100):
 # class AzimuthalEquidistant(ccrs.AzimuthalEquidistant)
 #     def __init__(self, *args, **kwargs):
 #         super(AzimuthalEquidistant, self)
-
-

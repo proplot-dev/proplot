@@ -5,7 +5,10 @@ import numpy as np
 # from contextlib import redirect_stdout
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
-from icecream import ic
+try:
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed.
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import utils

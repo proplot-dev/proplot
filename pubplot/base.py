@@ -58,7 +58,7 @@ import matplotlib.collections as mcollections
 from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
-from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel
+from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
 from . import colortools
 from . import utils
 from .utils import dot_dict, fill
@@ -130,18 +130,6 @@ _map_disabled_methods = (
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
     'fill_between', 'fill_betweenx', 'fill', 'stackplot')
-
-#------------------------------------------------------------------------------#
-# Create matplotlib.Path objects
-#------------------------------------------------------------------------------#
-def circle(N):
-    """
-    Draw a circle.
-    """
-    theta = np.linspace(0, 2*np.pi, N)
-    center, radius = [0.5, 0.5], 0.5
-    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
-    return mpath.Path(verts * radius + center)
 
 #------------------------------------------------------------------------------#
 # Misc tools
@@ -2018,7 +2006,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
             self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree) # use platecarree transform
-            self.set_boundary(circle(100), transform=self.transAxes)
+            self.set_boundary(Circle(100), transform=self.transAxes)
 
     def _as_mpl_axes(self):
         # Don't think this is ever used.
