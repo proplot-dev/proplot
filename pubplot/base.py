@@ -912,14 +912,14 @@ class BaseAxes(maxes.Axes):
     name = 'base'
     def __init__(self, *args, number=None,
             sharex=None,      sharey=None,
-            spanx_group=None, spany_group=None,
+            # spanx_group=None, spany_group=None,
             panelparent=None, panelside=None,
             **kwargs):
         # Initialize
         self._spanx = None # always must be present
         self._spany = None
-        self._spanx_group = []
-        self._spany_group = []
+        # self._spanx_group = []
+        # self._spany_group = []
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         self._zoom = None # if non-empty, will make invisible
         self._insets = [] # add to these later
@@ -949,8 +949,8 @@ class BaseAxes(maxes.Axes):
         if isinstance(self, maxes.SubplotBase):
             subspec = self.get_subplotspec()
             nrows, ncols = subspec.get_gridspec().get_geometry()
-            self.rows = (subspec.num1 // ncols, subspec.num2 // ncols)
-            self.cols = (subspec.num1 % ncols,  subspec.num2 % ncols)
+            self.rows = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
+            self.cols = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
         else:
             self.rows = None
             self.cols = None
@@ -969,10 +969,10 @@ class BaseAxes(maxes.Axes):
 
         # Custom idea of 'spanning axes', where x/y axis labels are shared
         # Also make sure always has attribute
-        if spanx_group:
-            self._spanx_setup(spanx_group)
-        if spany_group:
-            self._spany_setup(spany_group)
+        # if spanx_group:
+        #     self._spanx_setup(spanx_group)
+        # if spany_group:
+        #     self._spany_setup(spany_group)
 
         # Re-enforce rc settings (we may have customized versions, e.g. for
         # CartopyAxes, that __init__ did not configure)
@@ -997,41 +997,41 @@ class BaseAxes(maxes.Axes):
             obj = _cycle_features(self, obj)
         return obj
 
-    def _spanx_setup(self, group):
-        # Specify x, y transform in Figure coordinates
-        self.xaxis.label.set_transform(mtransforms.blended_transform_factory(
-                self.figure.transFigure, mtransforms.IdentityTransform()
-                ))
-        # Get min/max positions, in figure coordinates, of spanning axes
-        xmin = min(ax.get_position().xmin for ax in group)
-        xmax = max(ax.get_position().xmax for ax in group)
-        self.xaxis.label.set_position(((xmin+xmax)/2, 0))
-        # Add attribute for reference, and make this label invisible
-        for ax in group:
-            ax._spanx = self # may be self!
-            ax._spanx_group = group
-            if ax is not self:
-                ax.xaxis.label.set_visible(False)
-            else:
-                # TODO: Delete this, was just useful for bug-fixing
-                ax.xaxis.label.set_visible(True)
-
-    def _spany_setup(self, group):
-        # Specify x, y transform in Figure coordinates
-        # self.text(0.5,0.5,'This is a spanning axis!')
-        self.yaxis.label.set_transform(mtransforms.blended_transform_factory(
-                    mtransforms.IdentityTransform(), self.figure.transFigure
-                    ))
-        # Get min/max positions, in figure coordinates, of spanning axes
-        ymin = min(ax.get_position().ymin for ax in group)
-        ymax = max(ax.get_position().ymax for ax in group)
-        self.yaxis.label.set_position((0, (ymin+ymax)/2))
-        # Add attribute for reference, and make this label invisible
-        for ax in group:
-            ax._spany = self # may say self._spany = self!
-            ax._spany_group = group
-            if ax is not self:
-                ax.yaxis.label.set_visible(True)
+    # def _spanx_setup(self, group):
+    #     # Specify x, y transform in Figure coordinates
+    #     self.xaxis.label.set_transform(mtransforms.blended_transform_factory(
+    #             self.figure.transFigure, mtransforms.IdentityTransform()
+    #             ))
+    #     # Get min/max positions, in figure coordinates, of spanning axes
+    #     xmin = min(ax.get_position().xmin for ax in group)
+    #     xmax = max(ax.get_position().xmax for ax in group)
+    #     self.xaxis.label.set_position(((xmin+xmax)/2, 0))
+    #     # Add attribute for reference, and make this label invisible
+    #     for ax in group:
+    #         ax._spanx = self # may be self!
+    #         ax._spanx_group = group
+    #         if ax is not self:
+    #             ax.xaxis.label.set_visible(False)
+    #         else:
+    #             # TODO: Delete this, was just useful for bug-fixing
+    #             ax.xaxis.label.set_visible(True)
+    #
+    # def _spany_setup(self, group):
+    #     # Specify x, y transform in Figure coordinates
+    #     # self.text(0.5,0.5,'This is a spanning axis!')
+    #     self.yaxis.label.set_transform(mtransforms.blended_transform_factory(
+    #                 mtransforms.IdentityTransform(), self.figure.transFigure
+    #                 ))
+    #     # Get min/max positions, in figure coordinates, of spanning axes
+    #     ymin = min(ax.get_position().ymin for ax in group)
+    #     ymax = max(ax.get_position().ymax for ax in group)
+    #     self.yaxis.label.set_position((0, (ymin+ymax)/2))
+    #     # Add attribute for reference, and make this label invisible
+    #     for ax in group:
+    #         ax._spany = self # may say self._spany = self!
+    #         ax._spany_group = group
+    #         if ax is not self:
+    #             ax.yaxis.label.set_visible(True)
 
     def _sharex_setup(self, sharex):
         # Share vertical panel x-axes with eachother
@@ -1384,17 +1384,78 @@ class XYAxes(BaseAxes):
             obj = _check_edges(obj)
         return obj
 
+    def _shared_axis(self, xy):
+        # TODO: Figure out how sharing with panels works, if the original
+        # sharex/sharey are deleted and moved to the panel or if then
+        # the main axes just acquires a new share that points to panel
+        ax = self
+        ax = getattr(ax, '_share' + xy, None) or ax
+        ax = getattr(ax, '_share' + xy, None) or ax
+        return getattr(ax, xy + 'axis').label
+
+    def _span_kwargs(self, xy):
+        # Get the 'edge' we want to share (bottom row, or leftmost column),
+        # and then finding the coordinates for the spanning axes along that edge
+        def _panel(ax):
+            if xy=='x':
+                return ax.bottompanel or ax
+            else:
+                return ax.leftpanel or ax
+        def _edge(ax):
+            if xy=='x':
+                return getattr(ax, 'rows')[1]
+            else:
+                return getattr(ax, 'cols')[0]
+        def _span(ax):
+            if xy=='x':
+                return getattr(ax, 'cols')
+            else:
+                return getattr(ax, 'rows')
+        # Get the edges
+        axs = []
+        edge_self = _edge(self)
+        span_self = _span(self)
+        for ax in self.figure.axes:
+            if edge_self==_edge(ax):
+                axs += [_panel(ax)]
+
+        # Get the spanning rows/columns and only let the one closest to
+        # top-left corner be visible
+        # TODO: Instead just redirect user to that label?
+        kwargs = {}
+        span = [value for ax in axs for value in _span(ax)]
+        idx = slice(min(span), max(span)+1)
+        kwargs['visible'] = (min(span_self) == min(span))
+        # Build the transform object
+        if xy=='x': # span columns
+            subspec = self.figure._gridspec[0,idx]
+        else: # spans rows
+            subspec = self.figure._gridspec[idx,0]
+        bbox = subspec.get_position(self.figure) # in figure-relative coordinates
+        x0, y0, width, height = bbox.bounds
+        if xy=='x':
+            transform = mtransforms.blended_transform_factory(self.figure.transFigure, mtransforms.IdentityTransform())
+            position = (x0 + width/2, 1)
+        else:
+            transform = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.figure.transFigure)
+            position = (1, y0 + height/2)
+        kwargs['position'] = position
+        kwargs['transform'] = transform
+        return kwargs
+
     def _rcupdate(self):
         # Update the rcParams according to user input.
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
             spine.update(dict(linewidth=rc['axes.linewidth'], color=rc['axes.edgecolor']))
+
         # Axis settings
         for xy,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Axis label
             axis.label.update(dict(color=rc['axes.edgecolor'],
                 fontsize=rc['axes.labelsize'],
                 weight=rc['axes.labelweight']))
+
             # Tick labels
             for t in axis.get_ticklabels():
                 t.update(dict(color=rc['axes.edgecolor'], fontsize=rc[xy+'tick.labelsize']))
@@ -1405,11 +1466,13 @@ class XYAxes(BaseAxes):
             minor.pop('visible') # don't toggle that yet
             major = {key:value for key,value in major.items() if key not in ('bottom','top','left','right')}
             minor = {key:value for key,value in minor.items() if key not in ('bottom','top','left','right')}
+
             # Apply the settings
             major.update({'color':rc['axes.edgecolor']})
             minor.update({'color':rc['axes.edgecolor']})
             axis.set_tick_params(which='major', **major)
             axis.set_tick_params(which='minor', **minor)
+
             # Manually update gridlines
             for name,ticks in zip(('grid','gridminor'),(axis.get_major_ticks(), axis.get_minor_ticks())):
                 for tick in ticks:
@@ -1420,9 +1483,6 @@ class XYAxes(BaseAxes):
             #     axis.grid(gridminor, which='minor', **rc['gridminor']) # ignore if no minor ticks
 
         # Update background patch, with optional hatching
-        # Color setup, optional hatching in background of axes
-        # You should control transparency by passing transparent=True or False
-        # to the savefig command
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
         self.patch.update({'facecolor':rc['axes.facecolor']})
@@ -1450,6 +1510,7 @@ class XYAxes(BaseAxes):
         xlim=None,      ylim=None,
         xscale=None,    yscale=None,
         xlocator=None,  xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
+        xlabel_kw={}, ylabel_kw={},
         xscale_kw={}, yscale_kw={},
         xlocator_kw={}, ylocator_kw={},
         xformatter_kw={}, yformatter_kw={},
@@ -1489,7 +1550,7 @@ class XYAxes(BaseAxes):
         ygridminor = gridminor or ygridminor
         for xy, axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
-                formatter_kw, locator_kw, minorlocator_kw in \
+                label_kw, formatter_kw, locator_kw, minorlocator_kw in \
             zip('xy', (self.xaxis, self.yaxis), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
@@ -1497,7 +1558,7 @@ class XYAxes(BaseAxes):
                 (xlocator, ylocator), (xformatter, yformatter), # major ticks
                 (xtickrange, ytickrange), # range in which we label major ticks
                 (xtickdir, ytickdir), (xticklabeldir, yticklabeldir), # tick direction
-                (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
+                (xlabel_kw, ylabel_kw), (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
                 ):
             # Axis spine visibility and location
             sides = ('bottom','top') if xy=='x' else ('left','right')
@@ -1528,30 +1589,14 @@ class XYAxes(BaseAxes):
             # redirect to the correct *spanning* axes if the label is meant
             # to span multiple subplot
             if label is not None:
-                span = getattr(self, '_span' + xy) # spanning labels toggled?
-                share = getattr(self, '_share' + xy)
-                # Shared axes
-                if share:
-                    axis_label = getattr(share, xy + 'axis')
-                else:
-                    axis_label = axis
-                # if span: # seek the edges on the same row/column (will think in terms of an xlabel)
-                #     # Function for getting the 'edge' we want to share (bottom row, or leftmost column)
-                #     # TODO: Possible duplication? Didn't we rename the axes
-                #     # label on 'shared axes' to actually point to their parent
-                #     # axes, or did we not do this?
-                #     axs = []
-                #     edge = lambda ax: getattr(ax, 'rows')[1] if xy=='x' else getattr(ax, 'cols')[0]
-                #     panel = lambda ax: (ax.bottompanel or ax) if xy=='x' else (ax.leftpanel or ax)
-                #     span = lambda ax: getattr(ax, 'cols') if xy=='x' else getattr(ax, 'rows')
-                #     edge_self = edge(self)
-                #     for ax in self.figure.axes:
-                #         if edge_self==edge(ax):
-                #             axs += [panel(ax)]
-                #     # Obtain the axes boundaries
-                #     range = [value for ax in axs for value in span(ax)]
-                #     range = [min(range), max(range)] # the gridspec range
-                axis_label.label.set_text(label)
+                # Shared and spanning axes; try going a few layers deep
+                label_text = label
+                label = self._shared_axis(xy)
+                if getattr(self, '_span' + xy): # spanning labels toggled?
+                    pos_kw = self._span_kwargs(xy)
+                # Finally, label the axes
+                label.set_text(label_text)
+                label.update({**pos_kw, **label_kw})
 
             # Tick properties
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid

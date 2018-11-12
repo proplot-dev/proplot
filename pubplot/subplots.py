@@ -266,24 +266,24 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     ymax   = np.array([xy[1].max() for xy in axes_ids])
 
     # Find pairs with edges on same gridspec
-    xgroups_span_base, xgroups_span, grouped = [], [], []
-    if spanx:
-        for i in range(num_axes):
-            matching_axes = np.where(xmin[i]==xmin)[0]
-            if i not in grouped and matching_axes.size>1:
-                # Add the axes that is farthest down to control the x-label
-                xgroups_span      += [matching_axes] # add ndarray of ids to list
-                xgroups_span_base += [matching_axes[np.argmin(xmin[matching_axes])]]
-            grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
-    ygroups_span_base, ygroups_span, grouped = [], [], []
-    if spany:
-        for i in range(num_axes):
-            matching_axes = np.where(ymax[i]==ymax)[0]
-            if i not in grouped and matching_axes.size>1:
-                # Add the axes that is farthest left
-                ygroups_span      += [matching_axes] # add ndarray of ids to list
-                ygroups_span_base += [matching_axes[np.argmax(ymax[matching_axes])]]
-            grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
+    # xgroups_span_base, xgroups_span, grouped = [], [], []
+    # if spanx:
+    #     for i in range(num_axes):
+    #         matching_axes = np.where(xmin[i]==xmin)[0]
+    #         if i not in grouped and matching_axes.size>1:
+    #             # Add the axes that is farthest down to control the x-label
+    #             xgroups_span      += [matching_axes] # add ndarray of ids to list
+    #             xgroups_span_base += [matching_axes[np.argmin(xmin[matching_axes])]]
+    #         grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
+    # ygroups_span_base, ygroups_span, grouped = [], [], []
+    # if spany:
+    #     for i in range(num_axes):
+    #         matching_axes = np.where(ymax[i]==ymax)[0]
+    #         if i not in grouped and matching_axes.size>1:
+    #             # Add the axes that is farthest left
+    #             ygroups_span      += [matching_axes] # add ndarray of ids to list
+    #             ygroups_span_base += [matching_axes[np.argmax(ymax[matching_axes])]]
+    #         grouped += [*matching_axes] # bookkeeping; record ids that have been grouped already
 
     # Shared axes: generate list of base axes-dependent axes pairs
     # That is, find where the minimum-maximum gridspec extent in 'x' for a
@@ -382,23 +382,30 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     # TODO: The panel setup step has to be called *after* spanx/spany/sharex/sharey
     # setup is called, but we also need to call spanx/spany setup only *after*
     # every axes is drawn. Instead, then, we call the panel setup method below
-    if spanx and len(xgroups_span)>0:
-        for g,b in zip(xgroups_span, xgroups_span_base):
-            axs[b]._spanx_setup([axs[i] for i in g])
-
-    if spany and len(ygroups_span)>0:
-        for g,b in zip(ygroups_span, ygroups_span_base):
-            axs[b]._spany_setup([axs[i] for i in g])
+    # if spanx and len(xgroups_span)>0:
+    #     for g,b in zip(xgroups_span, xgroups_span_base):
+    #         axs[b]._spanx_setup([axs[i] for i in g])
+    #
+    # if spany and len(ygroups_span)>0:
+    #     for g,b in zip(ygroups_span, ygroups_span_base):
+    #         axs[b]._spany_setup([axs[i] for i in g])
 
     # Call panel setup after everything is done
-    # This draws
+    # This sets up shared axes
+    # TODO: Should ***disable*** this when e.g. user wants inner bottomcolorbar,
+    # since that means we don't want to share axes
+    # TODO: Consider, whenever a colorbar is drawn over an axes, finding
+    # all the children axes and disabling axis sharing with them?
     for ax in axs:
+        ax._spanx = spanx # toggle
+        ax._spany = spany
         ax._panel_setup()
 
     # Check that axes don't belong to multiple groups
     # This should be impossible unless my code is completely wrong...
     for ax in axs:
-        for name,groups in zip(('sharex', 'sharey', 'spanx', 'spany'), (xgroups, ygroups, xgroups_span, ygroups_span)):
+        # for name,groups in zip(('sharex', 'sharey', 'spanx', 'spany'), (xgroups, ygroups, xgroups_span, ygroups_span)):
+        for name,groups in zip(('sharex', 'sharey'), (xgroups, ygroups)):
             if sum(ax in group for group in xgroups)>1:
                 raise ValueError(f'Something went wrong; axis {i:d} belongs to multiple {name} groups.')
 

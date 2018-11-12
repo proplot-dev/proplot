@@ -1598,7 +1598,7 @@ def cycle_show():
     if len(cycles)%2==1:
         axs[-1].set_visible(False)
     # Save
-    fig.savefig(f'{os.path.dirname(__file__)}/../cmaps/cycles.pdf',
+    fig.savefig(f'{os.path.dirname(__file__)}/../colors/cycles.pdf',
             bbox_inches='tight', format='pdf')
     return fig
 
