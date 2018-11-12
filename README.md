@@ -1,4 +1,5 @@
 ## Overview
+
 This library provides helpful and versatile plotting utilities to make the process of crafting publication-quality graphics with `matplotlib` smoother. I recommend importing the package with
 ```
 import pubplot as plot
@@ -23,6 +24,11 @@ The **two most important** features are the `subplots` command and the `format` 
 ```
 pip install git+https://github.com/lukelbd/pubplot.git#egg=pubplot
 ```
+
+## Donation
+This package took an immense amount of time to write. If you've found it useful, feel free to buy me a cup of coffee :)
+
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url)
 
 ## Documentation
 ### The `subplots` command
