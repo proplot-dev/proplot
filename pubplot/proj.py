@@ -3,9 +3,12 @@
 # making stuff easier
 #------------------------------------------------------------------------------#
 import numpy as np
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import matplotlib.path as mpath
+# import cartopy.crs as ccrs
+try:
+    from cartopy.crs import _WarpedRectangularProjection
+except ModuleNotFoundError:
+    _WarpedRectangularProjection = object
 
 #------------------------------------------------------------------------------#
 # Path boundaries for projections
@@ -21,7 +24,7 @@ def Circle(ax, N=100):
 # Simple projections
 # Inspired by source code for Mollweide implementation
 #------------------------------------------------------------------------------#
-class Hammer(ccrs._WarpedRectangularProjection):
+class Hammer(_WarpedRectangularProjection):
     __name__ = 'hammer'
     name = 'hammer'
     def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
@@ -34,7 +37,7 @@ class Hammer(ccrs._WarpedRectangularProjection):
         # return self._threshold
         return 1e4
 
-class Aitoff(ccrs._WarpedRectangularProjection):
+class Aitoff(_WarpedRectangularProjection):
     __name__ = 'aitoff'
     name = 'aitoff'
     def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
@@ -47,7 +50,7 @@ class Aitoff(ccrs._WarpedRectangularProjection):
         # return self._threshold
         return 1e4
 
-class KavrayskiyVII(ccrs._WarpedRectangularProjection):
+class KavrayskiyVII(_WarpedRectangularProjection):
     __name__ = 'kavrayskiyVII'
     name = 'kavrayskiyVII'
     def __init__(self, central_longitude=0, globe=None):
@@ -61,7 +64,7 @@ class KavrayskiyVII(ccrs._WarpedRectangularProjection):
         return 1e4
 
 # TODO: Check this, but should be pretty much identical to above
-class WinkelTripel(ccrs._WarpedRectangularProjection):
+class WinkelTripel(_WarpedRectangularProjection):
     __name__ = 'winkeltripel'
     name = 'winkeltripel'
     def __init__(self, central_longitude=0, globe=None):
