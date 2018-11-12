@@ -179,7 +179,8 @@ rcSpecial = {
     'subplots.inner':        0.2, # just have ticks, no labeels
     'subplots.legend':       0.25, # default legend space (bottom of figure)
     'subplots.cbar':         0.17, # default colorbar width
-    'subplots.lab':          0.7, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    'subplots.ylab':         0.7, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    'subplots.xlab':         0.55, # for horizontal text should have more space
     'subplots.nolab':        0.15, # only ticks
     }
 # Generate list of categories
@@ -310,9 +311,9 @@ class rc_configurator(object):
         if key=='cycle':
             if utils.isscalar(value):
                 value = value,
-            colors = colortools.Cycle('colorblind')
+            colors = colortools.colors('colorblind')
             self['axes.prop_cycle'] = cycler('color', colors)
-            colors = colortools.Cycle(*value)
+            colors = colortools.colors(*value)
             self['axes.prop_cycle'] = cycler('color', colors)
             figs = list(map(plt.figure, plt.get_fignums()))
             for fig in figs:
@@ -401,24 +402,3 @@ class rc_configurator(object):
 # Instantiate object
 rc = rc_configurator()
 
-# rc_globals = {
-#     'axes_color':          'b',
-#     'grid_color':          'b',
-#     'grid_alpha':          0.7,
-#     'patch_color':         'green',
-#     'cmap':                'Greys',
-#     'cycle':               'cinematic1',
-#     'fontname':            'DejaVu Sans',
-#     'fontsize_small':      16, # inches
-#     'fontsize_large':      25, # inches
-#     'axes_linewidth':      2, # points
-#     'grid_linewidth':      4, # a bit thinner
-#     'gridminor_linewidth': 6, # a bit thinner still
-#     'plot_linewidth':      8,
-#     'patch_linewidth':     10,
-#     'major_ticklen':       12,
-#     'minor_ticklen':       14, # points
-#     'tickpad' :            5, # points (distance between ticks and labels)
-#     'labelpad' :           8, # points (distance between ticks and labels)
-#     'markersize' :         8,
-#     }

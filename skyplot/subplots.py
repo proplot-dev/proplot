@@ -124,6 +124,9 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
 
     Todo
     ----
+    * Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
+      axes sharing mode where we *disable ticklabels and labels*, but *do not
+      use the builtin sharex/sharey API*, suitable for complex map projections.
     * For spanning axes labels, right now only detect **x labels on bottom**
         and **ylabels on top**; generalize for all subplot edges.
     * Figure size should be constrained by the dimensions of the axes, not vice
@@ -132,19 +135,29 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     # Helper functions
     translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
     auto_adjust = fill(tight, auto_adjust)
-    def dict_of_kw(kw):
-        nested = [isinstance(value,dict) for value in kw.values()]
-        if not any(nested): # any([]) == False
-            kw = {range(1,num_axes+1): kw.copy()}
-        elif not all(nested):
-            raise ValueError('Wut.')
-        return kw
-    def axes_dict(kw): # this should switch us to zero-base indexing
+    def axes_dict(value, kw=False):
+        # First build up dictionary
+        # Accepts:
+        # 1) 'string' or {1:'string1', (2,3):'string2'}
+        if not kw:
+            if not isinstance(value, dict):
+                value = {range(1,num_axes+1): value}
+        # 2) {'prop':value} or {1:{'prop':value1}, (2,3):{'prop':value2}}
+        else:
+            nested = [isinstance(value,dict) for value in value.values()]
+            if not any(nested): # any([]) == False
+                value = {range(1,num_axes+1): value.copy()}
+            elif not all(nested):
+                raise ValueError('Wut.')
+        # Then unfurl wherever keys contain multiple axes numbers
         kw_out = {}
-        for nums,item in kw.items():
+        for nums,item in value.items():
             nums = np.atleast_1d(nums)
             for num in nums.flat:
                 kw_out[num-1] = item
+        # Verify numbers
+        if {*range(num_axes)} != {*kw_out.keys()}:
+            raise ValueError(f'Have {num_axes} axes, but {value} only has properties for axes {", ".join(str(i+1) for i in sorted(kw_out.keys()))}.')
         return kw_out
 
     # Array setup
@@ -177,13 +190,10 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     # NOTE: Previously went to some pains (mainly for basemap, something in the
     # initialization deals with this) to only draw one projection. This is hard
     # to generalize when want different projections/kwargs, so abandon
-    proj = projection or proj or 'xy'
+    basemap = axes_dict(basemap, False) # package used for projection
+    proj = axes_dict(projection or proj or 'xy', False) # name of projection; by default use base.XYAxes
+    proj_kw = axes_dict(projection_kw or proj_kw, True) # stores cartopy/basemap arguments
     axes_kw = {num:{} for num in range(num_axes)} # stores add_subplot arguments
-    proj_kw = projection_kw or proj_kw # stores cartopy/basemap arguments
-    proj_kw = axes_dict(dict_of_kw(proj_kw))
-    if isinstance(proj, str):
-        proj = {range(1,num_axes+1): proj}
-    proj = axes_dict(proj)
     for num,name in proj.items():
         # Builtin matplotlib polar axes, just use my overridden version
         if name=='polar':
@@ -195,7 +205,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
             axes_kw[num]['projection'] = 'xy'
         # Custom Basemap and Cartopy axes
         elif name:
-            package = 'basemap' if basemap else 'cartopy'
+            package = 'basemap' if basemap[num] else 'cartopy'
             instance, aspect = base.map_projection_factory(package, name, **proj_kw[num])
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             if not silent:
@@ -206,24 +216,17 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
             raise ValueError('All projection names should be declared. Wut.')
 
     # Create dictionary of panel toggles and settings
-    # Input can be string e.g. 'rl' or dictionary e.g. {'r':(1,2,3)}
+    # Input can be string e.g. 'rl' or dictionary e.g. {(1,2,3):'r', 4:'l'}
     # NOTE: Internally we convert array references to 0-base here
-    # First build up a dictionary of kwarg dictionaries for each axes index
-    innerpanels_kw = axes_dict(dict_of_kw(innerpanels_kw))
-    # Next add the 'which' arguments
+    # Add kwargs and the 'which' arguments
     # Optionally change the default panel widths for 'colorbar' panels
-    innerpanels = innerpanels or ''
-    innercolorbars = innercolorbars or ''
-    if isinstance(innerpanels, str):
-        innerpanels = {range(1,num_axes+1): innerpanels}
-    elif not isinstance(innerpanels, dict):
+    if not isinstance(innercolorbars, (dict, str)):
         raise ValueError('Must pass string of panel sides or dictionary mapping axes numbers to sides.')
-    if isinstance(innercolorbars, str):
-        innercolorbars = {range(1,num_axes+1): innercolorbars}
-    elif not isinstance(innercolorbars, dict):
+    if not isinstance(innerpanels, (dict, str)):
         raise ValueError('Must pass string of panel sides or dictionary mapping axes numbers to sides.')
-    innerpanels = axes_dict(innerpanels)
-    innercolorbars = axes_dict(innercolorbars)
+    innerpanels = axes_dict(innerpanels or '', False)
+    innercolorbars = axes_dict(innercolorbars or '', False)
+    innerpanels_kw = axes_dict(innerpanels_kw, True)
     for num,which in innerpanels.items():
         innerpanels_kw[num]['whichpanels'] = translate(which)
     for num,which in innercolorbars.items():
@@ -231,17 +234,15 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         if which:
             innerpanels_kw[num]['whichpanels'] = which
             if re.search('[bt]', which):
-                if not innerpanels_kw[num].get('hwidth',None):
-                    innerpanels_kw[num]['hwidth'] = rc.subplots['cbar']
-                if not kwargs.get('hspace',None):
-                    kwargs['hspace'] = rc.subplots['lab']
-                    innerpanels_kw[num]['hspace'] = rc.subplots['lab']
+                kwargs['hspace'] = fill(kwargs.get('hspace',None), rc.subplots['xlab'])
+                innerpanels_kw[num]['sharex_panels'] = False
+                innerpanels_kw[num]['hwidth'] = fill(innerpanels_kw[num].get('hwidth', None), rc.subplots['cbar'])
+                innerpanels_kw[num]['hspace'] = fill(innerpanels_kw[num].get('hspace', None), rc.subplots['xlab'])
             if re.search('[lr]', which):
-                if not innerpanels_kw[num].get('wwidth',None):
-                    innerpanels_kw[num]['wwidth'] = rc.subplots['cbar']
-                if not kwargs.get('wspace',None):
-                    kwargs['wspace'] = rc.subplots['lab']
-                    innerpanels_kw[num]['wspace'] = rc.subplots['lab']
+                kwargs['wspace'] = fill(kwargs.get('wspace',None), rc.subplots['ylab'])
+                innerpanels_kw[num]['sharey_panels'] = False
+                innerpanels_kw[num]['wwidth'] = fill(innerpanels_kw[num].get('wwidth', None), rc.subplots['cbar'])
+                innerpanels_kw[num]['wspace'] = fill(innerpanels_kw[num].get('wspace', None), rc.subplots['ylab'])
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)
@@ -312,9 +313,11 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
             continue
         if innerpanels_kw[i]['whichpanels']: # non-empty
             axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                    spanx=spanx, spany=spany,
                     number=i+1, **ax_kw, **innerpanels_kw[i]) # main axes handle
         else:
             axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
+                    spanx=spanx, spany=spany,
                     number=i+1, **ax_kw) # main axes can be a cartopy projection
 
     # Dependent axes
@@ -349,22 +352,12 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
             # Virgin axes; these are not an x base or a y base
             if innerpanels_kw[i]['whichpanels']: # non-empty
                 axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
-                        number=i+1,
+                        number=i+1, spanx=spanx, spany=spany,
                         sharex=sharex_ax, sharey=sharey_ax, **ax_kw, **innerpanels_kw[i])
             else:
                 axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
-                        number=i+1,
+                        number=i+1, spanx=spanx, spany=spany,
                         sharex=sharex_ax, sharey=sharey_ax, **ax_kw) # main axes can be a cartopy projection
-
-    # Call panel setup after everything is done
-    # TODO: Should ***disable*** this when e.g. user wants inner bottomcolorbar,
-    # since that means we don't want to share axes
-    # TODO: Consider, whenever a colorbar is drawn over an axes, finding
-    # all the children axes and disabling axis sharing with them?
-    for ax in axs:
-        ax._spanx = spanx # toggle
-        ax._spany = spany
-        ax._panel_setup()
 
     # Check that axes don't belong to multiple groups
     # This should be impossible unless my code is completely wrong...
@@ -391,7 +384,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
                 subspec = gs[idx,0]
             elif side=='bottom':
                 subspec = gs[-1,idx]
-            axp = fig.add_subplot(subspec, panelside=side, invisible=True, projection='panel')
+            axp = fig.add_subplot(subspec, panel_side=side, invisible=True, projection='panel')
             axsp += [axp]
         setattr(fig, name, axes_list(axsp))
     _paneladd('bottompanel', subplots_kw.bottompanels)

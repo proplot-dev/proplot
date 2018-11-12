@@ -8,24 +8,10 @@
 #   *want* to focus on the *extremes*, so want to weight colors more heavily
 #   on the brighters/whiter part of the map! That's what the ColdHot map does,
 #   it's what most of the ColorBrewer maps do, and it's what ColorWizard does.
-# TODO: Still confused over some issues:
-# * Note that by default extremes are stored at end of *lookup table*, not as
+# * By default extremes are stored at end of *lookup table*, not as
 #   separate RGBA values (so look under cmap._lut, indexes cmap._i_over and
 #   cmap._i_under). You can verify that your cmap is using most extreme values
 #   by comparing high-resolution one to low-resolution one.
-# * Seems by default that extremes are always a separate color; so far have
-#   been using *hack* where we simply *resample the lookup table* to the number
-#   of levels minus extremes, and magically extremes work out to the same color.
-# * Unsure whether to (a) limit the _segmentdata in a segmented colormap to
-#   the desired number with get_cmap() (which calls _resample), (b) create
-#   a ListedColormap with fixed colors, or (d) simply create a discrete
-#   normalizer that rounds to the nearest color in high-resolution lookup
-#   table? Probably should prefer the latter?
-# * Unsure of issue with contourf, BinNorm, and colorbar that results in
-#   weird offset ticks. Contour function seems to do weird stuff, still has
-#   high-resolution LinearSegmentedColormap, but distinct contour levels. Maybe
-#   you shouldn't pass a discrete normalizer since contour takes care of this
-#   task itself.
 #------------------------------------------------------------------------------#
 # Here's some useful info on colorspaces
 # https://en.wikipedia.org/wiki/HSL_and_HSV
@@ -274,8 +260,8 @@ def get_channel_value(color, channel, space='hsl'):
 #------------------------------------------------------------------------------#
 # Generalized colormap/cycle constructors
 #------------------------------------------------------------------------------#
-def Colormap(*args, extend='both',
-        xi=None, xf=None, # optionally truncate color range by these indices
+def colormap(*args, extend='both',
+        left=None, right=None, x=None, # optionally truncate color range by these indices
         ratios=1, reverse=False, gamma=None, gamma1=None, gamma2=None,
         name=None, register=False, save=False, N=None, **kwargs):
     """
@@ -284,7 +270,7 @@ def Colormap(*args, extend='both',
     if we don't intend to use both out-of-bounds colors; otherwise we lose
     the strongest colors at either end of the colormap.
 
-    You can still use extend='neither' in Colormap() call with extend='both'
+    You can still use extend='neither' in colormap() call with extend='both'
     in contour or colorbar call, just means that colors at ends of the main
     region will be same as out-of-bounds colors.
 
@@ -299,16 +285,15 @@ def Colormap(*args, extend='both',
 
     Segment data is completely divorced from the number of levels; can
     have many high-res segments with colormap N very small.
-
-    Turns out pcolormesh makes QuadMesh, which itself is a Collection,
-    which itself gets colors when calling draw() using update_scalarmappable(),
-    which itself uses to_rgba() to get facecolors, which itself is an inherited
-    ScalarMappable method that simply calls the colormap with numbers. Anyway
-    the issue *has* to be with pcolor, because when giving pcolor an actual
-    instance, no longer does that thing where final levels equal extensions.
-    Since collection API does nothing to underlying data or cmap, must be
-    something done by pcolormesh function.
     """
+    # Turns out pcolormesh makes QuadMesh, which itself is a Collection,
+    # which itself gets colors when calling draw() using update_scalarmappable(),
+    # which itself uses to_rgba() to get facecolors, which itself is an inherited
+    # ScalarMappable method that simply calls the colormap with numbers. Anyway
+    # the issue *has* to be with pcolor, because when giving pcolor an actual
+    # instance, no longer does that thing where final levels equal extensions.
+    # Since collection API does nothing to underlying data or cmap, must be
+    # something done by pcolormesh function.
     cmaps = []
     name = name or 'custom' # must have name, mcolors utilities expect this
     N_hires = 256
@@ -360,29 +345,32 @@ def Colormap(*args, extend='both',
         cmap = cmap.reversed()
 
     # Optionally clip edges or resample map.
-    # TODO: Write this.
+    try:
+        left, right = x
+    except TypeError:
+        pass
     if isinstance(cmap, mcolors.ListedColormap):
         slicer = None
-        if xi is not None or xf is not None:
-            slicer = slice(xi,xf)
+        if left is not None or right is not None:
+            slicer = slice(left,right)
         elif N is not None:
             slicer = slice(None,N)
         # Just sample indices for listed maps
         if slicer:
-            slicer = slice(xi,xf)
+            slicer = slice(left,right)
             try:
                 cmap = mcolors.ListedColormap(cmap.colors[slicer])
             except Exception:
                 raise ValueError(f'Invalid indices {slicer} for listed colormap.')
-    elif xi is not None or xf is not None:
+    elif left is not None or right is not None:
         # Trickier for segment data maps
         # First get segmentdata and parse input
         olddata = cmap._segmentdata
         newdata = {}
-        if xi is None:
-            xi = 0
-        if xf is None:
-            xf = 1
+        if left is None:
+            left = 0
+        if right is None:
+            right = 1
         # Next resample the segmentdata arrays
         for key,xyy in olddata.items():
             if key in ('gamma1', 'gamma2', 'space'):
@@ -390,21 +378,21 @@ def Colormap(*args, extend='both',
                 continue
             xyy = np.array(xyy)
             x = xyy[:,0]
-            xleft = np.where(x>xi)[0]
-            xright = np.where(x<xf)[0]
+            xleft, = np.where(x>left)
+            xright, = np.where(x<right)
             if len(xleft)==0:
-                raise ValueError(f'Invalid x minimum {xi}.')
+                raise ValueError(f'Invalid x minimum {left}.')
             if len(xright)==0:
-                raise ValueError(f'Invalid x maximum {xf}.')
+                raise ValueError(f'Invalid x maximum {right}.')
             l, r = xleft[0], xright[-1]
             newxyy = xyy[l:r+1,:].copy()
             if l>0:
-                left = xyy[l-1,1:] + (xi - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
-                newxyy = np.concatenate(([[xi, *left]], newxyy), axis=0)
+                xl = xyy[l-1,1:] + (left - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
+                newxyy = np.concatenate(([[left, *xl]], newxyy), axis=0)
             if r<len(x)-1:
-                right = xyy[r,1:] + (xf - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
-                newxyy = np.concatenate((newxyy, [[xf, *right]]), axis=0)
-            newxyy[:,0] = (newxyy[:,0] - xi)/(xf - xi)
+                xr = xyy[r,1:] + (right - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
+                newxyy = np.concatenate((newxyy, [[right, *xr]]), axis=0)
+            newxyy[:,0] = (newxyy[:,0] - left)/(right - left)
             newdata[key] = newxyy
         # And finally rebuild map
         cmap = type(cmap)(cmap.name, newdata)
@@ -449,7 +437,7 @@ def Colormap(*args, extend='both',
         #     h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
     return cmap
 
-def Cycle(*args, vmin=0, vmax=1):
+def colors(*args, vmin=0, vmax=1):
     """
     Convenience function to draw colors from arbitrary ListedColormap or
     LinearSegmentedColormap. Use vmin/vmax to scale your samples.
@@ -461,7 +449,7 @@ def Cycle(*args, vmin=0, vmax=1):
         args = [args] # presumably send a list of colors
     if len(args)==0:
         raise ValueError('Function requires at least 1 positional arg.')
-    cmap = Colormap(*args) # the cmap object itself
+    cmap = colormap(*args) # the cmap object itself
     if isinstance(cmap, mcolors.ListedColormap):
         # Just get the colors
         colors = cmap.colors
@@ -476,13 +464,18 @@ def Cycle(*args, vmin=0, vmax=1):
         else:
             raise ValueError(f'Invalid samples "{samples}". If you\'re building '
                     'a colormap on-the-fly, input must be [*args, '
-                    'samples] where *args are passed to the Colormap() constructor '
+                    'samples] where *args are passed to the colormap() constructor '
                     'and "samples" is either the number of samples desired '
                     'or a vector of colormap samples within [0,1].')
         colors = cmap((samples-vmin)/(vmax-vmin))
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     return colors
+
+# def colors()
+#     """
+#     Simple alias.
+#     """
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
@@ -632,7 +625,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         return cmap
 
     @staticmethod
-    def from_list(name, colors,
+    def from_list(name, color_list,
             ratios=None, reverse=False,
             **kwargs):
         """
@@ -650,9 +643,9 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         """
         # Dictionary
         cdict = {}
-        channels = [*zip(*colors)]
+        channels = [*zip(*color_list)]
         if len(channels) not in (3,4):
-            raise ValueError(f'Bad color list: {colors}')
+            raise ValueError(f'Bad color list: {color_list}')
         cs = ['hue', 'saturation', 'luminance']
         if len(channels)==4:
             cs += ['alpha']
@@ -807,7 +800,7 @@ def merge_cmaps(*cmaps, name='merged', N=512, ratios=1, **kwargs):
         ratios = [1]*len(cmaps)
 
     # Combine the colors
-    cmaps = [Colormap(cmap, N=None, **kwargs) for cmap in cmaps] # set N=None to disable resamping
+    cmaps = [colormap(cmap, N=None, **kwargs) for cmap in cmaps] # set N=None to disable resamping
     if all(isinstance(cmap,mcolors.ListedColormap) for cmap in cmaps):
         if not np.all(ratios==1):
             raise ValueError(f'Cannot assign different ratios when mering ListedColormaps.')
@@ -823,8 +816,8 @@ def merge_cmaps(*cmaps, name='merged', N=512, ratios=1, **kwargs):
         kind = kinds.pop() # colormap kind
         keys = {key for cmap in cmaps for key in cmap._segmentdata.keys()}
         ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
-        coords = np.concatenate([[0], np.cumsum(ratios)])
-        widths = coords[1:] - coords[:-1]
+        x0 = np.concatenate([[0], np.cumsum(ratios)])
+        xw = x0[1:] - x0[:-1]
 
         # Combine the segmentdata, and use the y1/y2 slots at merge points
         # so the transition is immediate (can never interpolate between end
@@ -832,22 +825,41 @@ def merge_cmaps(*cmaps, name='merged', N=512, ratios=1, **kwargs):
         segmentdata = {}
         gamma1, gamma2 = [], []
         for key in keys:
+            # Combine scalar values
             if key in ('gamma1', 'gamma2'):
                 if key not in segmentdata:
                     segmentdata[key] = []
-                segmentdata[key] += [cmap._segmentdata[key]]
+                for cmap in cmaps:
+                    segmentdata[key] += [cmap._segmentdata[key]]
                 continue
+            # Combine xyy data
             datas = []
             test = [callable(cmap._segmentdata[key]) for cmap in cmaps]
-            for x,width,cmap in zip(coords[:-1],widths,cmaps):
-                data = np.array(cmap._segmentdata[key])
-                data[:,0] = x + width*data[:,0]
-                datas.append(data)
-            for i in range(len(datas)-1):
-                datas[i][-1,2] = datas[i+1][0,2]
-                datas[i+1] = datas[i+1][1:,:]
-            data = np.concatenate(datas, axis=0)
-            data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum 1
+            if not all(test) and any(test):
+                raise ValueError('Mixed callable and non-callable colormap values.')
+            if all(test): # expand range from x-to-w to 0-1
+                for x,w,cmap in zip(x0[:-1],xw,cmaps):
+                    data = lambda x: data((x - x0)/w) # WARNING: untested!
+                    datas.append(data)
+                def data(x):
+                    idx, = np.where(x<x0)
+                    if idx.size==0:
+                        i = 0
+                    elif idx.size==x0.size:
+                        i = x0.size-2
+                    else:
+                        i = idx[-1]
+                    return datas[i](x)
+            else:
+                for x,w,cmap in zip(x0[:-1],xw,cmaps):
+                    data = np.array(cmap._segmentdata[key])
+                    data[:,0] = x + w*data[:,0]
+                    datas.append(data)
+                for i in range(len(datas)-1):
+                    datas[i][-1,2] = datas[i+1][0,2]
+                    datas[i+1] = datas[i+1][1:,:]
+                data = np.concatenate(datas, axis=0)
+                data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum exactly 1 (avoid floating point errors)
             segmentdata[key] = data
 
         # Create object
@@ -947,7 +959,7 @@ def set_cycle(cmap, samples=None, rename=False):
             samples from 0-1 from which to draw colormap colors. Will be ignored
             if the colormap is a ListedColormap (interpolation not possible).
     """
-    colors = Cycle(cmap, samples)
+    colors = colors(cmap, samples)
     cyl = cycler('color', colors)
     rcParams['axes.prop_cycle'] = cyl
     rcParams['patch.facecolor'] = colors[0]
@@ -1480,17 +1492,17 @@ def color_show(groups=['open', ['crayons','xkcd']], ncols=4, nbreak=12, minsat=0
         group = group or 'open'
         if isinstance(group, str):
             group = [group]
-        colors = {}
+        color_dict = {}
         for name in group:
             # Read colors from current cycler
             if name=='cycle':
                 seen = set() # trickery
                 cycle_colors = rcParams['axes.prop_cycle'].by_key()['color']
                 cycle_colors = [color for color in cycle_colors if not (color in seen or seen.add(color))] # trickery
-                colors.update({f'C{i}':v for i,v in enumerate(cycle_colors)})
+                color_dict.update({f'C{i}':v for i,v in enumerate(cycle_colors)})
             # Read custom defined colors
             else:
-                colors.update(custom_colors_filtered[name]) # add category dictionary
+                color_dict.update(custom_colors_filtered[name]) # add category dictionary
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
@@ -1509,7 +1521,7 @@ def color_show(groups=['open', ['crayons','xkcd']], ncols=4, nbreak=12, minsat=0
             swatch = 1
             colors_hsl = {key:
                 [channel/scale for channel,scale in zip(to_xyz(value, 'hcl'), _scale)]
-                for key,value in colors.items()}
+                for key,value in color_dict.items()}
 
             # Keep in separate columns
             breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
@@ -1555,7 +1567,7 @@ def color_show(groups=['open', ['crayons','xkcd']], ncols=4, nbreak=12, minsat=0
                 xi_text = w*(col + 0.25*swatch + 0.03*swatch)
                 print_name = name.split('xkcd:')[-1] # make sure no xkcd:
                 ax.text(xi_text, y, print_name, fontsize=h*0.8, ha='left', va='center')
-                ax.hlines(y+h*0.1, xi_line, xf_line, color=colors[name], lw=h*0.6)
+                ax.hlines(y+h*0.1, xi_line, xf_line, color=color_dict[name], lw=h*0.6)
         ax.set_xlim(0,X)
         ax.set_ylim(0,Y)
         ax.set_axis_off()
@@ -1708,56 +1720,4 @@ def cmap_show(N=31):
     print(f"Saving figure to: {filename}.")
     fig.savefig(filename, bbox_inches='tight')
     return fig
-
-#------------------------------------------------------------------------------#
-# TODO: Figure out if this is still useful
-#------------------------------------------------------------------------------#
-# ***Inverse of cycle_factory.***
-# Generate colormap instance from list of levels and colors.
-# * Generally don't want these kinds of colorbars to 'extend', but you can.
-# * Object will assume one color between individual levels; for example,
-#   if levels are [0,0.5,0.6,1], the first and last color-zones will be way thicker.
-# * If you want unevenly space intervals but evenly spaced boundaries, use custom
-#   Norm instead of default.
-# * This is *one way* to create a colormap from list of colors; another way is
-#   to just pass a list of colors to any _cformat method. That method will
-#   also generate levels that are always equally spaced.
-# if levels is None:
-#     levels = np.linspace(0,1,len(colors)+1)
-# if len(levels)!=len(colors)+1:
-#     raise ValueError(f"Have {len(levels):d} levels and {len(colors):d} colors. Need ncolors+1==nlevels.")
-# if extend=='min':
-#     colors = ['w', *colors] # add dummy color
-# elif extend=='max':
-#     colors = [*colors, 'w'] # add dummy color
-# elif extend=='both':
-#     colors = ['w', *colors, 'w']
-# elif extend!='neither':
-#     raise ValueError("Unknown extend option \"{extend}\".")
-# cmap, norm = mcolors.from_levels_and_colors(levels, colors, extend=extend) # creates ListedColormap!!!
-# return cmap
-# This was dumb, just needed to edit normalizer
-# def pad_cmap(cmap, amount, extend='both'):
-#     """
-#     Pads the extremes for lookup table in cmap, so that, if we do not ever want
-#     to color our 'extremes', we can still draw levels that sample the full range
-#     of possible colors.
-#     The 'amount' is fraction relative to the entire 0-1 width.
-#     """
-#     # Check stuff
-#     if extend not in ('min','max','neither'):
-#         raise ValueError(f'Extend must be "min", "max", or "neither".')
-#     if not isinstance(cmap, mcolors.LinearSegmentedColormap):
-#         raise TypeError('Input must be LinearSegmentedColormap.')
-#     # Apply padding
-#     offset = 0
-#     name = cmap.name
-#     segmentdata = cmap._segmentdata
-#     if extend in ('max','neither'):
-#         offset += amount # pad bottom of colormap
-#     for channel in ('red','green','blue'):
-#         data = np.array(segmentdata[channel])
-#         if extend in ('max','neither'): # pad low values
-#         data = np.concatenate((data, pad), axis=1)
-#     return mcolors.LinearSegmentedColormap(name, segmentdata, N=segmentdata.shape[0])
 

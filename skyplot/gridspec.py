@@ -19,6 +19,7 @@ def journal_size(width, height):
     if type(width) is not str:
         return width, height
     # Determine automatically
+    width, height = None, None
     table = {
         'pnas1': 8.7*cm2in,
         'pnas2': 11.4*cm2in,
@@ -37,10 +38,10 @@ def journal_size(width, height):
         raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
                           'Options are: ' + ', '.join(table.keys()))
     # Output width, and optionally also specify height
-    if utils.isnumber(value):
-        width = value
-    else:
+    try:
         width, height = value
+    except TypeError:
+        width = value
     return width, height
 
 # Function for processing input and generating necessary keyword args
@@ -114,16 +115,16 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
-    left   = fill(left,   rc.subplots['lab'])
-    bottom = fill(bottom, rc.subplots['lab'])
+    left   = fill(left,   rc.subplots['ylab'])
+    bottom = fill(bottom, rc.subplots['xlab'])
     right  = fill(right,  rc.subplots['nolab'])
     top    = fill(top,    rc.subplots['title'])
     bwidth = fill(bwidth, rc.subplots['cbar'])
     rwidth = fill(rwidth, rc.subplots['cbar'])
     lwidth = fill(lwidth, rc.subplots['cbar'])
-    bspace = fill(bspace, rc.subplots['lab'])
-    rspace = fill(rspace, rc.subplots['lab'])
-    lspace = fill(lspace, rc.subplots['lab'])
+    bspace = fill(bspace, rc.subplots['xlab'])
+    rspace = fill(rspace, rc.subplots['ylab'])
+    lspace = fill(lspace, rc.subplots['ylab'])
 
     # Figure size
     if not figsize:
