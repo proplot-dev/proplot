@@ -130,6 +130,8 @@ _map_disabled_methods = (
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
     'fill_between', 'fill_betweenx', 'fill', 'stackplot')
+# Map projections
+_map_pseudocyl = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
 
 #------------------------------------------------------------------------------#
 # Misc tools
@@ -645,13 +647,13 @@ class Figure(mfigure.Figure):
         # Assign rowlabels
         axs = []
         for ax in self.axes:
-            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax.cols[0]==0:
+            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and self._col_span[0]==0:
                 axs.append(ax)
         if isinstance(labels,str): # common during testing
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
-        axs = [ax for _,ax in sorted(zip([ax.rows[0] for ax in axs],axs))]
+        axs = [ax for _,ax in sorted(zip([ax._row_span[0] for ax in axs],axs))]
         for ax,label in zip(axs,labels):
             if label and not ax.rowlabel.get_text():
                 # Create a CompositeTransform that converts coordinates to
@@ -667,13 +669,13 @@ class Figure(mfigure.Figure):
         # Assign collabels
         axs = []
         for ax in self.axes:
-            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax.rows[0]==0:
+            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax._row_span[0]==0:
                 axs.append(ax)
         if isinstance(labels,str):
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} columns.')
-        axs = [ax for _,ax in sorted(zip([ax.cols[0] for ax in axs],axs))]
+        axs = [ax for _,ax in sorted(zip([ax._col_span[0] for ax in axs],axs))]
         for ax,label in zip(axs,labels):
             if label and not ax.collabel.get_text():
                 ax.collabel.update({'text':label, **kwargs})
@@ -708,7 +710,7 @@ class Figure(mfigure.Figure):
         # bring suptitle close to center
         offset = False
         for ax in self.axes:
-            if isinstance(ax, BaseAxes) and ax.rows[0]==0 \
+            if isinstance(ax, BaseAxes) and ax._row_span[0]==0 \
                 and ((ax.title.get_text() and not ax._title_inside)
                 or ax.collabel.get_text()):
                 offset = True
@@ -934,11 +936,11 @@ class BaseAxes(maxes.Axes):
         if isinstance(self, maxes.SubplotBase):
             subspec = self.get_subplotspec()
             nrows, ncols = subspec.get_gridspec().get_geometry()
-            self.rows = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
-            self.cols = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
+            self._row_span = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
+            self._col_span = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
         else:
-            self.rows = None
-            self.cols = None
+            self._row_span = None
+            self._col_span = None
         self.number = number # for abc numbering
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
@@ -1338,19 +1340,21 @@ class XYAxes(BaseAxes):
                 return ax.leftpanel or ax
         def _edge(ax):
             if xy=='x':
-                return getattr(ax, 'rows')[1]
+                return getattr(ax, '_row_span')[1]
             else:
-                return getattr(ax, 'cols')[0]
+                return getattr(ax, '_col_span')[0]
         def _span(ax):
             if xy=='x':
-                return getattr(ax, 'cols')
+                return getattr(ax, '_col_span')
             else:
-                return getattr(ax, 'rows')
+                return getattr(ax, '_row_span')
         # Get the edges
         axs = []
         edge_self = _edge(self)
         span_self = _span(self)
         for ax in self.figure.axes:
+            if not isinstance(ax, BaseAxes): # must be a colorbar or something, we didn't draw it
+                continue
             if edge_self==_edge(ax):
                 axs += [_panel(ax)]
 
@@ -1839,14 +1843,12 @@ class BasemapAxes(MapAxes):
     Axes subclass for basemap plotting.
     """
     name = 'basemap'
-    pseudocyl = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
     def __init__(self, *args, map_projection=None, **kwargs):
         """
         Declare basemap projection instance, add it as the 'm' attribute.
         The 'map_projection' argument sets projection, because this axes itself
         is called from add_subplot using projection='basemap'.
         """
-        import mpl_toolkits.basemap as mbasemap # verify package is available
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
         #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
         #   "limb2" automatically: one for fill and the other for the edges
@@ -1855,15 +1857,44 @@ class BasemapAxes(MapAxes):
         #   are still drawn -- so e.g. you can't change the color
         # * If you instead call drawmapboundary right away, _mapboundarydrawn will contain
         #   both the edges and the fill; so calling it again will replace *both*
+        import mpl_toolkits.basemap as mbasemap # verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
             raise ValueError('You must initialize BasemapAxes with map_projection=(basemap.Basemap instance).')
-        super().__init__(*args, **kwargs)
         self.m = map_projection
         self.boundary = None
-        self.axesPatch = self.patch # for bugfix
         self._recurred = False # use this so we can override plotting methods
-        if map_projection.projection in self.pseudocyl: # otherwise the spines are map boundary
-            self.boundary = self.m.drawmapboundary(ax=self)
+        self._mapboundarydrawn = None
+        # Initialize (and call _rcupdate)
+        super().__init__(*args, **kwargs)
+
+    def _rcupdate(self):
+        # Map boundary
+        # * First have to *manually replace* the old boundary by just deleting
+        #   the original one
+        # * If boundary is drawn successfully should be able to call
+        #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
+        # * For now will enforce that map plots *always* have background whereas
+        #   axes plots can have transparent background
+        self.axesPatch = self.patch # for bugfix
+        if self.m._mapboundarydrawn:
+            self.m._mapboundarydrawn.remove()
+        facecolor = rc['axes.facecolor']
+        outline = {'linewidth': rc['axes.linewidth'],
+                   'color':     rc['axes.edgecolor']}
+        # Draw boundary
+        if self.m.projection in _map_pseudocyl:
+            self.patch.set_alpha(0) # make patch invisible
+            p = self.m.drawmapboundary(fill_color=facecolor, ax=self, **outline) # set fill_color to 'none' to make transparent
+            p.set_rasterized(False) # not sure about this; might be rasterized
+            p.set_clip_on(False) # so edges of *line* denoting boundary aren't cut off
+            self.boundary = p # not sure why this one
+        else:
+            self.patch.set_facecolor(facecolor)
+            self.patch.set_edgecolor('none')
+            for spine in self.spines.values():
+                spine.update(outline)
+        # Call parent
+        super()._rcupdate()
 
     # Basemap overrides
     # WARNING: Never ever try to just make blanket methods on the Basemap
@@ -1901,14 +1932,14 @@ class BasemapAxes(MapAxes):
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
-        if coastline:
-            props = rc['coastline']
-            p = self.m.drawcoastlines(**props, ax=self)
         if land:
             props = rc['land']
             p = self.m.fillcontinents(ax=self)
             for _ in p:
                 _.update(props)
+        if coastline:
+            props = rc['coastline']
+            p = self.m.drawcoastlines(**props, ax=self)
 
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
@@ -1917,7 +1948,7 @@ class BasemapAxes(MapAxes):
         if latlocator is not None:
             if utils.isnumber(latlocator):
                 latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
-            p = self.drawparallels(latlocator, labels=latlabels, ax=self)
+            p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
                 for _ in [i for j in pi for i in j]: # magic
                     if isinstance(_, mtext.Text):
@@ -1942,29 +1973,6 @@ class BasemapAxes(MapAxes):
                         _.set_clip_on(True) # no gridlines past boundary
                         _.update(rc['lonlatlines'])
                         # _.set_linestyle(linestyle)
-
-        # Map boundary
-        # * First have to *manually replace* the old boundary by just deleting
-        #   the original one; note this requires drawmapboundary() was called
-        #   when the basemap was first instantiated; see notes in subplots() command.
-        # * If boundary is drawn successfully should be able to call
-        #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
-        # * For now will enforce that map plots *always* have background whereas
-        #   axes plots can have transparent background
-        if self.m._mapboundarydrawn:
-            self.m._mapboundarydrawn.remove()
-        outline = {'linewidth': rc['axes.linewidth'],
-                   'color':     rc['axes.edgecolor']}
-        if self.m.projection in self.pseudocyl:
-            self.patch.set_alpha(0) # make patch invisible
-            p = self.m.drawmapboundary(fill_color=color, ax=self, **outline) # set fill_color to 'none' to make transparent
-            p.set_rasterized(False) # not sure about this; might be rasterized
-            p.set_clip_on(False) # so edges of LINE denoting boundary aren't cut off
-        else: # use the settings to apply to Axes patch; the basemap API fails here
-            self.patch.set_facecolor(color)
-            self.patch.set_edgecolor('none')
-            for spine in self.spines.values():
-                spine.update(outline)
 
 @docstring_fix
 # class CartopyAxes(GeoAxes, MapAxes):
@@ -2037,7 +2045,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     # Add documentation here.
     def format(self,
         xlim=None, ylim=None,
-        land=False, ocean=False, land=False, # coastlines and continents
+        land=False, ocean=False, coastline=False, # coastlines and continents
+        reso='hi',
         latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
         latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
         **kwargs):
@@ -2107,22 +2116,22 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
+        if reso not in ('lo','med','hi'):
+            raise ValueError(f'Invalid resolution {reso}.')
+        reso = {'lo':'110m', 'med':'50m', 'hi':'10m'}.get(reso)
         if coastline and not self._coastline:
             # self.add_feature(cfeature.COASTLINE, **rc['coastlines'])
-            print('Add coastlines.')
-            feat = cfeature.NaturalEarthFeature('physical', 'coastline', '50m')
+            feat = cfeature.NaturalEarthFeature('physical', 'coastline', reso)
             self.add_feature(feat, **rc['coastline'])
             self._coastline = feat
         if land and not self._land:
             # self.add_feature(cfeature.LAND, **rc['continents'])
-            print('Add land.')
-            feat = cfeature.NaturalEarthFeature('physical', 'land', '50m')
+            feat = cfeature.NaturalEarthFeature('physical', 'land', reso)
             self.add_feature(feat, **rc['land'])
             self._land = feat
-        if oceans and not self._ocean:
+        if ocean and not self._ocean:
             # self.add_feature(cfeature.OCEAN, **rc['oceans'])
-            print('Add oceans.')
-            feat = cfeature.NaturalEarthFeature('physical', 'ocean', '50m')
+            feat = cfeature.NaturalEarthFeature('physical', 'ocean', reso)
             self.add_feature(feat, **rc['ocean'])
             self._ocean = feat
 
