@@ -101,6 +101,7 @@ list_cycles = {
     #     'green')] for i in range(10)},
     }
 # Aliases
+_scale = [359, 99, 99] # for some reason 100 luminance equals 0 luminance!!!
 _space_aliases = {
     'rgb':   'rgb',
     'hsv':   'hsv',
@@ -339,7 +340,7 @@ def Colormap(*args, extend='both',
             regex = '([0-9].)$'
             match = re.search(regex, cmap) # declare options with _[flags]
             cmap = re.sub(regex, '', cmap) # remove options
-            fade = 90 if not match else match.group(1) # default fade to 90 luminance
+            fade = kwargs.pop('fade',90) if not match else match.group(1) # default fade to 90 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
             cmap = monochrome_cmap(cmap, fade, name=name, N=N_hires, **kwargs)
@@ -582,10 +583,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         gammas = (1.0, self._segmentdata['gamma1'], self._segmentdata['gamma2'])
         self._lut = np.ones((self.N+3, 4), float) # fill
         for i,(channel,gamma,reverse) in enumerate(zip(channels, gammas, reverse)):
-            self._lut[:-3,i] = make_mapping_array(self.N, self._segmentdata[channel], gamma, reverse)
+            self._lut[:-3,i] = make_mapping_array(self.N, self._segmentdata[channel], channel, gamma, reverse)
         if 'alpha' in self._segmentdata:
-            self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'])
-        self._lut[:-3,0] %= 360
+            self._lut[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'], 'alpha')
+        self._lut[:-3,0] %= 359
         # Make hues circular, and set extremes
         self._isinit = True
         self._set_extremes() # generally just used end values in segmentdata
@@ -607,7 +608,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
     @staticmethod
     def from_hsl(name,
-            h=0, s=100, l=[100, 20], c=None, a=None,
+            h=0, s=99, l=[99, 20], c=None, a=None,
             hue=None, saturation=None, luminance=None, chroma=None, alpha=None,
             ratios=None, reverse=False, **kwargs):
         """
@@ -694,7 +695,7 @@ def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
         array.append((x, value, value))
     return array
 
-def make_mapping_array(N, data, gamma=1.0, reverse=False):
+def make_mapping_array(N, data, channel, gamma=1.0, reverse=False):
     """
     Mostly a copy of matplotlib version, with a few modifications:
         * Permit ranges outside of 0-1 (i.e. allowing HSL values).
@@ -767,6 +768,8 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
     lut[1:-1] = distance*(y0[ind] - y1[ind - 1]) + y1[ind - 1]
     lut[0]  = y1[0]
     lut[-1] = y0[-1]
+    if channel in ('saturation', 'luminance'):
+        lut[:] = np.clip(lut[:], 0, 99)
     return lut
 
 #------------------------------------------------------------------------------#
@@ -870,6 +873,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     space = get_space(space)
     h, s, l = to_xyz(to_rgb(color), space)
     if utils.isnumber(fade): # allow just specifying the luminance channel
+        fade = np.clip(fade, 0, 99) # 99 is the max!
         fade = to_rgb((h, 0, fade), space=space)
     _, fs, fl = to_xyz(to_rgb(fade), space)
     fs = s # consider changing this?
@@ -1253,7 +1257,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
     # from the custom_colors dictionary (perhaps due to quirk of autoreload,
     # perhaps by some more fundamental python thing), so we instead must create
     # *completely separate* dictionary and add colors from there
-    hcls = hcls/np.array([360, 100, 100])
+    hcls = hcls/np.array(_scale)
     hcls = np.round(hcls/threshold).astype(np.int64)
     _, index, counts = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
     deleted = 0
@@ -1496,7 +1500,7 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.
             space = 1
             swatch = 1
             colors_hsl = {key:
-                [channel/scale for channel,scale in zip(to_xyz(value, 'hcl'), (360, 100, 100))]
+                [channel/scale for channel,scale in zip(to_xyz(value, 'hcl'), _scale)]
                 for key,value in colors.items()}
 
             # Keep in separate columns
