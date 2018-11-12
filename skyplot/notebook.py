@@ -98,7 +98,7 @@ def nbsetup(directory=None, backend='inline'):
     # and is only one preserving vector graphics
     ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
 
-    # Control all rc settings directly with 'pubplot.rc' object, *no* notebook-
+    # Control all rc settings directly with 'rc' object, *no* notebook-
     # specific overrides.
     ipython.magic("config InlineBackend.rc = {}")
 

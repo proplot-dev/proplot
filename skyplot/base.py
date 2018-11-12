@@ -889,7 +889,7 @@ class Figure(mfigure.Figure):
 class BaseAxes(maxes.Axes):
     """
     Subclass the default Axes class. Then register it as the 'base' projection,
-    and you will get a subclass Subplot by calling fig.add_subplot(projection='pubplot').
+    and you will get a subclass Subplot by calling fig.add_subplot(projection='base').
     Notes:
     * You cannot subclass SubplotBase directly, should only be done with
       maxes.subplot_class_factory, which is called automatically when using add_subplot.
@@ -1591,7 +1591,7 @@ class XYAxes(BaseAxes):
                     axis.set_label_position(labelpos[0])
 
             # Gridline activation and setting (necessary because rcParams has no 'minorgrid'
-            # property, must be set in rcPubPlot)
+            # property, must be set in rcSpecial settings)
             # NOTE: Inexplicably, for a twinx axis, could only get the minor gridlines
             # to disappear if we changed the 'visible' property on each one.
             # for tick in axis.get_major_ticks():

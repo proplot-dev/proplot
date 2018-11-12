@@ -121,9 +121,9 @@ _categories_default = { # initialize as empty lists
     # We keep these ones
     'Matplotlib Originals':
         ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
-    'PubPlot Sequential':
+    'SkyPlot Sequential':
         ['Bog', 'Forest', 'Sea', 'Pale', 'Sunrise', 'Sunset', 'Vibrant'], # empty at first, fill automatically
-    'PubPlot Diverging':
+    'SkyPlot Diverging':
         ['ColdHot', 'DryWet', 'Water'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
@@ -422,7 +422,7 @@ def Colormap(*args, extend='both',
     if name and register:
         print(name, 'Registering')
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _categories_default.items()
-                    for cat_cmap in cat_cmaps if 'PubPlot' not in cat]:
+                    for cat_cmap in cat_cmaps if 'SkyPlot' not in cat]:
             print(f'Warning: Overwriting existing colormap "{name}".')
             # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
         elif name in mcm.cmap_d:
@@ -1652,8 +1652,8 @@ def cmap_show(N=31):
         print(f'New colormaps: {", ".join(cmaps_custom)}')
 
     # Attempt sorting based on hue
-    # for cat in ['PubPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
-    # for cat in ['PubPlot Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['SkyPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['SkyPlot Sequential', 'ColorBrewer2.0 Sequential']:
     for cat in []:
         hues = [np.mean([to_xyz(to_rgb(color),'hsl')[0]
             for color in mcm.cmap_d[cmap](np.linspace(0.3,1,20))])
