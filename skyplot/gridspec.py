@@ -3,13 +3,18 @@ import numpy as np
 import matplotlib.gridspec as mgridspec
 from .rcmod import rc
 from .utils import dot_dict, fill
+# Conversions
+cm2in = 0.3937
+mm2in = cm2in/10.0
+in2cm = 1.0/cm2in
+in2mm = 1.0/mm2in
 
 # Custom settings for various journals
 # Add to this throughout your career, or as standards change
 # PNAS info: http://www.pnas.org/page/authors/submission
 # AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
 # AGU info: https://publications.agu.org/author-resource-center/figures-faq/
-def journalsize(width, height):
+def journal_size(width, height):
     # User wants to define their own size
     if type(width) is not str:
         return width, height
@@ -139,7 +144,7 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     # preserve the aspect ratio of specified plot
     if width is None and height is None:
         width = 5 # default behavior is use 1:1 axes, fixed width
-    width, height = journalsize(width, height) # if user passed width=<string>, will use that journal size
+    width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
     auto_width  = (width is None and height is not None)
     auto_height = (height is None and width is not None)
     aspect = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio

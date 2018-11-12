@@ -15,11 +15,6 @@ from . import utils
 from . import base
 from .utils import fill
 from functools import wraps
-# Conversions
-cm2in = 0.3937
-mm2in = cm2in/10.0
-in2cm = 1.0/cm2in
-in2mm = 1.0/mm2in
 
 #------------------------------------------------------------------------------#
 # Miscellaneous helper functions
