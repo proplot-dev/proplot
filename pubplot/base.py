@@ -81,8 +81,7 @@ except ModuleNotFoundError:
     GeoAxes = PlateCarree = object
 
 # Global variables
-# These are used to bulk wrap a bunch of axes methods
-# NOTE: The below are used for cmap
+# First distinguish plot types
 _line_methods = ( # basemap methods you want to wrap that aren't 2D grids
     'plot', 'scatter'
     )
@@ -98,6 +97,10 @@ _contour_methods = (
 _pcolor_methods = (
     'pcolor', 'pcolormesh', 'pcolorpoly'
     )
+_show_methods = (
+    'imshow', 'matshow', 'spy', 'hist2d',
+    )
+# Next distinguish plots by more broad properties
 _nolevels_methods = (
     'pcolor', 'pcolormesh', 'pcolorpoly', 'imshow', 'matshow', 'spy'
     )
@@ -109,6 +112,8 @@ _cmap_methods = (
     'contour', 'contourf', 'pcolor', 'pcolormesh',
     'matshow', 'imshow', 'spy', 'hist2d'
     )
+# Finally disable some stuff for all axes, and just for map projection axes
+# The keys in below dictionary are error messages
 _disabled_methods = {
     "Unsupported plotting function {}.":
         ('pie', 'table', 'hexbin', 'eventplot',
@@ -333,12 +338,14 @@ def _cmap_features(self, func):
         # Call function with special args removed
         name = func.__name__
         levels = utils.fill(levels, 11)
-        contour_kw = {}
+        custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
-            contour_kw = {'levels': levels, 'extend': extend}
+            custom_kw = {'levels': levels, 'extend': extend}
+        # if name in _show_methods: # ***do not*** auto-adjust aspect ratio! messes up subplots!
+        #     custom_kw['aspect'] = 'auto'
         if norm:
-            contour_kw['norm'] = colortools.Norm(norm)
-        result = func(*args, norm=norm, **contour_kw, **kwargs)
+            custom_kw['norm'] = colortools.Norm(norm)
+        result = func(*args, norm=norm, **custom_kw, **kwargs)
         if name in _nolevels_methods:
             result.extend = extend
 
@@ -925,6 +932,9 @@ class BaseAxes(maxes.Axes):
         self._spanx_group = []
         self._spany_group = []
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
+        self._zoom = None # if non-empty, will make invisible
+        self._insets = [] # add to these later
+        self._parent = None # change this later
         super().__init__(*args, **kwargs)
 
         # Add special row/column labels (can only be filled with text if axes
@@ -947,10 +957,14 @@ class BaseAxes(maxes.Axes):
         self.rightpanel  = EmptyPanel()
 
         # Number and size
-        subspec = self.get_subplotspec()
-        nrows, ncols = subspec.get_gridspec().get_geometry()
-        self.rows = (subspec.num1 // ncols, subspec.num2 // ncols)
-        self.cols = (subspec.num1 % ncols,  subspec.num2 % ncols)
+        if isinstance(self, maxes.SubplotBase):
+            subspec = self.get_subplotspec()
+            nrows, ncols = subspec.get_gridspec().get_geometry()
+            self.rows = (subspec.num1 // ncols, subspec.num2 // ncols)
+            self.cols = (subspec.num1 % ncols,  subspec.num2 % ncols)
+        else:
+            self.rows = None
+            self.cols = None
         self.number = number # for abc numbering
         self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
         self.height = np.diff(self._position.intervaly)*self.figure.height
@@ -1476,6 +1490,8 @@ class XYAxes(BaseAxes):
             if yreverse:
                 ylim = ylim[::-1]
             self.set_ylim(ylim)
+        if xlim is not None or ylim is not None and self._parent:
+            self.indicate_inset_zoom()
 
         # Control axis ticks and labels and stuff
         xtickminor = tickminor or xtickminor
@@ -1663,36 +1679,62 @@ class XYAxes(BaseAxes):
         ax.xspine_override   = 'neither'
         return ax
 
-    # def make_inset_locator(self, bounds, trans):
-    #     # Helper function, had to be copied from private matplotlib version.
-    #     def inset_locator(ax, renderer):
-    #         bbox = mtransforms.Bbox.from_bounds(*bounds)
-    #         bb = mtransforms.TransformedBbox(bbox, trans)
-    #         tr = self.figure.transFigure.inverted()
-    #         bb = mtransforms.TransformedBbox(bb, tr)
-    #         return bb
-    #     return inset_locator
-    #
-    # def inset_axes(self, bounds, *, transform=None, zorder=5,
-    #         **kwargs):
-    #     # Create inset of same type.
-    #     # Defaults
-    #     if transform is None:
-    #         transform = self.transAxes
-    #     label = kwargs.pop('label', 'inset_axes')
-    #     # This puts the rectangle into figure-relative coordinates.
-    #     locator = self.make_inset_locator(bounds, transform)
-    #     bb = locator(None, None)
-    #     ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
-    #     # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
-    #     ax.set_axes_locator(locator)
-    #     self.add_child_axes(ax)
-    #     return ax
-    #
-    # def inset(self, *args, **kwargs):
-    #     # Inset
-    #     return self.inset_axes(*args, **kwargs)
+    def _make_inset_locator(self, bounds, trans):
+        # Helper function, had to be copied from private matplotlib version.
+        def inset_locator(ax, renderer):
+            bbox = mtransforms.Bbox.from_bounds(*bounds)
+            bb = mtransforms.TransformedBbox(bbox, trans)
+            tr = self.figure.transFigure.inverted()
+            bb = mtransforms.TransformedBbox(bb, tr)
+            return bb
+        return inset_locator
 
+    def inset_axes(self, bounds, *, transform=None, zorder=5, zoom=True, **kwargs):
+        # Carbon copy, but use my custom axes
+        # Defaults
+        if transform is None:
+            transform = self.transAxes
+        label = kwargs.pop('label', 'inset_axes')
+        # This puts the rectangle into figure-relative coordinates.
+        locator = self._make_inset_locator(bounds, transform)
+        bb = locator(None, None)
+        ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
+        ax.set_axes_locator(locator)
+        self.add_child_axes(ax)
+        self._insets += [ax]
+        ax._parent = self
+        # Finally add zoom
+        # NOTE: Requirs version >=3.0
+        if zoom:
+            ax.indicate_inset_zoom()
+        return ax
+
+    def indicate_inset_zoom(self, **kwargs):
+        # Custom version that can be *refreshed*
+        # Makes more sense to be defined on the inset axes, since parent
+        # could have multiple insets
+        parent = self._parent
+        if not parent:
+            raise ValueError(f'{self} is not an inset axes.')
+        xlim = self.get_xlim()
+        ylim = self.get_ylim()
+        rect = [xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0]]
+        rectpatch, connects = parent.indicate_inset(rect, self, **kwargs)
+        if self._zoom:
+            self._zoom[0].set_visible(False)
+            for line in self._zoom[1]:
+                line.set_visible(False)
+        self._zoom = (rectpatch, connects)
+        return (rectpatch, connects)
+
+    def inset(self, *args, **kwargs):
+        # Just an alias
+        return self.inset_axes(*args, **kwargs)
+
+    def inset_zoom(self, *args, **kwargs):
+        # Just an alias
+        return self.indicate_inset_zoom(*args, **kwargs)
 
 @docstring_fix
 class PanelAxes(XYAxes):
