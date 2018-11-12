@@ -818,17 +818,21 @@ def merge_cmaps(*cmaps, name='merged', N=512, ratios=1, **kwargs):
             raise ValueError(f'Got mixed colormap types.')
         kind = kinds.pop() # colormap kind
         keys = {key for cmap in cmaps for key in cmap._segmentdata.keys()}
-        if len(keys) not in (3,4):
-            raise ValueError(f'Got mixed segmentdata keys: {keys}.')
         ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
         coords = np.concatenate([[0], np.cumsum(ratios)])
         widths = coords[1:] - coords[:-1]
-        segmentdata = {}
 
         # Combine the segmentdata, and use the y1/y2 slots at merge points
         # so the transition is immediate (can never interpolate between end
         # colors on the two colormaps)
+        segmentdata = {}
+        gamma1, gamma2 = [], []
         for key in keys:
+            if key in ('gamma1', 'gamma2'):
+                if key not in segmentdata:
+                    segmentdata[key] = []
+                segmentdata[key] += [cmap._segmentdata[key]]
+                continue
             datas = []
             test = [callable(cmap._segmentdata[key]) for cmap in cmaps]
             for x,width,cmap in zip(coords[:-1],widths,cmaps):

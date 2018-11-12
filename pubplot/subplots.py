@@ -226,17 +226,18 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         innerpanels_kw[num]['whichpanels'] = translate(which)
     for num,which in innercolorbars.items():
         which = translate(which)
-        innerpanels_kw[num]['whichpanels'] = which
-        if re.search('[bt]', which):
-            if not innerpanels_kw[num].get('hwidth',None):
-                innerpanels_kw[num]['hwidth'] = rc.subplots['cbar']
-            if not kwargs.get('hspace',None):
-                kwargs['hspace'] = rc.subplots['lab']
-        if re.search('[lr]', which):
-            if not innerpanels_kw[num].get('wwidth',None):
-                innerpanels_kw[num]['wwidth'] = rc.subplots['cbar']
-            if not kwargs.get('wspace',None):
-                kwargs['wspace'] = rc.subplots['lab']
+        if which:
+            innerpanels_kw[num]['whichpanels'] = which
+            if re.search('[bt]', which):
+                if not innerpanels_kw[num].get('hwidth',None):
+                    innerpanels_kw[num]['hwidth'] = rc.subplots['cbar']
+                if not kwargs.get('hspace',None):
+                    kwargs['hspace'] = rc.subplots['lab']
+            if re.search('[lr]', which):
+                if not innerpanels_kw[num].get('wwidth',None):
+                    innerpanels_kw[num]['wwidth'] = rc.subplots['cbar']
+                if not kwargs.get('wspace',None):
+                    kwargs['wspace'] = rc.subplots['lab']
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)

@@ -762,8 +762,8 @@ class Figure(mfigure.Figure):
         whichpanels = whichpanels or 'r'
         hspace = utils.fill(hspace, 0.13) # teeny space
         wspace = utils.fill(wspace, 0.13)
-        hwidth = utils.fill(hwidth, 0.3) # default is panels for plotting stuff, not colorbars
-        wwidth = utils.fill(wwidth, 0.3)
+        hwidth = utils.fill(hwidth, 0.45) # default is panels for plotting stuff, not colorbars
+        wwidth = utils.fill(wwidth, 0.45)
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 
