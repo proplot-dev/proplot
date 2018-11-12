@@ -82,6 +82,25 @@ except ModuleNotFoundError:
 
 # Global variables
 # These are used to bulk wrap a bunch of axes methods
+# NOTE: The below are used for cmap
+_line_methods = ( # basemap methods you want to wrap that aren't 2D grids
+    'plot', 'scatter'
+    )
+_edge_methods = (
+    'pcolor', 'pcolorpoly', 'pcolormesh',
+    )
+_center_methods = (
+    'contour', 'contourf', 'quiver', 'streamplot', 'barbs',
+    )
+_contour_methods = (
+    'contour', 'contourf',
+    )
+_pcolor_methods = (
+    'pcolor', 'pcolormesh', 'pcolorpoly'
+    )
+_nolevels_methods = (
+    'pcolor', 'pcolormesh', 'pcolorpoly', 'imshow', 'matshow', 'spy'
+    )
 _cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
@@ -106,15 +125,6 @@ _map_disabled_methods = (
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
     'fill_between', 'fill_betweenx', 'fill', 'stackplot')
-_line_methods = ( # basemap methods you want to wrap that aren't 2D grids
-    'plot', 'scatter'
-    )
-_edge_methods = (
-    'pcolor', 'pcolorpoly', 'pcolormesh',
-    )
-_center_methods = (
-    'contour', 'contourf', 'quiver', 'streamplot', 'barbs',
-    )
 
 #------------------------------------------------------------------------------#
 # Create matplotlib.Path objects
@@ -315,78 +325,68 @@ def _cmap_features(self, func):
     """
     @wraps(func)
     def decorator(*args, cmap=None, cmap_kw={},
-                levels=11, extremes=True, norm=None,
+                resample=False, levels=None, extremes=True, norm=None,
                 extend='neither', **kwargs):
         # NOTE: We will normalize the data with whatever is passed, e.g.
         # logarithmic or whatever
         # is passed to Norm
         # Call function with special args removed
         name = func.__name__
-        kwextra = {}
-        if 'contour' in name:
-            kwextra = dict(levels=levels, extend=extend)
-        norm = colortools.Norm(norm)
-        result = func(*args, norm=norm, **kwextra, **kwargs)
-        # result = func(self, *args, norm=norm, **kwextra, **kwargs)
-        if 'pcolor' in name:
+        levels = utils.fill(levels, 11)
+        contour_kw = {}
+        if name in _contour_methods: # only valid kwargs for contouring
+            contour_kw = {'levels': levels, 'extend': extend}
+        if norm:
+            contour_kw['norm'] = colortools.Norm(norm)
+        result = func(*args, norm=norm, **contour_kw, **kwargs)
+        if name in _nolevels_methods:
             result.extend = extend
-        # Get levels, if they were None
-        # Otherwise we just have to resample the colormap segmentdata, by
-        # default picking enough colors to look like perfectly smooth gradations
+
+        # Get levels automatically determined by contourf, or make them
+        # from the automatically chosen pcolor/imshow clims
         if not utils.isvector(levels):
             if hasattr(result, 'levels'):
                 levels = result.levels
             else:
                 levels = np.linspace(*result.get_clim(), levels)
-        # TODO: Resampling seems to break a bunch of shit, maybe due to some
-        # changes I made to PerceptuallyUniformColormap? FIXME
-        cmap_kw.update({'resample': False})
-        # Set normalizer
-        if cmap_kw.get('resample',None):
-            if levels is not None:
-                N = len(levels)
-                norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
-            else:
-                if isinstance(cmap, mcolors.ListedColormap):
-                    N = len(cmap.colors)
-                else:
-                    N = 256 # convervative number
-                norm = result.norm # just use the default normalizer
+
+        # Choose to either:
+        # 1) Use len(levels) lookup table values and a smooth normalizer
+        if resample:
+            N = len(levels)
+            norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
+        # 2) Use a high-resolution lookup table with a discrete normalizer
+        # NOTE: Unclear which is better/more accurate? Intuition is this one.
+        # Will bin physical values into len(levels)-1 bins (plus, optionally,
+        # bins for extremes -- the 'extend' kwarg controls this).
         else:
-            N = None
-            norm = colortools.StepNorm(norm=norm, levels=levels,
-                   extend=cmap_kw.get('extend', extend)) # use extend='neither' to prevent triangles from being different color
+            N = None # will be ignored
+            norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
         result.set_norm(norm)
+
         # Specify colormap
         cmap = cmap or rc['image.cmap']
         if isinstance(cmap, (str,dict,mcolors.Colormap)):
             cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, N=N, **cmap_kw)
+        cmap = colortools.Colormap(*cmap, N=N, extend=extend, **cmap_kw)
         if not cmap._isinit:
             cmap._init()
-        try:
-            result.set_cmap(cmap)
-        except Exception:
-            print('Converting to RGBA first.')
-            cmap = mcolors.LinearSegmentedColormap.from_list(cmap.name, cmap._lut)
-            result.set_cmap(cmap)
-        # Fix result
-        # NOTE: Recursion yo!
+        result.set_cmap(cmap)
+
+        # Fix resulting colorbar for 'cmapline's
         if name=='cmapline':
             if levels is None:
                 levels = np.sort(np.unique(result.get_array()))
             result = self.contourf([0,0], [0,0], np.nan*np.ones((2,2)),
                 cmap=cmap, levels=levels, norm=norm)
-        # Optionally use same color for data in 'edge bins' as 'out of bounds' data
-        # NOTE: This shouldn't mess up normal contour() calls because if we
-        # specify color=<color>, should override cmap instance anyway
+
         # Fix white lines between filled contours/mesh
         linewidth = 0.3 # seems to be lowest threshold where white lines disappear
         if name=='contourf':
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
-        elif name[:6]=='pcolor':
+        elif name in _pcolor_methods:
             result.set_edgecolor('face')
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
@@ -1323,7 +1323,7 @@ class BaseAxes(maxes.Axes):
         newx, newy, newvalues = [], [], []
         edges = utils.edges(values)
         if bins:
-            norm = colortools.StepNorm(edges)
+            norm = colortools.BinNorm(edges)
         else:
             norm = colortools.LinearSegmentedNorm(edges)
         for j in range(y.shape[0]-1):
@@ -1662,31 +1662,35 @@ class XYAxes(BaseAxes):
         ax.xspine_override   = 'neither'
         return ax
 
-    def make_inset_locator(self, bounds, trans):
-        # Helper function, had to be copied from private matplotlib version.
-        def inset_locator(ax, renderer):
-            bbox = mtransforms.Bbox.from_bounds(*bounds)
-            bb = mtransforms.TransformedBbox(bbox, trans)
-            tr = self.figure.transFigure.inverted()
-            bb = mtransforms.TransformedBbox(bb, tr)
-            return bb
-        return inset_locator
-
-    def inset_axes(self, bounds, *, transform=None, zorder=5,
-            **kwargs):
-        # Create inset of same type.
-        # Defaults
-        if transform is None:
-            transform = self.transAxes
-        label = kwargs.pop('label', 'inset_axes')
-        # This puts the rectangle into figure-relative coordinates.
-        locator = self.make_inset_locator(bounds, transform)
-        bb = locator(None, None)
-        ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
-        # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
-        ax.set_axes_locator(locator)
-        self.add_child_axes(ax)
-        return ax
+    # def make_inset_locator(self, bounds, trans):
+    #     # Helper function, had to be copied from private matplotlib version.
+    #     def inset_locator(ax, renderer):
+    #         bbox = mtransforms.Bbox.from_bounds(*bounds)
+    #         bb = mtransforms.TransformedBbox(bbox, trans)
+    #         tr = self.figure.transFigure.inverted()
+    #         bb = mtransforms.TransformedBbox(bb, tr)
+    #         return bb
+    #     return inset_locator
+    #
+    # def inset_axes(self, bounds, *, transform=None, zorder=5,
+    #         **kwargs):
+    #     # Create inset of same type.
+    #     # Defaults
+    #     if transform is None:
+    #         transform = self.transAxes
+    #     label = kwargs.pop('label', 'inset_axes')
+    #     # This puts the rectangle into figure-relative coordinates.
+    #     locator = self.make_inset_locator(bounds, transform)
+    #     bb = locator(None, None)
+    #     ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+    #     # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
+    #     ax.set_axes_locator(locator)
+    #     self.add_child_axes(ax)
+    #     return ax
+    #
+    # def inset(self, *args, **kwargs):
+    #     # Inset
+    #     return self.inset_axes(*args, **kwargs)
 
 
 @docstring_fix
@@ -2334,7 +2338,7 @@ def colorbar_factory(ax, mappable, cgrid=False, clocator=None,
         levels = utils.edges(values) # get "edge" values between centers desired
         values = utils.edges(values) # this works empirically; otherwise get weird situation with edge-labels appearing on either side
         mappable = plt.contourf([[0,0],[0,0]], levels=levels, cmap=colormap,
-                extend='neither', norm=colortools.StepNorm(values)) # workaround
+                extend='neither', norm=colortools.BinNorm(values)) # workaround
         if clocator is None: # in this case, easy to assume user wants to label each value
             clocator = values
     if clocator is None:

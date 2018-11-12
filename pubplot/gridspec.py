@@ -40,7 +40,7 @@ def journalsize(width, height):
 
 # Function for processing input and generating necessary keyword args
 def _gridspec_kwargs(nrows, ncols, rowmajor=True,
-    aspect=1,    height=None, width=None,   # for controlling aspect ratio, default is control for width
+    aspect=1,    figsize=None, height=None, width=None,   # for controlling aspect ratio, default is control for width
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
     left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
@@ -120,9 +120,14 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     rspace = fill(rspace, rc.subplots['lab'])
     lspace = fill(lspace, rc.subplots['lab'])
 
+    # Figure size
+    if not figsize:
+        figsize = (width, height)
+    width, height = figsize
+
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing
-    subplots_kw = dot_dict(nrows=nrows, ncols=ncols, width=width, height=height, aspect=aspect,
+    subplots_kw = dot_dict(nrows=nrows, ncols=ncols, figsize=figsize, aspect=aspect,
         hspace=hspace, wspace=wspace,
         hratios=hratios, wratios=wratios,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,

@@ -21,7 +21,7 @@
 #   a ListedColormap with fixed colors, or (d) simply create a discrete
 #   normalizer that rounds to the nearest color in high-resolution lookup
 #   table? Probably should prefer the latter?
-# * Unsure of issue with contourf, StepNorm, and colorbar that results in
+# * Unsure of issue with contourf, BinNorm, and colorbar that results in
 #   weird offset ticks. Contour function seems to do weird stuff, still has
 #   high-resolution LinearSegmentedColormap, but distinct contour levels. Maybe
 #   you shouldn't pass a discrete normalizer since contour takes care of this
@@ -271,8 +271,7 @@ def get_channel_value(color, channel, space='hsl'):
 #------------------------------------------------------------------------------#
 def Colormap(*args, extend='both',
         xi=None, xf=None, # optionally truncate color range by these indices
-        ratios=1, resample=True, reverse=False,
-        gamma=None, gamma1=None, gamma2=None,
+        ratios=1, reverse=False, gamma=None, gamma1=None, gamma2=None,
         name=None, register=False, save=False, N=None, **kwargs):
     """
     Convenience function for generating colormaps in a variety of ways.
@@ -305,9 +304,9 @@ def Colormap(*args, extend='both',
     Since collection API does nothing to underlying data or cmap, must be
     something done by pcolormesh function.
     """
-    N = N or 1024 # default
     cmaps = []
     name = name or 'custom' # must have name, mcolors utilities expect this
+    N_hires = 256
     if len(args)==0:
         raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
@@ -330,10 +329,10 @@ def Colormap(*args, extend='both',
                     cmap._init()
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            cmap = PerceptuallyUniformColormap.from_hsl(name, **cmap)
+            cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_hires, **cmap)
         elif not isinstance(cmap, str):
             # List of colors
-            cmap = mcolors.ListedColormap(cmap, name=name)
+            cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
         else:
             # Monochrome colormap based from input color (i.e. single hue)
             light = True # by default
@@ -343,11 +342,13 @@ def Colormap(*args, extend='both',
             fade = 90 if not match else match.group(1) # default fade to 90 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
-            cmap = monochrome_cmap(cmap, fade, name=name, **kwargs)
-            kwargs = {}
+            cmap = monochrome_cmap(cmap, fade, name=name, N=N_hires, **kwargs)
         cmaps += [cmap]
     # Now merge the result of this arbitrary user input
-    cmap = merge_cmaps(cmaps, name=name, ratios=ratios, N=N)
+    # Since we are merging cmaps, potentially *many* color transitions; use big number by default
+    if len(cmaps)>1:
+        N_merge = N_hires*len(cmaps)
+        cmap = merge_cmaps(*cmaps, name=name, ratios=ratios, N=N_merge)
 
     # Reverse
     if reverse:
@@ -355,56 +356,62 @@ def Colormap(*args, extend='both',
 
     # Optionally clip edges or resample map.
     # TODO: Write this.
-    if xi is not None or xf is not None:
-        if isinstance(cmap, mcolors.ListedColormap):
-            # Just sample indices for listed maps
+    if isinstance(cmap, mcolors.ListedColormap):
+        slicer = None
+        if xi is not None or xf is not None:
+            slicer = slice(xi,xf)
+        elif N is not None:
+            slicer = slice(None,N)
+        # Just sample indices for listed maps
+        if slicer:
             slicer = slice(xi,xf)
             try:
                 cmap = mcolors.ListedColormap(cmap.colors[slicer])
             except Exception:
-                raise ValueError('Invalid indices for listed colormap.')
-        else:
-            # Trickier for segment data maps
-            # First get segmentdata and parse input
-            olddata = cmap._segmentdata
-            newdata = {}
-            if xi is None:
-                xi = 0
-            if xf is None:
-                xf = 1
-            # Next resample the segmentdata arrays
-            for key,xyy in olddata.items():
-                if key in ('gamma1', 'gamma2', 'space'):
-                    newdata[key] = xyy
-                    continue
-                xyy = np.array(xyy)
-                x = xyy[:,0]
-                xleft = np.where(x>xi)[0]
-                xright = np.where(x<xf)[0]
-                if len(xleft)==0:
-                    raise ValueError(f'Invalid x minimum {xi}.')
-                if len(xright)==0:
-                    raise ValueError(f'Invalid x maximum {xf}.')
-                l, r = xleft[0], xright[-1]
-                newxyy = xyy[l:r+1,:].copy()
-                if l>0:
-                    left = xyy[l-1,1:] + (xi - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
-                    newxyy = np.concatenate(([[xi, *left]], newxyy), axis=0)
-                if r<len(x)-1:
-                    right = xyy[r,1:] + (xf - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
-                    newxyy = np.concatenate((newxyy, [[xf, *right]]), axis=0)
-                newxyy[:,0] = (newxyy[:,0] - xi)/(xf - xi)
-                newdata[key] = newxyy
-            # And finally rebuild map
-            cmap = type(cmap)(cmap.name, newdata)
-
-    # TODO: This only works for forcing separate triangle colors for contours
-    # Figure out workaround eventually
-    if isinstance(cmap, mcolors.LinearSegmentedColormap) and resample:
+                raise ValueError(f'Invalid indices {slicer} for listed colormap.')
+    elif xi is not None or xf is not None:
+        # Trickier for segment data maps
+        # First get segmentdata and parse input
+        olddata = cmap._segmentdata
+        newdata = {}
+        if xi is None:
+            xi = 0
+        if xf is None:
+            xf = 1
+        # Next resample the segmentdata arrays
+        for key,xyy in olddata.items():
+            if key in ('gamma1', 'gamma2', 'space'):
+                newdata[key] = xyy
+                continue
+            xyy = np.array(xyy)
+            x = xyy[:,0]
+            xleft = np.where(x>xi)[0]
+            xright = np.where(x<xf)[0]
+            if len(xleft)==0:
+                raise ValueError(f'Invalid x minimum {xi}.')
+            if len(xright)==0:
+                raise ValueError(f'Invalid x maximum {xf}.')
+            l, r = xleft[0], xright[-1]
+            newxyy = xyy[l:r+1,:].copy()
+            if l>0:
+                left = xyy[l-1,1:] + (xi - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
+                newxyy = np.concatenate(([[xi, *left]], newxyy), axis=0)
+            if r<len(x)-1:
+                right = xyy[r,1:] + (xf - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
+                newxyy = np.concatenate((newxyy, [[xf, *right]]), axis=0)
+            newxyy[:,0] = (newxyy[:,0] - xi)/(xf - xi)
+            newdata[key] = newxyy
+        # And finally rebuild map
+        cmap = type(cmap)(cmap.name, newdata)
+    if isinstance(cmap, mcolors.LinearSegmentedColormap) and N is not None:
+        # Perform a crude resampling of the data, i.e. just generate a
+        # low-resolution lookup table instead
+        # NOTE: All this does is create a new colormap with *attribute* N levels,
+        # for which '_lut' attribute has not been generated yet.
         offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
         if extend not in offset:
             raise ValueError(f'Unknown extend option {extend}.')
-        cmap = cmap._resample(N-offset[extend]) # see mcm.get_cmap source
+        cmap = cmap._resample(N - offset[extend]) # see mcm.get_cmap source
 
     # Optionally register a colormap
     if name and register:
@@ -599,19 +606,21 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         return self
 
     @staticmethod
-    def from_hsl(name, h, s=100, l=[100, 20], c=None, a=None,
+    def from_hsl(name,
+            h=0, s=100, l=[100, 20], c=None, a=None,
+            hue=None, saturation=None, luminance=None, chroma=None, alpha=None,
             ratios=None, reverse=False, **kwargs):
         """
         Make linear segmented colormap by specifying channel values.
         """
         # Build dictionary, easy peasy
-        if c is not None:
-            s = c
-        if a is None:
-            a = 1.0
-        cdict = {}
+        h = fill(hue, h)
+        s = fill(chroma, fill(c, fill(saturation, s)))
+        l = fill(luminance, l)
+        a = fill(alpha, fill(a, 1.0))
         cs = ['hue', 'saturation', 'luminance', 'alpha']
         channels = [h, s, l, a]
+        cdict = {}
         for c,channel in zip(cs,channels):
             cdict[c] = make_segmentdata_array(channel, ratios, reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
@@ -763,7 +772,7 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
 #------------------------------------------------------------------------------#
 # Colormap constructors
 #------------------------------------------------------------------------------#
-def merge_cmaps(cmaps, name='merged', N=512, ratios=1, **kwargs):
+def merge_cmaps(*cmaps, name='merged', N=512, ratios=1, **kwargs):
     """
     Merge arbitrary colormaps.
     Arguments
@@ -784,8 +793,8 @@ def merge_cmaps(cmaps, name='merged', N=512, ratios=1, **kwargs):
     * In the case of ListedColormaps, we just combine the colors.
     """
     # Initial
-    if len(cmaps)==1:
-        return cmaps[0] # needed to avoid recursion!
+    if len(cmaps)<=1:
+        raise ValueError('Need two or more input cmaps.')
     ratios = ratios or 1
     if utils.isscalar(ratios):
         ratios = [1]*len(cmaps)
@@ -977,7 +986,8 @@ def Norm(norm, **kwargs):
     if isinstance(norm, mcolors.Normalize):
         pass
     elif norm is None:
-        norm = 'linear' # always the default
+        # norm = 'linear' # always the default
+        norm = None
     elif norm is None:
         norm = mcolors.Normalize() # default is just linear from 0 to 1
     elif type(norm) is not str: # dictionary lookup
@@ -993,71 +1003,51 @@ class LinearSegmentedNorm(mcolors.Normalize):
     Description
     -----------
     As in BoundaryNorm case, but instead we linearly *interpolate* colors
-    between the provided boundary indices.
-    Use this e.g. if you want to have the gradation from 0-1 'zoomed in' and
-    gradation from 1-10 'zoomed out'.
-    In this case, can control number of colors by setting the *lookup table*
-    when declaring colormap.
+    between the provided boundary levels. Exactly analagous to the method
+    in LinearSegmentedColormap: perform linear interpolations between
+    successive monotonic, but arbitrarily spaced, points.
     """
     def __init__(self, levels, norm=None, midpoint=None, clip=False, ncolors=None, **kwargs):
         # Very simple
         levels = np.atleast_1d(levels)
-        if np.any((levels[1:]-levels[:-1])<=0):
+        if levels.size<=1 or ((levels[1:]-levels[:-1])<=0).any():
             raise ValueError(f'Levels passed to LinearSegmentedNorm must be monotonically increasing.')
         super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
+        self._x = levels # alias for boundaries
+        # self._pre_norm = norm # e.g. a log-norm
         # if norm:
         #     levels = norm(levels)
-        self.levels = levels # alias for boundaries
-        # self.prenorm = norm # e.g. a log-norm
 
-    def __call__(self, value, clip=None):
-        # TODO: Add optional midpoint, this class will probably end up being one of
-        # my most used if so. Midpoint would just ensure <value> corresponds to 0.5 in cmap
-        # Map data values in range (vmin,vmax) to color indices in colormap
-        # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
-        value = np.atleast_1d(value)
-        # if self.prenorm:
-        #     value = self.prenorm(value) # e.g. first scale logarithmically
-        norm  = np.empty(value.shape)
-        for i,v in enumerate(value.flat):
-            if np.isnan(v):
-                continue
-            idxs = np.linspace(0, 1, self.levels.size)
-            locs = np.where(v>=self.levels)[0]
-            if locs.size==0:
-                norm[i] = 0
-            elif locs.size==self.levels.size:
-                norm[i] = 1
-            else:
-                cutoff      = locs[-1]
-                interpolant = idxs[cutoff:cutoff+2] # the 0-1 normalization
-                interpolee  = self.levels[cutoff:cutoff+2] # the boundary level values
-                norm[i]     = np.interp(v, interpolee, interpolant) # interpolate between 2 points
-        return ma.masked_array(norm, np.isnan(value))
+    def __call__(self, xq, clip=None):
+        # Follow example of make_mapping_array for efficient, vectorized
+        # linear interpolation across multiple segments
+        # NOTE: normal test puts values at a[i] if a[i-1] < v <= a[i]; for
+        # left-most data, satisfy a[0] <= v <= a[1]
+        # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
+        # than x[ind[i]-1] but smaller than x[ind[i]]
+        x = self._x # from arbitrarily spaced monotonic levels
+        y = np.linspace(0, 1, x.size) # to linear range 0-1
+        xq = np.atleast_1d(xq)
+        ind = np.searchsorted(x, xq)
+        ind[ind==0] = 1
+        distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
+        yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
+        return ma.masked_array(yq, np.isnan(xq))
 
-    def inverse(self, norm):
+    def inverse(self, yq):
         # Performs inverse operation of __call__
-        norm  = np.atleast_1d(norm)
-        value = np.empty(norm.shape)
-        for i,n in enumerate(norm.flat):
-            if np.isnan(n):
-                continue
-            idxs = np.linspace(0, 1, self.levels.size)
-            locs = np.where(n>=idxs)[0]
-            if locs.size==0:
-                value[i] = np.nanmin(self.levels)
-            elif locs.size==self.levels.size:
-                value[i] = np.nanmax(self.levels)
-            else:
-                cutoff = locs[-1]
-                interpolee  = idxs[cutoff:cutoff+2] # the 0-1 normalization
-                interpolant = self.levels[cutoff:cutoff+2] # the boundary level values
-                value[i]    = np.interp(n, interpolee, interpolant) # interpolate between 2 points
-        # if self.prenorm:
-        #     value = self.prenorm.inverse(value) # e.g. first scale logarithmically
-        return ma.masked_array(value, np.isnan(norm))
+        x = self._x
+        y = np.linspace(0, 1, x.size)
+        yq = np.atleast_1d(yq)
+        ind = np.searchsorted(y, yq)
+        ind[ind==0] = 1
+        distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
+        xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
+        return ma.masked_array(xq, np.isnan(yq))
+        # if self._pre_norm:
+        #     x = self._pre_norm.inverse(x) # e.g. first scale logarithmically
 
-class StepNorm(mcolors.BoundaryNorm):
+class BinNorm(mcolors.BoundaryNorm):
     """
     Simple normalizer that *interpolates* from an RGB array at point
     (level_idx/num_levels) along the array, instead of choosing color
@@ -1081,62 +1071,51 @@ class StepNorm(mcolors.BoundaryNorm):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, norm=None, centers=False, clip=False, ncolors=None, extend=None, **kwargs):
-        # Don't need to call partent initializer, this is own implementation; just need
-        # it to be subclass so ColorbarBase methods will detect it
+    def __init__(self, levels, norm=None, centers=False, clip=False, extend=None, **kwargs):
+        # NOTE: Idea is that we bin data into len(levels) discrete x-coordinates,
+        # and optionally make out-of-bounds colors the same or different
+        # NOTE: Don't need to call parent __init__, this is own implementation
+        # Do need it to subclass BoundaryNorm, so ColorbarBase will detect it
         # See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
+        # Declare boundaries, vmin, vmax in True coordinates
         extend = extend or 'both'
         levels = np.atleast_1d(levels)
-        if np.any((levels[1:]-levels[:-1])<=0):
+        if levels.size<=1 or ((levels[1:]-levels[:-1])<=0).any():
             raise ValueError('Levels passed to Normalize() must be monotonically increasing.')
         if extend not in ('both','min','max','neither'):
             raise ValueError(f'Unknown extend option "{extend}". Choose from "min", "max", "both", "neither".')
-        # Bins were passed, not edges
         if centers:
             levels = utils.edges(levels)
-        # Declare boundaries, vmin, vmax in True coordinates
+        N = len(levels)
+        # Determine y-bin *centers* desired
+        # NOTE: Length of bin centers should be N + 1
+        norm = norm or (lambda x: x) # e.g. a logarithmic transform
+        offset = {'both':2, 'min':1, 'max':1, 'neither':0}
+        resample = {'both':range(N+1), 'neither':[0, *range(N-1), N-2],
+                    'min':[*range(N), N-1], 'max':[0, *range(N)]}
+        self._x = norm(levels)
+        self._y_bins = np.linspace(0, 1, N + offset[extend] - 1)[resample[extend]]
+        self._pre_norm = norm
+        # Add builtin properties
         self.boundaries = levels # alias read by other functions
         self.vmin = levels[0]
         self.vmax = levels[-1]
-        # These are required/expected
-        self.N = len(levels)
         self.clip = clip
-        # Custom attributes
-        offset = {'both':2, 'min':1, 'max':1, 'neither':0}
-        slices = {'both':slice(1,-1),   'min':slice(1,None),
-                  'max':slice(None,-1), 'neither':slice(None)}
-        if norm:
-            levels = norm(levels) # e.g. a logarithm transform
-        self.levels = levels
-        self.prenorm = norm
-        self.normvals = np.linspace(0, 1, offset[extend]+levels.size-1)[slices[extend]]
+        self.N = N
 
-    def __call__(self, value, clip=None):
-        # TODO: Add optional midpoint, this class will probably end up being one of
-        # my most used if so. Midpoint would just ensure <value> corresponds to 0.5 in cmap
-        # Map data values in range (vmin,vmax) to color indices in colormap
-        # If have 11 levels and between ids 9 and 10, interpolant is between .9 and 1
-        value = np.atleast_1d(value)
-        if self.prenorm:
-            value = self.prenorm(value) # e.g. first scale logarithmically
-        norm  = np.empty(value.shape)
-        for i,v in enumerate(value.flat):
-            if np.isnan(v):
-                continue
-            locs = np.where(v>=self.levels)[0]
-            if locs.size==0:
-                norm[i] = 0
-            elif locs.size==self.levels.size:
-                norm[i] = 1
-            else:
-                cutoff  = locs[-1]
-                norm[i] = self.normvals[cutoff]
-                # (self.idxs[cutoff] + self.idxs[cutoff+1])/2
-        return ma.masked_array(norm, np.isnan(value))
+    def __call__(self, xq, clip=None):
+        # Follow example of LinearSegmentedNorm, but perform no interpolation,
+        # just use searchsorted to bin the data
+        # NOTE: The bins vector includes out-of-bounds negative (searchsorted
+        # index 0) and out-of-bounds positive (searchsorted index N+1) values
+        x = self._pre_norm(self._x)
+        xq = np.atleast_1d(xq)
+        yq = self._y_bins[np.searchsorted(x, xq)] # which x-bin does each point in xq belong to?
+        return ma.masked_array(yq, np.isnan(xq))
 
-    def inverse(self, norm):
+    def inverse(self, yq):
         # Not possible
-        raise ValueError('StepNorm is not invertible.')
+        raise ValueError('BinNorm is not invertible.')
 
 class StretchNorm(mcolors.Normalize):
     """
@@ -1461,7 +1440,7 @@ print('Registered colors and colormaps.')
 normalizers = {
     'none':       mcolors.NoNorm,
     'null':       mcolors.NoNorm,
-    'step':       StepNorm,
+    'step':       BinNorm,
     'segmented':  LinearSegmentedNorm,
     'boundary':   mcolors.BoundaryNorm,
     'log':        mcolors.LogNorm,
