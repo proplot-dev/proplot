@@ -93,7 +93,8 @@ xformatter, yformatter, xformatter_kw, yformatter_kw
 Titling options:
 
 ```
-suptitle, suptitlepos, title, titlepos, titlepad, title_kw,
+suptitle, suptitle_kw
+title, titlepos, title_kw,
 abc, abcpos, abcformat, abc_kw
 ```
 
