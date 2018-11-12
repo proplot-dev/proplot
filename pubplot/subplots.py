@@ -82,7 +82,9 @@ class axes_list(list):
 
 def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with subplots(array)
         emptycols=[], emptyrows=[], # obsolete?
-        tight=True, rcreset=True, silent=True, # arguments for figure instantiation
+        auto_adjust=True,
+        # tight=True, adjust=False,
+        rcreset=True, silent=True, # arguments for figure instantiation
         sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         innerpanels={}, innercolorbars={}, innerpanels_kw={},
@@ -245,7 +247,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)
     row_offset, col_offset = offset
     gs = FlexibleGridSpec(**gridspec_kw)
-    fig = plt.figure(figsize=figsize, tight=tight, rcreset=rcreset,
+    fig = plt.figure(figsize=figsize, auto_adjust=auto_adjust, rcreset=rcreset,
         gridspec=gs, subplots_kw=subplots_kw,
         FigureClass=base.Figure,
         )

@@ -612,21 +612,10 @@ class EmptyPanel(object):
 
 @docstring_fix
 class Figure(mfigure.Figure):
-    """
-    Subclass of the mfigure.Figure class, with lots of special formatting
-    options. Can be called by using pyplot.figure(FigureClass=Figure) kwargument
-    in my subplots function.
-
-    Features
-    --------
-    Need to document features.
-        rcreset (True):
-            when figure is drawn, reset rc settings to defaults?
-        tight (True):
-    """
+    # Subclass adding some super cool features
     def __init__(self, figsize,
             gridspec=None, subplots_kw=None,
-            rcreset=True, tight=True, pad=0.1,
+            rcreset=True,  auto_adjust=True, pad=0.1,
             **kwargs):
         """
         Matplotlib figure with some pizzazz.
@@ -639,7 +628,7 @@ class Figure(mfigure.Figure):
         Optional:
             rcreset (True):
                 when figure is drawn, reset rc settings to defaults?
-            tight (True):
+            auto_adjust (True):
                 when figure is drawn, trim the gridspec edges without messing
                 up axes aspect ratios and internal spacing?
         """
@@ -648,7 +637,7 @@ class Figure(mfigure.Figure):
         # ipython notebook finishes executing)
         self._rcreset  = rcreset
         self._smart_pad = pad
-        self._smart_tight = tight # note name _tight already taken!
+        self._smart_tight = auto_adjust # note name _tight already taken!
         self._smart_tight_init = True # is figure in its initial state?
         # Gridspec information
         self._gridspec = gridspec # gridspec encompassing drawing area
@@ -882,7 +871,7 @@ class Figure(mfigure.Figure):
         self.set_size_inches(figsize)
 
     @timer
-    def save(self, filename, adjust=False, silent=False, tight=False, pad=0.1, **kwargs):
+    def save(self, filename, adjust=False, silent=False, auto_adjust=False, pad=0.1, **kwargs):
         # Notes:
         # * Gridspec object must be updated before figure is printed to
         #     screen in interactive environment; will fail to update after that.
@@ -894,7 +883,7 @@ class Figure(mfigure.Figure):
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
-        if tight:
+        if auto_adjust:
             self.smart_tight_layout()
         # Finally, save
         if not silent:
