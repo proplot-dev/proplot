@@ -233,11 +233,13 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
                     innerpanels_kw[num]['hwidth'] = rc.subplots['cbar']
                 if not kwargs.get('hspace',None):
                     kwargs['hspace'] = rc.subplots['lab']
+                    innerpanels_kw[num]['hspace'] = rc.subplots['lab']
             if re.search('[lr]', which):
                 if not innerpanels_kw[num].get('wwidth',None):
                     innerpanels_kw[num]['wwidth'] = rc.subplots['cbar']
                 if not kwargs.get('wspace',None):
                     kwargs['wspace'] = rc.subplots['lab']
+                    innerpanels_kw[num]['wspace'] = rc.subplots['lab']
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)
