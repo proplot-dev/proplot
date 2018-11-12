@@ -46,8 +46,8 @@ def show():
 #-------------------------------------------------------------------------------
 class axes_list(list):
     """
-    Special list of axes, iterates through each axes and calls respective
-    method on each one. Will return a list of each return value.
+    Magical clas that iterates through each axes and calls respective
+    method on each one. Returns a list of each return value.
     """
     def __repr__(self):
         # Make clear that this is no ordinary list

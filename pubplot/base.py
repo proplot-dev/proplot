@@ -1107,7 +1107,7 @@ class BaseAxes(maxes.Axes):
         collabels=None, collabels_kw={},
         rowlabels=None, rowlabels_kw={}, # label rows and columns
         title=None, titlepos=None, title_kw={},
-        abc=False, abcpos=None, abcformat='', abc_kw={},
+        abc=None, abcpos=None, abcformat='', abc_kw={},
         rc_kw={}, **kwargs,
         ):
         """
@@ -1168,7 +1168,7 @@ class BaseAxes(maxes.Axes):
                 self.abc = self.text(0, 0, **abc_kw) # call *overridden* text method
             # Reposition text
             self.abc.update(self._title_pos(abcpos or 'ol'))
-        elif hasattr(self, 'abc'):
+        elif hasattr(self, 'abc') and abc is not None and not abc:
             # Hide
             self.abc.set_visible(False)
 
@@ -1546,7 +1546,6 @@ class XYAxes(BaseAxes):
                 # Finally, label the axes
                 label.set_text(label_text)
                 label.update({**pos_kw, **label_kw})
-                # label.set_visible(True)
 
             # Tick properties
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid

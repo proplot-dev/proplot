@@ -1460,7 +1460,7 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Visualizations
 #------------------------------------------------------------------------------#
-def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
+def color_show(groups=['open', ['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
@@ -1474,7 +1474,7 @@ def color_show(groups=['open',['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.
     for group in groups:
         # Get group colors
         group = group or 'open'
-        if isinstance(type(group), str):
+        if isinstance(group, str):
             group = [group]
         colors = {}
         for name in group:
