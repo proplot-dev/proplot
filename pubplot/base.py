@@ -349,6 +349,7 @@ def _cmap_features(self, func):
                 levels = result.levels
             else:
                 levels = np.linspace(*result.get_clim(), levels)
+        result.levels = levels # make sure they are on there!
 
         # Choose to either:
         # 1) Use len(levels) lookup table values and a smooth normalizer
