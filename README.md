@@ -40,6 +40,7 @@ This package took a shocking amount of time to write. If you've found it useful,
 
 # Documentation
 ## The `subplots` command
+### Basic usage
 To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to allot empty space. For example:
 ```
 f, axs = plot.subplots(array=[[1,2],[1,3]])
@@ -57,22 +58,23 @@ f, axs = plot.subplots(nrows=2)
 creates two rows with one column. Note that if you did not use `array`, the subplots are automatically numbered in row major order.
 
 The subplots command returns two arguments: the figure handle `f` and a special list of axes, `axs`. Note that **this is no ordinary list** -- you can bulk-invoke methods on every multiple axes simultaneously, no for-loop necessary. For example:
-
 ```
 f, axs = plot.subplots()
 axs.format(xlim=(0,1)) # set to be identical everywhere
 axs[:3].format(color='red') # make axis labels, spines, ticks red
 axs[3:].format(color='blue') # same, but make them blue
 ```
-      
-I encourage using either the `width` *or* `height` keyword arguments with `aspect` (default is `1`). The figure height/width will be scaled sufficiently so that *inter-axes spacing, panel widths, and the aspect ratio of the upper-left subplot is fixed*, while axes themselves are allowed to shrink/expand.
-
 You can also use, e.g., `width='ams1'` to make the figure conform to journal standards (check out `subplots.py` for the currently available ones, and feel free to send me additional standards -- I will add them).
 
-Other sizing keyword arguments are `wspace`, `hspace` (width/height spacing between axes), `wratios`, `hratios` (width/height ratios for columns/rows), `bwidth`, `rwidth`, `lwidth` (for panel widths), and `top`, `bottom`, `left`, `right` (border spacing -- although by default, excess space will be trimmed, so these arguments have no effect in the end).
+Additional sizing keyword arguments are `wspace`, `hspace` (width/height spacing between axes in *inches*), `wratios`, `hratios` (width/height ratios for columns/rows), `bwidth`, `rwidth`, `lwidth` (panel widths in *inches*), and `top`, `bottom`, `left`, `right` (border widths in *inches* -- although by default, excess space will be trimmed, so these arguments have no effect in the end; see below).
 
-Note that `wspace`, `hspace` are now specified in inches, and can be specified as a scalar or a *list of spacings*. To accomplish the latter, I *subclassed* the `GridSpec` class. The actual `wspace`, `hspace` passed to `GridSpec` are zero -- the spaces you see in your figure are `GridSpec` slots masquerading as spaces. Check out `FlexibleGridSpec.__getitem__`.
+### A smarter subplot layout and a new GridSpec class
+If you specify *either* (not both) `width` or `height`, optionally with the desired axes aspect ratio `aspect` (default is `1`), the figure height/width will be scaled such that **inter-subplot spacing and panel widths are fixed**. The subplots and the figure width or height (whichever you did not explicitly specify) are allowed to shrink/expand to achieve an aspect ratio of `aspect` for the top-left subplot.
 
+Also, inter-subplot spacing is now *variable*: specify `wspace` and `hspace` *in inches* (note that previously these were relative to the subplot widths/heights) as 1) a scalar constant or 2) a list of different spacings. To allow for the latter, I created a new `FlexibleGridSpec` class. The actual `wspace`, `hspace` passed to `GridSpec` are zero -- the spaces you see in your figure are `GridSpec` slots masquerading as spaces. Check out `FlexibleGridSpec.__getitem__`.
+
+The above also led me to make **significant improvements to `tight_layout`** (now *called by default* whenever the figure is drawn). Previously, `tight_layout` could be used to fit the figure borders over a box that perfectly encompasses all artists (i.e. text, subplots, etc.). However, because `GridSpec` defines inter-subplot spaces relative to the subplot dimensions, if a figure dimension contracts, the inter-subplot spaces will *also* contract. Since your font size is specified in physical units (i.e. points, or 1/72 inches), *this can easily cause text to overlap with other subplots where they didn't before*. Now, *tight layout will preserve axes aspect ratios, inter-subplot spacing, and panel widths* using the same process as when you call `subplots()`.
+      
 ## Inner and outer "panels"
 Use `[bottom|right]panel=True` to allot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to allot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to allot space for panels that can span adjacent columns (rows). These add `fig.[bottom|right]panel` attributes to the figure `fig` (access the nth panel with `fig.[bottom|right]panel[n]`).
 
@@ -104,8 +106,9 @@ Titling options:
 suptitle, suptitle_kw
 title, titlepos, title_kw,
 abc, abcpos, abcformat, abc_kw
-Axis options:
+```
 
+Axis options:
 ```
 xgrid, ygrid,
 xspineloc, yspineloc,
@@ -119,8 +122,6 @@ xlabel, ylabel, xlabel_kw, ylabel_kw
 xlocator, xminorlocator, xlocator_kw, xminorlocator_kw
 ylocator, yminorlocator, ylocator_kw, yminorlocator_kw
 xformatter, yformatter, xformatter_kw, yformatter_kw
-```
-
 ```
 
 Mapping options:
@@ -138,19 +139,21 @@ hatch, color, facecolor, linewidth
 ```
 
 ## Axis scales, tick formatters, and tick locators
-Added "*inverse*" axis scale -- invoke with `[x|y]scale='inverse'`. Useful for, e.g., having wavenumber and wavelength on opposite sides of the same plot.
+Added several new axis scales, which can be invoked with `[x|y]scale='name'` in `format()` calls:
 
-Added *sine-weighted* and *Mercator* axis scales. Invoke with `[x|y]scale='sine'` and `[x|y]scale='mercator'`.
+* The "*inverse*" scale. Useful for, e.g., having wavenumber and wavelength on opposite sides of the same plot.
+* The *sine-weighted* and *Mercator* axis scales. The former creates an area-weighted latitude axis.
+* Special "*cutoff*" scales, that allow arbitrary zoom-ins/zoom-outs. This can be invoked with `[x|y]scale=('cutoff', lower, upper, scale)` where `lower` and `upper` are the boundaries within which the axis scaling is multiplied by `scale`. Use `np.inf` for a hard cutoff.
 
-Added scale factory that can create scales with arbitrary *cutoffs* and "*zoom-ins/zoom-outs*".
+Added new default `Formatter` class for ticklabels, which renders numbers into the style you'll want 90% of the time. Also created several special formatter classes: use `ax.format([x|y]formatter='[lat|deglat|lon|deglon|deg]')` to format axis labels with cardinal direction indicators and/or degree symbols (as denoted by the names).
 
-Added new default `Formatter` class for ticklabels, which renders numbers into the style you'll want 90% of the time.
+Added helpful tools for specifying tick locations:
 
-Use `formatter='[lat|deglat|lon|deglon|deg]'` to format axis labels with cardinal direction indicators or degree symbols (as denoted by the names).
+* Use `ax.format([x|y]locator=N)` to tick every `N` data values.
+* Use `ax.format([x|y]locator=[array])` to tick specific locations.
+* Use `ax.format([x|y]locator='[string]')` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='log'`.
 
-Use `locator=N` to tick every `N` data values. Use `locator=[array]` to tick specific locations. Use `locator='[string]'` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='log'`.
-
-Use `plot.arange` for generating lists of contours, ticks, etc. -- it's like `np.arange`, but is **endpoint-inclusive**.
+Finally, use `plot.arange` for generating lists of contours, ticks, etc. -- it's like `np.arange`, but is **endpoint-inclusive**.
 
 ## Enhanced settings management
 Use `plot.rc` as your one-stop shop for changing global settings. This is an instance of the new `rc_configurator` class, created on import. It can be used to change built-in `matplotlib.rcParams` settings, a few custom "`rcSpecial`" settings, and some special "global" settings that modify several other settings at once.
