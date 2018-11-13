@@ -796,7 +796,7 @@ def merge_cmaps(*cmaps, name='merged', N=512, ratios=1, **kwargs):
     if len(cmaps)<=1:
         raise ValueError('Need two or more input cmaps.')
     ratios = ratios or 1
-    if utils.isscalar(ratios):
+    if utils.isnumber(ratios):
         ratios = [1]*len(cmaps)
 
     # Combine the colors

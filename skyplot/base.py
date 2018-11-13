@@ -300,7 +300,7 @@ def _cycle_features(self, func):
     def decorator(*args, cycle=None, **kwargs):
         # Determine and temporarily set cycler
         if cycle is not None:
-            if utils.isscalar(cycle):
+            if isinstance(cycle, str) or utils.isnumber(cycle):
                 cycle = cycle,
             cycle = colortools.cycle(*cycle)
             self.set_prop_cycle(color=cycle)

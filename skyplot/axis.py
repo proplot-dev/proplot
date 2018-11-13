@@ -446,7 +446,7 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         elif locator not in locators:
             raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
         locator = locators[locator](*args, **kwargs)
-    elif utils.isscalar(locator): # scalar variable
+    elif utils.isnumber(locator): # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     else:
         locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
@@ -491,7 +491,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
             if formatter in ['deg','deglon','deglat','lon','lat']:
                 kwargs.update({'deg':('deg' in formatter)})
             formatter = formatters[formatter](*args, **kwargs)
-    elif utils.isscalar(formatter): # interpret scalar number as *precision*
+    elif utils.isnumber(formatter): # interpret scalar number as *precision*
         formatter = CustomFormatter(formatter, *args, tickrange=tickrange, **kwargs)
     else:
         formatter = mticker.IndexFormatter(formatter) # list of strings on the integers
@@ -517,7 +517,7 @@ def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf]):
     # Format definition
     if tickrange is None:
         tickrange = [-np.inf, np.inf]
-    elif utils.isscalar(tickrange): # use e.g. -1 for no ticks
+    elif utils.isnumber(tickrange): # use e.g. -1 for no ticks
         tickrange = [-tickrange, tickrange]
     def f(value, location):
         # Exit if not in tickrange

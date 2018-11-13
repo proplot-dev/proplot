@@ -309,7 +309,7 @@ class rc_configurator(object):
         # NOTE: Generally if user uses 'C0', et cetera, assume they want to
         # refer to the *default* cycler colors; so first reset
         if key=='cycle':
-            if utils.isscalar(value):
+            if isinstance(value, str) or utils.isnumber(value):
                 value = value,
             colors = colortools.colors('colorblind')
             self['axes.prop_cycle'] = cycler('color', colors)
