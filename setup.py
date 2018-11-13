@@ -3,16 +3,16 @@ from setuptools import setup
 # https://stackoverflow.com/a/1857436/4970632
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
-    name         = 'SkyPlot',
-    url          = 'https://github.com/lukelbd/skyplot',
+    name         = 'ProPlot',
+    url          = 'https://github.com/lukelbd/proplot',
     author       = 'Luke Davis',
     author_email = 'lukelbd@gmail.com',
     # Package stuff
     # Also include package data
-    packages     = ['skyplot'],
+    packages     = ['proplot'],
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
-    scripts = ['scripts/skyplot_fonts'],
+    scripts = ['scripts/proplot_fonts'],
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing

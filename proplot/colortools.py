@@ -107,9 +107,16 @@ _categories_default = { # initialize as empty lists
     # We keep these ones
     'Matplotlib Originals':
         ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
-    'SkyPlot Sequential':
-        ['Bog', 'Forest', 'Sea', 'Pale', 'Sunrise', 'Sunset', 'Vibrant'], # empty at first, fill automatically
-    'SkyPlot Diverging':
+    'ProPlot Sequential':
+        ['Bog',
+            # 'Wood',
+            'Forest', 'Lake', 'Sea', 'Verdant',
+            'Pale',
+            'Fire', 'Golden', 'Desert', 'Sunrise', 'Sunset',
+            'Glacial',
+            ],
+            # 'Vibrant'], # empty at first, fill automatically
+    'ProPlot Diverging':
         ['ColdHot', 'DryWet', 'Water'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
@@ -319,6 +326,8 @@ def colormap(*args, extend='both',
                     cmap._init()
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
+            save = cmap.pop('save', save)
+            name = cmap.pop('name', name)
             cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_hires, **cmap)
         elif not isinstance(cmap, str):
             # List of colors
@@ -410,7 +419,7 @@ def colormap(*args, extend='both',
     if name and register:
         print(name, 'Registering')
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _categories_default.items()
-                    for cat_cmap in cat_cmaps if 'SkyPlot' not in cat]:
+                    for cat_cmap in cat_cmaps if 'ProPlot' not in cat]:
             print(f'Warning: Overwriting existing colormap "{name}".')
             # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
         elif name in mcm.cmap_d:
@@ -425,7 +434,6 @@ def colormap(*args, extend='both',
 
     # Optionally save colormap to disk
     if name and save:
-        print('Save cmap!')
         # Save segment data directly
         basename = f'{cmap.name}.npy'
         filename = f'{_data}/cmaps/{basename}'
@@ -1664,8 +1672,8 @@ def cmap_show(N=31):
         print(f'New colormaps: {", ".join(cmaps_custom)}')
 
     # Attempt sorting based on hue
-    # for cat in ['SkyPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
-    # for cat in ['SkyPlot Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['ProPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['ProPlot Sequential', 'ColorBrewer2.0 Sequential']:
     for cat in []:
         hues = [np.mean([to_xyz(to_rgb(color),'hsl')[0]
             for color in mcm.cmap_d[cmap](np.linspace(0.3,1,20))])

@@ -1,9 +1,9 @@
-# SkyPlot
+# ProPlot
 ## Overview
 
 This library provides helpful and versatile plotting utilities to hasten the process of crafting publication-quality graphics with `matplotlib`. I recommend importing the package with
 ```
-import skyplot as plot
+import proplot as plot
 ```
 Most of the features below derive from the **`subplots`** command, inspired by the `pyplot` command of the same name. This generates a scaffolding of axes and panels.
 
@@ -18,7 +18,7 @@ Quick overview of additional features:
 ## How is this different from seaborn?
 There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different? While some of the utilties here were inspired by seaborn (in particular `colors.py` takes its inspiration from seaborn's `palettes.py`), the goals for this project are quite different. I endeavored to create a package that was *extremely* efficient at the task of **crafting beautiful, precise, publication-ready figures, and no more**.
 
-When using SkyPlot, your data should be analysed *prior* to plotting, while in seaborn the tasks of data analysis and plotting are generally wrapped into one. And as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
+When using ProPlot, your data should be analysed *prior* to plotting, while in seaborn the tasks of data analysis and plotting are generally wrapped into one. And as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
 
 By focusing on this one task -- creating beautiful figures -- I've created a number of **immensely powerful** features well beyond the scope of `seaborn` as a data analysis-and-visualization package. While some `rc` defaults have been improved, these tools are not intended to give you the final product on a silver platter. Instead, I expect you to tinker with your plots. This package simply makes this process much, much easier.
 
@@ -26,7 +26,7 @@ By focusing on this one task -- creating beautiful figures -- I've created a num
 This package is a work-in-progress. Currently there is no dedicated `github.io` documentation and no formal releases on PyPi. However, feel free to install directly from Github using:
 
 ```
-pip install git+https://github.com/lukelbd/skyplot.git#egg=skyplot
+pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 ```
 
 I only push to this repo when new features are completed and working properly.
