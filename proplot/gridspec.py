@@ -13,6 +13,7 @@ def _units(value, error=True):
         'em': rc['small']/72.0,
         'ex': 0.5*rc['small']/72.0, # more or less; see URL
         'cm': 0.3937,
+        'in': 1.0, # already in inches
         'mm': 0.03937,
         'pt': 1/72.0,
         'l':  1.2*rc['small']/72.0, # the default line spacing for multiline labels
