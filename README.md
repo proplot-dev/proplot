@@ -77,7 +77,7 @@ If you specify *either* (not both) `width` or `height`, optionally with an aspec
 
 The above allowed me to create the **`smart_tight_layout`** method (which by default is **called whenever the figure is drawn**). Previously, `tight_layout` could be used to fit the figure borders over a box that perfectly encompasses all artists (i.e. text, subplots, etc.). However, because `GridSpec` spaces are relative to the subplot dimensions, changing the figure dimensions *also* changes the inter-subplot spacings. Since your font size is specified in points (i.e. a *physical* unit), *this can easily cause text to overlap with other subplots where they didn't before*. The new `smart_tight_layout` method draws a tight bounding box that **preserves inter-subplot spacing, panel widths, and subplot aspect ratios**.
 
-To achieve this, I created a new `FlexibleGridSpec` class. The actual `wspace`, `hspace` passed to `GridSpec` are zero -- the spaces you see in your figure are `GridSpec` slots masquerading as spaces. Check out `FlexibleGridSpec.__getitem__`. Also, inter-subplot spacing is now *variable*: specify `wspace` and `hspace` as 1) a scalar constant or 2) a list of different spacings.
+To achieve this, I created a new `FlexibleGridSpec` class. The actual `wspace`, `hspace` passed to `GridSpec` are zero -- the spaces you see in your figure are empty subplot slots *masquerading* as spaces. Check out `FlexibleGridSpec.__getitem__`. Also, inter-subplot spacing is now *variable*: specify `wspace` and `hspace` as 1) a scalar constant or 2) a list of different spacings.
       
 ## Inner and outer "panels"
 Use `[bottom|right]panel=True` to allot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to allot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to allot space for panels that can span adjacent columns (rows). These add `fig.[bottom|right]panel` attributes to the figure `fig` (access the nth panel with `fig.[bottom|right]panel[n]`).
@@ -155,7 +155,7 @@ Added helpful tools for specifying tick locations:
 
 * Use `ax.format([x|y]locator=N)` to tick every `N` data values.
 * Use `ax.format([x|y]locator=[array])` to tick specific locations.
-* Use `ax.format([x|y]locator='[string]')` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='log'`.
+* Use `ax.format([x|y]locator='string')` to use any of the `matplotlib.ticker` locators, e.g. `locator='month'` or `locator='log'`.
 
 Finally, use `plot.arange` for generating lists of contours, ticks, etc. -- it's like `np.arange`, but is **endpoint-inclusive**.
 
@@ -185,7 +185,15 @@ New colors have been added from XKCD colors, crayon colors, and Open Color web-d
 
 Use functions `cmap_show`, `color_show`, and `cycle_show` to visualize available colormaps, named colors, and color cycles. Functions will automatically save PDFs in the package directory.
 
-## Revised underlying issues with contour and pcolor commands
-Flipped the unnatural default used by `pcolor` and `contour` functions: that `0`th dimension of the input array is `y`-axis, `1`st dimension is `x`-axis. More intuitive to enter array with `0`th dimension on `x`-axis.
+## Changes to 2D data plotting commands
+By default, when calling functions that plot 2-dimensional data (e.g. `contour`) the usage is:
+```
+ax.contour([x-coordinates], [y-coordinates], [y-by-x array])
+```
+This drives me crazy! I find it much more intuitive if the input array satisfies 0th dimension = x-axis, 1st dimension = y-axis. The new usage for every such command is now
+```
+ax.contour([x-coordinates], [y-coordinates], [x-by-y array])
+```
+Perhaps this is against the "row-major" nature of `numpy`, but this is my preference. And my repo, my rules ;). Restore the default behavior by passing `rowmajor=True` to any such command.
 
-The well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632)nd [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) problems are fixed by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
+I've also fixed the well-documented [white-lines-between-filled-contours](https://stackoverflow.com/q/8263769/4970632) and [white-lines-between-pcolor-rectangles](https://stackoverflow.com/q/27092991/4970632) issues by automatically changing the edgecolors when `contourf`, `pcolor`, and `pcolormesh` are called.
