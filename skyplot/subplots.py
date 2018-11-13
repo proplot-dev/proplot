@@ -242,7 +242,13 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
                 kwargs['wspace'] = _fill(kwargs.get('wspace',None), rc.subplots['ylab'])
                 innerpanels_kw[num]['sharey_panels'] = False
                 innerpanels_kw[num]['wwidth'] = _fill(innerpanels_kw[num].get('wwidth', None), rc.subplots['cbar'])
-                innerpanels_kw[num]['wspace'] = _fill(innerpanels_kw[num].get('wspace', None), rc.subplots['ylab'])
+                if 'l' in which and 'r' in which:
+                    default = (rc.subplots['ylab'], rc.subplots['nolab'])
+                elif 'l' in which:
+                    default = rc.subplots['ylab']
+                else:
+                    default = rc.subplots['nolab']
+                innerpanels_kw[num]['wspace'] = _fill(innerpanels_kw[num].get('wspace', None), default)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)

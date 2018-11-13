@@ -770,10 +770,17 @@ class Figure(mfigure.Figure):
         # * Consider writing some convenience funcs to automate this unit conversion
         bbox = subspec.get_position(self) # valid since axes not drawn yet
         if hspace is not None:
-            height = np.diff(bbox.intervaly)[0]*height - hspace*(nrows-1)
+            hspace = np.atleast_1d(hspace)
+            if hspace.size==1:
+                hspace = np.repeat(hspace, (nrows-1,))
+            height = np.diff(bbox.intervaly)[0]*height - hspace.sum()
             hspace = hspace/(height/nrows)
         if wspace is not None:
-            width = np.diff(bbox.intervalx)[0]*width - wspace*(ncols-1)
+            wspace = wspace/(width/ncols)
+            wspace = np.atleast_1d(wspace)
+            if wspace.size==1:
+                wspace = np.repeat(wspace, (ncols-1,))
+            width = np.diff(bbox.intervalx)[0]*width - wspace.sum()
             wspace = wspace/(width/ncols)
 
         # Figure out hratios/wratios
