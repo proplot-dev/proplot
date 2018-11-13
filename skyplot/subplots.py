@@ -13,7 +13,7 @@ from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import utils
 from . import base
-from .utils import fill
+from .utils import _fill
 from functools import wraps
 
 #------------------------------------------------------------------------------#
@@ -134,7 +134,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     """
     # Helper functions
     translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
-    auto_adjust = fill(tight, auto_adjust)
+    auto_adjust = _fill(tight, auto_adjust)
     def axes_dict(value, kw=False):
         # First build up dictionary
         # Accepts:
@@ -234,15 +234,15 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         if which:
             innerpanels_kw[num]['whichpanels'] = which
             if re.search('[bt]', which):
-                kwargs['hspace'] = fill(kwargs.get('hspace',None), rc.subplots['xlab'])
+                kwargs['hspace'] = _fill(kwargs.get('hspace',None), rc.subplots['xlab'])
                 innerpanels_kw[num]['sharex_panels'] = False
-                innerpanels_kw[num]['hwidth'] = fill(innerpanels_kw[num].get('hwidth', None), rc.subplots['cbar'])
-                innerpanels_kw[num]['hspace'] = fill(innerpanels_kw[num].get('hspace', None), rc.subplots['xlab'])
+                innerpanels_kw[num]['hwidth'] = _fill(innerpanels_kw[num].get('hwidth', None), rc.subplots['cbar'])
+                innerpanels_kw[num]['hspace'] = _fill(innerpanels_kw[num].get('hspace', None), rc.subplots['xlab'])
             if re.search('[lr]', which):
-                kwargs['wspace'] = fill(kwargs.get('wspace',None), rc.subplots['ylab'])
+                kwargs['wspace'] = _fill(kwargs.get('wspace',None), rc.subplots['ylab'])
                 innerpanels_kw[num]['sharey_panels'] = False
-                innerpanels_kw[num]['wwidth'] = fill(innerpanels_kw[num].get('wwidth', None), rc.subplots['cbar'])
-                innerpanels_kw[num]['wspace'] = fill(innerpanels_kw[num].get('wspace', None), rc.subplots['ylab'])
+                innerpanels_kw[num]['wwidth'] = _fill(innerpanels_kw[num].get('wwidth', None), rc.subplots['cbar'])
+                innerpanels_kw[num]['wspace'] = _fill(innerpanels_kw[num].get('wspace', None), rc.subplots['ylab'])
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)

@@ -61,9 +61,8 @@ from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
-from . import colortools
-from . import utils
-from .utils import dot_dict, fill
+from . import colortools, utils
+from .utils import _dot_dict, _fill
 rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
@@ -329,7 +328,7 @@ def _cmap_features(self, func):
         # is passed to Norm
         # Call function with special args removed
         name = func.__name__
-        levels = utils.fill(levels, 11)
+        levels = _fill(levels, 11)
         custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
             custom_kw = {'levels': levels, 'extend': extend}
@@ -636,7 +635,7 @@ class Figure(mfigure.Figure):
         self._span_labels = [] # add axis instances to this, and label position will be updated
         # Gridspec information
         self._gridspec = gridspec # gridspec encompassing drawing area
-        self._subplots_kw = dot_dict(subplots_kw) # extra special settings
+        self._subplots_kw = _dot_dict(subplots_kw) # extra special settings
         # Figure dimensions
         self.width  = figsize[0] # dimensions
         self.height = figsize[1]
@@ -747,10 +746,10 @@ class Figure(mfigure.Figure):
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
         whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
-        hspace = utils.fill(hspace, 0.13) # teeny tiny space
-        wspace = utils.fill(wspace, 0.13)
-        hwidth = utils.fill(hwidth, 0.45) # default is panels for plotting stuff, not colorbars
-        wwidth = utils.fill(wwidth, 0.45)
+        hspace = _fill(hspace, 0.13) # teeny tiny space
+        wspace = _fill(wspace, 0.13)
+        hwidth = _fill(hwidth, 0.45) # default is panels for plotting stuff, not colorbars
+        wwidth = _fill(wwidth, 0.45)
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 
@@ -1947,10 +1946,10 @@ class BasemapAxes(MapAxes):
         **kwargs):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
-        lonlocator = fill(lonlocator, xlocator)
-        lonminorlocator = fill(lonminorlocator, xminorlocator)
-        latlocator = fill(latlocator, ylocator)
-        latminorlocator = fill(latminorlocator, yminorlocator)
+        lonlocator = _fill(lonlocator, xlocator)
+        lonminorlocator = _fill(lonminorlocator, xminorlocator)
+        latlocator = _fill(latlocator, ylocator)
+        latminorlocator = _fill(latminorlocator, yminorlocator)
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
@@ -2082,12 +2081,12 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
-        xlim = fill(lonlim, xlim)
-        ylim = fill(latlim, ylim)
-        lonlocator = fill(lonlocator, xlocator)
-        lonminorlocator = fill(lonminorlocator, xminorlocator)
-        latlocator = fill(latlocator, ylocator)
-        latminorlocator = fill(latminorlocator, yminorlocator)
+        xlim = _fill(lonlim, xlim)
+        ylim = _fill(latlim, ylim)
+        lonlocator = _fill(lonlocator, xlocator)
+        lonminorlocator = _fill(lonminorlocator, xminorlocator)
+        latlocator = _fill(latlocator, ylocator)
+        latminorlocator = _fill(latminorlocator, yminorlocator)
 
         # Configure extents?
         # WARNING: The set extents method tries to set a *rectangle* between
@@ -2363,12 +2362,12 @@ def colorbar_factory(ax, mappable,
         from list of colors or lines. Most of the time want 'neither'.
     """
     # Parse flexible input
-    clocator = fill(locator, clocator)
-    cgrid = fill(grid, cgrid)
-    ctickminor = fill(tickminor, ctickminor)
-    cminorlocator = fill(minorlocator, cminorlocator)
-    cformatter = fill(ticklabels, fill(cticklabels, fill(formatter, cformatter)))
-    clabel = fill(label, clabel)
+    clocator = _fill(locator, clocator)
+    cgrid = _fill(grid, cgrid)
+    ctickminor = _fill(tickminor, ctickminor)
+    cminorlocator = _fill(minorlocator, cminorlocator)
+    cformatter = _fill(ticklabels, _fill(cticklabels, _fill(formatter, cformatter)))
+    clabel = _fill(label, clabel)
     # Make sure to eliminate ticks
     # cax.xaxis.set_tick_params(which='both', bottom=False, top=False)
     # cax.yaxis.set_tick_params(which='both', bottom=False, top=False)
@@ -2411,7 +2410,7 @@ def colorbar_factory(ax, mappable,
         mappable = ax.contourf([[0,0],[0,0]],
                 levels=levels, cmap=cmap,
                 extend='neither', norm=colortools.BinNorm(values)) # workaround
-        clocator = fill(clocator, values)
+        clocator = _fill(clocator, values)
         if clocator is None:
             clocator = values
     if clocator is None:

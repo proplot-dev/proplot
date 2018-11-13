@@ -1,13 +1,40 @@
 #!/usr/bin/env python3
 import numpy as np
 import matplotlib.gridspec as mgridspec
+import re
 from .rcmod import rc
-from .utils import dot_dict, fill
+from .utils import _dot_dict, _fill
+
 # Conversions
-cm2in = 0.3937
-mm2in = cm2in/10.0
-in2cm = 1.0/cm2in
-in2mm = 1.0/mm2in
+def _units(value, error=True):
+    # Flexible units!
+    # See: http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first
+    unit_dict = {
+        'em': rc['small']/72.0,
+        'ex': 0.5*rc['small']/72.0, # more or less; see URL
+        'cm': 0.3937,
+        'mm': 0.03937,
+        'pt': 1/72.0,
+        'l':  1.2*rc['small']/72.0, # the default line spacing for multiline labels
+        'lh': 1.2*rc['small']/72.0,
+        }
+    if not isinstance(value, str):
+        return value # assume int/float is in inches
+    regex = re.match('^(.*)(' + '|'.join(unit_dict.keys()) + ')$', value)
+    if not regex:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    num, unit = regex.groups()
+    try:
+        num = float(num)
+    except ValueError:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    return num*unit_dict[unit] # e.g. cm / (in / cm)
 
 # Custom settings for various journals
 # Add to this throughout your career, or as standards change
@@ -16,22 +43,22 @@ in2mm = 1.0/mm2in
 # AGU info: https://publications.agu.org/author-resource-center/figures-faq/
 def journal_size(width, height):
     # User wants to define their own size
-    if type(width) is not str:
+    if not isinstance(width, str):
         return width, height
     # Determine automatically
     width, height = None, None
     table = {
-        'pnas1': 8.7*cm2in,
-        'pnas2': 11.4*cm2in,
-        'pnas3': 17.8*cm2in,
+        'pnas1': '8.7cm',
+        'pnas2': '11.4cm',
+        'pnas3': '17.8cm',
         'ams1': 3.2,
         'ams2': 4.5,
         'ams3': 5.5,
         'ams4': 6.5,
-        'agu1': (95*mm2in, 115*mm2in),
-        'agu2': (190*mm2in, 115*mm2in),
-        'agu3': (95*mm2in, 230*mm2in),
-        'agu4': (190*mm2in, 230*mm2in),
+        'agu1': ('95mm', '115mm'),
+        'agu2': ('190mm', '115mm'),
+        'agu3': ('95mm', '230mm'),
+        'agu4': ('190mm', '230mm'),
         }
     value = table.get(width, None)
     if value is None:
@@ -62,12 +89,12 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     # NOTE: Ugly but this is mostly boilerplate, shouln't change much
     def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, space):
         if colorbar or colorbars:
-            width = fill(width, rc.subplots['cbar'])
-            space = fill(space, rc.subplots['lab'])
+            width = _fill(width, rc.subplots['cbar'])
+            space = _fill(space, rc.subplots['lab'])
             panel, panels = colorbar, colorbars
         elif legend or legends:
-            width = fill(width, rc.subplots['legend'])
-            space = fill(space, 0)
+            width = _fill(width, rc.subplots['legend'])
+            space = _fill(space, 0)
             panel, panels = legend, legends
         return panel, panels, width, space
     rightpanel, rightpanels, rwidth, rspace, = _panelprops(
@@ -103,10 +130,10 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         aspect = aspect[0]/aspect[1]
     except (IndexError,TypeError):
         pass # do nothing
-    wratios = np.atleast_1d(fill(wratios, 1))
-    hratios = np.atleast_1d(fill(hratios, 1))
-    hspace = np.atleast_1d(fill(hspace, rc.subplots['title']))
-    wspace = np.atleast_1d(fill(wspace, rc.subplots['inner']))
+    wratios = np.atleast_1d(_fill(wratios, 1))
+    hratios = np.atleast_1d(_fill(hratios, 1))
+    hspace = np.atleast_1d(_fill(hspace, rc.subplots['title']))
+    wspace = np.atleast_1d(_fill(wspace, rc.subplots['inner']))
     if len(wratios)==1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios)==1:
@@ -115,25 +142,30 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
-    left   = fill(left,   rc.subplots['ylab'])
-    bottom = fill(bottom, rc.subplots['xlab'])
-    right  = fill(right,  rc.subplots['nolab'])
-    top    = fill(top,    rc.subplots['title'])
-    bwidth = fill(bwidth, rc.subplots['cbar'])
-    rwidth = fill(rwidth, rc.subplots['cbar'])
-    lwidth = fill(lwidth, rc.subplots['cbar'])
-    bspace = fill(bspace, rc.subplots['xlab'])
-    rspace = fill(rspace, rc.subplots['ylab'])
-    lspace = fill(lspace, rc.subplots['ylab'])
+    left   = _units(_fill(left,   rc.subplots['ylab']))
+    bottom = _units(_fill(bottom, rc.subplots['xlab']))
+    right  = _units(_fill(right,  rc.subplots['nolab']))
+    top    = _units(_fill(top,    rc.subplots['title']))
+    bwidth = _units(_fill(bwidth, rc.subplots['cbar']))
+    rwidth = _units(_fill(rwidth, rc.subplots['cbar']))
+    lwidth = _units(_fill(lwidth, rc.subplots['cbar']))
+    bspace = _units(_fill(bspace, rc.subplots['xlab']))
+    rspace = _units(_fill(rspace, rc.subplots['ylab']))
+    lspace = _units(_fill(lspace, rc.subplots['ylab']))
 
     # Figure size
     if not figsize:
         figsize = (width, height)
     width, height = figsize
+    width  = _units(width, error=False)
+    height = _units(height, error=False)
+    width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
+    if width is None and height is None:
+        width = 5 # default behavior is use 1:1 axes, fixed width
 
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing
-    subplots_kw = dot_dict(nrows=nrows, ncols=ncols, figsize=figsize, aspect=aspect,
+    subplots_kw = _dot_dict(nrows=nrows, ncols=ncols, figsize=figsize, aspect=aspect,
         hspace=hspace, wspace=wspace,
         hratios=hratios, wratios=wratios,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
@@ -143,9 +175,6 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
 
     # If width and height are not fixed, determine necessary width/height to
     # preserve the aspect ratio of specified plot
-    if width is None and height is None:
-        width = 5 # default behavior is use 1:1 axes, fixed width
-    width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
     auto_width  = (width is None and height is not None)
     auto_height = (height is None and width is not None)
     aspect = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
@@ -299,12 +328,12 @@ def flexible_gridspec_factory(base):
             # Parse flexible input
             nrows = self._nrows_visible
             ncols = self._ncols_visible
-            hratios = fill(height_ratios, hratios)
-            wratios = fill(width_ratios,  wratios)
-            hratios = np.atleast_1d(fill(hratios, 1))
-            wratios = np.atleast_1d(fill(wratios, 1))
-            hspace = np.atleast_1d(fill(hspace, np.mean(hratios)*0.10)) # this is relative to axes
-            wspace = np.atleast_1d(fill(wspace, np.mean(wratios)*0.10))
+            hratios = _fill(height_ratios, hratios)
+            wratios = _fill(width_ratios,  wratios)
+            hratios = np.atleast_1d(_fill(hratios, 1))
+            wratios = np.atleast_1d(_fill(wratios, 1))
+            hspace = np.atleast_1d(_fill(hspace, np.mean(hratios)*0.10)) # this is relative to axes
+            wspace = np.atleast_1d(_fill(wspace, np.mean(wratios)*0.10))
             if len(wspace)==1:
                 wspace = np.repeat(wspace, (ncols-1,))
             if len(hspace)==1:

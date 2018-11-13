@@ -8,9 +8,11 @@ import numpy as np
 from numbers import Number
 
 #------------------------------------------------------------------------------#
-# Helper class
+# Helper stuff
 #------------------------------------------------------------------------------#
-class dot_dict(dict):
+_fill = (lambda x,y: x if x is not None else y)
+
+class _dot_dict(dict):
     """
     Simple class for accessing elements with dot notation.
     See: https://stackoverflow.com/a/23689767/4970632
@@ -22,8 +24,6 @@ class dot_dict(dict):
 #------------------------------------------------------------------------------#
 # Definitions
 #------------------------------------------------------------------------------#
-fill = (lambda x,y: x if x is not None else y)
-
 def isvector(item):
     """
     Just test if is iterable, but not a string (we almost never mean this).
@@ -48,29 +48,6 @@ def isscalar(item):
     # return (hasattr(item,'__iter__') or hasattr(item,'__getitem__')) # integers have this!
     # return hasattr(item,'__iter__')
     return isinstance(item, Number) or isinstance(item, str)
-
-def edges(values, axis=-1):
-    """
-    Get approximate edge values along arbitrary axis.
-    """
-    # First permute
-    values = np.array(values)
-    values = np.swapaxes(values, axis, -1)
-    # Next operate
-    flip = False
-    if values[...,1]<values[...,0]:
-        flip = True
-        values = np.flip(values, axis=-1)
-    values = np.concatenate((
-        values[...,:1] - (values[...,1]-values[...,0])/2,
-        (values[...,1:] + values[...,:-1])/2,
-        values[...,-1:] + (values[...,-1]-values[...,-2])/2,
-        ), axis=-1)
-    if flip:
-        values = np.flip(values, axis=-1)
-    # Permute back and return
-    values = np.swapaxes(values, axis, -1)
-    return values
 
 def arange(min_, *args):
     """
@@ -108,4 +85,27 @@ def arange(min_, *args):
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
     return np.arange(min_, max_, step)
+
+def edges(values, axis=-1):
+    """
+    Get approximate edge values along arbitrary axis.
+    """
+    # First permute
+    values = np.array(values)
+    values = np.swapaxes(values, axis, -1)
+    # Next operate
+    flip = False
+    if values[...,1]<values[...,0]:
+        flip = True
+        values = np.flip(values, axis=-1)
+    values = np.concatenate((
+        values[...,:1] - (values[...,1]-values[...,0])/2,
+        (values[...,1:] + values[...,:-1])/2,
+        values[...,-1:] + (values[...,-1]-values[...,-2])/2,
+        ), axis=-1)
+    if flip:
+        values = np.flip(values, axis=-1)
+    # Permute back and return
+    values = np.swapaxes(values, axis, -1)
+    return values
 

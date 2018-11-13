@@ -50,7 +50,7 @@ from cycler import cycler
 from glob import glob
 from . import colormath
 from . import utils
-from .utils import fill
+from .utils import _fill
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
 # Define some new palettes
 # Note the default listed colormaps
@@ -520,8 +520,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         space = get_space(space)
         if 'gamma' in kwargs:
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
-        segmentdata['gamma1'] = fill(gamma1, fill(segmentdata.get('gamma1', None), 1.0))
-        segmentdata['gamma2'] = fill(gamma2, fill(segmentdata.get('gamma2', None), 1.0))
+        segmentdata['gamma1'] = _fill(gamma1, _fill(segmentdata.get('gamma1', None), 1.0))
+        segmentdata['gamma2'] = _fill(gamma2, _fill(segmentdata.get('gamma2', None), 1.0))
         self.space = space
         self.mask  = mask
         # First sanitize the segmentdata by converting color strings to their
@@ -612,10 +612,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         Make linear segmented colormap by specifying channel values.
         """
         # Build dictionary, easy peasy
-        h = fill(hue, h)
-        s = fill(chroma, fill(c, fill(saturation, s)))
-        l = fill(luminance, l)
-        a = fill(alpha, fill(a, 1.0))
+        h = _fill(hue, h)
+        s = _fill(chroma, _fill(c, _fill(saturation, s)))
+        l = _fill(luminance, l)
+        a = _fill(alpha, _fill(a, 1.0))
         cs = ['hue', 'saturation', 'luminance', 'alpha']
         channels = [h, s, l, a]
         cdict = {}
