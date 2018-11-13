@@ -64,16 +64,20 @@ axs.format(xlim=(0,1)) # set to be identical everywhere
 axs[:3].format(color='red') # make axis labels, spines, ticks red
 axs[3:].format(color='blue') # same, but make them blue
 ```
-You can also use, e.g., `width='ams1'` to make the figure conform to journal standards (check out `subplots.py` for the currently available ones, and feel free to send me additional standards -- I will add them).
 
 Additional sizing keyword arguments are `wspace`, `hspace` (width/height spacing between axes in *inches*), `wratios`, `hratios` (width/height ratios for columns/rows), `bwidth`, `rwidth`, `lwidth` (panel widths in *inches*), and `top`, `bottom`, `left`, `right` (border widths in *inches* -- although by default, excess space will be trimmed, so these arguments have no effect in the end; see below).
 
+### Journal sizes and units
+To specify create figures that conform to journal standards, use e.g. `width='ams1'`. Some standards actually specify a width and height together -- `width='name'` will fix both dimensions. Check out `subplots.py` for the currently available ones, and **feel free to contact me with additional journal standards -- I will add them**.
+
+Also, while the numeric sizing arguments are assumed to be in **inches**, you can specify sizes with **arbitrary units** using e.g. `width='12cm'`, `wspace='5mm'`, `hspace='3em'` (3 em squares), etc.
+
 ### A smarter subplot layout and a new GridSpec class
-If you specify *either* (not both) `width` or `height`, optionally with the desired axes aspect ratio `aspect` (default is `1`), the figure height/width will be scaled such that **inter-subplot spacing and panel widths are fixed**. The subplots and the figure width or height (whichever you did not explicitly specify) are allowed to shrink/expand to achieve an aspect ratio of `aspect` for the top-left subplot.
+If you specify *either* (not both) `width` or `height`, optionally with an aspect ratio `aspect` (default is `1`), the figure **height or width will be scaled** such that the top-left subplot has aspect ratio `aspect`. The **inter-subplot spacing and panel widths are held fixed** during this scaling.
 
-Also, inter-subplot spacing is now *variable*: specify `wspace` and `hspace` *in inches* (note that previously these were relative to the subplot widths/heights) as 1) a scalar constant or 2) a list of different spacings. To allow for the latter, I created a new `FlexibleGridSpec` class. The actual `wspace`, `hspace` passed to `GridSpec` are zero -- the spaces you see in your figure are `GridSpec` slots masquerading as spaces. Check out `FlexibleGridSpec.__getitem__`.
+The above allowed me to create the **`smart_tight_layout`** method (which by default is **called whenever the figure is drawn**). Previously, `tight_layout` could be used to fit the figure borders over a box that perfectly encompasses all artists (i.e. text, subplots, etc.). However, because `GridSpec` spaces are relative to the subplot dimensions, changing the figure dimensions *also* changes the inter-subplot spacings. Since your font size is specified in points (i.e. a *physical* unit), *this can easily cause text to overlap with other subplots where they didn't before*. The new `smart_tight_layout` method draws a tight bounding box that **preserves inter-subplot spacing, panel widths, and subplot aspect ratios**.
 
-The above also led me to make **significant improvements to `tight_layout`** (now *called by default* whenever the figure is drawn). Previously, `tight_layout` could be used to fit the figure borders over a box that perfectly encompasses all artists (i.e. text, subplots, etc.). However, because `GridSpec` defines inter-subplot spaces relative to the subplot dimensions, if a figure dimension contracts, the inter-subplot spaces will *also* contract. Since your font size is specified in physical units (i.e. points, or 1/72 inches), *this can easily cause text to overlap with other subplots where they didn't before*. Now, *tight layout will preserve axes aspect ratios, inter-subplot spacing, and panel widths* using the same process as when you call `subplots()`.
+To achieve this, I created a new `FlexibleGridSpec` class. The actual `wspace`, `hspace` passed to `GridSpec` are zero -- the spaces you see in your figure are `GridSpec` slots masquerading as spaces. Check out `FlexibleGridSpec.__getitem__`. Also, inter-subplot spacing is now *variable*: specify `wspace` and `hspace` as 1) a scalar constant or 2) a list of different spacings.
       
 ## Inner and outer "panels"
 Use `[bottom|right]panel=True` to allot space for panels spanning all columns (rows) on the bottom (right). Use `[bottom|right]panels=True` to allot space for one panel per column (row). Use `[bottom|right]panels=[n1,n2,...]` to allot space for panels that can span adjacent columns (rows). These add `fig.[bottom|right]panel` attributes to the figure `fig` (access the nth panel with `fig.[bottom|right]panel[n]`).
@@ -158,9 +162,13 @@ Finally, use `plot.arange` for generating lists of contours, ticks, etc. -- it's
 ## Enhanced settings management
 Use `plot.rc` as your one-stop shop for changing global settings. This is an instance of the new `rc_configurator` class, created on import. It can be used to change built-in `matplotlib.rcParams` settings, a few custom "`rcSpecial`" settings, and some special "global" settings that modify several other settings at once.
 
-Example: Use `plot.rc['linewidth'] = 2` or `plot.rc.linewidth = 2` to increase the thickness of axes spines, major tick marks, and minor tick marks. Use `plot.rc['color'] = 'red'` or `plot.rc.color = 'red'` to make all spines, tick marks, tick labels, and axes labels red. Use `plot.rc['small']` and `plot.rc['large']` to control axes font sizes. Update any arbitrary `rcParam` with e.g. `plot.rc['legend.frameon'] = False`.
+Quick summary of the "global" settings:
+* Use `plot.rc['linewidth'] = 2` or `plot.rc.linewidth = 2` to increase the thickness of axes spines, major tick marks, and minor tick marks.
+* Use `plot.rc['color'] = 'red'` or `plot.rc.color = 'red'` to make all spines, tick marks, tick labels, and axes labels red.
+* Use `plot.rc['small']` and `plot.rc['large']` to control axes font sizes.
+* Update any arbitrary `rcParam` with e.g. `plot.rc['legend.frameon'] = False` or `plot.rc.legend['frameon'] = False`.
 
-Use `plot.rc.reset()` to reset everything to the initial state. This is also called every time a figure's `draw` method is invoked (e.g. when a figure is rendered by the matplotlib backend or saved to file).
+Use `plot.rc.reset()` to reset everything to the initial state. By default, **this is called every time a figure is drawn** (i.e. when a figure is rendered by the matplotlib backend or saved to file).
 
 ## Colormaps, color cycles, and color names
 Added **new colormap class** analagous to `LinearSegmentedColormap`, called `PerceptuallyUniformColormap`, which interpolates through hue, saturation, and luminance space (with hues allowed to vary circularly). Choose from either of 4 HSV-like colorspaces: classic HSV, perceptually uniform HCL, or HSLuv/HPLuv (which are forms of HCL adapted for convenient use with colormaps; see [this link](http://www.hsluv.org/comparison/)).
