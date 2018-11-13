@@ -651,7 +651,7 @@ class Figure(mfigure.Figure):
         # Assign rowlabels
         axs = []
         for ax in self.axes:
-            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and self._col_span[0]==0:
+            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax._col_span[0]==0:
                 axs.append(ax)
         if isinstance(labels,str): # common during testing
             labels = [labels]*len(axs)
