@@ -9,23 +9,23 @@ from .utils import _dot_dict, _fill
 def _units(value, error=True):
     # Flexible units!
     # See: http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first
+    if not isinstance(value, str):
+        return value # assume int/float is in inches
     unit_dict = {
         'em': rc['small']/72.0,
         'ex': 0.5*rc['large']/72.0, # more or less; see URL
+        'lh': 1.2*rc['small']/72.0, # line height units (default spacing is 1.2 em squares)
         'lem': rc['small']/72.0, # for large text
         'lex': 0.5*rc['large']/72.0,
+        'llh': 1.2*rc['large']/72.0,
         'cm': 0.3937,
         'mm': 0.03937,
         'pt': 1/72.0,
-        'l':  1.2*rc['small']/72.0, # the default line spacing for multiline labels
-        'lh': 1.2*rc['small']/72.0,
         'in': 1.0, # already in inches
         'ft': 12.0, # the rest are included but dunno why you would do this :/
         'yd': 36.0,
         'm': 39.37,
         }
-    if not isinstance(value, str):
-        return value # assume int/float is in inches
     regex = re.match('^(.*)(' + '|'.join(unit_dict.keys()) + ')$', value)
     if not regex:
         if error:
