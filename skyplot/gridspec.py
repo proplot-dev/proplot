@@ -90,7 +90,7 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, space):
         if colorbar or colorbars:
             width = _fill(width, rc.subplots['cbar'])
-            space = _fill(space, rc.subplots['lab'])
+            space = _fill(space, rc.subplots['xlab'])
             panel, panels = colorbar, colorbars
         elif legend or legends:
             width = _fill(width, rc.subplots['legend'])
