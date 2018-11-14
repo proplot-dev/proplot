@@ -49,7 +49,7 @@ creates a grid with one tall plot on the left, and two smaller plots on the righ
 ```
 f, axs = plot.subplots(array=[[1,1,1],[2,0,4]])
 ```
-creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle (the zero). The axes "number" is added as an axes attribute.
+creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle (the zero). The corresponding `number`s are added to the subplots as attributes; you can use `format` to trigger a-b-c labeling based on these numbers (see below).
 
 Pass no arguments to generate default single-axes figure (1 row, 1 column), or use `nrows` and `ncols` to generate simple subplot grids. For example:
 ```
