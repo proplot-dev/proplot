@@ -2034,19 +2034,20 @@ class BasemapAxes(MapAxes):
         # Have absolutely *no idea* why; cartopy seems to do something weird because
         # there is no _dashSeq attribute on lines and line styles are always '-'.
         # See: https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html
+        # The dots ':' look better on cartopy so we try to mimick them below.
         def ls_translate(obj, style):
             if style=='-':
                 dashes = [None,None]
             else:
                 dashes = [*obj._dashSeq]
-                if linestyle==':':
+                if style==':':
                     dashes[0] /= 10
                     dashes[1] *= 1.5
-                elif linestyle=='--':
+                elif style=='--':
                     dashes[0] /= 1.5
                     dashes[1] *= 1.5
                 else:
-                    raise ValueError('No.')
+                    raise ValueError(f'Invalid style {style}.')
             return dashes
 
         # Longitude/latitude lines
