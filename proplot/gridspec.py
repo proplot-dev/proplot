@@ -288,8 +288,8 @@ def flexible_gridspec_factory(base):
                     )
 
         def __getitem__(self, key):
-            # Magic obfuscation that renders the 'space' rows and columns
-            # invisible. Note key will be tuple if multiple indices requested.
+            # Magic obfuscation that renders rows and columns designated as
+            # 'spaces' invisible. Note: key is tuple if multiple indices requested.
             def _normalize(key, size):
                 if isinstance(key, slice):
                     start, stop, _ = key.indices(size)
@@ -301,8 +301,8 @@ def flexible_gridspec_factory(base):
                     if 0 <= key < size:
                         return key, key
                 raise IndexError(f"Invalid index: {key} with size {size}.")
-            # SubplotSpec initialization will figure out the row/column
-            # geometry of these two number automatically
+            # SubplotSpec initialization figures out the row/column
+            # geometry of these two numbers automatically
             nrows, ncols = self._nrows, self._ncols
             nrows_visible, ncols_visible = self._nrows_visible, self._ncols_visible
             if isinstance(key, tuple):
@@ -327,7 +327,8 @@ def flexible_gridspec_factory(base):
             num1, num2 = _adjust(num1), _adjust(num2)
             return mgridspec.SubplotSpec(self, num1, num2)
 
-        def _spaces_as_ratios(self, hspace=None, wspace=None, # spacing between axes
+        def _spaces_as_ratios(self,
+                hspace=None, wspace=None, # spacing between axes
                 hratios=None, wratios=None,
                 height_ratios=None, width_ratios=None,
                 **kwargs):
@@ -372,10 +373,10 @@ def flexible_gridspec_factory(base):
             # left/right/top/bottom attributes
             wratios, hratios, edges_kw = self._spaces_as_ratios(**gridspec_kw)
             edges_kw = {key:value for key,value in edges_kw.items()
-                if key not in ('nrows','ncols')} # cannot be changed
+                if key not in ('nrows','ncols')} # cannot be modified
             self.set_width_ratios(wratios)
             self.set_height_ratios(hratios)
-            super().update(**edges_kw) # should just be left/right/top/bottom
+            super().update(**edges_kw) # remaining kwargs should just be left/right/top/bottom
 
     return _GridSpec
 

@@ -227,18 +227,22 @@ def counter(func):
 #       out-of-range values, while extend used in colorbar on pcolor has no such
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
-def _parse_args(args):
+def _parse_args(args, rowmajor):
     """
-    Parse arguments for check centers/edges.
+    Parse arguments for checking 2D data centers/edges.
     """
     if len(args)>2:
-        x, y = args[:2]
         Zs = args[2:]
     else:
         Zs = args
+    Zs = [np.array(Z) for Z in Zs] # ensure array
+    if rowmajor: # input has shape 'y-by-x' instead of 'x-by-y'
+        Zs = [Z.T for Z in Zs]
+    if len(args)>2:
+        x, y = args[:2]
+    else:
         x = np.arange(Zs[0].shape[0])
         y = np.arange(Zs[0].shape[1])
-    Zs = [np.array(Z) for Z in Zs]
     return np.array(x), np.array(y), Zs
 
 def _check_centers(func):
@@ -251,12 +255,14 @@ def _check_centers(func):
       * x, y, U, V
     """
     @wraps(func)
-    def decorator(*args, **kwargs):
+    def decorator(*args, rowmajor=False, **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
-        x, y, Zs = _parse_args(args)
+        x, y, Zs = _parse_args(args, rowmajor)
         xlen, ylen = x.shape[0], y.shape[-1]
         for Z in Zs:
-            if Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
+            if Z.ndim!=2:
+                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+            elif Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
                 x, y = (x[1:]+x[:-1])/2, (y[1:]+y[:-1])/2 # get centers, given edges
             elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
@@ -272,12 +278,14 @@ def _check_edges(func):
     Check shape of arguments passed to pcolor, and fix result.
     """
     @wraps(func)
-    def decorator(*args, **kwargs):
+    def decorator(*args, rowmajor=False, **kwargs):
         # Checks that sizes match up, checks whether graticule was input
-        x, y, Zs = _parse_args(args)
+        x, y, Zs = _parse_args(args, rowmajor)
         xlen, ylen = x.shape[0], y.shape[-1]
         for Z in Zs:
-            if Z.shape[0]==xlen and Z.shape[1]==ylen:
+            if Z.ndim!=2:
+                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+            elif Z.shape[0]==xlen and Z.shape[1]==ylen:
                 x, y = utils.edges(x), utils.edges(y)
             elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
@@ -925,7 +933,7 @@ class BaseAxes(maxes.Axes):
         # Initialize
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
-        self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
+        self._title_inside = True # toggle this to figure out whether we need to push 'super title' up
         self._zoom = None # if non-empty, will make invisible
         self._inset_parent = None # change this later
         self._insets = [] # add to these later
@@ -1085,11 +1093,24 @@ class BaseAxes(maxes.Axes):
         if hasattr(self,'abc'):
             self.abc.update(dict(fontsize=rc['abc.fontsize'], weight=rc['abc.weight']))
 
+    def _text_update(self, attr, kwargs):
+        # Handle issues where we want to update properties introduced
+        # by the BaseAxes.text() override
+        # Don't really want to subclass Text class, only have a few features
+        obj = getattr(self, attr)
+        try:
+            obj.update(kwargs)
+        except Exception:
+            obj.set_visible(False)
+            text = kwargs.pop('text', '')
+            setattr(self, attr, self.text(0, 0, text, **kwargs))
+
     def _title_pos(self, pos, **kwargs):
         # Position arbitrary text to left/middle/right either inside or outside
         # of axes (default is center, outside)
-        pad = (rc['axes.titlepad']/72)/self.height # to inches --> to axes relative
-        ipad = pad*1.5 # needs a bit more room to look ok
+        ypad = (rc['axes.titlepad']/72)/self.height # to inches --> to axes relative
+        xpad = (rc['axes.titlepad']/72)/self.width # why not use the same for x?
+        xpad_i, ypad_i = xpad*1.5, ypad*1.5 # inside labels need a bit more room
         pos = pos or 'oc'
         if not isinstance(pos, str):
             ha = va = 'center'
@@ -1103,20 +1124,23 @@ class BaseAxes(maxes.Axes):
                 x = 0.5
                 ha = 'center'
             elif 'l' in pos:
-                x = 0 + ipad*('i' in pos)
+                x = 0 + xpad_i*('i' in pos)
                 ha = 'left'
             elif 'r' in pos:
-                x = 1 - ipad*('i' in pos)
+                x = 1 - xpad_i*('i' in pos)
                 ha = 'right'
+            # Record _title_inside so we can automatically deflect suptitle
+            # If *any* object is outside (title or abc), want to deflect it up
+            defaults_kw = {}
             if 'o' in pos:
-                y = 1 + pad
+                y = 1 + ypad
                 va = 'baseline'
                 self._title_inside = False
             elif 'i' in pos:
-                y = 1 - ipad
+                y = 1 - ypad_i
                 va = 'top'
-            self._title_inside = True
-        return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va}
+                defaults_kw['fancy'] = _fill(kwargs.pop('fancy', None), True) # by default
+        return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va, **defaults_kw}
 
     def rc_context(self, *args, **kwargs):
         # Temporarily change rcParams for drawings on this axes.
@@ -1168,29 +1192,19 @@ class BaseAxes(maxes.Axes):
         # Create axes title
         # Input needs to be emptys string
         if title is not None:
-            # Allow user to use my *special* text method for
-            # making title, e.g. fancy=True
-            try:
-                self.title.update({'text':title, **title_kw})
-            except Exception:
-                self.title.set_visible(False)
-                self.title = self.text(0, 0, title, **title_kw)
-            # Reposition text
-            self.title.update(self._title_pos(titlepos or 'oc'))
+            pos_kw = self._title_pos(titlepos or 'oc', **title_kw)
+            self._text_update('title', {'text':title, **pos_kw, **title_kw})
 
         # Create axes numbering
         if self.number is not None and abc:
             # Get text
+            if 'a' not in abcformat:
+                raise ValueError(f'Invalid abcformat {abcformat}.')
             abcedges = abcformat.split('a')
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
-            abc_kw = {'text':text, 'ha':'left', 'va':'baseline', **abc_kw, **rc['abc']}
-            try:
-                self.abc.update(abc_kw)
-            except Exception:
-                self.abc.set_visible(False)
-                self.abc = self.text(0, 0, **abc_kw) # call *overridden* text method
-            # Reposition text
-            self.abc.update(self._title_pos(abcpos or 'ol'))
+            abc_kw = {'text':text, **abc_kw, **rc['abc']}
+            pos_kw = self._title_pos(abcpos or 'ol')
+            self._text_update('abc', {**pos_kw, **abc_kw})
         elif hasattr(self, 'abc') and abc is not None and not abc:
             # Hide
             self.abc.set_visible(False)
