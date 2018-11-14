@@ -40,6 +40,7 @@ except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
+from matplotlib.lines import _get_dash_pattern, _scale_dashes
 from string import ascii_lowercase
 from functools import wraps
 from inspect import cleandoc
@@ -84,26 +85,26 @@ except ModuleNotFoundError:
 # Global variables
 # First distinguish plot types
 _line_methods = ( # basemap methods you want to wrap that aren't 2D grids
-    'plot', 'scatter'
-    )
-_edge_methods = (
-    'pcolor', 'pcolorpoly', 'pcolormesh',
-    )
-_center_methods = (
-    'contour', 'contourf', 'quiver', 'streamplot', 'barbs',
+    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
     )
 _contour_methods = (
-    'contour', 'contourf',
+    'contour', 'contourf', 'tricontour', 'tricontourf'
     )
 _pcolor_methods = (
-    'pcolor', 'pcolormesh', 'pcolorpoly'
+    'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor'
     )
 _show_methods = (
     'imshow', 'matshow', 'spy', 'hist2d',
     )
+_center_methods = (
+    'contour', 'contourf', 'quiver', 'streamplot', 'barbs'
+    )
+_edge_methods = (
+    'pcolor', 'pcolormesh', 'pcolorpoly',
+    )
 # Next distinguish plots by more broad properties
 _nolevels_methods = (
-    'pcolor', 'pcolormesh', 'pcolorpoly', 'imshow', 'matshow', 'spy'
+    'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor', 'imshow', 'matshow', 'spy'
     )
 _cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
@@ -111,14 +112,14 @@ _cycle_methods  = (
 _cmap_methods = (
     'cmapline',
     'contour', 'contourf', 'pcolor', 'pcolormesh',
-    'matshow', 'imshow', 'spy', 'hist2d'
+    'matshow', 'imshow', 'spy', 'hist2d',
+    'tripcolor', 'tricontour', 'tricontourf',
     )
 # Finally disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
 _disabled_methods = {
     "Unsupported plotting function {}.":
         ('pie', 'table', 'hexbin', 'eventplot',
-        'triplot', 'tricontour', 'tricontourf', 'tripcolor',
         'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
         'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
     "Redundant function {} has been disabled.":
@@ -128,6 +129,7 @@ _disabled_methods = {
     }
 _map_disabled_methods = (
     'matshow', 'imshow', 'spy', 'bar', 'barh',
+    # 'triplot', 'tricontour', 'tricontourf', 'tripcolor',
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
     'fill_between', 'fill_betweenx', 'fill', 'stackplot')
@@ -388,8 +390,8 @@ def _cmap_features(self, func):
                 cmap=cmap, levels=levels, norm=norm)
 
         # Fix white lines between filled contours/mesh
-        linewidth = 0.3 # seems to be lowest threshold where white lines disappear
-        if name=='contourf':
+        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
+        if name in ('contourf', 'tricontourf'):
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
@@ -512,6 +514,7 @@ def _gridfix_basemap(self, func):
             Z[:,where[1:-1]] = np.nan
         # 5) Fix holes over poles by interpolating there (equivalent to
         # simple mean of highest/lowest latitude points)
+        # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
         Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
         Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
         lat = np.concatenate(([-90], lat, [90]))
@@ -532,11 +535,12 @@ def _gridfix_basemap(self, func):
         # this augments size by 2
         elif lon.size==Z.shape[1]: # linearly interpolate to the edges
             x = np.array([lon[-1], lon[0]+360]) # x
-            y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-            xq = lonmin+360
-            yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
-            Z = np.concatenate((yq, Z, yq), axis=1)
-            lon = np.append(np.append(lonmin, lon), lonmin+360)
+            if x[0] != x[1]:
+                y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                xq = lonmin+360
+                yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
+                Z = np.concatenate((yq, Z, yq), axis=1)
+                lon = np.append(np.append(lonmin, lon), lonmin+360)
         else:
             raise ValueError()
         # Finally get grid of x/y map projection coordinates
@@ -734,11 +738,13 @@ class Figure(mfigure.Figure):
             print('Resetting rcparams.')
             rc.reset()
         # If we haven't already, compress edges
-        # NOTE: Currently for cartopy axes with non-global edges, this can
-        # erroneously identify invisible edges of map as being part of boundary
-        # if self._smart_tight_init and self._smart_tight and \
-        #     not any(isinstance(ax, MapAxes) for ax in self.axes):
-        if self._smart_tight_init and self._smart_tight:
+        # NOTE: For cartopy axes, bounding box identified by matplotlib is wrong:
+        # 1) If you used set_bounds to zoom into part of a cartopy projection,
+        # this can erroneously identify invisible edges of map as being part of boundary
+        # 2) If you have gridliner text labels, matplotlib won't detect them.
+        # Cartopy sucks at labels!
+        if self._smart_tight_init and self._smart_tight and \
+            not any(isinstance(ax, CartopyAxes) for ax in self.axes):
             print('Adjusting gridspec.')
             self.smart_tight_layout()
         return super().draw(*args, **kwargs)
@@ -1220,16 +1226,23 @@ class BaseAxes(maxes.Axes):
         return colorbar_factory(self, *args, **kwargs)
 
     # Fancy wrappers
-    def text(self, x, y, text, transform='axes', fancy=False, black=True,
+    def text(self, x, y, text,
+            transform=None, fancy=False, black=True,
             linewidth=2, lw=None, **kwarg): # linewidth is for the border
         """
         Wrapper around original text method. Adds feature for easily drawing
         text with white border around black text.
+
+        Warning
+        -------
+        Basemap gridlining methods call text, so if you change the default
+        transform, will not be able to draw lat/lon labels!
         """
         linewidth = lw or linewidth
-        if type(transform) is not str:
-            pass # leave alone
-            # raise ValueError("Just name the transform with string \"axes\" or \"data\".")
+        if not transform:
+            transform = self.transData
+        elif isinstance(transform, mtransforms.Transform):
+            pass # do nothing
         elif transform=='figure':
             transform = self.figure.transFigure
         elif transform=='axes':
@@ -1237,7 +1250,7 @@ class BaseAxes(maxes.Axes):
         elif transform=='data':
             transform = self.transData
         else:
-            raise ValueError("Unknown transform name. Use string \"axes\" or \"data\".")
+            raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
         t = super().text(x, y, text, transform=transform, **kwarg)
         if fancy:
             fcolor, bcolor = 'wk'[black], 'kw'[black]
@@ -1873,6 +1886,33 @@ class MapAxes(BaseAxes):
             raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
+    def _parse_labels(self, labels, mode):
+        """
+        Parse lonlabels/latlabels argument.
+        """
+        if labels is False:
+            return [0]*4
+        if labels is None:
+            labels = True # use the default
+        if isinstance(labels, str):
+            string = labels
+            labels = [0]*4
+            for idx,char in zip([0,1,2,3],'lrbt'):
+                if char in string:
+                    labels[idx] = 1
+        if utils.isnumber(labels): # e.g. *boolean*
+            labels = np.atleast_1d(labels)
+        if len(labels)==1:
+            labels = [*labels, 0] # default is to label bottom/left
+        if len(labels)==2:
+            if mode=='x':
+                labels = [0, 0, *labels]
+            elif mode=='y':
+                labels = [*labels, 0, 0]
+        elif len(labels)!=4:
+            raise ValueError(f'Invalid labels: {labels}.')
+        return labels
+
 @docstring_fix
 class BasemapAxes(MapAxes):
     """
@@ -1943,7 +1983,8 @@ class BasemapAxes(MapAxes):
         if attr in _line_methods or attr in _edge_methods or attr in _center_methods:
             obj = _m_call(self, obj) # this must be the *last* step!
             if attr in _line_methods:
-                obj = _cycle_features(self, obj)
+                if attr[:3] != 'tri':
+                    obj = _cycle_features(self, obj)
                 obj = _linefix_basemap(self, obj)
             elif attr in _edge_methods or attr in _center_methods:
                 obj = _cmap_features(self, obj)
@@ -1963,14 +2004,19 @@ class BasemapAxes(MapAxes):
         lonlim=None, latlim=None,
         latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and land
-        latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
+        xlabels=None, ylabels=None,
+        latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
         **kwargs):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
+
+        # Parse flexible input
         lonlocator = _fill(lonlocator, xlocator)
         lonminorlocator = _fill(lonminorlocator, xminorlocator)
         latlocator = _fill(latlocator, ylocator)
         latminorlocator = _fill(latminorlocator, yminorlocator)
+        lonlabels = self._parse_labels(_fill(xlabels, lonlabels), 'x')
+        latlabels = self._parse_labels(_fill(ylabels, latlabels), 'y')
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
@@ -1983,38 +2029,58 @@ class BasemapAxes(MapAxes):
             props = rc['coastline']
             p = self.m.drawcoastlines(**props, ax=self)
 
+        # Function to make gridlines look like cartopy lines
+        # NOTE: For some reason basemap gridlines look different from cartopy ones
+        # Have absolutely *no idea* why; cartopy seems to do something weird because
+        # there is no _dashSeq attribute on lines and line styles are always '-'.
+        # See: https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html
+        def ls_translate(obj, style):
+            if style=='-':
+                dashes = [None,None]
+            else:
+                dashes = [*obj._dashSeq]
+                if linestyle==':':
+                    dashes[0] /= 10
+                    dashes[1] *= 1.5
+                elif linestyle=='--':
+                    dashes[0] /= 1.5
+                    dashes[1] *= 1.5
+                else:
+                    raise ValueError('No.')
+            return dashes
+
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
         # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
         tsettings = {'color':rc['xtick.color'], 'fontsize':rc['xtick.labelsize']}
+        latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
+        lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
+        lsettings = rc['lonlatlines']
+        linestyle = lsettings['linestyle']
         if latlocator is not None:
             if utils.isnumber(latlocator):
                 latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
             p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
-                for _ in [i for j in pi for i in j]: # magic
-                    if isinstance(_, mtext.Text):
-                        _.update(tsettings)
-                    else:
-                        _.set_clip_on(True) # no gridlines past boundary
-                        _.update(rc['lonlatlines'])
-                        # _.set_linestyle(linestyle)
-                # tried passing clip_on to the above, but it does nothing; must set
+                # Tried passing clip_on to the below, but it does nothing; must set
                 # for lines created after the fact
+                for obj in [i for j in pi for i in j]: # magic
+                    if isinstance(obj, mtext.Text):
+                        obj.update(tsettings)
+                    else:
+                        obj.update(lsettings)
+                        obj.set_dashes(ls_translate(obj, linestyle))
         if lonlocator is not None:
-            latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
-            lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
             if utils.isnumber(lonlocator):
                 lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
             p = self.m.drawmeridians(lonlocator, labels=lonlabels, ax=self)
             for pi in p.values():
-                for _ in [i for j in pi for i in j]: # magic
-                    if isinstance(_, mtext.Text):
-                        _.update(tsettings)
+                for obj in [i for j in pi for i in j]: # magic
+                    if isinstance(obj, mtext.Text):
+                        obj.update(tsettings)
                     else:
-                        _.set_clip_on(True) # no gridlines past boundary
-                        _.update(rc['lonlatlines'])
-                        # _.set_linestyle(linestyle)
+                        obj.update(lsettings)
+                        obj.set_dashes(ls_translate(obj, linestyle))
 
 @docstring_fix
 # class CartopyAxes(GeoAxes, MapAxes):
@@ -2046,7 +2112,11 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Below will call BaseAxes, which will call GeoAxes as the superclass
         # NOTE: Previously did stuff in __init__ manually, and called self._boundary,
         # which hides existing border patch and rewrites as None. Don't do that again.
-        super().__init__(*args, map_projection=map_projection, map_name=map_projection.name, **kwargs)
+        try:
+            map_name = map_projection.name
+        except AttributeError:
+            map_name = map_projection.proj4_params['proj']
+        super().__init__(*args, map_projection=map_projection, map_name=map_name, **kwargs)
 
         # Apply circle boundary
         self._land = None
@@ -2093,7 +2163,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and continents
         reso='hi',
-        latlabels=[0,0,0,0], lonlabels=[0,0,0,0], # sides for labels [left, right, bottom, top]
+        xlabels=None, ylabels=None,
+        latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
         **kwargs):
         # Dependencies
         import cartopy.feature as cfeature
@@ -2102,12 +2173,16 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
+
+        # Parse flexible input
         xlim = _fill(lonlim, xlim)
         ylim = _fill(latlim, ylim)
         lonlocator = _fill(lonlocator, xlocator)
         lonminorlocator = _fill(lonminorlocator, xminorlocator)
         latlocator = _fill(latlocator, ylocator)
         latminorlocator = _fill(latminorlocator, yminorlocator)
+        lonlabels = self._parse_labels(_fill(xlabels, lonlabels), 'x')
+        latlabels = self._parse_labels(_fill(ylabels, latlabels), 'y')
 
         # Configure extents?
         # WARNING: The set extents method tries to set a *rectangle* between
@@ -2133,37 +2208,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
                 ylim[1] = 90
             self.set_extent([*xlim, *ylim], PlateCarree)
 
-        # Draw gridlines
-        # WARNING: For some reason very weird side effects happen if you try
-        # to call gridlines() twice on same axes. Can't do it. Which is why
-        # we do this nonsense with the formatter below, instead of drawing 'major'
-        # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-90,90,v)]
-        lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
-        lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
-        lonlines = lonminorlocator or lonlocator # where we draw gridlines
-        latlines = latminorlocator or latlocator
-
-        # First take care of gridlines
-        draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
-        if latlines and latlines[0]==-90:
-            latlines[0] += 0.001
-        if lonlines and lonlines[0]==-90:
-            lonlines[0] -= 0.001
-        gl = self.gridlines(**rc['lonlatlines'], draw_labels=draw_labels)
-        gl.xlocator = mticker.FixedLocator(lonlines)
-        gl.ylocator = mticker.FixedLocator(latlines)
-
-        # Now take care of labels
-        if draw_labels:
-            lonfunc = lambda x,y: LONGITUDE_FORMATTER(x) if x in lonlocator else ''
-            latfunc = lambda x,y: LATITUDE_FORMATTER(x) if x in latlocator else ''
-            gl.xformatter = mticker.FuncFormatter(lonfunc)
-            gl.yformatter = mticker.FuncFormatter(latfunc)
-            gl.xlabels_bottom, gl.xlabels_top = latlabels[2:]
-            gl.ylabels_left, gl.ylabels_right = lonlabels[:2]
-
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
@@ -2186,6 +2230,36 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             self.add_feature(feat, **rc['ocean'])
             self._ocean = feat
 
+        # Draw gridlines
+        # WARNING: For some reason very weird side effects happen if you try
+        # to call gridlines() twice on same axes. Can't do it. Which is why
+        # we do this nonsense with the formatter below, instead of drawing 'major'
+        # grid lines and 'minor' grid lines.
+        lonvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-90,90,v)]
+        lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
+        lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
+        lonlines = lonminorlocator or lonlocator # where we draw gridlines
+        latlines = latminorlocator or latlocator
+
+        # First take care of gridlines
+        draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
+        if latlines and latlines[0]==-90:
+            latlines[0] += 0.001
+        if lonlines and lonlines[0]==-90:
+            lonlines[0] -= 0.001
+        gl = self.gridlines(**rc['lonlatlines'], draw_labels=draw_labels)
+        if lonlines: # NOTE: using mticker.NullLocator results in error!
+            gl.xlocator = mticker.FixedLocator(lonlines)
+        if latlines:
+            gl.ylocator = mticker.FixedLocator(latlines)
+
+        # Now take care of labels
+        if draw_labels:
+            gl.xformatter = LONGITUDE_FORMATTER
+            gl.yformatter = LATITUDE_FORMATTER
+            gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
+            gl.ylabels_left, gl.ylabels_right = latlabels[:2]
 
 @docstring_fix
 class PolarAxes(MapAxes, PolarAxes):
@@ -2219,17 +2293,18 @@ def map_projection_factory(package, projection, **kwargs):
     elif package=='cartopy':
         import cartopy.crs as ccrs # verify package is importable
         crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
-            **{k:'central_latitude'  for k in ['lat0','lat_0']},
-            **{k:'central_longitude' for k in ['lon0', 'lon_0']},
+            **{k:'central_latitude'  for k in ('lat0','lat_0')},
+            **{k:'central_longitude' for k in ('lon0', 'lon_0')},
             }
         crs_dict = { # interpret string, create cartopy projection
-            **{key: ccrs.PlateCarree   for key in ['cyl','rectilinear','pcarree','platecarree']},
-            **{key: ccrs.Mollweide     for key in ['moll','mollweide']},
-            **{key: ccrs.Stereographic for key in ['stereo','stereographic']},
+            **{key: ccrs.PlateCarree   for key in ('cyl', 'equirectangular', 'rectilinear','pcarree','platecarree')},
+            **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
+            **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
+            **{key: ccrs.Mercator      for key in ('merc', 'mercator')},
             'aeqd': ccrs.AzimuthalEquidistant, 'aeqa': ccrs.LambertAzimuthalEqualArea,
-            'mercator': ccrs.Mercator, 'robinson': ccrs.Robinson, 'ortho': ccrs.Orthographic,
-            'hammer': Hammer,       'aitoff': Aitoff,
-            'wintri': WinkelTripel, 'kav7':   KavrayskiyVII,
+            'robinson': ccrs.Robinson, 'ortho': ccrs.Orthographic,
+            'hammer': Hammer,          'aitoff': Aitoff,
+            'wintri': WinkelTripel,    'kav7':   KavrayskiyVII,
             }
         projection = projection or 'cyl'
         if projection not in crs_dict:

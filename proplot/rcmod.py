@@ -167,15 +167,17 @@ rcSpecial = {
     'gridminor.color':       'k',
     'gridminor.alpha':       0.1,
     'gridminor.linestyle':   '-',
-    'land.linewidth':        0,
+    'land.linewidth':        0, # no boundary for patch object
     'land.color':            'k',
-    'ocean.linewidth':      0,
-    'ocean.color':          'w',
-    'coastline.linewidth' : 1.0,
-    'lonlatlines.linestyle': ':',
-    'lonlatlines.alpha':     0.2,
+    'ocean.linewidth':       0, # no boundary for patch object
+    'ocean.color':           'w',
+    'coastline.linewidth' :  1.0,
+    'lonlatlines.linewidth': 1.0,
+    # 'lonlatlines.linestyle': ':',
+    'lonlatlines.linestyle': '--',
+    'lonlatlines.alpha':     0.4,
     'lonlatlines.color':     'k',
-    'subplots.title':        0.4, # extra space for title/suptitle
+    'subplots.title':        0.1, # extra space for title/suptitle
     'subplots.inner':        0.2, # just have ticks, no labeels
     'subplots.legend':       0.25, # default legend space (bottom of figure)
     'subplots.cbar':         0.17, # default colorbar width
