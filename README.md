@@ -43,11 +43,11 @@ This package took a shocking amount of time to write. If you've found it useful,
 ### Basic usage
 To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to allot empty space. For example:
 ```
-f, axs = plot.subplots(array=[[1,2],[1,3]])
+f, axs = plot.subplots([[1,2],[1,3]])
 ```
 creates a grid with one tall plot on the left, and two smaller plots on the right, while
 ```
-f, axs = plot.subplots(array=[[1,1,1],[2,0,4]])
+f, axs = plot.subplots([[1,1,1],[2,0,4]])
 ```
 creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle (the zero). The corresponding `number`s are added to the subplots as attributes; you can use `format` to trigger a-b-c labeling based on these numbers (see below).
 
