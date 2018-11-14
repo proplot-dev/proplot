@@ -73,7 +73,7 @@ To create figures that satisfy journal standards, use e.g. `width='ams1'`. Some 
 Also, while the numeric sizing arguments are assumed to be in **inches**, you can specify sizes with **arbitrary units** using e.g. `width='12cm'`, `wspace='5mm'`, `hspace='3em'` (3 em squares), etc.
 
 ### A smarter subplot layout and a new GridSpec class
-If you specify *either* (not both) `width` or `height`, optionally with an aspect ratio `aspect` (default is `1`), the figure **height or width will be scaled** such that the top-left subplot has aspect ratio `aspect`. The **inter-subplot spacing and panel widths are held fixed** during this scaling.
+If you specify *either* `width` or `height`, optionally with an aspect ratio `aspect` (default is `1`), the figure **height or width will be scaled** such that the top-left subplot has aspect ratio `aspect`. The **inter-subplot spacing and panel widths are held fixed** during this scaling.
 
 The above allowed me to create the **`smart_tight_layout`** method (which by default is **called whenever the figure is drawn**). Previously, `tight_layout` could be used to fit the figure borders over a box that perfectly encompasses all artists (i.e. text, subplots, etc.). However, because `GridSpec` spaces are relative to the subplot dimensions, changing the figure dimensions *also* changes the inter-subplot spacings. Since your font size is specified in points (i.e. a *physical* unit), *this can easily cause text to overlap with other subplots where they didn't before*. The new `smart_tight_layout` method draws a tight bounding box that **preserves inter-subplot spacing, panel widths, and subplot aspect ratios**.
 
