@@ -43,13 +43,13 @@ This package took a shocking amount of time to write. If you've found it useful,
 ### Basic usage
 To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to allot empty space. For example:
 ```
-f, axs = plot.subplots(array=[[1,2],[1,3]])
+f, axs = plot.subplots([[1,2],[1,3]])
 ```
 creates a grid with one tall plot on the left, and two smaller plots on the right, while
 ```
-f, axs = plot.subplots(array=[[1,1,1],[2,0,4]])
+f, axs = plot.subplots([[1,1,1],[2,0,4]])
 ```
-creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle (the zero). The axes "number" is added as an axes attribute.
+creates a grid with one long plot on top and two smaller plots on the bottom with a gap in the middle (the zero). The corresponding `number`s are added to the subplots as attributes; you can use `format` to trigger a-b-c labeling based on these numbers (see below).
 
 Pass no arguments to generate default single-axes figure (1 row, 1 column), or use `nrows` and `ncols` to generate simple subplot grids. For example:
 ```
@@ -68,12 +68,12 @@ axs[3:].format(color='blue') # same, but make them blue
 Additional sizing keyword arguments are `wspace`, `hspace` (width/height spacing between axes in *inches*), `wratios`, `hratios` (width/height ratios for columns/rows), `bwidth`, `rwidth`, `lwidth` (panel widths in *inches*), and `top`, `bottom`, `left`, `right` (border widths in *inches* -- although by default, excess space will be trimmed, so these arguments have no effect in the end; see below).
 
 ### Journal sizes and units
-To specify create figures that conform to journal standards, use e.g. `width='ams1'`. Some standards actually specify a width and height together -- `width='name'` will fix both dimensions. Check out `subplots.py` for the currently available ones, and **feel free to contact me with additional journal standards -- I will add them**.
+To create figures that satisfy journal standards, use e.g. `width='ams1'`. Some of these standards also specify a height (though you should still choose it with the `width` keyword). Check out `gridspec.py` for the currently available standards, and **feel free to contact me with additional journal standards -- I will add them**.
 
 Also, while the numeric sizing arguments are assumed to be in **inches**, you can specify sizes with **arbitrary units** using e.g. `width='12cm'`, `wspace='5mm'`, `hspace='3em'` (3 em squares), etc.
 
 ### A smarter subplot layout and a new GridSpec class
-If you specify *either* (not both) `width` or `height`, optionally with an aspect ratio `aspect` (default is `1`), the figure **height or width will be scaled** such that the top-left subplot has aspect ratio `aspect`. The **inter-subplot spacing and panel widths are held fixed** during this scaling.
+If you specify *either* `width` or `height`, optionally with an aspect ratio `aspect` (default is `1`), the figure **height or width will be scaled** such that the top-left subplot has aspect ratio `aspect`. The **inter-subplot spacing and panel widths are held fixed** during this scaling.
 
 The above allowed me to create the **`smart_tight_layout`** method (which by default is **called whenever the figure is drawn**). Previously, `tight_layout` could be used to fit the figure borders over a box that perfectly encompasses all artists (i.e. text, subplots, etc.). However, because `GridSpec` spaces are relative to the subplot dimensions, changing the figure dimensions *also* changes the inter-subplot spacings. Since your font size is specified in points (i.e. a *physical* unit), *this can easily cause text to overlap with other subplots where they didn't before*. The new `smart_tight_layout` method draws a tight bounding box that **preserves inter-subplot spacing, panel widths, and subplot aspect ratios**.
 
