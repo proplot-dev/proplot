@@ -36,7 +36,7 @@ I only push to this repo when new features are completed and working properly.
 
 Dependencies are `matplotlib` and `numpy`. If you want to use the mapping features, you will also need `basemap` and/or `cartopy`. Note that [basemap is no longer under active development](https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement) -- cartopy is integrated more intelligently with the matplotlib API, and therefore has more room for growth. However, for the time being, basemap **retains several advantages** over cartopy (namely [more tools for labeling meridians/parallels](https://github.com/SciTools/cartopy/issues/881) and more available projections -- see [basemap](https://matplotlib.org/basemap/users/mapsetup.html) vs. [cartopy](https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html)). Therefore basemap may be preferred in some circumstances.
 
-## Donation
+## Donations
 This package took a shocking amount of time to write. If you've found it useful, feel free to buy me a cup of coffee :)
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url)
