@@ -68,7 +68,7 @@ axs[3:].format(color='blue') # same, but make them blue
 Additional sizing keyword arguments are `wspace`, `hspace` (width/height spacing between axes in *inches*), `wratios`, `hratios` (width/height ratios for columns/rows), `bwidth`, `rwidth`, `lwidth` (panel widths in *inches*), and `top`, `bottom`, `left`, `right` (border widths in *inches* -- although by default, excess space will be trimmed, so these arguments have no effect in the end; see below).
 
 ### Journal sizes and units
-To specify create figures that conform to journal standards, use e.g. `width='ams1'`. Some standards actually specify a width and height together -- `width='name'` will fix both dimensions. Check out `subplots.py` for the currently available ones, and **feel free to contact me with additional journal standards -- I will add them**.
+To create figures that satisfy journal standards, use e.g. `width='ams1'`. Some of these standards also specify a height (though you should still choose it with the `width` keyword). Check out `gridspec.py` for the currently available standards, and **feel free to contact me with additional journal standards -- I will add them**.
 
 Also, while the numeric sizing arguments are assumed to be in **inches**, you can specify sizes with **arbitrary units** using e.g. `width='12cm'`, `wspace='5mm'`, `hspace='3em'` (3 em squares), etc.
 
