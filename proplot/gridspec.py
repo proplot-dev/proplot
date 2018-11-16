@@ -127,8 +127,6 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     bottompanels = _parse(bottompanel, bottompanels, ncols)
     rightpanels  = _parse(rightpanel,  rightpanels,  nrows)
     leftpanels   = _parse(leftpanel,   leftpanels,   nrows)
-    row_offset = 0
-    col_offset = 1 if leftpanels else 0
 
     # Apply the general defaults
     # Need to do this after number of rows/columns figured out
@@ -342,7 +340,7 @@ def flexible_gridspec_factory(base):
             hspace = np.atleast_1d(_fill(hspace, np.mean(hratios)*0.10)) # this is relative to axes
             wspace = np.atleast_1d(_fill(wspace, np.mean(wratios)*0.10))
             if len(wspace)==1:
-                wspace = np.repeat(wspace, (ncols-1,))
+                wspace = np.repeat(wspace, (ncols-1,)) # note: may be length 0
             if len(hspace)==1:
                 hspace = np.repeat(hspace, (nrows-1,))
 

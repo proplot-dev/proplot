@@ -4,8 +4,97 @@
 # These aren't strictly plot-related functions, but will be useful for user
 # in the context of making plots.
 #------------------------------------------------------------------------------#
+import time
 import numpy as np
 from numbers import Number
+from functools import wraps
+from inspect import cleandoc
+
+#------------------------------------------------------------------------------#
+# Decorators
+#------------------------------------------------------------------------------#
+def docstring_fix(child):
+    """
+    Decorator function for appending documentation from overridden method
+    onto the overriding method docstring.
+    Adapted from: https://stackoverflow.com/a/8101598/4970632
+    """
+    for name,chfunc in vars(child).items(): # returns __dict__ object
+        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
+        # if not isinstance(chfunc, FunctionType):
+            continue
+        for parent in getattr(child, '__bases__', ()):
+            parfunc = getattr(parent, name, None)
+            if not getattr(parfunc, '__doc__', None):
+                continue
+            if not getattr(chfunc, '__doc__', None):
+                chfunc.__doc__ = '' # in case it's None
+            cmessage = f'Full name: {parfunc.__qualname__}()'
+            pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
+            chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+            break # only do this for the first parent class
+    return child
+
+def fancy_decorator(decorator):
+    """
+    Normally to make a decorator that accepts arguments, you have to create
+    3 nested function definitions. This abstracts that away -- if you decorate
+    your decorator-function declaration with this, the decorator will now accept arguments.
+    See: https://stackoverflow.com/a/1594484/4970632
+    """
+    @wraps(decorator)
+    def decorator_maker(*args, **kwargs):
+        def decorator_wrapper(func):
+            return decorator(func, *args, **kwargs)
+        return decorator_wrapper
+    return decorator_maker
+
+def timer(func):
+    """
+    A decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632
+    """
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        t = time.clock()
+        print(f'{func.__name__}()')
+        res = func(*args, **kwargs)
+        print(f'{func.__name__}() time: {time.clock()-t}s')
+        return res
+    return decorator
+
+def logger(func):
+    """
+    A decorator that logs the activity of the script (it actually just prints it,
+    but it could be logging!)
+    See: https://stackoverflow.com/a/1594484/4970632
+    """
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        res = func(*args, **kwargs)
+        print(f'{func.__name__} called with: {args} {kwargs}')
+        return res
+    return decorator
+
+def counter(func):
+    """
+    A decorator that counts and prints the number of times a function
+    has been executed.
+    See: https://stackoverflow.com/a/1594484/4970632
+    """
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        # decorator.count += 1
+        t = time.clock()
+        res = func(*args, **kwargs)
+        decorator.time += (time.clock() - t)
+        print(f'{func.__name__} cumulative time: {decorator.time}s')
+        # print(f'{func.__name__} has been used: {decorator.count}x')
+        return res
+    decorator.time = 0
+    decorator.count = 0 # initialize
+    return decorator
+
 
 #------------------------------------------------------------------------------#
 # Helper stuff

@@ -11,7 +11,6 @@ except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
-from . import utils
 from . import base
 from .utils import _fill
 from functools import wraps
@@ -267,8 +266,9 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     axes_ids = [np.where(array==i) for i in np.unique(array) if i>0] # 0 stands for empty
     yrange = row_offset + np.array([[xy[0].min(), xy[0].max()+1] for xy in axes_ids]) # yrange is shared columns
     xrange = col_offset + np.array([[xy[1].min(), xy[1].max()+1] for xy in axes_ids])
-    xmin   = np.array([xy[0].min() for xy in axes_ids])
-    ymax   = np.array([xy[1].max() for xy in axes_ids])
+    # asdfas
+    # xmin   = np.array([xy[0].min() for xy in axes_ids]) # unused
+    # ymax   = np.array([xy[1].max() for xy in axes_ids])
 
     # Shared axes: generate list of base axes-dependent axes pairs
     # That is, find where the minimum-maximum gridspec extent in 'x' for a

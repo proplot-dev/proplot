@@ -29,10 +29,8 @@
 # Note that even if not in IPython notebook, io capture output still works;
 # seems to return some other module in that case
 import os
-import re
 import numpy as np
 import warnings
-import time
 from IPython.utils import io
 try:
     from icecream import ic
@@ -40,13 +38,11 @@ except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
-from matplotlib.lines import _get_dash_pattern, _scale_dashes
+# from matplotlib.lines import _get_dash_pattern, _scale_dashes
 from string import ascii_lowercase
 from functools import wraps
-from inspect import cleandoc
 import matplotlib.figure as mfigure
 import matplotlib.axes as maxes
-import matplotlib.path as mpath
 import matplotlib.contour as mcontour
 import matplotlib.patheffects as mpatheffects
 import matplotlib.dates as mdates
@@ -63,7 +59,7 @@ from .rcmod import rc, rc_context
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
 from . import colortools, utils
-from .utils import _dot_dict, _fill
+from .utils import _dot_dict, _fill, timer, docstring_fix
 rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
@@ -71,10 +67,10 @@ rc_context_rcmod = rc_context # so it won't be overritten by method declarations
 warnings.filterwarnings('ignore', category=mplDeprecation)
 # Optionally import mapping toolboxes
 # Main conda distro says they are incompatible, so make sure not required!
-try:
-    import mpl_toolkits.basemap as mbasemap
-except ModuleNotFoundError:
-    pass
+# try:
+#     import mpl_toolkits.basemap as mbasemap
+# except ModuleNotFoundError:
+#     pass
 try:
     from cartopy.mpl.geoaxes import GeoAxes
     from cartopy.crs import PlateCarree
@@ -135,86 +131,6 @@ _map_disabled_methods = (
     'fill_between', 'fill_betweenx', 'fill', 'stackplot')
 # Map projections
 _map_pseudocyl = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
-
-#------------------------------------------------------------------------------#
-# Misc tools
-#------------------------------------------------------------------------------#
-def docstring_fix(child):
-    """
-    Decorator function for appending documentation from overridden method
-    onto the overriding method docstring.
-    Adapted from: https://stackoverflow.com/a/8101598/4970632
-    """
-    for name,chfunc in vars(child).items(): # returns __dict__ object
-        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
-        # if not isinstance(chfunc, FunctionType):
-            continue
-        for parent in getattr(child, '__bases__', ()):
-            parfunc = getattr(parent, name, None)
-            if not getattr(parfunc, '__doc__', None):
-                continue
-            if not getattr(chfunc, '__doc__', None):
-                chfunc.__doc__ = '' # in case it's None
-            cmessage = f'Full name: {parfunc.__qualname__}()'
-            pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-            chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
-            break # only do this for the first parent class
-    return child
-
-def fancy_decorator(decorator):
-    """
-    Normally to make a decorator that accepts arguments, you have to create
-    3 nested function definitions. This abstracts that away -- if you decorate
-    your decorator-function declaration with this, the decorator will now accept arguments.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(decorator)
-    def decorator_maker(*args, **kwargs):
-        def decorator_wrapper(func):
-            return decorator(func, *args, **kwargs)
-        return decorator_wrapper
-    return decorator_maker
-
-def timer(func):
-    """
-    A decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(func)
-    def decorator(*args, **kwargs):
-        t = time.clock()
-        res = func(*args, **kwargs)
-        print(f'{func.__name__} time: {time.clock()-t}s')
-        return res
-    return decorator
-
-def logger(func):
-    """
-    A decorator that logs the activity of the script (it actually just prints it,
-    but it could be logging!)
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(func)
-    def decorator(*args, **kwargs):
-        res = func(*args, **kwargs)
-        print(f'{func.__name__} called with: {args} {kwargs}')
-        return res
-    return decorator
-
-def counter(func):
-    """
-    A decorator that counts and prints the number of times a function
-    has been executed.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(func)
-    def decorator(*args, **kwargs):
-        decorator.count = decorator.count + 1
-        res = func(*args, **kwargs)
-        print(f'{func.__name__} has been used: {decorator.count}x')
-        return res
-    decorator.count = 0
-    return decorator
 
 #------------------------------------------------------------------------------
 # Helper functions for plot overrides
@@ -334,16 +250,15 @@ def _cmap_features(self, func):
                 resample=False, levels=None, extremes=True, norm=None,
                 extend='neither', **kwargs):
         # NOTE: We will normalize the data with whatever is passed, e.g.
-        # logarithmic or whatever
-        # is passed to Norm
+        # logarithmic or whatever is passed to Norm
         # Call function with special args removed
+        # if name in _show_methods: # ***do not*** auto-adjust aspect ratio! messes up subplots!
+        #     custom_kw['aspect'] = 'auto'
         name = func.__name__
         levels = _fill(levels, 11)
         custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
             custom_kw = {'levels': levels, 'extend': extend}
-        # if name in _show_methods: # ***do not*** auto-adjust aspect ratio! messes up subplots!
-        #     custom_kw['aspect'] = 'auto'
         if norm:
             custom_kw['norm'] = colortools.Norm(norm)
         result = func(*args, norm=norm, **custom_kw, **kwargs)
@@ -594,6 +509,7 @@ def _gridfix_cartopy(func):
             Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Call function
         with io.capture_output() as captured:
+            print(captured)
             result = func(lon, lat, Z, transform=transform, **kwargs)
         # Call function
         return result
@@ -721,7 +637,7 @@ class Figure(mfigure.Figure):
         ypos = (base + offset)/self.height
         self._suptitle.update({'position':(xpos, ypos), 'ha':'center', 'va':'bottom', **kwargs})
 
-    def draw(self, *args, **kwargs):
+    def draw(self, renderer, *args, **kwargs):
         # Special: Figure out if other titles are present, and if not
         # bring suptitle close to center
         offset = False
@@ -746,8 +662,8 @@ class Figure(mfigure.Figure):
         if self._smart_tight_init and self._smart_tight and \
             not any(isinstance(ax, CartopyAxes) for ax in self.axes):
             print('Adjusting gridspec.')
-            self.smart_tight_layout()
-        return super().draw(*args, **kwargs)
+            self.smart_tight_layout(renderer)
+        return super().draw(renderer, *args, **kwargs)
 
     def panel_factory(self, subspec, whichpanels=None,
             hspace=None, wspace=None,
@@ -854,7 +770,7 @@ class Figure(mfigure.Figure):
         axmain._sharey_setup(sharey)
         return axmain
 
-    def smart_tight_layout(self, adjust=True, silent=False, update=True, pad=None):
+    def smart_tight_layout(self, renderer=None, pad=None):
         """
         Get arguments necessary passed to subplots() to create a tight figure
         bounding box without screwing aspect ratios, widths/heights, and such.
@@ -866,7 +782,9 @@ class Figure(mfigure.Figure):
         if self._subplots_kw is None or self._gridspec is None:
             raise ValueError("Initialize figure with 'subplots_kw' and 'gridspec' to draw tight grid.")
         obbox = self.bbox_inches # original bbox
-        bbox = self.get_tightbbox(self.canvas.get_renderer())
+        if not renderer: # cannot use the below on figure save! figure becomes a special FigurePDF class or something
+            renderer = self.canvas.get_renderer()
+        bbox = self.get_tightbbox(renderer)
         ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
         x1, y1, x2, y2 = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # deltas
 
@@ -892,7 +810,7 @@ class Figure(mfigure.Figure):
             axis.axes._share_span_label(axis)
 
     @timer
-    def save(self, filename, adjust=False, silent=False, auto_adjust=False, pad=0.1, **kwargs):
+    def save(self, filename, silent=False, auto_adjust=True, pad=0.1, **kwargs):
         # Notes:
         # * Gridspec object must be updated before figure is printed to
         #     screen in interactive environment; will fail to update after that.
@@ -905,13 +823,13 @@ class Figure(mfigure.Figure):
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
         if auto_adjust:
-            self.smart_tight_layout()
+            self.smart_tight_layout(pad=pad)
         # Finally, save
         if not silent:
             print(f'Saving to "{filename}".')
         return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
 
-    def savefig(*args, **kwargs):
+    def savefig(self, *args, **kwargs):
         # Alias for save.
         return self.save(*args, **kwargs)
 
@@ -988,6 +906,13 @@ class BaseAxes(maxes.Axes):
         # CartopyAxes, that __init__ did not configure)
         if not hasattr(self, 'abc'): # add custom property
             self.abc = self.text(0, 0, '')
+
+        # Enforce custom rc settings!
+        # TODO: This will be redundant in that it re-enforces builtin settings
+        # Could improve by *tracking changed rc settings*, only applying the
+        # (1) the rcSpecial and rcCache props when _rcupdate is called in __init__
+        # (2) only the rcCache (user overrides) when _rcupdate is called in format()
+        # First need to do benchmarks! Probably not too important for normal figures!
         self._rcupdate()
 
     # Apply some simple featueres, and disable spectral and triangular features
@@ -1093,23 +1018,22 @@ class BaseAxes(maxes.Axes):
 
     def _rcupdate(self):
         # Update the titling settings
-        self.title.update(dict(fontsize=rc['axes.titlesize'], weight=rc['axes.titleweight']))
-        if hasattr(self,'_suptitle'):
-            self._suptitle.update(dict(fontsize=rc['figure.titlesize'], weight=rc['figure.titleweight']))
+        self.title.update({'fontsize':rc['axes.titlesize'], 'weight':rc['axes.titleweight']})
         if hasattr(self,'abc'):
-            self.abc.update(dict(fontsize=rc['abc.fontsize'], weight=rc['abc.weight']))
+            self.abc.update({'fontsize':rc['abc.fontsize'], 'weight':rc['abc.weight']})
+        if hasattr(self,'_suptitle'):
+            self._suptitle.update({'fontsize':rc['figure.titlesize'], 'weight':rc['figure.titleweight']})
 
-    def _text_update(self, attr, kwargs):
-        # Handle issues where we want to update properties introduced
-        # by the BaseAxes.text() override
-        # Don't really want to subclass Text class, only have a few features
-        obj = getattr(self, attr)
+    def _text_update(self, obj, kwargs):
+        # Allow updating properties introduced by the BaseAxes.text() override.
+        # Don't really want to subclass mtext.Text; only have a few features
         try:
             obj.update(kwargs)
         except Exception:
             obj.set_visible(False)
             text = kwargs.pop('text', '')
-            setattr(self, attr, self.text(0, 0, text, **kwargs))
+            obj = self.text(0, 0, text, **kwargs)
+        return obj
 
     def _title_pos(self, pos, **kwargs):
         # Position arbitrary text to left/middle/right either inside or outside
@@ -1145,7 +1069,7 @@ class BaseAxes(maxes.Axes):
             elif 'i' in pos:
                 y = 1 - ypad_i
                 va = 'top'
-                defaults_kw['fancy'] = _fill(kwargs.pop('fancy', None), True) # by default
+                defaults_kw['border'] = _fill(kwargs.pop('border', None), True) # by default
         return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va, **defaults_kw}
 
     def rc_context(self, *args, **kwargs):
@@ -1199,7 +1123,7 @@ class BaseAxes(maxes.Axes):
         # Input needs to be emptys string
         if title is not None:
             pos_kw = self._title_pos(titlepos or 'oc', **title_kw)
-            self._text_update('title', {'text':title, **pos_kw, **title_kw})
+            self.title = self._text_update(self.title, {'text':title, **pos_kw, **title_kw})
 
         # Create axes numbering
         if self.number is not None and abc:
@@ -1210,7 +1134,7 @@ class BaseAxes(maxes.Axes):
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
             abc_kw = {'text':text, **abc_kw, **rc['abc']}
             pos_kw = self._title_pos(abcpos or 'ol')
-            self._text_update('abc', {**pos_kw, **abc_kw})
+            self.abc = self._text_update(self.abc, {**pos_kw, **abc_kw})
         elif hasattr(self, 'abc') and abc is not None and not abc:
             # Hide
             self.abc.set_visible(False)
@@ -1227,11 +1151,11 @@ class BaseAxes(maxes.Axes):
 
     # Fancy wrappers
     def text(self, x, y, text,
-            transform=None, fancy=False, black=True,
+            transform=None, border=False, invert=False,
             linewidth=2, lw=None, **kwarg): # linewidth is for the border
         """
         Wrapper around original text method. Adds feature for easily drawing
-        text with white border around black text.
+        text with white border around black text, or vice-versa with invert==True.
 
         Warning
         -------
@@ -1252,12 +1176,12 @@ class BaseAxes(maxes.Axes):
         else:
             raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
         t = super().text(x, y, text, transform=transform, **kwarg)
-        if fancy:
-            fcolor, bcolor = 'wk'[black], 'kw'[black]
-            t.update({'color':fcolor, 'zorder':1e10, # have to update after-the-fact for path effects
-                'path_effects': [mpatheffects.Stroke(linewidth=linewidth, foreground=bcolor), mpatheffects.Normal()]})
+        if border:
+            facecolor, bgcolor = ('wk' if invert else 'kw')
+            t.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
+                'path_effects': [mpatheffects.Stroke(linewidth=linewidth, foreground=bgcolor), mpatheffects.Normal()]})
             # t.update({'size':11, 'zorder':1e10,
-            #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bcolor,linewidth=.6,facecolor=fcolor)]})
+            #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bgcolor,linewidth=.6,facecolor=facecolor)]})
         return t
 
     # @_cycle_features
@@ -1368,6 +1292,7 @@ class XYAxes(BaseAxes):
     """
     # Initialize
     name = 'xy'
+    # @timer
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
@@ -1392,15 +1317,13 @@ class XYAxes(BaseAxes):
         # Get the 'edge' we want to share (bottom row, or leftmost column),
         # and then finding the coordinates for the spanning axes along that edge
         axs = []
-        kwargs = {}
         span = lambda ax: getattr(ax, '_col_span') if name=='x' else getattr(ax, '_row_span')
         edge = lambda ax: getattr(ax, '_row_span')[1] if name=='x' else getattr(ax, '_col_span')[0]
-        edge_self = edge(base)
-        span_self = span(base)
         # Identify the *main* axes spanning this edge, and if those axes have
         # a panel and are shared with it (i.e. has a _sharex/_sharey attribute
         # declared with _sharex_panels), point to the panel label
-        axs = [ax for ax in self.figure.axes if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes)]
+        axs = [ax for ax in self.figure.axes if isinstance(ax, BaseAxes)
+            and not isinstance(ax, PanelAxes) and edge(ax)==edge(base)]
         span_all = np.array([span(ax) for ax in axs])
 
         # Build the transform object
@@ -1429,22 +1352,25 @@ class XYAxes(BaseAxes):
         axis.label.update({'visible':True, 'position':position, 'transform':transform})
         return axis.label
 
+    # @timer
     def _rcupdate(self):
         # Update the rcParams according to user input.
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
-            spine.update(dict(linewidth=rc['axes.linewidth'], color=rc['axes.edgecolor']))
+            spine.update({'linewidth':rc['axes.linewidth'], 'color':rc['axes.edgecolor']})
 
         # Axis settings
         for name,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Axis label
-            axis.label.update(dict(color=rc['axes.edgecolor'],
-                fontsize=rc['axes.labelsize'],
-                weight=rc['axes.labelweight']))
+            # axis.label.update({'color':rc.color, 'fontsize':rc.small, 'weight':rc['axes.labelweight']})
+            axis.label.update({'color': rc['axes.edgecolor'],
+                            'fontsize': rc['axes.labelsize'],
+                            'weight':   rc['axes.labelweight']})
 
             # Tick labels
             for t in axis.get_ticklabels():
-                t.update(dict(color=rc['axes.edgecolor'], fontsize=rc[name + 'tick.labelsize']))
+                t.update({'color':rc['axes.edgecolor'], 'fontsize':rc[name + 'tick.labelsize']})
+                # t.update({'color':rc.color, 'fontsize':rc.small})
             # Tick marks
             # NOTE: We decide that tick location should be controlled only
             # by format(), so don't override that here.
@@ -1452,12 +1378,16 @@ class XYAxes(BaseAxes):
             minor.pop('visible') # don't toggle that yet
             major = {key:value for key,value in major.items() if key not in ('bottom','top','left','right')}
             minor = {key:value for key,value in minor.items() if key not in ('bottom','top','left','right')}
-
-            # Apply the settings
-            major.update({'color':rc['axes.edgecolor']})
-            minor.update({'color':rc['axes.edgecolor']})
+            major.update({'color': rc['axes.edgecolor']})
+            minor.update({'color': rc['axes.edgecolor']})
             axis.set_tick_params(which='major', **major)
             axis.set_tick_params(which='minor', **minor)
+
+            # Apply the settings
+            # major.update({'color':rc.color})
+            # minor.update({'color':rc.color})
+            # axis.set_tick_params(which='major', color=rc.color, size=rc.ticklen, width=rc.linewidth)
+            # axis.set_tick_params(which='minor', color=rc.color, size=rc.ticklen*rc.tickratio, width=rc.linewidth*rc.minorwidth)
 
             # Manually update gridlines
             for grid,ticks in zip(('grid','gridminor'),(axis.get_major_ticks(), axis.get_minor_ticks())):
@@ -1471,7 +1401,7 @@ class XYAxes(BaseAxes):
         # Update background patch, with optional hatching
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
-        self.patch.update({'facecolor':rc['axes.facecolor']})
+        self.patch.update({'facecolor': rc['axes.facecolor']})
         hatch = rc['axes.facehatch']
         if hatch: # non-empty string or not none
             self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
@@ -1557,6 +1487,12 @@ class XYAxes(BaseAxes):
                 (xtickdir, ytickdir), (xticklabeldir, yticklabeldir), # tick direction
                 (xlabel_kw, ylabel_kw), (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
                 ):
+            # NOTE: Some of these settings are also rc settings, but I think a
+            # good rule of thumb is format() methods should control toggling of
+            # features, while _rcupdate() controls the look of those features.
+            # Example: Set spine/tick locations with this func, but control
+            # color/linewidth through _rcupdate().
+            # TODO: Maybe the '_kw' stuff should be done in _rcupdate()?
             # Axis spine visibility and location
             sides = ('bottom','top') if axis.axis_name=='x' else ('left','right')
             for spine, side in zip((self.spines[s] for s in sides), sides):
@@ -1589,10 +1525,9 @@ class XYAxes(BaseAxes):
                 # Shared and spanning axes; try going a few layers deep
                 # The _span_label method changes label position so it spans axes
                 # If axis spanning not enabled, will just return the shared axis
-                text = label
+                label_text = label
                 label = self._share_span_label(axis)
-                label.set_text(text)
-                label.update({**label_kw})
+                label.update({'text':label_text, **label_kw})
 
             # Tick properties
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid
@@ -1618,7 +1553,8 @@ class XYAxes(BaseAxes):
                 ticks_major.update({'pad':1}) # ticklabels should be much closer
                 ticks_minor.update({'pad':1})
             if ticklabeldir=='in': # put tick labels inside the plot; sometimes might actually want this
-                pad = rc['majorlen'] + rc['tickpad'] + rc['small']
+                # pad = rc['majorlen'] + rc['tickpad'] + rc['small']
+                pad = rc['xtick.major.size'] + rc['xtick.major.pad'] + rc['xtick.labelsize']
                 ticks_major.update({'pad':-pad})
                 ticks_minor.update({'pad':-pad})
             # Finally, apply
@@ -1940,7 +1876,7 @@ class BasemapAxes(MapAxes):
         self.boundary = None
         self._recurred = False # use this so we can override plotting methods
         self._mapboundarydrawn = None
-        # Initialize (and call _rcupdate)
+        # Initialize
         super().__init__(*args, map_name=self.m.projection, **kwargs)
 
     def _rcupdate(self):
@@ -1957,6 +1893,7 @@ class BasemapAxes(MapAxes):
         facecolor = rc['axes.facecolor']
         outline = {'linewidth': rc['axes.linewidth'],
                    'color':     rc['axes.edgecolor']}
+
         # Draw boundary
         if self.m.projection in _map_pseudocyl:
             self.patch.set_alpha(0) # make patch invisible
@@ -1969,6 +1906,7 @@ class BasemapAxes(MapAxes):
             self.patch.set_edgecolor('none')
             for spine in self.spines.values():
                 spine.update(outline)
+
         # Call parent
         super()._rcupdate()
 
@@ -2403,8 +2341,8 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
             lsettings.pop(override, None)
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
-        fontsize = lsettings.get('fontsize', None) or rc['legend.fontsize']
-        spacing = lsettings.get('labelspacing', None) or rc['legend.labelspacing']
+        fontsize = lsettings.get('fontsize', None)     or rc['legend.fontsize']
+        spacing  = lsettings.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1/len(handles) # split up axes
         interval = (((1 + spacing)*fontsize)/72) / \
                 (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
@@ -2522,6 +2460,7 @@ def colorbar_factory(ax, mappable,
     # Determine major formatters and major/minor tick locators
     # Can pass clocator/cminorlocator as the *jump values* between the mappables
     # vmin/vmax if desired
+    fixed = None # so linter doesn't detect error in if i==1 block
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
     for i,locator in enumerate((clocator,cminorlocator)):
@@ -2547,8 +2486,8 @@ def colorbar_factory(ax, mappable,
         if i==1:
             # Prevent annoying major/minor overlaps where one is slightly shifted left/right
             # Consider floating point weirdness too
-            eps = 1e-10
             # length = len(values)
+            eps = 1e-10
             values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
             # print(f'Removed {length-len(values)}/{length} minor ticks(s).')
         fixed = values # record as new variable

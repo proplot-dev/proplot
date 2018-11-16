@@ -46,11 +46,11 @@ Todo
 #------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
 import re
-import numpy as np
 import matplotlib.pyplot as plt
 from cycler import cycler
 from . import colortools
 from . import utils
+from .utils import timer, counter
 from matplotlib import rcParams, style
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
@@ -111,8 +111,8 @@ rcDefaults = {
     'axes.xmargin':            0,
     'axes.ymargin':            0.05,
     'axes.titleweight':        'normal',
-    'axes.labelweight':        'normal',
     'axes.grid':               True,
+    'axes.labelweight':        'normal',
     'axes.labelpad':           3.0,
     'axes.titlepad':           3.0,
     'axes.axisbelow':          False, # for ticks/gridlines *above* patches, *below* lines, use 'lines'
@@ -276,6 +276,7 @@ class rc_configurator(object):
         # Test if module is in its initial state
         self._init = True
 
+    # @counter
     def __getitem__(self, key):
         # Can get a whole bunch of different things
         # Get full dictionary
@@ -302,6 +303,7 @@ class rc_configurator(object):
             raise ValueError(f'Invalid key "{key}".')
         return params
 
+    # @counter
     def __setitem__(self, key, value):
         # Detect aliases
         alias = {alias for alias,names in rcGlobals_children.items() if key in names}
