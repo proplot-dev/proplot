@@ -1,7 +1,8 @@
 # ProPlot
-## Overview
+A library providing helpful and versatile plotting utilities to hasten the process of crafting publication-quality graphics with `matplotlib`. 
 
-This library provides helpful and versatile plotting utilities to hasten the process of crafting publication-quality graphics with `matplotlib`. I recommend importing the package with
+## Overview
+Import with
 ```
 import proplot as plot
 ```
@@ -16,14 +17,16 @@ Quick overview of additional features:
   * Maps: Integration with basemap *and* cartopy. Generate arbitrary grids of map projections in one go. Switch between basemap and cartopy painlessly. Add geographical features as part of the `format` process.
 
 ## How is this different from seaborn?
-There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different? While some of the utilties here were inspired by seaborn (in particular `colors.py` takes its inspiration from seaborn's `palettes.py`), the goals for this project are quite different. I endeavored to create a package that was *extremely* efficient at the task of **crafting beautiful, precise, publication-ready figures, and no more**.
+There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different?
 
-When using ProPlot, your data should be analysed *prior* to plotting, while in seaborn the tasks of data analysis and plotting are generally wrapped into one. And as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
+While some of `proplot`'s tools were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of **crafting beautiful, precise, publication-ready figures, and no more**.
+
+Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form. ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time. Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
 
 By focusing on this one task -- creating beautiful figures -- I've created a number of **immensely powerful** features well beyond the scope of `seaborn` as a data analysis-and-visualization package. While some `rc` defaults have been improved, these tools are not intended to give you the final product on a silver platter. Instead, I expect you to tinker with your plots. This package simply makes this process much, much easier.
 
 ## Installation
-This package is a work-in-progress. Currently there is no dedicated `github.io` documentation and no formal releases on PyPi. However, feel free to install directly from Github using:
+This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
 
 ```
 pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
@@ -31,14 +34,16 @@ pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
 I only push to this repo when new features are completed and working properly.
 
-Dependencies are `matplotlib` and `numpy`. If you want to use the mapping features, you will also need `basemap` and/or `cartopy`. Note that [basemap is no longer under active development](https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement) -- cartopy is integrated much more intelligently with the matplotlib API, and therefore has more room for growth. However, for the time being, basemap retains several advantages over cartopy (namely [more tools for labeling meridians/parallels](https://github.com/SciTools/cartopy/issues/881) and more available projections -- see [basemap](https://matplotlib.org/basemap/users/mapsetup.html) vs. [cartopy](https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html)). Therefore basemap may be preferred in some circumstances.
+Dependencies are `matplotlib` and `numpy`. If you want to use the mapping features, you will also need `basemap` and/or `cartopy`. Note that [basemap is no longer under active development](https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement) -- cartopy is integrated more intelligently with the matplotlib API, and therefore has more room for growth. However, for the time being, basemap **retains several advantages** over cartopy (namely [more tools for labeling meridians/parallels](https://github.com/SciTools/cartopy/issues/881) and more available projections -- see [basemap](https://matplotlib.org/basemap/users/mapsetup.html) vs. [cartopy](https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html)). Therefore basemap may be preferred in some circumstances.
 
-## Donation
+## Donations
 This package took a shocking amount of time to write. If you've found it useful, feel free to buy me a cup of coffee :)
 
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url)
 
 # Documentation
+For the time being, there is no dedicated `github.io` doc page. Instead, refer to the documentation below, and check out the jupyter notebook  `showcase.ipynb` for some useful examples.
+
 ## The `subplots` command
 ### Basic usage
 To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to allot empty space. For example:
