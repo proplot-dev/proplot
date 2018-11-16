@@ -6,21 +6,13 @@ See: https://matplotlib.org/users/customizing.html
 Here's a quick list of rcParam categories:
     "lines", "patch", "hatch", "legend"
     "font", "text", "mathtext"
-        includes usetex for making all matplotlib fonts latex
-        and includes settings options for mathmode math, e.g. sf=sans
     "axes", "figure"
-        includes tons of options
     "date", "xtick", "ytick", "grid"
-        includes autoformatter
     "contour", "image"
-        include lut for size of colormap table
     "boxplot", "errorbar", "hist", "scatter"
     "path", "savefig", "ps", "tk", "pdf", "svg"
     "debug", "keymap", "examples"
     "animation"
-
-Warning: If you try to modify the dictionaries associated with the module
-*directly*, the autoreload ipython magic will reload every time! Cannot do this.
 
 Notes
 -----
@@ -29,19 +21,6 @@ Notes
 * Note that if *autoreload* is triggered/global defauls are reset, it seems that
     any options set with InlineBackend in ipython are ***ignored***. But if you query
     settings, options still present -- you just need to call nbsetup again.
-* Problem is the settings in rcParams are scattershot and missing some important
-    ones we want, but should use it when we can; options won't be rescinded in future versions
-* Currently features that can't be rcParam'ed are *gridminor* properties, the
-    *cgrid* idea (lines between colorbar colors), the continent/coastlines/lonlatlines
-    settings, and some legend settings.
-
-Todo
------
-* Change default background axes color to 0072B2, from seaborn colorblind, just
-    a bit darker than figure background; is nice.
-* Expand idea of default 'color', 'linewidth', whatever and create more
-    dictionaries with defaults settings, then update them. No more hardcoded values
-    in the main text below.
 """
 #------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
@@ -52,14 +31,17 @@ from . import colortools
 from . import utils
 from .utils import timer, counter
 from matplotlib import rcParams, style
+from icecream import ic
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 # Default settings
 # List of linked settings
 rcGlobals = {
     # Apply these ones to list of rcParams
-    'color' :     'k',
-    'facecolor':  'w',
+    'color':     'k',
+    'cycle':     'colorblind',
+    # 'facecolor':  '#0072b2', # 0072B2
+    'facecolor':  'w', # 0072B2
     'small':      8,
     'large':      9,
     'linewidth':  0.6,
@@ -77,11 +59,11 @@ rcGlobals = {
     }
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
-    'color':      ['axes.labelcolor', 'axes.edgecolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'facecolor':  ['axes.facecolor'], # simple alias
+    'color':      ['axes.labelcolor', 'axes.edgecolor', 'xtick.color', 'ytick.color', 'map.color'], # change the 'color' of an axes
+    'facecolor':  ['axes.facecolor', 'map.facecolor'], # simple alias
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
+    'linewidth':  ['axes.linewidth', 'map.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
     'fontname':   ['font.sans-serif'],
     # Less important ones
     'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
@@ -107,7 +89,6 @@ rcDefaults = {
     'savefig.directory':       '',
     'savefig.bbox':            'standard',
     'savefig.format':          'pdf',
-    'axes.facecolor':          (1,1,1,1),
     'axes.xmargin':            0,
     'axes.ymargin':            0.05,
     'axes.titleweight':        'normal',
@@ -159,11 +140,21 @@ rcDefaults = {
 # Special settings, should be thought of as extension of rcParams
 rcSpecial = {
     # These ones just need to be present, will get reset by globals
+    'map.facecolor':         rcGlobals['facecolor'],
+    'map.color':             rcGlobals['color'],
+    'map.linewidth':         rcGlobals['linewidth'],
     'abc.fontsize':          rcGlobals['large'],
+    'rowlabel.fontsize':     rcGlobals['large'],
+    'collabel.fontsize':     rcGlobals['large'],
     'gridminor.linewidth':   rcGlobals['linewidth']*rcGlobals['minorwidth'],
     # The rest can be applied as-is
     'axes.facehatch':        None, # optionally apply background hatching
     'abc.weight':            'bold',
+    'abc.color':             'k',
+    'rowlabel.weight':       'bold',
+    'rowlabel.color':        'k',
+    'collabel.weight':       'bold',
+    'collabel.color':        'k',
     'gridminor.color':       'k',
     'gridminor.alpha':       0.1,
     'gridminor.linestyle':   '-',
@@ -172,161 +163,211 @@ rcSpecial = {
     'ocean.linewidth':       0, # no boundary for patch object
     'ocean.color':           'w',
     'coastline.linewidth' :  1.0,
+    'coastline.color' :      'k',
     'lonlatlines.linewidth': 1.0,
-    # 'lonlatlines.linestyle': ':',
-    'lonlatlines.linestyle': '--',
+    'lonlatlines.linestyle': ':',
+    # 'lonlatlines.linestyle': '--',
     'lonlatlines.alpha':     0.4,
     'lonlatlines.color':     'k',
-    'subplots.title':        0.1, # extra space for title/suptitle
-    'subplots.inner':        0.2, # just have ticks, no labeels
-    'subplots.legend':       0.25, # default legend space (bottom of figure)
-    'subplots.cbar':         0.17, # default colorbar width
-    'subplots.ylab':         0.7, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
-    'subplots.xlab':         0.55, # for horizontal text should have more space
-    'subplots.nolab':        0.15, # only ticks
+    'gridspec.title':        0.2, # extra space for title/suptitle
+    'gridspec.inner':        0.2, # just have ticks, no labeels
+    'gridspec.legend':       0.25, # default legend space (bottom of figure)
+    'gridspec.cbar':         0.17, # default colorbar width
+    'gridspec.ylab':         0.7, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    'gridspec.xlab':         0.55, # for horizontal text should have more space
+    'gridspec.nolab':        0.15, # only ticks
     }
-# Generate list of categories
+# Generate list of valid names, and names with subcategories
+rc_names = {
+    *rcParams.keys(),
+    *rcSpecial.keys(),
+    }
 rc_categories = {
-    re.sub('\..*$', '', name) for name in rcParams.keys()
+    *(re.sub('\.[^.]*$', '', name) for name in rc_names),
+    *(re.sub('\..*$', '', name) for name in rc_names)
     }
-
-#------------------------------------------------------------------------------#
-# Contextual settings tool
-# Using this in day-to-day plotting is annoying and unnecessary, so we abstract
-# that away by permitting axes-specific changes requested by .format() input
-#------------------------------------------------------------------------------#
-class rc_context(object):
-    """
-    Context object.
-    """
-    def __init__(self, ax, *args, **kwargs):
-        """
-        Save user input.
-        """
-        # Parse input and detect if anything changed (to save time, since in the
-        # vact majority of the time, when this is called by format(), we are
-        # not going to change any settings)
-        for arg in args:
-            if not isinstance(arg, dict):
-                raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
-            kwargs.update(arg)
-        if not kwargs:
-            self._nochange = True
-        else:
-            self._nochange = False
-            self._kwargs = kwargs
-            self._special = rc._rcSpecial.copy()
-            self._rcparams = rcParams.copy()
-            self._ax = ax
-
-    def __enter__(self):
-        """
-        Apply them, then update all figures.
-        """
-        if not self._nochange:
-            for key,value in self._kwargs.items():
-                rc[key] = value # applies globally linked and individual settings
-
-    def __exit__(self, _type, _value, _traceback):
-        """
-        Return to previous state.
-        """
-        if not self._nochange:
-            for key,value in {**self._rcparams, **self._special}.items():
-                rc[key] = value
+def _get_alias(key):
+    alias = {alias for alias,names in rcGlobals_children.items() if key in names}
+    if len(alias)!=0:
+        key = alias.pop() # use
+    return key
 
 #-------------------------------------------------------------------------------
 # Contextual settings management
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 #-------------------------------------------------------------------------------
 class AttributeDict(dict):
-    """
-    Dictionary elements are attributes too.
-    """
+    # Dictionary elements are attributes too.
     def __getattr__(self, attr): # invoked only if __getattribute__ fails
         return self[attr]
     def __setattr__(self, attr, value):
         self[attr] = value
 
 class rc_configurator(object):
-    """
-    Abstract class for handling settings.
-    """
-    def reset(self):
-        # Alias to refresh settings
-        self.__init__()
-
     def __init__(self):
+        """
+        Magical abstract class for handling custom settings, builtin rcParams
+        settings, and artificial 'global' params that keep certain groups
+        of settings synced. Also includes context manager.
+        """
+        # First initialize matplotlib
         # Note rcdefaults() changes the backend! Inline plotting will fail for
         # rest of notebook session if you call rcdefaults before drawing a figure!
         # After first figure made, backend property is 'sticky', never changes!
         # See: https://stackoverflow.com/a/48322150/4970632
-        # First initialize matplotlib
-        style.use('default') # mpl.style does not change the backend
+        style.use('default') # mpl.style function does not change the backend
         # Add simple attributes to rcParams
-        self._rcSpecial = rcSpecial.copy() # *must* be separated from module
+        self._rcCache = {}
+        self._rcSpecial = rcSpecial.copy() # *must* be separated from module, so autoreload doesn't go nuts
         self._rcGlobals = rcGlobals.copy()
         for key,value in rcDefaults.items():
             rcParams[key] = value
         # Apply linked attributes to rcParams
-        # The __setitem__ method takes care of details
-        self['cycle'] = 'colorblind' # default cycler
-        for key,value in self._rcGlobals.items():
-            self[key] = value
-        # Test if module is in its initial state
+        self._set_cycler('colorblind')
+        rc, rc_sp = self._get_globals()
+        rcParams.update(rc)
+        self._rcSpecial.update(rc_sp)
+        # Settings
         self._init = True
+        self._cache_orig = None
+        self._cache_added = None
+        self._getitem_mode = 0
+
+    def __enter__(self):
+        # Apply new settings (will get added to _rcCache)
+        if not self._cache_added:
+            return
+        for key,value in self._cache_added.items():
+            self[key] = value # applies globally linked and individual settings
+
+    def __exit__(self, _type, _value, _traceback):
+        # Restore configurator cache to its previous state.
+        self._getitem_mode = 0
+        if not self._cache_orig:
+            return
+        for key,value in self._cache_orig.items():
+            self[key] = value
 
     # @counter
     def __getitem__(self, key):
         # Can get a whole bunch of different things
-        # Get full dictionary
+        # Get full dictionary e.g. for rc[None]
         if not key:
             return {**rcParams, **self._rcSpecial}
-        # Get a global linked value
-        if key in self._rcGlobals:
-            return self._rcGlobals[key]
+        # Allow for special time-saving modes where we *ignore rcParams*
+        # or even *ignore rcSpecial*.
+        mode = self._getitem_mode
+        if mode==0:
+            kws = (self._rcCache, self._rcSpecial, rcParams)
+        elif mode==1:
+            kws = (self._rcCache, self._rcSpecial)
+        elif mode==2:
+            kws = (self._rcCache,)
+        else:
+            raise ValueError(f'Invalid _getitem_mode {mode}.')
         # Get dictionary of sub-categories
-        # Allow access to dictionary contents through attributes
-        # NOTE: Try to iterate through dictionary only *once* (could do
-        # key in <blank> tests instead of first if statements, but that
-        # would often mean two iterations over almost entire dictionary)
-        params = AttributeDict()
-        for i,d in enumerate((rcParams, self._rcSpecial)):
-            for category,value in d.items():
-                if re.match(f'^{key}$', category):
-                    return d[key]
-                elif re.search(f'^{key}\.', category):
-                    subcategory = re.sub(f'^{key}.', '', category)
-                    if subcategory and '.' not in subcategory:
-                        params[subcategory] = d[category]
-        if not params:
-            raise ValueError(f'Invalid key "{key}".')
-        return params
+        if key in rc_categories:
+            # kw = AttributeDict()
+            params = {}
+            for kw in kws:
+                for category,value in kw.items():
+                    if re.search(f'^{key}\.', category):
+                        subcategory = re.sub(f'^{key}\.', '', category)
+                        if subcategory and '.' not in subcategory:
+                            params[subcategory] = value
+            return params
+        # Successively index a few different dicts
+        else:
+            # Try to return the value
+            for kw in (self._rcGlobals, *kws):
+                try:
+                    return kw[key]
+                except KeyError:
+                    continue
+            # If we were in one of the exlusive modes, return 1
+            if mode==0:
+                raise ValueError(f'Invalid key "{key}".')
+            else:
+                return None
 
     # @counter
     def __setitem__(self, key, value):
-        # Detect aliases
-        alias = {alias for alias,names in rcGlobals_children.items() if key in names}
-        if len(alias)!=0:
-            key = alias.pop() # use
+        # Keep certain properties *coupled*; always set the global one
+        key = _get_alias(key)
         # First the special cycler
+        if key=='cycle':
+            self._set_cycler(value)
+        # Apply global settings
+        elif key in rcGlobals:
+            rc, rc_sp = self._get_globals(key, value)
+            self._rcCache.update(rc)
+            self._rcCache.update(rc_sp)
+        # Directly modify single parameter
+        elif key in rc_names:
+            self._rcCache[key] = value
+        # Optionally pass a dictionary to modify a bunch of stuff at once
+        elif isinstance(key, dict):
+            kwargs = value
+            for name,value in kwargs.items():
+                name = f'{key}.{name}'
+                if name not in rc_names:
+                    raise ValueError(f'Invalid key "{name}" for parameter "{key}".')
+                else:
+                    self._rcCache[name] = value
+        else:
+            raise ValueError(f'Invalid key "{key}".')
+        self._init = False # no longer in initial state
+
+    def __getattribute__(self, attr):
+        # Alias to getitem
+        if attr.startswith('_') or attr in ('reset','context'):
+            return super().__getattribute__(attr)
+        else:
+            return self.__getitem__(attr)
+
+    def __setattr__(self, attr, value):
+        # Alias to setitem
+        if attr.startswith('_') or attr in ('reset','context'):
+            super().__setattr__(attr, value)
+        else:
+            self.__setitem__(attr, value)
+
+    def __str__(self):
+        # Alias to __repr__
+        return self.__repr__()
+
+    def __repr__(self):
+        # Nice string representation
+        length = 1 + max(len(key) for key in self._rcGlobals.keys())
+        string = '\n'.join(f'{key}: {" "*(length-len(key))}{value}'
+                                    for key,value in self._rcGlobals.items())
+        return string
+
+    def _set_cycler(self, value):
+        # Set the color cycler.
         # NOTE: Generally if user uses 'C0', et cetera, assume they want to
         # refer to the *default* cycler colors; so first reset
-        if key=='cycle':
-            if isinstance(value, str) or utils.isnumber(value):
-                value = value,
-            colors = colortools.colors('colorblind')
-            self['axes.prop_cycle'] = cycler('color', colors)
-            colors = colortools.colors(*value)
-            self['axes.prop_cycle'] = cycler('color', colors)
-            figs = list(map(plt.figure, plt.get_fignums()))
-            for fig in figs:
-                for ax in fig.axes:
-                    ax.set_prop_cycle(cycler('color', colors))
-        # Apply global settings
-        elif key in self._rcGlobals:
-            self._rcGlobals[key] = value
-            # First smarter controls on minor tick length
+        if isinstance(value, str) or utils.isnumber(value):
+            value = value,
+        colors = colortools.colors('colorblind')
+        rcParams['axes.prop_cycle'] = cycler('color', colors)
+        colors = colortools.colors(*value)
+        rcParams['axes.prop_cycle'] = cycler('color', colors)
+        figs = list(map(plt.figure, plt.get_fignums()))
+        for fig in figs:
+            for ax in fig.axes:
+                ax.set_prop_cycle(cycler('color', colors))
+
+    def _get_globals(self, key=None, value=None):
+        # Apply all properties in some group.
+        kw = {}
+        kw_sp = {}
+        if key is not None and value is not None:
+            items = [(key,value)]
+        else:
+            items = self._rcGlobals.items()
+        for key,value in items:
+            # Tick length/major-minor tick length ratio
             if key in ('ticklen','tickratio'):
                 if key=='tickratio':
                     ticklen = self._rcGlobals['ticklen']
@@ -334,9 +375,9 @@ class rc_configurator(object):
                 else:
                     ticklen = value
                     ratio = self._rcGlobals['tickratio']
-                rcParams['xtick.minor.size'] = ticklen*ratio
-                rcParams['ytick.minor.size'] = ticklen*ratio
-            # And on tick width
+                kw['xtick.minor.size'] = ticklen*ratio
+                kw['ytick.minor.size'] = ticklen*ratio
+            # Spine width/major-minor tick width ratio
             if key in ('linewidth','minorwidth'):
                 if key=='linewidth':
                     tickwidth = value
@@ -344,64 +385,48 @@ class rc_configurator(object):
                 else:
                     tickwidth = self._rcGlobals['linewidth']
                     ratio = value
-                rcParams['xtick.minor.width'] = tickwidth*ratio
-                rcParams['ytick.minor.width'] = tickwidth*ratio
-                self._rcSpecial['gridminor.linewidth'] = tickwidth*ratio
-            # Finally the special settings that correspond to a list of values
+                kw['xtick.minor.width'] = tickwidth*ratio
+                kw['ytick.minor.width'] = tickwidth*ratio
+                kw_sp['gridminor.linewidth'] = tickwidth*ratio # special
+            # Now update linked settings
             for name in rcGlobals_children.get(key,[]):
-                if name in rcParams:
-                    rcParams[name] = value
-                elif name in self._rcSpecial:
-                    self._rcSpecial[name] = value
+                if name in rcSpecial:
+                    kw_sp[name] = value
                 else:
-                    raise ValueError(f'Invalid key "{name}".')
-        # Directly modify single parameter
-        elif not isinstance(value, dict):
-            if key in rcParams:
-                rcParams[key] = value
-            elif key in self._rcSpecial:
-                self._rcSpecial[key] = value
-            else:
-                raise ValueError(f'Invalid key "{key}".')
-        # Optionally pass a dictionary to modify a bunch of stuff at once
-        else:
-            kwargs = value
-            for name,value in kwargs.items():
-                name = f'{key}.{name}'
-                if name in rcParams:
-                    rcParams[name] = value
-                elif name in self._rcSpecial:
-                    self._rcSpecial[name] = value
-                else:
-                    raise ValueError(f'Invalid key "{name}" for parameter "{key}".')
-        self._init = False # no longer in initial state
+                    kw[name] = value
+        return kw, kw_sp
 
-    def __getattribute__(self, attr):
-        # Alias to getitem
-        if attr.startswith('_') or attr=='reset':
-            return super().__getattribute__(attr)
-        else:
-            return self.__getitem__(attr)
+    def reset(self):
+        """
+        Restore settings to default.
+        """
+        return self.__init__()
 
-    def __setattr__(self, attr, value):
-        # Alias to setitem
-        if attr.startswith('_') or attr=='reset':
-            super().__setattr__(attr, value)
-        else:
-            self.__setitem__(attr, value)
-
-    def __repr__(self):
-        # Nice string representation
-        length = 1 + max(len(key) for key in self._rcGlobals.keys())
-        header = 'linked properties'
-        header = header + '\n' + '-'*len(header) + '\n'
-        header = ''
-        string = header + '\n'.join(f'{key}: {" "*(length-len(key))}{value}'
-                                    for key,value in self._rcGlobals.items())
-        return string
-
-    def __str__(self):
-        return self.__repr__()
+    def context(self, *args, mode=0, **kwargs):
+        """
+        Temporarily modify rc configuration. Do this by simply
+        saving the cache, allowing modification of the cache, then
+        restoring the old cache.
+        Three modes:
+            0) __getitem__ searches everything, the default.
+            1) __getitem__ ignores rcParams (assumption is these have already
+               been set). Used during Axes __init__ calls to _rcupdate.
+            2) __getitem__ ignores rcParams and rcSpecial; only read from cache, i.e.
+               settings that user has manually changed. Used during Axes
+               format() calls to _rcupdate.
+        """
+        # Apply mode
+        if mode not in (0,1,2):
+            raise ValueError(f'Invalid _getitem_mode {mode}.')
+        for arg in args:
+            if not isinstance(arg, dict):
+                raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
+            kwargs.update(arg)
+        self._getitem_mode = mode
+        if kwargs:
+            self._cache_added = kwargs
+            self._cache_orig  = rc._rcCache.copy()
+        return self
 
 # Instantiate object
 rc = rc_configurator()

@@ -233,20 +233,20 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         if which:
             innerpanels_kw[num]['whichpanels'] = which
             if re.search('[bt]', which):
-                kwargs['hspace'] = _fill(kwargs.get('hspace',None), rc.subplots['xlab'])
+                kwargs['hspace'] = _fill(kwargs.get('hspace',None), rc['gridspec.xlab'])
                 innerpanels_kw[num]['sharex_panels'] = False
-                innerpanels_kw[num]['hwidth'] = _fill(innerpanels_kw[num].get('hwidth', None), rc.subplots['cbar'])
-                innerpanels_kw[num]['hspace'] = _fill(innerpanels_kw[num].get('hspace', None), rc.subplots['xlab'])
+                innerpanels_kw[num]['hwidth'] = _fill(innerpanels_kw[num].get('hwidth', None), rc['gridspec.cbar'])
+                innerpanels_kw[num]['hspace'] = _fill(innerpanels_kw[num].get('hspace', None), rc['gridspec.xlab'])
             if re.search('[lr]', which):
-                kwargs['wspace'] = _fill(kwargs.get('wspace',None), rc.subplots['ylab'])
+                kwargs['wspace'] = _fill(kwargs.get('wspace',None), rc['gridspec.ylab'])
                 innerpanels_kw[num]['sharey_panels'] = False
-                innerpanels_kw[num]['wwidth'] = _fill(innerpanels_kw[num].get('wwidth', None), rc.subplots['cbar'])
+                innerpanels_kw[num]['wwidth'] = _fill(innerpanels_kw[num].get('wwidth', None), rc['gridspec.cbar'])
                 if 'l' in which and 'r' in which:
-                    default = (rc.subplots['ylab'], rc.subplots['nolab'])
+                    default = (rc['gridspec.ylab'], rc['gridspec.nolab'])
                 elif 'l' in which:
-                    default = rc.subplots['ylab']
+                    default = rc['gridspec.ylab']
                 else:
-                    default = rc.subplots['nolab']
+                    default = rc['gridspec.nolab']
                 innerpanels_kw[num]['wspace'] = _fill(innerpanels_kw[num].get('wspace', None), default)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)

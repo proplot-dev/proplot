@@ -55,12 +55,11 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
 from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
-from .rcmod import rc, rc_context
+from .rcmod import rc
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
 from . import colortools, utils
-from .utils import _dot_dict, _fill, timer, docstring_fix
-rc_context_rcmod = rc_context # so it won't be overritten by method declarations in subclasses
+from .utils import _dot_dict, _fill, timer, counter, docstring_fix
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -574,6 +573,8 @@ class Figure(mfigure.Figure):
         self.toppanel    = EmptyPanel()
         # Proceed
         super().__init__(figsize=figsize, **kwargs) # python 3 only
+        # Initialize suptitle, adds _suptitle attribute
+        self.suptitle('')
 
     def _rowlabels(self, labels, **kwargs):
         # Assign rowlabels
@@ -594,7 +595,8 @@ class Figure(mfigure.Figure):
                 x, _ = label_to_ax.transform(ax.yaxis.label.get_position())
                 ax.rowlabel.set_visible(True)
                 # Add text
-                ax.rowlabel.update({'text':label, 'position':[x,0.5],
+                ax.rowlabel.update({'text':label,
+                    'position':[x,0.5],
                     'ha':'right', 'va':'center', **kwargs})
 
     def _collabels(self, labels, **kwargs):
@@ -618,8 +620,6 @@ class Figure(mfigure.Figure):
         # 2) Determine y by whether titles exist on top-row axes.
         # NOTE: Default linespacing is 1.2; it has no get, only a setter; see
         # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-        if not hasattr(self,'_suptitle') or self._suptitle is None:
-            self.suptitle('')
         title_height = self.axes[0].title.get_size()/72
         line_spacing = self.axes[0].title._linespacing
         base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
@@ -637,6 +637,7 @@ class Figure(mfigure.Figure):
         ypos = (base + offset)/self.height
         self._suptitle.update({'position':(xpos, ypos), 'ha':'center', 'va':'bottom', **kwargs})
 
+    # @counter
     def draw(self, renderer, *args, **kwargs):
         # Special: Figure out if other titles are present, and if not
         # bring suptitle close to center
@@ -809,7 +810,7 @@ class Figure(mfigure.Figure):
         for axis in self._span_labels:
             axis.axes._share_span_label(axis)
 
-    @timer
+    # @timer
     def save(self, filename, silent=False, auto_adjust=True, pad=0.1, **kwargs):
         # Notes:
         # * Gridspec object must be updated before figure is printed to
@@ -836,6 +837,19 @@ class Figure(mfigure.Figure):
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
 #------------------------------------------------------------------------------#
+def update(props):
+    """
+    Function that only updates a property if rc.__getitem__ returns not None.
+    Meant for optimization; hundreds of 200-item dictionary lookups over several
+    subplots end up taking toll, almost 1s runtime.
+    """
+    props_out = {}
+    for key,value in props.items():
+        value = rc[value]
+        if value is not None:
+            props_out[key] = value
+    return props_out
+
 @docstring_fix
 class BaseAxes(maxes.Axes):
     """
@@ -863,15 +877,6 @@ class BaseAxes(maxes.Axes):
         self._insets = [] # add to these later
         self._map_name = map_name # consider conditionally allowing 'shared axes' for certain projections
         super().__init__(*args, **kwargs)
-
-        # Add special row/column labels (can only be filled with text if axes
-        # is on leftmost column/topmost row)
-        self.collabel = self.text(*self.title.get_position(), '',
-                weight=rc['axes.titleweight'], size=rc['axes.titlesize'],
-                va='baseline', ha='center', transform=self.title.get_transform())
-        self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
-                weight=rc['axes.titleweight'], size=rc['axes.titlesize'],
-                va='center', ha='right', transform=self.transAxes)
 
         # Panels
         if panel_side not in (None, 'left','right','bottom','top'):
@@ -902,18 +907,17 @@ class BaseAxes(maxes.Axes):
         self._sharex_setup(sharex)
         self._sharey_setup(sharey)
 
-        # Re-enforce rc settings (we may have customized versions, e.g. for
-        # CartopyAxes, that __init__ did not configure)
-        if not hasattr(self, 'abc'): # add custom property
-            self.abc = self.text(0, 0, '')
+        # Add extra text properties for abc labeling, rows/columns labels
+        # (can only be filled with text if axes is on leftmost column/topmost row)
+        self.abc = self.text(0, 0, '') # position tbd
+        self.collabel = self.text(*self.title.get_position(), '',
+                va='baseline', ha='center', transform=self.title.get_transform())
+        self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
+                va='center', ha='right', transform=self.transAxes)
 
-        # Enforce custom rc settings!
-        # TODO: This will be redundant in that it re-enforces builtin settings
-        # Could improve by *tracking changed rc settings*, only applying the
-        # (1) the rcSpecial and rcCache props when _rcupdate is called in __init__
-        # (2) only the rcCache (user overrides) when _rcupdate is called in format()
-        # First need to do benchmarks! Probably not too important for normal figures!
-        self._rcupdate()
+        # Enforce custom rc settings! And only look for rcSpecial settings.
+        with rc.context(mode=1):
+            self._rcupdate()
 
     # Apply some simple featueres, and disable spectral and triangular features
     # See: https://stackoverflow.com/a/23126260/4970632
@@ -1017,12 +1021,18 @@ class BaseAxes(maxes.Axes):
             self.rightpanel._sharex_setup(left)
 
     def _rcupdate(self):
-        # Update the titling settings
-        self.title.update({'fontsize':rc['axes.titlesize'], 'weight':rc['axes.titleweight']})
-        if hasattr(self,'abc'):
-            self.abc.update({'fontsize':rc['abc.fontsize'], 'weight':rc['abc.weight']})
-        if hasattr(self,'_suptitle'):
-            self._suptitle.update({'fontsize':rc['figure.titlesize'], 'weight':rc['figure.titleweight']})
+        # Axes, figure title (builtin settings)
+        kw = update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight'})
+        self.title.update(kw)
+        kw = update({'fontsize':'figure.titlesize', 'weight':'figure.titleweight'})
+        self.figure._suptitle.update(kw)
+        # Row and column labels, ABC labels
+        kw = update({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color'})
+        self.abc.update(kw)
+        kw = update({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color'})
+        self.rowlabel.update(kw)
+        kw = update({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color'})
+        self.collabel.update(kw)
 
     def _text_update(self, obj, kwargs):
         # Allow updating properties introduced by the BaseAxes.text() override.
@@ -1072,10 +1082,6 @@ class BaseAxes(maxes.Axes):
                 defaults_kw['border'] = _fill(kwargs.pop('border', None), True) # by default
         return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va, **defaults_kw}
 
-    def rc_context(self, *args, **kwargs):
-        # Temporarily change rcParams for drawings on this axes.
-        return rc_context_rcmod(self, *args, **kwargs)
-
     # New convenience feature
     # The title position can be a mix of 'l/c/r' and 'i/o'
     def format(self,
@@ -1103,7 +1109,7 @@ class BaseAxes(maxes.Axes):
         # First update (note that this will call _rcupdate overridden by child
         # classes, which can in turn call the parent class version, so we only
         # need to call this from the base class, and all settings will be applied)
-        with self.rc_context(rc_kw, **kwargs):
+        with rc.context(rc_kw, mode=2, **kwargs):
             self._rcupdate()
 
         # NOTE: These next two are actually *figure-wide* settings, but that
@@ -1132,9 +1138,8 @@ class BaseAxes(maxes.Axes):
                 raise ValueError(f'Invalid abcformat {abcformat}.')
             abcedges = abcformat.split('a')
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
-            abc_kw = {'text':text, **abc_kw, **rc['abc']}
             pos_kw = self._title_pos(abcpos or 'ol')
-            self.abc = self._text_update(self.abc, {**pos_kw, **abc_kw})
+            self.abc = self._text_update(self.abc, {'text':text, **abc_kw, **pos_kw})
         elif hasattr(self, 'abc') and abc is not None and not abc:
             # Hide
             self.abc.set_visible(False)
@@ -1353,58 +1358,48 @@ class XYAxes(BaseAxes):
         return axis.label
 
     # @timer
+    # @counter
     def _rcupdate(self):
         # Update the rcParams according to user input.
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
-            spine.update({'linewidth':rc['axes.linewidth'], 'color':rc['axes.edgecolor']})
+            kw = update({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
+            spine.update(kw)
 
         # Axis settings
         for name,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Axis label
-            # axis.label.update({'color':rc.color, 'fontsize':rc.small, 'weight':rc['axes.labelweight']})
-            axis.label.update({'color': rc['axes.edgecolor'],
-                            'fontsize': rc['axes.labelsize'],
-                            'weight':   rc['axes.labelweight']})
+            kw = update({'color':'axes.edgecolor', 'fontize':'axes.labelsize', 'weight':'axes.labelweight'})
+            axis.label.update(kw)
 
             # Tick labels
             for t in axis.get_ticklabels():
-                t.update({'color':rc['axes.edgecolor'], 'fontsize':rc[name + 'tick.labelsize']})
-                # t.update({'color':rc.color, 'fontsize':rc.small})
+                kw = update({'color':'axes.edgecolor', 'fontize':name+'tick.labelsize'})
+                t.update(kw)
+
             # Tick marks
             # NOTE: We decide that tick location should be controlled only
             # by format(), so don't override that here.
-            major, minor = rc[name + 'tick.major'], rc[name + 'tick.minor']
-            minor.pop('visible') # don't toggle that yet
-            major = {key:value for key,value in major.items() if key not in ('bottom','top','left','right')}
-            minor = {key:value for key,value in minor.items() if key not in ('bottom','top','left','right')}
-            major.update({'color': rc['axes.edgecolor']})
-            minor.update({'color': rc['axes.edgecolor']})
-            axis.set_tick_params(which='major', **major)
-            axis.set_tick_params(which='minor', **minor)
-
-            # Apply the settings
-            # major.update({'color':rc.color})
-            # minor.update({'color':rc.color})
-            # axis.set_tick_params(which='major', color=rc.color, size=rc.ticklen, width=rc.linewidth)
-            # axis.set_tick_params(which='minor', color=rc.color, size=rc.ticklen*rc.tickratio, width=rc.linewidth*rc.minorwidth)
+            kw_both = update({'color': name + 'tick.color'})
+            for which in ('major','minor'):
+                kw = rc[name + 'tick.' + which]
+                axis.set_tick_params(which=which, **kw, **kw_both)
 
             # Manually update gridlines
-            for grid,ticks in zip(('grid','gridminor'),(axis.get_major_ticks(), axis.get_minor_ticks())):
+            for grid,ticks in zip(['grid','gridminor'],[axis.get_major_ticks(), axis.get_minor_ticks()]):
+                kw = rc[grid]
                 for tick in ticks:
-                    tick.gridline.update(rc[grid])
-            # if grid is not None:
-            #     axis.grid(grid, which='major', **rc['grid'])
-            # if gridminor is not None:
-            #     axis.grid(gridminor, which='minor', **rc['gridminor']) # ignore if no minor ticks
+                    tick.gridline.update(kw)
 
         # Update background patch, with optional hatching
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
-        self.patch.update({'facecolor': rc['axes.facecolor']})
-        hatch = rc['axes.facehatch']
-        if hatch: # non-empty string or not none
-            self.fill_between([0,1], 0, 1, hatch=hatch, zorder=0, # put in back
+        kw = update({'facecolor': 'axes.facecolor'})
+        self.patch.update(kw)
+        kw = update({'hatch':'axes.facehatch'})
+        if kw: # non-empty
+            self.fill_between([0,1], 0, 1, hatch=kw['hatch'],
+                zorder=0, # put in back
                 facecolor='none', edgecolor='k', transform=self.transAxes)
 
         # Call parent
@@ -1601,9 +1596,9 @@ class XYAxes(BaseAxes):
             # For some insane reasion, these are ***both*** needed
             # Without this below stuff, e.g. gridminor=True doesn't draw gridlines
             if grid is not None: # grid changes must be after tick
-                axis.grid(grid, which='major', **rc['grid'])
+                axis.grid(grid, which='major')
             if gridminor is not None:
-                axis.grid(gridminor, which='minor', **rc['gridminor']) # ignore if no minor ticks
+                axis.grid(gridminor, which='minor') # ignore if no minor ticks
 
     def twiny(self, **kwargs):
         # Create second x-axis extending from shared ("twin") y-axis
@@ -1876,6 +1871,8 @@ class BasemapAxes(MapAxes):
         self.boundary = None
         self._recurred = False # use this so we can override plotting methods
         self._mapboundarydrawn = None
+        self._land = None
+        self._coastline = None
         # Initialize
         super().__init__(*args, map_name=self.m.projection, **kwargs)
 
@@ -1888,24 +1885,34 @@ class BasemapAxes(MapAxes):
         # * For now will enforce that map plots *always* have background whereas
         #   axes plots can have transparent background
         self.axesPatch = self.patch # for bugfix
-        if self.m._mapboundarydrawn:
-            self.m._mapboundarydrawn.remove()
-        facecolor = rc['axes.facecolor']
-        outline = {'linewidth': rc['axes.linewidth'],
-                   'color':     rc['axes.edgecolor']}
+        # if self.m._mapboundarydrawn:
+        #     self.m._mapboundarydrawn.remove()
 
         # Draw boundary
+        kw_face = update({'facecolor': 'map.facecolor'})
         if self.m.projection in _map_pseudocyl:
             self.patch.set_alpha(0) # make patch invisible
-            p = self.m.drawmapboundary(fill_color=facecolor, ax=self, **outline) # set fill_color to 'none' to make transparent
+            kw_edge = update({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
+            if not self.m._mapboundarydrawn:
+                p = self.m.drawmapboundary(ax=self, **kw_edge) # set fill_color to 'none' to make transparent
+            else:
+                p = self.m._mapboundarydrawn
+            p.update({**kw_face, **kw_edge})
             p.set_rasterized(False) # not sure about this; might be rasterized
-            p.set_clip_on(False) # so edges of *line* denoting boundary aren't cut off
-            self.boundary = p # not sure why this one
+            p.set_clip_on(False)    # so edges of *line* denoting boundary aren't cut off
+            self.boundary = p       # not sure why this one
         else:
-            self.patch.set_facecolor(facecolor)
-            self.patch.set_edgecolor('none')
+            self.patch.update({**kw_face, 'edgecolor':'none'})
+            kw_edge = update({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
             for spine in self.spines.values():
-                spine.update(outline)
+                spine.update(kw_edge)
+
+        # Basic geographic features
+        if self._land:
+            for p in self._land:
+                p.update(rc['land'])
+        if self._coastline:
+            self._coastline.update(rc['coastline'])
 
         # Call parent
         super()._rcupdate()
@@ -1958,14 +1965,12 @@ class BasemapAxes(MapAxes):
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
-        if land:
-            props = rc['land']
-            p = self.m.fillcontinents(ax=self)
-            for _ in p:
-                _.update(props)
-        if coastline:
-            props = rc['coastline']
-            p = self.m.drawcoastlines(**props, ax=self)
+        if land and not self._land:
+            self._land = self.m.fillcontinents(ax=sel)
+            for p in self._land:
+                p.update(rc['land'])
+        if coastline and not self._coastline:
+            self._coastline = self.m.drawcoastlines(ax=self, **rc['coastline'])
 
         # Function to make gridlines look like cartopy lines
         # NOTE: For some reason basemap gridlines look different from cartopy ones
@@ -1996,6 +2001,8 @@ class BasemapAxes(MapAxes):
         lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
         lsettings = rc['lonlatlines']
         linestyle = lsettings['linestyle']
+        latlocator = _fill(latlocator, 20) # gridlines by default
+        lonlocator = _fill(lonlocator, 60)
         if latlocator is not None:
             if utils.isnumber(latlocator):
                 latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
@@ -2068,10 +2075,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             self.set_boundary(Circle(100), transform=self.transAxes)
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
 
-    def _as_mpl_axes(self):
-        # Don't think this is ever used.
-        return GeoAxes, {'map_projection': self}
-
     def __getattribute__(self, attr, *args):
         obj = super().__getattribute__(attr, *args)
         if attr in _line_methods:
@@ -2087,9 +2090,11 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     def _rcupdate(self):
         # Update properties controlled by custom rc settings
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
-        self.background_patch.update({'facecolor': rc['axes.facecolor']})
-        self.outline_patch.update({'edgecolor': rc['axes.edgecolor'],
-                                   'linewidth': rc['axes.linewidth']})
+        kw = update({'facecolor': 'map.facecolor'})
+        self.background_patch.update(kw)
+        kw = update({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
+        self.outline_patch.update(kw)
+
         # Call parent
         super()._rcupdate()
 

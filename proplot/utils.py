@@ -88,7 +88,8 @@ def counter(func):
         t = time.clock()
         res = func(*args, **kwargs)
         decorator.time += (time.clock() - t)
-        print(f'{func.__name__} cumulative time: {decorator.time}s')
+        decorator.count += 1
+        print(f'{func.__name__} cumulative time: {decorator.time}s ({decorator.count} calls)')
         # print(f'{func.__name__} has been used: {decorator.count}x')
         return res
     decorator.time = 0
