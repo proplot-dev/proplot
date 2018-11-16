@@ -265,10 +265,22 @@ class rc_configurator(object):
             kws = (self._rcCache,)
         else:
             raise ValueError(f'Invalid _getitem_mode {mode}.')
-        # Get dictionary of sub-categories
+        # If it is available, return the values corresponding to names in
+        # user dictionary; e.g. {'color':'axes.facecolor'} becomes {'color':'w'}
+        # NOTE: Got weird bugs here. Dunno why. Use self.update method instead.
+        # if isinstance(key, dict):
+        #     params = {}
+        #     for kw in kws:
+        #         for name,value in key.items():
+        #             try:
+        #                 param = kw[value]
+        #             except KeyError:
+        #                 continue
+        #             params[name] = param
+        #     return params
         if key in rc_categories:
-            # kw = AttributeDict()
             params = {}
+            # params = AttributeDict()
             for kw in kws:
                 for category,value in kw.items():
                     if re.search(f'^{key}\.', category):
@@ -320,14 +332,14 @@ class rc_configurator(object):
 
     def __getattribute__(self, attr):
         # Alias to getitem
-        if attr.startswith('_') or attr in ('reset','context'):
+        if attr.startswith('_') or attr in ('reset','context','update'):
             return super().__getattribute__(attr)
         else:
             return self.__getitem__(attr)
 
     def __setattr__(self, attr, value):
         # Alias to setitem
-        if attr.startswith('_') or attr in ('reset','context'):
+        if attr.startswith('_') or attr in ('reset','context','update'):
             super().__setattr__(attr, value)
         else:
             self.__setitem__(attr, value)
@@ -401,6 +413,19 @@ class rc_configurator(object):
         Restore settings to default.
         """
         return self.__init__()
+
+    def update(self, props):
+        """
+        Function that only updates a property if self.__getitem__ returns not None.
+        Meant for optimization; hundreds of 200-item dictionary lookups over several
+        subplots end up taking toll, almost 1s runtime.
+        """
+        props_out = {}
+        for key,value in props.items():
+            value = self[value]
+            if value is not None:
+                props_out[key] = value
+        return props_out
 
     def context(self, *args, mode=0, **kwargs):
         """

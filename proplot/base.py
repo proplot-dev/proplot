@@ -837,19 +837,6 @@ class Figure(mfigure.Figure):
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
 #------------------------------------------------------------------------------#
-def update(props):
-    """
-    Function that only updates a property if rc.__getitem__ returns not None.
-    Meant for optimization; hundreds of 200-item dictionary lookups over several
-    subplots end up taking toll, almost 1s runtime.
-    """
-    props_out = {}
-    for key,value in props.items():
-        value = rc[value]
-        if value is not None:
-            props_out[key] = value
-    return props_out
-
 @docstring_fix
 class BaseAxes(maxes.Axes):
     """
@@ -1022,16 +1009,16 @@ class BaseAxes(maxes.Axes):
 
     def _rcupdate(self):
         # Axes, figure title (builtin settings)
-        kw = update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight'})
+        kw = rc.update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight'})
         self.title.update(kw)
-        kw = update({'fontsize':'figure.titlesize', 'weight':'figure.titleweight'})
+        kw = rc.update({'fontsize':'figure.titlesize', 'weight':'figure.titleweight'})
         self.figure._suptitle.update(kw)
         # Row and column labels, ABC labels
-        kw = update({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color'})
+        kw = rc.update({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color'})
         self.abc.update(kw)
-        kw = update({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color'})
+        kw = rc.update({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color'})
         self.rowlabel.update(kw)
-        kw = update({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color'})
+        kw = rc.update({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color'})
         self.collabel.update(kw)
 
     def _text_update(self, obj, kwargs):
@@ -1363,24 +1350,24 @@ class XYAxes(BaseAxes):
         # Update the rcParams according to user input.
         # Simply updates the spines and whatnot
         for spine in self.spines.values():
-            kw = update({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
+            kw = rc.update({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
             spine.update(kw)
 
         # Axis settings
         for name,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Axis label
-            kw = update({'color':'axes.edgecolor', 'fontize':'axes.labelsize', 'weight':'axes.labelweight'})
+            kw = rc.update({'color':'axes.edgecolor', 'fontize':'axes.labelsize', 'weight':'axes.labelweight'})
             axis.label.update(kw)
 
             # Tick labels
             for t in axis.get_ticklabels():
-                kw = update({'color':'axes.edgecolor', 'fontize':name+'tick.labelsize'})
+                kw = rc.update({'color':'axes.edgecolor', 'fontize':name+'tick.labelsize'})
                 t.update(kw)
 
             # Tick marks
             # NOTE: We decide that tick location should be controlled only
             # by format(), so don't override that here.
-            kw_both = update({'color': name + 'tick.color'})
+            kw_both = rc.update({'color': name + 'tick.color'})
             for which in ('major','minor'):
                 kw = rc[name + 'tick.' + which]
                 axis.set_tick_params(which=which, **kw, **kw_both)
@@ -1394,9 +1381,9 @@ class XYAxes(BaseAxes):
         # Update background patch, with optional hatching
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
-        kw = update({'facecolor': 'axes.facecolor'})
+        kw = rc.update({'facecolor': 'axes.facecolor'})
         self.patch.update(kw)
-        kw = update({'hatch':'axes.facehatch'})
+        kw = rc.update({'hatch':'axes.facehatch'})
         if kw: # non-empty
             self.fill_between([0,1], 0, 1, hatch=kw['hatch'],
                 zorder=0, # put in back
@@ -1889,10 +1876,10 @@ class BasemapAxes(MapAxes):
         #     self.m._mapboundarydrawn.remove()
 
         # Draw boundary
-        kw_face = update({'facecolor': 'map.facecolor'})
+        kw_face = rc.update({'facecolor': 'map.facecolor'})
         if self.m.projection in _map_pseudocyl:
             self.patch.set_alpha(0) # make patch invisible
-            kw_edge = update({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
+            kw_edge = rc.update({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
             if not self.m._mapboundarydrawn:
                 p = self.m.drawmapboundary(ax=self, **kw_edge) # set fill_color to 'none' to make transparent
             else:
@@ -1903,7 +1890,7 @@ class BasemapAxes(MapAxes):
             self.boundary = p       # not sure why this one
         else:
             self.patch.update({**kw_face, 'edgecolor':'none'})
-            kw_edge = update({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
+            kw_edge = rc.update({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
 
@@ -2090,9 +2077,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     def _rcupdate(self):
         # Update properties controlled by custom rc settings
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
-        kw = update({'facecolor': 'map.facecolor'})
+        kw = rc.update({'facecolor': 'map.facecolor'})
         self.background_patch.update(kw)
-        kw = update({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
+        kw = rc.update({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
         self.outline_patch.update(kw)
 
         # Call parent
