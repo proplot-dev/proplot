@@ -40,17 +40,13 @@ import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-try:
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed.
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from functools import wraps
 from matplotlib import rcParams
 from cycler import cycler
 from glob import glob
 from . import colormath
 from . import utils
-from .utils import _fill
+from .utils import _fill, ic
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
 # Define some new palettes
 # Note the default listed colormaps
@@ -124,8 +120,14 @@ _categories_default = { # initialize as empty lists
         'Amp', 'Solar', 'Phase', 'Phase_shifted'],
     'cmOcean Diverging':
         ['Balance', 'Curl', 'Delta'],
+    'OpenColors':
+        ['OpenGray', 'OpenRed', 'OpenPink', 'OpenGrape', 'OpenViolet', 'OpenIndigo',
+         'OpenBlue', 'OpenCyan', 'OpenTeal', 'OpenGreen', 'OpenLime',
+         'OpenYellow', 'OpenOrange'],
     'ColorBrewer2.0 Sequential':
-        ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+        # ['Greys',
+        ['Grays',
+        'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
         'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
         'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'],
     'ColorBrewer2.0 Diverging':
@@ -1412,6 +1414,16 @@ def register_cmaps():
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap(name, data, cmap.N)
             mcm.cmap_d[name + '_shifted'] = mcolors.LinearSegmentedColormap(name + '_shifted', data_shift, cmap.N)
 
+    # Convert names
+    mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
+
+    # Add OpenColor colormaps
+    for color in ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan',
+                  'teal', 'green', 'lime', 'yellow', 'orange']:
+        color_list = [to_rgb(color + str(i)) for i in range(10)]
+        name = 'Open' + color.title()
+        mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, color_list)
+
     # Delete ugly ones
     for category in _categories_ignore:
         for name in _categories_default:
@@ -1462,8 +1474,8 @@ custom_cycles = set() # same, but track cycles
 custom_lower = set() # lower-case keys added to dictionary, that we will ignore
 custom_colors = {} # downloaded colors categorized by filename
 custom_colors_filtered = {} # limit to 'sufficiently unique' color names
+register_colors() # must be done first, so we can register OpenColor cmaps
 register_cmaps()
-register_colors()
 register_cycles()
 print('Registered colors and colormaps.')
 
@@ -1484,7 +1496,7 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Visualizations
 #------------------------------------------------------------------------------#
-def color_show(groups=['open', ['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
+def color_show(groups=[['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html

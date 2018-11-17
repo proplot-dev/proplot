@@ -9,6 +9,10 @@ import numpy as np
 from numbers import Number
 from functools import wraps
 from inspect import cleandoc
+try:
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed.
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 
 #------------------------------------------------------------------------------#
 # Decorators
@@ -95,7 +99,6 @@ def counter(func):
     decorator.time = 0
     decorator.count = 0 # initialize
     return decorator
-
 
 #------------------------------------------------------------------------------#
 # Helper stuff

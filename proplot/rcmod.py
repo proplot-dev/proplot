@@ -29,9 +29,8 @@ import matplotlib.pyplot as plt
 from cycler import cycler
 from . import colortools
 from . import utils
-from .utils import timer, counter
+from .utils import timer, counter, ic
 from matplotlib import rcParams, style
-from icecream import ic
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 # Default settings

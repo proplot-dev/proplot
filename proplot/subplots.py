@@ -5,14 +5,10 @@ import numpy as np
 # from contextlib import redirect_stdout
 import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
-try:
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed.
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import base
-from .utils import _fill
+from .utils import _fill, ic
 from functools import wraps
 
 #------------------------------------------------------------------------------#
@@ -156,7 +152,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
                 kw_out[num-1] = item
         # Verify numbers
         if {*range(num_axes)} != {*kw_out.keys()}:
-            raise ValueError(f'Have {num_axes} axes, but {value} only has properties for axes {", ".join(str(i+1) for i in sorted(kw_out.keys()))}.')
+            raise ValueError(f'Have {num_axes} axes, but {value} has properties for axes {", ".join(str(i+1) for i in sorted(kw_out.keys()))}.')
         return kw_out
 
     # Array setup

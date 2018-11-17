@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.gridspec as mgridspec
 import re
 from .rcmod import rc
-from .utils import _dot_dict, _fill
+from .utils import _dot_dict, _fill, ic
 
 # Conversions
 def _units(value, error=True):
@@ -22,15 +22,13 @@ def _units(value, error=True):
         'mm': 0.03937,
         'pt': 1/72.0,
         'in': 1.0, # already in inches
-        'ft': 12.0, # the rest are included but dunno why you would do this :/
-        'yd': 36.0,
-        'm': 39.37,
         }
     regex = re.match('^(.*)(' + '|'.join(unit_dict.keys()) + ')$', value)
     if not regex:
         if error:
             raise ValueError(f'Invalid size spec {value}.')
         else:
+            ic(regex, value)
             return value
     num, unit = regex.groups()
     try:
@@ -39,6 +37,7 @@ def _units(value, error=True):
         if error:
             raise ValueError(f'Invalid size spec {value}.')
         else:
+            ic(num, unit, value)
             return value
     return num*unit_dict[unit] # e.g. cm / (in / cm)
 
@@ -164,9 +163,6 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     width  = _units(width, error=False)
     height = _units(height, error=False)
     width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
-    if width is None and height is None:
-        width = 5 # default behavior is use 1:1 axes, fixed width
-
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing
     subplots_kw = _dot_dict(nrows=nrows, ncols=ncols, figsize=figsize, aspect=aspect,
@@ -187,8 +183,11 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     bpanel_space = bwidth + bspace if bottompanels else 0
     rpanel_space = rwidth + rspace if rightpanels else 0
     lpanel_space = lwidth + lspace if leftpanels else 0
+    # Default behavior: axes approximately 2.0 inches wide
+    if width is None and height is None:
+        width = (ncols*2.0) + left + right + sum(wspace) + rpanel_space + lpanel_space
+        auto_height = True
     if width is not None:
-        # axwidth_ave = (width + lpanel_width + rpanel_width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
         axwidth_ave = (width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
     if height is not None:
         axheight_ave = (height - top - bottom - sum(hspace) - bpanel_space)/nrows

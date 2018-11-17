@@ -32,10 +32,6 @@ import os
 import numpy as np
 import warnings
 from IPython.utils import io
-try:
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed.
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
 # from matplotlib.lines import _get_dash_pattern, _scale_dashes
@@ -59,7 +55,7 @@ from .rcmod import rc
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
 from . import colortools, utils
-from .utils import _dot_dict, _fill, timer, counter, docstring_fix
+from .utils import _dot_dict, _fill, ic, timer, counter, docstring_fix
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -528,7 +524,7 @@ class EmptyPanel(object):
         return False # it's empty, so this is 'falsey'
 
     def __getattr__(self, attr, *args):
-        raise NotImplementedError('Panel does not exist.')
+        raise AttributeError('Panel does not exist.')
 
 @docstring_fix
 class Figure(mfigure.Figure):
@@ -2470,7 +2466,10 @@ def colorbar_factory(ax, mappable,
         values_min = np.where(values>=mappable.norm.vmin)[0]
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
-            raise ValueError(f'No ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
+            # raise ValueError(f'No ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
+            # print(f'Warning: no ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
+            locators.append(Locator('null'))
+            continue
         values_min, values_max = values_min[0], values_max[-1]
         values = values[values_min:values_max+1]
         if values[0]==mappable.norm.vmin:
