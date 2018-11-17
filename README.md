@@ -1,4 +1,4 @@
-# ProPlot
+# ExPlot
 A library providing helpful and versatile plotting utilities to hasten the process of crafting publication-quality graphics with `matplotlib`. 
 
 ## Overview
