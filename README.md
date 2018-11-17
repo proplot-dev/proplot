@@ -19,11 +19,11 @@ Quick overview of additional features:
 ## How is this different from seaborn?
 There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different?
 
-While some of `proplot`'s tools were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of **crafting beautiful, precise, publication-ready figures, and no more**.
+While some of `proplot`'s tools were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of crafting publication-quality graphics, and no more.
 
-Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form. ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time. Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
+Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form. ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time. Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn feature was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
 
-By focusing on this one task -- creating beautiful figures -- I've created a number of **immensely powerful** features well beyond the scope of `seaborn` as a data analysis-and-visualization package. While some `rc` defaults have been improved, these tools are not intended to give you the final product on a silver platter. Instead, I expect you to tinker with your plots. This package simply makes this process much, much easier.
+By focusing on this one task, I was able to create a number of powerful features well beyond the scope of `seaborn`. See below for details.
 
 ## Installation
 This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
