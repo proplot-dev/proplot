@@ -4,7 +4,7 @@ A library providing helpful and versatile plotting utilities to hasten the proce
 ## Overview
 Import with
 ```
-import proplot as plot
+import explot as plot
 ```
 Most of the features below derive from the **`subplots`** command, inspired by the `pyplot` command of the same name. This generates a scaffolding of axes and panels.
 
@@ -19,7 +19,7 @@ Quick overview of additional features:
 ## How is this different from seaborn?
 There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different?
 
-While some of `proplot`'s tools were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of crafting publication-quality graphics, and no more.
+While some of `explot`'s tools were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of crafting publication-quality graphics, and no more.
 
 Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form. ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time. Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn feature was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
 
@@ -29,7 +29,7 @@ By focusing on this one task, I was able to create a number of powerful features
 This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
 
 ```
-pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
+pip install git+https://github.com/lukelbd/explot.git#egg=explot
 ```
 
 I only push to this repo when new features are completed and working properly.

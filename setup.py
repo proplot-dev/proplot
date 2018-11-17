@@ -4,15 +4,15 @@ from setuptools import setup
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name         = 'ProPlot',
-    url          = 'https://github.com/lukelbd/proplot',
+    url          = 'https://github.com/lukelbd/explot',
     author       = 'Luke Davis',
     author_email = 'lukelbd@gmail.com',
     # Package stuff
     # Also include package data
-    packages     = ['proplot'],
+    packages     = ['explot'],
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
-    scripts = ['scripts/proplot_fonts'],
+    scripts = ['scripts/explot_fonts'],
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing
