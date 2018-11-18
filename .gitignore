@@ -26,7 +26,6 @@ __trash__
 __pycache__
 
 # Notebooks
-*.pdf
 *.ipynb
 .ipynb_checkpoints
 # !showcase.ipynb
