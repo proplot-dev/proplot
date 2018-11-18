@@ -18,7 +18,7 @@ Quick overview of additional features:
 
 ## Showcase
 
-For a showcase of all ExPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/explot) for a showcase of ExPlot features.
+For a showcase of all ExPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/explot).
 
 ## Installation
 This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
