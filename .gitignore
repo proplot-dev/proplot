@@ -12,6 +12,7 @@ empty*
 sample*
 notes*
 trash*
+colorbrewer
 
 # Ignore top-level init used on my machine to make package importable as long
 # as $HOME is in $PYTHONPATH (see: https://stackoverflow.com/a/3637678/4970632)
@@ -25,6 +26,7 @@ __trash__
 __pycache__
 
 # Notebooks
+*.pdf
 *.ipynb
 .ipynb_checkpoints
 # !showcase.ipynb
@@ -34,6 +36,3 @@ __pycache__
 .DS_Store?
 ._*
 .Trashes
-
-# Filter-branch files
-*.ipynb

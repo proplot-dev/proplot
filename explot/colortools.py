@@ -110,6 +110,7 @@ _categories_default = { # initialize as empty lists
             'Pale',
             'Fire', 'Golden', 'Desert', 'Sunrise', 'Sunset',
             'Glacial',
+            'Midnight',
             ],
             # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging':
