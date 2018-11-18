@@ -10,7 +10,6 @@ lottery*
 *.tex
 *.dfont
 *.bdf
-*.ttf
 empty*
 sample*
 notes*
