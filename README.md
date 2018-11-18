@@ -16,6 +16,10 @@ Quick overview of additional features:
   * Colors: Provided group of perceptually distinct named colors, powerful colormap-generating tools, ability to trivially swap between "color cycles" and "colormaps". A few new, beautiful colormaps and color cycles are provided. Create colorbars from lists of lines or color strings.
   * Maps: Integration with basemap *and* cartopy. Generate arbitrary grids of map projections in one go. Switch between basemap and cartopy painlessly. Add geographical features as part of the `format` process.
 
+## Showcase
+
+For a showcase of all ExPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/explot) for a showcase of ExPlot features.
+
 ## Installation
 This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
 
@@ -29,10 +33,6 @@ Dependencies are `matplotlib` and `numpy`. The geographic mapping mapping featur
 <!-- , and therefore has more room for growth. -->
 However, for the time being, basemap *retains several advantages* over cartopy (namely [more tools for labeling meridians/parallels](https://github.com/SciTools/cartopy/issues/881) and more available projections -- see [basemap](https://matplotlib.org/basemap/users/mapsetup.html) vs. [cartopy](https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html)). Therefore, I decided to support both.
 <!-- may be preferred in some circumstances. -->
-
-## Showcase
-
-Check out [this published jupyter notebook](https://lukelbd.github.io/explot) for a showcase of ExPlot features.
 
 ## How is this different from seaborn?
 There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different?
