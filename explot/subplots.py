@@ -79,6 +79,8 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         tight=None, auto_adjust=True,
         # tight=True, adjust=False,
         rcreset=True, silent=True, # arguments for figure instantiation
+        span=None, # bulk apply to x/y axes
+        share=None, # bulk apply to x/y axes
         spanx=1,  spany=1,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         sharex=1, sharey=1, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         innerpanels={}, innercolorbars={}, innerpanels_kw={},
@@ -128,6 +130,10 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         versa; might make things easier.
     """
     # Check
+    sharex = _fill(share, sharex)
+    sharey = _fill(share, sharey)
+    spanx = _fill(span, spanx)
+    spany = _fill(span, spany)
     if int(sharex) not in (0,1,2) or int(sharey) not in (0,1,2):
         raise ValueError('Axis sharing options sharex/sharey can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels).')
     # Helper functions
