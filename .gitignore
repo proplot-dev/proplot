@@ -8,6 +8,8 @@ lottery*
 *.pdf
 *.log
 *.tex
+*.dfont
+*.bdf
 empty*
 sample*
 notes*
@@ -35,6 +37,3 @@ __pycache__
 .DS_Store?
 ._*
 .Trashes
-
-# Filter-branch files
-*.pdf
