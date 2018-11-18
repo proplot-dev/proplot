@@ -1,6 +1,10 @@
 # ExPlot
 A library providing helpful and versatile plotting utilities to hasten the process of crafting publication-quality graphics with `matplotlib`. 
 
+## Showcase
+
+For a showcase of all ExPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/explot).
+
 ## Overview
 Import with
 ```
@@ -15,10 +19,6 @@ Quick overview of additional features:
   * Geometry: Specify axes aspect ratios without messing up subplot spacing. Panels and inter-axes spaces are held *fixed* in inches, while the figure width or height and individual axes sizes are allowed to change. Border space is trimmed (expanded) without messing with inter-axes spacing. *Incredibly* useful for meeting journal figure-size requirements.'
   * Colors: Provided group of perceptually distinct named colors, powerful colormap-generating tools, ability to trivially swap between "color cycles" and "colormaps". A few new, beautiful colormaps and color cycles are provided. Create colorbars from lists of lines or color strings.
   * Maps: Integration with basemap *and* cartopy. Generate arbitrary grids of map projections in one go. Switch between basemap and cartopy painlessly. Add geographical features as part of the `format` process.
-
-## Showcase
-
-For a showcase of all ExPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/explot).
 
 ## Installation
 This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
