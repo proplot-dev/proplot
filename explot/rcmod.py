@@ -63,7 +63,7 @@ rcGlobals_children = {
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
     'linewidth':  ['axes.linewidth', 'map.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
-    'fontname':   ['font.sans-serif'],
+    'fontname':   ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
     # Less important ones
     'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
     'top':        ['xtick.major.top',     'xtick.minor.top'],
@@ -102,12 +102,14 @@ rcDefaults = {
     'grid.alpha':              0.1,
     'grid.linestyle':          '-',
     'grid.linewidth':          0.6, # a bit thinner
-    'font.family':             'sans-serif',
-    'font.sans-serif':         'DejaVu Sans',
+    'font.family':             'DejaVu Sans', # allowed to be concrete name(s) when usetex is False
+    # 'font.family':             'sans-serif',
+    # 'font.sans-serif':         'DejaVu Sans',
+    'text.latex.preamble':      r'\usepackage{cmbright}', # https://stackoverflow.com/a/16345065/4970632
+    'text.usetex':             False, # use TeX for *all* font handling (limits available fonts)
     'mathtext.default':        'regular', # no italics
     'mathtext.bf' :            'sans:bold',
     'mathtext.it' :            'sans:it',
-    'text.latex.preamble':      r'\usepackage{cmbright}', # https://stackoverflow.com/a/16345065/4970632
     'image.cmap':              'sunset',
     'image.lut':               256,
     'patch.facecolor':         'C0',
@@ -310,6 +312,8 @@ class rc_configurator(object):
             self._set_cycler(value)
         # Apply global settings
         elif key in rcGlobals:
+            self._rcCache[key] = value
+            self._rcGlobals[key] = value
             rc, rc_sp = self._get_globals(key, value)
             self._rcCache.update(rc)
             self._rcCache.update(rc_sp)

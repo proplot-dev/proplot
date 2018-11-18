@@ -848,6 +848,7 @@ class BaseAxes(maxes.Axes):
     name = 'base'
     def __init__(self, *args, number=None,
             sharex=None, sharey=None, spanx=None, spany=None,
+            sharex_level=0, sharey_level=0,
             map_name=None,
             panel_parent=None, panel_side=None,
             **kwargs):
@@ -887,8 +888,8 @@ class BaseAxes(maxes.Axes):
         # Want to do this ***manually*** because want to have the ability to
         # add shared axes ***after the fact in general***. If the API changes,
         # will modify the below methods.
-        self._sharex_setup(sharex)
-        self._sharey_setup(sharey)
+        self._sharex_setup(sharex, sharex_level)
+        self._sharey_setup(sharey, sharey_level)
 
         # Add extra text properties for abc labeling, rows/columns labels
         # (can only be filled with text if axes is on leftmost column/topmost row)
@@ -933,13 +934,15 @@ class BaseAxes(maxes.Axes):
         nrows, ncols = gridspec.get_geometry()
         return nrows, ncols, subspec
 
-    def _sharex_setup(self, sharex):
+    def _sharex_setup(self, sharex, level):
         if sharex is None:
             return
         if self is sharex:
             return
         if isinstance(self, MapAxes) or isinstance(sharex, MapAxes):
             return
+        if level not in (1,2):
+            raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
         # Share vertical panel x-axes with *eachother*
         if self.leftpanel and sharex.leftpanel:
             self.leftpanel._sharex_setup(sharex.leftpanel)
@@ -957,17 +960,20 @@ class BaseAxes(maxes.Axes):
         # WARNING: It turned out setting *another axes' axis label* as
         # this attribute caused error, because matplotlib tried to add
         # the same artist instance twice. Can only make it invisible.
-        for t in self.xaxis.get_ticklabels():
-            t.set_visible(False)
+        if level==2:
+            for t in self.xaxis.get_ticklabels():
+                t.set_visible(False)
         self.xaxis.label.set_visible(False)
 
-    def _sharey_setup(self, sharey):
+    def _sharey_setup(self, sharey, level):
         if sharey is None:
             return
         if self is sharey:
             return
         if isinstance(self, MapAxes) or isinstance(sharey, MapAxes):
             return
+        if level not in (1,2):
+            raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
         # Share horizontal panel y-axes with *eachother*
         if self.bottompanel and sharey.bottompanel:
             self.bottompanel._sharey_setup(sharey.bottompanel)
@@ -983,8 +989,9 @@ class BaseAxes(maxes.Axes):
         self._sharey = sharey
         self._shared_y_axes.join(self, sharey)
         # Simple method for setting up shared axes
-        for t in self.yaxis.get_ticklabels():
-            t.set_visible(False)
+        if level==2:
+            for t in self.yaxis.get_ticklabels():
+                t.set_visible(False)
         self.yaxis.label.set_visible(False)
 
     def _sharex_panels(self):
@@ -1005,16 +1012,16 @@ class BaseAxes(maxes.Axes):
 
     def _rcupdate(self):
         # Axes, figure title (builtin settings)
-        kw = rc.update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight'})
+        kw = rc.update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight', 'fontname':'fontname'})
         self.title.update(kw)
-        kw = rc.update({'fontsize':'figure.titlesize', 'weight':'figure.titleweight'})
+        kw = rc.update({'fontsize':'figure.titlesize', 'weight':'figure.titleweight', 'fontname':'fontname'})
         self.figure._suptitle.update(kw)
         # Row and column labels, ABC labels
-        kw = rc.update({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color'})
+        kw = rc.update({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color', 'fontname':'fontname'})
         self.abc.update(kw)
-        kw = rc.update({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color'})
+        kw = rc.update({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color', 'fontname':'fontname'})
         self.rowlabel.update(kw)
-        kw = rc.update({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color'})
+        kw = rc.update({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color', 'fontname':'fontname'})
         self.collabel.update(kw)
 
     def _text_update(self, obj, kwargs):
@@ -1024,8 +1031,11 @@ class BaseAxes(maxes.Axes):
             obj.update(kwargs)
         except Exception:
             obj.set_visible(False)
-            text = kwargs.pop('text', '')
-            obj = self.text(0, 0, text, **kwargs)
+            text = kwargs.pop('text', obj.get_text())
+            color = kwargs.pop('color', obj.get_color())
+            weight = kwargs.pop('weight', obj.get_weight())
+            fontsize = kwargs.pop('fontsize', obj.get_fontsize())
+            obj = self.text(0, 0, text, color=color, weight=weight, fontsize=fontsize, **kwargs)
         return obj
 
     def _title_pos(self, pos, **kwargs):
@@ -1140,7 +1150,7 @@ class BaseAxes(maxes.Axes):
     # Fancy wrappers
     def text(self, x, y, text,
             transform=None, border=False, invert=False,
-            linewidth=2, lw=None, **kwarg): # linewidth is for the border
+            linewidth=2, lw=None, **kwargs): # linewidth is for the border
         """
         Wrapper around original text method. Adds feature for easily drawing
         text with white border around black text, or vice-versa with invert==True.
@@ -1150,6 +1160,7 @@ class BaseAxes(maxes.Axes):
         Basemap gridlining methods call text, so if you change the default
         transform, will not be able to draw lat/lon labels!
         """
+        # Get default transform by string name
         linewidth = lw or linewidth
         if not transform:
             transform = self.transData
@@ -1163,13 +1174,19 @@ class BaseAxes(maxes.Axes):
             transform = self.transData
         else:
             raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
-        t = super().text(x, y, text, transform=transform, **kwarg)
+        # Call parent, with custom rc settings
+        size = kwargs.pop('fontsize', rc['font.size'])
+        color = kwargs.pop('color', rc['text.color'])
+        weight = kwargs.pop('font', rc['font.weight'])
+        name = kwargs.pop('fontname', rc['fontname']) # is actually font.sans-serif
+        # ic(name)
+        t = super().text(x, y, text, transform=transform, fontname=name,
+            fontsize=size, color=color, fontweight=weight, **kwargs)
+        # Draw border
         if border:
             facecolor, bgcolor = ('wk' if invert else 'kw')
             t.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
                 'path_effects': [mpatheffects.Stroke(linewidth=linewidth, foreground=bgcolor), mpatheffects.Normal()]})
-            # t.update({'size':11, 'zorder':1e10,
-            #     'path_effects':[mpatheffects.PathPatchEffect(edgecolor=bgcolor,linewidth=.6,facecolor=facecolor)]})
         return t
 
     # @_cycle_features
@@ -1352,12 +1369,12 @@ class XYAxes(BaseAxes):
         # Axis settings
         for name,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Axis label
-            kw = rc.update({'color':'axes.edgecolor', 'fontize':'axes.labelsize', 'weight':'axes.labelweight'})
+            kw = rc.update({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':'axes.labelsize', 'weight':'axes.labelweight'})
             axis.label.update(kw)
 
             # Tick labels
             for t in axis.get_ticklabels():
-                kw = rc.update({'color':'axes.edgecolor', 'fontize':name+'tick.labelsize'})
+                kw = rc.update({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':name+'tick.labelsize'})
                 t.update(kw)
 
             # Tick marks
@@ -1889,13 +1906,6 @@ class BasemapAxes(MapAxes):
             kw_edge = rc.update({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
-
-        # Basic geographic features
-        if self._land:
-            for p in self._land:
-                p.update(rc['land'])
-        if self._coastline:
-            self._coastline.update(rc['coastline'])
 
         # Call parent
         super()._rcupdate()

@@ -86,7 +86,17 @@ list_cycles = {
     #     'cyan', 'pink', 'teal', 'indigo', 'orange', 'grape', 'lime', 'violet',
     #     'green')] for i in range(10)},
     }
-# Aliases
+# Color stuff
+# Keep major color names, and combinations of those names
+_distinct_colors_space = 'hsl' # register colors distinct in this space?
+_distinct_colors_threshold = 0.07
+_distinct_colors_exceptions = ['white', 'black', 'gray', 'red', 'pink', 'grape',
+        'violet', 'indigo', 'blue',
+        'coral', 'tomato red', 'crimson',
+        'cyan', 'teal', 'green', 'lime', 'yellow', 'orange',
+        'red orange', 'yellow orange', 'yellow green', 'blue green',
+        'blue violet', 'red violet',
+        ]
 _scale = [359, 99, 99] # for some reason 100 luminance equals 0 luminance!!!
 _space_aliases = {
     'rgb':   'rgb',
@@ -1224,7 +1234,7 @@ class StretchNorm(mcolors.Normalize):
 # * If you want to always disable interpolation, use ListedColormap. This type
 #   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
 #------------------------------------------------------------------------------#
-def register_colors(nmax=np.inf, threshold=0.10):
+def register_colors(nmax=np.inf):
     """
     Register new color names. Will only read first n of these
     colors, since XKCD library is massive (they should be sorted by popularity
@@ -1251,7 +1261,6 @@ def register_colors(nmax=np.inf, threshold=0.10):
     mcolors._colors_full_map.update(base2)
 
     # First register colors and get their HSL values
-    space = 'hcl'
     hcls = np.empty((0,3))
     names = []
     categories_list = []
@@ -1270,7 +1279,7 @@ def register_colors(nmax=np.inf, threshold=0.10):
         for i,(name,color) in enumerate(data): # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
-            hcl[i,:] = to_xyz(color, space=space)
+            hcl[i,:] = to_xyz(color, space=_distinct_colors_space)
             name = re.sub('grey', 'gray', name)
             name = re.sub('/', ' ', name)
             name = re.sub(r'\bpinky\b', 'pink', name)
@@ -1288,14 +1297,11 @@ def register_colors(nmax=np.inf, threshold=0.10):
     # perhaps by some more fundamental python thing), so we instead must create
     # *completely separate* dictionary and add colors from there
     hcls = hcls/np.array(_scale)
-    hcls = np.round(hcls/threshold).astype(np.int64)
+    hcls = np.round(hcls/_distinct_colors_threshold).astype(np.int64)
     _, index, counts = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
     deleted = 0
     counts = counts.sum()
-    exceptions = ['white', 'black', 'gray', 'red', 'pink', 'grape',
-            'violet', 'indigo', 'blue', 'coral', 'tomato red', 'crimson',
-            'cyan', 'teal', 'green', 'lime', 'yellow', 'orange']
-    exceptions_regex = '^(' + '|'.join(exceptions) + ')[0-9]?$'
+    exceptions_regex = '^(' + '|'.join(_distinct_colors_exceptions) + ')[0-9]?$'
 
     # Add colors to filtered colors
     for i,(category,name) in enumerate(names):
@@ -1305,13 +1311,16 @@ def register_colors(nmax=np.inf, threshold=0.10):
             custom_colors_filtered[category][name] = custom_colors[category][name]
     for category,dictionary in custom_colors_filtered.items():
         mcolors._colors_full_map.update(dictionary)
-    # print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
+    print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
 
 def register_cmaps():
     """
     Register colormaps and cycles in the cmaps directory.
     Note all of those methods simply modify the dictionary mcm.cmap_d.
     """
+    # Simple test to see if this has already been run
+    if 'Greys' not in mcm.cmap_d:
+        return
     # First read from file
     for file in glob(f'{_data}/cmaps/*'):
         # Read table of RGB values
@@ -1496,7 +1505,7 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Visualizations
 #------------------------------------------------------------------------------#
-def color_show(groups=[['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
+def color_show(groups=[['crayons','xkcd']], ncols=7, nbreak=12, minsat=0.2):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
@@ -1540,7 +1549,7 @@ def color_show(groups=[['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
             space = 1
             swatch = 1
             colors_hsl = {key:
-                [channel/scale for channel,scale in zip(to_xyz(value, 'hcl'), _scale)]
+                [channel/scale for channel,scale in zip(to_xyz(value, _distinct_colors_space), _scale)]
                 for key,value in color_dict.items()}
 
             # Keep in separate columns
@@ -1564,7 +1573,7 @@ def color_show(groups=[['crayons','xkcd']], ncols=4, nbreak=12, minsat=0.2):
                 plot_names.append([hue_colors[i][0] for i in sorted_index])
             # Concatenate those columns so get nice rectangle
             # nrows = max(len(huelist) for huelist in plot_names) # number of rows
-            ncols = nbreak-1
+            # ncols = nbreak-1 # allow custom setting
             names = [i for sublist in plot_names for i in sublist]
             plot_names = [[]]
             nrows = len(names)//ncols+1

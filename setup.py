@@ -12,7 +12,7 @@ setup(
     packages     = ['explot'],
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
-    scripts = ['scripts/explot_fonts'],
+    # scripts = ['scripts/explot_fonts'],
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing

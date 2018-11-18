@@ -79,8 +79,8 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         tight=None, auto_adjust=True,
         # tight=True, adjust=False,
         rcreset=True, silent=True, # arguments for figure instantiation
-        sharex=True, sharey=True, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
-        spanx=True,  spany=True,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
+        spanx=1,  spany=1,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
+        sharex=1, sharey=1, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         innerpanels={}, innercolorbars={}, innerpanels_kw={},
         basemap=False, proj={}, projection={}, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
@@ -127,6 +127,9 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     * Figure size should be constrained by the dimensions of the axes, not vice
         versa; might make things easier.
     """
+    # Check
+    if int(sharex) not in (0,1,2) or int(sharey) not in (0,1,2):
+        raise ValueError('Axis sharing options sharex/sharey can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels).')
     # Helper functions
     translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
     auto_adjust = _fill(tight, auto_adjust)
@@ -347,18 +350,20 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
             # have shared axes (e.g. is bottom-axes of three-column plot
             # and we want it to share the leftmost y-axis)
             if sharex_ax is not None and axs[i] is not sharex_ax:
-                axs[i]._sharex_setup(sharex_ax)
+                axs[i]._sharex_setup(sharex_ax, sharex)
             if sharey_ax is not None and axs[i] is not sharey_ax:
-                axs[i]._sharey_setup(sharey_ax)
+                axs[i]._sharey_setup(sharey_ax, sharey)
         else:
             # Virgin axes; these are not an x base or a y base
             if innerpanels_kw[i]['whichpanels']: # non-empty
                 axs[i] = fig.panel_factory(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         number=i+1, spanx=spanx, spany=spany,
+                        sharex_level=sharex, sharey_level=sharey,
                         sharex=sharex_ax, sharey=sharey_ax, **ax_kw, **innerpanels_kw[i])
             else:
                 axs[i] = fig.add_subplot(gs[slice(*yrange[i,:]), slice(*xrange[i,:])],
                         number=i+1, spanx=spanx, spany=spany,
+                        sharex_level=sharex, sharey_level=sharey,
                         sharex=sharex_ax, sharey=sharey_ax, **ax_kw) # main axes can be a cartopy projection
 
     # Check that axes don't belong to multiple groups
