@@ -37,6 +37,3 @@ __pycache__
 .DS_Store?
 ._*
 .Trashes
-
-# Filter-branch files
-*.ipynb
