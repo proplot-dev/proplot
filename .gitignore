@@ -27,7 +27,7 @@ __pycache__
 # Notebooks
 *.ipynb
 .ipynb_checkpoints
-!showcase.ipynb
+# !showcase.ipynb
 
 # OS generated files
 .DS_Store
