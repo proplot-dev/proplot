@@ -10,6 +10,7 @@ lottery*
 *.tex
 *.dfont
 *.bdf
+*.ttf
 empty*
 sample*
 notes*
@@ -37,6 +38,3 @@ __pycache__
 .DS_Store?
 ._*
 .Trashes
-
-# Filter-branch files
-*.ttf
