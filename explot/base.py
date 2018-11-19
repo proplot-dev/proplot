@@ -641,8 +641,7 @@ class Figure(mfigure.Figure):
         offset = False
         for ax in self.axes:
             if isinstance(ax, BaseAxes) and ax._row_span[0]==0 \
-                and ((ax.title.get_text() and not ax._title_inside)
-                or ax.collabel.get_text()):
+            and ((ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text()):
                 offset = True
                 break
         self._suptitle_setup(offset=offset) # just applies the spacing
@@ -667,6 +666,7 @@ class Figure(mfigure.Figure):
             hspace=None, wspace=None,
             hwidth=None, wwidth=None,
             sharex=None, sharey=None, # external sharing
+            sharex_level=0, sharey_level=0,
             sharex_panels=True, sharey_panels=True, # by default share main x/y axes with panel x/y axes
             **kwargs):
         # Helper function for creating paneled axes.
@@ -764,8 +764,8 @@ class Figure(mfigure.Figure):
             axmain._sharex_panels()
         if sharey_panels:
             axmain._sharey_panels()
-        axmain._sharex_setup(sharex)
-        axmain._sharey_setup(sharey)
+        axmain._sharex_setup(sharex, sharex_level)
+        axmain._sharey_setup(sharey, sharey_level)
         return axmain
 
     def smart_tight_layout(self, renderer=None, pad=None):
@@ -820,6 +820,7 @@ class Figure(mfigure.Figure):
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
+            kwargs['transparent'] = True
         if auto_adjust:
             self.smart_tight_layout(pad=pad)
         # Finally, save
@@ -946,14 +947,14 @@ class BaseAxes(maxes.Axes):
             raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
         # Share vertical panel x-axes with *eachother*
         if self.leftpanel and sharex.leftpanel:
-            self.leftpanel._sharex_setup(sharex.leftpanel)
+            self.leftpanel._sharex_setup(sharex.leftpanel, level)
         if self.rightpanel and sharex.rightpanel:
-            self.rightpanel._sharex_setup(sharex.rightpanel)
+            self.rightpanel._sharex_setup(sharex.rightpanel, level)
         # Share horizontal panel x-axes with *sharex*
         if self.bottompanel and sharex is not self.bottompanel:
-            self.bottompanel._sharex_setup(sharex)
+            self.bottompanel._sharex_setup(sharex, level)
         if self.toppanel and sharex is not self.toppanel:
-            self.toppanel._sharex_setup(sharex)
+            self.toppanel._sharex_setup(sharex, level)
         # Builtin features
         self._sharex = sharex
         self._shared_x_axes.join(self, sharex)
@@ -977,14 +978,14 @@ class BaseAxes(maxes.Axes):
             raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
         # Share horizontal panel y-axes with *eachother*
         if self.bottompanel and sharey.bottompanel:
-            self.bottompanel._sharey_setup(sharey.bottompanel)
+            self.bottompanel._sharey_setup(sharey.bottompanel, level)
         if self.toppanel and sharey.toppanel:
-            self.toppanel._sharey_setup(sharey.toppanel)
+            self.toppanel._sharey_setup(sharey.toppanel, level)
         # Share vertical panel y-axes with *sharey*
         if self.leftpanel:
-            self.leftpanel._sharey_setup(sharey)
+            self.leftpanel._sharey_setup(sharey, level)
         if self.rightpanel:
-            self.rightpanel._sharey_setup(sharey)
+            self.rightpanel._sharey_setup(sharey, level)
             # sharey = self.leftpanel._sharey or self.leftpanel
         # Builtin features
         self._sharey = sharey
@@ -998,20 +999,23 @@ class BaseAxes(maxes.Axes):
     def _sharex_panels(self):
         # Call this once panels are all declared
         if self.bottompanel:
-            self._sharex_setup(self.bottompanel)
+            self._sharex_setup(self.bottompanel, 2)
         bottom = self.bottompanel or self
         if self.toppanel:
-            self.toppanel._sharex_setup(bottom)
+            self.toppanel._sharex_setup(bottom, 2)
 
     def _sharey_panels(self):
         # Same but for y
         if self.leftpanel:
-            self._sharey_setup(self.leftpanel)
+            self._sharey_setup(self.leftpanel, 2)
         left = self.leftpanel or self
         if self.rightpanel:
-            self.rightpanel._sharex_setup(left)
+            self.rightpanel._sharex_setup(left, 2)
 
     def _rcupdate(self):
+        # Figure patch (for some reason needs to be re-asserted even if declared before figure drawn)
+        kw = rc.update({'facecolor':'figure.facecolor'})
+        self.figure.patch.update(kw)
         # Axes, figure title (builtin settings)
         kw = rc.update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight', 'fontname':'fontname'})
         self.title.update(kw)
@@ -1415,6 +1419,7 @@ class XYAxes(BaseAxes):
         xgrid=None,      ygrid=None,      # gridline toggle
         xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
         xspineloc=None,  yspineloc=None,  # deals with spine options
+        xloc=None, yloc=None, # aliases for 'where to put spine'
         tickminor=None, xtickminor=True, ytickminor=True, # minor ticks on/off
         gridminor=None, xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
         xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
@@ -1424,9 +1429,11 @@ class XYAxes(BaseAxes):
         xreverse=False, yreverse=False, # special properties
         xlabel=None,    ylabel=None,    # axis labels
         xlim=None,      ylim=None,
+        xbounds=None,   ybounds=None, # limit spine bounds?
         xscale=None,    yscale=None,
         xformatter=None, yformatter=None, xticklabels=None, yticklabels=None,
-        xlocator=None,  xminorlocator=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
+        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
+        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
         xlabel_kw={}, ylabel_kw={},
         xscale_kw={}, yscale_kw={},
         xlocator_kw={}, ylocator_kw={},
@@ -1469,17 +1476,24 @@ class XYAxes(BaseAxes):
 
         # Control axis ticks and labels and stuff
         # Allow for flexible input
-        xformatter = xticklabels or xformatter
-        yformatter = yticklabels or yformatter
-        xtickminor = tickminor or xtickminor
-        ytickminor = tickminor or ytickminor
-        xgridminor = gridminor or xgridminor
-        ygridminor = gridminor or ygridminor
-        for axis, label, tickloc, spineloc, gridminor, tickminor, tickminorlocator, \
+        xspineloc = _fill(xloc, xspineloc)
+        yspineloc = _fill(yloc, yspineloc)
+        xformatter = _fill(xticklabels, xformatter)
+        yformatter = _fill(yticklabels, yformatter)
+        xlocator = _fill(xticks, xlocator)
+        ylocator = _fill(yticks, ylocator)
+        xminorlocator = _fill(xminorticks, xminorlocator)
+        yminorlocator = _fill(yminorticks, yminorlocator)
+        xtickminor = _fill(tickminor, xtickminor)
+        ytickminor = _fill(tickminor, ytickminor)
+        xgridminor = _fill(gridminor, xgridminor)
+        ygridminor = _fill(gridminor, ygridminor)
+        for axis, label, tickloc, spineloc, bounds, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 label_kw, formatter_kw, locator_kw, minorlocator_kw in \
             zip((self.xaxis, self.yaxis), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
+                (xbounds, ybounds),
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
                 (xgrid, ygrid),
                 (xlocator, ylocator), (xformatter, yformatter), # major ticks
@@ -1495,9 +1509,13 @@ class XYAxes(BaseAxes):
             # TODO: Maybe the '_kw' stuff should be done in _rcupdate()?
             # Axis spine visibility and location
             sides = ('bottom','top') if axis.axis_name=='x' else ('left','right')
-            for spine, side in zip((self.spines[s] for s in sides), sides):
+            spines = [self.spines[s] for s in sides]
+            for spine, side in zip(spines, sides):
                 # Line properties
-                spineloc = getattr(self, axis.axis_name + 'spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
+                spineloc = getattr(self, f'twin_{axis.axis_name}spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
+                # Override if we're settings spine bounds
+                if bounds is not None and spineloc not in sides:
+                    spineloc = sides[0] # by default, should just have spines on edges in this case
                 # Eliminate sides
                 if spineloc=='neither':
                     spine.set_visible(False)
@@ -1515,7 +1533,10 @@ class XYAxes(BaseAxes):
                         spine.set_position(spineloc)
                     else:
                         spine.set_visible(False)
-            spines = [spine for spine in sides if self.spines[side].get_visible()]
+                # Apply spine bounds
+                if bounds is not None and spine.get_visible():
+                    spine.set_bounds(*bounds)
+            spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
 
             # Axis label properties
             # First redirect user request to the correct *shared* axes, then
@@ -1538,6 +1559,8 @@ class XYAxes(BaseAxes):
             # * Includes option to draw spines but not draw ticks on that spine, e.g.
             #   on the left/right edges
             # First determine tick sides
+            if bounds is not None and tickloc not in sides:
+                tickloc = sides[0]
             ticklocs = sides if tickloc=='both' else () if tickloc in ('neither','none') else None if tickloc is None else (tickloc,)
             if ticklocs is None:
                 ticks_sides = {side: False for side in sides if side not in spines}
@@ -1560,6 +1583,17 @@ class XYAxes(BaseAxes):
             # Finally, apply
             axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
             axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
+            # Ensure no out-of-bounds ticks! Even set_smart_bounds() does not
+            # always fix this! Need to try manual approach.
+            # NOTE: set_bounds also failed, and fancy method overrides did
+            # not work, so instead just turn locators into fixed version
+            # NOTE: most locators take no arguments in call(), and some have
+            # no tick_values method; so do the following
+            if bounds is not None:
+                locator = Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
+                axis.set_major_locator(locator)
+                locator = Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
+                axis.set_minor_locator(locator)
 
             # Set the major and minor locators and formatters
             # Also automatically detect whether axis is a 'time axis' (i.e.
@@ -1573,7 +1607,8 @@ class XYAxes(BaseAxes):
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(Locator('null'))
             elif tickminorlocator is not None:
-                axis.set_minor_locator(Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw))
+                locator = Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
+                axis.set_minor_locator(locator)
             axis.set_minor_formatter(mticker.NullFormatter())
             # Update text, and ensure that we don't have tick labels where
             # there are no ticks!
@@ -1620,9 +1655,9 @@ class XYAxes(BaseAxes):
         ax.patch.set_visible(False)
         ax.grid(False)
         # Special settings, force spine locations when format() called
-        self.xspine_override = 'bottom' # original axis ticks on bottom
-        ax.xspine_override   = 'top' # new axis ticks on top
-        ax.yspine_override   = 'neither'
+        self.twin_xspine_override = 'bottom' # original axis ticks on bottom
+        ax.twin_xspine_override   = 'top' # new axis ticks on top
+        ax.twin_yspine_override   = 'neither'
         return ax
 
     def twinx(self, yscale=None, **kwargs):
@@ -1645,14 +1680,12 @@ class XYAxes(BaseAxes):
         # if yscale:
         #     transform = mscale.scale_factory(yscale, self.yaxis).get_transform()
         #     lims = self.get_ylim()
-        #     ic(lims)
         #     lims = transform.transform(np.array(lims))
-        #     ic(lims)
         #     ax.set_ylim(lims)
         # Special settings, force spine locations when format() called
-        self.yspine_override = 'left' # original axis ticks on left
-        ax.yspine_override   = 'right' # new axis ticks on right
-        ax.xspine_override   = 'neither'
+        self.twin_yspine_override = 'left' # original axis ticks on left
+        ax.twin_yspine_override   = 'right' # new axis ticks on right
+        ax.twin_xspine_override   = 'neither'
         return ax
 
     def _make_inset_locator(self, bounds, trans):
@@ -1952,10 +1985,11 @@ class BasemapAxes(MapAxes):
     # Format basemap axes
     # Add documentation here.
     def format(self,
-        xlim=None, ylim=None,
-        xlocator=None, xminorlocator=None, ylocator=None, yminorlocator=None,
-        lonlim=None, latlim=None,
-        latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
+        xlim=None, ylim=None, lonlim=None, latlim=None,
+        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
+        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
+        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
+        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and land
         xlabels=None, ylabels=None,
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
@@ -1964,10 +1998,12 @@ class BasemapAxes(MapAxes):
         super().format(**kwargs)
 
         # Parse flexible input
-        lonlocator = _fill(lonlocator, xlocator)
-        lonminorlocator = _fill(lonminorlocator, xminorlocator)
-        latlocator = _fill(latlocator, ylocator)
-        latminorlocator = _fill(latminorlocator, yminorlocator)
+        xlim = _fill(lonlim, xlim)
+        ylim = _fill(latlim, ylim)
+        lonlocator = _fill(lonlocator, _fill(lonticks, _fill(xlocator, xticks)))
+        latlocator = _fill(latlocator, _fill(latticks, _fill(ylocator, yticks)))
+        lonminorlocator = _fill(lonminorlocator, _fill(lonminorticks, _fill(xminorlocator, xminorticks)))
+        latminorlocator = _fill(latminorlocator, _fill(latminorticks, _fill(yminorlocator, yminorticks)))
         lonlabels = self._parse_labels(_fill(xlabels, lonlabels), 'x')
         latlabels = self._parse_labels(_fill(ylabels, latlabels), 'y')
 
@@ -2109,10 +2145,11 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     # Format cartopy GeoAxes.
     # Add documentation here.
     def format(self,
-        xlim=None, ylim=None,
-        xlocator=None, xminorlocator=None, ylocator=None, yminorlocator=None,
-        lonlim=None, latlim=None,
-        latlocator=None, latminorlocator=None, lonlocator=None, lonminorlocator=None,
+        xlim=None, ylim=None, lonlim=None, latlim=None,
+        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
+        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
+        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
+        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and continents
         reso='hi',
         xlabels=None, ylabels=None,
@@ -2129,10 +2166,10 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Parse flexible input
         xlim = _fill(lonlim, xlim)
         ylim = _fill(latlim, ylim)
-        lonlocator = _fill(lonlocator, xlocator)
-        lonminorlocator = _fill(lonminorlocator, xminorlocator)
-        latlocator = _fill(latlocator, ylocator)
-        latminorlocator = _fill(latminorlocator, yminorlocator)
+        lonlocator = _fill(lonlocator, _fill(lonticks, _fill(xlocator, xticks)))
+        latlocator = _fill(latlocator, _fill(latticks, _fill(ylocator, yticks)))
+        lonminorlocator = _fill(lonminorlocator, _fill(lonminorticks, _fill(xminorlocator, xminorticks)))
+        latminorlocator = _fill(latminorlocator, _fill(latminorticks, _fill(yminorlocator, yminorticks)))
         lonlabels = self._parse_labels(_fill(xlabels, lonlabels), 'x')
         latlabels = self._parse_labels(_fill(ylabels, latlabels), 'y')
 
