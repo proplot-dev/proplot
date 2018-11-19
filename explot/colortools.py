@@ -91,6 +91,7 @@ list_cycles = {
 _distinct_colors_space = 'hsl' # register colors distinct in this space?
 _distinct_colors_threshold = 0.07
 _distinct_colors_exceptions = ['white', 'black', 'gray', 'red', 'pink', 'grape',
+        'sky blue',
         'violet', 'indigo', 'blue',
         'coral', 'tomato red', 'crimson',
         'cyan', 'teal', 'green', 'lime', 'yellow', 'orange',
@@ -343,6 +344,7 @@ def colormap(*args, extend='both',
             cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_hires, **cmap)
         elif not isinstance(cmap, str):
             # List of colors
+            N = None
             cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
         else:
             # Monochrome colormap based from input color (i.e. single hue)
@@ -492,10 +494,11 @@ def colors(*args, vmin=0, vmax=1):
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     return colors
 
-# def colors()
-#     """
-#     Simple alias.
-#     """
+def cycle(*args, **kwargs):
+    """
+    Simple alias.
+    """
+    return colors(*args, **kwargs)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """

@@ -666,7 +666,7 @@ class Figure(mfigure.Figure):
             hspace=None, wspace=None,
             hwidth=None, wwidth=None,
             sharex=None, sharey=None, # external sharing
-            sharex_level=0, sharey_level=0,
+            sharex_level=2, sharey_level=2,
             sharex_panels=True, sharey_panels=True, # by default share main x/y axes with panel x/y axes
             **kwargs):
         # Helper function for creating paneled axes.
@@ -701,27 +701,28 @@ class Figure(mfigure.Figure):
             hspace = np.atleast_1d(hspace)
             if hspace.size==1:
                 hspace = np.repeat(hspace, (nrows-1,))
-            height = np.diff(bbox.intervaly)[0]*height - hspace.sum()
+            boxheight = np.diff(bbox.intervaly)[0]*height
+            height = boxheight - hspace.sum()
             hspace = hspace/(height/nrows)
         if wspace is not None:
-            wspace = wspace/(width/ncols)
             wspace = np.atleast_1d(wspace)
             if wspace.size==1:
                 wspace = np.repeat(wspace, (ncols-1,))
-            width = np.diff(bbox.intervalx)[0]*width - wspace.sum()
+            boxwidth = np.diff(bbox.intervalx)[0]*width
+            width = boxwidth - wspace.sum()
             wspace = wspace/(width/ncols)
 
         # Figure out hratios/wratios
         # Will enforce (main_width + panel_width)/total_width = 1
         wwidth_ratios = [width - wwidth*(ncols-1)]*ncols
         if wwidth_ratios[0]<0:
-            raise ValueError(f'Panel wwidth is too large. Must be less than {width/(nrows-1):.3f}.')
+            raise ValueError(f'Panel wwidth {wwidth} is too large. Must be less than {width/(nrows-1):.3f}.')
         for i in range(ncols):
             if i!=main_pos[1]: # this is a panel entry
                 wwidth_ratios[i] = wwidth
         hwidth_ratios = [height-hwidth*(nrows-1)]*nrows
         if hwidth_ratios[0]<0:
-            raise ValueError(f'Panel hwidth is too large. Must be less than {height/(ncols-1):.3f}.')
+            raise ValueError(f'Panel hwidth {hwidth} is too large. Must be less than {height/(ncols-1):.3f}.')
         for i in range(nrows):
             if i!=main_pos[0]: # this is a panel entry
                 hwidth_ratios[i] = hwidth
@@ -756,10 +757,10 @@ class Figure(mfigure.Figure):
                 panels[side] = ax
 
         # Finally add as attributes, and set up axes sharing
-        axmain.bottompanel = panels.get('bottom', None)
-        axmain.toppanel    = panels.get('top', None)
-        axmain.leftpanel   = panels.get('left', None)
-        axmain.rightpanel  = panels.get('right', None)
+        axmain.bottompanel = panels.get('bottom', EmptyPanel())
+        axmain.toppanel    = panels.get('top',    EmptyPanel())
+        axmain.leftpanel   = panels.get('left',   EmptyPanel())
+        axmain.rightpanel  = panels.get('right',  EmptyPanel())
         if sharex_panels:
             axmain._sharex_panels()
         if sharey_panels:
@@ -1010,7 +1011,7 @@ class BaseAxes(maxes.Axes):
             self._sharey_setup(self.leftpanel, 2)
         left = self.leftpanel or self
         if self.rightpanel:
-            self.rightpanel._sharex_setup(left, 2)
+            self.rightpanel._sharey_setup(left, 2)
 
     def _rcupdate(self):
         # Figure patch (for some reason needs to be re-asserted even if declared before figure drawn)

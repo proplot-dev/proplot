@@ -82,7 +82,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         span=None, # bulk apply to x/y axes
         share=None, # bulk apply to x/y axes
         spanx=1,  spany=1,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
-        sharex=1, sharey=1, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
+        sharex=2, sharey=2, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         innerpanels={}, innercolorbars={}, innerpanels_kw={},
         basemap=False, proj={}, projection={}, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
@@ -158,7 +158,10 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         for nums,item in value.items():
             nums = np.atleast_1d(nums)
             for num in nums.flat:
-                kw_out[num-1] = item
+                if not kw:
+                    kw_out[num-1] = item
+                else:
+                    kw_out[num-1] = item.copy()
         # Verify numbers
         if {*range(num_axes)} != {*kw_out.keys()}:
             raise ValueError(f'Have {num_axes} axes, but {value} has properties for axes {", ".join(str(i+1) for i in sorted(kw_out.keys()))}.')
@@ -231,12 +234,14 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     innerpanels = axes_dict(innerpanels or '', False)
     innercolorbars = axes_dict(innercolorbars or '', False)
     innerpanels_kw = axes_dict(innerpanels_kw, True)
+    for kw in innerpanels_kw.values():
+        kw['whichpanels'] = ''
     for num,which in innerpanels.items():
-        innerpanels_kw[num]['whichpanels'] = translate(which)
+        innerpanels_kw[num]['whichpanels'] += translate(which)
     for num,which in innercolorbars.items():
         which = translate(which)
         if which:
-            innerpanels_kw[num]['whichpanels'] = which
+            innerpanels_kw[num]['whichpanels'] += which
             if re.search('[bt]', which):
                 kwargs['hspace'] = _fill(kwargs.get('hspace',None), rc['gridspec.xlab'])
                 innerpanels_kw[num]['sharex_panels'] = False

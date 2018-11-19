@@ -89,7 +89,7 @@ rcDefaults = {
     'savefig.bbox':            'standard',
     'savefig.format':          'pdf',
     'axes.xmargin':            0,
-    'axes.ymargin':            0.05,
+    'axes.ymargin':            0,
     'axes.titleweight':        'normal',
     'axes.grid':               True,
     'axes.labelweight':        'normal',
