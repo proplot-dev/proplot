@@ -1083,7 +1083,7 @@ class BaseAxes(maxes.Axes):
         collabels=None, collabels_kw={},
         rowlabels=None, rowlabels_kw={}, # label rows and columns
         title=None, titlepos=None, title_kw={},
-        abc=None, abcpos=None, abcformat='', abc_kw={},
+        abc=None, abcpos=None, abcformat=None, abc_kw={},
         rc_kw={}, **kwargs,
         ):
         """
@@ -1127,11 +1127,12 @@ class BaseAxes(maxes.Axes):
         # Create axes numbering
         if self.number is not None and abc:
             # Get text
+            abcformat = abcformat or 'a'
             if 'a' not in abcformat:
                 raise ValueError(f'Invalid abcformat {abcformat}.')
             abcedges = abcformat.split('a')
             text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
-            pos_kw = self._title_pos(abcpos or 'ol')
+            pos_kw = self._title_pos(abcpos or 'il')
             self.abc = self._text_update(self.abc, {'text':text, **abc_kw, **pos_kw})
         elif hasattr(self, 'abc') and abc is not None and not abc:
             # Hide
@@ -1578,7 +1579,7 @@ class XYAxes(BaseAxes):
             for t in axis.get_ticklabels():
                 if not ticklocs and ticklocs is not None:
                     t.set_visible(False)
-            if ticklocs:
+            if ticklocs: # override spine on which label is located, make sure it aligns with tick locations
                 labelpos = [tickloc for tickloc in ticklocs if self.spines[tickloc].get_visible()]
                 if len(labelpos)==1:
                     axis.set_label_position(labelpos[0])
