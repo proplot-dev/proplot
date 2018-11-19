@@ -4,15 +4,15 @@ from setuptools import setup
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name         = 'ProPlot',
-    url          = 'https://github.com/lukelbd/explot',
+    url          = 'https://github.com/lukelbd/panplot',
     author       = 'Luke Davis',
     author_email = 'lukelbd@gmail.com',
     # Package stuff
     # Also include package data
-    packages     = ['explot'],
+    packages     = ['panplot'],
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
-    # scripts = ['scripts/explot_fonts'],
+    # scripts = ['scripts/panplot_fonts'],
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing

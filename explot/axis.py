@@ -794,7 +794,7 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'percent':   mticker.PercentFormatter,
     # 'default':   CustomFormatter,
     'custom':    CustomFormatter,
-    'explot':   CustomFormatter,
+    'panplot':   CustomFormatter,
     '$':         MoneyFormatter,
     'pi':        PiFormatter,
     'e':         eFormatter,
