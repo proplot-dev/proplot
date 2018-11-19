@@ -1508,7 +1508,7 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Visualizations
 #------------------------------------------------------------------------------#
-def color_show(groups=[['crayons','xkcd']], ncols=7, nbreak=12, minsat=0.2):
+def color_show(groups=[['crayons','xkcd']], ncols=6, nbreak=12, minsat=0.2):
     """
     Visualize all possible named colors. Wheee!
     Modified from: https://matplotlib.org/examples/color/named_colors.html
@@ -1542,9 +1542,14 @@ def color_show(groups=[['crayons','xkcd']], ncols=7, nbreak=12, minsat=0.2):
             # Sorted color columns and plot settings
             space = 0.5
             swatch = 1.5
-            names = ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange']
+            names = ['red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'gray']
             nrows, ncols = 10, len(names) # rows and columns
             plot_names = [[name+str(i) for i in range(nrows)] for name in names]
+            nrows = nrows*2
+            ncols = (ncols+1)//2
+            plot_names = np.array(plot_names, order='C')
+            plot_names.resize((ncols, nrows))
+            plot_names = plot_names.tolist()
         # For other palettes this is necessary
         else:
             # Get colors in perceptally uniform space
@@ -1593,6 +1598,8 @@ def color_show(groups=[['crayons','xkcd']], ncols=7, nbreak=12, minsat=0.2):
         h, w = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
         for col,huelist in enumerate(plot_names):
             for row,name in enumerate(huelist): # list of colors in hue category
+                if not name: # empty slot
+                    continue
                 y = Y - (row * h) - h
                 xi_line = w*(col + 0.05)
                 xf_line = w*(col + 0.25*swatch)
