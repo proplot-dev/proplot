@@ -1583,17 +1583,6 @@ class XYAxes(BaseAxes):
             # Finally, apply
             axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
             axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
-            # Ensure no out-of-bounds ticks! Even set_smart_bounds() does not
-            # always fix this! Need to try manual approach.
-            # NOTE: set_bounds also failed, and fancy method overrides did
-            # not work, so instead just turn locators into fixed version
-            # NOTE: most locators take no arguments in call(), and some have
-            # no tick_values method; so do the following
-            if bounds is not None:
-                locator = Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
-                axis.set_major_locator(locator)
-                locator = Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
-                axis.set_minor_locator(locator)
 
             # Set the major and minor locators and formatters
             # Also automatically detect whether axis is a 'time axis' (i.e.
@@ -1619,6 +1608,17 @@ class XYAxes(BaseAxes):
                 labelpos = [tickloc for tickloc in ticklocs if self.spines[tickloc].get_visible()]
                 if len(labelpos)==1:
                     axis.set_label_position(labelpos[0])
+            # Ensure no out-of-bounds ticks! Even set_smart_bounds() does not
+            # always fix this! Need to try manual approach.
+            # NOTE: set_bounds also failed, and fancy method overrides did
+            # not work, so instead just turn locators into fixed version
+            # NOTE: most locators take no arguments in call(), and some have
+            # no tick_values method; so do the following
+            if bounds is not None:
+                locator = Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
+                axis.set_major_locator(locator)
+                locator = Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
+                axis.set_minor_locator(locator)
 
             # Gridline activation and setting (necessary because rcParams has no 'minorgrid'
             # property, must be set in rcSpecial settings)
