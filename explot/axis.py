@@ -69,6 +69,7 @@ Normalizers:
 #------------------------------------------------------------------------------#
 import re
 from . import utils
+from .utils import ic
 from fractions import Fraction
 from types import FunctionType
 import numpy as np
@@ -100,7 +101,7 @@ def Scale(scale, **kwargs):
         raise ValueError(f'Unknown scale {scale}.')
     return scale
 
-def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
+def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
     """
     Constructer for scale with custom cutoffs. Three options here:
       1. Put a 'cliff' between two numbers (default).
@@ -115,6 +116,11 @@ def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
     is because actual cutoffs were 0.1 away (and tick locs are 0.2 apart).
     """
     scale_name = name # have to copy to different name
+    if scale<0:
+        raise ValueError('Scale must be a positive float.')
+    if upper is None:
+        if scale==np.inf:
+            raise ValueError('For infinite scale (i.e. discrete cutoff), need both lower and upper bounds.')
     class CutoffScale(mscale.ScaleBase):
         # Declare name
         name = scale_name
@@ -133,22 +139,27 @@ def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
             input_dims = 1
             output_dims = 1
             is_separable = True
-            lower = l
-            upper = u
             def __init__(self):
                 mtransforms.Transform.__init__(self)
             def transform(self, a):
                 a = np.array(a) # very numpy array
                 aa = a.copy()
-                m1 = (a>self.lower)
-                m2 = (a>self.upper)
-                m3 = (a>self.lower) & (a<self.upper)
-                if scale==np.inf:
-                    aa[m1] = a[m1] - (self.upper - self.lower)
-                    aa[m3] = self.lower
+                if upper is None: # just scale between 2 segments
+                    m = (a > lower)
+                    aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
+                elif lower is None:
+                    m = (a < upper)
+                    aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
                 else:
-                    aa[m2] = a[m2] - (self.upper - self.lower)*(1 - 1/scale)
-                    aa[m3] = a[m3] - (a[m3] - self.lower)*(1 - 1/scale)
+                    m1 = (a > lower)
+                    m2 = (a > upper)
+                    m3 = (a > lower) & (a < upper)
+                    if scale==np.inf:
+                        aa[m1] = a[m1] - (upper - lower)
+                        aa[m3] = lower
+                    else:
+                        aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
+                        aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
                 return aa
             def transform_non_affine(self, a):
                 return self.transform(a)
@@ -159,22 +170,27 @@ def CutoffScaleFactory(l, u, scale=np.inf, name='cutoff'):
             input_dims = 1
             output_dims = 1
             is_separable = True
-            lower = l
-            upper = u
             def __init__(self):
                 mtransforms.Transform.__init__(self)
             def transform(self, a):
                 a = np.array(a)
                 aa = a.copy()
-                n = (self.upper-self.lower)*(1 - 1/scale)
-                m1 = (a>self.lower)
-                m2 = (a>self.upper - n)
-                m3 = (a>self.lower) & (a<(self.upper - n))
-                if scale==np.inf:
-                    aa[m1] = a[m1] + (self.upper - self.lower)
+                if upper is None:
+                    m = (a > lower)
+                    aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
+                elif lower is None:
+                    m = (a < upper)
+                    aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
                 else:
-                    aa[m2] = a[m2] + n
-                    aa[m3] = a[m3] + (a[m3] - self.lower)*(1 - 1/scale)
+                    n = (upper-lower)*(1 - 1/scale)
+                    m1 = (a > lower)
+                    m2 = (a > upper - n)
+                    m3 = (a > lower) & (a < (upper - n))
+                    if scale==np.inf:
+                        aa[m1] = a[m1] + (upper - lower)
+                    else:
+                        aa[m2] = a[m2] + n
+                        aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
                 return aa
             def transform_non_affine(self, a):
                 return self.transform(a)
@@ -357,9 +373,11 @@ class InverseScale(mscale.ScaleBase):
     def set_default_locators_and_formatters(self, axis):
         # Consider changing this
         # TODO: fix minor locator issue
-        axis.set_major_locator(mticker.LogLocator(base=10, subs=[1]))
-        axis.set_major_formatter(mticker.LogFormatter())
+        # TODO: log formatter can ignore certain major ticks! why is that?
+        axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
+        # axis.set_major_formatter(mticker.LogFormatter())
+        axis.set_major_formatter(CustomFormatter())
         axis.set_minor_formatter(mticker.NullFormatter())
 
     class InverseTransform(mtransforms.Transform):

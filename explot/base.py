@@ -941,7 +941,7 @@ class BaseAxes(maxes.Axes):
             return
         if isinstance(self, MapAxes) or isinstance(sharex, MapAxes):
             return
-        if level not in (1,2):
+        if level not in (0,1,2):
             raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
         # Share vertical panel x-axes with *eachother*
         if self.leftpanel and sharex.leftpanel:
@@ -972,7 +972,7 @@ class BaseAxes(maxes.Axes):
             return
         if isinstance(self, MapAxes) or isinstance(sharey, MapAxes):
             return
-        if level not in (1,2):
+        if level not in (0,1,2):
             raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
         # Share horizontal panel y-axes with *eachother*
         if self.bottompanel and sharey.bottompanel:
@@ -1179,7 +1179,6 @@ class BaseAxes(maxes.Axes):
         color = kwargs.pop('color', rc['text.color'])
         weight = kwargs.pop('font', rc['font.weight'])
         name = kwargs.pop('fontname', rc['fontname']) # is actually font.sans-serif
-        # ic(name)
         t = super().text(x, y, text, transform=transform, fontname=name,
             fontsize=size, color=color, fontweight=weight, **kwargs)
         # Draw border
@@ -1301,6 +1300,10 @@ class XYAxes(BaseAxes):
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
+        # Change the default formatter (mine is better)
+        formatter = Formatter('custom')
+        self.xaxis.set_major_formatter(formatter)
+        self.yaxis.set_major_formatter(formatter)
 
     def __getattribute__(self, attr, *args):
         # Attribute
@@ -1459,7 +1462,7 @@ class XYAxes(BaseAxes):
             if yreverse:
                 ylim = ylim[::-1]
             self.set_ylim(ylim)
-        if xlim is not None or ylim is not None and self._inset_parent:
+        if (xlim is not None or ylim is not None) and self._inset_parent:
             self.indicate_inset_zoom()
 
         # Control axis ticks and labels and stuff
