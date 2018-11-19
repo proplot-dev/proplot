@@ -39,6 +39,7 @@ from string import ascii_lowercase
 from functools import wraps
 import matplotlib.figure as mfigure
 import matplotlib.axes as maxes
+import matplotlib.scale as mscale
 import matplotlib.contour as mcontour
 import matplotlib.patheffects as mpatheffects
 import matplotlib.dates as mdates
@@ -1624,7 +1625,7 @@ class XYAxes(BaseAxes):
         ax.yspine_override   = 'neither'
         return ax
 
-    def twinx(self, **kwargs):
+    def twinx(self, yscale=None, **kwargs):
         # Create second y-axis extending from shared ("twin") x-axis
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format() method.
@@ -1638,6 +1639,16 @@ class XYAxes(BaseAxes):
         ax.xaxis.set_visible(False)
         ax.patch.set_visible(False)
         ax.grid(False)
+        # Apply scale and axes sharing
+        # NOTE: Forget about this because often (for height/pressure scales)
+        # the units won't match because we didn't use p0
+        # if yscale:
+        #     transform = mscale.scale_factory(yscale, self.yaxis).get_transform()
+        #     lims = self.get_ylim()
+        #     ic(lims)
+        #     lims = transform.transform(np.array(lims))
+        #     ic(lims)
+        #     ax.set_ylim(lims)
         # Special settings, force spine locations when format() called
         self.yspine_override = 'left' # original axis ticks on left
         ax.yspine_override   = 'right' # new axis ticks on right

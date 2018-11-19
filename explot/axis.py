@@ -93,7 +93,6 @@ def Scale(scale, **kwargs):
     args = []
     if utils.isvector(scale):
         scale, args = scale[0], scale[1:]
-    # print('scale', scale, args)
     if scale in scales and not args:
         pass # already registered
     elif scale=='cutoff':
@@ -103,6 +102,43 @@ def Scale(scale, **kwargs):
     else:
         raise ValueError(f'Unknown scale {scale}.')
     return scale
+
+class ExpTransform(mtransforms.Transform):
+    # Create transform object
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    def __init__(self, scale, minpos):
+        mtransforms.Transform.__init__(self)
+        self.minpos = minpos
+        self.scale = scale
+    def transform(self, a):
+        a = np.array(a)
+        aa = a.copy()
+        return np.exp(self.scale*aa)
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return InvertedExpTransform(self.scale, self.minpos)
+
+class InvertedExpTransform(mtransforms.Transform):
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    def __init__(self, scale, minpos):
+        mtransforms.Transform.__init__(self)
+        self.minpos = minpos
+        self.scale = scale
+    def transform(self, a):
+        a = np.array(a)
+        aa = a.copy()
+        aa[a<=self.minpos] = self.minpos
+        aa = np.log(aa)/self.scale
+        return aa # natural log here
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return ExpTransform(self.scale, self.minpos)
 
 def ExpScaleFactory(scale, to_exp=True, name='exp'):
     """
@@ -137,50 +173,12 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
             axis.set_minor_formatter(Formatter('null'))
 
         def get_transform(self):
-            # Return transform class
             # Either sub into e(scale*z), the default, or invert
             # the exponential
             if to_exp:
-                return self.ExpTransform(scale, self.minpos)
+                return ExpTransform(scale, self.minpos)
             else:
-                return self.InvertedExpTransform(scale, self.minpos)
-
-        class ExpTransform(mtransforms.Transform):
-            # Create transform object
-            input_dims = 1
-            output_dims = 1
-            is_separable = True
-            def __init__(self, scale, minpos):
-                mtransforms.Transform.__init__(self)
-                self.minpos = minpos
-                self.scale = scale
-            def transform(self, a):
-                a = np.array(a)
-                aa = a.copy()
-                return np.exp(self.scale*aa)
-            def transform_non_affine(self, a):
-                return self.transform(a)
-            def inverted(self):
-                return ExpScale.InvertedExpTransform(self.scale, self.minpos)
-
-        class InvertedExpTransform(mtransforms.Transform):
-            input_dims = 1
-            output_dims = 1
-            is_separable = True
-            def __init__(self, scale, minpos):
-                mtransforms.Transform.__init__(self)
-                self.minpos = minpos
-                self.scale = scale
-            def transform(self, a):
-                a = np.array(a)
-                aa = a.copy()
-                aa[a<=self.minpos] = self.minpos
-                aa = np.log(aa)/self.scale
-                return aa # natural log here
-            def transform_non_affine(self, a):
-                return self.transform(a)
-            def inverted(self):
-                return ExpScale.ExpTransform(self.scale, self.minpos)
+                return InvertedExpTransform(scale, self.minpos)
 
     # Register and return
     mscale.register_scale(ExpScale)
