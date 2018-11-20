@@ -38,6 +38,8 @@ from matplotlib import rcParams, style
 rcGlobals = {
     # Apply these ones to list of rcParams
     'color':     'k',
+    'xcolor':    None, # these are special; can be used to set particular spine colors
+    'ycolor':    None,
     'cycle':     'colorblind',
     # 'facecolor':  '#0072b2', # 0072B2
     'facecolor':  'w', # 0072B2
@@ -58,6 +60,14 @@ rcGlobals = {
     }
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
+    # The xcolor/ycolor we don't use 'special' props (since we'd be duplicating ones
+    # that already exist for all spines/labels). Instead just manually use the
+    # global property in the format script.
+    # NOTE: Should I even bother setting these? Yes: Idea is maybe we change
+    # underlying global keywords, but have rcupdate always refer to corresponding
+    # builtin values.
+    'xcolor':     [],
+    'ycolor':     [],
     'color':      ['axes.labelcolor', 'axes.edgecolor', 'xtick.color', 'ytick.color', 'map.color'], # change the 'color' of an axes
     'facecolor':  ['axes.facecolor', 'map.facecolor'], # simple alias
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
@@ -141,15 +151,15 @@ rcDefaults = {
 # Special settings, should be thought of as extension of rcParams
 rcSpecial = {
     # These ones just need to be present, will get reset by globals
-    'map.facecolor':         rcGlobals['facecolor'],
-    'map.color':             rcGlobals['color'],
-    'map.linewidth':         rcGlobals['linewidth'],
-    'abc.fontsize':          rcGlobals['large'],
-    'rowlabel.fontsize':     rcGlobals['large'],
-    'collabel.fontsize':     rcGlobals['large'],
-    'gridminor.linewidth':   rcGlobals['linewidth']*rcGlobals['minorwidth'],
-    # The rest can be applied as-is
+    'map.facecolor':         None,
+    'map.color':             None,
+    'map.linewidth':         None,
+    'abc.fontsize':          None,
+    'rowlabel.fontsize':     None,
+    'collabel.fontsize':     None,
+    'gridminor.linewidth':   None,
     'axes.facehatch':        None, # optionally apply background hatching
+    # The rest can be applied as-is
     'abc.weight':            'bold',
     'abc.color':             'k',
     'rowlabel.weight':       'bold',
@@ -205,6 +215,7 @@ class AttributeDict(dict):
         self[attr] = value
 
 class rc_configurator(object):
+    _public_api = ('reset', 'update', 'fill', 'context') # getattr and setattr will not look for these items on underlying dictionary
     def __init__(self):
         """
         Magical abstract class for handling custom settings, builtin rcParams
@@ -230,24 +241,23 @@ class rc_configurator(object):
         self._rcSpecial.update(rc_sp)
         # Settings
         self._init = True
-        self._cache_orig = None
-        self._cache_added = None
+        self._cache_orig = {}
+        self._cache_added = {}
         self._getitem_mode = 0
 
     def __enter__(self):
         # Apply new settings (will get added to _rcCache)
-        if not self._cache_added:
-            return
         for key,value in self._cache_added.items():
             self[key] = value # applies globally linked and individual settings
 
     def __exit__(self, _type, _value, _traceback):
         # Restore configurator cache to its previous state.
         self._getitem_mode = 0
-        if not self._cache_orig:
-            return
-        for key,value in self._cache_orig.items():
-            self[key] = value
+        self._rcCache = self._cache_orig
+        # if not self._cache_orig:
+        #     return
+        # for key,value in self._cache_orig.items():
+        #     self[key] = value
 
     # @counter
     def __getitem__(self, key):
@@ -268,40 +278,31 @@ class rc_configurator(object):
             raise ValueError(f'Invalid _getitem_mode {mode}.')
         # If it is available, return the values corresponding to names in
         # user dictionary; e.g. {'color':'axes.facecolor'} becomes {'color':'w'}
-        # NOTE: Got weird bugs here. Dunno why. Use self.update method instead.
-        # if isinstance(key, dict):
-        #     params = {}
-        #     for kw in kws:
-        #         for name,value in key.items():
-        #             try:
-        #                 param = kw[value]
-        #             except KeyError:
-        #                 continue
-        #             params[name] = param
-        #     return params
+        # NOTE: Got weird bugs here. Dunno why. Use self.fill method instead.
         if key in rc_categories:
             params = {}
-            # params = AttributeDict()
             for kw in kws:
                 for category,value in kw.items():
                     if re.search(f'^{key}\.', category):
                         subcategory = re.sub(f'^{key}\.', '', category)
                         if subcategory and '.' not in subcategory:
                             params[subcategory] = value
-            return params
-        # Successively index a few different dicts
-        else:
-            # Try to return the value
-            for kw in (self._rcGlobals, *kws):
-                try:
-                    return kw[key]
-                except KeyError:
-                    continue
-            # If we were in one of the exlusive modes, return 1
-            if mode==0:
-                raise ValueError(f'Invalid key "{key}".')
+            if mode==0 and not params:
+                raise ValueError(f'Invalid category "{key}".')
             else:
-                return None
+                return params
+        # Get individual property. Will successively index a few different dicts
+        # Try to return the value
+        for kw in (*kws[:1], self._rcGlobals, *kws[1:]):
+            try:
+                return kw[key]
+            except KeyError:
+                continue
+        # If we were in one of the exlusive modes, return None
+        if mode==0:
+            raise ValueError(f'Invalid prop name "{key}".')
+        else:
+            return None
 
     # @counter
     def __setitem__(self, key, value):
@@ -310,13 +311,14 @@ class rc_configurator(object):
         # First the special cycler
         if key=='cycle':
             self._set_cycler(value)
+            self._rcCache['cycle'] = value
         # Apply global settings
         elif key in rcGlobals:
-            self._rcCache[key] = value
-            self._rcGlobals[key] = value
             rc, rc_sp = self._get_globals(key, value)
             self._rcCache.update(rc)
             self._rcCache.update(rc_sp)
+            self._rcCache[key] = value # also update cached global property itself
+            # self._rcGlobals[key] = value # not necessary
         # Directly modify single parameter
         elif key in rc_names:
             self._rcCache[key] = value
@@ -335,14 +337,14 @@ class rc_configurator(object):
 
     def __getattribute__(self, attr):
         # Alias to getitem
-        if attr.startswith('_') or attr in ('reset','context','update'):
+        if attr[:1]=='_' or attr in self._public_api: # no recursion since second comparison won't be evaluated if first comparison evaluates True
             return super().__getattribute__(attr)
         else:
             return self.__getitem__(attr)
 
     def __setattr__(self, attr, value):
         # Alias to setitem
-        if attr.startswith('_') or attr in ('reset','context','update'):
+        if attr[:1]=='_' or attr in self._public_api:
             super().__setattr__(attr, value)
         else:
             self.__setitem__(attr, value)
@@ -417,7 +419,24 @@ class rc_configurator(object):
         """
         return self.__init__()
 
-    def update(self, props):
+    def update(self, *args, **kwargs):
+        """
+        Same as setting rc['axes'] = {'name':value}, but do this for bunch
+        of different propts.
+        """
+        kw = args[-1]
+        kw.update(kwargs)
+        if len(args)==1:
+            for key,value in k.items():
+                self[key] = value
+        elif len(args)==2:
+            category = args[0]
+            for key,value in kw.items():
+                self[category + '.' + key] = value
+        else:
+            raise ValueError('rc.update() accepts 1-2 positional arguments. Use rc.update(kw) to update a bunch of names, or rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
+
+    def fill(self, props):
         """
         Function that only updates a property if self.__getitem__ returns not None.
         Meant for optimization; hundreds of 200-item dictionary lookups over several
@@ -451,9 +470,8 @@ class rc_configurator(object):
                 raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
             kwargs.update(arg)
         self._getitem_mode = mode
-        if kwargs:
-            self._cache_added = kwargs
-            self._cache_orig  = rc._rcCache.copy()
+        self._cache_orig   = rc._rcCache.copy()
+        self._cache_added  = kwargs # could be empty
         return self
 
 # Instantiate object

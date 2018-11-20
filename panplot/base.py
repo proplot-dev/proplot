@@ -505,7 +505,7 @@ def _gridfix_cartopy(func):
             Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Call function
         with io.capture_output() as captured:
-            print(captured)
+            # print(captured)
             result = func(lon, lat, Z, transform=transform, **kwargs)
         # Call function
         return result
@@ -1015,19 +1015,19 @@ class BaseAxes(maxes.Axes):
 
     def _rcupdate(self):
         # Figure patch (for some reason needs to be re-asserted even if declared before figure drawn)
-        kw = rc.update({'facecolor':'figure.facecolor'})
+        kw = rc.fill({'facecolor':'figure.facecolor'})
         self.figure.patch.update(kw)
         # Axes, figure title (builtin settings)
-        kw = rc.update({'fontsize':'axes.titlesize', 'weight':'axes.titleweight', 'fontname':'fontname'})
+        kw = rc.fill({'fontsize':'axes.titlesize', 'weight':'axes.titleweight', 'fontname':'fontname'})
         self.title.update(kw)
-        kw = rc.update({'fontsize':'figure.titlesize', 'weight':'figure.titleweight', 'fontname':'fontname'})
+        kw = rc.fill({'fontsize':'figure.titlesize', 'weight':'figure.titleweight', 'fontname':'fontname'})
         self.figure._suptitle.update(kw)
         # Row and column labels, ABC labels
-        kw = rc.update({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color', 'fontname':'fontname'})
+        kw = rc.fill({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color', 'fontname':'fontname'})
         self.abc.update(kw)
-        kw = rc.update({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color', 'fontname':'fontname'})
+        kw = rc.fill({'fontsize':'rowlabel.fontsize', 'weight':'rowlabel.weight', 'color':'rowlabel.color', 'fontname':'fontname'})
         self.rowlabel.update(kw)
-        kw = rc.update({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color', 'fontname':'fontname'})
+        kw = rc.fill({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color', 'fontname':'fontname'})
         self.collabel.update(kw)
 
     def _text_update(self, obj, kwargs):
@@ -1370,30 +1370,40 @@ class XYAxes(BaseAxes):
     # @timer
     # @counter
     def _rcupdate(self):
-        # Update the rcParams according to user input.
-        # Simply updates the spines and whatnot
-        for spine in self.spines.values():
-            kw = rc.update({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
-            spine.update(kw)
-
         # Axis settings
         for name,axis in zip('xy', (self.xaxis, self.yaxis)):
-            # Axis label
-            kw = rc.update({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':'axes.labelsize', 'weight':'axes.labelweight'})
-            axis.label.update(kw)
+            # Optionally apply an x/y axis specific color
+            axis_side = axis.get_label_position()
+            axis_color = rc[name + 'color']
+            axis_color = {'color': axis_color} if axis_color else {}
+            sides = ('bottom','top') if name=='x' else ('left','right')
+
+            # Update the rcParams according to user input.
+            # The ticks/spines can be on both sides or just one, while the
+            # tick labels and axis label on just one side
+            for side in sides:
+                # Simply updates the spines and whatnot
+                override_color = axis_color if side==axis_side else {}
+                kw = rc.fill({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
+                self.spines[side].update({**kw, **axis_color})
+
+                # Tick marks
+                # NOTE: We decide that tick location should be controlled only
+                # by format(), so don't override that here.
+                kw_both = rc.fill({'color': name + 'tick.color'})
+                for which in ('major','minor'):
+                    kw = rc[name + 'tick.' + which]
+                    axis.set_tick_params(which=which, **kw, **{**kw_both, **axis_color})
 
             # Tick labels
+            # NOTE: Assumed
             for t in axis.get_ticklabels():
-                kw = rc.update({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':name+'tick.labelsize'})
-                t.update(kw)
+                kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':name+'tick.labelsize'})
+                t.update({**kw, **axis_color})
 
-            # Tick marks
-            # NOTE: We decide that tick location should be controlled only
-            # by format(), so don't override that here.
-            kw_both = rc.update({'color': name + 'tick.color'})
-            for which in ('major','minor'):
-                kw = rc[name + 'tick.' + which]
-                axis.set_tick_params(which=which, **kw, **kw_both)
+            # Axis label
+            kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':'axes.labelsize', 'weight':'axes.labelweight'})
+            axis.label.update({**kw, **axis_color})
 
             # Manually update gridlines
             for grid,ticks in zip(['grid','gridminor'],[axis.get_major_ticks(), axis.get_minor_ticks()]):
@@ -1404,9 +1414,9 @@ class XYAxes(BaseAxes):
         # Update background patch, with optional hatching
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
-        kw = rc.update({'facecolor': 'axes.facecolor'})
+        kw = rc.fill({'facecolor': 'axes.facecolor'})
         self.patch.update(kw)
-        kw = rc.update({'hatch':'axes.facehatch'})
+        kw = rc.fill({'hatch':'axes.facehatch'})
         if kw: # non-empty
             self.fill_between([0,1], 0, 1, hatch=kw['hatch'],
                 zorder=0, # put in back
@@ -1419,12 +1429,14 @@ class XYAxes(BaseAxes):
     def format(self,
         xgrid=None,      ygrid=None,      # gridline toggle
         xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
-        xspineloc=None,  yspineloc=None,  # deals with spine options
         xloc=None, yloc=None, # aliases for 'where to put spine'
+        xspineloc=None,  yspineloc=None,  # deals with spine options
+        xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
+        xlabelloc=None,  ylabelloc=None,
+        xticklabelloc=None, yticklabelloc=None, # where to put tick labels
+        xtickdir=None,   ytickdir=None,   # which direction ('in', 'our', or 'inout')
         tickminor=None, xtickminor=True, ytickminor=True, # minor ticks on/off
         gridminor=None, xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
-        xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
-        xtickdir=None,   ytickdir=None,   # which direction ('in', 'our', or 'inout')
         xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
         xtickrange=None,    ytickrange=None,    # limit regions where we assign ticklabels to major-ticks
         xreverse=False, yreverse=False, # special properties
@@ -1489,11 +1501,12 @@ class XYAxes(BaseAxes):
         ytickminor = _fill(tickminor, ytickminor)
         xgridminor = _fill(gridminor, xgridminor)
         ygridminor = _fill(gridminor, ygridminor)
-        for axis, label, tickloc, spineloc, bounds, gridminor, tickminor, tickminorlocator, \
+        for axis, label, tickloc, spineloc, ticklabelloc, labelloc, bounds, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 label_kw, formatter_kw, locator_kw, minorlocator_kw in \
             zip((self.xaxis, self.yaxis), (xlabel, ylabel), \
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
+                (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
                 (xbounds, ybounds),
                 (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
                 (xgrid, ygrid),
@@ -1551,40 +1564,6 @@ class XYAxes(BaseAxes):
                 label = self._share_span_label(axis)
                 label.update({'text':label_text, **label_kw})
 
-            # Tick properties
-            # * Weird issue seems to cause set_tick_params to reset/forget that the grid
-            #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
-            #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
-            # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
-            #   group of left/right or top/bottom
-            # * Includes option to draw spines but not draw ticks on that spine, e.g.
-            #   on the left/right edges
-            # First determine tick sides
-            if bounds is not None and tickloc not in sides:
-                tickloc = sides[0]
-            ticklocs = sides if tickloc=='both' else () if tickloc in ('neither','none') else None if tickloc is None else (tickloc,)
-            if ticklocs is None:
-                ticks_sides = {side: False for side in sides if side not in spines}
-            else:
-                ticks_sides = {side: side in spines and side in ticklocs for side in sides}
-            ticks_sides = dict(ticks_sides, **{'label'+side:b for side,b in ticks_sides.items()})
-            # Next basic settings
-            ticks_major, ticks_minor = {}, {}
-            if tickdir is not None:
-                ticks_major.update({'direction':tickdir})
-                ticks_minor.update({'direction':tickdir})
-            if tickdir=='in':
-                ticks_major.update({'pad':1}) # ticklabels should be much closer
-                ticks_minor.update({'pad':1})
-            if ticklabeldir=='in': # put tick labels inside the plot; sometimes might actually want this
-                # pad = rc['majorlen'] + rc['tickpad'] + rc['small']
-                pad = rc['xtick.major.size'] + rc['xtick.major.pad'] + rc['xtick.labelsize']
-                ticks_major.update({'pad':-pad})
-                ticks_minor.update({'pad':-pad})
-            # Finally, apply
-            axis.set_tick_params(which='major', **ticks_sides, **ticks_major)
-            axis.set_tick_params(which='minor', **ticks_sides, **ticks_minor) # have length
-
             # Set the major and minor locators and formatters
             # Also automatically detect whether axis is a 'time axis' (i.e.
             # whether user has plotted something with x/y as datetime/date/np.datetime64
@@ -1600,15 +1579,59 @@ class XYAxes(BaseAxes):
                 locator = Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
                 axis.set_minor_locator(locator)
             axis.set_minor_formatter(mticker.NullFormatter())
-            # Update text, and ensure that we don't have tick labels where
-            # there are no ticks!
-            for t in axis.get_ticklabels():
-                if not ticklocs and ticklocs is not None:
-                    t.set_visible(False)
-            if ticklocs: # override spine on which label is located, make sure it aligns with tick locations
-                labelpos = [tickloc for tickloc in ticklocs if self.spines[tickloc].get_visible()]
-                if len(labelpos)==1:
-                    axis.set_label_position(labelpos[0])
+
+            # Tick properties
+            # * Weird issue seems to cause set_tick_params to reset/forget that the grid
+            #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
+            #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
+            # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
+            #   group of left/right or top/bottom
+            # * Includes option to draw spines but not draw ticks on that spine, e.g.
+            #   on the left/right edges
+            # First determine tick sides
+            ticklocs_kw = {None: None, 'both': sides, 'neither': (), 'none': ()}
+            if bounds is not None and tickloc not in sides:
+                tickloc = sides[0] # override to just one side
+            ticklocs = ticklocs_kw.get(tickloc, (tickloc,))
+            if ticklocs is None:
+                ticks_sides = {}
+            else:
+                ticks_sides = {side: (side in ticklocs) for side in sides}
+            ticks_sides.update({side: False for side in sides if side not in spines}) # override
+            # Next the tick label sides
+            # Will override to make sure sides match
+            ticklabellocs = ticklocs_kw.get(ticklabelloc, (ticklabelloc,))
+            if ticklabellocs is None:
+                ticklabels_sides = {}
+            else:
+                ticklabels_sides = {'label' + side: (side in ticklabellocs) for side in sides}
+            ticklabels_sides.update({'label' + side: False for side in sides
+                if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
+            # Finally the label side
+            if labelloc is None:
+                if ticklocs is not None:
+                    options = [side for side in sides if (side in ticklocs and side in spines)]
+                    if len(options)==1:
+                        labelloc = options[0]
+            elif labelloc not in sides:
+                raise ValueError('Got labelloc "{labelloc}", valid options are {sides}.')
+            if labelloc is not None:
+                axis.set_label_position(labelloc)
+            # Apply settings to ticks
+            ticks_major, ticks_minor = {}, {}
+            if tickdir is not None:
+                ticks_major.update({'direction':tickdir})
+                ticks_minor.update({'direction':tickdir})
+            if tickdir=='in':
+                ticks_major.update({'pad':1}) # ticklabels should be much closer
+                ticks_minor.update({'pad':1})
+            if ticklabeldir=='in': # put tick labels inside the plot; sometimes might actually want this
+                pad = rc['xtick.major.size'] + rc['xtick.major.pad'] + rc['xtick.labelsize']
+                ticks_major.update({'pad':-pad})
+                ticks_minor.update({'pad':-pad})
+            axis.set_tick_params(which='major', **ticks_sides, **ticklabels_sides, **ticks_major)
+            axis.set_tick_params(which='minor', **ticks_sides, **ticklabels_sides, **ticks_minor) # have length
+
             # Ensure no out-of-bounds ticks! Even set_smart_bounds() does not
             # always fix this! Need to try manual approach.
             # NOTE: set_bounds also failed, and fancy method overrides did
@@ -1938,10 +1961,10 @@ class BasemapAxes(MapAxes):
         #     self.m._mapboundarydrawn.remove()
 
         # Draw boundary
-        kw_face = rc.update({'facecolor': 'map.facecolor'})
+        kw_face = rc.fill({'facecolor': 'map.facecolor'})
         if self.m.projection in _map_pseudocyl:
             self.patch.set_alpha(0) # make patch invisible
-            kw_edge = rc.update({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
+            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
             if not self.m._mapboundarydrawn:
                 p = self.m.drawmapboundary(ax=self, **kw_edge) # set fill_color to 'none' to make transparent
             else:
@@ -1952,7 +1975,7 @@ class BasemapAxes(MapAxes):
             self.boundary = p       # not sure why this one
         else:
             self.patch.update({**kw_face, 'edgecolor':'none'})
-            kw_edge = rc.update({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
+            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
 
@@ -2135,9 +2158,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     def _rcupdate(self):
         # Update properties controlled by custom rc settings
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
-        kw = rc.update({'facecolor': 'map.facecolor'})
+        kw = rc.fill({'facecolor': 'map.facecolor'})
         self.background_patch.update(kw)
-        kw = rc.update({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
+        kw = rc.fill({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
         self.outline_patch.update(kw)
 
         # Call parent
