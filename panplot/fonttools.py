@@ -5,7 +5,7 @@ Add to this.
 """
 import os
 from glob import glob
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from matplotlib import matplotlib_fname
 import matplotlib.font_manager as mfonts
 #------------------------------------------------------------------------------
@@ -34,5 +34,10 @@ def install_fonts():
     May require restarting iPython session. Note font cache will be deleted
     in this process, which could cause delays.
     """
-    Popen(_font_script, shell=True).wait()
+    # See: https://stackoverflow.com/a/17413045/4970632
     # os.system(_font_script)
+    # p = Popen(_font_script, stdout=PIPE).wait()
+    p = Popen(_font_script, shell=False).wait()
+    # while p.poll() is None:
+    #     print(p.stdout.readline()) # this blocks until it receives a newline.
+    print('Fonts have ben installed and font cache has been emptied. Please restart your iPython session.')

@@ -638,7 +638,9 @@ class Figure(mfigure.Figure):
             # See: https://matplotlib.org/_modules/matplotlib/axis.html#Axis.set_tick_params
             title_lev1, title_lev2, title_lev3 = None, None, None
             for ax in self.axes:
-                if not isinstance(ax, BaseAxes) or not ax._row_span[0]==0:
+                # TODO: Need to ensure we do not test *bottom* axes panels
+                if not isinstance(ax, BaseAxes) or not ax._row_span[0]==0 or \
+                    (isinstance(ax, PanelAxes) and ax.panel_side=='bottom'):
                     continue
                 title_lev1 = ax.title # always will be non-None
                 if ((ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text()):
@@ -661,7 +663,9 @@ class Figure(mfigure.Figure):
             if not title_lev2: # no title present
                 line = 0
                 title = title_lev1
-                title.set_text(' ') # dummy spaces, so subplots adjust will work properly
+                if not title.get_text():
+                # if not title.axes._title_inside:
+                    title.set_text(' ') # dummy spaces, so subplots adjust will work properly
             elif title_lev3:
                 line = 1.0 # looks best empirically
                 title = title_lev3
@@ -1101,11 +1105,29 @@ class BaseAxes(maxes.Axes):
             obj.update(kwargs)
         except Exception:
             obj.set_visible(False)
-            text = kwargs.pop('text', obj.get_text())
-            color = kwargs.pop('color', obj.get_color())
-            weight = kwargs.pop('weight', obj.get_weight())
+            text     = kwargs.pop('text', obj.get_text())
+            color    = kwargs.pop('color', obj.get_color())
+            weight   = kwargs.pop('weight', obj.get_weight())
             fontsize = kwargs.pop('fontsize', obj.get_fontsize())
-            obj = self.text(0, 0, text, color=color, weight=weight, fontsize=fontsize, **kwargs)
+            x, y = None, None
+            pos = obj.get_position()
+            if 'position' in kwargs:
+                x, y = kwargs.pop('position')
+            x = kwargs.pop('x', x)
+            y = kwargs.pop('y', y)
+            if x is None:
+                x = pos[0]
+            if y is None:
+                y = pos[1]
+            try:
+                x = x[0]
+            except TypeError:
+                pass
+            try:
+                y = y[0]
+            except TypeError:
+                pass
+            obj = self.text(x, y, text, color=color, weight=weight, fontsize=fontsize, **kwargs)
         return obj
 
     def _title_pos(self, pos, **kwargs):
@@ -1143,6 +1165,7 @@ class BaseAxes(maxes.Axes):
                 self._title_inside = False
                 transform = self.title.get_transform()
             elif 'i' in pos:
+                y = 1 - ypad_i
                 va = 'top'
                 transform = self.transAxes
                 extra['border'] = _fill(kwargs.pop('border', None), True) # by default
@@ -2438,6 +2461,7 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
         if candidate in lsettings:
             hsettings[candidate] = lsettings.pop(candidate)
     hsettings.update({'alpha':1.0}) # always maximimum opacity
+    lsettings.update({'prop':{'family':rc['fontname']}}) # 'prop' can be a FontProperties object or a dict for the kwargs to instantiate one
 
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:

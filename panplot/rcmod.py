@@ -56,7 +56,9 @@ rcGlobals = {
     'tickpad':    2.0,
     'inout' :     'out',
     # Convenient aliases (i.e. they do not bulk apply to a bunch of settings, just shorter names)
-    'fontname':       'DejaVu Sans',
+    # 'fontname':       'DejaVu Sans',
+    # 'fontname':       'Verdana', # the prettiest IMO
+    'fontname':       'Helvetica Neue', # best one; and less crammed than Helvetica
     'titleweight':    'normal',
     'suptitleweight': 'bold',
     'abcweight':      'bold',
