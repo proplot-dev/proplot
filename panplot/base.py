@@ -1105,12 +1105,6 @@ class BaseAxes(maxes.Axes):
         * Problem is there is no autofmt_ydate(), so really should implement my own
           version of this.
         """
-        # First update (note that this will call _rcupdate overridden by child
-        # classes, which can in turn call the parent class version, so we only
-        # need to call this from the base class, and all settings will be applied)
-        with rc.context(rc_kw, mode=2, **kwargs):
-            self._rcupdate()
-
         # NOTE: These next two are actually *figure-wide* settings, but that
         # line seems to get blurred -- where we have shared axes, spanning
         # labels, and whatnot. May result in redundant assignments if formatting
@@ -1143,6 +1137,12 @@ class BaseAxes(maxes.Axes):
         elif hasattr(self, 'abc') and abc is not None and not abc:
             # Hide
             self.abc.set_visible(False)
+
+        # First update (note that this will call _rcupdate overridden by child
+        # classes, which can in turn call the parent class version, so we only
+        # need to call this from the base class, and all settings will be applied)
+        with rc.context(rc_kw, mode=2, **kwargs):
+            self._rcupdate()
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
@@ -1465,8 +1465,6 @@ class XYAxes(BaseAxes):
           anchoring them by locator/limits like the default API, or just
           disable ticklabels/labels for some.
         """
-        # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().format(**kwargs)
         # Set axis scaling and limits
         if xscale is not None:
             if hasattr(xscale,'name'):
@@ -1663,6 +1661,9 @@ class XYAxes(BaseAxes):
                 axis.grid(grid, which='major')
             if gridminor is not None:
                 axis.grid(gridminor, which='minor') # ignore if no minor ticks
+
+        # Pass stuff to parent formatter, e.g. title and abc labeling
+        super().format(**kwargs)
 
     def twiny(self, **kwargs):
         # Create second x-axis extending from shared ("twin") y-axis
@@ -2018,9 +2019,6 @@ class BasemapAxes(MapAxes):
         xlabels=None, ylabels=None,
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
         **kwargs):
-        # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().format(**kwargs)
-
         # Parse flexible input
         xlim = _fill(lonlim, xlim)
         ylim = _fill(latlim, ylim)
@@ -2095,6 +2093,9 @@ class BasemapAxes(MapAxes):
                     else:
                         obj.update(lsettings)
                         obj.set_dashes(ls_translate(obj, linestyle))
+
+        # Pass stuff to parent formatter, e.g. title and abc labeling
+        super().format(**kwargs)
 
 @docstring_fix
 # class CartopyAxes(GeoAxes, MapAxes):
@@ -2184,9 +2185,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         import cartopy.crs as ccrs # verify package is available
         from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
-        # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().format(**kwargs)
-
         # Parse flexible input
         xlim = _fill(lonlim, xlim)
         ylim = _fill(latlim, ylim)
@@ -2273,6 +2271,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             gl.yformatter = LATITUDE_FORMATTER
             gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
             gl.ylabels_left, gl.ylabels_right = latlabels[:2]
+
+        # Pass stuff to parent formatter, e.g. title and abc labeling
+        super().format(**kwargs)
 
 @docstring_fix
 class PolarAxes(MapAxes, PolarAxes):
