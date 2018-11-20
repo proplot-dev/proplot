@@ -2448,7 +2448,7 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
     return legends
 
 def colorbar_factory(ax, mappable,
-        grid=False, locator=None, tickminor=False, minorlocator=None, ticklabels=None, formatter=None, label=None,
+        grid=None, locator=None, tickminor=None, minorlocator=None, ticklabels=None, formatter=None, label=None,
         cgrid=False, clocator=None, ctickminor=False, cminorlocator=None, cticklabels=None, cformatter=None, clabel=None,
         errfix=True, extend='neither', extendlength=0.2, # in inches
         values=None, orientation='horizontal', ticklocation='outer', **kwargs): #, settings=None):
