@@ -56,6 +56,7 @@ from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
+from . import fonttools
 from . import colortools, utils
 from .utils import _dot_dict, _fill, ic, timer, counter, docstring_fix
 
@@ -1270,14 +1271,23 @@ class BaseAxes(maxes.Axes):
             transform = self.transData
         else:
             raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
-        # Call parent, with custom rc settings
-        size = kwargs.pop('fontsize', rc['font.size'])
-        color = kwargs.pop('color', rc['text.color'])
-        weight = kwargs.pop('font', rc['font.weight'])
+        # Raise more helpful error message if font unavailable
         name = kwargs.pop('fontname', rc['fontname']) # is actually font.sans-serif
+        if name not in fonttools.fonts:
+            suffix = ''
+            if name not in fonttools._missing_fonts:
+                suffix = f' Available fonts are: {", ".join(fonttools.fonts)}.'
+            print(f'Warning: Font "{name}" unavailable, falling back to DejaVu Sans.' + suffix)
+            fonttools._missing_fonts.append(name)
+            name = 'DejaVu Sans'
+        # Call parent, with custom rc settings
+        # These seem to sometimes not get used by default
+        size   = kwargs.pop('fontsize', rc['font.size'])
+        color  = kwargs.pop('color', rc['text.color'])
+        weight = kwargs.pop('font', rc['font.weight'])
         t = super().text(x, y, text, transform=transform, fontname=name,
             fontsize=size, color=color, fontweight=weight, **kwargs)
-        # Draw border
+        # Optionally draw border around text
         if border:
             facecolor, bgcolor = ('wk' if invert else 'kw')
             t.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
