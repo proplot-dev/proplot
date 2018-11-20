@@ -52,6 +52,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
 from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
+# from .rcmod import rc, rcParams
 from .rcmod import rc
 from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
@@ -372,7 +373,7 @@ def _gridfix_basemap(self, func):
     Interpret coordinates and fix discontinuities in grid.
     """
     @wraps(func)
-    def decorator(lon, lat, Z, **kwargs):
+    def decorator(lon, lat, Z, fix_poles=True, **kwargs):
     # def decorator(self, lon, lat, Z, **kwargs):
         # Raise errors
         # print('lon', lon, 'lat', lat, 'Z', Z)
@@ -426,10 +427,11 @@ def _gridfix_basemap(self, func):
         # 5) Fix holes over poles by interpolating there (equivalent to
         # simple mean of highest/lowest latitude points)
         # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
-        Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-        Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-        lat = np.concatenate(([-90], lat, [90]))
-        Z = np.concatenate((Z_south, Z, Z_north), axis=0)
+        if fix_poles:
+            Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
+            Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
+            lat = np.concatenate(([-90], lat, [90]))
+            Z = np.concatenate((Z_south, Z, Z_north), axis=0)
         # 6) Fix seams at map boundary; 3 scenarios here:
         # Have edges (e.g. for pcolor), and they fit perfectly against basemap seams
         # this does not augment size
@@ -492,13 +494,14 @@ def _gridfix_cartopy(func):
     See: https://github.com/SciTools/cartopy/issues/946
     """
     @wraps(func)
-    def decorator(lon, lat, Z, transform=PlateCarree, **kwargs):
+    def decorator(lon, lat, Z, transform=PlateCarree, fix_poles=True, **kwargs):
         # 1) Fix holes over poles by *interpolating* there (equivalent to
         # simple mean of highest/lowest latitude points)
-        Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-        Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-        lat = np.concatenate(([-90], lat, [90]))
-        Z = np.concatenate((Z_south, Z, Z_north), axis=0)
+        if fix_poles:
+            Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
+            Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
+            lat = np.concatenate(([-90], lat, [90]))
+            Z = np.concatenate((Z_south, Z, Z_north), axis=0)
         # 2) Fix seams at map boundary; by ensuring circular coverage
         if (lon[0] % 360) != ((lon[-1] + 360) % 360):
             lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
@@ -611,15 +614,9 @@ class Figure(mfigure.Figure):
             if label and not ax.collabel.get_text():
                 ax.collabel.update({'text':label, **kwargs})
 
-    def _suptitle_setup(self, offset=False, **kwargs):
+    def _suptitle_setup(self, renderer=None, offset=False, **kwargs):
         # Intelligently determine supertitle position:
-        # 1) Determine x by the underlying gridspec structure, where main axes lie.
-        # 2) Determine y by whether titles exist on top-row axes.
-        # NOTE: Default linespacing is 1.2; it has no get, only a setter; see
-        # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-        title_height = self.axes[0].title.get_size()/72
-        line_spacing = self.axes[0].title._linespacing
-        base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
+        # Determine x by the underlying gridspec structure, where main axes lie.
         left = self._subplots_kw.left
         right = self._subplots_kw.right
         if self.leftpanel:
@@ -627,39 +624,104 @@ class Figure(mfigure.Figure):
         if self.rightpanel:
             right += (self._subplots_kw.rwidth + self._subplots_kw.rspace)
         xpos = left/self.width + 0.5*(self.width - left - right)/self.width
-        if offset:
-            offset = line_spacing*title_height
+
+        if not offset:
+            # Simple offset, not using the automatically determined
+            # title position for guidance
+            base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
+            ypos = base/self.height
+            transform = self.transFigure
         else:
-            offset = 0
-        ypos = (base + offset)/self.height
-        self._suptitle.update({'position':(xpos, ypos), 'ha':'center', 'va':'bottom', **kwargs})
+            # Figure out which title on the top-row axes will be offset the most
+            # NOTE: Have to use private API to figure out whether axis has
+            # tick labels or not! Seems to be no other way to do it.
+            # See: https://matplotlib.org/_modules/matplotlib/axis.html#Axis.set_tick_params
+            title_lev1, title_lev2, title_lev3 = None, None, None
+            for ax in self.axes:
+                if not isinstance(ax, BaseAxes) or not ax._row_span[0]==0:
+                    continue
+                title_lev1 = ax.title # always will be non-None
+                if ((ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text()):
+                    title_lev2 = ax.title
+                if ax.xaxis.get_ticks_position() == 'top':
+                    test = 'label1On' not in ax.xaxis._major_tick_kw \
+                        or ax.xaxis._major_tick_kw['label1On'] \
+                        or ax.xaxis._major_tick_kw['label2On']
+                    if test:
+                        title_lev3 = ax.title
+
+            # Hacky bugfixes:
+            # 1) If no title, fill with spaces. Does nothing in most cases, but
+            # if tick labels are on top, without this step matplotlib tight subplots
+            # will not see the suptitle; now suptitle will just occupy empty title space.
+            # 2) If title and tick labels on top, offset the suptitle and get
+            # matplotlib to adjust tight_subplot by prepending newlines to title.
+            # 3) Otherwise, offset suptitle, and matplotlib will recognize the
+            # suptitle during tight_subplot adjustment.
+            if not title_lev2: # no title present
+                line = 0
+                title = title_lev1
+                title.set_text(' ') # dummy spaces, so subplots adjust will work properly
+            elif title_lev3:
+                line = 1.0 # looks best empirically
+                title = title_lev3
+                text = title.get_text()
+                title.set_text('\n\n' + text)
+            else:
+                line = 1.2 # default line spacing; see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                title = title_lev1 # most common one
+
+            # First idea: Create blended transform, end with newline
+            # ypos = title.get_position()[1]
+            # transform = mtransforms.blended_transform_factory(
+            #         self.transFigure, title.get_transform())
+            # text = kwargs.pop('text', self._suptitle.get_text())
+            # if text[-1:] != '\n':
+            #     text += '\n'
+            # kwargs['text'] = text
+            # New idea: Get the transformed position
+            # NOTE: Seems draw() is called more than once, and the last times
+            # are when title positions are appropriately offset.
+            # NOTE: Default linespacing is 1.2; it has no get, only a setter; see
+            # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            transform = title.get_transform() + self.transFigure.inverted()
+            ypos = transform.transform(title.get_position())[1]
+            line = line*(rc['axes.titlesize']/72)/self.height
+            ypos = ypos + line
+            transform = self.transFigure
+
+        # Update settings
+        self._suptitle.update({'position':(xpos, ypos),
+            'transform':transform,
+            'ha':'center', 'va':'bottom', **kwargs})
 
     # @counter
     def draw(self, renderer, *args, **kwargs):
         # Special: Figure out if other titles are present, and if not
         # bring suptitle close to center
-        offset = False
-        for ax in self.axes:
-            if isinstance(ax, BaseAxes) and ax._row_span[0]==0 \
-            and ((ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text()):
-                offset = True
-                break
-        self._suptitle_setup(offset=offset) # just applies the spacing
+        ref_ax = None
+        self._suptitle_setup(renderer, offset=True) # just applies the spacing
+        # If we haven't already, compress edges
+        _repeat_tight = bool(self._suptitle.get_text())
+        _repeat_tight = False
+        # if not hasattr(self, '_counter'):
+        #     self._counter = 0
+        if (_repeat_tight or self._smart_tight_init) and self._smart_tight:
+            # Cartopy sucks at labels! Bounding box identified will be wrong.
+            # 1) If you used set_bounds to zoom into part of a cartopy projection,
+            # this can erroneously identify invisible edges of map as being part of boundary
+            # 2) If you have gridliner text labels, matplotlib won't detect them.
+            if not any(isinstance(ax, CartopyAxes) for ax in self.axes):
+                if self._smart_tight_init:
+                    print('Adjusting gridspec.')
+                # if self._counter < 2:
+                self.smart_tight_layout(renderer)
+            # self._counter += 1
         # If rc settings have been changed, reset them when the figure is
         # displayed (usually means we have finished executing a notebook cell).
         if not rc._init and self._rcreset:
             print('Resetting rcparams.')
             rc.reset()
-        # If we haven't already, compress edges
-        # NOTE: For cartopy axes, bounding box identified by matplotlib is wrong:
-        # 1) If you used set_bounds to zoom into part of a cartopy projection,
-        # this can erroneously identify invisible edges of map as being part of boundary
-        # 2) If you have gridliner text labels, matplotlib won't detect them.
-        # Cartopy sucks at labels!
-        if self._smart_tight_init and self._smart_tight and \
-            not any(isinstance(ax, CartopyAxes) for ax in self.axes):
-            print('Adjusting gridspec.')
-            self.smart_tight_layout(renderer)
         return super().draw(renderer, *args, **kwargs)
 
     def panel_factory(self, subspec, whichpanels=None,
@@ -1033,6 +1095,8 @@ class BaseAxes(maxes.Axes):
     def _text_update(self, obj, kwargs):
         # Allow updating properties introduced by the BaseAxes.text() override.
         # Don't really want to subclass mtext.Text; only have a few features
+        # NOTE: Don't use kwargs because want this to look like standard
+        # artist self.update.
         try:
             obj.update(kwargs)
         except Exception:
@@ -1051,10 +1115,13 @@ class BaseAxes(maxes.Axes):
         xpad = (rc['axes.titlepad']/72)/self.width # why not use the same for x?
         xpad_i, ypad_i = xpad*1.5, ypad*1.5 # inside labels need a bit more room
         pos = pos or 'oc'
+        extra = {}
         if not isinstance(pos, str):
             ha = va = 'center'
             x, y = pos
+            transform = self.transAxes
         else:
+            # Get horizontal position
             if not any(c in pos for c in 'lcr'):
                 pos += 'c'
             if not any(c in pos for c in 'oi'):
@@ -1070,21 +1137,20 @@ class BaseAxes(maxes.Axes):
                 ha = 'right'
             # Record _title_inside so we can automatically deflect suptitle
             # If *any* object is outside (title or abc), want to deflect it up
-            defaults_kw = {}
             if 'o' in pos:
-                y = 1 + ypad
+                y = 1 # 1 + ypad # leave it alone, may be adjusted during draw-time to account for axis label (fails to adjust for tick labels; see notebook)
                 va = 'baseline'
                 self._title_inside = False
+                transform = self.title.get_transform()
             elif 'i' in pos:
-                y = 1 - ypad_i
                 va = 'top'
-                defaults_kw['border'] = _fill(kwargs.pop('border', None), True) # by default
-        return {'position':(x,y), 'transform':self.transAxes, 'ha':ha, 'va':va, **defaults_kw}
+                transform = self.transAxes
+                extra['border'] = _fill(kwargs.pop('border', None), True) # by default
+        return {'x':x, 'y':y, 'transform':transform, 'ha':ha, 'va':va, **extra}
 
     # New convenience feature
     # The title position can be a mix of 'l/c/r' and 'i/o'
     def format(self,
-        facehatch=None, # control figure/axes background; hatch just applies to axes
         suptitle=None, suptitle_kw={},
         collabels=None, collabels_kw={},
         rowlabels=None, rowlabels_kw={}, # label rows and columns
@@ -1323,6 +1389,9 @@ class XYAxes(BaseAxes):
 
     def _share_span_label(self, axis):
         # Bail
+        # TODO: This works, but for spanning y-axes there is danger that we
+        # pick the y-label where y ticks are really narrow and spanning
+        # label crashes into tick labels on another axes.
         name = axis.axis_name
         base = self
         base = getattr(base, '_share' + name, None) or base
@@ -1411,23 +1480,32 @@ class XYAxes(BaseAxes):
                 for tick in ticks:
                     tick.gridline.update(kw)
 
-        # Update background patch, with optional hatching
+        # Background patch basics
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
         kw = rc.fill({'facecolor': 'axes.facecolor'})
         self.patch.update(kw)
-        kw = rc.fill({'hatch':'axes.facehatch'})
-        if kw: # non-empty
-            self.fill_between([0,1], 0, 1, hatch=kw['hatch'],
-                zorder=0, # put in back
-                facecolor='none', edgecolor='k', transform=self.transAxes)
+
+        # Hatching options (useful where we want to highlight invalid data)
+        # NOTE: So that we can keep re-accessing hatches between multiple calls,
+        # we will add hatches to the patch object directly. Edge/linewidth and
+        # hatch width are decoupled (latter only controllable with hatch.linewidth),
+        # so we can do this without adding edges to the background patch (which
+        # normally we want to control with 'spines').
+        # NOTE: Currently cannot reset linewidth on existing hathces... or maybe
+        # we can? Maybe linewidth delayed to drawtime, since it can only be set
+        # with an rc setting?
+        kw = rc.fill({'hatch':'axes.facehatch', 'edgecolor':'axes.hatchcolor', 'alpha':'axes.hatchalpha'})
+        self.patch.update(kw)
+        # if kw and kw.get('hatch',None): # non-empty
+        #     self.fill_between([0,1], 0, 1, zorder=0, # put in back
+        #         facecolor='none', transform=self.transAxes, **kw)
 
         # Call parent
         super()._rcupdate()
 
     # Cool overrides
     def format(self,
-        xgrid=None,      ygrid=None,      # gridline toggle
         xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
         xloc=None, yloc=None, # aliases for 'where to put spine'
         xspineloc=None,  yspineloc=None,  # deals with spine options
@@ -1436,6 +1514,7 @@ class XYAxes(BaseAxes):
         xticklabelloc=None, yticklabelloc=None, # where to put tick labels
         xtickdir=None,   ytickdir=None,   # which direction ('in', 'our', or 'inout')
         tickminor=None, xtickminor=True, ytickminor=True, # minor ticks on/off
+        grid=None,      xgrid=None,      ygrid=None,      # gridline toggle
         gridminor=None, xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
         xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
         xtickrange=None,    ytickrange=None,    # limit regions where we assign ticklabels to major-ticks
@@ -1497,8 +1576,17 @@ class XYAxes(BaseAxes):
         yminorlocator = _fill(yminorticks, yminorlocator)
         xtickminor = _fill(tickminor, xtickminor)
         ytickminor = _fill(tickminor, ytickminor)
+        xgrid = _fill(grid, xgrid)
+        ygrid = _fill(grid, ygrid)
         xgridminor = _fill(gridminor, xgridminor)
         ygridminor = _fill(gridminor, ygridminor)
+        # Override for weird bug where title doesn't get automatically offset
+        # from ticklabels in certain circumstance; check out notebook
+        xtickloc = _fill(xtickloc, xticklabelloc) # if user specified labels somewhere, make sure to put ticks there by default!
+        ytickloc = _fill(ytickloc, yticklabelloc)
+        if xtickloc=='both' and xticklabelloc in ('both','top') and not xlabel: # xtickloc *cannot* be 'top', *only* appears for 'both'
+            print('Warning: This keyword combination causes matplotlib bug where title is not offset from tick labels. Try adding an x-axis label or ticking only the top axis.')
+        # Begin loop
         for axis, label, tickloc, spineloc, ticklabelloc, labelloc, bounds, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 label_kw, formatter_kw, locator_kw, minorlocator_kw in \
@@ -1549,18 +1637,6 @@ class XYAxes(BaseAxes):
                 if bounds is not None and spine.get_visible():
                     spine.set_bounds(*bounds)
             spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
-
-            # Axis label properties
-            # First redirect user request to the correct *shared* axes, then
-            # redirect to the correct *spanning* axes if the label is meant
-            # to span multiple subplot
-            if label is not None:
-                # Shared and spanning axes; try going a few layers deep
-                # The _span_label method changes label position so it spans axes
-                # If axis spanning not enabled, will just return the shared axis
-                label_text = label
-                label = self._share_span_label(axis)
-                label.update({'text':label_text, **label_kw})
 
             # Set the major and minor locators and formatters
             # Also automatically detect whether axis is a 'time axis' (i.e.
@@ -1641,6 +1717,20 @@ class XYAxes(BaseAxes):
                 axis.set_major_locator(locator)
                 locator = Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_minor_locator(locator)
+
+            # Axis label properties
+            # First redirect user request to the correct *shared* axes, then
+            # redirect to the correct *spanning* axes if the label is meant
+            # to span multiple subplot
+            if label is not None:
+                # Shared and spanning axes; try going a few layers deep
+                # The _span_label method changes label position so it spans axes
+                # If axis spanning not enabled, will just return the shared axis
+                label_text = label
+                label = self._share_span_label(axis)
+                label.update({'text':label_text, **label_kw})
+                if axis.get_label_position() == 'top':
+                    label.set_va('bottom') # baseline was cramped if no ticklabels present
 
             # Gridline activation and setting (necessary because rcParams has no 'minorgrid'
             # property, must be set in rcSpecial settings)
@@ -2032,7 +2122,7 @@ class BasemapAxes(MapAxes):
         # Basemap axes setup
         # Coastlines, parallels, meridians
         if land and not self._land:
-            self._land = self.m.fillcontinents(ax=sel)
+            self._land = self.m.fillcontinents(ax=self)
             for p in self._land:
                 p.update(rc['land'])
         if coastline and not self._coastline:
@@ -2553,7 +2643,6 @@ def colorbar_factory(ax, mappable,
         values_min = np.where(values>=mappable.norm.vmin)[0]
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
-            # raise ValueError(f'No ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
             # print(f'Warning: no ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
             locators.append(Locator('null'))
             continue

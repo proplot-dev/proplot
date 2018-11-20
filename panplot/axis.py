@@ -97,7 +97,15 @@ def Scale(scale, **kwargs):
         pass # already registered
     elif scale=='cutoff':
         scale = CutoffScaleFactory(*args, **kwargs)
-    elif scale=='exp':
+    elif scale in ('exp', 'height', 'pressure'): # note here args is non-zero
+        if scale=='height':
+            if len(args)!=1:
+                raise ValueError('Only one non-keyword arg allowed.')
+            args = [*args, True]
+        if scale=='pressure':
+            if len(args)!=1:
+                raise ValueError('Only one non-keyword arg allowed.')
+            args = [*args, False]
         scale = ExpScaleFactory(*args, **kwargs)
     else:
         raise ValueError(f'Unknown scale {scale}.')
@@ -318,6 +326,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
 
     def set_default_locators_and_formatters(self, axis):
         # Apply these
+        axis.set_smart_bounds(True)
         axis.set_major_locator(Locator(20)) # every 20 degrees
         axis.set_major_formatter(Formatter('deg'))
         axis.set_minor_formatter(Formatter('null'))
@@ -332,16 +341,18 @@ class MercatorLatitudeScale(mscale.ScaleBase):
             # Initialize, declare attribute
             mtransforms.Transform.__init__(self)
             self.thresh = thresh
-        def transform_non_affine(self, array):
+        def transform_non_affine(self, a):
             # For M N-dimensional transform, transform MxN into result
             # So numbers stay the same, but data will then be linear in the
             # result of the math below.
-            array = np.radians(array) # convert to radians
-            masked = ma.masked_where((array < -self.thresh) | (array > self.thresh), array)
-            if masked.mask.any():
-                return ma.log(np.abs(ma.tan(masked) + 1.0 / ma.cos(masked)))
+            a = np.radians(a) # convert to radians
+            m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+            # m[m.mask] = np.nan
+            # a[m.mask] = np.nan
+            if m.mask.any():
+                return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
             else:
-                return np.log(np.abs(np.tan(array) + 1.0 / np.cos(array)))
+                return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
         def inverted(self):
             # Just call inverse transform class
             return MercatorLatitudeScale.InvertedMercatorLatitudeTransform(self.thresh)
@@ -356,7 +367,8 @@ class MercatorLatitudeScale(mscale.ScaleBase):
             mtransforms.Transform.__init__(self)
             self.thresh = thresh
         def transform_non_affine(self, a):
-            return np.degrees(np.arctan(np.sinh(a)))
+            # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+            return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
         def inverted(self):
             return MercatorLatitudeScale.MercatorLatitudeTransform(self.thresh)
 
@@ -378,10 +390,12 @@ class SineLatitudeScale(mscale.ScaleBase):
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         # *Hard* limit on axis boundaries
-        return max(vmin, -90), min(vmax, 90)
+        return vmin, vmax
+        # return max(vmin, -90), min(vmax, 90)
 
     def set_default_locators_and_formatters(self, axis):
         # Apply these
+        axis.set_smart_bounds(True)
         axis.set_major_locator(Locator(20)) # every 20 degrees
         axis.set_major_formatter(Formatter('deg'))
         axis.set_minor_formatter(Formatter('null'))
@@ -417,12 +431,10 @@ class SineLatitudeScale(mscale.ScaleBase):
         def __init__(self):
             mtransforms.Transform.__init__(self)
         def transform_non_affine(self, a):
-            # Clipping, instead of setting invalid, fixes weird issue where
-            # ylim is inappropriately zoomed way in
+            # Clipping, instead of setting invalid
+            # NOTE: Using ma.arcsin below caused super weird errors, dun do that
             aa = a.copy()
-            aa[a < -1] = -1
-            aa[a >  1] = 1
-            return np.rad2deg(ma.arcsin(aa))
+            return np.rad2deg(np.arcsin(aa))
         def inverted(self):
             return MercatorLatitudeScale.SineLatitudeTransform()
 
@@ -455,15 +467,14 @@ class InverseScale(mscale.ScaleBase):
                 minpos if vmax <= 0 else vmax)
 
     def set_default_locators_and_formatters(self, axis):
-        # Consider changing this
-        axis.set_smart_bounds(True) # may prevent ticks from extending off sides
         # TODO: fix minor locator issue
-        # TODO: log formatter can ignore certain major ticks! why is that?
+        # NOTE: log formatter can ignore certain major ticks! why is that?
+        axis.set_smart_bounds(True) # may prevent ticks from extending off sides
         axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
-        # axis.set_major_formatter(mticker.LogFormatter())
         axis.set_major_formatter(Formatter('custom'))
         axis.set_minor_formatter(Formatter('null'))
+        # axis.set_major_formatter(mticker.LogFormatter())
 
     class InverseTransform(mtransforms.Transform):
         # Create transform object

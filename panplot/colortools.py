@@ -114,7 +114,7 @@ _categories_default = { # initialize as empty lists
     # We keep these ones
     'Matplotlib Originals':
         ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
-    'ProPlot Sequential':
+    'PanPlot Sequential':
         ['Bog',
             # 'Wood',
             'Forest', 'Lake', 'Sea', 'Verdant',
@@ -123,7 +123,7 @@ _categories_default = { # initialize as empty lists
             'Glacial',
             ],
             # 'Vibrant'], # empty at first, fill automatically
-    'ProPlot Diverging':
+    'PanPlot Diverging':
         ['ColdHot', 'DryWet', 'Water'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
@@ -433,7 +433,7 @@ def colormap(*args, extend='both',
     if name and register:
         print(name, 'Registering')
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _categories_default.items()
-                    for cat_cmap in cat_cmaps if 'ProPlot' not in cat]:
+                    for cat_cmap in cat_cmaps if 'PanPlot' not in cat]:
             print(f'Warning: Overwriting existing colormap "{name}".')
             # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
         elif name in mcm.cmap_d:
@@ -1703,8 +1703,8 @@ def cmap_show(N=31):
         print(f'New colormaps: {", ".join(cmaps_custom)}')
 
     # Attempt sorting based on hue
-    # for cat in ['ProPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
-    # for cat in ['ProPlot Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['PanPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
+    # for cat in ['PanPlot Sequential', 'ColorBrewer2.0 Sequential']:
     for cat in []:
         hues = [np.mean([to_xyz(to_rgb(color),'hsl')[0]
             for color in mcm.cmap_d[cmap](np.linspace(0.3,1,20))])

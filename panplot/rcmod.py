@@ -43,6 +43,7 @@ rcGlobals = {
     'cycle':     'colorblind',
     # 'facecolor':  '#0072b2', # 0072B2
     'facecolor':  'w', # 0072B2
+    'facehatch':  None, # hatching on background, useful for indicating invalid data
     'small':      8,
     'large':      9,
     'linewidth':  0.6,
@@ -53,7 +54,11 @@ rcGlobals = {
     'ticklen':    4.0,
     'tickpad':    2.0,
     'inout' :     'out',
-    'fontname':   'DejaVu Sans', # simple alias
+    # Convenient aliases (i.e. they do not bulk apply to a bunch of settings, just shorter names)
+    'fontname':       'DejaVu Sans',
+    'titleweight':    'normal',
+    'suptitleweight': 'bold',
+    'abcweight':      'bold',
     # Special ones
     'tickratio':  0.5, # ratio of major-to-minor tick size
     'minorwidth': 0.8, # ratio of major-to-minor tick width
@@ -63,17 +68,27 @@ rcGlobals_children = {
     # The xcolor/ycolor we don't use 'special' props (since we'd be duplicating ones
     # that already exist for all spines/labels). Instead just manually use the
     # global property in the format script.
+    # NOTE: Hatches are weird: https://stackoverflow.com/questions/29549530/how-to-change-the-linewidth-of-hatch-in-matplotlib
+    # Linewidths can only be controlled with a global property!
     # NOTE: Should I even bother setting these? Yes: Idea is maybe we change
-    # underlying global keywords, but have rcupdate always refer to corresponding
-    # builtin values.
+    # underlying global keywords, but have rcupdate always refer to
+    # corresponding builtin values.
     'xcolor':     [],
     'ycolor':     [],
-    'color':      ['axes.labelcolor', 'axes.edgecolor', 'xtick.color', 'ytick.color', 'map.color'], # change the 'color' of an axes
+    'color':      ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.color', 'map.hatchcolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'facecolor':  ['axes.facecolor', 'map.facecolor'], # simple alias
+    'facehatch':  ['axes.facehatch', 'map.facehatch'], # optionally apply background hatching
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'map.linewidth', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
-    'fontname':   ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
+    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'axes.hatchlw', 'map.hatchlw', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
+    'gridalpha':  ['grid.alpha',     'gridminor.alpha'],
+    'gridcolor':  ['grid.color',     'gridminor.color'],
+    'gridstyle':  ['grid.linestyle', 'gridminor.linestyle'],
+    # Aliases
+    'fontname':       ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
+    'abcweight':      ['abc.weight'],
+    'titleweight':    ['axes.titleweight'],
+    'suptitleweight': ['figure.titleweight'],
     # Less important ones
     'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
     'top':        ['xtick.major.top',     'xtick.minor.top'],
@@ -126,7 +141,7 @@ rcDefaults = {
     'patch.edgecolor':         'k',
     'patch.linewidth':         1.0,
     'hatch.color':             'k',
-    'hatch.linewidth':         1.0,
+    'hatch.linewidth':         0.7,
     'markers.fillstyle':       'full',
     'scatter.marker':          'o',
     'lines.linewidth' :        1.3,
@@ -151,14 +166,20 @@ rcDefaults = {
 # Special settings, should be thought of as extension of rcParams
 rcSpecial = {
     # These ones just need to be present, will get reset by globals
-    'map.facecolor':         None,
-    'map.color':             None,
-    'map.linewidth':         None,
-    'abc.fontsize':          None,
-    'rowlabel.fontsize':     None,
-    'collabel.fontsize':     None,
-    'gridminor.linewidth':   None,
-    'axes.facehatch':        None, # optionally apply background hatching
+    'map.facecolor':       None,
+    'map.color':           None,
+    'map.linewidth':       None,
+    'abc.fontsize':        None,
+    'rowlabel.fontsize':   None,
+    'collabel.fontsize':   None,
+    'gridminor.linewidth': None,
+    'gridminor.alpha':     None,
+    'axes.facehatch':      None,
+    'axes.hatchcolor':     None,
+    'axes.hatchlw':        None,
+    'map.facehatch':       None,
+    'map.hatchcolor':      None,
+    'map.hatchlw' :        None,
     # The rest can be applied as-is
     'abc.weight':            'bold',
     'abc.color':             'k',
@@ -167,7 +188,6 @@ rcSpecial = {
     'collabel.weight':       'bold',
     'collabel.color':        'k',
     'gridminor.color':       'k',
-    'gridminor.alpha':       0.1,
     'gridminor.linestyle':   '-',
     'land.linewidth':        0, # no boundary for patch object
     'land.color':            'k',
@@ -424,10 +444,12 @@ class rc_configurator(object):
         Same as setting rc['axes'] = {'name':value}, but do this for bunch
         of different propts.
         """
+        if len(args)==0:
+            args = [{}]
         kw = args[-1]
         kw.update(kwargs)
         if len(args)==1:
-            for key,value in k.items():
+            for key,value in kw.items():
                 self[key] = value
         elif len(args)==2:
             category = args[0]
