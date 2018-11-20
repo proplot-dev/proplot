@@ -44,6 +44,7 @@ rcGlobals = {
     # 'facecolor':  '#0072b2', # 0072B2
     'facecolor':  'w', # 0072B2
     'facehatch':  None, # hatching on background, useful for indicating invalid data
+    'gridalpha':  0.1,
     'small':      8,
     'large':      9,
     'linewidth':  0.6,
