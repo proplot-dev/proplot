@@ -357,6 +357,10 @@ def flexible_gridspec_factory(base):
                 wspace = np.repeat(wspace, (ncols-1,)) # note: may be length 0
             if len(hspace)==1:
                 hspace = np.repeat(hspace, (nrows-1,))
+            if len(wratios)==1:
+                wratios = np.repeat(wratios, (ncols,))
+            if len(hratios)==1:
+                hratios = np.repeat(hratios, (nrows,))
 
             # Verify input ratios and spacings
             # Translate height/width spacings, implement as extra columns/rows

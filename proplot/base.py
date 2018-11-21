@@ -1949,32 +1949,44 @@ class PanelAxes(XYAxes):
         kwlegend.update(kwargs)
         return self, legend_factory(self, handles, **kwlegend)
 
-    def colorbar(self, *args, i=0, n=1, length=1, **kwargs):
+    def colorbar(self, *args, i=0, n=1, length=1,
+            space=0, hspace=None, wspace=None,
+            **kwargs):
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec
         self._invisible()
         side = self.panel_side
+        space = _fill(hspace, _fill(wspace, space)) # flexible arguments
         figure = self.figure
         subspec = self.get_subplotspec()
-        if n>2:
-            raise ValueError('I strongly advise against drawing more than 2 stacked colorbars.')
+        # if n>2:
+        #     raise ValueError('I strongly advise against drawing more than 2 stacked colorbars.')
         if length!=1 or n!=1:
             # First get gridspec
+            # Note formula: total width = n*<colorbar width> + (n-1)*<space width>
             if side in ['bottom','top']:
+                hwidth = (self.height - (n-1)*space)/n # express height ratios in physical units
+                if hwidth<0:
+                    raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.height}.')
                 gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=n,  ncols=3,
-                        wspace=0, hspace=0,
+                        wspace=0, hspace=space,
                         subplot_spec=subspec,
-                        width_ratios=((1-length)/2, length, (1-length)/2)
+                        width_ratios=((1-length)/2, length, (1-length)/2),
+                        height_ratios=hwidth,
                         )
                 subspec = gridspec[i,1]
             elif side in ['left','right']:
+                wwidth = (self.width - (n-1)*space)/n
+                if wwidth<0:
+                    raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.width}.')
                 gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=3,  ncols=n,
-                        hspace=0, wspace=0,
+                        wspace=wspace, hspace=hspace,
                         subplot_spec=subspec,
-                        height_ratios=((1-length)/2, length, (1-length)/2)
+                        height_ratios=((1-length)/2, length, (1-length)/2),
+                        width_ratios=wwidth,
                         )
                 subspec = gridspec[1,i]
             # Next redraw axes
@@ -1987,13 +1999,15 @@ class PanelAxes(XYAxes):
             outside, inside = 'bottom', 'top'
             if side=='top':
                 outside, inside = inside, outside
-            ticklocation = outside if i==n-1 else inside
+            # ticklocation = outside if i==n-1 else inside
+            ticklocation = outside
             orientation  = 'horizontal'
         elif side in ['left','right']:
             outside, inside = 'left', 'right'
             if side=='right':
                 outside, inside = inside, outside
-            ticklocation = outside if i==n-1 else inside
+            # ticklocation = outside if i==n-1 else inside
+            ticklocation = outside
             orientation  = 'vertical'
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         return ax, colorbar_factory(ax, *args, **kwargs)
