@@ -1017,7 +1017,7 @@ def rename_colors(cycle='colorblind'):
 # including _process_values(), which if it doesn't detect BoundaryNorm will
 # end up trying to infer boundaries from inverse() method
 #------------------------------------------------------------------------------
-def Norm(norm, **kwargs):
+def Norm(norm, levels=None, **kwargs):
     """
     Return arbitrary normalizer.
 
@@ -1042,7 +1042,10 @@ def Norm(norm, **kwargs):
     if isinstance(norm, str):
         if norm not in normalizers:
             raise ValueError(f'Unknown normalizer "{norm}". Options are {", ".join(normalizers.keys())}.')
-        norm = normalizers[norm](**kwargs)
+        norm = normalizers[norm]
+        if norm in (BinNorm, LinearSegmentedNorm):
+            kwargs.update({'levels':levels})
+        norm = norm(**kwargs)
     return norm
 
 class LinearSegmentedNorm(mcolors.Normalize):
@@ -1497,6 +1500,8 @@ normalizers = {
     'none':       mcolors.NoNorm,
     'null':       mcolors.NoNorm,
     'step':       BinNorm,
+    'bins':       BinNorm,
+    'bin':        BinNorm,
     'segmented':  LinearSegmentedNorm,
     'boundary':   mcolors.BoundaryNorm,
     'log':        mcolors.LogNorm,

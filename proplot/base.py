@@ -87,6 +87,9 @@ _contour_methods = (
 _pcolor_methods = (
     'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor'
     )
+_contourf_methods = (
+    'contourf', 'tricontourf',
+    )
 _show_methods = (
     'imshow', 'matshow', 'spy', 'hist2d',
     )
@@ -247,9 +250,9 @@ def _cmap_features(self, func):
     def decorator(*args, cmap=None, cmap_kw={},
                 resample=False, levels=None, extremes=True, norm=None,
                 extend='neither', **kwargs):
-        # NOTE: We will normalize the data with whatever is passed, e.g.
-        # logarithmic or whatever is passed to Norm
-        # Call function with special args removed
+        # TODO: Add support for normalizing data that is input to
+        # my custom normalizers e.g. with log, or allow user to optionally
+        # override the default LinearSegmentedColormap.
         # if name in _show_methods: # ***do not*** auto-adjust aspect ratio! messes up subplots!
         #     custom_kw['aspect'] = 'auto'
         name = func.__name__
@@ -257,7 +260,8 @@ def _cmap_features(self, func):
         custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
             custom_kw = {'levels': levels, 'extend': extend}
-        result = func(*args, **kwargs, **custom_kw, norm=colortools.Norm(norm))
+        norm_in = colortools.Norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
+        result = func(*args, **kwargs, **custom_kw, norm=norm)
         if name in _nolevels_methods:
             result.extend = extend
 
@@ -270,19 +274,24 @@ def _cmap_features(self, func):
                 levels = np.linspace(*result.get_clim(), levels)
         result.levels = levels # make sure they are on there!
 
-        # Choose to either:
-        # 1) Use len(levels) lookup table values and a smooth normalizer
-        if resample:
-            N = len(levels)
-            norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
-        # 2) Use a high-resolution lookup table with a discrete normalizer
-        # NOTE: Unclear which is better/more accurate? Intuition is this one.
-        # Will bin physical values into len(levels)-1 bins (plus, optionally,
-        # bins for extremes -- the 'extend' kwarg controls this).
+        if name=='cmapline': # should already be taken care of?
+            N = len(levels) # may be ignored anyway
+            norm = result.norm # we needed the norm to draw the line
+            pass
         else:
-            N = None # will be ignored
-            norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
-        result.set_norm(norm)
+            # Choose to either:
+            # 1) Use len(levels) lookup table values and a smooth normalizer
+            if resample:
+                N = len(levels)
+                norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
+            # 2) Use a high-resolution lookup table with a discrete normalizer
+            # NOTE: Unclear which is better/more accurate? Intuition is this one.
+            # Will bin physical values into len(levels)-1 bins (plus, optionally,
+            # bins for extremes -- the 'extend' kwarg controls this).
+            else:
+                N = None # will be ignored
+                norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
+            result.set_norm(norm)
 
         # Specify colormap
         cmap = cmap or rc['image.cmap']
@@ -294,15 +303,27 @@ def _cmap_features(self, func):
         result.set_cmap(cmap)
 
         # Fix resulting colorbar for 'cmapline's
+        # Recursion yo
+        # NOTE: For some reason resample had to be True for this to work
+        # NOTE: Instead should return a dictionary with colors and values,
+        # that colorbar will accept.
+        # NOTE: get_colors fails because they aren't generated until later,
+        # so we use the cmap instead.
         if name=='cmapline':
-            if levels is None:
-                levels = np.sort(np.unique(result.get_array()))
-            result = self.contourf([0,0], [0,0], np.nan*np.ones((2,2)),
-                cmap=cmap, levels=levels, norm=norm)
+            values = result._segment_values
+            offset = 0.5*1/len(values)
+            cmap = result.get_cmap()
+            # cmap = cmap._resample(512) # did not help
+            colors = [cmap(i) for i in np.linspace(0 + 2*offset, 1 - 2*offset, len(values))]
+            result = (colors, values) # then colorbar_factory will interpret this
+            # if levels is None:
+            #     levels = np.sort(np.unique(result.get_array()))
+            # result = self.contourf([0,0], [0,0], np.nan*np.ones((2,2)),
+            #     cmap=cmap, levels=levels, resample=True)
 
         # Fix white lines between filled contours/mesh
         linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-        if name in ('contourf', 'tricontourf'):
+        if name in _contourf_methods:
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
@@ -1358,7 +1379,9 @@ class BaseAxes(maxes.Axes):
         if bins:
             norm = colortools.BinNorm(edges)
         else:
+            # TODO: This one fails
             norm = colortools.LinearSegmentedNorm(edges)
+            raise Exception
         for j in range(y.shape[0]-1):
             newx.extend(np.linspace(x[j], x[j+1], nbetween+2))
             newy.extend(np.linspace(y[j], y[j+1], nbetween+2))
@@ -1366,8 +1389,8 @@ class BaseAxes(maxes.Axes):
             # if j>0:
             #     interp = interp[1:] # prevent duplicates
             # newvalues.extend(interp)
-            # WARNING: Could not get the inverse thing to work properly
-            if not isinstance(norm,mcolors.BoundaryNorm):
+            # TODO: Could not get the inverse thing to work properly
+            if not isinstance(norm, mcolors.BoundaryNorm):
                 # Has inverse
                 interp = np.linspace(np.asscalar(norm(values[j])),
                     np.asscalar(norm(values[j+1])), nbetween+2)
@@ -1383,11 +1406,14 @@ class BaseAxes(maxes.Axes):
         collection = mcollections.LineCollection(segments, cmap=cmap, norm=norm, linestyles='-')
         collection.set_array(newvalues)
         collection.update({key:value for key,value in kwargs.items() if key not in ['color']})
-        # FIXME: for some reason using 'line' as the mappable results in colorbar
+        # FIXME: for some reason using the 'line' as the mappable results in colorbar
         # with color *cutoffs* at values, instead of centered levels at values
+        # We resort to artificially generating equivalent mappable
+        # NOTE: Add the custom attirbute _segment_values to this end
         # line = self.add_collection(collection)
-        # line = colortools.mappable(cmap, values, norm=norm) # use hacky mchackerson instead
         self.add_collection(collection)
+        collection._segment_values = values
+        collection._segment_edges  = edges
         return collection
 
 #------------------------------------------------------------------------------#
@@ -2620,6 +2646,8 @@ def colorbar_factory(ax, mappable,
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
+    if utils.isvector(mappable) and len(mappable)==2:
+        mappable, values = mappable
     if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
         if isinstance(mappable[0], martist.Artist):
             fromlines = True # we passed a bunch of line handles; just use their colors
