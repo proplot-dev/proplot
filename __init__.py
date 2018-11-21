@@ -3,4 +3,4 @@
 # This makes package locally importable, as long as
 # this directory is on PYTHONPATH.
 #------------------------------------------------------------------------------#
-from .panplot import *
+from .proplot import *

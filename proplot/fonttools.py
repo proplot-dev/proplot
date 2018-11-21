@@ -23,8 +23,8 @@ import matplotlib.font_manager as mfonts
 # fonts_ttf = sorted({f.name for f in mfonts.fontManager.ttflist})
 # fonts_afm = sorted({f.name for f in mfonts.fontManager.afmlist})
 # fonts = mfonts.get_fontconfig_fonts() # same thing? but this lets us segregate them
-fonts_mpl_files = sorted(glob(f"{matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.ttf"))
-fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf'))
+fonts_mpl_files = sorted(glob(f"{matplotlib_fname().rstrip('matplotlibrc')}/fonts/ttf/*.[ot]tf"))
+fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf')) # even with that fontext, will include otf! weird
 fonts_os, fonts_mpl = set(), set()
 for file in fonts_os_files:
     try:
@@ -49,10 +49,10 @@ def install_fonts():
     May require restarting iPython session. Note font cache will be deleted
     in this process, which could cause delays.
     """
-    # See: https://stackoverflow.com/a/17413045/4970632
-    # os.system(_font_script)
-    # p = Popen(_font_script, stdout=PIPE).wait()
-    p = Popen(_font_script, shell=False).wait()
-    # while p.poll() is None:
-    #     print(p.stdout.readline()) # this blocks until it receives a newline.
+    # See: https://stackoverflow.com/a/2502883/4970632
+    # Just print strings because in notebooks will get printed
+    # to terminal; see: https://stackoverflow.com/q/38616077/4970632
+    p = Popen(_font_script, stdout=PIPE, shell=False)
+    out, err = p.communicate()
+    print(out.decode('utf-8').strip()) # strip trailing newline
     print('Fonts have ben installed and font cache has been emptied. Please restart your iPython session.')

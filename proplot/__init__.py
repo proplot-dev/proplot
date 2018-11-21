@@ -6,7 +6,7 @@
 #------------------------------------------------------------------------------#
 # First set up notebook
 from .notebook import *
-name = 'PanPlot'
+name = 'ProPlot'
 # Then import stuff
 from .base import *   # basic tools
 from .subplots import *
