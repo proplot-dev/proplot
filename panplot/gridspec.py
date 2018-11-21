@@ -28,7 +28,6 @@ def _units(value, error=True):
         if error:
             raise ValueError(f'Invalid size spec {value}.')
         else:
-            ic(regex, value)
             return value
     num, unit = regex.groups()
     try:
@@ -37,7 +36,6 @@ def _units(value, error=True):
         if error:
             raise ValueError(f'Invalid size spec {value}.')
         else:
-            ic(num, unit, value)
             return value
     return num*unit_dict[unit] # e.g. cm / (in / cm)
 
@@ -78,7 +76,8 @@ def journal_size(width, height):
 
 # Function for processing input and generating necessary keyword args
 def _gridspec_kwargs(nrows, ncols, rowmajor=True,
-    aspect=1,    figsize=None, height=None, width=None,   # for controlling aspect ratio, default is control for width
+    aspect=1,    figsize=None, # for controlling aspect ratio, default is control for width
+    width=None, height=None, axwidth=None, axheight=None,
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
     left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
@@ -129,10 +128,6 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
 
     # Apply the general defaults
     # Need to do this after number of rows/columns figured out
-    try:
-        aspect = aspect[0]/aspect[1]
-    except (IndexError,TypeError):
-        pass # do nothing
     wratios = np.atleast_1d(_fill(wratios, 1))
     hratios = np.atleast_1d(_fill(hratios, 1))
     hspace = np.atleast_1d(_fill(hspace, rc['gridspec.title']))
@@ -163,9 +158,59 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     width  = _units(width, error=False)
     height = _units(height, error=False)
     width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
+    # If width and height are not fixed, determine necessary width/height to
+    # preserve the aspect ratio of specified plot
+    auto_both = (width is None and height is None)
+    auto_width  = (width is None and height is not None)
+    auto_height = (height is None and width is not None)
+    auto_neither = (width is not None and height is not None)
+    # TODO: Account for top-left axes occupying multiple subplot slots!
+    bpanel_space = bwidth + bspace if bottompanels else 0
+    rpanel_space = rwidth + rspace if rightpanels else 0
+    lpanel_space = lwidth + lspace if leftpanels else 0
+    # Default behavior: axes approximately 2.0 inches wide
+    if auto_width or auto_neither:
+        axheight_ave = (height - top - bottom - sum(hspace) - bpanel_space)/nrows
+    if auto_height or auto_neither:
+        axwidth_ave = (width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
+
+    # Get aspect ratio
+    try:
+        aspect = aspect[0]/aspect[1]
+    except (IndexError,TypeError):
+        pass # do nothing
+    aspect_fixed = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
+    aspect_fixed = aspect*(hratios[0]/np.mean(hratios))
+    if auto_both: # get stuff directly from axes
+        if axwidth is None and axheight is None:
+            axwidth = 2.0
+        if axwidth is None:
+            axwidth = axheight*aspect_fixed
+        elif axheight is None:
+            axheight = axwidth/aspect_fixed
+        axwidth_ave  = axwidth
+        axheight_ave = axheight
+        width   = (ncols*axwidth) + left + right + sum(wspace) + rpanel_space + lpanel_space
+        height  = (nrows*axheight) + bottom + top + sum(hspace) + bpanel_space
+        figsize = (width, height)
+    # Fix height and top-left axes aspect ratio
+    if auto_width:
+        axwidth_ave = axheight_ave*aspect_fixed
+        width       = axwidth_ave*ncols + left + right + sum(wspace) + rpanel_space + lpanel_space
+    # Fix width and top-left axes aspect ratio
+    if auto_height:
+        axheight_ave = axwidth_ave/aspect_fixed
+        height       = axheight_ave*nrows + top + bottom + sum(hspace) + bpanel_space
+    # Check
+    if axwidth_ave<0:
+        raise ValueError("Not enough room for axes. Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
+    if axheight_ave<0:
+        raise ValueError("Not enough room for axes. Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
+
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing
-    subplots_kw = _dot_dict(nrows=nrows, ncols=ncols, figsize=figsize, aspect=aspect,
+    subplots_kw = _dot_dict(nrows=nrows, ncols=ncols,
+        figsize=figsize, aspect=aspect,
         hspace=hspace, wspace=wspace,
         hratios=hratios, wratios=wratios,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
@@ -173,38 +218,8 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         bwidth=bwidth, bspace=bspace, rwidth=rwidth, rspace=rspace, lwidth=lwidth, lspace=lspace,
         )
 
-    # If width and height are not fixed, determine necessary width/height to
-    # preserve the aspect ratio of specified plot
-    auto_width  = (width is None and height is not None)
-    auto_height = (height is None and width is not None)
-    aspect = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
-    aspect = aspect*(hratios[0]/np.mean(hratios))
-    # TODO: Account for top-left axes occupying multiple subplot slots!
-    bpanel_space = bwidth + bspace if bottompanels else 0
-    rpanel_space = rwidth + rspace if rightpanels else 0
-    lpanel_space = lwidth + lspace if leftpanels else 0
-    # Default behavior: axes approximately 2.0 inches wide
-    if width is None and height is None:
-        width = (ncols*2.0) + left + right + sum(wspace) + rpanel_space + lpanel_space
-        auto_height = True
-    if width is not None:
-        axwidth_ave = (width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
-    if height is not None:
-        axheight_ave = (height - top - bottom - sum(hspace) - bpanel_space)/nrows
-    # Fix height and top-left axes aspect ratio
-    if auto_width:
-        axwidth_ave = axheight_ave*aspect
-        width       = axwidth_ave*ncols + left + right + sum(wspace) + rpanel_space + lpanel_space
-    # Fix width and top-left axes aspect ratio
-    if auto_height:
-        axheight_ave = axwidth_ave/aspect
-        height       = axheight_ave*nrows + top + bottom + sum(hspace) + bpanel_space
     # Make sure the 'ratios' and 'spaces' are in physical units (we cast the
     # former to physical units), easier then to add stuff as below
-    if axwidth_ave<0:
-        raise ValueError("Not enough room for axes. Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
-    if axheight_ave<0:
-        raise ValueError("Not enough room for axes. Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
     wspace = wspace.tolist()
     hspace = hspace.tolist()
     wratios = (ncols*axwidth_ave*(wratios/sum(wratios))).tolist()
