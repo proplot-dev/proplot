@@ -1,9 +1,9 @@
-# PanPlot
+# ProPlot
 A library providing helpful and versatile plotting utilities to hasten the process of crafting publication-quality graphics with `matplotlib`. 
 
 ## Showcase
 
-For a showcase of all PanPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/proplot).
+For a showcase of all ProPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/proplot).
 
 ## Overview
 Import with

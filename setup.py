@@ -2,8 +2,7 @@ from setuptools import setup
 # For including non-python data, see:
 # https://stackoverflow.com/a/1857436/4970632
 # NOTE: To rename the repo (which you do a lot), use this command:
-# find . \( -name '*.ipynb' -o -name '*.py' -o -name '*.md' -o -name '*.txt' 
-# -o -name '.vimsession' \) -exec gsed -i 's/panplot/proplot/g' {} +
+# find . \( -name '*.ipynb' -o -name '*.py' -o -name '*.md' -o -name '*.txt' -o -name '.vimsession' \) -exec gsed -i 's/panplot/proplot/g' {} +
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
     name         = 'ProPlot',
