@@ -2030,6 +2030,11 @@ class MapAxes(BaseAxes):
     def _parse_labels(self, labels, mode):
         """
         Parse lonlabels/latlabels argument.
+        Four different options:
+            1) use a string e.g. 'lr', 'bt'
+            2) boolean True; left for latitudes, bottom for longitudes
+            3) a (n1,n2) tuple ((left,right) for latitudes, (bottom,top) for longitudes)
+            4) a (n1,n2,n3,n4) tuple like normal
         """
         if labels is False:
             return [0]*4
