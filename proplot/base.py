@@ -257,9 +257,7 @@ def _cmap_features(self, func):
         custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
             custom_kw = {'levels': levels, 'extend': extend}
-        if norm:
-            custom_kw['norm'] = colortools.Norm(norm)
-        result = func(*args, norm=norm, **custom_kw, **kwargs)
+        result = func(*args, **kwargs, **custom_kw, norm=colortools.Norm(norm))
         if name in _nolevels_methods:
             result.extend = extend
 
