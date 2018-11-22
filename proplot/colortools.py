@@ -532,7 +532,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
          luminance  = [[0, 1, 1], [1, 0.2, 0.2]])
     """
     def __init__(self, name, segmentdata,
-            space='hsl', gamma1=None, gamma2=None,
+            space='hsl', gamma=None, gamma1=None, gamma2=None,
             mask=False, **kwargs):
         """
         Initialize with dictionary of values. Note that hues should lie in
@@ -562,6 +562,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         space = get_space(space)
         if 'gamma' in kwargs:
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
+        gamma1 = _fill(gamma, gamma1)
+        gamma2 = _fill(gamma, gamma2)
         segmentdata['gamma1'] = _fill(gamma1, _fill(segmentdata.get('gamma1', None), 1.0))
         segmentdata['gamma2'] = _fill(gamma2, _fill(segmentdata.get('gamma2', None), 1.0))
         self.space = space
@@ -788,18 +790,22 @@ def make_mapping_array(N, data, channel, gamma=1.0, reverse=False):
     ind = np.searchsorted(x, xq)[1:-1] # where xq[i] must be inserted so it is larger than x[ind[i]-1] but smaller than x[ind[i]]
     distance = (xq[1:-1] - x[ind - 1])/(x[ind] - x[ind - 1])
     # Scale distances in each segment by input gamma
+    # The ui are starting-points, the ci are counts from that point
+    # over which segment applies (i.e. where to apply the gamma)
     _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
     for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
         # Test if 1
-        gamma = gammas[i]
+        gamma = gammas[ind[ui]-1] # the relevant segment is to *left* of this number
         if gamma==1:
             continue
         # By default, weight toward a *lower* channel value (i.e. bigger
         # exponent implies more colors at lower value)
-        ir = ((y0[i + 1] - y1[i]) < 0) # by default want to weight toward a *lower* channel value
+        # Again, the relevant 'segment' is to the *left* of index returned by searchsorted
+        ir = False
+        if ci>1: # i.e. more than 1 color in this 'segment'
+            ir = ((y0[ind[ui]] - y1[ind[ui]-1]) < 0) # by default want to weight toward a *lower* channel value
         if reverse:
             ir = (not ir)
-        # print('Left value', y1[i], 'Right value', y0[i + 1], 'Reverse', ir)
         if ir:
             distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
         else:
