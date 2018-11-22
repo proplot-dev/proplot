@@ -327,8 +327,12 @@ def colormap(*args, extend='both',
         raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
         # Retrieve Colormap instance
+        # Also make sure you reset the lookup table (get_cmap does this
+        # by calling _resample).
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
+            if isinstance(cmap, mcolors.LinearSegmentedColormap):
+                cmap = cmap._resample(_N_hires)
         if isinstance(cmap, mcolors.Colormap):
             # Allow gamma override, otherwise do nothing
             if isinstance(cmap, PerceptuallyUniformColormap):

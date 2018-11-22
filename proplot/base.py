@@ -281,6 +281,7 @@ def _cmap_features(self, func):
         result.levels = levels # make sure they are on there!
 
         if name=='cmapline': # should already be taken care of?
+            ic(levels)
             N = len(levels) # may be ignored anyway
             norm = result.norm # we needed the norm to draw the line
             pass
@@ -1416,6 +1417,12 @@ class BaseAxes(maxes.Axes):
                     np.asscalar(values[j+1]), nbetween+2)
                 newvalues.extend(interp)
         # Create LineCollection and update with values
+        ic(values, len(values), len(newvalues), bins, cmap)
+        if cmap is None:
+            cmap = rc['image.cmap']
+        cmap = colortools.colormap(cmap)
+        ic(cmap.N)
+        ic(norm.boundaries, len(norm.boundaries))
         newvalues  = np.array(newvalues)
         points     = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
         segments   = np.concatenate([points[:-1], points[1:]], axis=1)
@@ -2697,9 +2704,9 @@ def colorbar_factory(ax, mappable,
         mappable = ax.contourf([[0,0],[0,0]],
                 levels=levels, cmap=cmap,
                 extend='neither', norm=colortools.BinNorm(values)) # workaround
-        clocator = _fill(clocator, values)
         if clocator is None:
-            clocator = values
+            nstep = len(values)//20
+            clocator = values[::nstep]
     if clocator is None:
         # By default, label discretization levels
         # NOTE: cmap_features adds 'levels' attribute whenever
