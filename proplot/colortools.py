@@ -114,14 +114,14 @@ _cmap_categories = { # initialize as empty lists
     'Matplotlib Originals':
         ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
     'ProPlot Sequential':
-        ['Bog',
-            # 'Wood',
-            'Forest', 'Lake', 'Sea', 'Verdant',
-            'Blood',
-            'Fire', 'Golden', 'Desert', 'Sunrise', 'Sunset',
-            'Glacial',
-            ],
-            # 'Vibrant'], # empty at first, fill automatically
+        [ 'Glacial',
+        'Bog',
+        # 'Wood',
+        'Lake', 'Sea', 'Verdant', 'Forest',
+        'Blood',
+        'Fire', 'Golden', 'Sunrise', 'Sunset',
+        ],
+        # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging':
         ['ColdHot', 'NegPos', 'DryWet', 'Water'],
     'cmOcean Sequential':
