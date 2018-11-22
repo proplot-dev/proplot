@@ -203,9 +203,9 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         height       = axheight_ave*nrows + top + bottom + sum(hspace) + bpanel_space
     # Check
     if axwidth_ave<0:
-        raise ValueError("Not enough room for axes. Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
+        raise ValueError(f"Not enough room for axes (would have width {axwidth_ave}). Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
     if axheight_ave<0:
-        raise ValueError("Not enough room for axes. Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
+        raise ValueError(f"Not enough room for axes (would have height {axheight_ave}). Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
 
     # Necessary arguments to reconstruct this grid
     # Can follow some of the pre-processing

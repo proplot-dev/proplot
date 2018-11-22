@@ -23,14 +23,14 @@ _dir_data = re.sub('/matplotlibrc$', '', matplotlib_fname())
 fonts_mpl_files = sorted(glob(f"{_dir_data}/fonts/ttf/*.[ot]tf"))
 fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf')) # even with that fontext, will include otf! weird
 fonts_os, fonts_mpl = set(), set()
-for file in fonts_os_files:
+for _file in fonts_os_files:
     try:
-        fonts_os.add(mfonts.FontProperties(fname=file).get_name())
+        fonts_os.add(mfonts.FontProperties(fname=_file).get_name())
     except Exception as err:
         pass # fails sometimes
-for file in fonts_mpl_files:
+for _file in fonts_mpl_files:
     try:
-        fonts_mpl.add(mfonts.FontProperties(fname=file).get_name())
+        fonts_mpl.add(mfonts.FontProperties(fname=_file).get_name())
     except Exception as err:
         pass # fails sometimes
 fonts = {*fonts_os, *fonts_mpl}

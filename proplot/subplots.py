@@ -3,13 +3,14 @@ import re
 import numpy as np
 # import io
 # from contextlib import redirect_stdout
-import matplotlib.pyplot as plt
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from . import base
 from .utils import _fill, ic
 from functools import wraps
+# Have to do this for a couple things
+import matplotlib.pyplot as plt
 
 #------------------------------------------------------------------------------#
 # Miscellaneous helper functions

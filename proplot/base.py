@@ -35,7 +35,6 @@ from IPython.utils import io
 from matplotlib.cbook import mplDeprecation
 from matplotlib.projections import register_projection, PolarAxes
 # from matplotlib.lines import _get_dash_pattern, _scale_dashes
-from string import ascii_lowercase
 from functools import wraps
 import matplotlib.figure as mfigure
 import matplotlib.axes as maxes
@@ -59,6 +58,14 @@ from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
 from . import fonttools
 from . import colortools, utils
 from .utils import _dot_dict, _fill, ic, timer, counter, docstring_fix
+# Silly function, returns a...z...aa...zz...aaa...zzz
+# God help you if you ever need that many indices
+_abc = 'abcdefghijklmnopqrstuvwxyz'
+def _ascii(i, prefix=''):
+    if i < 26:
+        return prefix + _abc[i]
+    else:
+        return _ascii(i - 26, prefix) + _abc[i % 26]
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -72,7 +79,6 @@ warnings.filterwarnings('ignore', category=mplDeprecation)
 try:
     from cartopy.mpl.geoaxes import GeoAxes
     from cartopy.crs import PlateCarree
-    PlateCarree = PlateCarree() # global variable
 except ModuleNotFoundError:
     GeoAxes = PlateCarree = object
 
@@ -224,12 +230,12 @@ def _cycle_features(self, func):
     The set_prop_cycle command modifies underlying _get_lines and _get_patches_for_fill.
     """
     @wraps(func)
-    def decorator(*args, cycle=None, **kwargs):
+    def decorator(*args, cycle=None, cycle_kw={}, **kwargs):
         # Determine and temporarily set cycler
         if cycle is not None:
-            if isinstance(cycle, str) or utils.isnumber(cycle):
+            if not utils.isvector(cycle):
                 cycle = cycle,
-            cycle = colortools.cycle(*cycle)
+            cycle = colortools.cycle(*cycle, **cycle_kw)
             self.set_prop_cycle(color=cycle)
         return func(*args, **kwargs)
     return decorator
@@ -260,7 +266,7 @@ def _cmap_features(self, func):
         custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
             custom_kw = {'levels': levels, 'extend': extend}
-        norm_in = colortools.Norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
+        norm_in = colortools.norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
         result = func(*args, **kwargs, **custom_kw, norm=norm)
         if name in _nolevels_methods:
             result.extend = extend
@@ -494,10 +500,10 @@ def _linefix_cartopy(func):
     want to @wrap it to preserve documentation.
     """
     @wraps(func)
-    def decorator(*args, **kwargs):
-        if not kwargs.get('transform', None):
-            kwargs['transform'] = PlateCarree
-        return func(*args, **kwargs)
+    def decorator(*args, transform=PlateCarree, **kwargs):
+        if isinstance(transform, type):
+            transform = transform() # instantiate
+        return func(*args, transform=transform, **kwargs)
     return decorator
 
 def _gridfix_cartopy(func):
@@ -527,8 +533,9 @@ def _gridfix_cartopy(func):
             lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
             Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Call function
+        if isinstance(transform, type):
+            transform = transform() # instantiate
         with io.capture_output() as captured:
-            # print(captured)
             result = func(lon, lat, Z, transform=transform, **kwargs)
         # Call function
         return result
@@ -645,7 +652,7 @@ class Figure(mfigure.Figure):
             right += (self._subplots_kw.rwidth + self._subplots_kw.rspace)
         xpos = left/self.width + 0.5*(self.width - left - right)/self.width
 
-        if not offset:
+        if not offset or not kwargs.get('text', self._suptitle.get_text()):
             # Simple offset, not using the automatically determined
             # title position for guidance
             base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
@@ -686,7 +693,7 @@ class Figure(mfigure.Figure):
                 if not title.get_text():
                 # if not title.axes._title_inside:
                     title.set_text(' ') # dummy spaces, so subplots adjust will work properly
-            elif title_lev3:
+            elif title_lev3: # upper axes present
                 line = 1.0 # looks best empirically
                 title = title_lev3
                 text = title.get_text()
@@ -725,22 +732,7 @@ class Figure(mfigure.Figure):
         # bring suptitle close to center
         ref_ax = None
         self._suptitle_setup(renderer, offset=True) # just applies the spacing
-        # If we haven't already, compress edges
-        _repeat_tight = bool(self._suptitle.get_text())
-        _repeat_tight = False
-        # if not hasattr(self, '_counter'):
-        #     self._counter = 0
-        if (_repeat_tight or self._smart_tight_init) and self._smart_tight:
-            # Cartopy sucks at labels! Bounding box identified will be wrong.
-            # 1) If you used set_bounds to zoom into part of a cartopy projection,
-            # this can erroneously identify invisible edges of map as being part of boundary
-            # 2) If you have gridliner text labels, matplotlib won't detect them.
-            if not any(isinstance(ax, CartopyAxes) for ax in self.axes):
-                if self._smart_tight_init:
-                    print('Adjusting gridspec.')
-                # if self._counter < 2:
-                self.smart_tight_layout(renderer)
-            # self._counter += 1
+        self._auto_smart_tight_layout(renderer)
         # If rc settings have been changed, reset them when the figure is
         # displayed (usually means we have finished executing a notebook cell).
         if not rc._init and self._rcreset:
@@ -894,6 +886,20 @@ class Figure(mfigure.Figure):
         for axis in self._span_labels:
             axis.axes._share_span_label(axis)
 
+    def _auto_smart_tight_layout(self, renderer=None):
+        # If we haven't already, compress edges
+        # _repeat_tight = bool(self._suptitle.get_text()) # optionally also try this
+        if not self._smart_tight_init or not self._smart_tight:
+            return
+        # Cartopy sucks at labels! Bounding box identified will be wrong.
+        # 1) If you used set_bounds to zoom into part of a cartopy projection,
+        # this can erroneously identify invisible edges of map as being part of boundary
+        # 2) If you have gridliner text labels, matplotlib won't detect them.
+        if not any(isinstance(ax, CartopyAxes) for ax in self.axes):
+            if self._smart_tight_init:
+                print('Adjusting gridspec.')
+            self.smart_tight_layout(renderer)
+
     # @timer
     def save(self, filename, silent=False, auto_adjust=True, pad=0.1, **kwargs):
         # Notes:
@@ -908,9 +914,8 @@ class Figure(mfigure.Figure):
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
             kwargs['transparent'] = True
-        if auto_adjust:
-            self.smart_tight_layout(pad=pad)
         # Finally, save
+        self._auto_smart_tight_layout()
         if not silent:
             print(f'Saving to "{filename}".')
         return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
@@ -1191,6 +1196,15 @@ class BaseAxes(maxes.Axes):
                 extra['border'] = _fill(kwargs.pop('border', None), True) # by default
         return {'x':x, 'y':y, 'transform':transform, 'ha':ha, 'va':va, **extra}
 
+    # Make axes invisible
+    def invisible(self):
+        # Make axes invisible
+        for s in self.spines.values():
+            s.set_visible(False)
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+        self.patch.set_alpha(0)
+
     # New convenience feature
     # The title position can be a mix of 'l/c/r' and 'i/o'
     def format(self,
@@ -1231,7 +1245,7 @@ class BaseAxes(maxes.Axes):
         # Input needs to be emptys string
         if title is not None:
             pos_kw = self._title_pos(titlepos or 'oc', **title_kw)
-            self.title = self._text_update(self.title, {'text':title, **pos_kw, **title_kw})
+            self.title = self._text_update(self.title, {'text':title, 'visible':True, **pos_kw, **title_kw})
 
         # Create axes numbering
         if self.number is not None and abc:
@@ -1240,7 +1254,7 @@ class BaseAxes(maxes.Axes):
             if 'a' not in abcformat:
                 raise ValueError(f'Invalid abcformat {abcformat}.')
             abcedges = abcformat.split('a')
-            text = abcedges[0] + ascii_lowercase[self.number-1] + abcedges[-1]
+            text = abcedges[0] + _ascii(self.number-1) + abcedges[-1]
             pos_kw = self._title_pos(abcpos or 'il')
             self.abc = self._text_update(self.abc, {'text':text, **abc_kw, **pos_kw})
         elif hasattr(self, 'abc') and abc is not None and not abc:
@@ -1954,20 +1968,12 @@ class PanelAxes(XYAxes):
         super().__init__(*args, panel_side=panel_side, **kwargs)
         # Make everything invisible
         if invisible:
-            self._invisible()
-
-    def _invisible(self):
-        # Make axes invisible
-        for s in self.spines.values():
-            s.set_visible(False)
-        self.xaxis.set_visible(False)
-        self.yaxis.set_visible(False)
-        self.patch.set_alpha(0)
+            self.invisible()
 
     def legend(self, handles, **kwargs):
         # Allocate invisible axes for drawing legend.
         # Returns the axes and the output of legend_factory().
-        self._invisible()
+        self.invisible()
         kwlegend = {'borderaxespad':  0,
                     'frameon':        False,
                     'loc':            'upper center',
@@ -1981,7 +1987,7 @@ class PanelAxes(XYAxes):
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec
-        self._invisible()
+        self.invisible()
         side = self.panel_side
         space = _fill(hspace, _fill(wspace, space)) # flexible arguments
         figure = self.figure
@@ -2305,9 +2311,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         self._coastline = None
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
-            # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
-            self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree) # use platecarree transform
+            self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree()) # use platecarree transform
             self.set_boundary(Circle(100), transform=self.transAxes)
+            # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
 
     def __getattribute__(self, attr, *args):
@@ -2383,7 +2389,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
                 ylim[0] = -90
             if ylim[1] is None:
                 ylim[1] = 90
-            self.set_extent([*xlim, *ylim], PlateCarree)
+            self.set_extent([*xlim, *ylim], PlateCarree())
 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
@@ -2420,7 +2426,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         latlines = latminorlocator or latlocator
 
         # First take care of gridlines
-        draw_labels = (isinstance(self.projection,ccrs.Mercator) or isinstance(self.projection,ccrs.PlateCarree))
+        draw_labels = (isinstance(self.projection, ccrs.Mercator) or isinstance(self.projection, ccrs.PlateCarree))
         if latlines and latlines[0]==-90:
             latlines[0] += 0.001
         if lonlines and lonlines[0]==-90:

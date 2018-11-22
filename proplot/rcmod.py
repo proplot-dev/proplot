@@ -25,7 +25,7 @@ Notes
 #------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
 import re
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure, get_fignums
 from cycler import cycler
 from . import colortools
 from . import utils
@@ -393,7 +393,7 @@ class rc_configurator(object):
         rcParams['axes.prop_cycle'] = cycler('color', colors)
         colors = colortools.colors(*value)
         rcParams['axes.prop_cycle'] = cycler('color', colors)
-        figs = list(map(plt.figure, plt.get_fignums()))
+        figs = list(map(figure, get_fignums()))
         for fig in figs:
             for ax in fig.axes:
                 ax.set_prop_cycle(cycler('color', colors))
