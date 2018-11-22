@@ -1035,8 +1035,8 @@ class BaseAxes(maxes.Axes):
             return
         if isinstance(self, MapAxes) or isinstance(sharex, MapAxes):
             return
-        if level not in (0,1,2):
-            raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
+        if level not in range(4):
+            raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
         # Share vertical panel x-axes with *eachother*
         if self.leftpanel and sharex.leftpanel:
             self.leftpanel._sharex_setup(sharex.leftpanel, level)
@@ -1049,12 +1049,13 @@ class BaseAxes(maxes.Axes):
             self.toppanel._sharex_setup(sharex, level)
         # Builtin features
         self._sharex = sharex
-        self._shared_x_axes.join(self, sharex)
+        if level>1:
+            self._shared_x_axes.join(self, sharex)
         # Simple method for setting up shared axes
         # WARNING: It turned out setting *another axes' axis label* as
         # this attribute caused error, because matplotlib tried to add
         # the same artist instance twice. Can only make it invisible.
-        if level==2:
+        if level>2:
             for t in self.xaxis.get_ticklabels():
                 t.set_visible(False)
         self.xaxis.label.set_visible(False)
@@ -1066,8 +1067,8 @@ class BaseAxes(maxes.Axes):
             return
         if isinstance(self, MapAxes) or isinstance(sharey, MapAxes):
             return
-        if level not in (0,1,2):
-            raise ValueError('Level can be 1 (do not hide tick labels) or 2 (do hide tick labels).')
+        if level not in range(4):
+            raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
         # Share horizontal panel y-axes with *eachother*
         if self.bottompanel and sharey.bottompanel:
             self.bottompanel._sharey_setup(sharey.bottompanel, level)
@@ -1081,9 +1082,10 @@ class BaseAxes(maxes.Axes):
             # sharey = self.leftpanel._sharey or self.leftpanel
         # Builtin features
         self._sharey = sharey
-        self._shared_y_axes.join(self, sharey)
+        if level>1:
+            self._shared_y_axes.join(self, sharey)
         # Simple method for setting up shared axes
-        if level==2:
+        if level>2:
             for t in self.yaxis.get_ticklabels():
                 t.set_visible(False)
         self.yaxis.label.set_visible(False)

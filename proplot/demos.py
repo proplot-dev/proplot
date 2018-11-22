@@ -10,6 +10,69 @@ from . import subplots # actually imports the function, since __init__ makes it 
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
 
 #------------------------------------------------------------------------------#
+# Demo of channel values
+#------------------------------------------------------------------------------#
+# def
+def cmap_breakdown(name, luminance=50, chroma=None, hue=None, N=100, space='hcl'):
+    # Dictionary
+    hues = np.linspace(0, 360, N)
+    sats = np.linspace(0, 100, N)
+    lums = np.linspace(0, 100, N)
+    # if luminance is not None:
+    #     name = 'Hue-chroma cross-section'
+    # elif saturation is not None:
+    # elif hue is not None:
+    scales = {'rgb':(1,1,1), 'default':(360,100,100)}
+    names  = {'rgb':('red', 'green', 'blue'),
+              'hcl':('hue', 'chroma', 'luminance'),
+              'hsl':('hue', 'saturation', 'luminance'),
+              'hsv':('hue', 'saturation', 'value'),
+              'hpl':('hue', 'partial sat', 'luminance')}
+    # Figure
+    rcParams['axes.ymargin'] = 0.1
+    f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
+                           span=0, sharey=1, wspace=0.5,
+                           bottom=0.4, axwidth=2, aspect=1, tight=True)
+    x = np.linspace(0, 1, N)
+    cmap = tools.colormap(name, N=N)
+    cmap._init()
+    for j,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl','rgb'))):
+        # Get RGB table, unclipped
+        hs = []
+        if hasattr(cmap, 'space'):
+            cmap._init()
+            lut = cmap._lut_hsl[:,:3].copy()
+            for i in range(len(lut)):
+                lut[i,:] = tools.to_rgb(lut[i,:], cmap.space)
+        else:
+            lut = cmap._lut[:,:3].copy()
+        # Convert RGB to space
+        for i in range(len(lut)):
+            lut[i,:] = tools.to_xyz(lut[i,:], space=space)
+        scale = scales.get(space, scales['default'])
+        labels = names[space]
+        # Draw line, add legend
+        colors = ['C1', 'C2', 'C0'] # corresponds with RGB roughly
+        m = 0
+        for i,label in enumerate(labels):
+            y = lut[:-2,i]/scale[i]
+            y = np.clip(y, 0, 5)
+            h, = ax.plot(x, y, color=colors[i], lw=2, label=label)
+            m = max(m, max(y))
+            hs += [h]
+        f.bottompanel[j].legend(hs)
+        ax.axhline(1, color='red7', dashes=(1.5, 1.5), alpha=0.8, zorder=0, lw=2)
+        ax.format(title=space.upper(), titlepos='oc', ylim=(0-0.1, m + 0.1))
+    # Draw colorbar
+    with np.errstate(all='ignore'):
+        m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=name)
+    f.rightpanel.colorbar(m, clocator='none', cformatter='none', clabel=f'{name} colors')
+    locator = [0, 0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 6, 7, 8, 10]
+    axs.format(suptitle=f'{name} channel breakdown', ylim=None, ytickminor=False,
+              yscale=('cutoff', 4, 1), ylocator=locator, # progress 10x faster above x=1
+              xlabel='position', ylabel='scaled channel value')
+
+#------------------------------------------------------------------------------#
 # Reference tables for colors, colormaps, cycles
 #------------------------------------------------------------------------------#
 def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):

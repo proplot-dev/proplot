@@ -1433,7 +1433,8 @@ def register_cmaps():
             mcm.cmap_d[name + '_shifted'] = mcolors.LinearSegmentedColormap(name + '_shifted', data_shift, cmap.N)
 
     # Convert names
-    mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
+    mcm.cmap_d['Grays']   = mcm.cmap_d.pop('Greys')
+    mcm.cmap_d['Grays_r'] = mcm.cmap_d.pop('Greys_r')
 
     # Add OpenColor colormaps
     for color in ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan',

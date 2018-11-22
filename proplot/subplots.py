@@ -83,7 +83,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         span=None, # bulk apply to x/y axes
         share=None, # bulk apply to x/y axes
         spanx=1,  spany=1,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
-        sharex=2, sharey=2, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
+        sharex=3, sharey=3, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         innerpanels={}, innercolorbars={}, innerpanels_kw={},
         basemap=False, proj={}, projection={}, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
@@ -135,7 +135,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     sharey = _fill(share, sharey)
     spanx = _fill(span, spanx)
     spany = _fill(span, spany)
-    if int(sharex) not in (0,1,2) or int(sharey) not in (0,1,2):
+    if int(sharex) not in range(4) or int(sharey) not in range(4):
         raise ValueError('Axis sharing options sharex/sharey can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels).')
     # Helper functions
     translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
