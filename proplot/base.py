@@ -251,29 +251,52 @@ def _cmap_features(self, func):
           colormap so 'out-of-bounds' have same color as edge colors
           from 'in-bounds' region.
     Also see: https://stackoverflow.com/a/48614231/4970632
+
+    Notes
+    -----
+    The 'bins' argument lets you choose between:
+        1) (True) Use a *discrete* normalizer with a *continuous* (i.e. very
+           high resolution) color table.
+        2) (False) Use a *continuous* normalizer with a *discrete* (containing
+           the number of colors you want) color table.
     """
     @wraps(func)
     def decorator(*args, cmap=None, cmap_kw={},
-                resample=False, levels=None, extremes=True, norm=None,
+                bins=True, # use *discrete* normalizer with 'continuous' color table
+                values=None, levels=None, norm=None,
+                values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
                 extend='neither', **kwargs):
-        # TODO: Add support for normalizing data that is input to
-        # my custom normalizers e.g. with log, or allow user to optionally
-        # override the default LinearSegmentedColormap.
-        # if name in _show_methods: # ***do not*** auto-adjust aspect ratio! messes up subplots!
-        #     custom_kw['aspect'] = 'auto'
+        # First get normalizer (i.e. a callable with an .inverse attribute
+        # that inverts the call) and levels. If user provided one, and also
+        # specified *values* (bin centers), make sure you get the bin levels
+        # (halfway points) in *transformed space*, e.g. log space.
         name = func.__name__
-        levels = _fill(levels, 11)
+        norm = colortools.norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
+        if utils.isvector(values) and values_as_levels:
+            if norm: # is not None
+                levels = norm.inverse(utils.edges(norm(values)))
+            else:
+                levels = utils.edges(values)
+        levels = _fill(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+
+        # Call function with custom stuff
+        # NOTE: For contouring, colors discretized automatically. But we also
+        # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
         custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
-            custom_kw = {'levels': levels, 'extend': extend}
-        norm_in = colortools.norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
-        result = func(*args, **kwargs, **custom_kw, norm=norm)
+            custom_kw.update({'levels': levels, 'extend': extend})
+        if name == 'cmapline':
+            custom_kw.update({'values': values}) # implement this directly
+        if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
+            custom_kw.update({'aspect': 'auto'})
+        result = func(*args, **custom_kw, **kwargs)
         if name in _nolevels_methods:
             result.extend = extend
 
         # Get levels automatically determined by contourf, or make them
         # from the automatically chosen pcolor/imshow clims
-        if not utils.isvector(levels):
+        # the normalizers will ***prefer*** this over levels
+        if not utils.isvector(levels): # i.e. was an integer
             if hasattr(result, 'levels'):
                 levels = result.levels
             else:
@@ -282,13 +305,13 @@ def _cmap_features(self, func):
 
         # Choose to either:
         # 1) Use len(levels) lookup table values and a smooth normalizer
-        if resample:
-            N = len(levels)
+        # TODO: Figure out how extend stuff works, a bit confused again.
+        if not bins:
+            offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
+            N = len(values) + offset[extend]
             norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
         # 2) Use a high-resolution lookup table with a discrete normalizer
         # NOTE: Unclear which is better/more accurate? Intuition is this one.
-        # Will bin physical values into len(levels)-1 bins (plus, optionally,
-        # bins for extremes -- the 'extend' kwarg controls this).
         else:
             N = None # will be ignored
             norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
@@ -296,7 +319,7 @@ def _cmap_features(self, func):
 
         # Specify colormap
         cmap = cmap or rc['image.cmap']
-        if isinstance(cmap, (str,dict,mcolors.Colormap)):
+        if isinstance(cmap, (str, dict, mcolors.Colormap)):
             cmap = cmap, # make a tuple
         cmap = colortools.colormap(*cmap, N=N, extend=extend, **cmap_kw)
         if not cmap._isinit:
@@ -1397,7 +1420,7 @@ class BaseAxes(maxes.Axes):
             x, y, values = np.array(x), np.array(y), np.array(values)
         coords, vals = [], []
         edges = utils.edges(values)
-        for j in range(y.shape[0]-1):
+        for j in range(y.shape[0]):
             # Get x/y coordinates and values for points to the 'left' and
             # 'right' of each joint. Also prevent duplicates.
             if j==0:
@@ -1405,8 +1428,8 @@ class BaseAxes(maxes.Axes):
             else:
                 xleft = [(x[j-1] + x[j])/2, x[j]]
                 yleft = [(y[j-1] + y[j])/2, y[j]]
-            if j+1==y.shape[0]-1:
-                xright, yright = np.array([]), np.array([])
+            if j+1==y.shape[0]:
+                xright, yright = [], []
             else:
                 xleft  = xleft[:-1] # prevent repetition when joined with xright/yright
                 yleft  = yleft[:-1] # actually need numbers of x/y coordinates to be same for each segment
@@ -2762,7 +2785,7 @@ def colorbar_factory(ax, mappable,
     #   level will still lie on same location, so error will occur
     if normfix:
         mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/10000
-    if hasattr(mappable.norm,'levels'):
+    if hasattr(mappable.norm, 'levels'):
         mappable.norm.levels = np.atleast_1d(mappable.norm.levels).astype(np.float)
         if normfix:
             mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]/10000

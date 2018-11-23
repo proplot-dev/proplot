@@ -321,11 +321,11 @@ def colormap(*args, extend='both',
     # instance, no longer does that thing where final levels equal extensions.
     # Since collection API does nothing to underlying data or cmap, must be
     # something done by pcolormesh function.
+    _N = N or _N_hires
     _cmaps = []
     name = name or 'custom' # must have name, mcolors utilities expect this
     if len(args)==0:
         args = [rcParams['image.cmap']] # use default
-        # raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
         # Retrieve Colormap instance
         # Also make sure you reset the lookup table (get_cmap does this
@@ -335,7 +335,7 @@ def colormap(*args, extend='both',
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
             if isinstance(cmap, mcolors.LinearSegmentedColormap):
-                cmap = cmap._resample(_N_hires)
+                cmap = cmap._resample(_N)
         if isinstance(cmap, mcolors.Colormap):
             # Allow gamma override, otherwise do nothing
             if isinstance(cmap, PerceptuallyUniformColormap):
@@ -358,10 +358,9 @@ def colormap(*args, extend='both',
                 if key in kwargs:
                     print(f'Warning: Got duplicate keys "{key}" in cmap dictionary ({cmap[key]}) and in keyword args ({kwargs[key]}). Using first one.')
             kw = kwargs.update
-            cmap = PerceptuallyUniformColormap.from_hsl(name, N=_N_hires, **{**kwargs, **cmap})
+            cmap = PerceptuallyUniformColormap.from_hsl(name, N=_N, **{**kwargs, **cmap})
         elif not isinstance(cmap, str):
             # List of colors
-            N = None
             cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
         else:
             # Monochrome colormap based from input color (i.e. single hue)
@@ -371,12 +370,12 @@ def colormap(*args, extend='both',
             fade = kwargs.pop('fade',90) if not match else match.group(1) # default fade to 90 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
-            cmap = monochrome_cmap(cmap, fade, name=name, N=_N_hires, **kwargs)
+            cmap = monochrome_cmap(cmap, fade, name=name, N=_N, **kwargs)
         _cmaps += [cmap]
     # Now merge the result of this arbitrary user input
     # Since we are merging cmaps, potentially *many* color transitions; use big number by default
     if len(_cmaps)>1:
-        N_merge = _N_hires*len(_cmaps)
+        N_merge = _N*len(_cmaps)
         cmap = merge_cmaps(*_cmaps, name=name, ratios=ratios, N=N_merge)
 
     # Reverse
@@ -1039,36 +1038,26 @@ def rename_colors(cycle='colorblind'):
 # including _process_values(), which if it doesn't detect BoundaryNorm will
 # end up trying to infer boundaries from inverse() method
 #------------------------------------------------------------------------------
-def norm(norm, levels=None, **kwargs):
+def norm(norm_i, levels=None, norm=None, **kwargs):
     """
     Return arbitrary normalizer.
-
-    Notes
-    -----
-    Tried following the pcolor example (see Colormap notes) to use BoundaryNorm
-    for getting segmented levels from colormap. Note this is sort-of built into
-    mcolors.Colormap (by generating lookup table with N colors) -- BoundaryNorm
-    is an alternative. It seems that using normalizers to discretize colors
-    performs *better* than using low-resolution resampling when the colormap
-    is complex, but not exactly sure why.
     """
-    if isinstance(norm, mcolors.Normalize):
+    if isinstance(norm_i, mcolors.Normalize):
         pass
-    elif norm is None:
-        # norm = 'linear' # always the default
-        norm = None
-    elif norm is None:
-        norm = mcolors.Normalize() # default is just linear from 0 to 1
-    elif type(norm) is not str: # dictionary lookup
-        raise ValueError(f'Unknown norm "{norm}".')
-    if isinstance(norm, str):
-        if norm not in normalizers:
-            raise ValueError(f'Unknown normalizer "{norm}". Options are {", ".join(normalizers.keys())}.')
-        norm = normalizers[norm]
-        if norm in (BinNorm, LinearSegmentedNorm):
-            kwargs.update({'levels':levels})
-        norm = norm(**kwargs)
-    return norm
+    elif norm_i is None:
+        norm_i = None
+    elif norm_i is None:
+        norm_i = mcolors.Normalize() # default is just linear from 0 to 1
+    elif type(norm_i) is not str: # dictionary lookup
+        raise ValueError(f'Unknown norm "{norm_i}".')
+    if isinstance(norm_i, str):
+        if norm_i not in normalizers:
+            raise ValueError(f'Unknown normalizer "{norm_i}". Options are {", ".join(normalizers.keys())}.')
+        norm_i = normalizers[norm_i]
+        if norm_i in (BinNorm, LinearSegmentedNorm):
+            kwargs.update({'levels':levels, 'norm':norm})
+        norm_i = norm_i(**kwargs)
+    return norm_i
 
 class LinearSegmentedNorm(mcolors.Normalize):
     """
@@ -1079,16 +1068,20 @@ class LinearSegmentedNorm(mcolors.Normalize):
     in LinearSegmentedColormap: perform linear interpolations between
     successive monotonic, but arbitrarily spaced, points.
     """
-    def __init__(self, levels, norm=None, midpoint=None, clip=False, ncolors=None, **kwargs):
-        # Very simple
+    def __init__(self, levels, norm=None, clip=False, **kwargs):
+        # Test
         levels = np.atleast_1d(levels)
         if levels.size<=1 or ((levels[1:]-levels[:-1])<=0).any():
             raise ValueError(f'Levels passed to LinearSegmentedNorm must be monotonically increasing.')
         super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
+        # Add some properties
+        if not norm: # e.g. a logarithmic transform
+            norm = (lambda x: x)
+            norm.inverse = (lambda x: x)
         self._x = levels # alias for boundaries
-        # self._pre_norm = norm # e.g. a log-norm
-        # if norm:
-        #     levels = norm(levels)
+        self._x_norm = norm(levels)
+        self._y = np.linspace(0, 1, levels.size)
+        self._norm = norm
 
     def __call__(self, xq, clip=None):
         # Follow example of make_mapping_array for efficient, vectorized
@@ -1097,27 +1090,27 @@ class LinearSegmentedNorm(mcolors.Normalize):
         # left-most data, satisfy a[0] <= v <= a[1]
         # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
         # than x[ind[i]-1] but smaller than x[ind[i]]
-        x = self._x # from arbitrarily spaced monotonic levels
-        y = np.linspace(0, 1, x.size) # to linear range 0-1
-        xq = np.atleast_1d(xq)
+        x = self._x_norm # from arbitrarily spaced monotonic levels
+        y = self._y # to linear range 0-1
+        xq = self._norm(np.atleast_1d(xq))
         ind = np.searchsorted(x, xq)
         ind[ind==0] = 1
+        ind[ind==len(x)] = len(x) - 1 # actually want to go to left of that
         distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
         yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):
         # Performs inverse operation of __call__
-        x = self._x
-        y = np.linspace(0, 1, x.size)
+        x = self._x_norm
+        y = self._y
         yq = np.atleast_1d(yq)
         ind = np.searchsorted(y, yq)
         ind[ind==0] = 1
+        ind[ind==len(x)] = len(x) - 1
         distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
         xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
-        return ma.masked_array(xq, np.isnan(yq))
-        # if self._pre_norm:
-        #     x = self._pre_norm.inverse(x) # e.g. first scale logarithmically
+        return ma.masked_array(self._norm.inverse(xq), np.isnan(yq))
 
 class BinNorm(mcolors.BoundaryNorm):
     """
@@ -1144,12 +1137,12 @@ class BinNorm(mcolors.BoundaryNorm):
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
     def __init__(self, levels, norm=None, centers=False, clip=False, extend=None, **kwargs):
+        # Declare boundaries, vmin, vmax in True coordinates
         # NOTE: Idea is that we bin data into len(levels) discrete x-coordinates,
         # and optionally make out-of-bounds colors the same or different
         # NOTE: Don't need to call parent __init__, this is own implementation
         # Do need it to subclass BoundaryNorm, so ColorbarBase will detect it
         # See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
-        # Declare boundaries, vmin, vmax in True coordinates
         extend = extend or 'both'
         levels = np.atleast_1d(levels)
         if levels.size<=1 or ((levels[1:]-levels[:-1])<=0).any():
@@ -1159,15 +1152,17 @@ class BinNorm(mcolors.BoundaryNorm):
         if centers:
             levels = utils.edges(levels)
         N = len(levels)
+
         # Determine y-bin *centers* desired
         # NOTE: Length of bin centers should be N + 1
         norm = norm or (lambda x: x) # e.g. a logarithmic transform
         offset = {'both':2, 'min':1, 'max':1, 'neither':0}
         resample = {'both':range(N+1), 'neither':[0, *range(N-1), N-2],
                     'min':[*range(N), N-1], 'max':[0, *range(N)]}
+        self._norm = norm
         self._x = norm(levels)
         self._y_bins = np.linspace(0, 1, N + offset[extend] - 1)[resample[extend]]
-        self._pre_norm = norm
+
         # Add builtin properties
         self.boundaries = levels # alias read by other functions
         self.vmin = levels[0]
@@ -1177,11 +1172,11 @@ class BinNorm(mcolors.BoundaryNorm):
 
     def __call__(self, xq, clip=None):
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
-        # just use searchsorted to bin the data
+        # just use searchsorted to bin the data.
         # NOTE: The bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
-        x = self._pre_norm(self._x)
-        xq = np.atleast_1d(xq)
+        x = self._x
+        xq = self._norm(np.atleast_1d(xq))
         yq = self._y_bins[np.searchsorted(x, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))
 

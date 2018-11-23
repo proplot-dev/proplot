@@ -59,6 +59,7 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
     # Make figure, with hatching indiatinc invalid values
     # Note we invert the x-y ordering for imshow
     rc['facehatch'] = '....'
+    # rc['facehatch'] = 'xxx'
     f, axs = subplots(ncols=3, bottomlegends=True, rightcolorbar=True,
                         span=0, share=0, wspace=0.6, axwidth=2.5,
                         bottom=0, left=0, right=0,
@@ -68,6 +69,7 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
         for j in range(hsl.shape[0]):
             for k in range(hsl.shape[1]):
                 rgb_jk = tools.to_rgb(hsl[j,k,:].flat, space)
+                # rgba[k,j,:3] = np.clip(rgb_jk, 0, 1)
                 if not all(0 <= c <= 1 for c in rgb_jk):
                     rgba[k,j,3] = 0 # transparent cell
                 else:
