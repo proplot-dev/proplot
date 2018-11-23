@@ -339,6 +339,8 @@ def colormap(*args, extend='both',
         if isinstance(cmap, mcolors.Colormap):
             # Allow gamma override, otherwise do nothing
             if isinstance(cmap, PerceptuallyUniformColormap):
+                if gamma and not gamma1 and not gamma2:
+                    gamma1 = gamma2 = gamma
                 if gamma1 or gamma2:
                     segmentdata = cmap._segmentdata.copy()
                     if gamma1:
