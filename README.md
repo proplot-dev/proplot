@@ -13,7 +13,7 @@ The next most important utility is the **`format`** method, available on every a
 Quick overview of additional features:
 
   * Geometry: A smarter "tight subplots" method. Panels and empty spaces are held *fixed*, while the figure width or height and individual axes sizes are allowed to change. This means a tight border is achieved without messing up aspect ratios or spaces. Very useful for meeting journal figure-size requirements.
-  * Colors: Perceptually distinct named colors, powerful colormap-generating tools, ability to trivially swap between "color cycles" and "colormaps". A few new, beautiful colormaps and color cycles. Create colorbars from lists of lines or color strings.
+  * Colors: Perceptually distinct named colors, powerful colormap-generating tools, ability to trivially swap between "color cycles" and "colormaps". A few new, beautiful colormaps and color cycles. Make colorbars from lists of lines or colors.
   * Maps: Integration with basemap *and* cartopy. Generate arbitrary grids of map projections in one go. Switch between basemap and cartopy painlessly. Add geographical features as part of the `format` process.
 
 ## Showcase
@@ -45,7 +45,7 @@ While some of `proplot`'s tools were inspired by seaborn (in particular much of 
 
 Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form. ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time. Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn feature was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
 
-By focusing on this one task, I was able to create a number of powerful features well beyond the scope of `seaborn`. See below for details.
+By focusing on this one task, I was able to create a number of powerful features well beyond the scope of `seaborn`. See the documentation and showcase for details.
 
 ## Donations
 This package took a shocking amount of time to write. If you've found it useful, feel free to buy me a cup of coffee :)
