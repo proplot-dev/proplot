@@ -44,12 +44,8 @@ def _units(value, error=True):
 # PNAS info: http://www.pnas.org/page/authors/submission
 # AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
 # AGU info: https://publications.agu.org/author-resource-center/figures-faq/
-def journal_size(width, height):
-    # User wants to define their own size
-    if not isinstance(width, str):
-        return width, height
+def journal_size(journal):
     # Determine automatically
-    width, height = None, None
     table = {
         'pnas1': '8.7cm',
         'pnas2': '11.4cm',
@@ -63,11 +59,12 @@ def journal_size(width, height):
         'agu3': ('95mm', '230mm'),
         'agu4': ('190mm', '230mm'),
         }
-    value = table.get(width, None)
+    value = table.get(journal, None)
     if value is None:
-        raise ValueError(f'Unknown journal figure width specifier "{width}". ' +
-                          'Options are: ' + ', '.join(table.keys()))
-    # Output width, and optionally also specify height
+        raise ValueError(f'Unknown journal figure size specifier "{journal}". ' +
+                          'Current options are: ' + ', '.join(table.keys()))
+    # Return width, and optionally also the height
+    width, height = None, None
     try:
         width, height = value
     except TypeError:
@@ -77,7 +74,7 @@ def journal_size(width, height):
 # Function for processing input and generating necessary keyword args
 def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     aspect=1,    figsize=None, # for controlling aspect ratio, default is control for width
-    width=None, height=None, axwidth=None, axheight=None,
+    width=None,  height=None, axwidth=None, axheight=None, journal=None,
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
     left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
@@ -152,12 +149,15 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     lspace = _units(_fill(lspace, rc['gridspec.ylab']))
 
     # Determine figure size
+    if journal:
+        if width or height or axwidth or axheight or figsize:
+            raise ValueError('Argument conflict: Specify only a journal size, or the figure dimensions, not both.')
+        width, height = journal_size(journal) # if user passed width=<string>, will use that journal size
     if not figsize:
         figsize = (width, height)
     width, height = figsize
     width  = _units(width, error=False)
     height = _units(height, error=False)
-    width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
 
     # If width and height are not fixed, determine necessary width/height to
     # preserve the aspect ratio of specified plot
