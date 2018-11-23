@@ -324,11 +324,14 @@ def colormap(*args, extend='both',
     _cmaps = []
     name = name or 'custom' # must have name, mcolors utilities expect this
     if len(args)==0:
-        raise ValueError('Function requires at least 1 positional arg.')
+        args = [rcParams['image.cmap']] # use default
+        # raise ValueError('Function requires at least 1 positional arg.')
     for cmap in args:
         # Retrieve Colormap instance
         # Also make sure you reset the lookup table (get_cmap does this
         # by calling _resample).
+        if not cmap:
+            cmap = rcParams['image.cmap']
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
             if isinstance(cmap, mcolors.LinearSegmentedColormap):

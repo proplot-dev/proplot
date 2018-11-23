@@ -48,6 +48,7 @@ rcGlobals = {
     'small':      8,
     'large':      9,
     'linewidth':  0.6,
+    'gridwidth':  0.6,
     'bottom':     True,
     'top':        False,
     'left':       True,
@@ -65,6 +66,7 @@ rcGlobals = {
     # Special ones
     'tickratio':  0.5, # ratio of major-to-minor tick size
     'minorwidth': 0.8, # ratio of major-to-minor tick width
+    'gridratio':  0.5, # ratio of major-to-minor grid line widths
     }
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
@@ -83,7 +85,9 @@ rcGlobals_children = {
     'facehatch':  ['axes.facehatch', 'map.facehatch'], # optionally apply background hatching
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'axes.hatchlw', 'map.hatchlw', 'grid.linewidth', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
+    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'axes.hatchlw',
+                   # 'grid.linewidth', # should not be coupled, looks ugly
+                   'map.hatchlw', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
     'gridalpha':  ['grid.alpha',     'gridminor.alpha'],
     'gridcolor':  ['grid.color',     'gridminor.color'],
     'gridstyle':  ['grid.linestyle', 'gridminor.linestyle'],
@@ -117,13 +121,13 @@ rcDefaults = {
     'savefig.bbox':            'standard',
     'savefig.format':          'pdf',
     'axes.xmargin':            0,
-    'axes.ymargin':            0,
+    'axes.ymargin':            0.05,
     'axes.titleweight':        'normal',
     'axes.grid':               True,
     'axes.labelweight':        'normal',
     'axes.labelpad':           3.0,
     'axes.titlepad':           3.0,
-    'axes.axisbelow':          False, # for ticks/gridlines *above* patches, *below* lines, use 'lines'
+    'axes.axisbelow':          'lines', # for ticks/gridlines *above* patches, *below* lines, use 'lines'
     'xtick.minor.visible' :    True,
     'ytick.minor.visible' :    True,
     'grid.color':              'k',
@@ -167,7 +171,7 @@ rcDefaults = {
     'legend.borderaxespad' :   0,
     }
 # Special settings, should be thought of as extension of rcParams
-rcSpecial = {
+rcDefaults_sp = {
     # These ones just need to be present, will get reset by globals
     'map.facecolor':       None,
     'map.color':           None,
@@ -175,7 +179,6 @@ rcSpecial = {
     'abc.fontsize':        None,
     'rowlabel.fontsize':   None,
     'collabel.fontsize':   None,
-    'gridminor.linewidth': None,
     'gridminor.alpha':     None,
     'axes.facehatch':      None,
     'axes.hatchcolor':     None,
@@ -192,6 +195,7 @@ rcSpecial = {
     'collabel.color':        'k',
     'gridminor.color':       'k',
     'gridminor.linestyle':   '-',
+    'gridminor.linewidth':   0.1,
     'land.linewidth':        0, # no boundary for patch object
     'land.color':            'k',
     'ocean.linewidth':       0, # no boundary for patch object
@@ -211,10 +215,11 @@ rcSpecial = {
     'gridspec.xlab':         0.55, # for horizontal text should have more space
     'gridspec.nolab':        0.15, # only ticks
     }
+rcParams_sp = rcDefaults_sp.copy()
 # Generate list of valid names, and names with subcategories
 rc_names = {
     *rcParams.keys(),
-    *rcSpecial.keys(),
+    *rcParams_sp.keys(),
     }
 rc_categories = {
     *(re.sub('\.[^.]*$', '', name) for name in rc_names),
@@ -238,7 +243,7 @@ class AttributeDict(dict):
         self[attr] = value
 
 class rc_configurator(object):
-    _public_api = ('reset', 'update', 'fill', 'context') # getattr and setattr will not look for these items on underlying dictionary
+    _public_api = ('reset', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
     def __init__(self):
         """
         Magical abstract class for handling custom settings, builtin rcParams
@@ -253,20 +258,22 @@ class rc_configurator(object):
         style.use('default') # mpl.style function does not change the backend
         # Add simple attributes to rcParams
         self._rcCache = {}
-        self._rcSpecial = rcSpecial.copy() # *must* be separated from module, so autoreload doesn't go nuts
         self._rcGlobals = rcGlobals.copy()
         for key,value in rcDefaults.items():
             rcParams[key] = value
+        for key,value in rcDefaults_sp.items():
+            rcParams_sp[key] = value
         # Apply linked attributes to rcParams
         self._set_cycler('colorblind')
         rc, rc_sp = self._get_globals()
         rcParams.update(rc)
-        self._rcSpecial.update(rc_sp)
+        rcParams_sp.update(rc_sp)
         # Settings
         self._init = True
         self._cache_orig = {}
         self._cache_added = {}
-        self._getitem_mode = 0
+        self._getitem_mode = 0 # 0 means look for everything, including cache
+        self._setitem_mode = 0 # 0 means set underlying props
 
     def __enter__(self):
         # Apply new settings (will get added to _rcCache)
@@ -275,26 +282,24 @@ class rc_configurator(object):
 
     def __exit__(self, _type, _value, _traceback):
         # Restore configurator cache to its previous state.
-        self._getitem_mode = 0
         self._rcCache = self._cache_orig
-        # if not self._cache_orig:
-        #     return
-        # for key,value in self._cache_orig.items():
-        #     self[key] = value
+        self._cache_orig = {}
+        self._cache_added = {}
+        self._getitem_mode = 0
 
     # @counter
     def __getitem__(self, key):
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
-            return {**rcParams, **self._rcSpecial}
+            return {**rcParams, **rcParams_sp}
         # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcSpecial*.
+        # or even *ignore rcParams_sp*.
         mode = self._getitem_mode
         if mode==0:
-            kws = (self._rcCache, self._rcSpecial, rcParams)
+            kws = (self._rcCache, rcParams_sp, rcParams)
         elif mode==1:
-            kws = (self._rcCache, self._rcSpecial)
+            kws = (self._rcCache, rcParams_sp)
         elif mode==2:
             kws = (self._rcCache,)
         else:
@@ -330,8 +335,13 @@ class rc_configurator(object):
     # @counter
     def __setitem__(self, key, value):
         # Keep certain properties *coupled*; always set the global one
+        # NOTE: We use the 'setitem mode' of 1 when *entering the with..as
+        # context* -- the point being that *the with..ax construct is
+        # only used when axes have already been drawn*.
         key = _get_alias(key)
         # First the special cycler
+        # NOTE: No matter the 'setitem mode' this will always set the axes
+        # prop_cycle rc settings
         if key=='cycle':
             self._set_cycler(value)
             self._rcCache['cycle'] = value
@@ -341,19 +351,18 @@ class rc_configurator(object):
             self._rcCache.update(rc)
             self._rcCache.update(rc_sp)
             self._rcCache[key] = value # also update cached global property itself
-            # self._rcGlobals[key] = value # not necessary
+            self._rcGlobals[key] = value
         # Directly modify single parameter
+        # NOTE: If 'setitem mode' is 0, this means user has directly set
+        # something (we are not in a with..as context in format()), so we
+        # want to directly modify rcParams.
         elif key in rc_names:
             self._rcCache[key] = value
-        # Optionally pass a dictionary to modify a bunch of stuff at once
-        elif isinstance(key, dict):
-            kwargs = value
-            for name,value in kwargs.items():
-                name = f'{key}.{name}'
-                if name not in rc_names:
-                    raise ValueError(f'Invalid key "{name}" for parameter "{key}".')
-                else:
-                    self._rcCache[name] = value
+            if self._setitem_mode==0:
+                try:
+                    rcParams[key] = value
+                except KeyError:
+                    pass
         else:
             raise ValueError(f'Invalid key "{key}".')
         self._init = False # no longer in initial state
@@ -427,20 +436,53 @@ class rc_configurator(object):
                     ratio = value
                 kw['xtick.minor.width'] = tickwidth*ratio
                 kw['ytick.minor.width'] = tickwidth*ratio
-                kw_sp['gridminor.linewidth'] = tickwidth*ratio # special
+                # kw_sp['gridminor.linewidth'] = tickwidth*ratio # special
+            # Grid line
+            if key in ('gridwidth', 'gridratio'):
+                if key=='gridwidth':
+                    gridwidth = value
+                    ratio = self._rcGlobals['gridratio']
+                else:
+                    gridwidth = self._rcGlobals['gridwidth']
+                    ratio = value
+                kw_sp['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
             for name in rcGlobals_children.get(key,[]):
-                if name in rcSpecial:
+                if name in rcParams_sp:
                     kw_sp[name] = value
                 else:
                     kw[name] = value
         return kw, kw_sp
 
-    def reset(self):
+    def _context(self, *args, mode=0, **kwargs):
         """
-        Restore settings to default.
+        Temporarily modify rc configuration. Do this by simply
+        saving the cache, allowing modification of the cache, then
+        restoring the old cache.
+        Three modes:
+            0) __getitem__ searches everything, the default.
+            1) __getitem__ ignores rcParams (assumption is these have already
+               been set). Used during Axes __init__ calls to _rcupdate.
+            2) __getitem__ ignores rcParams and rcParams_sp; only read from
+                cache, i.e. settings that user has manually changed.
+               Used during Axes format() calls to _rcupdate.
+        Notes
+        -----
+        This is kept private, because it's only mean to be used within
+        the 'format()' method automatically! Instead of user having to use
+        with..as, they should just pass rc_kw dict or kwargs to format().
         """
-        return self.__init__()
+        # Apply mode
+        if mode not in range(3):
+            raise ValueError(f'Invalid _getitem_mode {mode}.')
+        for arg in args:
+            if not isinstance(arg, dict):
+                raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
+            kwargs.update(arg)
+        self._getitem_mode = mode
+        self._cache_orig   = rc._rcCache.copy()
+        self._cache_added  = kwargs # could be empty
+        return self
 
     def update(self, *args, **kwargs):
         """
@@ -474,30 +516,11 @@ class rc_configurator(object):
                 props_out[key] = value
         return props_out
 
-    def context(self, *args, mode=0, **kwargs):
+    def reset(self):
         """
-        Temporarily modify rc configuration. Do this by simply
-        saving the cache, allowing modification of the cache, then
-        restoring the old cache.
-        Three modes:
-            0) __getitem__ searches everything, the default.
-            1) __getitem__ ignores rcParams (assumption is these have already
-               been set). Used during Axes __init__ calls to _rcupdate.
-            2) __getitem__ ignores rcParams and rcSpecial; only read from cache, i.e.
-               settings that user has manually changed. Used during Axes
-               format() calls to _rcupdate.
+        Restore settings to default.
         """
-        # Apply mode
-        if mode not in (0,1,2):
-            raise ValueError(f'Invalid _getitem_mode {mode}.')
-        for arg in args:
-            if not isinstance(arg, dict):
-                raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
-            kwargs.update(arg)
-        self._getitem_mode = mode
-        self._cache_orig   = rc._rcCache.copy()
-        self._cache_added  = kwargs # could be empty
-        return self
+        return self.__init__()
 
 # Instantiate object
 rc = rc_configurator()

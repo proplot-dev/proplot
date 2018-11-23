@@ -280,25 +280,19 @@ def _cmap_features(self, func):
                 levels = np.linspace(*result.get_clim(), levels)
         result.levels = levels # make sure they are on there!
 
-        if name=='cmapline': # should already be taken care of?
-            ic(levels)
-            N = len(levels) # may be ignored anyway
-            norm = result.norm # we needed the norm to draw the line
-            pass
+        # Choose to either:
+        # 1) Use len(levels) lookup table values and a smooth normalizer
+        if resample:
+            N = len(levels)
+            norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
+        # 2) Use a high-resolution lookup table with a discrete normalizer
+        # NOTE: Unclear which is better/more accurate? Intuition is this one.
+        # Will bin physical values into len(levels)-1 bins (plus, optionally,
+        # bins for extremes -- the 'extend' kwarg controls this).
         else:
-            # Choose to either:
-            # 1) Use len(levels) lookup table values and a smooth normalizer
-            if resample:
-                N = len(levels)
-                norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
-            # 2) Use a high-resolution lookup table with a discrete normalizer
-            # NOTE: Unclear which is better/more accurate? Intuition is this one.
-            # Will bin physical values into len(levels)-1 bins (plus, optionally,
-            # bins for extremes -- the 'extend' kwarg controls this).
-            else:
-                N = None # will be ignored
-                norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
-            result.set_norm(norm)
+            N = None # will be ignored
+            norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
+        result.set_norm(norm)
 
         # Specify colormap
         cmap = cmap or rc['image.cmap']
@@ -309,32 +303,13 @@ def _cmap_features(self, func):
             cmap._init()
         result.set_cmap(cmap)
 
-        # Fix resulting colorbar for 'cmapline's
-        # Recursion yo
-        # NOTE: For some reason resample had to be True for this to work
-        # NOTE: Instead should return a dictionary with colors and values,
-        # that colorbar will accept.
-        # NOTE: get_colors fails because they aren't generated until later,
-        # so we use the cmap instead.
-        if name=='cmapline':
-            values = result._segment_values
-            offset = 0.5*1/len(values)
-            cmap = result.get_cmap()
-            # cmap = cmap._resample(512) # did not help
-            colors = [cmap(i) for i in np.linspace(0 + 2*offset, 1 - 2*offset, len(values))]
-            result = (colors, values) # then colorbar_factory will interpret this
-            # if levels is None:
-            #     levels = np.sort(np.unique(result.get_array()))
-            # result = self.contourf([0,0], [0,0], np.nan*np.ones((2,2)),
-            #     cmap=cmap, levels=levels, resample=True)
-
         # Fix white lines between filled contours/mesh
         linewidth = 0.4 # seems to be lowest threshold where white lines disappear
         if name in _contourf_methods:
             for contour in result.collections:
                 contour.set_edgecolor('face')
                 contour.set_linewidth(linewidth)
-        elif name in _pcolor_methods:
+        if name in _pcolor_methods:
             result.set_edgecolor('face')
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
@@ -995,7 +970,7 @@ class BaseAxes(maxes.Axes):
                 va='center', ha='right', transform=self.transAxes)
 
         # Enforce custom rc settings! And only look for rcSpecial settings.
-        with rc.context(mode=1):
+        with rc._context(mode=1):
             self._rcupdate()
 
     # Apply some simple featueres, and disable spectral and triangular features
@@ -1267,7 +1242,7 @@ class BaseAxes(maxes.Axes):
         # First update (note that this will call _rcupdate overridden by child
         # classes, which can in turn call the parent class version, so we only
         # need to call this from the base class, and all settings will be applied)
-        with rc.context(rc_kw, mode=2, **kwargs):
+        with rc._context(rc_kw, mode=2, **kwargs):
             self._rcupdate()
 
     # Create legend creation method
@@ -1372,71 +1347,85 @@ class BaseAxes(maxes.Axes):
         return super().scatter(*args, **kwargs)
 
     # @_cmap_features
-    def cmapline(self, *args, cmap=None,
-            values=None, norm=None,
-            bins=True, nbetween=1, **kwargs):
+    def cmapline(self, *args, cmap=None, norm=None,
+            values=None, interp=0, **kwargs):
         """
         Create lines with colormap.
         See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
         Will manage input more strictly, this is harder to generalize.
+
+        Optional
+        --------
+          values:
+            the values to which each (x,y) coordinate corresponds.
+          bins:
+            do you want values to be *discretized*, or do you want to
+            *interpolate* values between points? not yet implemented.
+          interp:
+            number of values between each line joint and each *halfway* point
+            between line joints to which you want to interpolate. for bins,
+            we don't need any interpolation.
         """
         # First error check
+        if values is None:
+            raise ValueError('For line with a "colormap", must input values=<iterable> to which colors will be mapped.')
         if len(args) not in (1,2):
             raise ValueError(f'Function requires 1-2 arguments, got {len(args)}.')
         y = np.array(args[-1]).squeeze()
         x = np.arange(y.shape[-1]) if len(args)==1 else np.array(args[0]).squeeze()
         values = np.array(values).squeeze()
         if x.ndim!=1 or y.ndim!=1 or values.ndim!=1:
-            raise ValueError(f'Input x ({x.ndim}D), y ({y.ndim}D), and values ({values.ndim}D) must be 1-dimensional.')
+            raise ValueError(f'Input x ({x.ndim}-d), y ({y.ndim}-d), and values ({values.ndim}-d) must be 1-dimensional.')
+        if len(x)!=len(y) or len(x)!=len(values) or len(y)!=len(values):
+            raise ValueError(f'Got {len(x)} xs, {len(y)} ys, but {len(values)} colormap values.')
+
         # Next draw the line
         # Interpolate values to optionally allow for smooth gradations between
         # values (bins=False) or color switchover halfway between points (bins=True)
-        newx, newy, newvalues = [], [], []
+        # Next optionally interpolate the corresponding colormap values
+        # NOTE: We linearly interpolate here, but user might use a normalizer that
+        # e.g. performs log before selecting linear color range; don't need to
+        # implement that here
+        if interp>0:
+            xorig, yorig, vorig = x, y, values
+            x, y, values = [], [], []
+            for j in range(xorig.shape[0]-1):
+                idx = (slice(None, -1) if j+1<xorig.shape[0]-1 else slice(None))
+                x.extend(np.linspace(xorig[j], xorig[j+1], interp + 2)[idx].flat)
+                y.extend(np.linspace(yorig[j], yorig[j+1], interp + 2)[idx].flat)
+                values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
+            x, y, values = np.array(x), np.array(y), np.array(values)
+        coords, vals = [], []
         edges = utils.edges(values)
-        if bins:
-            norm = colortools.BinNorm(edges)
-        else:
-            # TODO: This one fails
-            norm = colortools.LinearSegmentedNorm(edges)
-            raise Exception
         for j in range(y.shape[0]-1):
-            newx.extend(np.linspace(x[j], x[j+1], nbetween+2))
-            newy.extend(np.linspace(y[j], y[j+1], nbetween+2))
-            # WARNING: Below breaks everything! Evidently we need the duplicates
-            # if j>0:
-            #     interp = interp[1:] # prevent duplicates
-            # newvalues.extend(interp)
-            # TODO: Could not get the inverse thing to work properly
-            if not isinstance(norm, mcolors.BoundaryNorm):
-                # Has inverse
-                interp = np.linspace(np.asscalar(norm(values[j])),
-                    np.asscalar(norm(values[j+1])), nbetween+2)
-                newvalues.extend(norm.inverse(interp))
+            # Get x/y coordinates and values for points to the 'left' and
+            # 'right' of each joint. Also prevent duplicates.
+            if j==0:
+                xleft, yleft = [], []
             else:
-                interp = np.linspace(np.asscalar(values[j]),
-                    np.asscalar(values[j+1]), nbetween+2)
-                newvalues.extend(interp)
+                xleft = [(x[j-1] + x[j])/2, x[j]]
+                yleft = [(y[j-1] + y[j])/2, y[j]]
+            if j+1==y.shape[0]-1:
+                xright, yright = np.array([]), np.array([])
+            else:
+                xleft  = xleft[:-1] # prevent repetition when joined with xright/yright
+                yleft  = yleft[:-1] # actually need numbers of x/y coordinates to be same for each segment
+                xright = [x[j], (x[j+1] + x[j])/2]
+                yright = [y[j], (y[j+1] + y[j])/2]
+            pleft  = np.stack((xleft,  yleft), axis=1)
+            pright = np.stack((xright, yright), axis=1)
+            coords.append(np.concatenate((pleft, pright), axis=0))
+
         # Create LineCollection and update with values
-        ic(values, len(values), len(newvalues), bins, cmap)
-        if cmap is None:
-            cmap = rc['image.cmap']
-        cmap = colortools.colormap(cmap)
-        ic(cmap.N)
-        ic(norm.boundaries, len(norm.boundaries))
-        newvalues  = np.array(newvalues)
-        points     = np.array([newx, newy]).T.reshape(-1, 1, 2) # -1 means value is inferred from size of array, neat!
-        segments   = np.concatenate([points[:-1], points[1:]], axis=1)
-        collection = mcollections.LineCollection(segments, cmap=cmap, norm=norm, linestyles='-')
-        collection.set_array(newvalues)
-        collection.update({key:value for key,value in kwargs.items() if key not in ['color']})
-        # FIXME: for some reason using the 'line' as the mappable results in colorbar
-        # with color *cutoffs* at values, instead of centered levels at values
-        # We resort to artificially generating equivalent mappable
-        # NOTE: Add the custom attirbute _segment_values to this end
-        # line = self.add_collection(collection)
+        # TODO: Why not just pass kwargs to class?
+        collection = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm, linestyles='-')
+        collection.set_array(np.array(values))
+        collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
+
+        # Add collection, with some custom attributes
         self.add_collection(collection)
-        collection._segment_values = values
-        collection._segment_edges  = edges
+        collection.values = values
+        collection.levels = edges # needed for other functions some
         return collection
 
 #------------------------------------------------------------------------------#
@@ -2654,15 +2643,12 @@ def colorbar_factory(ax, mappable,
         from list of colors or lines. Most of the time want 'neither'.
     """
     # Parse flexible input
-    clocator = _fill(locator, clocator)
-    cgrid = _fill(grid, cgrid)
-    ctickminor = _fill(tickminor, ctickminor)
+    clocator      = _fill(locator, clocator)
+    cgrid         = _fill(grid, cgrid)
+    ctickminor    = _fill(tickminor, ctickminor)
     cminorlocator = _fill(minorlocator, cminorlocator)
-    cformatter = _fill(ticklabels, _fill(cticklabels, _fill(formatter, cformatter)))
-    clabel = _fill(label, clabel)
-    # Make sure to eliminate ticks
-    # cax.xaxis.set_tick_params(which='both', bottom=False, top=False)
-    # cax.yaxis.set_tick_params(which='both', bottom=False, top=False)
+    cformatter    = _fill(ticklabels, _fill(cticklabels, _fill(formatter, cformatter)))
+    clabel        = _fill(label, clabel)
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
@@ -2696,10 +2682,8 @@ def colorbar_factory(ax, mappable,
         colors = [h.get_color() for h in mappable]
     if fromlines or fromcolors:
         # Get colors, and by default, label each value directly
-        # colors = ['#ffffff'] + colors + ['#ffffff']
-        # colors = colors[:1] + colors + colors[-1:]
+        cmap   = colortools.colormap(colors)
         values = np.array(values) # needed for below
-        cmap = colortools.colormap(colors)
         levels = utils.edges(values) # get "edge" values between centers desired
         mappable = ax.contourf([[0,0],[0,0]],
                 levels=levels, cmap=cmap,
@@ -2708,12 +2692,11 @@ def colorbar_factory(ax, mappable,
             nstep = len(values)//20
             clocator = values[::nstep]
     if clocator is None:
-        # By default, label discretization levels
-        # NOTE: cmap_features adds 'levels' attribute whenever
-        # BinNorm is used to discretize pcolor/imshow maps.
-        clocator = getattr(mappable, 'levels', None)
+        # By default, label the discretization levels (if there aren't too many)
+        # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
+        clocator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
         if clocator is not None:
-            step = 1+len(clocator)//20
+            step = 1 + len(clocator)//20
             clocator = clocator[::step]
 
     # Determine major formatters and major/minor tick locators
@@ -2826,9 +2809,11 @@ def colorbar_factory(ax, mappable,
         minorvals = mappable.norm(minorvals)
     axis.set_ticks(minorvals, minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
+
     # Set up the label
     if clabel is not None:
         axis.label.update({'text':clabel})
+
     # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
     # because blending will occur, will get colored lines instead of white ones;
     # need to perform manual alpha blending)
@@ -2852,6 +2837,7 @@ def colorbar_factory(ax, mappable,
         cb.solids.set_cmap(cmap)
         cb.solids.set_alpha(1.0)
         # cb.solids.set_cmap()
+
     # Fix pesky white lines between levels + misalignment with border due to rasterized blocks
     cb.solids.set_linewidth(0.2) # something small
     cb.solids.set_edgecolor('face')

@@ -12,7 +12,6 @@ _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install d
 #------------------------------------------------------------------------------#
 # Demo of channel values
 #------------------------------------------------------------------------------#
-# def
 def cmap_breakdown(name, luminance=50, chroma=None, hue=None, N=100, space='hcl'):
     # Dictionary
     hues = np.linspace(0, 360, N)
@@ -29,7 +28,6 @@ def cmap_breakdown(name, luminance=50, chroma=None, hue=None, N=100, space='hcl'
               'hsv':('hue', 'saturation', 'value'),
               'hpl':('hue', 'partial sat', 'luminance')}
     # Figure
-    rcParams['axes.ymargin'] = 0.1
     f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
                            span=0, sharey=1, wspace=0.5,
                            bottom=0.4, axwidth=2, aspect=1, tight=True)
