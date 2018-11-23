@@ -7,7 +7,7 @@ For a showcase of all ProPlot features, check out [**this online jupyter noteboo
 
 ## Documentation
 
-The full documentation can be found [**here**](https://lukelbd.github.io/tools/proplot_doc). It is a work-in-progress for the time being.
+The full documentation can be found [**here**](https://lukelbd.github.io/tools/proplot_doc). It is a work-in-progress.
 
 ## Overview
 Import with
