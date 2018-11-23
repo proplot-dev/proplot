@@ -1072,8 +1072,10 @@ class LinearSegmentedNorm(mcolors.Normalize):
     def __init__(self, levels, norm=None, clip=False, **kwargs):
         # Test
         levels = np.atleast_1d(levels)
-        if levels.size<=1 or ((levels[1:]-levels[:-1])<=0).any():
-            raise ValueError(f'Levels passed to LinearSegmentedNorm must be monotonically increasing.')
+        if levels.size<=1:
+            raise ValueError('Need at least two levels.')
+        elif ((levels[1:]-levels[:-1])<=0).any():
+            raise ValueError(f'Levels {levels} passed to LinearSegmentedNorm must be monotonically increasing.')
         super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
         # Add some properties
         if not norm: # e.g. a logarithmic transform
@@ -1146,8 +1148,10 @@ class BinNorm(mcolors.BoundaryNorm):
         # See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
         extend = extend or 'both'
         levels = np.atleast_1d(levels)
-        if levels.size<=1 or ((levels[1:]-levels[:-1])<=0).any():
-            raise ValueError('Levels passed to Normalize() must be monotonically increasing.')
+        if levels.size<=1:
+            raise ValueError('Need at least two levels.')
+        elif ((levels[1:]-levels[:-1])<=0).any():
+            raise ValueError(f'Levels {levels} passed to Normalize() must be monotonically increasing.')
         if extend not in ('both','min','max','neither'):
             raise ValueError(f'Unknown extend option "{extend}". Choose from "min", "max", "both", "neither".')
         if centers:

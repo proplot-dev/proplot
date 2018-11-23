@@ -347,6 +347,8 @@ class rc_configurator(object):
             self._rcCache['cycle'] = value
         # Apply global settings
         elif key in rcGlobals:
+            if value=='default':
+                value = rcGlobals[key]
             rc, rc_sp = self._get_globals(key, value)
             self._rcCache.update(rc)
             self._rcCache.update(rc_sp)

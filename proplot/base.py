@@ -88,7 +88,7 @@ _line_methods = ( # basemap methods you want to wrap that aren't 2D grids
     'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
     )
 _contour_methods = (
-    'contour', 'contourf', 'tricontour', 'tricontourf'
+    'contour', 'tricontour',
     )
 _pcolor_methods = (
     'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor'
@@ -284,7 +284,7 @@ def _cmap_features(self, func):
         # Call function with custom stuff
         # NOTE: For contouring, colors discretized automatically. But we also
         # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
-        if name in _contour_methods: # only valid kwargs for contouring
+        if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
             kwargs.update({'levels': levels, 'extend': extend})
         if name == 'cmapline':
             kwargs.update({'values': values}) # implement this directly
@@ -304,39 +304,46 @@ def _cmap_features(self, func):
                 levels = np.linspace(*result.get_clim(), levels)
         result.levels = levels # make sure they are on there!
 
-        # Choose to either:
-        # 1) Use len(levels) lookup table values and a smooth normalizer
-        # TODO: Figure out how extend stuff works, a bit confused again.
-        if not bins:
-            offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-            N = len(values) + offset[extend]
-            norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
-        # 2) Use a high-resolution lookup table with a discrete normalizer
-        # NOTE: Unclear which is better/more accurate? Intuition is this one.
+        if name in _contour_methods and cmap is None:
+            # Contour *lines* can be colormapped, but this should not be
+            # default if user did not input a cmap
+            N = None
         else:
-            N = None # will be ignored
-            norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
-        result.set_norm(norm)
+            # Choose to either:
+            # 1) Use len(levels) lookup table values and a smooth normalizer
+            # TODO: Figure out how extend stuff works, a bit confused again.
+            if not bins:
+                offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
+                N = len(values) + offset[extend]
+                norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
+            # 2) Use a high-resolution lookup table with a discrete normalizer
+            # NOTE: Unclear which is better/more accurate? Intuition is this one.
+            else:
+                N = None # will be ignored
+                norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
+            result.set_norm(norm)
 
-        # Specify colormap
-        cmap = cmap or rc['image.cmap']
-        if isinstance(cmap, (str, dict, mcolors.Colormap)):
-            cmap = cmap, # make a tuple
-        cmap = colortools.colormap(*cmap, N=N, extend=extend, **cmap_kw)
-        if not cmap._isinit:
-            cmap._init()
-        result.set_cmap(cmap)
+            # Specify colormap
+            cmap = cmap or rc['image.cmap']
+            if isinstance(cmap, (str, dict, mcolors.Colormap)):
+                cmap = cmap, # make a tuple
+            cmap = colortools.colormap(*cmap, N=N, extend=extend, **cmap_kw)
+            if not cmap._isinit:
+                cmap._init()
+            result.set_cmap(cmap)
 
-        # Fix white lines between filled contours/mesh
-        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-        if name in _contourf_methods:
-            for contour in result.collections:
-                contour.set_edgecolor('face')
-                contour.set_linewidth(linewidth)
-        if name in _pcolor_methods:
-            result.set_edgecolor('face')
-            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+            # Fix white lines between filled contours/mesh
+            linewidth = 0.4 # seems to be lowest threshold where white lines disappear
+            if name in _contourf_methods:
+                for contour in result.collections:
+                    contour.set_edgecolor('face')
+                    contour.set_linewidth(linewidth)
+            if name in _pcolor_methods:
+                result.set_edgecolor('face')
+                result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+
         return result
+
     return decorator
 
 #------------------------------------------------------------------------------#
@@ -687,12 +694,13 @@ class Figure(mfigure.Figure):
             # matplotlib to adjust tight_subplot by prepending newlines to title.
             # 3) Otherwise, offset suptitle, and matplotlib will recognize the
             # suptitle during tight_subplot adjustment.
+            # ic(title_lev2, title_lev1, title_lev3)
             if not title_lev2: # no title present
                 line = 0
                 title = title_lev1
                 if not title.get_text():
                 # if not title.axes._title_inside:
-                    title.set_text(' ') # dummy spaces, so subplots adjust will work properly
+                    title.set_text('\n ') # dummy spaces, so subplots adjust will work properly
             elif title_lev3: # upper axes present
                 line = 1.0 # looks best empirically
                 title = title_lev3
