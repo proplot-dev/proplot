@@ -112,7 +112,7 @@ def cmap_breakdown(name, N=100, space='hcl'):
             m = max(m, max(y))
             hs += [h]
         f.bottompanel[j].legend(hs)
-        ax.axhline(1, color='red7', dashes=(1.5, 1.5), alpha=0.8, zorder=0, lw=2)
+        ax.axhline(1, color='gray7', dashes=(1.5, 2.5), alpha=0.8, zorder=0, lw=2)
         ax.format(title=space.upper(), titlepos='oc', ylim=(0-0.1, m + 0.1))
     # Draw colorbar
     with np.errstate(all='ignore'):

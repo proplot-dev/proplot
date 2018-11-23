@@ -1614,6 +1614,8 @@ class XYAxes(BaseAxes):
           disable ticklabels/labels for some.
         """
         # Set axis scaling and limits
+        # These do not seem to have their own axes-specific public methods,
+        # so do the x/y one by one here
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
@@ -1659,7 +1661,7 @@ class XYAxes(BaseAxes):
         for axis, label, tickloc, spineloc, ticklabelloc, labelloc, bounds, gridminor, tickminor, tickminorlocator, \
                 grid, ticklocator, tickformatter, tickrange, tickdir, ticklabeldir, \
                 label_kw, formatter_kw, locator_kw, minorlocator_kw in \
-            zip((self.xaxis, self.yaxis), (xlabel, ylabel), \
+            zip((self.xaxis, self.yaxis), (xlabel, ylabel),
                 (xtickloc,ytickloc), (xspineloc, yspineloc), # other stuff
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
                 (xbounds, ybounds),
@@ -1781,7 +1783,10 @@ class XYAxes(BaseAxes):
             # not work, so instead just turn locators into fixed version
             # NOTE: most locators take no arguments in call(), and some have
             # no tick_values method; so do the following
-            if bounds is not None:
+            # TODO: add optional override to do this every time
+            if bounds is not None or axis.get_scale()=='cutoff':
+                if bounds is None: # no API for this on axis
+                    bounds = getattr(self, 'get_' + axis.axis_name + 'lim')()
                 locator = Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_major_locator(locator)
                 locator = Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
