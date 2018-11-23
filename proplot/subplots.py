@@ -218,7 +218,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             if not silent:
                 print(f'Forcing aspect ratio: {aspect:.3g}')
-            if num==1:
+            if num==0:
                 kwargs.update(aspect=aspect)
         else:
             raise ValueError('All projection names should be declared. Wut.')

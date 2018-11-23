@@ -2849,7 +2849,9 @@ def colorbar_factory(ax, mappable,
     # NOTE: For some reason cb solids uses listed colormap with always 1.0
     # alpha, then alpha is applied after.
     # See: https://stackoverflow.com/a/35672224/4970632
-    alpha = cb.solids.get_alpha()
+    alpha = None
+    if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
+        alpha = cb.solids.get_alpha()
     if alpha is not None and alpha<1:
         # First get reference color
         print('Performing manual alpha-blending for colorbar solids.')
@@ -2868,8 +2870,9 @@ def colorbar_factory(ax, mappable,
         # cb.solids.set_cmap()
 
     # Fix pesky white lines between levels + misalignment with border due to rasterized blocks
-    cb.solids.set_linewidth(0.2) # something small
-    cb.solids.set_edgecolor('face')
-    cb.solids.set_rasterized(False)
+    if cb.solids:
+        cb.solids.set_linewidth(0.2) # something small
+        cb.solids.set_edgecolor('face')
+        cb.solids.set_rasterized(False)
     return cb
 
