@@ -12,7 +12,7 @@ The next most important utility is the **`format`** method, available on every a
 
 Quick overview of additional features:
 
-  * Geometry: A smarter "tight subplots" method. Panels and empty spaces are held *fixed*, while the figure width or height and axes dimensions are allowed to change. This means a tight border is achieved without messing up aspect ratios or spaces.
+  * Geometry: A smarter "tight subplots" method. Panels and empty spaces are held *fixed*, while the figure and axes dimensions are allowed to change. This acheives a "tight border" without messing up axes aspect ratios or spaces.
   * Colors: Perceptually distinct named colors, powerful colormap-generating tools, ability to trivially swap between "color cycles" and "colormaps". A few new, beautiful colormaps and color cycles. Make colorbars from lists of lines or colors.
   * Maps: Integration with basemap *and* cartopy. Generate arbitrary grids of map projections in one go. Switch between basemap and cartopy painlessly. Add geographical features as part of the `format` process.
 
