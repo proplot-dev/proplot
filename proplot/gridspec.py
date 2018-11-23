@@ -151,48 +151,47 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     rspace = _units(_fill(rspace, rc['gridspec.ylab']))
     lspace = _units(_fill(lspace, rc['gridspec.ylab']))
 
-    # Figure size
+    # Determine figure size
     if not figsize:
         figsize = (width, height)
     width, height = figsize
     width  = _units(width, error=False)
     height = _units(height, error=False)
     width, height = journal_size(width, height) # if user passed width=<string>, will use that journal size
+
     # If width and height are not fixed, determine necessary width/height to
     # preserve the aspect ratio of specified plot
     auto_both = (width is None and height is None)
     auto_width  = (width is None and height is not None)
     auto_height = (height is None and width is not None)
     auto_neither = (width is not None and height is not None)
-    # TODO: Account for top-left axes occupying multiple subplot slots!
     bpanel_space = bwidth + bspace if bottompanels else 0
     rpanel_space = rwidth + rspace if rightpanels else 0
     lpanel_space = lwidth + lspace if leftpanels else 0
-    # Default behavior: axes approximately 2.0 inches wide
-    if auto_width or auto_neither:
-        axheight_ave = (height - top - bottom - sum(hspace) - bpanel_space)/nrows
-    if auto_height or auto_neither:
-        axwidth_ave = (width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
-
-    # Get aspect ratio
     try:
         aspect = aspect[0]/aspect[1]
     except (IndexError,TypeError):
         pass # do nothing
     aspect_fixed = aspect/(wratios[0]/np.mean(wratios)) # e.g. if 2 columns, 5:1 width ratio, change the 'average' aspect ratio
     aspect_fixed = aspect*(hratios[0]/np.mean(hratios))
+    # Determine average axes widths/heights
+    # Default behavior: axes average 2.0 inches wide
+    if auto_width or auto_neither:
+        axheight_ave = (height - top - bottom - sum(hspace) - bpanel_space)/nrows
+    if auto_height or auto_neither:
+        axwidth_ave = (width - left - right - sum(wspace) - rpanel_space - lpanel_space)/ncols
     if auto_both: # get stuff directly from axes
         if axwidth is None and axheight is None:
             axwidth = 2.0
         if axwidth is None:
-            axwidth = axheight*aspect_fixed
+            height = axheight*nrows + top + bottom + sum(hspace) + bpanel_space
+            auto_width = True
+            axheight_ave = axheight
         elif axheight is None:
-            axheight = axwidth/aspect_fixed
-        axwidth_ave  = axwidth
-        axheight_ave = axheight
-        width   = (ncols*axwidth) + left + right + sum(wspace) + rpanel_space + lpanel_space
-        height  = (nrows*axheight) + bottom + top + sum(hspace) + bpanel_space
-        figsize = (width, height)
+            width = axwidth*ncols + left + right + sum(wspace) + rpanel_space + lpanel_space
+            auto_height = True
+            axwidth_ave = axwidth
+        figsize = (width, height) # again
     # Fix height and top-left axes aspect ratio
     if auto_width:
         axwidth_ave = axheight_ave*aspect_fixed
