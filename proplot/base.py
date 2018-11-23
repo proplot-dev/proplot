@@ -272,6 +272,8 @@ def _cmap_features(self, func):
         # (halfway points) in *transformed space*, e.g. log space.
         name = func.__name__
         norm = colortools.norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
+        if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
+            values_as_levels = False # get levels later down the line
         if utils.isvector(values) and values_as_levels:
             if norm: # is not None
                 levels = norm.inverse(utils.edges(norm(values)))
