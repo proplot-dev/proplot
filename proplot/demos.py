@@ -61,7 +61,7 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
     rc['facehatch'] = '....'
     f, axs = subplots(ncols=3, bottomlegends=True, rightcolorbar=True,
                         span=0, share=0, wspace=0.6, axwidth=2.5,
-                        left=0, right=0, bottom=0,
+                        bottom=0, left=0, right=0,
                         aspect=1, tight=True)
     for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
