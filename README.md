@@ -3,11 +3,11 @@ A library providing helpful and versatile plotting utilities to hasten the proce
 
 ## Showcase
 
-For a showcase of all ProPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/proplot).
+For a showcase of all ProPlot features, check out [**this online jupyter notebook**](https://lukelbd.github.io/tools/proplot).
 
 ## Documentation
 
-The full documentation can be found [**here**](https://lukelbd.github.io/proplot). It is a work-in-progress for the time being.
+The full documentation can be found [**here**](https://lukelbd.github.io/tools/proplot_doc). It is a work-in-progress for the time being.
 
 ## Overview
 Import with
