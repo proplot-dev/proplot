@@ -19,13 +19,15 @@ _names  = {'rgb':('red', 'green', 'blue'),
 #------------------------------------------------------------------------------#
 # Demo of channel values and colorspaces
 #------------------------------------------------------------------------------#
-def colorspace_breakdown(luminance=50, chroma=None, saturation=None, hue=None,
+def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
                          N=100, space='hcl'):
     # Dictionary
-    hues = np.linspace(0, 360, N)
-    sats = np.linspace(0, 100, N)
-    lums = np.linspace(0, 100, N)
+    hues = np.linspace(0, 360, 361)
+    sats = np.linspace(0, 120, 120) # use 120 instead of 121, prevents annoying rough edge on HSL plot
+    lums = np.linspace(0, 99.99, 101)
     chroma = saturation if saturation is not None else chroma
+    if luminance is None and chroma is None and hue is None:
+        luminance = 50
     if luminance is not None:
         hsl = np.concatenate((
             np.repeat(hues[:,None], len(sats), axis=1)[...,None],
@@ -34,6 +36,7 @@ def colorspace_breakdown(luminance=50, chroma=None, saturation=None, hue=None,
             ), axis=2)
         suptitle = f'Hue-chroma cross-section for luminance {luminance}'
         xlabel, ylabel = 'hue', 'chroma'
+        xloc, yloc = 60, 20
     elif chroma is not None:
         hsl = np.concatenate((
             np.repeat(hues[:,None], len(lums), axis=1)[...,None],
@@ -42,20 +45,22 @@ def colorspace_breakdown(luminance=50, chroma=None, saturation=None, hue=None,
             ), axis=2)
         suptitle = f'Hue-luminance cross-section for chroma {chroma}'
         xlabel, ylabel = 'hue', 'luminance'
+        xloc, yloc = 60, 20
     elif hue is not None:
         hsl = np.concatenate((
-            np.ones((len(sats), len(lums)))[...,None]*hue,
-            np.repeat(sats[:,None], len(lums), axis=1)[...,None],
-            np.repeat(lums[None,:], len(sats), axis=0)[...,None],
+            np.ones((len(lums), len(sats)))[...,None]*hue,
+            np.repeat(sats[None,:], len(lums), axis=0)[...,None],
+            np.repeat(lums[:,None], len(sats), axis=1)[...,None],
             ), axis=2)
-        suptitle = 'Chroma-luminance cross-section'
-        xlabel, ylabel = 'chroma', 'luminance'
+        suptitle = 'Luminance-chroma cross-section'
+        xlabel, ylabel = 'luminance', 'chroma'
+        xloc, yloc = 20, 20
 
     # Make figure, with hatching indiatinc invalid values
     # Note we invert the x-y ordering for imshow
-    rc['facehatch'] = 'xxx'
+    rc['facehatch'] = '....'
     f, axs = subplots(ncols=3, bottomlegends=True, rightcolorbar=True,
-                        span=0, share=0, wspace=0.2, axwidth=2.5,
+                        span=0, share=0, wspace=0.6, axwidth=2.5,
                         left=0, right=0, bottom=0,
                         aspect=1, tight=True)
     for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
@@ -67,10 +72,11 @@ def colorspace_breakdown(luminance=50, chroma=None, saturation=None, hue=None,
                     rgba[k,j,3] = 0 # transparent cell
                 else:
                     rgba[k,j,:3] = rgb_jk
-        ax.imshow(rgba, origin='lower')
+        ax.imshow(rgba, origin='lower', aspect='auto')
         ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
-                  xlocator='none', ylocator='none',
-                  title=space.upper())
+                  grid=False, tickminor=False,
+                  xlocator=xloc, ylocator=yloc,
+                  title=space.upper(), title_kw={'weight':'bold'})
     return f
 
 def cmap_breakdown(name, N=100, space='hcl'):
