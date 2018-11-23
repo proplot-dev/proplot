@@ -284,14 +284,13 @@ def _cmap_features(self, func):
         # Call function with custom stuff
         # NOTE: For contouring, colors discretized automatically. But we also
         # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
-        custom_kw = {}
         if name in _contour_methods: # only valid kwargs for contouring
-            custom_kw.update({'levels': levels, 'extend': extend})
+            kwargs.update({'levels': levels, 'extend': extend})
         if name == 'cmapline':
-            custom_kw.update({'values': values}) # implement this directly
+            kwargs.update({'values': values}) # implement this directly
         if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
-            custom_kw.update({'aspect': 'auto'})
-        result = func(*args, **custom_kw, **kwargs)
+            kwargs.update({'aspect': 'auto'})
+        result = func(*args, **kwargs)
         if name in _nolevels_methods:
             result.extend = extend
 

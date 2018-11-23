@@ -130,10 +130,10 @@ _cmap_categories = { # initialize as empty lists
         'Amp', 'Solar', 'Phase', 'Phase_shifted'],
     'cmOcean Diverging':
         ['Balance', 'Curl', 'Delta'],
-    'OpenColors':
-        ['OpenGray', 'OpenRed', 'OpenPink', 'OpenGrape', 'OpenViolet', 'OpenIndigo',
-         'OpenBlue', 'OpenCyan', 'OpenTeal', 'OpenGreen', 'OpenLime',
-         'OpenYellow', 'OpenOrange'],
+    # 'OpenColors':
+    #     ['OpenGray', 'OpenRed', 'OpenPink', 'OpenGrape', 'OpenViolet', 'OpenIndigo',
+    #      'OpenBlue', 'OpenCyan', 'OpenTeal', 'OpenGreen', 'OpenLime',
+    #      'OpenYellow', 'OpenOrange'],
     'ColorBrewer2.0 Sequential':
         # ['Greys',
         ['Grays',
@@ -437,6 +437,7 @@ def colormap(*args, extend='both',
             newdata[key] = newxyy
         # And finally rebuild map
         cmap = type(cmap)(cmap.name, newdata, **kw)
+
     if isinstance(cmap, mcolors.LinearSegmentedColormap) and N is not None:
         # Perform a crude resampling of the data, i.e. just generate a
         # low-resolution lookup table instead
@@ -1445,11 +1446,12 @@ def register_cmaps():
     mcm.cmap_d['Grays_r'] = mcm.cmap_d.pop('Greys_r')
 
     # Add OpenColor colormaps
-    for color in ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan',
-                  'teal', 'green', 'lime', 'yellow', 'orange']:
-        color_list = [to_rgb(color + str(i)) for i in range(10)]
-        name = 'Open' + color.title()
-        mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, color_list)
+    # Actually nah, not enough gradation for these
+    # for color in ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan',
+    #               'teal', 'green', 'lime', 'yellow', 'orange']:
+    #     color_list = [to_rgb(color + str(i)) for i in range(10)]
+    #     name = 'Open' + color.title()
+    #     mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, color_list)
 
     # Delete ugly ones
     for category in _cmap_categories_delete:

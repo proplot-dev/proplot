@@ -183,14 +183,16 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     if auto_both: # get stuff directly from axes
         if axwidth is None and axheight is None:
             axwidth = 2.0
-        if axwidth is None:
+        if axheight is not None:
             height = axheight*nrows + top + bottom + sum(hspace) + bpanel_space
             auto_width = True
             axheight_ave = axheight
-        elif axheight is None:
+        if axwidth is not None:
             width = axwidth*ncols + left + right + sum(wspace) + rpanel_space + lpanel_space
             auto_height = True
             axwidth_ave = axwidth
+        if axwidth is not None and axheight is not None:
+            auto_width = auto_height = False
         figsize = (width, height) # again
     # Fix height and top-left axes aspect ratio
     if auto_width:
