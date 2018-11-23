@@ -5,28 +5,75 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
+from .rcmod import rc
 from . import colortools as tools
 from . import subplots # actually imports the function, since __init__ makes it global
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
+_scales = {'rgb':(1,1,1), 'default':(360,100,100)}
+_names  = {'rgb':('red', 'green', 'blue'),
+            'hcl':('hue', 'chroma', 'luminance'),
+            'hsl':('hue', 'saturation', 'luminance'),
+            'hsv':('hue', 'saturation', 'value'),
+            'hpl':('hue', 'partial sat', 'luminance')}
 
 #------------------------------------------------------------------------------#
-# Demo of channel values
+# Demo of channel values and colorspaces
 #------------------------------------------------------------------------------#
-def cmap_breakdown(name, luminance=50, chroma=None, hue=None, N=100, space='hcl'):
+def colorspace_breakdown(luminance=50, chroma=None, saturation=None, hue=None,
+                         N=100, space='hcl'):
     # Dictionary
     hues = np.linspace(0, 360, N)
     sats = np.linspace(0, 100, N)
     lums = np.linspace(0, 100, N)
-    # if luminance is not None:
-    #     name = 'Hue-chroma cross-section'
-    # elif saturation is not None:
-    # elif hue is not None:
-    scales = {'rgb':(1,1,1), 'default':(360,100,100)}
-    names  = {'rgb':('red', 'green', 'blue'),
-              'hcl':('hue', 'chroma', 'luminance'),
-              'hsl':('hue', 'saturation', 'luminance'),
-              'hsv':('hue', 'saturation', 'value'),
-              'hpl':('hue', 'partial sat', 'luminance')}
+    chroma = saturation if saturation is not None else chroma
+    if luminance is not None:
+        hsl = np.concatenate((
+            np.repeat(hues[:,None], len(sats), axis=1)[...,None],
+            np.repeat(sats[None,:], len(hues), axis=0)[...,None],
+            np.ones((len(hues), len(sats)))[...,None]*luminance,
+            ), axis=2)
+        suptitle = f'Hue-chroma cross-section for luminance {luminance}'
+        xlabel, ylabel = 'hue', 'chroma'
+    elif chroma is not None:
+        hsl = np.concatenate((
+            np.repeat(hues[:,None], len(lums), axis=1)[...,None],
+            np.ones((len(hues), len(lums)))[...,None]*chroma,
+            np.repeat(lums[None,:], len(hues), axis=0)[...,None],
+            ), axis=2)
+        suptitle = f'Hue-luminance cross-section for chroma {chroma}'
+        xlabel, ylabel = 'hue', 'luminance'
+    elif hue is not None:
+        hsl = np.concatenate((
+            np.ones((len(sats), len(lums)))[...,None]*hue,
+            np.repeat(sats[:,None], len(lums), axis=1)[...,None],
+            np.repeat(lums[None,:], len(sats), axis=0)[...,None],
+            ), axis=2)
+        suptitle = 'Chroma-luminance cross-section'
+        xlabel, ylabel = 'chroma', 'luminance'
+
+    # Make figure, with hatching indiatinc invalid values
+    # Note we invert the x-y ordering for imshow
+    rc['facehatch'] = 'xxx'
+    f, axs = subplots(ncols=3, bottomlegends=True, rightcolorbar=True,
+                        span=0, share=0, wspace=0.2, axwidth=2.5,
+                        left=0, right=0, bottom=0,
+                        aspect=1, tight=True)
+    for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
+        rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
+        for j in range(hsl.shape[0]):
+            for k in range(hsl.shape[1]):
+                rgb_jk = tools.to_rgb(hsl[j,k,:].flat, space)
+                if not all(0 <= c <= 1 for c in rgb_jk):
+                    rgba[k,j,3] = 0 # transparent cell
+                else:
+                    rgba[k,j,:3] = rgb_jk
+        ax.imshow(rgba, origin='lower')
+        ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
+                  xlocator='none', ylocator='none',
+                  title=space.upper())
+    return f
+
+def cmap_breakdown(name, N=100, space='hcl'):
     # Figure
     f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
                            span=0, sharey=1, wspace=0.5,
@@ -47,8 +94,8 @@ def cmap_breakdown(name, luminance=50, chroma=None, hue=None, N=100, space='hcl'
         # Convert RGB to space
         for i in range(len(lut)):
             lut[i,:] = tools.to_xyz(lut[i,:], space=space)
-        scale = scales.get(space, scales['default'])
-        labels = names[space]
+        scale  = _scales.get(space, _scales['default'])
+        labels = _names[space]
         # Draw line, add legend
         colors = ['C1', 'C2', 'C0'] # corresponds with RGB roughly
         m = 0
