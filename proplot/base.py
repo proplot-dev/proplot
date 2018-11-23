@@ -745,7 +745,7 @@ class Figure(mfigure.Figure):
             hspace=None, wspace=None,
             hwidth=None, wwidth=None,
             sharex=None, sharey=None, # external sharing
-            sharex_level=2, sharey_level=2,
+            sharex_level=3, sharey_level=3,
             sharex_panels=True, sharey_panels=True, # by default share main x/y axes with panel x/y axes
             **kwargs):
         # Helper function for creating paneled axes.
@@ -1094,18 +1094,18 @@ class BaseAxes(maxes.Axes):
     def _sharex_panels(self):
         # Call this once panels are all declared
         if self.bottompanel:
-            self._sharex_setup(self.bottompanel, 2)
+            self._sharex_setup(self.bottompanel, 3)
         bottom = self.bottompanel or self
         if self.toppanel:
-            self.toppanel._sharex_setup(bottom, 2)
+            self.toppanel._sharex_setup(bottom, 3)
 
     def _sharey_panels(self):
         # Same but for y
         if self.leftpanel:
-            self._sharey_setup(self.leftpanel, 2)
+            self._sharey_setup(self.leftpanel, 3)
         left = self.leftpanel or self
         if self.rightpanel:
-            self.rightpanel._sharey_setup(left, 2)
+            self.rightpanel._sharey_setup(left, 3)
 
     def _rcupdate(self):
         # Figure patch (for some reason needs to be re-asserted even if declared before figure drawn)
