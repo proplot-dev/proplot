@@ -58,7 +58,8 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
 
     # Make figure, with hatching indiatinc invalid values
     # Note we invert the x-y ordering for imshow
-    rc['facehatch'] = '....'
+    # rc['facehatch'] = '....'
+    rc['facecolor'] = 'k'
     # rc['facehatch'] = 'xxx'
     f, axs = subplots(ncols=3, bottomlegends=True, rightcolorbar=True,
                         span=0, share=0, wspace=0.6, axwidth=2.5,
