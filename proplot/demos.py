@@ -119,7 +119,7 @@ def cmap_breakdown(name, N=100, space='hcl'):
         m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=name)
     f.rightpanel.colorbar(m, clocator='none', cformatter='none', clabel=f'{name} colors')
     locator = [0, 0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 6, 7, 8, 10]
-    axs.format(suptitle=f'{name} channel breakdown', ylim=None, ytickminor=False,
+    axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
               yscale=('cutoff', 4, 1), ylocator=locator, # progress 10x faster above x=1
               xlabel='position', ylabel='scaled channel value')
 
