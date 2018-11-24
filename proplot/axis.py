@@ -585,6 +585,9 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     # Already have a formatter object
     if isinstance(formatter, mticker.Formatter): # formatter object
         return formatter
+    if utils.isvector(formatter) and formatter[0]=='frac':
+        args.append(formatter[1]) # the number
+        formatter = formatter[0]
     # Interpret user input
     if formatter is None: # by default use my special super cool formatter, better than original
         if time:
@@ -610,8 +613,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     elif utils.isnumber(formatter): # interpret scalar number as *precision*
         formatter = CustomFormatter(formatter, *args, tickrange=tickrange, **kwargs)
     else:
-        formatter = mticker.IndexFormatter(formatter) # list of strings on the integers
-        # formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
+        formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
     return formatter
 
 #-------------------------------------------------------------------------------
@@ -727,7 +729,7 @@ def LonFormatter(*args, **kwargs):
 #------------------------------------------------------------------------------#
 # Formatters with fractions
 #------------------------------------------------------------------------------#
-def FracFormatter(number, symbol):
+def FracFormatter(symbol, number):
     """
     Format as fractions, multiples of some value, e.g. a physical constant.
     """
@@ -758,14 +760,14 @@ def PiFormatter():
     Return FracFormatter, where the number is np.pi and
     symbol is $\pi$.
     """
-    return FracFormatter(np.pi, r'\pi')
+    return FracFormatter(r'\pi', np.pi)
 
 def eFormatter():
     """
     Return FracFormatter, where the number is np.exp(1) and
     symbol is $e$.
     """
-    return FracFormatter(np.exp(1), 'e')
+    return FracFormatter('e', np.exp(1))
 
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
@@ -803,6 +805,7 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'logit':     mticker.LogitFormatter,
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
+    'index':     IndexFormatter,
     'default':   CustomFormatter,
     'custom':    CustomFormatter,
     'proplot':   CustomFormatter,
