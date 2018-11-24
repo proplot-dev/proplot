@@ -53,10 +53,8 @@ import matplotlib.collections as mcollections
 from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 # from .rcmod import rc, rcParams
 from .rcmod import rc
-from .axis import Scale, Locator, Formatter # default axis norm and formatter
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
-from . import fonttools
-from . import colortools, utils
+from . import colortools, fonttools, axistools, utils
 from .utils import _dot_dict, _fill, ic, timer, counter, docstring_fix
 # Silly function, returns a...z...aa...zz...aaa...zzz
 # God help you if you ever need that many indices
@@ -1475,7 +1473,7 @@ class XYAxes(BaseAxes):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
         # Change the default formatter (mine is better)
-        formatter = Formatter('custom')
+        formatter = axistools.formatter('custom')
         self.xaxis.set_major_formatter(formatter)
         self.yaxis.set_major_formatter(formatter)
 
@@ -1650,11 +1648,11 @@ class XYAxes(BaseAxes):
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
-            self.set_xscale(Scale(xscale, **xscale_kw))
+            self.set_xscale(axistools.scale(xscale, **xscale_kw))
         if yscale is not None:
             if hasattr(yscale,'name'):
                 yscale = yscale.name
-            self.set_yscale(Scale(yscale, **yscale_kw))
+            self.set_yscale(axistools.scale(yscale, **yscale_kw))
         if xlim is not None:
             if xreverse:
                 xlim = xlim[::-1]
@@ -1750,13 +1748,13 @@ class XYAxes(BaseAxes):
             # objects, and matplotlib automatically set the unit converter)
             time = isinstance(axis.converter, mdates.DateConverter)
             if ticklocator is not None:
-                axis.set_major_locator(Locator(ticklocator, time=time, **locator_kw))
+                axis.set_major_locator(axistools.locator(ticklocator, time=time, **locator_kw))
             if tickformatter is not None:
-                axis.set_major_formatter(Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
+                axis.set_major_formatter(axistools.formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
             if not tickminor and tickminorlocator is None:
-                axis.set_minor_locator(Locator('null'))
+                axis.set_minor_locator(axistools.locator('null'))
             elif tickminorlocator is not None:
-                locator = Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
+                locator = axistools.locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
                 axis.set_minor_locator(locator)
             axis.set_minor_formatter(mticker.NullFormatter())
 
@@ -1822,9 +1820,9 @@ class XYAxes(BaseAxes):
             if bounds is not None or axis.get_scale()=='cutoff':
                 if bounds is None: # no API for this on axis
                     bounds = getattr(self, 'get_' + axis.axis_name + 'lim')()
-                locator = Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
+                locator = axistools.locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_major_locator(locator)
-                locator = Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
+                locator = axistools.locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_minor_locator(locator)
 
             # Axis label properties
@@ -2750,9 +2748,9 @@ def colorbar_factory(ax, mappable,
         # Need to use tick_values instead of accessing 'locs' attribute because
         # many locators don't have these attributes; require norm.vmin/vmax as input
         if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
-            locators.append(Locator('null'))
+            locators.append(axistools.locator('null'))
             continue
-        values = np.array(Locator(locator).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        values = np.array(axistools.locator(locator).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendlength.
         # We need to figure out the numbers that will eventually be rendered to
@@ -2761,7 +2759,7 @@ def colorbar_factory(ax, mappable,
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
             # print(f'Warning: no ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
-            locators.append(Locator('null'))
+            locators.append(axistools.locator('null'))
             continue
         values_min, values_max = values_min[0], values_max[-1]
         values = values[values_min:values_max+1]
@@ -2775,9 +2773,9 @@ def colorbar_factory(ax, mappable,
             values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
             # print(f'Removed {length-len(values)}/{length} minor ticks(s).')
         fixed = values # record as new variable
-        locators.append(Locator(fixed)) # final locator object
+        locators.append(axistools.locator(fixed)) # final locator object
     # Next the formatter
-    cformatter = Formatter(cformatter)
+    cformatter = axistools.formatter(cformatter)
 
     # Fix the norm object
     # Check out the *insanely weird error* that occurs when you comment out this block!

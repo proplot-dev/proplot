@@ -86,7 +86,7 @@ import matplotlib.transforms as mtransforms
 scales = ['linear','log','symlog','logit', # builtin
           'pressure', 'height',
           'exp','sine','mercator','inverse'] # custom
-def Scale(scale, **kwargs):
+def scale(scale, **kwargs):
     """
     Generate arbitrary scale object.
     """
@@ -177,8 +177,8 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
         def set_default_locators_and_formatters(self, axis):
             # Consider changing this
             axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-            axis.set_major_formatter(Formatter('custom'))
-            axis.set_minor_formatter(Formatter('null'))
+            axis.set_major_formatter(formatter('custom'))
+            axis.set_minor_formatter(formatter('null'))
 
         def get_transform(self):
             # Either sub into e(scale*z), the default, or invert
@@ -224,8 +224,8 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
             return self.CutoffTransform()
 
         def set_default_locators_and_formatters(self, axis):
-            axis.set_major_formatter(Formatter('custom'))
-            axis.set_minor_formatter(Formatter('null'))
+            axis.set_major_formatter(formatter('custom'))
+            axis.set_minor_formatter(formatter('null'))
             axis.set_smart_bounds(True) # may prevent ticks from extending off sides
 
         class CutoffTransform(mtransforms.Transform):
@@ -328,8 +328,8 @@ class MercatorLatitudeScale(mscale.ScaleBase):
         # Apply these
         axis.set_smart_bounds(True)
         axis.set_major_locator(Locator(20)) # every 20 degrees
-        axis.set_major_formatter(Formatter('deg'))
-        axis.set_minor_formatter(Formatter('null'))
+        axis.set_major_formatter(formatter('deg'))
+        axis.set_minor_formatter(formatter('null'))
 
     class MercatorLatitudeTransform(mtransforms.Transform):
         # Default attributes
@@ -396,9 +396,9 @@ class SineLatitudeScale(mscale.ScaleBase):
     def set_default_locators_and_formatters(self, axis):
         # Apply these
         axis.set_smart_bounds(True)
-        axis.set_major_locator(Locator(20)) # every 20 degrees
-        axis.set_major_formatter(Formatter('deg'))
-        axis.set_minor_formatter(Formatter('null'))
+        axis.set_major_locator(locator(20)) # every 20 degrees
+        axis.set_major_formatter(formatter('deg'))
+        axis.set_minor_formatter(formatter('null'))
 
     class SineLatitudeTransform(mtransforms.Transform):
         # Default attributes
@@ -472,8 +472,8 @@ class InverseScale(mscale.ScaleBase):
         axis.set_smart_bounds(True) # may prevent ticks from extending off sides
         axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
-        axis.set_major_formatter(Formatter('custom'))
-        axis.set_minor_formatter(Formatter('null'))
+        axis.set_major_formatter(formatter('custom'))
+        axis.set_minor_formatter(formatter('null'))
         # axis.set_major_formatter(mticker.LogFormatter())
 
     class InverseTransform(mtransforms.Transform):
@@ -530,10 +530,9 @@ ExpScaleFactory(-1.0/7, True,  'height') # scale height so it matches a pressure
 # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py
 # The axis_date() method just sets the converter to the date one
 #------------------------------------------------------------------------------#
-def Locator(locator, *args, minor=False, time=False, **kwargs):
+def locator(loc, *args, minor=False, time=False, **kwargs):
     """
-    Default locator. Can be instantiated with a bunch of
-    different objects.
+    Construct a locator object.
     Argument:
         Can be number (specify multiples along which ticks
         are drawn), list (tick these positions), or string for dictionary
@@ -545,30 +544,30 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     the points passed so that no more than 'nbins' ticks are selected.
     """
     # Do nothing, and return None if locator is None
-    if isinstance(locator, mticker.Locator):
-        return locator
+    if isinstance(loc, mticker.Locator):
+        return loc
     # Decipher user input
-    if locator is None:
+    if loc is None:
         if time:
-            locator = mticker.AutoDateLocator(*args, **kwargs)
+            loc = mticker.AutoDateLocator(*args, **kwargs)
         elif minor:
-            locator = mticker.AutoMinorLocator(*args, **kwargs)
+            loc = mticker.AutoMinorLocator(*args, **kwargs)
         else:
-            locator = mticker.AutoLocator(*args, **kwargs)
-    elif type(locator) is str: # dictionary lookup
-        if locator=='logminor':
-            locator = 'log'
+            loc = mticker.AutoLocator(*args, **kwargs)
+    elif type(loc) is str: # dictionary lookup
+        if loc=='logminor':
+            loc = 'log'
             kwargs.update({'subs':np.arange(0,10)})
-        elif locator not in locators:
-            raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
-        locator = locators[locator](*args, **kwargs)
-    elif utils.isnumber(locator): # scalar variable
-        locator = mticker.MultipleLocator(locator, *args, **kwargs)
+        elif loc not in locators:
+            raise ValueError(f'Unknown locator "{loc}". Options are {", ".join(locators.keys())}.')
+        loc = locators[loc](*args, **kwargs)
+    elif utils.isnumber(loc): # scalar variable
+        loc = mticker.MultipleLocator(loc, *args, **kwargs)
     else:
-        locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
-    return locator
+        loc = mticker.FixedLocator(np.sort(loc), *args, **kwargs) # not necessary
+    return loc
 
-def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
+def formatter(form, *args, time=False, tickrange=None, **kwargs):
     """
     As above, auto-interpret user input.
     Includes option for %-formatting of numbers and dates, passing a list of strings
@@ -583,38 +582,38 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         kwargs: passed to locator when instantiated
     """
     # Already have a formatter object
-    if isinstance(formatter, mticker.Formatter): # formatter object
-        return formatter
-    if utils.isvector(formatter) and formatter[0]=='frac':
-        args.append(formatter[1]) # the number
-        formatter = formatter[0]
+    if isinstance(form, mticker.Formatter): # formatter object
+        return form
+    if utils.isvector(form) and form[0]=='frac':
+        args.append(form[1]) # the number
+        form = form[0]
     # Interpret user input
-    if formatter is None: # by default use my special super cool formatter, better than original
+    if form is None: # by default use my special super cool formatter, better than original
         if time:
-            formatter = mdates.AutoDateFormatter(*args, **kwargs)
+            form = mdates.AutoDateFormatter(*args, **kwargs)
         else:
-            formatter = CustomFormatter(*args, tickrange=tickrange, **kwargs)
-    elif isinstance(formatter, FunctionType):
-        formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
-    elif type(formatter) is str: # assumption is list of strings
-        if '{x}' in formatter:
-            formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs) # new-style .format() formatter
-        elif '%' in formatter:
+            form = CustomFormatter(*args, tickrange=tickrange, **kwargs)
+    elif isinstance(form, FunctionType):
+        form = mticker.FuncFormatter(form, *args, **kwargs)
+    elif type(form) is str: # assumption is list of strings
+        if '{x}' in form:
+            form = mticker.StrMethodFormatter(form, *args, **kwargs) # new-style .format() form
+        elif '%' in form:
             if time:
-                formatter = mdates.DateFormatter(formatter, *args, **kwargs) # %-style, dates
+                form = mdates.DateFormatter(form, *args, **kwargs) # %-style, dates
             else:
-                formatter = mticker.FormatStrFormatter(formatter, *args, **kwargs) # %-style, numbers
+                form = mticker.FormatStrFormatter(form, *args, **kwargs) # %-style, numbers
         else:
-            if formatter not in formatters:
-                raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
-            if formatter in ['deg','deglon','deglat','lon','lat']:
-                kwargs.update({'deg':('deg' in formatter)})
-            formatter = formatters[formatter](*args, **kwargs)
-    elif utils.isnumber(formatter): # interpret scalar number as *precision*
-        formatter = CustomFormatter(formatter, *args, tickrange=tickrange, **kwargs)
+            if form not in formatters:
+                raise ValueError(f'Unknown formatter "{form}". Options are {", ".join(formatters.keys())}.')
+            if form in ['deg','deglon','deglat','lon','lat']:
+                kwargs.update({'deg':('deg' in form)})
+            form = formatters[form](*args, **kwargs)
+    elif utils.isnumber(form): # interpret scalar number as *precision*
+        form = CustomFormatter(form, *args, tickrange=tickrange, **kwargs)
     else:
-        formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
-    return formatter
+        form = mticker.FixedFormatter(form) # list of strings on the major ticks, wherever they may be
+    return form
 
 #-------------------------------------------------------------------------------
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
@@ -805,7 +804,7 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'logit':     mticker.LogitFormatter,
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
-    'index':     IndexFormatter,
+    'index':     mticker.IndexFormatter,
     'default':   CustomFormatter,
     'custom':    CustomFormatter,
     'proplot':   CustomFormatter,
