@@ -1607,7 +1607,6 @@ class XYAxes(BaseAxes):
 
     # Cool overrides
     def format(self,
-        xdates=False,    ydates=False,    # whether to format axis labels as long datetime strings; the formatter should be a date %-style string
         xloc=None, yloc=None, # aliases for 'where to put spine'
         xspineloc=None,  yspineloc=None,  # deals with spine options
         xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
@@ -1617,7 +1616,7 @@ class XYAxes(BaseAxes):
         tickminor=None, xtickminor=True, ytickminor=True, # minor ticks on/off
         grid=None,      xgrid=None,      ygrid=None,      # gridline toggle
         gridminor=None, xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
-        xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
+        xticklabeldir=None, yticklabeldir=None, ticklabeldir=None, # which direction to draw labels
         xtickrange=None,    ytickrange=None,    # limit regions where we assign ticklabels to major-ticks
         xreverse=False, yreverse=False, # special properties
         xlabel=None,    ylabel=None,    # axis labels
@@ -1685,6 +1684,8 @@ class XYAxes(BaseAxes):
         ygridminor = _fill(gridminor, ygridminor)
         xtickdir = _fill(tickdir, xtickdir)
         ytickdir = _fill(tickdir, ytickdir)
+        xticklabeldir = _fill(ticklabeldir, xticklabeldir)
+        yticklabeldir = _fill(ticklabeldir, yticklabeldir)
         # Override for weird bug where title doesn't get automatically offset
         # from ticklabels in certain circumstance; check out notebook
         xtickloc = _fill(xtickloc, xticklabelloc) # if user specified labels somewhere, make sure to put ticks there by default!

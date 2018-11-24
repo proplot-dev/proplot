@@ -803,7 +803,7 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'logit':     mticker.LogitFormatter,
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
-    # 'default':   CustomFormatter,
+    'default':   CustomFormatter,
     'custom':    CustomFormatter,
     'proplot':   CustomFormatter,
     '$':         MoneyFormatter,
