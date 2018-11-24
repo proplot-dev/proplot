@@ -1613,7 +1613,7 @@ class XYAxes(BaseAxes):
         xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
         xlabelloc=None,  ylabelloc=None,
         xticklabelloc=None, yticklabelloc=None, # where to put tick labels
-        xtickdir=None,   ytickdir=None,   # which direction ('in', 'our', or 'inout')
+        xtickdir=None,  ytickdir=None,   tickdir=None,  # which direction ('in', 'out', or 'inout')
         tickminor=None, xtickminor=True, ytickminor=True, # minor ticks on/off
         grid=None,      xgrid=None,      ygrid=None,      # gridline toggle
         gridminor=None, xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
@@ -1683,6 +1683,8 @@ class XYAxes(BaseAxes):
         ygrid = _fill(grid, ygrid)
         xgridminor = _fill(gridminor, xgridminor)
         ygridminor = _fill(gridminor, ygridminor)
+        xtickdir = _fill(tickdir, xtickdir)
+        ytickdir = _fill(tickdir, ytickdir)
         # Override for weird bug where title doesn't get automatically offset
         # from ticklabels in certain circumstance; check out notebook
         xtickloc = _fill(xtickloc, xticklabelloc) # if user specified labels somewhere, make sure to put ticks there by default!
