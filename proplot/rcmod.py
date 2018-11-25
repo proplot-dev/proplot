@@ -55,7 +55,7 @@ rcGlobals = {
     'right':      False,
     'ticklen':    4.0,
     'tickpad':    2.0,
-    'inout' :     'out',
+    'tickdir' :   'out',
     # Convenient aliases (i.e. they do not bulk apply to a bunch of settings, just shorter names)
     # 'fontname':       'DejaVu Sans',
     # 'fontname':       'Verdana', # the prettiest IMO
@@ -102,7 +102,7 @@ rcGlobals_children = {
     'left':       ['ytick.major.left',    'ytick.minor.left'],
     'right':      ['ytick.major.right',   'ytick.minor.right'],
     'ticklen' :   ['xtick.major.size',    'ytick.major.size'],
-    'inout':      ['xtick.direction',     'ytick.direction'],
+    'tickdir':    ['xtick.direction',     'ytick.direction'],
     'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
     }
 # Settings that apply to just one thing, and are
