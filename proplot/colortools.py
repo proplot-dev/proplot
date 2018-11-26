@@ -115,9 +115,9 @@ _cmap_categories = { # initialize as empty lists
         ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
     'ProPlot Sequential':
         [ 'Glacial',
-        'Bog',
+        'Bog', 'Verdant',
         # 'Wood',
-        'Lake', 'Sea', 'Verdant', 'Forest',
+        'Lake', 'Sea', 'Forest',
         'Blood',
         'Fire', 'Golden', 'Sunrise', 'Sunset',
         ],
