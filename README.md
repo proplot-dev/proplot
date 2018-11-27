@@ -40,11 +40,15 @@ However, for the time being, basemap *retains several advantages* over cartopy (
 ## How is this different from seaborn?
 There is already a great matplotlib wrapper called [seaborn](https://seaborn.pydata.org/). What makes this project different?
 
-While some of `proplot`'s tools were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of crafting publication-quality graphics, and no more.
+While parts of `proplot` were inspired by seaborn (in particular much of `colors.py` is drawn from seaborn's `palettes.py`), the goal for this project was quite different -- it is intended to simplify the task of making publication-quality figures, and no more.
 
-Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form. ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time. Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn feature was not particularly useful for me. For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
+Seaborn largely attempts to merge the tasks of data analysis and visualization, and many of its features require neatly tabulated data in a standard form.
+ProPlot contains no analysis tools -- it is expected that you analyze your data on your own time.
 
-By focusing on this one task, I was able to create a number of powerful features well beyond the scope of `seaborn`. See the documentation and showcase for details.
+Anyway, as an atmospheric scientist, the datasets I use usually do not lend themselves to fitting in a simple DataFrame -- so this seaborn feature was not particularly useful for me.
+For data analysis tools I use in my physical climatology research, check out my [ClimPy](https://github.com/lukelbd/climpy`) project (still in preliminary stages).
+
+By focusing on this single task, I was able to create a number of powerful features beyond the scope of `seaborn`. See the documentation and showcase for details.
 
 ## Donations
 This package took a shocking amount of time to write. If you've found it useful, feel free to buy me a cup of coffee :)
