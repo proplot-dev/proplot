@@ -119,7 +119,7 @@ _cmap_categories = { # initialize as empty lists
         # 'Wood',
         'Lake', 'Sea', 'Forest',
         'Blood',
-        'Fire', 'Golden', 'Sunrise', 'Sunset',
+        'Fire', 'Sunrise', 'Sunset', 'Golden',
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging':
