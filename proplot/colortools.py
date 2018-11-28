@@ -124,7 +124,7 @@ _cmap_categories = { # initialize as empty lists
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging':
-        ['IceFire', 'NegPos', 'DryWet', 'Water'],
+        ['IceFire', 'NegPos', 'DryWet', 'LandSea'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
