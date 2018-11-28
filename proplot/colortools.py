@@ -123,7 +123,7 @@ _cmap_categories = { # initialize as empty lists
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging':
-        ['ColdHot', 'IceFire', 'NegPos', 'DryWet', 'Water'],
+        ['IceFire', 'NegPos', 'DryWet', 'Water'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
@@ -143,7 +143,7 @@ _cmap_categories = { # initialize as empty lists
     'ColorBrewer2.0 Diverging':
         ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'],
     'Other':
-        ['cubehelix', 'bwr'],
+        ['ColdHot', 'bwr', 'cubehelix'],
         # ['cubehelix', 'rainbow', 'bwr'],
     # These ones will be deleted
     'Alt Sequential':
