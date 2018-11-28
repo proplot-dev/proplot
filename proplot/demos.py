@@ -82,19 +82,19 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
                   title=space.upper(), title_kw={'weight':'bold'})
     return f
 
-def cmap_breakdown(name, N=100, space='hcl'):
+def cmap_breakdown(cmap, N=100, space='hcl'):
     # Figure
     f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
                            span=0, sharey=1, wspace=0.5,
                            bottom=0.4, axwidth=2, aspect=1, tight=True)
     x = np.linspace(0, 1, N)
-    cmap = tools.colormap(name, N=N)
+    cmap = tools.colormap(cmap, N=N) # arbitrary cmap argument
     cmap._init()
+    name = cmap.name
     for j,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl','rgb'))):
         # Get RGB table, unclipped
         hs = []
         if hasattr(cmap, 'space'):
-            cmap._init()
             lut = cmap._lut_hsl[:,:3].copy()
             for i in range(len(lut)):
                 lut[i,:] = tools.to_rgb(lut[i,:], cmap.space)
@@ -119,7 +119,7 @@ def cmap_breakdown(name, N=100, space='hcl'):
         ax.format(title=space.upper(), titlepos='oc', ylim=(0-0.1, m + 0.1))
     # Draw colorbar
     with np.errstate(all='ignore'):
-        m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=name)
+        m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=cmap)
     f.rightpanel.colorbar(m, clocator='none', cformatter='none', clabel=f'{name} colors')
     locator = [0, 0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 6, 7, 8, 10]
     axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
