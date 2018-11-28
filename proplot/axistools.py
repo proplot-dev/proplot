@@ -24,6 +24,15 @@ Scales:
         autoscaling provided by the tick locators, this range limiting will
         always be adhered to, whether the axis range is set manually,
         determined automatically or changed through panning and zooming.
+    Important notes on methods:
+      - When you set_xlim or set_ylim, the minpos used is actually the *data
+        limits* minpos (i.e. minimum coordinate for plotted data). So don't
+        try to e.g. clip data < 0, that is job for transform, if you use minpos
+        in limit_range_for_scale will get wrong and weird results.
+      - Common to use set_smart_bounds(True) in set_default_locators_and_formatters()
+        call -- but this only draws ticks where **data exists**. Often this may
+        not be what we want. Check out source code, see if we can develop own
+        version smarter than this, that still prevents these hanging ticks.
   * Also, have to be 'registered' unlike locators and formatters, which
     can be passed to the 'set' methods. Or maybe not?
 Transforms:
@@ -115,36 +124,44 @@ class ExpTransform(mtransforms.Transform):
     # Create transform object
     input_dims = 1
     output_dims = 1
+    has_inverse = True
     is_separable = True
     def __init__(self, scale, minpos):
         mtransforms.Transform.__init__(self)
         self.minpos = minpos
         self.scale = scale
-    def transform(self, a):
-        a = np.array(a)
-        aa = a.copy()
-        return np.exp(self.scale*aa)
+    # def transform(self, a):
     def transform_non_affine(self, a):
-        return self.transform(a)
+        # a = np.array(a)
+        # aa = a.copy()
+        return np.exp(self.scale*np.array(a))
+        # return np.exp(self.scale*aa)
+        # aa[a<=self.minpos] = self.minpos
+        # return np.exp(abs(self.scale)*aa)
+    # def transform_non_affine(self, a):
+    #     return self.transform(a)
     def inverted(self):
         return InvertedExpTransform(self.scale, self.minpos)
 
 class InvertedExpTransform(mtransforms.Transform):
     input_dims = 1
     output_dims = 1
+    has_inverse = True
     is_separable = True
     def __init__(self, scale, minpos):
         mtransforms.Transform.__init__(self)
         self.minpos = minpos
         self.scale = scale
-    def transform(self, a):
+    # def transform(self, a):
+    def transform_non_affine(self, a):
         a = np.array(a)
         aa = a.copy()
         aa[a<=self.minpos] = self.minpos
-        aa = np.log(aa)/self.scale
-        return aa # natural log here
-    def transform_non_affine(self, a):
-        return self.transform(a)
+        return np.log(aa)/self.scale
+        # return np.log(aa)/abs(self.scale)
+        # return np.sign(self.scale)*np.log(aa)/self.scale
+    # def transform_non_affine(self, a):
+    #     return self.transform(a)
     def inverted(self):
         return ExpTransform(self.scale, self.minpos)
 
@@ -152,11 +169,12 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
     """
     Exponential scale, useful for plotting height and pressure e.g.
     """
+    scale_num = scale
     scale_name = name # must make a copy
-    # scale = 1 # TODO: Shouldn't the scale not matter?
-    # scale = -1.0 # this seems to prevent ticks from going off edge
     class ExpScale(mscale.ScaleBase):
         name = scale_name # assigns as attribute
+        scale = scale_num
+        forward = to_exp
         # Declare name
         def __init__(self, axis, minpos=1e-300, **kwargs):
             # Initialize
@@ -167,26 +185,25 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
             # Prevent conversion from inverting axis scale, which
             # happens when scale is less than zero
             # 99% of time this is want user will want I think
-            if scale<0:
+            # NOTE: Do not try to limit data to range above zero here, that
+            # is transform's job; see header for info.
+            if self.scale < 0:
                 vmax, vmin = vmin, vmax
-            if not np.isfinite(minpos):
-                minpos = 1e-300
-            return (minpos if vmin <= 0 else vmin,
-                    minpos if vmax <= 0 else vmax)
+            return vmin, vmax
 
         def set_default_locators_and_formatters(self, axis):
             # Consider changing this
-            axis.set_smart_bounds(True) # may prevent ticks from extending off sides
+            # axis.set_smart_bounds(True) # may prevent ticks from extending off sides
             axis.set_major_formatter(formatter('custom'))
             axis.set_minor_formatter(formatter('null'))
 
         def get_transform(self):
             # Either sub into e(scale*z), the default, or invert
             # the exponential
-            if to_exp:
-                return ExpTransform(scale, self.minpos)
+            if self.forward:
+                return ExpTransform(self.scale, self.minpos)
             else:
-                return InvertedExpTransform(scale, self.minpos)
+                return InvertedExpTransform(self.scale, self.minpos)
 
     # Register and return
     mscale.register_scale(ExpScale)
@@ -213,6 +230,72 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
     if upper is None:
         if scale==np.inf:
             raise ValueError('For infinite scale (i.e. discrete cutoff), need both lower and upper bounds.')
+
+    class CutoffTransform(mtransforms.Transform):
+        # Create transform object
+        input_dims = 1
+        output_dims = 1
+        has_inverse = True
+        is_separable = True
+        def __init__(self):
+            mtransforms.Transform.__init__(self)
+        def transform(self, a):
+            a = np.array(a) # very numpy array
+            aa = a.copy()
+            if upper is None: # just scale between 2 segments
+                m = (a > lower)
+                aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
+            elif lower is None:
+                m = (a < upper)
+                aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
+            else:
+                m1 = (a > lower)
+                m2 = (a > upper)
+                m3 = (a > lower) & (a < upper)
+                if scale==np.inf:
+                    aa[m1] = a[m1] - (upper - lower)
+                    aa[m3] = lower
+                else:
+                    aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
+                    aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
+            return aa
+        def transform_non_affine(self, a):
+            return self.transform(a)
+        def inverted(self):
+            return InvertedCutoffTransform()
+
+    class InvertedCutoffTransform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        has_inverse = True
+        is_separable = True
+        def __init__(self):
+            mtransforms.Transform.__init__(self)
+        def transform(self, a):
+            a = np.array(a)
+            aa = a.copy()
+            if upper is None:
+                m = (a > lower)
+                aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
+            elif lower is None:
+                m = (a < upper)
+                aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
+            else:
+                n = (upper-lower)*(1 - 1/scale)
+                m1 = (a > lower)
+                m2 = (a > upper - n)
+                m3 = (a > lower) & (a < (upper - n))
+                if scale==np.inf:
+                    aa[m1] = a[m1] + (upper - lower)
+                else:
+                    aa[m2] = a[m2] + n
+                    aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
+            return aa
+        def transform_non_affine(self, a):
+            return self.transform(a)
+        def inverted(self):
+            return CutoffTransform()
+
     class CutoffScale(mscale.ScaleBase):
         # Declare name
         name = scale_name
@@ -221,80 +304,58 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
             self.name = scale_name
 
         def get_transform(self):
-            return self.CutoffTransform()
+            return CutoffTransform()
 
         def set_default_locators_and_formatters(self, axis):
             axis.set_major_formatter(formatter('custom'))
             axis.set_minor_formatter(formatter('null'))
             axis.set_smart_bounds(True) # may prevent ticks from extending off sides
 
-        class CutoffTransform(mtransforms.Transform):
-            # Create transform object
-            input_dims = 1
-            output_dims = 1
-            is_separable = True
-            def __init__(self):
-                mtransforms.Transform.__init__(self)
-            def transform(self, a):
-                a = np.array(a) # very numpy array
-                aa = a.copy()
-                if upper is None: # just scale between 2 segments
-                    m = (a > lower)
-                    aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
-                elif lower is None:
-                    m = (a < upper)
-                    aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
-                else:
-                    m1 = (a > lower)
-                    m2 = (a > upper)
-                    m3 = (a > lower) & (a < upper)
-                    if scale==np.inf:
-                        aa[m1] = a[m1] - (upper - lower)
-                        aa[m3] = lower
-                    else:
-                        aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
-                        aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
-                return aa
-            def transform_non_affine(self, a):
-                return self.transform(a)
-            def inverted(self):
-                return CutoffScale.InvertedCutoffTransform()
-
-        class InvertedCutoffTransform(mtransforms.Transform):
-            input_dims = 1
-            output_dims = 1
-            is_separable = True
-            def __init__(self):
-                mtransforms.Transform.__init__(self)
-            def transform(self, a):
-                a = np.array(a)
-                aa = a.copy()
-                if upper is None:
-                    m = (a > lower)
-                    aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
-                elif lower is None:
-                    m = (a < upper)
-                    aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
-                else:
-                    n = (upper-lower)*(1 - 1/scale)
-                    m1 = (a > lower)
-                    m2 = (a > upper - n)
-                    m3 = (a > lower) & (a < (upper - n))
-                    if scale==np.inf:
-                        aa[m1] = a[m1] + (upper - lower)
-                    else:
-                        aa[m2] = a[m2] + n
-                        aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
-                return aa
-            def transform_non_affine(self, a):
-                return self.transform(a)
-            def inverted(self):
-                return CutoffScale.CutoffTransform()
-
     # Register and return
     mscale.register_scale(CutoffScale)
     # print(f'Registered scale "{scale_name}".')
     return scale_name
+
+class MercatorLatitudeTransform(mtransforms.Transform):
+    # Default attributes
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, thresh):
+        # Initialize, declare attribute
+        mtransforms.Transform.__init__(self)
+        self.thresh = thresh
+    def transform_non_affine(self, a):
+        # For M N-dimensional transform, transform MxN into result
+        # So numbers stay the same, but data will then be linear in the
+        # result of the math below.
+        a = np.radians(a) # convert to radians
+        m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+        # m[m.mask] = np.nan
+        # a[m.mask] = np.nan
+        if m.mask.any():
+            return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
+        else:
+            return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
+    def inverted(self):
+        # Just call inverse transform class
+        return InvertedMercatorLatitudeTransform(self.thresh)
+
+class InvertedMercatorLatitudeTransform(mtransforms.Transform):
+    # As above, but for the inverse transform
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, thresh):
+        mtransforms.Transform.__init__(self)
+        self.thresh = thresh
+    def transform_non_affine(self, a):
+        # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+        return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
+    def inverted(self):
+        return MercatorLatitudeTransform(self.thresh)
 
 class MercatorLatitudeScale(mscale.ScaleBase):
     """
@@ -318,7 +379,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
 
     def get_transform(self):
         # Return special transform object
-        return self.MercatorLatitudeTransform(self.thresh)
+        return MercatorLatitudeTransform(self.thresh)
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         # *Hard* limit on axis boundaries
@@ -331,46 +392,43 @@ class MercatorLatitudeScale(mscale.ScaleBase):
         axis.set_major_formatter(formatter('deg'))
         axis.set_minor_formatter(formatter('null'))
 
-    class MercatorLatitudeTransform(mtransforms.Transform):
-        # Default attributes
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-        has_inverse = True
-        def __init__(self, thresh):
-            # Initialize, declare attribute
-            mtransforms.Transform.__init__(self)
-            self.thresh = thresh
-        def transform_non_affine(self, a):
-            # For M N-dimensional transform, transform MxN into result
-            # So numbers stay the same, but data will then be linear in the
-            # result of the math below.
-            a = np.radians(a) # convert to radians
-            m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
-            # m[m.mask] = np.nan
-            # a[m.mask] = np.nan
-            if m.mask.any():
-                return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
-            else:
-                return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
-        def inverted(self):
-            # Just call inverse transform class
-            return MercatorLatitudeScale.InvertedMercatorLatitudeTransform(self.thresh)
+class SineLatitudeTransform(mtransforms.Transform):
+    # Default attributes
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self):
+        # Initialize, declare attribute
+        mtransforms.Transform.__init__(self)
+    def transform_non_affine(self, a):
+        # Transformation
+        with np.errstate(invalid='ignore'): # NaNs will always be False
+            m = (a >= -90) & (a <= 90)
+        if not m.all():
+            aa = ma.masked_where(~m, a)
+            return ma.sin(np.deg2rad(aa))
+        else:
+            return np.sin(np.deg2rad(a))
+    def inverted(self):
+        # Just call inverse transform class
+        return InvertedSineLatitudeTransform()
 
-    class InvertedMercatorLatitudeTransform(mtransforms.Transform):
-        # As above, but for the inverse transform
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-        has_inverse = True
-        def __init__(self, thresh):
-            mtransforms.Transform.__init__(self)
-            self.thresh = thresh
-        def transform_non_affine(self, a):
-            # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
-            return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
-        def inverted(self):
-            return MercatorLatitudeScale.MercatorLatitudeTransform(self.thresh)
+class InvertedSineLatitudeTransform(mtransforms.Transform):
+    # As above, but for the inverse transform
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self):
+        mtransforms.Transform.__init__(self)
+    def transform_non_affine(self, a):
+        # Clipping, instead of setting invalid
+        # NOTE: Using ma.arcsin below caused super weird errors, dun do that
+        aa = a.copy()
+        return np.rad2deg(np.arcsin(aa))
+    def inverted(self):
+        return SineLatitudeTransform()
 
 class SineLatitudeScale(mscale.ScaleBase):
     """
@@ -386,7 +444,7 @@ class SineLatitudeScale(mscale.ScaleBase):
 
     def get_transform(self):
         # Return special transform object
-        return self.SineLatitudeTransform()
+        return SineLatitudeTransform()
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         # *Hard* limit on axis boundaries
@@ -400,43 +458,44 @@ class SineLatitudeScale(mscale.ScaleBase):
         axis.set_major_formatter(formatter('deg'))
         axis.set_minor_formatter(formatter('null'))
 
-    class SineLatitudeTransform(mtransforms.Transform):
-        # Default attributes
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-        has_inverse = True
-        def __init__(self):
-            # Initialize, declare attribute
-            mtransforms.Transform.__init__(self)
-        def transform_non_affine(self, a):
-            # Transformation
-            with np.errstate(invalid='ignore'): # NaNs will always be False
-                m = (a >= -90) & (a <= 90)
-            if not m.all():
-                aa = ma.masked_where(~m, a)
-                return ma.sin(np.deg2rad(aa))
-            else:
-                return np.sin(np.deg2rad(a))
-        def inverted(self):
-            # Just call inverse transform class
-            return SineLatitudeScale.InvertedSineLatitudeTransform()
+class InverseTransform(mtransforms.Transform):
+    # Create transform object
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, minpos):
+        mtransforms.Transform.__init__(self)
+        self.minpos = minpos
+    def transform(self, a):
+        a = np.array(a)
+        aa = a.copy()
+        aa[a<=0] = self.minpos
+        # aa[a<=0] = np.nan # minpos
+        return 1.0/aa
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return InvertedInverseTransform(self.minpos)
 
-    class InvertedSineLatitudeTransform(mtransforms.Transform):
-        # As above, but for the inverse transform
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-        has_inverse = True
-        def __init__(self):
-            mtransforms.Transform.__init__(self)
-        def transform_non_affine(self, a):
-            # Clipping, instead of setting invalid
-            # NOTE: Using ma.arcsin below caused super weird errors, dun do that
-            aa = a.copy()
-            return np.rad2deg(np.arcsin(aa))
-        def inverted(self):
-            return MercatorLatitudeScale.SineLatitudeTransform()
+class InvertedInverseTransform(mtransforms.Transform):
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, minpos):
+        mtransforms.Transform.__init__(self)
+        self.minpos = minpos
+    def transform(self, a):
+        a = np.array(a)
+        aa = a.copy()
+        aa[a<=0] = self.minpos
+        # aa[a<=0] = np.nan # messes up automatic ylim setting
+        return 1.0/aa
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return InverseTransform(self.minpos)
 
 class InverseScale(mscale.ScaleBase):
     """
@@ -457,7 +516,7 @@ class InverseScale(mscale.ScaleBase):
 
     def get_transform(self):
         # Return transform class
-        return self.InverseTransform(self.minpos)
+        return InverseTransform(self.minpos)
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         # *Hard* limit on axis boundaries
@@ -475,43 +534,6 @@ class InverseScale(mscale.ScaleBase):
         axis.set_major_formatter(formatter('custom'))
         axis.set_minor_formatter(formatter('null'))
         # axis.set_major_formatter(mticker.LogFormatter())
-
-    class InverseTransform(mtransforms.Transform):
-        # Create transform object
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-        def __init__(self, minpos):
-            mtransforms.Transform.__init__(self)
-            self.minpos = minpos
-        def transform(self, a):
-            a = np.array(a)
-            aa = a.copy()
-            aa[a<=0] = self.minpos
-            # aa[a<=0] = np.nan # minpos
-            return 1.0/aa
-        def transform_non_affine(self, a):
-            return self.transform(a)
-        def inverted(self):
-            return InverseScale.InvertedInverseTransform(self.minpos)
-
-    class InvertedInverseTransform(mtransforms.Transform):
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-        def __init__(self, minpos):
-            mtransforms.Transform.__init__(self)
-            self.minpos = minpos
-        def transform(self, a):
-            a = np.array(a)
-            aa = a.copy()
-            aa[a<=0] = self.minpos
-            # aa[a<=0] = np.nan # messes up automatic ylim setting
-            return 1.0/aa
-        def transform_non_affine(self, a):
-            return self.transform(a)
-        def inverted(self):
-            return InverseScale.InverseTransform(self.minpos)
 
 # Register hard-coded scale names, so user can set_xscale and set_yscale with strings
 mscale.register_scale(InverseScale)
