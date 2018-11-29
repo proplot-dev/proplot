@@ -114,7 +114,7 @@ _cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
 _cmap_methods = (
-    'cmapline',
+    'cmapline', 'hexbin', # special
     'contour', 'contourf', 'pcolor', 'pcolormesh',
     'matshow', 'imshow', 'spy', 'hist2d',
     'tripcolor', 'tricontour', 'tricontourf',
@@ -127,12 +127,14 @@ _nolevels_methods = (
 # Finally disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
 _disabled_methods = {
-    "Unsupported plotting function {}.":
-        ('pie', 'table', 'hexbin', 'eventplot',
+    "Unsupported plotting function {}. May be added soon.":
+        ('pie', 'table', 'eventplot',
         'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
         'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
-    "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale'). Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
-        ('plot_date', 'semilogx', 'semilogy', 'loglog'),
+    "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale').":
+        ('semilogx', 'semilogy', 'loglog'),
+    "Redundant function {} has been disabled. Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
+        ('plot_date',),
     "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use angle as 'x' and radius as 'y'.":
         ('polar',)
     }
@@ -288,9 +290,14 @@ def _cmap_features(self, func):
                 levels = utils.edges(values)
         levels = _fill(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
 
-        # Call function with custom stuff
+        # Call function with custom kwargs
         # NOTE: For contouring, colors discretized automatically. But we also
         # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
+        # NOTE: For hexbin, bins is argument.
+        bins = bins or False # None defaults to False
+        if bins not in (True, False):
+            kwargs.update({'bins':bins})
+            bins = True # or False
         if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
             kwargs.update({'levels': levels, 'extend': extend})
         if name == 'cmapline':
@@ -304,6 +311,10 @@ def _cmap_features(self, func):
         # Get levels automatically determined by contourf, or make them
         # from the automatically chosen pcolor/imshow clims
         # the normalizers will ***prefer*** this over levels
+        # TODO: This still is not respected for hexbin 'log' norm for
+        # some reason, figure out fix.
+        if hasattr(result, 'norm'):
+            norm = result.norm
         if not utils.isvector(levels): # i.e. was an integer
             if hasattr(result, 'levels'):
                 levels = result.levels

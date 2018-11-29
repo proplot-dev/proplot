@@ -117,7 +117,7 @@ _cmap_categories = { # initialize as empty lists
         [ 'Glacial',
         'Bog', 'Verdant',
         # 'Wood',
-        'Lake', 'Sea', 'Forest',
+        'Lake', 'Turquoise', 'Forest',
         'Blood',
         'Sunrise', 'Sunset', 'Fire',
         'Golden',
@@ -1168,7 +1168,8 @@ class BinNorm(mcolors.BoundaryNorm):
         resample = {'both':range(N+1), 'neither':[0, *range(N-1), N-2],
                     'min':[*range(N), N-1], 'max':[0, *range(N)]}
         self._norm = norm
-        self._x = norm(levels)
+        self._x = levels
+        self._x_norm = norm(levels)
         self._y_bins = np.linspace(0, 1, N + offset[extend] - 1)[resample[extend]]
 
         # Add builtin properties
@@ -1183,7 +1184,7 @@ class BinNorm(mcolors.BoundaryNorm):
         # just use searchsorted to bin the data.
         # NOTE: The bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
-        x = self._x
+        x = self._x_norm
         xq = self._norm(np.atleast_1d(xq))
         yq = self._y_bins[np.searchsorted(x, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))
