@@ -63,18 +63,18 @@ _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install d
 # Note the default listed colormaps
 _cycles_cmap = ['Set1', 'Set2', 'Set3', 'Set4', 'Set5']
 _cycles_list = {
-    # default matplotlib v2
+    # Default matplotlib v2
     'default':      ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
-    # copied from stylesheets; stylesheets just add color themese from every possible tool, not already present as a colormap
+    # Copied from stylesheets; stylesheets just add color themese from every possible tool, not already present as a colormap
     '538':          ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
     'ggplot':       ['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
-    # the default seaborn ones (excluded deep/muted/bright because thought they were unappealing)
+    # The default seaborn ones (excluded deep/muted/bright because thought they were unappealing)
     'colorblind':   ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
     'colorblind10': ["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"], # versions with more colors
-    # from the website
+    # From the website
     'flatui':       ["#3498db", "#e74c3c", "#95a5a6", "#34495e", "#2ecc71", "#9b59b6"],
-    # created with online tools; add to this
-    # see: http://tools.medialab.sciences-po.fr/iwanthue/index.php
+    # Created with online tools; add to this
+    # See: http://tools.medialab.sciences-po.fr/iwanthue/index.php
     'cinematic':    [(51,92,103), (158,42,43), (255,243,176), (224,159,62), (84,11,14)],
     'cool':         ["#6C464F", "#9E768F", "#9FA4C4", "#B3CDD1", "#C7F0BD"],
     'sugar':        ["#007EA7", "#B4654A", "#80CED7", "#B3CDD1", "#003249"],
@@ -91,7 +91,7 @@ _distinct_colors_space = 'hsl' # register colors distinct in this space?
 _distinct_colors_threshold = 0.07
 _distinct_colors_exceptions = [
     'white', 'black', 'gray', 'red', 'pink', 'grape',
-    'sky blue',
+    'sky blue', 'eggshell', 'sea blue',
     'violet', 'indigo', 'blue',
     'coral', 'tomato red', 'crimson',
     'cyan', 'teal', 'green', 'lime', 'yellow', 'orange',
@@ -124,7 +124,7 @@ _cmap_categories = { # initialize as empty lists
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging':
-        ['IceFire', 'NegPos', 'BlueRed', 'CoolWarm', 'DryWet', 'LandSea'],
+        ['IceFire', 'NegPos', 'BlueRed', 'CoolWarm', 'DryWet', 'DesertJungle', 'LandSea'],
     'cmOcean Sequential':
         ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',

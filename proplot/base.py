@@ -49,6 +49,7 @@ import matplotlib.artist as martist
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
+
 # Local modules, projection sand formatters and stuff
 from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 # from .rcmod import rc, rcParams
@@ -56,8 +57,9 @@ from .rcmod import rc
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
 from . import colortools, fonttools, axistools, utils
 from .utils import _dot_dict, _fill, ic, timer, counter, docstring_fix
-# Silly function, returns a...z...aa...zz...aaa...zzz
-# God help you if you ever need that many indices
+
+# Silly recursive function, returns a...z...aa...zz...aaa...zzz
+# God help you if you ever need that many labels
 _abc = 'abcdefghijklmnopqrstuvwxyz'
 def _ascii(i, prefix=''):
     if i < 26:
@@ -70,17 +72,20 @@ def _ascii(i, prefix=''):
 warnings.filterwarnings('ignore', category=mplDeprecation)
 # Optionally import mapping toolboxes
 # Main conda distro says they are incompatible, so make sure not required!
-# try:
-#     import mpl_toolkits.basemap as mbasemap
-# except ModuleNotFoundError:
-#     pass
 try:
     from cartopy.mpl.geoaxes import GeoAxes
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
     GeoAxes = PlateCarree = object
 
-# Global variables
+#------------------------------------------------------------------------------#
+# Decorators
+# To bulk decorate lists of methods, instead of wrapping methods explicitly,
+# we do some hacky bullshit with __getattribute__ and apply 'wrapper' there
+# Do this because it's cleaner, not really any performance issues since even
+# if we look up attributes thousands of times, testing membership in a length-4
+# list is nanoseconds level
+#------------------------------------------------------------------------------#
 # First distinguish plot types
 _line_methods = ( # basemap methods you want to wrap that aren't 2D grids
     'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
@@ -103,10 +108,8 @@ _center_methods = (
 _edge_methods = (
     'pcolor', 'pcolormesh', 'pcolorpoly',
     )
+
 # Next distinguish plots by more broad properties
-_nolevels_methods = (
-    'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor', 'imshow', 'matshow', 'spy'
-    )
 _cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
@@ -116,6 +119,11 @@ _cmap_methods = (
     'matshow', 'imshow', 'spy', 'hist2d',
     'tripcolor', 'tricontour', 'tricontourf',
     )
+_nolevels_methods = (
+    'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor',
+    'imshow', 'matshow', 'spy'
+    )
+
 # Finally disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
 _disabled_methods = {
@@ -123,9 +131,9 @@ _disabled_methods = {
         ('pie', 'table', 'hexbin', 'eventplot',
         'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
         'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
-    "Redundant function {} has been disabled.":
+    "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale'). Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
         ('plot_date', 'semilogx', 'semilogy', 'loglog'),
-    "Redundant function {} has been disabled. Just use projection='polar' instead.":
+    "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use angle as 'x' and radius as 'y'.":
         ('polar',)
     }
 _map_disabled_methods = (
@@ -134,6 +142,7 @@ _map_disabled_methods = (
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
     'fill_between', 'fill_betweenx', 'fill', 'stackplot')
+
 # Map projections
 _map_pseudocyl = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
 
@@ -308,11 +317,11 @@ def _cmap_features(self, func):
             N = None
         else:
             # Choose to either:
-            # 1) Use len(levels) lookup table values and a smooth normalizer
+            # 1) Use <len(levels)> lookup table values and a smooth normalizer
             # TODO: Figure out how extend stuff works, a bit confused again.
             if not bins:
                 offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-                N = len(values) + offset[extend]
+                N = len(levels) + offset[extend] - 1
                 norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
             # 2) Use a high-resolution lookup table with a discrete normalizer
             # NOTE: Unclear which is better/more accurate? Intuition is this one.

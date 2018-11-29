@@ -126,44 +126,35 @@ class ExpTransform(mtransforms.Transform):
     output_dims = 1
     has_inverse = True
     is_separable = True
-    def __init__(self, scale, minpos):
+    def __init__(self, scale, thresh):
         mtransforms.Transform.__init__(self)
-        self.minpos = minpos
+        self.thresh = thresh
         self.scale = scale
-    # def transform(self, a):
-    def transform_non_affine(self, a):
-        # a = np.array(a)
-        # aa = a.copy()
+    def transform(self, a):
         return np.exp(self.scale*np.array(a))
-        # return np.exp(self.scale*aa)
-        # aa[a<=self.minpos] = self.minpos
-        # return np.exp(abs(self.scale)*aa)
-    # def transform_non_affine(self, a):
-    #     return self.transform(a)
+    def transform_non_affine(self, a):
+        return self.transform(a)
     def inverted(self):
-        return InvertedExpTransform(self.scale, self.minpos)
+        return InvertedExpTransform(self.scale, self.thresh)
 
 class InvertedExpTransform(mtransforms.Transform):
     input_dims = 1
     output_dims = 1
     has_inverse = True
     is_separable = True
-    def __init__(self, scale, minpos):
+    def __init__(self, scale, thresh):
         mtransforms.Transform.__init__(self)
-        self.minpos = minpos
+        self.thresh = thresh
         self.scale = scale
-    # def transform(self, a):
-    def transform_non_affine(self, a):
+    def transform(self, a):
         a = np.array(a)
         aa = a.copy()
-        aa[a<=self.minpos] = self.minpos
+        aa[a<=self.thresh] = self.thresh
         return np.log(aa)/self.scale
-        # return np.log(aa)/abs(self.scale)
-        # return np.sign(self.scale)*np.log(aa)/self.scale
-    # def transform_non_affine(self, a):
-    #     return self.transform(a)
+    def transform_non_affine(self, a):
+        return self.transform(a)
     def inverted(self):
-        return ExpTransform(self.scale, self.minpos)
+        return ExpTransform(self.scale, self.thresh)
 
 def ExpScaleFactory(scale, to_exp=True, name='exp'):
     """
@@ -176,10 +167,10 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
         scale = scale_num
         forward = to_exp
         # Declare name
-        def __init__(self, axis, minpos=1e-300, **kwargs):
+        def __init__(self, axis, thresh=1e-300, **kwargs):
             # Initialize
             mscale.ScaleBase.__init__(self)
-            self.minpos = minpos
+            self.thresh = thresh
 
         def limit_range_for_scale(self, vmin, vmax, minpos):
             # Prevent conversion from inverting axis scale, which
@@ -201,9 +192,9 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
             # Either sub into e(scale*z), the default, or invert
             # the exponential
             if self.forward:
-                return ExpTransform(self.scale, self.minpos)
+                return ExpTransform(self.scale, self.thresh)
             else:
-                return InvertedExpTransform(self.scale, self.minpos)
+                return InvertedExpTransform(self.scale, self.thresh)
 
     # Register and return
     mscale.register_scale(ExpScale)
