@@ -1042,26 +1042,31 @@ def rename_colors(cycle='colorblind'):
 # including _process_values(), which if it doesn't detect BoundaryNorm will
 # end up trying to infer boundaries from inverse() method
 #------------------------------------------------------------------------------
-def norm(norm_i, levels=None, norm=None, **kwargs):
+def norm(norm_out, levels=None, norm=None, **kwargs):
     """
     Return arbitrary normalizer.
     """
-    if isinstance(norm_i, mcolors.Normalize):
-        pass
-    elif norm_i is None:
-        norm_i = None
-    elif norm_i is None:
-        norm_i = mcolors.Normalize() # default is just linear from 0 to 1
-    elif type(norm_i) is not str: # dictionary lookup
-        raise ValueError(f'Unknown norm "{norm_i}".')
-    if isinstance(norm_i, str):
-        if norm_i not in normalizers:
-            raise ValueError(f'Unknown normalizer "{norm_i}". Options are {", ".join(normalizers.keys())}.')
-        norm_i = normalizers[norm_i]
-        if norm_i in (BinNorm, LinearSegmentedNorm):
-            kwargs.update({'levels':levels, 'norm':norm})
-        norm_i = norm_i(**kwargs)
-    return norm_i
+    # NOTE: The cmap_features script depends on passing None --> return None,
+    # instead of returning a default normalizer!
+    norm_preprocess = norm
+    if not norm_out or isinstance(norm_out, mcolors.Normalize):
+        return norm_out
+    if isinstance(norm_out, str):
+        key = norm_out
+        if key not in normalizers:
+            raise ValueError(f'Unknown normalizer "{key}". Options are {", ".join(normalizers.keys())}.')
+        norm_out = normalizers[key]
+        if norm_out in (MidpointNorm, BinNorm, LinearSegmentedNorm):
+            if not utils.isvector(levels):
+                raise ValueError(f'Need levels for normalizer "{key}". Received levels={levels}.')
+            if norm_out is MidpointNorm:
+                kwargs.update({'vmin':min(levels), 'vmax':max(levels)})
+            else:
+                kwargs.update({'levels':levels, 'norm':norm_preprocess})
+        norm_out = norm_out(**kwargs) # initialize
+    else:
+        raise ValueError(f'Unknown norm "{norm_out}".')
+    return norm_out
 
 class LinearSegmentedNorm(mcolors.Normalize):
     """
@@ -1184,20 +1189,20 @@ class BinNorm(mcolors.BoundaryNorm):
         # just use searchsorted to bin the data.
         # NOTE: The bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
-        x = self._x_norm
         xq = self._norm(np.atleast_1d(xq))
-        yq = self._y_bins[np.searchsorted(x, xq)] # which x-bin does each point in xq belong to?
+        yq = self._y_bins[np.searchsorted(self._x_norm, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):
         # Not possible
         raise ValueError('BinNorm is not invertible.')
 
-class StretchNorm(mcolors.Normalize):
+class MidpointNorm(mcolors.Normalize):
     """
     Normalizers that 'stretches' and 'compresses' either side of a colormap
     about some midpoint, proceeding exponentially (exp>0) or logarithmically
     (exp<0) down the linear colormap from the center point.
+    Inspired from this thread: https://stackoverflow.com/q/25500541/4970632
 
     Notes
     -----
@@ -1207,51 +1212,23 @@ class StretchNorm(mcolors.Normalize):
       LinearSegmentedNorm? Should user just use exponential gradation
       functions in the segmentdata instead of using a special normalizer?
     """
-    def __init__(self, exp=0, midpoint=None, vmin=None, vmax=None, clip=None):
+    def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
         # Bigger numbers are too one-sided
-        if abs(exp) > 10:
-            raise ValueError('Warping scale must be between -10 and 10.')
         super().__init__(vmin, vmax, clip)
         self._midpoint = midpoint
-        self._exp = exp
 
-    def _warp(x, exp, exp_max=4):
-        # Returns indices stretched so neutral/low values are sampled more heavily
-        if exp > 0:
-            invert = True
-        else:
-            invert, exp = False, -exp
-        exp = exp*(exp_max/10)
-        # Apply function; approaches x=1 as a-->Inf, x=x as a-->0
-        if invert: x = 1-x
-        value =  (x-1+(np.exp(x)-x)**exp)/(np.e-1)**exp
-        if invert:
-            value = 1-value # flip on y-axis
-        return value
-
-    def __call__(self, value, clip=None):
+    def __call__(self, xq, clip=None):
         # Get middle point in 0-1 coords, and value
-        midpoint = self._midpoint or self.vmin
-        midpoint_scaled = (midpoint - self.vmin)/(self.vmax - self.vmin)
-        value_scaled    = (value - self.vmin)/(self.vmax - self.vmin)
-        try: iter(value_scaled)
-        except TypeError:
-            value_scaled = np.arange(value_scaled)
-        value_cmap = ma.empty(value_scaled.size)
-        # Get values, accounting for midpoints
-        for i,v in enumerate(value_scaled):
-            v = np.clip(v, 0, 1)
-            if v>=midpoint_scaled:
-                block_width = 1 - midpoint_scaled
-                value_cmap[i] = (midpoint_scaled +
-                    block_width*self._warp((v - midpoint_scaled)/block_width, self._exp)
-                    )
-            else:
-                block_width = midpoint_scaled
-                value_cmap[i] = (midpoint_scaled -
-                    block_width*self._warp((midpoint_scaled - v)/block_width, self._exp)
-                    )
-        return value_cmap
+        # NOTE: Look up these three values in case vmin/vmax changed; this is
+        # a more general normalizer than the others. Others are 'parent'
+        # normalizers, meant to be static more or less.
+        x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
+        return ma.masked_array(np.interp(xq, x, y))
+
+    def inverse(self, yq, clip=None):
+        # Invert the above
+        x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
+        return ma.masked_array(np.interp(yq, y, x))
 
 #------------------------------------------------------------------------------#
 # Register new colormaps; must come before registering the color cycles
@@ -1528,6 +1505,8 @@ normalizers = {
     'step':       BinNorm,
     'bins':       BinNorm,
     'bin':        BinNorm,
+    'zero':       MidpointNorm,
+    'midpoint':   MidpointNorm,
     'segmented':  LinearSegmentedNorm,
     'boundary':   mcolors.BoundaryNorm,
     'log':        mcolors.LogNorm,

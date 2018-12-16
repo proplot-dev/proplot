@@ -86,6 +86,24 @@ except ModuleNotFoundError:
 # if we look up attributes thousands of times, testing membership in a length-4
 # list is nanoseconds level
 #------------------------------------------------------------------------------#
+# General attribute aliases, to be referenced in the base class __getattribute_;
+# NOTE: In this package, we only create a new method 'pcolorpoly', don't override
+# the 'pcolor' method, so don't run into recursion issues due to internal
+# matplotlib pcolormesh() calls to pcolor()
+_fig_aliases = {
+    'bpanel': 'bottompanel',
+    'rpanel': 'rightpanel',
+    'tpanel': 'toppanel',
+    'lpanel': 'leftpanel'
+    }
+_ax_aliases = {
+    'pcolorpoly': 'pcolor',
+    'bpanel': 'bottompanel',
+    'rpanel': 'rightpanel',
+    'tpanel': 'toppanel',
+    'lpanel': 'leftpanel'
+    }
+
 # First distinguish plot types
 _line_methods = ( # basemap methods you want to wrap that aren't 2D grids
     'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
@@ -272,20 +290,20 @@ def _cmap_features(self, func):
     @wraps(func)
     def decorator(*args, cmap=None, cmap_kw={},
                 bins=True, # use *discrete* normalizer with 'continuous' color table
-                values=None, levels=None, norm=None,
+                values=None, levels=None,
+                norm=None, norm_kw={},
+                zero=False, # override levels to be *centered* on zero
                 values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
                 extend='neither', **kwargs):
-        # First get normalizer (i.e. a callable with an .inverse attribute
-        # that inverts the call) and levels. If user provided one, and also
-        # specified *values* (bin centers), make sure you get the bin levels
-        # (halfway points) in *transformed space*, e.g. log space.
-        name = func.__name__
-        norm = colortools.norm(norm, levels=levels) # if None, returns None; for my custom colormaps, we will need the levels
+        # Optionally pass level centers instead of level edges
+        # NOTE: See the norm_preprocessor section below for why we funnel
+        # results through a normalizer here
         if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
             values_as_levels = False # get levels later down the line
         if utils.isvector(values) and values_as_levels:
-            if norm: # is not None
-                levels = norm.inverse(utils.edges(norm(values)))
+            norm_tmp = colortools.norm(norm, **norm_kw)
+            if norm_tmp: # is not None
+                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
             else:
                 levels = utils.edges(values)
         levels = _fill(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
@@ -294,6 +312,7 @@ def _cmap_features(self, func):
         # NOTE: For contouring, colors discretized automatically. But we also
         # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
         # NOTE: For hexbin, bins is argument.
+        name = func.__name__
         bins = bins or False # None defaults to False
         if bins not in (True, False):
             kwargs.update({'bins':bins})
@@ -311,55 +330,84 @@ def _cmap_features(self, func):
         # Get levels automatically determined by contourf, or make them
         # from the automatically chosen pcolor/imshow clims
         # the normalizers will ***prefer*** this over levels
+        # TODO: See this thread https://stackoverflow.com/q/25500541/4970632
+        # Figure out some convenience feature for making a midpoint centered
+        # colormap normalizer.
         # TODO: This still is not respected for hexbin 'log' norm for
         # some reason, figure out fix.
-        if hasattr(result, 'norm'):
-            norm = result.norm
+        # TODO: Consider making my two custom normalizers 'parent' normalizers,
+        # as a ***dummy superclass***, and disallow using them escept in this
+        # controlled circumstance below.
+        # NOTE: Some custom normalizers ***other*** than the "parent" normalizers
+        # BinNorm and LinearSegmentedNorm (right now, just MidpointNorm) may
+        # also need levels. So, wait until now to declare norm.
+        # NOTE: When contourf has already drawn contours, they *cannot* be
+        # changed/updated -- must be redrawn! Therefore, if you want to change
+        # your levels after the fact (e.g. "draw 15 levels, but center them on
+        # zero), you will have to redraw!
         if not utils.isvector(levels): # i.e. was an integer
+            # Some tools automatically generate levels, like contourf
+            # Others will just automatically impose some clims, like levels
+            # Below accounts for both options
             if hasattr(result, 'levels'):
                 levels = result.levels
             else:
                 levels = np.linspace(*result.get_clim(), levels)
+            # Only makes sense if user specified integer level count
+            if zero:
+                abs_max = max([abs(max(levels)), abs(min(levels))])
+                levels = np.linspace(-abs_max, abs_max, len(levels))
+            # print(abs_max, levels)
+            # result.set_clim(-abs_max, abs_max)
         result.levels = levels # make sure they are on there!
 
+        # Get 'pre-processor' norm -- e.g. maybe user gave some unevenly spaced
+        # (e.g. logarithmically spaced) discrete levels -- for the *colorbar
+        # coordinates* to work properly, want interpolation between those
+        # coordinates to also be in that space. Also important if user
+        # specified bin centers instead of levels (see above).
+        norm_preprocess = colortools.norm(norm, levels=levels, **norm_kw)
+        if hasattr(result, 'norm') and norm_preprocess is None:
+            norm_preprocess = result.norm
+        result.set_norm(norm_preprocess)
+
+        # Contour *lines* can be colormapped, but this should not be
+        # default if user did not input a cmap
         if name in _contour_methods and cmap is None:
-            # Contour *lines* can be colormapped, but this should not be
-            # default if user did not input a cmap
-            N = None
+            return result
+
+        # Choose to either:
+        # 1) Use <len(levels)> lookup table values and a smooth normalizer
+        # TODO: Figure out how extend stuff works, a bit confused again.
+        if not bins:
+            offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
+            N = len(levels) + offset[extend] - 1
+            norm = colortools.LinearSegmentedNorm(norm=norm_preprocess, levels=levels)
+        # 2) Use a high-resolution lookup table with a discrete normalizer
+        # NOTE: Unclear which is better/more accurate? Intuition is this one.
         else:
-            # Choose to either:
-            # 1) Use <len(levels)> lookup table values and a smooth normalizer
-            # TODO: Figure out how extend stuff works, a bit confused again.
-            if not bins:
-                offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-                N = len(levels) + offset[extend] - 1
-                norm = colortools.LinearSegmentedNorm(norm=norm, levels=levels)
-            # 2) Use a high-resolution lookup table with a discrete normalizer
-            # NOTE: Unclear which is better/more accurate? Intuition is this one.
-            else:
-                N = None # will be ignored
-                norm = colortools.BinNorm(norm=norm, levels=levels, extend=extend)
-            result.set_norm(norm)
+            N = None # will be ignored
+            norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
+        # result.set_norm(norm)
 
-            # Specify colormap
-            cmap = cmap or rc['image.cmap']
-            if isinstance(cmap, (str, dict, mcolors.Colormap)):
-                cmap = cmap, # make a tuple
-            cmap = colortools.colormap(*cmap, N=N, extend=extend, **cmap_kw)
-            if not cmap._isinit:
-                cmap._init()
-            result.set_cmap(cmap)
+        # Specify colormap
+        cmap = cmap or rc['image.cmap']
+        if isinstance(cmap, (str, dict, mcolors.Colormap)):
+            cmap = cmap, # make a tuple
+        cmap = colortools.colormap(*cmap, N=N, extend=extend, **cmap_kw)
+        if not cmap._isinit:
+            cmap._init()
+        result.set_cmap(cmap)
 
-            # Fix white lines between filled contours/mesh
-            linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-            if name in _contourf_methods:
-                for contour in result.collections:
-                    contour.set_edgecolor('face')
-                    contour.set_linewidth(linewidth)
-            if name in _pcolor_methods:
-                result.set_edgecolor('face')
-                result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
-
+        # Fix white lines between filled contours/mesh
+        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
+        if name in _contourf_methods:
+            for contour in result.collections:
+                contour.set_edgecolor('face')
+                contour.set_linewidth(linewidth)
+        if name in _pcolor_methods:
+            result.set_edgecolor('face')
+            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
 
     return decorator
@@ -627,6 +675,11 @@ class Figure(mfigure.Figure):
         super().__init__(figsize=figsize, **kwargs) # python 3 only
         # Initialize suptitle, adds _suptitle attribute
         self.suptitle('')
+
+    def __getattribute__(self, attr, *args):
+        # Get attribute, but offer some convenient aliases
+        attr = _fig_aliases.get(attr, attr)
+        return super().__getattribute__(attr, *args)
 
     def _rowlabels(self, labels, **kwargs):
         # Assign rowlabels
@@ -1031,8 +1084,7 @@ class BaseAxes(maxes.Axes):
         for message,attrs in _disabled_methods.items():
             if attr in attrs:
                 raise NotImplementedError(message.format(attr))
-        if attr=='pcolorpoly':
-            attr = 'pcolor' # use alias so don't run into recursion issues due to internal pcolormesh calls to pcolor()
+        attr = _ax_aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
         if attr in _cmap_methods:
             obj = _cmap_features(self, obj)
@@ -1301,6 +1353,8 @@ class BaseAxes(maxes.Axes):
         return legend_factory(self, *args, **kwargs)
 
     # Fill entire axes with colorbar
+    # TODO: Make the default behavior draw a tiny colorbar inset
+    # in the axes itself!
     def colorbar(self, *args, **kwargs):
         # Call colorbar() function.
         return colorbar_factory(self, *args, **kwargs)
@@ -2026,16 +2080,25 @@ class PanelAxes(XYAxes):
         if invisible:
             self.invisible()
 
-    def legend(self, handles, **kwargs):
-        # Allocate invisible axes for drawing legend.
-        # Returns the axes and the output of legend_factory().
-        self.invisible()
-        kwlegend = {'borderaxespad':  0,
+    # TODO: Should have two versions of both of these
+    # 1) Adds a legend or *small* colorbar to the axes
+    # 2) *Fills* the entire axes with a colorbar or legend box
+    # TODO: Get rid of legend and colorbar factories, implement them as
+    # direct overrides!
+    def legend(self, handles, entire=True, **kwargs_override):
+        if not entire:
+            # Do the normal thing
+            kwargs = kwargs_override
+        else:
+            # Allocate invisible axes for drawing legend.
+            # Returns the axes and the output of legend_factory().
+            self.invisible()
+            kwargs = {'borderaxespad':  0,
                     'frameon':        False,
                     'loc':            'upper center',
                     'bbox_transform': self.transAxes}
-        kwlegend.update(kwargs)
-        return self, legend_factory(self, handles, **kwlegend)
+            kwargs.update(kwargs_override)
+        return legend_factory(self, handles, **kwargs)
 
     def colorbar(self, *args, i=0, n=1, length=1,
             space=0, hspace=None, wspace=None,
@@ -2098,7 +2161,7 @@ class PanelAxes(XYAxes):
             ticklocation = outside
             orientation  = 'vertical'
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
-        return ax, colorbar_factory(ax, *args, **kwargs)
+        return colorbar_factory(ax, *args, **kwargs)
 
 class MapAxes(BaseAxes):
     """
@@ -2641,8 +2704,11 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
     # Means we also have to overhaul some settings
     else:
         legends = []
-        for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
-            lsettings.pop(override, None)
+        for override in ['loc','ncol','bbox_to_anchor','borderpad',
+                         'borderaxespad','frameon','framealpha']:
+            overridden = lsettings.pop(override, None)
+            if overridden is not None:
+                print(f'Warning: Overriding legend property "{overridden}".')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = lsettings.get('fontsize', None)     or rc['legend.fontsize']
