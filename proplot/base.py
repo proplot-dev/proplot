@@ -369,26 +369,34 @@ def _cmap_features(self, func):
         norm_preprocess = colortools.norm(norm, levels=levels, **norm_kw)
         if hasattr(result, 'norm') and norm_preprocess is None:
             norm_preprocess = result.norm
-        result.set_norm(norm_preprocess)
 
         # Contour *lines* can be colormapped, but this should not be
         # default if user did not input a cmap
         if name in _contour_methods and cmap is None:
             return result
 
-        # Choose to either:
-        # 1) Use <len(levels)> lookup table values and a smooth normalizer
-        # TODO: Figure out how extend stuff works, a bit confused again.
-        if not bins:
-            offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-            N = len(levels) + offset[extend] - 1
-            norm = colortools.LinearSegmentedNorm(norm=norm_preprocess, levels=levels)
-        # 2) Use a high-resolution lookup table with a discrete normalizer
-        # NOTE: Unclear which is better/more accurate? Intuition is this one.
+        # Special MidpointNorm so far incompatible with others. This one
+        # should only be used when user wants to declare some number of levels,
+        # and wants to set the zero point.
+        # TODO: Fix this! Right now is fine for contourf, will faile for
+        # pcolormesh and other stuff.
+        if isinstance(norm_preprocess, colortools.MidpointNorm):
+            N = None
+            result.set_norm(norm_preprocess)
         else:
-            N = None # will be ignored
-            norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
-        # result.set_norm(norm)
+            # Wrap the pre-processor. Choose to either:
+            # 1) Use <len(levels)> lookup table values and a smooth normalizer
+            # TODO: Figure out how extend stuff works, a bit confused again.
+            if not bins:
+                offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
+                N = len(levels) + offset[extend] - 1
+                norm = colortools.LinearSegmentedNorm(norm=norm_preprocess, levels=levels)
+            # 2) Use a high-resolution lookup table with a discrete normalizer
+            # NOTE: Unclear which is better/more accurate? Intuition is this one.
+            else:
+                N = None # will be ignored
+                norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
+            result.set_norm(norm)
 
         # Specify colormap
         cmap = cmap or rc['image.cmap']
