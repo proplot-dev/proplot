@@ -1125,10 +1125,10 @@ class LinearSegmentedNorm(mcolors.Normalize):
 
 class BinNorm(mcolors.BoundaryNorm):
     """
-    Simple normalizer that *interpolates* from an RGB array at point
-    (level_idx/num_levels) along the array, instead of choosing color
-    from (transform(level_value)-transform(vmin))/(transform(vmax)-transform(vmin))
-    where transform can be linear, logarithmic, etc.
+    This is the same as BoundaryNorm, except color intensity is determined
+    from the **index along the vector of boundaries**, rather than the
+    **boundary values themselves**. This is great when you want weirdly spaced
+    color levels.
 
     Note
     ----
@@ -1199,18 +1199,9 @@ class BinNorm(mcolors.BoundaryNorm):
 
 class MidpointNorm(mcolors.Normalize):
     """
-    Normalizers that 'stretches' and 'compresses' either side of a colormap
-    about some midpoint, proceeding exponentially (exp>0) or logarithmically
-    (exp<0) down the linear colormap from the center point.
+    Simple normalizer that ensures a 'midpoint' always lies at the central
+    colormap color. Normally ued with diverging colormaps and midpoint=0.
     Inspired from this thread: https://stackoverflow.com/q/25500541/4970632
-
-    Notes
-    -----
-    * Default midpoint is vmin, i.e. we just stretch to the right. For diverging
-      colormaps, use midpoint 0.5.
-    * Need to update this. Should features be incorporated with
-      LinearSegmentedNorm? Should user just use exponential gradation
-      functions in the segmentdata instead of using a special normalizer?
     """
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
         # Bigger numbers are too one-sided
