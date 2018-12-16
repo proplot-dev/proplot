@@ -22,7 +22,7 @@ For a showcase of all ProPlot features, check out [**this online jupyter noteboo
 
 ## Documentation
 
-The full documentation can be found [**here**](https://lukelbd.github.io/tools/proplot_doc). It is a work-in-progress.
+The full documentation can be found [**here**](https://lukelbd.github.io/tools/proplot/doc). It is a work-in-progress.
 
 ## Installation
 This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
