@@ -1113,26 +1113,28 @@ class BinNorm(mcolors.BoundaryNorm):
             raise ValueError(f'Unknown extend option "{extend}". Choose from "min", "max", "both", "neither".')
 
         # Determine color ids for levels, i.e. position in 0-1 space
+        # NOTE: If user used LinearSegmentedNorm for the normalizer (the
+        # default) any monotonic levels will be even.
         # NOTE: Length of these ids should be N + 1 -- that is, N - 1 colors
         # for values in-between levels, plus 2 colors for out-of-bounds.
         #   * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
         #   * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
         #     where the offset X equals frac/len(levels).
-        # NOTE: If user used LinearSegmentedNorm for the normalizer (the
-        # default) any monotonic levels will be even.
+        # First get coordinates
         norm = norm or (lambda x: x) # e.g. a logarithmic transform
         eps = frac/levels.size # default makes extend color one half 'stronger' then next color
         x_b = norm(levels)
         x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
         y = (x_m - x_m.min())/(x_m.max() - x_m.min()) # get color ids scaled by normalizer, e.g. a log norm
+        # Account for out of bounds colors
+        offset = 0
+        scale = 1
         if extend in ('min','both'):
-            y = np.insert(eps + y*(1 - eps), 0, 0) # insert '0' (arg 3) before index '0' (arg 2)
-        else:
-            y = np.insert(y, 0, 0)
+            offset = eps
+            scale -= eps
         if extend in ('max','both'):
-            y = np.insert(y*(1 - eps), y.size, 1) # insert on end
-        else:
-            y = np.insert(y, y.size, 1)
+            scale -= eps
+        y = np.concatenate(([0], offset + scale*y, [1])) # insert '0' (arg 3) before index '0' (arg 2)
         self._norm = norm
         self._x_b = x_b
         self._y = y
