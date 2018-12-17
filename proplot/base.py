@@ -289,7 +289,6 @@ def _cmap_features(self, func):
     """
     @wraps(func)
     def decorator(*args, cmap=None, cmap_kw={},
-                bins=True, # use *discrete* normalizer with 'continuous' color table
                 values=None, levels=None,
                 norm=None, norm_kw={},
                 zero=False, # override levels to be *centered* on zero
@@ -311,12 +310,7 @@ def _cmap_features(self, func):
         # Call function with custom kwargs
         # NOTE: For contouring, colors discretized automatically. But we also
         # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
-        # NOTE: For hexbin, bins is argument.
         name = func.__name__
-        bins = bins or False # None defaults to False
-        if bins not in (True, False):
-            kwargs.update({'bins':bins})
-            bins = True # or False
         if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
             kwargs.update({'levels': levels, 'extend': extend})
         if name == 'cmapline':
