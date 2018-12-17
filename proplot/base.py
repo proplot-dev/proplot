@@ -330,17 +330,8 @@ def _cmap_features(self, func):
         # Get levels automatically determined by contourf, or make them
         # from the automatically chosen pcolor/imshow clims
         # the normalizers will ***prefer*** this over levels
-        # TODO: See this thread https://stackoverflow.com/q/25500541/4970632
-        # Figure out some convenience feature for making a midpoint centered
-        # colormap normalizer.
         # TODO: This still is not respected for hexbin 'log' norm for
         # some reason, figure out fix.
-        # TODO: Consider making my two custom normalizers 'parent' normalizers,
-        # as a ***dummy superclass***, and disallow using them escept in this
-        # controlled circumstance below.
-        # NOTE: Some custom normalizers ***other*** than the "parent" normalizers
-        # BinNorm and LinearSegmentedNorm (right now, just MidpointNorm) may
-        # also need levels. So, wait until now to declare norm.
         # NOTE: When contourf has already drawn contours, they *cannot* be
         # changed/updated -- must be redrawn! Therefore, if you want to change
         # your levels after the fact (e.g. "draw 15 levels, but center them on
@@ -361,11 +352,9 @@ def _cmap_features(self, func):
             # result.set_clim(-abs_max, abs_max)
         result.levels = levels # make sure they are on there!
 
-        # Get 'pre-processor' norm -- e.g. maybe user gave some unevenly spaced
-        # (e.g. logarithmically spaced) discrete levels -- for the *colorbar
-        # coordinates* to work properly, want interpolation between those
-        # coordinates to also be in that space. Also important if user
-        # specified bin centers instead of levels (see above).
+        # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
+        # in logarithmic space, or warped to diverge from center from a
+        # given midpoint like zero
         norm_preprocess = colortools.norm(norm, levels=levels, **norm_kw)
         if hasattr(result, 'norm') and norm_preprocess is None:
             norm_preprocess = result.norm
@@ -375,28 +364,13 @@ def _cmap_features(self, func):
         if name in _contour_methods and cmap is None:
             return result
 
-        # Special MidpointNorm so far incompatible with others. This one
-        # should only be used when user wants to declare some number of levels,
-        # and wants to set the zero point.
-        # TODO: Fix this! Right now is fine for contourf, will faile for
-        # pcolormesh and other stuff.
-        if isinstance(norm_preprocess, colortools.MidpointNorm):
-            N = None
-            result.set_norm(norm_preprocess)
-        else:
-            # Wrap the pre-processor. Choose to either:
-            # 1) Use <len(levels)> lookup table values and a smooth normalizer
-            # TODO: Figure out how extend stuff works, a bit confused again.
-            if not bins:
-                offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-                N = len(levels) + offset[extend] - 1
-                norm = colortools.LinearSegmentedNorm(norm=norm_preprocess, levels=levels)
-            # 2) Use a high-resolution lookup table with a discrete normalizer
-            # NOTE: Unclear which is better/more accurate? Intuition is this one.
-            else:
-                N = None # will be ignored
-                norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
-            result.set_norm(norm)
+        # Create colors
+        N = None # will be ignored
+        norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
+        result.set_norm(norm)
+        # offset = {'neither':0, 'max':1, 'min':1, 'both':2}
+        # N = len(levels) + offset[extend]
+        # norm = colortools.LinearSegmentedNorm(norm=norm_preprocess, levels=levels, extend=extend)
 
         # Specify colormap
         cmap = cmap or rc['image.cmap']
