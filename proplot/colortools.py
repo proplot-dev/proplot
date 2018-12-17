@@ -1096,8 +1096,10 @@ class BinNorm(mcolors.BoundaryNorm):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, norm=None, clip=False, frac=0.5, extend='neither', **kwargs):
-        # Declare boundaries, vmin, vmax in True coordinates
+    def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither', **kwargs):
+        # Declare boundaries, vmin, vmax in True coordinates. The step controls
+        # intensity transition to out-of-bounds color; by default, the step is
+        # equal to the *average* step between in-bounds colors (step == 1).
         # NOTE: Idea is that we bin data into len(levels) discrete x-coordinates,
         # and optionally make out-of-bounds colors the same or different
         # NOTE: Don't need to call parent __init__, this is own implementation
@@ -1119,10 +1121,10 @@ class BinNorm(mcolors.BoundaryNorm):
         # for values in-between levels, plus 2 colors for out-of-bounds.
         #   * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
         #   * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
-        #     where the offset X equals frac/len(levels).
+        #     where the offset X equals step/len(levels).
         # First get coordinates
         norm = norm or (lambda x: x) # e.g. a logarithmic transform
-        eps = frac/levels.size # default makes extend color one half 'stronger' then next color
+        eps = step/levels.size
         x_b = norm(levels)
         x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
         y = (x_m - x_m.min())/(x_m.max() - x_m.min()) # get color ids scaled by normalizer, e.g. a log norm
@@ -1134,6 +1136,9 @@ class BinNorm(mcolors.BoundaryNorm):
             scale -= eps
         if extend in ('max','both'):
             scale -= eps
+        if isinstance(y, ma.core.MaskedArray):
+            y = y.filled(np.nan)
+        y = y[np.isfinite(y)]
         y = np.concatenate(([0], offset + scale*y, [1])) # insert '0' (arg 3) before index '0' (arg 2)
         self._norm = norm
         self._x_b = x_b
@@ -1153,7 +1158,10 @@ class BinNorm(mcolors.BoundaryNorm):
         # just use searchsorted to bin the data.
         # NOTE: The bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
+        # ic(xq, self._norm)
         xq = self._norm(np.atleast_1d(xq))
+        # ic(self._x_b, xq, np.searchsorted(self._x_b, xq))
+        # asda
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))
 
@@ -1230,6 +1238,8 @@ class MidpointNorm(mcolors.Normalize):
         # than x[ind[i]-1] but smaller than x[ind[i]]
         # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
         # return ma.masked_array(np.interp(xq, x, y))
+        if self.vmin >= self._midpoint or self.vmax <= self._midpoint:
+            raise ValueError(f'Midpoint {self._midpoint} outside of vmin {self.vmin} and vmax {self.vmax}.')
         x = np.array([self.vmin, self._midpoint, self.vmax])
         y = np.array([0, 0.5, 1])
         xq = np.atleast_1d(xq)
