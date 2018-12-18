@@ -379,7 +379,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
     def set_default_locators_and_formatters(self, axis):
         # Apply these
         axis.set_smart_bounds(True)
-        axis.set_major_locator(Locator(20)) # every 20 degrees
+        axis.set_major_locator(locator(20)) # every 20 degrees
         axis.set_major_formatter(formatter('deg'))
         axis.set_minor_formatter(formatter('null'))
 

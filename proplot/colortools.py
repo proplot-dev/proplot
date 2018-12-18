@@ -117,7 +117,7 @@ _cmap_categories = { # initialize as empty lists
         [ 'Glacial',
         'Bog', 'Verdant',
         # 'Wood',
-        'Lake', 'Sea', 'Forest',
+        'Lake', 'Turquoise', 'Forest',
         'Blood',
         'Sunrise', 'Sunset', 'Fire',
         'Golden',
@@ -1042,88 +1042,42 @@ def rename_colors(cycle='colorblind'):
 # including _process_values(), which if it doesn't detect BoundaryNorm will
 # end up trying to infer boundaries from inverse() method
 #------------------------------------------------------------------------------
-def norm(norm_i, levels=None, norm=None, **kwargs):
+def norm(norm_in, levels=None, norm=None, **kwargs):
     """
     Return arbitrary normalizer.
     """
-    if isinstance(norm_i, mcolors.Normalize):
-        pass
-    elif norm_i is None:
-        norm_i = None
-    elif norm_i is None:
-        norm_i = mcolors.Normalize() # default is just linear from 0 to 1
-    elif type(norm_i) is not str: # dictionary lookup
-        raise ValueError(f'Unknown norm "{norm_i}".')
-    if isinstance(norm_i, str):
-        if norm_i not in normalizers:
-            raise ValueError(f'Unknown normalizer "{norm_i}". Options are {", ".join(normalizers.keys())}.')
-        norm_i = normalizers[norm_i]
-        if norm_i in (BinNorm, LinearSegmentedNorm):
-            kwargs.update({'levels':levels, 'norm':norm})
-        norm_i = norm_i(**kwargs)
-    return norm_i
-
-class LinearSegmentedNorm(mcolors.Normalize):
-    """
-    Description
-    -----------
-    As in BoundaryNorm case, but instead we linearly *interpolate* colors
-    between the provided boundary levels. Exactly analagous to the method
-    in LinearSegmentedColormap: perform linear interpolations between
-    successive monotonic, but arbitrarily spaced, points.
-    """
-    def __init__(self, levels, norm=None, clip=False, **kwargs):
-        # Test
-        levels = np.atleast_1d(levels)
-        if levels.size<=1:
-            raise ValueError('Need at least two levels.')
-        elif ((levels[1:]-levels[:-1])<=0).any():
-            raise ValueError(f'Levels {levels} passed to LinearSegmentedNorm must be monotonically increasing.')
-        super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
-        # Add some properties
-        if not norm: # e.g. a logarithmic transform
-            norm = (lambda x: x)
-            norm.inverse = (lambda x: x)
-        self._x = levels # alias for boundaries
-        self._x_norm = norm(levels)
-        self._y = np.linspace(0, 1, levels.size)
-        self._norm = norm
-
-    def __call__(self, xq, clip=None):
-        # Follow example of make_mapping_array for efficient, vectorized
-        # linear interpolation across multiple segments
-        # NOTE: normal test puts values at a[i] if a[i-1] < v <= a[i]; for
-        # left-most data, satisfy a[0] <= v <= a[1]
-        # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
-        # than x[ind[i]-1] but smaller than x[ind[i]]
-        x = self._x_norm # from arbitrarily spaced monotonic levels
-        y = self._y # to linear range 0-1
-        xq = self._norm(np.atleast_1d(xq))
-        ind = np.searchsorted(x, xq)
-        ind[ind==0] = 1
-        ind[ind==len(x)] = len(x) - 1 # actually want to go to left of that
-        distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
-        yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
-        return ma.masked_array(yq, np.isnan(xq))
-
-    def inverse(self, yq):
-        # Performs inverse operation of __call__
-        x = self._x_norm
-        y = self._y
-        yq = np.atleast_1d(yq)
-        ind = np.searchsorted(y, yq)
-        ind[ind==0] = 1
-        ind[ind==len(x)] = len(x) - 1
-        distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
-        xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
-        return ma.masked_array(self._norm.inverse(xq), np.isnan(yq))
+    norm_preprocess = norm
+    if isinstance(norm_in, mcolors.Normalize):
+        return norm_in
+    if not norm_in: # is None
+        norm_in = 'segments' # by default, make arbitrary monotonic user levels proceed linearly through color space
+    if isinstance(norm_in, str):
+        # Get class
+        if norm_in not in normalizers:
+            raise ValueError(f'Unknown normalizer "{norm_in}". Options are {", ".join(normalizers.keys())}.')
+        norm_out = normalizers[norm_in]
+        # Instantiate class
+        if norm_out is BinNorm:
+            raise ValueError('This normalizer can only be used internally!')
+        if norm_out is MidpointNorm:
+            if not utils.isvector(levels):
+                raise ValueError(f'Need levels for normalizer "{norm_in}". Received levels={levels}.')
+            kwargs.update({'vmin':min(levels), 'vmax':max(levels)})
+        elif norm_out is LinearSegmentedNorm:
+            if not utils.isvector(levels):
+                raise ValueError(f'Need levels for normalizer "{norm_in}". Received levels={levels}.')
+            kwargs.update({'levels':levels, 'norm':norm_preprocess})
+        norm_out = norm_out(**kwargs) # initialize
+    else:
+        raise ValueError(f'Unknown norm "{norm_out}".')
+    return norm_out
 
 class BinNorm(mcolors.BoundaryNorm):
     """
-    Simple normalizer that *interpolates* from an RGB array at point
-    (level_idx/num_levels) along the array, instead of choosing color
-    from (transform(level_value)-transform(vmin))/(transform(vmax)-transform(vmin))
-    where transform can be linear, logarithmic, etc.
+    This is the same as BoundaryNorm, except color intensity is determined
+    from the **index along the vector of boundaries**, rather than the
+    **boundary values themselves**. This is great when you want weirdly spaced
+    color levels.
 
     Note
     ----
@@ -1142,8 +1096,10 @@ class BinNorm(mcolors.BoundaryNorm):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, norm=None, centers=False, clip=False, extend=None, **kwargs):
-        # Declare boundaries, vmin, vmax in True coordinates
+    def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither', **kwargs):
+        # Declare boundaries, vmin, vmax in True coordinates. The step controls
+        # intensity transition to out-of-bounds color; by default, the step is
+        # equal to the *average* step between in-bounds colors (step == 1).
         # NOTE: Idea is that we bin data into len(levels) discrete x-coordinates,
         # and optionally make out-of-bounds colors the same or different
         # NOTE: Don't need to call parent __init__, this is own implementation
@@ -1157,100 +1113,157 @@ class BinNorm(mcolors.BoundaryNorm):
             raise ValueError(f'Levels {levels} passed to Normalize() must be monotonically increasing.')
         if extend not in ('both','min','max','neither'):
             raise ValueError(f'Unknown extend option "{extend}". Choose from "min", "max", "both", "neither".')
-        if centers:
-            levels = utils.edges(levels)
-        N = len(levels)
 
-        # Determine y-bin *centers* desired
-        # NOTE: Length of bin centers should be N + 1
+        # Determine color ids for levels, i.e. position in 0-1 space
+        # NOTE: If user used LinearSegmentedNorm for the normalizer (the
+        # default) any monotonic levels will be even.
+        # NOTE: Length of these ids should be N + 1 -- that is, N - 1 colors
+        # for values in-between levels, plus 2 colors for out-of-bounds.
+        #   * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
+        #   * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
+        #     where the offset X equals step/len(levels).
+        # First get coordinates
         norm = norm or (lambda x: x) # e.g. a logarithmic transform
-        offset = {'both':2, 'min':1, 'max':1, 'neither':0}
-        resample = {'both':range(N+1), 'neither':[0, *range(N-1), N-2],
-                    'min':[*range(N), N-1], 'max':[0, *range(N)]}
+        eps = step/levels.size
+        x_b = norm(levels)
+        x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
+        y = (x_m - x_m.min())/(x_m.max() - x_m.min()) # get color ids scaled by normalizer, e.g. a log norm
+        # Account for out of bounds colors
+        offset = 0
+        scale = 1
+        if extend in ('min','both'):
+            offset = eps
+            scale -= eps
+        if extend in ('max','both'):
+            scale -= eps
+        if isinstance(y, ma.core.MaskedArray):
+            y = y.filled(np.nan)
+        y = y[np.isfinite(y)]
+        y = np.concatenate(([0], offset + scale*y, [1])) # insert '0' (arg 3) before index '0' (arg 2)
         self._norm = norm
-        self._x = norm(levels)
-        self._y_bins = np.linspace(0, 1, N + offset[extend] - 1)[resample[extend]]
+        self._x_b = x_b
+        self._y = y
 
         # Add builtin properties
-        self.boundaries = levels # alias read by other functions
-        self.vmin = levels[0]
-        self.vmax = levels[-1]
+        # NOTE: Are vmin/vmax even used?
+        # self.vmin = x[0]
+        # self.vmax = x[-1]
+        self.vmin = levels.min()
+        self.vmax = levels.max()
         self.clip = clip
-        self.N = N
+        # self.N = x_m.size
 
     def __call__(self, xq, clip=None):
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
         # NOTE: The bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
-        x = self._x
+        # ic(xq, self._norm)
         xq = self._norm(np.atleast_1d(xq))
-        yq = self._y_bins[np.searchsorted(x, xq)] # which x-bin does each point in xq belong to?
+        # ic(self._x_b, xq, np.searchsorted(self._x_b, xq))
+        # asda
+        yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):
         # Not possible
         raise ValueError('BinNorm is not invertible.')
 
-class StretchNorm(mcolors.Normalize):
+class LinearSegmentedNorm(mcolors.Normalize):
     """
-    Normalizers that 'stretches' and 'compresses' either side of a colormap
-    about some midpoint, proceeding exponentially (exp>0) or logarithmically
-    (exp<0) down the linear colormap from the center point.
+    Description
+    -----------
+    As in BoundaryNorm case, but instead we linearly *interpolate* colors
+    between the provided boundary levels. Exactly analagous to the method
+    in LinearSegmentedColormap: perform linear interpolations between
+    successive monotonic, but arbitrarily spaced, points.
+    """
+    def __init__(self, levels, clip=False, **kwargs):
+        # Test
+        levels = np.atleast_1d(levels)
+        if levels.size<=1:
+            raise ValueError('Need at least two levels.')
+        elif ((levels[1:]-levels[:-1])<=0).any():
+            raise ValueError(f'Levels {levels} passed to LinearSegmentedNorm must be monotonically increasing.')
+        super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
+        self._x = levels
+        self._y = np.linspace(0, 1, len(levels))
 
-    Notes
-    -----
-    * Default midpoint is vmin, i.e. we just stretch to the right. For diverging
-      colormaps, use midpoint 0.5.
-    * Need to update this. Should features be incorporated with
-      LinearSegmentedNorm? Should user just use exponential gradation
-      functions in the segmentdata instead of using a special normalizer?
+    def __call__(self, xq, clip=None):
+        # Follow example of make_mapping_array for efficient, vectorized
+        # linear interpolation across multiple segments
+        # NOTE: normal test puts values at a[i] if a[i-1] < v <= a[i]; for
+        # left-most data, satisfy a[0] <= v <= a[1]
+        # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
+        # than x[ind[i]-1] but smaller than x[ind[i]]
+        x = self._x # from arbitrarily spaced monotonic levels
+        y = self._y # to linear range 0-1
+        xq = np.atleast_1d(xq)
+        ind = np.searchsorted(x, xq)
+        ind[ind==0] = 1
+        ind[ind==len(x)] = len(x) - 1 # actually want to go to left of that
+        distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
+        yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
+        return ma.masked_array(yq, np.isnan(xq))
+
+    def inverse(self, yq):
+        # Performs inverse operation of __call__
+        x = self._x
+        y = self._y
+        yq = np.atleast_1d(yq)
+        ind = np.searchsorted(y, yq)
+        ind[ind==0] = 1
+        ind[ind==len(y)] = len(y) - 1
+        distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
+        xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
+        return ma.masked_array(xq, np.isnan(yq))
+
+class MidpointNorm(mcolors.Normalize):
     """
-    def __init__(self, exp=0, midpoint=None, vmin=None, vmax=None, clip=None):
+    Simple normalizer that ensures a 'midpoint' always lies at the central
+    colormap color. Normally ued with diverging colormaps and midpoint=0.
+    Inspired from this thread: https://stackoverflow.com/q/25500541/4970632
+    """
+    def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
         # Bigger numbers are too one-sided
-        if abs(exp) > 10:
-            raise ValueError('Warping scale must be between -10 and 10.')
         super().__init__(vmin, vmax, clip)
         self._midpoint = midpoint
-        self._exp = exp
 
-    def _warp(x, exp, exp_max=4):
-        # Returns indices stretched so neutral/low values are sampled more heavily
-        if exp > 0:
-            invert = True
-        else:
-            invert, exp = False, -exp
-        exp = exp*(exp_max/10)
-        # Apply function; approaches x=1 as a-->Inf, x=x as a-->0
-        if invert: x = 1-x
-        value =  (x-1+(np.exp(x)-x)**exp)/(np.e-1)**exp
-        if invert:
-            value = 1-value # flip on y-axis
-        return value
-
-    def __call__(self, value, clip=None):
+    def __call__(self, xq, clip=None):
         # Get middle point in 0-1 coords, and value
-        midpoint = self._midpoint or self.vmin
-        midpoint_scaled = (midpoint - self.vmin)/(self.vmax - self.vmin)
-        value_scaled    = (value - self.vmin)/(self.vmax - self.vmin)
-        try: iter(value_scaled)
-        except TypeError:
-            value_scaled = np.arange(value_scaled)
-        value_cmap = ma.empty(value_scaled.size)
-        # Get values, accounting for midpoints
-        for i,v in enumerate(value_scaled):
-            v = np.clip(v, 0, 1)
-            if v>=midpoint_scaled:
-                block_width = 1 - midpoint_scaled
-                value_cmap[i] = (midpoint_scaled +
-                    block_width*self._warp((v - midpoint_scaled)/block_width, self._exp)
-                    )
-            else:
-                block_width = midpoint_scaled
-                value_cmap[i] = (midpoint_scaled -
-                    block_width*self._warp((midpoint_scaled - v)/block_width, self._exp)
-                    )
-        return value_cmap
+        # NOTE: Look up these three values in case vmin/vmax changed; this is
+        # a more general normalizer than the others. Others are 'parent'
+        # normalizers, meant to be static more or less.
+        # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
+        # than x[ind[i]-1] but smaller than x[ind[i]]
+        # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
+        # return ma.masked_array(np.interp(xq, x, y))
+        if self.vmin >= self._midpoint or self.vmax <= self._midpoint:
+            raise ValueError(f'Midpoint {self._midpoint} outside of vmin {self.vmin} and vmax {self.vmax}.')
+        x = np.array([self.vmin, self._midpoint, self.vmax])
+        y = np.array([0, 0.5, 1])
+        xq = np.atleast_1d(xq)
+        ind = np.searchsorted(x, xq)
+        ind[ind==0] = 1 # in this case will get normed value <0
+        ind[ind==len(x)] = len(x) - 1 # in this case, will get normed value >0
+        distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
+        yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
+        return ma.masked_array(yq, np.isnan(xq))
+
+    def inverse(self, yq, clip=None):
+        # Invert the above
+        # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
+        # return ma.masked_array(np.interp(yq, y, x))
+        # Performs inverse operation of __call__
+        x = np.array([self.vmin, self._midpoint, self.vmax])
+        y = np.array([0, 0.5, 1])
+        yq = np.atleast_1d(yq)
+        ind = np.searchsorted(y, yq)
+        ind[ind==0] = 1
+        ind[ind==len(y)] = len(y) - 1
+        distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
+        xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
+        return ma.masked_array(xq, np.isnan(yq))
 
 #------------------------------------------------------------------------------#
 # Register new colormaps; must come before registering the color cycles
@@ -1527,6 +1540,9 @@ normalizers = {
     'step':       BinNorm,
     'bins':       BinNorm,
     'bin':        BinNorm,
+    'zero':       MidpointNorm,
+    'midpoint':   MidpointNorm,
+    'segments':   LinearSegmentedNorm,
     'segmented':  LinearSegmentedNorm,
     'boundary':   mcolors.BoundaryNorm,
     'log':        mcolors.LogNorm,

@@ -60,9 +60,12 @@ rcGlobals = {
     # 'fontname':       'DejaVu Sans',
     # 'fontname':       'Verdana', # the prettiest IMO
     'fontname':       'Helvetica Neue', # best one; and less crammed than Helvetica
+    'margin':         0.0,
+    'xmargin':        0.0, # found I wanted to change these *a lot*
+    'ymargin':        0.0, # found I wanted to change these *a lot*
+    'abcweight':      'bold',
     'titleweight':    'normal',
     'suptitleweight': 'bold',
-    'abcweight':      'bold',
     # Special ones
     'tickratio':  0.5, # ratio of major-to-minor tick size
     'minorwidth': 0.8, # ratio of major-to-minor tick width
@@ -92,6 +95,9 @@ rcGlobals_children = {
     'gridcolor':  ['grid.color',     'gridminor.color'],
     'gridstyle':  ['grid.linestyle', 'gridminor.linestyle'],
     # Aliases
+    'margin':         ['axes.xmargin', 'axes.ymargin'],
+    'xmargin':        ['axes.xmargin'], # found I wanted to change these *a lot*
+    'ymargin':        ['axes.ymargin'], # found I wanted to change these *a lot*
     'fontname':       ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
     'abcweight':      ['abc.weight'],
     'titleweight':    ['axes.titleweight'],
@@ -108,6 +114,7 @@ rcGlobals_children = {
 # Settings that apply to just one thing, and are
 # already implemented by matplotlib
 rcDefaults = {
+    # Some of these will be overwritten by global alises
     'figure.dpi':              90, # save ipython notebook space
     'figure.facecolor':        (0.95,0.95,0.95,1),
     'figure.max_open_warning': 0,
@@ -116,12 +123,12 @@ rcDefaults = {
     'savefig.facecolor':       (1,1,1,1),
     'savefig.transparent':     True,
     'savefig.dpi':             300,
-    'savefig.pad_inches':      0,
+    'savefig.pad_inches':      0.0,
     'savefig.directory':       '',
     'savefig.bbox':            'standard',
     'savefig.format':          'pdf',
-    'axes.xmargin':            0,
-    'axes.ymargin':            0.05,
+    'axes.xmargin':            0.0,
+    'axes.ymargin':            0.0,
     'axes.titleweight':        'normal',
     'axes.grid':               True,
     'axes.labelweight':        'normal',
