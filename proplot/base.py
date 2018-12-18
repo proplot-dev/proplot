@@ -346,17 +346,17 @@ def _cmap_features(self, func):
             # result.set_clim(-abs_max, abs_max)
         result.levels = levels # make sure they are on there!
 
+        # Contour *lines* can be colormapped, but this should not be
+        # default if user did not input a cmap
+        if name in _contour_methods and cmap is None:
+            return result
+
         # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
         # in logarithmic space, or warped to diverge from center from a
         # given midpoint like zero
         norm_preprocess = colortools.norm(norm, levels=levels, **norm_kw)
         if hasattr(result, 'norm') and norm_preprocess is None:
             norm_preprocess = result.norm
-
-        # Contour *lines* can be colormapped, but this should not be
-        # default if user did not input a cmap
-        if name in _contour_methods and cmap is None:
-            return result
 
         # Create colors
         N = None # will be ignored
@@ -2685,7 +2685,7 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
                          'borderaxespad','frameon','framealpha']:
             overridden = lsettings.pop(override, None)
             if overridden is not None:
-                print(f'Warning: Overriding legend property "{overridden}".')
+                print(f'Warning: Overriding legend property "{override}".')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = lsettings.get('fontsize', None)     or rc['legend.fontsize']
