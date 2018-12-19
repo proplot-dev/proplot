@@ -664,8 +664,9 @@ def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf]):
         if string=='-0': # special case
             string = '0'
         if value>0 and string=='0':
+            pass # this was dumb
             # raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
-            print('Warning: Tried to round tick position label to zero. Add precision or use an exponential formatter.')
+            # print('Warning: Tried to round tick position label to zero. Add precision or use an exponential formatter.')
         # Use unicode minus instead of ASCII hyphen (which is default)
         string = re.sub('-', '−', string) # pure unicode minus
         # string = re.sub('-', '${-}$', string) # latex version
