@@ -943,17 +943,17 @@ class Figure(mfigure.Figure):
 
     def _auto_smart_tight_layout(self, renderer=None):
         # If we haven't already, compress edges
-        # _repeat_tight = bool(self._suptitle.get_text()) # optionally also try this
         if not self._smart_tight_init or not self._smart_tight:
             return
         # Cartopy sucks at labels! Bounding box identified will be wrong.
         # 1) If you used set_bounds to zoom into part of a cartopy projection,
         # this can erroneously identify invisible edges of map as being part of boundary
         # 2) If you have gridliner text labels, matplotlib won't detect them.
-        if not any(isinstance(ax, CartopyAxes) for ax in self.axes):
-            if self._smart_tight_init:
-                print('Adjusting gridspec.')
-            self.smart_tight_layout(renderer)
+        if any(isinstance(ax, CartopyAxes) for ax in self.axes):
+            return
+        # Adjust if none of not done already
+        print('Adjusting gridspec.')
+        self.smart_tight_layout(renderer)
 
     # @timer
     def save(self, filename, silent=False, auto_adjust=True, pad=0.1, **kwargs):
@@ -970,6 +970,7 @@ class Figure(mfigure.Figure):
             kwargs['facecolor'] = kwargs.pop('color') # the color
             kwargs['transparent'] = True
         # Finally, save
+        self._suptitle_setup(offset=True) # just applies the spacing
         self._auto_smart_tight_layout()
         if not silent:
             print(f'Saving to "{filename}".')
@@ -2719,8 +2720,13 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
     return legends
 
 def colorbar_factory(ax, mappable,
-        grid=None, locator=None, tickminor=None, minorlocator=None, ticklabels=None, formatter=None, label=None,
-        cgrid=False, clocator=None, ctickminor=False, cminorlocator=None, cticklabels=None, cformatter=None, clabel=None,
+        ctickminor=False, tickminor=None,
+        cgrid=False, grid=None,
+        clocator=None, locator=None, cminorlocator=None, minorlocator=None,
+        clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
+        cticklabels=None, ticklabels=None,
+        cformatter=None, formatter=None,
+        clabel=None, label=None,
         errfix=True, extend='neither', extendlength=0.2, # in inches
         values=None, orientation='horizontal', ticklocation='outer', **kwargs): #, settings=None):
     """
@@ -2749,6 +2755,8 @@ def colorbar_factory(ax, mappable,
     cminorlocator = _fill(minorlocator, cminorlocator)
     cformatter    = _fill(ticklabels, _fill(cticklabels, _fill(formatter, cformatter)))
     clabel        = _fill(label, clabel)
+    clocator_kw = _fill(locator_kw, clocator_kw)
+    cminorlocator_kw = _fill(minorlocator_kw, cminorlocator_kw)
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
@@ -2789,7 +2797,7 @@ def colorbar_factory(ax, mappable,
                 levels=levels, cmap=cmap,
                 extend='neither', norm=colortools.BinNorm(values)) # workaround
         if clocator is None:
-            nstep = len(values)//20
+            nstep = 1 + len(values)//20
             clocator = values[::nstep]
     if clocator is None:
         # By default, label the discretization levels (if there aren't too many)
@@ -2805,14 +2813,14 @@ def colorbar_factory(ax, mappable,
     fixed = None # so linter doesn't detect error in if i==1 block
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
-    for i,locator in enumerate((clocator,cminorlocator)):
+    for i,(locator,locator_kw) in enumerate(zip((clocator,cminorlocator),(clocator_kw,cminorlocator_kw))):
         # Get the locator values
         # Need to use tick_values instead of accessing 'locs' attribute because
         # many locators don't have these attributes; require norm.vmin/vmax as input
         if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
             locators.append(axistools.locator('null'))
             continue
-        values = np.array(axistools.locator(locator).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        values = np.array(axistools.locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendlength.
         # We need to figure out the numbers that will eventually be rendered to
