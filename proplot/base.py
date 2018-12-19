@@ -2681,11 +2681,13 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
     # Means we also have to overhaul some settings
     else:
         legends = []
+        overridden = []
         for override in ['loc','ncol','bbox_to_anchor','borderpad',
                          'borderaxespad','frameon','framealpha']:
-            overridden = lsettings.pop(override, None)
-            if overridden is not None:
-                print(f'Warning: Overriding legend property "{overridden}".')
+            prop = lsettings.pop(override, None)
+            if prop is not None:
+                overridden.append(override)
+        print(f'Warning: Overriding legend properties {", ".join(prop for prop in overridden)}.')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = lsettings.get('fontsize', None)     or rc['legend.fontsize']
