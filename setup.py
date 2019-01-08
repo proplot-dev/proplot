@@ -5,13 +5,14 @@ from setuptools import setup
 # find . \( -name '*.ipynb' -o -name '*.py' -o -name '*.md' -o -name '*.txt' -o -name '.vimsession' \) -exec gsed -i 's/panplot/proplot/g' {} +
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
-    name         = 'ProPlot',
+    name         = 'proplot',
     url          = 'https://github.com/lukelbd/proplot',
     author       = 'Luke Davis',
     author_email = 'lukelbd@gmail.com',
     # Package stuff
     # Also include package data
-    packages     = ['proplot'],
+    # packages     = ['proplot'],
+    packages     = [], # reserve name
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
     # scripts = ['scripts/proplot_fonts'],

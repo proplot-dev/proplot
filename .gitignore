@@ -4,6 +4,11 @@
 .*.sw[a-z]
 lottery*
 
+# PyPi stuff
+build
+dist
+*.egg-info
+
 # Private files
 *.pdf
 *.log
