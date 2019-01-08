@@ -1146,12 +1146,11 @@ class BinNorm(mcolors.BoundaryNorm):
 
         # Add builtin properties
         # NOTE: Are vmin/vmax even used?
-        # self.vmin = x[0]
-        # self.vmax = x[-1]
+        self.boundaries = levels
         self.vmin = levels.min()
         self.vmax = levels.max()
         self.clip = clip
-        # self.N = x_m.size
+        self.N = levels.size
 
     def __call__(self, xq, clip=None):
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
