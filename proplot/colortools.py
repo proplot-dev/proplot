@@ -278,9 +278,9 @@ class _CmapDict(dict):
         return super().__setitem__(key.lower(), item)
 
     def __contains__(self, item):
-        # Must be overriden
-        # print(f'Contains {item}?')
+        # Must be overriden?
         try:
+            self.__getitem__(item)
             return True
         except KeyError:
             return False
