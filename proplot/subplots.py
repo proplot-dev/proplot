@@ -84,7 +84,7 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         share=None, # bulk apply to x/y axes
         spanx=1,  spany=1,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         sharex=3, sharey=3, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
-        innerpanels={}, innercolorbars={}, innerpanels_kw={},
+        innerpanels={}, innercolorbars={}, innerpanels_kw={}, innercolorbars_kw={},
         basemap=False, proj={}, projection={}, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
     """
@@ -234,6 +234,8 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
         raise ValueError('Must pass string of panel sides or dictionary mapping axes numbers to sides.')
     innerpanels = axes_dict(innerpanels or '', False)
     innercolorbars = axes_dict(innercolorbars or '', False)
+    if innercolorbars_kw:
+        innerpanels_kw = innercolorbars_kw
     innerpanels_kw = axes_dict(innerpanels_kw, True)
     for kw in innerpanels_kw.values():
         kw['whichpanels'] = ''
