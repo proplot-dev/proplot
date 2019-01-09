@@ -12,7 +12,7 @@ setup(
     # Package stuff
     # Also include package data
     # packages     = ['proplot'],
-    packages     = [], # reserve name
+    packages     = ['proplot'], # reserve name
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
     # Command-line scripts
     # scripts = ['scripts/proplot_fonts'],
