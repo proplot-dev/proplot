@@ -204,7 +204,6 @@ _mirrors = [
     (name, ''.join(reversed([name[slice(*idxs[i:i+2])] for i in range(len(idxs)-1)])),)
     for name,idxs in _cmap_parts.items()
     ]
-print('Mirrors:', _mirrors)
 
 #------------------------------------------------------------------------------#
 # Special class for colormap names
@@ -289,7 +288,7 @@ class _CmapDict(dict):
     def get(self, key, *args):
         # Get item
         if len(args)>1:
-            raise ValueError(f'_CmapDict.get() accepts only 1-2 args, got {len(args)+1}.')
+            raise ValueError(f'_CmapDict.get() accepts only 1-2 arguments (got {len(args)+1}).')
         try:
             return self.__getitem__(key)
         except KeyError as key_error:
@@ -301,7 +300,7 @@ class _CmapDict(dict):
     def pop(self, key, *args):
         # Pop item
         if len(args)>1:
-            raise ValueError(f'_CmapDict.pop() accepts only 1-2 args, got {len(args)+1}.')
+            raise ValueError(f'_CmapDict.pop() accepts only 1-2 arguments (got {len(args)+1}).')
         try:
             key = self._sanitize_key(key)
             value = self._getitem(key) # could raise error
