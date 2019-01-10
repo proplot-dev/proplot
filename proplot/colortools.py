@@ -211,8 +211,6 @@ _mirrors = [
 class _CmapDict(dict):
     """
     Flexible colormap identification.
-    I think self.get just calls __getitem__ in a try
-    catch statement? Maybe. Try it out.
     """
     def __init__(self, kwargs):
         # Initialize with lowercase only
