@@ -92,8 +92,8 @@ rcGlobals_children = {
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
     'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'axes.hatchlw',
-                   # 'grid.linewidth', # should not be coupled, looks ugly
                    'map.hatchlw', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
+                   # 'grid.linewidth', # should not be coupled, looks ugly
     'gridalpha':  ['grid.alpha',     'gridminor.alpha'],
     'gridcolor':  ['grid.color',     'gridminor.color'],
     'gridstyle':  ['grid.linestyle', 'gridminor.linestyle'],
@@ -226,6 +226,7 @@ rcDefaults_sp = {
     'gridspec.nolab':        0.15, # only ticks
     }
 rcParams_sp = rcDefaults_sp.copy()
+n_sp = len(rcParams_sp) # instead of fancy rcGlobals-style key verification, just check if dictionary has grown when user sets an item -- in this case, property was invalid, so we throw error
 # Generate list of valid names, and names with subcategories
 rc_names = {
     *rcParams.keys(),
@@ -235,11 +236,6 @@ rc_categories = {
     *(re.sub('\.[^.]*$', '', name) for name in rc_names),
     *(re.sub('\..*$', '', name) for name in rc_names)
     }
-def _get_alias(key):
-    alias = {alias for alias,names in rcGlobals_children.items() if key in names}
-    if len(alias)!=0:
-        key = alias.pop() # use
-    return key
 
 #-------------------------------------------------------------------------------
 # Contextual settings management
@@ -283,7 +279,6 @@ class rc_configurator(object):
         self._cache_orig = {}
         self._cache_added = {}
         self._getitem_mode = 0 # 0 means look for everything, including cache
-        self._setitem_mode = 0 # 0 means set underlying props
 
     def __enter__(self):
         # Apply new settings (will get added to _rcCache)
@@ -314,6 +309,7 @@ class rc_configurator(object):
             kws = (self._rcCache,)
         else:
             raise ValueError(f'Invalid _getitem_mode {mode}.')
+        # print(mode, self._rcCache)
         # If it is available, return the values corresponding to names in
         # user dictionary; e.g. {'color':'axes.facecolor'} becomes {'color':'w'}
         # NOTE: Got weird bugs here. Dunno why. Use self.fill method instead.
@@ -344,11 +340,6 @@ class rc_configurator(object):
 
     # @counter
     def __setitem__(self, key, value):
-        # Keep certain properties *coupled*; always set the global one
-        # NOTE: We use the 'setitem mode' of 1 when *entering the with..as
-        # context* -- the point being that *the with..ax construct is
-        # only used when axes have already been drawn*.
-        key = _get_alias(key)
         # First the special cycler
         # NOTE: No matter the 'setitem mode' this will always set the axes
         # prop_cycle rc settings
@@ -364,17 +355,18 @@ class rc_configurator(object):
             self._rcCache.update(rc_sp)
             self._rcCache[key] = value # also update cached global property itself
             self._rcGlobals[key] = value
+            rcParams.update(rc)
+            rcParams_sp.update(rc_sp)
         # Directly modify single parameter
         # NOTE: If 'setitem mode' is 0, this means user has directly set
         # something (we are not in a with..as context in format()), so we
         # want to directly modify rcParams.
         elif key in rc_names:
             self._rcCache[key] = value
-            if self._setitem_mode==0:
-                try:
-                    rcParams[key] = value
-                except KeyError:
-                    pass
+            try:
+                rcParams[key] = value
+            except KeyError:
+                pass
         else:
             raise ValueError(f'Invalid key "{key}".')
         self._init = False # no longer in initial state
@@ -459,7 +451,7 @@ class rc_configurator(object):
                     ratio = value
                 kw_sp['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
-            for name in rcGlobals_children.get(key,[]):
+            for name in rcGlobals_children.get(key, []):
                 if name in rcParams_sp:
                     kw_sp[name] = value
                 else:

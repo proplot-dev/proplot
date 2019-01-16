@@ -1049,7 +1049,9 @@ class BaseAxes(maxes.Axes):
         self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
                 va='center', ha='right', transform=self.transAxes)
 
-        # Enforce custom rc settings! And only look for rcSpecial settings.
+        # Enforce custom rc settings! And only look for rcSpecial settings,
+        # because the 'global' settings will be applied on initialization/do
+        # not have to be explicitly re-applied.
         with rc._context(mode=1):
             self._rcupdate()
 
@@ -1616,8 +1618,8 @@ class XYAxes(BaseAxes):
 
             # Tick labels
             # NOTE: Assumed
+            kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize': name + 'tick.labelsize'})
             for t in axis.get_ticklabels():
-                kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':name+'tick.labelsize'})
                 t.update({**kw, **axis_color})
 
             # Axis label
@@ -2681,11 +2683,13 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
     # Means we also have to overhaul some settings
     else:
         legends = []
+        overridden = []
         for override in ['loc','ncol','bbox_to_anchor','borderpad',
                          'borderaxespad','frameon','framealpha']:
-            overridden = lsettings.pop(override, None)
-            if overridden is not None:
-                print(f'Warning: Overriding legend property "{override}".')
+            prop = lsettings.pop(override, None)
+            if prop is not None:
+                overridden.append(override)
+        print(f'Warning: Overriding legend properties {", ".join(prop for prop in overridden)}.')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = lsettings.get('fontsize', None)     or rc['legend.fontsize']

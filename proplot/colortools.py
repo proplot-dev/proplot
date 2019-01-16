@@ -59,6 +59,10 @@ from . import colormath
 from . import utils
 from .utils import _fill, ic
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
+
+# Default number of colors
+_N_hires = 256
+
 # Define some new palettes
 # Note the default listed colormaps
 _cycles_cmap = ['Set1', 'Set2', 'Set3', 'Set4', 'Set5']
@@ -85,6 +89,7 @@ _cycles_list = {
     'intersection': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
     'field':        ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
     }
+
 # Color stuff
 # Keep major color names, and combinations of those names
 _distinct_colors_space = 'hsl' # register colors distinct in this space?
@@ -108,6 +113,7 @@ _space_aliases = {
     'hcl':   'hcl',
     'lch':   'hcl',
     }
+
 # Names of builtin colormaps
 _cmap_categories = { # initialize as empty lists
     # We keep these ones
@@ -116,7 +122,6 @@ _cmap_categories = { # initialize as empty lists
     'ProPlot Sequential':
         [ 'Glacial',
         'Bog', 'Verdant',
-        # 'Wood',
         'Lake', 'Turquoise', 'Forest',
         'Blood',
         'Sunrise', 'Sunset', 'Fire',
@@ -131,10 +136,6 @@ _cmap_categories = { # initialize as empty lists
         'Amp', 'Solar', 'Phase', 'Phase_shifted'],
     'cmOcean Diverging':
         ['Balance', 'Curl', 'Delta'],
-    # 'OpenColors':
-    #     ['OpenGray', 'OpenRed', 'OpenPink', 'OpenGrape', 'OpenViolet', 'OpenIndigo',
-    #      'OpenBlue', 'OpenCyan', 'OpenTeal', 'OpenGreen', 'OpenLime',
-    #      'OpenYellow', 'OpenOrange'],
     'ColorBrewer2.0 Sequential':
         # ['Greys',
         ['Grays',
@@ -146,7 +147,8 @@ _cmap_categories = { # initialize as empty lists
     'Other':
         ['ColdHot', 'bwr', 'cubehelix'],
         # ['cubehelix', 'rainbow', 'bwr'],
-    # These ones will be deleted
+    # Other
+    # WARNING: These ones will be deleted
     'Alt Sequential':
         sorted(['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
         'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
@@ -162,8 +164,158 @@ _cmap_categories = { # initialize as empty lists
         'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 _cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
-# Default number of colors
-_N_hires = 256
+
+# Slice indices that split up segments of names
+# WARNING: Must add to this list manually! Not worth trying to generalize.
+# List of string cmap names, and the indices where they can be broken into parts
+_cmap_parts = {
+    'coldhot':      (None, 4, None),
+    'bwr':          (None, 1, 2, None),
+    'icefire':      (None, 3, None),
+    'negpos':       (None, 3, None),
+    'bluered':      (None, 4, None),
+    'coolwarm':     (None, 4, None),
+    'drywet':       (None, 3, None),
+    'desertjungle': (None, 6, None),
+    'landsea':      (None, 4, None),
+    'ylorbr':       (None, 2, 4, None),
+    'ylorrd':       (None, 2, 4, None),
+    'orrd':         (None, 2, None),
+    'purd':         (None, 2, None),
+    'rdpu':         (None, 2, None),
+    'bupu':         (None, 2, None),
+    'gnbu':         (None, 2, None),
+    'pubu':         (None, 2, None),
+    'ylgnbu':       (None, 2, 4, None),
+    'pubugn':       (None, 2, 4, None),
+    'bugn':         (None, 2, None),
+    'ylgn':         (None, 2, None),
+    'piyg':         (None, 2, None),
+    'prgn':         (None, 1, 2, None), # purple red green
+    'brbg':         (None, 2, 3, None), # brown blue green
+    'puor':         (None, 2, None),
+    'rdgy':         (None, 2, None),
+    'rdbu':         (None, 2, None),
+    'rdylbu':       (None, 2, 4, None),
+    'rdylgn':       (None, 2, 4, None),
+    }
+# Tuple pairs of mirror image cmap names
+_mirrors = [
+    (name, ''.join(reversed([name[slice(*idxs[i:i+2])] for i in range(len(idxs)-1)])),)
+    for name,idxs in _cmap_parts.items()
+    ]
+
+#------------------------------------------------------------------------------#
+# Special class for colormap names
+#------------------------------------------------------------------------------#
+class _CmapDict(dict):
+    """
+    Flexible colormap identification.
+    """
+    # Initialize -- converts keys to lower case and
+    # ignores the 'reverse' maps
+    def __init__(self, kwargs):
+        kwargs_filtered = {}
+        for key,value in kwargs.items():
+            if not isinstance(key, str):
+                raise KeyError(f'Invalid key {key}. Must be string.')
+            if key[-2:] != '_r': # don't need to store these!
+                kwargs_filtered[key.lower()] = value
+        super().__init__(kwargs_filtered)
+
+    # Helper functions
+    def _sanitize_key(self, key):
+        # Try retrieving
+        if not isinstance(key, str):
+            raise ValueError(f'Invalid key {key}. Must be string.')
+        key = key.lower()
+        reverse = False
+        if key[-2:] == '_r':
+            key = key[:-2]
+            reverse = True
+        if not super().__contains__(key):
+            # Attempt to get 'mirror' key, maybe that's the one
+            # stored in colormap dict
+            key_mirror = key
+            for mirror in _mirrors:
+                try:
+                    idx = mirror.index(key)
+                    key_mirror = mirror[1 - idx]
+                except ValueError:
+                    continue
+            if super().__contains__(key_mirror):
+                reverse = (not reverse)
+                key = key_mirror
+        # Return 'sanitized' key. Not necessarily in dictionary! Error
+        # will be raised further down the line if so.
+        if reverse:
+            key = key + '_r'
+        return key
+
+    def _getitem(self, key):
+        # Call this to avoid sanitization
+        reverse = False
+        if key[-2:] == '_r':
+            key = key[:-2]
+            reverse = True
+        value = super().__getitem__(key) # may raise keyerror
+        if reverse:
+            try:
+                value = value.reversed()
+            except AttributeError:
+                raise KeyError(f'Dictionary value in {key} must have reversed() method.')
+        return value
+
+    # Indexing and 'in' behavior
+    def __getitem__(self, key):
+        # Assume lowercase
+        key = self._sanitize_key(key)
+        return self._getitem(key)
+
+    def __setitem__(self, key, item):
+        # Set item
+        if not isinstance(key, str):
+            raise KeyError(f'Invalid key {key}. Must be string.')
+        return super().__setitem__(key.lower(), item)
+
+    def __contains__(self, item):
+        # Must be overriden?
+        try:
+            self.__getitem__(item)
+            return True
+        except KeyError:
+            return False
+
+    # Other methods
+    def get(self, key, *args):
+        # Get item
+        if len(args)>1:
+            raise ValueError(f'_CmapDict.get() accepts only 1-2 arguments (got {len(args)+1}).')
+        try:
+            return self.__getitem__(key)
+        except KeyError as key_error:
+            if args:
+                return args[0]
+            else:
+                raise key_error
+
+    def pop(self, key, *args):
+        # Pop item
+        if len(args)>1:
+            raise ValueError(f'_CmapDict.pop() accepts only 1-2 arguments (got {len(args)+1}).')
+        try:
+            key = self._sanitize_key(key)
+            value = self._getitem(key) # could raise error
+            del self[key]
+        except KeyError as key_error:
+            if args:
+                return args[0]
+            else:
+                raise key_error
+
+# Override entire colormap dictionary
+if not isinstance(mcm.cmap_d, _CmapDict):
+    mcm.cmap_d = _CmapDict(mcm.cmap_d)
 
 #------------------------------------------------------------------------------#
 # More generalized utility for retrieving colors
@@ -462,10 +614,10 @@ def colormap(*args, extend='both',
             pass # no warning necessary
             # print(f'Warning: Overwriting existing colormap "{name}".')
         mcm.cmap_d[name] = cmap
-        mcm.cmap_d[name+'_r'] = cmap.reversed()
+        mcm.cmap_d[name + '_r'] = cmap.reversed()
         if re.search('[A-Z]',name):
             mcm.cmap_d[name.lower()] = cmap
-            mcm.cmap_d[name.lower()+'_r'] = cmap.reversed()
+            mcm.cmap_d[name.lower() + '_r'] = cmap.reversed()
         # print(f'Registered name {name}.') # not necessary
 
     # Optionally save colormap to disk
@@ -1146,12 +1298,11 @@ class BinNorm(mcolors.BoundaryNorm):
 
         # Add builtin properties
         # NOTE: Are vmin/vmax even used?
-        # self.vmin = x[0]
-        # self.vmax = x[-1]
+        self.boundaries = levels
         self.vmin = levels.min()
         self.vmax = levels.max()
         self.clip = clip
-        # self.N = x_m.size
+        self.N = levels.size
 
     def __call__(self, xq, clip=None):
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
@@ -1361,15 +1512,13 @@ def register_cmaps():
     Register colormaps and cycles in the cmaps directory.
     Note all of those methods simply modify the dictionary mcm.cmap_d.
     """
-    # Simple test to see if this has already been run
-    if 'Greys' not in mcm.cmap_d:
-        return
     # First read from file
     for file in glob(f'{_data}/cmaps/*'):
         # Read table of RGB values
         if not re.search('.(rgb|hex|npy)$', file):
             continue
         name = os.path.basename(file)[:-4]
+        cmaps.add(name)
         # Comment this out to overwrite existing ones
         # if name in mcm.cmap_d: # don't want to re-register every time
         #     continue
@@ -1397,16 +1546,12 @@ def register_cmaps():
             else:
                 cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=_N_hires)
         # Register as ListedColormap or LinearSegmentedColormap
-        if isinstance(cmap, mcolors.Colormap): # i.e. we did not load segmentdata directly
-            cmap_r = cmap.reversed()
-        else:
+        # TODO: Check the cmaps.add thing works
+        if not isinstance(cmap, mcolors.Colormap): # i.e. we did not load segmentdata directly
             N = len(cmap) # simple as that; number of rows of colors
-            cmap   = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
-            cmap_r = cmap.reversed() # default name is name+'_r'
-            cmaps.add(name)
+            cmap = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
         # Register maps (this is just what register_cmap does)
-        mcm.cmap_d[cmap.name]   = cmap
-        mcm.cmap_d[cmap_r.name] = cmap_r
+        mcm.cmap_d[cmap.name] = cmap
 
     # Fix the builtin rainbow colormaps by switching from Listed to
     # LinearSegmented -- don't know why matplotlib shifts with these as
@@ -1416,27 +1561,8 @@ def register_cmaps():
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
 
-    # Swap the order of divering colorbrewer maps, direction of color changes
-    # is opposite from intuition (red to blue, pink to green, etc.)
-    names = []
-    if 'RdBu' in mcm.cmap_d: # only do this once! we modified the content of ColorBrewer Diverging
-        for name in _cmap_categories['ColorBrewer2.0 Diverging']:
-            # Reverse map and name
-            # e.g. RdBu --> BuRd, RdYlBu --> BuYlRd
-            # Note default name PuOr is literally backwards...
-            cmap   = mcm.cmap_d.get(name, None)
-            cmap_r = mcm.cmap_d.get(name + '_r', None)
-            if cmap:
-                if name not in ('Spectral','PuOr','BrBG'):
-                    del mcm.cmap_d[name]
-                    del mcm.cmap_d[name + '_r']
-                    name = re.sub('^(..)(..)?(..)$', r'\3\2\1', name)
-                    mcm.cmap_d[name] = cmap_r
-                    mcm.cmap_d[name + '_r'] = cmap
-            names += [name]
-    _cmap_categories['ColorBrewer2.0 Diverging'] = names
-
     # Add shifted versions of cyclic colormaps, and prevent same colors on ends
+    # TODO: Add automatic shifting of colormap by N degrees in the _CmapDict
     for name in ['twilight', 'Phase']:
         cmap = mcm.cmap_d.get(name, None)
         if cmap and isinstance(cmap, mcolors.LinearSegmentedColormap):
@@ -1461,35 +1587,15 @@ def register_cmaps():
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap(name, data, cmap.N)
             mcm.cmap_d[name + '_shifted'] = mcolors.LinearSegmentedColormap(name + '_shifted', data_shift, cmap.N)
 
-    # Convert names
-    mcm.cmap_d['Grays']   = mcm.cmap_d.pop('Greys')
-    mcm.cmap_d['Grays_r'] = mcm.cmap_d.pop('Greys_r')
-
-    # Add OpenColor colormaps
-    # Actually nah, not enough gradation for these
-    # for color in ['gray', 'red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan',
-    #               'teal', 'green', 'lime', 'yellow', 'orange']:
-    #     color_list = [to_rgb(color + str(i)) for i in range(10)]
-    #     name = 'Open' + color.title()
-    #     mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, color_list)
-
-    # Delete ugly ones
+    # Delete ugly cmaps (strong-arm user into using the better ones)
+    # TODO: Better way to generalize this language stuff? Not worth it maybe.
+    greys = mcm.cmap_d.get('Greys', None)
+    if greys is not None:
+        mcm.cmap_d['Grays'] = greys
+    # TODO: Add this to cmap dict __init__?
     for category in _cmap_categories_delete:
         for name in _cmap_categories:
             mcm.cmap_d.pop(name, None)
-
-    # Register names so that they can be invoked ***without capitalization***
-    # This always bugged me! Note cannot change dictionary during iteration.
-    ignorecase = {}
-    ignore = [category for categories in _cmap_categories_delete for category in categories]
-    for name,cmap in mcm.cmap_d.items():
-        if name in ignore:
-            mcm.cmap_d.pop(name, None)
-        elif re.search('[A-Z]',name):
-            ignorecase[name.lower()] = cmap
-    mcm.cmap_d.update(ignorecase)
-    for key in ignorecase.keys():
-        _cmaps_lower.add(key)
 
 def register_cycles():
     """
@@ -1503,12 +1609,8 @@ def register_cycles():
         cycles.add(name)
 
     # Remove some redundant ones
-    mcm.cmap_d.pop('tab10',   None)
-    mcm.cmap_d.pop('tab20',   None)
-    mcm.cmap_d.pop('Paired',  None)
-    mcm.cmap_d.pop('Pastel1', None)
-    mcm.cmap_d.pop('Pastel2', None)
-    mcm.cmap_d.pop('Dark2',   None)
+    for key in ('tab10', 'tab20', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
+        mcm.cmap_d.pop(key,   None)
     if 'Accent' in mcm.cmap_d:
         mcm.cmap_d.pop('Set1', None)
         mcm.cmap_d['Set1'] = mcm.cmap_d.pop('Accent')
@@ -1527,7 +1629,6 @@ cmaps = set() # track downloaded colormaps; user can then check this list
 cycles = set() # same, but track cycles
 colors_filtered = {} # limit to 'sufficiently unique' color names
 colors_unfiltered = {} # downloaded colors categorized by filename
-_cmaps_lower = set() # lower-case keys added to dictionary, that we will ignore
 register_colors() # must be done first, so we can register OpenColor cmaps
 register_cmaps()
 register_cycles()
