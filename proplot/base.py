@@ -1049,7 +1049,9 @@ class BaseAxes(maxes.Axes):
         self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
                 va='center', ha='right', transform=self.transAxes)
 
-        # Enforce custom rc settings! And only look for rcSpecial settings.
+        # Enforce custom rc settings! And only look for rcSpecial settings,
+        # because the 'global' settings will be applied on initialization/do
+        # not have to be explicitly re-applied.
         with rc._context(mode=1):
             self._rcupdate()
 
@@ -1616,8 +1618,8 @@ class XYAxes(BaseAxes):
 
             # Tick labels
             # NOTE: Assumed
+            kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize': name + 'tick.labelsize'})
             for t in axis.get_ticklabels():
-                kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':name+'tick.labelsize'})
                 t.update({**kw, **axis_color})
 
             # Axis label

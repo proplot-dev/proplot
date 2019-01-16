@@ -212,16 +212,18 @@ class _CmapDict(dict):
     """
     Flexible colormap identification.
     """
+    # Initialize -- converts keys to lower case and
+    # ignores the 'reverse' maps
     def __init__(self, kwargs):
-        # Initialize with lowercase only
-        kwargs_sanitized = {}
+        kwargs_filtered = {}
         for key,value in kwargs.items():
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
             if key[-2:] != '_r': # don't need to store these!
-                kwargs_sanitized[key.lower()] = value
-        super().__init__(kwargs_sanitized)
+                kwargs_filtered[key.lower()] = value
+        super().__init__(kwargs_filtered)
 
+    # Helper functions
     def _sanitize_key(self, key):
         # Try retrieving
         if not isinstance(key, str):
@@ -264,6 +266,7 @@ class _CmapDict(dict):
                 raise KeyError(f'Dictionary value in {key} must have reversed() method.')
         return value
 
+    # Indexing and 'in' behavior
     def __getitem__(self, key):
         # Assume lowercase
         key = self._sanitize_key(key)
@@ -283,6 +286,7 @@ class _CmapDict(dict):
         except KeyError:
             return False
 
+    # Other methods
     def get(self, key, *args):
         # Get item
         if len(args)>1:
