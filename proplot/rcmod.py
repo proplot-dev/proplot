@@ -31,6 +31,11 @@ from . import colortools
 from . import utils
 from .utils import timer, counter, ic
 from matplotlib import rcParams, style
+# Get default font
+# WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
+# failed to render/printed nonsense, but Helvetica fine
+import sys
+_default_font = 'Helvetica' if sys.platform=='linux' else 'Helvetica Neue' # says 'darwin' on mac
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 # Default settings
@@ -57,9 +62,7 @@ rcGlobals = {
     'tickpad':    2.0,
     'tickdir' :   'out',
     # Convenient aliases (i.e. they do not bulk apply to a bunch of settings, just shorter names)
-    # 'fontname':       'DejaVu Sans',
-    # 'fontname':       'Verdana', # the prettiest IMO
-    'fontname':       'Helvetica Neue', # best one; and less crammed than Helvetica
+    'fontname':       _default_font, # best one; and less crammed than Helvetica
     'margin':         0.0,
     'xmargin':        0.0, # found I wanted to change these *a lot*
     'ymargin':        0.0, # found I wanted to change these *a lot*

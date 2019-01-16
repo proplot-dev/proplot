@@ -97,5 +97,9 @@ def install_fonts():
             os.remove(file)
             print(f'Deleted font cache {file}.')
 
+    # Rebuild
+    mfonts._rebuild()
+    print('Rebuilt font library.')
+
     # Message
     print('Fonts have been installed and font cache has been emptied. Please restart your iPython session.')

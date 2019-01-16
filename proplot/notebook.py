@@ -96,7 +96,8 @@ def nbsetup(directory=None, backend='inline'):
 
     # Retina probably more space efficient (high-res bitmap), but svg is prettiest
     # and is only one preserving vector graphics
-    ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
+    # ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
+    ipython.magic("config InlineBackend.figure_formats = ['retina']")
 
     # Control all rc settings directly with 'rc' object, *no* notebook-
     # specific overrides.
