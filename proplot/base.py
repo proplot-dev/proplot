@@ -1594,9 +1594,8 @@ class XYAxes(BaseAxes):
         # Axis settings
         for name,axis in zip('xy', (self.xaxis, self.yaxis)):
             # Optionally apply an x/y axis specific color
-            axis_side = axis.get_label_position()
-            axis_color = rc[name + 'color']
-            axis_color = {'color': axis_color} if axis_color else {}
+            label_side = axis.get_label_position()
+            axis_color = rc[name + 'color'] # the special 'xcolor' and 'ycolor' property, for changing color on one spine
             sides = ('bottom','top') if name=='x' else ('left','right')
 
             # Update the rcParams according to user input.
@@ -1604,27 +1603,46 @@ class XYAxes(BaseAxes):
             # tick labels and axis label on just one side
             for side in sides:
                 # Simply updates the spines and whatnot
-                override_color = axis_color if side==axis_side else {}
-                kw = rc.fill({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
-                self.spines[side].update({**kw, **axis_color})
+                override_color = None
+                if side==label_side:
+                    override_color = axis_color
+                kw = rc.fill({
+                    'lw':    'axes.linewidth',
+                    'color': 'axes.edgecolor'
+                    })
+                if override_color:
+                    kw['color'] = override_color
+                self.spines[side].update(kw)
 
-                # Tick marks
-                # NOTE: We decide that tick location should be controlled only
-                # by format(), so don't override that here.
-                kw_both = rc.fill({'color': name + 'tick.color'})
-                for which in ('major','minor'):
-                    kw = rc[name + 'tick.' + which]
-                    axis.set_tick_params(which=which, **kw, **{**kw_both, **axis_color})
+            # Tick marks
+            # NOTE: We decide that tick location should be controlled only
+            # by format(), so don't override that here.
+            kw = rc.fill({
+                'color': name + 'tick.color',
+                'labelcolor': 'axes.edgecolor',
+                'labelsize':  'axes.labelsize'})
+            if override_color:
+                kw['color'] = override_color
+            axis.set_tick_params(which='both', **kw)
+            for which in ('major','minor'):
+                axis.set_tick_params(which=which, **rc[name + 'tick.' + which])
 
             # Tick labels
-            # NOTE: Assumed
-            kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize': name + 'tick.labelsize'})
+            # TODO: Figure out how to change fontname for all ticks, like in
+            # set_tick_params. But fontname is global.
+            kw = rc.fill({'fontname': 'fontname'})
             for t in axis.get_ticklabels():
-                t.update({**kw, **axis_color})
+                t.update(kw)
 
             # Axis label
-            kw = rc.fill({'color':'axes.edgecolor', 'fontname':'fontname', 'fontsize':'axes.labelsize', 'weight':'axes.labelweight'})
-            axis.label.update({**kw, **axis_color})
+            kw = rc.fill({
+                'color':    'axes.edgecolor',
+                'fontname': 'fontname',
+                'fontsize': 'axes.labelsize',
+                'weight':   'axes.labelweight'})
+            if override_color:
+                kw['color'] = override_color
+            axis.label.update(kw)
 
             # Manually update gridlines
             for grid,ticks in zip(['grid','gridminor'],[axis.get_major_ticks(), axis.get_minor_ticks()]):
