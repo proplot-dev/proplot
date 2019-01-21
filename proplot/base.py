@@ -1820,7 +1820,7 @@ class XYAxes(BaseAxes):
             time = isinstance(axis.converter, mdates.DateConverter)
             if ticklocator is not None:
                 axis.set_major_locator(axistools.locator(ticklocator, time=time, **locator_kw))
-            if tickformatter is not None:
+            if tickformatter is not None or tickrange is not None:
                 axis.set_major_formatter(axistools.formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(axistools.locator('null'))

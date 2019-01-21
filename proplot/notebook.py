@@ -81,12 +81,9 @@ def nbsetup(directory=None, backend='inline'):
         ipython.magic("autoreload 2") # turn on expensive autoreloading
 
     # Autosaving
-    # with redirect_stdout(_null):
-    # with redirect_stdout(_null):
+    # Capture the annoying message + 2 line breaks
     with io.capture_output() as captured:
         ipython.magic(f"autosave {autosave:d}") # autosave every minute
-    # sys.stdout.write("\033[F") #back to previous line
-    # sys.stdout.write("\033[K") #clear line
 
     # Initialize with default 'inline' settings
     ipython.magic("matplotlib " + backend) # change print_figure_kwargs to see edges
@@ -103,7 +100,7 @@ def nbsetup(directory=None, backend='inline'):
     ipython.magic("config InlineBackend.rc = {}")
 
     # For some reason this is necessary, even with rc['savefig.bbox'] = 'standard'
-    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") #bbox_inches=\'tight\', pad_inches=0.1)')
+    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
     # Print difference
     # rcfinal = rcParams.copy()
