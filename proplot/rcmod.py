@@ -309,7 +309,6 @@ class rc_configurator(object):
             kws = (self._rcCache,)
         else:
             raise ValueError(f'Invalid _getitem_mode {mode}.')
-        # print(mode, self._rcCache)
         # If it is available, return the values corresponding to names in
         # user dictionary; e.g. {'color':'axes.facecolor'} becomes {'color':'w'}
         # NOTE: Got weird bugs here. Dunno why. Use self.fill method instead.

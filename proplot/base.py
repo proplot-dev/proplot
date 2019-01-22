@@ -192,6 +192,8 @@ def _parse_args(args, rowmajor):
         Zs = [Z.T for Z in Zs]
     if len(args)>2:
         x, y = args[:2]
+        if rowmajor:
+            x, y = x.T, y.T # in case they are 2-dimensional
     else:
         x = np.arange(Zs[0].shape[0])
         y = np.arange(Zs[0].shape[1])
@@ -220,6 +222,7 @@ def _check_centers(func):
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+        x, y = x.T, y.T # in case they are 2-dimensional
         Zs = [Z.T for Z in Zs]
         result = func(x, y, *Zs, **kwargs)
         return result
@@ -243,6 +246,7 @@ def _check_edges(func):
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+        x, y = x.T, y.T
         Zs = [Z.T for Z in Zs]
         result = func(x, y, *Zs, **kwargs)
         return result
@@ -300,16 +304,20 @@ def _cmap_features(self, func):
         if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
             values_as_levels = False # get levels later down the line
         if utils.isvector(values) and values_as_levels:
-            norm_tmp = colortools.norm(norm, **norm_kw)
-            if norm_tmp: # is not None
-                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
-            else:
+            # Special case of LinearSegmentedNorm, just get edges
+            if isinstance(norm, colortools.LinearSegmentedNorm) or \
+                (isinstance(norm, str) and 'segment' in norm):
                 levels = utils.edges(values)
+            # Else see what pops out
+            else:
+                norm_tmp = colortools.norm(norm, **norm_kw)
+                if norm_tmp: # is not None
+                    levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+                else:
+                    levels = utils.edges(values)
         levels = _fill(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
 
         # Call function with custom kwargs
-        # NOTE: For contouring, colors discretized automatically. But we also
-        # do it with a BinNorm. Redundant? So far no harm so seriosuly leave it alone.
         name = func.__name__
         if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
             kwargs.update({'levels': levels, 'extend': extend})
@@ -322,28 +330,33 @@ def _cmap_features(self, func):
             result.extend = extend
 
         # Get levels automatically determined by contourf, or make them
-        # from the automatically chosen pcolor/imshow clims
-        # the normalizers will ***prefer*** this over levels
+        # from the automatically chosen pcolor/imshow clims.
         # TODO: This still is not respected for hexbin 'log' norm for
         # some reason, figure out fix.
-        # NOTE: When contourf has already drawn contours, they *cannot* be
-        # changed/updated -- must be redrawn! Therefore, if you want to change
-        # your levels after the fact (e.g. "draw 15 levels, but center them on
-        # zero), you will have to redraw!
         if not utils.isvector(levels): # i.e. was an integer
-            # Some tools automatically generate levels, like contourf
-            # Others will just automatically impose some clims, like levels
-            # Below accounts for both options
+            # Some tools automatically generate levels, like contourf.
+            # Others will just automatically impose clims, like pcolor.
+            # Below accounts for both options.
             if hasattr(result, 'levels'):
                 levels = result.levels
             else:
                 levels = np.linspace(*result.get_clim(), levels)
-            # Only makes sense if user specified integer level count
+            # Center the levels
+            # NOTE: When contourf has already rendered contours, they *cannot* be
+            # changed/updated -- must be redrawn!
             if zero:
                 abs_max = max([abs(max(levels)), abs(min(levels))])
                 levels = np.linspace(-abs_max, abs_max, len(levels))
-            # print(abs_max, levels)
-            # result.set_clim(-abs_max, abs_max)
+                if hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
+                    if hasattr(result, 'collections'):
+                        for artist in result.collections:
+                            artist.set_visible(False)
+                    elif hasattr(result, 'set_visible'):
+                        result.set_visible(False)
+                    else:
+                        raise ValueError(f'Unknown object {result}. Cannot center colormap levels.')
+                    kwargs['levels'] = levels
+                    result = func(*args, **kwargs)
         result.levels = levels # make sure they are on there!
 
         # Contour *lines* can be colormapped, but this should not be
@@ -362,9 +375,6 @@ def _cmap_features(self, func):
         N = None # will be ignored
         norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
         result.set_norm(norm)
-        # offset = {'neither':0, 'max':1, 'min':1, 'both':2}
-        # N = len(levels) + offset[extend]
-        # norm = colortools.LinearSegmentedNorm(norm=norm_preprocess, levels=levels, extend=extend)
 
         # Specify colormap
         cmap = cmap or rc['image.cmap']
@@ -1167,11 +1177,13 @@ class BaseAxes(maxes.Axes):
         # Figure patch (for some reason needs to be re-asserted even if declared before figure drawn)
         kw = rc.fill({'facecolor':'figure.facecolor'})
         self.figure.patch.update(kw)
+
         # Axes, figure title (builtin settings)
         kw = rc.fill({'fontsize':'axes.titlesize', 'weight':'axes.titleweight', 'fontname':'fontname'})
         self.title.update(kw)
         kw = rc.fill({'fontsize':'figure.titlesize', 'weight':'figure.titleweight', 'fontname':'fontname'})
         self.figure._suptitle.update(kw)
+
         # Row and column labels, ABC labels
         kw = rc.fill({'fontsize':'abc.fontsize', 'weight':'abc.weight', 'color':'abc.color', 'fontname':'fontname'})
         self.abc.update(kw)
@@ -1333,10 +1345,13 @@ class BaseAxes(maxes.Axes):
 
     # Fill entire axes with colorbar
     # TODO: Make the default behavior draw a tiny colorbar inset
-    # in the axes itself!
+    # in the axes itself with InsetAxes! Then panel axes overrides this
+    # default behavior, so that panel.colorbar *fills* the axes with a colorbar.
     def colorbar(self, *args, **kwargs):
-        # Call colorbar() function.
-        return colorbar_factory(self, *args, **kwargs)
+        raise NotImplementedError('Inset colorbars for non-panel axes is not yet implemented.')
+        # WARNING: Below will have bugs because 'self' is a BaseAxes! See comment
+        # under colorbar method on PanelAxes class.
+        # return colorbar_factory(self, *args, **kwargs)
 
     # Fancy wrappers
     def text(self, x, y, text,
@@ -1602,19 +1617,21 @@ class XYAxes(BaseAxes):
             # Update the rcParams according to user input.
             # The ticks/spines can be on both sides or just one, while the
             # tick labels and axis label on just one side
+            kw = rc.fill({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
+            # print('cache', rc._rcCache)
+            # print('kw', kw)
+            # override_color = (axis_color if side==axis_side else {})
             for side in sides:
                 # Simply updates the spines and whatnot
-                override_color = axis_color if side==axis_side else {}
-                kw = rc.fill({'lw':'axes.linewidth', 'color':'axes.edgecolor'})
                 self.spines[side].update({**kw, **axis_color})
 
-                # Tick marks
-                # NOTE: We decide that tick location should be controlled only
-                # by format(), so don't override that here.
-                kw_both = rc.fill({'color': name + 'tick.color'})
-                for which in ('major','minor'):
-                    kw = rc[name + 'tick.' + which]
-                    axis.set_tick_params(which=which, **kw, **{**kw_both, **axis_color})
+            # Tick marks
+            # NOTE: We decide that tick location should be controlled only
+            # by format(), so don't override that here.
+            kw_both = rc.fill({'color': name + 'tick.color'})
+            for which in ('major','minor'):
+                kw = rc[name + 'tick.' + which]
+                axis.set_tick_params(which=which, **kw, **{**kw_both, **axis_color})
 
             # Tick labels
             # NOTE: Assumed
@@ -1698,14 +1715,22 @@ class XYAxes(BaseAxes):
         # Set axis scaling and limits
         # These do not seem to have their own axes-specific public methods,
         # so do the x/y one by one here
+        # WARNING: Special override here, force custom formatter when scale
+        # is changed to log and user uses 'xlocator'/'ylocator'! Generally
+        # means want specific tick labels on log-scale plot, but log formatter
+        # will *override* and only show powers of 10.
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
             self.set_xscale(axistools.scale(xscale, **xscale_kw))
+            if xscale in ('log','inverse') and xlocator is not None and xformatter is None:
+                xformatter = 'custom'
         if yscale is not None:
             if hasattr(yscale,'name'):
                 yscale = yscale.name
             self.set_yscale(axistools.scale(yscale, **yscale_kw))
+            if yscale in ('log','inverse') and ylocator is not None and yformatter is None:
+                yformatter = 'custom'
         if xlim is not None:
             if xreverse:
                 xlim = xlim[::-1]
@@ -1802,7 +1827,7 @@ class XYAxes(BaseAxes):
             time = isinstance(axis.converter, mdates.DateConverter)
             if ticklocator is not None:
                 axis.set_major_locator(axistools.locator(ticklocator, time=time, **locator_kw))
-            if tickformatter is not None:
+            if tickformatter is not None or tickrange is not None:
                 axis.set_major_formatter(axistools.formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(axistools.locator('null'))
@@ -2090,6 +2115,8 @@ class PanelAxes(XYAxes):
         space = _fill(hspace, _fill(wspace, space)) # flexible arguments
         figure = self.figure
         subspec = self.get_subplotspec()
+
+        # Create colorbar axes
         # if n>2:
         #     raise ValueError('I strongly advise against drawing more than 2 stacked colorbars.')
         if length!=1 or n!=1:
@@ -2122,8 +2149,14 @@ class PanelAxes(XYAxes):
             # Next redraw axes
             # self.remove() # save memory
             self.set_visible(False)
+
         # Allocate axes for drawing colorbar.
         # Returns the axes and the output of colorbar_factory().
+        # WARNING: Using BaseAxes for the colorbar axes seems to cause bugs,
+        # because colorbar uses some internal methods that are wrapped by
+        # cmap_features! Not exactly sure why, but bottom line, do not use
+        # custom projection.
+        # ax = figure.add_subplot(subspec, projection='base')
         ax = figure.add_subplot(subspec, projection=None)
         if side in ['bottom','top']:
             outside, inside = 'bottom', 'top'
@@ -2554,6 +2587,7 @@ class PolarAxes(MapAxes, PolarAxes):
     name = 'newpolar'
 
 # Register the projection
+register_projection(BaseAxes)
 register_projection(XYAxes)
 register_projection(PanelAxes)
 register_projection(PolarAxes)
@@ -2730,6 +2764,7 @@ def colorbar_factory(ax, mappable,
         clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
         cticklabels=None, ticklabels=None,
         cformatter=None, formatter=None,
+        norm=None, norm_kw={}, # normalizer to use when passing colors/lines
         clabel=None, label=None,
         errfix=True, extend='neither', extendlength=0.2, # in inches
         values=None, orientation='horizontal', ticklocation='outer', **kwargs): #, settings=None):
@@ -2752,6 +2787,10 @@ def colorbar_factory(ax, mappable,
     * The 'extend' kwarg is used for the case when you are manufacturing colorbar
         from list of colors or lines. Most of the time want 'neither'.
     """
+    # See comment under colorbar() method def for PanelAxes class. Will get
+    # weird results if axes is a special BaseAxes.
+    if isinstance(ax, BaseAxes):
+        raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
     # Parse flexible input
     clocator      = _fill(locator, clocator)
     cgrid         = _fill(grid, cgrid)
@@ -2792,20 +2831,21 @@ def colorbar_factory(ax, mappable,
         if len(mappable)!=len(values):
             raise ValueError('Number of "values" should equal number of handles.')
         colors = [h.get_color() for h in mappable]
+    # Get colors, and by default, label each value directly
+    # Note contourf will not be overridden for colorbar axes! Need to
+    # manually wrap with _cmap_features.
     if fromlines or fromcolors:
-        # Get colors, and by default, label each value directly
         cmap   = colortools.colormap(colors)
-        values = np.array(values) # needed for below
-        levels = utils.edges(values) # get "edge" values between centers desired
-        mappable = ax.contourf([[0,0],[0,0]],
-                levels=levels, cmap=cmap,
-                extend='neither', norm=colortools.BinNorm(values)) # workaround
+        func = _cmap_features(ax, ax.contourf)
+        mappable = func([[0,0],[0,0]],
+            values=np.array(values), cmap=cmap, extend='neither',
+            norm=(norm or 'segmented')) # workaround
         if clocator is None:
             nstep = 1 + len(values)//20
             clocator = values[::nstep]
+    # By default, label the discretization levels (if there aren't too many)
+    # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
     if clocator is None:
-        # By default, label the discretization levels (if there aren't too many)
-        # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
         clocator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
         if clocator is not None:
             step = 1 + len(clocator)//20
@@ -2839,13 +2879,11 @@ def colorbar_factory(ax, mappable,
         values = values[values_min:values_max+1]
         if values[0]==mappable.norm.vmin:
             normfix = True
+        # Prevent annoying major/minor overlaps where one is slightly shifted left/right
+        # Consider floating point weirdness too
         if i==1:
-            # Prevent annoying major/minor overlaps where one is slightly shifted left/right
-            # Consider floating point weirdness too
-            # length = len(values)
             eps = 1e-10
             values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
-            # print(f'Removed {length-len(values)}/{length} minor ticks(s).')
         fixed = values # record as new variable
         locators.append(axistools.locator(fixed)) # final locator object
     # Next the formatter
