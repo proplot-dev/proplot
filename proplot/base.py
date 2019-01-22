@@ -226,9 +226,9 @@ def _check_centers(func):
         for Z in Zs:
             if Z.ndim!=2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1:
-                x = (x[1:,...] + x[:-1,...])/2
-                y = (y[...,1:] + y[...,:-1])/2 # get centers, given edges
+            elif Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1 and x.ndim==1 and y.ndim==1:
+                x = (x[1:] + x[:-1])/2
+                y = (y[1:] + y[:-1])/2 # get centers, given edges
             elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
@@ -252,6 +252,8 @@ def _check_edges(func):
             if Z.ndim!=2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
             elif Z.shape[0]==xlen and Z.shape[1]==ylen:
+                # If 2D, don't raise error, but don't fix either, because
+                # matplotlib pcolor accepts grid center inputs.
                 if x.ndim==1 and y.ndim==1:
                     x, y = utils.edges(x), utils.edges(y)
             elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
