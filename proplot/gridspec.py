@@ -188,7 +188,6 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
             auto_width = True
             axheight_ave = axheight
         if axwidth is not None:
-            print(axwidth, ncols, left, right, wspace, rpanel_space, lpanel_space)
             width = axwidth*ncols + left + right + sum(wspace) + rpanel_space + lpanel_space
             auto_height = True
             axwidth_ave = axwidth

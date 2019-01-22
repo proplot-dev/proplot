@@ -461,7 +461,6 @@ def _gridfix_basemap(self, func):
     def decorator(lon, lat, Z, fix_poles=True, **kwargs):
     # def decorator(self, lon, lat, Z, **kwargs):
         # Raise errors
-        # print('lon', lon, 'lat', lat, 'Z', Z)
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
         if lon.max()>lon.min()+360:
             raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')

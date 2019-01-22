@@ -605,20 +605,18 @@ def colormap(*args, extend='both',
 
     # Optionally register a colormap
     if name and register:
-        print(name, 'Registering')
         if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _cmap_categories.items()
                     for cat_cmap in cat_cmaps if 'ProPlot' not in cat]:
             print(f'Warning: Overwriting existing colormap "{name}".')
             # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
         elif name in mcm.cmap_d:
             pass # no warning necessary
-            # print(f'Warning: Overwriting existing colormap "{name}".')
         mcm.cmap_d[name] = cmap
         mcm.cmap_d[name + '_r'] = cmap.reversed()
         if re.search('[A-Z]',name):
             mcm.cmap_d[name.lower()] = cmap
             mcm.cmap_d[name.lower() + '_r'] = cmap.reversed()
-        # print(f'Registered name {name}.') # not necessary
+        print(f'Registered {name}.') # not necessary
 
     # Optionally save colormap to disk
     if name and save:
