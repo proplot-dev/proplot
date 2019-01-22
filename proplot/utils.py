@@ -180,11 +180,12 @@ def edges(values, axis=-1):
     values = np.swapaxes(values, axis, -1)
     # Next operate
     flip = False
-    if values[...,1]<values[...,0]:
+    idxs = [[0] for _ in range(values.ndim-1)] # must be list because we use it twice
+    if values[np.ix_(*idxs, [1])] < values[np.ix_(*idxs, [0])]:
         flip = True
         values = np.flip(values, axis=-1)
     values = np.concatenate((
-        values[...,:1] - (values[...,1]-values[...,0])/2,
+        values[...,:1]  - (values[...,1]-values[...,0])/2,
         (values[...,1:] + values[...,:-1])/2,
         values[...,-1:] + (values[...,-1]-values[...,-2])/2,
         ), axis=-1)
