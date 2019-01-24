@@ -75,7 +75,7 @@ class axes_list(list):
         else:
             raise AttributeError('Mixed methods found.')
 
-def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with subplots(array)
+def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subplots(array)
         emptycols=[], emptyrows=[], # obsolete?
         tight=None, auto_adjust=True,
         # tight=True, adjust=False,
@@ -171,11 +171,14 @@ def subplots(array=None, ncols=1, nrows=1, rowmajor=True, # allow calling with s
     # Array setup
     if array is None:
         array = np.arange(1,nrows*ncols+1)[...,None]
-        order = 'C' if rowmajor else 'F' # for column major, use Fortran ordering
+        if order not in ('C','F'): # better error message
+            raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
         array = array.reshape((nrows, ncols), order=order) # numpy is row-major, remember
     array = np.array(array) # enforce array type
     if array.ndim==1:
-        array = array[None,:] if rowmajor else array[:,None] # interpret as single row or column
+        if order not in ('C','F'): # better error message
+            raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+        array = array[None,:] if order=='C' else array[:,None] # interpret as single row or column
     # Empty rows/columns feature
     array[array==None] = 0 # use zero for placeholder; otherwise have issues
     if emptycols:

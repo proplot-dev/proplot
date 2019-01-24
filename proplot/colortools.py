@@ -663,11 +663,10 @@ def colors(*args, vmin=0, vmax=1, **kwargs):
         elif utils.isvector(samples):
             samples = np.array(samples)
         else:
-            raise ValueError(f'Invalid samples "{samples}". If you\'re building '
-                    'a colormap on-the-fly, input must be [*args, '
-                    'samples] where *args are passed to the colormap() constructor '
-                    'and "samples" is either the number of samples desired '
-                    'or a vector of colormap samples within [0,1].')
+            raise ValueError(f'Invalid samples "{samples}". If you are building '
+            'a colormap on-the-fly, input must be [*args, samples] where *args '
+            'are passed to the colormap() constructor and "samples" is either '
+            'the number of samples desired or a vector of colormap samples within [0,1].')
         colors = cmap((samples-vmin)/(vmax-vmin))
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')

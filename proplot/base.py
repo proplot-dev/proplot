@@ -179,7 +179,7 @@ _map_pseudocyl = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
 #       out-of-range values, while extend used in colorbar on pcolor has no such
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
-def _parse_args(args, rowmajor):
+def _parse_args(args):
     """
     Parse arguments for checking 2D data centers/edges.
     """
@@ -189,13 +189,9 @@ def _parse_args(args, rowmajor):
     else:
         Zs = args
     Zs = [np.array(Z) for Z in Zs] # ensure array
-    if rowmajor: # input has shape 'y-by-x' instead of 'x-by-y'
-        Zs = [Z.T for Z in Zs]
     if len(args)>2:
         x, y = args[:2]
         x, y = np.array(x), np.array(y)
-        if rowmajor:
-            x, y = x.T, y.T # in case they are 2-dimensional
     else:
         x = np.arange(Zs[0].shape[0])
         y = np.arange(Zs[0].shape[1])
@@ -219,9 +215,9 @@ def _check_centers(func):
       * x, y, U, V
     """
     @wraps(func)
-    def decorator(*args, rowmajor=False, **kwargs):
+    def decorator(*args, order='C', **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
-        x, y, Zs = _parse_args(args, rowmajor)
+        x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[0], y.shape[-1]
         for Z in Zs:
             if Z.ndim!=2:
@@ -233,8 +229,12 @@ def _check_centers(func):
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        x, y = x.T, y.T # in case they are 2-dimensional
-        Zs = [Z.T for Z in Zs]
+        # Optionally re-order
+        if order=='F':
+            x, y = x.T, y.T # in case they are 2-dimensional
+            Zs = (Z.T for Z in Zs)
+        elif order!='C':
+            raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
         result = func(x, y, *Zs, **kwargs)
         return result
     return decorator
@@ -244,9 +244,9 @@ def _check_edges(func):
     Check shape of arguments passed to pcolor, and fix result.
     """
     @wraps(func)
-    def decorator(*args, rowmajor=False, **kwargs):
+    def decorator(*args, order='C', **kwargs):
         # Checks that sizes match up, checks whether graticule was input
-        x, y, Zs = _parse_args(args, rowmajor)
+        x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[0], y.shape[-1]
         for Z in Zs:
             if Z.ndim!=2:
@@ -260,11 +260,14 @@ def _check_edges(func):
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
                         f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        x, y = x.T, y.T
-        Zs = [Z.T for Z in Zs]
+        # Optionally re-order
+        if order=='F':
+            x, y = x.T, y.T # in case they are 2-dimensional
+            Zs = (Z.T for Z in Zs)
+        elif order!='C':
+            raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
         result = func(x, y, *Zs, **kwargs)
         return result
-        # return func(self, x, y, *Zs, **kwargs)
     return decorator
 
 def _cycle_features(self, func):
@@ -2659,7 +2662,7 @@ def map_projection_factory(package, projection, **kwargs):
         raise ValueError(f'Unknown package "{package}".')
     return projection, aspect
 
-def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #, settings=None): # can be updated
+def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
     Should update my legend function to CLIP the legend box when it goes outside axes area, so
@@ -2671,6 +2674,8 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
         lsettings['ncol'] = lsettings.pop('ncols') # pyplot subplot uses 'ncols', but legend uses 'ncol'... annoying!
     if 'frame' in lsettings: # again, confusing choice
         lsettings['frameon'] = lsettings.pop('frame')
+    if order not in ('F','C'):
+        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
     # Setup legend text and handle properties
     hsettings = {}
     for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
@@ -2723,7 +2728,7 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
         # Split up into rows and columns -- by default matplotlib will
         # sort them in ***column-major*** order but that's dumb, we want row-major!
         # See: https://stackoverflow.com/q/10101141/4970632
-        if rowmajor:
+        if order=='C':
             newhandles = []
             ncol = lsettings['ncol'] # number of columns
             handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
@@ -2757,8 +2762,8 @@ def legend_factory(ax, handles=None, align=None, rowmajor=True, **lsettings): #,
         interval = (((1 + spacing)*fontsize)/72) / \
                 (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
         # Iterate and draw
-        if not rowmajor:
-            raise ValueError('Using rowmajor=False with align=False does not make sense.')
+        if order=='F':
+            raise NotImplementedError(f'When align=False, proplot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
         for h,hs in enumerate(handles):
             bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
             leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs),
