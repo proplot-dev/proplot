@@ -218,17 +218,17 @@ def _check_centers(func):
     def decorator(*args, order='C', **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
-        xlen, ylen = x.shape[0], y.shape[-1]
+        xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim!=2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[0]==xlen-1 and Z.shape[1]==ylen-1 and x.ndim==1 and y.ndim==1:
+            elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
                 x = (x[1:] + x[:-1])/2
                 y = (y[1:] + y[:-1])/2 # get centers, given edges
-            elif Z.shape[0]!=xlen or Z.shape[1]!=ylen:
+            elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+                        f'ncolumns ({Z.shape[1]}) and nrows ({Z.shape[0]}) of Z, or its borders.')
         # Optionally re-order
         if order=='F':
             x, y = x.T, y.T # in case they are 2-dimensional
@@ -251,15 +251,15 @@ def _check_edges(func):
         for Z in Zs:
             if Z.ndim!=2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[0]==xlen and Z.shape[1]==ylen:
+            elif Z.shape[1]==xlen and Z.shape[0]==ylen:
                 # If 2D, don't raise error, but don't fix either, because
                 # matplotlib pcolor accepts grid center inputs.
                 if x.ndim==1 and y.ndim==1:
                     x, y = utils.edges(x), utils.edges(y)
-            elif Z.shape[0]!=xlen-1 or Z.shape[1]!=ylen-1:
+            elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+                        f'ncolumns ({Z.shape[1]}) and nrows ({Z.shape[0]}) of Z, or its borders.')
         # Optionally re-order
         if order=='F':
             x, y = x.T, y.T # in case they are 2-dimensional
@@ -342,6 +342,7 @@ def _cmap_features(self, func):
             kwargs.update({'values': values}) # implement this directly
         if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
             kwargs.update({'aspect': 'auto'})
+        print(args)
         result = func(*args, **kwargs)
         if name in _nolevels_methods:
             result.extend = extend
