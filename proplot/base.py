@@ -2681,7 +2681,8 @@ def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, set
     for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
         if candidate in lsettings:
             hsettings[candidate] = lsettings.pop(candidate)
-    hsettings.update({'alpha':1.0}) # always maximimum opacity
+    # Overwrite alpha? Bad idea
+    # hsettings.update({'alpha':1.0}) # always maximimum opacity
     lsettings.update({'prop':{'family':rc['fontname']}}) # 'prop' can be a FontProperties object or a dict for the kwargs to instantiate one
 
     # Detect if user wants to specify rows manually

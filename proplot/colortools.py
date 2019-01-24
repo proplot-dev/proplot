@@ -1188,15 +1188,23 @@ def rename_colors(cycle='colorblind'):
 #------------------------------------------------------------------------------#
 # Return arbitrary normalizer
 #------------------------------------------------------------------------------
-def norm(norm_in, levels=None, norm=None, **kwargs):
+def norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     """
     Return arbitrary normalizer.
     """
     norm_preprocess = norm
     if isinstance(norm_in, mcolors.Normalize):
         return norm_in
+    if levels is None and values is not None:
+        levels = utils.edges(values)
     if not norm_in: # is None
-        norm_in = 'segments' # by default, make arbitrary monotonic user levels proceed linearly through color space
+        # By default, make arbitrary monotonic user levels proceed linearly
+        # through color space
+        if levels is not None:
+            norm_in = 'segments'
+        # Fall back if no levels provided
+        else:
+            norm_in = 'linear'
     if isinstance(norm_in, str):
         # Get class
         if norm_in not in normalizers:
@@ -1640,12 +1648,12 @@ register_cycles()
 
 # Finally our dictionary of normalizers
 # Includes some custom classes, so has to go at end
+# NOTE: Make BinNorm inaccessible to users. Idea is that all other normalizers
+# can be wrapped by BinNorm -- BinNorm is just used to break colors into
+# discrete levels.
 normalizers = {
     'none':       mcolors.NoNorm,
     'null':       mcolors.NoNorm,
-    'step':       BinNorm,
-    'bins':       BinNorm,
-    'bin':        BinNorm,
     'zero':       MidpointNorm,
     'midpoint':   MidpointNorm,
     'segments':   LinearSegmentedNorm,

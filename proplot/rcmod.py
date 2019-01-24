@@ -275,10 +275,13 @@ class rc_configurator(object):
         rcParams.update(rc)
         rcParams_sp.update(rc_sp)
         # Settings
+        # TODO: Looks like _getitem_mode can get stuck on a higher, more
+        # restrictive value (e.g. 1 or 2) when cell fails to execute. Should
+        # consider improving this.
         self._init = True
         self._cache_orig = {}
         self._cache_added = {}
-        self._getitem_mode = 0 # 0 means look for everything, including cache
+        self._getitem_mode = 0
 
     def __enter__(self):
         # Apply new settings (will get added to _rcCache)
