@@ -342,7 +342,6 @@ def _cmap_features(self, func):
             kwargs.update({'values': values}) # implement this directly
         if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
             kwargs.update({'aspect': 'auto'})
-        print(args)
         result = func(*args, **kwargs)
         if name in _nolevels_methods:
             result.extend = extend
