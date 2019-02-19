@@ -136,8 +136,16 @@ _cmap_categories = { # initialize as empty lists
         'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'
         ],
     # Other
-    'Other': [
-        'ColdHot', 'bwr', 'cubehelix'
+    # BlackBody2 is actually from Los Alamos, and a couple are from Andrew's
+    # website, but organization is better this way.
+    # 'Other': [
+    'Miscellaneous': [
+        'BlackBody1', 'BlackBody2',
+        'CubeHelix',
+        'Kindlmann', 'ExtendedKindlmann',
+        'BWR',
+        'BentCoolWarm', 'SmoothCoolWarm', 
+        'ColdHot',
         ],
     # Custom maps
     'ProPlot Sequential': [
@@ -163,53 +171,28 @@ _cmap_categories = { # initialize as empty lists
         ],
     # Kenneth Moreland
     # See: https://www.kennethmoreland.com/color-advice/
-    'KennethMoreland Sequential': [
-        'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
-        ],
-    'KennethMoreland Diverging': [
-        'SmoothCoolWarm', 'BentCoolWarm',
-        ],
+    # 'Kenneth Moreland Sequential': [
+    #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
+    #     ],
+    # 'Kenneth Moreland Diverging': [
+    #     'SmoothCoolWarm', 'BentCoolWarm',
+    #     ],
     # FabioCrameri
     # See: http://www.fabiocrameri.ch/colourmaps.php
-    'FabioCrameri Sequential': [
+    'Fabio Crameri Sequential': [
         'Acton', 'Bamako', 'Batlow', 'Bilbao', 'Buda',
         'Davos', 'Devon', 'GrayC', 'Hawaii', 'Imola', 'Lajolla',
         'Lapaz', 'Nuuk', 'Oslo', 'Tokyo', 'Turku',
         ],
-    'FabioCrameri Diverging': [
+    'Fabio Crameri Diverging': [
         'Broc', 'Cork',  'Vik', 'Lisbon', 'Tofino', 'Berlin', 'Roma', 'Oleron',
         ],
     # Los Alamos
-    'LosAlamos Sequential': [
-        'MutedRainbow', 'DeepRainbow', 'MutedBlue', 'DeepBlue', 'Turquoise', 'BrightGreen', 'WarmGray', 'Hot'
+    'Los Alamos Sequential': [
+        'MutedRainbow', 'DeepRainbow', 'MutedBlue', 'DeepBlue', 'Turquoise', 'BrightGreen', 'WarmGray',
         ],
-    'LosAlamos Diverging': [
+    'Los Alamos Diverging': [
         'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
-        ],
-    # CET maps
-    # See: https://peterkovesi.com/projects/colourmaps/
-    'CET Sequential': [
-        'CET-S1', 'CET-S2', 'CET-S3', 'CET-S4', 'CET-S5', 'CET-S6', 'CET-S7', 'CET-S8', 'CET-S9', 'CET-S10',
-        'CET-S11', 'CET-S12', 'CET-S13', 'CET-S14', 'CET-S15', 'CET-S16', 'CET-S17', 'CET-S18', 'CET-S19',
-        'CET-CBS1', 'CET-CBS2', # colorblind
-        'CET-CBTS1', 'CET-CBTS2', # tritanopic colorblind
-        ],
-    'CET Isoluminant': [
-        'CET-I1', 'CET-I2', 'CET-I3', 
-        ],
-    'CET Rainbow': [
-        'CET-R1', 'CET-R2', 'CET-R3',
-        ],
-    'CET Diverging': [
-        'CET-D1', 'CET-D1A', 'CET-D2', 'CET-D3', 'CET-D4', 'CET-D6', 'CET-D7',
-        'CET-D8', 'CET-D9', 'CET-D10', 'CET-D11', 'CET-D12', 'CET-D13',
-        'CET-CBD1', 'CET-CBTD1', # colorblind
-        ],
-    'CET Cyclic': [
-        'CET-C1', 'CET-C2', 'CET-C4', 'CET-C5', 
-        'CET-C1_shifted', 'CET-C2_shifted', 'CET-C4_shifted', 'CET-C5_shifted', # shifted
-        'CET-CBC', 'CET-CBC_shifted', # colorblind
-        'CET-CBTC', 'CET-CBTC_shifted', # tritanopic colorblind
         ],
     # SciVisColor
     'SciVisColor Sequential': [
@@ -241,30 +224,58 @@ _cmap_categories = { # initialize as empty lists
         'Highlight1', 'Highlight2', 'Highlight3', 'Highlight4', 'Highlight5'
         ],
     'SciVisColor Outlier': [
-        'Outlier1', 'Outlier2', 'Outlier3', 'Outlier4', 'Outlier5', 'Outlier6', 'Outlier7', 'Outlier8'
+        'DivOutlier1', 'DivOutlier2', 'DivOutlier3', 'DivOutlier4',
+        'Outlier1', 'Outlier2', 'Outlier3', 'Outlier4'
+        ],
+    # CET maps
+    # See: https://peterkovesi.com/projects/colourmaps/
+    'CET Sequential': [
+        'CET-S1', 'CET-S2', 'CET-S3', 'CET-S4', 'CET-S5', 'CET-S6', 'CET-S7', 'CET-S8', 'CET-S9', 'CET-S10',
+        'CET-S11', 'CET-S12', 'CET-S13', 'CET-S14', 'CET-S15', 'CET-S16', 'CET-S17', 'CET-S18', 'CET-S19',
+        'CET-CBS1', 'CET-CBS2', # colorblind
+        'CET-CBTS1', 'CET-CBTS2', # tritanopic colorblind
+        ],
+    'CET Isoluminant': [
+        'CET-I1', 'CET-I2', 'CET-I3', 
+        ],
+    'CET Rainbow': [
+        'CET-R1', 'CET-R2', 'CET-R3',
+        ],
+    'CET Diverging': [
+        'CET-D1', 'CET-D1A', 'CET-D2', 'CET-D3', 'CET-D4', 'CET-D6', 'CET-D7',
+        'CET-D8', 'CET-D9', 'CET-D10', 'CET-D11', 'CET-D12', 'CET-D13',
+        'CET-CBD1', 'CET-CBTD1', # colorblind
+        ],
+    'CET Cyclic': [
+        'CET-C1', 'CET-C1_shifted',
+        'CET-C2', 'CET-C2_shifted',
+        'CET-C4', 'CET-C4_shifted',
+        'CET-C5', 'CET-C5_shifted',
+        'CET-CBC', 'CET-CBC_shifted', # colorblind
+        'CET-CBTC', 'CET-CBTC_shifted', # tritanopic colorblind
         ],
     # Gross. These ones will be deleted.
     'Alt Sequential': [
         'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
         'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
         'coolwarm', 'seismic', # diverging ones
-         'multi', 'cubehelix', 'cividis',
+         'multi', 'cividis',
         'afmhot', 'gist_heat', 'copper'
         ],
     'Alt Rainbow': [
-        'multi', 'cubehelix', 'cividis'
+        'multi', 'cividis'
         ],
     'Alt Diverging': [
         'coolwarm', 'bwr', 'seismic'
         ],
-    'Miscellaneous': [
+    'Miscellaneous Orig': [
         'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
         'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
         'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'
         ]}
 
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
-_cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
+_cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous Orig']
 
 # Slice indices that split up segments of names
 # WARNING: Must add to this list manually! Not worth trying to generalize.
@@ -1626,7 +1637,6 @@ def register_colors(nmax=np.inf, verbose=False):
     if verbose:
         print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
 
-@utils.timer
 def register_cmaps():
     """
     Register colormaps and cycles in the cmaps directory.

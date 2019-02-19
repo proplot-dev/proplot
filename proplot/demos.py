@@ -286,7 +286,7 @@ def cycle_show():
 
 # def cmap_show(N=31, ignore=['Miscellaneous','Sequential2','Diverging2']):
 # def cmap_show(N=31):
-def cmap_show(N=51):
+def cmap_show(N=129):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -300,22 +300,24 @@ def cmap_show(N=51):
 
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
-    categories    = {cat:names for cat,names in tools._cmap_categories.items()
+    categories = {cat:names for cat,names in tools._cmap_categories.items()
                         if cat not in tools._cmap_categories_delete}
-    cmaps_ignore  = [name.lower() for cat,names in tools._cmap_categories.items() for name in names
+    categories_reg = {cat:[name for name in names if name.lower() in cmaps_reg]
+                        for cat,names in categories.items()}
+    cmaps_delete  = [name.lower() for cat,names in tools._cmap_categories.items() for name in names
                         if cat in tools._cmap_categories_delete]
-    cmaps_known   = [name.lower() for cat,names in categories.items() for name in names
+    cmaps_reg_known   = [name.lower() for cat,names in categories.items() for name in names
                         if name.lower() in cmaps_reg]
     cmaps_missing = [name.lower() for cat,names in categories.items() for name in names
                         if name.lower() not in cmaps_reg]
-    cmaps_custom  = [name for name in cmaps_reg
-                        if name not in cmaps_known and name not in cmaps_ignore]
+    cmaps_unknown  = [name for name in cmaps_reg
+                        if name not in cmaps_reg_known and name not in cmaps_delete]
     if cmaps_missing:
         print(f'Missing colormaps: {", ".join(cmaps_missing)}')
-    if cmaps_ignore:
-        print(f'Ignored colormaps: {", ".join(cmaps_ignore)}')
-    if cmaps_custom:
-        print(f'New colormaps: {", ".join(cmaps_custom)}')
+    if cmaps_delete:
+        print(f'Deleted colormaps: {", ".join(cmaps_delete)}')
+    if cmaps_unknown:
+        print(f'New colormaps: {", ".join(cmaps_unknown)}')
 
     # Attempt to auto-detect diverging colormaps, just sample the points on either end
     # Do this by simply summing the RGB channels to get HSV brightness
@@ -324,32 +326,35 @@ def cmap_show(N=51):
     # if name.lower() in custom_diverging:
 
     # Attempt sorting based on hue
-    # for cat in ['ProPlot Sequential', 'cmOcean Sequential', 'ColorBrewer2.0 Sequential']:
-    # for cat in ['ProPlot Sequential', 'ColorBrewer2.0 Sequential']:
-    for cat in []:
-        hues = [np.mean([tools.to_xyz(tools.to_rgb(color),'hsl')[0]
-            for color in mcm.cmap_d[name](np.linspace(0.3,1,20))])
-            for name in categories[cat]]
-        categories[cat] = [categories[cat][idx] for 
-            idx,name in zip(np.argsort(hues), categories[cat])]
+    # for cat in []:
+    #     hues = [np.mean([tools.to_xyz(tools.to_rgb(color),'hsl')[0]
+    #         for color in mcm.cmap_d[name](np.linspace(0.3,1,20))])
+    #         for name in categories[cat]]
+    #     categories[cat] = [categories[cat][idx] for
+    #         idx,name in zip(np.argsort(hues), categories[cat])]
 
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
 
     # Figure
+    # Old method skipped missing colormaps/left blank space, new method
+    # closes blank space
     extra = 1 # number of axes-widths to allocate for titles
-    nmaps = len(cmaps_known) + len(cmaps_custom) + len(categories)*extra
+    # nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories)*extra
+    nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories)*extra
+    # nmaps = sum(len([name for name in names]) for names in categories_reg.values()) + len(categories_reg)*extra
     fig, axs = subplots(nrows=nmaps, axwidth=4.5, axheight=0.23,
                         span=False, share=False, hspace=0.07)
 
     # Make plot
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
-    for cat in categories:
+    # for cat,names in categories.items():
+    for cat,names in categories_reg.items():
         # Space for title
         ntitles += extra # two axes-widths
-        for imap,name in enumerate(categories[cat]):
+        for imap,name in enumerate(names):
             # Checks
             iax += 1
             if imap + ntitles + nplots > nmaps:
@@ -374,7 +379,7 @@ def cmap_show(N=51):
                       )
 
         # Space for plots
-        nplots += len(categories[cat])
+        nplots += len(names)
 
     # Save
     filename = f'{_data}/cmaps/colormaps.pdf'
