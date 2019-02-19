@@ -25,7 +25,7 @@ For a showcase of all ProPlot features, check out [**this online jupyter noteboo
 The full documentation can be found [**here**](https://lukelbd.github.io/tools/proplot/doc). It is a work-in-progress.
 
 ## Installation
-This package is a work-in-progress. Currently there is no formal releas on PyPi. However, feel free to install directly from Github using:
+This package is a work-in-progress. Currently there is no formal release on PyPi. However, feel free to install directly from Github using:
 
 ```
 pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
