@@ -136,15 +136,16 @@ _cmap_categories = { # initialize as empty lists
         'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'
         ],
     # Other
-    # BlackBody2 is actually from Los Alamos, and a couple are from Andrew's
+    # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
     # website, but organization is better this way.
     # 'Other': [
     'Miscellaneous': [
         'BlackBody1', 'BlackBody2',
         'CubeHelix',
+        'MutedRainbow', 'DarkRainbow',
         'Kindlmann', 'ExtendedKindlmann',
-        'BWR',
         'BentCoolWarm', 'SmoothCoolWarm', 
+        'BWR',
         'ColdHot',
         ],
     # Custom maps
@@ -171,6 +172,7 @@ _cmap_categories = { # initialize as empty lists
         ],
     # Kenneth Moreland
     # See: https://www.kennethmoreland.com/color-advice/
+    # Decided to only keep the BlackBody one, put it in Miscellaneous category
     # 'Kenneth Moreland Sequential': [
     #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
     #     ],
@@ -180,27 +182,37 @@ _cmap_categories = { # initialize as empty lists
     # FabioCrameri
     # See: http://www.fabiocrameri.ch/colourmaps.php
     'Fabio Crameri Sequential': [
-        'Acton', 'Bamako', 'Batlow', 'Bilbao', 'Buda',
-        'Davos', 'Devon', 'GrayC', 'Hawaii', 'Imola', 'Lajolla',
-        'Lapaz', 'Nuuk', 'Oslo', 'Tokyo', 'Turku',
+        'GrayC', 'Acton', 'Buda', 'Lajolla', 'Bilbao', 'Turku', 'Lapaz', 'Nuuk',
+        'Bamako', 'Imola', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
         ],
     'Fabio Crameri Diverging': [
-        'Broc', 'Cork',  'Vik', 'Lisbon', 'Tofino', 'Berlin', 'Roma', 'Oleron',
+        'Broc', 'Cork',  'Vik', 'Roma', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
         ],
     # Los Alamos
-    'Los Alamos Sequential': [
-        'MutedRainbow', 'DeepRainbow', 'MutedBlue', 'DeepBlue', 'Turquoise', 'BrightGreen', 'WarmGray',
-        ],
-    'Los Alamos Diverging': [
-        'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
-        ],
+    # See: https://datascience.lanl.gov/colormaps.html
+    # Most of these have analogues in SciVisColor, added the few unique
+    # ones to Miscellaneous category
+    # 'Los Alamos Sequential': [
+    #     'MutedRainbow', 'DarkRainbow', 'MutedBlue', 'DeepBlue', 'BrightBlue', 'BrightGreen', 'WarmGray',
+    #     ],
+    # 'Los Alamos Diverging': [
+    #     'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
+    #     ],
     # SciVisColor
-    'SciVisColor Sequential': [
-        'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
-        'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
-        'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
-        'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
+    'SciVisColor Blues': [
         'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11', 'Blue12'
+        ],
+    'SciVisColor Greens': [
+        'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
+        ],
+    'SciVisColor Oranges': [
+        'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
+        ],
+    'SciVisColor Browns': [
+        'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
+        ],
+    'SciVisColor Reds/Purples': [
+        'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
         ],
     'SciVisColor Diverging': [
         'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
@@ -231,7 +243,9 @@ _cmap_categories = { # initialize as empty lists
     # See: https://peterkovesi.com/projects/colourmaps/
     'CET Sequential': [
         'CET-S1', 'CET-S2', 'CET-S3', 'CET-S4', 'CET-S5', 'CET-S6', 'CET-S7', 'CET-S8', 'CET-S9', 'CET-S10',
-        'CET-S11', 'CET-S12', 'CET-S13', 'CET-S14', 'CET-S15', 'CET-S16', 'CET-S17', 'CET-S18', 'CET-S19',
+        'CET-S11', 'CET-S12', 'CET-S13', 'CET-S14', 'CET-S15', 'CET-S16',
+        'CET-S17', 'CET-S18', 'CET-S19',
+        'CET-S20', 'CET-S21', 'CET-S22',
         'CET-CBS1', 'CET-CBS2', # colorblind
         'CET-CBTS1', 'CET-CBTS2', # tritanopic colorblind
         ],
