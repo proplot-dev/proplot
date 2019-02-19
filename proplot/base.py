@@ -2133,8 +2133,8 @@ class PanelAxes(XYAxes):
         return legend_factory(self, handles, **kwargs)
 
     def colorbar(self, *args, i=0, n=1, length=1,
-            space=0, hspace=None, wspace=None,
-            **kwargs):
+        space=0, hspace=None, wspace=None,
+        **kwargs):
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec

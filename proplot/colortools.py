@@ -48,6 +48,8 @@
 #------------------------------------------------------------------------------
 import os
 import re
+import json
+from lxml import etree
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
@@ -65,29 +67,29 @@ _N_hires = 256
 
 # Define some new palettes
 # Note the default listed colormaps
-_cycles_cmap = ['Set1', 'Set2', 'Set3', 'Set4', 'Set5']
-_cycles_list = {
+_cycles_loaded = {}
+_cycles_preset = {
     # Default matplotlib v2
     'default':      ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
     # Copied from stylesheets; stylesheets just add color themese from every possible tool, not already present as a colormap
     '538':          ['#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
     'ggplot':       ['#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42', '#FFB5B8'],
     # The default seaborn ones (excluded deep/muted/bright because thought they were unappealing)
-    'colorblind':   ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
-    'colorblind10': ["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"], # versions with more colors
+    'ColorBlind':   ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
+    'ColorBlind10': ["#0173B2", "#DE8F05", "#029E73", "#D55E00", "#CC78BC", "#CA9161", "#FBAFE4", "#949494", "#ECE133", "#56B4E9"], # versions with more colors
     # From the website
-    'flatui':       ["#3498db", "#e74c3c", "#95a5a6", "#34495e", "#2ecc71", "#9b59b6"],
+    'FlatUI':       ["#3498db", "#e74c3c", "#95a5a6", "#34495e", "#2ecc71", "#9b59b6"],
     # Created with online tools; add to this
     # See: http://tools.medialab.sciences-po.fr/iwanthue/index.php
-    'cinematic':    [(51,92,103), (158,42,43), (255,243,176), (224,159,62), (84,11,14)],
-    'cool':         ["#6C464F", "#9E768F", "#9FA4C4", "#B3CDD1", "#C7F0BD"],
-    'sugar':        ["#007EA7", "#B4654A", "#80CED7", "#B3CDD1", "#003249"],
-    'vibrant':      ["#007EA7", "#D81159", "#B3CDD1", "#FFBC42", "#0496FF"],
-    'office':       ["#252323", "#70798C", "#DAD2BC", "#F5F1ED", "#A99985"],
-    'industrial':   ["#38302E", "#6F6866", "#788585", "#BABF95", "#CCDAD1"],
-    'tropical':     ["#0D3B66", "#F95738", "#F4D35E", "#FAF0CA", "#EE964B"],
-    'intersection': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
-    'field':        ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
+    'Cinematic':    [(51,92,103), (158,42,43), (255,243,176), (224,159,62), (84,11,14)],
+    'Cool':         ["#6C464F", "#9E768F", "#9FA4C4", "#B3CDD1", "#C7F0BD"],
+    'Sugar':        ["#007EA7", "#B4654A", "#80CED7", "#B3CDD1", "#003249"],
+    'Vibrant':      ["#007EA7", "#D81159", "#B3CDD1", "#FFBC42", "#0496FF"],
+    'Office':       ["#252323", "#70798C", "#DAD2BC", "#F5F1ED", "#A99985"],
+    'Industrial':   ["#38302E", "#6F6866", "#788585", "#BABF95", "#CCDAD1"],
+    'Tropical':     ["#0D3B66", "#F95738", "#F4D35E", "#FAF0CA", "#EE964B"],
+    'Intersection': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
+    'Field':        ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
     }
 
 # Color stuff
@@ -115,53 +117,119 @@ _space_aliases = {
     }
 
 # Names of builtin colormaps
+# NOTE: Has support for 'x' coordinates in first column.
+# NOTE: For 'alpha' column, must use a .rgba filename
+# TODO: Better way to save colormap files.
 _cmap_categories = { # initialize as empty lists
     # We keep these ones
-    'Matplotlib Originals':
-        ['viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'],
-    'ProPlot Sequential':
-        [ 'Glacial',
+    'Matplotlib Originals': [
+        'viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'
+        ],
+    # Included ColorBrewer
+    'ColorBrewer2.0 Sequential': [
+        'Grays',
+        'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+        'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+        'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'
+        ],
+    'ColorBrewer2.0 Diverging': [
+        'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'
+        ],
+    # Other
+    'Other': [
+        'ColdHot', 'bwr', 'cubehelix'
+        ],
+    # Custom maps
+    'ProPlot Sequential': [
+         'Glacial',
         'Bog', 'Verdant',
         'Lake', 'Turquoise', 'Forest',
         'Blood',
         'Sunrise', 'Sunset', 'Fire',
-        'Golden',
+        'Golden'
         ],
         # 'Vibrant'], # empty at first, fill automatically
-    'ProPlot Diverging':
-        ['IceFire', 'NegPos', 'BlueRed', 'CoolWarm', 'DryWet', 'DesertJungle', 'LandSea'],
-    'cmOcean Sequential':
-        ['Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
+    'ProPlot Diverging': [
+        'IceFire', 'NegPos', 'BlueRed', 'CoolWarm', 'DryWet', 'DesertJungle', 'LandSea'
+        ],
+    # cmOcean
+    'cmOcean Sequential': [
+        'Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
-        'Amp', 'Solar', 'Phase', 'Phase_shifted'],
-    'cmOcean Diverging':
-        ['Balance', 'Curl', 'Delta'],
-    'ColorBrewer2.0 Sequential':
-        # ['Greys',
-        ['Grays',
-        'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
-        'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-        'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'],
-    'ColorBrewer2.0 Diverging':
-        ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'],
-    'Other':
-        ['ColdHot', 'bwr', 'cubehelix'],
-        # ['cubehelix', 'rainbow', 'bwr'],
-    # Other
-    # WARNING: These ones will be deleted
-    'Alt Sequential':
-        sorted(['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+        'Amp', 'Solar', 'Phase', 'Phase_shifted'
+        ],
+    'cmOcean Diverging': [
+        'Balance', 'Curl', 'Delta'
+        ],
+    # FabioCrameri
+    # See: http://www.fabiocrameri.ch/colourmaps.php
+    'FabioCrameri Sequential': [
+        'Acton', 'Bamako', 'Batlow', 'Bilbao', 'Buda',
+        'Davos', 'Devon', 'GrayC', 'Hawaii', 'Imola', 'Lajolla',
+        'Lapaz', 'Nuuk', 'Oslo', 'Tokyo', 'Turku',
+        ],
+    'FabioCrameri Diverging': [
+        'Broc', 'Cork',  'Vik', 'Lisbon', 'Tofino', 'Berlin', 'Roma', 'Oleron',
+        ],
+    # Los Alamos
+    'LosAlamos Diverging': [
+        'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
+        ],
+    'LosAlamos Sequential': [
+        'MutedRainbow', 'DeepRainbow', 'MutedBlue', 'DeepBlue', 'Turquoise', 'BrightGreen', 'WarmGray', 'Hot'
+        ],
+    # SciVisColor
+    'SciVisColor Sequential': [
+        'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
+        'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
+        'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
+        'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
+        'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11', 'Blue12'
+        ],
+    'SciVisColor Diverging': [
+        'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
+        ],
+    'SciVisColor 3 Waves': [
+        '3Wave1', '3Wave2', '3Wave3', '3Wave4', '3Wave5', '3Wave6', '3Wave7'
+        ],
+    'SciVisColor 4 Waves': [
+        '4Wave1', '4Wave2', '4Wave3', '4Wave4', '4Wave5', '4Wave6', '4Wave7'
+        ],
+    'SciVisColor 5 Waves': [
+        '5Wave1', '5Wave2', '5Wave3', '5Wave4', '5Wave5', '5Wave6'
+        ],
+    'SciVisColor Inserts': [
+        'Insert1', 'Insert2', 'Insert3', 'Insert4', 'Insert5', 'Insert6', 'Insert7', 'Insert8', 'Insert9', 'Insert10'
+        ],
+    'SciVisColor Thick Inserts': [
+        'ThickInsert1', 'ThickInsert2', 'ThickInsert3', 'ThickInsert4', 'ThickInsert5'
+        ],
+    'SciVisColor Highlight': [
+        'Highlight1', 'Highlight2', 'Highlight3', 'Highlight4', 'Highlight5'
+        ],
+    'SciVisColor Outlier': [
+        'Outlier1', 'Outlier2', 'Outlier3', 'Outlier4', 'Outlier5', 'Outlier6', 'Outlier7', 'Outlier8'
+        ],
+    # Gross. These ones will be deleted.
+    'Alt Sequential': [
+        'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
         'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
         'coolwarm', 'seismic', # diverging ones
-        'afmhot', 'gist_heat', 'copper']),
-    'Alt Rainbow':
-        sorted(['multi', 'cubehelix', 'cividis']),
-    'Alt Diverging':
-        sorted(['coolwarm', 'bwr', 'seismic']),
-    'Miscellaneous':
-        sorted(['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+         'multi', 'cubehelix', 'cividis',
+        'afmhot', 'gist_heat', 'copper'
+        ],
+    'Alt Rainbow': [
+        'multi', 'cubehelix', 'cividis'
+        ],
+    'Alt Diverging': [
+        'coolwarm', 'bwr', 'seismic'
+        ],
+    'Miscellaneous': [
+        'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
         'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
-        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])}
+        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'
+        ]}
+
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 _cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous']
 
@@ -200,7 +268,7 @@ _cmap_parts = {
     'rdylgn':       (None, 2, 4, None),
     }
 # Tuple pairs of mirror image cmap names
-_mirrors = [
+_cmap_mirrors = [
     (name, ''.join(reversed([name[slice(*idxs[i:i+2])] for i in range(len(idxs)-1)])),)
     for name,idxs in _cmap_parts.items()
     ]
@@ -237,7 +305,7 @@ class _CmapDict(dict):
             # Attempt to get 'mirror' key, maybe that's the one
             # stored in colormap dict
             key_mirror = key
-            for mirror in _mirrors:
+            for mirror in _cmap_mirrors:
                 try:
                     idx = mirror.index(key)
                     key_mirror = mirror[1 - idx]
@@ -292,7 +360,9 @@ class _CmapDict(dict):
         if len(args)>1:
             raise ValueError(f'_CmapDict.get() accepts only 1-2 arguments (got {len(args)+1}).')
         try:
-            return self.__getitem__(key)
+            if not isinstance(key, str):
+                raise KeyError(f'Invalid key {key}. Must be string.')
+            return self.__getitem__(key.lower())
         except KeyError as key_error:
             if args:
                 return args[0]
@@ -312,6 +382,7 @@ class _CmapDict(dict):
                 return args[0]
             else:
                 raise key_error
+        return value
 
 # Override entire colormap dictionary
 if not isinstance(mcm.cmap_d, _CmapDict):
@@ -621,14 +692,13 @@ def colormap(*args, extend='both',
     # Optionally save colormap to disk
     if name and save:
         # Save segment data directly
-        basename = f'{cmap.name}.npy'
+        basename = f'{cmap.name}.json'
         filename = f'{_data}/cmaps/{basename}'
-        np.save(filename, dict(cmap._segmentdata, space=cmap.space))
+        data = cmap._segmentdata.copy()
+        data['space'] = cmap.space
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')
-        # Save list of hex colors
-        # basename = f'{cmap.name}.hex'
-        # with open(filename, 'w') as h: # overwrites if exists; otherwise us 'a'
-        #     h.write(','.join(mcolors.to_hex(cmap(i)) for i in np.linspace(0,1,cmap.N)))
     return cmap
 
 def colors(*args, vmin=0, vmax=1, **kwargs):
@@ -901,12 +971,14 @@ def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
 def make_mapping_array(N, data, channel, gamma=1.0, reverse=False):
     """
     Mostly a copy of matplotlib version, with a few modifications:
-        * Disable clipping, allow the 0-360, 0-100, 0-100 HSL values.
-        * Allow circular hue gradations along 0-360.
-        * Allow weighting each transition by going from:
-            c = c1 + x*(c2 - c1)
-          for x in range [0-1], to
-            c = c1 + (x**gamma)*(c2 - c1)
+    * Disable clipping, allow the 0-360, 0-100, 0-100 HSL values.
+    * Allow circular hue gradations along 0-360.
+    * Allow weighting each transition by going from:
+        c = c1 + x*(c2 - c1)
+        for x in range [0-1], to
+        c = c1 + (x**gamma)*(c2 - c1)
+      When reverse==True, we use 1-(1-x)**gamma to use that gamma to
+      weight toward *higher* channel values instead of lower channel values.
     """
     # Optionally allow for ***callable*** instead of linearly interpolating
     # between line segments
@@ -1527,50 +1599,98 @@ def register_cmaps():
     Note all of those methods simply modify the dictionary mcm.cmap_d.
     """
     # First read from file
-    for file in glob(f'{_data}/cmaps/*'):
+    for filename in glob(f'{_data}/cmaps/*'):
         # Read table of RGB values
-        if not re.search('.(rgb|hex|npy)$', file):
+        if not re.search('\.(x?rgba?|json|xml)$', filename):
             continue
-        name = os.path.basename(file)[:-4]
-        cmaps.add(name)
-        # Comment this out to overwrite existing ones
+        basename = os.path.basename(filename)
+        name = basename.split('.')[0]
         # if name in mcm.cmap_d: # don't want to re-register every time
         #     continue
-        if re.search('.rgb$', file):
-            try: cmap = np.loadtxt(file, delimiter=',') # simple
+        # Read .rgb, .rgba, .xrgb, and .xrgba files
+        # The first 2 prescribe identical coordinates for each
+        # NOTE: Developed this before was loading xml files directly
+        # Files with 'x' coordinates still a feature, but not currently used
+        cycle = False
+        if re.search('\.x?rgba?$', filename):
+            # Load
+            ext = filename.split('.')[-1]
+            try:
+                cmap = np.loadtxt(filename, delimiter=',') # simple
             except:
-                print(f'Failed to load {os.path.basename(file)}.')
+                print(f'Failed to load {basename}.')
                 continue
-            if (cmap>1).any():
-                cmap = cmap/255
-        # Read list of hex strings
-        elif re.search('.hex$', file):
-            cmap = [*open(file)] # just a single line
-            if len(cmap)==0:
-                continue # file is empty
-            cmap = cmap[0].strip().split(',') # csv hex strings
-            cmap = np.array([mcolors.to_rgb(c) for c in cmap]) # from list of tuples
+            # Build x-coordinates and standardize shape
+            N = cmap.shape[0]
+            if ext[0] != 'x':
+                x = np.linspace(0, 1, N)
+                cmap = np.concatenate((x[:,None], cmap), axis=1)
+            if cmap.shape[1] not in (4,5):
+                raise ValueError(f'Invalid number of columns for colormap "{name}": {cmap.shape[1]}.')
+            if (cmap[:,1:4]>1).any(): # from 0-255 to 0-1
+                cmap[:,1:4] = cmap[:,1:4]/255
+            # Build color dict
+            x = cmap[:,0]
+            cdict = {}
+            if cmap.shape[1]==5:
+                channels = ('red', 'green', 'blue', 'alpha')
+            else:
+                channels = ('red', 'green', 'blue')
+            for i,channel in enumerate(channels):
+                vector = cmap[:,i+1:i+2]
+                cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
+            cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
+            cmaps.add(name)
+        # Load XML files created with scivizcolor
+        # Adapted from script found here: https://sciviscolor.org/matlab-matplotlib-pv44/
+        elif re.search('\.xml$', filename):
+            try:
+                xmldoc = etree.parse(filename)
+            except IOError:
+                raise ValueError('The input file is invalid. It must be a colormap xml file. Go to https://sciviscolor.org/home/colormaps/ for some good options.')
+            x = []
+            colors = []
+            for s in xmldoc.getroot().findall('.//Point'):
+                x.append(float(s.attrib['x']))
+                colors.append((float(s.attrib['r']), float(s.attrib['g']), float(s.attrib['b'])))
+            N = len(x)
+            x = np.array(x)
+            x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
+            colors = np.array(colors)
+            if 'cycle' in name.lower():
+                cmap = mcolors.ListedColormap([to_rgb(color) for color in colors])
+                cycles.add(name)
+            else:
+                cdict = {}
+                for i,channel in enumerate(('red', 'green', 'blue')):
+                    vector = colors[:,i:i+1]
+                    cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
+                cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
+                cmaps.add(name)
         # Directly read segmentdata of hex strings
         # Will ensure that HSL colormaps have the 'space' entry
         else:
-            segmentdata = np.load(file).item() # unpack 0-D array
+            with open(filename, 'r') as file:
+                segmentdata = json.load(file)
             if 'space' in segmentdata:
                 space = segmentdata.pop('space')
                 cmap = PerceptuallyUniformColormap(name, segmentdata, space=space, N=_N_hires)
             else:
                 cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=_N_hires)
-        # Register as ListedColormap or LinearSegmentedColormap
-        if not isinstance(cmap, mcolors.Colormap): # i.e. we did not load segmentdata directly
-            N = len(cmap) # simple as that; number of rows of colors
-            cmap = mcolors.LinearSegmentedColormap.from_list(name, cmap, N) # using static method is way easier
+            cmaps.add(name)
         # Register maps (this is just what register_cmap does)
-        mcm.cmap_d[cmap.name] = cmap
+        # If the _r (reversed) version is stored on file, store the straightened one
+        if re.search('_r$', name):
+            name = name[:-2]
+            cmap = cmap.reversed()
+            cmap.name = name
+        mcm.cmap_d[name] = cmap
 
     # Fix the builtin rainbow colormaps by switching from Listed to
     # LinearSegmented -- don't know why matplotlib shifts with these as
     # discrete maps by default, dumb.
     for name in _cmap_categories['Matplotlib Originals']: # initialize as empty lists
-        cmap = mcm.cmap_d.get(name,None)
+        cmap = mcm.cmap_d.get(name, None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
 
@@ -1614,32 +1734,38 @@ def register_cycles():
     """
     Register cycles defined right here by dictionaries.
     """
-    # Simply register them as ListedColormaps
-    # TODO: Consider adding support for loading cycles on disk
-    for name,colors in _cycles_list.items():
-        mcm.cmap_d[name]        = mcolors.ListedColormap([to_rgb(color) for color in colors])
-        mcm.cmap_d[f'{name}_r'] = mcolors.ListedColormap([to_rgb(color) for color in colors[::-1]])
+    # Read lists of hex strings from disk
+    for filename in glob(f'{_data}/cmaps/*.hex'):
+        name = os.path.basename(filename)
+        name = name.split('.hex')[0]
+        colors = [*open(filename)] # should just be a single line
+        if len(colors)==0:
+            continue # file is empty
+        if len(colors)>1:
+            raise ValueError('.hex color cycle files should contain only one line.')
+        colors = colors[0].strip().split(',') # csv hex strings
+        colors = [mcolors.to_rgb(c) for c in colors] # from list of tuples
+        _cycles_loaded[name] = colors
+
+    # Register names
+    # Note that 'loaded' cycles will overwrite any presets with same name
+    for name,colors in {**_cycles_preset, **_cycles_loaded}.items():
+        mcm.cmap_d[name] = mcolors.ListedColormap([to_rgb(color) for color in colors])
         cycles.add(name)
 
-    # Remove some redundant ones
+    # Remove some redundant or ugly ones
     for key in ('tab10', 'tab20', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
-        mcm.cmap_d.pop(key,   None)
-    if 'Accent' in mcm.cmap_d:
-        mcm.cmap_d.pop('Set1', None)
-        mcm.cmap_d['Set1'] = mcm.cmap_d.pop('Accent')
-        cycles.add('Accent')
-    if 'tab20b' in mcm.cmap_d:
-        mcm.cmap_d['Set4'] = mcm.cmap_d.pop('tab20b')
-        cycles.add('Set4')
-    if 'tab20c' in mcm.cmap_d:
-        mcm.cmap_d['Set5'] = mcm.cmap_d.pop('tab20c')
-        cycles.add('Set5')
+        mcm.cmap_d.pop(key, None)
+    # *Change* the name of some more useful ones
+    for (name1,name2) in [('Accent','Set1'), ('tab20b','Set4'), ('tab20c','Set5')]:
+        mcm.cmap_d[name2] = mcm.cmap_d.pop(name1)
+        cycles.add(name2)
 
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly
 # varying LinearSegmentedColormap instances or subclasses thereof
-cmaps = set() # track downloaded colormaps; user can then check this list
-cycles = set() # same, but track cycles
+cmaps = set() # track *downloaded* colormaps; user can then check this list
+cycles = set() # track *all* color cycles
 colors_filtered = {} # limit to 'sufficiently unique' color names
 colors_unfiltered = {} # downloaded colors categorized by filename
 register_colors() # must be done first, so we can register OpenColor cmaps

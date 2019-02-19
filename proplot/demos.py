@@ -258,7 +258,7 @@ def cycle_show():
     # Get the list of cycles
     _cycles = {**{name:mcm.cmap_d[name].colors for name in tools._cycles_cmap},
                **{name:mcm.cmap_d[name].colors for name in tools._cycles_list.keys()}}
-    nrows = len(_cycles)//2+len(_cycles)%2
+    nrows = len(_cycles)//2 + len(_cycles)%2
     # Create plot
     state = np.random.RandomState(528)
     fig, axs = subplots(width=6, wspace=0.05, hspace=0.25,
@@ -285,7 +285,8 @@ def cycle_show():
     return fig
 
 # def cmap_show(N=31, ignore=['Miscellaneous','Sequential2','Diverging2']):
-def cmap_show(N=31):
+# def cmap_show(N=31):
+def cmap_show(N=51):
     """
     Plot all current colormaps, along with their catgories.
     This example comes from the Cookbook on www.scipy.org. According to the
@@ -293,28 +294,20 @@ def cmap_show(N=31):
     unclear who the original author is.
     See: http://matplotlib.org/examples/color/colormaps_reference.html
     """
-    # Have colormaps separated into categories:
-    # NOTE: viridis, cividis, plasma, inferno, and magma are all
-    # listed colormaps for some reason
-    exceptions = ['viridis','cividis','plasma','inferno','magma']
-    cmaps_reg = [name for name in mcm.cmap_d.keys() if
-            not name.endswith('_r')
-            and name not in tools._cmaps_lower
-            and 'Vega' not in name
-            and (isinstance(mcm.cmap_d[name],mcolors.LinearSegmentedColormap) or name in exceptions)]
-    # cmaps_listed = [name for name in mcm.cmap_d.keys() if
-    #         and (not isinstance(mcm.cmap_d[name],mcolors.LinearSegmentedColormap) and name not in exceptions)]
+    # Have colormaps separated into categories
+    cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys')
+            and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
 
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
     categories    = {cat:names for cat,names in tools._cmap_categories.items()
                         if cat not in tools._cmap_categories_delete}
-    cmaps_ignore  = [name for cat,names in tools._cmap_categories.items() for name in names
+    cmaps_ignore  = [name.lower() for cat,names in tools._cmap_categories.items() for name in names
                         if cat in tools._cmap_categories_delete]
-    cmaps_known   = [name for cat,names in categories.items() for name in names
-                        if name in cmaps_reg]
-    cmaps_missing = [name for cat,names in categories.items() for name in names
-                        if name not in cmaps_reg]
+    cmaps_known   = [name.lower() for cat,names in categories.items() for name in names
+                        if name.lower() in cmaps_reg]
+    cmaps_missing = [name.lower() for cat,names in categories.items() for name in names
+                        if name.lower() not in cmaps_reg]
     cmaps_custom  = [name for name in cmaps_reg
                         if name not in cmaps_known and name not in cmaps_ignore]
     if cmaps_missing:
@@ -367,7 +360,7 @@ def cmap_show(N=31):
                 iax += 1
                 ax.invisible()
                 ax = axs[iax]
-            if name not in mcm.cmap_d or name not in cmaps_reg: # i.e. the expected builtin colormap is missing
+            if name not in mcm.cmap_d or name.lower() not in cmaps_reg: # i.e. the expected builtin colormap is missing
                 ax.invisible() # empty space
                 continue
             # Draw map
