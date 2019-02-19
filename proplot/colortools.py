@@ -161,6 +161,14 @@ _cmap_categories = { # initialize as empty lists
     'cmOcean Diverging': [
         'Balance', 'Curl', 'Delta'
         ],
+    # Kenneth Moreland
+    # See: https://www.kennethmoreland.com/color-advice/
+    'KennethMoreland Sequential': [
+        'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
+        ],
+    'KennethMoreland Diverging': [
+        'SmoothCoolWarm', 'BentCoolWarm',
+        ],
     # FabioCrameri
     # See: http://www.fabiocrameri.ch/colourmaps.php
     'FabioCrameri Sequential': [
@@ -172,11 +180,36 @@ _cmap_categories = { # initialize as empty lists
         'Broc', 'Cork',  'Vik', 'Lisbon', 'Tofino', 'Berlin', 'Roma', 'Oleron',
         ],
     # Los Alamos
+    'LosAlamos Sequential': [
+        'MutedRainbow', 'DeepRainbow', 'MutedBlue', 'DeepBlue', 'Turquoise', 'BrightGreen', 'WarmGray', 'Hot'
+        ],
     'LosAlamos Diverging': [
         'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
         ],
-    'LosAlamos Sequential': [
-        'MutedRainbow', 'DeepRainbow', 'MutedBlue', 'DeepBlue', 'Turquoise', 'BrightGreen', 'WarmGray', 'Hot'
+    # CET maps
+    # See: https://peterkovesi.com/projects/colourmaps/
+    'CET Sequential': [
+        'CET-S1', 'CET-S2', 'CET-S3', 'CET-S4', 'CET-S5', 'CET-S6', 'CET-S7', 'CET-S8', 'CET-S9', 'CET-S10',
+        'CET-S11', 'CET-S12', 'CET-S13', 'CET-S14', 'CET-S15', 'CET-S16', 'CET-S17', 'CET-S18', 'CET-S19',
+        'CET-CBS1', 'CET-CBS2', # colorblind
+        'CET-CBTS1', 'CET-CBTS2', # tritanopic colorblind
+        ],
+    'CET Isoluminant': [
+        'CET-I1', 'CET-I2', 'CET-I3', 
+        ],
+    'CET Rainbow': [
+        'CET-R1', 'CET-R2', 'CET-R3',
+        ],
+    'CET Diverging': [
+        'CET-D1', 'CET-D1A', 'CET-D2', 'CET-D3', 'CET-D4', 'CET-D6', 'CET-D7',
+        'CET-D8', 'CET-D9', 'CET-D10', 'CET-D11', 'CET-D12', 'CET-D13',
+        'CET-CBD1', 'CET-CBTD1', # colorblind
+        ],
+    'CET Cyclic': [
+        'CET-C1', 'CET-C2', 'CET-C4', 'CET-C5', 
+        'CET-C1_shifted', 'CET-C2_shifted', 'CET-C4_shifted', 'CET-C5_shifted', # shifted
+        'CET-CBC', 'CET-CBC_shifted', # colorblind
+        'CET-CBTC', 'CET-CBTC_shifted', # tritanopic colorblind
         ],
     # SciVisColor
     'SciVisColor Sequential': [
@@ -591,9 +624,9 @@ def colormap(*args, extend='both',
         else:
             # Monochrome colormap based from input color (i.e. single hue)
             regex = '([0-9].)$'
-            match = re.search(regex, cmap) # declare options with _[flags]
+            match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
             cmap = re.sub(regex, '', cmap) # remove options
-            fade = kwargs.pop('fade',90) if not match else match.group(1) # default fade to 90 luminance
+            fade = kwargs.pop('fade',100) if not match else match.group(1) # default fade to 100 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
             cmap = monochrome_cmap(cmap, fade, name=name, N=_N, **kwargs)
@@ -1593,6 +1626,7 @@ def register_colors(nmax=np.inf, verbose=False):
     if verbose:
         print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
 
+@utils.timer
 def register_cmaps():
     """
     Register colormaps and cycles in the cmaps directory.
@@ -1603,14 +1637,11 @@ def register_cmaps():
         # Read table of RGB values
         if not re.search('\.(x?rgba?|json|xml)$', filename):
             continue
-        basename = os.path.basename(filename)
-        name = basename.split('.')[0]
+        name = os.path.basename(filename)
+        name = name.split('.')[0]
         # if name in mcm.cmap_d: # don't want to re-register every time
         #     continue
         # Read .rgb, .rgba, .xrgb, and .xrgba files
-        # The first 2 prescribe identical coordinates for each
-        # NOTE: Developed this before was loading xml files directly
-        # Files with 'x' coordinates still a feature, but not currently used
         cycle = False
         if re.search('\.x?rgba?$', filename):
             # Load
@@ -1618,7 +1649,7 @@ def register_cmaps():
             try:
                 cmap = np.loadtxt(filename, delimiter=',') # simple
             except:
-                print(f'Failed to load {basename}.')
+                print(f'Failed to load {os.path.basename(filename)}.')
                 continue
             # Build x-coordinates and standardize shape
             N = cmap.shape[0]
@@ -1627,7 +1658,7 @@ def register_cmaps():
                 cmap = np.concatenate((x[:,None], cmap), axis=1)
             if cmap.shape[1] not in (4,5):
                 raise ValueError(f'Invalid number of columns for colormap "{name}": {cmap.shape[1]}.')
-            if (cmap[:,1:4]>1).any(): # from 0-255 to 0-1
+            if (cmap[:,1:4]>10).any(): # from 0-255 to 0-1
                 cmap[:,1:4] = cmap[:,1:4]/255
             # Build color dict
             x = cmap[:,0]
