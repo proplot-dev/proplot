@@ -1,44 +1,40 @@
 #!/usr/bin/env python3
-"""
-Script to set up magic commands and other notebook properties.
-Just call this in the first cell with "run pyfuncs/notebook". And voila!
-Call with optional directory argument to make that the new working directory.
-
-Unbelievably weird problem:
-  * Warning on calling rcdefaults(): https://stackoverflow.com/q/48320804/4970632
-    Apparently you can change the backend until the first plot is drawn, then
-    it stays the same. So the rcdefault() command changes the backend to a
-    non-inline version.
-
-Notes on python figures:
-  * Can use InlineBackend rc configuration to make inline figure properties
-    different from figure.<subproperty> settings in rcParams.
-  * Problem is, whenever rcParams are reset/pyfuncs module is reloaded, the previous
-    InlineBackend properties disappear.
-  * It is *also* necessary to maintain separate savefig options, including 'transparent'
-    and 'facecolor' -- cannot just set these to use the figure properties.
-    If transparent set to False, saved figure will have no transparency *even if* the
-    default figure.facecolor has zero alpha. Will *only* be transparent if alpha explicitly
-    changed by user command. Try playing with settings in plot.globals to see.
-  * In conclusion: Best workflow is probably to set InlineBackend settings to empty, but
-    control figure settings separate from savefig settings. Also need to test: if
-    transparent=True but patches were set to have zero transparency manually, will they
-    be made re-transparent when figure is saved?
-
-Notes on jupyter configuration:
-  * In .jupyter, the jupyter_nbconvert_config.json sets up locations of stuff; templates
-      for nbextensions and formatting files for markdown/code cells.
-  * In .jupyter, the jupyter_notebook_config.json installs the configurator extension
-      for managing extra plugins.
-  * In .jupyter, not sure yet how to successfully use jupyter_console_config.py and
-      jupyter_notebook_config.py; couldn't get it to do what this function does on startup.
-  * In .jupyter/custom, current_theme.txt lists the current jupyterthemes theme, custom.css
-      contains CSS formatting for it, and fonts should contain font files -- note that there
-      are not font files on my Mac, even though jupyterthemes works; sometimes may be empty
-  * In .jupyter/nbconfig, tree.json loads the extra tab for the NBconfigurator, and 
-      common.json gives option to hide incompatible plugs, and notebook.json contains all
-      the new settings; just copy it over to current notebook to update
-"""
+#------------------------------------------------------------------------------#
+# Unbelievably weird problem:
+#   * Warning on calling rcdefaults(): https://stackoverflow.com/q/48320804/4970632
+#     Apparently you can change the backend until the first plot is drawn, then
+#     it stays the same. So the rcdefault() command changes the backend to a
+#     non-inline version.
+#
+# Notes on python figures:
+#   * Can use InlineBackend rc configuration to make inline figure properties
+#     different from figure.<subproperty> settings in rcParams.
+#   * Problem is, whenever rcParams are reset/pyfuncs module is reloaded, the previous
+#     InlineBackend properties disappear.
+#   * It is *also* necessary to maintain separate savefig options, including 'transparent'
+#     and 'facecolor' -- cannot just set these to use the figure properties.
+#     If transparent set to False, saved figure will have no transparency *even if* the
+#     default figure.facecolor has zero alpha. Will *only* be transparent if alpha explicitly
+#     changed by user command. Try playing with settings in plot.globals to see.
+#   * In conclusion: Best workflow is probably to set InlineBackend settings to empty, but
+#     control figure settings separate from savefig settings. Also need to test: if
+#     transparent=True but patches were set to have zero transparency manually, will they
+#     be made re-transparent when figure is saved?
+#
+# Notes on jupyter configuration:
+#   * In .jupyter, the jupyter_nbconvert_config.json sets up locations of stuff; templates
+#       for nbextensions and formatting files for markdown/code cells.
+#   * In .jupyter, the jupyter_notebook_config.json installs the configurator extension
+#       for managing extra plugins.
+#   * In .jupyter, not sure yet how to successfully use jupyter_console_config.py and
+#       jupyter_notebook_config.py; couldn't get it to do what this function does on startup.
+#   * In .jupyter/custom, current_theme.txt lists the current jupyterthemes theme, custom.css
+#       contains CSS formatting for it, and fonts should contain font files -- note that there
+#       are not font files on my Mac, even though jupyterthemes works; sometimes may be empty
+#   * In .jupyter/nbconfig, tree.json loads the extra tab for the NBconfigurator, and
+#       common.json gives option to hide incompatible plugs, and notebook.json contains all
+#       the new settings; just copy it over to current notebook to update
+#------------------------------------------------------------------------------#
 # Imports
 from IPython import get_ipython
 from IPython.utils import io
@@ -50,6 +46,11 @@ from matplotlib import rcParams
 
 # @block_printing
 def nbsetup(directory=None, backend='inline'):
+    """
+    Script to set up magic commands and other notebook properties.
+    Just call this in the first cell with "run pyfuncs/notebook". And voila!
+    Call with optional directory argument to make that the new working directory.
+    """
     # Variables
     cd = os.getcwd()
     home = os.path.expanduser('~')

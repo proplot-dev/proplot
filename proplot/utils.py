@@ -61,9 +61,10 @@ def _docstring_fix(child):
                 continue
             if not getattr(chfunc, '__doc__', None):
                 chfunc.__doc__ = '' # in case it's None
-            cmessage = f'Full name: {parfunc.__qualname__}()'
-            pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-            chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+            # cmessage = f'Full name: {parfunc.__qualname__}()'
+            # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
+            # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+            chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n{cleandoc(parfunc.__doc__)}'
             break # only do this for the first parent class
     return child
 
