@@ -11,7 +11,7 @@ from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
 from .axes import map_projection_factory
 from .figure import Figure
-from .utils import _fill, ic
+from .utils import _default, ic
 from functools import wraps
 # Have to do this for a couple things
 import matplotlib.pyplot as plt
@@ -135,15 +135,15 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
         versa; might make things easier.
     """
     # Check
-    sharex = _fill(share, sharex)
-    sharey = _fill(share, sharey)
-    spanx = _fill(span, spanx)
-    spany = _fill(span, spany)
+    sharex = _default(share, sharex)
+    sharey = _default(share, sharey)
+    spanx = _default(span, spanx)
+    spany = _default(span, spany)
     if int(sharex) not in range(4) or int(sharey) not in range(4):
         raise ValueError('Axis sharing options sharex/sharey can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels).')
     # Helper functions
     translate = lambda p: {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}.get(p, p)
-    auto_adjust = _fill(tight, auto_adjust)
+    auto_adjust = _default(tight, auto_adjust)
     def axes_dict(value, kw=False):
         # First build up dictionary
         # Accepts:
@@ -253,21 +253,21 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
         if which:
             innerpanels_kw[num]['whichpanels'] += which
             if re.search('[bt]', which):
-                kwargs['hspace'] = _fill(kwargs.get('hspace',None), rc['gridspec.xlab'])
+                kwargs['hspace'] = _default(kwargs.get('hspace',None), rc['gridspec.xlab'])
                 innerpanels_kw[num]['sharex_panels'] = False
-                innerpanels_kw[num]['hwidth'] = _fill(innerpanels_kw[num].get('hwidth', None), rc['gridspec.cbar'])
-                innerpanels_kw[num]['hspace'] = _fill(innerpanels_kw[num].get('hspace', None), rc['gridspec.xlab'])
+                innerpanels_kw[num]['hwidth'] = _default(innerpanels_kw[num].get('hwidth', None), rc['gridspec.cbar'])
+                innerpanels_kw[num]['hspace'] = _default(innerpanels_kw[num].get('hspace', None), rc['gridspec.xlab'])
             if re.search('[lr]', which):
-                kwargs['wspace'] = _fill(kwargs.get('wspace',None), rc['gridspec.ylab'])
+                kwargs['wspace'] = _default(kwargs.get('wspace',None), rc['gridspec.ylab'])
                 innerpanels_kw[num]['sharey_panels'] = False
-                innerpanels_kw[num]['wwidth'] = _fill(innerpanels_kw[num].get('wwidth', None), rc['gridspec.cbar'])
+                innerpanels_kw[num]['wwidth'] = _default(innerpanels_kw[num].get('wwidth', None), rc['gridspec.cbar'])
                 if 'l' in which and 'r' in which:
                     default = (rc['gridspec.ylab'], rc['gridspec.nolab'])
                 elif 'l' in which:
                     default = rc['gridspec.ylab']
                 else:
                     default = rc['gridspec.nolab']
-                innerpanels_kw[num]['wspace'] = _fill(innerpanels_kw[num].get('wspace', None), default)
+                innerpanels_kw[num]['wspace'] = _default(innerpanels_kw[num].get('wspace', None), default)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)

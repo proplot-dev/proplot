@@ -83,7 +83,6 @@ Normalizers:
 # Imports
 #------------------------------------------------------------------------------#
 import re
-from . import utils
 from .utils import ic
 from numbers import Number
 from fractions import Fraction
@@ -107,7 +106,7 @@ def scale(scale, **kwargs):
     Generate arbitrary scale object.
     """
     args = []
-    if utils.isvector(scale):
+    if np.iterable(scale) and not isinstance(scale, str):
         scale, args = scale[0], scale[1:]
     if scale in scales and not args:
         pass # already registered
@@ -604,7 +603,7 @@ def formatter(form, *args, time=False, tickrange=None, **kwargs):
     # Already have a formatter object
     if isinstance(form, mticker.Formatter): # formatter object
         return form
-    if utils.isvector(form) and form[0]=='frac':
+    if np.iterable(form) and form[0]=='frac':
         args.append(form[1]) # the number
         form = form[0]
     # Interpret user input

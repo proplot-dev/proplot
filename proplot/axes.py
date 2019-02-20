@@ -33,8 +33,8 @@ from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 # from .rcmod import rc, rcParams
 from .rcmod import rc
 from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
-from . import colortools, fonttools, axistools, utils
-from .utils import _dot_dict, _fill, _timer, _counter, _docstring_fix, ic
+from . import colortools, fonttools, axistools
+from .utils import _dot_dict, _default, _timer, _counter, _docstring_fix, ic, edges, arange
 
 # Silly recursive function, returns a...z...aa...zz...aaa...zzz
 # God help you if you ever need that many labels
@@ -227,7 +227,7 @@ def _check_edges(func):
                 # If 2D, don't raise error, but don't fix either, because
                 # matplotlib pcolor accepts grid center inputs.
                 if x.ndim==1 and y.ndim==1:
-                    x, y = utils.edges(x), utils.edges(y)
+                    x, y = edges(x), edges(y)
             elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
@@ -253,7 +253,7 @@ def _cycle_features(self, func):
     def decorator(*args, cycle=None, cycle_kw={}, **kwargs):
         # Determine and temporarily set cycler
         if cycle is not None:
-            if not utils.isvector(cycle):
+            if not np.iterable(cycle) or isinstance(cycle, str):
                 cycle = cycle,
             cycle = colortools.cycle(*cycle, **cycle_kw)
             self.set_prop_cycle(color=cycle)
@@ -292,19 +292,19 @@ def _cmap_features(self, func):
         # results through a normalizer here
         if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
             values_as_levels = False # get levels later down the line
-        if utils.isvector(values) and values_as_levels:
+        if np.iterable(values) and values_as_levels:
             # Special case of LinearSegmentedNorm, just get edges
             if isinstance(norm, colortools.LinearSegmentedNorm) or \
                 (isinstance(norm, str) and 'segment' in norm):
-                levels = utils.edges(values)
+                levels = edges(values)
             # Else see what pops out
             else:
                 norm_tmp = colortools.norm(norm, **norm_kw)
                 if norm_tmp: # is not None
-                    levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+                    levels = norm_tmp.inverse(edges(norm_tmp(values)))
                 else:
-                    levels = utils.edges(values)
-        levels = _fill(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+                    levels = edges(values)
+        levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
 
         # Call function with custom kwargs
         name = func.__name__
@@ -322,7 +322,7 @@ def _cmap_features(self, func):
         # from the automatically chosen pcolor/imshow clims.
         # TODO: This still is not respected for hexbin 'log' norm for
         # some reason, figure out fix.
-        if not utils.isvector(levels): # i.e. was an integer
+        if not np.iterable(levels): # i.e. was an integer
             # Some tools automatically generate levels, like contourf.
             # Others will just automatically impose clims, like pcolor.
             # Below accounts for both options.
@@ -865,7 +865,7 @@ class BaseAxes(maxes.Axes):
                 y = 1 - ypad_i
                 va = 'top'
                 transform = self.transAxes
-                extra['border'] = _fill(kwargs.pop('border', None), True) # by default
+                extra['border'] = _default(kwargs.pop('border', None), True) # by default
         return {'x':x, 'y':y, 'transform':transform, 'ha':ha, 'va':va, **extra}
 
     # Make axes invisible
@@ -1095,7 +1095,7 @@ class BaseAxes(maxes.Axes):
                 values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
             x, y, values = np.array(x), np.array(y), np.array(values)
         coords, vals = [], []
-        edges = utils.edges(values)
+        levels = edges(values)
         for j in range(y.shape[0]):
             # Get x/y coordinates and values for points to the 'left' and
             # 'right' of each joint. Also prevent duplicates.
@@ -1124,7 +1124,7 @@ class BaseAxes(maxes.Axes):
         # Add collection, with some custom attributes
         self.add_collection(collection)
         collection.values = values
-        collection.levels = edges # needed for other functions some
+        collection.levels = levels # needed for other functions some
         return collection
 
 #------------------------------------------------------------------------------#
@@ -1351,28 +1351,28 @@ class XYAxes(BaseAxes):
 
         # Control axis ticks and labels and stuff
         # Allow for flexible input
-        xspineloc = _fill(xloc, xspineloc)
-        yspineloc = _fill(yloc, yspineloc)
-        xformatter = _fill(xticklabels, xformatter)
-        yformatter = _fill(yticklabels, yformatter)
-        xlocator = _fill(xticks, xlocator)
-        ylocator = _fill(yticks, ylocator)
-        xminorlocator = _fill(xminorticks, xminorlocator)
-        yminorlocator = _fill(yminorticks, yminorlocator)
-        xtickminor = _fill(tickminor, xtickminor)
-        ytickminor = _fill(tickminor, ytickminor)
-        xgrid = _fill(grid, xgrid)
-        ygrid = _fill(grid, ygrid)
-        xgridminor = _fill(gridminor, xgridminor)
-        ygridminor = _fill(gridminor, ygridminor)
-        xtickdir = _fill(tickdir, xtickdir)
-        ytickdir = _fill(tickdir, ytickdir)
-        xticklabeldir = _fill(ticklabeldir, xticklabeldir)
-        yticklabeldir = _fill(ticklabeldir, yticklabeldir)
+        xspineloc = _default(xloc, xspineloc)
+        yspineloc = _default(yloc, yspineloc)
+        xformatter = _default(xticklabels, xformatter)
+        yformatter = _default(yticklabels, yformatter)
+        xlocator = _default(xticks, xlocator)
+        ylocator = _default(yticks, ylocator)
+        xminorlocator = _default(xminorticks, xminorlocator)
+        yminorlocator = _default(yminorticks, yminorlocator)
+        xtickminor = _default(tickminor, xtickminor)
+        ytickminor = _default(tickminor, ytickminor)
+        xgrid = _default(grid, xgrid)
+        ygrid = _default(grid, ygrid)
+        xgridminor = _default(gridminor, xgridminor)
+        ygridminor = _default(gridminor, ygridminor)
+        xtickdir = _default(tickdir, xtickdir)
+        ytickdir = _default(tickdir, ytickdir)
+        xticklabeldir = _default(ticklabeldir, xticklabeldir)
+        yticklabeldir = _default(ticklabeldir, yticklabeldir)
         # Override for weird bug where title doesn't get automatically offset
         # from ticklabels in certain circumstance; check out notebook
-        xtickloc = _fill(xtickloc, xticklabelloc) # if user specified labels somewhere, make sure to put ticks there by default!
-        ytickloc = _fill(ytickloc, yticklabelloc)
+        xtickloc = _default(xtickloc, xticklabelloc) # if user specified labels somewhere, make sure to put ticks there by default!
+        ytickloc = _default(ytickloc, yticklabelloc)
         if xtickloc=='both' and xticklabelloc in ('both','top') and not xlabel: # xtickloc *cannot* be 'top', *only* appears for 'both'
             print('Warning: This keyword combination causes matplotlib bug where title is not offset from tick labels. Try adding an x-axis label or ticking only the top axis.')
         # Begin loop
@@ -1733,7 +1733,7 @@ class PanelAxes(XYAxes):
         # Will always redraw an axes with new subspec
         self.invisible()
         side = self.panel_side
-        space = _fill(hspace, _fill(wspace, space)) # flexible arguments
+        space = _default(hspace, _default(wspace, space)) # flexible arguments
         figure = self.figure
         subspec = self.get_subplotspec()
 
@@ -1944,14 +1944,14 @@ class BasemapAxes(MapAxes):
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
         **kwargs):
         # Parse flexible input
-        xlim = _fill(lonlim, xlim)
-        ylim = _fill(latlim, ylim)
-        lonlocator = _fill(lonlocator, _fill(lonticks, _fill(xlocator, xticks)))
-        latlocator = _fill(latlocator, _fill(latticks, _fill(ylocator, yticks)))
-        lonminorlocator = _fill(lonminorlocator, _fill(lonminorticks, _fill(xminorlocator, xminorticks)))
-        latminorlocator = _fill(latminorlocator, _fill(latminorticks, _fill(yminorlocator, yminorticks)))
-        lonlabels = self._parse_labels(_fill(xlabels, lonlabels), 'x')
-        latlabels = self._parse_labels(_fill(ylabels, latlabels), 'y')
+        xlim = _default(lonlim, xlim)
+        ylim = _default(latlim, ylim)
+        lonlocator = _default(lonlocator, _default(lonticks, _default(xlocator, xticks)))
+        latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
+        lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
+        latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
+        lonlabels = self._parse_labels(_default(xlabels, lonlabels), 'x')
+        latlabels = self._parse_labels(_default(ylabels, latlabels), 'y')
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
@@ -1991,11 +1991,11 @@ class BasemapAxes(MapAxes):
         lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
         lsettings = rc['lonlatlines']
         linestyle = lsettings['linestyle']
-        latlocator = _fill(latlocator, 20) # gridlines by default
-        lonlocator = _fill(lonlocator, 60)
+        latlocator = _default(latlocator, 20) # gridlines by default
+        lonlocator = _default(lonlocator, 60)
         if latlocator is not None:
             if isinstance(latlocator, Number):
-                latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
+                latlocator = arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
             p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
                 # Tried passing clip_on to the below, but it does nothing; must set
@@ -2008,7 +2008,7 @@ class BasemapAxes(MapAxes):
                         obj.set_dashes(ls_translate(obj, linestyle))
         if lonlocator is not None:
             if isinstance(lonlocator, Number):
-                lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
+                lonlocator = arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
             p = self.m.drawmeridians(lonlocator, labels=lonlabels, ax=self)
             for pi in p.values():
                 for obj in [i for j in pi for i in j]: # magic
@@ -2110,14 +2110,14 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
         # Parse flexible input
-        xlim = _fill(lonlim, xlim)
-        ylim = _fill(latlim, ylim)
-        lonlocator = _fill(lonlocator, _fill(lonticks, _fill(xlocator, xticks)))
-        latlocator = _fill(latlocator, _fill(latticks, _fill(ylocator, yticks)))
-        lonminorlocator = _fill(lonminorlocator, _fill(lonminorticks, _fill(xminorlocator, xminorticks)))
-        latminorlocator = _fill(latminorlocator, _fill(latminorticks, _fill(yminorlocator, yminorticks)))
-        lonlabels = self._parse_labels(_fill(xlabels, lonlabels), 'x')
-        latlabels = self._parse_labels(_fill(ylabels, latlabels), 'y')
+        xlim = _default(lonlim, xlim)
+        ylim = _default(latlim, ylim)
+        lonlocator = _default(lonlocator, _default(lonticks, _default(xlocator, xticks)))
+        latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
+        lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
+        latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
+        lonlabels = self._parse_labels(_default(xlabels, lonlabels), 'x')
+        latlabels = self._parse_labels(_default(ylabels, latlabels), 'y')
 
         # Configure extents?
         # WARNING: The set extents method tries to set a *rectangle* between
@@ -2170,8 +2170,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if utils.isvector(v) else [*utils.arange(-90,90,v)]
+        lonvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*arange(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*arange(-90,90,v)]
         lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
         lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
@@ -2416,18 +2416,18 @@ def colorbar_factory(ax, mappable,
     if isinstance(ax, BaseAxes):
         raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
     # Parse flexible input
-    clocator      = _fill(locator, clocator)
-    cgrid         = _fill(grid, cgrid)
-    ctickminor    = _fill(tickminor, ctickminor)
-    cminorlocator = _fill(minorlocator, cminorlocator)
-    cformatter    = _fill(ticklabels, _fill(cticklabels, _fill(formatter, cformatter)))
-    clabel        = _fill(label, clabel)
-    clocator_kw = _fill(locator_kw, clocator_kw)
-    cminorlocator_kw = _fill(minorlocator_kw, cminorlocator_kw)
+    clocator      = _default(locator, clocator)
+    cgrid         = _default(grid, cgrid)
+    ctickminor    = _default(tickminor, ctickminor)
+    cminorlocator = _default(minorlocator, cminorlocator)
+    cformatter    = _default(ticklabels, _default(cticklabels, _default(formatter, cformatter)))
+    clabel        = _default(label, clabel)
+    clocator_kw = _default(locator_kw, clocator_kw)
+    cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
-    if utils.isvector(mappable) and len(mappable)==2:
+    if np.iterable(mappable) and len(mappable)==2:
         mappable, values = mappable
     if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
         if isinstance(mappable[0], martist.Artist):

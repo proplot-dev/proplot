@@ -8,7 +8,7 @@ import matplotlib.figure as mfigure
 from .axes import BaseAxes, PanelAxes, CartopyAxes, EmptyPanel
 from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc
-from .utils import _dot_dict, _fill, _timer, _counter, _docstring_fix, ic
+from .utils import _dot_dict, _default, _timer, _counter, _docstring_fix, ic
 # Aliases for panel names
 _aliases = {
     'bpanel': 'bottompanel',
@@ -217,10 +217,10 @@ class Figure(mfigure.Figure):
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
         whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
-        hspace = _fill(hspace, 0.13) # teeny tiny space
-        wspace = _fill(wspace, 0.13)
-        hwidth = _fill(hwidth, 0.45) # default is panels for plotting stuff, not colorbars
-        wwidth = _fill(wwidth, 0.45)
+        hspace = _default(hspace, 0.13) # teeny tiny space
+        wspace = _default(wspace, 0.13)
+        hwidth = _default(hwidth, 0.45) # default is panels for plotting stuff, not colorbars
+        wwidth = _default(wwidth, 0.45)
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 

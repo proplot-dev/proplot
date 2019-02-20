@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.gridspec as mgridspec
 import re
 from .rcmod import rc
-from .utils import _dot_dict, _fill, ic
+from .utils import _dot_dict, _default, ic
 
 # Conversions
 def _units(value, error=True):
@@ -90,12 +90,12 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     # NOTE: Ugly but this is mostly boilerplate, shouln't change much
     def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, space):
         if colorbar or colorbars:
-            width = _fill(width, rc['gridspec.cbar'])
-            space = _fill(space, rc['gridspec.xlab'])
+            width = _default(width, rc['gridspec.cbar'])
+            space = _default(space, rc['gridspec.xlab'])
             panel, panels = colorbar, colorbars
         elif legend or legends:
-            width = _fill(width, rc['gridspec.legend'])
-            space = _fill(space, 0)
+            width = _default(width, rc['gridspec.legend'])
+            space = _default(space, 0)
             panel, panels = legend, legends
         return panel, panels, width, space
     rightpanel, rightpanels, rwidth, rspace, = _panelprops(
@@ -125,10 +125,10 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
 
     # Apply the general defaults
     # Need to do this after number of rows/columns figured out
-    wratios = np.atleast_1d(_fill(wratios, 1))
-    hratios = np.atleast_1d(_fill(hratios, 1))
-    hspace = np.atleast_1d(_fill(hspace, rc['gridspec.title']))
-    wspace = np.atleast_1d(_fill(wspace, rc['gridspec.inner']))
+    wratios = np.atleast_1d(_default(wratios, 1))
+    hratios = np.atleast_1d(_default(hratios, 1))
+    hspace = np.atleast_1d(_default(hspace, rc['gridspec.title']))
+    wspace = np.atleast_1d(_default(wspace, rc['gridspec.inner']))
     if len(wratios)==1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios)==1:
@@ -137,16 +137,16 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
-    left   = _units(_fill(left,   rc['gridspec.ylab']))
-    bottom = _units(_fill(bottom, rc['gridspec.xlab']))
-    right  = _units(_fill(right,  rc['gridspec.nolab']))
-    top    = _units(_fill(top,    rc['gridspec.title']))
-    bwidth = _units(_fill(bwidth, rc['gridspec.cbar']))
-    rwidth = _units(_fill(rwidth, rc['gridspec.cbar']))
-    lwidth = _units(_fill(lwidth, rc['gridspec.cbar']))
-    bspace = _units(_fill(bspace, rc['gridspec.xlab']))
-    rspace = _units(_fill(rspace, rc['gridspec.ylab']))
-    lspace = _units(_fill(lspace, rc['gridspec.ylab']))
+    left   = _units(_default(left,   rc['gridspec.ylab']))
+    bottom = _units(_default(bottom, rc['gridspec.xlab']))
+    right  = _units(_default(right,  rc['gridspec.nolab']))
+    top    = _units(_default(top,    rc['gridspec.title']))
+    bwidth = _units(_default(bwidth, rc['gridspec.cbar']))
+    rwidth = _units(_default(rwidth, rc['gridspec.cbar']))
+    lwidth = _units(_default(lwidth, rc['gridspec.cbar']))
+    bspace = _units(_default(bspace, rc['gridspec.xlab']))
+    rspace = _units(_default(rspace, rc['gridspec.ylab']))
+    lspace = _units(_default(lspace, rc['gridspec.ylab']))
 
     # Determine figure size
     if journal:
@@ -348,12 +348,12 @@ def flexible_gridspec_factory(base):
             # Parse flexible input
             nrows = self._nrows_visible
             ncols = self._ncols_visible
-            hratios = _fill(height_ratios, hratios)
-            wratios = _fill(width_ratios,  wratios)
-            hratios = np.atleast_1d(_fill(hratios, 1))
-            wratios = np.atleast_1d(_fill(wratios, 1))
-            hspace = np.atleast_1d(_fill(hspace, np.mean(hratios)*0.10)) # this is relative to axes
-            wspace = np.atleast_1d(_fill(wspace, np.mean(wratios)*0.10))
+            hratios = _default(height_ratios, hratios)
+            wratios = _default(width_ratios,  wratios)
+            hratios = np.atleast_1d(_default(hratios, 1))
+            wratios = np.atleast_1d(_default(wratios, 1))
+            hspace = np.atleast_1d(_default(hspace, np.mean(hratios)*0.10)) # this is relative to axes
+            wspace = np.atleast_1d(_default(wspace, np.mean(wratios)*0.10))
             if len(wspace)==1:
                 wspace = np.repeat(wspace, (ncols-1,)) # note: may be length 0
             if len(hspace)==1:

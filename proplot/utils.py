@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-#------------------------------------------------------------------------------#
-# Just a few tools
-# These aren't strictly plot-related functions, but will be useful for user
-# in the context of making plots.
+"""
+A couple simple tools. They aren't strictly plot-related functions, but
+will be useful for user in the context of making plots.
+"""
 #------------------------------------------------------------------------------#
 import time
 import numpy as np
@@ -13,6 +13,7 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
+_default = (lambda x,y: x if x is not None else y) # fill if not None
 
 # Helper class
 class _dot_dict(dict):
@@ -113,28 +114,6 @@ def _counter(func):
     decorator.time = 0
     decorator.count = 0 # initialize
     return decorator
-
-#------------------------------------------------------------------------------#
-# Helper stuff
-#------------------------------------------------------------------------------#
-_fill = (lambda x,y: x if x is not None else y)
-
-def isnumber(item):
-    """
-    Just test if number.
-    See: https://stackoverflow.com/questions/4187185/how-can-i-check-if-my-python-object-is-a-number
-    Note: Numpy numbers have __getitem__ attribute! So cannot test this.
-    Why is this done? So they can be converted to ND singleton numpy arrays
-    easily with number[None,None,...].
-    """
-    return isinstance(item, Number)
-
-def isvector(item):
-    """
-    Just test if is iterable, but not a string (we almost never mean this).
-    """
-    # return hasattr(item, '__iter__') and not isinstance(item, str)
-    return np.iterable(item) and not isinstance(item, str)
 
 #------------------------------------------------------------------------------#
 # Accessible for user

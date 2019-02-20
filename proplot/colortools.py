@@ -76,6 +76,7 @@ import os
 import re
 import json
 from lxml import etree
+from numbers import Number
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
@@ -84,8 +85,7 @@ from matplotlib import rcParams
 from cycler import cycler
 from glob import glob
 from . import colormath
-from . import utils
-from .utils import _fill, ic
+from .utils import _default, ic, edges
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
 
 # Default number of colors
@@ -631,7 +631,7 @@ def add_alpha(color):
     """
     Ensures presence of alpha channel.
     """
-    if not utils.isvector(color):
+    if not np.iterable(color) or isinstance(color, str):
         raise ValueError('Input must be color tuple.')
     if len(color)==3:
         color = [*color, 1.0]
@@ -659,7 +659,7 @@ def get_channel_value(color, channel, space='hsl'):
     channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2,
                     'alpha': 3, 'h': 0, 's': 1, 'c': 1, 'l': 2}
     channel = channel_idxs.get(channel, channel)
-    if callable(color) or utils.isnumber(color):
+    if callable(color) or isinstance(color, Number):
         return color
     if channel not in (0,1,2):
         raise ValueError('Channel must be in [0,1,2].')
@@ -883,7 +883,7 @@ def colors(*args, vmin=0, vmax=1, **kwargs):
     # 1) User inputs some number of samples; 99% of time, use this
     # to get samples from a LinearSegmentedColormap
     # draw colors.
-    if utils.isnumber(args[-1]) or utils.isvector(args[-1]):
+    if isinstance(args[-1], Number) or (np.iterable(args[-1]) and not isinstance(args[-1], str)):
         args, samples = args[:-1], args[-1]
     # 2) User inputs a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
@@ -896,10 +896,10 @@ def colors(*args, vmin=0, vmax=1, **kwargs):
     elif isinstance(cmap, mcolors.LinearSegmentedColormap): # or subclass
         # Employ ***more flexible*** version of get_cmap() method, which does this:
         # LinearSegmentedColormap(self.name, self._segmentdata, lutsize)
-        if utils.isnumber(samples):
+        if isinstance(samples, Number):
             # samples = np.linspace(0, 1-1/nsample, nsample) # from 'centers'
             samples = np.linspace(0, 1, samples) # from edge to edge
-        elif utils.isvector(samples):
+        elif np.iterable(samples):
             samples = np.array(samples)
         else:
             raise ValueError(f'Invalid samples "{samples}". If you are building '
@@ -960,10 +960,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         space = get_space(space)
         if 'gamma' in kwargs:
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
-        gamma1 = _fill(gamma, gamma1)
-        gamma2 = _fill(gamma, gamma2)
-        segmentdata['gamma1'] = _fill(gamma1, _fill(segmentdata.get('gamma1', None), 1.0))
-        segmentdata['gamma2'] = _fill(gamma2, _fill(segmentdata.get('gamma2', None), 1.0))
+        gamma1 = _default(gamma, gamma1)
+        gamma2 = _default(gamma, gamma2)
+        segmentdata['gamma1'] = _default(gamma1, _default(segmentdata.get('gamma1', None), 1.0))
+        segmentdata['gamma2'] = _default(gamma2, _default(segmentdata.get('gamma2', None), 1.0))
         self.space = space
         self.mask  = mask
         # First sanitize the segmentdata by converting color strings to their
@@ -1057,10 +1057,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         Make linear segmented colormap by specifying channel values.
         """
         # Build dictionary, easy peasy
-        h = _fill(hue, h)
-        s = _fill(chroma, _fill(c, _fill(saturation, s)))
-        l = _fill(luminance, l)
-        a = _fill(alpha, _fill(a, 1.0))
+        h = _default(hue, h)
+        s = _default(chroma, _default(c, _default(saturation, s)))
+        l = _default(luminance, l)
+        a = _default(alpha, _default(a, 1.0))
         cs = ['hue', 'saturation', 'luminance', 'alpha']
         channels = [h, s, l, a]
         cdict = {}
@@ -1245,7 +1245,7 @@ def merge_cmaps(*_cmaps, name='merged', N=512, ratios=1, **kwargs):
     if len(_cmaps)<=1:
         raise ValueError('Need two or more input cmaps.')
     ratios = ratios or 1
-    if utils.isnumber(ratios):
+    if isinstance(ratios, Number):
         ratios = [1]*len(_cmaps)
 
     # Combine the colors
@@ -1340,7 +1340,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     # Get colorspace
     space = get_space(space)
     h, s, l = to_xyz(to_rgb(color), space)
-    if utils.isnumber(fade): # allow just specifying the luminance channel
+    if isinstance(fade, Number): # allow just specifying the luminance channel
         # fade = np.clip(fade, 0, 99)
         fade = np.clip(fade, 0, 100)
         fade = to_rgb((h, 0, fade), space=space)
@@ -1437,7 +1437,7 @@ def norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     if isinstance(norm_in, mcolors.Normalize):
         return norm_in
     if levels is None and values is not None:
-        levels = utils.edges(values)
+        levels = edges(values)
     if not norm_in: # is None
         # By default, make arbitrary monotonic user levels proceed linearly
         # through color space
@@ -1455,11 +1455,11 @@ def norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         if norm_out is BinNorm:
             raise ValueError('This normalizer can only be used internally!')
         if norm_out is MidpointNorm:
-            if not utils.isvector(levels):
+            if not np.iterable(levels):
                 raise ValueError(f'Need levels for normalizer "{norm_in}". Received levels={levels}.')
             kwargs.update({'vmin':min(levels), 'vmax':max(levels)})
         elif norm_out is LinearSegmentedNorm:
-            if not utils.isvector(levels):
+            if not np.iterable(levels):
                 raise ValueError(f'Need levels for normalizer "{norm_in}". Received levels={levels}.')
             kwargs.update({'levels':levels, 'norm':norm_preprocess})
         norm_out = norm_out(**kwargs) # initialize

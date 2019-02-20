@@ -77,6 +77,14 @@ RC configuration
     :undoc-members:
     :show-inheritance:
 
+Utils
+--------------------
+
+.. automodule:: proplot.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Included demos
 --------------------
 
