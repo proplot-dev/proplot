@@ -1,8 +1,13 @@
+.. Documentation was generated following this guide:
+   https://daler.github.io/sphinxdoc-test/includeme.html
+   Relevant thread: https://github.com/sphinx-doc/sphinx/issues/3382
+   More traditional approach: http://www.willmcginnis.com/2016/02/29/automating-documentation-workflow-with-sphinx-and-github-pages/
+
 ProPlot
 =======
 
-A library providing helpful and versatile plotting utilities that hasten
-the process of making publication-quality graphics.
+A library providing helpful and versatile plotting utilities
+for making beautiful, publication-quality graphics with ease.
 
 Overview
 --------
