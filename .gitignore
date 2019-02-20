@@ -2,7 +2,11 @@
 .session.vim
 .vimsession
 .*.sw[a-z]
-lottery*
+
+# Colormap subfolders
+rejects
+weird
+colorbrewer
 
 # PyPi stuff
 build
@@ -19,7 +23,6 @@ empty*
 sample*
 notes*
 trash*
-colorbrewer
 
 # Ignore top-level init used on my machine to make package importable as long
 # as $HOME is in $PYTHONPATH (see: https://stackoverflow.com/a/3637678/4970632)

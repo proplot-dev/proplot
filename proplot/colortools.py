@@ -10,6 +10,32 @@
 # * HPL fixes this by, for *every luminance*, designating 100 as
 #   the *minimum* max chroma across *every hue for that luminance*. This
 #   makes it more suitable for multi-hue colormaps.
+# TODO: Allow some colormaps (e.g. topography) to have ***fixed*** levels,
+# i.e. force the user to use very high resolution (e.g. 256 levels) and the
+# 'x' coordinates will enforce discrete jumps between colors. Consider doing
+# this for 'seismic' map, and others.
+#------------------------------------------------------------------------------#
+# Interesting cpt-city colormaps that did not use:
+# * Considered Jim Mossman maps, but not very uniform.
+# * Erik Jeschke grayscale ones are also neat, but probably not much
+#   scientific use.
+# * Rafi 'sky' themes were pretty, but ultimately not useful.
+# * Crumblingwalls also interesting, but too many/some are weird.
+# * NCL gradients mostly ugly, forget them.
+# * Piecrust design has interesting 'nature' colormaps, but they are
+#   not practical. Just added a couple astro ones (aurora, space, star).
+# * Elvensword is cool, but most are pretty banded.
+# Geographic ones not used:
+# * Christian Heine geologic time maps are interesting, but again not
+#   uniform and not useful.
+# * IBCA could have been good, but bathymetry has ugly jumps.
+# * GMT maps also interesting, but non uniform.
+# * Victor Huérfano Caribbean map almost useful, but has banding.
+# * Christopher Wesson martian topo map sort of cool, but too pale.
+# * Thomas Deweez has more topo colors, but kind of ugly.
+# Geographic ones to be adapted:
+# * ESRI seems to have best geographic maps.
+# * Wiki schemes are also pretty good, but not great.
 #------------------------------------------------------------------------------#
 # Notes on 'channel-wise alpha':
 # * Colormaps generated from HCL space (and cmOcean ones) are indeed perfectly
@@ -123,31 +149,39 @@ _space_aliases = {
 _cmap_categories = { # initialize as empty lists
     # We keep these ones
     'Matplotlib Originals': [
-        'viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted'
+        'viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted',
         ],
+
+    # Assorted origin, but these belong together
+    'Grayscale': [
+        'Grays',
+        'GrayCM',
+        'GrayC',
+        'PseudoGray',
+        'GrayCycle',
+        'GrayCycle_shifted',
+        ],
+
     # Included ColorBrewer
     'ColorBrewer2.0 Sequential': [
-        'Grays',
         'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
         'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-        'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'
+        'PuBu', 'PuBuGn', 'BuGn', 'GnBu', 'YlGnBu', 'YlGn'
         ],
+
+    # Added diverging versions
+    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/jjg/polarity/index.html
+    # Other JJ Green maps weren't that great
+    # TODO: Add 'serated' maps? See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/jjg/serrate/index.html
+    # TODO: Add tool for cutting center out of ***any*** colormap by ending
+    # with the _cut suffix or something?
     'ColorBrewer2.0 Diverging': [
-        'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn', 'Spectral'
+        # 'GYPi', 'GnRP', 'BrBG', 'PuOr', 'GyRd', 'BuRd', 'BuYlRd', 'GnYlRd', 'Spectral'
+        'Spectral', 'Spectral_cut', 'PiYG', 'PiYG_cut', 'PRGn', 'PRGn_cut',
+        'BrBG', 'BrBG_cut', 'PuOr', 'PuOr_cut', 'RdGY', 'RdGY_cut',
+        'RdBu', 'RdBu_cut', 'RdYlBu', 'RdYlBu_cut', 'RdYlGn', 'RdYlGn_cut',
         ],
-    # Other
-    # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
-    # website, but organization is better this way.
-    # 'Other': [
-    'Miscellaneous': [
-        'BlackBody1', 'BlackBody2',
-        'CubeHelix',
-        'MutedRainbow', 'DarkRainbow',
-        'Kindlmann', 'ExtendedKindlmann',
-        'BentCoolWarm', 'SmoothCoolWarm', 
-        'BWR',
-        'ColdHot',
-        ],
+
     # Custom maps
     'ProPlot Sequential': [
          'Glacial',
@@ -159,35 +193,85 @@ _cmap_categories = { # initialize as empty lists
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging': [
-        'IceFire', 'NegPos', 'BlueRed', 'CoolWarm', 'DryWet', 'DesertJungle', 'LandSea'
+        'IceFire', 'NegPos', 'BlueRed', 'PurplePink', 'DryWet', 'DrierWetter', 'LandSea'
         ],
+
     # cmOcean
     'cmOcean Sequential': [
-        'Gray', 'Oxy', 'Thermal', 'Haline', 'Ice', 'Dense',
-        'Deep', 'Algae', 'Tempo', 'Speed', 'Matter', 'Turbid',
-        'Amp', 'Solar', 'Phase', 'Phase_shifted'
+        'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
+        'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
+        'Amp', 'Phase', 'Phase_shifted'
         ],
     'cmOcean Diverging': [
         'Balance', 'Curl', 'Delta'
         ],
+
+    # Other
+    # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
+    # website, but organization is better this way.
+    'Miscellaneous': [
+        'BWR',
+        'ColdHot',
+        'Temperature', # from ???
+        'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
+        'Star',
+        'cividis',
+        # 'JMN', # James map; ugly, so deleted
+        'CubeHelix', 'SatCubeHelix',
+        # 'Aurora', 'Space', # from PIEcrust; not uniform, so deleted
+        # 'TemperatureJJG', # from JJG; ugly, so deleted
+        'Kindlmann', 'ExtendedKindlmann',
+        # 'Seismic', # note this one originally had hard boundaries/no interpolation
+        'MutedBio', 'DarkBio', # from: ???, maybe SciVisColor
+        ],
+
+    # Statistik
+    'Statistik Stadt Zürich': [
+        'MutedBlue', 'MutedRed', 'MutedDry', 'MutedWet',
+        'MutedBuRd', 'MutedBuRd_cut', 'MutedDryWet', 'MutedDryWet_cut',
+        ],
+
     # Kenneth Moreland
-    # See: https://www.kennethmoreland.com/color-advice/
-    # Decided to only keep the BlackBody one, put it in Miscellaneous category
+    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html
+    # Soft coolwarm from: https://www.kennethmoreland.com/color-advice/
     # 'Kenneth Moreland Sequential': [
     #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
     #     ],
-    # 'Kenneth Moreland Diverging': [
-    #     'SmoothCoolWarm', 'BentCoolWarm',
+    'Kenneth Moreland': [
+        'CoolWarm', 'MutedCoolWarm', 'SoftCoolWarm',
+        'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
+        ],
+
+    # Sky themes from rafi; not very scientifically useful, but pretty
+    # 'Sky' : [
+    #     'Sky1', 'Sky2', 'Sky3', 'Sky4', 'Sky5', 'Sky6', 'Sky7',
     #     ],
+
+    # CET maps
+    # See: https://peterkovesi.com/projects/colourmaps/
+    # Only kept the 'nice' ones
+    'CET Selections': [
+        'CET1', 'CET2', 'CET3', 'CET4',
+        'Iso1', 'Iso2', 'Iso3', 
+        ],
+    # 'CET Rainbow': [
+    #     ],
+    # 'CET Diverging': [
+    #     ],
+    # 'CET Cyclic': [
+    #     ],
+
     # FabioCrameri
     # See: http://www.fabiocrameri.ch/colourmaps.php
     'Fabio Crameri Sequential': [
-        'GrayC', 'Acton', 'Buda', 'Lajolla', 'Bilbao', 'Turku', 'Lapaz', 'Nuuk',
-        'Bamako', 'Imola', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
+        'Acton', 'Buda', 'Lajolla',
+        'Imola', 'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
+        'Turku', 'Bilbao', 'Lapaz',
         ],
     'Fabio Crameri Diverging': [
-        'Broc', 'Cork',  'Vik', 'Roma', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
+        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
         ],
+
     # Los Alamos
     # See: https://datascience.lanl.gov/colormaps.html
     # Most of these have analogues in SciVisColor, added the few unique
@@ -198,82 +282,99 @@ _cmap_categories = { # initialize as empty lists
     # 'Los Alamos Diverging': [
     #     'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
     #     ],
+
     # SciVisColor
-    'SciVisColor Blues': [
-        'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11', 'Blue12'
-        ],
-    'SciVisColor Greens': [
-        'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
-        ],
-    'SciVisColor Oranges': [
-        'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
-        ],
-    'SciVisColor Browns': [
-        'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
-        ],
-    'SciVisColor Reds/Purples': [
-        'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
-        ],
-    'SciVisColor Diverging': [
-        'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
-        ],
-    'SciVisColor 3 Waves': [
-        '3Wave1', '3Wave2', '3Wave3', '3Wave4', '3Wave5', '3Wave6', '3Wave7'
-        ],
-    'SciVisColor 4 Waves': [
-        '4Wave1', '4Wave2', '4Wave3', '4Wave4', '4Wave5', '4Wave6', '4Wave7'
-        ],
-    'SciVisColor 5 Waves': [
-        '5Wave1', '5Wave2', '5Wave3', '5Wave4', '5Wave5', '5Wave6'
-        ],
-    'SciVisColor Inserts': [
-        'Insert1', 'Insert2', 'Insert3', 'Insert4', 'Insert5', 'Insert6', 'Insert7', 'Insert8', 'Insert9', 'Insert10'
-        ],
-    'SciVisColor Thick Inserts': [
-        'ThickInsert1', 'ThickInsert2', 'ThickInsert3', 'ThickInsert4', 'ThickInsert5'
-        ],
-    'SciVisColor Highlight': [
-        'Highlight1', 'Highlight2', 'Highlight3', 'Highlight4', 'Highlight5'
-        ],
-    'SciVisColor Outlier': [
-        'DivOutlier1', 'DivOutlier2', 'DivOutlier3', 'DivOutlier4',
-        'Outlier1', 'Outlier2', 'Outlier3', 'Outlier4'
-        ],
-    # CET maps
-    # See: https://peterkovesi.com/projects/colourmaps/
-    'CET Sequential': [
-        'CET-S1', 'CET-S2', 'CET-S3', 'CET-S4', 'CET-S5', 'CET-S6', 'CET-S7', 'CET-S8', 'CET-S9', 'CET-S10',
-        'CET-S11', 'CET-S12', 'CET-S13', 'CET-S14', 'CET-S15', 'CET-S16',
-        'CET-S17', 'CET-S18', 'CET-S19',
-        'CET-S20', 'CET-S21', 'CET-S22',
-        'CET-CBS1', 'CET-CBS2', # colorblind
-        'CET-CBTS1', 'CET-CBTS2', # tritanopic colorblind
-        ],
-    'CET Isoluminant': [
-        'CET-I1', 'CET-I2', 'CET-I3', 
-        ],
-    'CET Rainbow': [
-        'CET-R1', 'CET-R2', 'CET-R3',
-        ],
-    'CET Diverging': [
-        'CET-D1', 'CET-D1A', 'CET-D2', 'CET-D3', 'CET-D4', 'CET-D6', 'CET-D7',
-        'CET-D8', 'CET-D9', 'CET-D10', 'CET-D11', 'CET-D12', 'CET-D13',
-        'CET-CBD1', 'CET-CBTD1', # colorblind
-        ],
-    'CET Cyclic': [
-        'CET-C1', 'CET-C1_shifted',
-        'CET-C2', 'CET-C2_shifted',
-        'CET-C4', 'CET-C4_shifted',
-        'CET-C5', 'CET-C5_shifted',
-        'CET-CBC', 'CET-CBC_shifted', # colorblind
-        'CET-CBTC', 'CET-CBTC_shifted', # tritanopic colorblind
-        ],
+    # Culled these because some were ugly
+      'SciVisColor': [
+              'SciPale',
+              'SciBlue', 'SciCyan', 'SciSky', 
+              'SciTurquoise',
+              'SciBlueGreen',
+              'SciGrass', 'SciGreen', 'SciGreenish',
+              'SciYellow',
+              'SciOrange', 'SciRed',
+              'SciBrown',
+              'SciMauve',
+              'SciPurple',
+              'SciViolet',
+              'SciBlueViolet', 
+          ],
+    # 'SciVisColor Blues': [
+    #     'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11', 'Blue12'
+    #     ],
+    # 'SciVisColor Greens': [
+    #     'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
+    #     ],
+    # 'SciVisColor Oranges': [
+    #     'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
+    #     ],
+    # 'SciVisColor Browns': [
+    #     'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
+    #     ],
+    # 'SciVisColor Reds/Purples': [
+    #     'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
+    #     ],
+    # 'SciVisColor Diverging': [
+    #     'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
+    #     ],
+
+    # Waves, also filtered
+    # 'SciVisColor 3 Waves': [
+    #     '3Wave1', '3Wave2', '3Wave3', '3Wave4', '3Wave5', '3Wave6', '3Wave7'
+    #     ],
+    # 'SciVisColor 4 Waves': [
+    #     '4Wave1', '4Wave2', '4Wave3', '4Wave4', '4Wave5', '4Wave6', '4Wave7'
+    #     ],
+    # 'SciVisColor 5 Waves': [
+    #     '5Wave1', '5Wave2', '5Wave3', '5Wave4', '5Wave5', '5Wave6'
+    #     ],
+
+    # Decided to totally forget these
+    # 'SciVisColor Waves': [
+    #     '3Wave1', '3Wave2', '3Wave3',
+    #     '4Wave1', '4Wave2', '4Wave3',
+    #     '5Wave1', '5Wave2', '5Wave3',
+    #     ],
+    # 'SciVisColor Inserts': [
+    #     'Insert1', 'Insert2', 'Insert3', 'Insert4', 'Insert5', 'Insert6', 'Insert7', 'Insert8', 'Insert9', 'Insert10'
+    #     ],
+    # 'SciVisColor Thick Inserts': [
+    #     'ThickInsert1', 'ThickInsert2', 'ThickInsert3', 'ThickInsert4', 'ThickInsert5'
+    #     ],
+    # 'SciVisColor Highlight': [
+    #     'Highlight1', 'Highlight2', 'Highlight3', 'Highlight4', 'Highlight5',
+    #     ],
+
+    # Most of these were ugly, deleted them
+    # 'SciVisColor Outlier': [
+    #     'DivOutlier1', 'DivOutlier2', 'DivOutlier3', 'DivOutlier4',
+    #     'Outlier1', 'Outlier2', 'Outlier3', 'Outlier4'
+    #     ],
+
+    # Duncan Agnew
+    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/dca/index.html
+    # These are 1.0.5 through 1.4.0
+    # 'Duncan Agnew': [
+    #     'Alarm1', 'Alarm2', 'Alarm3', 'Alarm4', 'Alarm5', 'Alarm6', 'Alarm7'
+    #     ],
+
+    # Elevation and bathymetry
+    # 'Geographic': [
+    #     'Bath1', # from XKCD; see: http://soliton.vm.bytemark.co.uk/pub/cpt-city/xkcd/tn/xkcd-bath.png.index.html
+    #     'Bath2', # from Tom Patterson; see: http://soliton.vm.bytemark.co.uk/pub/cpt-city/tp/index.html
+    #     'Bath3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/ibcso/tn/ibcso-bath.png.index.html
+    #     'Bath4', # ^^ same
+    #     'Geography4-1', # mostly ocean
+    #     'Geography5-4', # range must be -4000 to 5000
+    #     'Geography1', # from ???
+    #     'Geography2', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/ngdc/tn/ETOPO1.png.index.html
+    #     'Geography3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/mby/tn/mby.png.index.html
+    #     ],
     # Gross. These ones will be deleted.
     'Alt Sequential': [
         'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
         'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-        'coolwarm', 'seismic', # diverging ones
-         'multi', 'cividis',
+        'multi', 'cividis',
         'afmhot', 'gist_heat', 'copper'
         ],
     'Alt Rainbow': [
@@ -295,27 +396,22 @@ _cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Mi
 # WARNING: Must add to this list manually! Not worth trying to generalize.
 # List of string cmap names, and the indices where they can be broken into parts
 _cmap_parts = {
-    'coldhot':      (None, 4, None),
-    'bwr':          (None, 1, 2, None),
-    'icefire':      (None, 3, None),
-    'negpos':       (None, 3, None),
-    'bluered':      (None, 4, None),
-    'coolwarm':     (None, 4, None),
-    'drywet':       (None, 3, None),
-    'desertjungle': (None, 6, None),
-    'landsea':      (None, 4, None),
-    'ylorbr':       (None, 2, 4, None),
-    'ylorrd':       (None, 2, 4, None),
-    'orrd':         (None, 2, None),
-    'purd':         (None, 2, None),
-    'rdpu':         (None, 2, None),
-    'bupu':         (None, 2, None),
-    'gnbu':         (None, 2, None),
-    'pubu':         (None, 2, None),
-    'ylgnbu':       (None, 2, 4, None),
-    'pubugn':       (None, 2, 4, None),
-    'bugn':         (None, 2, None),
-    'ylgn':         (None, 2, None),
+    # Sequential
+    # Decided these shouldn't be reversed; left colors always refer
+    # to 'light' colors, right to 'dark' colors. Also there is BuPu and PuBu
+    # 'ylorbr':       (None, 2, 4, None),
+    # 'ylorrd':       (None, 2, 4, None),
+    # 'orrd':         (None, 2, None),
+    # 'purd':         (None, 2, None),
+    # 'rdpu':         (None, 2, None),
+    # 'bupu':         (None, 2, None),
+    # 'gnbu':         (None, 2, None),
+    # 'pubu':         (None, 2, None),
+    # 'ylgnbu':       (None, 2, 4, None),
+    # 'pubugn':       (None, 2, 4, None),
+    # 'bugn':         (None, 2, None),
+    # 'ylgn':         (None, 2, None),
+    # Diverging
     'piyg':         (None, 2, None),
     'prgn':         (None, 1, 2, None), # purple red green
     'brbg':         (None, 2, 3, None), # brown blue green
@@ -324,6 +420,16 @@ _cmap_parts = {
     'rdbu':         (None, 2, None),
     'rdylbu':       (None, 2, 4, None),
     'rdylgn':       (None, 2, 4, None),
+    # Other diverging
+    'coldhot':      (None, 4, None),
+    'bwr':          (None, 1, 2, None),
+    'icefire':      (None, 3, None),
+    'negpos':       (None, 3, None),
+    'bluered':      (None, 4, None),
+    'purplepink':   (None, 4, None),
+    'drywet':       (None, 3, None),
+    'drierwetter':  (None, 5, None),
+    'landsea':      (None, 4, None),
     }
 # Tuple pairs of mirror image cmap names
 _cmap_mirrors = [
@@ -1666,7 +1772,6 @@ def register_cmaps():
         # if name in mcm.cmap_d: # don't want to re-register every time
         #     continue
         # Read .rgb, .rgba, .xrgb, and .xrgba files
-        cycle = False
         if re.search('\.x?rgba?$', filename):
             # Load
             ext = filename.split('.')[-1]
@@ -1686,16 +1791,22 @@ def register_cmaps():
                 cmap[:,1:4] = cmap[:,1:4]/255
             # Build color dict
             x = cmap[:,0]
-            cdict = {}
+            x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
             if cmap.shape[1]==5:
                 channels = ('red', 'green', 'blue', 'alpha')
             else:
                 channels = ('red', 'green', 'blue')
-            for i,channel in enumerate(channels):
-                vector = cmap[:,i+1:i+2]
-                cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
-            cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
-            cmaps.add(name)
+            # Optional cycles
+            if re.match('(cycle|qual)[0-9]', name.lower()):
+                cmap = mcolors.ListedColormap(cmap[:,1:])
+                cycles.add(name)
+            else:
+                cdict = {}
+                for i,channel in enumerate(channels):
+                    vector = cmap[:,i+1:i+2]
+                    cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
+                cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
+                cmaps.add(name)
         # Load XML files created with scivizcolor
         # Adapted from script found here: https://sciviscolor.org/matlab-matplotlib-pv44/
         elif re.search('\.xml$', filename):
@@ -1712,7 +1823,7 @@ def register_cmaps():
             x = np.array(x)
             x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
             colors = np.array(colors)
-            if 'cycle' in name.lower():
+            if re.match('(cycle|qual)[0-9]', name.lower()):
                 cmap = mcolors.ListedColormap([to_rgb(color) for color in colors])
                 cycles.add(name)
             else:
@@ -1748,6 +1859,11 @@ def register_cmaps():
         cmap = mcm.cmap_d.get(name, None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
+
+    # Reverse some included colormaps, so colors
+    # go from 'cold' to 'hot'
+    for name in ('Spectral',):
+        mcm.cmap_d[name] = mcm.cmap_d[name].reversed()
 
     # Add shifted versions of cyclic colormaps, and prevent same colors on ends
     # TODO: Add automatic shifting of colormap by N degrees in the _CmapDict
