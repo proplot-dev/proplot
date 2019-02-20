@@ -285,38 +285,40 @@ _cmap_categories = { # initialize as empty lists
 
     # SciVisColor
     # Culled these because some were ugly
-      'SciVisColor': [
-              'SciPale',
-              'SciBlue', 'SciCyan', 'SciSky', 
-              'SciTurquoise',
-              'SciBlueGreen',
-              'SciBrightGreen', 'SciGreen', 'SciYellowGreen',
-              'SciYellow',
-              'SciOrange',
-              'SciYellowRed',
-              'SciOrangeRed',
-              'SciRed',
-              'SciBrown',
-              'SciMauve',
-              'SciPurple',
-              'SciViolet',
-              'SciBlueViolet', 
-          ],
-    # 'SciVisColor Blues': [
-    #     'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11', 'Blue12'
-    #     ],
-    # 'SciVisColor Greens': [
-    #     'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
-    #     ],
-    # 'SciVisColor Oranges': [
-    #     'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
-    #     ],
-    # 'SciVisColor Browns': [
-    #     'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
-    #     ],
-    # 'SciVisColor Reds/Purples': [
-    #     'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
-    #     ],
+    # Actually nevermind... point of these is to *combine* them, make
+    # stacked colormaps that highlight different things.
+    # 'SciVisColor': [
+    #           'SciPale',
+    #           'SciBlue', 'SciCyan', 'SciSky',
+    #           'SciTurquoise',
+    #           'SciBlueGreen',
+    #           'SciBrightGreen', 'SciGreen', 'SciYellowGreen',
+    #           'SciYellow',
+    #           'SciOrange',
+    #           'SciYellowRed',
+    #           'SciOrangeRed',
+    #           'SciRed',
+    #           'SciBrown',
+    #           'SciMauve',
+    #           'SciPurple',
+    #           'SciViolet',
+    #           'SciBlueViolet',
+    #       ],
+    'SciVisColor Blues': [
+        'Blue0', 'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11',
+        ],
+    'SciVisColor Greens': [
+        'Green1', 'Green2', 'Green3', 'Green4', 'Green5', 'Green6', 'Green7', 'Green8',
+        ],
+    'SciVisColor Oranges': [
+        'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5', 'Orange6', 'Orange7', 'Orange8',
+        ],
+    'SciVisColor Browns': [
+        'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5', 'Brown6', 'Brown7', 'Brown8', 'Brown9',
+        ],
+    'SciVisColor Reds/Purples': [
+        'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
+        ],
     # 'SciVisColor Diverging': [
     #     'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
     #     ],
