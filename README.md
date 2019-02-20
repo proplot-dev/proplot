@@ -33,8 +33,6 @@ This package is a work-in-progress. Currently there is no formal release on PyPi
 pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 ```
 
-I only push to this repo when new features are completed and working properly.
-
 Dependencies are `matplotlib` and `numpy`. The geographic mapping mapping features require `basemap` or `cartopy`. Note that [basemap is no longer under active development](https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement) -- cartopy is integrated more intelligently with the matplotlib API.
 However, for the time being, basemap *retains several advantages* over cartopy (namely [more tools for labeling meridians/parallels](https://github.com/SciTools/cartopy/issues/881) and more available projections -- see [basemap](https://matplotlib.org/basemap/users/mapsetup.html) vs. [cartopy](https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html)). Therefore, I decided to support both.
 <!-- may be preferred in some circumstances. -->
