@@ -4,6 +4,7 @@
 .*.sw[a-z]
 
 # Colormap subfolders
+tmp
 rejects
 weird
 colorbrewer

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Module for creating special ProPlot figures with special ProPlot axes.
+"""
 import re
 import numpy as np
 # import io
@@ -6,7 +9,8 @@ import numpy as np
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
 from .gridspec import _gridspec_kwargs, FlexibleGridSpec
-from . import base
+from .axes import map_projection_factory
+from .figure import Figure
 from .utils import _fill, ic
 from functools import wraps
 # Have to do this for a couple things
@@ -217,7 +221,7 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
         # Custom Basemap and Cartopy axes
         elif name:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, aspect = base.map_projection_factory(package, name, **proj_kw[num])
+            instance, aspect = map_projection_factory(package, name, **proj_kw[num])
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             if not silent:
                 print(f'Forcing aspect ratio: {aspect:.3g}')
@@ -271,7 +275,7 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
     gs = FlexibleGridSpec(**gridspec_kw)
     fig = plt.figure(figsize=figsize, auto_adjust=auto_adjust, rcreset=rcreset,
         gridspec=gs, subplots_kw=subplots_kw,
-        FigureClass=base.Figure,
+        FigureClass=Figure,
         )
 
     #--------------------------------------------------------------------------

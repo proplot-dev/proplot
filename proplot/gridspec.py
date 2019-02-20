@@ -212,7 +212,7 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     # Can follow some of the pre-processing
     subplots_kw = _dot_dict(nrows=nrows, ncols=ncols,
         figsize=figsize, aspect=aspect,
-        hspace=hspace, wspace=wspace,
+        hspace=hspace,   wspace=wspace,
         hratios=hratios, wratios=wratios,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
         left=left,     bottom=bottom, right=right,   top=top,

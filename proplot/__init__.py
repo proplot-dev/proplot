@@ -10,7 +10,7 @@ name = 'ProPlot'
 # Then import stuff
 from .utils import *      # misc stuff
 from .rcmod import *      # custom configuration implementation
-from .base import *       # basic tools
+from .axes import *       # everything, axes definitions
 from .subplots import *
 from .gridspec import *
 from .colortools import * # color tools

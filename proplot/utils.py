@@ -14,10 +14,38 @@ try:
 except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 
+# Helper class
+class _dot_dict(dict):
+    """
+    Simple class for accessing elements with dot notation.
+    See: https://stackoverflow.com/a/23689767/4970632
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 #------------------------------------------------------------------------------#
 # Decorators
+# Below is very simple example that demonstrates how simple decorators work
+# def decorator1(func):
+#     def decorator():
+#         print('decorator 1 called')
+#         func()
+#         print('decorator 1 finished')
+#     return decorator
+# def decorator2(func):
+#     def decorator():
+#         print('decorator 2 called')
+#         func()
+#         print('decorator 2 finished')
+#     return decorator
+# @decorator1
+# @decorator2
+# def hello():
+#     print('hello world!')
+# hello()
 #------------------------------------------------------------------------------#
-def docstring_fix(child):
+def _docstring_fix(child):
     """
     Decorator function for appending documentation from overridden method
     onto the overriding method docstring.
@@ -39,21 +67,7 @@ def docstring_fix(child):
             break # only do this for the first parent class
     return child
 
-def fancy_decorator(decorator):
-    """
-    Normally to make a decorator that accepts arguments, you have to create
-    3 nested function definitions. This abstracts that away -- if you decorate
-    your decorator-function declaration with this, the decorator will now accept arguments.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(decorator)
-    def decorator_maker(*args, **kwargs):
-        def decorator_wrapper(func):
-            return decorator(func, *args, **kwargs)
-        return decorator_wrapper
-    return decorator_maker
-
-def timer(func):
+def _timer(func):
     """
     A decorator that prints the time a function takes to execute.
     See: https://stackoverflow.com/a/1594484/4970632
@@ -67,7 +81,7 @@ def timer(func):
         return res
     return decorator
 
-def logger(func):
+def _logger(func):
     """
     A decorator that logs the activity of the script (it actually just prints it,
     but it could be logging!)
@@ -80,7 +94,7 @@ def logger(func):
         return res
     return decorator
 
-def counter(func):
+def _counter(func):
     """
     A decorator that counts and prints the number of times a function
     has been executed.
@@ -104,15 +118,6 @@ def counter(func):
 # Helper stuff
 #------------------------------------------------------------------------------#
 _fill = (lambda x,y: x if x is not None else y)
-
-class _dot_dict(dict):
-    """
-    Simple class for accessing elements with dot notation.
-    See: https://stackoverflow.com/a/23689767/4970632
-    """
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
 
 def isnumber(item):
     """

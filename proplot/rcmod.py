@@ -22,20 +22,21 @@ Notes
     any options set with InlineBackend in ipython are ***ignored***. But if you query
     settings, options still present -- you just need to call nbsetup again.
 """
-#------------------------------------------------------------------------------#
 # First just make sure some dependencies are loaded
 import re
 from matplotlib.pyplot import figure, get_fignums
 from cycler import cycler
 from . import colortools
 from . import utils
-from .utils import timer, counter, ic
+from .utils import _timer, _counter, ic
 from matplotlib import rcParams, style
+
 # Get default font
 # WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
 # failed to render/printed nonsense, but Helvetica fine
 import sys
 _default_font = 'Helvetica' if sys.platform=='linux' else 'Helvetica Neue' # says 'darwin' on mac
+
 # Will add our own dictionary to the top-level matplotlib module, to go
 # alongside rcParams
 # Default settings
@@ -74,6 +75,7 @@ rcGlobals = {
     'minorwidth': 0.8, # ratio of major-to-minor tick width
     'gridratio':  0.5, # ratio of major-to-minor grid line widths
     }
+
 rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     # The xcolor/ycolor we don't use 'special' props (since we'd be duplicating ones
@@ -114,6 +116,7 @@ rcGlobals_children = {
     'tickdir':    ['xtick.direction',     'ytick.direction'],
     'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
     }
+
 # Settings that apply to just one thing, and are
 # already implemented by matplotlib
 rcDefaults = {
@@ -180,6 +183,7 @@ rcDefaults = {
     'legend.borderpad' :       0.5,
     'legend.borderaxespad' :   0,
     }
+
 # Special settings, should be thought of as extension of rcParams
 rcDefaults_sp = {
     # These ones just need to be present, will get reset by globals
@@ -226,7 +230,7 @@ rcDefaults_sp = {
     'gridspec.nolab':        0.15, # only ticks
     }
 rcParams_sp = rcDefaults_sp.copy()
-n_sp = len(rcParams_sp) # instead of fancy rcGlobals-style key verification, just check if dictionary has grown when user sets an item -- in this case, property was invalid, so we throw error
+
 # Generate list of valid names, and names with subcategories
 rc_names = {
     *rcParams.keys(),
@@ -295,7 +299,6 @@ class rc_configurator(object):
         self._cache_added = {}
         self._getitem_mode = 0
 
-    # @counter
     def __getitem__(self, key):
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
@@ -340,7 +343,6 @@ class rc_configurator(object):
         else:
             return None
 
-    # @counter
     def __setitem__(self, key, value):
         # First the special cycler
         # NOTE: No matter the 'setitem mode' this will always set the axes
@@ -402,7 +404,7 @@ class rc_configurator(object):
         # Set the color cycler.
         # NOTE: Generally if user uses 'C0', et cetera, assume they want to
         # refer to the *default* cycler colors; so first reset
-        if isinstance(value, str) or utils.isnumber(value):
+        if isinstance(value, str) or isinstance(value, Number):
             value = value,
         colors = colortools.colors('colorblind')
         rcParams['axes.prop_cycle'] = cycler('color', colors)

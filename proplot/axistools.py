@@ -2,6 +2,7 @@
 """
 Define various axis scales, locators, and formatters. Also define normalizers
 generally used for colormap scaling. Below is rough overview of API.
+
 General Notes:
   * Want to try to avoid **using the Formatter to scale/transform values, and
     passing the locator an array of scaled/transformed values**. Makes more sense
@@ -9,6 +10,7 @@ General Notes:
     formatters like normal, as they were intended to be used. This way, if e.g.
     matching frequency-axis with wavelength-axis, just conver the **axis limits**
     so they match, then you're good.
+
 Scales:
   * These are complicated. See: https://matplotlib.org/_modules/matplotlib/scale.html#ScaleBase
     Use existing ones as inspiration -- e.g. InverseScale modeled after LogScale.
@@ -35,6 +37,7 @@ Scales:
         version smarter than this, that still prevents these hanging ticks.
   * Also, have to be 'registered' unlike locators and formatters, which
     can be passed to the 'set' methods. Or maybe not?
+
 Transforms:
   * These are complicted. See: https://matplotlib.org/_modules/matplotlib/transforms.html#Transform
   * Attributes:
@@ -45,6 +48,7 @@ Transforms:
       - transform(): transforms N-D coordinates, given M x N array of values. Can also
         just declare transform_affine or transform_non_affine.
       - inverted(): if has_inverse True, performs inverse transform.
+
 Locators:
   * These are complicated. See: https://matplotlib.org/_modules/matplotlib/ticker.html#Locator
   * Special:
@@ -61,10 +65,12 @@ Locators:
       - autoscale(), which calls the internal locator 'view_limits' with
         result of axis.get_view_interval()
       - pan() and zoom() for interactive purposes
+
 Formatters:
   * Easy to construct: just build with FuncFormatter a function that accepts
     the number and a 'position', which maybe is used for offset or something
     but almost always don't touch it, leave it default.
+
 Normalizers:
   * Generally these are used for colormaps, easy to construct: require
     only an __init__ method and a __call__ method.
@@ -79,6 +85,7 @@ Normalizers:
 import re
 from . import utils
 from .utils import ic
+from numbers import Number
 from fractions import Fraction
 from types import FunctionType
 import numpy as np
@@ -574,7 +581,7 @@ def locator(loc, *args, minor=False, time=False, **kwargs):
         elif loc not in locators:
             raise ValueError(f'Unknown locator "{loc}". Options are {", ".join(locators.keys())}.')
         loc = locators[loc](*args, **kwargs)
-    elif utils.isnumber(loc): # scalar variable
+    elif isinstance(loc, Number): # scalar variable
         loc = mticker.MultipleLocator(loc, *args, **kwargs)
     else:
         loc = mticker.FixedLocator(np.sort(loc), *args, **kwargs) # not necessary
@@ -622,7 +629,7 @@ def formatter(form, *args, time=False, tickrange=None, **kwargs):
             if form in ['deg','deglon','deglat','lon','lat']:
                 kwargs.update({'deg':('deg' in form)})
             form = formatters[form](*args, **kwargs)
-    elif utils.isnumber(form): # interpret scalar number as *precision*
+    elif isinstance(form, Number): # interpret scalar number as *precision*
         form = CustomFormatter(form, *args, tickrange=tickrange, **kwargs)
     else:
         form = mticker.FixedFormatter(form) # list of strings on the major ticks, wherever they may be
@@ -647,7 +654,7 @@ def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf]):
     # Format definition
     if tickrange is None:
         tickrange = [-np.inf, np.inf]
-    elif utils.isnumber(tickrange): # use e.g. -1 for no ticks
+    elif isinstance(tickrange, Number): # use e.g. -1 for no ticks
         tickrange = [-tickrange, tickrange]
     def f(value, location):
         # Exit if not in tickrange

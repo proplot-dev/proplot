@@ -3,14 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to proplot's documentation!
+Welcome to ProPlot's documentation!
 ===================================
 
+.. Below replaces traditional autodoc invocation with
+   .. automodule:: mods.set.tests
+      :members:
+      :show-inheritance:
+   Use 'sphinx-apidoc ../proplot -o .' to auto-generate modules.rst
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
    includeme
+   modules
 
 
 Indices and tables
