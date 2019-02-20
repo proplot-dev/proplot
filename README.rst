@@ -117,6 +117,4 @@ useful, feel free to buy me a cup of coffee :)
 
 .. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
-   :height: 100px
-   :width: 200 px
    :scale: 50 %

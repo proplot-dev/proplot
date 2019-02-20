@@ -3,7 +3,6 @@
 A couple simple tools. They aren't strictly plot-related functions, but
 will be useful for user in the context of making plots.
 """
-#------------------------------------------------------------------------------#
 import time
 import numpy as np
 from numbers import Number

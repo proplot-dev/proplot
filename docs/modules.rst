@@ -4,4 +4,15 @@ Documentation
 .. toctree::
    :maxdepth: 4
 
-   proplot
+   notebook
+   subplots
+   figure
+   axes
+   gridspec
+   axistools
+   colortools
+   fonttools
+   proj
+   rcmod
+   utils
+   demos
