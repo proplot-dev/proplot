@@ -1,6 +1,6 @@
-formatter
+Formatter
 =========
 
 .. currentmodule:: proplot.axistools
 
-.. autofunction:: formatter
+.. autofunction:: Formatter

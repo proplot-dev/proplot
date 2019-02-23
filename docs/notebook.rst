@@ -5,5 +5,5 @@ Notebook tools
 
 .. automodsumm:: proplot.notebook
    :toctree: api
-   :skip: get_ipython, ic, rc
+   :skip: get_ipython, rc
 

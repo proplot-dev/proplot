@@ -92,7 +92,9 @@ intersphinx_mapping = {
                        'python': ('https://docs.python.org/3', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-                       'xarray': ('http://xarray.pydata.org/en/stable', None)
+                       'xarray': ('http://xarray.pydata.org/en/stable', None),
+                       'cartopy': ('https://scitools.org.uk/cartopy/docs/latest/', None),
+                       'basemap': ('https://matplotlib.org/basemap/', None),
                        }
 
 # If true, the current module name will be prepended to all description
@@ -237,11 +239,6 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
-
-# -- Options for intersphinx extension ---------------------------------------
-
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
 
 # -- Options for todo extension ----------------------------------------------
 

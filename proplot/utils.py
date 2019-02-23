@@ -196,14 +196,7 @@ def _counter(func):
 #------------------------------------------------------------------------------#
 def arange(min_, *args):
     """
-    Duplicate behavior of np.arange, except with inclusive endpoints; dtype is
-    controlled very carefully, so should be 'most precise' among min/max/step args.
-    Input:
-        stop
-        start, stop, [step]
-        Just like np.arange!
-    Output:
-        The array sequence.
+    Duplicate behavior of `numpy.arange`, except with **inclusive endpoints**.
     """
     # Optional arguments just like np.arange
     if len(args)==0:

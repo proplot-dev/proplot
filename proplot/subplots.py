@@ -42,8 +42,8 @@ def show():
 #-------------------------------------------------------------------------------
 class axes_list(list):
     """
-    Magical class that iterates through each axes and calls respective
-    method on each one. Returns a list of each return value. When calling
+    Magical class that iterates through items and calls respective
+    method (or retrieves respective attribute) on each one. When calling
     ``f, axs = plot.subplots(...)``, ``axs`` is an instance of `axes_list`.
     """
     def __repr__(self):
@@ -91,13 +91,9 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
         basemap=False, proj={}, projection={}, proj_kw={}, projection_kw={},
         **kwargs): # for projections; can be 'basemap' or 'cartopy'
     """
-    Summary
-    -------
     Special creation of subplots grids, allowing for arbitrarily overlapping 
     axes objects. Will return figure handle and axes objects.
 
-    Details
-    -------
     * Easiest way to create subplots is with nrows=1 and ncols=1. If you want extra space
       between a row or column, specify the row/column number that you want to be 'empty' with
       emptyrows=row/emptycolumn=column, and adjust wratios/hratios for the desired width of that space.
@@ -116,12 +112,12 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
     Notes
     -----
     * Matplotlib set_aspect option seems to behave strangely on some plots (trend-plots from
-        SST paper); for this reason we override the fix_aspect option provided by basemap and
-        just draw figure with appropriate aspect ratio to begin with. Otherwise get weird
-        differently-shaped subplots that seem to make no sense.
+      SST paper); for this reason we override the fix_aspect option provided by basemap and
+      just draw figure with appropriate aspect ratio to begin with. Otherwise get weird
+      differently-shaped subplots that seem to make no sense.
     * Shared axes will generally end up with the same axis limits/scaling/majorlocators/minorlocators;
-        the sharex and sharey detection algorithm really is just to get instructions to make the
-        ticklabels/axis labels invisible for certain axes.
+      the sharex and sharey detection algorithm really is just to get instructions to make the
+      ticklabels/axis labels invisible for certain axes.
 
     Todo
     ----
@@ -129,9 +125,9 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
       axes sharing mode where we *disable ticklabels and labels*, but *do not
       use the builtin sharex/sharey API*, suitable for complex map projections.
     * For spanning axes labels, right now only detect **x labels on bottom**
-        and **ylabels on top**; generalize for all subplot edges.
+      and **ylabels on top**; generalize for all subplot edges.
     * Figure size should be constrained by the dimensions of the axes, not vice
-        versa; might make things easier.
+      versa; might make things easier.
     """
     # Check
     sharex = _default(share, sharex)

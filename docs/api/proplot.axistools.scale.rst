@@ -1,6 +1,6 @@
-scale
+Scale
 =====
 
 .. currentmodule:: proplot.axistools
 
-.. autofunction:: scale
+.. autofunction:: Scale

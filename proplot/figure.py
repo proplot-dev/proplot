@@ -199,6 +199,9 @@ class Figure(mfigure.Figure):
             'ha':'center', 'va':'bottom', **kwargs})
 
     def draw(self, renderer, *args, **kwargs):
+        """
+        Custom draw.
+        """
         # Special: Figure out if other titles are present, and if not
         # bring suptitle close to center
         # ref_ax = None
@@ -218,6 +221,9 @@ class Figure(mfigure.Figure):
             sharex_level=3, sharey_level=3,
             sharex_panels=True, sharey_panels=True, # by default share main x/y axes with panel x/y axes
             **kwargs):
+        """
+        Create edge panels.
+        """
         # Helper function for creating paneled axes.
         width, height = self.width, self.height
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
@@ -372,6 +378,9 @@ class Figure(mfigure.Figure):
         self.smart_tight_layout(renderer)
 
     def save(self, filename, silent=False, auto_adjust=True, pad=0.1, **kwargs):
+        """
+        Custom save.
+        """
         # Notes:
         # * Gridspec object must be updated before figure is printed to
         #     screen in interactive environment; will fail to update after that.
@@ -392,6 +401,9 @@ class Figure(mfigure.Figure):
         return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
 
     def savefig(self, *args, **kwargs):
+        """
+        Custom save.
+        """
         # Alias for save.
         return self.save(*args, **kwargs)
 

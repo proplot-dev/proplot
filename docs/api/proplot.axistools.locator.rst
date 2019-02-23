@@ -1,6 +1,6 @@
-locator
+Locator
 =======
 
 .. currentmodule:: proplot.axistools
 
-.. autofunction:: locator
+.. autofunction:: Locator

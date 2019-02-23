@@ -1,6 +1,6 @@
-MoneyFormatter
+PoundFormatter
 ==============
 
 .. currentmodule:: proplot.axistools
 
-.. autofunction:: MoneyFormatter
+.. autofunction:: PoundFormatter

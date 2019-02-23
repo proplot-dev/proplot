@@ -594,13 +594,19 @@ def _gridfix_cartopy(func):
 #------------------------------------------------------------------------------#
 class BaseAxes(maxes.Axes):
     """
-    Subclass the default Axes class. Then register it as the 'base' projection,
-    and you will get a subclass Subplot by calling fig.add_subplot(projection='base').
-    Notes:
-    * You cannot subclass SubplotBase directly, should only be done with
-      maxes.subplot_class_factory, which is called automatically when using add_subplot.
-    * Cartopy projections should use same methods as for ordinary 'cartesian'
-      plot, so we put a bunch of definition overrides in here.
+    Lowest-level `~matplotlib.axes.Axes` override. Handles titles and axis
+    sharing. Overrides the legend, colorbar, and plot methods. Registered
+    projeciton name is ``'base'``.
+
+    Notes
+    -----
+    Impossible to subclass `~matplotlib.axes.SubplotBase` directly; the subplot
+    subclass is made automatically by `~matplotlib.axes.subplot_class_factory`
+    after calling `~matplotlib.figure.Figure.add_subplot`.
+
+    Todo
+    ----
+    Consider moving the share axis stuff to `XYAxes`?
     """
     # Initial stuff
     name = 'base'
@@ -1010,15 +1016,15 @@ class BaseAxes(maxes.Axes):
     # @_cycle_features
     def plot(self, *args, cmap=None, values=None, **kwargs):
         """
-        Expand functionality of plot to also make LineCollection lines, i.e. lines
-        whose colors change as a function of some key/indicator.
+        As in `~matplotlib.axes.Axes.plot`, but with added functionality
+        for making `~matplotlib.collections.LineCollection` lines -- lines
+        whose colors change as a function of the coordinates `values`.
 
         Other Parameters
         ----------------
         **kwargs :
-            Valid kwargs are :class:`~matplotlib.lines.Line2D` properties,
+            Valid kwargs are `~matplotlib.lines.Line2D` properties,
             with the exception of 'transform':
-
         """
         if cmap is None and values is None:
             # Make normal boring lines
@@ -1056,24 +1062,24 @@ class BaseAxes(maxes.Axes):
         return super().scatter(*args, **kwargs)
 
     # @_cmap_features
-    def cmapline(self, *args, cmap=None, norm=None,
-            values=None, interp=0, **kwargs):
+    def cmapline(self, *args, values=None,
+            cmap=None, norm=None,
+            interp=0, **kwargs):
         """
-        Create lines with colormap.
-        See: https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html
-        Will manage input more strictly, this is harder to generalize.
+        Create lines with colormap. See `this matplotlib example
+        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`_.
+        Calling `BaseAxes.plot` with kwargs ``cmap`` and ``values`` will
+        invoke this method.
 
-        Optional
+        Other parameters
         --------
-          values:
-            the values to which each (x,y) coordinate corresponds.
-          bins:
-            do you want values to be *discretized*, or do you want to
-            *interpolate* values between points? not yet implemented.
-          interp:
-            number of values between each line joint and each *halfway* point
-            between line joints to which you want to interpolate. for bins,
-            we don't need any interpolation.
+          values : array-like
+            The values to which each (x,y) coordinate corresponds.
+          cmap : cmap-argument
+            The colormap, passed to the `~colortools.cmap` function.
+          interp : int, optional
+            Number of values between each line joint and each *halfway* point
+            between line joints to which you want to interpolate.
         """
         # First error check
         if values is None:
@@ -1150,7 +1156,7 @@ class XYAxes(BaseAxes):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
         # Change the default formatter (mine is better)
-        formatter = axistools.formatter('custom')
+        formatter = axistools.Formatter('custom')
         self.xaxis.set_major_formatter(formatter)
         self.yaxis.set_major_formatter(formatter)
 
@@ -1338,13 +1344,13 @@ class XYAxes(BaseAxes):
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
-            self.set_xscale(axistools.scale(xscale, **xscale_kw))
+            self.set_xscale(axistools.Scale(xscale, **xscale_kw))
             if xscale in ('log','inverse') and xlocator is not None and xformatter is None:
                 xformatter = 'custom'
         if yscale is not None:
             if hasattr(yscale,'name'):
                 yscale = yscale.name
-            self.set_yscale(axistools.scale(yscale, **yscale_kw))
+            self.set_yscale(axistools.Scale(yscale, **yscale_kw))
             if yscale in ('log','inverse') and ylocator is not None and yformatter is None:
                 yformatter = 'custom'
         if xlim is not None:
@@ -1442,13 +1448,13 @@ class XYAxes(BaseAxes):
             # objects, and matplotlib automatically set the unit converter)
             time = isinstance(axis.converter, mdates.DateConverter)
             if ticklocator is not None:
-                axis.set_major_locator(axistools.locator(ticklocator, time=time, **locator_kw))
+                axis.set_major_locator(axistools.Locator(ticklocator, time=time, **locator_kw))
             if tickformatter is not None or tickrange is not None:
-                axis.set_major_formatter(axistools.formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
+                axis.set_major_formatter(axistools.Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
             if not tickminor and tickminorlocator is None:
-                axis.set_minor_locator(axistools.locator('null'))
+                axis.set_minor_locator(axistools.Locator('null'))
             elif tickminorlocator is not None:
-                locator = axistools.locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
+                locator = axistools.Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
                 axis.set_minor_locator(locator)
             axis.set_minor_formatter(mticker.NullFormatter())
 
@@ -1514,9 +1520,9 @@ class XYAxes(BaseAxes):
             if bounds is not None or axis.get_scale()=='cutoff':
                 if bounds is None: # no API for this on axis
                     bounds = getattr(self, 'get_' + axis.axis_name + 'lim')()
-                locator = axistools.locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
+                locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_major_locator(locator)
-                locator = axistools.locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
+                locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_minor_locator(locator)
 
             # Axis label properties
@@ -1823,14 +1829,21 @@ class MapAxes(BaseAxes):
             raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
-    def _parse_labels(self, labels, mode):
+    def parse_labels(self, labels, mode):
         """
-        Parse lonlabels/latlabels argument.
-        Four different options:
-            1) use a string e.g. 'lr', 'bt'
-            2) boolean True; left for latitudes, bottom for longitudes
-            3) a (n1,n2) tuple ((left,right) for latitudes, (bottom,top) for longitudes)
-            4) a (n1,n2,n3,n4) tuple like normal
+        Parses complex ``lonlabels`` and ``latlabels`` arguments. There are
+        four different options:
+
+            1. A string, e.g. ``'lr'``, ``'bt'``
+            2. Boolean ``True``; indicates left side for latitudes,
+                bottom for longitudes.
+            3. A boolean ``(left,right)`` tuple for latitudes,
+                ``(bottom,top)`` for longitudes.
+            4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
+                `~basemap.Basemap.drawmeridians` and
+                `~basemap.Basemap.drawparallels` methods;
+                indicates whether to label left, right, top, and bottom
+                sides, respectively.
         """
         if labels is False:
             return [0]*4
@@ -1857,15 +1870,14 @@ class MapAxes(BaseAxes):
 
 class BasemapAxes(MapAxes):
     """
-    Axes subclass for basemap plotting.
+    Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
+    projections. The `~basemap.Basemap` projection instance is added as
+    the `m` attribute, but this is all abstracted away -- you can use
+    `~matplotlib.axes.Axes` methods like ``plot()`` and ``contour()`` with
+    your raw longitude-latitude data. Neat, huh?
     """
     name = 'basemap'
     def __init__(self, *args, map_projection=None, **kwargs):
-        """
-        Declare basemap projection instance, add it as the 'm' attribute.
-        The 'map_projection' argument sets projection, because this axes itself
-        is called from add_subplot using projection='basemap'.
-        """
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
         #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
         #   "limb2" automatically: one for fill and the other for the edges
@@ -1963,8 +1975,8 @@ class BasemapAxes(MapAxes):
         latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
         lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
         latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
-        lonlabels = self._parse_labels(_default(xlabels, lonlabels), 'x')
-        latlabels = self._parse_labels(_default(ylabels, latlabels), 'y')
+        lonlabels = self.parse_labels(_default(xlabels, lonlabels), 'x')
+        latlabels = self.parse_labels(_default(ylabels, latlabels), 'y')
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
@@ -2034,22 +2046,35 @@ class BasemapAxes(MapAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
 
+# Cartopy takes advantage of documented feature where any class with method
+# named _as_mpl_axes can be passed as 'projection' object.
 class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so the methods can overwrite stuff
-    # Cartopy takes advantage of documented feature where any class with method
-    # named _as_mpl_axes can be passed as 'projection' object.
-    # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
+# Feature documented here: https://matplotlib.org/devel/add_new_projection.html
+    """
+    Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
+    projections. Initializes the `~cartopy.crs` projection instance. Also
+    allows for *partial* coverage of azimuthal projections by zooming into
+    the full projection, then drawing a circle boundary around some latitude
+    away from the center (this is surprisingly difficult to do).
+
+    Parameters
+    ----------
+    map_projection : str
+        String name for projection.
+    circle_center : float, optional
+        For polar projections, the center latitude of the circle (``-90``
+        or ``90``).
+    circle_edge : float, optional
+        For polar projections, the edge latitude of the circle.
+
+    Notes
+    -----
+    The circle stuff for polar projection was developed from `this example
+    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
+    """
     # Used in Projection parent class here: https://scitools.org.uk/cartopy/docs/v0.13/_modules/cartopy/crs
     name = 'cartopy'
     def __init__(self, *args, map_projection=None, circle_center=90, circle_edge=0, **kwargs):
-        """
-        Initialize cartopy projection, and allow for *partial* (i.e. not global)
-        coverage for azimuthal projections by zooming into the full projection,
-        then drawing a circle boundary around some latitude away from the center.
-        * The 'map_projection' argument sets projection, because this axes itself
-          is called from add_subplot using projection='basemap'.
-        * Number 'ncircle' controls number of points for drawing circular projection
-          boundary. For more info see: https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html
-        """
         # Dependencies
         import cartopy.crs as ccrs # verify package is available
 
@@ -2127,8 +2152,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
         lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
         latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
-        lonlabels = self._parse_labels(_default(xlabels, lonlabels), 'x')
-        latlabels = self._parse_labels(_default(ylabels, latlabels), 'y')
+        lonlabels = self.parse_labels(_default(xlabels, lonlabels), 'x')
+        latlabels = self.parse_labels(_default(ylabels, latlabels), 'y')
 
         # Configure extents?
         # WARNING: The set extents method tries to set a *rectangle* between
@@ -2212,8 +2237,12 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
 class PolarAxes(MapAxes, mproj.PolarAxes):
     """
-    Thin decorator around PolarAxes with my new plotting features.
-    So far just intended to mix the two classes.
+    Thin decorator around `~matplotlib.projections.PolarAxes` with my
+    new plotting features. So far just mixes the two classes.
+
+    Warning
+    -------
+    Polar axes have not been tested yet!
     """
     name = 'newpolar'
 
@@ -2230,7 +2259,12 @@ mproj.register_projection(CartopyAxes)
 #------------------------------------------------------------------------------#
 def map_projection_factory(package, projection, **kwargs):
     """
-    Returns Basemap object or cartopy ccrs instance.
+    Returns `~basemap.Basemap` instance or projection instance
+    from the `cartopy.crs` module.
+
+    Todo
+    ----
+    Document projection names!
     """
     # Initial stuff
     # Create projection and determine required aspect ratio
@@ -2407,24 +2441,28 @@ def colorbar_factory(ax, mappable,
         errfix=True, extend='neither', extendlength=0.2, # in inches
         values=None, orientation='horizontal', ticklocation='outer', **kwargs): #, settings=None):
     """
-    Description
-    -----------
-    Function for formatting colorbar-axes (axes that are "filled" by a colorbar).
-    * There are options on the colorbar object (cb.locator, cb.formatter with cb.update_ticks)
-        and by passing kwargs (ticks=x, format=y) that allow uer to not reference the underlying
-        "axes" when fixing ticks. Don't use this functionality because not necessary for us and
-        is missing many features, e.g. minorlocators/minorformatters. Also is different syntax.
-    * There is an INSANELY WEIRD problem with colorbars when simultaneously passing levels
-        and norm object to a mappable; fixed by passing vmin/vmax INSTEAD OF levels 
-    (see: https://stackoverflow.com/q/40116968/4970632).
-    * Problem is, often WANT levels instead of vmin/vmax, while simultaneously
-        using a Normalize (for example) to determine colors between the levels
-    (see: https://stackoverflow.com/q/42723538/4970632).
-    * Workaround is to make sure locators are in vmin/vmax range exclusively;
-        cannot match/exceed values.
-    * The 'extend' kwarg is used for the case when you are manufacturing colorbar
-        from list of colors or lines. Most of the time want 'neither'.
+    Function for drawing colorbars, with some extra options. This function
+    should be accessed by the `BaseAxes.colorbar` and `PanelAxes.colorbar`
+    methods.
     """
+    # Developer notes
+    # * There are options on the colorbar object (cb.locator,
+    #   cb.formatter with cb.update_ticks) and by passing kwargs (ticks=x,
+    #   format=y) that allow user to not reference the underlying "axes"
+    #   when fixing ticks. Don't use this functionality because not necessary
+    #   for us and is missing many features, e.g. minorlocators/minorformatters.
+    #   Also is different syntax.
+    # * There is an INSANELY WEIRD problem with colorbars when simultaneously
+    #   passing levels and norm object to a mappable; fixed by passing
+    #   vmin/vmax INSTEAD OF levels.
+    #   (see: https://stackoverflow.com/q/40116968/4970632).
+    # * Problem is, often WANT levels instead of vmin/vmax, while simultaneously
+    #   using a Normalize (for example) to determine colors between the levels
+    #   (see: https://stackoverflow.com/q/42723538/4970632).
+    # * Workaround is to make sure locators are in vmin/vmax range exclusively;
+    #   cannot match/exceed values.
+    # * The 'extend' kwarg is used for the case when you are manufacturing
+    #   colorbar from list of colors or lines. Most of the time want 'neither'.
     # See comment under colorbar() method def for PanelAxes class. Will get
     # weird results if axes is a special BaseAxes.
     if isinstance(ax, BaseAxes):
@@ -2438,6 +2476,7 @@ def colorbar_factory(ax, mappable,
     clabel        = _default(label, clabel)
     clocator_kw = _default(locator_kw, clocator_kw)
     cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
+
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     fromlines, fromcolors = False, False
@@ -2500,9 +2539,9 @@ def colorbar_factory(ax, mappable,
         # Need to use tick_values instead of accessing 'locs' attribute because
         # many locators don't have these attributes; require norm.vmin/vmax as input
         if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
-            locators.append(axistools.locator('null'))
+            locators.append(axistools.Locator('null'))
             continue
-        values = np.array(axistools.locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        values = np.array(axistools.Locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendlength.
         # We need to figure out the numbers that will eventually be rendered to
@@ -2511,7 +2550,7 @@ def colorbar_factory(ax, mappable,
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
             # print(f'Warning: no ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
-            locators.append(axistools.locator('null'))
+            locators.append(axistools.Locator('null'))
             continue
         values_min, values_max = values_min[0], values_max[-1]
         values = values[values_min:values_max+1]
@@ -2523,9 +2562,9 @@ def colorbar_factory(ax, mappable,
             eps = 1e-10
             values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
         fixed = values # record as new variable
-        locators.append(axistools.locator(fixed)) # final locator object
+        locators.append(axistools.Locator(fixed)) # final locator object
     # Next the formatter
-    cformatter = axistools.formatter(cformatter)
+    cformatter = axistools.Formatter(cformatter)
 
     # Fix the norm object
     # Check out the *insanely weird error* that occurs when you comment out this block!
