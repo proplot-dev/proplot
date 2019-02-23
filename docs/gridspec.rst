@@ -1,9 +1,8 @@
-
 Gridspec subclass
 -----------------------
 
 .. automodule:: proplot.gridspec
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
+.. automodsumm:: proplot.gridspec
+   :toctree: api
+   :skip: ic, rc, units

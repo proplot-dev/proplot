@@ -8,12 +8,9 @@ import numpy as np
 # from contextlib import redirect_stdout
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
-from .gridspec import _gridspec_kwargs, FlexibleGridSpec
-from .axes import map_projection_factory
-from .figure import Figure
 from .utils import _default, ic
-from functools import wraps
-# Have to do this for a couple things
+from . import gridspec, figure, axes
+import functools
 import matplotlib.pyplot as plt
 
 #------------------------------------------------------------------------------#
@@ -21,14 +18,15 @@ import matplotlib.pyplot as plt
 #------------------------------------------------------------------------------#
 def figure(*args, **kwargs):
     """
-    Simple alias for 'subplots', perhaps more intuitive.
+    Alias for `subplots`.
     """
     return subplots(*args, **kwargs)
 
 def close():
     """
     Close all figures 'open' in memory. This does not delete images printed
-    in an ipython notebook; those are rendered versions of the abstract figure objects.
+    in an ipython notebook; those are rendered versions of the abstract
+    figure objects.
     """
     plt.close('all') # easy peasy
 
@@ -44,8 +42,9 @@ def show():
 #-------------------------------------------------------------------------------
 class axes_list(list):
     """
-    Magical clas that iterates through each axes and calls respective
-    method on each one. Returns a list of each return value.
+    Magical class that iterates through each axes and calls respective
+    method on each one. Returns a list of each return value. When calling
+    ``f, axs = plot.subplots(...)``, ``axs`` is an instance of `axes_list`.
     """
     def __repr__(self):
         # Make clear that this is no ordinary list
@@ -65,7 +64,7 @@ class axes_list(list):
         if None in values:
             raise AttributeError(f"'{type(self[0])}' object has no method '{attr}'.")
         elif all(callable(value) for value in values):
-            @wraps(values[0])
+            @functools.wraps(values[0])
             def iterator(*args, **kwargs):
                 ret = []
                 for ax in self:
@@ -137,8 +136,8 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
     # Check
     sharex = _default(share, sharex)
     sharey = _default(share, sharey)
-    spanx = _default(span, spanx)
-    spany = _default(span, spany)
+    spanx  = _default(span, spanx)
+    spany  = _default(span, spany)
     if int(sharex) not in range(4) or int(sharey) not in range(4):
         raise ValueError('Axis sharing options sharex/sharey can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels).')
     # Helper functions
@@ -221,7 +220,7 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
         # Custom Basemap and Cartopy axes
         elif name:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, aspect = map_projection_factory(package, name, **proj_kw[num])
+            instance, aspect = axes.map_projection_factory(package, name, **proj_kw[num])
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             if not silent:
                 print(f'Forcing aspect ratio: {aspect:.3g}')
@@ -270,12 +269,12 @@ def subplots(array=None, ncols=1, nrows=1, order='C', # allow calling with subpl
                 innerpanels_kw[num]['wspace'] = _default(innerpanels_kw[num].get('wspace', None), default)
 
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
-    figsize, offset, subplots_kw, gridspec_kw = _gridspec_kwargs(nrows, ncols, **kwargs)
+    figsize, offset, subplots_kw, gridspec_kw = gridspec._gridspec_kwargs(nrows, ncols, **kwargs)
     row_offset, col_offset = offset
-    gs = FlexibleGridSpec(**gridspec_kw)
+    gs = gridspec.FlexibleGridSpec(**gridspec_kw)
     fig = plt.figure(figsize=figsize, auto_adjust=auto_adjust, rcreset=rcreset,
         gridspec=gs, subplots_kw=subplots_kw,
-        FigureClass=Figure,
+        FigureClass=figure.Figure,
         )
 
     #--------------------------------------------------------------------------

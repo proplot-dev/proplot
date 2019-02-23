@@ -5,9 +5,8 @@ will be useful for user in the context of making plots.
 """
 import time
 import numpy as np
-from numbers import Number
-from functools import wraps
-from inspect import cleandoc
+import functools
+# from inspect import cleandoc
 try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
@@ -23,6 +22,68 @@ class _dot_dict(dict):
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+def units(value, error=True):
+    """
+    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
+    for info on the em square units.
+
+    Parameters
+    ----------
+    value : float or str
+        A size 'unit'. If numeric, assumed unit is inches.
+
+        If string, we look for the format ``'123.456units'``, where the
+        number is the value and `'units'` are one of the following:
+
+        =====  ================================
+        Name   Description
+        =====  ================================
+        em     Em-square 
+        ex     Ex-square 
+        lh     Line height, or 1.2 em-squares
+        lem    Em-square for large-sized text
+        lex    Ex-square for large-sized text
+        llh    Line height, or 1.2 em-squares for large-sized text
+        cm     Centimeters
+        mm     Millimeters
+        pt     Points, or 1/72 inches
+        in     Inches
+        =====  ================================
+
+    error : bool, optional
+        Raise error on failure?
+
+    """
+    if not isinstance(value, str):
+        return value # assume int/float is in inches
+    unit_dict = {
+        'em': rc['small']/72.0,
+        'ex': 0.5*rc['large']/72.0, # more or less; see URL
+        'lh': 1.2*rc['small']/72.0, # line height units (default spacing is 1.2 em squares)
+        'lem': rc['small']/72.0, # for large text
+        'lex': 0.5*rc['large']/72.0,
+        'llh': 1.2*rc['large']/72.0,
+        'cm': 0.3937,
+        'mm': 0.03937,
+        'pt': 1/72.0,
+        'in': 1.0, # already in inches
+        }
+    regex = re.match('^(.*)(' + '|'.join(unit_dict.keys()) + ')$', value)
+    if not regex:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    num, unit = regex.groups()
+    try:
+        num = float(num)
+    except ValueError:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    return num*unit_dict[unit] # e.g. cm / (in / cm)
 
 #------------------------------------------------------------------------------#
 # Decorators
@@ -45,35 +106,50 @@ class _dot_dict(dict):
 #     print('hello world!')
 # hello()
 #------------------------------------------------------------------------------#
-def _docstring_fix(child):
-    """
-    Decorator function for appending documentation from overridden method
-    onto the overriding method docstring.
-    Adapted from: https://stackoverflow.com/a/8101598/4970632
-    """
-    for name,chfunc in vars(child).items(): # returns __dict__ object
-        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
-        # if not isinstance(chfunc, FunctionType):
-            continue
-        for parent in getattr(child, '__bases__', ()):
-            parfunc = getattr(parent, name, None)
-            if not getattr(parfunc, '__doc__', None):
-                continue
-            if not getattr(chfunc, '__doc__', None):
-                chfunc.__doc__ = '' # in case it's None
-            # cmessage = f'Full name: {parfunc.__qualname__}()'
-            # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-            # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
-            chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n{cleandoc(parfunc.__doc__)}'
-            break # only do this for the first parent class
-    return child
+# Throw this one out, use kwarg interpolation from method.
+# Why? Because matplotlib plot_directive sphinx extension will look for
+# gallery images in the old documentation that do not exist for ProPlot.
+# def _docstring_fix(child):
+#     """
+#     Decorator function for appending documentation from overridden method
+#     onto the overriding method docstring.
+#     Adapted from: https://stackoverflow.com/a/8101598/4970632
+#     """
+#     for name,chfunc in vars(child).items(): # returns __dict__ object
+#         if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
+#             continue
+#         for parent in getattr(child, '__bases__', ()):
+#             # Obtain documentation
+#             parfunc = getattr(parent, name, None)
+#             if not getattr(parfunc, '__doc__', None):
+#                 continue
+#             if not getattr(chfunc, '__doc__', None):
+#                 chfunc.__doc__ = '' # in case it's None
+#
+#             # Ugly
+#             # cmessage = f'Full name: {parfunc.__qualname__}()'
+#             # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
+#             # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Simple
+#             # chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n\n\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Fails because numpydoc disallows custom subsections; see: https://developer.lsst.io/python/numpydoc.html#sections-are-restricted-to-the-numpydoc-section-set
+#             # chfunc.__doc__ = f'ProPlot Override\n================\n{cleandoc(chfunc.__doc__)}\n\n\n' \
+#             #                  f'Original Documentation\n======================\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Differentiate with bold text
+#             chfunc.__doc__ = f'**ProPlot Override**\n{cleandoc(chfunc.__doc__)}\n\n\n' \
+#                              f'**Original Documentation**\n{cleandoc(parfunc.__doc__)}'
+#             break # only do this for the first parent class
+#     return child
 
 def _timer(func):
     """
     A decorator that prints the time a function takes to execute.
     See: https://stackoverflow.com/a/1594484/4970632
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
         t = time.clock()
         print(f'{func.__name__}()')
@@ -88,7 +164,7 @@ def _logger(func):
     but it could be logging!)
     See: https://stackoverflow.com/a/1594484/4970632
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
         print(f'{func.__name__} called with: {args} {kwargs}')
@@ -101,7 +177,7 @@ def _counter(func):
     has been executed.
     See: https://stackoverflow.com/a/1594484/4970632
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
         # decorator.count += 1
         t = time.clock()

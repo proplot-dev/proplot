@@ -1,7 +1,8 @@
-.. Documentation was generated following this guide:
+.. Docstrings formatted according to:
+   numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
+   matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
+.. Sphinx is used following this guide (less traditional approach):
    https://daler.github.io/sphinxdoc-test/includeme.html
-   Relevant thread: https://github.com/sphinx-doc/sphinx/issues/3382
-   More traditional approach: http://www.willmcginnis.com/2016/02/29/automating-documentation-workflow-with-sphinx-and-github-pages/
 
 ProPlot
 =======
@@ -117,4 +118,3 @@ useful, feel free to buy me a cup of coffee :)
 
 .. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
-   :scale: 50 %

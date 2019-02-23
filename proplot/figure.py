@@ -5,10 +5,9 @@ Figure subclass.
 import os
 import numpy as np
 import matplotlib.figure as mfigure
-from .axes import BaseAxes, PanelAxes, CartopyAxes, EmptyPanel
-from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
 from .rcmod import rc
-from .utils import _dot_dict, _default, _timer, _counter, _docstring_fix, ic
+from .utils import _dot_dict, _default, _timer, _counter, units, ic
+from . import gridspec, axes
 # Aliases for panel names
 _aliases = {
     'bpanel': 'bottompanel',
@@ -17,7 +16,6 @@ _aliases = {
     'lpanel': 'leftpanel'
     }
 
-@_docstring_fix
 class Figure(mfigure.Figure):
     # Subclass adding some super cool features
     def __init__(self, figsize,
@@ -26,24 +24,31 @@ class Figure(mfigure.Figure):
             **kwargs):
         """
         Matplotlib figure with some pizzazz.
-        Requires:
-            figsize:
-                figure size (width, height) in inches
-            subplots_kw:
-                dictionary-like container of the keyword arguments used to
-                initialize
-        Optional:
-            rcreset (True):
-                when figure is drawn, reset rc settings to defaults?
-            auto_adjust (True):
-                when figure is drawn, trim the gridspec edges without messing
-                up axes aspect ratios and internal spacing?
+
+        Parameters
+        ----------
+        figsize : (float or str, float or str)
+            Figure size (width, height). If numeric, units are inches.
+            Otherwise can specify alternative units.
+        subplots_kw : None, dict-like
+            Container of the keyword arguments used to initialize
+            subplots.
+
+        Other parameters
+        ----------------
+        rcreset : bool, optional
+            When figure is drawn, reset rc settings to defaults?
+        auto_adjust : bool, optional
+            When figure is drawn, trim the gridspec edges without messing
+            up axes aspect ratios and internal spacing?
+        **kwargs : dict-like
+            Passed to `matplotlib.figure.Figure` initializer.
         """
         # Initialize figure with some custom attributes.
         # Whether to reset rcParams wheenver a figure is drawn (e.g. after
         # ipython notebook finishes executing)
         self._rcreset  = rcreset
-        self._smart_pad = pad
+        self._smart_pad = units(pad)
         self._smart_tight = auto_adjust # note name _tight already taken!
         self._smart_tight_init = True # is figure in its initial state?
         self._span_labels = [] # add axis instances to this, and label position will be updated
@@ -51,13 +56,14 @@ class Figure(mfigure.Figure):
         self._gridspec = gridspec # gridspec encompassing drawing area
         self._subplots_kw = _dot_dict(subplots_kw) # extra special settings
         # Figure dimensions
+        figsize = [units(size) for size in figsize]
         self.width  = figsize[0] # dimensions
         self.height = figsize[1]
         # Panels, initiate as empty
-        self.leftpanel   = EmptyPanel()
-        self.bottompanel = EmptyPanel()
-        self.rightpanel  = EmptyPanel()
-        self.toppanel    = EmptyPanel()
+        self.leftpanel   = axes.EmptyPanel()
+        self.bottompanel = axes.EmptyPanel()
+        self.rightpanel  = axes.EmptyPanel()
+        self.toppanel    = axes.EmptyPanel()
         # Proceed
         super().__init__(figsize=figsize, **kwargs) # python 3 only
         # Initialize suptitle, adds _suptitle attribute
@@ -72,7 +78,7 @@ class Figure(mfigure.Figure):
         # Assign rowlabels
         axs = []
         for ax in self.axes:
-            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax._col_span[0]==0:
+            if isinstance(ax, axes.BaseAxes) and not isinstance(ax, axes.PanelAxes) and ax._col_span[0]==0:
                 axs.append(ax)
         if isinstance(labels,str): # common during testing
             labels = [labels]*len(axs)
@@ -95,7 +101,7 @@ class Figure(mfigure.Figure):
         # Assign collabels
         axs = []
         for ax in self.axes:
-            if isinstance(ax, BaseAxes) and not isinstance(ax, PanelAxes) and ax._row_span[0]==0:
+            if isinstance(ax, axes.BaseAxes) and not isinstance(ax, axes.PanelAxes) and ax._row_span[0]==0:
                 axs.append(ax)
         if isinstance(labels,str):
             labels = [labels]*len(axs)
@@ -131,8 +137,8 @@ class Figure(mfigure.Figure):
             title_lev1, title_lev2, title_lev3 = None, None, None
             for ax in self.axes:
                 # TODO: Need to ensure we do not test *bottom* axes panels
-                if not isinstance(ax, BaseAxes) or not ax._row_span[0]==0 or \
-                    (isinstance(ax, PanelAxes) and ax.panel_side=='bottom'):
+                if not isinstance(ax, axes.BaseAxes) or not ax._row_span[0]==0 or \
+                    (isinstance(ax, axes.PanelAxes) and ax.panel_side=='bottom'):
                     continue
                 title_lev1 = ax.title # always will be non-None
                 if ((ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text()):
@@ -274,7 +280,7 @@ class Figure(mfigure.Figure):
         # Will create axes in order of rows/columns so that the "base" axes
         # are always built before the axes to be "shared" with them
         panels = []
-        gs = FlexibleGridSpecFromSubplotSpec(
+        gs = gridspec.FlexibleGridSpecFromSubplotSpec(
                 nrows         = nrows,
                 ncols         = ncols,
                 subplot_spec  = subspec,
@@ -300,10 +306,10 @@ class Figure(mfigure.Figure):
                 panels[side] = ax
 
         # Finally add as attributes, and set up axes sharing
-        axmain.bottompanel = panels.get('bottom', EmptyPanel())
-        axmain.toppanel    = panels.get('top',    EmptyPanel())
-        axmain.leftpanel   = panels.get('left',   EmptyPanel())
-        axmain.rightpanel  = panels.get('right',  EmptyPanel())
+        axmain.bottompanel = panels.get('bottom', axes.EmptyPanel())
+        axmain.toppanel    = panels.get('top',    axes.EmptyPanel())
+        axmain.leftpanel   = panels.get('left',   axes.EmptyPanel())
+        axmain.rightpanel  = panels.get('right',  axes.EmptyPanel())
         if sharex_panels:
             axmain._sharex_panels()
         if sharey_panels:
@@ -341,7 +347,7 @@ class Figure(mfigure.Figure):
         bottom = getattr(subplots_kw, bname) - y1 + pad
         top    = getattr(subplots_kw, tname) - y2 + pad
         subplots_kw.update({lname:left, rname:right, bname:bottom, tname:top})
-        figsize, *_, gridspec_kw = _gridspec_kwargs(**subplots_kw)
+        figsize, *_, gridspec_kw = gridspec._gridspec_kwargs(**subplots_kw)
         self._smart_tight_init = False
         self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
@@ -359,7 +365,7 @@ class Figure(mfigure.Figure):
         # 1) If you used set_bounds to zoom into part of a cartopy projection,
         # this can erroneously identify invisible edges of map as being part of boundary
         # 2) If you have gridliner text labels, matplotlib won't detect them.
-        if any(isinstance(ax, CartopyAxes) for ax in self.axes):
+        if any(isinstance(ax, axes.CartopyAxes) for ax in self.axes):
             return
         # Adjust if none of not done already
         print('Adjusting gridspec.')

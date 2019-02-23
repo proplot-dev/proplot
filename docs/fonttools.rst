@@ -1,9 +1,9 @@
-
 Font tools
 ------------------------
 
 .. automodule:: proplot.fonttools
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.fonttools
+   :toctree: api
+   :skip: matplotlib_fname, get_cachedir
 

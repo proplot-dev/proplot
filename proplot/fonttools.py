@@ -6,10 +6,9 @@ Add to this.
 import os
 import re
 import shutil
-from glob import glob
-from matplotlib import matplotlib_fname
-from matplotlib import get_cachedir
+import glob
 import matplotlib.font_manager as mfonts
+from matplotlib import matplotlib_fname, get_cachedir
 # from subprocess import Popen, PIPE
 #------------------------------------------------------------------------------
 # List the current font names, original version; works on Linux but not Mac,
@@ -20,7 +19,7 @@ import matplotlib.font_manager as mfonts
 # Also see: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
 # Also see: https://stackoverflow.com/questions/18821795/how-can-i-get-list-of-font-familyor-name-of-font-in-matplotlib
 _dir_data = re.sub('/matplotlibrc$', '', matplotlib_fname())
-fonts_mpl_files = sorted(glob(f"{_dir_data}/fonts/ttf/*.[ot]tf"))
+fonts_mpl_files = sorted(glob.glob(f"{_dir_data}/fonts/ttf/*.[ot]tf"))
 fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf')) # even with that fontext, will include otf! weird
 fonts_os, fonts_mpl = set(), set()
 for _file in fonts_os_files:
@@ -85,14 +84,14 @@ def install_fonts():
     dir_source = f'{os.path.dirname(__file__)}/fonts' # should be in same place as scripts
     dir_dest = f'{_dir_data}/fonts/ttf'
     # print(f'Transfering .ttf and .otf files from {dir_source} to {dir_dest}.')
-    for file in glob(f'{dir_source}/*.[ot]tf'):
+    for file in glob.glob(f'{dir_source}/*.[ot]tf'):
         if not os.path.exists(f'{dir_dest}/{os.path.basename(file)}'):
             print(f'Adding font "{os.path.basename(file)}".')
             shutil.copy(file, dir_dest)
 
     # Delete cache
     dir_cache = get_cachedir()
-    for file in glob(f'{dir_cache}/*.cache') + glob(f'{dir_cache}/font*'):
+    for file in glob.glob(f'{dir_cache}/*.cache') + glob.glob(f'{dir_cache}/font*'):
         if not os.path.isdir(file): # don't dump the tex.cache folder... because dunno why
             os.remove(file)
             print(f'Deleted font cache {file}.')

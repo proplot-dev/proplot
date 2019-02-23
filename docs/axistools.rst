@@ -1,9 +1,9 @@
-
 Axis tools
 ------------------------
 
 .. automodule:: proplot.axistools
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.axistools
+   :toctree: api
+   :skip: Number, Fraction, FunctionType, ic
 

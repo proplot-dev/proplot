@@ -1,9 +1,8 @@
-
 Included demos
 --------------------
 
 .. automodule:: proplot.demos
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
+.. automodsumm:: proplot.demos
+   :toctree: api
+   :skip: subplots, rc, rcParams

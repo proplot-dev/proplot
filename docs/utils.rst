@@ -1,9 +1,8 @@
-
-Utils
+Utilities
 --------------------
 
 .. automodule:: proplot.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
+.. automodsumm:: proplot.utils
+   :toctree: api
+   :skip: ic

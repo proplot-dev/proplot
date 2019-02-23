@@ -1,8 +1,9 @@
 Notebook tools
------------------------
+--------------
 
 .. automodule:: proplot.notebook
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.notebook
+   :toctree: api
+   :skip: get_ipython, ic, rc
 

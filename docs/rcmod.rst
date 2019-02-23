@@ -1,9 +1,8 @@
-
 RC configuration
 --------------------
 
 .. automodule:: proplot.rcmod
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
+.. automodsumm:: proplot.rcmod
+   :toctree: api
+   :skip: AttributeDict, rcParams, ic

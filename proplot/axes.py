@@ -8,12 +8,12 @@ Axes subclasses central to this library.
 import os
 import numpy as np
 import warnings
+import functools
 from numbers import Number
 from IPython.utils import io
 from matplotlib.cbook import mplDeprecation
-from matplotlib.projections import register_projection, PolarAxes
 # from matplotlib.lines import _get_dash_pattern, _scale_dashes
-from functools import wraps
+import matplotlib.projections as mproj
 import matplotlib.figure as mfigure
 import matplotlib.axes as maxes
 import matplotlib.scale as mscale
@@ -29,12 +29,10 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 
 # Local modules, projection sand formatters and stuff
-from .gridspec import _gridspec_kwargs, FlexibleGridSpecFromSubplotSpec
-# from .rcmod import rc, rcParams
+from matplotlib import docstring
 from .rcmod import rc
-from .proj import Aitoff, Hammer, KavrayskiyVII, WinkelTripel, Circle
-from . import colortools, fonttools, axistools
-from .utils import _dot_dict, _default, _timer, _counter, _docstring_fix, ic, edges, arange
+from . import proj, utils, gridspec, colortools, fonttools, axistools
+from .utils import _dot_dict, _default, _timer, _counter, ic
 
 # Silly recursive function, returns a...z...aa...zz...aaa...zzz
 # God help you if you ever need that many labels
@@ -186,7 +184,7 @@ def _check_centers(func):
       * x, y, Z
       * x, y, U, V
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, order='C', **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
@@ -215,7 +213,7 @@ def _check_edges(func):
     """
     Check shape of arguments passed to pcolor, and fix result.
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, order='C', **kwargs):
         # Checks that sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
@@ -227,7 +225,7 @@ def _check_edges(func):
                 # If 2D, don't raise error, but don't fix either, because
                 # matplotlib pcolor accepts grid center inputs.
                 if x.ndim==1 and y.ndim==1:
-                    x, y = edges(x), edges(y)
+                    x, y = utils.edges(x), utils.edges(y)
             elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
@@ -249,7 +247,7 @@ def _cycle_features(self, func):
     See: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py
     The set_prop_cycle command modifies underlying _get_lines and _get_patches_for_fill.
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, cycle=None, cycle_kw={}, **kwargs):
         # Determine and temporarily set cycler
         if cycle is not None:
@@ -280,7 +278,7 @@ def _cmap_features(self, func):
         2) (False) Use a *continuous* normalizer with a *discrete* (containing
            the number of colors you want) color table.
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, cmap=None, cmap_kw={},
                 values=None, levels=None,
                 norm=None, norm_kw={},
@@ -296,14 +294,14 @@ def _cmap_features(self, func):
             # Special case of LinearSegmentedNorm, just get edges
             if isinstance(norm, colortools.LinearSegmentedNorm) or \
                 (isinstance(norm, str) and 'segment' in norm):
-                levels = edges(values)
+                levels = utils.edges(values)
             # Else see what pops out
             else:
                 norm_tmp = colortools.norm(norm, **norm_kw)
                 if norm_tmp: # is not None
-                    levels = norm_tmp.inverse(edges(norm_tmp(values)))
+                    levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
                 else:
-                    levels = edges(values)
+                    levels = utils.edges(values)
         levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
 
         # Call function with custom kwargs
@@ -401,7 +399,7 @@ def _m_call(self, func):
     Call the basemap version of the function of the same name.
     """
     name = func.__name__
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
         return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
     return decorator
@@ -411,7 +409,7 @@ def _no_recurse(self, func):
     Decorator to prevent recursion in Basemap method overrides.
     See: https://stackoverflow.com/a/37675810/4970632
     """
-    @wraps(func)
+    @functools.wraps(func)
     # def decorator(self, *args, **kwargs):
     def decorator(*args, **kwargs):
         name = getattr(func, '__name__')
@@ -434,7 +432,7 @@ def _linefix_basemap(self, func):
     Simply add an additional kwarg. Needs whole function because we
     want to @wrap it to preserve documentation.
     """
-    @wraps(func)
+    @functools.wraps(func)
     # def decorator(self, *args, **kwargs):
     def decorator(*args, **kwargs):
         kwargs.update(latlon=True)
@@ -446,7 +444,7 @@ def _gridfix_basemap(self, func):
     """
     Interpret coordinates and fix discontinuities in grid.
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(lon, lat, Z, fix_poles=True, **kwargs):
         # Raise errors
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
@@ -547,7 +545,7 @@ def _linefix_cartopy(func):
     Simply add an additional kwarg. Needs whole function because we
     want to @wrap it to preserve documentation.
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(*args, transform=PlateCarree, **kwargs):
         if isinstance(transform, type):
             transform = transform() # instantiate
@@ -567,7 +565,7 @@ def _gridfix_cartopy(func):
     with IPython capture_output() tool, like in nbsetup().
     See: https://github.com/SciTools/cartopy/issues/946
     """
-    @wraps(func)
+    @functools.wraps(func)
     def decorator(lon, lat, Z, transform=PlateCarree, fix_poles=True, **kwargs):
         # Below only works for vector data
         if lon.ndim==1 and lat.ndim==1:
@@ -594,7 +592,6 @@ def _gridfix_cartopy(func):
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
 #------------------------------------------------------------------------------#
-@_docstring_fix
 class BaseAxes(maxes.Axes):
     """
     Subclass the default Axes class. Then register it as the 'base' projection,
@@ -941,6 +938,9 @@ class BaseAxes(maxes.Axes):
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
+        """
+        Add legend.
+        """
         # Call custom legend() function.
         return legend_factory(self, *args, **kwargs)
 
@@ -949,6 +949,9 @@ class BaseAxes(maxes.Axes):
     # in the axes itself with InsetAxes! Then panel axes overrides this
     # default behavior, so that panel.colorbar *fills* the axes with a colorbar.
     def colorbar(self, *args, **kwargs):
+        """
+        Add *inset* colorbar, sort of like a legend.
+        """
         raise NotImplementedError('Inset colorbars for non-panel axes is not yet implemented.')
         # WARNING: Below will have bugs because 'self' is a BaseAxes! See comment
         # under colorbar method on PanelAxes class.
@@ -1009,6 +1012,13 @@ class BaseAxes(maxes.Axes):
         """
         Expand functionality of plot to also make LineCollection lines, i.e. lines
         whose colors change as a function of some key/indicator.
+
+        Other Parameters
+        ----------------
+        **kwargs :
+            Valid kwargs are :class:`~matplotlib.lines.Line2D` properties,
+            with the exception of 'transform':
+
         """
         if cmap is None and values is None:
             # Make normal boring lines
@@ -1095,7 +1105,7 @@ class BaseAxes(maxes.Axes):
                 values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
             x, y, values = np.array(x), np.array(y), np.array(values)
         coords, vals = [], []
-        levels = edges(values)
+        levels = utils.edges(values)
         for j in range(y.shape[0]):
             # Get x/y coordinates and values for points to the 'left' and
             # 'right' of each joint. Also prevent duplicates.
@@ -1130,7 +1140,6 @@ class BaseAxes(maxes.Axes):
 #------------------------------------------------------------------------------#
 # Specific classes, which subclass the base one
 #------------------------------------------------------------------------------#
-@_docstring_fix
 class XYAxes(BaseAxes):
     """
     Subclass for ordinary Cartesian-grid axes.
@@ -1684,7 +1693,6 @@ class EmptyPanel(object):
     def __getattr__(self, attr, *args):
         raise AttributeError('Panel does not exist.')
 
-@_docstring_fix
 class PanelAxes(XYAxes):
     name = 'panel'
     def __init__(self, *args, panel_side=None, invisible=False, **kwargs):
@@ -1694,8 +1702,8 @@ class PanelAxes(XYAxes):
 
         Notes
         -----
-        See: https://stackoverflow.com/a/52121237/4970632
-        Also an example: https://stackoverflow.com/q/26236380/4970632
+        See `this post <https://stackoverflow.com/a/52121237/4970632>`_
+        and `this example <https://stackoverflow.com/q/26236380/4970632>`_.
         """
         # Initiate
         if panel_side is None:
@@ -1711,6 +1719,9 @@ class PanelAxes(XYAxes):
     # TODO: Get rid of legend and colorbar factories, implement them as
     # direct overrides!
     def legend(self, handles, entire=True, **kwargs_override):
+        """
+        Fill panel with legend.
+        """
         if not entire:
             # Do the normal thing
             kwargs = kwargs_override
@@ -1728,6 +1739,9 @@ class PanelAxes(XYAxes):
     def colorbar(self, *args, i=0, n=1, length=1,
         space=0, hspace=None, wspace=None,
         **kwargs):
+        """
+        Fill panel with colorbar.
+        """
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
         # Will always redraw an axes with new subspec
@@ -1747,7 +1761,7 @@ class PanelAxes(XYAxes):
                 hwidth = (self.height - (n-1)*space)/n # express height ratios in physical units
                 if hwidth<0:
                     raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.height}.')
-                gridspec = FlexibleGridSpecFromSubplotSpec(
+                gridspec = gridspec.FlexibleGridSpecFromSubplotSpec(
                         nrows=n,  ncols=3,
                         wspace=0, hspace=space,
                         subplot_spec=subspec,
@@ -1759,7 +1773,7 @@ class PanelAxes(XYAxes):
                 wwidth = (self.width - (n-1)*space)/n
                 if wwidth<0:
                     raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.width}.')
-                gridspec = FlexibleGridSpecFromSubplotSpec(
+                gridspec = gridspec.FlexibleGridSpecFromSubplotSpec(
                         nrows=3,  ncols=n,
                         wspace=wspace, hspace=hspace,
                         subplot_spec=subspec,
@@ -1841,7 +1855,6 @@ class MapAxes(BaseAxes):
             raise ValueError(f'Invalid labels: {labels}.')
         return labels
 
-@_docstring_fix
 class BasemapAxes(MapAxes):
     """
     Axes subclass for basemap plotting.
@@ -1995,7 +2008,7 @@ class BasemapAxes(MapAxes):
         lonlocator = _default(lonlocator, 60)
         if latlocator is not None:
             if isinstance(latlocator, Number):
-                latlocator = arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
+                latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
             p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
                 # Tried passing clip_on to the below, but it does nothing; must set
@@ -2008,7 +2021,7 @@ class BasemapAxes(MapAxes):
                         obj.set_dashes(ls_translate(obj, linestyle))
         if lonlocator is not None:
             if isinstance(lonlocator, Number):
-                lonlocator = arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
+                lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
             p = self.m.drawmeridians(lonlocator, labels=lonlabels, ax=self)
             for pi in p.values():
                 for obj in [i for j in pi for i in j]: # magic
@@ -2021,8 +2034,6 @@ class BasemapAxes(MapAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
 
-@_docstring_fix
-# class CartopyAxes(GeoAxes, MapAxes):
 class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so the methods can overwrite stuff
     # Cartopy takes advantage of documented feature where any class with method
     # named _as_mpl_axes can be passed as 'projection' object.
@@ -2064,7 +2075,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree()) # use platecarree transform
-            self.set_boundary(Circle(100), transform=self.transAxes)
+            self.set_boundary(proj.Circle(100), transform=self.transAxes)
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
 
@@ -2170,8 +2181,8 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*arange(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*arange(-90,90,v)]
+        lonvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-180,180,v)]
+        latvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-90,90,v)]
         lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
         lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
@@ -2199,8 +2210,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
 
-@_docstring_fix
-class PolarAxes(MapAxes, PolarAxes):
+class PolarAxes(MapAxes, mproj.PolarAxes):
     """
     Thin decorator around PolarAxes with my new plotting features.
     So far just intended to mix the two classes.
@@ -2208,12 +2218,12 @@ class PolarAxes(MapAxes, PolarAxes):
     name = 'newpolar'
 
 # Register the projection
-register_projection(BaseAxes)
-register_projection(XYAxes)
-register_projection(PanelAxes)
-register_projection(PolarAxes)
-register_projection(BasemapAxes)
-register_projection(CartopyAxes)
+mproj.register_projection(BaseAxes)
+mproj.register_projection(XYAxes)
+mproj.register_projection(PanelAxes)
+mproj.register_projection(PolarAxes)
+mproj.register_projection(BasemapAxes)
+mproj.register_projection(CartopyAxes)
 
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
@@ -2232,7 +2242,7 @@ def map_projection_factory(package, projection, **kwargs):
     elif package=='cartopy':
         import cartopy.crs as ccrs # verify package is importable
         crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
-            **{k:'central_latitude'  for k in ('lat0','lat_0')},
+            **{k:'central_latitude'  for k in ('lat0', 'lat_0')},
             **{k:'central_longitude' for k in ('lon0', 'lon_0')},
             }
         crs_dict = { # interpret string, create cartopy projection
@@ -2240,10 +2250,14 @@ def map_projection_factory(package, projection, **kwargs):
             **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
             **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
             **{key: ccrs.Mercator      for key in ('merc', 'mercator')},
-            'aeqd': ccrs.AzimuthalEquidistant, 'aeqa': ccrs.LambertAzimuthalEqualArea,
-            'robinson': ccrs.Robinson, 'ortho': ccrs.Orthographic,
-            'hammer': Hammer,          'aitoff': Aitoff,
-            'wintri': WinkelTripel,    'kav7':   KavrayskiyVII,
+            'aeqd':     ccrs.AzimuthalEquidistant,
+            'aeqa':     ccrs.LambertAzimuthalEqualArea,
+            'robinson': ccrs.Robinson,
+            'ortho':    ccrs.Orthographic,
+            'hammer':   proj.Hammer,
+            'aitoff':   proj.Aitoff,
+            'wintri':   proj.WinkelTripel,
+            'kav7':     proj.KavrayskiyVII,
             }
         projection = projection or 'cyl'
         if projection not in crs_dict:
@@ -2258,15 +2272,15 @@ def map_projection_factory(package, projection, **kwargs):
 def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, settings=None): # can be updated
     """
     Function for formatting legend-axes (invisible axes with centered legends on them).
-    Should update my legend function to CLIP the legend box when it goes outside axes area, so
+    Should update my legend function to clip the legend box when it goes outside axes area, so
     the legend-width and bottom/right widths can be chosen propertly/separately.
     """
     # First get legend settings (usually just one per plot so don't need to declare
     # this dynamically/globally), and interpret kwargs
-    if 'ncols' in lsettings:
-        lsettings['ncol'] = lsettings.pop('ncols') # pyplot subplot uses 'ncols', but legend uses 'ncol'... annoying!
-    if 'frame' in lsettings: # again, confusing choice
-        lsettings['frameon'] = lsettings.pop('frame')
+    # PyPlot subplot uses 'ncols', but legend uses 'ncol'... annoying!
+    for name,alias in [('ncol', 'ncols'), ('frame', 'frameon')]:
+        if alias in lsettings:
+            lsettings[name] = lsettings.pop(alias)
     if order not in ('F','C'):
         raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
     # Setup legend text and handle properties

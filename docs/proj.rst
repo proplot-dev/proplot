@@ -1,9 +1,8 @@
-
 Projections
 -------------------
 
 .. automodule:: proplot.proj
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.proj
+   :toctree: api
 

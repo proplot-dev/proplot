@@ -75,17 +75,17 @@
 import os
 import re
 import json
+import glob
 from lxml import etree
 from numbers import Number
+import cycler
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from matplotlib import rcParams
-from cycler import cycler
-from glob import glob
-from . import colormath
-from .utils import _default, ic, edges
+from . import utils, colormath
+from .utils import _default, ic
 _data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
 
 # Default number of colors
@@ -1398,7 +1398,7 @@ def set_cycle(cmap, samples=None, rename=False):
             if the colormap is a ListedColormap (interpolation not possible).
     """
     _colors = colors(cmap, samples)
-    cyl = cycler('color', _colors)
+    cyl = cycler.cycler('color', _colors)
     rcParams['axes.prop_cycle'] = cyl
     rcParams['patch.facecolor'] = _colors[0]
     if rename:
@@ -1437,7 +1437,7 @@ def norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     if isinstance(norm_in, mcolors.Normalize):
         return norm_in
     if levels is None and values is not None:
-        levels = edges(values)
+        levels = utils.edges(values)
     if not norm_in: # is None
         # By default, make arbitrary monotonic user levels proceed linearly
         # through color space
@@ -1714,7 +1714,7 @@ def register_colors(nmax=np.inf, verbose=False):
     # First register colors and get their HSL values
     names = []
     hcls = np.empty((0,3))
-    for file in glob(f'{_data}/colors/*.txt'):
+    for file in glob.glob(f'{_data}/colors/*.txt'):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
@@ -1768,7 +1768,7 @@ def register_cmaps():
     Note all of those methods simply modify the dictionary mcm.cmap_d.
     """
     # First read from file
-    for filename in glob(f'{_data}/cmaps/*'):
+    for filename in glob.glob(f'{_data}/cmaps/*'):
         # Read table of RGB values
         if not re.search('\.(x?rgba?|json|xml)$', filename):
             continue
@@ -1911,7 +1911,7 @@ def register_cycles():
     Register cycles defined right here by dictionaries.
     """
     # Read lists of hex strings from disk
-    for filename in glob(f'{_data}/cmaps/*.hex'):
+    for filename in glob.glob(f'{_data}/cmaps/*.hex'):
         name = os.path.basename(filename)
         name = name.split('.hex')[0]
         colors = [*open(filename)] # should just be a single line

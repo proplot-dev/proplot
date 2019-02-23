@@ -18,11 +18,12 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.append(os.path.abspath('sphinxext')) # see: https://matplotlib.org/sampledoc/extensions.html
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'proplot'
+project = 'ProPlot'
 copyright = '2019, Luke L. B. Davis'
 author = 'Luke L. B. Davis'
 
@@ -48,11 +49,69 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx.ext.ifconfig',
+    # 'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
-]
+    # 'sphinxext.custom_roles', # copied directly from matplotlib
+    'sphinx.ext.autosummary',
+    'IPython.sphinxext.ipython_directive',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
+    'sphinx_automodapi.automodapi', # see: https://sphinx-automodapi.readthedocs.io/en/latest/
+    # 'matplotlib.sphinxext.only_directives', # deprecated; see: https://github.com/statsmodels/statsmodels/issues/5291
+    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
+    ]
+
+# Generate stub pages whenever ::autosummary directive encountered
+# This way don't have to call sphinx-autogen manually
+autosummary_generate = True
+
+# Use automodapi tool, created by astropy people
+# See: https://sphinx-automodapi.readthedocs.io/en/latest/automodapi.html#overview
+# Normally have to *enumerate* function names manually. This will document
+# them automatically. Just be careful, if you use from x import *, to exclude
+# them in the automodapi:: directive
+# Also modify so 
+automodapi_toctreedirnm = 'api' # create much better URL for the page
+automodsumm_inherited_members = False
+
+# Turn off code and image links for embedded mpl plots
+# plot_html_show_source_link = False
+# plot_html_show_formats = False
+
+# One of 'class', 'both', or 'init'
+# The 'both' concatenates class and __init__ docstring
+# See: http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+autoclass_content = 'both'
+
+# Set up mapping for other projects' docs
+intersphinx_mapping = {
+                       'matplotlib': ('https://matplotlib.org', None),
+                       'sphinx': ('http://www.sphinx-doc.org/en/stable/', None),
+                       'python': ('https://docs.python.org/3', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
+                       'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+                       'xarray': ('http://xarray.pydata.org/en/stable', None)
+                       }
+
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = False # confusing, because I use submodules for *organization*
+
+# Napoleon options
+# See: http://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+napoleon_use_rtype = False
+napoleon_use_param = False
+napoleon_use_ivar = False
+napoleon_use_keyword = False
+napoleon_numpy_docstring = True
+napoleon_google_docstring = False
+napoleon_include_init_with_doc = False # move init doc to 'class' doc
+
+# Fix duplicate class member documentation from autosummary + numpydoc
+# See: https://github.com/phn/pytpm/issues/3#issuecomment-12133978
+numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -76,11 +135,13 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', '_templates', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# Role
+default_role = 'py:obj' # default family is py, but can also set default role so don't need :func:`name`, :module:`name`, etc.
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -110,6 +171,12 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+
+# The name of an image file (within the static path) to use as favicon of the
+# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# pixels large. Static folder is for CSS and image files.
+# For icons see: https://icons8.com/icon
+html_favicon = os.path.join('_static', 'graph.ico')
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

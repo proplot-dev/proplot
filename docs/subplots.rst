@@ -1,9 +1,10 @@
-
 Subplots
------------------------
+--------
 
 .. automodule:: proplot.subplots
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.subplots
+   :toctree: api
+   :skip: ic, rc
+
 

@@ -1,9 +1,9 @@
-
 Axes subclasses
 ---------------
 
 .. automodule:: proplot.axes
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.axes
+   :toctree: api
+   :skip: Number, GeoAxes, PlateCarree, mplDeprecation, ic, rc
 

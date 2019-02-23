@@ -3,41 +3,7 @@ import numpy as np
 import matplotlib.gridspec as mgridspec
 import re
 from .rcmod import rc
-from .utils import _dot_dict, _default, ic
-
-# Conversions
-def _units(value, error=True):
-    # Flexible units!
-    # See: http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first
-    if not isinstance(value, str):
-        return value # assume int/float is in inches
-    unit_dict = {
-        'em': rc['small']/72.0,
-        'ex': 0.5*rc['large']/72.0, # more or less; see URL
-        'lh': 1.2*rc['small']/72.0, # line height units (default spacing is 1.2 em squares)
-        'lem': rc['small']/72.0, # for large text
-        'lex': 0.5*rc['large']/72.0,
-        'llh': 1.2*rc['large']/72.0,
-        'cm': 0.3937,
-        'mm': 0.03937,
-        'pt': 1/72.0,
-        'in': 1.0, # already in inches
-        }
-    regex = re.match('^(.*)(' + '|'.join(unit_dict.keys()) + ')$', value)
-    if not regex:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    num, unit = regex.groups()
-    try:
-        num = float(num)
-    except ValueError:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    return num*unit_dict[unit] # e.g. cm / (in / cm)
+from .utils import _dot_dict, _default, units, ic
 
 # Custom settings for various journals
 # Add to this throughout your career, or as standards change
@@ -45,7 +11,9 @@ def _units(value, error=True):
 # AMS info: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
 # AGU info: https://publications.agu.org/author-resource-center/figures-faq/
 def journal_size(journal):
-    # Determine automatically
+    """
+    Journal sizes.
+    """
     table = {
         'pnas1': '8.7cm',
         'pnas2': '11.4cm',
@@ -137,16 +105,16 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
-    left   = _units(_default(left,   rc['gridspec.ylab']))
-    bottom = _units(_default(bottom, rc['gridspec.xlab']))
-    right  = _units(_default(right,  rc['gridspec.nolab']))
-    top    = _units(_default(top,    rc['gridspec.title']))
-    bwidth = _units(_default(bwidth, rc['gridspec.cbar']))
-    rwidth = _units(_default(rwidth, rc['gridspec.cbar']))
-    lwidth = _units(_default(lwidth, rc['gridspec.cbar']))
-    bspace = _units(_default(bspace, rc['gridspec.xlab']))
-    rspace = _units(_default(rspace, rc['gridspec.ylab']))
-    lspace = _units(_default(lspace, rc['gridspec.ylab']))
+    left   = units(_default(left,   rc['gridspec.ylab']))
+    bottom = units(_default(bottom, rc['gridspec.xlab']))
+    right  = units(_default(right,  rc['gridspec.nolab']))
+    top    = units(_default(top,    rc['gridspec.title']))
+    bwidth = units(_default(bwidth, rc['gridspec.cbar']))
+    rwidth = units(_default(rwidth, rc['gridspec.cbar']))
+    lwidth = units(_default(lwidth, rc['gridspec.cbar']))
+    bspace = units(_default(bspace, rc['gridspec.xlab']))
+    rspace = units(_default(rspace, rc['gridspec.ylab']))
+    lspace = units(_default(lspace, rc['gridspec.ylab']))
 
     # Determine figure size
     if journal:
@@ -156,8 +124,8 @@ def _gridspec_kwargs(nrows, ncols, rowmajor=True,
     if not figsize:
         figsize = (width, height)
     width, height = figsize
-    width  = _units(width, error=False)
-    height = _units(height, error=False)
+    width  = units(width, error=False)
+    height = units(height, error=False)
 
     # If width and height are not fixed, determine necessary width/height to
     # preserve the aspect ratio of specified plot

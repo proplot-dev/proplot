@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-#------------------------------------------------------------------------------#
-# This configures the global working environment
 """
-See: https://matplotlib.org/users/customizing.html
-Here's a quick list of rcParam categories:
+See `this article <https://matplotlib.org/users/customizing.html>`_. Here's a
+quick list of rcParam categories:
+..
+
     "lines", "patch", "hatch", "legend"
     "font", "text", "mathtext"
     "axes", "figure"
@@ -16,16 +16,16 @@ Here's a quick list of rcParam categories:
 
 Notes
 -----
-* Note the figure settings are used when printing interactively or just making
-    the figure object, but the savefig ones are used when calling savefig.
-* Note that if *autoreload* is triggered/global defauls are reset, it seems that
-    any options set with InlineBackend in ipython are ***ignored***. But if you query
-    settings, options still present -- you just need to call nbsetup again.
+* The figure settings are used when printing interactively or just making
+  the figure object, but the savefig ones are used when calling savefig.
+* If *autoreload* is triggered/global defauls are reset, it seems that
+  any options set with InlineBackend in ipython are ***ignored***. But if you query
+  settings, options still present -- you just need to call nbsetup again.
 """
 # First just make sure some dependencies are loaded
 import re
-from matplotlib.pyplot import figure, get_fignums
-from cycler import cycler
+import cycler
+import matplotlib.pyplot as plt
 from . import colortools
 from . import utils
 from .utils import _timer, _counter, ic
@@ -41,7 +41,7 @@ _default_font = 'Helvetica' if sys.platform=='linux' else 'Helvetica Neue' # say
 # alongside rcParams
 # Default settings
 # List of linked settings
-rcGlobals = {
+_rcGlobals = {
     # Apply these ones to list of rcParams
     'color':     'k',
     'xcolor':    None, # these are special; can be used to set particular spine colors
@@ -76,7 +76,7 @@ rcGlobals = {
     'gridratio':  0.5, # ratio of major-to-minor grid line widths
     }
 
-rcGlobals_children = {
+_rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     # The xcolor/ycolor we don't use 'special' props (since we'd be duplicating ones
     # that already exist for all spines/labels). Instead just manually use the
@@ -119,7 +119,7 @@ rcGlobals_children = {
 
 # Settings that apply to just one thing, and are
 # already implemented by matplotlib
-rcDefaults = {
+_rcDefaults = {
     # Some of these will be overwritten by global alises
     'figure.dpi':              90, # save ipython notebook space
     'figure.facecolor':        (0.95,0.95,0.95,1),
@@ -185,7 +185,7 @@ rcDefaults = {
     }
 
 # Special settings, should be thought of as extension of rcParams
-rcDefaults_sp = {
+_rcDefaults_sp = {
     # These ones just need to be present, will get reset by globals
     'map.facecolor':       None,
     'map.color':           None,
@@ -229,16 +229,17 @@ rcDefaults_sp = {
     'gridspec.xlab':         0.55, # for horizontal text should have more space
     'gridspec.nolab':        0.15, # only ticks
     }
-rcParams_sp = rcDefaults_sp.copy()
+_rcParams_sp = _rcDefaults_sp.copy()
 
 # Generate list of valid names, and names with subcategories
-rc_names = {
+# TODO: Display this somewhere? Maybe in repr of rc?
+_rc_names = {
     *rcParams.keys(),
-    *rcParams_sp.keys(),
+    *_rcParams_sp.keys(),
     }
-rc_categories = {
-    *(re.sub('\.[^.]*$', '', name) for name in rc_names),
-    *(re.sub('\..*$', '', name) for name in rc_names)
+_rc_categories = {
+    *(re.sub('\.[^.]*$', '', name) for name in _rc_names),
+    *(re.sub('\..*$', '', name) for name in _rc_names)
     }
 
 #-------------------------------------------------------------------------------
@@ -268,16 +269,16 @@ class rc_configurator(object):
         style.use('default') # mpl.style function does not change the backend
         # Add simple attributes to rcParams
         self._rcCache = {}
-        self._rcGlobals = rcGlobals.copy()
-        for key,value in rcDefaults.items():
+        self._rcGlobals = _rcGlobals.copy()
+        for key,value in _rcDefaults.items():
             rcParams[key] = value
-        for key,value in rcDefaults_sp.items():
-            rcParams_sp[key] = value
+        for key,value in _rcDefaults_sp.items():
+            _rcParams_sp[key] = value
         # Apply linked attributes to rcParams
         self._set_cycler('colorblind')
         rc, rc_sp = self._get_globals()
         rcParams.update(rc)
-        rcParams_sp.update(rc_sp)
+        _rcParams_sp.update(rc_sp)
         # Settings
         # TODO: Looks like _getitem_mode can get stuck on a higher, more
         # restrictive value (e.g. 1 or 2) when cell fails to execute. Should
@@ -303,14 +304,14 @@ class rc_configurator(object):
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
-            return {**rcParams, **rcParams_sp}
+            return {**rcParams, **_rcParams_sp}
         # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcParams_sp*.
+        # or even *ignore _rcParams_sp*.
         mode = self._getitem_mode
         if mode==0:
-            kws = (self._rcCache, rcParams_sp, rcParams)
+            kws = (self._rcCache, _rcParams_sp, rcParams)
         elif mode==1:
-            kws = (self._rcCache, rcParams_sp)
+            kws = (self._rcCache, _rcParams_sp)
         elif mode==2:
             kws = (self._rcCache,)
         else:
@@ -318,7 +319,7 @@ class rc_configurator(object):
         # If it is available, return the values corresponding to names in
         # user dictionary; e.g. {'color':'axes.facecolor'} becomes {'color':'w'}
         # NOTE: Got weird bugs here. Dunno why. Use self.fill method instead.
-        if key in rc_categories:
+        if key in _rc_categories:
             params = {}
             for kw in kws:
                 for category,value in kw.items():
@@ -351,21 +352,21 @@ class rc_configurator(object):
             self._set_cycler(value)
             self._rcCache['cycle'] = value
         # Apply global settings
-        elif key in rcGlobals:
+        elif key in _rcGlobals:
             if value=='default':
-                value = rcGlobals[key]
+                value = _rcGlobals[key]
             rc, rc_sp = self._get_globals(key, value)
             self._rcCache.update(rc)
             self._rcCache.update(rc_sp)
             self._rcCache[key] = value # also update cached global property itself
             self._rcGlobals[key] = value
             rcParams.update(rc)
-            rcParams_sp.update(rc_sp)
+            _rcParams_sp.update(rc_sp)
         # Directly modify single parameter
         # NOTE: If 'setitem mode' is 0, this means user has directly set
         # something (we are not in a with..as context in format()), so we
         # want to directly modify rcParams.
-        elif key in rc_names:
+        elif key in _rc_names:
             self._rcCache[key] = value
             try:
                 rcParams[key] = value
@@ -390,13 +391,17 @@ class rc_configurator(object):
             self.__setitem__(attr, value)
 
     def __str__(self):
-        # Alias to __repr__
-        return self.__repr__()
-
-    def __repr__(self):
         # Nice string representation
         length = 1 + max(len(key) for key in self._rcGlobals.keys())
-        string = '\n'.join(f'{key}: {" "*(length-len(key))}{value}'
+        string = 'Global settings\n---------------\n' + '\n'.join(f'{key}: {" "*(length-len(key))}{value}'
+                                    for key,value in self._rcGlobals.items())
+        string += '\n\nAll settings\n------------\n' + ', '.join(_rc_names)
+        return string
+
+    def __repr__(self):
+        # Simple one, good for auto docs
+        length = 1 + max(len(key) for key in self._rcGlobals.keys())
+        string = ', '.join(f'{key}: {" "*(length-len(key))}{value}'
                                     for key,value in self._rcGlobals.items())
         return string
 
@@ -407,13 +412,13 @@ class rc_configurator(object):
         if isinstance(value, str) or isinstance(value, Number):
             value = value,
         colors = colortools.colors('colorblind')
-        rcParams['axes.prop_cycle'] = cycler('color', colors)
+        rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         colors = colortools.colors(*value)
-        rcParams['axes.prop_cycle'] = cycler('color', colors)
-        figs = list(map(figure, get_fignums()))
+        rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
+        figs = list(map(plt.figure, plt.get_fignums()))
         for fig in figs:
             for ax in fig.axes:
-                ax.set_prop_cycle(cycler('color', colors))
+                ax.set_prop_cycle(cycler.cycler('color', colors))
 
     def _get_globals(self, key=None, value=None):
         # Apply all properties in some group.
@@ -455,8 +460,8 @@ class rc_configurator(object):
                     ratio = value
                 kw_sp['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
-            for name in rcGlobals_children.get(key, []):
-                if name in rcParams_sp:
+            for name in _rcGlobals_children.get(key, []):
+                if name in _rcParams_sp:
                     kw_sp[name] = value
                 else:
                     kw[name] = value
@@ -467,13 +472,17 @@ class rc_configurator(object):
         Temporarily modify rc configuration. Do this by simply
         saving the cache, allowing modification of the cache, then
         restoring the old cache.
+
         Three modes:
-            0) __getitem__ searches everything, the default.
-            1) __getitem__ ignores rcParams (assumption is these have already
-               been set). Used during Axes __init__ calls to _rcupdate.
-            2) __getitem__ ignores rcParams and rcParams_sp; only read from
-                cache, i.e. settings that user has manually changed.
-               Used during Axes format() calls to _rcupdate.
+
+            0. `__getitem__` searches everything, the default.
+            1. `__getitem__` ignores `_rcParams` (assumption is these
+                have already been set). Used during axes `__init__`
+                calls to `_rcupdate`.
+            2. `__getitem__` ignores `_rcParams` and `_rcParams_sp`; only
+                reads from cache, i.e. settings that user has manually changed.
+                Used during `format()` calls to `_rcupdate`.
+
         Notes
         -----
         This is kept private, because it's only mean to be used within
@@ -513,9 +522,10 @@ class rc_configurator(object):
 
     def fill(self, props):
         """
-        Function that only updates a property if self.__getitem__ returns not None.
-        Meant for optimization; hundreds of 200-item dictionary lookups over several
-        subplots end up taking toll, almost 1s runtime.
+        Function that only updates a property if self.__getitem__
+        returns not None. Meant for optimization: hundreds of 200-item
+        dictionary lookups over several subplots end up taking toll,
+        almost 1s runtime.
         """
         props_out = {}
         for key,value in props.items():
@@ -532,4 +542,7 @@ class rc_configurator(object):
 
 # Instantiate object
 rc = rc_configurator()
+"""
+Instance of `rc_configurator`. Use this to change global settings.
+"""
 

@@ -1,9 +1,9 @@
-
 Color tools
 -------------------------
 
 .. automodule:: proplot.colortools
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodsumm:: proplot.colortools
+   :toctree: api
+   :skip: Number, ic
 
