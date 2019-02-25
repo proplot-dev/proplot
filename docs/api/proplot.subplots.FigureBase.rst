@@ -1,20 +1,20 @@
-Figure
-======
+FigureBase
+==========
 
-.. currentmodule:: proplot.figure
+.. currentmodule:: proplot.subplots
 
-.. autoclass:: Figure
+.. autoclass:: FigureBase
    :show-inheritance:
 
    .. rubric:: Methods Summary
 
    .. autosummary::
 
-      ~Figure.draw
-      ~Figure.panel_factory
-      ~Figure.save
-      ~Figure.savefig
-      ~Figure.smart_tight_layout
+      ~FigureBase.draw
+      ~FigureBase.panel_factory
+      ~FigureBase.save
+      ~FigureBase.savefig
+      ~FigureBase.smart_tight_layout
 
    .. rubric:: Methods Documentation
 

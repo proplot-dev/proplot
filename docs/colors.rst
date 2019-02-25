@@ -1,4 +1,4 @@
-Colors and stuff
+Color management
 ================
 
 A figure prepared for publication should be a work of art. Your
@@ -9,30 +9,26 @@ appealing and informative.
 Colormaps
 ---------
 
-A **new colormap class** analagous to ``LinearSegmentedColormap`` is now
-available, called ``PerceptuallyUniformColormap``. This class linearly
+A **new colormap class** analagous to `~matplotlib.colors.LinearSegmentedColormap` is now
+available, called `~proplot.colortools.PerceptuallyUniformColormap`. This class linearly
 interpolates through hue, chroma, and luminance space (with hues allowed
 to vary circularly), instead of RGB space as with
-``LinearSegmentedColormap``.
+`~matplotlib.colors.LinearSegmentedColormap` 
 
-I’ve made several ``PerceptuallyUniformColormap``\ s already that come
-packaged with ProPlot. I’ve also added the perceptually uniform
-`cmOcean <https://matplotlib.org/cmocean/>`__ colormaps. **A table of
-the new colormaps can be found at the end of
-the showcase**.
-
-The colors in a ``PerceptuallyUniformColormap`` can span either of `4
+The colors in a `~proplot.colortools.PerceptuallyUniformColormap` can span either of `4
 HSV-like colorspaces <http://www.hsluv.org/comparison/>`__: classic HSV,
 perceptually uniform HCL, or HSLuv/HPLuv (which are forms of HCL adapted
-for this kind of usage). They can be specified using ``space='string'``
-where ``'string'`` is any of ``'hsv'``, ``'hcl'``, ``'hsl'``, or
-``'hpl'``.
+for this kind of usage).
+
+I’ve packaged several `~proplot.colortools.PerceptuallyUniformColormap` maps
+with ProPlot, along with perceptually uniform maps from several other projects.
+:ref:`Smooth colormaps` provides a table of the registered colormaps.
 
 Colormap generation
 -------------------
 
-Generate a ``PerceptuallyUniformColormap`` on-the-fly by passing a
-**dictionary** to any plotting function that accepts the ``cmap``
+Generate a `~proplot.colortools.PerceptuallyUniformColormap` on-the-fly by passing a
+**dictionary** to any plotting function that accepts the `cmap`
 keyword argument.
 
 Example:
@@ -63,38 +59,32 @@ Example:
    ax.pcolormesh(np.random.rand(10,10), cmap='sky blue70', cmap_kw={'name':'my_cmap', 'save':True})
 
 creates a monochrome colormap. It also saves the colormap with the name
-``'my_cmap'``, using the ``cmap_kw`` dictionary argument.
+``'my_cmap'``, using the `cmap_kw` dictionary argument.
 
 Color cycles
 ------------
 
 In addition to the new colormaps, new “color cycles” are also available
-(i.e. the automatic color order used for drawing multiple lines). **A
-table of the new color cycles can be found at the end of
-the**\ `showcase <%7B%7B%20site.baseurl%20%7D%7D%7B%%20link%20_tools/proplot.md%20%%7D>`__\ **.**
+(i.e. the automatic color order used for drawing multiple lines).
+:ref:`Discrete colormaps` provides a table of these cycles.
 
-The color cycler can be set with ``plot.rc.cycle = 'name'`` or by
-passing ``cycle='name'`` to any command that plots lines/patches
-(``plot``, ``bar``, etc.).
+The color cycler can be set with the ``plot.rc.cycle`` property, or by
+passing ``cycle='name'`` to any command that plots lines/patches (``plot``, ``bar``, etc.).
 
 The **distinction between a “colormap” and “color cycle” is now fluid**:
-0. All color cycles are defined as ``ListedColormap``\ s, and you can
-request them as colormaps with ``cmap='cycle_name'``. 1. Cycles can be
-generated on the fly from ``LinearSegmentedColormap``\ s by specifying
-e.g. ``cycle=('cmap_name', N)`` where ``N`` is the number of colors over
-the registered colormap you’d like to sample. If you just use
-``cycle='cmap_name'``, the default will be 10 colors.
 
-Example:
+1. All color cycles are implemented as `~matplotlib.colors.ListedColormap` instances; you can request them as colormaps with ``cmap='cycle_name'``.
+2. Cycles can be generated on the fly from the colormaps by specifying e.g. ``cycle=('cmap_name', N)``, where ``N`` is the number of colors over the registered colormap you’d like to sample. If you just use ``cycle='cmap_name'``, the default will be 10 colors.
+
+
+The following generates a cycle of 5 colors over the matplotlib builtin colormap
+``'blues'``, excluding the very brightest colors:
 
 .. code:: python
 
    f, ax = plot.subplots()
    ax.plot(np.random.rand(10,5), cycle=('blues', 5), cycle_kw={'x':(0.2,1)})
 
-generates a cycle of 5 colors over the matplotlib builtin colormap
-``blues``, excluding the brightest/whitest colors (using the
-``cycle_kw`` dictionary argument).
 
 Registered color names
 ----------------------
@@ -103,16 +93,15 @@ New colors names have been added from the `XKCD color-naming
 project <https://xkcd.com/color/rgb/>`__, so-called “crayon” colors
 provided with `Seaborn <https://seaborn.pydata.org/>`__, and Open Color
 web-design color palette. Colors that aren’t sufficiently perceptually
-distinct are eliminated, so its easier to pick from the color table. **A
-table of the new registered colors can be found at the end of
-the**\ `showcase <%7B%7B%20site.baseurl%20%7D%7D%7B%%20link%20_tools/proplot.md%20%%7D>`__\ **.**
+distinct are eliminated, so it's easier to pick from the color table.
+
+:ref:`New color names` provides table of the newly registered colors.
 
 Contour and pcolor
 ------------------
 
 This one is a small change – I’ve fixed the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
-and
-`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
-issues by automatically changing the edgecolors when ``contourf``,
-``pcolor``, and ``pcolormesh`` are called.
+and `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
+issues by automatically changing the edgecolors when `contourf`,
+`pcolor`, and `pcolormesh` are called.

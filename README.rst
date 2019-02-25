@@ -38,15 +38,17 @@ Quick overview of additional features:
    colormap-generating tools, ability to trivially swap between "color
    cycles" and "colormaps". A few new, beautiful colormaps and color
    cycles. Make colorbars from lists of lines or colors.
--  Maps: Integration with basemap *and* cartopy. Generate arbitrary
-   grids of map projections in one go. Switch between basemap and
-   cartopy painlessly. Add geographical features as part of the
+-  Maps: Integration with basemap and cartopy. Generate arbitrary
+   grids of map projections in one go. Switch between the cartopy and
+   basemap backends painlessly. Add geographical features as part of the
    `~proplot.axes.CartopyAxes.format` process.
 
 Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig for this package, and helping me fix a lot of the initial
-bugs. Check out his `climpred package <https://github.com/bradyrx/climpred>`_
-for facilitating decadal climate prediction.
+guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
+
+Documentation
+-------------
+The documentation is published `here <https://lukelbd.github.io/proplot>`_.
 
 Installation
 ------------
@@ -58,27 +60,8 @@ on PyPi. However, feel free to install directly from Github using:
 
    pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
-Dependencies are ``matplotlib`` and ``numpy``. The geographic mapping
-mapping features require ``basemap`` or ``cartopy``. Note that `basemap
-is no longer under active
-development <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
-– cartopy is integrated more intelligently with the matplotlib API.
-However, for the time being, basemap *retains several advantages* over
-cartopy (namely `more tools for labeling
-meridians/parallels <https://github.com/SciTools/cartopy/issues/881>`__
-and more available projections – see
-`basemap <https://matplotlib.org/basemap/users/mapsetup.html>`__ vs.
-`cartopy <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html>`__).
-Therefore, I decided to support both.
-
-Documentation
--------------
-The documentation is published `on my website <https://lukelbd.github.io/proplot>`_.
-
-For a broad overview of ProPlot features, see the :ref:`showcase` and the :ref:`quickstart`
-sections.
-
-For the detailed API documentation (generated from docstrings), see the :ref:`modules` section.
+Dependencies are just `matplotlib` and `numpy`. The geographic mapping
+mapping features require `cartopy` and/or `basemap`.
 
 How is this different from seaborn?
 -----------------------------------
@@ -87,7 +70,7 @@ There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. What makes this project
 different?
 
-While parts of ``proplot`` were inspired by seaborn (in particular much
+While parts of `proplot` were inspired by seaborn (in particular much
 of ``colors.py`` is drawn from seaborn’s ``palettes.py``), the goal for
 this project was quite different – it is intended to simplify the task
 of making publication-quality figures, and no more.
@@ -105,7 +88,7 @@ that you analyze your data on your own time.
    preliminary stages).
 
 By focusing on this single task, I was able to create a number of
-powerful features beyond the scope of ``seaborn``. I was also able
+powerful features beyond the scope of `seaborn`. I was also able
 to integrate my features much more closely with the matplotlib API,
 rather than making an entirely new ecosystem that you have to learn
 to use from scratch.

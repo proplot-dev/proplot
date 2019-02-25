@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Registers colormaps, color cycles, and color string names. Defines tools
-for creating new colormaps and color cycles. Defines new normalizer
-classes.
+Register colormaps, color cycles, and color string names. Define tools
+for creating new colormaps and color cycles. Define new normalizer classes.
 """
 #------------------------------------------------------------------------------#
 # Note colormaps are *callable*, will just deliver the corresponding color, easy.
@@ -972,7 +971,7 @@ def cycle(*args, **kwargs):
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
-    Generate a `~matpltolib.colors.LinearSegmentedColormap` in a
+    Generate a `~matplotlib.colors.LinearSegmentedColormap` in a
     *perceptually uniform colorspace* -- that is, either HSLuv, HCL, or HPLuv.
     See `this page <http://www.hsluv.org/comparison/>`_ for a description
     of each colorspace.

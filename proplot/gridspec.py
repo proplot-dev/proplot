@@ -12,26 +12,29 @@ def journal_size(journal):
     size standards. If height is not specified by standard, `height` takes
     the value ``None``.
 
-    This function is called when the `journal` keyword argument for
-    `~proplot.subplots.subplots` is set.
+    This function is used when `~proplot.subplots.subplots` is called with
+    the `journal` keyword argument.
 
-    The options are as follows:
+    The options for `journal` are as follows:
 
-    ===========  ==================  ========================================================================================================================================================
-    Key          Size description    Organization
-    ===========  ==================  ========================================================================================================================================================
-    ``'pnas1'``  1-column            Proceedings of the National Academy of Sciences [1]_
-    ``'pnas2'``  2-column            "
-    ``'pnas3'``  Landscape page      "
-    ``'ams1'``   1-column            American Meteorological Society [2]_
-    ``'ams2'``   Small 2-column      "
-    ``'ams3'``   Medium 2-column     "
-    ``'ams4'``   Full 2-column       "
-    ``'agu1'``   1-column            American Geophysical Union [3]_
-    ``'agu2'``   2-column            "
-    ``'agu3'``   Landscape 1-column  "
-    ``'agu4'``   Landscape 2-column  "
-    ===========  ==================  ========================================================================================================================================================
+    ===========  =====================  ====================================================
+    Key          Size description       Organization
+    ===========  =====================  ====================================================
+    ``'pnas1'``  1-column               Proceedings of the National Academy of Sciences [1]_
+    ``'pnas2'``  2-column               "
+    ``'pnas3'``  Landscape page         "
+    ``'ams1'``   1-column               American Meteorological Society [2]_
+    ``'ams2'``   Small 2-column         "
+    ``'ams3'``   Medium 2-column        "
+    ``'ams4'``   Full 2-column          "
+    ``'agu1'``   1-column               American Geophysical Union [3]_
+    ``'agu2'``   2-column               "
+    ``'agu3'``   1-column, full height  "
+    ``'agu4'``   2-column, full height  "
+    ===========  =====================  ====================================================
+
+    Feel free to submit a pull request if you'd like to add additional
+    standards.
 
     .. [1] `PNAS recommendations <http://www.pnas.org/page/authors/submission>`_
     .. [2] `AMS recommendations <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`_
@@ -82,7 +85,7 @@ class FlexibleGridSpecBase(object):
         wspace, hspace : float, str, or list thereof
             The horizontal/vertical spacing between columns/rows of
             subplots. If float, units are inches. If string,
-            units are interpreted by `proplot.units`. If list thereof,
+            units are interpreted by `~proplot.utils.units`. If list thereof,
             allows for **variable** spacing (length of ``wspace`` must
             be ``ncols-1``; of ``hspace`` must be ``nrows-1``).
         hratios, wratios : list of float
@@ -94,7 +97,7 @@ class FlexibleGridSpecBase(object):
         left, right, top, bottom : float or str
             Passed to `~matplotlib.gridspec.GridSpec`. Indicates width of "margins"
             surrounding the grid. If float, units are inches. If string,
-            units are interpreted by `proplot.units`.
+            units are interpreted by `~proplot.utils.units`.
 
             Generally, these are used to set the "figure edges" around the
             region of subplots. If ``proplot.subplots`` was called with

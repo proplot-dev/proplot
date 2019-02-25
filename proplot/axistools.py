@@ -3,19 +3,19 @@
 Define various axis scales, locators, and formatters. Below is rough
 overview of matplotlib API.
 
-General Notes
--------------
-Want to try to avoid **using the Formatter to scale/transform values, and
-passing the locator an array of scaled/transformed values**.
+**General Notes**
+
+Want to try to avoid using the Formatter to scale/transform values, and
+passing the locator an array of scaled/transformed values.
 
 Makes more sense
-to instead define separate **axis transforms**, then can use locators and
+to instead define separate *axis transforms*, then can use locators and
 formatters like normal, as they were intended to be used. This way, if e.g.
-matching frequency-axis with wavelength-axis, just conver the **axis limits**
+matching frequency-axis with wavelength-axis, just conver the *axis limits*
 so they match, then you're good.
 
-Scales
-------
+**Scale Classes**
+
 * These are complicated. See `~matplotlib.scale.ScaleBase`. Use existing ones
   as inspiration -- e.g. `InverseScale` modeled after `~matplotlib.scale.LogScale`.
 * Way to think of these is that *every single value you see on an axes first
@@ -50,9 +50,9 @@ Scales
 * Note scales have to be *registered* unlike locators and formatters, which
   can be passed to the setter methods directly.
 
-Transforms
-----------
-* These are complicted. See: https://matplotlib.org/_modules/matplotlib/transforms.html#Transform
+**Transform Classes**
+
+* These are complicted. See `the transforms module <https://matplotlib.org/_modules/matplotlib/transforms.html#Transform>`_.
 * Attributes:
     - `input_dims`, `output_dims`, `is_separable`, and `has_inverse`. The
       `dims` are because transforms can be N-D, but for *scales* they are
@@ -64,9 +64,9 @@ Transforms
       just declare `transform_affine` or `transform_non_affine`.
     - `inverted`: If `has_inverse is` ``True``, performs the inverse transform.
 
-Locators
---------
-* These are complicated. See: https://matplotlib.org/_modules/matplotlib/ticker.html#Locator
+**Locator Classes**
+
+* These are complicated. See `the ticker module <https://matplotlib.org/_modules/matplotlib/ticker.html#Locator>`_.
 * Special:
     - `__init__` not defined on base class but *must* be defined for subclass.
 
@@ -84,21 +84,12 @@ Locators
       result of ``axis.get_view_interval(...)``.
     - `pan` and `zoom`: Interactive purposes.
 
-Formatters
-----------
+**Formatter Classes**
+
 Easy to construct: just build with `~matplotlib.formatter.FuncFormatter`
 a function that accepts the number and a 'position', which maybe is used
 for offset or something (don't touch it, leave it default).
 
-Normalizers
------------
-* Generally these are used for colormaps, easy to construct: require
-  only an `__init__` method and a `__call__` method.
-* The `__init__` method takes `vmin`, `vmax`, and `clip`, and can define custom
-  attributes.
-* The `__call__` method just returns a *masked array* to handle NaNs,
-  and call transforms data from physical units to *normalized* units
-  from 0-1, representing the position in colormap.
 """
 #------------------------------------------------------------------------------#
 # Imports
@@ -816,7 +807,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     elif isinstance(formatter, FunctionType):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif type(formatter) is str: # assumption is list of strings
-        if '{x}' in formatter:
+        if '{}' in formatter:
             formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs) # new-style .format() form
         elif '%' in formatter:
             if time:

@@ -6,7 +6,6 @@ Documentation
 
    notebook
    subplots
-   figure
    axes
    gridspec
    axistools

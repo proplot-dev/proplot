@@ -8,7 +8,6 @@ Figures and axes with special ProPlot features can be created with `~proplot.sub
 To generate complex grids, pass a 2D array of numbers corresponding to unique subplots. Use zero to allot empty space. For example, the following command creates a grid with one tall plot on the left, and two smaller plots on the right:
 
 .. code-block:: python
-   :linenos:
 
    import proplot as plot
    f, axs = plot.subplots([[1,2],[1,3]])
@@ -16,7 +15,6 @@ To generate complex grids, pass a 2D array of numbers corresponding to unique su
 while this command creates a grid with one long plot on top and two smaller plots on the bottom, with a gap in the middle (the zero):
 
 .. code-block:: python
-   :linenos:
 
    import proplot as plot
    f, axs = plot.subplots([[1,1,1],[2,0,4]])
@@ -26,7 +24,6 @@ The corresponding axes "numbers" are added as attributes, and can be used for a-
 For a single-axes figure (1 row, 1 column), simply call `~proplot.subplots` with no arguments. For simple grids, use the `nrows` and `ncols` keyword args; for example
 
 .. code-block:: python
-   :linenos:
 
    import proplot as plot
    f, axs = plot.subplots(nrows=2)
@@ -34,7 +31,6 @@ For a single-axes figure (1 row, 1 column), simply call `~proplot.subplots` with
 The `~proplot.axes_list` container lets you invoke methods in every axes in `axs` simultaneously; for example:
 
 .. code-block:: python
-   :linenos:
 
    import proplot as plot
    f, axs = plot.subplots()
@@ -104,7 +100,7 @@ the `journal` keyword argument.
 
 Example:
 
-.. code:: python
+.. code-block:: python
 
    f, axs = plot.subplots(ncols=3, nrows=2, journal='ams2') # medium-sized figure for AMS journal
 

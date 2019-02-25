@@ -16,10 +16,9 @@ Welcome to ProPlot's documentation!
    :maxdepth: 4
    :caption: Contents:
 
-   includeme
-   showcase-header
+   readme
    quickstart
-   modules
+   documentation
 
 
 Indices and tables

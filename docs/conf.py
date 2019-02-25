@@ -138,7 +138,8 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', '_templates', 'originals', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', '_templates', '_themes',
+                    'originals', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -152,7 +153,16 @@ default_role = 'py:obj' # default family is py, but can also set default role so
 # a list of builtin themes.
 #
 # html_theme = 'alabaster' # ugly default
-html_theme = 'sphinx_rtd_theme' # from: https://sphinx-rtd-theme.readthedocs.io/en/latest/installing.html
+# html_theme = 'sphinx_rtd_theme' # from: https://sphinx-rtd-theme.readthedocs.io/en/latest/installing.html
+html_theme = 'rtd_custom'
+html_theme_path = ['_themes']
+html_theme_options = {
+    'collapse_navigation': True,
+    'navigation_depth': 4,
+    }
+# html_sidebars = {'**': ['layout.html', 'search.html', 'breadcrumbs.html', 'footer.html', 'searchbox.html']}
+# html_sidebars = {'**': ['fulltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}
+# html_sidebars = {'**': ['fulltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
