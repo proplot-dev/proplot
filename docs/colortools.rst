@@ -5,5 +5,5 @@ Color tools
 
 .. automodsumm:: proplot.colortools
    :toctree: api
-   :skip: Number, ic
+   :skip: Number, ic, rcParams
 

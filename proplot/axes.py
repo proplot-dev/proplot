@@ -610,6 +610,7 @@ class BaseAxes(maxes.Axes):
     """
     # Initial stuff
     name = 'base'
+    """The registered projection name."""
     def __init__(self, *args, number=None,
             sharex=None, sharey=None, spanx=None, spany=None,
             sharex_level=0, sharey_level=0,
@@ -1152,6 +1153,7 @@ class XYAxes(BaseAxes):
     """
     # Initialize
     name = 'xy'
+    """The registered projection name."""
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
@@ -1701,10 +1703,17 @@ class EmptyPanel(object):
 
 class PanelAxes(XYAxes):
     name = 'panel'
+    """The registered projection name."""
     def __init__(self, *args, panel_side=None, invisible=False, **kwargs):
         """
-        Axes with added utilities that make it suitable for holding a legend or
-        colorbar meant to reference several other subplots at once.
+        An `~proplot.axes.XYAxes` with `legend` and `colorbar` methods
+        overridden. Calling these will "fill" the entire axes with a legend
+        or colorbar.
+
+        This is suitable for axes meant to reference content in several
+        other subplots at once.
+
+        See `~proplot.subplots.subplots` for details.
 
         Notes
         -----
@@ -1834,16 +1843,16 @@ class MapAxes(BaseAxes):
         Parses complex ``lonlabels`` and ``latlabels`` arguments. There are
         four different options:
 
-            1. A string, e.g. ``'lr'``, ``'bt'``
+            1. A string, e.g. ``'lr'``, ``'bt'``.
             2. Boolean ``True``; indicates left side for latitudes,
-                bottom for longitudes.
+               bottom for longitudes.
             3. A boolean ``(left,right)`` tuple for latitudes,
-                ``(bottom,top)`` for longitudes.
+               ``(bottom,top)`` for longitudes.
             4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
-                `~basemap.Basemap.drawmeridians` and
-                `~basemap.Basemap.drawparallels` methods;
-                indicates whether to label left, right, top, and bottom
-                sides, respectively.
+               `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+               `~mpl_toolkits.basemap.Basemap.drawparallels` methods;
+               indicates whether to label left, right, top, and bottom
+               sides, respectively.
         """
         if labels is False:
             return [0]*4
@@ -1871,12 +1880,13 @@ class MapAxes(BaseAxes):
 class BasemapAxes(MapAxes):
     """
     Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
-    projections. The `~basemap.Basemap` projection instance is added as
+    projections. The `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `m` attribute, but this is all abstracted away -- you can use
     `~matplotlib.axes.Axes` methods like ``plot()`` and ``contour()`` with
     your raw longitude-latitude data. Neat, huh?
     """
     name = 'basemap'
+    """The registered projection name."""
     def __init__(self, *args, map_projection=None, **kwargs):
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
         #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
@@ -2052,7 +2062,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
     """
     Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
-    projections. Initializes the `~cartopy.crs` projection instance. Also
+    projections. Initializes the `cartopy.crs.Projection` instance. Also
     allows for *partial* coverage of azimuthal projections by zooming into
     the full projection, then drawing a circle boundary around some latitude
     away from the center (this is surprisingly difficult to do).
@@ -2074,6 +2084,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     """
     # Used in Projection parent class here: https://scitools.org.uk/cartopy/docs/v0.13/_modules/cartopy/crs
     name = 'cartopy'
+    """The registered projection name."""
     def __init__(self, *args, map_projection=None, circle_center=90, circle_edge=0, **kwargs):
         # Dependencies
         import cartopy.crs as ccrs # verify package is available
@@ -2245,6 +2256,7 @@ class PolarAxes(MapAxes, mproj.PolarAxes):
     Polar axes have not been tested yet!
     """
     name = 'newpolar'
+    """The registered projection name."""
 
 # Register the projection
 mproj.register_projection(BaseAxes)
@@ -2259,8 +2271,8 @@ mproj.register_projection(CartopyAxes)
 #------------------------------------------------------------------------------#
 def map_projection_factory(package, projection, **kwargs):
     """
-    Returns `~basemap.Basemap` instance or projection instance
-    from the `cartopy.crs` module.
+    Returns a `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
+    instance.
 
     Todo
     ----

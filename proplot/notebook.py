@@ -47,9 +47,20 @@ from matplotlib import rcParams
 # @block_printing
 def nbsetup(directory=None, backend='inline'):
     """
-    Script to set up magic commands and other notebook properties.
-    Just call this in the first cell with "run pyfuncs/notebook". And voila!
-    Call with optional directory argument to make that the new working directory.
+    Set up magic commands and other notebook properties. Also increases
+    resolution of inline figures, which is suitable for the "small" default
+    font and figure sizes used by ProPlot.
+
+    Just call this in the first cell of your notebook with
+
+    .. code-block:: python
+        :linenos:
+
+        import proplot as plot
+        plot.nbsetup()
+
+    and voila! Pass an optional `directory` argument to make that the
+    new working directory.
     """
     # Variables
     cd = os.getcwd()

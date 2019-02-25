@@ -6,7 +6,9 @@ overview of matplotlib API.
 General Notes
 -------------
 Want to try to avoid **using the Formatter to scale/transform values, and
-passing the locator an array of scaled/transformed values**. Makes more sense
+passing the locator an array of scaled/transformed values**.
+
+Makes more sense
 to instead define separate **axis transforms**, then can use locators and
 formatters like normal, as they were intended to be used. This way, if e.g.
 matching frequency-axis with wavelength-axis, just conver the **axis limits**
@@ -14,81 +16,89 @@ so they match, then you're good.
 
 Scales
 ------
-* These are complicated. See: https://matplotlib.org/_modules/matplotlib/scale.html#ScaleBase
-  Use existing ones as inspiration -- e.g. InverseScale modeled after LogScale.
+* These are complicated. See `~matplotlib.scale.ScaleBase`. Use existing ones
+  as inspiration -- e.g. `InverseScale` modeled after `~matplotlib.scale.LogScale`.
 * Way to think of these is that *every single value you see on an axes first
   gets secretly converted through some equation*, e.g. logarithm, and plotted
   linearly in that transformation space.
-* Methods include:
-    - get_transform(), which should return an mtransforms.Transform instance
-    - set_default_locators_and_formatters(), which should return
-      default locators and formatters
-    - limit_range_for_scale(), which can be used to raise errors/clip
-      stuff not within that range. From Mercator example: unlike the
-      autoscaling provided by the tick locators, this range limiting will
-      always be adhered to, whether the axis range is set manually,
-      determined automatically or changed through panning and zooming.
+* Methods are as follows:
 
-  Important notes on methods:
-    - When you set_xlim or set_ylim, the minpos used is actually the *data
-      limits* minpos (i.e. minimum coordinate for plotted data). So don't
-      try to e.g. clip data < 0, that is job for transform, if you use minpos
-      in limit_range_for_scale will get wrong and weird results.
-    - Common to use set_smart_bounds(True) in set_default_locators_and_formatters()
-      call -- but this only draws ticks where **data exists**. Often this may
-      not be what we want. Check out source code, see if we can develop own
-      version smarter than this, that still prevents these hanging ticks.
+   - `get_transform`: Returns a `~matplotlib.transforms.Transform` instance.
+   - `set_default_locators_and_formatters`: Returns
+     the default locators and formatters.
+   - `limit_range_for_scale`: Can be used to raise errors or clip
+     stuff not within that range.
 
-* Also, have to be 'registered' unlike locators and formatters, which
-  can be passed to the 'set' methods. Or maybe not?
+     From the Mercator example: unlike the autoscaling provided by the
+     tick locators, this range limiting will always be adhered to, whether
+     the axis range is set manually, determined automatically or changed
+     through panning and zooming.
+
+* Important notes on methods:
+
+    - When you use `set_xlim` or `set_ylim`, the `minpos` used is actually
+      the *data limits* `minpos` (i.e. the minimum coordinate for plotted
+      data). So don't try to e.g. clip data less than 0. That is job for
+      transform. If you use `minpos` in `limit_range_for_scale`, will get
+      wrong and weird results.
+    - Common to use `set_smart_bounds(True)` in the call to
+      `set_default_locators_and_formatters` call -- but this only draws ticks
+      where **data exists**. Often this may not be what we want. Check out
+      source code, see if we can develop own version smarter than this,
+      that still prevents these hanging ticks.
+
+* Note scales have to be *registered* unlike locators and formatters, which
+  can be passed to the setter methods directly.
 
 Transforms
 ----------
 * These are complicted. See: https://matplotlib.org/_modules/matplotlib/transforms.html#Transform
 * Attributes:
-    - input_dims, output_dims, is_separable, and has_inverse; the dims are because
-      transforms can be N-D, but for *scales* are always 1, 1. Note is_separable is
-      true if transform is separable in x/y dimensions.
+    - `input_dims`, `output_dims`, `is_separable`, and `has_inverse`. The
+      `dims` are because transforms can be N-D, but for *scales* they are
+      always 1. Note `is_separable` is true if the transform is separable
+      in the x/y dimensions.
 
 * Methods:
-    - transform(): transforms N-D coordinates, given M x N array of values. Can also
-      just declare transform_affine or transform_non_affine.
-    - inverted(): if has_inverse True, performs inverse transform.
+    - `transform`: Transforms N-D coordinates, given M x N array of values. Can also
+      just declare `transform_affine` or `transform_non_affine`.
+    - `inverted`: If `has_inverse is` ``True``, performs the inverse transform.
 
 Locators
 --------
 * These are complicated. See: https://matplotlib.org/_modules/matplotlib/ticker.html#Locator
 * Special:
-    - __init__() not defined on base class but *must* be defined for subclass.
+    - `__init__` not defined on base class but *must* be defined for subclass.
 
 * Methods include:
-    - tick_values(), which accepts vmin/vmax and returns values of located ticks
-    - __call__(), which can return data limits, view limits, or
+    - `tick_values`: Accepts vmin/vmax and returns values of located ticks
+    - `__call__`: Can return data limits, view limits, or
       other stuff; not sure how this works or when it's invoked.
-    - view_limits(), which changes the *view* limits from default vmin, vmax
-      to prevent singularities (uses mtransforms.nonsingular method; for
-      more info on this see: https://matplotlib.org/_modules/matplotlib/transforms.html#nonsingular)
+    - `view_limits`: Changes the *view* limits from default `vmin`, `vmax`
+      to prevent singularities. Uses `~matplotlib.transforms.nonsingular`
+      method; for more info see the `matplotlib doc <https://matplotlib.org/_modules/matplotlib/transforms.html#nonsingular>`_.
 
 * Methods that usually can be left alone:
-    - raise_if_exceeds(), which just tests if ticks exceed MAXTICKS number
-    - autoscale(), which calls the internal locator 'view_limits' with
-      result of axis.get_view_interval()
-    - pan() and zoom() for interactive purposes
+    - `raise_if_exceeds`: Just tests if ticks exceed ``MAXTICKS`` number.
+    - `autoscale`: Calls the internal locator `view_limits` with
+      result of ``axis.get_view_interval(...)``.
+    - `pan` and `zoom`: Interactive purposes.
 
 Formatters
 ----------
-Easy to construct: just build with FuncFormatter a function that accepts
-the number and a 'position', which maybe is used for offset or something
-but almost always don't touch it, leave it default.
+Easy to construct: just build with `~matplotlib.formatter.FuncFormatter`
+a function that accepts the number and a 'position', which maybe is used
+for offset or something (don't touch it, leave it default).
 
 Normalizers
 -----------
 * Generally these are used for colormaps, easy to construct: require
-  only an __init__ method and a __call__ method.
-* The init method takes vmin, vmax, and clip, and can define custom
-  attributes. The call method just returns a *masked array* to handle NaNs,
+  only an `__init__` method and a `__call__` method.
+* The `__init__` method takes `vmin`, `vmax`, and `clip`, and can define custom
+  attributes.
+* The `__call__` method just returns a *masked array* to handle NaNs,
   and call transforms data from physical units to *normalized* units
-  from 0-1, representing position in colormap.
+  from 0-1, representing the position in colormap.
 """
 #------------------------------------------------------------------------------#
 # Imports
@@ -177,6 +187,7 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
     scale_name = name # must make a copy
     class ExpScale(mscale.ScaleBase):
         name = scale_name # assigns as attribute
+        """Registered scale name."""
         scale = scale_num
         forward = to_exp
         # Declare name
@@ -282,6 +293,7 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
     class CutoffScale(mscale.ScaleBase):
         # Declare name
         name = scale_name
+        """Registered scale name."""
         def __init__(self, axis, **kwargs):
             mscale.ScaleBase.__init__(self)
             self.name = scale_name
@@ -393,6 +405,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
     .. bibliography:: ../refs.bib
     """
     name = 'mercator'
+    """Registered scale name."""
     def __init__(self, axis, *, thresh=85.0, **kwargs):
         # Initialize
         mscale.ScaleBase.__init__(self)
@@ -461,19 +474,20 @@ class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
 #------------------------------------------------------------------------------#
 class SineLatitudeScale(mscale.ScaleBase):
     r"""
-    The scale function:
+    The scale function is...
 
     .. math:
 
-        \sin(\rad(y))
+        \sin((y))
 
     The inverse scale function:
 
     .. math:
 
-        \deg(\arcsin(y))
+        (\arcsin(y))
     """
     name = 'sine'
+    """Registered scale name."""
     def __init__(self, axis, **kwargs):
         # Initialize
         mscale.ScaleBase.__init__(self)
@@ -547,6 +561,7 @@ class InverseScale(mscale.ScaleBase):
     # scale will invert and swap the limits you provide. Weird! But works great!
     # Declare name
     name = 'inverse'
+    """Registered scale name."""
     def __init__(self, axis, minpos=1e-2, **kwargs):
         # Initialize (note thresh is always needed)
         mscale.ScaleBase.__init__(self)

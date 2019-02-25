@@ -222,17 +222,41 @@ class Figure(mfigure.Figure):
             sharex_panels=True, sharey_panels=True, # by default share main x/y axes with panel x/y axes
             **kwargs):
         """
-        Create edge panels.
+        Create panels along subplot edges.
+
+        Parameters
+        ----------
+        subspec : `~matplotlib.gridspec.SubplotSpec`
+            The `~matplotlib.gridspec.SubplotSpec` instance onto which
+            the main subplot and its panels are drawn.
+        whichpanels : None or str, optional
+            Whether to draw panels on the left, right, bottom, or top
+            sides. Should be a string containing any of the characters
+            ``'l'``, ``'r'``, ``'b'``, or ``'t'`` in any order.
+            Default is ``'r'``.
+        wwidth, hwidth : None, float, or str, optional
+            Width of vertical (``wwidth``) and horizontal (``hwidth``)
+            panels, respectively. If float, units are inches. If string,
+            units are interpreted by `proplot.units`.
+        wspace, hspace : None, float, or str, optional
+            Empty space between the main subplot and the panel.
+            If float, units are inches. If string,
+            units are interpreted by `proplot.units`.
+
+        Todo
+        ----
+        * Make settings specific to left, right, top, bottom sides!
+        * Document the share settings.
         """
         # Helper function for creating paneled axes.
         width, height = self.width, self.height
         translate = {'bottom':'b', 'top':'t', 'right':'r', 'left':'l'}
         whichpanels = translate.get(whichpanels, whichpanels)
         whichpanels = whichpanels or 'r'
-        hspace = _default(hspace, 0.13) # teeny tiny space
-        wspace = _default(wspace, 0.13)
-        hwidth = _default(hwidth, 0.45) # default is panels for plotting stuff, not colorbars
-        wwidth = _default(wwidth, 0.45)
+        hspace = units(_default(hspace, 0.13)) # teeny tiny space
+        wspace = units(_default(wspace, 0.13))
+        hwidth = units(_default(hwidth, 0.45)) # default is panels for plotting stuff, not colorbars
+        wwidth = units(_default(wwidth, 0.45))
         if any(s.lower() not in 'lrbt' for s in whichpanels):
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 

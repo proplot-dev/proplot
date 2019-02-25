@@ -17,6 +17,8 @@ Welcome to ProPlot's documentation!
    :caption: Contents:
 
    includeme
+   showcase-header
+   quickstart
    modules
 
 

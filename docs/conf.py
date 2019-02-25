@@ -53,6 +53,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
+    'sphinx.ext.autosectionlabel',
     # 'sphinxext.custom_roles', # copied directly from matplotlib
     'sphinx.ext.autosummary',
     'IPython.sphinxext.ipython_directive',
@@ -88,13 +89,13 @@ autoclass_content = 'both'
 # Set up mapping for other projects' docs
 intersphinx_mapping = {
                        'matplotlib': ('https://matplotlib.org', None),
-                       'sphinx': ('http://www.sphinx-doc.org/en/stable/', None),
+                       'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
                        'python': ('https://docs.python.org/3', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
                        'xarray': ('http://xarray.pydata.org/en/stable', None),
-                       'cartopy': ('https://scitools.org.uk/cartopy/docs/latest/', None),
-                       'basemap': ('https://matplotlib.org/basemap/', None),
+                       'cartopy': ('https://scitools.org.uk/cartopy/docs/latest', None),
+                       'basemap': ('https://matplotlib.org/basemap', None),
                        }
 
 # If true, the current module name will be prepended to all description
@@ -137,7 +138,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', '_templates', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', '_templates', 'originals', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
