@@ -1,8 +1,8 @@
-Figure and subplot panels
-=========================
+Panels
+======
 
-Outer Panels
-------------
+"Outer" Panels
+--------------
 
 ProPlot figures may optionally have “outer” panels on the bottom, left,
 or right of the figure, accessed with ``fig.bottompanel``,
@@ -10,7 +10,7 @@ or right of the figure, accessed with ``fig.bottompanel``,
 
 -  ``bottompanel=True``: Allot space for a single panel spanning all
    columns of subplots.
--  ``bottompanels=True``: Allot space for ``n`` separate panels spanning
+-  ``bottompanels=True``: Allot space for ``n`` separate panels occupying
    the ``n`` columns of subplots.
 -  ``bottompanels=[array]``: Allot space for an arbitrary number of
    panels spanning contiguous subplot columns – for example,
@@ -40,6 +40,25 @@ These are useful for global legends/colorbars intended to reference multiple sub
 
 Outer panel settings can be configured with a bunch of `subplots` keyword arguments; see the :ref:`documentation` for details.
 
+"Inner" Panels
+--------------
+
+ProPlot also provides utilities for making “**inner panels**”. These may
+be useful where you want a colorbar for every plot, a legend outside of
+every axes, or want to show the x/y-direction statistics for some 2D
+value plotted in your subplot (e.g. the x-direction mean, variance,
+etc.).
+
+The procedure for requesting inner panels is similar:
+
+* ``innerpanels='r'`` draws panels on the right of each subplot, ``innerpanels='rt'`` draws panels on the top and the right.
+* ``innerpanels={1:'r', (2,3):''}`` or ``innerpanels={range(5):'bt', 5:''}`` draws inner panels for *particular subplot numbers*.
+
+As with the outer panels, you can also use ``innercolorbars='r'`` to
+draw panels with default widths/spacing suitable for colorbars.
+
+Inner panel settings can be configured with a bunch of `subplots` keyword arguments; see the :ref:`documentation` for details.
+
 Colorbar Enhancements
 ---------------------
 
@@ -56,24 +75,4 @@ Two additional options make it easy to configure your colorbar geometry:
 
 * ``length=fraction``, where ``0 <= fraction <= 1``, will make the colorbar span a *fraction* of the horizontal/vertical extent of the axes it is filling.
 * ``extendlength=size`` controls the length of the “triangles” representing out-of-bounds colors (drawn when you use ``extend='min'``, ``extend='max'``, or ``extend='both'``). Since the “triangles” are now specified in physical units, they will always match other colorbars in the figure.
-
-Inner Panels
-------------
-
-ProPlot also provides utilities for making “**inner panels**”. These may
-be useful where you want a colorbar for every plot, a legend outside of
-every axes, or want to show the x/y-direction statistics for some 2D
-value plotted in your subplot (e.g. the x-direction mean, variance,
-etc.).
-
-The procedure for requesting inner panels is similar:
-
-* ``innerpanels='r'`` draws panels on the right of each subplot, ``innerpanels='rt'`` draws panels on the top and the right.
-* ``innerpanels={1:'r', (2,3):''}`` or ``innerpanels={range(5):'bt', 5:''}`` draws inner panels for *particular subplot numbers*.
-* ``innerpanels_kw={'key':value}`` or, for example, ``innerpanels_kw={1:{'key':value1}, range(1,3):{'key':value2}}`` will format your inner panels.
-
-As with the outer panels, you can also use ``innercolorbars='r'`` to
-draw panels with default widths/spacing suitable for colorbars.
-
-Inner panel settings can be configured with a bunch of `subplots` keyword arguments; see the :ref:`documentation` for details.
 

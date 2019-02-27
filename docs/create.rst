@@ -1,5 +1,5 @@
-Figure creation
-===============
+Figures and subplots
+====================
 
 The subplots command
 --------------------

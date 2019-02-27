@@ -1,5 +1,5 @@
-Geographic projections
-======================
+Projections
+===========
 ProPlot also lets you set up axes with geographic projections using either of 2 packages: `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`.
 See the `~proplot.proj` documentation for a handy table of available projection names.
 

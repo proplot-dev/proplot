@@ -603,8 +603,8 @@ described above. See the `~proplot.colortools` module for more info.
    :height: 5434px
 
 
-Discrete colormaps
-------------------
+Color cycles
+------------
 
 The below figure shows the newly regsistered discrete colormaps or
 “color cycles” – i.e. colormaps whose transitions are not meant to be
@@ -629,8 +629,8 @@ you wish to draw.
 .. image:: _static/showcase_files/showcase_34_1.svg
 
 
-New color names
----------------
+Color names
+-----------
 
 This first plot shows newly registered colors from the `Open
 Color <https://github.com/yeun/open-color>`__ UI-design library. The
