@@ -1410,14 +1410,16 @@ class XYAxes(BaseAxes):
         # Change the default formatter
         # My trims trailing zeros, but numbers no longer aligned. Matter
         # of taste really; will see if others like it.
-        formatter = axistools.Formatter('custom')
+        formatter = axistools.Formatter('default')
         self.xaxis.set_major_formatter(formatter)
+        formatter = axistools.Formatter('default')
         self.yaxis.set_major_formatter(formatter)
         # Reset this; otherwise matplotlib won't automatically change
         # formatter when it encounters certain types of data, like
         # datetime.
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
+        self.stale = True
 
     def __getattribute__(self, attr, *args):
         # Attribute
@@ -1671,13 +1673,13 @@ class XYAxes(BaseAxes):
                 xscale = xscale.name
             self.set_xscale(axistools.Scale(xscale, **xscale_kw))
             if xscale in ('log','inverse') and xlocator is not None and xformatter is None:
-                xformatter = 'custom'
+                xformatter = 'default'
         if yscale is not None:
             if hasattr(yscale,'name'):
                 yscale = yscale.name
             self.set_yscale(axistools.Scale(yscale, **yscale_kw))
             if yscale in ('log','inverse') and ylocator is not None and yformatter is None:
-                yformatter = 'custom'
+                yformatter = 'default'
         if xlim is not None:
             if xreverse:
                 xlim = xlim[::-1]

@@ -216,7 +216,7 @@ def ExpScaleFactory(scale, to_exp=True, name='exp'):
         def set_default_locators_and_formatters(self, axis):
             # Consider changing this
             # axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-            axis.set_major_formatter(Formatter('custom'))
+            axis.set_major_formatter(Formatter('default'))
             axis.set_minor_formatter(Formatter('null'))
 
         def get_transform(self):
@@ -309,7 +309,7 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
             return _CutoffTransform()
 
         def set_default_locators_and_formatters(self, axis):
-            axis.set_major_formatter(Formatter('custom'))
+            axis.set_major_formatter(Formatter('default'))
             axis.set_minor_formatter(Formatter('null'))
             axis.set_smart_bounds(True) # may prevent ticks from extending off sides
 
@@ -591,7 +591,7 @@ class InverseScale(mscale.ScaleBase):
         axis.set_smart_bounds(True) # may prevent ticks from extending off sides
         axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
-        axis.set_major_formatter(Formatter('custom'))
+        axis.set_major_formatter(Formatter('default'))
         axis.set_minor_formatter(Formatter('null'))
         # axis.set_major_formatter(mticker.LogFormatter())
 
@@ -736,16 +736,14 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
     return locator
 
-def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
+def Formatter(formatter, *args, axis=None, time=False, tickrange=None, **kwargs):
     """
     Returns a `~matplotlib.ticker.Formatter` instance.
 
     Parameters
     ----------
     formatter : None, float, function, list of str, or str
-        If None, returns `CustomFormatter`, unless `time` is ``True`` (see below).
-
-        If float, returns `CustomFormatter` with precision `precision`.
+        If None, returns `ScalarFormatter`, unless `time` is ``True`` (see below).
 
         If function, function is used to output label string from numeric
         input. Returns a `~matplotlib.ticker.FuncFormatter` instance.
@@ -778,13 +776,8 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         `'eng'`        `~matplotlib.ticker.EngFormatter`
         `'percent'`    `~matplotlib.ticker.PercentFormatter`
         `'index'`      `~matplotlib.ticker.IndexFormatter`
-        `'default'`    `CustomFormatter`
-        `'custom'`     `CustomFormatter`
-        `'proplot'`    `CustomFormatter`
-        `'$'`          `DollarFormatter`
-        `'dollar'`     `DollarFormatter`
-        `'euro'`       `EuroFormatter`
-        `'pound'`      `PoundFormatter`
+        `'scalar'`     `ScalarFormatter`
+        `'default'`    `ScalarFormatter`
         `'pi'`         `PiFormatter`
         `'e'`          `eFormatter`
         `'deg'`        `CoordinateFormatter`
@@ -794,16 +787,20 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         `'deglon'`     `LonFormatter`, with degree symbol
         =============  ============================================
 
+    axis : None or `~matplotlib.axis.Axis`, optional
+        The axis, needed by `ScalarFormatter` and
+        its derivatives.
+
     time : bool, optional
         Ignored if `formatter` is not ``None``. Otherwise, if ``True``, returns
         a `~matplotlib.ticker.AutoDateFormatter` instance.
 
     tickrange : (float, float), optional
-        See `CustomFormatter`.
+        See `ScalarFormatter`.
 
     Other parameters
     ----------------
-    **kwargs
+    *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class on instantiation.
     """
     # Already have a formatter object
@@ -814,12 +811,10 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         formatter = formatter[0]
     # Interpret user input
     if formatter is None: # by default use my special super cool formatter, better than original
-        if time:
-            formatter = mdates.AutoDateFormatter(*args, **kwargs)
+        if not time:
+            formatter = ScalarFormatter(*args, tickrange=tickrange, **kwargs)
         else:
-            formatter = CustomFormatter(*args, tickrange=tickrange, **kwargs)
-    elif isinstance(formatter, Number): # interpret scalar number as *precision*
-        formatter = CustomFormatter(formatter, *args, tickrange=tickrange, **kwargs)
+            formatter = mdates.AutoDateFormatter(*args, **kwargs)
     elif isinstance(formatter, FunctionType):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif type(formatter) is str: # assumption is list of strings
@@ -836,8 +831,10 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
             if formatter in ['deg','deglon','deglat','lon','lat']:
                 kwargs.update({'deg':('deg' in formatter)})
             formatter = formatters[formatter](*args, **kwargs)
-    else:
+    elif np.iterable(formatter):
         formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
+    else:
+        raise ValueError(f'Invalid formatter "{formatter}".')
     return formatter
 
 #-------------------------------------------------------------------------------
@@ -846,102 +843,55 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 # classes by passing function references to Funcformatter
 #-------------------------------------------------------------------------------
 # First the default formatter
-def CustomFormatter(precision=6, tickrange=[-np.inf, np.inf],
-                    zerotrim=True):
+class ScalarFormatter(mticker.ScalarFormatter):
     r"""
-    The ProPlot default tick formatter. `CustomFormatter` differs from
-    the default `~matplotlib.ticker.Formatter` in the following ways:
+    The new default formatter, a simple wrapper around
+    `~matplotlib.ticker.ScalarFormatter`. Differs from
+    `~matplotlib.ticker.ScalarFormatter` in the following ways:
 
-    1. Trims trailing zeros if any exist, and switches to exponential
-       notation for big numbers instead of adding that little exponential
-       tag at the top of the axes.
+    1. Trims trailing zeros if any exist.
     2. Allows user to specify *range* within which major tick marks
        are labelled.
 
-    Parameters
-    ----------
-    precision : int, optional
-        For `precision` :math:`p`, switch to exponential notation if number
-        is :math:`<10^{-p}` or :math:`>10^{p}`.
-    tickrange : (float, float), optional
-        Range within which major tick marks are labelled.
-    zerotrim : bool, optional
-        Whether to trim trailing zeros.
     """
-    # Format definition
-    if tickrange is None:
-        tickrange = [-np.inf, np.inf]
-    elif isinstance(tickrange, Number): # use e.g. -1 for no ticks
-        tickrange = [-tickrange, tickrange]
-    def f(value, location):
-        # Exit if not in tickrange
-        eps = abs(value)/1000
-        if (value + eps) < tickrange[0] or (value - eps) > tickrange[1]:
+    def __init__(self, *args, zerotrim=True, tickrange=[-np.inf, np.inf],
+                              prefix=None, suffix=None, **kwargs):
+        """
+        Parameters
+        ----------
+        tickrange : (float, float), optional
+            Range within which major tick marks are labelled.
+        zerotrim : bool, optional
+            Whether to trim trailing zeros.
+        prefix, suffix : None or str, optional
+            Optional prefix and suffix for strings.
+        """
+        super().__init__(*args, **kwargs)
+        self._zerotrim = zerotrim
+        self._tickrange = tickrange
+        self._prefix = prefix or ''
+        self._suffix = suffix or ''
+
+    def __call__(self, x, pos=None):
+        """
+        Parameters
+        ----------
+        x : float
+            The value.
+        pos : None or float, optional
+            The position.
+        """
+        eps = abs(x)/1000
+        prefix = ''
+        tickrange = self._tickrange
+        if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
             return '' # avoid some ticks
-        # Return special string
-        if value==0:
-            string = '0'
-        else:
-            power = np.log10(abs(value))
-            if power > precision or power < -precision + 1:
-                string = '{:.1e}'.format(value)
-                if zerotrim:
-                    string = re.sub(r'\.0', '', string)
-                    string = re.sub('([+-])0([0-9])$', r'\1\2', string)
-                    string = re.sub('[+]', '', string)
-            elif power < 1:
-                iprecision = 1 - int(power//1)
-                string = f'{{:.{iprecision:d}f}}'.format(value) # f-string compiled, then format run
-                if zerotrim:
-                    string = re.sub(r'\.?0$', '', string)
-            else:
-                string = '{:.0f}'.format(value)
-        # Use unicode minus instead of ASCII hyphen (which is default)
-        minus = '−' # '${-}$', u'\u002d', r'\scalebox{0.75}[1.0]{$-$}'
-        string = re.sub('-', minus, string) # pure unicode minus
-        return string
-    # And create object
-    return mticker.FuncFormatter(f)
-
-#------------------------------------------------------------------------------#
-# Formatting with prefixes
-#------------------------------------------------------------------------------#
-def _PrefixSuffixFormatter(*args, prefix=None, suffix=None, **kwargs):
-    """
-    For adding arbitrary prefix/suffix to tick labels, inside of
-    minus sign.
-    """
-    prefix = prefix or ''
-    suffix = suffix or ''
-    def f(value, location):
-        string = CustomFormatter(*args, **kwargs)(value, location)
-        if string[0] in '−-': # unicode minus or hyphen
-            string = string[0] + prefix + string[1:] + suffix
-        else:
-            string = prefix + string + suffix
-        return string
-    return mticker.FuncFormatter(f)
-
-def DollarFormatter(*args, **kwargs):
-    """
-    Dollar sign in front of values.
-    """
-    kwargs.update({'precision':2, 'zerotrim':False})
-    return _PrefixSuffixFormatter(*args, prefix='$', **kwargs)
-
-def PoundFormatter(*args, **kwargs):
-    """
-    Pound sign in front of values.
-    """
-    kwargs.update({'precision':2, 'zerotrim':False})
-    return _PrefixSuffixFormatter(*args, prefix='£', **kwargs)
-
-def EuroFormatter(*args, **kwargs):
-    """
-    Euro sign in front of values.
-    """
-    kwargs.update({'precision':2, 'zerotrim':False})
-    return _PrefixSuffixFormatter(*args, prefix='€', **kwargs)
+        string = super().__call__(x, pos)
+        if self._zerotrim:
+            string = re.sub(r'\.?0+$', '', string)
+        if string and string[0] in '−-': # unicode minus or hyphen
+            prefix, string = string[0], string[1:]
+        return prefix + self._prefix + string + self._suffix
 
 #------------------------------------------------------------------------------#
 # Formatters for dealing with one axis in geographic coordinates
@@ -958,23 +908,23 @@ def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
     deg : bool, optional
         Whether to add unicode degree symbol.
     """
-    # Helper function for below formatters
-    def f(value, location):
+    def f(x, pos):
         # Optional degree symbol
         suffix = ''
         if deg:
             suffix = '\N{DEGREE SIGN}' # Unicode lookup by name
         # Apply suffix if not on equator/prime meridian
-        if isinstance(cardinal,str):
-            if value<0:
-                value *= -1
+        if cardinal:
+            if x < 0:
+                x *= -1
                 suffix += cardinal[0]
-            elif value>0:
+            elif x > 0:
                 suffix += cardinal[1]
         # Finally use default formatter
-        func = CustomFormatter(*args, **kwargs)
-        return func(value, location) + suffix
-    # And create object
+        string = '{:.6f}'.format(x)
+        string = string.replace('-', '\N{MINUS SIGN}')
+        string = re.sub(r'\.?0+$', '', string)
+        return string + suffix
     return mticker.FuncFormatter(f)
 
 def LatFormatter(*args, **kwargs):
@@ -1004,9 +954,9 @@ def FracFormatter(symbol, number):
     number : float
         The value, e.g. `numpy.pi`.
     """
-    def f(n, loc): # must accept location argument
-        frac = Fraction(n/number).limit_denominator()
-        if n==0: # zero
+    def f(x, pos): # must accept location argument
+        frac = Fraction(x/number).limit_denominator()
+        if x==0: # zero
             string = '0'
         elif frac.denominator==1: # denominator is one
             if frac.numerator==1:
@@ -1093,13 +1043,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
     'index':     mticker.IndexFormatter,
-    'default':   CustomFormatter,
-    'custom':    CustomFormatter,
-    'proplot':   CustomFormatter,
-    '$':         DollarFormatter,
-    'dollar':    DollarFormatter,
-    'euro':      EuroFormatter,
-    'pound':     PoundFormatter,
+    'default':   ScalarFormatter,
+    'scalar':    ScalarFormatter,
     'pi':        PiFormatter,
     'e':         eFormatter,
     'deg':       CoordinateFormatter,
