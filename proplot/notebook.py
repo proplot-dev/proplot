@@ -44,7 +44,6 @@ import socket
 from .rcmod import rc
 from matplotlib import rcParams
 
-# @block_printing
 def nbsetup(directory=None, autosave=30, backend='inline'):
     """
     Set up ipython notebook with better inline figures.
@@ -67,27 +66,20 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     home = os.path.expanduser('~')
     hostname = socket.gethostname().split('.')[0]
 
-    # Rc initial
-    # rcinit = rcParams.copy()
-
     # Make sure we are in session
     ipython = get_ipython() # save session
     if ipython is None:
         print("Warning: IPython kernel not found.")
         return
-        # exit()
 
     # Optional argument
     if directory:
         os.chdir(os.path.expanduser(directory)) # move to this directory
         print(f'Moved to directory {os.path.expanduser(directory)}.')
 
-    # Reload modules, so can easily edit/run imported functions
-    # with redirect_stdout(_null):
+    # Only do this if not already loaded -- otherwise will get *recursive* 
+    # reloading, even with unload_ext command!
     if 'autoreload' not in ipython.magics_manager.magics['line']:
-        # Only do this if not already loaded -- otherwise will get *recursive* 
-        # reloading, even with unload_ext command!
-        # with redirect_stdout(_null):
         ipython.magic("reload_ext autoreload") # reload instead of load, to avoid annoying message
         ipython.magic("autoreload 2") # turn on expensive autoreloading
 
@@ -114,13 +106,11 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     # For some reason this is necessary, even with rc['savefig.bbox'] = 'standard'
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
-    # Print difference
+    # Re-assert defaults (some get overwritten on inline initiatoin)
     # rcfinal = rcParams.copy()
     # print({key:(value1,value2) for key,value1,value2 in
     #     zip(rcParams.keys(), rcinit.values(), rcfinal.values())
     #     if value1 != value2})
-
-    # Re-assert defaults (some get overwritten on inline initiatoin)
     rc.reset()
 
     # Message

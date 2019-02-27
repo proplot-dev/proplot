@@ -2,35 +2,16 @@
 Subplot arrays
 --------------
 
-Use ``subplots`` to generate plots of arbitrary complexity, assign map
-projections to particular axes, add panels to the edges of subplots or
-the entire figure, and designate plot dimensions compatible for
-particular publications. Note that figures drawn in *interactive
-sessions* will have gray backgrounds with white axes, while *saved*
-figures will be transparent (disable this by passing
-``transparent=False`` to ``fig.save``).
-
-Every axes generated with ``subplots`` is a special subclass of the
-``matplotlib.axes.Axes`` class, with several new methods introduced. The
-most important of these is the ``format`` method. This command is
-extremely powerful, and can be used to create highly customized figures
-– it is best demonstrated by example (see below).
-
-Pass the ``nrows`` and ``ncols`` arguments to ``subplots`` to create
-simple subplot grids.
-
-This library expands the builtin “`shared
+Use ``subplots`` to generate plots of arbitrary complexity, turn some
+axes into map projections, add panels to the edges of subplots or the
+entire figure, and much more. I also expanded the builtin “`shared
 axis <https://matplotlib.org/examples/pylab_examples/shared_axis_demo.html>`__”
-matplotlib feature, using ``subplots`` arguments ``sharex``, ``sharey``,
-and ``share`` (both axes). Use ``share[x|y]=0`` for no axis sharing
-``share[x|y]=1`` for sharing axis labels, but not limits or tick labels,
-``share[x|y]=2`` for sharing axis labels and limits, but not tick
-labels, and ``share[x|y]=3`` for sharing axis labels, limits, and tick
-labels. There is also a new feature for making “subplot-spanning” x and
-y labels, toggled with the ``spanx``, ``spany``, or ``span`` arguments.
+matplotlib feature and added a “spanning” label feature, as demonstrated
+below. See the ``subplots`` function for usage details.
 
-A worked example is below, where the **y-axes** are “shared” and the
-**x-axes** are labelled with a “spanning” axis label.
+Sidenote: If ``nbsetup`` is called, figures drawn in *interactive
+sessions* will have gray backgrounds with white axes, while *saved*
+figures will have transparent backgrounds.
 
 .. code:: ipython3
 
@@ -52,19 +33,19 @@ A worked example is below, where the **y-axes** are “shared” and the
 
 
 
-.. image:: _static/showcase_files/showcase_2_1.svg
+.. image:: _static/showcase/showcase_1_1.svg
 
 
 
-.. image:: _static/showcase_files/showcase_2_2.svg
+.. image:: _static/showcase/showcase_1_2.svg
 
 
 
-.. image:: _static/showcase_files/showcase_2_3.svg
+.. image:: _static/showcase/showcase_1_3.svg
 
 
 
-.. image:: _static/showcase_files/showcase_2_4.svg
+.. image:: _static/showcase/showcase_1_4.svg
 
 
 .. code:: ipython3
@@ -84,27 +65,19 @@ A worked example is below, where the **y-axes** are “shared” and the
 
 
 
-.. image:: _static/showcase_files/showcase_3_1.svg
+.. image:: _static/showcase/showcase_2_1.svg
 
 
 
-.. image:: _static/showcase_files/showcase_3_2.svg
+.. image:: _static/showcase/showcase_2_2.svg
 
 
-Set up an arbitrarily complex grid of subplots using a 2D array of
-integers (or iterable of iterables). Use ``0`` for empty spaces, and
-``1`` to ``N`` for unique subplots, ``N`` being the number of subplots
-you want. You can think of this array as a “picture” of the grid you
-want. The below example demonstrates this nicely.
-
-The list of ``Axes`` instances returned by ``subplots`` is actually a
-**special class** called ``axes_list``, ordered by the numbering you
-used in the 2D array (if you used the ``nrows`` or ``ncols`` arguments
-instead, default numbering is row-major order). You can bulk-call any
-method across several axes by accessing that method attribute on the
-``axes_list`` – this is done with the ``format`` method below. You can
-also use ``axs.item`` to retrieve a *list* of ``item`` attributes from
-each axes in the ``axes_list``.
+Set up a complex grid of subplots using a 2D array of integers. Call a
+method on every axes in the ``axes_list`` returned by ``subplots``
+**simultaneously**, thanks to the special ``axes_list`` class (this is
+particularly handy with the ``format`` function). Note you can also get
+a list of item attributes for every axes in the list using
+``axes_list.item``.
 
 .. code:: ipython3
 
@@ -126,18 +99,18 @@ each axes in the ``axes_list``.
 
 
 
-.. image:: _static/showcase_files/showcase_5_3.svg
+.. image:: _static/showcase/showcase_4_3.svg
 
 
 Formatting and panels
 ---------------------
 
-Easily label rows/columns of your plot, add figure titles, add
-colorbars/legends to the perimeter of the subplot region, label subplots
-with a-b-c enumeration, and reposition titles. In this example, we use
-outer “panels” to draw colorbars. Each panel may *span arbitrary
-contiguous rows and columns*. For more information on panels, see the
-`documentation <https://lukelbd.github.io/tools/proplot/doc>`__.
+Easily label rows and columns of your plot, add figure titles, add
+colorbars and legends along the edges of your figure, label subplots
+with a-b-c enumeration, and reposition titles automatically. In this
+example, we use outer “panels” to draw colorbars. Each panel may *span
+arbitrary contiguous rows and columns*. For more information on panels,
+see the `documentation <https://lukelbd.github.io/tools/proplot/doc>`__.
 
 .. code:: ipython3
 
@@ -168,7 +141,7 @@ contiguous rows and columns*. For more information on panels, see the
 
 
 
-.. image:: _static/showcase_files/showcase_8_1.svg
+.. image:: _static/showcase/showcase_7_1.svg
 
 
 Modify global settings with ``plot.rc['prop']`` or ``plot.rc.prop``.
@@ -213,16 +186,15 @@ information settings configuration in ProPlot.
 
 
 
-.. image:: _static/showcase_files/showcase_10_3.svg
+.. image:: _static/showcase/showcase_9_3.svg
 
 
 Easily switch between different fonts using the ``fontname`` rc
 property. The ``ttf`` files from several fonts are distributed with this
 package, and can be locally installed to your matplotlib distribution
 using ``plot.install_fonts`` (may require restarting iPython session).
-Note ``plot.fonts`` is a list of available fonts, ``plot.fonts_os`` is a
-list of OS-provided fonts, and ``plot.fonts_mpl`` is a list of fonts
-packaged with matplotlib (or added with ``install_fonts``).
+Most notable is the addition of ``Helvetica``, **the new default font**.
+Below is a showcase of the available fonts.
 
 .. code:: ipython3
 
@@ -259,7 +231,7 @@ packaged with matplotlib (or added with ``install_fonts``).
 
 
 
-.. image:: _static/showcase_files/showcase_12_1.svg
+.. image:: _static/showcase/showcase_11_1.svg
 
 
 Map projections
@@ -309,7 +281,7 @@ most projections.
 
 
 
-.. image:: _static/showcase_files/showcase_14_1.svg
+.. image:: _static/showcase/showcase_13_1.svg
 
 
 .. code:: ipython3
@@ -345,19 +317,16 @@ most projections.
 
 
 
-.. image:: _static/showcase_files/showcase_15_1.svg
+.. image:: _static/showcase/showcase_14_1.svg
 
 
 Axis scales
 -----------
 
 This package also provides some special axis “scales”, along with a tool
-for creating arbitrary scales with “jumps” and “zooms”.
-
-The ``sine`` scale creates a geographically “area-weighted” latitude
-axis. The ``mercator`` scale creates an axis in Mercator latitude
-coordinates, which is occasionally useful `scientific
-contexts <https://journals.ametsoc.org/doi/full/10.1175/JAS-D-11-039.1>`__.
+for creating arbitrary scales with “jumps” and “zooms”. The ``sine``
+scale creates a geographically “area-weighted” latitude axis. The
+``mercator`` scale creates an axis in Mercator latitude coordinates.
 
 .. code:: ipython3
 
@@ -383,7 +352,7 @@ contexts <https://journals.ametsoc.org/doi/full/10.1175/JAS-D-11-039.1>`__.
 
 
 
-.. image:: _static/showcase_files/showcase_18_1.svg
+.. image:: _static/showcase/showcase_16_1.svg
 
 
 The ``inverse`` scale is useful primarily where you’d like to show the
@@ -413,15 +382,15 @@ wavenumber and wavelength on the same axis.
 
 
 
-.. image:: _static/showcase_files/showcase_20_1.svg
+.. image:: _static/showcase/showcase_18_1.svg
 
 
-Scale a height coordinate to correspond linearly with pressure using
-``[x|y]scale='height'``. Scale a pressure coordinate to correspond
-linearly with height using ``[x|y]scale='pressure'``. Note the scale
-height assumed for these conversions is 7km – change this by using
-``[x|y]scale=('height', scale_height)`` or
-``[x|y]scale=('pressure', scale_height)``.
+(If you’re not an atmospheric scientist, you can skip this part.) Scale
+a height coordinate to correspond linearly with pressure using the
+``'height'`` scale. Scale a pressure coordinate to correspond linearly
+with height using the ``'pressure'`` scale. Note the scale height
+assumed for these conversions is 7km, and can be changed. See the
+``axistools`` module for details.
 
 .. code:: ipython3
 
@@ -471,12 +440,13 @@ height assumed for these conversions is 7km – change this by using
 
 
 
-.. image:: _static/showcase_files/showcase_22_3.svg
+.. image:: _static/showcase/showcase_20_3.svg
 
 
-Use so-called “cutoff scales” to create x/y axes with discrete cutoffs,
-or to have x/y axes span different magnitudes across different parts of
-the axis. Useful when you have data with large outliers.
+Use so-called “cutoff scales” to create axes with discrete cutoffs, or
+to change the “rate of change” of values along parts of an axis. Useful
+when you have data with large outliers or with a strange, non-linear
+distribution.
 
 .. code:: ipython3
 
@@ -507,7 +477,7 @@ the axis. Useful when you have data with large outliers.
 
 
 
-.. image:: _static/showcase_files/showcase_24_1.svg
+.. image:: _static/showcase/showcase_22_1.svg
 
 
 Perceptually uniform colorspaces
@@ -527,7 +497,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase_files/showcase_26_1.svg
+.. image:: _static/showcase/showcase_24_1.svg
 
 
 .. code:: ipython3
@@ -539,7 +509,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase_files/showcase_27_1.svg
+.. image:: _static/showcase/showcase_25_1.svg
 
 
 .. code:: ipython3
@@ -551,7 +521,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase_files/showcase_28_1.svg
+.. image:: _static/showcase/showcase_26_1.svg
 
 
 .. code:: ipython3
@@ -565,7 +535,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase_files/showcase_29_3.svg
+.. image:: _static/showcase/showcase_27_3.svg
 
 
 .. code:: ipython3
@@ -579,15 +549,15 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase_files/showcase_30_3.svg
+.. image:: _static/showcase/showcase_28_3.svg
 
 
-Smooth colormaps
-----------------
+Colormaps
+---------
 
 Below is a table of the new colormaps. The ProPlot ones were designed
 using linear transitions in the “perceptually uniform” colorspaces
-described above. See the `~proplot.colortools` module for more info.
+described above. See the ``colortools`` module for more info.
 
 .. code:: ipython3
 
@@ -598,7 +568,7 @@ described above. See the `~proplot.colortools` module for more info.
 
 
 
-.. image:: _static/showcase_files/showcase_32_1.png
+.. image:: _static/showcase/showcase_30_1.png
    :width: 481px
    :height: 5434px
 
@@ -606,16 +576,13 @@ described above. See the `~proplot.colortools` module for more info.
 Color cycles
 ------------
 
-The below figure shows the newly regsistered discrete colormaps or
-“color cycles” – i.e. colormaps whose transitions are not meant to be
-smooth. See the `~proplot.colortools` module for more info.
-
-Any discrete colormap name can be used as the ``cmap`` argument in a
-plotting command (e.g. ``contourf``), and any smooth colormap name can
-be used as the ``cycler`` argument in a plotting command (e.g.
-``plot``), or as the default cycle ``plot.rc.cycle``, using
-``cycle=('smooth_cmap', N)`` where ``N`` indicates the number of colors
-you wish to draw.
+The below example shows the registered ``LinearSegmentedColormap`` maps,
+or “color cycles” – i.e. colormaps whose transitions are not meant to be
+smooth. See the ``colortools`` module for more info. Note any discrete
+colormap name can be used as the ``cmap`` argument in a plotting command
+(e.g. ``contourf``), and any smooth colormap name can be used as the
+``cycler`` argument in a plotting command. The distinction between these
+is fluid!
 
 .. code:: ipython3
 
@@ -626,18 +593,20 @@ you wish to draw.
 
 
 
-.. image:: _static/showcase_files/showcase_34_1.svg
+.. image:: _static/showcase/showcase_32_1.svg
 
 
 Color names
 -----------
 
-This first plot shows newly registered colors from the `Open
-Color <https://github.com/yeun/open-color>`__ UI-design library. The
-second plot shows the remaining registered colors, consisting of the
-standard ROYGBIV names, “crayon” color names, and XKCD crowd-sourced
-color names. I limit the named colors to those sufficiently distinct in
-the HCL colorspace, to eliminate redundant colors.
+The first example shows the new `Open
+Color <https://github.com/yeun/open-color>`__ colors. The second example
+shows the remaining registered colors, consisting of the standard
+ROYGBIV names, “crayon” color names, and XKCD crowd-sourced color names.
+I limit the named colors to those sufficiently distinct in the HCL
+colorspace, to eliminate redundant colors – as you can see, this gives
+us a nice table that can be consulted when you’re deciding on the color
+for some plot element.
 
 .. code:: ipython3
 
@@ -648,7 +617,7 @@ the HCL colorspace, to eliminate redundant colors.
 
 
 
-.. image:: _static/showcase_files/showcase_36_1.svg
+.. image:: _static/showcase/showcase_34_1.svg
 
 
 .. code:: ipython3
@@ -660,7 +629,7 @@ the HCL colorspace, to eliminate redundant colors.
 
 
 
-.. image:: _static/showcase_files/showcase_37_1.svg
+.. image:: _static/showcase/showcase_35_1.svg
 
 
 On-the-fly colormaps
@@ -668,7 +637,7 @@ On-the-fly colormaps
 
 The below builds colormaps on-the-fly in a number of different ways.
 This is one of the most versatile features offered by ProPlot. See the
-`~proplot.colortools` module for details.
+``colortools`` module for details.
 
 .. code:: ipython3
 
@@ -703,18 +672,14 @@ This is one of the most versatile features offered by ProPlot. See the
 
 
 
-.. image:: _static/showcase_files/showcase_39_1.svg
+.. image:: _static/showcase/showcase_37_1.svg
 
 
-For any PerceptuallyUniformColormap, the chroma gamma (``gamma1``) and
-the luminance gamma (``gamma2``) can be changed on-the-fly. For the
-former, large numbers favor pale colors; for the latter, large numbers
-favor bright colors. Thus this essentially gives the ‘white’ part of
-sequential/diverging cmaps more emphasis.
-
-Note I’ve also added support for pcolormesh *levels* and “extend”
-options (not provided by default API). This is often very useful for
-interpreting physical data with coarse resolution.
+The below shows how gamma can be changed for my new “perceptually
+uniform colormaps” on the fly. See the ``PerceptuallyUniformColormap``
+class for details. Note I’ve also added support for pcolormesh *levels*
+and “extend” options, which is not provided by default API! This is
+often very useful for interpreting physical data with coarse resolution.
 
 .. code:: ipython3
 
@@ -741,12 +706,13 @@ interpreting physical data with coarse resolution.
 
 
 
-.. image:: _static/showcase_files/showcase_41_1.svg
+.. image:: _static/showcase/showcase_39_1.svg
 
 
-I also enhanced the ``plot`` method to allow mapping colormap colors to
-each (x,y) pair on a line, and added a “stacked colorbar” feature that
-is useful when using multiple colormaps in the same axes.
+The below example shows how the new ``plot`` method can be used to map
+colormap colors to each (x,y) pair on a line. You can also draw “stacked
+colorbars”, which can be particularly useful when more than one colormap
+is being used in the same subplot.
 
 .. code:: ipython3
 
@@ -774,5 +740,5 @@ is useful when using multiple colormaps in the same axes.
 
 
 
-.. image:: _static/showcase_files/showcase_43_1.svg
+.. image:: _static/showcase/showcase_41_1.svg
 

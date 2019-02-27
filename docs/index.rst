@@ -7,7 +7,8 @@
 ProPlot
 =======
 
-A `matplotlib <https://matplotlib.org/>`_ wrapper providing versatile plotting utilities
+An object-oriented `matplotlib <https://matplotlib.org/>`_ wrapper
+providing versatile plotting utilities
 for making beautiful, publication-quality graphics.
 
 Installation
@@ -20,15 +21,15 @@ on PyPi. However, feel free to install directly from Github using:
 
    pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
-Dependencies are `matplotlib` and `numpy`. The geographic mapping
-mapping features require `cartopy` and/or `basemap`. I recommend importing
-with
+The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://www.numpy.org/>`_.  The geographic mapping mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and/or `basemap <https://matplotlib.org/basemap/index.html>`_.
+
+I recommend importing with
 
 .. code-block:: python
 
    import proplot as plot
 
-to differentiate ProPlot from the usual `plt` abbreviation for `~matplotlib.pyplot`.
+to differentiate the abbreviation from the usual `~matplotlib.pyplot` abbreviation "``plt``".
 If you are in an ipython notebook, I also recommend adding
 
 .. code-block:: python
@@ -44,8 +45,8 @@ Overview
 On import, a bunch of new colormaps and string color names are registered.
 If this is all you want, and you don't care about other features, simply
 import ProPlot at the top of your script. See `~proplot.colortools` for details,
-and the visualizations in :ref:`Smooth colormaps`, :ref:`Discrete colormaps`,
-:ref:`New color names`.
+and the visualizations in :ref:`Colormaps`, :ref:`Color cycles`,
+:ref:`Color names`.
 
 The remaining features mostly derive from the `~proplot.subplots.subplots` command, inspired
 by the pyplot `~matplotlib.pyplot.subplots` command. This generates a scaffolding

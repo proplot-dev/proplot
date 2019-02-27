@@ -71,32 +71,43 @@ Note that matplotlib comes packaged with every `ColorBrewer2.0
    <h1>Flexible colormap declaration</h1>
 
 
-Colormaps can be declared as gradations of a single color (e.g. ``maroon``),
-registered colormap names (e.g. ``Glacial``), registered color cycle names
-(e.g. ``cycle1``), lists of colors, and arbitrary linear transformations
-in HSL space. Color cycles can be declared in the same way as colormaps,
-optionally with an iterable ``(cmap args, N)`` where ``N`` indicates
-the number of colors you wish to draw.
+All of the `~matplotlib.axes.Axes` methods listed in `cmap_methods` and
+`cycle_methods` have been wrapped. For the latter methods, a brand new
+keyword arg called `cycle` has been added, for changing the axes property
+cycle on-the-fly. The `cmap` and `cycle` arguments are all passed through
+the magical `Colormap` function.
 
-To **concatenate** arbitrary colormaps, just pass an iterable containing
-the previously described "colormap indicators" (e.g. ``('C0', 'C1')``
-concatenates two single-hue dark-light gradation colormaps).
-Note this means, if you want a `~matplotlib.colors.ListedColormap` from a
-list of input colors, you must pass ``[['color1', 'color2', ...]]`` instead
-of `['color1', 'color2', ...]`.
+`Colormap` is incredibly powerful -- it can make colormaps on-the-fly, look
+up existing maps, and merge them. As such, any of the following are now
+valid `cmap` and `cycle` arguments:
 
-To **clip** colors in your colormap, use the `left`, `right`, or `x` keyword
-args.
+1. Registered colormap names. For example, ``'Blues'`` or ``'Sunset'``.
+   See :ref:`Colors` for a visalization of the registered maps.
 
-To **build** a perceptually uniform colormap on-the-fly pass a dictionary 
-with keys `'l'`, `'s'`, and `'h'`. The corresponding values should indicate
-the range of hues, luminances, and saturations across which you want your
-colormap to linearly vary. Specify color name strings, and ProPlot will
-look up the corresponding channel value for that color.
-Specify `'string+/-number'` to offset the channel value for that
-color by any number. Use a `gamma>1` to make the colormap "linger"
-on brighter/less colorful colors (i.e. the transitions will not be exactly linear).
-Note **hues vary from 0 to 360**, while **luminance and chroma vary from 0 to 100**.
+   Cycles are constructed automatically be sampling colors from these colormaps;
+   use e.g. ``('Blues', 5)`` to specify the number of colors in the cycle.
+2. Gradations of a single hue. For example, ``'maroon'`` creates colormap spanning
+   white to maroon, and ``'maroon90'`` spans from a 90% luminance pale red
+   color to maroon (see `~proplot.colors.Colormap`).
+
+   Cycles are once again constructed automatically; use e.g. ``('maroon', 10)``
+   to specify the number of colors in the cycle.
+3. Registered color cycle names. For example, ``'Cycle1'``. See :ref:`Colors`
+   for a visualization of the registered cycles.
+4. Lists of colors. For example, `['red', 'blue', 'green']`.
+   Cycles are constructed automatically from these
+5. Dictionary containing the keys ``'h'``, ``'s'``, and ``'l'``. This builds
+   a `PerceptuallyUniformColormap` using the
+   `~PerceptuallyUniformColormap.from_hsl` constructor.
+6. **List of any of the above five arguments, to merge the resulting
+   colormaps.** For
+   example, use `['viridis', 'navy']` to merge the virids map with a colormap
+   spanning navy to white.
+
+Note when assigning to the `proplot.rc.cycle` global setting (see
+`~proplot.rcmod`), the argument is also interpreted as above. For example,
+`proplot.rc.cycle = ('blue', 10)` will construct a color cycle with 10 colors
+ranging from white to blue.
 """
 #------------------------------------------------------------------------------#
 # Notes
@@ -1122,7 +1133,7 @@ def cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     we just select colors from that list.
 
     For colormaps (i.e. `~matplotlib.colors.LinearSegmentedColormap` instances),
-    we draw samples from the full range of colors.
+    we draw samples from the full range of colormap colors.
 
     Parameters
     ----------
@@ -1853,24 +1864,7 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     Parameters
     ----------
     norm_in : str or `~matplotlib.colors.Normalize`
-        Key name for the normalizer. Options are as follows:
-
-        =============  =================================
-        Key            Class
-        =============  =================================
-        `'none'`       `~matplotlib.colors.NoNorm`
-        `'null'`       `~matplotlib.colors.NoNorm`
-        `'zero'`       `MidpointNorm`
-        `'midpoint'`   `MidpointNorm`
-        `'segments'`   `LinearSegmentedNorm`
-        `'segmented'`  `LinearSegmentedNorm`
-        `'boundary'`   `~matplotlib.colors.BoundaryNorm`
-        `'log'`        `~matplotlib.colors.LogNorm`
-        `'linear'`     `~matplotlib.colors.Normalize`
-        `'power'`      `~matplotlib.colors.PowerNorm`
-        `'symlog'`     `~matplotlib.colors.SymLogNorm`
-        =============  =================================
-
+        Key name for the normalizer.
     levels, values : array-like
         The level edges (`levels`) or centers (`values`) passed
         to `LinearSegmentedNorm`.
@@ -1881,11 +1875,30 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     Other parameters
     ----------------
     **kwargs
-        Passed to the ``Normalizer`` initializer.
+        Passed to the `~matplotlib.colors.Normalizer` initializer.
+        See `this tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
+        for more info.
 
-    Todo
-    ----
-    Document this.
+    Notes
+    -----
+    The recognized normalizer key names are as follows:
+
+    ===============  =================================
+    Key              Class
+    ===============  =================================
+    ``'none'``       `~matplotlib.colors.NoNorm`
+    ``'null'``       `~matplotlib.colors.NoNorm`
+    ``'zero'``       `MidpointNorm`
+    ``'midpoint'``   `MidpointNorm`
+    ``'segments'``   `LinearSegmentedNorm`
+    ``'segmented'``  `LinearSegmentedNorm`
+    ``'boundary'``   `~matplotlib.colors.BoundaryNorm`
+    ``'log'``        `~matplotlib.colors.LogNorm`
+    ``'linear'``     `~matplotlib.colors.Normalize`
+    ``'power'``      `~matplotlib.colors.PowerNorm`
+    ``'symlog'``     `~matplotlib.colors.SymLogNorm`
+    ===============  =================================
+
     """
     norm, norm_preprocess = norm_in, norm
     if isinstance(norm, mcolors.Normalize):
@@ -2046,7 +2059,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
     spaced levels -- e.g. when your data spans a large range of magnitudes.
 
     This class is the **default** normalizer for all functions that accept
-    the ``cmap`` keyword arg.
+    the `cmap` keyword arg.
     """
     def __init__(self, levels, clip=False, **kwargs):
         # Test

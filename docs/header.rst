@@ -1,3 +1,6 @@
+.. Use the following regex to delete cell text output:
+   .. parsed-literal::\n\n.\+\_.\{-}\n\n
+
 Examples
 ========
 

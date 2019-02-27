@@ -47,62 +47,49 @@ See `~proplot.subplots` for a full description of the arguments.
 
 Shared axes
 -----------
-This feature is demonstrated in the :ref:`examples`.
+I've expanded the matplotlib `shared axis <https://matplotlib.org/examples/pylab_examples/shared_axis_demo.html>`_ setting and added a new "spanning axis label" feature. These
+are best demonstrated by example; see :ref:`Examples` and `~proplot.subplots.subplots`.
 
 Smarter subplot layout
 ----------------------
 
-If you specify just one of ``width``, ``height``, ``axwidth`` (fixes
-figure width), or ``axheight`` (fixes figure height), the unspecified
+If you specify just one of `width`, `height`, `axwidth` (fixes
+figure width), or `axheight` (fixes figure height), the unspecified
 dimension will be **scaled** such that the top-left subplot has aspect
-ratio ``aspect``. **Spacing and panel widths are held fixed** during
+ratio `aspect`. **Spacing and panel widths are held fixed** during
 this scaling.
 
-This is accomplished with the new ``FlexibleGridSpec`` class, subclassed
-from matplotlib’s ``GridSpec`` class. The “actual” ``wspace`` and
-``hspace`` passed to ``GridSpec`` are zero – the spaces you see in your
+This is accomplished with the new `FlexibleGridSpec` class, subclassed
+from matplotlib’s `GridSpec` class. The “actual” `wspace` and
+`hspace` passed to `GridSpec` are zero – the spaces you see in your
 figure are empty subplot slots *masquerading* as spaces, whose widths
-are controlled by ``width_ratios`` and ``height_ratios``. Check out
-``FlexibleGridSpec.__getitem__``.
+are controlled by `width_ratios` and `height_ratios`. Check out
+`FlexibleGridSpec.__getitem__`.
 
 Note this also means **inter-subplot spacing is now variable**. You can
-specify ``wspace`` and ``hspace`` with: 1. A scalar constant, e.g.
-``wspace=0.2``. 1. A list of different spacings, e.g.
-``wspace=[0.1,0.5]`` to offset the 3rd column in a 3-column plot from
-the rest.
+specify `wspace` and `hspace` with:
+
+1. A scalar constant, e.g.  `wspace=0.2`.
+2. A list of different spacings, e.g.  `wspace=[0.1,0.5]` to offset the 3rd column in a 3-column plot from the rest.
 
 Smarter “tight” layout
 ----------------------
 
 The subplot layout changes allowed me to create the
-``smart_tight_layout`` method. By default, this method is **called
+`smart_tight_layout` method. By default, this method is **called
 whenever the figure is drawn** (i.e. when it is rendered by the
 matplotlib backend or saved to file) – disable this behavior with
-``plot.subplots(tight=False)``.
+`plot.subplots(tight=False)`.
 
-Previously, ``tight_layout`` could be used to fit the figure borders
+Previously, `tight_layout` could be used to fit the figure borders
 over a box that perfectly encompasses all artists (i.e. text, subplots,
-etc.). However, because ``GridSpec`` spaces are relative to the subplot
+etc.). However, because `GridSpec` spaces are relative to the subplot
 dimensions, changing the figure dimensions also changes the
 inter-subplot spacings. Since your font size is specified in points
 (i.e. a physical unit), *this can easily cause text to overlap with
 other subplots where it didn’t before*.
 
-The new ``smart_tight_layout`` method draws a tight bounding box that
+The new `smart_tight_layout` method draws a tight bounding box that
 **preserves inter-subplot spacing, panel widths, and subplot aspect
 ratios**.
 
-Academic journal standards
---------------------------
-
-To create figures with dimensions that satisfy journal standards, use
-the `journal` keyword argument.
-
-Example:
-
-.. code-block:: python
-
-   f, axs = plot.subplots(ncols=3, nrows=2, journal='ams2') # medium-sized figure for AMS journal
-
-The currently available specifiers are found in the `~proplot.gridspec.journal_size`
-documentation.
