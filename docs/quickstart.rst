@@ -6,7 +6,7 @@ Getting started
    :maxdepth: 4
 
    create
-   panels
+   extras
    maps
    format
    colors

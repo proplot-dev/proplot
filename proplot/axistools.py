@@ -846,21 +846,23 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 # classes by passing function references to Funcformatter
 #-------------------------------------------------------------------------------
 # First the default formatter
-def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf], zerotrim=True):
-    """
+def CustomFormatter(precision=6, tickrange=[-np.inf, np.inf],
+                    zerotrim=True):
+    r"""
     The ProPlot default tick formatter. `CustomFormatter` differs from
     the default `~matplotlib.ticker.Formatter` in the following ways:
 
-        1. Has precision specifier, with trailing zeros trimmed.
-        2. Does not automatically switch to exponential notation for
-           small/big numbers.
-        3. Allows user to specify *range* within which major tick marks
-           are labelled.
+    1. Trims trailing zeros if any exist, and switches to exponential
+       notation for big numbers instead of adding that little exponential
+       tag at the top of the axes.
+    2. Allows user to specify *range* within which major tick marks
+       are labelled.
 
     Parameters
     ----------
     precision : int, optional
-        Maximum number of digits after decimal place.
+        For `precision` :math:`p`, switch to exponential notation if number
+        is :math:`<10^{-p}` or :math:`>10^{p}`.
     tickrange : (float, float), optional
         Range within which major tick marks are labelled.
     zerotrim : bool, optional
@@ -874,26 +876,27 @@ def CustomFormatter(precision=2, tickrange=[-np.inf, np.inf], zerotrim=True):
     def f(value, location):
         # Exit if not in tickrange
         eps = abs(value)/1000
-        if (value+eps)<tickrange[0] or (value-eps)>tickrange[1]:
+        if (value + eps) < tickrange[0] or (value - eps) > tickrange[1]:
             return '' # avoid some ticks
         # Return special string
-        # * Note *cannot* use 'g' because 'g' precision operator specifies count of
-        #   significant digits, not places after decimal place.
-        # * There is no format that specifies digits after decimal place AND trims trailing zeros.
-        string = f'{{{0}:.{precision:d}f}}'.format(value) # f-string compiled, then format run
-        if zerotrim:
-            if '.' in string: # g-style trimming
-                string = string.rstrip('0').rstrip('.')
-            if string=='-0': # special case
-                string = '0'
-        if value>0 and string=='0':
-            pass # this was dumb
-            # raise RuntimeError('Tried to round tick position label to zero. Add precision or use an exponential formatter.')
+        if value==0:
+            string = '0'
+        else:
+            power = np.log10(abs(value))
+            if power > precision or power < -precision + 1:
+                string = '{:.1e}'.format(value)
+                if zerotrim:
+                    string = re.sub(r'\.0', '', string)
+            elif power < 1:
+                iprecision = 1 - int(power//1)
+                string = f'{{:.{iprecision:d}f}}'.format(value) # f-string compiled, then format run
+                if zerotrim:
+                    string = re.sub(r'\.?0$', '', string)
+            else:
+                string = '{:.0f}'.format(value)
         # Use unicode minus instead of ASCII hyphen (which is default)
-        string = re.sub('-', '−', string) # pure unicode minus
-        # string = re.sub('-', '${-}$', string) # latex version
-        # string = re.sub('-', u'\u002d', string) # unicode hyphen minus, looks same as hyphen
-        # string = re.sub('-', r'\scalebox{0.75}[1.0]{$-$}', string)
+        minus = '−' # '${-}$', u'\u002d', r'\scalebox{0.75}[1.0]{$-$}'
+        string = re.sub('-', minus, string) # pure unicode minus
         return string
     # And create object
     return mticker.FuncFormatter(f)

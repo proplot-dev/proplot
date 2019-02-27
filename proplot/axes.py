@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-The axes subclasses central to this library.
+The axes subclasses central to this library, plus the enhanced
+colorbar and legend functions.
 
 You should focus on the `format` methods: `BaseAxes.format`,
 `XYAxes.format`, and `CartopyAxes.format` and `BasemapAxes.format`.
@@ -208,7 +209,7 @@ def _check_centers(func):
             elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                        f'ncolumns ({Z.shape[1]}) and nrows ({Z.shape[0]}) of Z, or its borders.')
+                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
         # Optionally re-order
         if order=='F':
             x, y = x.T, y.T # in case they are 2-dimensional
@@ -227,7 +228,7 @@ def _check_edges(func):
     def decorator(*args, order='C', **kwargs):
         # Checks that sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
-        xlen, ylen = x.shape[0], y.shape[-1]
+        xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim!=2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
@@ -239,7 +240,7 @@ def _check_edges(func):
             elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
                 raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
                         f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                        f'ncolumns ({Z.shape[1]}) and nrows ({Z.shape[0]}) of Z, or its borders.')
+                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
         # Optionally re-order
         if order=='F':
             x, y = x.T, y.T # in case they are 2-dimensional
@@ -1405,7 +1406,9 @@ class XYAxes(BaseAxes):
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
-        # Change the default formatter (mine is better)
+        # Change the default formatter
+        # My trims trailing zeros, but numbers no longer aligned. Matter
+        # of taste really; will see if others like it.
         formatter = axistools.Formatter('custom')
         self.xaxis.set_major_formatter(formatter)
         self.yaxis.set_major_formatter(formatter)
@@ -2847,7 +2850,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
                                  markersize=size,
                                  color=[handle.cmap(0.5)],
                                  label=handle.get_label())
-    handles = np.array(handles).squeeze().tolist()
+    # handles = np.array(handles).squeeze().tolist()
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
         align = not list_of_lists
