@@ -849,9 +849,9 @@ class ScalarFormatter(mticker.ScalarFormatter):
     `~matplotlib.ticker.ScalarFormatter`. Differs from
     `~matplotlib.ticker.ScalarFormatter` in the following ways:
 
-    1. Trims trailing zeros if any exist.
-    2. Allows user to specify *range* within which major tick marks
-       are labelled.
+        1. Trims trailing zeros if any exist.
+        2. Allows user to specify *range* within which major tick marks
+           are labelled.
 
     """
     def __init__(self, *args, zerotrim=True, tickrange=[-np.inf, np.inf],
