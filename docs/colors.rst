@@ -22,7 +22,7 @@ for this kind of usage).
 
 I’ve packaged several `~proplot.colortools.PerceptuallyUniformColormap` maps
 with ProPlot, along with perceptually uniform maps from several other projects.
-:ref:`Smooth colormaps` provides a table of the registered colormaps.
+:ref:`Colormaps` provides a table of the registered colormaps.
 
 Colormap generation
 -------------------
@@ -66,7 +66,7 @@ Color cycles
 
 In addition to the new colormaps, new “color cycles” are also available
 (i.e. the automatic color order used for drawing multiple lines).
-:ref:`Discrete colormaps` provides a table of these cycles.
+:ref:`Color cycles` provides a table of these cycles.
 
 The color cycler can be set with the ``plot.rc.cycle`` property, or by
 passing ``cycle='name'`` to any command that plots lines/patches (``plot``, ``bar``, etc.).
@@ -95,7 +95,7 @@ provided with `Seaborn <https://seaborn.pydata.org/>`__, and Open Color
 web-design color palette. Colors that aren’t sufficiently perceptually
 distinct are eliminated, so it's easier to pick from the color table.
 
-:ref:`New color names` provides table of the newly registered colors.
+:ref:`Color names` provides table of the newly registered colors.
 
 Contour and pcolor
 ------------------
