@@ -4,7 +4,7 @@ Formatting
 The format command
 ------------------
 The new `~proplot.axes.XYAxes.format` method, available on every axes returned from `~proplot.subplots.subplots`, is a versatile and powerful tool. But some might argue
-that it just replicates features already available from `matplotlib` -- so, some motivation is in order.
+that it just replicates features already available from matplotlib -- so, some motivation is in order.
 
 To modify an axes property (e.g. an *x*-axis label) with the default API, you normally have to use a bunch of one-liner `~matplotlib.pyplot` commands, or method calls on axes and axis instances. This can get quite repetitive and quite verbose, resulting in lots of ugly, cumbersome boilerplate code.
 
@@ -32,24 +32,24 @@ There are also some new scales available, described below:
    ``'mercator'``. The former creates an area-weighted latitude axis.
 -  The **cutoff** scale, allowing arbitrary
    zoom-ins and zoom-outs over segments of an axis. This scale is invoked
-   with the tuple ``('cutoff', scale, lower, upper)`` where `lower`
-   and `upper` are the boundaries within which the axis scaling is
-   multiplied by `scale`. Use ``np.inf`` for a hard cutoff.
+   with the tuple ``('cutoff', scale, lower, upper)`` where ``lower``
+   and ``upper`` are the boundaries within which the axis scaling is
+   multiplied by ``scale``. Use ``np.inf`` for a hard cutoff.
    Alternatively, use ``('cutoff', scale, position)`` to
-   scale every coordinate after position `position` by `scale`.
+   scale every coordinate after position ``position`` by ``scale``.
 
 Tick settings
 -------------
 
 Control tick positions with the `xlocator` and `ylocator` keyword args (or their aliases, `xticks` and `yticks`). These accept a number of possible values:
 
-*  A number (e.g. `xticks=N`) ticks every N data values.
+*  A number (e.g. ``xticks=N``) ticks every N data values.
 *  A string will look up any of the `matplotlib.ticker`
    locators by key name, e.g. ``'log'``.
 *  A list of numbers will tick those specific locations.
 
 I recommend using `plot.arange` to generate lists of ticks –
-it’s like `np.arange`, but is **endpoint-inclusive**, which more often than
+it’s like `numpy.arange`, but is **endpoint-inclusive**, which more often than
 not is what you'll want in this context.
 
 Control tick label formats with the `xformatter` and `yformatter` keyword args (or their aliases, `xticklabels` and `yticklabels`). These accept a number of possible values:
@@ -60,43 +60,43 @@ Control tick label formats with the `xformatter` and `yformatter` keyword args (
   symbols, as denoted by the respective names.
 * ``'pi'``, ``'e'``, ``('symbol', scale)`` will format tick labels represented as
   fractions of some symbol (the first 2 are :math:`\pi` and Euler's constant, provided for convenience).
-* A list of strings (e.g. `xticklabels=['a', 'b', 'c']`) will simply label existing ticks with that list.
+* A list of strings (e.g. ``xticklabels=['a', 'b', 'c']``) will simply label existing ticks with that list.
 
 
 The rc object
 -------------
-A special object named ``rc`` (belonging to a class called
-`rc_configurator`) is created whenever you import ProPlot. This object
+A special object named `~proplot.rcmod.rc` (belonging to a class called
+`~proplot.rcmod.rc_configurator`) is created whenever you import ProPlot. This object
 gives you advanced control over the look of your plots. **Use**
-`plot.rc` **as your one-stop shop for changing global settings**.
+`~proplot.rcmod.rc` **as your one-stop shop for changing global settings**.
 
-``rc`` object can be used to change built-in
-`matplotlib.rcParams` settings, a few custom “``rcSpecial``” settings,
-and some magic “``rcGlobal``” settings that apply to groups of other
+The `~proplot.rcmod.rc` object can be used to change built-in
+`~matplotlib.rcParams` settings, a few custom :ref:`rcSpecial` settings,
+and some magic :ref:`rcGlobal` settings that apply to groups of other
 settings and keep them synced – e.g., tick, spine, and tick label
 colors. The global settings are tabulated in the `~proplot.rcmod` documentation.
 
-To modify any `rcGlobals` or `rcParams` settings, you have three options:
+To modify any :ref:`rcGlobal` or `~matplotlib.rcParams` settings, you have three options:
 
-1. Change one global setting using `plot.rc.name = value` or `plot.rc['name'] = value`.
-   Note that, for `rcParams` settings with ‘dots’ in their name, you will
-   have to use `plot.rc['category.name'] = value``
+1. Change one global setting using ``plot.rc.name = value`` or ``plot.rc['name'] = value``.
+   Note that, for `~matplotlib.rcParams` settings with ‘dots’ in their name, you will
+   have to use ``plot.rc['category.name'] = value``
 2. Update several global settings at once using
-   `plot.rc.update({'name1':value1, 'name2':value2})` or
-   `plot.rc.update(name1=value1, name2=value2)`, just like you would
+   ``plot.rc.update({'name1':value1, 'name2':value2})`` or
+   ``plot.rc.update(name1=value1, name2=value2)``, just like you would
    update a dictionary.
 3. Change local settings using
-   `ax.format(rc_kw={'name1':value1, 'name2':value2})` or
-   `ax.format(name1=value1, name2=value2)`. Note that, for this last
+   ``ax.format(rc_kw={'name1':value1, 'name2':value2})`` or
+   ``ax.format(name1=value1, name2=value2)``. Note that, for this last
    option, *the rc settings will only be applied to that specific subplot*. This can be convenient for (e.g.) drawing focus to a particular subplot by changing
    its color.
 
 Note some of these settings can also be controlled using, e.g.,
-`ax.format(title_kw={'weight':'bold'})` instead of
-`ax.format(rc_kw={'titleweight':'bold'})`.
+``ax.format(title_kw={'weight':'bold'})`` instead of
+``ax.format(rc_kw={'titleweight':'bold'})``.
 
-To access a single setting, use `rc.name` or `rc['name']`. To
-access a group of setting by category name, use e.g. `rc.axes`
+To access a single setting, use ``rc.name`` or ``rc['name']``. To
+access a group of setting by category name, use e.g. ``rc.axes``
 and a **dictionary** will be returned.
 
 To reset everything to the default state, use `~proplot.rcmod.rc_configurator.reset`. By

@@ -637,7 +637,9 @@ On-the-fly colormaps
 --------------------
 
 The below builds colormaps on-the-fly in a number of different ways.
-This is one of the most versatile features offered by ProPlot. See the
+This is one of the most versatile features offered by ProPlot. Note also
+that the distinctions between “colormaps” and “color cycles” is now
+**fluid**; cycles can be used as colormaps, and vice versa. See the
 ``colortools`` module for details.
 
 .. code:: ipython3

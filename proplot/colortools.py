@@ -94,19 +94,19 @@ valid `cmap` and `cycle` arguments:
    to specify the number of colors in the cycle.
 3. Registered color cycle names. For example, ``'Cycle1'``. See :ref:`Colors`
    for a visualization of the registered cycles.
-4. Lists of colors. For example, `['red', 'blue', 'green']`.
+4. Lists of colors. For example, ``['red', 'blue', 'green']``.
    Cycles are constructed automatically from these
 5. Dictionary containing the keys ``'h'``, ``'s'``, and ``'l'``. This builds
    a `PerceptuallyUniformColormap` using the
    `~PerceptuallyUniformColormap.from_hsl` constructor.
 6. **List of any of the above five arguments, to merge the resulting
    colormaps.** For
-   example, use `['viridis', 'navy']` to merge the virids map with a colormap
+   example, use ``['viridis', 'navy']`` to merge the virids map with a colormap
    spanning navy to white.
 
-Note when assigning to the `proplot.rc.cycle` global setting (see
+Note when assigning to the ``proplot.rc.cycle`` global setting (see
 `~proplot.rcmod`), the argument is also interpreted as above. For example,
-`proplot.rc.cycle = ('blue', 10)` will construct a color cycle with 10 colors
+``proplot.rc.cycle = ('blue', 10)`` will construct a color cycle with 10 colors
 ranging from white to blue.
 """
 #------------------------------------------------------------------------------#
@@ -643,7 +643,7 @@ class CmapDict(dict):
     # Other methods
     def get(self, key, *args):
         """
-        Case-insensitive version of `dict.get`.
+        Case-insensitive version of ``dict.get``.
         """
         # Get item
         if len(args)>1:
@@ -660,7 +660,7 @@ class CmapDict(dict):
 
     def pop(self, key, *args):
         """
-        Case-insensitive version of `dict.pop`.
+        Case-insensitive version of ``dict.pop``.
         """
         # Pop item
         if len(args)>1:
@@ -905,7 +905,7 @@ def Colormap(*args, name=None, N=None,
     Parameters
     ----------
     *args : `~matplotib.colors.Colormap`, dict, list of str, or str
-        Each arg generates a single colormap. If `len(args)>1`, the colormaps
+        Each arg generates a single colormap. If ``len(args)>1``, the colormaps
         are merged.
 
         If the arg is a `~matplotlib.colors.Colormap`, nothing more is done.
@@ -935,10 +935,10 @@ def Colormap(*args, name=None, N=None,
         their own color. This improves upon the matplotlib API by ensuring
         **the colors on either end of the colorbar are always the most intense
         colors in the colormap** -- no matter the extend property. By default
-        when `extend` is not `'both'`, matplotlib just lobs off the most
+        when `extend` is not ``'both'``, matplotlib just lobs off the most
         intense colors on either end.
 
-        Note you can still use ``extend='neither'`` in your call to `colormap`
+        Note you can still use ``extend='neither'`` in your call to `Colormap`
         with ``extend='both'`` in the contour or colorbar call. This
         means that colors at the ends of the main region will be same as
         the out-of-bounds colors.
@@ -951,7 +951,7 @@ def Colormap(*args, name=None, N=None,
         colormap in the list before they are merged. If float, applies
         to the *final* colormap. No difference if ``len(args)`` is 1.
     x : (float, float), optional
-        List containing `(left, right)` arguments.
+        List containing the keyword args `(left, right)`.
     reverse : bool or list of bool, optional
         Optionally reverse the colormap(s).
 
@@ -974,7 +974,7 @@ def Colormap(*args, name=None, N=None,
     register : bool, optional
         Whether to register resulting colormap. If registered, it can
         be invoked with ``cmap='name'`` on plotting functions
-        like ``contourf()``.
+        like `~matplotlib.figure.Figure.contourf`.
     save : bool, optional
         Whether to save the final colormap to disk.
 
@@ -983,8 +983,8 @@ def Colormap(*args, name=None, N=None,
     Resampling method described in `this post
     <https://stackoverflow.com/q/48613920/4970632>`_ is awful! All it does is
     reduce the lookup table size -- what ends up happening under the hood is
-    matplotlib tries to *evenly* draw ``N-1`` (`'min'` or `'max'`) or ``N-2``
-    (`'neither`') colors from a lookup table with ``N`` colors, which means
+    matplotlib tries to *evenly* draw ``N-1`` (``'min'`` or ``'max'``) or ``N-2``
+    (``'neither'``) colors from a lookup table with ``N`` colors, which means
     it simply *skips over* 1 or 2 colors in the middle of the lookup table,
     which will cause visual jumps!
 
@@ -1138,18 +1138,18 @@ def cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     Parameters
     ----------
     *args
-        Passed to `colormap`. If ``args[-1]`` is a float or list of float,
+        Passed to `Colormap`. If ``args[-1]`` is a float or list of float,
         it is used as the `samples` argument.
 
         This allows the user to declare new color cycles with, for example,
-        `proplot.rc.cycle = ['blues', 'reds', 20]`
+        ``proplot.rc.cycle = ['blues', 'reds', 20]``
     samples : float or list of float, optional
         Last element of `args`; detected automatically if this element is
         iterable or a number.
 
         This implementation seems weird, but this allows the user to do
-        stuff like `proplot.rc.cycle = ['blues', 'reds', 20]`
-        Required if `colormap` returns a smooth
+        stuff like ``proplot.rc.cycle = ['blues', 'reds', 20]``
+        Required if `Colormap` returns a smooth
         colormap (i.e. a `~matplotlib.colors.LinearSegmentedColormap` 
         instance).
     vmin, vmax : float, optional
@@ -1158,7 +1158,7 @@ def cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     Other parameters
     ----------------
     **kwargs
-        Passed to `colormap`.
+        Passed to `Colormap`.
 
     In the latter case, we will draw samples from that colormap by (default)
     drawing from Use vmin/vmax to scale your samples.
@@ -1212,8 +1212,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         Parameters
         ----------
         segmentdata : dict-like
-            Dictionary mapping containing the keys `'hue'`, `'saturation'`,
-            and `'luminance'`. Values should be lists containing any of
+            Dictionary mapping containing the keys ``'hue'``, ``'saturation'``,
+            and ``'luminance'``. Values should be lists containing any of
             the following channel specifiers:
 
                 1. Numbers, within the range 0-360 for hue and 0-100 for
@@ -1393,7 +1393,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             Relative extent of each transitions indicated by the channel
             value lists.
 
-            For example, `luminance=[100,50,0]` with `ratios=[2,1]`
+            For example, ``luminance=[100,50,0]`` with ``ratios=[2,1]``
             places the *x*-coordinate where the luminance is 50 at 0.66 --
             the white to gray transition is slower than the gray to black
             transition.
@@ -1532,7 +1532,7 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
             y = y_{1,i} + w_i^{\gamma_i}*(y_{0,i+1} - y_{1,i})
 
         where :math:`\gamma_i` corresponds to `gamma` and the weight
-        :math:`w_i` ranges from 0 to 1 between rows `i` and `i+1`.
+        :math:`w_i` ranges from 0 to 1 between rows ``i`` and ``i+1``.
         If `gamma` is float, it applies to every transition. Otherwise,
         its length must equal ``data.shape[0]-1``.
     reverse : bool, optional
@@ -1621,8 +1621,8 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
 #------------------------------------------------------------------------------#
 def merge_cmaps(*imaps, name='merged', N=512, ratios=1, **kwargs):
     """
-    Merges arbitrary colormaps. This is best used by passing multiple `args`
-    to the `colormap` function.
+    Merges arbitrary colormaps. This is used when you pass multiple `args`
+    to the `Colormap` function.
 
     Parameters
     ----------
@@ -1638,7 +1638,7 @@ def merge_cmaps(*imaps, name='merged', N=512, ratios=1, **kwargs):
     * The old method had us simply calling the colormap with arrays of fractions.
       This was sloppy, because it just samples locations on the lookup table and
       will therefore degrade the original, smooth, functional transitions.
-    * Better method is to combine the `_segmentdata` arrays and simply scale
+    * Better method is to combine the ``_segmentdata`` arrays and simply scale
       the *x* coordinates in each ``(x,y1,y2)`` channel-tuple according to
       the ratios.
     * In the case of `~matplotlib.colors.ListedColormap`, we just combine the
@@ -2109,7 +2109,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
 class MidpointNorm(mcolors.Normalize):
     """
     Ensure a "midpoint" always lies at the central colormap color. This
-    is normally used with diverging colormaps and `midpoint=0`.
+    is normally used with diverging colormaps and ``midpoint=0``.
 
     Notes
     -----
@@ -2406,7 +2406,7 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Register color cycles defined in `.hex` files (lists of hex strings)
+    Register color cycles defined in ``.hex`` files (lists of hex strings)
     and those declared in this module.
 
     Use `~proplot.demos.cycle_show` to generate a table of the resulting

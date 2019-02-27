@@ -40,7 +40,7 @@ _aliases = {
 #------------------------------------------------------------------------------#
 def close():
     """
-    Alias for `matplotlib.pyplot.close('all')`.
+    Alias for ``matplotlib.pyplot.close('all')``.
     Closes all figures stored in memory. Note this does not delete
     rendered figures in an iPython notebook.
     """
@@ -48,7 +48,7 @@ def close():
 
 def show():
     """
-    Alias for `matplotlib.pyplot.show`. Note this command should
+    Alias for ``matplotlib.pyplot.show()``. Note this command should
     be unnecessary if you are doing inline iPython notebook plotting
     and ran the `~proplot.notebook.nbsetup` command.
     """
@@ -295,7 +295,7 @@ class FigureBase(mfigure.Figure):
             ``'l'``, ``'r'``, ``'b'``, or ``'t'`` in any order.
             Default is ``'r'``.
         wwidth, hwidth : None, float, or str, optional
-            Width of vertical (``wwidth``) and horizontal (``hwidth``)
+            Width of vertical (`wwidth`) and horizontal (`hwidth`)
             panels, respectively. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`.
         wspace, hspace : None, float, or str, optional
@@ -423,7 +423,8 @@ class FigureBase(mfigure.Figure):
         Conform figure edges to tight bounding box around content, without
         screwing up subplot aspect ratios, empty spaces, panel sizes, and such.
 
-        This is called automatically whenever `draw` or `savefig` are called,
+        This is called automatically whenever `~FigureBase.draw` or
+        `~FigureBase.savefig` are called,
         unless the user set `auto_adjust` to ``False`` in the call to
         `subplots`.
 
@@ -1026,6 +1027,10 @@ def subplots(array=None, ncols=1, nrows=1,
         Passed to `FigureBase`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpec`.
+
+    See also
+    --------
+    `~proplot.axes.BaseAxes`, `~proplot.axes.BaseAxes.format`
 
     Notes
     -----

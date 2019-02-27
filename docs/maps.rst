@@ -6,11 +6,11 @@ See the `~proplot.proj` documentation for a handy table of available projection 
 Note that `~mpl_toolkits.basemap` is `no longer under active development <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`_ -- cartopy is the intended replacement, as it is integrated more intelligently with the matplotlib API.
 However, for the time being, basemap *retains several advantages* over cartopy. Namely, `more tools for labeling meridians/parallels <https://github.com/SciTools/cartopy/issues/881>`_ and more available projections -- see the `basemap list <https://matplotlib.org/basemap/users/mapsetup.html>`_ vs. the `cartopy list <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html>`_. I therefore decided to support both.
 
-Projections are configured with the `proj` and `proj_kw` keyword args via the `~proplot.subplots.subplots` command. Set the map projection for all subplots with `proj='proj'`, or separately for different subplots with e.g. `proj={1:'proj1', (2,3):'proj2', 4:'name3'}`. In the latter case, the integers and integer tuples correspond to **the subplot number**.
+Projections are configured with the `proj` and `proj_kw` keyword args via the `~proplot.subplots.subplots` command. Set the map projection for all subplots with ``proj='proj'``, or separately for different subplots with e.g. ``proj={1:'proj1', (2,3):'proj2', 4:'name3'}``. In the latter case, the integers and integer tuples correspond to **the subplot number**.
 
-In the same way, you can pass keyword args to the cartopy `~cartopy.crs.Projection` and `~mpl_toolkits.basemap.Basemap` class initializers using `proj_kw={'name':value}` or e.g. `proj_kw={1:'proj1', (2,3):'proj2'}`.
+In the same way, you can pass keyword args to the cartopy `~cartopy.crs.Projection` and `~mpl_toolkits.basemap.Basemap` class initializers using ``proj_kw={'name':value}`` or e.g. ``proj_kw={1:'proj1', (2,3):'proj2'}``.
 
-You can also choose between cartopy and basemap using `basemap=False` or e.g. `basemap={1:True, 2:False}`.
+You can also choose between cartopy and basemap using ``basemap=False`` or e.g. ``basemap={1:True, 2:False}``.
 
 As a simple example, the following creates 3 side-by-side `Hammer projections <https://en.wikipedia.org/wiki/Hammer_projection>`_ using Cartopy.
 

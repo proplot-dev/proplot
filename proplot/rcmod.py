@@ -5,9 +5,9 @@ features, and defines some brand new settings. There are now three different
 types of settings:
 
 * **Builtin** :ref:`rcParams` settings. These have the format
-  `category.subcategory`, so approaches 1 and 2 are invalid (see below).
+  ``category.subcategory``, so approaches 1 and 2 are invalid (see below).
 * **Custom** :ref:`rcSpecial` settings. These also have the format
-  `category.subcategory`.
+  ``category.subcategory``.
 * **Global** :ref:`rcGlobal` settings. These are simple, short names
   used to change **multiple** "builtin" and "custom" settings at once,
   or as shorthands for settings with longer names.
@@ -16,10 +16,10 @@ Your one-stop-shop for changing settings is the `rc` object. To change
 the setting named ``name`` to ``value``, use any of the following 4
 approaches:
 
-1. `rc.name = value`
-2. `rc.update(name=value)`
-3. `rc['name'] = value`
-4. `rc.update({'name':value})`
+1. ``rc.name = value``
+2. ``rc.update(name=value)``
+3. ``rc['name'] = value``
+4. ``rc.update({'name':value})``
 
 The "builtin", "custom", and "global" settings are described in detail
 below.
@@ -37,10 +37,6 @@ The `rcParams` categories are as follows:
 * Axis elements: ``date``, ``xtick``, ``ytick``, ``grid``.
 * Printing and saving: ``path``, ``figure``, ``savefig``, ``ps``, ``tk``, ``pdf``, ``svg``.
 * Other: ``keymap``, ``examples``, ``debug``.
-
-.. ``figure`` settings are used when printing interactively or
-   just making the figure object, while ``savefig`` settings are used when calling
-   `~matplotlib.figure.Figure.savefig`.
 
 rcSpecial
 ---------
@@ -118,11 +114,11 @@ Key                 Description
 ==================  ==============================================================================================================
 ``cycle``           The default color cycle name, used e.g. for lines.
 ``color``           The color of axis spines, tick marks, tick labels, and labels.
-``xcolor``          As with `color`, but specific to *x*-axes.
-``ycolor``          As with `color`, but specific to *y*-axes.
+``xcolor``          As with ``'color'``, but specific to *x*-axes.
+``ycolor``          As with ``'color'``, but specific to *y*-axes.
 ``margin``          The margin of space around subplot `~matplotlib.artist.Artist` instances, if ``xlim`` and ``ylim`` are unset.
-``xmargin``         As with `margin`, but specific to the *x* direction.
-``ymargin``         As with `margin`, but specific to the *y* direction.
+``xmargin``         As with ``'margin'``, but specific to the *x* direction.
+``ymargin``         As with ``'margin'``, but specific to the *y* direction.
 ``facecolor``       The axes background color.
 ``facehatch``       The background hatching pattern [1]_. Useful for highlighting "NaN" data in a ``contourf`` plot.
 ``small``           Font size for legend text, tick labels, axis labels, and text generated with `~proplot.axes.BaseAxes.text`.
@@ -619,17 +615,18 @@ class rc_configurator(object):
 
             0. `__getitem__` searches everything, the default.
             1. `__getitem__` ignores `_rcParams` (assumption is these
-                have already been set). Used during axes `__init__`
-                calls to `_rcupdate`.
+               have already been set). Used during axes `__init__`
+               calls to `_rcupdate`.
             2. `__getitem__` ignores `_rcParams` and `_rcParams_sp`; only
-                reads from cache, i.e. settings that user has manually changed.
-                Used during `format()` calls to `_rcupdate`.
+               reads from cache, i.e. settings that user has manually changed.
+               Used during `~proplot.BaseAxes.format` calls to
+               `~proplot.BaseAxes._rcupdate`.
 
         Notes
         -----
         This is kept private, because it's only meant to be used within
         the '~proplot.axes.BaseAxes.format' automatically! Instead of the
-        user having to use the `with x as y` construct, they should just
+        user having to use the ``with x as y`` construct, they should just
         pass an `rc_kw` dict or extra `kwargs` to `~proplot.axes.BaseAxes.format`.
         """
         # Apply mode
@@ -683,8 +680,8 @@ class rc_configurator(object):
 
     def update(self, *args, **kwargs):
         """
-        Update global settings. Also can be done with `self.name = value`
-        or `self['name'] = value`.
+        Update global settings. Also can be done with ``self.name = value``
+        or ``self['name'] = value``.
 
         Parameters
         ----------

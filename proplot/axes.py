@@ -1042,7 +1042,7 @@ class BaseAxes(maxes.Axes):
             * ``'o'``: Outside the axes.
             * ``'i'``: Inside the axes. In this case, a white border
               will be drawn around the title text by default.
-              Disable with `title_kw={'border':False}`.
+              Disable with ``title_kw={'border':False}``.
 
             There are 3 options for the horizontal position:
 
@@ -1306,7 +1306,7 @@ class BaseAxes(maxes.Axes):
         """
         Create lines with colormap. See `this matplotlib example
         <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`_.
-        Calling `BaseAxes.plot` with kwargs ``cmap`` and ``values`` will
+        Calling `BaseAxes.plot` with kwargs `cmap` and `values` will
         invoke this method.
 
         Parameters
@@ -2274,8 +2274,9 @@ class BasemapAxes(MapAxes):
     Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
     projections. The `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `m` attribute, but this is all abstracted away -- you can use
-    `~matplotlib.axes.Axes` methods like ``plot()`` and ``contour()`` with
-    your raw longitude-latitude data. Neat, huh?
+    `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
+    `~matplotlib.axes.Axes.contour` with
+    your raw longitude-latitude data.
 
     See also
     --------

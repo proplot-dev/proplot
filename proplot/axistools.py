@@ -73,7 +73,7 @@ so they match, then you're good.
 * Methods:
     - `transform`: Transforms N-D coordinates, given M x N array of values. Can also
       just declare `transform_affine` or `transform_non_affine`.
-    - `inverted`: If `has_inverse is` ``True``, performs the inverse transform.
+    - `inverted`: If `has_inverse` is ``True``, performs the inverse transform.
 
 .. raw:: html
 
@@ -659,7 +659,7 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     ----------
     locator : None, float, list of float, or str
         If None, returns the default `~matpltolib.ticker.AutoLocator`,
-        unless ``minor`` or ``time`` are ``True`` (see below).
+        unless `minor` or `time` are ``True`` (see below).
 
         If number, specifies the *multiple* used to define tick separation.
         Returns a `~matplotlib.ticker.MultipleLocator` instance.
@@ -709,8 +709,8 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
 
     Notes
     -----
-    `~matpltolib.ticker.AutoLocator` has a useful `nbins` option; no more
-    than `nbins-1` ticks are drawn.
+    `~matpltolib.ticker.AutoLocator` has a useful ``nbins`` option; no more
+    than ``nbins-1`` ticks are drawn.
     """
     # Do nothing, and return None if locator is None
     if isinstance(locator, mticker.Locator):
@@ -804,7 +804,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     Other parameters
     ----------------
     **kwargs
-        Passed to the ``Formatter`` class on instantiation.
+        Passed to the `~matplotlib.ticker.Formatter` class on instantiation.
     """
     # Already have a formatter object
     if isinstance(formatter, mticker.Formatter): # formatter object
@@ -974,13 +974,13 @@ def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
 
 def LatFormatter(*args, **kwargs):
     """
-    Calls `CoordinateFormatter` with `cardinal='SN'`.
+    Calls `CoordinateFormatter` with ``cardinal='SN'``.
     """
     return CoordinateFormatter(*args, cardinal='SN', **kwargs)
 
 def LonFormatter(*args, **kwargs):
     """
-    Calls `CoordinateFormatter` with `cardinal='WE'`.
+    Calls `CoordinateFormatter` with ``cardinal='WE'``.
     """
     return CoordinateFormatter(*args, cardinal='WE', **kwargs)
 
@@ -1072,7 +1072,7 @@ locators = {
     'year':        mdates.YearLocator,
     }
 """
-Mapping of strings to ``Locator`` classes.
+Mapping of strings to `~matplotlib.ticker.Locator` classes.
 """
 
 formatters = { # note default LogFormatter uses ugly e+00 notation
@@ -1104,5 +1104,5 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'deglon':    LonFormatter,
     }
 """
-Mapping of strings to ``Formatter`` classes.
+Mapping of strings to `~matplotlib.ticker.Formatter` classes.
 """

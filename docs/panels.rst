@@ -38,7 +38,7 @@ These are useful for global legends/colorbars intended to reference multiple sub
    lines = ax.plot(np.random.rand(10,10)) # 10 lines, colored according to the active property cycler
    f.rightpanel.colorbar(lines, values=np.arange(10)) # see next section
 
-Outer panel settings can be configured with a bunch of `subplots` keyword arguments; see the :ref:`documentation` for details.
+Outer panel settings can be configured with a bunch of `~proplot.subplots.subplots` keyword arguments; see the :ref:`Documentation` for details.
 
 "Inner" Panels
 --------------
@@ -57,7 +57,7 @@ The procedure for requesting inner panels is similar:
 As with the outer panels, you can also use ``innercolorbars='r'`` to
 draw panels with default widths/spacing suitable for colorbars.
 
-Inner panel settings can be configured with a bunch of `subplots` keyword arguments; see the :ref:`documentation` for details.
+Inner panel settings can be configured with a bunch of `~proplot.subplots.subplots` keyword arguments; see the :ref:`documentation` for details.
 
 Colorbar Enhancements
 ---------------------
