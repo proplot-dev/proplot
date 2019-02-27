@@ -38,12 +38,6 @@ _aliases = {
 #------------------------------------------------------------------------------#
 # Miscellaneous helper functions
 #------------------------------------------------------------------------------#
-def figure(*args, **kwargs):
-    """
-    Alias for `matplotlib.pyplot.figure`.
-    """
-    return plt.figure(*args, **kwargs)
-
 def close():
     """
     Alias for `matplotlib.pyplot.close('all')`.
