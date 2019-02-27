@@ -47,7 +47,7 @@ See `~proplot.subplots` for a full description of the arguments.
 
 Shared axes
 -----------
-This feature is demonstrated in the :ref:`teaser`.
+This feature is demonstrated in the :ref:`examples`.
 
 Smarter subplot layout
 ----------------------

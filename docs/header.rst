@@ -1,5 +1,5 @@
-Teaser
-======
+Examples
+========
 
 Below is a showcase of ProPlot's features. See :ref:`getting started` for an
 introduction, and :ref:`documentation` for details once you get the hang of
