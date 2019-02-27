@@ -7,7 +7,7 @@
 ProPlot
 =======
 
-A library providing helpful and versatile plotting utilities
+A `matplotlib <https://matplotlib.org/>`_ wrapper providing helpful and versatile plotting utilities
 for making beautiful, publication-quality graphics with ease.
 
 Installation
