@@ -2755,10 +2755,8 @@ def map_projection_factory(projection, basemap=False, **kwargs):
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is importable
-        if projection not in proj.projs:
-            raise ValueError(f'Unknown projection "{projection}". Options are: {", ".join(proj.projs.keys())}.')
         kwargs = {crs_translate.get(key, key): value for key,value in kwargs.items()}
-        projection = proj.projs[projection](**kwargs)
+        projection = proj.Proj(projection, **kwargs)
         aspect = (np.diff(projection.x_limits) / \
                   np.diff(projection.y_limits))[0]
     return projection, aspect
