@@ -2814,7 +2814,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     """
     # First get legend settings (usually just one per plot so don't need to declare
     # this dynamically/globally), and interpret kwargs.
-    for name,alias in [('ncol', 'ncols'), ('frame', 'frameon')]:
+    for name,alias in [('ncol', 'ncols'), ('frameon', 'frame')]:
         if alias in kwargs:
             kwargs[name] = kwargs.pop(alias)
     if order not in ('F','C'):
@@ -2847,6 +2847,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
                                  markersize=size,
                                  color=[handle.cmap(0.5)],
                                  label=handle.get_label())
+    handles = np.array(handles).squeeze().tolist()
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
         align = not list_of_lists

@@ -1,5 +1,5 @@
-Panels
-======
+Panels, colorbars, and legends
+==============================
 
 "Outer" Panels
 --------------
@@ -62,7 +62,7 @@ Inner panel settings can be configured with a bunch of `~proplot.subplots.subplo
 Colorbar Enhancements
 ---------------------
 
-Normally, to create a colorbar, you need a “mappable” instance – i.e.,
+See `~proplot.axes.colorbar_factory` for more info. Normally, to create a colorbar, you need a “mappable” instance – i.e.,
 something with a `get_cmap` method, returned by `contourf`,
 `pcolor`, etc.
 
@@ -76,3 +76,13 @@ Two additional options make it easy to configure your colorbar geometry:
 * ``length=fraction``, where ``0 <= fraction <= 1``, will make the colorbar span a *fraction* of the horizontal/vertical extent of the axes it is filling.
 * ``extendlength=size`` controls the length of the “triangles” representing out-of-bounds colors (drawn when you use ``extend='min'``, ``extend='max'``, or ``extend='both'``). Since the “triangles” are now specified in physical units, they will always match other colorbars in the figure.
 
+Legend Enhancements
+-------------------
+
+See `~proplot.axes.legend_factory` for more info. Normally, the legend handles are plotted in column-major order by default. Now you can choose between row-major and column-major, and the
+former is the new default.
+
+You can also create pseudo-legends with handles that **are not** aligned by column, using
+``align=False`` -- or by passing a *list of lists of handles* instead of a list of handles. This actually creates a bunch of centered single-row legends stacked
+on top of each other. This can be handy when you want to organize rows of handles logically,
+or you have just a couple handles beneath a really long row and you want them centered.
