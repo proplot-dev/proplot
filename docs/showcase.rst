@@ -9,9 +9,10 @@ axis <https://matplotlib.org/examples/pylab_examples/shared_axis_demo.html>`__�
 matplotlib feature and added a “spanning” label feature, as demonstrated
 below. See the ``subplots`` function for usage details.
 
-Sidenote: If ``nbsetup`` is called, figures drawn in *interactive
-sessions* will have gray backgrounds with white axes, while *saved*
-figures will have transparent backgrounds.
+Sidenote: The default ``rc`` settings make figures drawn in interactive
+sessions have *gray backgrounds with white axes*, while the default
+``save`` keyword args will save figures with *transparent axes and
+figure canvas*.
 
 .. code:: ipython3
 
