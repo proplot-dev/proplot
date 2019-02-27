@@ -1,26 +1,162 @@
 #!/usr/bin/env python3
 """
-See `this article <https://matplotlib.org/users/customizing.html>`_. Here's a
-quick list of rcParam categories:
-..
+This module manges global "rc" settings with a bunch of new convenience
+features, and defines some brand new settings. There are now three different
+types of settings:
 
-    "lines", "patch", "hatch", "legend"
-    "font", "text", "mathtext"
-    "axes", "figure"
-    "date", "xtick", "ytick", "grid"
-    "contour", "image"
-    "boxplot", "errorbar", "hist", "scatter"
-    "path", "savefig", "ps", "tk", "pdf", "svg"
-    "debug", "keymap", "examples"
-    "animation"
+* **Builtin** :ref:`rcParams` settings. These have the format
+  `category.subcategory`, so approaches 1 and 2 are invalid (see below).
+* **Custom** :ref:`rcSpecial` settings. These also have the format
+  `category.subcategory`.
+* **Global** :ref:`rcGlobal` settings. These are simple, short names
+  used to change **multiple** "builtin" and "custom" settings at once,
+  or as shorthands for settings with longer names.
 
-Notes
------
-* The figure settings are used when printing interactively or just making
-  the figure object, but the savefig ones are used when calling savefig.
-* If *autoreload* is triggered/global defauls are reset, it seems that
-  any options set with InlineBackend in ipython are ***ignored***. But if you query
-  settings, options still present -- you just need to call nbsetup again.
+Your one-stop-shop for changing settings is the `rc` object. To change
+the setting named ``name`` to ``value``, use any of the following 4
+approaches:
+
+1. `rc.name = value`
+2. `rc.update(name=value)`
+3. `rc['name'] = value`
+4. `rc.update({'name':value})`
+
+The "builtin", "custom", and "global" settings are described in detail
+below.
+
+rcParams
+--------
+These are the builtin matplotlib settings. See `this page
+<https://matplotlib.org/users/customizing.html>`_ for more info.
+The `rcParams` categories are as follows:
+
+* Axes: ``axes``.
+* Text: ``font``, ``text``, ``mathtext``.
+* Plot elements: ``lines``, ``patch``, ``hatch``, ``legend``, ``contour``, ``image``,
+  ``boxplot``, ``errorbar``, ``hist``, ``scatter``, ``animation``.
+* Axis elements: ``date``, ``xtick``, ``ytick``, ``grid``.
+* Printing and saving: ``path``, ``figure``, ``savefig``, ``ps``, ``tk``, ``pdf``, ``svg``.
+* Other: ``keymap``, ``examples``, ``debug``.
+
+.. ``figure`` settings are used when printing interactively or
+   just making the figure object, while ``savefig`` settings are used when calling
+   `~matplotlib.figure.Figure.savefig`.
+
+rcSpecial
+---------
+My brand new settings, meant to configure special ProPlot featues. The
+`rcSpecial` categories are as follows:
+
+* Background hatching: ``axes``, ``map``.
+* Subplots: ``gridspec``.
+* New labels: ``abc``, ``rowlabel``, ``collabel``
+* Gridlines: ``gridminor``, ``lonlatlines``
+* Geographic features: ``land``, ``ocean``, ``coastline``.
+
+The ``map`` and ``axes`` subcategories:
+
+==============  ==================================================================
+Key             Description
+==============  ==================================================================
+``facehatch``   Background hatching string pattern, if not ``None`` [1]_.
+``hatchcolor``  Color of background hatching pattern. Default is same as spines.
+``hatchlw``     Line width for background hatching. Default is same as spines.
+==============  ==================================================================
+
+The ``gridspec`` subcategories (all values are in inches):
+
+==========  ==================================================================
+Key         Description
+==========  ==================================================================
+``title``   Vertical space for titles.
+``legend``  Width of "legend" panels.
+``cbar``    Width of "colorbar" panels.
+``ylab``    Horizontal space between subplots alotted for *y*-labels.
+``xlab``    Vertical space between subplots alotted for *x*-labels.
+``nolab``   Space between subplots alotted for tick marks.
+``inner``   Totally empty space between subplots.
+==========  ==================================================================
+
+The ``abc``, ``rowlabel``, and ``collabel`` subcategories:
+
+============  ==================================================================
+Key           Description
+============  ==================================================================
+``fontsize``  The font size.
+``weight``    The font weight.
+``color``     The font color.
+============  ==================================================================
+
+The ``lonlatlines`` and ``gridminor`` subcategories:
+
+=============  ==================================================================
+Key            Description
+=============  ==================================================================
+``linewidth``  The line width.
+``linestyle``  The line style.
+``alpha``      The line transparency.
+``color``      The line color.
+=============  ==================================================================
+
+The ``land``, ``ocean``, and ``coastlines`` subcategories:
+
+=============  ==================================================================
+Key            Description
+=============  ==================================================================
+``linewidth``  The line width or patch edge width.
+``color``      The line color or patch color.
+=============  ==================================================================
+
+rcGlobal
+--------
+Global settings are used to change :ref:`rcParams` and :ref:`rcSpecial` settings
+in bulk, or as shorthands for common settings with longer names.
+
+==================  ==============================================================================================================
+Key                 Description
+==================  ==============================================================================================================
+``cycle``           The default color cycle name, used e.g. for lines.
+``color``           The color of axis spines, tick marks, tick labels, and labels.
+``xcolor``          As with `color`, but specific to *x*-axes.
+``ycolor``          As with `color`, but specific to *y*-axes.
+``margin``          The margin of space around subplot `~matplotlib.artist.Artist` instances, if ``xlim`` and ``ylim`` are unset.
+``xmargin``         As with `margin`, but specific to the *x* direction.
+``ymargin``         As with `margin`, but specific to the *y* direction.
+``facecolor``       The axes background color.
+``facehatch``       The background hatching pattern [1]_. Useful for highlighting "NaN" data in a ``contourf`` plot.
+``small``           Font size for legend text, tick labels, axis labels, and text generated with `~proplot.axes.BaseAxes.text`.
+``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
+``fontname``        Name of font used for all text in the figure [2]_.
+``linewidth``       Thickness of axes spines and major tick lines.
+``minorwidth``      Ratio of minor to major tick line thickness.
+``gridwidth``       Thickness of gridlines.
+``gridminor``       Ratio of minor to major gridline thickness.
+``gridalpha``       Transparency of major and minor gridlines.
+``gridcolor``       Color of major and minor gridlines.
+``gridstyle``       Linestyle of major and minor gridlines.
+``ticklen``         Length of major ticks.
+``tickratio``       Ratio of minor to major tick lengths.
+``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
+``abcweight``       Font weight for a-b-c labels [3]_.
+``titleweight``     Font weight for titles [3]_.
+``suptitleweight``  Font weight for "super" titles [3]_.
+==================  ==============================================================================================================
+
+.. [1] For example, ``'xxx'`` or ``'..'``. See `this demo <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
+.. [2] This module *changes the default* from DejaVu Sans (or Bitstream Vera) to
+       Helvetica Neue or Helvetica. Install these with `~proplot.fonttools.install_fonts`
+       after installing ProPlot for the first time, and after updating
+       matplotlib.
+.. [3] Valid weights are ``'ultralight'``, ``'light'``, ``'normal'``,
+       ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
+       Note that many fonts only have ``normal`` or ``bold`` available.
+       If you request another weight, the “closest” availble weight will
+       be selected.
+
+Todo
+----
+Disable the ``gridspec`` stuff by automating the inter-subplot spacing?
+
 """
 # First just make sure some dependencies are loaded
 import re
@@ -41,7 +177,7 @@ _default_font = 'Helvetica' if sys.platform=='linux' else 'Helvetica Neue' # say
 # alongside rcParams
 # Default settings
 # List of linked settings
-_rcGlobals = {
+_rcGlobal = {
     # Apply these ones to list of rcParams
     'color':     'k',
     'xcolor':    None, # these are special; can be used to set particular spine colors
@@ -76,7 +212,7 @@ _rcGlobals = {
     'gridratio':  0.5, # ratio of major-to-minor grid line widths
     }
 
-_rcGlobals_children = {
+_rcGlobal_children = {
     # Most important ones, expect these to be used a lot
     # The xcolor/ycolor we don't use 'special' props (since we'd be duplicating ones
     # that already exist for all spines/labels). Instead just manually use the
@@ -200,7 +336,7 @@ _rcDefaults_sp = {
     'map.facehatch':       None,
     'map.hatchcolor':      None,
     'map.hatchlw' :        None,
-    # The rest can be applied as-is
+    # the rest can be applied as-is
     'abc.weight':            'bold',
     'abc.color':             'k',
     'rowlabel.weight':       'bold',
@@ -222,7 +358,7 @@ _rcDefaults_sp = {
     'lonlatlines.alpha':     0.4,
     'lonlatlines.color':     'k',
     'gridspec.title':        0.2, # extra space for title/suptitle
-    'gridspec.inner':        0.2, # just have ticks, no labeels
+    'gridspec.inner':        0.2, # just have ticks, no labels
     'gridspec.legend':       0.25, # default legend space (bottom of figure)
     'gridspec.cbar':         0.17, # default colorbar width
     'gridspec.ylab':         0.7, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
@@ -257,9 +393,11 @@ class rc_configurator(object):
     _public_api = ('reset', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
     def __init__(self):
         """
-        Magical abstract class for handling custom settings, builtin rcParams
-        settings, and artificial 'global' params that keep certain groups
-        of settings synced. Also includes context manager.
+        Magical abstract class for managing builtin `rcParams` settings, 
+        our artificial `_rcSpecial` settings, and new "global" settings
+        that keep certain groups of settings synced.
+
+        See the `rc` documentation for details.
         """
         # First initialize matplotlib
         # Note rcdefaults() changes the backend! Inline plotting will fail for
@@ -269,7 +407,7 @@ class rc_configurator(object):
         style.use('default') # mpl.style function does not change the backend
         # Add simple attributes to rcParams
         self._rcCache = {}
-        self._rcGlobals = _rcGlobals.copy()
+        self._rcGlobal = _rcGlobal.copy()
         for key,value in _rcDefaults.items():
             rcParams[key] = value
         for key,value in _rcDefaults_sp.items():
@@ -333,7 +471,7 @@ class rc_configurator(object):
                 return params
         # Get individual property. Will successively index a few different dicts
         # Try to return the value
-        for kw in (*kws[:1], self._rcGlobals, *kws[1:]):
+        for kw in (*kws[:1], self._rcGlobal, *kws[1:]):
             try:
                 return kw[key]
             except KeyError:
@@ -352,14 +490,14 @@ class rc_configurator(object):
             self._set_cycler(value)
             self._rcCache['cycle'] = value
         # Apply global settings
-        elif key in _rcGlobals:
+        elif key in _rcGlobal:
             if value=='default':
-                value = _rcGlobals[key]
+                value = _rcGlobal[key]
             rc, rc_sp = self._get_globals(key, value)
             self._rcCache.update(rc)
             self._rcCache.update(rc_sp)
             self._rcCache[key] = value # also update cached global property itself
-            self._rcGlobals[key] = value
+            self._rcGlobal[key] = value
             rcParams.update(rc)
             _rcParams_sp.update(rc_sp)
         # Directly modify single parameter
@@ -392,17 +530,17 @@ class rc_configurator(object):
 
     def __str__(self):
         # Nice string representation
-        length = 1 + max(len(key) for key in self._rcGlobals.keys())
+        length = 1 + max(len(key) for key in self._rcGlobal.keys())
         string = 'Global settings\n---------------\n' + '\n'.join(f'{key}: {" "*(length-len(key))}{value}'
-                                    for key,value in self._rcGlobals.items())
+                                    for key,value in self._rcGlobal.items())
         string += '\n\nAll settings\n------------\n' + ', '.join(_rc_names)
         return string
 
     def __repr__(self):
         # Simple one, good for auto docs
-        length = 1 + max(len(key) for key in self._rcGlobals.keys())
+        length = 1 + max(len(key) for key in self._rcGlobal.keys())
         string = ', '.join(f'{key}: {" "*(length-len(key))}{value}'
-                                    for key,value in self._rcGlobals.items())
+                                    for key,value in self._rcGlobal.items())
         return string
 
     def _set_cycler(self, value):
@@ -427,25 +565,25 @@ class rc_configurator(object):
         if key is not None and value is not None:
             items = [(key,value)]
         else:
-            items = self._rcGlobals.items()
+            items = self._rcGlobal.items()
         for key,value in items:
             # Tick length/major-minor tick length ratio
             if key in ('ticklen','tickratio'):
                 if key=='tickratio':
-                    ticklen = self._rcGlobals['ticklen']
+                    ticklen = self._rcGlobal['ticklen']
                     ratio = value
                 else:
                     ticklen = value
-                    ratio = self._rcGlobals['tickratio']
+                    ratio = self._rcGlobal['tickratio']
                 kw['xtick.minor.size'] = ticklen*ratio
                 kw['ytick.minor.size'] = ticklen*ratio
             # Spine width/major-minor tick width ratio
             if key in ('linewidth','minorwidth'):
                 if key=='linewidth':
                     tickwidth = value
-                    ratio = self._rcGlobals['minorwidth']
+                    ratio = self._rcGlobal['minorwidth']
                 else:
-                    tickwidth = self._rcGlobals['linewidth']
+                    tickwidth = self._rcGlobal['linewidth']
                     ratio = value
                 kw['xtick.minor.width'] = tickwidth*ratio
                 kw['ytick.minor.width'] = tickwidth*ratio
@@ -454,13 +592,13 @@ class rc_configurator(object):
             if key in ('gridwidth', 'gridratio'):
                 if key=='gridwidth':
                     gridwidth = value
-                    ratio = self._rcGlobals['gridratio']
+                    ratio = self._rcGlobal['gridratio']
                 else:
-                    gridwidth = self._rcGlobals['gridwidth']
+                    gridwidth = self._rcGlobal['gridwidth']
                     ratio = value
                 kw_sp['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
-            for name in _rcGlobals_children.get(key, []):
+            for name in _rcGlobal_children.get(key, []):
                 if name in _rcParams_sp:
                     kw_sp[name] = value
                 else:
@@ -469,11 +607,11 @@ class rc_configurator(object):
 
     def _context(self, *args, mode=0, **kwargs):
         """
-        Temporarily modify rc configuration. Do this by simply
-        saving the cache, allowing modification of the cache, then
-        restoring the old cache.
+        Temporarily modify the rc settings. Do this by simply
+        saving the old cache, allowing modification of a new cache,
+        then restoring the old one.
 
-        Three modes:
+        This has three modes:
 
             0. `__getitem__` searches everything, the default.
             1. `__getitem__` ignores `_rcParams` (assumption is these
@@ -485,9 +623,10 @@ class rc_configurator(object):
 
         Notes
         -----
-        This is kept private, because it's only mean to be used within
-        the 'format()' method automatically! Instead of user having to use
-        with..as, they should just pass rc_kw dict or kwargs to format().
+        This is kept private, because it's only meant to be used within
+        the '~proplot.axes.BaseAxes.format' automatically! Instead of the
+        user having to use the `with x as y` construct, they should just
+        pass an `rc_kw` dict or extra `kwargs` to `~proplot.axes.BaseAxes.format`.
         """
         # Apply mode
         if mode not in range(3):
@@ -501,31 +640,35 @@ class rc_configurator(object):
         self._cache_added  = kwargs # could be empty
         return self
 
-    def update(self, *args, **kwargs):
-        """
-        Same as setting rc['axes'] = {'name':value}, but do this for bunch
-        of different propts.
-        """
-        if len(args)==0:
-            args = [{}]
-        kw = args[-1]
-        kw.update(kwargs)
-        if len(args)==1:
-            for key,value in kw.items():
-                self[key] = value
-        elif len(args)==2:
-            category = args[0]
-            for key,value in kw.items():
-                self[category + '.' + key] = value
-        else:
-            raise ValueError('rc.update() accepts 1-2 positional arguments. Use rc.update(kw) to update a bunch of names, or rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
-
     def fill(self, props):
         """
-        Function that only updates a property if self.__getitem__
-        returns not None. Meant for optimization: hundreds of 200-item
-        dictionary lookups over several subplots end up taking toll,
-        almost 1s runtime.
+        Fill a dictionary containing rc property string names with the
+        corresponding property. This is mostly used internally by
+        `~proplot.axes.BaseAxes` and its subclasses.
+
+        Parameters
+        ----------
+        props : dict-like
+            Dictionary whose values are names of rc properties. The values
+            are replaced with the corresponding property only if
+            `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
+            that key, value pair is omitted from the output dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary filled with rc properties.
+
+        `~rc_configurator.fill` is used to build dictionaries for updating
+        `~matplotlib.artist.Artist` instances. Of course, the artist property
+        won't need updating unless an rc setting has changed since it was
+        drawn (i.e. when the figure and axes were created).
+
+        With this in mind, `~rc_configurator.__getitem__` returns ``None``
+        when a setting has not been changed (changed settings are cached
+        in a separate dictionary). This prevents hundreds of 1000-item
+        dictionary lookups; without caching, runtime increases by 1s even
+        for relatively simple plots.
         """
         props_out = {}
         for key,value in props.items():
@@ -534,15 +677,45 @@ class rc_configurator(object):
                 props_out[key] = value
         return props_out
 
+    def update(self, *args, **kwargs):
+        """
+        Update global settings. Also can be done with `self.name = value`
+        or `self['name'] = value`.
+
+        Parameters
+        ----------
+        category : str, optional
+            Category of rc settings to update, passed as the first positional arg.
+            If used, all keys are prefixed with the string ``category + '.'``.
+        kw : dict-like, optional
+            Dictionary of new rc settings, passed as the last positional arg.
+        kwargs
+            Dictionary of new rc settings, passed as keyword args.
+        """
+        if len(args)==0:
+            args = [{}]
+        kw = args[-1]
+        kw.update(kwargs)
+        if len(args)==2:
+            prefix = args[0] + '.'
+        elif len(args)==1:
+            prefix = ''
+        else:
+            raise ValueError('Accepts 1-2 positional arguments only. Use rc.update(kw) to update a bunch of names, or rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
+        for key,value in kw.items():
+            self[prefix + key] = value
+
     def reset(self):
         """
-        Restore settings to default.
+        Restore settings to the default.
         """
         return self.__init__()
 
 # Instantiate object
 rc = rc_configurator()
 """
-Instance of `rc_configurator`. Use this to change global settings.
+Instance of `rc_configurator`. Use this to change rc settings.
+
+See the `~proplot.rcmod` root page for details.
 """
 

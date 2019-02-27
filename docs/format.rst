@@ -20,8 +20,8 @@ Example:
    f, ax = plot.subplots()
    ax.format(xlabel='time (seconds)', ylabel='temperature (K)', title='20th century sea-surface temperature')
 
-Axis scales
------------
+Scale settings
+--------------
 
 Control axis scales with the `xscale` and `yscale` keyword args.
 There are also some new scales available, described below:

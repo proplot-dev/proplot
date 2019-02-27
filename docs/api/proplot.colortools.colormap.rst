@@ -1,6 +1,6 @@
-colormap
+Colormap
 ========
 
 .. currentmodule:: proplot.colortools
 
-.. autofunction:: colormap
+.. autofunction:: Colormap

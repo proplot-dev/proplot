@@ -1,9 +1,31 @@
 Axes subclasses
 ---------------
 
-.. automodule:: proplot.axes
+**Variables**
 
 .. automodsumm:: proplot.axes
    :toctree: api
-   :skip: Number, GeoAxes, PlateCarree, mplDeprecation, ic, rc
+   :variables-only:
+   :skip: ic, rc
+
+**Functions**
+
+.. automodsumm:: proplot.axes
+   :toctree: api
+   :functions-only:
+   :skip: units
+
+**Classes**
+
+.. automodsumm:: proplot.axes
+   :toctree: api
+   :classes-only:
+   :skip: Number, GeoAxes, PlateCarree, mplDeprecation
+
+.. Hacky bullshit to prevent header appearing in TOC
+.. raw:: html
+
+   <h1>Overview</h1>
+
+.. automodule:: proplot.axes
 

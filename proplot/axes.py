@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
-Axes subclasses central to this library.
+The axes subclasses central to this library.
+
+You should focus on the `format` methods: `BaseAxes.format`,
+`XYAxes.format`, and `CartopyAxes.format` and `BasemapAxes.format`.
+These methods are your one-stop-shop for changing axes settings like
+*x* and *y* axis limits, axis labels, tick locations, tick label
+format, grid lines, scales, titles, a-b-c labelling, adding
+geographic features, and much more.
 """
 # Note that even if not in IPython notebook, io capture output still works
 # functools.wraps preserves __name__ metadata; see comment:
@@ -32,7 +39,7 @@ import matplotlib.collections as mcollections
 from matplotlib import docstring
 from .rcmod import rc
 from . import proj, utils, gridspec, colortools, fonttools, axistools
-from .utils import _dot_dict, _default, _timer, _counter, ic
+from .utils import _dot_dict, _default, _timer, _counter, ic, units
 
 # Silly recursive function, returns a...z...aa...zz...aaa...zzz
 # God help you if you ever need that many labels
@@ -74,8 +81,8 @@ _aliases = {
     'lpanel': 'leftpanel'
     }
 
-# First distinguish plot types
-_line_methods = ( # basemap methods you want to wrap that aren't 2D grids
+# Basic plotting tool categories, used in various places
+_line_methods = (
     'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
     )
 _contour_methods = (
@@ -90,6 +97,8 @@ _contourf_methods = (
 _show_methods = (
     'imshow', 'matshow', 'spy', 'hist2d',
     )
+
+# 2D plot functions that require coordinate centers and edges
 _center_methods = (
     'contour', 'contourf', 'quiver', 'streamplot', 'barbs'
     )
@@ -97,20 +106,18 @@ _edge_methods = (
     'pcolor', 'pcolormesh', 'pcolorpoly',
     )
 
-# Next distinguish plots by more broad properties
-_cycle_methods  = (
+# Whether to wrap plot functions with cycle features or cmap features
+cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
-_cmap_methods = (
+"""List of plotting methods wrapped by `cycle_features`."""
+cmap_methods = (
     'cmapline', 'hexbin', # special
     'contour', 'contourf', 'pcolor', 'pcolormesh',
     'matshow', 'imshow', 'spy', 'hist2d',
     'tripcolor', 'tricontour', 'tricontourf',
     )
-_nolevels_methods = (
-    'pcolor', 'pcolormesh', 'pcolorpoly', 'tripcolor',
-    'imshow', 'matshow', 'spy'
-    )
+"""List of plotting methods wrapped by `cmap_features`."""
 
 # Finally disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
@@ -131,10 +138,8 @@ _map_disabled_methods = (
     # 'triplot', 'tricontour', 'tricontourf', 'tripcolor',
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
-    'fill_between', 'fill_betweenx', 'fill', 'stackplot')
-
-# Map projections
-_map_pseudocyl = ['moll','robin','eck4','kav7','sinu','mbtfpq','vandg','hammer']
+    'fill_between', 'fill_betweenx', 'fill', 'stackplot'
+    )
 
 #------------------------------------------------------------------------------
 # Helper functions for plot overrides
@@ -178,11 +183,15 @@ def _parse_args(args):
 def _check_centers(func):
     """
     Check shape of arguments passed to contour, and fix result.
+
+    Notes
+    -----
     Optional numbers of arguments:
-      * Z
-      * U, V
-      * x, y, Z
-      * x, y, U, V
+
+    * Z
+    * U, V
+    * x, y, Z
+    * x, y, U, V
     """
     @functools.wraps(func)
     def decorator(*args, order='C', **kwargs):
@@ -240,12 +249,35 @@ def _check_edges(func):
         return result
     return decorator
 
-def _cycle_features(self, func):
+def cycle_features(self, func):
     """
-    Allow specification of color cycler at plot-time. Will simply set the axes
-    property cycler, and if it differs from user input, update it.
-    See: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py
-    The set_prop_cycle command modifies underlying _get_lines and _get_patches_for_fill.
+    Wrapper generator that allows specifying the "color cycler" at plot-time.
+    This simply sets the axes property cycler before calling the plot method,
+    and sets the cycle
+
+    Parameters
+    ----------
+    cycle : None or cycle spec, optional
+        The cycle specifer, passed to the `~proplot.colortools.cycle`
+        constructor.
+    cycle_kw : dict-like, optional
+        Passed to `~proplot.colortools.cycle`.
+
+    Other parameters
+    ----------------
+    *args, **kwargs
+        Passed to the matplotlib plotting method.
+
+    See also
+    --------
+    `cycle_methods`, `BaseAxes`, `~proplot.colortools.cycle`
+
+    Notes
+    -----
+    See the `matplotlib source 
+    <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
+    The `set_prop_cycle` command modifies underlying 
+    `_get_lines` and `_get_patches_for_fill`.
     """
     @functools.wraps(func)
     def decorator(*args, cycle=None, cycle_kw={}, **kwargs):
@@ -258,33 +290,77 @@ def _cycle_features(self, func):
         return func(*args, **kwargs)
     return decorator
 
-def _cmap_features(self, func):
+def cmap_features(self, func):
     """
-    Manage output of contour and pcolor functions.
-    New features:
-        * Create new colormaps on the fly, and merge arbitrary named
-          or created colormaps.
-        * Always use full range of colormap, whether you are extending
-          max, min, neither, or both. For the first three, will reconstruct
-          colormap so 'out-of-bounds' have same color as edge colors
-          from 'in-bounds' region.
-    Also see: https://stackoverflow.com/a/48614231/4970632
+    Wrapper generator that adds a bunch of new features, including
+    flexible and on-the-fly colormap generation.
+
+    Parameters
+    ----------
+    cmap : None or colormap spec, optional
+        The colormap specifer, passed to the `~proplot.colortools.Colormap`
+        constructor.
+    cmap_kw : dict-like, optional
+        Passed to `~proplot.colortools.Colormap`.
+    extend : {'neither', 'both', 'min', 'max'}, optional
+        Whether to assign a unique color to out-of-bounds data. Also means
+        when the colorbar is drawn, colorbar "extensions" will be drawn
+        (triangles by default).
+    levels : None or int or list of float, optional
+        If list of float, level *edges*. If integer, the number of level
+        edges, and boundaries are chosen by matplotlib based on the data
+        range. Defaults to 11.
+    values : None or list of float, optional
+        The level *centers*. If not ``None``, infers levels using
+        `~proplot.utils.edges` and overrides the `levels` keyword arg.
+    zero : bool, optional
+        Ignored if `values` or `levels` are lists.
+        If colormap levels were automatically selected, toggle this to
+        modify the levels to be **symmetric about zero**.
+    norm : None or normalizer spec, optional
+        The colormap normalizer, used to map data values to colormap colors.
+        This is passed to the `~proplot.colortools.Norm` constructor.
+    norm_kw : dict-like, optional
+        Passed to `~proplot.colortools.Norm`.
+    values_as_levels : bool, optional
+        Used internally. Toggles whether to infer `values` from `levels`, or
+        to bypass them and add `values` as a keyword arg to the main function.
+
+    * Create new colormaps on the fly, and merge arbitrary named
+      or created colormaps.
+    * Always use full range of colormap, whether you are extending
+      max, min, neither, or both. For the first three, will reconstruct
+      colormap so 'out-of-bounds' have same color as edge colors
+      from 'in-bounds' region.
+
+    Also see `this post <https://stackoverflow.com/a/48614231/4970632>`.
+
+    Other parameters
+    ----------------
+    *args, **kwargs
+        Passed to the matplotlib plotting method.
+
+    See also
+    --------
+    `cmap_methods`, `BaseAxes`, `~proplot.colortools.Colormap`,
+    `~proplot.colortools.Norm`, `~matplotlib.colors.Colormap`,
+    `~matplotlib.colors.Normalizer`
 
     Notes
     -----
-    The 'bins' argument lets you choose between:
-        1) (True) Use a *discrete* normalizer with a *continuous* (i.e. very
-           high resolution) color table.
-        2) (False) Use a *continuous* normalizer with a *discrete* (containing
-           the number of colors you want) color table.
+    The `bins` argument lets you choose between:
+
+    1. (True) Use a *discrete* normalizer with a *continuous* (i.e. very
+        high resolution) color table.
+    2. (False) Use a *continuous* normalizer with a *discrete* (containing
+        the number of colors you want) color table.
     """
     @functools.wraps(func)
-    def decorator(*args, cmap=None, cmap_kw={},
-                values=None, levels=None,
+    def decorator(*args, cmap=None, cmap_kw={}, extend='neither',
+                values=None, levels=None, zero=False, # override levels to be *centered* on zero
                 norm=None, norm_kw={},
-                zero=False, # override levels to be *centered* on zero
                 values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
-                extend='neither', **kwargs):
+                **kwargs):
         # Optionally pass level centers instead of level edges
         # NOTE: See the norm_preprocessor section below for why we funnel
         # results through a normalizer here
@@ -297,7 +373,7 @@ def _cmap_features(self, func):
                 levels = utils.edges(values)
             # Else see what pops out
             else:
-                norm_tmp = colortools.norm(norm, **norm_kw)
+                norm_tmp = colortools.Norm(norm, **norm_kw)
                 if norm_tmp: # is not None
                     levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
                 else:
@@ -313,8 +389,8 @@ def _cmap_features(self, func):
         if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
             kwargs.update({'aspect': 'auto'})
         result = func(*args, **kwargs)
-        if name in _nolevels_methods:
-            result.extend = extend
+        if not hasattr(result, 'extend'):
+            result.extend = extend # will already be on there for some funcs
 
         # Get levels automatically determined by contourf, or make them
         # from the automatically chosen pcolor/imshow clims.
@@ -354,7 +430,7 @@ def _cmap_features(self, func):
         # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
         # in logarithmic space, or warped to diverge from center from a
         # given midpoint like zero
-        norm_preprocess = colortools.norm(norm, levels=levels, **norm_kw)
+        norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
         if hasattr(result, 'norm') and norm_preprocess is None:
             norm_preprocess = result.norm
 
@@ -367,7 +443,7 @@ def _cmap_features(self, func):
         cmap = cmap or rc['image.cmap']
         if isinstance(cmap, (str, dict, mcolors.Colormap)):
             cmap = cmap, # make a tuple
-        cmap = colortools.colormap(*cmap, N=N, extend=extend, **cmap_kw)
+        cmap = colortools.Colormap(*cmap, N=N, extend=extend, **cmap_kw)
         if not cmap._isinit:
             cmap._init()
         result.set_cmap(cmap)
@@ -595,18 +671,23 @@ def _gridfix_cartopy(func):
 class BaseAxes(maxes.Axes):
     """
     Lowest-level `~matplotlib.axes.Axes` override. Handles titles and axis
-    sharing. Overrides the legend, colorbar, and plot methods. Registered
-    projeciton name is ``'base'``.
+    sharing. Overrides the legend, colorbar, and plot methods.
 
     Notes
     -----
-    Impossible to subclass `~matplotlib.axes.SubplotBase` directly; the subplot
-    subclass is made automatically by `~matplotlib.axes.subplot_class_factory`
+    It is impossible to subclass `~matplotlib.axes.SubplotBase` directly.
+    The subplot subclass is made automatically by
+    `~matplotlib.axes.subplot_class_factory`
     after calling `~matplotlib.figure.Figure.add_subplot`.
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `XYAxes`, `PanelAxes`,
+    `MapAxes`, `CartopyAxes`, `BasemapAxes`
 
     Todo
     ----
-    Consider moving the share axis stuff to `XYAxes`?
+    Consider moving the share axis stuff to `XYAxes` class.
     """
     # Initial stuff
     name = 'base'
@@ -617,6 +698,33 @@ class BaseAxes(maxes.Axes):
             map_name=None,
             panel_parent=None, panel_side=None,
             **kwargs):
+        # Copied sharex stuff from subplots documentation
+        """
+        Parameters
+        ----------
+        number : None or int
+            The subplot number, used for a-b-c labelling (see
+            `~BaseAxes.format`).
+        sharex_level, sharey_level : {3, 2, 1, 0}, optional
+            The "axis sharing level" for the *x* axis, *y* axis, or both
+            axes.
+
+            See `~proplot.subplots.subplots` for details.
+        sharex, sharey : None or `BaseAxes`, optional
+            Axes to use for *x* and *y* axis sharing. Should correspond
+            to the subplot in the bottommost row, leftmost column.
+        spanx, spany : None or `BaseAxes`, optional
+            Axes to use for the "spanning" *x* and *y* axis labels. Should
+            correspond to the subplot in the leftmost column, bottommost row.
+
+            See `~proplot.subplots.subplots` for details.
+        panel_parent : None or `BaseAxes`, optional
+            The parent of the panel. Used only with `PanelAxes`.
+        panel_side : {None, 'left', 'right', 'top', 'bottom'}, optional
+            The side the panel was drawn on. Used only with `PanelAxes`.
+        map_name : None or str, optional
+            The name of the map projection. Used only with `BasemapAxes`.
+        """
         # Initialize
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
@@ -680,10 +788,10 @@ class BaseAxes(maxes.Axes):
                 raise NotImplementedError(message.format(attr))
         attr = _aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
-        if attr in _cmap_methods:
-            obj = _cmap_features(self, obj)
-        elif attr in _cycle_methods:
-            obj = _cycle_features(self, obj)
+        if attr in cmap_methods:
+            obj = cmap_features(self, obj)
+        elif attr in cycle_methods:
+            obj = cycle_features(self, obj)
         return obj
 
     def _topmost_subspec(self):
@@ -872,9 +980,10 @@ class BaseAxes(maxes.Axes):
                 extra['border'] = _default(kwargs.pop('border', None), True) # by default
         return {'x':x, 'y':y, 'transform':transform, 'ha':ha, 'va':va, **extra}
 
-    # Make axes invisible
     def invisible(self):
-        # Make axes invisible
+        """
+        Make axes invisible.
+        """
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
@@ -892,17 +1001,89 @@ class BaseAxes(maxes.Axes):
         rc_kw={}, **kwargs,
         ):
         """
-        Function for formatting axes of all kinds; some arguments are only relevant to special axes, like 
-        colorbar or basemap axes. By default, simply applies the dictionary values from settings() above,
-        but can supply many kwargs to further modify things.
+        Function for formatting axes titles and labels.
+
+        Parameters
+        ----------
+        suptitle : None or str, optional
+            The figure "super" title, centered between the left edge of
+            the lefmost column of subplots and the right edge of the rightmost
+            column of subplots, and automatically offset above figure titles.
+
+            This is more sophisticated than matplotlib's builtin "super title",
+            which is just centered between the figure edges and offset from
+            the top edge.
+        suptitle_kw : dict-like, optional
+            The super title settings. Applied with the
+            `~matplotlib.artist.Artist.update` method on the
+            `~matplotlib.text.Text` instance. Options include ``'color'``,
+            ``'size'``, and ``'weight'``.
+        title : None or str, optional
+            The axes title.
+        titlepos : None or str, optional
+            The position of the axes title, set by a string consisting of up
+            to 2 characters. The default is ``'co'``.
+
+            There are 2 options for the vertical position:
+
+            * ``'o'``: Outside the axes.
+            * ``'i'``: Inside the axes. In this case, a white border
+              will be drawn around the title text by default.
+              Disable with `title_kw={'border':False}`.
+
+            There are 3 options for the horizontal position:
+
+            * ``'c'``: Centered, the default.
+            * ``'l'``: Left aligned.
+            * ``'r'``: Right aligned.
+
+        title_kw : dict-like, optional
+            The title settings. See `suptitle_kw`.
+        rowlabels, colllabels : None or list of str, optional
+            The subplot row and column labels. If list, length must match
+            the number of subplot rows, columns.
+        rowlabels_kw, collabels_kw : dict-like, optional
+            The row and column label settings. See `suptitle_kw`.
+        abc : None or bool, optional
+            Whether to apply "a-b-c" subplot labelling based on the
+            `number` attribute.
+
+            If `number` is >26, labels will loop around to a, ..., z, aa,
+            ..., zz, aaa, ..., zzz, ... God help you if you ever need that
+            many labels.
+        abcpos : None or str, optional
+            The position of the subplot label. See `titlepos`.
+            The default is ``'li'``.
+        abcformat : None or str, optional
+            A string containing the character ``'a'``, specifying the
+            format of the a-b-c labelling. ``'a.'`` is the default, but
+            ``'(a)'`` or ``'a)'`` might also be desirable.
+        abc_kw : dict-like, optional
+            The subplot label settings. See `suptitle_kw`.
+        rc_kw, kwargs
+            "rc" configuration settings specific to this axes, used to
+            temporarily update the `~proplot.rcmod.rc` object.
+
+            See `~proplot.rcmod` for details.
 
         Todo
         ----
-        * Add options for datetime handling; note possible date axes handles are TimeStamp (pandas),
-          np.datetime64, DateTimeIndex; can fix with fig.autofmt_xdate() or manually set options; uses
-          ax.is_last_row() or ax.is_first_column(), so should look that up.
-        * Problem is there is no autofmt_ydate(), so really should implement my own
-          version of this.
+        * Add options for datetime handling. Note possible date axes handles
+          are `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
+        * Can fix with `~matplotlib.figure.Figure.autofmt_xdate` or manually
+          set options. The problem is there is no `~matplotib.figure.Figure.autofmt_ydate`,
+          so really should implement my own version of this.
+        * Look into `~matplotlib.axes.SubplotBase.is_last_row` and
+          `~matplotlib.axes.SubplotBase.is_first_column` methods.
+
+        Notes
+        -----
+        `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
+
+        See also
+        --------
+        `~proplot.subplots.subplots`, `~proplot.rcmod`,
+        `XYAxes.format`, `BasemapAxes.format`, `CartopyAxes.format`
         """
         # NOTE: These next two are actually *figure-wide* settings, but that
         # line seems to get blurred -- where we have shared axes, spanning
@@ -966,16 +1147,42 @@ class BaseAxes(maxes.Axes):
 
     # Fancy wrappers
     def text(self, x, y, text,
-            transform=None, border=False, invert=False,
+            transform='data', border=False, invert=False,
             linewidth=2, lw=None, **kwargs): # linewidth is for the border
         """
-        Wrapper around original text method. Adds feature for easily drawing
-        text with white border around black text, or vice-versa with invert==True.
+        Wrapper around original text method. Mainly adds feature for drawing
+        "borders" around text.
+
+        Parameters
+        ----------
+        x, y : float
+            The *x* and *y* coordinates for the text.
+        text : str
+            The text.
+        transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
+            The coordinate system (i.e. "transform"), or a string pointing
+            to a transform that we will look up. Default is ``'data'``.
+        border : bool, optional
+            Whether to draw border around text.
+        invert : bool, optional
+            Ignored if `border` is ``False``. Whether to draw black text
+            with a white border (``False``), or white text on a black
+            border (``True``).
+        linewidth : float, optional
+            Ignored if `border` is ``False``. The width of the text border.
+        lw
+            Alias for `linewidth`.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `~matplotlib.text.Text` instantiator.
 
         Warning
         -------
         Basemap gridlining methods call text, so if you change the default
-        transform, will not be able to draw lat/lon labels!
+        transform, you will not be able to draw latitude and longitude
+        labels! Leave it alone.
         """
         # Get default transform by string name
         linewidth = lw or linewidth
@@ -1014,18 +1221,23 @@ class BaseAxes(maxes.Axes):
                 'path_effects': [mpatheffects.Stroke(linewidth=linewidth, foreground=bgcolor), mpatheffects.Normal()]})
         return t
 
-    # @_cycle_features
+    # @cycle_features
     def plot(self, *args, cmap=None, values=None, **kwargs):
         """
-        As in `~matplotlib.axes.Axes.plot`, but with added functionality
-        for making `~matplotlib.collections.LineCollection` lines -- lines
-        whose colors change as a function of the coordinates `values`.
+        As in `~matplotlib.axes.Axes.plot`, but adds functionality
+        for making `~matplotlib.collections.LineCollection` lines. These
+        are lines whose colors change as a function of the coordinates
+        `values`.
 
-        Other Parameters
-        ----------------
-        **kwargs :
-            Valid kwargs are `~matplotlib.lines.Line2D` properties,
-            with the exception of 'transform':
+        Parameters
+        ----------
+        *args
+            Passed to `~matplotlib.axes.Axes.plot`.
+        cmap, values
+            Passed to `~BaseAxes.cmapline`.
+        **kwargs
+            `~matplotlib.lines.Line2D` properties.
+
         """
         if cmap is None and values is None:
             # Make normal boring lines
@@ -1038,10 +1250,11 @@ class BaseAxes(maxes.Axes):
             raise ValueError('To draw colormap line, must provide kwargs "values" and "cmap".')
         return lines
 
-    # @_cycle_features
+    # @cycle_features
     def scatter(self, *args, **kwargs):
         """
-        Just add some more consistent keyword argument options.
+        Just makes keyword arg conventions consistent with `plot`. This is
+        something that always bothered me.
         """
         # Manage input arguments
         if len(args)>4:
@@ -1052,17 +1265,19 @@ class BaseAxes(maxes.Axes):
         if len(args)>2:
             kwargs['s'] = args.pop(2)
         # Apply some aliases for keyword arguments
-        aliases = {'c':   ['markercolor', 'color'],
-                   's':   ['markersize', 'size'],
-            'linewidths': ['lw','linewidth','markeredgewidth', 'markeredgewidths'],
-            'edgecolors': ['markeredgecolor', 'markeredgecolors']}
+        aliases = {
+            'c':          ['color', 'markercolor'],
+            's':          ['size', 'markersize'],
+            'linewidths': ['lw', 'linewidth', 'markeredgewidth', 'markeredgewidths'],
+            'edgecolors': ['markeredgecolor', 'markeredgecolors'],
+            }
         for name,options in aliases.items():
             for option in options:
                 if option in kwargs:
                     kwargs[name] = kwargs.pop(option)
         return super().scatter(*args, **kwargs)
 
-    # @_cmap_features
+    # @cmap_features
     def cmapline(self, *args, values=None,
             cmap=None, norm=None,
             interp=0, **kwargs):
@@ -1072,15 +1287,22 @@ class BaseAxes(maxes.Axes):
         Calling `BaseAxes.plot` with kwargs ``cmap`` and ``values`` will
         invoke this method.
 
-        Other parameters
-        --------
-          values : array-like
-            The values to which each (x,y) coordinate corresponds.
-          cmap : cmap-argument
-            The colormap, passed to the `~colortools.cmap` function.
-          interp : int, optional
+        Parameters
+        ----------
+        values : list of float
+            Values corresponding to points on the line.
+        cmap : None or colormap spec, optional
+            Colormap specifier, passed to `~proplot.colortools.colormap`.
+        norm : None or `~matplotlib.colors.Normalizer`, optional
+            The normalizer, used for mapping `values` to colormap colors.
+        interp : int, optional
             Number of values between each line joint and each *halfway* point
             between line joints to which you want to interpolate.
+
+        Warning
+        -------
+        So far this only works for **1D** *x* and *y* coordinates. Cannot draw
+        multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
         """
         # First error check
         if values is None:
@@ -1149,7 +1371,11 @@ class BaseAxes(maxes.Axes):
 #------------------------------------------------------------------------------#
 class XYAxes(BaseAxes):
     """
-    Subclass for ordinary Cartesian-grid axes.
+    Subclass for ordinary Cartesian axes.
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `BaseAxes`, `PanelAxes`
     """
     # Initialize
     name = 'xy'
@@ -1180,7 +1406,7 @@ class XYAxes(BaseAxes):
         base = self
         base = getattr(base, '_share' + name, None) or base
         base = getattr(base, '_share' + name, None) or base
-        if not getattr(base, '_span' + name):
+        if not getattr(base, '_span'  + name):
             return getattr(base, name + 'axis').label
         # Get the 'edge' we want to share (bottom row, or leftmost column),
         # and then finding the coordinates for the spanning axes along that edge
@@ -1325,16 +1551,97 @@ class XYAxes(BaseAxes):
         xminorlocator_kw={}, yminorlocator_kw={},
         **kwargs): # formatter
         """
-        Format the x/y labels, tick locators, tick formatters, and more.
-        Needs more documentation.
+        Format the *x* and *y* axis labels, tick locations, tick label
+        format, scales, and more.
+
+        Parameters
+        ----------
+        xlabel, ylabel : None or str, optional
+            The *x* and *y* axis labels. Applied with
+            `~matplotlib.axes.Axes.set_xlabel`
+            and `~matplotlib.axes.Axes.set_ylabel`.
+        xlabel_kw, ylabel_kw : dict-like, optional
+            The *x* and *y* axis label settings. Applied with the
+            `~matplotlib.artist.Artist.update` method on the
+            `~matplotlib.text.Text` instance. Options include ``'color'``,
+            ``'size'``, and ``'weight'``.
+        xlim, ylim : None or length-2 list of float or None, optional
+            The *x* and *y* axis data limits. Applied with
+            `~matplotlib.axes.Axes.set_xlim` and `~matplotlib.axes.Axes.set_ylim`.
+        xreverse, yreverse : bool, optional
+            Whether to reverse the *x* and *y* axis limits.
+        xbounds, ybounds : None or length-2 list of float, optional
+            The *x* and *y* axis data bounds within which to draw the spines.
+            For example, this can be used to separate the *x*
+            and *y* axis spines, so they don't meet at the corner.
+        xtickrange, ytickrange : None or length-2 list of float, optional
+            The *x* and *y* axis data ranges within which major tick marks
+            are labelled. For example, the tick range ``[-1,1]`` with
+            axis range ``[-5,5]`` and a tick interval of 1 will only
+            label the ticks marks at -1, 0, and 1.
+        xscale, yscale : None or scale spec, optional
+            The *x* and *y* axis scales. Arguments are passed to and interpreted
+            by `~proplot.axistools.Scale`. Examples include ``'linear'``
+            and ``('cutoff', 0.5, 2)``.
+        xscale_kw, yscale_kw : dict-like, optional
+            The *x* and *y* axis scale settings. Passed to
+            `~proplot.axistools.Scale`.
+        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'zero'}, optional
+            The *x* and *y* axis spine locations.
+        xloc, yloc
+            Aliases for `xspineloc`, `yspineloc`.
+        xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
+            Which *x* and *y* axis spines should have major and minor tick marks.
+        xtickminor, ytickminor, tickminor : None or bool, optional
+            Whether to draw minor ticks on the *x* axis, *y* axis, and
+            both axes.
+        xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
+            Direction that major and minor tick marks point for the *x* axis,
+            *y* axis, and both axes.
+        xgrid, ygrid, grid : None or bool, optional
+            Whether to draw major gridlines on the *x* axes, *y* axes,
+            and both axes.
+        xgridminor, ygridminor, gridminor : None or bool, optional
+            Whether to draw minor gridlines on the *x* axis, *y* axis, and
+            both axes.
+        xticklabeldir, yticklabeldir : {'in', 'out'}
+            Whether to place *x* and *y* axis tick label text inside
+            or outside the axes.
+        xlocator, ylocator : None or locator spec, optional
+            The *x* and *y* axis tick mark positions. Passed to the
+            `~proplot.axistools.Locator` constructor.
+        xlocator_kw, ylocator_kw : dict-like, optional
+            The *x* and *y* axis locator settings. Passed to
+            `~proplot.axistools.Locator`.
+        xticks, yticks
+            Aliases for `xlocator`, `ylocator`.
+        xminorlocator, yminorlocator
+            As for `xlocator`, `ylocator`, but for the minor ticks.
+        xminorticks, yminorticks
+            Aliases for `xminorlocator`, `yminorlocator`.
+        xminorlocator_kw, yminorlocator_kw
+            As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
+        xformatter, yformatter : None or format spec, optional
+            The *x* and *y* axis tick label format. Passed to the
+            `~proplot.axistools.Formatter` constructor.
+        xticklabels, yticklabels
+            Aliases for `xformatter`, `yformatter`.
+        xformatter_kw, yformatter_kw : dict-like, optional
+            The *x* and *y* axis formatter settings. Passed to
+            `~proplot.axistools.Formatter`.
 
         Todo
         ----
         * Consider redirecting user to another label rather than making
-          this one invisible for spanning/shared axes.
+          this one invisible for spanning and shared axes.
         * More intelligent axis sharing with map axes. Consider optionally
-          anchoring them by locator/limits like the default API, or just
-          disable ticklabels/labels for some.
+          anchoring them by the locator and limits like the default API, or just
+          disable ticklabels and labels for some.
+
+        See also
+        --------
+        `BaseAxes.format`, `~proplot.axistools.Scale`,
+        `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`
         """
         # Set axis scaling and limits
         # These do not seem to have their own axes-specific public methods,
@@ -1565,6 +1872,11 @@ class XYAxes(BaseAxes):
         super().format(**kwargs)
 
     def twiny(self, **kwargs):
+        """
+        Create second *x* axis extending from a shared ("twin") *y*
+        axis. Adds features for intelligently moving around tick and axis
+        labels, handling axis sharing.
+        """
         # Create second x-axis extending from shared ("twin") y-axis
         # Note: Cannot wrap twiny() because then the axes created will be
         # instantiated from the parent class, which doesn't have format() method.
@@ -1585,6 +1897,11 @@ class XYAxes(BaseAxes):
         return ax
 
     def twinx(self, yscale=None, **kwargs):
+        """
+        Create second *y* axis extending from a shared ("twin") *x*
+        axis. Adds features for intelligently moving around tick and axis
+        labels, handling axis sharing.
+        """
         # Create second y-axis extending from shared ("twin") x-axis
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format() method.
@@ -1623,6 +1940,10 @@ class XYAxes(BaseAxes):
         return inset_locator
 
     def inset_axes(self, bounds, *, transform=None, zorder=5, zoom=True, zoom_kw={}, **kwargs):
+        """
+        Draw an inset `XYAxes` axes. Otherwise, this is a carbon copy
+        of the `~matplotlib.axes.Axes.inset_axes` method.
+        """
         # Carbon copy, but use my custom axes
         # Defaults
         if transform is None:
@@ -1644,7 +1965,10 @@ class XYAxes(BaseAxes):
         return ax
 
     def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
-        # Custom version that can be *refreshed*
+        """
+        Custom inset zoom indicator that can be *refreshed* as the
+        parent axis limits change.
+        """
         # Makes more sense to be defined on the inset axes, since parent
         # could have multiple insets
         parent = self._inset_parent
@@ -1680,20 +2004,29 @@ class XYAxes(BaseAxes):
         return (rectpatch, connects)
 
     def inset(self, *args, **kwargs):
+        """
+        Alias for `~XYAxes.inset_axes`.
+        """
         # Just an alias
         return self.inset_axes(*args, **kwargs)
 
     def inset_zoom(self, *args, **kwargs):
+        """
+        Alias for `~XYAxes.indicate_inset_zoom`.
+        """
         # Just an alias
         return self.indicate_inset_zoom(*args, **kwargs)
 
 class EmptyPanel(object):
     """
     Dummy object to put in place when an axes or figure panel does not exist.
-    Makes nicer error message than if we just put 'None' or nothing there.
+    This gives a nicer error message than if we had just used ``None`` or put
+    nothing there at all.
 
-    Remember: __getattr__ is invoked only when __getattribute__ fails, i.e.
-    when user requests anything that isn't a hidden object() method.
+    Notes
+    -----
+    `__getattr__` is invoked only when `__getattribute__` fails, i.e.
+    when the user requests anything that isn't a hidden `object` method.
     """
     def __bool__(self):
         return False # it's empty, so this is 'falsey'
@@ -1702,23 +2035,38 @@ class EmptyPanel(object):
         raise AttributeError('Panel does not exist.')
 
 class PanelAxes(XYAxes):
+    """
+    An `~proplot.axes.XYAxes` with `legend` and `colorbar` methods
+    overridden. Calling these will "fill" the entire axes with a legend
+    or colorbar.
+
+    This is suitable for axes meant to reference content in several
+    other subplots at once.
+
+    Notes
+    -----
+    See `this post <https://stackoverflow.com/a/52121237/4970632>`_
+    and `this example <https://stackoverflow.com/q/26236380/4970632>`_.
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `~proplot.subplots.FigureBase.panel_factory`, `XYAxes`, `BaseAxes`
+    """
+    # Name
     name = 'panel'
     """The registered projection name."""
     def __init__(self, *args, panel_side=None, invisible=False, **kwargs):
         """
-        An `~proplot.axes.XYAxes` with `legend` and `colorbar` methods
-        overridden. Calling these will "fill" the entire axes with a legend
-        or colorbar.
-
-        This is suitable for axes meant to reference content in several
-        other subplots at once.
-
-        See `~proplot.subplots.subplots` for details.
-
-        Notes
-        -----
-        See `this post <https://stackoverflow.com/a/52121237/4970632>`_
-        and `this example <https://stackoverflow.com/q/26236380/4970632>`_.
+        Parameters
+        ----------
+        panel_side : {'left', 'right', 'bottom', 'top'}
+            The side on which the panel is drawn.
+        invisible : bool, optional
+            Whether to make the axes invisible at the start. This is the
+            default when using e.g. the `bottomlegend` keyword arg
+            in `~proplot.subplots.subplots`.
+        *args, **kwargs
+            Passed to the `XYAxes` initializer.
         """
         # Initiate
         if panel_side is None:
@@ -1735,7 +2083,8 @@ class PanelAxes(XYAxes):
     # direct overrides!
     def legend(self, handles, entire=True, **kwargs_override):
         """
-        Fill panel with legend.
+        "Fill the panel" with a legend. That is, draw a centered legend
+        and make the axes spines, ticks, etc. invisible.
         """
         if not entire:
             # Do the normal thing
@@ -1755,7 +2104,7 @@ class PanelAxes(XYAxes):
         space=0, hspace=None, wspace=None,
         **kwargs):
         """
-        Fill panel with colorbar.
+        Fill the panel with colorbar.
         """
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
@@ -1827,8 +2176,12 @@ class PanelAxes(XYAxes):
 
 class MapAxes(BaseAxes):
     """
-    Dummy intermediate class that just disables a bunch of methods that are
+    Dummy intermediate class. Disables a bunch of methods that are
     inappropriate for map projections.
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `BaseAxes`, `CartopyAxes`, `BasemapAxes`
     """
     # Disable some methods to prevent weird shit from happening
     # Originally used property decorators for this but way too verbose
@@ -1838,21 +2191,53 @@ class MapAxes(BaseAxes):
             raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
-    def parse_labels(self, labels, mode):
+    @staticmethod
+    def ls_translate(obj, style):
+        """
+        Make basemap gridlines look like cartopy lines using the `dashes`
+        tuple.
+
+        Notes
+        -----
+        For some reason basemap gridlines look different from cartopy ones.
+        Have absolutely **no idea** why. Cartopy seems to do something weird because
+        there is no ``_dashSeq`` attribute on the lines, and the line styles
+        are always "officially" ``'-'``, even though they are dashed.
+        See `this reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`_.
+
+        The dots ``':'`` actually look better on cartopy so we try to mimick them
+        below.
+        """
+        if style=='-':
+            dashes = [None,None]
+        else:
+            dashes = [*obj._dashSeq]
+            if style==':':
+                dashes[0] /= 10
+                dashes[1] *= 1.5
+            elif style=='--':
+                dashes[0] /= 1.5
+                dashes[1] *= 1.5
+            else:
+                raise ValueError(f'Invalid style {style}.')
+        return dashes
+
+    @staticmethod
+    def parse_labels(labels, mode):
         """
         Parses complex ``lonlabels`` and ``latlabels`` arguments. There are
         four different options:
 
-            1. A string, e.g. ``'lr'``, ``'bt'``.
-            2. Boolean ``True``; indicates left side for latitudes,
-               bottom for longitudes.
-            3. A boolean ``(left,right)`` tuple for latitudes,
-               ``(bottom,top)`` for longitudes.
-            4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
-               `~mpl_toolkits.basemap.Basemap.drawmeridians` and
-               `~mpl_toolkits.basemap.Basemap.drawparallels` methods;
-               indicates whether to label left, right, top, and bottom
-               sides, respectively.
+        1. A string, e.g. ``'lr'`` or ``'bt'``.
+        2. Boolean ``True``. Indicates left side for latitudes,
+           bottom for longitudes.
+        3. A boolean ``(left,right)`` tuple for latitudes,
+           ``(bottom,top)`` for longitudes.
+        4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
+           `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+           `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
+           Indicates whether to label left, right, top, and bottom
+           sides, respectively.
         """
         if labels is False:
             return [0]*4
@@ -1884,8 +2269,14 @@ class BasemapAxes(MapAxes):
     the `m` attribute, but this is all abstracted away -- you can use
     `~matplotlib.axes.Axes` methods like ``plot()`` and ``contour()`` with
     your raw longitude-latitude data. Neat, huh?
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `~proplot.proj`, `BaseAxes`, `MapAxes`
     """
     name = 'basemap'
+    _map_pseudocyl = ['moll', 'robin', 'eck4', 'kav7', 'sinu',
+                      'mbtfpq', 'vandg', 'hammer', 'aitoff']
     """The registered projection name."""
     def __init__(self, *args, map_projection=None, **kwargs):
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
@@ -1922,7 +2313,7 @@ class BasemapAxes(MapAxes):
 
         # Draw boundary
         kw_face = rc.fill({'facecolor': 'map.facecolor'})
-        if self.m.projection in _map_pseudocyl:
+        if self.m.projection in self._map_pseudocyl:
             self.patch.set_alpha(0) # make patch invisible
             kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
             if not self.m._mapboundarydrawn:
@@ -1954,10 +2345,10 @@ class BasemapAxes(MapAxes):
             obj = _m_call(self, obj) # this must be the *last* step!
             if attr in _line_methods:
                 if attr[:3] != 'tri':
-                    obj = _cycle_features(self, obj)
+                    obj = cycle_features(self, obj)
                 obj = _linefix_basemap(self, obj)
             elif attr in _edge_methods or attr in _center_methods:
-                obj = _cmap_features(self, obj)
+                obj = cmap_features(self, obj)
                 obj = _gridfix_basemap(self, obj)
                 if attr in _edge_methods:
                     obj = _check_edges(obj)
@@ -1969,15 +2360,47 @@ class BasemapAxes(MapAxes):
     # Format basemap axes
     # Add documentation here.
     def format(self,
-        xlim=None, ylim=None, lonlim=None, latlim=None,
+        lonlim=None, latlim=None, xlim=None, ylim=None,
+        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
+        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
         xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
         yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
-        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
-        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and land
-        xlabels=None, ylabels=None,
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
+        xlabels=None, ylabels=None,
         **kwargs):
+        """
+        Format the map projection.
+
+        Parameters
+        ----------
+        lonlim, latlim : None or length-2 list of float, optional
+            Longitude and latitude limits of projection.
+        xlim, ylim
+            Aliases for `lonlim`, `latlim`.
+        lonlocator, latlocator : None or list of float, optional
+            List of longitudes and latitudes for drawing gridlines.
+        xlocator, ylocator, lonticks, latticks, xticks, yticks
+            Aliases for `lonlocator`, `latlocator`.
+        lonminorlocator, latminorlocator : None or list of float, optional
+            As with `lonlocator` and `latlocator`, but for minor gridlines.
+        xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
+            Aliases for `lonminorlocator`, `latminorlocator`.
+        lonlabels, latlabels
+            Positions for drawing longitude and latitude coordinate labels
+            for the gridlines. Interpreted by `~MapAxes.parse_labels`.
+        xlabels, ylabels
+            Aliases for `lonlabels`, `latlabels`.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to the parent `BaseAxes.format`.
+
+        See also
+        --------
+        `~proplot.subplots.subplots`, `~proplot.rcmod`, `BaseAxes.format`
+        """
         # Parse flexible input
         xlim = _default(lonlim, xlim)
         ylim = _default(latlim, ylim)
@@ -1996,27 +2419,6 @@ class BasemapAxes(MapAxes):
                 p.update(rc['land'])
         if coastline and not self._coastline:
             self._coastline = self.m.drawcoastlines(ax=self, **rc['coastline'])
-
-        # Function to make gridlines look like cartopy lines
-        # NOTE: For some reason basemap gridlines look different from cartopy ones
-        # Have absolutely *no idea* why; cartopy seems to do something weird because
-        # there is no _dashSeq attribute on lines and line styles are always '-'.
-        # See: https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html
-        # The dots ':' look better on cartopy so we try to mimick them below.
-        def ls_translate(obj, style):
-            if style=='-':
-                dashes = [None,None]
-            else:
-                dashes = [*obj._dashSeq]
-                if style==':':
-                    dashes[0] /= 10
-                    dashes[1] *= 1.5
-                elif style=='--':
-                    dashes[0] /= 1.5
-                    dashes[1] *= 1.5
-                else:
-                    raise ValueError(f'Invalid style {style}.')
-            return dashes
 
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
@@ -2040,7 +2442,7 @@ class BasemapAxes(MapAxes):
                         obj.update(tsettings)
                     else:
                         obj.update(lsettings)
-                        obj.set_dashes(ls_translate(obj, linestyle))
+                        obj.set_dashes(self.ls_translate(obj, linestyle))
         if lonlocator is not None:
             if isinstance(lonlocator, Number):
                 lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
@@ -2051,7 +2453,7 @@ class BasemapAxes(MapAxes):
                         obj.update(tsettings)
                     else:
                         obj.update(lsettings)
-                        obj.set_dashes(ls_translate(obj, linestyle))
+                        obj.set_dashes(self.ls_translate(obj, linestyle))
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
@@ -2081,6 +2483,10 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     -----
     The circle stuff for polar projection was developed from `this example
     <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `~proplot.proj`, `BaseAxes`, `MapAxes`
     """
     # Used in Projection parent class here: https://scitools.org.uk/cartopy/docs/v0.13/_modules/cartopy/crs
     name = 'cartopy'
@@ -2151,6 +2557,38 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         xlabels=None, ylabels=None,
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
         **kwargs):
+        """
+        Format the map projection.
+
+        Parameters
+        ----------
+        lonlim, latlim : None or length-2 list of float, optional
+            Longitude and latitude limits of projection.
+        xlim, ylim
+            Aliases for `lonlim`, `latlim`.
+        lonlocator, latlocator : None or list of float, optional
+            List of longitudes and latitudes for drawing gridlines.
+        xlocator, ylocator, lonticks, latticks, xticks, yticks
+            Aliases for `lonlocator`, `latlocator`.
+        lonminorlocator, latminorlocator : None or list of float, optional
+            As with `lonlocator` and `latlocator`, but for minor gridlines.
+        xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
+            Aliases for `lonminorlocator`, `latminorlocator`.
+        lonlabels, latlabels
+            Positions for drawing longitude and latitude coordinate labels
+            for the gridlines. Interpreted by `~MapAxes.parse_labels`.
+        xlabels, ylabels
+            Aliases for `lonlabels`, `latlabels`.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to the parent `BaseAxes.format`.
+
+        See also
+        --------
+        `~proplot.subplots.subplots`, `~proplot.rcmod`, `BaseAxes.format`
+        """
         # Dependencies
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs # verify package is available
@@ -2249,11 +2687,15 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 class PolarAxes(MapAxes, mproj.PolarAxes):
     """
     Thin decorator around `~matplotlib.projections.PolarAxes` with my
-    new plotting features. So far just mixes the two classes.
+    new plotting features. So far, just mixes the two classes.
 
     Warning
     -------
     Polar axes have not been tested yet!
+
+    See also
+    --------
+    `~proplot.subplots.subplots`, `BaseAxes`, `MapAxes`
     """
     name = 'newpolar'
     """The registered projection name."""
@@ -2269,74 +2711,118 @@ mproj.register_projection(CartopyAxes)
 #------------------------------------------------------------------------------#
 # Custom legend and colorbar factories
 #------------------------------------------------------------------------------#
-def map_projection_factory(package, projection, **kwargs):
+def map_projection_factory(projection, basemap=False, **kwargs):
     """
     Returns a `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
     instance.
 
-    Todo
-    ----
-    Document projection names!
+    Parameters
+    ----------
+    projection : str
+        The projection name.
+    basemap : bool, optional
+        Whether to use the basemap or cartopy package. Defaults to ``False``.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
+        initializers.
+
+    See also
+    --------
+    `~proplot.proj`, `CartopyAxes`, `BasemapAxes`
     """
-    # Initial stuff
-    # Create projection and determine required aspect ratio
-    if package=='basemap':
+    # Allow less verbose keywords, actually match proj4 keywords and are
+    # similar to basemap
+    projection = projection or 'cyl'
+    crs_translate = { # ad to this
+        'lat_0': 'central_latitude',
+        'lon_0': 'central_longitude',
+        }
+    cyl_aliases = {
+        'eqc':     'cyl',
+        'pcarree': 'cyl',
+        }
+    # Basemap
+    if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
-        projection = mbasemap.Basemap(projection=(projection or 'cyl'), **{**kwargs, 'fix_aspect':True}) # cylindrical by default
-        aspect = (projection.urcrnrx - projection.llcrnrx)/(projection.urcrnry - projection.llcrnry)
-    # Get the projection instance from a string and determine required aspect ratio
-    elif package=='cartopy':
-        import cartopy.crs as ccrs # verify package is importable
-        crs_translate = { # less verbose keywords, actually match proj4 keywords and are similar to basemap
-            **{k:'central_latitude'  for k in ('lat0', 'lat_0')},
-            **{k:'central_longitude' for k in ('lon0', 'lon_0')},
-            }
-        crs_dict = { # interpret string, create cartopy projection
-            **{key: ccrs.PlateCarree   for key in ('cyl', 'equirectangular', 'rectilinear','pcarree','platecarree')},
-            **{key: ccrs.Mollweide     for key in ('moll','mollweide')},
-            **{key: ccrs.Stereographic for key in ('stereo','stereographic')},
-            **{key: ccrs.Mercator      for key in ('merc', 'mercator')},
-            'aeqd':     ccrs.AzimuthalEquidistant,
-            'aeqa':     ccrs.LambertAzimuthalEqualArea,
-            'robinson': ccrs.Robinson,
-            'ortho':    ccrs.Orthographic,
-            'hammer':   proj.Hammer,
-            'aitoff':   proj.Aitoff,
-            'wintri':   proj.WinkelTripel,
-            'kav7':     proj.KavrayskiyVII,
-            }
-        projection = projection or 'cyl'
-        if projection not in crs_dict:
-            raise ValueError(f'For cartopy, projection must be one of the following: {", ".join(crs_dict.keys())}.')
-        projection = crs_dict[projection](**{crs_translate.get(key,key):value for key,value in kwargs.items()})
-        aspect = (np.diff(projection.x_limits)/np.diff(projection.y_limits))[0]
-    # Error
+        kwargs.update({'fix_aspect':True})
+        projection = cyl_aliases.get(projection, projection)
+        projection = mbasemap.Basemap(projection=projection, **kwargs)
+        aspect = (projection.urcrnrx - projection.llcrnrx) / \
+                 (projection.urcrnry - projection.llcrnry)
+    # Cartopy
     else:
-        raise ValueError(f'Unknown package "{package}".')
+        import cartopy.crs as ccrs # verify package is importable
+        if projection not in proj.projs:
+            raise ValueError(f'Unknown projection "{projection}". Options are: {", ".join(proj.projs.keys())}.')
+        kwargs = {crs_translate.get(key, key): value for key,value in kwargs.items()}
+        projection = proj.projs[projection](**kwargs)
+        aspect = (np.diff(projection.x_limits) / \
+                  np.diff(projection.y_limits))[0]
     return projection, aspect
 
-def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, settings=None): # can be updated
+def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     """
-    Function for formatting legend-axes (invisible axes with centered legends on them).
-    Should update my legend function to clip the legend box when it goes outside axes area, so
-    the legend-width and bottom/right widths can be chosen propertly/separately.
+    Function for drawing a legend, with some handy added features.
+
+    Parameters
+    ----------
+    ax : `~matplotlib.axes.Axes`
+        The axes.
+    handles : None or list of `~matplotlib.artist.Artist`, optional
+        List of artists instances -- for example, `~matplotlib.lines.Line2D`.
+    order : {'C', 'F'}, optional
+        Whether legend handles are drawn in column-major (``'C'``) or row-major
+        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
+        ``'F'`` was the original matplotlib default; the default is now ``'C'``.
+    align : None or bool, optional
+        Whether to align rows of legend handles. If ``False``, we actually
+        draw successive single-row legends stacked on top of each other,
+        and you cannot have a "legend box".
+
+        If ``None``, we try to infer this setting from the `handles` keyword
+        arg. Becomes ``True`` if `handles` is a list of lists (implies
+        each sublist is a *row* in the legend), ``False`` if not.
+    ncol : int, optional
+        The number of columns.
+    ncols
+        Alias for ncol. Added for consistency with
+        `~matplotlib.pyplot.subplots`.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to `~matplotlib.axes.Axes.legend`.
+
+    Todo
+    ----
+    Should update this function to clip the legend box when it goes
+    outside axes area, so the legend width and bottom or right widths can be
+    chosen propertly/separately.
+
+    See also
+    --------
+    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
     """
     # First get legend settings (usually just one per plot so don't need to declare
-    # this dynamically/globally), and interpret kwargs
-    # PyPlot subplot uses 'ncols', but legend uses 'ncol'... annoying!
+    # this dynamically/globally), and interpret kwargs.
     for name,alias in [('ncol', 'ncols'), ('frame', 'frameon')]:
-        if alias in lsettings:
-            lsettings[name] = lsettings.pop(alias)
+        if alias in kwargs:
+            kwargs[name] = kwargs.pop(alias)
     if order not in ('F','C'):
         raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
     # Setup legend text and handle properties
     hsettings = {}
     for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
-        if candidate in lsettings:
-            hsettings[candidate] = lsettings.pop(candidate)
+        if candidate in kwargs:
+            hsettings[candidate] = kwargs.pop(candidate)
     # Overwrite alpha? Bad idea
-    # hsettings.update({'alpha':1.0}) # always maximimum opacity
-    lsettings.update({'prop':{'family':rc['fontname']}}) # 'prop' can be a FontProperties object or a dict for the kwargs to instantiate one
+    # hsettings.update({'alpha':1.0})
+    # Font name; 'prop' can be a FontProperties object or a dict for the kwargs
+    # to instantiate one.
+    kwargs.update({'prop': {'family':rc['fontname']}})
 
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
@@ -2360,10 +2846,11 @@ def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, set
         align = not list_of_lists
     else: # standardize format based on input
         if not align and not list_of_lists: # separate into columns
-            # raise ValueError("Need to specify number of columns with ncol.")
+            if 'ncol' not in kwargs:
+                kwargs['ncol'] = 3
+            ncol = kwargs['ncol']
             list_of_lists = True
-            lsettings['ncol'] = lsettings.get('ncol',3)
-            handles = [handles[i*lsettings['ncol']:(i+1)*lsettings['ncol']]
+            handles = [handles[i*ncol:(i+1)*ncol]
                         for i in range(len(handles))] # to list of iterables
         if align and list_of_lists: # unfurl, because we just want one legend!
             list_of_lists = False
@@ -2376,25 +2863,26 @@ def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, set
     if align:
         # Prepare settings
         if list_of_lists:
-            lsettings['ncol'] = len(handles[0]) # choose this for column length
-        elif 'ncol' not in lsettings:
-            lsettings['ncol'] = 3
+            kwargs['ncol'] = len(handles[0]) # choose this for column length
+        elif 'ncol' not in kwargs:
+            kwargs['ncol'] = 3
         # Split up into rows and columns -- by default matplotlib will
         # sort them in ***column-major*** order but that's dumb, we want row-major!
         # See: https://stackoverflow.com/q/10101141/4970632
         if order=='C':
             newhandles = []
-            ncol = lsettings['ncol'] # number of columns
+            ncol = kwargs['ncol'] # number of columns
             handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
             nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
-            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(lsettings['ncol']-nfinalrow)
+            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(kwargs['ncol']-nfinalrow)
                 # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
             for col,nrow in enumerate(nrows): # iterate through cols
                 newhandles.extend(handlesplit[row][col] for row in range(nrow))
             handles = newhandles
         # Finally draw legend, mimicking row-major ordering
-        leg = super(BaseAxes, ax).legend(handles=handles, **lsettings)
+        leg = super(BaseAxes, ax).legend(handles=handles, **kwargs)
         legends = [leg]
+
     # 2) Separate legend for each row
     # The labelspacing/borderspacing will be exactly replicated, as if we were
     # using the original legend command
@@ -2404,14 +2892,15 @@ def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, set
         overridden = []
         for override in ['loc','ncol','bbox_to_anchor','borderpad',
                          'borderaxespad','frameon','framealpha']:
-            prop = lsettings.pop(override, None)
+            prop = kwargs.pop(override, None)
             if prop is not None:
                 overridden.append(override)
-        print(f'Warning: Overriding legend properties {", ".join(prop for prop in overridden)}.')
+        if overridden:
+            print(f'Warning: Overriding legend properties {", ".join(prop for prop in overridden)}.')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
-        fontsize = lsettings.get('fontsize', None)     or rc['legend.fontsize']
-        spacing  = lsettings.get('labelspacing', None) or rc['legend.labelspacing']
+        fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
+        spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1/len(handles) # split up axes
         interval = (((1 + spacing)*fontsize)/72) / \
                 (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
@@ -2425,10 +2914,11 @@ def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, set
                 frameon=False,
                 borderpad=0,
                 bbox_to_anchor=bbox,
-                **lsettings) # _format_legend is overriding original legend Method
+                **kwargs) # _format_legend is overriding original legend Method
             legends.append(leg)
         for l in legends[:-1]:
             ax.add_artist(l) # because matplotlib deletes previous ones
+
     # Properties for legends
     outline = {'linewidth': rc['axes.linewidth'],
                'edgecolor': rc['axes.edgecolor'],
@@ -2441,21 +2931,104 @@ def legend_factory(ax, handles=None, align=None, order='C', **lsettings): #, set
         #     t.update(tsettings) # or get_texts()
     return legends
 
-def colorbar_factory(ax, mappable,
+def colorbar_factory(ax, mappable, values=None,
+        orientation='horizontal', extend='neither', extendlength=0.2,
+        clabel=None, label=None,
         ctickminor=False, tickminor=None,
         cgrid=False, grid=None,
+        ticklocation=None, cticklocation=None, ctickdir=None, tickdir='out',
         clocator=None, locator=None, cminorlocator=None, minorlocator=None,
         clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
-        cticklabels=None, ticklabels=None,
         cformatter=None, formatter=None,
+        cticklabels=None, ticklabels=None,
         norm=None, norm_kw={}, # normalizer to use when passing colors/lines
-        clabel=None, label=None,
-        errfix=True, extend='neither', extendlength=0.2, # in inches
-        values=None, orientation='horizontal', ticklocation='outer', **kwargs): #, settings=None):
+        **kwargs): #, settings=None):
     """
-    Function for drawing colorbars, with some extra options. This function
-    should be accessed by the `BaseAxes.colorbar` and `PanelAxes.colorbar`
-    methods.
+    Function for filling an axes with a colorbar, with some handy added
+    features.
+
+    Parameters
+    ----------
+    ax : `~matplotlib.axes.Axes`
+        The axes to fill with a colorbar.
+    mappable : mappable or list of str or list of plot handles
+        There are three options here:
+
+        1. A mappable object. Basically, any object with a `get_cmap` method, like
+           the objects returned by `~matplotlib.axes.Axes.contourf` and
+           `~matplotlib.axes.Axes.pcolormesh`.
+        2. A list of hex strings, color string names, or RGB tuples. From this,
+           a colormap will be generated and used with the colorbar. Requires
+           `values` is not ``None``.
+        3. A list of "plot handles". Basically, any object with a `get_color`
+           method, like `~matplotlib.lines.Line2D` instances. From this,
+           a colormap will be generated and used with the colorbar. Requires
+           `values` is not ``None``.
+
+    values : None or list of float, optional
+        Ignored if `mappable` is a mappable object. Maps each color or plot
+        handle in the `mappable` list to numeric values. From this, a
+        colormap and normalizer are constructed.
+    orientation : {'horizontal', 'vertical'}, optional
+        The colorbar orientation.
+    extend : {'neither', 'both', 'min', 'max'}, optional
+        Ignored if `mappable` has the ``extend`` attribute.
+        Direction for drawing colorbar "extensions" (i.e. references to
+        out-of-bounds data with a unique color). These are triangles by
+        default.
+    extendlength : float or str, optional
+        The length of the colorbar "extensions" in *physical units*.
+        If float, units are inches. If string,
+        units are interpreted by `~proplot.utils.units`.
+
+        This is handy if you have multiple colorbars in one figure.
+        With the matplotlib API, it is really hard to get triangle
+        sizes to match, because the `extendlength` units are *relative*.
+    tickdir : {'out', 'in'}, optional
+        Whether to draw tick marks pointing inside or outside.
+    ctickdir, ticklocation, cticklocation
+        Aliases of `tickdir`.
+    label : None or str, optional
+        The colorbar label.
+    tickminor : bool, optional
+        Whether to put minor ticks on the colorbar. Default is ``False``.
+    grid : bool, optional
+        Whether to draw "gridlines" (i.e. separators) between each level
+        across the colorbar. Default is ``False``.
+    clabel, ctickminor, cgrid
+        Aliases for `label`, `tickminor`, `grid`.
+    locator : None or locator spec, optional
+        The colorbar tick mark positions. Passed to the
+        `~proplot.axistools.Locator` constructor.
+    locator_kw : dict-like, optional
+        The locator settings. Passed to `~proplot.axistools.Locator`.
+    minorlocator
+        As with `locator`, but for the minor tick marks.
+    minorlocator_kw
+        As for `locator_kw`, but for the minor locator.
+    clocator, cminorlocator, clocator_kw, cminorlocator_kw
+        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
+    formatter : None or formatter spec, optional
+        The tick label format. Passed to the `~proplot.axistools.Formatter`
+        constructor.
+    cformatter, ticklabels, cticklabels
+        Aliases for `formatter`.
+    norm : None or normalizer spec, optional
+        Ignored if `mappable` has the ``norm`` attribute. The normalizer
+        for converting `values` to colormap colors. Passed to the
+        `~proplot.colortools.Norm` constructor.
+    norm_kw : dict-like, optional
+        The normalizer settings. Passed to `~proplot.colortools.Norm`.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to `~matplotlib.figure.Figure.colorbar`.
+
+    See also
+    --------
+    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
+    `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, `~proplot.colortools.Norm`
     """
     # Developer notes
     # * There are options on the colorbar object (cb.locator,
@@ -2522,13 +3095,14 @@ def colorbar_factory(ax, mappable,
         colors = [h.get_color() for h in mappable]
     # Get colors, and by default, label each value directly
     # Note contourf will not be overridden for colorbar axes! Need to
-    # manually wrap with _cmap_features.
+    # manually wrap with cmap_features.
     if fromlines or fromcolors:
-        cmap   = colortools.colormap(colors)
-        func = _cmap_features(ax, ax.contourf)
+        cmap   = colortools.Colormap(colors)
+        func = cmap_features(ax, ax.contourf)
         mappable = func([[0,0],[0,0]],
             values=np.array(values), cmap=cmap, extend='neither',
-            norm=(norm or 'segmented')) # workaround
+            norm=(norm or 'segmented')
+            ) # workaround
         if clocator is None:
             nstep = 1 + len(values)//20
             clocator = values[::nstep]
@@ -2613,8 +3187,11 @@ def colorbar_factory(ax, mappable,
     else:
         axis = ax.yaxis
         scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
+    extendlength = utils.units(extendlength)
     extendlength = extendlength/(scale - 2*extendlength)
     csettings.update({'extendfrac':extendlength}) # width of colorbar axes and stuff
+    ticklocation = ticklocation or ctickdir or tickdir
+    ticklocation = {'out':'outer', 'in':'inner'}.get(ticklocation, ticklocation)
     cb = ax.figure.colorbar(mappable,
             ticklocation=ticklocation,
             ticks=locators[0],

@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 """
-The starting point for creating special ProPlot figures containins
-special ProPlot axes.
+The starting point for creating custom ProPlot figures and axes.
+The `subplots` command is all you'll need to directly use here;
+it returns a figure instance and list of axes.
+
+Note that
+instead of separating features into their own functions (e.g.
+a `generate_panel` function), we specify them right when the
+figure is declared.
+
+The reason for this approach is we want to build a
+*static figure "scaffolding"* before plotting anything. This
+way, ProPlot can hold the axes aspect ratios, panel widths, colorbar
+widths, and inter-axes spaces **fixed** (note this was really hard
+to do and is **really darn cool**!).
+
+See `~FigureBase.smart_tight_layout` for details.
 """
 import os
 import re
@@ -271,7 +285,7 @@ class FigureBase(mfigure.Figure):
             sharex_panels=True, sharey_panels=True, # by default share main x/y axes with panel x/y axes
             **kwargs):
         """
-        Create panels along subplot edges.
+        Create "inner" panels, i.e. panels along subplot edges.
 
         Parameters
         ----------
@@ -291,11 +305,21 @@ class FigureBase(mfigure.Figure):
             Empty space between the main subplot and the panel.
             If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`.
+        sharex_panels, sharey_panels : bool, optional
+            Whether to share the *x* axes labels for vertically oriented
+            (left/right) panels stacked on top of each other, and the
+            *y* axes labels for horizontally oriented (bottom/top) panels
+            next to each other. Defaults to ``True``.
+        sharex, sharey : None or `~proplot.axes.BaseAxes`, optional
+            The axes for "sharing" labels, tick labels, and limits.
+            See `subplots` for details.
+        sharex_level, sharey_level : {3, 2, 1, 0}, optional
+            The axis sharing level.
+            See `subplots` for details.
 
         Todo
         ----
-        * Make settings specific to left, right, top, bottom sides!
-        * Document the share settings.
+        Make settings specific to left, right, top, bottom sides!
         """
         # Helper function for creating paneled axes.
         width, height = self.width, self.height
@@ -348,7 +372,7 @@ class FigureBase(mfigure.Figure):
         for i in range(ncols):
             if i!=main_pos[1]: # this is a panel entry
                 wwidth_ratios[i] = wwidth
-        hwidth_ratios = [height-hwidth*(nrows-1)]*nrows
+        hwidth_ratios = [height - hwidth*(nrows-1)]*nrows
         if hwidth_ratios[0]<0:
             raise ValueError(f'Panel hwidth {hwidth} is too large. Must be less than {height/(ncols-1):.3f}.')
         for i in range(nrows):
@@ -549,21 +573,50 @@ class axes_list(list):
 # Function for processing input and generating necessary keyword args
 def _subplots_kwargs(nrows, ncols, rowmajor=True,
     aspect=1,    figsize=None, # for controlling aspect ratio, default is control for width
+    # General
     width=None,  height=None, axwidth=None, axheight=None, journal=None,
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
     left=None,   bottom=None, right=None,   top=None,     # spaces around edge of main plotting area, in inches
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
-    bottompanel=False, bottompanels=False, # bottompanelrows=1, # optionally draw extra rows
-    rightpanel=False,  rightpanels=False,  # rightpanelcols=1,
-    leftpanel=False,   leftpanels=False,   # leftpanelcols=1,
+    # Panels
+    bottompanel=False, bottompanels=False,
+    rightpanel=False,  rightpanels=False,
+    leftpanel=False,   leftpanels=False,
     bottomcolorbar=False, bottomcolorbars=False, bottomlegend=False, bottomlegends=False, # convenient aliases that change default features
     rightcolorbar=False,  rightcolorbars=False,  rightlegend=False,  rightlegends=False,
-    leftcolorbar=False,   leftcolorbars=False,   leftlegend=False,   leftlegends=False
+    leftcolorbar=False,   leftcolorbars=False,   leftlegend=False,   leftlegends=False,
+    # Panel aliases
+    bpanel=None,    bpanels=None,
+    rpanel=None,    rpanels=None,
+    lpanel=None,    lpanels=None,
+    bcolorbar=None, bcolorbars=None, blegend=None, blegends=None,
+    rcolorbar=None, rcolorbars=None, rlegend=None, rlegends=None,
+    lcolorbar=None, lcolorbars=None, llegend=None, llegends=None,
     ):
     """
-    Handle complex keyword args and aliases thereof, apply
-    `~proplot.rcmod.rc` configuration defaults.
+    Handle complex keyword args and aliases thereof.
     """
+    # Aliases
+    # Because why the fuck not?
+    bottompanel  = bpanel or bottompanel
+    bottompanels = bpanels or bottompanels
+    rightpanel   = rpanel or rightpanel
+    rightpanels  = rpanels or rightpanels
+    leftpanel    = lpanel or leftpanel
+    leftpanels   = lpanels or leftpanels
+    bottomlegend  = blegend or bottomlegend
+    bottomlegends = blegends or bottomlegends # convenient aliases that change default features
+    rightlegend   = rlegend or rightlegend
+    rightlegends  = rlegends or rightlegends
+    leftlegend    = llegend or leftlegend
+    leftlegends   = llegends or leftlegends
+    bottomcolorbar  = bcolorbar or bottomcolorbar
+    bottomcolorbars = bcolorbars or bottomcolorbars
+    rightcolorbar   = rcolorbar or rightcolorbar
+    rightcolorbars  = rcolorbars or rightcolorbars
+    leftcolorbar    = lcolorbar or leftcolorbar
+    leftcolorbars   = lcolorbars or leftcolorbars
+
     # Handle the convenience feature for specifying the desired width/spacing
     # for panels as that suitable for a colorbar or legend
     # NOTE: Ugly but this is mostly boilerplate, shouln't change much
@@ -767,15 +820,6 @@ def subplots(array=None, ncols=1, nrows=1,
     axes or arbitrary grids of axes (any of which can be map projections),
     and optional "panels" along axes or figure edges.
 
-    Instead of separating many ProPlot features into their own functions (e.g.
-    a `generate_panel` function), we specify them with keyword arguments
-    right when the figure is declared.
-
-    The reason for this approach is we want to build a
-    *static figure "scaffolding"* before plotting anything. This
-    way, ProPlot can tightly control axes aspect ratios and panel/colorbar
-    widths. See `~FigureBase.smart_tight_layout` for details.
-
     The parameters are sorted into the following rough sections: subplot grid
     specifications, figure and subplot sizes, axis sharing,
     inner panels, outer panels, and map projections.
@@ -810,7 +854,7 @@ def subplots(array=None, ncols=1, nrows=1,
     width, height : float or str, optional
         The figure width and height. If float, units are inches. If string,
         units are interpreted by `~proplot.utils.units` -- for example,
-        ``width="10cm"`` creates a 10cm wide figure.
+        `width="10cm"` creates a 10cm wide figure.
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     journal : None or str, optional
@@ -830,29 +874,32 @@ def subplots(array=None, ncols=1, nrows=1,
     hspace, wspace, hratios, wratios, left, right, top, bottom : optional
         Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
 
-    spanx, spany, span : bool or {1, 0}, optional
-        Whether to use "spanning" axis labels for the *x* axis, *y* axis, or
-        both axes. When ``True`` or ``1``, the axis label for the leftmost
-        (*y*) or bottommost (*x*) subplot is **centered** on that column or
-        row (i.e. it "spans" the column or row).
-
-        This labels multiple subplot axes with one label, reducing
-        redundancy of information.
     sharex, sharey, share : {3, 2, 1, 0}, optional
         The "axis sharing level" for the *x* axis, *y* axis, or both
         axes. Options are as follows:
 
             0. No axis sharing.
-            1. Only draw *axis label* on the leftmost (*y*) or
-               bottommost (*x*) column or row of subplots. Axis tick labels
+            1. Only draw *axis label* on the leftmost column (*y*) or
+               bottommost row (*x*) of subplots. Axis tick labels
                still appear on every subplot.
             2. As in 1, but forces the axis limits to be identical. Axis
                tick labels still appear on every subplot.
             3. As in 2, but only show the *axis tick labels* on the
-               leftmost (*y*) or bottommost (*x*) column or row of subplots.
+               leftmost column (*y*) or bottommost row (*x*) of subplots.
 
-        This feature can considerably reduce redundancy of information
-        in your figure.
+        This feature can considerably redundancy in your figure.
+    spanx, spany, span : bool or {1, 0}, optional
+        Whether to use "spanning" axis labels for the *x* axis, *y* axis, or
+        both axes. When ``True`` or ``1``, the axis label for the leftmost
+        (*y*) or bottommost (*x*) subplot is **centered** on that column or
+        row -- i.e. it "spans" that column or row. For example, this means
+        for a 3-row figure, you only need 1 y-axis label instead of 3.
+
+        This feature can considerably redundancy in your figure.
+
+        "Spanning" labels also integrate with "shared" axes. For example,
+        for a 3-row, 3-column figure, with ``sharey>1`` and ``spany=1``,
+        your figure will have **1** *y*-axis label instead of 9.
 
     innerpanels : str or dict-like, optional
         Specify which axes should have inner "panels".
@@ -932,6 +979,9 @@ def subplots(array=None, ncols=1, nrows=1,
 
         The panel can then be **filled** with a legend with, for example, 
         ``fig.leftpanel.legend(...)``.
+    bpanel, bpanels, bcolorbar, bcolorbars, blegend, blegends, rpanel, rpanels, rcolorbar, rcolorbars, rlegend, rlegends, lpanel, lpanels, lcolorbar, lcolorbars, llegend, llegends
+        Aliases for equivalent args with ``bottom``, ``right``, and ``left``.
+        It's a bit faster, so why not?
     lwidth, rwidth, bwidth, twidth : float, optional
         Width of left, right, bottom, and top panels. If float, units are
         inches. If string, units are interpreted by `~proplot.utils.units`.
@@ -982,20 +1032,21 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Notes
     -----
-    Matplotlib `~matplotlib.axes.Axes.set_aspect` option seems to behave
-    strangely for some plots; for this reason we override the ``fix_aspect``
-    keyword arg provided by `~mpl_toolkits.basemap.Basemap` and just draw
-    the figure with appropriate aspect ratio to begin with. Otherwise, we
-    get weird differently-shaped subplots that seem to make no sense.
+    * Matplotlib `~matplotlib.axes.Axes.set_aspect` option seems to behave
+      strangely for some plots; for this reason we override the ``fix_aspect``
+      keyword arg provided by `~mpl_toolkits.basemap.Basemap` and just draw
+      the figure with appropriate aspect ratio to begin with. Otherwise, we
+      get weird differently-shaped subplots that seem to make no sense.
 
-    Shared axes will generally end up with the same axis
-    limits/scaling/majorlocators/minorlocators; the ``sharex`` and ``sharey``
-    detection algorithm really is just to get instructions to make the
-    ticklabels/axis labels **invisible** for certain axes.
+    * All shared axes will generally end up with the same axis
+      limits, scaling, major locators, and minor locators. The
+      ``sharex`` and ``sharey`` detection algorithm really is just to get
+      instructions to make the tick labels and axis labels **invisible**
+      for certain axes.
 
     Todo
     ----
-    * Add options for e.g. ``bpanel`` keyword args.
+    * Add options for e.g. `bpanel` keyword args.
     * Fix axes aspect ratio stuff when width/height ratios are not one!
     * Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
       axes sharing mode where we *disable ticklabels and labels*, but *do not
@@ -1090,7 +1141,7 @@ def subplots(array=None, ncols=1, nrows=1,
         # Custom Basemap and Cartopy axes
         elif name:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, aspect = axes.map_projection_factory(package, name, **proj_kw[num])
+            instance, aspect = axes.map_projection_factory(name, basemap=basemap[num], **proj_kw[num])
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             if num==0:
                 # print(f'Forcing aspect ratio: {aspect:.3g}')

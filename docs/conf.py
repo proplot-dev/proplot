@@ -58,6 +58,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
+    'nbsphinx',
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     'sphinx_automodapi.automodapi', # see: https://sphinx-automodapi.readthedocs.io/en/latest/
     # 'matplotlib.sphinxext.only_directives', # deprecated; see: https://github.com/statsmodels/statsmodels/issues/5291
@@ -96,6 +97,7 @@ intersphinx_mapping = {
                        'xarray': ('http://xarray.pydata.org/en/stable', None),
                        'cartopy': ('https://scitools.org.uk/cartopy/docs/latest', None),
                        'basemap': ('https://matplotlib.org/basemap', None),
+                       'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
                        }
 
 # If true, the current module name will be prepended to all description
@@ -138,8 +140,9 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
+# NOTE: Must add 'include' files or will get duplicate label warnings.
 exclude_patterns = ['_build', '_templates', '_themes',
-                    'originals', 'Thumbs.db', '.DS_Store']
+                    'originals', 'showcase*', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'

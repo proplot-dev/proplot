@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
-Define various axis scales, locators, and formatters. Below is rough
-overview of matplotlib API.
+Defines various axis scales, locators, and formatters. Also "registers"
+the locator and formatter names, so that they can be called selected with
+the `~proplot.axes.XYAxes.format` method.
 
-**General Notes**
+Below is the rough overview of matplotlib API.
 
-Want to try to avoid using the Formatter to scale/transform values, and
+.. raw:: html
+
+   <h1>Review</h1>
+
+We want to try to avoid using the Formatter to scale/transform values, and
 passing the locator an array of scaled/transformed values.
 
 Makes more sense
@@ -14,7 +19,10 @@ formatters like normal, as they were intended to be used. This way, if e.g.
 matching frequency-axis with wavelength-axis, just conver the *axis limits*
 so they match, then you're good.
 
-**Scale Classes**
+.. raw:: html
+
+   <h2>Scales</h2>
+
 
 * These are complicated. See `~matplotlib.scale.ScaleBase`. Use existing ones
   as inspiration -- e.g. `InverseScale` modeled after `~matplotlib.scale.LogScale`.
@@ -50,7 +58,10 @@ so they match, then you're good.
 * Note scales have to be *registered* unlike locators and formatters, which
   can be passed to the setter methods directly.
 
-**Transform Classes**
+.. raw:: html
+
+   <h2>Transforms</h2>
+
 
 * These are complicted. See `the transforms module <https://matplotlib.org/_modules/matplotlib/transforms.html#Transform>`_.
 * Attributes:
@@ -64,7 +75,10 @@ so they match, then you're good.
       just declare `transform_affine` or `transform_non_affine`.
     - `inverted`: If `has_inverse is` ``True``, performs the inverse transform.
 
-**Locator Classes**
+.. raw:: html
+
+   <h2>Locators</h2>
+
 
 * These are complicated. See `the ticker module <https://matplotlib.org/_modules/matplotlib/ticker.html#Locator>`_.
 * Special:
@@ -84,12 +98,14 @@ so they match, then you're good.
       result of ``axis.get_view_interval(...)``.
     - `pan` and `zoom`: Interactive purposes.
 
-**Formatter Classes**
+.. raw:: html
+
+   <h2>Formatters</h2>
+
 
 Easy to construct: just build with `~matplotlib.formatter.FuncFormatter`
 a function that accepts the number and a 'position', which maybe is used
 for offset or something (don't touch it, leave it default).
-
 """
 #------------------------------------------------------------------------------#
 # Imports

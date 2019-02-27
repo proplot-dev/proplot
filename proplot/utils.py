@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-A couple simple tools. They aren't strictly plot-related functions, but
-will be useful for user in the context of making plots.
+A few simple tools. `units` is called by several functions to allow for
+flexible unit sizes, instead of just inches. `arange` and `edges` are both
+often useful in the context of making plots -- for example, when creating
+a list of contours or tick mark positions.
 """
 import time
 import numpy as np

@@ -45,16 +45,16 @@ from .rcmod import rc
 from matplotlib import rcParams
 
 # @block_printing
-def nbsetup(directory=None, backend='inline'):
+def nbsetup(directory=None, autosave=30, backend='inline'):
     """
-    Set up magic commands and other notebook properties. Also increases
-    resolution of inline figures, which is suitable for the "small" default
-    font and figure sizes used by ProPlot.
+    Set up ipython notebook with better inline figures.
+    Also enables the very useful `autoreload
+    <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    and autosave extensions (saves every 30s by default).
 
-    Just call this in the first cell of your notebook with
+    Just add this to the first cell of your notebook:
 
     .. code-block:: python
-        :linenos:
 
         import proplot as plot
         plot.nbsetup()
@@ -66,7 +66,6 @@ def nbsetup(directory=None, backend='inline'):
     cd = os.getcwd()
     home = os.path.expanduser('~')
     hostname = socket.gethostname().split('.')[0]
-    autosave = 30
 
     # Rc initial
     # rcinit = rcParams.copy()

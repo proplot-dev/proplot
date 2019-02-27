@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """
-Script that simply lists the availble system fonts.
-Add to this.
+Provides a handy list of available font names and installs some new fonts --
+most notably, Helvetica and Helvetica Neue.
+
+The `rcmod` module will *change the default* font name from DejaVu Sans (or
+Bitstream Vera) to Helvetica Neue or Helvetica.
+
+Todo
+----
+Make temp file of something that indicates whether fonts have been installed,
+and call `install_fonts` automatically?
 """
 import os
 import re
@@ -19,9 +27,24 @@ from matplotlib import matplotlib_fname, get_cachedir
 # Also see: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
 # Also see: https://stackoverflow.com/questions/18821795/how-can-i-get-list-of-font-familyor-name-of-font-in-matplotlib
 _dir_data = re.sub('/matplotlibrc$', '', matplotlib_fname())
+
 fonts_mpl_files = sorted(glob.glob(f"{_dir_data}/fonts/ttf/*.[ot]tf"))
+"""
+Font files provided by matplotlib or ProPlot.
+"""
 fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf')) # even with that fontext, will include otf! weird
-fonts_os, fonts_mpl = set(), set()
+"""
+Font files provided by your operating system.
+"""
+
+fonts_mpl = set()
+"""
+Registered font names provided by matplotlib or ProPlot.
+"""
+fonts_os = set()
+"""
+Registered font names provided by your operating system.
+"""
 for _file in fonts_os_files:
     try:
         fonts_os.add(mfonts.FontProperties(fname=_file).get_name())
@@ -33,8 +56,11 @@ for _file in fonts_mpl_files:
     except Exception as err:
         pass # fails sometimes
 fonts = {*fonts_os, *fonts_mpl}
+"""
+All registered font names.
+"""
 
-# Missing fonts (add to this list whenever user requests one)
+# Missing fonts (this list is filled whenever user requests one)
 _missing_fonts = []
 
 #------------------------------------------------------------------------------#
@@ -68,9 +94,12 @@ _missing_fonts = []
 #------------------------------------------------------------------------------#
 def install_fonts():
     """
-    Install matplotlib fonts from ttf files located in the 'fonts' directory.
-    May require restarting iPython session. Note font cache will be deleted
-    in this process, which could cause delays.
+    Register matplotlib fonts from ``.ttf`` files located in the 'fonts'
+    directory.  May require restarting iPython session. Note font cache will
+    be deleted in this process, which could cause delays.
+
+    Run this after installing ProPlot for the first time, and after updating
+    matplotlib.
     """
     # See: https://stackoverflow.com/a/2502883/4970632
     # Just print strings because in notebooks will get printed
@@ -98,7 +127,4 @@ def install_fonts():
 
     # Rebuild
     mfonts._rebuild()
-    print('Rebuilt font library.')
-
-    # Message
     print('Fonts have been installed and font cache has been emptied. Please restart your iPython session.')

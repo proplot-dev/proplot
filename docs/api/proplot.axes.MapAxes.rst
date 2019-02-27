@@ -10,8 +10,10 @@ MapAxes
 
    .. autosummary::
 
+      ~MapAxes.ls_translate
       ~MapAxes.parse_labels
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: ls_translate
    .. automethod:: parse_labels

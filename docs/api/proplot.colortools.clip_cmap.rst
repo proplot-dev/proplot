@@ -1,6 +1,6 @@
-get_space
+clip_cmap
 =========
 
 .. currentmodule:: proplot.colortools
 
-.. autofunction:: get_space
+.. autofunction:: clip_cmap

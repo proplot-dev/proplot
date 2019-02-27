@@ -1,6 +1,6 @@
-norm
+Norm
 ====
 
 .. currentmodule:: proplot.colortools
 
-.. autofunction:: norm
+.. autofunction:: Norm

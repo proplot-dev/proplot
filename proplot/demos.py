@@ -21,6 +21,10 @@ _names  = {'rgb':('red', 'green', 'blue'),
 #------------------------------------------------------------------------------#
 def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
                          N=100, space='hcl'):
+    """
+    Generate hue-chroma, hue-luminance, and luminance-chroma
+    cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
+    """
     # Dictionary
     hues = np.linspace(0, 360, 361)
     sats = np.linspace(0, 120, 120) # use 120 instead of 121, prevents annoying rough edge on HSL plot
@@ -83,6 +87,10 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
     return f
 
 def cmap_breakdown(cmap, N=100, space='hcl'):
+    """
+    Handy visualization of how a `~proplot.colortools.PerceptuallyUniformColormap`
+    varies in the HCL, HSLuv, and HPLuv colorspaces.
+    """
     # Figure
     f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
                            span=0, sharey=1, wspace=0.5,
@@ -133,8 +141,6 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
     """
     Visualize all possible named colors. Adapted from `this example
     <https://matplotlib.org/examples/color/named_colors.html>`_.
-    Note the 'Tableau Colors' are just the *default matplotlib
-    color cycle colors*! So don't bother iterating over them.
     """
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map (see soure code; is just a dictionary wrapper
@@ -287,11 +293,8 @@ def cycle_show():
 # def cmap_show(N=31):
 def cmap_show(N=129):
     """
-    Plots all current colormaps, along with their catgories. This example
-    comes from the Cookbook on www.scipy.org. According to the history,
-    Andrew Straw did the conversion from an old page, but it is
-    unclear who the original author is; see `this example
-    <http://matplotlib.org/examples/color/colormaps_reference.html>`_.
+    Plots all current colormaps, along with their catgories. Adapted from
+    `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_.
     """
     # Have colormaps separated into categories
     cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys')
