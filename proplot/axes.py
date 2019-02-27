@@ -736,6 +736,7 @@ class BaseAxes(maxes.Axes):
         self._insets = [] # add to these later
         self._map_name = map_name # consider conditionally allowing 'shared axes' for certain projections
         super().__init__(*args, **kwargs)
+        self._title_pos_init = self.title.get_position() # position of title outside axes
 
         # Panels
         if panel_side not in (None, 'left','right','bottom','top'):
@@ -1412,6 +1413,11 @@ class XYAxes(BaseAxes):
         formatter = axistools.Formatter('custom')
         self.xaxis.set_major_formatter(formatter)
         self.yaxis.set_major_formatter(formatter)
+        # Reset this; otherwise matplotlib won't automatically change
+        # formatter when it encounters certain types of data, like
+        # datetime.
+        self.xaxis.isDefault_majfmt = True
+        self.yaxis.isDefault_majfmt = True
 
     def __getattribute__(self, attr, *args):
         # Attribute

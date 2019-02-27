@@ -192,14 +192,17 @@ class FigureBase(mfigure.Figure):
             # NOTE: Have to use private API to figure out whether axis has
             # tick labels or not! Seems to be no other way to do it.
             # See: https://matplotlib.org/_modules/matplotlib/axis.html#Axis.set_tick_params
+            # TODO: Modify self.axes? Maybe add a axes_main and axes_panel
+            # attribute or something? Because if have insets and other stuff
+            # won't that fuck shit up?
             title_lev1, title_lev2, title_lev3 = None, None, None
             for ax in self.axes:
-                # TODO: Need to ensure we do not test *bottom* axes panels
                 if not isinstance(ax, axes.BaseAxes) or not ax._row_span[0]==0 or \
                     (isinstance(ax, axes.PanelAxes) and ax.panel_side=='bottom'):
                     continue
                 title_lev1 = ax.title # always will be non-None
-                if ((ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text()):
+                if ((ax.title.get_text() and not ax._title_inside)
+                    or ax.collabel.get_text()):
                     title_lev2 = ax.title
                 if ax.xaxis.get_ticks_position() == 'top':
                     test = 'label1On' not in ax.xaxis._major_tick_kw \
@@ -216,7 +219,7 @@ class FigureBase(mfigure.Figure):
             # matplotlib to adjust tight_subplot by prepending newlines to title.
             # 3) Otherwise, offset suptitle, and matplotlib will recognize the
             # suptitle during tight_subplot adjustment.
-            # ic(title_lev2, title_lev1, title_lev3)
+            # ic(title_lev1, title_lev2, title_lev3)
             if not title_lev2: # no title present
                 line = 0
                 title = title_lev1
@@ -240,13 +243,14 @@ class FigureBase(mfigure.Figure):
             # if text[-1:] != '\n':
             #     text += '\n'
             # kwargs['text'] = text
+
             # New idea: Get the transformed position
-            # NOTE: Seems draw() is called more than once, and the last times
+            # NOTE: Seems draw is called more than once, and the last times
             # are when title positions are appropriately offset.
             # NOTE: Default linespacing is 1.2; it has no get, only a setter; see
             # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
             transform = title.get_transform() + self.transFigure.inverted()
-            ypos = transform.transform(title.get_position())[1]
+            ypos = transform.transform(title.axes._title_pos_init)[1]
             line = line*(rc['axes.titlesize']/72)/self.height
             ypos = ypos + line
             transform = self.transFigure

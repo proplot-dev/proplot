@@ -887,6 +887,8 @@ def CustomFormatter(precision=6, tickrange=[-np.inf, np.inf],
                 string = '{:.1e}'.format(value)
                 if zerotrim:
                     string = re.sub(r'\.0', '', string)
+                    string = re.sub('([+-])0([0-9])$', r'\1\2', string)
+                    string = re.sub('[+]', '', string)
             elif power < 1:
                 iprecision = 1 - int(power//1)
                 string = f'{{:.{iprecision:d}f}}'.format(value) # f-string compiled, then format run
