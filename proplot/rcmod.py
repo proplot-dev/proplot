@@ -60,6 +60,7 @@ Key             Description
 ==============  ==================================================================
 ``facehatch``   Background hatching string pattern, if not ``None`` [1]_.
 ``hatchcolor``  Color of background hatching pattern. Default is same as spines.
+``hatchalpha``  Transparency of hatch lines. Default is same as spines.
 ``hatchlw``     Line width for background hatching. Default is same as spines.
 ==============  ==================================================================
 
@@ -186,6 +187,9 @@ _rcGlobal = {
     # 'facecolor':  '#0072b2', # 0072B2
     'facecolor':  'w', # 0072B2
     'facehatch':  None, # hatching on background, useful for indicating invalid data
+    'hatchalpha': 1,
+    'hatchcolor': 'k',
+    'hatchlw':    0.6,
     'gridalpha':  0.1,
     'small':      8,
     'large':      9,
@@ -227,10 +231,12 @@ _rcGlobal_children = {
     'color':      ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.color', 'map.hatchcolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'facecolor':  ['axes.facecolor', 'map.facecolor'], # simple alias
     'facehatch':  ['axes.facehatch', 'map.facehatch'], # optionally apply background hatching
+    'hatchlw':    ['hatch.linewidth'],
+    'hatchcolor': ['axes.hatchcolor', 'map.hatchcolor'],
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'axes.hatchlw',
-                   'map.hatchlw', 'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
+    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth',
+                   'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
                    # 'grid.linewidth', # should not be coupled, looks ugly
     'gridalpha':  ['grid.alpha',     'gridminor.alpha'],
     'gridcolor':  ['grid.color',     'gridminor.color'],
@@ -332,10 +338,8 @@ _rcDefaults_sp = {
     'gridminor.alpha':     None,
     'axes.facehatch':      None,
     'axes.hatchcolor':     None,
-    'axes.hatchlw':        None,
     'map.facehatch':       None,
     'map.hatchcolor':      None,
-    'map.hatchlw' :        None,
     # the rest can be applied as-is
     'abc.weight':            'bold',
     'abc.color':             'k',

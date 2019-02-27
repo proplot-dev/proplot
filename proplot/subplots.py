@@ -40,20 +40,23 @@ _aliases = {
 #------------------------------------------------------------------------------#
 def figure(*args, **kwargs):
     """
-    Alias for `subplots`.
+    Alias for `matplotlib.pyplot.figure`.
     """
-    return subplots(*args, **kwargs)
+    return plt.figure(*args, **kwargs)
 
 def close():
     """
-    Close all figures stored in memory. Note this does not delete
+    Alias for `matplotlib.pyplot.close('all')`.
+    Closes all figures stored in memory. Note this does not delete
     rendered figures in an iPython notebook.
     """
     plt.close('all') # easy peasy
 
 def show():
     """
-    Show all figures.
+    Alias for `matplotlib.pyplot.show`. Note this command should
+    be unnecessary if you are doing inline iPython notebook plotting
+    and ran the `~proplot.notebook.nbsetup` command.
     """
     plt.show()
 
@@ -510,7 +513,7 @@ class FigureBase(mfigure.Figure):
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
             kwargs['facecolor'] = kwargs.pop('color') # the color
-            kwargs['transparent'] = True
+            kwargs['transparent'] = False
         # Finally, save
         self._suptitle_setup(offset=True) # just applies the spacing
         self._auto_smart_tight_layout()
@@ -804,7 +807,7 @@ def _subplots_kwargs(nrows, ncols, rowmajor=True,
 def subplots(array=None, ncols=1, nrows=1,
         order='C', # allow calling with subplots(array)
         emptycols=[], emptyrows=[], # obsolete?
-        tight=None, auto_adjust=True,
+        tight=None, auto_adjust=True, pad=0.1,
         rcreset=True, silent=True, # arguments for figure instantiation
         span=None, # bulk apply to x/y axes
         share=None, # bulk apply to x/y axes
@@ -1025,7 +1028,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    auto_adjust, tight, rcreset, silent
+    auto_adjust, tight, pad, rcreset, silent
         Passed to `FigureBase`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpec`.
@@ -1197,6 +1200,7 @@ def subplots(array=None, ncols=1, nrows=1,
         gridspec=gs,
         subplots_kw=subplots_kw,
         auto_adjust=auto_adjust,
+        pad=pad,
         rcreset=rcreset,
         silent=silent,
         FigureClass=FigureBase,

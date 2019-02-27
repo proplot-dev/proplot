@@ -681,6 +681,19 @@ def _get_space(space):
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
 
+def shade(color, shade=0.5):
+    """
+    Change the "shade" of a color by messing with its luminance channel.
+    """
+    try:
+        color = mcolors.to_rgb(color) # ensure is valid color
+    except Exception:
+        raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
+    color = [*colormath.rgb_to_hsl(*color)]
+    color[2] = max([0, min([color[2]*shade, 100])]) # multiply luminance by this value
+    color = [*colormath.hsl_to_rgb(*color)]
+    return tuple(color)
+
 def to_rgb(color, space='rgb'):
     """
     Generalization of `~matplotlib.colors.to_rgb`. Translates color tuples

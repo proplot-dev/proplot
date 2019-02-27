@@ -134,11 +134,12 @@ _disabled_methods = {
         ('polar',)
     }
 _map_disabled_methods = (
-    'matshow', 'imshow', 'spy', 'bar', 'barh',
+    'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
     # 'triplot', 'tricontour', 'tricontourf', 'tripcolor',
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
-    'fill_between', 'fill_betweenx', 'fill', 'stackplot'
+    # 'fill_between', 'fill_betweenx', 'fill',
+    'stackplot'
     )
 
 #------------------------------------------------------------------------------
@@ -905,6 +906,18 @@ class BaseAxes(maxes.Axes):
         kw = rc.fill({'fontsize':'collabel.fontsize', 'weight':'collabel.weight', 'color':'collabel.color', 'fontname':'fontname'})
         self.collabel.update(kw)
 
+        # Hatching options (useful where we want to highlight invalid data)
+        # NOTE: So that we can keep re-accessing hatches between multiple calls,
+        # we will add hatches to the patch object directly.
+        # TODO: This only works for XYAxes! Need to do something else for
+        # PolarAxes! Or just add a _bg_hatch property or something?
+        # self.patch.update(kw)
+        kw = rc.fill({'hatch':'facehatch', 'edgecolor':'axes.hatchcolor', 'alpha':'hatchalpha'})
+        if kw and kw.get('hatch',None): # non-empty
+            self.fill_between([0,1], 0, 1, zorder=0, # put in back
+                facecolor='none', transform=self.transAxes, **kw)
+
+
     def _text_update(self, obj, kwargs):
         # Allow updating properties introduced by the BaseAxes.text() override.
         # Don't really want to subclass mtext.Text; only have a few features
@@ -1147,7 +1160,9 @@ class BaseAxes(maxes.Axes):
 
     # Fancy wrappers
     def text(self, x, y, text,
-            transform='data', border=False, invert=False,
+            transform='data',
+            border=False, border_kw={},
+            invert=False,
             linewidth=2, lw=None, **kwargs): # linewidth is for the border
         """
         Wrapper around original text method. Mainly adds feature for drawing
@@ -1164,6 +1179,8 @@ class BaseAxes(maxes.Axes):
             to a transform that we will look up. Default is ``'data'``.
         border : bool, optional
             Whether to draw border around text.
+        border_kw : dict-like, optional
+            Passed to `~matplotlib.path_effects.Stroke` if drawing a border.
         invert : bool, optional
             Ignored if `border` is ``False``. Whether to draw black text
             with a white border (``False``), or white text on a black
@@ -1216,9 +1233,14 @@ class BaseAxes(maxes.Axes):
             fontsize=size, color=color, fontweight=weight, **kwargs)
         # Optionally draw border around text
         if border:
-            facecolor, bgcolor = ('wk' if invert else 'kw')
+            facecolor, bgcolor = color, 'w'
+            if invert:
+                facecolor, bgcolor = bgcolor, facecolor
+            # facecolor, bgcolor = ('wk' if invert else 'kw')
+            kwargs = {'linewidth':linewidth, 'foreground':bgcolor, 'joinstyle':'miter'}
+            kwargs.update(border_kw)
             t.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
-                'path_effects': [mpatheffects.Stroke(linewidth=linewidth, foreground=bgcolor), mpatheffects.Normal()]})
+                'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]})
         return t
 
     # @cycle_features
@@ -1504,21 +1526,6 @@ class XYAxes(BaseAxes):
         self.patch.set_zorder(-1)
         kw = rc.fill({'facecolor': 'axes.facecolor'})
         self.patch.update(kw)
-
-        # Hatching options (useful where we want to highlight invalid data)
-        # NOTE: So that we can keep re-accessing hatches between multiple calls,
-        # we will add hatches to the patch object directly. Edge/linewidth and
-        # hatch width are decoupled (latter only controllable with hatch.linewidth),
-        # so we can do this without adding edges to the background patch (which
-        # normally we want to control with 'spines').
-        # NOTE: Currently cannot reset linewidth on existing hathces... or maybe
-        # we can? Maybe linewidth delayed to drawtime, since it can only be set
-        # with an rc setting?
-        kw = rc.fill({'hatch':'axes.facehatch', 'edgecolor':'axes.hatchcolor', 'alpha':'axes.hatchalpha'})
-        self.patch.update(kw)
-        # if kw and kw.get('hatch',None): # non-empty
-        #     self.fill_between([0,1], 0, 1, zorder=0, # put in back
-        #         facecolor='none', transform=self.transAxes, **kw)
 
         # Call parent
         super()._rcupdate()

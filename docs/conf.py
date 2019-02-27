@@ -79,6 +79,7 @@ automodapi_toctreedirnm = 'api' # create much better URL for the page
 automodsumm_inherited_members = False
 
 # Turn off code and image links for embedded mpl plots
+html_logo = '_static/logo.png'
 # plot_html_show_source_link = False
 # plot_html_show_formats = False
 
@@ -192,8 +193,8 @@ html_static_path = ['_static']
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Static folder is for CSS and image files.
 # For icons see: https://icons8.com/icon
-html_favicon = os.path.join('_static', 'graph.ico')
-
+# html_favicon = os.path.join('_static', 'graph.ico')
+html_favicon = os.path.join('_static', 'logo.ico')
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
