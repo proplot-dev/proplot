@@ -225,7 +225,7 @@ _cycles_preset = {
 # Color stuff
 # Keep major color names, and combinations of those names
 # _distinct_colors_threshold = 0.07
-_distinct_colors_threshold = 0.09
+_distinct_colors_threshold = 0.07 # bigger number equals fewer colors
 _distinct_colors_space = 'hsl' # register colors distinct in this space?
 _distinct_colors_exceptions = [
     'white', 'black', 'gray', 'red', 'pink', 'grape',
@@ -2195,7 +2195,14 @@ def register_colors(nmax=np.inf, verbose=False):
     correct = (('/', ' '), ("'s", ''), ('grey', 'gray'),
                ('pinky', 'pink'), ('greeny', 'green'),
                ('robin egg', 'robins egg'),
-               ('egg blue', 'egg'))
+               ('egg blue', 'egg'),
+               (r'reddish', 'red'),
+               (r'purplish', 'purple'),
+               (r'bluish',  'blue'),
+               (r'ish\b', ''),
+               ('bluegray', 'blue gray'),
+               ('grayblue', 'gray blue'),
+               ('lightblue', 'light blue'))
     for file in sorted(glob.glob(os.path.join(_data, 'colors', '*.txt'))):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))

@@ -21,7 +21,7 @@ figure canvas*.
     plot.nbsetup()
     N = 50
     M = 40
-    colors = plot.Colors('grays_r', M, x=(0.1, 0.8))
+    colors = plot.colors('grays_r', M, x=(0.1, 0.8))
     for share in (0,1,2,3):
         f, axs = plot.subplots(ncols=4, aspect=1.2, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
@@ -630,7 +630,9 @@ for some plot element.
 
 
 
-.. image:: _static/showcase/showcase_35_1.svg
+.. image:: _static/showcase/showcase_35_1.png
+   :width: 720px
+   :height: 1203px
 
 
 On-the-fly colormaps
