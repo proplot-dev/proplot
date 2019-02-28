@@ -147,9 +147,9 @@ Key                 Description
 
 .. [1] For example, ``'xxx'`` or ``'..'``. See `this demo <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
 .. [2] This module *changes the default* from DejaVu Sans (or Bitstream Vera) to
-       Helvetica Neue or Helvetica. Install these with `~proplot.fonttools.install_fonts`
-       after installing ProPlot for the first time, and after updating
-       matplotlib.
+       Helvetica Neue or Helvetica. Run `~proplot.fonttools.install_fonts`
+       to install them when you download ProPlot for the first time, and
+       whenever you update matplotlib.
 .. [3] Valid weights are ``'ultralight'``, ``'light'``, ``'normal'``,
        ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
        Note that many fonts only have ``normal`` or ``bold`` available.
@@ -646,10 +646,12 @@ class rc_configurator(object):
         dict
             Dictionary filled with rc properties.
 
+        Notes
+        -----
         `~rc_configurator.fill` is used to build dictionaries for updating
         `~matplotlib.artist.Artist` instances. Of course, the artist property
         won't need updating unless an rc setting has changed since it was
-        drawn (i.e. when the figure and axes were created).
+        instantiated.
 
         With this in mind, `~rc_configurator.__getitem__` returns ``None``
         when a setting has not been changed (changed settings are cached
