@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from matplotlib import rcParams
 import os
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as mcm
@@ -163,7 +164,7 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
                 color_dict.update({f'C{i}':v for i,v in enumerate(cycle_colors)})
             # Read custom defined colors
             else:
-                color_dict.update(tools.colors_filtered[name]) # add category dictionary
+                color_dict.update(tools.colorlist[name]) # add category dictionary
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
@@ -173,7 +174,7 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
             swatch = 1.5
             names = ['red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'gray']
             nrows, ncols = 10, len(names) # rows and columns
-            plot_names = [[name+str(i) for i in range(nrows)] for name in names]
+            plot_names = [[name + str(i) for i in range(nrows)] for name in names]
             nrows = nrows*2
             ncols = (ncols+1)//2
             plot_names = np.array(plot_names, order='C')
@@ -185,10 +186,10 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
             # Then will group based on hue thresholds
             wscale = 1
             swatch = 1
-            colors_hsl = {key:
-                [c/s for c,s in zip(tools.to_xyz(value,
-                tools._distinct_colors_space), scale)]
-                for key,value in color_dict.items()}
+            colors_hsl = {
+                key: [c/s for c,s in zip(tools.to_xyz(value, tools._distinct_colors_space), scale)]
+                for key,value in color_dict.items()
+                }
 
             # Keep in separate columns
             breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
@@ -226,12 +227,7 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
                            height=5*(nrows/40),
                            left=0, right=0, top=0, bottom=0,
                            tight=False)
-        # asdfsda
         X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
-        # print(X, Y)
-        # dx, dy = fig.get_dpi()
-        # X, Y = ax.width, ax.height
-        # print(X, Y)
         hsep, wsep = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
         for col,huelist in enumerate(plot_names):
             for row,name in enumerate(huelist): # list of colors in hue category
@@ -242,8 +238,7 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
                 xi_line = wsep*(col + 0.05)
                 xf_line = wsep*(col + 0.25*swatch)
                 xi_text = wsep*(col + 0.25*swatch + 0.03*swatch)
-                print_name = name.split('xkcd:')[-1] # make sure no xkcd:
-                ax.text(xi_text, y, print_name,
+                ax.text(xi_text, y, re.sub('^xkcd:', '', name),
                         fontsize=hsep*0.8, ha='left', va='center')
                 ax.hlines(y_line, xi_line, xf_line, color=color_dict[name], lw=hsep*0.6)
 
@@ -252,7 +247,6 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
         ax.set_axis_off()
         fig.save(f'{_data}/colors/colors_{"-".join(group)}.pdf',
                 format='pdf', transparent=False)
-        # asdfasd
         figs += [fig]
     return figs
 

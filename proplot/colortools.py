@@ -758,7 +758,7 @@ def to_xyz(color, space):
     elif space=='hcl':
         color = colormath.rgb_to_hcl(*color)
     elif space=='rgb':
-        color = color # do nothing
+        pass
     else:
         raise ValueError(f'Invalid colorspace {space}.')
     return color
@@ -2203,31 +2203,40 @@ def register_colors(nmax=np.inf, verbose=False):
     mcolors._colors_full_map.update(base2)
 
     # First register colors and get their HSL values
+    # Sort files in reverse order becuase I prefer XKCD color names to crayon
+    # color names; so want to overwrite identical names with XKCD name.
+    seen = set()
     names = []
     hcls = np.empty((0,3))
-    for file in glob.glob(os.path.join(_data, 'colors', '*.txt')):
+    for file in sorted(glob.glob(os.path.join(_data, 'colors', '*.txt'))):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
-        ncolors = min(len(data), nmax-1)
-        # Add categories
-        _colors_unfiltered[category] = {}
-        colorlist[category] = {} # just initialize this one
         # Sanitize names and add to dictionary
-        hcl = np.empty((ncolors,3))
+        # NOTE: You can add to this!
+        _dict = {}
+        ihcls = []
+        colorlist[category] = {} # just initialize this one
         for i,(name,color) in enumerate(data): # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
-            hcl[i,:] = to_xyz(color, space=_distinct_colors_space)
+            # Sanitize
             name = re.sub('/', ' ', name)
             name = re.sub("'s", '', name)
             name = re.sub('grey', 'gray', name)
             name = re.sub('pinky', 'pink', name)
             name = re.sub('greeny', 'green', name)
-            names.append((category, name))
-            _colors_unfiltered[category][name] = color
+            # Check
+            if name in seen:
+                continue
+            # Add
+            seen.add(name)
+            names.append((category, name)) # save the category name pair
+            ihcls.append(to_xyz(color, space=_distinct_colors_space))
+            _dict[name] = color # save the color
+        _colors_unfiltered[category] = _dict
         # Concatenate HCL arrays
-        hcls = np.concatenate((hcls, hcl), axis=0)
+        hcls = np.concatenate((hcls, ihcls), axis=0)
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: unique axis argument requires numpy version >=1.13
@@ -2248,8 +2257,8 @@ def register_colors(nmax=np.inf, verbose=False):
             deleted += 1
         else:
             colorlist[category][name] = _colors_unfiltered[category][name]
-    for category,dictionary in colorlist.items():
-        mcolors._colors_full_map.update(dictionary)
+    for key,kw in colorlist.items():
+        mcolors._colors_full_map.update(kw)
     if verbose:
         print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
 
@@ -2263,7 +2272,6 @@ def register_cmaps():
     color cycles.
     """
     # First read from file
-    global cmaps
     for filename in glob.glob(os.path.join(_data, 'cmaps', '*')):
         # Read table of RGB values
         if not re.search('\.(x?rgba?|json|xml)$', filename):
@@ -2401,8 +2409,6 @@ def register_cmaps():
     for category in _cmap_categories_delete:
         for name in _cmap_categories:
             mcm.cmap_d.pop(name, None)
-    # Sort
-    cmaps = set(sorted(cmaps))
 
 def register_cycles():
     """
@@ -2413,7 +2419,6 @@ def register_cycles():
     color cycles.
     """
     # Read lists of hex strings from disk
-    global cycles
     for filename in glob.glob(os.path.join(_data, 'cmaps', '*.hex')):
         name = os.path.basename(filename)
         name = name.split('.hex')[0]
@@ -2439,8 +2444,6 @@ def register_cycles():
     for (name1,name2) in [('Accent','Set1'), ('tab20b','Set4'), ('tab20c','Set5')]:
         mcm.cmap_d[name2] = mcm.cmap_d.pop(name1)
         cycles.add(name2)
-    # Sort
-    cycles = set(sorted(cycles))
 
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly
@@ -2464,6 +2467,8 @@ Filtered, registered color names by category.
 register_colors() # must be done first, so we can register OpenColor cmaps
 register_cmaps()
 register_cycles()
+cmaps = set(sorted(cmaps))
+cycles = set(sorted(cycles))
 
 # Finally our dictionary of normalizers
 # Includes some custom classes, so has to go at end

@@ -488,9 +488,9 @@ class rc_configurator(object):
         elif key in _rc_names:
             self._rcCache[key] = value
             try:
-                _rcParams[key] = value
+                _rcParams[key] = value # rcParams dict has key validation
             except KeyError:
-                pass
+                _rcParams_new[key] = value
         else:
             raise ValueError(f'Invalid key "{key}".')
         self._init = False # no longer in initial state

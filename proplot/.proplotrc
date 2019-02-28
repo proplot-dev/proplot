@@ -46,7 +46,7 @@ rcGlobals:
 #------------------
 rcParams:
     # Change default
-    figure.dpi:              120
+    figure.dpi:              90
     figure.facecolor:        '#f2f2f2'
     figure.max_open_warning: 0
     figure.autolayout:       False

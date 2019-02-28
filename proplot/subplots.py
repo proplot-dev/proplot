@@ -1083,6 +1083,9 @@ def subplots(array=None, ncols=1, nrows=1,
     * For spanning axes labels, right now only detect **x labels on bottom**
       and **ylabels on top**. Generalize for all subplot edges.
     """
+    # Ensure getitem mode is zero; might still be non-zero if had error
+    # in 'with context' block
+    rc._getitem_mode = 0
     # Check
     sharex = _default(share, sharex)
     sharey = _default(share, sharey)

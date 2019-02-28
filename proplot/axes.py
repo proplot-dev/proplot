@@ -1674,6 +1674,7 @@ class XYAxes(BaseAxes):
         # is changed to log and user uses 'xlocator'/'ylocator'! Generally
         # means want specific tick labels on log-scale plot, but log formatter
         # will *override* and only show powers of 10.
+        rc._getitem_mode = 0 # might still be non-zero if had error
         if xscale is not None:
             if hasattr(xscale,'name'):
                 xscale = xscale.name
@@ -2300,8 +2301,10 @@ class BasemapAxes(MapAxes):
     `~proplot.subplots.subplots`, `~proplot.proj`, `BaseAxes`, `MapAxes`
     """
     name = 'basemap'
-    _map_pseudocyl = ['moll', 'robin', 'eck4', 'kav7', 'sinu',
-                      'mbtfpq', 'vandg', 'hammer', 'aitoff']
+    _map_rectangular = ['merc', 'pcarree', 'cyl', 'cea', 'eqc', 'mill',
+                      'omerc', 'utm', 'tmerc', 'lcyl', 'gall']
+    # _map_pseudocyl = ['moll', 'robin', 'eck4', 'kav7', 'sinu',
+    #                   'mbtfpq', 'vandg', 'hammer', 'aitoff']
     """The registered projection name."""
     def __init__(self, *args, map_projection=None, **kwargs):
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
@@ -2317,9 +2320,10 @@ class BasemapAxes(MapAxes):
             raise ValueError('You must initialize BasemapAxes with map_projection=(basemap.Basemap instance).')
         self.m = map_projection
         self.boundary = None
-        self._recurred = False # use this so we can override plotting methods
         self._mapboundarydrawn = None
+        self._recurred = False # use this so we can override plotting methods
         self._land = None
+        self._ocean = None
         self._coastline = None
         # Initialize
         super().__init__(*args, map_name=self.m.projection, **kwargs)
@@ -2338,7 +2342,9 @@ class BasemapAxes(MapAxes):
 
         # Draw boundary
         kw_face = rc.fill({'facecolor': 'map.facecolor'})
-        if self.m.projection in self._map_pseudocyl:
+        print(kw_face)
+        # if self.m.projection in self._map_pseudocyl:
+        if self.m.projection not in self._map_rectangular:
             self.patch.set_alpha(0) # make patch invisible
             kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
             if not self.m._mapboundarydrawn:
@@ -2354,6 +2360,19 @@ class BasemapAxes(MapAxes):
             kw_edge = rc.fill({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
+
+        # Update geographic stuff
+        if self._land:
+            kw = rc.fill({'linewidth': 'land.linewidth', 'color':'land.color'})
+            for p in self._land:
+                p.update(kw)
+        if self._ocean:
+            kw = rc.fill({'linewidth': 'ocean.linewidth', 'color':'ocean.color'})
+            for p in self._ocean:
+                p.update(kw)
+        if self._coastline:
+            kw = rc.fill({'linewidth': 'coastline.linewidth', 'color':'coastline.color'})
+            self._coastline.update(kw)
 
         # Call parent
         super()._rcupdate()
@@ -2524,6 +2543,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=(cartopy.crs.Projection instance).')
         self._hold = None # dunno
+        self._land = None
+        self._ocean = None
+        self._coastline = None
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
 
         # Below will call BaseAxes, which will call GeoAxes as the superclass
@@ -2536,9 +2558,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         super().__init__(*args, map_projection=map_projection, map_name=map_name, **kwargs)
 
         # Apply circle boundary
-        self._land = None
-        self._ocean = None
-        self._coastline = None
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
         if any(isinstance(map_projection, cp) for cp in crs_circles):
             self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree()) # use platecarree transform
@@ -2560,6 +2579,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
     def _rcupdate(self):
         # Update properties controlled by custom rc settings
+        # TODO: Update geo features too!
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
         kw = rc.fill({'facecolor': 'map.facecolor'})
         self.background_patch.update(kw)
