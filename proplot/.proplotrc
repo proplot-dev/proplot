@@ -27,6 +27,12 @@ rcGlobals:
     left:       True
     right:      False
 
+    # Geography
+    landcolor:      k
+    oceancolor:     w
+    coastlinewidth: 1.0
+    coastcolor:     k
+
     # Convenient aliases (i.e. they do not bulk apply to a bunch of settings just shorter names)
     fontname:       # will be determined by OS in ProPlot
     margin:         0.0
@@ -116,8 +122,9 @@ rcParams_new:
     map.facehatch:
     map.hatchcolor:
     map.facecolor:
-    map.color:
     map.linewidth:
+    map.edgecolor:
+    map.reso: med
 
     # Axis settings
     axes.formatter.zerotrim: True
@@ -125,22 +132,14 @@ rcParams_new:
     # Title settings
     # Again, empty ones are filled by the global settings
     abc.fontsize:
-    abc.weight:            bold
-    abc.color:             k
+    abc.weight:        bold
+    abc.color:         k
     rowlabel.fontsize:
-    rowlabel.weight:       bold
-    rowlabel.color:        k
+    rowlabel.weight:   bold
+    rowlabel.color:    k
     collabel.fontsize:
-    collabel.weight:       bold
-    collabel.color:        k
-
-    # Geography
-    land.linewidth:        0 # no boundary for patch object
-    land.color:            k
-    ocean.linewidth:       0 # no boundary for patch object
-    ocean.color:           w
-    coastline.linewidth:   1.0
-    coastline.color:       k
+    collabel.weight:   bold
+    collabel.color:    k
 
     # Grid lines
     gridminor.alpha:

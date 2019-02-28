@@ -45,23 +45,14 @@ rcParams_new
 My brand new settings, meant to configure special ProPlot featues. The
 `rcParams_new` categories are as follows:
 
-* Background hatching: ``axes``, ``map``.
 * Subplots: ``gridspec``.
+* Map settings: ``map``
+* Background hatching: ``axes``, ``map``.
 * New labels: ``abc``, ``rowlabel``, ``collabel``
 * Gridlines: ``gridminor``, ``lonlatlines``
-* Geographic features: ``land``, ``ocean``, ``coastline``.
 
 A miscellaneous setting is the boolean ``axes.formatter.zerotrim``; use this
 to trim trailing zeros on tick labels. Default is ``True``.
-
-The ``map`` and ``axes`` subcategories:
-
-==============  ==================================================================
-Key             Description
-==============  ==================================================================
-``facehatch``   Background hatching string pattern, if not ``None`` [1]_.
-``hatchcolor``  Color of background hatching pattern. Default is same as spines.
-==============  ==================================================================
 
 The ``gridspec`` subcategories (all values are in inches):
 
@@ -76,6 +67,26 @@ Key         Description
 ``nolab``   Space between subplots alotted for tick marks.
 ``inner``   Totally empty space between subplots.
 ==========  ==================================================================
+
+The ``map`` subcategory :
+
+==============  ==================================================================
+Key             Description
+==============  ==================================================================
+``reso``        Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``facecolor``   Background color for the map projection.
+``linewidth``   Line width of map boundary.
+``edgecolor``   Edge color of map boundary.
+==============  ==================================================================
+
+Background hatching with the ``map`` and ``axes`` subcategories :
+
+==============  ==================================================================
+Key             Description
+==============  ==================================================================
+``facehatch``   Background hatching string pattern, if not ``None`` [1]_.
+``hatchcolor``  Color of background hatching pattern. Default is same as spines.
+==============  ==================================================================
 
 The ``abc``, ``rowlabel``, and ``collabel`` subcategories:
 
@@ -96,15 +107,6 @@ Key            Description
 ``linestyle``  The line style.
 ``alpha``      The line transparency.
 ``color``      The line color.
-=============  ==================================================================
-
-The ``land``, ``ocean``, and ``coastlines`` subcategories:
-
-=============  ==================================================================
-Key            Description
-=============  ==================================================================
-``linewidth``  The line width or patch edge width.
-``color``      The line color or patch color.
 =============  ==================================================================
 
 rcGlobals
@@ -209,29 +211,33 @@ _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     # For xcolor/ycolor we just manually use the
     # global property in the format script.
-    'cycle':      [],
-    'color':      ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.color', 'map.hatchcolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'xcolor':     [], # specially used in the `~matplotlib.axes.XYAxes._rcupdate` function
-    'ycolor':     [],
-    'hatchlw':    ['hatch.linewidth'],
-    'hatchalpha': [],
-    'facecolor':  ['axes.facecolor', 'map.facecolor'], # simple alias
-    'facehatch':  ['axes.facehatch', 'map.facehatch'], # optionally apply background hatching
-    'hatchcolor': ['axes.hatchcolor', 'map.hatchcolor'],
-    'gridalpha':  ['grid.alpha', 'gridminor.alpha'],
-    'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
-    'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
-    'gridwidth':  ['grid.linewidth'],
-    'gridcolor':  ['grid.color',     'gridminor.color'],
-    'gridstyle':  ['grid.linestyle', 'gridminor.linestyle'],
-    'ticklen' :   ['xtick.major.size',    'ytick.major.size'],
-    'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
-    'tickdir':    ['xtick.direction',     'ytick.direction'],
-    'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
-    'top':        ['xtick.major.top',     'xtick.minor.top'],
-    'left':       ['ytick.major.left',    'ytick.minor.left'],
-    'right':      ['ytick.major.right',   'ytick.minor.right'],
+    'cycle':          [],
+    'color':          ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.edgecolor', 'map.hatchcolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'xcolor':         [], # specially used in the `~matplotlib.axes.XYAxes._rcupdate` function
+    'ycolor':         [],
+    'hatchlw':        ['hatch.linewidth'],
+    'hatchalpha':     [],
+    'landcolor':      [],
+    'oceancolor':     [],
+    'coastlinewidth': [],
+    'coastcolor':     [],
+    'facecolor':      ['axes.facecolor', 'map.facecolor'], # simple alias
+    'facehatch':      ['axes.facehatch', 'map.facehatch'], # optionally apply background hatching
+    'hatchcolor':     ['axes.hatchcolor', 'map.hatchcolor'],
+    'gridalpha':      ['grid.alpha', 'gridminor.alpha'],
+    'small':          ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
+    'large':          ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
+    'linewidth':      ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
+    'gridwidth':      ['grid.linewidth'],
+    'gridcolor':      ['grid.color',     'gridminor.color'],
+    'gridstyle':      ['grid.linestyle', 'gridminor.linestyle'],
+    'ticklen' :       ['xtick.major.size',    'ytick.major.size'],
+    'tickpad':        ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
+    'tickdir':        ['xtick.direction',     'ytick.direction'],
+    'bottom':         ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
+    'top':            ['xtick.major.top',     'xtick.minor.top'],
+    'left':           ['ytick.major.left',    'ytick.minor.left'],
+    'right':          ['ytick.major.right',   'ytick.minor.right'],
 
     # Simple aliases
     'fontname':       ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
@@ -251,14 +257,15 @@ _rcGlobals_children = {
 # Names of the new settings
 _rcGlobals_keys = {*_rcGlobals_children.keys()}
 _rcParams_new_keys = {
+    'axes.formatter.zerotrim',
     'axes.facehatch',
     'axes.hatchcolor',
-    'axes.formatter.zerotrim',
+    'map.facecolor',
     'map.facehatch',
     'map.hatchcolor',
-    'map.facecolor',
-    'map.color',
+    'map.edgecolor',
     'map.linewidth',
+    'map.reso',
     'abc.fontsize',
     'abc.weight',
     'abc.color',
@@ -268,12 +275,6 @@ _rcParams_new_keys = {
     'collabel.fontsize',
     'collabel.weight',
     'collabel.color',
-    'land.linewidth',
-    'land.color',
-    'ocean.linewidth',
-    'ocean.color',
-    'coastline.linewidth',
-    'coastline.color',
     'gridminor.alpha',
     'gridminor.color',
     'gridminor.linestyle',
@@ -334,44 +335,42 @@ class rc_configurator(object):
         # Load the defaults from file
         for i,file in enumerate((_default_rc, _user_rc)):
             # Load
-            error = RuntimeError(f'Invalid configuration file "{file}".')
             if not os.path.exists(file):
                 continue
             with open(file) as f:
                 try:
                     data = yaml.safe_load(f)
-                except yaml.YAMLError:
-                    raise error
+                except yaml.YAMLError as err:
+                    print('Error: Invalid .proplotrc file.')
+                    raise err
             # Test
             keys = {*data.keys()}
             if i==0:
                 # Check file
                 if keys != {'rcGlobals', 'rcParams', 'rcParams_new'}:
-                    raise error
-
+                    raise RuntimeError(f'Default .proplotrc file has unexpected sections.')
                 # Check contents of each sub dictionary
                 _dict = data['rcGlobals']
                 if {*_dict.keys()} != _rcGlobals_keys:
-                    raise error
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid rcGlobals keys.')
                 _rcGlobals.update(_dict)
                 _rcGlobals_default.update(_dict)
                 _dict = data['rcParams_new']
                 if {*_dict} != _rcParams_new_keys:
-                    raise error
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid rcParams_new keys.')
                 _rcParams_new.update(_dict)
             else:
                 # Check file
                 if keys > {'rcGlobals', 'rcParams', 'rcParams_new'}:
-                    raise error
-
+                    raise RuntimeError(f'User .proplotrc file has unexpected sections.')
                 # Check contents of each sub dictionary
                 _dict = data.get('rcGlobals', {})
                 if {*_dict.keys()} > _rcGlobals_keys:
-                    raise error
+                    raise RuntimeError(f'User .proplotrc file has invalid rcGlobals keys.')
                 _rcGlobals.update(_dict)
                 _dict = data.get('rcParams_new', {})
                 if {*_dict.keys()} > _rcGlobals_keys:
-                    raise error
+                    raise RuntimeError(f'User .proplotrc file has invalid rcParams_new keys.')
                 _rcParams_new.update(_dict)
 
             # Update (this one already checks against invalid keys)

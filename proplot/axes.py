@@ -2341,9 +2341,7 @@ class BasemapAxes(MapAxes):
         #     self.m._mapboundarydrawn.remove()
 
         # Draw boundary
-        kw_face = rc.fill({'facecolor': 'map.facecolor'})
-        print(kw_face)
-        # if self.m.projection in self._map_pseudocyl:
+        kw_face = rc.fill({'facecolor': 'axes.facecolor'})
         if self.m.projection not in self._map_rectangular:
             self.patch.set_alpha(0) # make patch invisible
             kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
@@ -2360,19 +2358,6 @@ class BasemapAxes(MapAxes):
             kw_edge = rc.fill({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
-
-        # Update geographic stuff
-        if self._land:
-            kw = rc.fill({'linewidth': 'land.linewidth', 'color':'land.color'})
-            for p in self._land:
-                p.update(kw)
-        if self._ocean:
-            kw = rc.fill({'linewidth': 'ocean.linewidth', 'color':'ocean.color'})
-            for p in self._ocean:
-                p.update(kw)
-        if self._coastline:
-            kw = rc.fill({'linewidth': 'coastline.linewidth', 'color':'coastline.color'})
-            self._coastline.update(kw)
 
         # Call parent
         super()._rcupdate()
@@ -2412,6 +2397,7 @@ class BasemapAxes(MapAxes):
         land=False, ocean=False, coastline=False, # coastlines and land
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
         xlabels=None, ylabels=None,
+        landcolor=None, oceancolor=None, coastcolor=None, coastlinewidth=None,
         **kwargs):
         """
         Format the map projection.
@@ -2458,11 +2444,12 @@ class BasemapAxes(MapAxes):
         # Basemap axes setup
         # Coastlines, parallels, meridians
         if land and not self._land:
-            self._land = self.m.fillcontinents(ax=self)
-            for p in self._land:
-                p.update(rc['land'])
+            color = _default(landcolor, rc.landcolor)
+            self._land = self.m.fillcontinents(ax=self, color=color)
         if coastline and not self._coastline:
-            self._coastline = self.m.drawcoastlines(ax=self, **rc['coastline'])
+            lw = _default(coastlinewidth, rc.coastlinewidth)
+            color = _default(coastcolor, rc.coastcolor)
+            self._coastline = self.m.drawcoastlines(ax=self, color=color, lw=lw)
 
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
@@ -2579,9 +2566,11 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
     def _rcupdate(self):
         # Update properties controlled by custom rc settings
-        # TODO: Update geo features too!
+        # WARNING: Seems cartopy features can't be updated!
+        # See: https://scitools.org.uk/cartopy/docs/v0.14/_modules/cartopy/feature.html#Feature
+        # Change the _kwargs property also does *nothing*
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
-        kw = rc.fill({'facecolor': 'map.facecolor'})
+        kw = rc.fill({'facecolor': 'axes.facecolor'})
         self.background_patch.update(kw)
         kw = rc.fill({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
         self.outline_patch.update(kw)
@@ -2598,9 +2587,10 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
         lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and continents
-        reso='hi',
+        landcolor=None, oceancolor=None, coastcolor=None, coastlinewidth=None,
         xlabels=None, ylabels=None,
         latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
+        reso=None,
         **kwargs):
         """
         Format the map projection.
@@ -2624,6 +2614,12 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
             for the gridlines. Interpreted by `~MapAxes.parse_labels`.
         xlabels, ylabels
             Aliases for `lonlabels`, `latlabels`.
+        reso : {None, 'lo', 'med', 'hi'}, optional
+            Resolution for geographic features. Inferred from configuration
+            if ``None``. See the `~proplot.rcmod` documentation.
+        landcolor, oceancolor, coastcolor, coastlinewidth
+            Geographic feature settings. If ``None``, read from the
+            configuration. See the `~proplot.rcmod` documentation.
 
         Other parameters
         ----------------
@@ -2678,21 +2674,26 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
         if reso not in ('lo','med','hi'):
             raise ValueError(f'Invalid resolution {reso}.')
+        reso = _default(reso, rc['map.reso'])
         reso = {'lo':'110m', 'med':'50m', 'hi':'10m'}.get(reso)
         if coastline and not self._coastline:
             # self.add_feature(cfeature.COASTLINE, **rc['coastlines'])
-            feat = cfeature.NaturalEarthFeature('physical', 'coastline', reso)
-            self.add_feature(feat, **rc['coastline'])
+            feat  = cfeature.NaturalEarthFeature('physical', 'coastline', reso)
+            color = _default(coastcolor, rc.coastcolor)
+            lw    = _default(coastlinewidth, rc.coastlinewidth)
+            self.add_feature(feat, color=color, lw=lw)
             self._coastline = feat
         if land and not self._land:
             # self.add_feature(cfeature.LAND, **rc['continents'])
-            feat = cfeature.NaturalEarthFeature('physical', 'land', reso)
-            self.add_feature(feat, **rc['land'])
+            feat  = cfeature.NaturalEarthFeature('physical', 'land', reso)
+            color = _default(landcolor, rc.landcolor)
+            self.add_feature(feat, color=color)
             self._land = feat
         if ocean and not self._ocean:
             # self.add_feature(cfeature.OCEAN, **rc['oceans'])
             feat = cfeature.NaturalEarthFeature('physical', 'ocean', reso)
-            self.add_feature(feat, **rc['ocean'])
+            color = _default(oceancolor, rc.oceancolor)
+            self.add_feature(feat, color=oceancolor)
             self._ocean = feat
 
         # Draw gridlines
