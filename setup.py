@@ -11,11 +11,8 @@ setup(
     author_email = 'lukelbd@gmail.com',
     # Package stuff
     # Also include package data
-    # packages     = ['proplot'],
     packages     = ['proplot'], # reserve name
-    package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
-    # Command-line scripts
-    # scripts = ['scripts/proplot_fonts'],
+    package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*', '.proplotrc']},
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing

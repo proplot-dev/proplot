@@ -112,6 +112,7 @@ for offset or something (don't touch it, leave it default).
 #------------------------------------------------------------------------------#
 import re
 from .utils import ic
+from .rcmod import rc
 from numbers import Number
 from fractions import Fraction
 from types import FunctionType
@@ -854,7 +855,7 @@ class ScalarFormatter(mticker.ScalarFormatter):
            are labelled.
 
     """
-    def __init__(self, *args, zerotrim=True, tickrange=[-np.inf, np.inf],
+    def __init__(self, *args, zerotrim=None, tickrange=[-np.inf, np.inf],
                               prefix=None, suffix=None, **kwargs):
         """
         Parameters
@@ -867,6 +868,8 @@ class ScalarFormatter(mticker.ScalarFormatter):
             Optional prefix and suffix for strings.
         """
         super().__init__(*args, **kwargs)
+        if zerotrim is None:
+            zerotrim = rc['axes.formatter.zerotrim']
         self._zerotrim = zerotrim
         self._tickrange = tickrange
         self._prefix = prefix or ''

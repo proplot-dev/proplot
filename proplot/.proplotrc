@@ -1,0 +1,164 @@
+#-------------------------------------
+# ProPlot global settings
+#-------------------------------------
+rcGlobals:
+    # Important settings
+    cycle:      colorblind
+    color:      k
+    xcolor:     k # can be used to set particular spine colors
+    ycolor:     k
+    hatchlw:    0.6
+    hatchalpha: 1
+    facecolor:  w # or 0072B2
+    facehatch:    # hatching on background, useful for indicating invalid data
+    hatchcolor: k
+    gridalpha:  0.1
+    small:      8
+    large:      9
+    linewidth:  0.6
+    gridwidth:  0.6
+    gridcolor:  k
+    gridstyle:  ':'
+    ticklen:    4.0
+    tickpad:    2.0
+    tickdir:    out
+    bottom:     True
+    top:        False
+    left:       True
+    right:      False
+
+    # Convenient aliases (i.e. they do not bulk apply to a bunch of settings just shorter names)
+    fontname:       # will be determined by OS in ProPlot
+    margin:         0.0
+    xmargin:        0.0
+    ymargin:        0.0
+    abcweight:      bold
+    titleweight:    normal
+    suptitleweight: bold
+
+    # Special ones
+    gridratio:  0.5    # ratio of major-to-minor grid line widths
+    tickratio: 0.8     # ratio of major-to-minor tick width
+    ticklenratio:  0.5 # ratio of major-to-minor tick size
+
+#------------------
+# rcParams defaults
+#------------------
+rcParams:
+    # Change default
+    figure.dpi:              120
+    figure.facecolor:        '#f2f2f2'
+    figure.max_open_warning: 0
+    figure.autolayout:       False
+    figure.titleweight:      bold
+    savefig.facecolor:       '#ffffff'
+    savefig.transparent:     True
+    savefig.dpi:             300
+    savefig.pad_inches:      0.0
+    savefig.directory:
+    savefig.bbox:            standard
+    savefig.format:          pdf
+    axes.xmargin:            0.0
+    axes.ymargin:            0.0
+    axes.titleweight:        normal
+    axes.grid:               True
+    axes.labelweight:        normal
+    axes.labelpad:           3.0
+    axes.titlepad:           3.0
+    axes.axisbelow:          lines # for ticks/gridlines *above* patches, *below* lines, use lines
+    xtick.minor.visible:     True
+    ytick.minor.visible:     True
+    grid.color:              k
+    grid.alpha:              0.1
+    grid.linestyle:          '-'
+    grid.linewidth:          0.6 # a bit thinner
+    text.usetex:             False # use TeX for *all* font handling (limits available fonts)
+    mathtext.default:        regular # no italics
+    mathtext.bf:             sans:bold
+    mathtext.it:             sans:it
+    image.cmap:              sunset
+    image.lut:               256
+    patch.facecolor:         C0
+    patch.edgecolor:         k
+    patch.linewidth:         1.0
+    hatch.color:             k
+    hatch.linewidth:         0.7
+    markers.fillstyle:       full
+    scatter.marker:          o
+    lines.linewidth:         1.3
+    lines.color:             C0
+    lines.markeredgewidth:   0
+    lines.markersize:        3.0
+    lines.dash_joinstyle:    miter
+    lines.dash_capstyle:     projecting
+    lines.solid_joinstyle:   miter # joinstyle options are miter, round, bevel
+    lines.solid_capstyle:    projecting # capstyle options are butt, round, projecting
+    legend.fancybox:         False
+    legend.frameon:          False
+    legend.labelspacing:     0.5
+    legend.handletextpad:    0.5
+    legend.handlelength:     1.5
+    legend.columnspacing:    1
+    legend.facecolor:        w
+    legend.numpoints:        1
+    legend.borderpad:        0.5
+    legend.borderaxespad:    0
+
+#----------------------
+# rcParams_new defaults
+#----------------------
+# These are my "fake" rcParams
+rcParams_new:
+    # Axes background extras
+    # The empty ones will be filled by the default *global* properties above
+    axes.facehatch:
+    axes.hatchcolor:
+    map.facehatch:
+    map.hatchcolor:
+    map.facecolor:
+    map.color:
+    map.linewidth:
+
+    # Axis settings
+    axes.formatter.zerotrim: True
+
+    # Title settings
+    # Again, empty ones are filled by the global settings
+    abc.fontsize:
+    abc.weight:            bold
+    abc.color:             k
+    rowlabel.fontsize:
+    rowlabel.weight:       bold
+    rowlabel.color:        k
+    collabel.fontsize:
+    collabel.weight:       bold
+    collabel.color:        k
+
+    # Geography
+    land.linewidth:        0 # no boundary for patch object
+    land.color:            k
+    ocean.linewidth:       0 # no boundary for patch object
+    ocean.color:           w
+    coastline.linewidth:   1.0
+    coastline.color:       k
+
+    # Grid lines
+    gridminor.alpha:
+    gridminor.color:       k
+    gridminor.linestyle:   '-'
+    gridminor.linewidth:   0.1
+    lonlatlines.alpha:     0.4
+    lonlatlines.color:     k
+    lonlatlines.linewidth: 1.0
+    lonlatlines.linestyle: ':'
+    # lonlatlines.linestyle: --
+
+    # Gridspec
+    gridspec.title:        0.2  # extra space for title/suptitle
+    gridspec.inner:        0.2  # just have ticks, no labels
+    gridspec.legend:       0.25 # default legend space (bottom of figure)
+    gridspec.cbar:         0.17 # default colorbar width
+    gridspec.ylab:         0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    gridspec.xlab:         0.55 # for horizontal text should have more space
+    gridspec.nolab:        0.15 # only ticks
+

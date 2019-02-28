@@ -6,9 +6,9 @@ types of settings:
 
 * **Builtin** :ref:`rcParams` settings. These have the format
   ``category.subcategory``, so approaches 1 and 2 are invalid (see below).
-* **Custom** :ref:`rcSpecial` settings. These also have the format
+* **Custom** :ref:`rcParams_new` settings. These also have the format
   ``category.subcategory``.
-* **Global** :ref:`rcGlobal` settings. These are simple, short names
+* **Global** :ref:`rcGlobals` settings. These are simple, short names
   used to change **multiple** "builtin" and "custom" settings at once,
   or as shorthands for settings with longer names.
 
@@ -26,9 +26,10 @@ below.
 
 rcParams
 --------
+
 These are the builtin matplotlib settings. See `this page
 <https://matplotlib.org/users/customizing.html>`_ for more info.
-The `rcParams` categories are as follows:
+The ``rcParams`` categories are as follows:
 
 * Axes: ``axes``.
 * Text: ``font``, ``text``, ``mathtext``.
@@ -38,16 +39,20 @@ The `rcParams` categories are as follows:
 * Printing and saving: ``path``, ``figure``, ``savefig``, ``ps``, ``tk``, ``pdf``, ``svg``.
 * Other: ``keymap``, ``examples``, ``debug``.
 
-rcSpecial
----------
+rcParams_new
+------------
+
 My brand new settings, meant to configure special ProPlot featues. The
-`rcSpecial` categories are as follows:
+`rcParams_new` categories are as follows:
 
 * Background hatching: ``axes``, ``map``.
 * Subplots: ``gridspec``.
 * New labels: ``abc``, ``rowlabel``, ``collabel``
 * Gridlines: ``gridminor``, ``lonlatlines``
 * Geographic features: ``land``, ``ocean``, ``coastline``.
+
+A miscellaneous setting is the boolean ``axes.formatter.zerotrim``; use this
+to trim trailing zeros on tick labels. Default is ``True``.
 
 The ``map`` and ``axes`` subcategories:
 
@@ -56,8 +61,6 @@ Key             Description
 ==============  ==================================================================
 ``facehatch``   Background hatching string pattern, if not ``None`` [1]_.
 ``hatchcolor``  Color of background hatching pattern. Default is same as spines.
-``hatchalpha``  Transparency of hatch lines. Default is same as spines.
-``hatchlw``     Line width for background hatching. Default is same as spines.
 ==============  ==================================================================
 
 The ``gridspec`` subcategories (all values are in inches):
@@ -104,9 +107,10 @@ Key            Description
 ``color``      The line color or patch color.
 =============  ==================================================================
 
-rcGlobal
---------
-Global settings are used to change :ref:`rcParams` and :ref:`rcSpecial` settings
+rcGlobals
+---------
+
+These settings are used to change :ref:`rcParams` and :ref:`rcParams_new` settings
 in bulk, or as shorthands for common settings with longer names.
 
 ==================  ==============================================================================================================
@@ -125,15 +129,15 @@ Key                 Description
 ``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
 ``fontname``        Name of font used for all text in the figure [2]_.
 ``linewidth``       Thickness of axes spines and major tick lines.
-``minorwidth``      Ratio of minor to major tick line thickness.
 ``gridwidth``       Thickness of gridlines.
-``gridminor``       Ratio of minor to major gridline thickness.
+``gridratio``       Ratio of minor to major gridline thickness.
 ``gridalpha``       Transparency of major and minor gridlines.
 ``gridcolor``       Color of major and minor gridlines.
 ``gridstyle``       Linestyle of major and minor gridlines.
 ``ticklen``         Length of major ticks.
-``tickratio``       Ratio of minor to major tick lengths.
 ``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
+``tickratio``       Ratio of minor to major tick line thickness.
+``ticklenratio``    Ratio of minor to major tick lengths.
 ``abcweight``       Font weight for a-b-c labels [3]_.
 ``titleweight``     Font weight for titles [3]_.
 ``suptitleweight``  Font weight for "super" titles [3]_.
@@ -155,223 +159,143 @@ Todo
 Disable the ``gridspec`` stuff by automating the inter-subplot spacing?
 
 """
-# First just make sure some dependencies are loaded
+# First import stuff
+# try:
+#     from icecream import ic
+# except ImportError:  # graceful fallback if IceCream isn't installed.
+#     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 import re
+import os
+import yaml
 import cycler
 import matplotlib.pyplot as plt
 from . import colortools
-from . import utils
-from .utils import _timer, _counter, ic
-from matplotlib import rcParams, style
+import matplotlib as mpl
+_rcParams = mpl.rcParams
+_rcGlobals = {}
+_rcParams_new = {}
+_rcGlobals_default = {} # container for ***default*** settings
+
+# Timer
+# Cannot import utils because it imports this module
+# import time
+# import functools
+# def _timer(func):
+#     """
+#     A decorator that prints the time a function takes to execute.
+#     See: https://stackoverflow.com/a/1594484/4970632
+#     """
+#     @functools.wraps(func)
+#     def decorator(*args, **kwargs):
+#         t = time.clock()
+#         print(f'{func.__name__}()')
+#         res = func(*args, **kwargs)
+#         print(f'{func.__name__}() time: {time.clock()-t}s')
+#         return res
+#     return decorator
 
 # Get default font
 # WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
 # failed to render/printed nonsense, but Helvetica fine
 import sys
+_user_rc = os.path.join(os.path.expanduser("~"), '.proplotrc')
+_default_rc = os.path.join(os.path.dirname(__file__), '.proplotrc') # or parent, but that makes pip install distribution hard
 _default_font = 'Helvetica' if sys.platform=='linux' else 'Helvetica Neue' # says 'darwin' on mac
+if not os.path.exists(_default_rc):
+    raise ValueError('Default configuration file does not exist.')
 
-# Will add our own dictionary to the top-level matplotlib module, to go
-# alongside rcParams
-# Default settings
-# List of linked settings
-_rcGlobal = {
-    # Apply these ones to list of rcParams
-    'color':     'k',
-    'xcolor':    None, # these are special; can be used to set particular spine colors
-    'ycolor':    None,
-    'cycle':     'colorblind',
-    # 'facecolor':  '#0072b2', # 0072B2
-    'facecolor':  'w', # 0072B2
-    'facehatch':  None, # hatching on background, useful for indicating invalid data
-    'hatchalpha': 1,
-    'hatchcolor': 'k',
-    'hatchlw':    0.6,
-    'gridalpha':  0.1,
-    'small':      8,
-    'large':      9,
-    'linewidth':  0.6,
-    'gridwidth':  0.6,
-    'bottom':     True,
-    'top':        False,
-    'left':       True,
-    'right':      False,
-    'ticklen':    4.0,
-    'tickpad':    2.0,
-    'tickdir' :   'out',
-    # Convenient aliases (i.e. they do not bulk apply to a bunch of settings, just shorter names)
-    'fontname':       _default_font, # best one; and less crammed than Helvetica
-    'margin':         0.0,
-    'xmargin':        0.0, # found I wanted to change these *a lot*
-    'ymargin':        0.0, # found I wanted to change these *a lot*
-    'abcweight':      'bold',
-    'titleweight':    'normal',
-    'suptitleweight': 'bold',
-    # Special ones
-    'tickratio':  0.5, # ratio of major-to-minor tick size
-    'minorwidth': 0.8, # ratio of major-to-minor tick width
-    'gridratio':  0.5, # ratio of major-to-minor grid line widths
-    }
-
-_rcGlobal_children = {
+# "Global" settings and the lower-level settings they change
+_rcGlobals_children = {
     # Most important ones, expect these to be used a lot
-    # The xcolor/ycolor we don't use 'special' props (since we'd be duplicating ones
-    # that already exist for all spines/labels). Instead just manually use the
+    # For xcolor/ycolor we just manually use the
     # global property in the format script.
-    # NOTE: Hatches are weird: https://stackoverflow.com/questions/29549530/how-to-change-the-linewidth-of-hatch-in-matplotlib
-    # Linewidths can only be controlled with a global property!
-    # NOTE: Should I even bother setting these? Yes: Idea is maybe we change
-    # underlying global keywords, but have rcupdate always refer to
-    # corresponding builtin values.
-    'xcolor':     [],
-    'ycolor':     [],
+    'cycle':      [],
     'color':      ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.color', 'map.hatchcolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'xcolor':     [], # specially used in the `~matplotlib.axes.XYAxes._rcupdate` function
+    'ycolor':     [],
+    'hatchlw':    ['hatch.linewidth'],
+    'hatchalpha': [],
     'facecolor':  ['axes.facecolor', 'map.facecolor'], # simple alias
     'facehatch':  ['axes.facehatch', 'map.facehatch'], # optionally apply background hatching
-    'hatchlw':    ['hatch.linewidth'],
     'hatchcolor': ['axes.hatchcolor', 'map.hatchcolor'],
+    'gridalpha':  ['grid.alpha', 'gridminor.alpha'],
     'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth',
-                   'xtick.major.width', 'ytick.major.width'], # gridline widths same as tick widths
-                   # 'grid.linewidth', # should not be coupled, looks ugly
-    'gridalpha':  ['grid.alpha',     'gridminor.alpha'],
+    'linewidth':  ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
+    'gridwidth':  ['grid.linewidth'],
     'gridcolor':  ['grid.color',     'gridminor.color'],
     'gridstyle':  ['grid.linestyle', 'gridminor.linestyle'],
-    # Aliases
-    'margin':         ['axes.xmargin', 'axes.ymargin'],
-    'xmargin':        ['axes.xmargin'], # found I wanted to change these *a lot*
-    'ymargin':        ['axes.ymargin'], # found I wanted to change these *a lot*
-    'fontname':       ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
-    'abcweight':      ['abc.weight'],
-    'titleweight':    ['axes.titleweight'],
-    'suptitleweight': ['figure.titleweight'],
-    # Less important ones
+    'ticklen' :   ['xtick.major.size',    'ytick.major.size'],
+    'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
+    'tickdir':    ['xtick.direction',     'ytick.direction'],
     'bottom':     ['xtick.major.bottom',  'xtick.minor.bottom'], # major and minor ticks should always be in the same place
     'top':        ['xtick.major.top',     'xtick.minor.top'],
     'left':       ['ytick.major.left',    'ytick.minor.left'],
     'right':      ['ytick.major.right',   'ytick.minor.right'],
-    'ticklen' :   ['xtick.major.size',    'ytick.major.size'],
-    'tickdir':    ['xtick.direction',     'ytick.direction'],
-    'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
+
+    # Simple aliases
+    'fontname':       ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
+    'margin':         ['axes.xmargin', 'axes.ymargin'],
+    'xmargin':        ['axes.xmargin'], # found I wanted to change these *a lot*
+    'ymargin':        ['axes.ymargin'], # found I wanted to change these *a lot*
+    'abcweight':      ['abc.weight'],
+    'titleweight':    ['axes.titleweight'],
+    'suptitleweight': ['figure.titleweight'],
+
+    # Special ones
+    'ticklenratio': [],
+    'tickratio': [],
+    'gridratio': [],
     }
 
-# Settings that apply to just one thing, and are
-# already implemented by matplotlib
-_rcDefaults = {
-    # Some of these will be overwritten by global alises
-    'figure.dpi':              90, # save ipython notebook space
-    'figure.facecolor':        (0.95,0.95,0.95,1),
-    'figure.max_open_warning': 0,
-    'figure.autolayout':       False,
-    'figure.titleweight':      'bold',
-    'savefig.facecolor':       (1,1,1,1),
-    'savefig.transparent':     True,
-    'savefig.dpi':             300,
-    'savefig.pad_inches':      0.0,
-    'savefig.directory':       '',
-    'savefig.bbox':            'standard',
-    'savefig.format':          'pdf',
-    'axes.xmargin':            0.0,
-    'axes.ymargin':            0.0,
-    'axes.titleweight':        'normal',
-    'axes.grid':               True,
-    'axes.labelweight':        'normal',
-    'axes.labelpad':           3.0,
-    'axes.titlepad':           3.0,
-    'axes.axisbelow':          'lines', # for ticks/gridlines *above* patches, *below* lines, use 'lines'
-    'xtick.minor.visible' :    True,
-    'ytick.minor.visible' :    True,
-    'grid.color':              'k',
-    'grid.alpha':              0.1,
-    'grid.linestyle':          '-',
-    'grid.linewidth':          0.6, # a bit thinner
-    'font.family':             'DejaVu Sans', # allowed to be concrete name(s) when usetex is False
-    # 'font.family':             'sans-serif',
-    # 'font.sans-serif':         'DejaVu Sans',
-    'text.latex.preamble':      r'\usepackage{cmbright}', # https://stackoverflow.com/a/16345065/4970632
-    'text.usetex':             False, # use TeX for *all* font handling (limits available fonts)
-    'mathtext.default':        'regular', # no italics
-    'mathtext.bf' :            'sans:bold',
-    'mathtext.it' :            'sans:it',
-    'image.cmap':              'sunset',
-    'image.lut':               256,
-    'patch.facecolor':         'C0',
-    'patch.edgecolor':         'k',
-    'patch.linewidth':         1.0,
-    'hatch.color':             'k',
-    'hatch.linewidth':         0.7,
-    'markers.fillstyle':       'full',
-    'scatter.marker':          'o',
-    'lines.linewidth' :        1.3,
-    'lines.color' :            'C0',
-    'lines.markeredgewidth' :  0,
-    'lines.markersize' :       3.0,
-    'lines.dash_joinstyle' :   'miter',
-    'lines.dash_capstyle' :    'projecting',
-    'lines.solid_joinstyle' :  'miter', # joinstyle opts= miter, round, bevel
-    'lines.solid_capstyle' :   'projecting', # capstyle opts= butt, round, projecting
-    'legend.fancybox' :        False,
-    'legend.frameon' :         False,
-    'legend.labelspacing' :    0.5,
-    'legend.handletextpad' :   0.5,
-    'legend.handlelength' :    1.5,
-    'legend.columnspacing' :   1,
-    'legend.facecolor' :       'w',
-    'legend.numpoints' :       1,
-    'legend.borderpad' :       0.5,
-    'legend.borderaxespad' :   0,
+# Names of the new settings
+_rcGlobals_keys = {*_rcGlobals_children.keys()}
+_rcParams_new_keys = {
+    'axes.facehatch',
+    'axes.hatchcolor',
+    'axes.formatter.zerotrim',
+    'map.facehatch',
+    'map.hatchcolor',
+    'map.facecolor',
+    'map.color',
+    'map.linewidth',
+    'abc.fontsize',
+    'abc.weight',
+    'abc.color',
+    'rowlabel.fontsize',
+    'rowlabel.weight',
+    'rowlabel.color',
+    'collabel.fontsize',
+    'collabel.weight',
+    'collabel.color',
+    'land.linewidth',
+    'land.color',
+    'ocean.linewidth',
+    'ocean.color',
+    'coastline.linewidth',
+    'coastline.color',
+    'gridminor.alpha',
+    'gridminor.color',
+    'gridminor.linestyle',
+    'gridminor.linewidth',
+    'lonlatlines.alpha',
+    'lonlatlines.color',
+    'lonlatlines.linewidth',
+    'lonlatlines.linestyle',
+    'gridspec.title',
+    'gridspec.inner',
+    'gridspec.legend',
+    'gridspec.cbar',
+    'gridspec.ylab',
+    'gridspec.xlab',
+    'gridspec.nolab',
     }
-
-# Special settings, should be thought of as extension of rcParams
-_rcDefaults_sp = {
-    # These ones just need to be present, will get reset by globals
-    'map.facecolor':       None,
-    'map.color':           None,
-    'map.linewidth':       None,
-    'abc.fontsize':        None,
-    'rowlabel.fontsize':   None,
-    'collabel.fontsize':   None,
-    'gridminor.alpha':     None,
-    'axes.facehatch':      None,
-    'axes.hatchcolor':     None,
-    'map.facehatch':       None,
-    'map.hatchcolor':      None,
-    # the rest can be applied as-is
-    'abc.weight':            'bold',
-    'abc.color':             'k',
-    'rowlabel.weight':       'bold',
-    'rowlabel.color':        'k',
-    'collabel.weight':       'bold',
-    'collabel.color':        'k',
-    'gridminor.color':       'k',
-    'gridminor.linestyle':   '-',
-    'gridminor.linewidth':   0.1,
-    'land.linewidth':        0, # no boundary for patch object
-    'land.color':            'k',
-    'ocean.linewidth':       0, # no boundary for patch object
-    'ocean.color':           'w',
-    'coastline.linewidth' :  1.0,
-    'coastline.color' :      'k',
-    'lonlatlines.linewidth': 1.0,
-    'lonlatlines.linestyle': ':',
-    # 'lonlatlines.linestyle': '--',
-    'lonlatlines.alpha':     0.4,
-    'lonlatlines.color':     'k',
-    'gridspec.title':        0.2, # extra space for title/suptitle
-    'gridspec.inner':        0.2, # just have ticks, no labels
-    'gridspec.legend':       0.25, # default legend space (bottom of figure)
-    'gridspec.cbar':         0.17, # default colorbar width
-    'gridspec.ylab':         0.7, # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
-    'gridspec.xlab':         0.55, # for horizontal text should have more space
-    'gridspec.nolab':        0.15, # only ticks
-    }
-_rcParams_sp = _rcDefaults_sp.copy()
 
 # Generate list of valid names, and names with subcategories
 # TODO: Display this somewhere? Maybe in repr of rc?
 _rc_names = {
-    *rcParams.keys(),
-    *_rcParams_sp.keys(),
+    *_rcParams.keys(),
+    *_rcParams_new_keys,
     }
 _rc_categories = {
     *(re.sub('\.[^.]*$', '', name) for name in _rc_names),
@@ -393,31 +317,85 @@ class rc_configurator(object):
     _public_api = ('reset', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
     def __init__(self):
         """
-        Magical abstract class for managing builtin `rcParams` settings, 
-        our artificial `_rcSpecial` settings, and new "global" settings
+        Magical abstract class for managing builtin :ref:`rcParams` settings, 
+        our artificial :ref:`rcParams_new` settings, and new "global" settings
         that keep certain groups of settings synced.
 
-        See the `rc` documentation for details.
+        See the module documentation for details.
         """
         # First initialize matplotlib
         # Note rcdefaults() changes the backend! Inline plotting will fail for
         # rest of notebook session if you call rcdefaults before drawing a figure!
         # After first figure made, backend property is 'sticky', never changes!
         # See: https://stackoverflow.com/a/48322150/4970632
-        style.use('default') # mpl.style function does not change the backend
-        # Add simple attributes to rcParams
         self._rcCache = {}
-        self._rcGlobal = _rcGlobal.copy()
-        for key,value in _rcDefaults.items():
-            rcParams[key] = value
-        for key,value in _rcDefaults_sp.items():
-            _rcParams_sp[key] = value
-        # Apply linked attributes to rcParams
-        self._set_cycler('colorblind')
-        rc, rc_sp = self._get_globals()
-        rcParams.update(rc)
-        _rcParams_sp.update(rc_sp)
-        # Settings
+        mpl.style.use('default') # mpl.style function does not change the backend
+
+        # Load the defaults from file
+        for i,file in enumerate((_default_rc, _user_rc)):
+            # Load
+            error = RuntimeError(f'Invalid configuration file "{file}".')
+            if not os.path.exists(file):
+                continue
+            with open(file) as f:
+                try:
+                    data = yaml.safe_load(f)
+                except yaml.YAMLError:
+                    raise error
+            # Test
+            keys = {*data.keys()}
+            if i==0:
+                # Check file
+                if keys != {'rcGlobals', 'rcParams', 'rcParams_new'}:
+                    raise error
+
+                # Check contents of each sub dictionary
+                _dict = data['rcGlobals']
+                if {*_dict.keys()} != _rcGlobals_keys:
+                    raise error
+                _rcGlobals.update(_dict)
+                _rcGlobals_default.update(_dict)
+                _dict = data['rcParams_new']
+                if {*_dict} != _rcParams_new_keys:
+                    raise error
+                _rcParams_new.update(_dict)
+            else:
+                # Check file
+                if keys > {'rcGlobals', 'rcParams', 'rcParams_new'}:
+                    raise error
+
+                # Check contents of each sub dictionary
+                _dict = data.get('rcGlobals', {})
+                if {*_dict.keys()} > _rcGlobals_keys:
+                    raise error
+                _rcGlobals.update(_dict)
+                _dict = data.get('rcParams_new', {})
+                if {*_dict.keys()} > _rcGlobals_keys:
+                    raise error
+                _rcParams_new.update(_dict)
+
+            # Update (this one already checks against invalid keys)
+            for key,value in data.get('rcParams', {}).items():
+                _rcParams[key] = value
+
+        # Set default fontname and cycler
+        # These ones are special. I had issues with Helvetica Neue
+        # on UNIX, and Helvetica looked better; but not on macOS.
+        if _rcGlobals.get('fontname', None) is None:
+            _rcGlobals['fontname'] = _default_font
+
+        # Set up the cycler
+        # This one is also special; run arg through colortools.colors
+        self._set_cycler(_rcGlobals.get('cycle', 'colorblind'))
+
+        # Apply *global settings* to children settings
+        rc, rc_new = self._get_globals()
+        for key,value in rc.items():
+            _rcParams[key] = value
+        for key,value in rc_new.items():
+            _rcParams_new[key] = value
+
+        # Caching stuff
         # TODO: Looks like _getitem_mode can get stuck on a higher, more
         # restrictive value (e.g. 1 or 2) when cell fails to execute. Should
         # consider improving this.
@@ -442,14 +420,14 @@ class rc_configurator(object):
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
-            return {**rcParams, **_rcParams_sp}
-        # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore _rcParams_sp*.
+            return {**_rcParams, **_rcParams_new}
+        # Allow for special time-saving modes where we *ignore _rcParams*
+        # or even *ignore _rcParams_new*.
         mode = self._getitem_mode
         if mode==0:
-            kws = (self._rcCache, _rcParams_sp, rcParams)
+            kws = (self._rcCache, _rcParams_new, _rcParams)
         elif mode==1:
-            kws = (self._rcCache, _rcParams_sp)
+            kws = (self._rcCache, _rcParams_new)
         elif mode==2:
             kws = (self._rcCache,)
         else:
@@ -471,7 +449,7 @@ class rc_configurator(object):
                 return params
         # Get individual property. Will successively index a few different dicts
         # Try to return the value
-        for kw in (*kws[:1], self._rcGlobal, *kws[1:]):
+        for kw in (*kws[:1], _rcGlobals, *kws[1:]):
             try:
                 return kw[key]
             except KeyError:
@@ -483,6 +461,9 @@ class rc_configurator(object):
             return None
 
     def __setitem__(self, key, value):
+        """
+        Set :ref:`rcGlobals`, :ref:`rcParams`, or :ref:`rcParams_new` settings.
+        """
         # First the special cycler
         # NOTE: No matter the 'setitem mode' this will always set the axes
         # prop_cycle rc settings
@@ -490,24 +471,24 @@ class rc_configurator(object):
             self._set_cycler(value)
             self._rcCache['cycle'] = value
         # Apply global settings
-        elif key in _rcGlobal:
+        elif key in _rcGlobals:
             if value=='default':
-                value = _rcGlobal[key]
-            rc, rc_sp = self._get_globals(key, value)
+                value = _rcGlobals_default[key]
+            rc, rc_new = self._get_globals(key, value)
             self._rcCache.update(rc)
-            self._rcCache.update(rc_sp)
+            self._rcCache.update(rc_new)
             self._rcCache[key] = value # also update cached global property itself
-            self._rcGlobal[key] = value
-            rcParams.update(rc)
-            _rcParams_sp.update(rc_sp)
+            _rcGlobals[key] = value
+            _rcParams.update(rc)
+            _rcParams_new.update(rc_new)
         # Directly modify single parameter
         # NOTE: If 'setitem mode' is 0, this means user has directly set
         # something (we are not in a with..as context in format()), so we
-        # want to directly modify rcParams.
+        # want to directly modify _rcParams.
         elif key in _rc_names:
             self._rcCache[key] = value
             try:
-                rcParams[key] = value
+                _rcParams[key] = value
             except KeyError:
                 pass
         else:
@@ -515,95 +496,101 @@ class rc_configurator(object):
         self._init = False # no longer in initial state
 
     def __getattribute__(self, attr):
-        # Alias to getitem
+        """
+        Alias to getitem.
+        """
         if attr[:1]=='_' or attr in self._public_api: # no recursion since second comparison won't be evaluated if first comparison evaluates True
             return super().__getattribute__(attr)
         else:
             return self.__getitem__(attr)
 
     def __setattr__(self, attr, value):
-        # Alias to setitem
+        """
+        Alias to setitem.
+        """
         if attr[:1]=='_' or attr in self._public_api:
             super().__setattr__(attr, value)
         else:
             self.__setitem__(attr, value)
 
-    def __str__(self):
+    def __repr__(self):
         # Nice string representation
-        length = 1 + max(len(key) for key in self._rcGlobal.keys())
-        string = 'Global settings\n---------------\n' + '\n'.join(f'{key}: {" "*(length-len(key))}{value}'
-                                    for key,value in self._rcGlobal.items())
-        string += '\n\nAll settings\n------------\n' + ', '.join(_rc_names)
+        length = 1 + max(len(key) for key in _rcGlobals.keys())
+        string = 'rc = {\n' + '\n'.join(f'  {key}: {" "*(length-len(key))}{value}'
+                                    for key,value in _rcGlobals.items()) + '\n}'
         return string
 
-    def __repr__(self):
+    def __str__(self):
         # Simple one, good for auto docs
-        length = 1 + max(len(key) for key in self._rcGlobal.keys())
-        string = ', '.join(f'{key}: {" "*(length-len(key))}{value}'
-                                    for key,value in self._rcGlobal.items())
+        length = 1 + max(len(key) for key in _rcGlobals.keys())
+        string = ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
         return string
 
     def _set_cycler(self, value):
-        # Set the color cycler.
+        """
+        Set the color cycler.
+        """
         # NOTE: Generally if user uses 'C0', et cetera, assume they want to
         # refer to the *default* cycler colors; so first reset
         if isinstance(value, str) or isinstance(value, Number):
             value = value,
         colors = colortools.colors('colorblind')
-        rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
+        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         colors = colortools.colors(*value)
-        rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
+        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         figs = list(map(plt.figure, plt.get_fignums()))
         for fig in figs:
             for ax in fig.axes:
                 ax.set_prop_cycle(cycler.cycler('color', colors))
 
     def _get_globals(self, key=None, value=None):
-        # Apply all properties in some group.
+        """
+        Apply all properties in some group.
+        """
         kw = {}
-        kw_sp = {}
+        kw_new = {}
         if key is not None and value is not None:
             items = [(key,value)]
         else:
-            items = self._rcGlobal.items()
+            items = _rcGlobals.items()
         for key,value in items:
             # Tick length/major-minor tick length ratio
-            if key in ('ticklen','tickratio'):
-                if key=='tickratio':
-                    ticklen = self._rcGlobal['ticklen']
+            if key in ('ticklen', 'ticklenratio'):
+                if key=='ticklenratio':
+                    ticklen = _rcGlobals['ticklen']
                     ratio = value
                 else:
                     ticklen = value
-                    ratio = self._rcGlobal['tickratio']
+                    ratio = _rcGlobals['ticklenratio']
                 kw['xtick.minor.size'] = ticklen*ratio
                 kw['ytick.minor.size'] = ticklen*ratio
             # Spine width/major-minor tick width ratio
-            if key in ('linewidth','minorwidth'):
+            if key in ('linewidth', 'tickratio'):
                 if key=='linewidth':
                     tickwidth = value
-                    ratio = self._rcGlobal['minorwidth']
+                    ratio = _rcGlobals['tickratio']
                 else:
-                    tickwidth = self._rcGlobal['linewidth']
+                    tickwidth = _rcGlobals['linewidth']
                     ratio = value
                 kw['xtick.minor.width'] = tickwidth*ratio
                 kw['ytick.minor.width'] = tickwidth*ratio
-                # kw_sp['gridminor.linewidth'] = tickwidth*ratio # special
+                # kw_new['gridminor.linewidth'] = tickwidth*ratio # special
             # Grid line
             if key in ('gridwidth', 'gridratio'):
                 if key=='gridwidth':
                     gridwidth = value
-                    ratio = self._rcGlobal['gridratio']
+                    ratio = _rcGlobals['gridratio']
                 else:
-                    gridwidth = self._rcGlobal['gridwidth']
+                    gridwidth = _rcGlobals['gridwidth']
                     ratio = value
-                kw_sp['gridminor.linewidth'] = gridwidth*ratio
+                kw_new['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
-            for name in _rcGlobal_children.get(key, []):
-                if name in _rcParams_sp:
-                    kw_sp[name] = value
+            for name in _rcGlobals_children[key]:
+                if name in _rcParams_new:
+                    kw_new[name] = value
                 else:
                     kw[name] = value
-        return kw, kw_sp
+        return kw, kw_new
 
     def _context(self, *args, mode=0, **kwargs):
         """
@@ -617,7 +604,7 @@ class rc_configurator(object):
             1. `__getitem__` ignores `_rcParams` (assumption is these
                have already been set). Used during axes `__init__`
                calls to `_rcupdate`.
-            2. `__getitem__` ignores `_rcParams` and `_rcParams_sp`; only
+            2. `__getitem__` ignores `_rcParams` and `_rcParams_new`; only
                reads from cache, i.e. settings that user has manually changed.
                Used during `~proplot.BaseAxes.format` calls to
                `~proplot.BaseAxes._rcupdate`.

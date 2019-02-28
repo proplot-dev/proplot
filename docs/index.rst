@@ -36,7 +36,9 @@ If you are in an ipython notebook, I also recommend adding
 
    plot.nbsetup()
 
-This enables a couple useful extensions and greatly increases the resolution of your inline figures.
+This enables a couple useful extensions and greatly increases the resolution of your inline figures -- ProPlot
+applies relatively small font size and line width defaults, so that the physical size matches what might appear
+in a 
 See `~proplot.notebook.nbsetup` for details.
 
 Overview

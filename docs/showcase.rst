@@ -147,7 +147,7 @@ see the `documentation <https://lukelbd.github.io/tools/proplot/doc>`__.
 
 Modify global settings with ``plot.rc['prop']`` or ``plot.rc.prop``.
 This includes ``rcParams`` settings (i.e. builtin matplotlib global
-settings), custom ``rcSpecial`` settings, and some bulk ``rcGlobals``
+settings), custom ``rcParams_new`` settings, and some bulk ``rcGlobals``
 settings that apply to multiple other settings. See the
 `documentation <https://lukelbd.github.io/tools/proplot/doc>`__ for more
 information settings configuration in ProPlot.

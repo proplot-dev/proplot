@@ -5,89 +5,6 @@ flexible unit sizes, instead of just inches. `arange` and `edges` are both
 often useful in the context of making plots -- for example, when creating
 a list of contours or tick mark positions.
 """
-import time
-import numpy as np
-import functools
-# from inspect import cleandoc
-try:
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed.
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-_default = (lambda x,y: x if x is not None else y) # fill if not None
-
-# Helper class
-class _dot_dict(dict):
-    """
-    Simple class for accessing elements with dot notation.
-    See: https://stackoverflow.com/a/23689767/4970632
-    """
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-def units(value, error=True):
-    """
-    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
-    for info on the em square units.
-
-    Parameters
-    ----------
-    value : float or str
-        A size 'unit'. If numeric, assumed unit is inches.
-
-        If string, we look for the format ``'123.456units'``, where the
-        number is the value and `'units'` are one of the following:
-
-        =====  ================================
-        Name   Description
-        =====  ================================
-        em     Em-square 
-        ex     Ex-square 
-        lh     Line height, or 1.2 em-squares
-        lem    Em-square for large-sized text
-        lex    Ex-square for large-sized text
-        llh    Line height, or 1.2 em-squares for large-sized text
-        cm     Centimeters
-        mm     Millimeters
-        pt     Points, or 1/72 inches
-        in     Inches
-        =====  ================================
-
-    error : bool, optional
-        Raise error on failure?
-
-    """
-    if not isinstance(value, str):
-        return value # assume int/float is in inches
-    unit_dict = {
-        'em': rc['small']/72.0,
-        'ex': 0.5*rc['large']/72.0, # more or less; see URL
-        'lh': 1.2*rc['small']/72.0, # line height units (default spacing is 1.2 em squares)
-        'lem': rc['small']/72.0, # for large text
-        'lex': 0.5*rc['large']/72.0,
-        'llh': 1.2*rc['large']/72.0,
-        'cm': 0.3937,
-        'mm': 0.03937,
-        'pt': 1/72.0,
-        'in': 1.0, # already in inches
-        }
-    regex = re.match('^(.*)(' + '|'.join(unit_dict.keys()) + ')$', value)
-    if not regex:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    num, unit = regex.groups()
-    try:
-        num = float(num)
-    except ValueError:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    return num*unit_dict[unit] # e.g. cm / (in / cm)
-
-#------------------------------------------------------------------------------#
 # Decorators
 # Below is very simple example that demonstrates how simple decorators work
 # def decorator1(func):
@@ -107,10 +24,99 @@ def units(value, error=True):
 # def hello():
 #     print('hello world!')
 # hello()
-#------------------------------------------------------------------------------#
+import time
+import numpy as np
+import functools
+try:
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed.
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
+_default = (lambda x,y: x if x is not None else y) # fill if not None
+
+# Helper class
+class _dot_dict(dict):
+    """
+    Simple class for accessing elements with dot notation.
+    See `this post <https://stackoverflow.com/a/23689767/4970632>`__.
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+def units(value, error=True, dpi=90):
+    """
+    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
+    for info on the em square units. The `dpi` is equivalent to the one used
+    for iPython notebook inline figures: ``rc['figure.dpi']``. See the
+    `~proplot.rcmod` module for details.
+
+    Parameters
+    ----------
+    value : float or str
+        A size 'unit'. If numeric, assumed unit is inches.
+
+        If string, we look for the format ``'123.456units'``, where the
+        number is the value and `'units'` are one of the following:
+
+        ==============  ===================================================
+        Key             Description
+        ==============  ===================================================
+        ``px``, ``pp``  Pixels, assuming dpi of ``rc['figure.dpi']``
+        ``cm``          Centimeters
+        ``mm``          Millimeters
+        ``pt``          Points, or 1/72 inches
+        ``in``          Inches
+        ``em``          Em-square 
+        ``ex``          Ex-square 
+        ``lh``          Line height, or 1.2 em-squares
+        ``lem``         Em-square for large-sized text
+        ``lex``         Ex-square for large-sized text
+        ``llh``         Line height, or 1.2 em-squares for large-sized text
+        ==============  ===================================================
+
+    error : bool, optional
+        Raise error on failure?
+
+    """
+    # Possible units
+    # RC settings must be looked up every time
+    from .rcmod import rc
+    _unit_dict = {
+        'em': rc['small']/72.0,
+        'ex': 0.5*rc['large']/72.0, # more or less; see URL
+        'lh': 1.2*rc['small']/72.0, # line height units (default spacing is 1.2 em squares)
+        'lem': rc['small']/72.0, # for large text
+        'lex': 0.5*rc['large']/72.0,
+        'llh': 1.2*rc['large']/72.0,
+        'cm': 0.3937,
+        'mm': 0.03937,
+        'pt': 1/72.0,
+        'in': 1.0, # already in inches
+        'px': 1/rc['figure.dpi'], # dots times 1/dots per inch
+        'pp': 1/rc['figure.dpi'],
+        }
+    if not isinstance(value, str):
+        return value # assume int/float is in inches
+    regex = re.match('^(.*)(' + '|'.join(_unit_dict.keys()) + ')$', value)
+    if not regex:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    num, unit = regex.groups()
+    try:
+        num = float(num)
+    except ValueError:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    return num*_unit_dict[unit] # e.g. cm / (in / cm)
+
 # Throw this one out, use kwarg interpolation from method.
 # Why? Because matplotlib plot_directive sphinx extension will look for
 # gallery images in the old documentation that do not exist for ProPlot.
+# from inspect import cleandoc
 # def _docstring_fix(child):
 #     """
 #     Decorator function for appending documentation from overridden method

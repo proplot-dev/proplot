@@ -737,6 +737,7 @@ class BaseAxes(maxes.Axes):
         self._map_name = map_name # consider conditionally allowing 'shared axes' for certain projections
         super().__init__(*args, **kwargs)
         self._title_pos_init = self.title.get_position() # position of title outside axes
+        self._title_pos_transform = self.title.get_transform()
 
         # Panels
         if panel_side not in (None, 'left','right','bottom','top'):
@@ -921,6 +922,9 @@ class BaseAxes(maxes.Axes):
 
 
     def _text_update(self, obj, kwargs):
+        """
+        Update text, and allow for border.
+        """
         # Allow updating properties introduced by the BaseAxes.text() override.
         # Don't really want to subclass mtext.Text; only have a few features
         # NOTE: Don't use kwargs because want this to look like standard
@@ -955,8 +959,10 @@ class BaseAxes(maxes.Axes):
         return obj
 
     def _title_pos(self, pos, **kwargs):
-        # Position arbitrary text to left/middle/right either inside or outside
-        # of axes (default is center, outside)
+        """
+        Position title text to the left, center, or right and either inside or
+        outside the axes (default is center, outside).
+        """
         ypad = (rc['axes.titlepad']/72)/self.height # to inches --> to axes relative
         xpad = (rc['axes.titlepad']/72)/self.width # why not use the same for x?
         xpad_i, ypad_i = xpad*1.5, ypad*1.5 # inside labels need a bit more room
@@ -985,12 +991,13 @@ class BaseAxes(maxes.Axes):
             # If *any* object is outside (title or abc), want to deflect it up
             if 'o' in pos:
                 y = 1 # 1 + ypad # leave it alone, may be adjusted during draw-time to account for axis label (fails to adjust for tick labels; see notebook)
-                va = 'baseline'
+                va = 'bottom'
                 self._title_inside = False
                 transform = self.title.get_transform()
             elif 'i' in pos:
                 y = 1 - ypad_i
                 va = 'top'
+                self._title_inside = True
                 transform = self.transAxes
                 extra['border'] = _default(kwargs.pop('border', None), True) # by default
         return {'x':x, 'y':y, 'transform':transform, 'ha':ha, 'va':va, **extra}
@@ -1107,7 +1114,7 @@ class BaseAxes(maxes.Axes):
         # Create figure title
         fig = self.figure # the figure
         if suptitle is not None:
-            fig._suptitle_setup(text=suptitle, **suptitle_kw)
+            fig._suptitle_setup(text=suptitle, auto=False, **suptitle_kw)
         if rowlabels is not None:
             fig._rowlabels(rowlabels, **rowlabels_kw)
         if collabels is not None:
@@ -1419,7 +1426,6 @@ class XYAxes(BaseAxes):
         # datetime.
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
-        self.stale = True
 
     def __getattribute__(self, attr, *args):
         # Attribute
@@ -2884,16 +2890,15 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
             kwargs['ncol'] = len(handles[0]) # choose this for column length
         elif 'ncol' not in kwargs:
             kwargs['ncol'] = 3
-        # Split up into rows and columns -- by default matplotlib will
-        # sort them in ***column-major*** order but that's dumb, we want row-major!
+        # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
         if order=='C':
             newhandles = []
             ncol = kwargs['ncol'] # number of columns
             handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
             nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
+            # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
             nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(kwargs['ncol']-nfinalrow)
-                # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
             for col,nrow in enumerate(nrows): # iterate through cols
                 newhandles.extend(handlesplit[row][col] for row in range(nrow))
             handles = newhandles

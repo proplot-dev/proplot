@@ -27,6 +27,7 @@ from . import gridspec, axes
 import functools
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
+import matplotlib.transforms as mtransforms
 # For panel names
 _aliases = {
     'bpanel': 'bottompanel',
@@ -126,6 +127,8 @@ class FigureBase(mfigure.Figure):
         super().__init__(figsize=figsize, **kwargs) # python 3 only
         # Initialize suptitle, adds _suptitle attribute
         self.suptitle('')
+        self._suptitle_init = True # whether vertical position has been changed yet
+        self._suptitle_transform = None
 
     def __getattribute__(self, attr, *args):
         # Get attribute, but offer some convenient aliases
@@ -133,7 +136,9 @@ class FigureBase(mfigure.Figure):
         return super().__getattribute__(attr, *args)
 
     def _rowlabels(self, labels, **kwargs):
-        # Assign rowlabels
+        """
+        Assign row labels.
+        """
         axs = []
         for ax in self.axes:
             if isinstance(ax, axes.BaseAxes) and not isinstance(ax, axes.PanelAxes) and ax._col_span[0]==0:
@@ -156,7 +161,9 @@ class FigureBase(mfigure.Figure):
                     'ha':'right', 'va':'center', **kwargs})
 
     def _collabels(self, labels, **kwargs):
-        # Assign collabels
+        """
+        Assign column labels.
+        """
         axs = []
         for ax in self.axes:
             if isinstance(ax, axes.BaseAxes) and not isinstance(ax, axes.PanelAxes) and ax._row_span[0]==0:
@@ -170,7 +177,24 @@ class FigureBase(mfigure.Figure):
             if label and not ax.collabel.get_text():
                 ax.collabel.update({'text':label, **kwargs})
 
-    def _suptitle_setup(self, renderer=None, offset=False, **kwargs):
+    def _suptitle_setup(self, renderer=None, auto=True, **kwargs):
+        """
+        Intelligently determine super title position.
+
+        Parameters
+        ----------
+        renderer : None or `~matplotlib.backend_bases.RendererBase`, optional
+            The renderer.
+        auto : bool, optional
+            Whether this was called manually or not. In the latter case, we
+            set a flag so that the vertical position will not be changed again.
+
+        Notes
+        -----
+        Seems that `~matplotlib.figure.Figure.draw` is called *more than once*,
+        and the title position are appropriately offset only during the
+        *later* calls! So need to run this every time.
+        """
         # Intelligently determine supertitle position:
         # Determine x by the underlying gridspec structure, where main axes lie.
         left = self._subplots_kw.left
@@ -181,15 +205,14 @@ class FigureBase(mfigure.Figure):
             right += (self._subplots_kw.rwidth + self._subplots_kw.rspace)
         xpos = left/self.width + 0.5*(self.width - left - right)/self.width
 
-        if not offset or not kwargs.get('text', self._suptitle.get_text()):
-            # Simple offset, not using the automatically determined
-            # title position for guidance
-            base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
-            ypos = base/self.height
-            transform = self.transFigure
+        # if self._suptitle_init or kwargs.get('text', None):
+        if False:
+            # base = rc['axes.titlepad']/72 + self._gridspec.top*self.height
+            # ypos = base/self.height
+            ypos = self._suptitle.get_position()[1]
         else:
             # Figure out which title on the top-row axes will be offset the most
-            # NOTE: Have to use private API to figure out whether axis has
+            # WARNING: Have to use private API to figure out whether axis has
             # tick labels or not! Seems to be no other way to do it.
             # See: https://matplotlib.org/_modules/matplotlib/axis.html#Axis.set_tick_params
             # TODO: Modify self.axes? Maybe add a axes_main and axes_panel
@@ -197,12 +220,10 @@ class FigureBase(mfigure.Figure):
             # won't that fuck shit up?
             title_lev1, title_lev2, title_lev3 = None, None, None
             for ax in self.axes:
-                if not isinstance(ax, axes.BaseAxes) or not ax._row_span[0]==0 or \
-                    (isinstance(ax, axes.PanelAxes) and ax.panel_side=='bottom'):
+                if not isinstance(ax, axes.BaseAxes) or not ax._row_span[0]==0 or (isinstance(ax, axes.PanelAxes) and ax.panel_side=='bottom'):
                     continue
                 title_lev1 = ax.title # always will be non-None
-                if ((ax.title.get_text() and not ax._title_inside)
-                    or ax.collabel.get_text()):
+                if (ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text():
                     title_lev2 = ax.title
                 if ax.xaxis.get_ticks_position() == 'top':
                     test = 'label1On' not in ax.xaxis._major_tick_kw \
@@ -211,54 +232,54 @@ class FigureBase(mfigure.Figure):
                     if test:
                         title_lev3 = ax.title
 
-            # Hacky bugfixes:
-            # 1) If no title, fill with spaces. Does nothing in most cases, but
-            # if tick labels are on top, without this step matplotlib tight subplots
-            # will not see the suptitle; now suptitle will just occupy empty title space.
-            # 2) If title and tick labels on top, offset the suptitle and get
-            # matplotlib to adjust tight_subplot by prepending newlines to title.
-            # 3) Otherwise, offset suptitle, and matplotlib will recognize the
-            # suptitle during tight_subplot adjustment.
-            # ic(title_lev1, title_lev2, title_lev3)
-            if not title_lev2: # no title present
-                line = 0
-                title = title_lev1
-                if not title.get_text():
-                # if not title.axes._title_inside:
-                    title.set_text('\n ') # dummy spaces, so subplots adjust will work properly
-            elif title_lev3: # upper axes present
-                line = 1.0 # looks best empirically
+            # Hacky bugfixes
+            # NOTE: Default linespacing is 1.2; it has no get, only a setter.
+            # See: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            if title_lev3: # upper axes present
+                # If title and tick labels on top, offset the suptitle and get
+                # matplotlib to adjust tight_subplot by prepending newlines to
+                # the actual title.
                 title = title_lev3
                 text = title.get_text()
                 title.set_text('\n\n' + text)
+                line = 1.2 # looks best empirically
+                add = '\n'
+            elif title_lev2:
+                # Just offset suptitle, and matplotlib will recognize the
+                # suptitle during tight_subplot adjustment.
+                line = 1.2
+                title = title_lev2 # most common one
             else:
-                line = 1.2 # default line spacing; see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-                title = title_lev1 # most common one
+                # No title present. So, fill with spaces. Does nothing in most
+                # cases, but if tick labels are on top, without this step
+                # matplotlib tight subplots will not see the suptitle; now
+                # suptitle will just occupy the empty title space.
+                line = 0
+                title = title_lev1
+                if not title.axes._title_inside:
+                    title.set_text(' ')
+                add = ''
 
             # First idea: Create blended transform, end with newline
-            # ypos = title.get_position()[1]
-            # transform = mtransforms.blended_transform_factory(
-            #         self.transFigure, title.get_transform())
-            # text = kwargs.pop('text', self._suptitle.get_text())
-            # if text[-1:] != '\n':
-            #     text += '\n'
-            # kwargs['text'] = text
+            # ypos = title.axes._title_pos_init[1]
+            # kwargs['text'] = kwargs.get('text', self._suptitle.get_text()) + add
+            # kwargs['transform'] = mtransforms.blended_transform_factory(self.transFigure, title.get_transform())
 
             # New idea: Get the transformed position
-            # NOTE: Seems draw is called more than once, and the last times
-            # are when title positions are appropriately offset.
-            # NOTE: Default linespacing is 1.2; it has no get, only a setter; see
-            # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-            transform = title.get_transform() + self.transFigure.inverted()
+            if self._suptitle_transform:
+                transform = self._suptitle_transform
+            else:
+                transform = title.axes._title_pos_transform + self.transFigure.inverted()
             ypos = transform.transform(title.axes._title_pos_init)[1]
-            line = line*(rc['axes.titlesize']/72)/self.height
+            line = line*(title.get_size()/72)/self.height
             ypos = ypos + line
-            transform = self.transFigure
+            kwargs['transform'] = self.transFigure
 
         # Update settings
         self._suptitle.update({'position':(xpos, ypos),
-            'transform':transform,
             'ha':'center', 'va':'bottom', **kwargs})
+        if auto:
+            self._suptitle_init = False
 
     def draw(self, renderer, *args, **kwargs):
         """
@@ -268,15 +289,17 @@ class FigureBase(mfigure.Figure):
         """
         # Special: Figure out if other titles are present, and if not
         # bring suptitle close to center
-        self._suptitle_setup(renderer, offset=True) # just applies the spacing
+        self._suptitle_setup(renderer, auto=True) # just applies the spacing
         self._auto_smart_tight_layout(renderer)
-        # If rc settings have been changed, reset them when the figure is
-        # displayed (usually means we have finished executing a notebook cell).
+        out = super().draw(renderer, *args, **kwargs)
+
+        # If rc settings have been changed, reset them after drawing is done
+        # Usually means we have finished executing a notebook cell
         if not rc._init and self._rcreset:
             if not self._silent:
                 print('Resetting rcparams.')
             rc.reset()
-        return super().draw(renderer, *args, **kwargs)
+        return out
 
     def panel_factory(self, subspec, whichpanels=None,
             hspace=None, wspace=None,
@@ -514,7 +537,7 @@ class FigureBase(mfigure.Figure):
             kwargs['facecolor'] = kwargs.pop('color') # the color
             kwargs['transparent'] = False
         # Finally, save
-        self._suptitle_setup(offset=True) # just applies the spacing
+        self._suptitle_setup(auto=True) # just applies the spacing
         self._auto_smart_tight_layout()
         if not self._silent:
             print(f'Saving to "{filename}".')

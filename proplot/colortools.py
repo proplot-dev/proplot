@@ -190,7 +190,7 @@ import matplotlib.cm as mcm
 from matplotlib import rcParams
 from . import utils, colormath
 from .utils import _default, ic
-_data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
+_data = os.path.dirname(__file__) # or parent, but that makes pip install distribution hard
 
 # Default number of colors
 _N_hires = 256
@@ -1116,7 +1116,7 @@ def Colormap(*args, name=None, N=None,
     if name and save:
         # Save segment data directly
         basename = f'{cmap.name}.json'
-        filename = f'{_data}/cmaps/{basename}'
+        filename = os.path.join(_data, 'cmaps', basename)
         data = cmap._segmentdata.copy()
         data['space'] = cmap.space
         with open(filename, 'w') as file:
@@ -2205,7 +2205,7 @@ def register_colors(nmax=np.inf, verbose=False):
     # First register colors and get their HSL values
     names = []
     hcls = np.empty((0,3))
-    for file in glob.glob(f'{_data}/colors/*.txt'):
+    for file in glob.glob(os.path.join(_data, 'colors', '*.txt')):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
@@ -2264,7 +2264,7 @@ def register_cmaps():
     """
     # First read from file
     global cmaps
-    for filename in glob.glob(f'{_data}/cmaps/*'):
+    for filename in glob.glob(os.path.join(_data, 'cmaps', '*')):
         # Read table of RGB values
         if not re.search('\.(x?rgba?|json|xml)$', filename):
             continue
@@ -2414,7 +2414,7 @@ def register_cycles():
     """
     # Read lists of hex strings from disk
     global cycles
-    for filename in glob.glob(f'{_data}/cmaps/*.hex'):
+    for filename in glob.glob(os.path.join(_data, 'cmaps', '*.hex')):
         name = os.path.basename(filename)
         name = name.split('.hex')[0]
         colors = [*open(filename)] # should just be a single line

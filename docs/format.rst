@@ -71,12 +71,12 @@ gives you advanced control over the look of your plots. **Use**
 `~proplot.rcmod.rc` **as your one-stop shop for changing global settings**.
 
 The `~proplot.rcmod.rc` object can be used to change built-in
-`~matplotlib.rcParams` settings, a few custom :ref:`rcSpecial` settings,
-and some magic :ref:`rcGlobal` settings that apply to groups of other
+`~matplotlib.rcParams` settings, a few custom :ref:`rcParams_new` settings,
+and some magic :ref:`rcGlobals` settings that apply to groups of other
 settings and keep them synced – e.g., tick, spine, and tick label
 colors. The global settings are tabulated in the `~proplot.rcmod` documentation.
 
-To modify any :ref:`rcGlobal` or `~matplotlib.rcParams` settings, you have three options:
+To modify any :ref:`rcGlobals` or `~matplotlib.rcParams` settings, you have three options:
 
 1. Change one global setting using ``plot.rc.name = value`` or ``plot.rc['name'] = value``.
    Note that, for `~matplotlib.rcParams` settings with ‘dots’ in their name, you will

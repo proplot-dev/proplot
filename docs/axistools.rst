@@ -6,7 +6,7 @@ Axis tools
 .. automodsumm:: proplot.axistools
    :toctree: api
    :variables-only:
-   :skip: ic
+   :skip: ic, rc
 
 **Functions**
 

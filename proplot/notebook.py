@@ -42,7 +42,6 @@ import os
 import sys
 import socket
 from .rcmod import rc
-from matplotlib import rcParams
 
 def nbsetup(directory=None, autosave=30, backend='inline'):
     """
@@ -106,11 +105,7 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     # For some reason this is necessary, even with rc['savefig.bbox'] = 'standard'
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
-    # Re-assert defaults (some get overwritten on inline initiatoin)
-    # rcfinal = rcParams.copy()
-    # print({key:(value1,value2) for key,value1,value2 in
-    #     zip(rcParams.keys(), rcinit.values(), rcfinal.values())
-    #     if value1 != value2})
+    # Re-assert defaults (some get overwritten on inline initiation)
     rc.reset()
 
     # Message
