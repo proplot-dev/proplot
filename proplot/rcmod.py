@@ -534,9 +534,9 @@ class rc_configurator(object):
         # refer to the *default* cycler colors; so first reset
         if isinstance(value, str) or isinstance(value, Number):
             value = value,
-        colors = colortools.colors('colorblind')
+        colors = colortools.Cycle('colorblind')
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-        colors = colortools.colors(*value)
+        colors = colortools.Cycle(*value)
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         figs = list(map(plt.figure, plt.get_fignums()))
         for fig in figs:

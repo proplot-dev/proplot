@@ -1,6 +1,6 @@
-cycle
+Cycle
 =====
 
 .. currentmodule:: proplot.colortools
 
-.. autofunction:: cycle
+.. autofunction:: Cycle

@@ -224,8 +224,9 @@ _cycles_preset = {
 
 # Color stuff
 # Keep major color names, and combinations of those names
+# _distinct_colors_threshold = 0.07
+_distinct_colors_threshold = 0.09
 _distinct_colors_space = 'hsl' # register colors distinct in this space?
-_distinct_colors_threshold = 0.07
 _distinct_colors_exceptions = [
     'white', 'black', 'gray', 'red', 'pink', 'grape',
     'sky blue', 'eggshell', 'sea blue',
@@ -346,11 +347,6 @@ _cmap_categories = { # initialize as empty lists
         'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
         ],
 
-    # Sky themes from rafi; not very scientifically useful, but pretty
-    # 'Sky' : [
-    #     'Sky1', 'Sky2', 'Sky3', 'Sky4', 'Sky5', 'Sky6', 'Sky7',
-    #     ],
-
     # CET maps
     # See: https://peterkovesi.com/projects/colourmaps/
     # Only kept the 'nice' ones
@@ -376,6 +372,11 @@ _cmap_categories = { # initialize as empty lists
         'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
         ],
 
+    # Sky themes from rafi; not very scientifically useful, but pretty
+    # 'Sky' : [
+    #     'Sky1', 'Sky2', 'Sky3', 'Sky4', 'Sky5', 'Sky6', 'Sky7',
+    #     ],
+
     # Los Alamos
     # See: https://datascience.lanl.gov/colormaps.html
     # Most of these have analogues in SciVisColor, added the few unique
@@ -391,23 +392,6 @@ _cmap_categories = { # initialize as empty lists
     # Culled these because some were ugly
     # Actually nevermind... point of these is to *combine* them, make
     # stacked colormaps that highlight different things.
-    # 'SciVisColor': [
-    #           'SciPale',
-    #           'SciBlue', 'SciCyan', 'SciSky',
-    #           'SciTurquoise',
-    #           'SciBlueGreen',
-    #           'SciBrightGreen', 'SciGreen', 'SciYellowGreen',
-    #           'SciYellow',
-    #           'SciOrange',
-    #           'SciYellowRed',
-    #           'SciOrangeRed',
-    #           'SciRed',
-    #           'SciBrown',
-    #           'SciMauve',
-    #           'SciPurple',
-    #           'SciViolet',
-    #           'SciBlueViolet',
-    #       ],
     'SciVisColor Blues': [
         'Blue0', 'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5', 'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11',
         ],
@@ -423,11 +407,12 @@ _cmap_categories = { # initialize as empty lists
     'SciVisColor Reds/Purples': [
         'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
         ],
+
+    # Remove the "combo" maps (and ugly diverging ones) because these can
+    # be built in proplot with the Colormap tool!
     # 'SciVisColor Diverging': [
     #     'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
     #     ],
-
-    # Waves, also filtered
     # 'SciVisColor 3 Waves': [
     #     '3Wave1', '3Wave2', '3Wave3', '3Wave4', '3Wave5', '3Wave6', '3Wave7'
     #     ],
@@ -437,8 +422,6 @@ _cmap_categories = { # initialize as empty lists
     # 'SciVisColor 5 Waves': [
     #     '5Wave1', '5Wave2', '5Wave3', '5Wave4', '5Wave5', '5Wave6'
     #     ],
-
-    # Decided to totally forget these
     # 'SciVisColor Waves': [
     #     '3Wave1', '3Wave2', '3Wave3',
     #     '4Wave1', '4Wave2', '4Wave3',
@@ -479,6 +462,7 @@ _cmap_categories = { # initialize as empty lists
     #     'Geography2', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/ngdc/tn/ETOPO1.png.index.html
     #     'Geography3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/mby/tn/mby.png.index.html
     #     ],
+
     # Gross. These ones will be deleted.
     'Alt Sequential': [
         'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
@@ -1124,7 +1108,7 @@ def Colormap(*args, name=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
+def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     """
     Convenience function to draw colors from arbitrary color cycles and
     colormaps stored in `matplotlib.cm.cmap_d`.
@@ -1192,11 +1176,11 @@ def cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     return colors
 
-def colors(*args, **kwargs):
+def Colors(*args, **kwargs):
     """
     Simple alias.
     """
-    return cycle(*args, **kwargs)
+    return Cycle(*args, **kwargs)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
@@ -1824,7 +1808,7 @@ def set_cycle(cmap, samples=None, rename=False):
         Will be ignored if the colormap is a `~matplotlib.colors.ListedColormap`,
         for which interpolation is not possible.
     """
-    _colors = colors(cmap, samples)
+    _colors = Cycle(cmap, samples)
     cyl = cycler.cycler('color', _colors)
     rcParams['axes.prop_cycle'] = cyl
     rcParams['patch.facecolor'] = _colors[0]
@@ -2208,24 +2192,26 @@ def register_colors(nmax=np.inf, verbose=False):
     seen = set()
     names = []
     hcls = np.empty((0,3))
+    correct = (('/', ' '), ("'s", ''), ('grey', 'gray'),
+               ('pinky', 'pink'), ('greeny', 'green'),
+               ('robin egg', 'robins egg'),
+               ('egg blue', 'egg'))
     for file in sorted(glob.glob(os.path.join(_data, 'colors', '*.txt'))):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
         # Sanitize names and add to dictionary
         # NOTE: You can add to this!
+        i = 0
         _dict = {}
         ihcls = []
         colorlist[category] = {} # just initialize this one
-        for i,(name,color) in enumerate(data): # is list of name, color tuples
+        for name, color in data: # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
             # Sanitize
-            name = re.sub('/', ' ', name)
-            name = re.sub("'s", '', name)
-            name = re.sub('grey', 'gray', name)
-            name = re.sub('pinky', 'pink', name)
-            name = re.sub('greeny', 'green', name)
+            for reg,sub in correct:
+                name = re.sub(reg, sub, name)
             # Check
             if name in seen:
                 continue
@@ -2234,6 +2220,7 @@ def register_colors(nmax=np.inf, verbose=False):
             names.append((category, name)) # save the category name pair
             ihcls.append(to_xyz(color, space=_distinct_colors_space))
             _dict[name] = color # save the color
+            i += 1
         _colors_unfiltered[category] = _dict
         # Concatenate HCL arrays
         hcls = np.concatenate((hcls, ihcls), axis=0)

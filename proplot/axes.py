@@ -260,10 +260,10 @@ def cycle_features(self, func):
     Parameters
     ----------
     cycle : None or cycle spec, optional
-        The cycle specifer, passed to the `~proplot.colortools.cycle`
+        The cycle specifer, passed to the `~proplot.colortools.Cycle`
         constructor.
     cycle_kw : dict-like, optional
-        Passed to `~proplot.colortools.cycle`.
+        Passed to `~proplot.colortools.Cycle`.
 
     Other parameters
     ----------------
@@ -272,7 +272,7 @@ def cycle_features(self, func):
 
     See also
     --------
-    `cycle_methods`, `BaseAxes`, `~proplot.colortools.cycle`
+    `cycle_methods`, `BaseAxes`, `~proplot.colortools.Cycle`
 
     Notes
     -----
@@ -287,7 +287,7 @@ def cycle_features(self, func):
         if cycle is not None:
             if not np.iterable(cycle) or isinstance(cycle, str):
                 cycle = cycle,
-            cycle = colortools.cycle(*cycle, **cycle_kw)
+            cycle = colortools.Cycle(*cycle, **cycle_kw)
             self.set_prop_cycle(color=cycle)
         return func(*args, **kwargs)
     return decorator
