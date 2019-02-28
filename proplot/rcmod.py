@@ -56,58 +56,58 @@ to trim trailing zeros on tick labels. Default is ``True``.
 
 The ``gridspec`` subcategories (all values are in inches):
 
-==========  ==================================================================
-Key         Description
-==========  ==================================================================
-``title``   Vertical space for titles.
-``legend``  Width of "legend" panels.
-``cbar``    Width of "colorbar" panels.
-``ylab``    Horizontal space between subplots alotted for *y*-labels.
-``xlab``    Vertical space between subplots alotted for *x*-labels.
-``nolab``   Space between subplots alotted for tick marks.
-``inner``   Totally empty space between subplots.
-==========  ==================================================================
+===================  ==================================================================
+Key                  Description
+===================  ==================================================================
+``gridspec.title``   Vertical space for titles.
+``gridspec.legend``  Width of "legend" panels.
+``gridspec.cbar``    Width of "colorbar" panels.
+``gridspec.ylab``    Horizontal space between subplots alotted for *y*-labels.
+``gridspec.xlab``    Vertical space between subplots alotted for *x*-labels.
+``gridspec.nolab``   Space between subplots alotted for tick marks.
+``gridspec.inner``   Totally empty space between subplots.
+===================  ==================================================================
 
 The ``map`` subcategory :
 
-==============  ==================================================================
-Key             Description
-==============  ==================================================================
-``reso``        Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
-``facecolor``   Background color for the map projection.
-``linewidth``   Line width of map boundary.
-``edgecolor``   Edge color of map boundary.
-==============  ==================================================================
+=================  ==================================================================
+Key                Description
+=================  ==================================================================
+``map.reso``       Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``map.facecolor``  Background color for the map projection.
+``map.linewidth``  Line width of map boundary.
+``map.edgecolor``  Edge color of map boundary.
+=================  ==================================================================
 
 Background hatching with the ``map`` and ``axes`` subcategories :
 
-==============  ==================================================================
-Key             Description
-==============  ==================================================================
-``facehatch``   Background hatching string pattern, if not ``None`` [1]_.
-``hatchcolor``  Color of background hatching pattern. Default is same as spines.
-==============  ==================================================================
+==================  ==================================================================
+Key                 Description
+==================  ==================================================================
+``xxx.facehatch``   Background hatching string pattern, if not ``None`` [1]_.
+``xxx.hatchcolor``  Color of background hatching pattern. Default is same as spines.
+==================  ==================================================================
 
 The ``abc``, ``rowlabel``, and ``collabel`` subcategories:
 
-============  ==================================================================
-Key           Description
-============  ==================================================================
-``fontsize``  The font size.
-``weight``    The font weight.
-``color``     The font color.
-============  ==================================================================
+================  ==================================================================
+Key               Description
+================  ==================================================================
+``xxx.fontsize``  The font size.
+``xxx.weight``    The font weight.
+``xxx.color``     The font color.
+================  ==================================================================
 
 The ``lonlatlines`` and ``gridminor`` subcategories:
 
-=============  ==================================================================
-Key            Description
-=============  ==================================================================
-``linewidth``  The line width.
-``linestyle``  The line style.
-``alpha``      The line transparency.
-``color``      The line color.
-=============  ==================================================================
+=================  ==================================================================
+Key                Description
+=================  ==================================================================
+``xxx.linewidth``  The line width.
+``xxx.linestyle``  The line style.
+``xxx.alpha``      The line transparency.
+``xxx.color``      The line color.
+=================  ==================================================================
 
 rcGlobals
 ---------
