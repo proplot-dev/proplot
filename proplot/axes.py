@@ -392,7 +392,7 @@ def cmap_features(self, func):
         if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
             kwargs.update({'aspect': 'auto'})
         result = func(*args, **kwargs)
-        if not hasattr(result, 'extend'):
+        if not getattr(result, 'extend', None):
             result.extend = extend # will already be on there for some funcs
 
         # Get levels automatically determined by contourf, or make them
@@ -493,14 +493,13 @@ def _no_recurse(self, func):
     def decorator(*args, **kwargs):
         name = getattr(func, '__name__')
         if self._recurred:
-            # Don't call func again, now we want to call the parent function
-            # Note this time 'self' is repeated in position args[0]
+            # Don't call func again, now we want to call the original
+            # matplotlib version of this function
             self._recurred = False
-            result = super(BasemapAxes, self).__getattribute__(name)(*args, **kwargs)
+            result = object.__getattribute__(self, name)(*args, **kwargs)
         else:
             # Actually return the basemap version
             self._recurred = True
-            # result = self.m.__getattribute__(name)(ax=self, *args, **kwargs)
             result = func(*args, **kwargs)
         self._recurred = False # cleanup, in case recursion never occurred
         return result
@@ -516,7 +515,6 @@ def _linefix_basemap(self, func):
     def decorator(*args, **kwargs):
         kwargs.update(latlon=True)
         return func(*args, **kwargs)
-        # return func(self, *args, **kwargs)
     return decorator
 
 def _gridfix_basemap(self, func):
@@ -526,14 +524,15 @@ def _gridfix_basemap(self, func):
     @functools.wraps(func)
     def decorator(lon, lat, Z, fix_poles=True, **kwargs):
         # Raise errors
+        eps = 1e-3
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
-        if lon.max()>lon.min()+360:
+        if lon.max() > lon.min() + 360 + eps:
             raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
-        if lon.min()<-360 or lon.max()>360:
+        if lon.min() < -360 or lon.max() > 360:
             raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Must fall in range [-360, 360].')
-        if lonmin<-360 or lonmin>0:
-            print(f'Warning: Minimum longitude is {lonmin}, not in range [-360,0].')
-            # raise ValueError('Minimum longitude must fall in range [-360, 0].')
+        # if lonmin < -360 or lonmin > 0:
+        #     print(f'Warning: Minimum longitude is {lonmin}, not in range [-360,0].')
+        #     raise ValueError('Minimum longitude must fall in range [-360, 0].')
         # Establish 360-degree range
         lon -= 720
         while True:
@@ -619,19 +618,24 @@ def _gridfix_basemap(self, func):
         return func(x, y, Z, **kwargs)
     return decorator
 
-def _linefix_cartopy(func):
+def _linefix_cartopy(self, func):
     """
     Simply add an additional kwarg. Needs whole function because we
     want to @wrap it to preserve documentation.
     """
     @functools.wraps(func)
     def decorator(*args, transform=PlateCarree, **kwargs):
+        # Simple
         if isinstance(transform, type):
             transform = transform() # instantiate
-        return func(*args, transform=transform, **kwargs)
+        result = func(*args, transform=transform, **kwargs)
+        # Some plot functions seem to reset the outlinepatch or
+        # backgroundpatch (???), so need to re-enforce settings.
+        self._rcupdate()
+        return result
     return decorator
 
-def _gridfix_cartopy(func):
+def _gridfix_cartopy(self, func):
     """
     Apply default transform and fix discontinuities in grid.
     Note for cartopy, we don't have to worry about meridian at which longitude
@@ -665,6 +669,9 @@ def _gridfix_cartopy(func):
         # Call function
         with io.capture_output() as captured:
             result = func(lon, lat, Z, transform=transform, **kwargs)
+        # Some plot functions seem to reset the outlinepatch or
+        # backgroundpatch (???), so need to re-enforce settings.
+        self._rcupdate()
         return result
     return decorator
 
@@ -1254,7 +1261,6 @@ class BaseAxes(maxes.Axes):
                 'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]})
         return t
 
-    # @cycle_features
     def plot(self, *args, cmap=None, values=None, **kwargs):
         """
         As in `~matplotlib.axes.Axes.plot`, but adds functionality
@@ -1283,7 +1289,6 @@ class BaseAxes(maxes.Axes):
             raise ValueError('To draw colormap line, must provide kwargs "values" and "cmap".')
         return lines
 
-    # @cycle_features
     def scatter(self, *args, **kwargs):
         """
         Just makes keyword arg conventions consistent with `plot`. This is
@@ -1310,7 +1315,6 @@ class BaseAxes(maxes.Axes):
                     kwargs[name] = kwargs.pop(option)
         return super().scatter(*args, **kwargs)
 
-    # @cmap_features
     def cmapline(self, *args, values=None,
             cmap=None, norm=None,
             interp=0, **kwargs):
@@ -2559,9 +2563,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     def __getattribute__(self, attr, *args):
         obj = super().__getattribute__(attr, *args)
         if attr in _line_methods:
-            obj = _linefix_cartopy(obj)
+            obj = _linefix_cartopy(self, obj)
         elif attr in _edge_methods or attr in _center_methods:
-            obj = _gridfix_cartopy(obj)
+            obj = _gridfix_cartopy(self, obj)
             if attr in _edge_methods:
                 obj = _check_edges(obj)
             else:
@@ -2713,11 +2717,12 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         latlines = latminorlocator or latlocator
 
         # First take care of gridlines
+        eps = 1e-3
         draw_labels = (isinstance(self.projection, ccrs.Mercator) or isinstance(self.projection, ccrs.PlateCarree))
         if latlines and latlines[0]==-90:
-            latlines[0] += 0.001
+            latlines[0] += eps
         if lonlines and lonlines[0]==-90:
-            lonlines[0] -= 0.001
+            lonlines[0] -= eps
         gl = self.gridlines(**rc['lonlatlines'], draw_labels=draw_labels)
         if lonlines: # NOTE: using mticker.NullLocator results in error!
             gl.xlocator = mticker.FixedLocator(lonlines)
@@ -2834,7 +2839,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     for i,handle in enumerate(handles):
         if hasattr(handle, 'cmap'):
             # Make sure we sample the *center* of the colormap
-            print('Warning: Creating legend for colormap object.')
+            print('Warning: Getting legend entry from colormap.')
             size = np.mean(handle.get_sizes())
             handles[i] = ax.scatter([0], [0],
                                  markersize=size,
@@ -2931,7 +2936,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     return legends
 
 def colorbar_factory(ax, mappable, values=None,
-        orientation='horizontal', extend='neither', extendlength=0.2,
+        orientation='horizontal', extend=None, extendlength=0.2,
         clabel=None, label=None,
         ctickminor=False, tickminor=None,
         cgrid=False, grid=None,
@@ -2970,11 +2975,11 @@ def colorbar_factory(ax, mappable, values=None,
         colormap and normalizer are constructed.
     orientation : {'horizontal', 'vertical'}, optional
         The colorbar orientation.
-    extend : {'neither', 'both', 'min', 'max'}, optional
-        Ignored if `mappable` has the ``extend`` attribute.
+    extend : {None, 'neither', 'both', 'min', 'max'}, optional
         Direction for drawing colorbar "extensions" (i.e. references to
         out-of-bounds data with a unique color). These are triangles by
-        default.
+        default. If ``None``, we try to use the ``extend`` attribute on the
+        mappable object. If the attribute is unavailable, we use ``'neither'``.
     extendlength : float or str, optional
         The length of the colorbar "extensions" in *physical units*.
         If float, units are inches. If string,
@@ -3071,12 +3076,15 @@ def colorbar_factory(ax, mappable, values=None,
             fromlines = True # we passed a bunch of line handles; just use their colors
         else:
             fromcolors = True # we passed a bunch of color strings or tuples
+    # Update with user-kwargs
+    if extend is None:
+        if hasattr(mappable, 'extend'):
+            extend = mappable.extend or 'neither'
+        else:
+            extend = 'neither'
     csettings = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
                  'spacing':'uniform', 'extend':extend, 'drawedges':cgrid} # this is default case unless mappable has special props
-    # Update with user-kwargs
-    csettings.update(**kwargs)
-    if hasattr(mappable, 'extend') and mappable.extend is not None:
-        csettings.update({'extend':mappable.extend})
+    csettings.update(kwargs)
 
     # Option to generate colorbar/colormap from line handles
     # * Note the colors are perfect if we don't extend them by dummy color on either side,
@@ -3134,7 +3142,6 @@ def colorbar_factory(ax, mappable, values=None,
         values_min = np.where(values>=mappable.norm.vmin)[0]
         values_max = np.where(values<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
-            # print(f'Warning: no ticks are within the colorbar range {mappable.norm.vmin:.3g} to {mappable.norm.vmax:.3g}.')
             locators.append(axistools.Locator('null'))
             continue
         values_min, values_max = values_min[0], values_max[-1]
@@ -3240,7 +3247,7 @@ def colorbar_factory(ax, mappable, values=None,
         alpha = cb.solids.get_alpha()
     if alpha is not None and alpha<1:
         # First get reference color
-        # print('Warning: Performing manual alpha-blending for colorbar solids.')
+        print('Warning: Performing manual alpha-blending for colorbar solids.')
         reference = mappable.axes.get_facecolor() # the axes facecolor
         reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
         # Next get solids

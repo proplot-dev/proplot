@@ -232,7 +232,7 @@ _rcGlobals_children = {
     'hatchcolor':     ['axes.hatchcolor', 'map.hatchcolor'],
     'gridalpha':      ['grid.alpha', 'gridminor.alpha'],
     'small':          ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize'], # the 'small' fonts
-    'large':          ['abc.fontsize', 'figure.titlesize', 'axes.titlesize'], # the 'large' fonts
+    'large':          ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
     'linewidth':      ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
     'gridwidth':      ['grid.linewidth'],
     'gridcolor':      ['grid.color',     'gridminor.color'],

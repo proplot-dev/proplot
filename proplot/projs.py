@@ -139,9 +139,9 @@ def Proj(name, basemap=False, **kwargs):
     else:
         import cartopy.crs as ccrs # verify package is importable
         kwargs = {crs_translate.get(key, key): value for key,value in kwargs.items()}
-        crs = projs.get(name, None)
+        crs = crs_projs.get(name, None)
         if name is None:
-            raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(projs.keys())}.')
+            raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(crs_projs.keys())}.')
         projection = crs(**kwargs)
         aspect = (np.diff(projection.x_limits) / \
                   np.diff(projection.y_limits))[0]
@@ -223,12 +223,12 @@ class WinkelTripel(_WarpedRectangularProjection):
         return 1e4
 
 # Dictionary of names
-projs = {}
+crs_projs = {}
 """
 Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
 """
 if ccrs:
-    projs = { # interpret string, create cartopy projection
+    crs_projs = { # interpret string, create cartopy projection
       'aea':     ccrs.AlbersEqualArea,
       'aeqd':    ccrs.AzimuthalEquidistant,
       'aitoff':  Aitoff,
