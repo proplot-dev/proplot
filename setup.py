@@ -19,6 +19,6 @@ setup(
     version = '1.0',
     # The license can be anything you like
     license          = open('LICENSE.txt').read(),
-    description      = 'Matplotlib wrapper for making clear, concise, publication-quality graphics quickly and easily.',
-    long_description = open('README.md').read(),
+    description      = 'Matplotlib wrapper for making beautiful, publication-quality graphics.',
+    long_description = open('README.rst').read(),
 )
