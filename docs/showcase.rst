@@ -280,7 +280,6 @@ most projections.
     y = plot.arange(-60,60+1,30)
     data = np.random.rand(len(y), len(x))
     for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
-        # adfdas
         m = None
         cmap = ['sunset', 'sunrise'][basemap]
         levels = [0, .3, .5, .7, .9, 1]
@@ -294,9 +293,6 @@ most projections.
         ax.format(facecolor='gray2', suptitle='Hammer projection in different mapping frameworks', collabels=['Cartopy', 'Basemap'])
         if p<2:
             c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
-        # print(p, ax._sharex, ax._sharey, list(ax._shared_x_axes))
-        # if p==2:
-            # raise Exception
 
 
 
@@ -305,14 +301,39 @@ most projections.
    :height: 417px
 
 
+Easily add geographic features using either basemap or cartopy as the
+projection backend. Note how basemap tends to fit many projections into
+“rectangles”, but cartopy does not.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, nrows=2, proj={(1,2):'ortho', (3,4):'npstere'}, basemap={1:False, 2:True, 3:False, 4:True},
+                           proj_kw={(1,2):{'lon_0':0, 'lat_0':0}, (3,4):{'lon_0':0, 'boundinglat':40}})
+    axs[0::2].format(reso='med', land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'})
+    axs[1::2].format(land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'})
+    axs.format(collabels=['Earth, cartopy', 'Earth, basemap'])
+
+
+
+.. image:: _static/showcase/showcase_15_0.png
+   :width: 454px
+   :height: 466px
+
+
+Cartopy can do latitude and longitude labels for just the Mercator and
+equirectangular projections. It can also perform more complex plotting
+methods like ``tricontourf``.
+
 .. code:: ipython3
 
     import proplot as plot
     plot.nbsetup()
     import numpy as np
-    f, axs = plot.subplots(ncols=2, width=7, proj={1:'merc', 2:'nplaea'},
-                           wspace=0.5, basemap={1:False, 2:True},
-                           proj_kw={1:{'lon_0':0}, 2:{'lon_0':0, 'boundinglat':5}}, left=0.4, right=0.4, bottom=0.2)
+    f, axs = plot.subplots(ncols=1, width=3.5, proj='merc', wspace=0.5, basemap=False,
+                           proj_kw={'lon_0':0}, left=0.4, right=0.4, bottom=0.2)
     # First the tricolor cartopy plot
     axs.set_adjustable('box')
     ax = axs[0]
@@ -323,24 +344,13 @@ most projections.
     y = (y-0.5)*180
     levels = np.linspace(0, 1, 100)
     cnt = ax.tripcolor(x, y, z, levels=levels, cmap='Turquoise')
-    ax.format(title='Tricontour plot', xlabels='b', xlocator=60, ylocator=20)
-    # Next the basemap one
-    ax = axs[1]
-    N = 20
-    x = np.linspace(-180, 180, N)
-    x = x[:-1] # smooth transition across cutoff
-    y = np.linspace(-70, 70, N)
-    levels = np.linspace(0, 1, 100)
-    ax.format(title='Basemap plot', xlocator=plot.arange(-180,180,60), ylocator=plot.arange(-80,80,20),
-              lonlabels='lrb', latlabels='')
-    cnt = ax.contourf(x, y, np.random.rand(len(y), len(x)).cumsum(axis=0), cmap='Turquoise', levels=20)
+    ax.format(title='Tricontour plot, latitude and longitude labels', xlabels='b', xlocator=60, ylocator=20)
 
 
 
-
-.. image:: _static/showcase/showcase_14_1.png
-   :width: 630px
-   :height: 255px
+.. image:: _static/showcase/showcase_17_0.png
+   :width: 315px
+   :height: 279px
 
 
 Axis scales
@@ -375,7 +385,7 @@ scale creates a geographically “area-weighted” latitude axis. The
 
 
 
-.. image:: _static/showcase/showcase_16_1.png
+.. image:: _static/showcase/showcase_19_1.png
    :width: 630px
    :height: 325px
 
@@ -407,7 +417,7 @@ wavenumber and wavelength on the same axis.
 
 
 
-.. image:: _static/showcase/showcase_18_1.png
+.. image:: _static/showcase/showcase_21_1.png
    :width: 540px
    :height: 279px
 
@@ -466,7 +476,7 @@ assumed for these conversions is 7km, and can be changed. See the
 
 
 
-.. image:: _static/showcase/showcase_20_2.png
+.. image:: _static/showcase/showcase_23_2.png
    :width: 450px
    :height: 411px
 
@@ -505,7 +515,7 @@ distribution.
 
 
 
-.. image:: _static/showcase/showcase_22_1.png
+.. image:: _static/showcase/showcase_25_1.png
    :width: 540px
    :height: 565px
 
@@ -527,7 +537,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_24_1.png
+.. image:: _static/showcase/showcase_27_1.png
    :width: 847px
    :height: 297px
 
@@ -541,7 +551,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_25_1.svg
+.. image:: _static/showcase/showcase_28_1.svg
 
 
 .. code:: ipython3
@@ -553,7 +563,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_26_1.svg
+.. image:: _static/showcase/showcase_29_1.svg
 
 
 .. code:: ipython3
@@ -567,7 +577,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_27_3.svg
+.. image:: _static/showcase/showcase_30_3.svg
 
 
 .. code:: ipython3
@@ -581,7 +591,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_28_3.svg
+.. image:: _static/showcase/showcase_31_3.svg
 
 
 Colormaps
@@ -600,7 +610,7 @@ described above. See the ``colortools`` module for more info.
 
 
 
-.. image:: _static/showcase/showcase_30_1.png
+.. image:: _static/showcase/showcase_33_1.png
    :width: 481px
    :height: 5434px
 
@@ -625,7 +635,7 @@ is fluid!
 
 
 
-.. image:: _static/showcase/showcase_32_1.png
+.. image:: _static/showcase/showcase_35_1.png
    :width: 540px
    :height: 2109px
 
@@ -651,7 +661,7 @@ for some plot element.
 
 
 
-.. image:: _static/showcase/showcase_34_1.svg
+.. image:: _static/showcase/showcase_37_1.svg
 
 
 .. code:: ipython3
@@ -663,7 +673,7 @@ for some plot element.
 
 
 
-.. image:: _static/showcase/showcase_35_1.png
+.. image:: _static/showcase/showcase_38_1.png
    :width: 720px
    :height: 1203px
 
@@ -712,7 +722,7 @@ that the distinctions between “colormaps” and “color cycles” is now
 
 
 
-.. image:: _static/showcase/showcase_37_1.png
+.. image:: _static/showcase/showcase_40_1.png
    :width: 634px
    :height: 983px
 
@@ -748,7 +758,7 @@ often very useful for interpreting physical data with coarse resolution.
 
 
 
-.. image:: _static/showcase/showcase_39_1.png
+.. image:: _static/showcase/showcase_42_1.png
    :width: 652px
    :height: 417px
 
@@ -784,7 +794,7 @@ is being used in the same subplot.
 
 
 
-.. image:: _static/showcase/showcase_41_1.png
+.. image:: _static/showcase/showcase_44_1.png
    :width: 504px
    :height: 384px
 

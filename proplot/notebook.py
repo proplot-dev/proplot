@@ -105,9 +105,10 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     # For some reason this is necessary, even with rc['savefig.bbox'] = 'standard'
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
-    # Re-assert defaults (some get overwritten on inline initiation)
+    # Re-assert defaults (some get overwritten on initiation of inline backend)
     rc.reset()
 
-    # Message
-    print("Configured ipython notebook.")
+# Run automatically?
+# if rc['nbsetup']:
+#     nbsetup()
 

@@ -127,14 +127,15 @@ def Proj(name, basemap=False, **kwargs):
         'eqc':     'cyl',
         'pcarree': 'cyl',
         }
+    kw_init = {}
     # Basemap
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         kwargs.update({'fix_aspect':True})
         name = cyl_aliases.get(name, name)
         projection = mbasemap.Basemap(projection=name, **kwargs)
-        aspect = (projection.urcrnrx - projection.llcrnrx) / \
-                 (projection.urcrnry - projection.llcrnry)
+        kw_init['aspect'] = (projection.urcrnrx - projection.llcrnrx) / \
+                           (projection.urcrnry - projection.llcrnry)
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is importable
@@ -142,10 +143,13 @@ def Proj(name, basemap=False, **kwargs):
         crs = crs_projs.get(name, None)
         if name is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(crs_projs.keys())}.')
+        for init_arg in ('boundinglat', 'centrallat'):
+            if init_arg in kwargs:
+                kw_init[init_arg] = kwargs.pop(init_arg)
         projection = crs(**kwargs)
-        aspect = (np.diff(projection.x_limits) / \
-                  np.diff(projection.y_limits))[0]
-    return projection, aspect
+        kw_init['aspect'] = (np.diff(projection.x_limits) / \
+                            np.diff(projection.y_limits))[0]
+    return projection, kw_init
 
 # Simple projections
 # Inspired by source code for Mollweide implementation

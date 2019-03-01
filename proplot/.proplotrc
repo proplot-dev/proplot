@@ -3,6 +3,7 @@
 #-------------------------------------
 rcGlobals:
     # Important settings
+    # nbsetup:    True
     cycle:      colorblind
     cmap:       sunset
     lut:        256
@@ -125,6 +126,8 @@ rcParams_new:
     map.linewidth:
     map.edgecolor:
     map.reso: med
+    map.lonlines: 30 # default gridline spacing
+    map.latlines: 15
 
     # Axis settings
     axes.formatter.zerotrim: True

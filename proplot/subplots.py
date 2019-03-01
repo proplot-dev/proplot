@@ -1173,13 +1173,14 @@ def subplots(array=None, ncols=1, nrows=1,
         elif name=='xy':
             axes_kw[num]['projection'] = 'xy'
         # Custom Basemap and Cartopy axes
+        # print(f'Forcing aspect ratio: {aspect:.3g}')
         elif name:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, aspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
+            instance, kwproj = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
+            if num!=0:
+                kwproj.pop('aspect')
             axes_kw[num].update({'projection':package, 'map_projection':instance})
-            if num==0:
-                # print(f'Forcing aspect ratio: {aspect:.3g}')
-                kwargs.update(aspect=aspect)
+            axes_kw[num].update(kwproj)
         else:
             raise ValueError('All projection names should be declared. Wut.')
 

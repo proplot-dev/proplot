@@ -39,7 +39,7 @@ import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
 from matplotlib import docstring
 from .rcmod import rc
-from . import utils, colortools, fonttools, axistools
+from . import utils, projs, colortools, fonttools, axistools
 from .utils import _dot_dict, _default, _timer, _counter, ic, units
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 
@@ -2278,7 +2278,8 @@ class MapAxes(BaseAxes):
         if labels is False:
             return [0]*4
         if labels is None:
-            labels = True # use the default
+            # labels = True # will label lons on bottom, lats on left
+            labels = False
         if isinstance(labels, str):
             string = labels
             labels = [0]*4
@@ -2449,6 +2450,7 @@ class BasemapAxes(MapAxes):
         latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
         lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
         latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
+        # Length-4 boolean arrays of whether and where to goggle labels
         lonlabels = self.parse_labels(_default(xlabels, lonlabels), 'x')
         latlabels = self.parse_labels(_default(ylabels, latlabels), 'y')
 
@@ -2460,7 +2462,7 @@ class BasemapAxes(MapAxes):
         if coastline and not self._coastline:
             lw = _default(coastlinewidth, rc.coastlinewidth)
             color = _default(coastcolor, rc.coastcolor)
-            self._coastline = self.m.drawcoastlines(ax=self, color=color, lw=lw)
+            self._coastline = self.m.drawcoastlines(ax=self, color=color, linewidth=lw)
 
         # Longitude/latitude lines
         # Make sure to turn off clipping by invisible axes boundary; otherwise
@@ -2469,9 +2471,8 @@ class BasemapAxes(MapAxes):
         latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
         lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
         lsettings = rc['lonlatlines']
-        linestyle = lsettings['linestyle']
-        latlocator = _default(latlocator, 20) # gridlines by default
-        lonlocator = _default(lonlocator, 60)
+        latlocator = _default(latlocator, rc['map.latlines']) # gridlines by default
+        lonlocator = _default(lonlocator, rc['map.lonlines'])
         if latlocator is not None:
             if isinstance(latlocator, Number):
                 latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
@@ -2484,7 +2485,7 @@ class BasemapAxes(MapAxes):
                         obj.update(tsettings)
                     else:
                         obj.update(lsettings)
-                        obj.set_dashes(self.ls_translate(obj, linestyle))
+                        obj.set_dashes(self.ls_translate(obj, lsettings['linestyle']))
         if lonlocator is not None:
             if isinstance(lonlocator, Number):
                 lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
@@ -2495,7 +2496,7 @@ class BasemapAxes(MapAxes):
                         obj.update(tsettings)
                     else:
                         obj.update(lsettings)
-                        obj.set_dashes(self.ls_translate(obj, linestyle))
+                        obj.set_dashes(self.ls_translate(obj, lsettings['linestyle']))
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
@@ -2515,10 +2516,10 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     ----------
     map_projection : str
         String name for projection.
-    circle_center : float, optional
+    centrallat : float, optional
         For polar projections, the center latitude of the circle (``-90``
         or ``90``).
-    circle_edge : float, optional
+    boundinglat : float, optional
         For polar projections, the edge latitude of the circle.
 
     Notes
@@ -2532,14 +2533,18 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     """
     # Used in Projection parent class here: https://scitools.org.uk/cartopy/docs/v0.13/_modules/cartopy/crs
     name = 'cartopy'
+    _n_bounds = 100 # number of points for drawing circle map boundary
+    _proj_circles = ('laea', 'aeqd', 'stere', 'npstere', 'spstere')
+    _proj_np = ('npstere',)
+    _proj_sp = ('spstere',)
     """The registered projection name."""
-    def __init__(self, *args, map_projection=None, circle_center=90, circle_edge=0, **kwargs):
+    def __init__(self, *args, map_projection=None, centrallat=90, boundinglat=0, **kwargs):
         # Dependencies
         import cartopy.crs as ccrs # verify package is available
 
         # Do the GeoAxes initialization steps manually (there are very few)
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('You must initialize CartopyAxes with map_projection=(cartopy.crs.Projection instance).')
+            raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection>.')
         self._hold = None # dunno
         self._land = None
         self._ocean = None
@@ -2557,11 +2562,15 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
         # Apply circle boundary
         crs_circles = (ccrs.LambertAzimuthalEqualArea, ccrs.AzimuthalEquidistant)
-        if any(isinstance(map_projection, cp) for cp in crs_circles):
-            self.set_extent([-180, 180, circle_edge, circle_center], PlateCarree()) # use platecarree transform
-            self.set_boundary(proj.Circle(100), transform=self.transAxes)
-            # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
+        if map_name in self._proj_circles:
+            if map_name in self._proj_np:
+                centrallat = 90
+            elif map_name in self._proj_sp:
+                centrallat = -90
+            self.set_extent([-180, 180, boundinglat, centrallat], PlateCarree()) # use platecarree transform
+            self.set_boundary(projs.Circle(self._n_bounds), transform=self.transAxes)
+            # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
 
     def __getattribute__(self, attr, *args):
         obj = super().__getattribute__(attr, *args)
@@ -2580,7 +2589,6 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # WARNING: Seems cartopy features can't be updated!
         # See: https://scitools.org.uk/cartopy/docs/v0.14/_modules/cartopy/feature.html#Feature
         # Change the _kwargs property also does *nothing*
-        self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
         kw = rc.fill({'facecolor': 'map.facecolor'})
         self.background_patch.update(kw)
         kw = rc.fill({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
@@ -2683,28 +2691,35 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
+        # NOTE: The natural_earth_shp method is deprecated, use add_feature instead.
+        # See: https://cartopy-pelson.readthedocs.io/en/readthedocs/whats_new.html
         reso = _default(reso, rc['map.reso'])
         if reso not in ('lo','med','hi'):
             raise ValueError(f'Invalid resolution {reso}.')
         reso = {'lo':'110m', 'med':'50m', 'hi':'10m'}.get(reso)
         if coastline and not self._coastline:
             # self.add_feature(cfeature.COASTLINE, **rc['coastlines'])
-            feat  = cfeature.NaturalEarthFeature('physical', 'coastline', reso)
+            # feat  = cfeature.NaturalEarthFeature('physical', 'coastline', reso)
+            # self.add_feature(feat, color=color, linewidth=lw)
+            # Changing linewidth is evidently impossible with cfeature. Bug?
+            # See: https://stackoverflow.com/questions/43671240/changing-line-width-of-cartopy-borders
             color = _default(coastcolor, rc.coastcolor)
             lw    = _default(coastlinewidth, rc.coastlinewidth)
-            self.add_feature(feat, color=color, lw=lw)
+            feat = self.coastlines(reso, color=color, linewidth=lw, zorder=10)
             self._coastline = feat
         if land and not self._land:
             # self.add_feature(cfeature.LAND, **rc['continents'])
-            feat  = cfeature.NaturalEarthFeature('physical', 'land', reso)
+            # feat = self.natural_earth_shp('land', reso, 'physical', color=color)
             color = _default(landcolor, rc.landcolor)
+            feat  = cfeature.NaturalEarthFeature('physical', 'land', reso)
             self.add_feature(feat, color=color)
             self._land = feat
         if ocean and not self._ocean:
             # self.add_feature(cfeature.OCEAN, **rc['oceans'])
-            feat = cfeature.NaturalEarthFeature('physical', 'ocean', reso)
+            # feat = cfeature.NaturalEarthFeature('physical', 'ocean', reso)
+            # self.add_feature(feat, color=oceancolor)
             color = _default(oceancolor, rc.oceancolor)
-            self.add_feature(feat, color=oceancolor)
+            feat = self.natural_earth_shp('ocean', reso, 'physical', color=color)
             self._ocean = feat
 
         # Draw gridlines
@@ -2712,10 +2727,14 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        lonvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-180,180,v)]
-        latvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-90,90,v)]
-        lonminorlocator, latminorlocator = lonvec(lonminorlocator), latvec(latminorlocator)
-        lonlocator, latlocator = lonvec(lonlocator), latvec(latlocator)
+        latlocator = _default(latlocator, rc['map.latlines']) # gridlines by default
+        lonlocator = _default(lonlocator, rc['map.lonlines'])
+        lonvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-180, 180, v)]
+        latvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-90, 90, v)]
+        lonminorlocator = lonvec(lonminorlocator)
+        latminorlocator = latvec(latminorlocator)
+        lonlocator = lonvec(lonlocator)
+        latlocator = latvec(latlocator)
         lonlines = lonminorlocator or lonlocator # where we draw gridlines
         latlines = latminorlocator or latlocator
 
@@ -2745,7 +2764,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
 class PolarAxes(MapAxes, mproj.PolarAxes):
     """
-    Thin decorator around `~matplotlib.projections.PolarAxes` with my
+    Thin wrapper around `~matplotlib.projections.PolarAxes` with my
     new plotting features. So far, just mixes the two classes.
 
     Warning

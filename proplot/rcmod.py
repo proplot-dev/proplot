@@ -74,6 +74,8 @@ The ``map`` subcategory :
 Key                Description
 =================  ==================================================================
 ``map.reso``       Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``map.lonlines``   Default interval for longitude gridlines.
+``map.latlines``   Default interval for latitude gridlines.
 ``map.facecolor``  Background color for the map projection.
 ``map.linewidth``  Line width of map boundary.
 ``map.edgecolor``  Edge color of map boundary.
@@ -163,6 +165,7 @@ Todo
 Disable the ``gridspec`` stuff by automating the inter-subplot spacing?
 
 """
+# ``nbsetup``         Boolean, whether to run `~proplot.notebook.nbsetup` command automatically on import.
 # First import stuff
 # try:
 #     from icecream import ic
@@ -214,6 +217,7 @@ _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     # For xcolor/ycolor we just manually use the
     # global property in the format script.
+    # 'nbsetup':        [], # special toggle
     'cycle':          [], # special handling, passed through Cycle
     'cmap':           [], # special handling, passed through Colormap
     'lut':            ['image.lut'],
@@ -272,6 +276,8 @@ _rcParams_new_keys = {
     'map.edgecolor',
     'map.linewidth',
     'map.reso',
+    'map.lonlines',
+    'map.latlines',
     'abc.fontsize',
     'abc.weight',
     'abc.color',
