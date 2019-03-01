@@ -2330,222 +2330,32 @@ class MapAxes(BaseAxes):
                     ilabels = [0, 0, *ilabels]
                 elif mode=='y':
                     ilabels = [*ilabels, 0, 0]
-            elif len(labels)!=4:
+            elif len(ilabels)!=4:
                 raise ValueError(f'Invalid {mode} labels: {ilabels}.')
             labels[i] = ilabels
         lonlabels, latlabels = labels
         return latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels, kwargs
 
-class BasemapAxes(MapAxes):
+class PolarAxes(MapAxes, mproj.PolarAxes):
     """
-    Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
-    projections. The `~mpl_toolkits.basemap.Basemap` projection instance is added as
-    the `m` attribute, but this is all abstracted away -- you can use
-    `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
-    `~matplotlib.axes.Axes.contour` with
-    your raw longitude-latitude data.
+    Thin wrapper around `~matplotlib.projections.PolarAxes` with my
+    new plotting features. So far, just mixes the two classes.
+
+    Warning
+    -------
+    Polar axes have not been tested yet!
 
     See also
     --------
-    `~proplot.subplots.subplots`, `~proplot.proj`, `BaseAxes`, `MapAxes`
+    `~proplot.subplots.subplots`, `BaseAxes`, `MapAxes`
     """
-    name = 'basemap'
-    # Note non-rectangular projections; for rectnagular ones, axes spines are
-    # used as boundaries, but for these, have different boundary.
-    _proj_non_rectangular = (
-            # Always non-rectangular
-            'ortho', 'geos', 'nsper',
-            'moll', 'hammer', 'robin',
-            'eck4', 'kav7', 'mbtfpq', # last one is McBryde-Thomas flat polar quartic
-            'sinu', 'vandg', # last one is van der Grinten
-            # Only non-rectangular if we pass 'round' kwarg
-            # This is done by default, currently no way to change it
-            'npstere', 'spstere', 'nplaea',
-            'splaea', 'npaeqd', 'spaeqd',
-            )
+    name = 'newpolar'
     """The registered projection name."""
-    def __init__(self, *args, map_projection=None, **kwargs):
-        # * Must set boundary before-hand, otherwise the set_axes_limits method called
-        #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
-        #   "limb2" automatically: one for fill and the other for the edges
-        # * Then, since the patch object in _mapboundarydrawn is only the fill-version, calling
-        #   drawmapboundary() again will replace only *that one*, but the original visible edges
-        #   are still drawn -- so e.g. you can't change the color
-        # * If you instead call drawmapboundary right away, _mapboundarydrawn will contain
-        #   both the edges and the fill; so calling it again will replace *both*
-        import mpl_toolkits.basemap as mbasemap # verify package is available
-        if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError('You must initialize BasemapAxes with map_projection=(basemap.Basemap instance).')
-        self.m = map_projection
-        self.boundary = None
-        self._mapboundarydrawn = None
-        self._recurred = False # use this so we can override plotting methods
-        self._land = None
-        self._ocean = None
-        self._coastline = None
-        # Initialize
-        super().__init__(*args, map_name=self.m.projection, **kwargs)
-
-    def _rcupdate(self):
-        # Map boundary
-        # * First have to *manually replace* the old boundary by just deleting
-        #   the original one
-        # * If boundary is drawn successfully should be able to call
-        #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
-        # * For now will enforce that map plots *always* have background whereas
-        #   axes plots can have transparent background
-        kw_face = rc.fill({'facecolor': 'map.facecolor'})
-        self.axesPatch = self.patch # bugfix or something
-        if self.m.projection in self._proj_non_rectangular:
-            self.patch.set_alpha(0) # make patch invisible
-            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'}) # necessary to update after drawn, because patch 'color' is the fill but kwarg for edge color is 'color'
-            if not self.m._mapboundarydrawn:
-                p = self.m.drawmapboundary(ax=self) # set fill_color to 'none' to make transparent
-            else:
-                p = self.m._mapboundarydrawn
-            p.update({**kw_face, **kw_edge})
-            p.set_rasterized(False) # not sure about this; might be rasterized
-            p.set_clip_on(False)    # so edges of *line* denoting boundary aren't cut off
-            self.boundary = p       # not sure why this one
-        else:
-            self.patch.update({**kw_face, 'edgecolor':'none'})
-            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
-            for spine in self.spines.values():
-                spine.update(kw_edge)
-
-        # Call parent
-        super()._rcupdate()
-
-    # Basemap overrides
-    # WARNING: Never ever try to just make blanket methods on the Basemap
-    # instance accessible from axes instance! Can of worms and had bunch of
-    # weird errors! Just pick the ones you think user will want to use.
-    def __getattribute__(self, attr, *args):
-        if attr=='pcolorpoly': # need to specify this again to access the .m method
-            attr = 'pcolor' # use alias so don't run into recursion issues due to internal pcolormesh calls to pcolor()
-        obj = super().__getattribute__(attr, *args)
-        if attr in _line_methods or attr in _edge_methods or attr in _center_methods:
-            obj = _m_call(self, obj) # this must be the *last* step!
-            if attr in _line_methods:
-                if attr[:3] != 'tri':
-                    obj = cycle_features(self, obj)
-                obj = _linefix_basemap(self, obj)
-            elif attr in _edge_methods or attr in _center_methods:
-                obj = cmap_features(self, obj)
-                obj = _gridfix_basemap(self, obj)
-                if attr in _edge_methods:
-                    obj = _check_edges(obj)
-                else:
-                    obj = _check_centers(obj)
-            obj = _no_recurse(self, obj)
-        return obj
-
-    @staticmethod
-    def ls_translate(obj, style):
-        """
-        Make basemap gridlines look like cartopy lines using the `dashes`
-        tuple.
-
-        Notes
-        -----
-        For some reason basemap gridlines look different from cartopy ones.
-        Have absolutely **no idea** why. Cartopy seems to do something weird because
-        there is no ``_dashSeq`` attribute on the lines, and the line styles
-        are always "officially" ``'-'``, even though they are dashed.
-        See `this reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`_.
-
-        The dots ``':'`` actually look better on cartopy so we try to mimick them
-        below.
-        """
-        if style=='-':
-            dashes = [None,None]
-        else:
-            dashes = [*obj._dashSeq]
-            if style==':':
-                dashes[0] /= 10
-                dashes[1] *= 1.5
-            elif style=='--':
-                dashes[0] /= 1.5
-                dashes[1] *= 1.5
-            else:
-                raise ValueError(f'Invalid style {style}.')
-        return dashes
-
-    def format(self,
-        land=False, ocean=False, coastline=False, # coastlines and land
-        landcolor=None, oceancolor=None, coastcolor=None, coastlinewidth=None,
-        **kwargs):
-        """
-        Format the map projection.
-
-        Parameters
-        ----------
-        land, ocean, coastline : bool, optional
-            Optionally draw these geographic features.
-        landcolor, oceancolor, coastcolor, coastlinewidth
-            Geographic feature settings. If ``None``, read from the
-            configuration. See the `~proplot.rcmod` documentation.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `MapAxes.parse_args` and `BaseAxes.format`.
-
-        See also
-        --------
-        `~proplot.subplots.subplots`, `~proplot.rcmod`, `MapAxes.parse_args`,
-        `BaseAxes.format`
-        """
-        # Parse flexible input
-        # TODO: Enable xlim and ylim!
-        latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels, kwargs = \
-                self.parse_args(**kwargs)
-
-        # Basemap axes setup
-        # Coastlines, parallels, meridians
-        if land and not self._land:
-            color = _default(landcolor, rc.landcolor)
-            self._land = self.m.fillcontinents(ax=self, color=color)
-        if coastline and not self._coastline:
-            lw = _default(coastlinewidth, rc.coastlinewidth)
-            color = _default(coastcolor, rc.coastcolor)
-            self._coastline = self.m.drawcoastlines(ax=self, color=color, linewidth=lw)
-
-        # Longitude/latitude lines
-        # Make sure to turn off clipping by invisible axes boundary; otherwise
-        # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
-        tsettings = {'color':rc['xtick.color'], 'fontsize':rc['xtick.labelsize']}
-        latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
-        lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
-        lsettings = rc['lonlatlines']
-        if latlocator:
-            p = self.m.drawparallels(latlocator, latmax=latmax, labels=latlabels, ax=self)
-            for pi in p.values(): # returns dict, where each one is tuple
-                # Tried passing clip_on to the below, but it does nothing; must set
-                # for lines created after the fact
-                for obj in [i for j in pi for i in j]: # magic
-                    if isinstance(obj, mtext.Text):
-                        obj.update(tsettings)
-                    else:
-                        obj.update(lsettings)
-                        obj.set_dashes(self.ls_translate(obj, lsettings['linestyle']))
-        if lonlocator:
-            p = self.m.drawmeridians(lonlocator, latmax=latmax, labels=lonlabels, ax=self)
-            for pi in p.values():
-                for obj in [i for j in pi for i in j]: # magic
-                    if isinstance(obj, mtext.Text):
-                        obj.update(tsettings)
-                    else:
-                        obj.update(lsettings)
-                        obj.set_dashes(self.ls_translate(obj, lsettings['linestyle']))
-
-        # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().format(**kwargs)
 
 # Cartopy takes advantage of documented feature where any class with method
 # named _as_mpl_axes can be passed as 'projection' object.
-class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so the methods can overwrite stuff
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
+class CartopyAxes(MapAxes, GeoAxes):
     """
     Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
     projections. Initializes the `cartopy.crs.Projection` instance. Also
@@ -2680,12 +2490,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Configure extents?
         # WARNING: The set extents method tries to set a *rectangle* between
         # the *4* (x,y) coordinate pairs (each corner), so something like
-        # (-180,180,-90,90) will result in *vertical line*, causing error!
-        # NOTE: proj4_params stores keyword-arg pairs, proj4_init stores
-        # the shell string passed
-        # NOTE: They may add this in set_xlim and set_ylim in the
-        # near future; see:
-        # https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638
+        # (-180,180,-90,90) will result in *line*, causing error!
+        # NOTE: They may add this as part of set_xlim and set_ylim in the
+        # near future; see: https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638
         if lonlim is not None or latlim is not None:
             lonlim = lonlim or [None, None]
             latlim = latlim or [None, None]
@@ -2695,6 +2502,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
                 lonlim[0] = lon_0 - 180
             if lonlim[1] is None:
                 lonlim[1] = lon_0 + 180
+            lonlim[0] += eps
             if latlim[0] is None:
                 latlim[0] = -90
             if latlim[1] is None:
@@ -2763,21 +2571,211 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().format(**kwargs)
 
-class PolarAxes(MapAxes, mproj.PolarAxes):
+class BasemapAxes(MapAxes):
     """
-    Thin wrapper around `~matplotlib.projections.PolarAxes` with my
-    new plotting features. So far, just mixes the two classes.
-
-    Warning
-    -------
-    Polar axes have not been tested yet!
+    Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
+    projections. The `~mpl_toolkits.basemap.Basemap` projection instance is added as
+    the `m` attribute, but this is all abstracted away -- you can use
+    `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
+    `~matplotlib.axes.Axes.contour` with
+    your raw longitude-latitude data.
 
     See also
     --------
-    `~proplot.subplots.subplots`, `BaseAxes`, `MapAxes`
+    `~proplot.subplots.subplots`, `~proplot.proj`, `BaseAxes`, `MapAxes`
     """
-    name = 'newpolar'
+    name = 'basemap'
+    # Note non-rectangular projections; for rectnagular ones, axes spines are
+    # used as boundaries, but for these, have different boundary.
+    _proj_non_rectangular = (
+            # Always non-rectangular
+            'ortho', 'geos', 'nsper',
+            'moll', 'hammer', 'robin',
+            'eck4', 'kav7', 'mbtfpq', # last one is McBryde-Thomas flat polar quartic
+            'sinu', 'vandg', # last one is van der Grinten
+            # Only non-rectangular if we pass 'round' kwarg
+            # This is done by default, currently no way to change it
+            'npstere', 'spstere', 'nplaea',
+            'splaea', 'npaeqd', 'spaeqd',
+            )
     """The registered projection name."""
+    def __init__(self, *args, map_projection=None, **kwargs):
+        # * Must set boundary before-hand, otherwise the set_axes_limits method called
+        #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
+        #   "limb2" automatically: one for fill and the other for the edges
+        # * Then, since the patch object in _mapboundarydrawn is only the fill-version, calling
+        #   drawmapboundary() again will replace only *that one*, but the original visible edges
+        #   are still drawn -- so e.g. you can't change the color
+        # * If you instead call drawmapboundary right away, _mapboundarydrawn will contain
+        #   both the edges and the fill; so calling it again will replace *both*
+        import mpl_toolkits.basemap as mbasemap # verify package is available
+        if not isinstance(map_projection, mbasemap.Basemap):
+            raise ValueError('You must initialize BasemapAxes with map_projection=(basemap.Basemap instance).')
+        self.m = map_projection
+        self.boundary = None
+        self._mapboundarydrawn = None
+        self._recurred = False # use this so we can override plotting methods
+        self._land = None
+        self._ocean = None
+        self._coastline = None
+        # Initialize
+        super().__init__(*args, map_name=self.m.projection, **kwargs)
+
+    # Basemap overrides
+    # WARNING: Never ever try to just make blanket methods on the Basemap
+    # instance accessible from axes instance! Can of worms and had bunch of
+    # weird errors! Just pick the ones you think user will want to use.
+    def __getattribute__(self, attr, *args):
+        if attr=='pcolorpoly': # need to specify this again to access the .m method
+            attr = 'pcolor' # use alias so don't run into recursion issues due to internal pcolormesh calls to pcolor()
+        obj = super().__getattribute__(attr, *args)
+        if attr in _line_methods or attr in _edge_methods or attr in _center_methods:
+            obj = _m_call(self, obj) # this must be the *last* step!
+            if attr in _line_methods:
+                if attr[:3] != 'tri':
+                    obj = cycle_features(self, obj)
+                obj = _linefix_basemap(self, obj)
+            elif attr in _edge_methods or attr in _center_methods:
+                obj = cmap_features(self, obj)
+                obj = _gridfix_basemap(self, obj)
+                if attr in _edge_methods:
+                    obj = _check_edges(obj)
+                else:
+                    obj = _check_centers(obj)
+            obj = _no_recurse(self, obj)
+        return obj
+
+    def _rcupdate(self):
+        # Map boundary
+        # * First have to *manually replace* the old boundary by just deleting
+        #   the original one
+        # * If boundary is drawn successfully should be able to call
+        #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
+        # * For now will enforce that map plots *always* have background whereas
+        #   axes plots can have transparent background
+        kw_face = rc.fill({'facecolor': 'map.facecolor'})
+        self.axesPatch = self.patch # bugfix or something
+        if self.m.projection in self._proj_non_rectangular:
+            self.patch.set_alpha(0) # make patch invisible
+            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'}) # necessary to update after drawn, because patch 'color' is the fill but kwarg for edge color is 'color'
+            if not self.m._mapboundarydrawn:
+                p = self.m.drawmapboundary(ax=self) # set fill_color to 'none' to make transparent
+            else:
+                p = self.m._mapboundarydrawn
+            p.update({**kw_face, **kw_edge})
+            p.set_rasterized(False) # not sure about this; might be rasterized
+            p.set_clip_on(False)    # so edges of *line* denoting boundary aren't cut off
+            self.boundary = p       # not sure why this one
+        else:
+            self.patch.update({**kw_face, 'edgecolor':'none'})
+            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'color': 'map.edgecolor'})
+            for spine in self.spines.values():
+                spine.update(kw_edge)
+
+        # Call parent
+        super()._rcupdate()
+
+    @staticmethod
+    def _ls_translate(obj, style):
+        """
+        Make basemap gridlines look like cartopy lines using the `dashes`
+        tuple.
+
+        Notes
+        -----
+        For some reason basemap gridlines look different from cartopy ones.
+        Have absolutely **no idea** why. Cartopy seems to do something weird because
+        there is no ``_dashSeq`` attribute on the lines, and the line styles
+        are always "officially" ``'-'``, even though they are dashed.
+        See `this reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`_.
+
+        The dots ``':'`` actually look better on cartopy so we try to mimick them
+        below.
+        """
+        if style=='-':
+            dashes = [None,None]
+        else:
+            dashes = [*obj._dashSeq]
+            if style==':':
+                dashes[0] /= 10
+                dashes[1] *= 1.5
+            elif style=='--':
+                dashes[0] /= 1.5
+                dashes[1] *= 1.5
+            else:
+                raise ValueError(f'Invalid style {style}.')
+        return dashes
+
+    def format(self,
+        land=False, ocean=False, coastline=False, # coastlines and land
+        landcolor=None, oceancolor=None, coastcolor=None, coastlinewidth=None,
+        **kwargs):
+        """
+        Format the map projection.
+
+        Parameters
+        ----------
+        land, ocean, coastline : bool, optional
+            Optionally draw these geographic features.
+        landcolor, oceancolor, coastcolor, coastlinewidth
+            Geographic feature settings. If ``None``, read from the
+            configuration. See the `~proplot.rcmod` documentation.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `MapAxes.parse_args` and `BaseAxes.format`.
+
+        See also
+        --------
+        `~proplot.subplots.subplots`, `~proplot.rcmod`, `MapAxes.parse_args`,
+        `BaseAxes.format`
+        """
+        # Parse flexible input
+        # TODO: Enable xlim and ylim!
+        latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels, kwargs = \
+                self.parse_args(**kwargs)
+
+        # Basemap axes setup
+        # Coastlines, parallels, meridians
+        if land and not self._land:
+            color = _default(landcolor, rc.landcolor)
+            self._land = self.m.fillcontinents(ax=self, color=color)
+        if coastline and not self._coastline:
+            lw = _default(coastlinewidth, rc.coastlinewidth)
+            color = _default(coastcolor, rc.coastcolor)
+            self._coastline = self.m.drawcoastlines(ax=self, color=color, linewidth=lw)
+
+        # Longitude/latitude lines
+        # Make sure to turn off clipping by invisible axes boundary; otherwise
+        # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
+        tsettings = {'color':rc['xtick.color'], 'fontsize':rc['xtick.labelsize']}
+        latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
+        lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
+        lsettings = rc['lonlatlines']
+        if latlocator:
+            p = self.m.drawparallels(latlocator, latmax=latmax, labels=latlabels, ax=self)
+            for pi in p.values(): # returns dict, where each one is tuple
+                # Tried passing clip_on to the below, but it does nothing; must set
+                # for lines created after the fact
+                for obj in [i for j in pi for i in j]: # magic
+                    if isinstance(obj, mtext.Text):
+                        obj.update(tsettings)
+                    else:
+                        obj.update(lsettings)
+                        obj.set_dashes(self._ls_translate(obj, lsettings['linestyle']))
+        if lonlocator:
+            p = self.m.drawmeridians(lonlocator, latmax=latmax, labels=lonlabels, ax=self)
+            for pi in p.values():
+                for obj in [i for j in pi for i in j]: # magic
+                    if isinstance(obj, mtext.Text):
+                        obj.update(tsettings)
+                    else:
+                        obj.update(lsettings)
+                        obj.set_dashes(self._ls_translate(obj, lsettings['linestyle']))
+
+        # Pass stuff to parent formatter, e.g. title and abc labeling
+        super().format(**kwargs)
 
 # Register the projections
 mproj.register_projection(BaseAxes)

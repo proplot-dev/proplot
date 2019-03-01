@@ -1164,21 +1164,21 @@ def subplots(array=None, ncols=1, nrows=1,
     proj_kw = axes_dict(projection_kw or proj_kw, True) # stores cartopy/basemap arguments
     axes_kw = {num:{} for num in range(num_axes)} # stores add_subplot arguments
     for num,name in proj.items():
+        # The default, my XYAxes projection
+        if name=='xy':
+            axes_kw[num]['projection'] = 'xy'
         # Builtin matplotlib polar axes, just use my overridden version
-        if name=='polar':
+        elif name=='polar':
             axes_kw[num]['projection'] = 'newpolar'
             if num==1:
                 kwargs.update(aspect=1)
-        # The default, my XYAxes projection
-        elif name=='xy':
-            axes_kw[num]['projection'] = 'xy'
         # Custom Basemap and Cartopy axes
         # print(f'Forcing aspect ratio: {aspect:.3g}')
         elif name:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, kwproj = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
-            if num!=0:
-                kwproj.pop('aspect')
+            instance, aspect, kwproj = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
+            if num==1:
+                kwargs.update({'aspect':aspect})
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             axes_kw[num].update(kwproj)
         else:

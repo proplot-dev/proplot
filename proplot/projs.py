@@ -106,6 +106,18 @@ def Proj(name, basemap=False, **kwargs):
     basemap : bool, optional
         Whether to use the basemap or cartopy package. Defaults to ``False``.
 
+    Returns
+    -------
+    projection : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
+        The projection instance.
+    aspect : float
+        The aspect ratio.
+    kwout : dict
+        Extra keyword args. These are still "projection" arguments but
+        need to be passed to the *axes* initializer instead of the
+        `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
+        initializers. So far only used by `~proplot.axes.CartopyAxes`.
+
     Other parameters
     ----------------
     **kwargs
@@ -126,13 +138,15 @@ def Proj(name, basemap=False, **kwargs):
     crs_translate = { # ad to this
         'lat_0': 'central_latitude',
         'lon_0': 'central_longitude',
+        'lat_min': 'min_latitude',
+        'lat_max': 'max_latitude',
         }
     cyl_aliases = {
         'eqc':     'cyl',
         'pcarree': 'cyl',
         }
-    kw_init = {}
     # Basemap
+    kwout = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         name = cyl_aliases.get(name, name)
@@ -140,8 +154,8 @@ def Proj(name, basemap=False, **kwargs):
         if name in basemap_circles:
             kwargs.update({'round': True})
         projection = mbasemap.Basemap(projection=name, **kwargs)
-        kw_init['aspect'] = (projection.urcrnrx - projection.llcrnrx) / \
-                           (projection.urcrnry - projection.llcrnry)
+        aspect = (projection.urcrnrx - projection.llcrnrx) / \
+                 (projection.urcrnry - projection.llcrnry)
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is importable
@@ -149,13 +163,13 @@ def Proj(name, basemap=False, **kwargs):
         crs = crs_projs.get(name, None)
         if name is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(crs_projs.keys())}.')
-        for init_arg in ('boundinglat', 'centrallat'):
-            if init_arg in kwargs:
-                kw_init[init_arg] = kwargs.pop(init_arg)
+        for arg in ('boundinglat', 'centrallat'):
+            if arg in kwargs:
+                kwout[arg] = kwargs.pop(arg)
         projection = crs(**kwargs)
-        kw_init['aspect'] = (np.diff(projection.x_limits) / \
-                            np.diff(projection.y_limits))[0]
-    return projection, kw_init
+        aspect = (np.diff(projection.x_limits) / \
+                  np.diff(projection.y_limits))[0]
+    return projection, aspect, kwout
 
 # Simple projections
 # Inspired by source code for Mollweide implementation
