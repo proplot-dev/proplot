@@ -2298,7 +2298,7 @@ class MapAxes(BaseAxes):
             lon_0 = self.m.lonmin
         if lonlocator is not None:
             if not np.iterable(lonlocator):
-                lonlocator = utils.arange(lon_0-180+lonlocator, lon_0+180-lonlocator, lonlocator)
+                lonlocator = utils.arange(lon_0 - 180, lon_0 + 180, lonlocator)
             lonlocator = [*lonlocator]
         if latlocator is not None:
             if not np.iterable(latlocator):
