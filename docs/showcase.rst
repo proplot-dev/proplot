@@ -296,7 +296,7 @@ most projections.
 
 
 
-.. image:: _static/showcase/showcase_13_1.png
+.. image:: _static/showcase/showcase_13_0.png
    :width: 630px
    :height: 417px
 
@@ -347,7 +347,7 @@ methods like ``tricontourf``.
     y = (y-0.5)*180
     levels = np.linspace(0, 1, 100)
     cnt = ax.tripcolor(x, y, z, levels=levels, cmap='Turquoise')
-    ax.format(title='Tricontour plot, latitude and longitude labels', xlabels='b', xlocator=60, ylocator=20)
+    ax.format(title='Tricontour plot, latitude and longitude labels', xlabels='b', ylabels='l', xlocator=60, ylocator=20, latmax=90)
 
 
 
