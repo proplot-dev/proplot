@@ -76,6 +76,7 @@ Key                Description
 ``map.reso``       Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
 ``map.lonlines``   Default interval for longitude gridlines.
 ``map.latlines``   Default interval for latitude gridlines.
+``map.latmax``     Meridian gridlines are cut off poleward of this latitude.
 ``map.facecolor``  Background color for the map projection.
 ``map.linewidth``  Line width of map boundary.
 ``map.edgecolor``  Edge color of map boundary.
@@ -278,6 +279,7 @@ _rcParams_new_keys = {
     'map.reso',
     'map.lonlines',
     'map.latlines',
+    'map.latmax',
     'abc.fontsize',
     'abc.weight',
     'abc.color',

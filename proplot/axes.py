@@ -525,7 +525,7 @@ def _gridfix_basemap(self, func):
     discontinuities in grid.
     """
     @functools.wraps(func)
-    def decorator(lon, lat, Z, fix_poles=True, **kwargs):
+    def decorator(lon, lat, Z, globe=True, **kwargs):
         # Raise errors
         eps = 1e-3
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
@@ -577,38 +577,38 @@ def _gridfix_basemap(self, func):
                 # remember that a *slice* with no valid range just returns empty array
                 where = np.where((lon<lonmin) | (lon>lonmax))[0]
                 Z[:,where[1:-1]] = np.nan
-            # 4) Fix holes over poles by interpolating there (equivalent to
-            # simple mean of highest/lowest latitude points)
-            # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
-            if fix_poles:
+            if globe:
+                # 4) Fix holes over poles by interpolating there (equivalent to
+                # simple mean of highest/lowest latitude points)
+                # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
                 Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
                 Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
                 lat = np.concatenate(([-90], lat, [90]))
                 Z = np.concatenate((Z_south, Z, Z_north), axis=0)
-            # 5) Fix seams at map boundary; 3 scenarios here:
-            # Have edges (e.g. for pcolor), and they fit perfectly against basemap seams
-            # this does not augment size
-            if lon[0]==lonmin and lon.size-1==Z.shape[1]: # borders fit perfectly
-                pass # do nothing
-            # Have edges (e.g. for pcolor), and the projection edge is in-between grid cell boundaries
-            # this augments size by 1
-            elif lon.size-1==Z.shape[1]: # no interpolation necessary; just make a new grid cell
-                lon = np.append(lonmin, lon) # append way easier than concatenate
-                lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
-                Z = np.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
-            # Have centers (e.g. for contourf), and we need to interpolate to the
-            # left/right edges of the map boundary
-            # this augments size by 2
-            elif lon.size==Z.shape[1]: # linearly interpolate to the edges
-                x = np.array([lon[-1], lon[0]+360]) # x
-                if x[0] != x[1]:
-                    y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-                    xq = lonmin+360
-                    yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
-                    Z = np.concatenate((yq, Z, yq), axis=1)
-                    lon = np.append(np.append(lonmin, lon), lonmin+360)
-            else:
-                raise ValueError()
+                # 5) Fix seams at map boundary; 3 scenarios here:
+                # Have edges (e.g. for pcolor), and they fit perfectly against basemap seams
+                # this does not augment size
+                if lon[0]==lonmin and lon.size-1==Z.shape[1]: # borders fit perfectly
+                    pass # do nothing
+                # Have edges (e.g. for pcolor), and the projection edge is in-between grid cell boundaries
+                # this augments size by 1
+                elif lon.size-1==Z.shape[1]: # no interpolation necessary; just make a new grid cell
+                    lon = np.append(lonmin, lon) # append way easier than concatenate
+                    lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
+                    Z = np.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
+                # Have centers (e.g. for contourf), and we need to interpolate to the
+                # left/right edges of the map boundary
+                # this augments size by 2
+                elif lon.size==Z.shape[1]: # linearly interpolate to the edges
+                    x = np.array([lon[-1], lon[0]+360]) # x
+                    if x[0] != x[1]:
+                        y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                        xq = lonmin+360
+                        yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
+                        Z = np.concatenate((yq, Z, yq), axis=1)
+                        lon = np.append(np.append(lonmin, lon), lonmin+360)
+                else:
+                    raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
         # Finally get grid of x/y map projection coordinates
         lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
         x, y = self.m(*np.meshgrid(lon, lat))
@@ -652,18 +652,18 @@ def _gridfix_cartopy(self, func):
     See: https://github.com/SciTools/cartopy/issues/946
     """
     @functools.wraps(func)
-    def decorator(lon, lat, Z, transform=PlateCarree, fix_poles=True, **kwargs):
+    def decorator(lon, lat, Z, transform=PlateCarree, globe=True, **kwargs):
         # Below only works for vector data
         if lon.ndim==1 and lat.ndim==1:
             # 1) Fix holes over poles by *interpolating* there (equivalent to
             # simple mean of highest/lowest latitude points)
-            if fix_poles:
+            if globe:
                 Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
                 Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
                 lat = np.concatenate(([-90], lat, [90]))
                 Z = np.concatenate((Z_south, Z, Z_north), axis=0)
             # 2) Fix seams at map boundary; by ensuring circular coverage
-            if (lon[0] % 360) != ((lon[-1] + 360) % 360):
+            if globe and (lon[0] % 360) != ((lon[-1] + 360) % 360):
                 lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
                 Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Instantiate transform
@@ -2227,77 +2227,114 @@ class MapAxes(BaseAxes):
             raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
-    @staticmethod
-    def ls_translate(obj, style):
+    def parse_args(self, latmax=None,
+        lonlim=None, latlim=None, xlim=None, ylim=None,
+        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
+        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
+        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
+        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
+        latlabels=None, lonlabels=None, xlabels=None, ylabels=None,
+        **kwargs,
+        ):
         """
-        Make basemap gridlines look like cartopy lines using the `dashes`
-        tuple.
+        Parameters
+        ----------
+        latmax : None or float, optional
+            Meridian gridlines are cut off poleward of this latitude. If
+            ``None``, read from the configuration.
+        lonlim, latlim : None or length-2 list of float, optional
+            Longitude and latitude limits of projection.
+        xlim, ylim
+            Aliases for `lonlim`, `latlim`.
+        lonlocator, latlocator : None or list of float, optional
+            List of longitudes and latitudes for drawing gridlines.
+        xlocator, ylocator, lonticks, latticks, xticks, yticks
+            Aliases for `lonlocator`, `latlocator`.
+        lonminorlocator, latminorlocator : None or list of float, optional
+            As with `lonlocator` and `latlocator`, but for minor gridlines.
+        xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
+            Aliases for `lonminorlocator`, `latminorlocator`.
+        lonlabels, latlabels
+            Whether to label longitudes and latitudes, and on which sides
+            of the map. There are four different options:
 
-        Notes
-        -----
-        For some reason basemap gridlines look different from cartopy ones.
-        Have absolutely **no idea** why. Cartopy seems to do something weird because
-        there is no ``_dashSeq`` attribute on the lines, and the line styles
-        are always "officially" ``'-'``, even though they are dashed.
-        See `this reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`_.
+            1. Boolean ``True``. Indicates left side for latitudes,
+            bottom for longitudes.
+            2. A string, e.g. ``'lr'`` or ``'bt'``.
+            3. A boolean ``(left,right)`` tuple for latitudes,
+            ``(bottom,top)`` for longitudes.
+            4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
+            `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+            `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
+            The boolean values indicate whether to label gridlines intersecting
+            the left, right, top, and bottom sides, respectively.
+        xlabels, ylabels
+            Aliases for `lonlabels`, `latlabels`.
 
-        The dots ``':'`` actually look better on cartopy so we try to mimick them
-        below.
+        Returns
+        -------
+        latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels
+            Keyword args, standardized and with aliases interpreted.
+        **kwargs
+            Remaining keyword args. Will be passed to `BaseAxes.format`.
         """
-        if style=='-':
-            dashes = [None,None]
+        # Parse alternative keyword args
+        lonlim = _default(xlim, lonlim)
+        latlim = _default(ylim, latlim)
+        lonlocator = _default(lonlocator, _default(lonticks, _default(xlocator, xticks)))
+        latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
+        lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
+        latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
+        lonlocator = lonminorlocator or lonlocator # where we draw gridlines
+        latlocator = latminorlocator or latlocator
+        latlocator = _default(latlocator, rc['map.latlines']) # gridlines by default
+        lonlocator = _default(lonlocator, rc['map.lonlines'])
+
+        # Interptet latitude
+        latmax = _default(latmax, rc['map.latmax'])
+        if isinstance(self, CartopyAxes):
+            lon_0 = self.projection.proj4_params.get('lon_0', 0)
         else:
-            dashes = [*obj._dashSeq]
-            if style==':':
-                dashes[0] /= 10
-                dashes[1] *= 1.5
-            elif style=='--':
-                dashes[0] /= 1.5
-                dashes[1] *= 1.5
-            else:
-                raise ValueError(f'Invalid style {style}.')
-        return dashes
+            lon_0 = self.m.lonmin
+        if lonlocator is not None:
+            if not np.iterable(lonlocator):
+                lonlocator = utils.arange(lon_0-180+lonlocator, lon_0+180-lonlocator, lonlocator)
+            lonlocator = [*lonlocator]
+        if latlocator is not None:
+            if not np.iterable(latlocator):
+                latlocator = utils.arange(-latmax, latmax, latlocator)
+            latlocator = [*latlocator]
 
-    @staticmethod
-    def parse_labels(labels, mode):
-        """
-        Parses complex ``lonlabels`` and ``latlabels`` arguments. There are
-        four different options:
-
-        1. A string, e.g. ``'lr'`` or ``'bt'``.
-        2. Boolean ``True``. Indicates left side for latitudes,
-           bottom for longitudes.
-        3. A boolean ``(left,right)`` tuple for latitudes,
-           ``(bottom,top)`` for longitudes.
-        4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
-           `~mpl_toolkits.basemap.Basemap.drawmeridians` and
-           `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
-           Indicates whether to label left, right, top, and bottom
-           sides, respectively.
-        """
-        if labels is False:
-            return [0]*4
-        if labels is None:
-            # labels = True # will label lons on bottom, lats on left
-            labels = False
-        if isinstance(labels, str):
-            string = labels
-            labels = [0]*4
-            for idx,char in zip([0,1,2,3],'lrbt'):
-                if char in string:
-                    labels[idx] = 1
-        if isinstance(labels, Number): # e.g. *boolean*
-            labels = np.atleast_1d(labels)
-        if len(labels)==1:
-            labels = [*labels, 0] # default is to label bottom/left
-        if len(labels)==2:
-            if mode=='x':
-                labels = [0, 0, *labels]
-            elif mode=='y':
-                labels = [*labels, 0, 0]
-        elif len(labels)!=4:
-            raise ValueError(f'Invalid labels: {labels}.')
-        return labels
+        # Length-4 boolean arrays of whether and where to goggle labels
+        lonlabels = _default(xlabels, lonlabels)
+        latlabels = _default(ylabels, latlabels)
+        labels = [lonlabels, latlabels]
+        for i,(mode,ilabels) in enumerate(zip(('x', 'y'), tuple(labels))):
+            if ilabels is False:
+                return [0]*4
+            if ilabels is None:
+                # ilabels = True # will label lons on bottom, lats on left
+                ilabels = False
+            if isinstance(ilabels, str):
+                string = ilabels
+                ilabels = [0]*4
+                for idx,char in zip([0,1,2,3],'lrbt'):
+                    if char in string:
+                        ilabels[idx] = 1
+            if isinstance(ilabels, Number): # e.g. *boolean*
+                ilabels = np.atleast_1d(ilabels)
+            if len(ilabels)==1:
+                ilabels = [*ilabels, 0] # default is to label bottom/left
+            if len(ilabels)==2:
+                if mode=='x':
+                    ilabels = [0, 0, *ilabels]
+                elif mode=='y':
+                    ilabels = [*ilabels, 0, 0]
+            elif len(labels)!=4:
+                raise ValueError(f'Invalid {mode} labels: {ilabels}.')
+            labels[i] = ilabels
+        lonlabels, latlabels = labels
+        return latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels, kwargs
 
 class BasemapAxes(MapAxes):
     """
@@ -2315,12 +2352,17 @@ class BasemapAxes(MapAxes):
     name = 'basemap'
     # Note non-rectangular projections; for rectnagular ones, axes spines are
     # used as boundaries, but for these, have different boundary.
-    _proj_non_rectangular = [
+    _proj_non_rectangular = (
+            # Always non-rectangular
             'ortho', 'geos', 'nsper',
             'moll', 'hammer', 'robin',
             'eck4', 'kav7', 'mbtfpq', # last one is McBryde-Thomas flat polar quartic
             'sinu', 'vandg', # last one is van der Grinten
-            ]
+            # Only non-rectangular if we pass 'round' kwarg
+            # This is done by default, currently no way to change it
+            'npstere', 'spstere', 'nplaea',
+            'splaea', 'npaeqd', 'spaeqd',
+            )
     """The registered projection name."""
     def __init__(self, *args, map_projection=None, **kwargs):
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
@@ -2398,17 +2440,39 @@ class BasemapAxes(MapAxes):
             obj = _no_recurse(self, obj)
         return obj
 
-    # Format basemap axes
-    # Add documentation here.
+    @staticmethod
+    def ls_translate(obj, style):
+        """
+        Make basemap gridlines look like cartopy lines using the `dashes`
+        tuple.
+
+        Notes
+        -----
+        For some reason basemap gridlines look different from cartopy ones.
+        Have absolutely **no idea** why. Cartopy seems to do something weird because
+        there is no ``_dashSeq`` attribute on the lines, and the line styles
+        are always "officially" ``'-'``, even though they are dashed.
+        See `this reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`_.
+
+        The dots ``':'`` actually look better on cartopy so we try to mimick them
+        below.
+        """
+        if style=='-':
+            dashes = [None,None]
+        else:
+            dashes = [*obj._dashSeq]
+            if style==':':
+                dashes[0] /= 10
+                dashes[1] *= 1.5
+            elif style=='--':
+                dashes[0] /= 1.5
+                dashes[1] *= 1.5
+            else:
+                raise ValueError(f'Invalid style {style}.')
+        return dashes
+
     def format(self,
-        lonlim=None, latlim=None, xlim=None, ylim=None,
-        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
-        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
-        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
-        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
         land=False, ocean=False, coastline=False, # coastlines and land
-        latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
-        xlabels=None, ylabels=None,
         landcolor=None, oceancolor=None, coastcolor=None, coastlinewidth=None,
         **kwargs):
         """
@@ -2416,43 +2480,26 @@ class BasemapAxes(MapAxes):
 
         Parameters
         ----------
-        lonlim, latlim : None or length-2 list of float, optional
-            Longitude and latitude limits of projection.
-        xlim, ylim
-            Aliases for `lonlim`, `latlim`.
-        lonlocator, latlocator : None or list of float, optional
-            List of longitudes and latitudes for drawing gridlines.
-        xlocator, ylocator, lonticks, latticks, xticks, yticks
-            Aliases for `lonlocator`, `latlocator`.
-        lonminorlocator, latminorlocator : None or list of float, optional
-            As with `lonlocator` and `latlocator`, but for minor gridlines.
-        xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
-            Aliases for `lonminorlocator`, `latminorlocator`.
-        lonlabels, latlabels
-            Positions for drawing longitude and latitude coordinate labels
-            for the gridlines. Interpreted by `~MapAxes.parse_labels`.
-        xlabels, ylabels
-            Aliases for `lonlabels`, `latlabels`.
+        land, ocean, coastline : bool, optional
+            Optionally draw these geographic features.
+        landcolor, oceancolor, coastcolor, coastlinewidth
+            Geographic feature settings. If ``None``, read from the
+            configuration. See the `~proplot.rcmod` documentation.
 
         Other parameters
         ----------------
         **kwargs
-            Passed to the parent `BaseAxes.format`.
+            Passed to `MapAxes.parse_args` and `BaseAxes.format`.
 
         See also
         --------
-        `~proplot.subplots.subplots`, `~proplot.rcmod`, `BaseAxes.format`
+        `~proplot.subplots.subplots`, `~proplot.rcmod`, `MapAxes.parse_args`,
+        `BaseAxes.format`
         """
         # Parse flexible input
-        xlim = _default(lonlim, xlim)
-        ylim = _default(latlim, ylim)
-        lonlocator = _default(lonlocator, _default(lonticks, _default(xlocator, xticks)))
-        latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
-        lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
-        latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
-        # Length-4 boolean arrays of whether and where to goggle labels
-        lonlabels = self.parse_labels(_default(xlabels, lonlabels), 'x')
-        latlabels = self.parse_labels(_default(ylabels, latlabels), 'y')
+        # TODO: Enable xlim and ylim!
+        latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels, kwargs = \
+                self.parse_args(**kwargs)
 
         # Basemap axes setup
         # Coastlines, parallels, meridians
@@ -2471,12 +2518,8 @@ class BasemapAxes(MapAxes):
         latlabels[2:] = latlabels[2:][::-1] # default is left/right/top/bottom which is dumb
         lonlabels[2:] = lonlabels[2:][::-1] # change to left/right/bottom/top
         lsettings = rc['lonlatlines']
-        latlocator = _default(latlocator, rc['map.latlines']) # gridlines by default
-        lonlocator = _default(lonlocator, rc['map.lonlines'])
-        if latlocator is not None:
-            if isinstance(latlocator, Number):
-                latlocator = utils.arange(self.m.latmin+latlocator, self.m.latmax-latlocator, latlocator)
-            p = self.m.drawparallels(latlocator, labels=latlabels, ax=self)
+        if latlocator:
+            p = self.m.drawparallels(latlocator, latmax=latmax, labels=latlabels, ax=self)
             for pi in p.values(): # returns dict, where each one is tuple
                 # Tried passing clip_on to the below, but it does nothing; must set
                 # for lines created after the fact
@@ -2486,10 +2529,8 @@ class BasemapAxes(MapAxes):
                     else:
                         obj.update(lsettings)
                         obj.set_dashes(self.ls_translate(obj, lsettings['linestyle']))
-        if lonlocator is not None:
-            if isinstance(lonlocator, Number):
-                lonlocator = utils.arange(self.m.lonmin+lonlocator, self.m.lonmax-lonlocator, lonlocator)
-            p = self.m.drawmeridians(lonlocator, labels=lonlabels, ax=self)
+        if lonlocator:
+            p = self.m.drawmeridians(lonlocator, latmax=latmax, labels=lonlabels, ax=self)
             for pi in p.values():
                 for obj in [i for j in pi for i in j]: # magic
                     if isinstance(obj, mtext.Text):
@@ -2600,42 +2641,19 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
     # Format cartopy GeoAxes.
     # Add documentation here.
     def format(self,
-        xlim=None, ylim=None, lonlim=None, latlim=None,
-        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
-        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
-        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
-        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
-        land=False, ocean=False, coastline=False, # coastlines and continents
+        land=False, ocean=False, coastline=False, reso=None,
         landcolor=None, oceancolor=None, coastcolor=None, coastlinewidth=None,
-        xlabels=None, ylabels=None,
-        latlabels=None, lonlabels=None, # sides for labels [left, right, bottom, top]
-        reso=None,
         **kwargs):
         """
         Format the map projection.
 
         Parameters
         ----------
-        lonlim, latlim : None or length-2 list of float, optional
-            Longitude and latitude limits of projection.
-        xlim, ylim
-            Aliases for `lonlim`, `latlim`.
-        lonlocator, latlocator : None or list of float, optional
-            List of longitudes and latitudes for drawing gridlines.
-        xlocator, ylocator, lonticks, latticks, xticks, yticks
-            Aliases for `lonlocator`, `latlocator`.
-        lonminorlocator, latminorlocator : None or list of float, optional
-            As with `lonlocator` and `latlocator`, but for minor gridlines.
-        xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
-            Aliases for `lonminorlocator`, `latminorlocator`.
-        lonlabels, latlabels
-            Positions for drawing longitude and latitude coordinate labels
-            for the gridlines. Interpreted by `~MapAxes.parse_labels`.
-        xlabels, ylabels
-            Aliases for `lonlabels`, `latlabels`.
         reso : {None, 'lo', 'med', 'hi'}, optional
-            Resolution for geographic features. Inferred from configuration
-            if ``None``. See the `~proplot.rcmod` documentation.
+            Resolution of geographic features. Inferred from
+            configuration if ``None``. See the `~proplot.rcmod` documentation.
+        land, ocean, coastline : bool, optional
+            Optionally draw these geographic features.
         landcolor, oceancolor, coastcolor, coastlinewidth
             Geographic feature settings. If ``None``, read from the
             configuration. See the `~proplot.rcmod` documentation.
@@ -2643,26 +2661,21 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         Other parameters
         ----------------
         **kwargs
-            Passed to the parent `BaseAxes.format`.
+            Passed to `MapAxes.parse_args` and `BaseAxes.format`.
 
         See also
         --------
-        `~proplot.subplots.subplots`, `~proplot.rcmod`, `BaseAxes.format`
+        `~proplot.subplots.subplots`, `~proplot.rcmod`, `MapAxes.parse_args`,
+        `BaseAxes.format`
         """
         # Dependencies
         import cartopy.feature as cfeature
-        import cartopy.crs as ccrs # verify package is available
+        import cartopy.crs as ccrs
         from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
         # Parse flexible input
-        xlim = _default(lonlim, xlim)
-        ylim = _default(latlim, ylim)
-        lonlocator = _default(lonlocator, _default(lonticks, _default(xlocator, xticks)))
-        latlocator = _default(latlocator, _default(latticks, _default(ylocator, yticks)))
-        lonminorlocator = _default(lonminorlocator, _default(lonminorticks, _default(xminorlocator, xminorticks)))
-        latminorlocator = _default(latminorlocator, _default(latminorticks, _default(yminorlocator, yminorticks)))
-        lonlabels = self.parse_labels(_default(xlabels, lonlabels), 'x')
-        latlabels = self.parse_labels(_default(ylabels, latlabels), 'y')
+        _, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels, kwargs = \
+                self.parse_args(**kwargs)
 
         # Configure extents?
         # WARNING: The set extents method tries to set a *rectangle* between
@@ -2673,20 +2686,20 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # NOTE: They may add this in set_xlim and set_ylim in the
         # near future; see:
         # https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638
-        if xlim is not None or ylim is not None:
-            xlim = xlim or [None,None]
-            ylim = ylim or [None,None]
-            xlim, ylim = [*xlim], [*ylim]
+        if lonlim is not None or latlim is not None:
+            lonlim = lonlim or [None, None]
+            latlim = latlim or [None, None]
+            lonlim, latlim = [*lonlim], [*latlim]
             lon_0 = self.projection.proj4_params.get('lon_0', 0)
-            if xlim[0] is None:
-                xlim[0] = lon_0 - 180
-            if xlim[1] is None:
-                xlim[1] = lon_0 + 180
-            if ylim[0] is None:
-                ylim[0] = -90
-            if ylim[1] is None:
-                ylim[1] = 90
-            self.set_extent([*xlim, *ylim], PlateCarree())
+            if lonlim[0] is None:
+                lonlim[0] = lon_0 - 180
+            if lonlim[1] is None:
+                lonlim[1] = lon_0 + 180
+            if latlim[0] is None:
+                latlim[0] = -90
+            if latlim[1] is None:
+                latlim[1] = 90
+            self.set_extent([*lonlim, *latlim], PlateCarree())
 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
@@ -2727,29 +2740,17 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # to call gridlines() twice on same axes. Can't do it. Which is why
         # we do this nonsense with the formatter below, instead of drawing 'major'
         # grid lines and 'minor' grid lines.
-        latlocator = _default(latlocator, rc['map.latlines']) # gridlines by default
-        lonlocator = _default(lonlocator, rc['map.lonlines'])
-        lonvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-180, 180, v)]
-        latvec = lambda v: [] if v is None else [*v] if np.iterable(v) else [*utils.arange(-90, 90, v)]
-        lonminorlocator = lonvec(lonminorlocator)
-        latminorlocator = latvec(latminorlocator)
-        lonlocator = lonvec(lonlocator)
-        latlocator = latvec(latlocator)
-        lonlines = lonminorlocator or lonlocator # where we draw gridlines
-        latlines = latminorlocator or latlocator
-
-        # First take care of gridlines
         eps = 1e-3
-        draw_labels = (isinstance(self.projection, ccrs.Mercator) or isinstance(self.projection, ccrs.PlateCarree))
-        if latlines and latlines[0]==-90:
-            latlines[0] += eps
-        if lonlines and lonlines[0]==-90:
-            lonlines[0] -= eps
+        draw_labels = isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree))
         gl = self.gridlines(**rc['lonlatlines'], draw_labels=draw_labels)
-        if lonlines: # NOTE: using mticker.NullLocator results in error!
-            gl.xlocator = mticker.FixedLocator(lonlines)
-        if latlines:
-            gl.ylocator = mticker.FixedLocator(latlines)
+        if lonlocator: # NOTE: using mticker.NullLocator results in error!
+            gl.xlocator = mticker.FixedLocator(lonlocator)
+        if latlocator:
+            if latlocator[0]==-90:
+                latlocator[0] += eps
+            if latlocator[-1]==90:
+                latlocator[-1] -= eps
+            gl.ylocator = mticker.FixedLocator(latlocator)
 
         # Now take care of labels
         if draw_labels:

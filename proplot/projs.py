@@ -119,6 +119,10 @@ def Proj(name, basemap=False, **kwargs):
     # Allow less verbose keywords, actually match proj4 keywords and are
     # similar to basemap
     name = name or 'cyl'
+    basemap_circles = (
+        'npstere', 'spstere', 'nplaea',
+        'splaea', 'npaeqd', 'spaeqd',
+        )
     crs_translate = { # ad to this
         'lat_0': 'central_latitude',
         'lon_0': 'central_longitude',
@@ -131,8 +135,10 @@ def Proj(name, basemap=False, **kwargs):
     # Basemap
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
-        kwargs.update({'fix_aspect':True})
         name = cyl_aliases.get(name, name)
+        kwargs.update({'fix_aspect': True})
+        if name in basemap_circles:
+            kwargs.update({'round': True})
         projection = mbasemap.Basemap(projection=name, **kwargs)
         kw_init['aspect'] = (projection.urcrnrx - projection.llcrnrx) / \
                            (projection.urcrnry - projection.llcrnry)

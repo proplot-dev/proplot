@@ -116,19 +116,6 @@ rcParams:
 #----------------------
 # These are my "fake" rcParams
 rcParams_new:
-    # Axes background extras
-    # The empty ones will be filled by the default *global* properties above
-    axes.facehatch:
-    axes.hatchcolor:
-    map.facehatch:
-    map.hatchcolor:
-    map.facecolor:
-    map.linewidth:
-    map.edgecolor:
-    map.reso: med
-    map.lonlines: 30 # default gridline spacing
-    map.latlines: 15
-
     # Axis settings
     axes.formatter.zerotrim: True
 
@@ -143,6 +130,20 @@ rcParams_new:
     collabel.fontsize:
     collabel.weight:   bold
     collabel.color:    k
+
+    # Axes background extras
+    # The empty ones will be filled by the default *global* properties above
+    axes.facehatch:
+    axes.hatchcolor:
+    map.facehatch:
+    map.hatchcolor:
+    map.facecolor:
+    map.linewidth:
+    map.edgecolor:
+    map.reso: med
+    map.lonlines: 30 # default gridline spacing
+    map.latlines: 20
+    map.latmax:   80 # maximum latitude for gridlines
 
     # Grid lines
     gridminor.alpha:

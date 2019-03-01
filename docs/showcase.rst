@@ -302,19 +302,22 @@ most projections.
 
 
 Easily add geographic features using either basemap or cartopy as the
-projection backend. Note how basemap tends to fit many projections into
-“rectangles”, but cartopy does not.
+projection backend. Change the axes background color (``facecolor``) and
+line width of the boundary (``linewidth``) just like with Cartesian
+axes.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, nrows=2, proj={(1,2):'ortho', (3,4):'npstere'}, basemap={1:False, 2:True, 3:False, 4:True},
+    f, axs = plot.subplots(ncols=2, nrows=2,
+                           proj={(1,2):'ortho', (3,4):'npstere'},
+                           basemap={(1,3):False, (2,4):True},
                            proj_kw={(1,2):{'lon_0':0, 'lat_0':0}, (3,4):{'lon_0':0, 'boundinglat':40}})
-    axs[0::2].format(reso='med', land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'})
-    axs[1::2].format(land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'})
-    axs.format(collabels=['Earth, cartopy', 'Earth, basemap'])
+    axs[0::2].format(reso='med', land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=3)
+    axs[1::2].format(land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=3)
+    axs.format(collabels=['Cartopy', 'Basemap'])
 
 
 
