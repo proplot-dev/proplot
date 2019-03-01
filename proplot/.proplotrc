@@ -4,6 +4,8 @@
 rcGlobals:
     # Important settings
     cycle:      colorblind
+    cmap:       sunset
+    lut:        256
     color:      k
     xcolor:     k # can be used to set particular spine colors
     ycolor:     k
@@ -82,8 +84,6 @@ rcParams:
     mathtext.default:        regular # no italics
     mathtext.bf:             sans:bold
     mathtext.it:             sans:it
-    image.cmap:              sunset
-    image.lut:               256
     patch.facecolor:         C0
     patch.edgecolor:         k
     patch.linewidth:         1.0

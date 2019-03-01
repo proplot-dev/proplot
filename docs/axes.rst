@@ -20,7 +20,7 @@ Axes subclasses
 .. automodsumm:: proplot.axes
    :toctree: api
    :classes-only:
-   :skip: Number, GeoAxes, PlateCarree, mplDeprecation
+   :skip: Number, GeoAxes, PlateCarree, mplDeprecation, FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

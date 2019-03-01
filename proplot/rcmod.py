@@ -119,6 +119,8 @@ in bulk, or as shorthands for common settings with longer names.
 Key                 Description
 ==================  ==============================================================================================================
 ``cycle``           The default color cycle name, used e.g. for lines.
+``cmap``            The default colormap.
+``lut``             The number of colors to put in the colormap lookup table.
 ``color``           The color of axis spines, tick marks, tick labels, and labels.
 ``xcolor``          As with ``'color'``, but specific to *x*-axes.
 ``ycolor``          As with ``'color'``, but specific to *y*-axes.
@@ -172,6 +174,7 @@ import yaml
 import cycler
 import matplotlib.pyplot as plt
 from . import colortools
+import numpy as np
 import matplotlib as mpl
 _rcParams = mpl.rcParams
 _rcGlobals = {}
@@ -211,12 +214,15 @@ _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     # For xcolor/ycolor we just manually use the
     # global property in the format script.
-    'cycle':          [],
-    'color':          ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.edgecolor', 'map.hatchcolor', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'xcolor':         [], # specially used in the `~matplotlib.axes.XYAxes._rcupdate` function
-    'ycolor':         [],
+    'cycle':          [], # special handling, passed through Cycle
+    'cmap':           [], # special handling, passed through Colormap
+    'lut':            ['image.lut'],
+    'color':          ['axes.labelcolor', 'axes.edgecolor', 'axes.hatchcolor', 'map.edgecolor', 'map.hatchcolor',
+                       'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'hatchlw':        ['hatch.linewidth'],
     'hatchalpha':     [],
+    'xcolor':         [], # specially used in the `~matplotlib.axes.XYAxes._rcupdate` function
+    'ycolor':         [],
     'landcolor':      [],
     'oceancolor':     [],
     'coastlinewidth': [],
@@ -329,7 +335,6 @@ class rc_configurator(object):
         # rest of notebook session if you call rcdefaults before drawing a figure!
         # After first figure made, backend property is 'sticky', never changes!
         # See: https://stackoverflow.com/a/48322150/4970632
-        self._rcCache = {}
         mpl.style.use('default') # mpl.style function does not change the backend
 
         # Load the defaults from file
@@ -383,9 +388,10 @@ class rc_configurator(object):
         if _rcGlobals.get('fontname', None) is None:
             _rcGlobals['fontname'] = _default_font
 
-        # Set up the cycler
-        # This one is also special; run arg through colortools.colors
-        self._set_cycler(_rcGlobals.get('cycle', 'colorblind'))
+        # Set the default cycler and colormap (they must
+        # be passed through constructor)
+        self._set_cmap(_rcGlobals['cmap'])
+        self._set_cycler(_rcGlobals['cycle'])
 
         # Apply *global settings* to children settings
         rc, rc_new = self._get_globals()
@@ -399,23 +405,41 @@ class rc_configurator(object):
         # restrictive value (e.g. 1 or 2) when cell fails to execute. Should
         # consider improving this.
         self._init = True
-        self._cache_orig = {}
-        self._cache_added = {}
         self._getitem_mode = 0
+        self._setitem_cache = False
+        self._cache = {}
+        self._cache_restore = {}
+        self._context_kwargs = {}
+        self._context_cache_backup = {}
 
     def __enter__(self):
-        # Apply new settings (will get added to _rcCache)
-        for key,value in self._cache_added.items():
+        """
+        Apply temporary user global settings.
+        """
+        self._setitem_cache = True # cache the originals when they are changed?
+        self._context_cache_backup = rc._cache.copy()
+        for key,value in self._context_kwargs.items():
             self[key] = value # applies globally linked and individual settings
 
     def __exit__(self, _type, _value, _traceback):
-        # Restore configurator cache to its previous state.
-        self._rcCache = self._cache_orig
-        self._cache_orig = {}
-        self._cache_added = {}
+        """
+        Restore configurator cache to initial state.
+        """
         self._getitem_mode = 0
+        self._setitem_cache = False
+        for key,value in self._cache_restore.items():
+            self[key] = value
+        self._cache = self._context_cache_backup
+        self._cache_restore = {}
+        self._context_kwargs = {}
+        self._context_cache_backup = {}
 
     def __getitem__(self, key):
+        """
+        Retrieve property. If we are in a `_context` block, will only
+        return cached properties (i.e. properties that user wants to
+        temporarily change). If not cached, returns None.
+        """
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
@@ -424,11 +448,11 @@ class rc_configurator(object):
         # or even *ignore _rcParams_new*.
         mode = self._getitem_mode
         if mode==0:
-            kws = (self._rcCache, _rcParams_new, _rcParams)
+            kws = (self._cache, _rcParams_new, _rcParams)
         elif mode==1:
-            kws = (self._rcCache, _rcParams_new)
+            kws = (self._cache, _rcParams_new)
         elif mode==2:
-            kws = (self._rcCache,)
+            kws = (self._cache,)
         else:
             raise ValueError(f'Invalid _getitem_mode {mode}.')
         # If it is available, return the values corresponding to names in
@@ -463,21 +487,44 @@ class rc_configurator(object):
         """
         Set :ref:`rcGlobals`, :ref:`rcParams`, or :ref:`rcParams_new` settings.
         """
-        # First the special cycler
+        # Save changed properties?
+        cache = self._cache
+        cache[key] = value
+        restore = self._setitem_cache
+        if restore:
+            cache_restore = self._cache_restore
+        # First the special cycler and colormaps
         # NOTE: No matter the 'setitem mode' this will always set the axes
         # prop_cycle rc settings
         if key=='cycle':
+            if restore:
+                for ikey in ('cycle', 'axes.prop_cycle'):
+                    cache_restore[ikey] = _rcGlobals[ikey]
             self._set_cycler(value)
-            self._rcCache['cycle'] = value
-        # Apply global settings
+        elif key=='cmap':
+            if restore:
+                for ikey in ('cycle', 'image.cmap'):
+                    cache_restore[ikey] = _rcGlobals[ikey]
+                cache_restore[key] = _rcGlobals[key]
+            self._set_cmap(value)
+        # Global settings
         elif key in _rcGlobals:
+            # Update globals
+            if restore:
+                cache_restore[key] = _rcGlobals[key]
             if value=='default':
                 value = _rcGlobals_default[key]
-            rc, rc_new = self._get_globals(key, value)
-            self._rcCache.update(rc)
-            self._rcCache.update(rc_new)
-            self._rcCache[key] = value # also update cached global property itself
+            if key=='color': # recursively update global children of global settings
+                self['xcolor'] = value
+                self['ycolor'] = value
             _rcGlobals[key] = value
+            # Update children
+            rc, rc_new = self._get_globals(key, value)
+            cache.update(rc)
+            cache.update(rc_new)
+            if restore:
+                cache_restore.update({key:_rcParams[key] for key in rc})
+                cache_restore.update({key:_rcParams_new[key] for key in rc_new})
             _rcParams.update(rc)
             _rcParams_new.update(rc_new)
         # Directly modify single parameter
@@ -485,10 +532,13 @@ class rc_configurator(object):
         # something (we are not in a with..as context in format()), so we
         # want to directly modify _rcParams.
         elif key in _rc_names:
-            self._rcCache[key] = value
             try:
+                if restore:
+                    cache_restore[key] = _rcParams[key]
                 _rcParams[key] = value # rcParams dict has key validation
             except KeyError:
+                if restore:
+                    cache_restore[key] = _rcParams_new[key]
                 _rcParams_new[key] = value
         else:
             raise ValueError(f'Invalid key "{key}".')
@@ -513,29 +563,51 @@ class rc_configurator(object):
             self.__setitem__(attr, value)
 
     def __repr__(self):
-        # Nice string representation
+        """
+        Nice string representation.
+        """
         length = 1 + max(len(key) for key in _rcGlobals.keys())
         string = 'rc = {\n' + '\n'.join(f'  {key}: {" "*(length-len(key))}{value}'
                                     for key,value in _rcGlobals.items()) + '\n}'
         return string
 
     def __str__(self):
-        # Simple one, good for auto docs
+        """
+        Short string representation.
+        """
         length = 1 + max(len(key) for key in _rcGlobals.keys())
         string = ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
         return string
 
+    def _set_cmap(self, value):
+        """
+        Set the default colormap. Value is passed through
+        `~proplot.colortools.Colormap`.
+        """
+        kw = {}
+        if np.iterable(value) and len(value)==2 and isinstance(value[-1], dict):
+            value, kw = value[0], value[-1]
+        if isinstance(value, str) or not np.iterable(value):
+            value = value,
+        cmap = colortools.Colormap(*value, **kw)
+        _rcParams['image.cmap'] = cmap.name
+
     def _set_cycler(self, value):
         """
-        Set the color cycler.
+        Set the default color cycler. Value is passed through
+        `~proplot.colortools.Cycle`.
         """
-        # NOTE: Generally if user uses 'C0', et cetera, assume they want to
-        # refer to the *default* cycler colors; so first reset
-        if isinstance(value, str) or isinstance(value, Number):
+        # Generally if user uses 'C0', et cetera, assume they want to
+        # refer to the *default* cycler colors; so we reset that first
+        current = _rcGlobals['cycle']
+        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colortools.Cycle(current))
+        # Set cycler
+        kw = {}
+        if np.iterable(value) and len(value)==2 and isinstance(value[-1], dict):
+            value, kw = value[0], value[-1]
+        if isinstance(value, str) or not np.iterable(value):
             value = value,
-        colors = colortools.Cycle('colorblind')
-        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-        colors = colortools.Cycle(*value)
+        colors = colortools.Cycle(*value, **kw)
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         figs = list(map(plt.figure, plt.get_fignums()))
         for fig in figs:
@@ -544,7 +616,8 @@ class rc_configurator(object):
 
     def _get_globals(self, key=None, value=None):
         """
-        Apply all properties in some group.
+        Return dictionaries for updating "child" properties in
+        `rcParams` and `rcParams_new` with global property.
         """
         kw = {}
         kw_new = {}
@@ -599,14 +672,14 @@ class rc_configurator(object):
 
         This has three modes:
 
-            0. `__getitem__` searches everything, the default.
-            1. `__getitem__` ignores `_rcParams` (assumption is these
-               have already been set). Used during axes `__init__`
-               calls to `_rcupdate`.
-            2. `__getitem__` ignores `_rcParams` and `_rcParams_new`; only
-               reads from cache, i.e. settings that user has manually changed.
-               Used during `~proplot.BaseAxes.format` calls to
-               `~proplot.BaseAxes._rcupdate`.
+        0. `__getitem__` searches everything, the default.
+        1. `__getitem__` ignores `_rcParams` (assumption is these
+            have already been set). Used during axes `__init__`
+            calls to `_rcupdate`.
+        2. `__getitem__` ignores `_rcParams` and `_rcParams_new`; only
+            reads from cache, i.e. settings that user has manually changed.
+            Used during `~proplot.BaseAxes.format` calls to
+            `~proplot.BaseAxes._rcupdate`.
 
         Notes
         -----
@@ -622,9 +695,8 @@ class rc_configurator(object):
             if not isinstance(arg, dict):
                 raise ValueError('rc_context() only accepts dictionary args and kwarg pairs.')
             kwargs.update(arg)
+        self._context_kwargs = kwargs # could be empty
         self._getitem_mode = mode
-        self._cache_orig   = rc._rcCache.copy()
-        self._cache_added  = kwargs # could be empty
         return self
 
     def fill(self, props):

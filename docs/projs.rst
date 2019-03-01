@@ -3,19 +3,19 @@ Projections
 
 **Variables**
 
-.. automodsumm:: proplot.proj
+.. automodsumm:: proplot.projs
    :variables-only:
    :toctree: api
 
 **Functions**
 
-.. automodsumm:: proplot.proj
+.. automodsumm:: proplot.projs
    :functions-only:
    :toctree: api
 
 **Classes**
 
-.. automodsumm:: proplot.proj
+.. automodsumm:: proplot.projs
    :classes-only:
    :toctree: api
 
@@ -24,5 +24,5 @@ Projections
 
    <h1>Overview</h1>
 
-.. automodule:: proplot.proj
+.. automodule:: proplot.projs
 

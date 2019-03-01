@@ -1,17 +1,17 @@
-Hammer
-======
+KavrayskiyVII
+=============
 
-.. currentmodule:: proplot.proj
+.. currentmodule:: proplot.projs
 
-.. autoclass:: Hammer
+.. autoclass:: KavrayskiyVII
    :show-inheritance:
 
    .. rubric:: Attributes Summary
 
    .. autosummary::
 
-      ~Hammer.name
-      ~Hammer.threshold
+      ~KavrayskiyVII.name
+      ~KavrayskiyVII.threshold
 
    .. rubric:: Attributes Documentation
 

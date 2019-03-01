@@ -1,6 +1,6 @@
 projs
 =====
 
-.. currentmodule:: proplot.proj
+.. currentmodule:: proplot.projs
 
 .. autodata:: projs

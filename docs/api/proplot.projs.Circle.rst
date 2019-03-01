@@ -1,6 +1,6 @@
 Circle
 ======
 
-.. currentmodule:: proplot.proj
+.. currentmodule:: proplot.projs
 
 .. autofunction:: Circle

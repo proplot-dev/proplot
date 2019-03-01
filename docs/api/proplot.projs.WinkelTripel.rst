@@ -1,17 +1,17 @@
-KavrayskiyVII
-=============
+WinkelTripel
+============
 
-.. currentmodule:: proplot.proj
+.. currentmodule:: proplot.projs
 
-.. autoclass:: KavrayskiyVII
+.. autoclass:: WinkelTripel
    :show-inheritance:
 
    .. rubric:: Attributes Summary
 
    .. autosummary::
 
-      ~KavrayskiyVII.name
-      ~KavrayskiyVII.threshold
+      ~WinkelTripel.name
+      ~WinkelTripel.threshold
 
    .. rubric:: Attributes Documentation
 

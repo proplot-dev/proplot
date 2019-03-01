@@ -23,7 +23,7 @@ import numpy as np
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
 from .utils import _dot_dict, _default, _timer, _counter, units, ic
-from . import gridspec, axes
+from . import gridspec, projs, axes
 import functools
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
@@ -242,8 +242,7 @@ class FigureBase(mfigure.Figure):
                 title = title_lev3
                 text = title.get_text()
                 title.set_text('\n\n' + text)
-                line = 1.2 # looks best empirically
-                add = '\n'
+                line = 3.2 # looks best empirically
             elif title_lev2:
                 # Just offset suptitle, and matplotlib will recognize the
                 # suptitle during tight_subplot adjustment.
@@ -258,7 +257,6 @@ class FigureBase(mfigure.Figure):
                 title = title_lev1
                 if not title.axes._title_inside:
                     title.set_text(' ')
-                add = ''
 
             # First idea: Create blended transform, end with newline
             # ypos = title.axes._title_pos_init[1]
@@ -494,6 +492,9 @@ class FigureBase(mfigure.Figure):
             axis.axes._share_span_label(axis)
 
     def _auto_smart_tight_layout(self, renderer=None):
+        """
+        Conditionally call `~FigureBase.smart_tight_layout`.
+        """
         # Only proceed if this wasn't already done, or user did not want
         # the figure to have tight boundaries.
         if not self._smart_tight_init or not self._smart_tight:
@@ -503,8 +504,9 @@ class FigureBase(mfigure.Figure):
         # this can erroneously identify invisible edges of map as being part of boundary
         # 2) If you have gridliner text labels, matplotlib won't detect them.
         # Therefore, bail if we find any cartopy axes.
-        # TODO: Fix this?
-        if any(isinstance(ax, axes.CartopyAxes) for ax in self.axes):
+        # TODO: Fix this? Right now we just let set_bounds fuck up, and bail
+        # if gridliner was ever used.
+        if any(getattr(ax, '_gridliner_on', None) for ax in self.axes):
             return
         # Proceed
         if not self._silent:
@@ -1173,7 +1175,7 @@ def subplots(array=None, ncols=1, nrows=1,
         # Custom Basemap and Cartopy axes
         elif name:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, aspect = axes.map_projection_factory(name, basemap=basemap[num], **proj_kw[num])
+            instance, aspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
             axes_kw[num].update({'projection':package, 'map_projection':instance})
             if num==0:
                 # print(f'Forcing aspect ratio: {aspect:.3g}')

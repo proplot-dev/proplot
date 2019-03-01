@@ -15,6 +15,6 @@ from .gridspec import *
 from .colortools import * # color tools
 from .fonttools import *  # fonts
 from .axistools import *  # locators, normalizers, and formatters
-from .proj import *       # cartopy projections and whatnot
+from .projs import *      # projections and whatnot
 from .demos import *      # demonstrations
 from .notebook import *

@@ -1,17 +1,17 @@
-WinkelTripel
-============
+Aitoff
+======
 
-.. currentmodule:: proplot.proj
+.. currentmodule:: proplot.projs
 
-.. autoclass:: WinkelTripel
+.. autoclass:: Aitoff
    :show-inheritance:
 
    .. rubric:: Attributes Summary
 
    .. autosummary::
 
-      ~WinkelTripel.name
-      ~WinkelTripel.threshold
+      ~Aitoff.name
+      ~Aitoff.threshold
 
    .. rubric:: Attributes Documentation
 

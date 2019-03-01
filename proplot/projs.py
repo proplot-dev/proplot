@@ -16,6 +16,7 @@ keyword arg with the `~proplot.subplots.subplots` function.
 The following is a table of registered projections, their full names (with a
 link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
 if it exists), and whether they are available in the cartopy and basemap packages.
+Note both basemap and cartopy use `PROJ.4` as their backends.
 
 ====================================  ===========================================================================================  =========  =======
 Key                                   Name                                                                                         Cartopy    Basemap
@@ -93,23 +94,58 @@ def Circle(ax, N=100):
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
     return mpath.Path(verts * radius + center)
 
-# Constructor function
-def Proj(name, **kwargs):
+def Proj(name, basemap=False, **kwargs):
     """
-    Returns an instance of the cartopy `~cartopy.crs.Projection` class.
+    Returns a `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
+    instance.
 
     Parameters
     ----------
     name : str
-        The projection name. See the table in the `~proplot.proj`
-        documentation.
+        The projection name.
+    basemap : bool, optional
+        Whether to use the basemap or cartopy package. Defaults to ``False``.
+
+    Other parameters
+    ----------------
     **kwargs
-        Passed to `~cartopy.crs.Projection`.
+        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
+        initializers.
+
+    See also
+    --------
+    `~proplot.proj`, `CartopyAxes`, `BasemapAxes`
     """
-    class_ = projs.get(name, None)
-    if name is None:
-        raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(projs.keys())}.')
-    return class_(**kwargs)
+    # Allow less verbose keywords, actually match proj4 keywords and are
+    # similar to basemap
+    name = name or 'cyl'
+    crs_translate = { # ad to this
+        'lat_0': 'central_latitude',
+        'lon_0': 'central_longitude',
+        }
+    cyl_aliases = {
+        'eqc':     'cyl',
+        'pcarree': 'cyl',
+        }
+    # Basemap
+    if basemap:
+        import mpl_toolkits.basemap as mbasemap # verify package is available
+        kwargs.update({'fix_aspect':True})
+        name = cyl_aliases.get(name, name)
+        projection = mbasemap.Basemap(projection=name, **kwargs)
+        aspect = (projection.urcrnrx - projection.llcrnrx) / \
+                 (projection.urcrnry - projection.llcrnry)
+    # Cartopy
+    else:
+        import cartopy.crs as ccrs # verify package is importable
+        kwargs = {crs_translate.get(key, key): value for key,value in kwargs.items()}
+        crs = projs.get(name, None)
+        if name is None:
+            raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(projs.keys())}.')
+        projection = crs(**kwargs)
+        aspect = (np.diff(projection.x_limits) / \
+                  np.diff(projection.y_limits))[0]
+    return projection, aspect
 
 # Simple projections
 # Inspired by source code for Mollweide implementation

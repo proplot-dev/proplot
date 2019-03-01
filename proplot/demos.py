@@ -256,8 +256,8 @@ def cycle_show():
     the custom API.
     """
     # Get the list of cycles
-    _cycles = {**{name:mcm.cmap_d[name].colors for name in tools._cycles_cmap},
-               **{name:mcm.cmap_d[name].colors for name in tools._cycles_list.keys()}}
+    _cycles = {name:mcm.cmap_d[name].colors for name in tools.cycles}
+    _cycles = {name:_cycles[name] for name in sorted(_cycles.keys())}
     nrows = len(_cycles)//2 + len(_cycles)%2
     # Create plot
     state = np.random.RandomState(528)

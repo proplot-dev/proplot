@@ -298,6 +298,72 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
         if scale==np.inf:
             raise ValueError('For infinite scale (i.e. discrete cutoff), need both lower and upper bounds.')
 
+    class _CutoffTransform(mtransforms.Transform):
+        # Create transform object
+        input_dims = 1
+        output_dims = 1
+        has_inverse = True
+        is_separable = True
+        def __init__(self):
+            mtransforms.Transform.__init__(self)
+        def transform(self, a):
+            a = np.array(a) # very numpy array
+            aa = a.copy()
+            if upper is None: # just scale between 2 segments
+                m = (a > lower)
+                aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
+            elif lower is None:
+                m = (a < upper)
+                aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
+            else:
+                m1 = (a > lower)
+                m2 = (a > upper)
+                m3 = (a > lower) & (a < upper)
+                if scale==np.inf:
+                    aa[m1] = a[m1] - (upper - lower)
+                    aa[m3] = lower
+                else:
+                    aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
+                    aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
+            return aa
+        def transform_non_affine(self, a):
+            return self.transform(a)
+        def inverted(self):
+            return _InvertedCutoffTransform()
+
+    class _InvertedCutoffTransform(mtransforms.Transform):
+        # Inverse of _CutoffTransform
+        input_dims = 1
+        output_dims = 1
+        has_inverse = True
+        is_separable = True
+        def __init__(self):
+            mtransforms.Transform.__init__(self)
+        def transform(self, a):
+            a = np.array(a)
+            aa = a.copy()
+            if upper is None:
+                m = (a > lower)
+                aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
+            elif lower is None:
+                m = (a < upper)
+                aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
+            else:
+                n = (upper-lower)*(1 - 1/scale)
+                m1 = (a > lower)
+                m2 = (a > upper - n)
+                m3 = (a > lower) & (a < (upper - n))
+                if scale==np.inf:
+                    aa[m1] = a[m1] + (upper - lower)
+                else:
+                    aa[m2] = a[m2] + n
+                    aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
+            return aa
+        def transform_non_affine(self, a):
+            return self.transform(a)
+        def inverted(self):
+            return _CutoffTransform()
+
     class CutoffScale(mscale.ScaleBase):
         # Declare name
         name = scale_name
@@ -318,72 +384,6 @@ def CutoffScaleFactory(scale, lower, upper=None, name='cutoff'):
     mscale.register_scale(CutoffScale)
     # print(f'Registered scale "{scale_name}".')
     return scale_name
-
-class _CutoffTransform(mtransforms.Transform):
-    # Create transform object
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-    def __init__(self):
-        mtransforms.Transform.__init__(self)
-    def transform(self, a):
-        a = np.array(a) # very numpy array
-        aa = a.copy()
-        if upper is None: # just scale between 2 segments
-            m = (a > lower)
-            aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
-        elif lower is None:
-            m = (a < upper)
-            aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
-        else:
-            m1 = (a > lower)
-            m2 = (a > upper)
-            m3 = (a > lower) & (a < upper)
-            if scale==np.inf:
-                aa[m1] = a[m1] - (upper - lower)
-                aa[m3] = lower
-            else:
-                aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
-                aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
-        return aa
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _InvertedCutoffTransform()
-
-class _InvertedCutoffTransform(mtransforms.Transform):
-    # Inverse of _CutoffTransform
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-    def __init__(self):
-        mtransforms.Transform.__init__(self)
-    def transform(self, a):
-        a = np.array(a)
-        aa = a.copy()
-        if upper is None:
-            m = (a > lower)
-            aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
-        elif lower is None:
-            m = (a < upper)
-            aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
-        else:
-            n = (upper-lower)*(1 - 1/scale)
-            m1 = (a > lower)
-            m2 = (a > upper - n)
-            m3 = (a > lower) & (a < (upper - n))
-            if scale==np.inf:
-                aa[m1] = a[m1] + (upper - lower)
-            else:
-                aa[m2] = a[m2] + n
-                aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
-        return aa
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _CutoffTransform()
 
 #------------------------------------------------------------------------------#
 # Mercator axis
@@ -855,18 +855,19 @@ class ScalarFormatter(mticker.ScalarFormatter):
            are labelled.
 
     """
-    def __init__(self, *args, zerotrim=None, tickrange=[-np.inf, np.inf],
+    def __init__(self, *args, zerotrim=None, tickrange=None,
                               prefix=None, suffix=None, **kwargs):
         """
         Parameters
         ----------
-        tickrange : (float, float), optional
+        tickrange : None or (float, float), optional
             Range within which major tick marks are labelled.
         zerotrim : bool, optional
             Whether to trim trailing zeros.
         prefix, suffix : None or str, optional
             Optional prefix and suffix for strings.
         """
+        tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(*args, **kwargs)
         if zerotrim is None:
             zerotrim = rc['axes.formatter.zerotrim']
@@ -891,7 +892,7 @@ class ScalarFormatter(mticker.ScalarFormatter):
             return '' # avoid some ticks
         string = super().__call__(x, pos)
         if self._zerotrim:
-            string = re.sub(r'\.?0+$', '', string)
+            string = re.sub(r'\.0+$', '', string)
         if string and string[0] in '−-': # unicode minus or hyphen
             prefix, string = string[0], string[1:]
         return prefix + self._prefix + string + self._suffix

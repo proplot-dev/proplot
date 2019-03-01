@@ -190,7 +190,9 @@ import matplotlib.cm as mcm
 from matplotlib import rcParams
 from . import utils, colormath
 from .utils import _default, ic
-_data = os.path.dirname(__file__) # or parent, but that makes pip install distribution hard
+_data_user = os.path.join(os.path.expanduser('~'), '.proplot')
+_data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
+_data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
 
 # Default number of colors
 _N_hires = 256
@@ -880,7 +882,7 @@ def Colormap(*args, name=None, N=None,
         extend='both',
         left=None, right=None, x=None, reverse=False, # optionally truncate color range by these indices
         ratios=1, gamma=None, gamma1=None, gamma2=None,
-        register=False, save=False,
+        register=True, save=False,
         **kwargs):
     """
     Convenience function for generating and **merging** colormaps
@@ -910,7 +912,10 @@ def Colormap(*args, name=None, N=None,
           default, this is 100).
 
     name : None or str, optional
-        Name of colormap. Default name is ``'custom'``.
+        Name of colormap. Default name is ``'no_name'``.
+
+        The resulting colormap can then be invoked by passing ``cmap='name'``
+        to plotting functions like `~matplotlib.figure.Figure.contourf`.
     N : None or int, optional
         Number of colors to generate in the hidden lookupt table ``_lut``.
         By default, a relatively high resolution of 256 is chosen (see notes).
@@ -955,12 +960,15 @@ def Colormap(*args, name=None, N=None,
         `PerceptuallyUniformColormap` documentation.
 
         So far no way to apply this differently for each colormap in `args`.
-    register : bool, optional
-        Whether to register resulting colormap. If registered, it can
-        be invoked with ``cmap='name'`` on plotting functions
-        like `~matplotlib.figure.Figure.contourf`.
     save : bool, optional
-        Whether to save the final colormap to disk.
+        Whether to save the colormap in the folder ``~/.proplot``. The
+        folder is created if it does not already exist.
+
+        If the colormap is a `~matplotlib.colors.ListedColormap` (i.e. a
+        "color cycle"), the list of hex strings are written to ``name.hex``.
+
+        If the colormap is a `~matplotlib.colors.LinearSegmentedColormap`,
+        the segment data dictionary is written to ``name.json``.
 
     Notes
     -----
@@ -991,7 +999,7 @@ def Colormap(*args, name=None, N=None,
     # something done by pcolormesh function.
     _N = N or _N_hires
     imaps = []
-    name = name or 'custom' # must have name, mcolors utilities expect this
+    name = name or 'no_name' # must have name, mcolors utilities expect this
     if len(args)==0:
         args = [rcParams['image.cmap']] # use default
 
@@ -1038,7 +1046,7 @@ def Colormap(*args, name=None, N=None,
             regex = '([0-9].)$'
             match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
             cmap = re.sub(regex, '', cmap) # remove options
-            fade = kwargs.pop('fade',100) if not match else match.group(1) # default fade to 100 luminance
+            fade = kwargs.pop('fade', 90) if not match else match.group(1) # default fade to 100 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
             cmap = monochrome_cmap(cmap, fade, name=name, N=_N, **kwargs)
@@ -1081,30 +1089,31 @@ def Colormap(*args, name=None, N=None,
             raise ValueError(f'Unknown extend option {extend}.')
         cmap = cmap._resample(N - offset[extend]) # see mcm.get_cmap source
 
-    # Optionally register a colormap
-    if name and register:
-        if name.lower() in [cat_cmap.lower() for cat,cat_cmaps in _cmap_categories.items()
-                    for cat_cmap in cat_cmaps if 'ProPlot' not in cat]:
-            print(f'Warning: Overwriting existing colormap "{name}".')
-            # raise ValueError(f'Builtin colormap "{name}" already exists. Choose a different name.')
-        elif name in mcm.cmap_d:
-            pass # no warning necessary
-        mcm.cmap_d[name] = cmap
-        mcm.cmap_d[name + '_r'] = cmap.reversed()
-        if re.search('[A-Z]',name):
-            mcm.cmap_d[name.lower()] = cmap
-            mcm.cmap_d[name.lower() + '_r'] = cmap.reversed()
-        print(f'Registered {name}.') # not necessary
+    # Register the colormap
+    mcm.cmap_d[name] = cmap
+    mcm.cmap_d[name + '_r'] = cmap.reversed()
+    if re.search('[A-Z]',name):
+        mcm.cmap_d[name.lower()] = cmap
+        mcm.cmap_d[name.lower() + '_r'] = cmap.reversed()
 
     # Optionally save colormap to disk
     if name and save:
+        if not os.path.isdir(_data_user):
+            os.mkdir(_data_user)
+        # Save listed colormap i.e. color cycle
+        if isinstance(cmap, mcolors.ListedColormap):
+            basename = f'{cmap.name}.hex'
+            filename = os.path.join(_data_user, basename)
+            with open(filename, 'w') as f:
+                f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
         # Save segment data directly
-        basename = f'{cmap.name}.json'
-        filename = os.path.join(_data, 'cmaps', basename)
-        data = cmap._segmentdata.copy()
-        data['space'] = cmap.space
-        with open(filename, 'w') as file:
-            json.dump(data, file, indent=4)
+        else:
+            basename = f'{cmap.name}.json'
+            filename = os.path.join(_data_user, basename)
+            data = cmap._segmentdata.copy()
+            data['space'] = cmap.space
+            with open(filename, 'w') as file:
+                json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')
     return cmap
 
@@ -1739,11 +1748,9 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     space = _get_space(space)
     h, s, l = to_xyz(to_rgb(color), space)
     if isinstance(fade, Number): # allow just specifying the luminance channel
-        # fade = np.clip(fade, 0, 99)
-        fade = np.clip(fade, 0, 100)
-        fade = to_rgb((h, 0, fade), space=space)
-    _, fs, fl = to_xyz(to_rgb(fade), space)
-    fs = s # consider changing this?
+        fs, fl = s, fade # fade to *same* saturation by default
+    else:
+        _, fs, fl = to_xyz(to_rgb(fade), space)
     index = slice(None,None,-1) if reverse else slice(None)
     return PerceptuallyUniformColormap.from_hsl(name, h, [s,fs][index], [l,fl][index],
             space=space, **kwargs)
@@ -2203,7 +2210,7 @@ def register_colors(nmax=np.inf, verbose=False):
                ('bluegray', 'blue gray'),
                ('grayblue', 'gray blue'),
                ('lightblue', 'light blue'))
-    for file in sorted(glob.glob(os.path.join(_data, 'colors', '*.txt'))):
+    for file in sorted(glob.glob(os.path.join(_data_colors, '*.txt'))):
         # Read data
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
@@ -2266,7 +2273,8 @@ def register_cmaps():
     color cycles.
     """
     # First read from file
-    for filename in glob.glob(os.path.join(_data, 'cmaps', '*')):
+    for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
+            sorted(glob.glob(os.path.join(_data_user, '*'))):
         # Read table of RGB values
         if not re.search('\.(x?rgba?|json|xml)$', filename):
             continue
@@ -2413,7 +2421,10 @@ def register_cycles():
     color cycles.
     """
     # Read lists of hex strings from disk
-    for filename in glob.glob(os.path.join(_data, 'cmaps', '*.hex')):
+    for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
+            sorted(glob.glob(os.path.join(_data_user, '*'))):
+        if not re.search('\.hex$', filename):
+            continue
         name = os.path.basename(filename)
         name = name.split('.hex')[0]
         colors = [*open(filename)] # should just be a single line
@@ -2436,8 +2447,10 @@ def register_cycles():
         mcm.cmap_d.pop(key, None)
     # *Change* the name of some more useful ones
     for (name1,name2) in [('Accent','Set1'), ('tab20b','Set4'), ('tab20c','Set5')]:
-        mcm.cmap_d[name2] = mcm.cmap_d.pop(name1)
-        cycles.add(name2)
+        orig = mcm.cmap_d.pop(name1, None)
+        if orig:
+            mcm.cmap_d[name2] = orig
+            cycles.add(name2)
 
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly

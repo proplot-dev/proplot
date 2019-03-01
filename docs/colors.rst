@@ -61,6 +61,9 @@ Example:
 creates a monochrome colormap. It also saves the colormap with the name
 ``'my_cmap'``, using the `cmap_kw` dictionary argument.
 
+The default colormap can be set with ``plot.rc.cmap = <cmap spec>`` or ``plot.rc.cmap = (<cmap spec>, <cmap kwargs>)``,
+where the colormap specification (and optional keyword args) are passed through `~proplot.Colormap`.
+
 Color cycles
 ------------
 
@@ -68,13 +71,16 @@ In addition to the new colormaps, new “color cycles” are also available
 (i.e. the automatic color order used for drawing multiple lines).
 :ref:`Color cycles` provides a table of these cycles.
 
-The color cycler can be set with the ``plot.rc.cycle`` property, or by
-passing ``cycle='name'`` to any command that plots lines/patches (``plot``, ``bar``, etc.).
+The default cycler can be set with ``plot.rc.cycle = <cycle spec>`` or ``plot.rc.cycle = (<cycle spec>, <cycle kwargs>)``,
+where the cycle specification (and optional keyword args) are passed through `~proplot.Cycle`.
+The cycler can also be temporarily changed by passing ``cycle='name'`` (and, optionally, ``cycle_kw={'key':value}``)
+to any plotting command that ordinarily loops through a color cycle, e.g. ``plot`` and ``bar``.
+
 
 The **distinction between a “colormap” and “color cycle” is now fluid**:
 
 1. All color cycles are implemented as `~matplotlib.colors.ListedColormap` instances; you can request them as colormaps with ``cmap='cycle_name'``.
-2. Cycles can be generated on the fly from the colormaps by specifying e.g. ``cycle=('cmap_name', N)``, where ``N`` is the number of colors over the registered colormap you’d like to sample. If you just use ``cycle='cmap_name'``, the default will be 10 colors.
+2. Cycles can be generated on the fly from the colormaps by specifying e.g. ``cycle=('cmap_name', N)``, where ``N`` is the number of colors over the registered colormap you’d like to sample. If you just use ``cycle='cmap_name'``, the default is 10 colors.
 
 
 The following generates a cycle of 5 colors over the matplotlib builtin colormap

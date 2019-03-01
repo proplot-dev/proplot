@@ -21,7 +21,7 @@ figure canvas*.
     plot.nbsetup()
     N = 50
     M = 40
-    colors = plot.colors('grays_r', M, x=(0.1, 0.8))
+    colors = plot.Colors('grays_r', M, x=(0.1, 0.8))
     for share in (0,1,2,3):
         f, axs = plot.subplots(ncols=4, aspect=1.2, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
@@ -34,19 +34,27 @@ figure canvas*.
 
 
 
-.. image:: _static/showcase/showcase_1_1.svg
+.. image:: _static/showcase/showcase_1_1.png
+   :width: 643px
+   :height: 155px
 
 
 
-.. image:: _static/showcase/showcase_1_2.svg
+.. image:: _static/showcase/showcase_1_2.png
+   :width: 643px
+   :height: 156px
 
 
 
-.. image:: _static/showcase/showcase_1_3.svg
+.. image:: _static/showcase/showcase_1_3.png
+   :width: 643px
+   :height: 155px
 
 
 
-.. image:: _static/showcase/showcase_1_4.svg
+.. image:: _static/showcase/showcase_1_4.png
+   :width: 643px
+   :height: 155px
 
 
 .. code:: ipython3
@@ -66,11 +74,15 @@ figure canvas*.
 
 
 
-.. image:: _static/showcase/showcase_2_1.svg
+.. image:: _static/showcase/showcase_2_1.png
+   :width: 598px
+   :height: 552px
 
 
 
-.. image:: _static/showcase/showcase_2_2.svg
+.. image:: _static/showcase/showcase_2_2.png
+   :width: 490px
+   :height: 490px
 
 
 Set up a complex grid of subplots using a 2D array of integers. Call a
@@ -89,8 +101,8 @@ a list of item attributes for every axes in the list using
     f, axs = plot.subplots([[1, 1, 2], [1, 1, 6], [3, 4, 4], [3, 5, 5]],
                            span=1, share=3,
                            wspace=0.6, hspace=0.5, width=5)
-    axs.format(suptitle='Complex subplot grid', xlabel='time (seconds)', ylabel='temperature (K)', abc=True)
-    axs[0].plot(2*(np.random.rand(100,5)-0.5).cumsum(axis=0))
+    axs.format(suptitle='Complex subplot grid with axis-sharing + spanning labels', xlabel='time (seconds)', ylabel='temperature (K)', abc=True)
+    axs[0].plot(2*(np.random.rand(100,5)-0.5).cumsum(axis=0), lw=2)
 
 
 
@@ -99,8 +111,9 @@ a list of item attributes for every axes in the list using
 
 
 
-
-.. image:: _static/showcase/showcase_4_3.svg
+.. image:: _static/showcase/showcase_4_2.png
+   :width: 450px
+   :height: 561px
 
 
 Formatting and panels
@@ -142,7 +155,10 @@ see the `documentation <https://lukelbd.github.io/tools/proplot/doc>`__.
 
 
 
-.. image:: _static/showcase/showcase_7_1.svg
+
+.. image:: _static/showcase/showcase_7_2.png
+   :width: 613px
+   :height: 426px
 
 
 Modify global settings with ``plot.rc['prop']`` or ``plot.rc.prop``.
@@ -186,8 +202,9 @@ information settings configuration in ProPlot.
 
 
 
-
-.. image:: _static/showcase/showcase_9_3.svg
+.. image:: _static/showcase/showcase_9_2.png
+   :width: 540px
+   :height: 379px
 
 
 Easily switch between different fonts using the ``fontname`` rc
@@ -232,7 +249,9 @@ Below is a showcase of the available fonts.
 
 
 
-.. image:: _static/showcase/showcase_11_1.svg
+.. image:: _static/showcase/showcase_11_1.png
+   :width: 931px
+   :height: 792px
 
 
 Map projections
@@ -259,7 +278,7 @@ most projections.
     offset = 20
     x = plot.arange(-180+offset,180+offset-1,60)
     y = plot.arange(-60,60+1,30)
-    data = np.random.rand(len(x), len(y))
+    data = np.random.rand(len(y), len(x))
     for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
         # adfdas
         m = None
@@ -267,22 +286,23 @@ most projections.
         levels = [0, .3, .5, .7, .9, 1]
         levels = np.linspace(0,1,11)
         if pcolor:
-            m = ax.pcolorpoly(x, y, data, levels=levels, cmap=cmap, extend='both', extremes=True)
+            m = ax.pcolorpoly(x, y, data, levels=levels, cmap=cmap, extend='both')
             ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5))
         if not pcolor:
-            m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='both', extremes=False)
+            m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='both')
             ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5))
         ax.format(facecolor='gray2', suptitle='Hammer projection in different mapping frameworks', collabels=['Cartopy', 'Basemap'])
         if p<2:
-            ax, c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
+            c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
         # print(p, ax._sharex, ax._sharey, list(ax._shared_x_axes))
         # if p==2:
             # raise Exception
 
 
 
-
-.. image:: _static/showcase/showcase_13_1.svg
+.. image:: _static/showcase/showcase_13_1.png
+   :width: 630px
+   :height: 417px
 
 
 .. code:: ipython3
@@ -302,7 +322,7 @@ most projections.
     x = (x-0.5)*360
     y = (y-0.5)*180
     levels = np.linspace(0, 1, 100)
-    cnt = ax.tripcolor(x, y, z, levels=levels, cmap='Sea')
+    cnt = ax.tripcolor(x, y, z, levels=levels, cmap='Turquoise')
     ax.format(title='Tricontour plot', xlabels='b', xlocator=60, ylocator=20)
     # Next the basemap one
     ax = axs[1]
@@ -313,12 +333,14 @@ most projections.
     levels = np.linspace(0, 1, 100)
     ax.format(title='Basemap plot', xlocator=plot.arange(-180,180,60), ylocator=plot.arange(-80,80,20),
               lonlabels='lrb', latlabels='')
-    cnt = ax.contourf(x, y, np.random.rand(len(x), len(y)).cumsum(axis=0), cmap='Sea', levels=20)
+    cnt = ax.contourf(x, y, np.random.rand(len(y), len(x)).cumsum(axis=0), cmap='Turquoise', levels=20)
 
 
 
 
-.. image:: _static/showcase/showcase_14_1.svg
+.. image:: _static/showcase/showcase_14_1.png
+   :width: 630px
+   :height: 255px
 
 
 Axis scales
@@ -353,7 +375,9 @@ scale creates a geographically “area-weighted” latitude axis. The
 
 
 
-.. image:: _static/showcase/showcase_16_1.svg
+.. image:: _static/showcase/showcase_16_1.png
+   :width: 630px
+   :height: 325px
 
 
 The ``inverse`` scale is useful primarily where you’d like to show the
@@ -383,7 +407,9 @@ wavenumber and wavelength on the same axis.
 
 
 
-.. image:: _static/showcase/showcase_18_1.svg
+.. image:: _static/showcase/showcase_18_1.png
+   :width: 540px
+   :height: 279px
 
 
 (If you’re not an atmospheric scientist, you can skip this part.) Scale
@@ -440,8 +466,9 @@ assumed for these conversions is 7km, and can be changed. See the
 
 
 
-
-.. image:: _static/showcase/showcase_20_3.svg
+.. image:: _static/showcase/showcase_20_2.png
+   :width: 450px
+   :height: 411px
 
 
 Use so-called “cutoff scales” to create axes with discrete cutoffs, or
@@ -455,7 +482,7 @@ distribution.
     import numpy as np
     plot.nbsetup()
     # plot.rc.fontname = 'Verdana'
-    f, axs = plot.figure(width=6, nrows=4, aspect=(5,1),
+    f, axs = plot.subplots(width=6, nrows=4, aspect=(5,1),
                          hspace=0.5,
                          sharey=False, sharex=False)
     # Compression
@@ -478,7 +505,9 @@ distribution.
 
 
 
-.. image:: _static/showcase/showcase_22_1.svg
+.. image:: _static/showcase/showcase_22_1.png
+   :width: 540px
+   :height: 565px
 
 
 Perceptually uniform colorspaces
@@ -498,7 +527,9 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_24_1.svg
+.. image:: _static/showcase/showcase_24_1.png
+   :width: 847px
+   :height: 297px
 
 
 .. code:: ipython3
@@ -594,7 +625,9 @@ is fluid!
 
 
 
-.. image:: _static/showcase/showcase_32_1.svg
+.. image:: _static/showcase/showcase_32_1.png
+   :width: 540px
+   :height: 2109px
 
 
 Color names
@@ -649,6 +682,7 @@ that the distinctions between “colormaps” and “color cycles” is now
     import numpy as np
     import proplot as plot
     plot.nbsetup()
+    N = 12
     flymap = {'h':['blue-360','red'], 'l':[98, 20], 'space':'hpl', 'gamma':1.4}
     listmap = ('light green', 'blue violet', 'sky blue', 'blue green', 'red violet')
     cmaps  = ['maroon',     ('C0','C2'),    'tropical', 'glacial',         flymap,     [listmap], 'blood', 'blood']
@@ -659,16 +693,17 @@ that the distinctions between “colormaps” and “color cycles” is now
                            innerpanels_kw={'hspace':0.1, 'wwidth':0.8}, hspace=0.1,
                            innerpanels='r', innercolorbars='b')
     # Lines
-    N = 12
     lines = np.random.rand(20,N) - 0.5
-    lines = lines[:,:1] + lines.cumsum(axis=0) + np.arange(0,N)
+    lines = lines[:,:1] + lines.cumsum(axis=1) + np.arange(0,N)[None,:]
     ylim = (0,11)
     scales = [0.1, 0.3, 0.5, 0.7]
     for i,(ax,cmap,cycle,kw) in enumerate(zip(axs,cmaps,cycles,kws)):
         data = np.cos(np.sin(scales[i//2] * np.linspace(0,N,N)[None,:] * np.linspace(0,N,N)[:,None])) # psychadelic colors
         m = ax.contourf(data, cmap=cmap, cmap_kw=kw, levels=10)
-        # ax.contour(data, colors='w', linewidths=0.5)
-        ax.rightpanel.plot(lines, lw=2, cycle=cycle, cycle_kw=kw) # one for each line
+        y = np.arange(lines.shape[0])
+        plot.rc.cycle = (cycle, kw)
+        for i in range(N):
+            ax.rightpanel.plot(lines[:,i], lw=2) # one for each line
         ax.rightpanel.format(ylocator='none', ylim=ylim)
         ax.bottompanel.colorbar(m, clocator='none')
     axs.format(suptitle='Various ways to declare colormaps and cycles', abc=True, abcpos='il',
@@ -677,7 +712,9 @@ that the distinctions between “colormaps” and “color cycles” is now
 
 
 
-.. image:: _static/showcase/showcase_37_1.svg
+.. image:: _static/showcase/showcase_37_1.png
+   :width: 634px
+   :height: 983px
 
 
 The below shows how gamma can be changed for my new “perceptually
@@ -711,7 +748,9 @@ often very useful for interpreting physical data with coarse resolution.
 
 
 
-.. image:: _static/showcase/showcase_39_1.svg
+.. image:: _static/showcase/showcase_39_1.png
+   :width: 652px
+   :height: 417px
 
 
 The below example shows how the new ``plot`` method can be used to map
@@ -740,10 +779,12 @@ is being used in the same subplot.
                     linewidth=15, interp=1-i, cmap_kw={'left':i*0.05})
         ax.format(xlim=(-1,1), ylim=(-1,1), suptitle='Lines with smooth colormap gradations',
                   xlabel='cosine angle', ylabel='sine angle')
-        ax, c = f.bottompanel.colorbar(m,  space=0.37, i=i, n=2, locator=None, label=f'label {i}')
+        c = f.bottompanel.colorbar(m,  space=0.37, i=i, n=2, locator=None, label=f'label {i}')
 
 
 
 
-.. image:: _static/showcase/showcase_41_1.svg
+.. image:: _static/showcase/showcase_41_1.png
+   :width: 504px
+   :height: 384px
 

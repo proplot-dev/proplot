@@ -1,17 +1,17 @@
-Aitoff
+Hammer
 ======
 
-.. currentmodule:: proplot.proj
+.. currentmodule:: proplot.projs
 
-.. autoclass:: Aitoff
+.. autoclass:: Hammer
    :show-inheritance:
 
    .. rubric:: Attributes Summary
 
    .. autosummary::
 
-      ~Aitoff.name
-      ~Aitoff.threshold
+      ~Hammer.name
+      ~Hammer.threshold
 
    .. rubric:: Attributes Documentation
 

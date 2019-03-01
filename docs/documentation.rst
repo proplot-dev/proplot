@@ -11,7 +11,7 @@ Documentation
    axistools
    colortools
    fonttools
-   proj
+   projs
    rcmod
    utils
    demos

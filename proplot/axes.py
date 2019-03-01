@@ -39,8 +39,9 @@ import matplotlib.collections as mcollections
 # Local modules, projection sand formatters and stuff
 from matplotlib import docstring
 from .rcmod import rc
-from . import proj, utils, gridspec, colortools, fonttools, axistools
+from . import utils, colortools, fonttools, axistools
 from .utils import _dot_dict, _default, _timer, _counter, ic, units
+from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 
 # Silly recursive function, returns a...z...aa...zz...aaa...zzz
 # God help you if you ever need that many labels
@@ -284,9 +285,9 @@ def cycle_features(self, func):
     @functools.wraps(func)
     def decorator(*args, cycle=None, cycle_kw={}, **kwargs):
         # Determine and temporarily set cycler
-        if cycle is not None:
-            if not np.iterable(cycle) or isinstance(cycle, str):
-                cycle = cycle,
+        if not np.iterable(cycle) or isinstance(cycle, str):
+            cycle = cycle,
+        if cycle[0] is not None and not (isinstance(cycle[0], str) and cycle == rc.cycle):
             cycle = colortools.Cycle(*cycle, **cycle_kw)
             self.set_prop_cycle(color=cycle)
         return func(*args, **kwargs)
@@ -735,6 +736,7 @@ class BaseAxes(maxes.Axes):
         self._inset_parent = None # change this later
         self._insets = [] # add to these later
         self._map_name = map_name # consider conditionally allowing 'shared axes' for certain projections
+        self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
         super().__init__(*args, **kwargs)
         self._title_pos_init = self.title.get_position() # position of title outside axes
         self._title_pos_transform = self.title.get_transform()
@@ -1387,7 +1389,7 @@ class BaseAxes(maxes.Axes):
 
         # Create LineCollection and update with values
         # TODO: Why not just pass kwargs to class?
-        collection = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm, linestyles='-')
+        collection = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm, linestyles='-', joinstyle='miter')
         collection.set_array(np.array(values))
         collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 
@@ -1508,7 +1510,8 @@ class XYAxes(BaseAxes):
             kw = rc.fill({
                 'color': name + 'tick.color',
                 'labelcolor': 'axes.edgecolor',
-                'labelsize':  'axes.labelsize'})
+                'labelsize':  'axes.labelsize'
+                })
             if axis_color:
                 kw['color'] = axis_color
             axis.set_tick_params(which='both', **kw)
@@ -1519,6 +1522,8 @@ class XYAxes(BaseAxes):
             # TODO: Figure out how to change fontname for all ticks, like in
             # set_tick_params. But fontname is global.
             kw = rc.fill({'fontname': 'fontname'})
+            if axis_color:
+                kw['color'] = axis_color
             for t in axis.get_ticklabels():
                 t.update(kw)
 
@@ -1541,8 +1546,7 @@ class XYAxes(BaseAxes):
         # Background patch basics
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
-        kw = rc.fill({'facecolor': 'axes.facecolor'})
-        self.patch.update(kw)
+        self.patch.update(rc.fill({'facecolor': 'axes.facecolor'}))
 
         # Call parent
         super()._rcupdate()
@@ -2150,7 +2154,7 @@ class PanelAxes(XYAxes):
                 hwidth = (self.height - (n-1)*space)/n # express height ratios in physical units
                 if hwidth<0:
                     raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.height}.')
-                gridspec = gridspec.FlexibleGridSpecFromSubplotSpec(
+                gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=n,  ncols=3,
                         wspace=0, hspace=space,
                         subplot_spec=subspec,
@@ -2162,7 +2166,7 @@ class PanelAxes(XYAxes):
                 wwidth = (self.width - (n-1)*space)/n
                 if wwidth<0:
                     raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.width}.')
-                gridspec = gridspec.FlexibleGridSpecFromSubplotSpec(
+                gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=3,  ncols=n,
                         wspace=wspace, hspace=hspace,
                         subplot_spec=subspec,
@@ -2301,10 +2305,14 @@ class BasemapAxes(MapAxes):
     `~proplot.subplots.subplots`, `~proplot.proj`, `BaseAxes`, `MapAxes`
     """
     name = 'basemap'
-    _map_rectangular = ['merc', 'pcarree', 'cyl', 'cea', 'eqc', 'mill',
-                      'omerc', 'utm', 'tmerc', 'lcyl', 'gall']
-    # _map_pseudocyl = ['moll', 'robin', 'eck4', 'kav7', 'sinu',
-    #                   'mbtfpq', 'vandg', 'hammer', 'aitoff']
+    # Note non-rectangular projections; for rectnagular ones, axes spines are
+    # used as boundaries, but for these, have different boundary.
+    _proj_non_rectangular = [
+            'ortho', 'geos', 'nsper',
+            'moll', 'hammer', 'robin',
+            'eck4', 'kav7', 'mbtfpq', # last one is McBryde-Thomas flat polar quartic
+            'sinu', 'vandg', # last one is van der Grinten
+            ]
     """The registered projection name."""
     def __init__(self, *args, map_projection=None, **kwargs):
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
@@ -2336,17 +2344,13 @@ class BasemapAxes(MapAxes):
         #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
         # * For now will enforce that map plots *always* have background whereas
         #   axes plots can have transparent background
-        self.axesPatch = self.patch # for bugfix
-        # if self.m._mapboundarydrawn:
-        #     self.m._mapboundarydrawn.remove()
-
-        # Draw boundary
-        kw_face = rc.fill({'facecolor': 'axes.facecolor'})
-        if self.m.projection not in self._map_rectangular:
+        kw_face = rc.fill({'facecolor': 'map.facecolor'})
+        self.axesPatch = self.patch # bugfix or something
+        if self.m.projection in self._proj_non_rectangular:
             self.patch.set_alpha(0) # make patch invisible
-            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'})
+            kw_edge = rc.fill({'linewidth': 'map.linewidth', 'edgecolor': 'map.edgecolor'}) # necessary to update after drawn, because patch 'color' is the fill but kwarg for edge color is 'color'
             if not self.m._mapboundarydrawn:
-                p = self.m.drawmapboundary(ax=self, **kw_edge) # set fill_color to 'none' to make transparent
+                p = self.m.drawmapboundary(ax=self) # set fill_color to 'none' to make transparent
             else:
                 p = self.m._mapboundarydrawn
             p.update({**kw_face, **kw_edge})
@@ -2570,7 +2574,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # See: https://scitools.org.uk/cartopy/docs/v0.14/_modules/cartopy/feature.html#Feature
         # Change the _kwargs property also does *nothing*
         self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
-        kw = rc.fill({'facecolor': 'axes.facecolor'})
+        kw = rc.fill({'facecolor': 'map.facecolor'})
         self.background_patch.update(kw)
         kw = rc.fill({'edgecolor': 'map.edgecolor', 'linewidth': 'map.linewidth'})
         self.outline_patch.update(kw)
@@ -2672,9 +2676,9 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
         # Add geographic features
         # Use the NaturalEarthFeature to get more configurable resolution; can choose
         # between 10m, 50m, and 110m (scales 1:10mil, 1:50mil, and 1:110mil)
+        reso = _default(reso, rc['map.reso'])
         if reso not in ('lo','med','hi'):
             raise ValueError(f'Invalid resolution {reso}.')
-        reso = _default(reso, rc['map.reso'])
         reso = {'lo':'110m', 'med':'50m', 'hi':'10m'}.get(reso)
         if coastline and not self._coastline:
             # self.add_feature(cfeature.COASTLINE, **rc['coastlines'])
@@ -2722,6 +2726,7 @@ class CartopyAxes(MapAxes, GeoAxes): # custom one has to be higher priority, so 
 
         # Now take care of labels
         if draw_labels:
+            self._gridliner_on = True
             gl.xformatter = LONGITUDE_FORMATTER
             gl.yformatter = LATITUDE_FORMATTER
             gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
@@ -2746,7 +2751,7 @@ class PolarAxes(MapAxes, mproj.PolarAxes):
     name = 'newpolar'
     """The registered projection name."""
 
-# Register the projection
+# Register the projections
 mproj.register_projection(BaseAxes)
 mproj.register_projection(XYAxes)
 mproj.register_projection(PanelAxes)
@@ -2755,58 +2760,8 @@ mproj.register_projection(BasemapAxes)
 mproj.register_projection(CartopyAxes)
 
 #------------------------------------------------------------------------------#
-# Custom legend and colorbar factories
+# Legends and colorbars
 #------------------------------------------------------------------------------#
-def map_projection_factory(projection, basemap=False, **kwargs):
-    """
-    Returns a `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-    instance.
-
-    Parameters
-    ----------
-    projection : str
-        The projection name.
-    basemap : bool, optional
-        Whether to use the basemap or cartopy package. Defaults to ``False``.
-
-    Other parameters
-    ----------------
-    **kwargs
-        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-        initializers.
-
-    See also
-    --------
-    `~proplot.proj`, `CartopyAxes`, `BasemapAxes`
-    """
-    # Allow less verbose keywords, actually match proj4 keywords and are
-    # similar to basemap
-    projection = projection or 'cyl'
-    crs_translate = { # ad to this
-        'lat_0': 'central_latitude',
-        'lon_0': 'central_longitude',
-        }
-    cyl_aliases = {
-        'eqc':     'cyl',
-        'pcarree': 'cyl',
-        }
-    # Basemap
-    if basemap:
-        import mpl_toolkits.basemap as mbasemap # verify package is available
-        kwargs.update({'fix_aspect':True})
-        projection = cyl_aliases.get(projection, projection)
-        projection = mbasemap.Basemap(projection=projection, **kwargs)
-        aspect = (projection.urcrnrx - projection.llcrnrx) / \
-                 (projection.urcrnry - projection.llcrnry)
-    # Cartopy
-    else:
-        import cartopy.crs as ccrs # verify package is importable
-        kwargs = {crs_translate.get(key, key): value for key,value in kwargs.items()}
-        projection = proj.Proj(projection, **kwargs)
-        aspect = (np.diff(projection.x_limits) / \
-                  np.diff(projection.y_limits))[0]
-    return projection, aspect
-
 def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     """
     Function for drawing a legend, with some handy added features.
@@ -3285,7 +3240,7 @@ def colorbar_factory(ax, mappable, values=None,
         alpha = cb.solids.get_alpha()
     if alpha is not None and alpha<1:
         # First get reference color
-        print('Performing manual alpha-blending for colorbar solids.')
+        # print('Warning: Performing manual alpha-blending for colorbar solids.')
         reference = mappable.axes.get_facecolor() # the axes facecolor
         reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
         # Next get solids
