@@ -159,7 +159,7 @@ _map_disabled_methods = (
 #------------------------------------------------------------------------------
 def _parse_args(args):
     """
-    Parse arguments for checking 2D data centers/edges.
+    Helper function for `_check_edges` and `_check_centers`.
     """
     # Sanitize input
     if len(args)>2:
@@ -224,6 +224,15 @@ def _check_centers(func):
 def _check_edges(func):
     """
     Check shape of arguments passed to pcolor, and fix result.
+
+    Notes
+    -----
+    Optional numbers of arguments:
+
+    * Z
+    * U, V
+    * x, y, Z
+    * x, y, U, V
     """
     @functools.wraps(func)
     def decorator(*args, order='C', **kwargs):
@@ -254,15 +263,16 @@ def _check_edges(func):
 
 def cycle_features(self, func):
     """
-    Wrapper generator that allows specifying the "color cycler" at plot-time.
-    This simply sets the axes property cycler before calling the plot method,
-    and sets the cycle
+    Wraps methods that use the ``rcParams['axes.prop_cycle']`` "property
+    cycle" if properties were not explicitly specified, like
+    `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.bar`.
+    Adds several new keyword args.
 
     Parameters
     ----------
     cycle : None or cycle spec, optional
         The cycle specifer, passed to the `~proplot.colortools.Cycle`
-        constructor.
+        constructor.  See `~proplot.colortools.Cycle` for options.
     cycle_kw : dict-like, optional
         Passed to `~proplot.colortools.Cycle`.
 
@@ -295,14 +305,17 @@ def cycle_features(self, func):
 
 def cmap_features(self, func):
     """
-    Wrapper generator that adds a bunch of new features, including
-    flexible and on-the-fly colormap generation.
+    Wraps methods that take a `cmap` argument, like
+    `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
+    Adds several new keyword args and features. Note this means
+    `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
+    now accept a `levels` keyword arg.
 
     Parameters
     ----------
     cmap : None or colormap spec, optional
         The colormap specifer, passed to the `~proplot.colortools.Colormap`
-        constructor.
+        constructor. See `~proplot.colortools.Colormap` for options.
     cmap_kw : dict-like, optional
         Passed to `~proplot.colortools.Colormap`.
     extend : {'neither', 'both', 'min', 'max'}, optional
@@ -318,8 +331,8 @@ def cmap_features(self, func):
         `~proplot.utils.edges` and overrides the `levels` keyword arg.
     zero : bool, optional
         Ignored if `values` or `levels` are lists.
-        If colormap levels were automatically selected, toggle this to
-        modify the levels to be **symmetric about zero**.
+        If colormap levels were automatically selected by matplotlib, toggle
+        this to modify the levels to be **symmetric about zero**.
     norm : None or normalizer spec, optional
         The colormap normalizer, used to map data values to colormap colors.
         This is passed to the `~proplot.colortools.Norm` constructor.
@@ -328,15 +341,6 @@ def cmap_features(self, func):
     values_as_levels : bool, optional
         Used internally. Toggles whether to infer `values` from `levels`, or
         to bypass them and add `values` as a keyword arg to the main function.
-
-    * Create new colormaps on the fly, and merge arbitrary named
-      or created colormaps.
-    * Always use full range of colormap, whether you are extending
-      max, min, neither, or both. For the first three, will reconstruct
-      colormap so 'out-of-bounds' have same color as edge colors
-      from 'in-bounds' region.
-
-    Also see `this post <https://stackoverflow.com/a/48614231/4970632>`.
 
     Other parameters
     ----------------
@@ -351,12 +355,12 @@ def cmap_features(self, func):
 
     Notes
     -----
-    The `bins` argument lets you choose between:
-
-    1. (True) Use a *discrete* normalizer with a *continuous* (i.e. very
-        high resolution) color table.
-    2. (False) Use a *continuous* normalizer with a *discrete* (containing
-        the number of colors you want) color table.
+    Now, the colored levels always use the **full range of colors** in the
+    colormap, whether you are extending max, min, neither, or both. By default,
+    when you select `extend` not ``both``, matplotlib seems to just cut off
+    the most intense colors on either side (reserved for coloring "out of
+    bounds" data). `This post <https://stackoverflow.com/a/48614231/4970632>`__
+    helped me figure some of this stuff out.
     """
     @functools.wraps(func)
     def decorator(*args, cmap=None, cmap_kw={}, extend='neither',
@@ -475,7 +479,7 @@ def cmap_features(self, func):
 # cause a suite of weird errors. Prevent this recursion with the below decorator.
 def _m_call(self, func):
     """
-    Call the basemap version of the function of the same name.
+    Docorator that calls the basemap version of the function of the same name.
     """
     name = func.__name__
     @functools.wraps(func)
@@ -486,10 +490,9 @@ def _m_call(self, func):
 def _no_recurse(self, func):
     """
     Decorator to prevent recursion in Basemap method overrides.
-    See: https://stackoverflow.com/a/37675810/4970632
+    See `this post https://stackoverflow.com/a/37675810/4970632`__.
     """
     @functools.wraps(func)
-    # def decorator(self, *args, **kwargs):
     def decorator(*args, **kwargs):
         name = getattr(func, '__name__')
         if self._recurred:
@@ -511,7 +514,6 @@ def _linefix_basemap(self, func):
     want to @wrap it to preserve documentation.
     """
     @functools.wraps(func)
-    # def decorator(self, *args, **kwargs):
     def decorator(*args, **kwargs):
         kwargs.update(latlon=True)
         return func(*args, **kwargs)
@@ -519,7 +521,8 @@ def _linefix_basemap(self, func):
 
 def _gridfix_basemap(self, func):
     """
-    Interpret coordinates and fix discontinuities in grid.
+    Decorator that interprets coordinates and fixes
+    discontinuities in grid.
     """
     @functools.wraps(func)
     def decorator(lon, lat, Z, fix_poles=True, **kwargs):
@@ -620,8 +623,8 @@ def _gridfix_basemap(self, func):
 
 def _linefix_cartopy(self, func):
     """
-    Simply add an additional kwarg. Needs whole function because we
-    want to @wrap it to preserve documentation.
+    Decorator that just instantiates the projection transform, if a class
+    was passed instead of an object.
     """
     @functools.wraps(func)
     def decorator(*args, transform=PlateCarree, **kwargs):
@@ -637,9 +640,9 @@ def _linefix_cartopy(self, func):
 
 def _gridfix_cartopy(self, func):
     """
-    Apply default transform and fix discontinuities in grid.
-    Note for cartopy, we don't have to worry about meridian at which longitude
-    wraps around; projection handles all that.
+    Decorator that applies default transform and fixes discontinuities in
+    grid. Note for cartopy, we don't have to worry about meridian at which
+    longitude wraps around; projection handles all that.
 
     Todo
     ----
