@@ -16,7 +16,7 @@ BasemapAxes
 
    .. autosummary::
 
-      ~BasemapAxes.format
+      ~BasemapAxes.format__
 
    .. rubric:: Attributes Documentation
 
@@ -24,4 +24,4 @@ BasemapAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: format
+   .. automethod:: format__

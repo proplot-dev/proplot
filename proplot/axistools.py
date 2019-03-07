@@ -885,14 +885,19 @@ class ScalarFormatter(mticker.ScalarFormatter):
         pos : None or float, optional
             The position.
         """
+        # Tick range limitation
         eps = abs(x)/1000
-        prefix = ''
         tickrange = self._tickrange
         if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
             return '' # avoid some ticks
+        # Normal formatting
         string = super().__call__(x, pos)
         if self._zerotrim:
             string = re.sub(r'\.0+$', '', string)
+            string = re.sub(r'^(.*\..*)0+$', r'\1', string)
+        string = re.sub(r'^[−-]0$', '0', string) # '-0' to '0'; necessary?
+        # Prefix and suffix
+        prefix = ''
         if string and string[0] in '−-': # unicode minus or hyphen
             prefix, string = string[0], string[1:]
         return prefix + self._prefix + string + self._suffix
@@ -925,9 +930,9 @@ def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
             elif x > 0:
                 suffix += cardinal[1]
         # Finally use default formatter
-        string = '{:.6f}'.format(x)
-        string = string.replace('-', '\N{MINUS SIGN}')
-        string = re.sub(r'\.?0+$', '', string)
+        string = '{:.6f}'.format(x).replace('-', '\N{MINUS SIGN}')
+        string = re.sub(r'\.0+$', '', string)
+        string = re.sub(r'^(.*\..*)0+$', r'\1', string)
         return string + suffix
     return mticker.FuncFormatter(f)
 
@@ -994,7 +999,7 @@ def eFormatter():
 
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
-scales = ['linear',
+scales = ('linear',
           'log',
           'symlog',
           'logit', # builtin
@@ -1003,7 +1008,7 @@ scales = ['linear',
           'exp',
           'sine',
           'mercator',
-          'inverse'] # custom
+          'inverse') # custom
 """
 List of registered scales.
 """

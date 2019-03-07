@@ -23,7 +23,7 @@ figure canvas*.
     M = 40
     colors = plot.Colors('grays_r', M, x=(0.1, 0.8))
     for share in (0,1,2,3):
-        f, axs = plot.subplots(ncols=4, aspect=1.2, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
+        f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
         for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
             array = gen(scale)
@@ -33,28 +33,27 @@ figure canvas*.
 
 
 
-
-.. image:: _static/showcase/showcase_1_1.png
+.. image:: showcase/showcase_1_0.png
    :width: 643px
-   :height: 155px
+   :height: 174px
 
 
 
-.. image:: _static/showcase/showcase_1_2.png
+.. image:: showcase/showcase_1_1.png
    :width: 643px
-   :height: 156px
+   :height: 172px
 
 
 
-.. image:: _static/showcase/showcase_1_3.png
+.. image:: showcase/showcase_1_2.png
    :width: 643px
-   :height: 155px
+   :height: 173px
 
 
 
-.. image:: _static/showcase/showcase_1_4.png
+.. image:: showcase/showcase_1_3.png
    :width: 643px
-   :height: 155px
+   :height: 173px
 
 
 .. code:: ipython3
@@ -69,20 +68,19 @@ figure canvas*.
                                wspace=0.2 + 0.4*(1-mode), hspace=0.15 + 0.25*(1-mode))
         for ax in axs:
             ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
-        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode)
+        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abc_pos='il')
 
 
 
-
-.. image:: _static/showcase/showcase_2_1.png
+.. image:: showcase/showcase_2_0.png
    :width: 598px
    :height: 552px
 
 
 
-.. image:: _static/showcase/showcase_2_2.png
+.. image:: showcase/showcase_2_1.png
    :width: 490px
-   :height: 490px
+   :height: 484px
 
 
 Set up a complex grid of subplots using a 2D array of integers. Call a
@@ -110,10 +108,9 @@ a list of item attributes for every axes in the list using
 
 
 
-
-.. image:: _static/showcase/showcase_4_2.png
+.. image:: showcase/showcase_4_1.png
    :width: 450px
-   :height: 561px
+   :height: 586px
 
 
 Formatting and panels
@@ -133,17 +130,17 @@ see the `documentation <https://lukelbd.github.io/tools/proplot/doc>`__.
     import numpy as np
     plot.nbsetup()
     f, axs = plot.subplots(tight=True, spany=False, sharey=3, sharex=1,
-                           nrows=3, ncols=3, axwidth=1.5, aspect=1,
+                           nrows=3, ncols=3, axwidth=1.5, aspect=0.67,
                            wratios=[2,1,1], hratios=[2,1,1],
                            bottom=0.5, left=0.5, lspace=0.5,
                            hspace=0.3, wspace=(0.2, 0.6),
                            # hspace=(0.1, 0.4), wspace=(0.1, 0.4),
                            bottompanel=True, rightpanels=[1,2,2])
-    m = axs[0].contourf(np.random.rand(10,10).cumsum(axis=0), rowmajor=True, extend='both')
+    m = axs[0].contourf(np.random.rand(10,10).cumsum(axis=0), extend='both')
     # axs[:3].format(title='Minor titles')
-    axs.format(abc=True, abcpos='li', abcformat='a.',
+    axs.format(abc=True, abc_pos='li', abc_format='a.',
                suptitle='SuperTitle is automatically offset and centered above main axes',
-               title='Inner title', titlepos='inside', # title_kw={'fancy':True},
+               title='Inner title', title_pos='inside', # title_kw={'fancy':True},
                collabels=['Column A', 'Column B', 'Column C'], collabels_kw=dict(color='k', weight='bold'),
                rowlabels=['Row 1', 'Row 2', 'Row 3'], rowlabels_kw=dict(color='k', weight='bold'),
                xlabel='xlabel', ylabel='ylabel')
@@ -154,11 +151,9 @@ see the `documentation <https://lukelbd.github.io/tools/proplot/doc>`__.
 
 
 
-
-
-.. image:: _static/showcase/showcase_7_2.png
+.. image:: showcase/showcase_7_0.png
    :width: 613px
-   :height: 426px
+   :height: 552px
 
 
 Modify global settings with ``plot.rc['prop']`` or ``plot.rc.prop``.
@@ -187,7 +182,7 @@ information settings configuration in ProPlot.
         data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
         lines = ax.plot(data, linewidth=2)
         ax.bottompanel.plot(data.mean(axis=1), color='gray7', lw=2)
-    axs.format(ytickloc='both', ycolor='blue7', xlabel='spanning x label', ylabel='ylabel', abc=True, abcpos='il',
+    axs.format(ytickloc='both', ycolor='blue7', xlabel='spanning x label', ylabel='ylabel', abc=True, abc_format='a)', abc_pos='il',
                yticklabelloc='both',
                suptitle='Various features demonstrated below')
     ay = axs[-1].twinx()
@@ -201,8 +196,7 @@ information settings configuration in ProPlot.
 
 
 
-
-.. image:: _static/showcase/showcase_9_2.png
+.. image:: showcase/showcase_9_1.png
    :width: 540px
    :height: 379px
 
@@ -248,8 +242,7 @@ Below is a showcase of the available fonts.
 
 
 
-
-.. image:: _static/showcase/showcase_11_1.png
+.. image:: showcase/showcase_11_0.png
    :width: 931px
    :height: 792px
 
@@ -285,10 +278,10 @@ most projections.
         levels = [0, .3, .5, .7, .9, 1]
         levels = np.linspace(0,1,11)
         if pcolor:
-            m = ax.pcolorpoly(x, y, data, levels=levels, cmap=cmap, extend='both')
+            m = ax.pcolorpoly(x, y, data, levels=levels, cmap=cmap, extend='neither')
             ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5))
         if not pcolor:
-            m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='both')
+            m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither')
             ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5))
         ax.format(facecolor='gray2', suptitle='Hammer projection in different mapping frameworks', collabels=['Cartopy', 'Basemap'])
         if p<2:
@@ -296,7 +289,7 @@ most projections.
 
 
 
-.. image:: _static/showcase/showcase_13_0.png
+.. image:: showcase/showcase_13_0.png
    :width: 630px
    :height: 417px
 
@@ -315,13 +308,13 @@ axes.
                            proj={(1,2):'ortho', (3,4):'npstere'},
                            basemap={(1,3):False, (2,4):True},
                            proj_kw={(1,2):{'lon_0':0, 'lat_0':0}, (3,4):{'lon_0':0, 'boundinglat':40}})
-    axs[0::2].format(reso='med', land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=3)
-    axs[1::2].format(land=True, coastline=True, landcolor='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=3)
     axs.format(collabels=['Cartopy', 'Basemap'])
+    axs[0::2].format(reso='med', land=True, coast=True, land_color='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=2)
+    axs[1::2].format(land=True, coast=True, land_color='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=2)
 
 
 
-.. image:: _static/showcase/showcase_15_0.png
+.. image:: showcase/showcase_15_0.png
    :width: 454px
    :height: 466px
 
@@ -351,7 +344,7 @@ methods like ``tricontourf``.
 
 
 
-.. image:: _static/showcase/showcase_17_0.png
+.. image:: showcase/showcase_17_0.png
    :width: 315px
    :height: 279px
 
@@ -369,13 +362,13 @@ scale creates a geographically “area-weighted” latitude axis. The
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    plot.rc.update(color='gray7', facehatch='xxxx')
+    plot.rc.update(color='gray7', hatch='xxxx')
     f, axs = plot.subplots(ncols=2, width=7, share=0, span=0, wspace=0.7, left=0.6)
     n = 30
     x = np.linspace(-180,180,n)
     y = np.linspace(-85,85,n) # note sine just truncated values not in [-90,90], but Mercator transformation can reflect them
     y2 = np.linspace(-85,85,n) # for pcolor
-    for i,(ax,scale,color) in enumerate(zip(axs,['mercator','sine'],['sky blue','coral'])):
+    for i,(ax,scale,color) in enumerate(zip(axs,['mercator','sine'],['sky','coral'])):
         ax = axs[i-1]
         ax.plot(x, y, '-', color=color, lw=4)
         data = np.random.rand(len(x), len(y2))
@@ -387,8 +380,7 @@ scale creates a geographically “area-weighted” latitude axis. The
 
 
 
-
-.. image:: _static/showcase/showcase_19_1.png
+.. image:: showcase/showcase_19_0.png
    :width: 630px
    :height: 325px
 
@@ -413,14 +405,13 @@ wavenumber and wavelength on the same axis.
     axy = ax.twiny()
     axy.format(xlim=(1/max(x), 1/min(x)), xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
               xscale='inverse', xlabel='period (days)',
-              title='Title automatically offset above axis labels', titlepos='oc',
+              title='Title automatically offset above axis labels', title_pos='oc',
               suptitle='SuperTitle above everything', 
               )
 
 
 
-
-.. image:: _static/showcase/showcase_21_1.png
+.. image:: showcase/showcase_21_0.png
    :width: 540px
    :height: 279px
 
@@ -478,8 +469,7 @@ assumed for these conversions is 7km, and can be changed. See the
 
 
 
-
-.. image:: _static/showcase/showcase_23_2.png
+.. image:: showcase/showcase_23_1.png
    :width: 450px
    :height: 411px
 
@@ -517,8 +507,7 @@ distribution.
 
 
 
-
-.. image:: _static/showcase/showcase_25_1.png
+.. image:: showcase/showcase_25_0.png
    :width: 540px
    :height: 565px
 
@@ -540,7 +529,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_27_1.png
+.. image:: showcase/showcase_27_1.png
    :width: 847px
    :height: 297px
 
@@ -554,7 +543,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_28_1.svg
+.. image:: showcase/showcase_28_1.svg
 
 
 .. code:: ipython3
@@ -566,7 +555,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_29_1.svg
+.. image:: showcase/showcase_29_1.svg
 
 
 .. code:: ipython3
@@ -580,7 +569,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_30_3.svg
+.. image:: showcase/showcase_30_3.svg
 
 
 .. code:: ipython3
@@ -594,7 +583,7 @@ the three HSV-like colorspaces shown below. For more info, check out
 
 
 
-.. image:: _static/showcase/showcase_31_3.svg
+.. image:: showcase/showcase_31_3.svg
 
 
 Colormaps
@@ -613,7 +602,7 @@ described above. See the ``colortools`` module for more info.
 
 
 
-.. image:: _static/showcase/showcase_33_1.png
+.. image:: showcase/showcase_33_1.png
    :width: 481px
    :height: 5434px
 
@@ -637,8 +626,7 @@ is fluid!
 
 
 
-
-.. image:: _static/showcase/showcase_35_1.png
+.. image:: showcase/showcase_35_0.png
    :width: 540px
    :height: 2109px
 
@@ -663,8 +651,9 @@ for some plot element.
 
 
 
-
-.. image:: _static/showcase/showcase_37_1.svg
+.. image:: showcase/showcase_37_0.png
+   :width: 630px
+   :height: 225px
 
 
 .. code:: ipython3
@@ -675,8 +664,7 @@ for some plot element.
 
 
 
-
-.. image:: _static/showcase/showcase_38_1.png
+.. image:: showcase/showcase_38_0.png
    :width: 720px
    :height: 1203px
 
@@ -717,17 +705,16 @@ that the distinctions between “colormaps” and “color cycles” is now
         plot.rc.cycle = (cycle, kw)
         for i in range(N):
             ax.rightpanel.plot(lines[:,i], lw=2) # one for each line
-        ax.rightpanel.format(ylocator='none', ylim=ylim)
+        ax.rightpanel.format(xticks='none', yticks='none', ylim=ylim)
         ax.bottompanel.colorbar(m, clocator='none')
-    axs.format(suptitle='Various ways to declare colormaps and cycles', abc=True, abcpos='il',
-               xlim=None, xticks='none', ylim=ylim)
+    axs.format(suptitle='Various ways to declare colormaps and cycles', abc=True, abc_pos='il',
+               xlim=None, xticks='none', yticks='none', ylim=ylim)
 
 
 
-
-.. image:: _static/showcase/showcase_40_1.png
+.. image:: showcase/showcase_40_0.png
    :width: 634px
-   :height: 983px
+   :height: 1007px
 
 
 The below shows how gamma can be changed for my new “perceptually
@@ -760,8 +747,7 @@ often very useful for interpreting physical data with coarse resolution.
 
 
 
-
-.. image:: _static/showcase/showcase_42_1.png
+.. image:: showcase/showcase_42_0.png
    :width: 652px
    :height: 417px
 
@@ -796,8 +782,7 @@ is being used in the same subplot.
 
 
 
-
-.. image:: _static/showcase/showcase_44_1.png
+.. image:: showcase/showcase_44_0.png
    :width: 504px
    :height: 384px
 

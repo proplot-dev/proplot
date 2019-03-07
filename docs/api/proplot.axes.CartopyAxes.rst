@@ -16,7 +16,7 @@ CartopyAxes
 
    .. autosummary::
 
-      ~CartopyAxes.format
+      ~CartopyAxes.format__
 
    .. rubric:: Attributes Documentation
 
@@ -24,4 +24,4 @@ CartopyAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: format
+   .. automethod:: format__

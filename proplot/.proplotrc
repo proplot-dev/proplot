@@ -4,51 +4,112 @@
 rcGlobals:
     # Important settings
     # nbsetup:    True
-    cycle:      colorblind
-    cmap:       sunset
-    lut:        256
-    color:      k
-    xcolor:     k # can be used to set particular spine colors
-    ycolor:     k
-    hatchlw:    0.6
-    hatchalpha: 1
-    facecolor:  w # or 0072B2
-    facehatch:    # hatching on background, useful for indicating invalid data
-    hatchcolor: k
-    gridalpha:  0.1
-    small:      8
-    large:      9
-    linewidth:  0.6
-    gridwidth:  0.6
-    gridcolor:  k
-    gridstyle:  ':'
-    ticklen:    4.0
-    tickpad:    2.0
-    tickdir:    out
-    bottom:     True
-    top:        False
-    left:       True
-    right:      False
-
+    fontname:  # will be determined by OS in ProPlot
+    cycle:     colorblind
+    cmap:      sunset
+    reso:      hi # for cartopy geographic features, one of {'lo', 'med', 'hi'}
+    lut:       256
+    color:     k
+    xcolor:    k # can be used to set particular spine colors
+    ycolor:    k
+    margin:    0.0
+    xmargin:   0.0
+    ymargin:   0.0
+    grid:      # if empty, defers to matplotlib (which generally omits gridlines if e.g. contourf was drawn)
+    geogrid:   True
+    gridminor: False
+    hatch:     False # hatching on background, useful for indicating invalid data
+    facecolor: w # or 0072B2
+    small:     8
+    large:     9
+    linewidth: 0.6
+    ticklen:   4.0
+    tickpad:   2.0
+    tickdir:   out
+    bottom:    True
+    top:       False
+    left:      True
+    right:     False
     # Geography
-    landcolor:      k
-    oceancolor:     w
-    coastlinewidth: 1.0
-    coastcolor:     k
+    land:         False
+    ocean:        False
+    coast:        False
+    rivers:       False
+    lakes:        False
+    borders:      False
+    innerborders: False # e.g. states, provinces
+    # Ratios
+    gridratio:    0.5 # ratio of major-to-minor grid line widths
+    tickratio:    0.8 # ratio of major-to-minor tick width
+    ticklenratio: 0.5 # ratio of major-to-minor tick size
 
-    # Convenient aliases (i.e. they do not bulk apply to a bunch of settings just shorter names)
-    fontname:       # will be determined by OS in ProPlot
-    margin:         0.0
-    xmargin:        0.0
-    ymargin:        0.0
-    abcweight:      bold
-    titleweight:    normal
-    suptitleweight: bold
-
-    # Special ones
-    gridratio:  0.5    # ratio of major-to-minor grid line widths
-    tickratio: 0.8     # ratio of major-to-minor tick width
-    ticklenratio:  0.5 # ratio of major-to-minor tick size
+#----------------------
+# rcParams_new defaults
+#----------------------
+# These are my "fake" rcParams
+rcParams_new:
+    # Axis settings
+    axes.formatter.zerotrim: True
+    # Title settings
+    # Again, empty ones are filled by the global settings
+    abc.fontsize:
+    abc.weight:        bold
+    abc.color:         k
+    abc.pos:           ol   # outside the axes, to the left
+    abc.format:        a
+    abc.border:        True # whether to draw border for interior labels
+    abc.linewidth:     1.5  # width of border
+    title.pos:         oc   # outside the axes, in the center
+    title.border:      True
+    title.linewidth:   1.5
+    title.color:       k
+    title.weight:      normal
+    title.fontsize:    # equal to 'large'
+    suptitle.color:    k
+    suptitle.weight:   bold
+    suptitle.fontsize:
+    rowlabel.fontsize:
+    rowlabel.weight:   bold
+    rowlabel.color:    k
+    collabel.fontsize:
+    collabel.weight:   bold
+    collabel.color:    k
+    # Parallels and meridians
+    geogrid.labels:    True
+    geogrid.labelsize: # 'small' font size
+    geogrid.lonlines:  30 # default gridline spacing
+    geogrid.latlines:  20
+    geogrid.latmax:    80 # maximum latitude for gridlines
+    geogrid.alpha:     0.4
+    geogrid.color:     k
+    geogrid.linewidth: 0.6
+    geogrid.linestyle: ':'
+    # Geography
+    land.color:             k
+    ocean.color:            w
+    lakes.color:            w
+    coast.color:            k
+    coast.linewidth:        0.6
+    borders.color:          k
+    borders.linewidth:      0.6
+    innerborders.color:     k
+    innerborders.linewidth: 0.6
+    rivers.color:           k
+    rivers.linewidth:       0.6
+    # Minor grid lines
+    gridminor.alpha:
+    gridminor.color:
+    gridminor.linestyle:
+    gridminor.linewidth:
+    # lonlatlines.linestyle: --
+    # Gridspec
+    gridspec.title:  0.2  # extra space for title/suptitle
+    gridspec.inner:  0.2  # just have ticks, no labels
+    gridspec.legend: 0.25 # default legend space (bottom of figure)
+    gridspec.cbar:   0.17 # default colorbar width
+    gridspec.ylab:   0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    gridspec.xlab:   0.55 # for horizontal text should have more space
+    gridspec.nolab:  0.15 # only ticks
 
 #------------------
 # rcParams defaults
@@ -59,7 +120,7 @@ rcParams:
     figure.facecolor:        '#f2f2f2'
     figure.max_open_warning: 0
     figure.autolayout:       False
-    figure.titleweight:      bold
+    figure.titleweight:      bold # the super title weight
     savefig.facecolor:       '#ffffff'
     savefig.transparent:     True
     savefig.dpi:             300
@@ -77,19 +138,19 @@ rcParams:
     axes.axisbelow:          lines # for ticks/gridlines *above* patches, *below* lines, use lines
     xtick.minor.visible:     True
     ytick.minor.visible:     True
-    grid.color:              k
+    grid.color:              'k' # also applies to gridminor props, if not set
     grid.alpha:              0.1
+    grid.linewidth:          0.6
     grid.linestyle:          '-'
-    grid.linewidth:          0.6 # a bit thinner
     text.usetex:             False # use TeX for *all* font handling (limits available fonts)
     mathtext.default:        regular # no italics
-    mathtext.bf:             sans:bold
-    mathtext.it:             sans:it
+    mathtext.bf:             'sans:bold'
+    mathtext.it:             'sans:it'
     patch.facecolor:         C0
     patch.edgecolor:         k
     patch.linewidth:         1.0
-    hatch.color:             k
-    hatch.linewidth:         0.7
+    hatch.color:             k # filled with 'color'
+    hatch.linewidth:         0.6 # filled with 'linewidth'
     markers.fillstyle:       full
     scatter.marker:          o
     lines.linewidth:         1.3
@@ -110,58 +171,3 @@ rcParams:
     legend.numpoints:        1
     legend.borderpad:        0.5
     legend.borderaxespad:    0
-
-#----------------------
-# rcParams_new defaults
-#----------------------
-# These are my "fake" rcParams
-rcParams_new:
-    # Axis settings
-    axes.formatter.zerotrim: True
-
-    # Title settings
-    # Again, empty ones are filled by the global settings
-    abc.fontsize:
-    abc.weight:        bold
-    abc.color:         k
-    rowlabel.fontsize:
-    rowlabel.weight:   bold
-    rowlabel.color:    k
-    collabel.fontsize:
-    collabel.weight:   bold
-    collabel.color:    k
-
-    # Axes background extras
-    # The empty ones will be filled by the default *global* properties above
-    axes.facehatch:
-    axes.hatchcolor:
-    map.facehatch:
-    map.hatchcolor:
-    map.facecolor:
-    map.linewidth:
-    map.edgecolor:
-    map.reso: med
-    map.lonlines: 30 # default gridline spacing
-    map.latlines: 20
-    map.latmax:   80 # maximum latitude for gridlines
-
-    # Grid lines
-    gridminor.alpha:
-    gridminor.color:       k
-    gridminor.linestyle:   '-'
-    gridminor.linewidth:   0.1
-    lonlatlines.alpha:     0.4
-    lonlatlines.color:     k
-    lonlatlines.linewidth: 1.0
-    lonlatlines.linestyle: ':'
-    # lonlatlines.linestyle: --
-
-    # Gridspec
-    gridspec.title:        0.2  # extra space for title/suptitle
-    gridspec.inner:        0.2  # just have ticks, no labels
-    gridspec.legend:       0.25 # default legend space (bottom of figure)
-    gridspec.cbar:         0.17 # default colorbar width
-    gridspec.ylab:         0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
-    gridspec.xlab:         0.55 # for horizontal text should have more space
-    gridspec.nolab:        0.15 # only ticks
-

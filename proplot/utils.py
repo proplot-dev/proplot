@@ -31,17 +31,13 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-_default = (lambda x,y: x if x is not None else y) # fill if not None
 
-# Helper class
-class _dot_dict(dict):
-    """
-    Simple class for accessing elements with dot notation.
-    See `this post <https://stackoverflow.com/a/23689767/4970632>`__.
-    """
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+def _default(*args):
+    """Find first value not None. Usually used for setting default rc settings."""
+    for arg in args:
+        if arg is not None:
+            return arg
+    return arg # last one
 
 def units(value, error=True, dpi=90):
     """
@@ -80,20 +76,21 @@ def units(value, error=True, dpi=90):
     """
     # Possible units
     # RC settings must be looked up every time
-    from .rcmod import rc
+    # from .rcmod import rc
+    from matplotlib import rcParams
     _unit_dict = {
-        'em': rc['small']/72.0,
-        'ex': 0.5*rc['large']/72.0, # more or less; see URL
-        'lh': 1.2*rc['small']/72.0, # line height units (default spacing is 1.2 em squares)
-        'lem': rc['small']/72.0, # for large text
-        'lex': 0.5*rc['large']/72.0,
-        'llh': 1.2*rc['large']/72.0,
+        'em': rcParams['font.size']/72.0,
+        'ex': 0.5*rcParams['font.size']/72.0, # more or less; see URL
+        'lh': 1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
+        'lem': rcParams['figure.titlesize']/72.0, # for large text
+        'lex': 0.5*rcParams['figure.titlesize']/72.0,
+        'llh': 1.2*rcParams['figure.titlesize']/72.0,
         'cm': 0.3937,
         'mm': 0.03937,
         'pt': 1/72.0,
         'in': 1.0, # already in inches
-        'px': 1/rc['figure.dpi'], # dots times 1/dots per inch
-        'pp': 1/rc['figure.dpi'],
+        'px': 1/rcParams['figure.dpi'], # dots times 1/dots per inch
+        'pp': 1/rcParams['figure.dpi'],
         }
     if not isinstance(value, str):
         return value # assume int/float is in inches

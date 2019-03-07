@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.gridspec as mgridspec
 import re
 from .rcmod import rc
-from .utils import _dot_dict, _default, units, ic
+from .utils import _default, units, ic
 
 # Custom settings for various journals
 def journal_size(journal):

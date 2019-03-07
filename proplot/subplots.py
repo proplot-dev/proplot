@@ -22,7 +22,7 @@ import re
 import numpy as np
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
-from .utils import _dot_dict, _default, _timer, _counter, units, ic
+from .utils import _default, _timer, _counter, units, ic
 from . import gridspec, projs, axes
 import functools
 import matplotlib.pyplot as plt
@@ -58,6 +58,16 @@ def show():
 #------------------------------------------------------------------------------#
 # Figure class
 #------------------------------------------------------------------------------#
+class _dot_dict(dict):
+    # Helper class
+    """
+    Simple class for accessing elements with dot notation.
+    See `this post <https://stackoverflow.com/a/23689767/4970632>`__.
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 class FigureBase(mfigure.Figure):
     # Subclass adding some super cool features
     def __init__(self, figsize, gridspec=None, subplots_kw=None,
@@ -771,11 +781,11 @@ def _subplots_kwargs(nrows, ncols, rowmajor=True,
     # Can follow some of the pre-processing
     subplots_kw = _dot_dict(nrows=nrows, ncols=ncols,
         figsize=figsize, aspect=aspect,
-        hspace=hspace,   wspace=wspace,
+        hspace=hspace, wspace=wspace,
         hratios=hratios, wratios=wratios,
         bottompanels=bottompanels, leftpanels=leftpanels, rightpanels=rightpanels,
-        left=left,     bottom=bottom, right=right,   top=top,
         bwidth=bwidth, bspace=bspace, rwidth=rwidth, rspace=rspace, lwidth=lwidth, lspace=lspace,
+        left=left, bottom=bottom, right=right, top=top,
         )
 
     # Make sure the 'ratios' and 'spaces' are in physical units (we cast the

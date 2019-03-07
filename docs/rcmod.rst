@@ -3,7 +3,7 @@ RC configuration
 
 .. automodsumm:: proplot.rcmod
    :toctree: api
-   :skip: AttributeDict
+   :skip: ic, units
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html
