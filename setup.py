@@ -5,10 +5,11 @@ from setuptools import setup
 # find . \( -name '*.ipynb' -o -name '*.py' -o -name '*.md' -o -name '*.txt' -o -name '.vimsession' \) -exec gsed -i 's/panplot/proplot/g' {} +
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
-    name         = 'proplot',
-    url          = 'https://github.com/lukelbd/proplot',
-    author       = 'Luke Davis',
-    author_email = 'lukelbd@gmail.com',
+    name            = 'proplot',
+    url             = 'https://github.com/lukelbd/proplot',
+    author          = 'Luke Davis',
+    author_email    = 'lukelbd@gmail.com',
+    python_requires = '>=3.6.0', # enforce version
     # Package stuff
     # Also include package data
     packages     = ['proplot'], # reserve name

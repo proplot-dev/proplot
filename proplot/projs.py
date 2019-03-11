@@ -55,7 +55,7 @@ Key                                   Name                                      
 ``'nsper'``                           `Near-Sided Perspective <https://proj4.org/operations/projections/nsper.html>`_              ✓          ✓
 ``'osni'``                            OSNI (Ireland)                                                                               ✓          ✗
 ``'osgb'``                            OSGB (UK)                                                                                    ✓          ✗
-``'omerc'``                           `Oblique Mercator <https://proj4.org/operations/projections/omerc.html>`_                    ✓          ✓
+``'omerc'``                           `Oblique Mercator <https://proj4.org/operations/projections/omerc.html>`_                    ✗          ✓
 ``'ortho'``                           `Orthographic <https://proj4.org/operations/projections/ortho.html>`_                        ✓          ✓
 ``'poly'``                            `Polyconic <https://proj4.org/operations/projections/poly.html>`_                            ✗          ✓
 ``'rotpole'``                         Rotated Pole                                                                                 ✓          ✓
@@ -76,6 +76,8 @@ Key                                   Name                                      
 #------------------------------------------------------------------------------#
 import numpy as np
 import matplotlib.path as mpath
+import warnings
+from .rcmod import rc
 try:
     import cartopy.crs as ccrs
     from cartopy.crs import _WarpedRectangularProjection
@@ -131,37 +133,26 @@ def Proj(name, basemap=False, **kwargs):
     # Allow less verbose keywords, actually match proj4 keywords and are
     # similar to basemap
     name = name or 'cyl'
-    basemap_circles = (
-        'npstere', 'spstere', 'nplaea',
-        'splaea', 'npaeqd', 'spaeqd',
-        )
-    crs_translate = { # ad to this
-        'lat_0': 'central_latitude',
-        'lon_0': 'central_longitude',
-        'lat_min': 'min_latitude',
-        'lat_max': 'max_latitude',
-        }
-    cyl_aliases = {
-        'eqc':     'cyl',
-        'pcarree': 'cyl',
-        }
     # Basemap
     kwout = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
-        name = cyl_aliases.get(name, name)
-        kwargs.update({'fix_aspect': True})
-        if name in basemap_circles:
-            kwargs.update({'round': True})
-        projection = mbasemap.Basemap(projection=name, **kwargs)
+        name = _basemap_cyl.get(name, name)
+        kwproj = _basemap_kw.get(name, {})
+        kwproj.update(kwargs)
+        kwproj.update({'fix_aspect': True})
+        if name in _basemap_circles:
+            kwproj.update({'round': True})
+        reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
+        projection = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
         aspect = (projection.urcrnrx - projection.llcrnrx) / \
                  (projection.urcrnry - projection.llcrnry)
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is importable
-        kwargs = {crs_translate.get(key, key): value for key,value in kwargs.items()}
+        kwargs = {_crs_translate.get(key, key): value for key,value in kwargs.items()}
         crs = crs_projs.get(name, None)
-        if name is None:
+        if crs is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(crs_projs.keys())}.')
         for arg in ('boundinglat', 'centrallat'):
             if arg in kwargs:
@@ -246,50 +237,115 @@ class WinkelTripel(_WarpedRectangularProjection):
         """Projection resolution."""
         return 1e4
 
-# Dictionary of names
+# Basemap stuff
+_basemap_circles = (
+    'npstere', 'spstere', 'nplaea',
+    'splaea', 'npaeqd', 'spaeqd',
+    )
+_basemap_cyl = { # aliases for 'cyl', that match PROJ4 name and common name
+    'eqc':     'cyl',
+    'pcarree': 'cyl',
+    }
+_basemap_kw = { # note either llcrn/urcrnr args (all 4) can be specified, or width and height can be specified
+    'eck4':    {'lon_0':0},
+    'geos':    {'lon_0':0},
+    'hammer':  {'lon_0':0},
+    'moll':    {'lon_0':0},
+    'kav7':    {'lon_0':0},
+    'sinu':    {'lon_0':0},
+    'vandg':   {'lon_0':0},
+    'mbtfpq':  {'lon_0':0},
+    'robin':   {'lon_0':0},
+    'ortho':   {'lon_0':0, 'lat_0':0},
+    'nsper':   {'lon_0':0, 'lat_0':0},
+    'aea':     {'lon_0':0, 'lat_0':90, 'width':15000e3, 'height':15000e3},
+    'eqdc':    {'lon_0':0, 'lat_0':90, 'width':15000e3, 'height':15000e3},
+    'cass':    {'lon_0':0, 'lat_0':90, 'width':15000e3, 'height':15000e3},
+    'gnom':    {'lon_0':0, 'lat_0':90, 'width':15000e3, 'height':15000e3},
+    'lcc':     {'lon_0':0, 'lat_0':90, 'width':10000e3, 'height':10000e3},
+    'poly':    {'lon_0':0, 'lat_0':0, 'width':10000e3, 'height':10000e3},
+    'npaeqd':  {'lon_0':0, 'boundinglat':10},
+    'nplaea':  {'lon_0':0, 'boundinglat':10},
+    'npstere': {'lon_0':0, 'boundinglat':10},
+    'spaeqd':  {'lon_0':0, 'boundinglat':-10},
+    'splaea':  {'lon_0':0, 'boundinglat':-10},
+    'spstere': {'lon_0':0, 'boundinglat':-10},
+    'tmerc':   {'lon_0':0, 'lat_0':0, 'width':10000e3, 'height':10000e3},
+    'merc':    {'llcrnrlat':-80, 'urcrnrlat':84, 'llcrnrlon':-180, 'urcrnrlon':180},
+    'omerc':   {'lat_0':0, 'lon_0':0, 'lat_1':-10, 'lat_2':10, 'lon_1':0, 'lon_2':0, 'width':10000e3, 'height':10000e3},
+    }
+"""
+Default keyword args for Basemap projections. Basemap will raise error if
+you don't provide them but that's annoying, better to just have some
+default behavior.
+"""
+
+# Cartopy stuff
+_crs_translate = { # ad to this
+    'lat_0': 'central_latitude',
+    'lon_0': 'central_longitude',
+    'lat_min': 'min_latitude',
+    'lat_max': 'max_latitude',
+    }
 crs_projs = {}
 """
 Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
 """
 if ccrs:
+    # Custom ones, these are always present
     crs_projs = { # interpret string, create cartopy projection
-      'aea':     ccrs.AlbersEqualArea,
-      'aeqd':    ccrs.AzimuthalEquidistant,
       'aitoff':  Aitoff,
-      'cyl':     ccrs.PlateCarree, # only basemap name not matching PROJ.4
-      'eck1':    ccrs.EckertI,
-      'eck2':    ccrs.EckertII,
-      'eck3':    ccrs.EckertIII,
-      'eck4':    ccrs.EckertIV,
-      'eck5':    ccrs.EckertV,
-      'eck6':    ccrs.EckertVI,
-      'eqc':     ccrs.PlateCarree, # actual PROJ.4 name
-      'eqdc':    ccrs.EquidistantConic,
-      'eqearth': ccrs.EqualEarth, # better looking Robinson; not in basemap
-      'euro':    ccrs.EuroPP, # Europe; not in basemap or PROJ.4
-      'geos':    ccrs.Geostationary,
-      'gnom':    ccrs.Gnomonic,
       'hammer':  Hammer,
-      'igh':     ccrs.InterruptedGoodeHomolosine, # not in basemap
       'kav7':    KavrayskiyVII,
-      'laea':    ccrs.LambertAzimuthalEqualArea,
-      'lcc':     ccrs.LambertConformal,
-      'lcyl':    ccrs.LambertCylindrical, # not in basemap or PROJ.4
-      'merc':    ccrs.Mercator,
-      'mill':    ccrs.Miller,
-      'moll':    ccrs.Mollweide,
-      'npstere': ccrs.NorthPolarStereo, # north/south pole stuff not in PROJ.4
-      'nsper':   ccrs.NearsidePerspective,
-      'ortho':   ccrs.Orthographic,
-      'osgb':    ccrs.OSGB, # UK; not in basemap or PROJ.4
-      'osni':    ccrs.OSNI, # Ireland; not in basemap or PROJ.4
-      'pcarree': ccrs.PlateCarree, # common alt name
-      'robin':   ccrs.Robinson,
-      'rotpole': ccrs.RotatedPole,
-      'sinu':    ccrs.Sinusoidal,
-      'spstere': ccrs.SouthPolarStereo,
-      'stere':   ccrs.Stereographic,
-      'tmerc' :  ccrs.TransverseMercator,
-      'utm':     ccrs.UTM, # not in basemap
       'wintri':  WinkelTripel,
-      }
+    }
+    # Builtin ones. Some of these are unavailable in older versions, so
+    # we just print warning in that case.
+    _unavail = []
+    for _name,_class in { # interpret string, create cartopy projection
+            'aea':     'AlbersEqualArea',
+            'aeqd':    'AzimuthalEquidistant',
+            'cyl':     'PlateCarree', # only basemap name not matching PROJ.4
+            'eck1':    'EckertI',
+            'eck2':    'EckertII',
+            'eck3':    'EckertIII',
+            'eck4':    'EckertIV',
+            'eck5':    'EckertV',
+            'eck6':    'EckertVI',
+            'eqc':     'PlateCarree', # actual PROJ.4 name
+            'eqdc':    'EquidistantConic',
+            'eqearth': 'EqualEarth', # better looking Robinson; not in basemap
+            'euro':    'EuroPP', # Europe; not in basemap or PROJ.4
+            'geos':    'Geostationary',
+            'gnom':    'Gnomonic',
+            'igh':     'InterruptedGoodeHomolosine', # not in basemap
+            'laea':    'LambertAzimuthalEqualArea',
+            'lcc':     'LambertConformal',
+            'lcyl':    'LambertCylindrical', # not in basemap or PROJ.4
+            'merc':    'Mercator',
+            'mill':    'Miller',
+            'moll':    'Mollweide',
+            'npstere': 'NorthPolarStereo', # north/south pole stuff not in PROJ.4
+            'nsper':   'NearsidePerspective',
+            'ortho':   'Orthographic',
+            'osgb':    'OSGB', # UK; not in basemap or PROJ.4
+            'osni':    'OSNI', # Ireland; not in basemap or PROJ.4
+            'pcarree': 'PlateCarree', # common alt name
+            'robin':   'Robinson',
+            'rotpole': 'RotatedPole',
+            'sinu':    'Sinusoidal',
+            'spstere': 'SouthPolarStereo',
+            'stere':   'Stereographic',
+            'tmerc' :  'TransverseMercator',
+            'utm':     'UTM', # not in basemap
+            }.items():
+        _class = getattr(ccrs, _class, None)
+        if _class is None:
+            _unavail.append(_name)
+            continue
+        crs_projs[_name] = _class
+    if _unavail:
+        warnings.warn(f'Cartopy projection(s) {", ".join(_unavail)} are unavailable. Consider updating to the latest version of cartopy.')
+
+
+

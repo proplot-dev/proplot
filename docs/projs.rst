@@ -6,6 +6,7 @@ Projections
 .. automodsumm:: proplot.projs
    :variables-only:
    :toctree: api
+   :skip: rc
 
 **Functions**
 

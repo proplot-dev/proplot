@@ -16,7 +16,9 @@ XYAxes
 
    .. autosummary::
 
-      ~XYAxes.format__
+      ~XYAxes.altx
+      ~XYAxes.alty
+      ~XYAxes.fancy_update
       ~XYAxes.indicate_inset_zoom
       ~XYAxes.inset
       ~XYAxes.inset_axes
@@ -30,7 +32,9 @@ XYAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: format__
+   .. automethod:: altx
+   .. automethod:: alty
+   .. automethod:: fancy_update
    .. automethod:: indicate_inset_zoom
    .. automethod:: inset
    .. automethod:: inset_axes

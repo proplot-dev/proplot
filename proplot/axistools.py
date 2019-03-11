@@ -592,9 +592,9 @@ class InverseScale(mscale.ScaleBase):
         axis.set_smart_bounds(True) # may prevent ticks from extending off sides
         axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
+        # axis.set_major_formatter(mticker.LogFormatter())
         axis.set_major_formatter(Formatter('default'))
         axis.set_minor_formatter(Formatter('null'))
-        # axis.set_major_formatter(mticker.LogFormatter())
 
 class _InverseTransform(mtransforms.Transform):
     # Create transform object
@@ -932,7 +932,7 @@ def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
         # Finally use default formatter
         string = '{:.6f}'.format(x).replace('-', '\N{MINUS SIGN}')
         string = re.sub(r'\.0+$', '', string)
-        string = re.sub(r'^(.*\..*)0+$', r'\1', string)
+        string = re.sub(r'^(.*\..*?)0+$', r'\1', string) # note the non-greedy secondary glob!
         return string + suffix
     return mticker.FuncFormatter(f)
 

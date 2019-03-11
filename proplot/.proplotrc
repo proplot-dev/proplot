@@ -7,18 +7,14 @@ rcGlobals:
     fontname:  # will be determined by OS in ProPlot
     cycle:     colorblind
     cmap:      sunset
-    reso:      hi # for cartopy geographic features, one of {'lo', 'med', 'hi'}
+    reso:      lo # for cartopy geographic features, one of {'lo', 'med', 'hi'}
     lut:       256
     color:     k
-    xcolor:    k # can be used to set particular spine colors
-    ycolor:    k
     margin:    0.0
-    xmargin:   0.0
-    ymargin:   0.0
-    grid:      # if empty, defers to matplotlib (which generally omits gridlines if e.g. contourf was drawn)
+    grid:      True
     geogrid:   True
     gridminor: False
-    hatch:     False # hatching on background, useful for indicating invalid data
+    hatch:     # hatching on background, useful for indicating invalid data
     facecolor: w # or 0072B2
     small:     8
     large:     9
@@ -26,10 +22,6 @@ rcGlobals:
     ticklen:   4.0
     tickpad:   2.0
     tickdir:   out
-    bottom:    True
-    top:       False
-    left:      True
-    right:     False
     # Geography
     land:         False
     ocean:        False
@@ -43,6 +35,75 @@ rcGlobals:
     tickratio:    0.8 # ratio of major-to-minor tick width
     ticklenratio: 0.5 # ratio of major-to-minor tick size
 
+#------------------
+# rcParams defaults
+#------------------
+rcParams:
+    # Change default
+    figure.dpi:              90
+    figure.facecolor:        '#f2f2f2'
+    figure.max_open_warning: 0
+    figure.autolayout:       False
+    figure.titleweight:      bold # the super title weight
+    savefig.facecolor:       '#ffffff'
+    savefig.transparent:     True
+    savefig.dpi:             300
+    savefig.pad_inches:      0.0
+    savefig.directory:
+    savefig.bbox:            standard
+    savefig.format:          pdf
+    axes.xmargin:            0.0
+    axes.ymargin:            0.0
+    axes.titleweight:        normal
+    axes.grid:               True
+    axes.labelweight:        normal
+    axes.labelpad:           3.0
+    axes.titlepad:           3.0
+    axes.axisbelow:          lines # for ticks/gridlines *above* patches, *below* lines, use lines
+    axes.spines.bottom:      True
+    axes.spines.top:         True
+    axes.spines.left:        True
+    axes.spines.right:       True
+    xtick.bottom:            True
+    xtick.top:               False
+    xtick.minor.visible:     True
+    ytick.left:              True
+    ytick.right:             False
+    ytick.minor.visible:     True
+    grid.color:              'k' # also applies to gridminor props, if not set
+    grid.alpha:              0.1
+    grid.linewidth:          0.6
+    grid.linestyle:          '-'
+    text.usetex:             False # use TeX for *all* font handling (limits available fonts)
+    mathtext.default:        regular # no italics
+    mathtext.bf:             'sans:bold'
+    mathtext.it:             'sans:it'
+    patch.facecolor:         C0
+    patch.edgecolor:         k
+    patch.linewidth:         1.0
+    hatch.color:             k # filled with 'color'
+    hatch.linewidth:         0.6 # filled with 'linewidth'
+    markers.fillstyle:       full
+    scatter.marker:          o
+    lines.linewidth:         1.3
+    lines.color:             C0
+    lines.markeredgewidth:   0
+    lines.markersize:        3.0
+    lines.dash_joinstyle:    miter
+    lines.dash_capstyle:     projecting
+    lines.solid_joinstyle:   miter # joinstyle options are miter, round, bevel
+    lines.solid_capstyle:    projecting # capstyle options are butt, round, projecting
+    legend.fancybox:         False
+    legend.frameon:          False
+    legend.labelspacing:     0.5
+    legend.handletextpad:    0.5
+    legend.handlelength:     1.5
+    legend.columnspacing:    1
+    legend.facecolor:        w
+    legend.numpoints:        1
+    legend.borderpad:        0.5
+    legend.borderaxespad:    0
+
 #----------------------
 # rcParams_new defaults
 #----------------------
@@ -50,12 +111,17 @@ rcGlobals:
 rcParams_new:
     # Axis settings
     axes.formatter.zerotrim: True
+    axes.gridminor: True
+    axes.geogrid: True
+    axes.hatch:
+    axes.alpha: # empty by default; will depend on savefig transparent setting (TODO: check if set_alpha changes savefig result!)
+    hatch.alpha: 1
     # Title settings
     # Again, empty ones are filled by the global settings
     abc.fontsize:
     abc.weight:        bold
     abc.color:         k
-    abc.pos:           ol   # outside the axes, to the left
+    abc.pos:           il   # inside the axes, to the left
     abc.format:        a
     abc.border:        True # whether to draw border for interior labels
     abc.linewidth:     1.5  # width of border
@@ -103,71 +169,16 @@ rcParams_new:
     gridminor.linewidth:
     # lonlatlines.linestyle: --
     # Gridspec
-    gridspec.title:  0.2  # extra space for title/suptitle
-    gridspec.inner:  0.2  # just have ticks, no labels
-    gridspec.legend: 0.25 # default legend space (bottom of figure)
-    gridspec.cbar:   0.17 # default colorbar width
-    gridspec.ylab:   0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
-    gridspec.xlab:   0.55 # for horizontal text should have more space
-    gridspec.nolab:  0.15 # only ticks
+    gridspec.axwidth:  2 # default width
+    gridspec.pad:      0.1 # padding around edges for tight layout
+    gridspec.innerpad: 0.15 # padding inside
+    gridspec.title:    0.2  # extra space for title/suptitle
+    gridspec.inner:    0.2  # just have ticks, no labels
+    gridspec.legend:   0.25 # default legend space (bottom of figure)
+    gridspec.cbar:     0.17 # default colorbar width
+    gridspec.ylab:     0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    gridspec.xlab:     0.55 # for horizontal text should have more space
+    gridspec.nolab:    0.15 # only ticks
+    gridspec.panelwidth: 0.45
+    gridspec.panelspace: 0.15
 
-#------------------
-# rcParams defaults
-#------------------
-rcParams:
-    # Change default
-    figure.dpi:              90
-    figure.facecolor:        '#f2f2f2'
-    figure.max_open_warning: 0
-    figure.autolayout:       False
-    figure.titleweight:      bold # the super title weight
-    savefig.facecolor:       '#ffffff'
-    savefig.transparent:     True
-    savefig.dpi:             300
-    savefig.pad_inches:      0.0
-    savefig.directory:
-    savefig.bbox:            standard
-    savefig.format:          pdf
-    axes.xmargin:            0.0
-    axes.ymargin:            0.0
-    axes.titleweight:        normal
-    axes.grid:               True
-    axes.labelweight:        normal
-    axes.labelpad:           3.0
-    axes.titlepad:           3.0
-    axes.axisbelow:          lines # for ticks/gridlines *above* patches, *below* lines, use lines
-    xtick.minor.visible:     True
-    ytick.minor.visible:     True
-    grid.color:              'k' # also applies to gridminor props, if not set
-    grid.alpha:              0.1
-    grid.linewidth:          0.6
-    grid.linestyle:          '-'
-    text.usetex:             False # use TeX for *all* font handling (limits available fonts)
-    mathtext.default:        regular # no italics
-    mathtext.bf:             'sans:bold'
-    mathtext.it:             'sans:it'
-    patch.facecolor:         C0
-    patch.edgecolor:         k
-    patch.linewidth:         1.0
-    hatch.color:             k # filled with 'color'
-    hatch.linewidth:         0.6 # filled with 'linewidth'
-    markers.fillstyle:       full
-    scatter.marker:          o
-    lines.linewidth:         1.3
-    lines.color:             C0
-    lines.markeredgewidth:   0
-    lines.markersize:        3.0
-    lines.dash_joinstyle:    miter
-    lines.dash_capstyle:     projecting
-    lines.solid_joinstyle:   miter # joinstyle options are miter, round, bevel
-    lines.solid_capstyle:    projecting # capstyle options are butt, round, projecting
-    legend.fancybox:         False
-    legend.frameon:          False
-    legend.labelspacing:     0.5
-    legend.handletextpad:    0.5
-    legend.handlelength:     1.5
-    legend.columnspacing:    1
-    legend.facecolor:        w
-    legend.numpoints:        1
-    legend.borderpad:        0.5
-    legend.borderaxespad:    0

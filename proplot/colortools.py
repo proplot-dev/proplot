@@ -183,6 +183,7 @@ import glob
 from lxml import etree
 from numbers import Number
 import cycler
+import warnings
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
@@ -349,12 +350,12 @@ _cmap_categories = { # initialize as empty lists
         'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
         ],
 
-    # CET maps
+    # CET isoluminant maps
     # See: https://peterkovesi.com/projects/colourmaps/
-    # Only kept the 'nice' ones
-    'CET Selections': [
-        'CET1', 'CET2', 'CET3', 'CET4',
+    # All the others have better options
+    'Isoluminant': [
         'Iso1', 'Iso2', 'Iso3', 
+        # 'CET1', 'CET2', 'CET3', 'CET4',
         ],
     # 'CET Rainbow': [
     #     ],
@@ -1007,6 +1008,10 @@ def Colormap(*args, name=None, N=None,
         # Retrieve Colormap instance
         # Also make sure you reset the lookup table (get_cmap does this
         # by calling _resample).
+        # TODO: What if colormap names conflict with color names! Maybe
+        # address this! Currently, this makes it impossible to make a
+        # monochrome colormap from some named color if that name also
+        # exists for a colormap.
         if cmap is None:
             cmap = rcParams['image.cmap']
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
@@ -1014,7 +1019,7 @@ def Colormap(*args, name=None, N=None,
             if isinstance(cmap, mcolors.LinearSegmentedColormap):
                 cmap = cmap._resample(_N)
         if isinstance(cmap, mcolors.Colormap):
-            # Allow gamma override, otherwise do nothing
+            # Allow overriding the gamma, otherwise do nothing
             if isinstance(cmap, PerceptuallyUniformColormap):
                 if gamma and not gamma1 and not gamma2:
                     gamma1 = gamma2 = gamma
@@ -1035,7 +1040,7 @@ def Colormap(*args, name=None, N=None,
             name = cmap.pop('name', name)
             for key in cmap:
                 if key in kwargs:
-                    print(f'Warning: Got duplicate keys "{key}" in cmap dictionary ({cmap[key]}) and in keyword args ({kwargs[key]}). Using first one.')
+                    warnings.warn(f'Got duplicate keys "{key}" in cmap dictionary ({cmap[key]}) and in keyword args ({kwargs[key]}). Using first one.')
             kw = kwargs.update
             cmap = PerceptuallyUniformColormap.from_hsl(name, N=_N, **{**kwargs, **cmap})
         elif not isinstance(cmap, str):
@@ -1046,7 +1051,7 @@ def Colormap(*args, name=None, N=None,
             regex = '([0-9].)$'
             match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
             cmap = re.sub(regex, '', cmap) # remove options
-            fade = kwargs.pop('fade', 90) if not match else match.group(1) # default fade to 100 luminance
+            fade = kwargs.pop('fade', 90) if not match else float(match.group(1)) # default fade to 100 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
             cmap = monochrome_cmap(cmap, fade, name=name, N=_N, **kwargs)
@@ -1110,12 +1115,21 @@ def Colormap(*args, name=None, N=None,
         else:
             basename = f'{cmap.name}.json'
             filename = os.path.join(_data_user, basename)
-            data = cmap._segmentdata.copy()
-            data['space'] = cmap.space
+            data = {}
+            for key,value in cmap._segmentdata.items():
+                data[key] = value.astype(float).tolist() # from np.float to builtin float, and to list of lists
+            if hasattr(cmap, 'space'):
+                data['space'] = cmap.space
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')
     return cmap
+
+def colors(*args, **kwargs):
+    """
+    Alias for `Cycle`.
+    """
+    return Cycle(*args, **kwargs)
 
 def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     """
@@ -1184,12 +1198,6 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     return colors
-
-def Colors(*args, **kwargs):
-    """
-    Simple alias.
-    """
-    return Cycle(*args, **kwargs)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
@@ -1728,12 +1736,14 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     ----------
     color : color-like
         Color RGB tuple, hex string, or named color string.
-    name : str, optional
-        Colormap name. Default is ``'monochrome'``.
+    fade : float or color-like
+        The luminance channel strength, or color name from which to take the luminance channel.
     reverse : bool
         Whether to reverse the colormap.
     space : ('hsl')
         Colorspace in which the luminance is varied.
+    name : str, optional
+        Colormap name. Default is ``'monochrome'``.
 
     Other parameters
     ----------------
@@ -1749,6 +1759,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     h, s, l = to_xyz(to_rgb(color), space)
     if isinstance(fade, Number): # allow just specifying the luminance channel
         fs, fl = s, fade # fade to *same* saturation by default
+        fs = s/2
     else:
         _, fs, fl = to_xyz(to_rgb(fade), space)
     index = slice(None,None,-1) if reverse else slice(None)
@@ -1791,9 +1802,9 @@ def clip_colors(colors, mask=True, gray=0.2, verbose=False):
     if verbose:
         for i,name in enumerate('rgb'):
             if under[:,i].any():
-                print(f'Warning: {message} "{name}" channel (<0).')
+                warnings.warn(f'{message} "{name}" channel (<0).')
             if over[:,i].any():
-                print(f'Warning: {message} "{name}" channel (>1).')
+                warnings.warn(f'{message} "{name}" channel (>1).')
     return colors
     # return colors.tolist() # so it is *hashable*, can be cached (wrote this because had weird error, was unrelated)
 

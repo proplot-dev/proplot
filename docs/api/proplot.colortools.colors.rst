@@ -1,6 +1,6 @@
-Colors
+colors
 ======
 
 .. currentmodule:: proplot.colortools
 
-.. autofunction:: Colors
+.. autofunction:: colors

@@ -18,8 +18,8 @@ BaseAxes
 
       ~BaseAxes.cmapline
       ~BaseAxes.colorbar
+      ~BaseAxes.fancy_update
       ~BaseAxes.format
-      ~BaseAxes.format__
       ~BaseAxes.invisible
       ~BaseAxes.legend
       ~BaseAxes.plot
@@ -34,8 +34,8 @@ BaseAxes
 
    .. automethod:: cmapline
    .. automethod:: colorbar
+   .. automethod:: fancy_update
    .. automethod:: format
-   .. automethod:: format__
    .. automethod:: invisible
    .. automethod:: legend
    .. automethod:: plot
