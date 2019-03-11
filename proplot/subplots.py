@@ -1379,51 +1379,34 @@ def subplots(array=None, ncols=1, nrows=1,
     if not isinstance(innerpanels, (dict, str)):
         raise ValueError('Must pass string of panel sides or dictionary mapping axes numbers to sides.')
     # Apply, with changed defaults for inner colorbars
-    for kw in innerpanels_kw.values(): # initialize with empty strings
-        kw['whichpanels'] = ''
-    for num,which in innerpanels.items():
-        kw = innerpanels_kw[num]
-        kw['whichpanels'] += translate(which)
-        if 'wwidth' not in kw:
-            kw['wwidth'] = rc['gridspec.panelwidth']
-        if 'hwidth' not in kw:
-            kw['hwidth'] = rc['gridspec.panelwidth']
-        nh = int('b' in which) + int('t' in which)
-        kw['hspace'] = [rc['gridspec.panelspace']]*nh
-        nw = int('l' in which) + int('r' in which)
-        kw['wspace'] = [rc['gridspec.panelspace']]*nw
-    for num,which in innercolorbars.items():
-        which = translate(which)
-        if not which:
-            continue
-        kw = innerpanels_kw[num]
-        kw['whichpanels'] += which
-        if re.search('[bt]', which):
-            kw['sharex_panels'] = False
-            if 'hwidth' not in kw:
-                kw['hwidth'] = rc['gridspec.cbar']
-            if 'hspace' not in kw:
-                default = [] # TODO: is colorbar on top drawn with labels on top?
-                if 't' in which:
-                    default.append(rc['gridspec.nolab'])
-                if 'b' in which:
-                    default.append(rc['gridspec.xlab'])
-                kw['hspace'] = default
-            if 'hspace' not in kwargs:
-                kwargs['hspace'] = rc['gridspec.xlab']
-        if re.search('[lr]', which):
-            kw['sharey_panels'] = False
-            if 'wwidth' not in kw:
-                kw['wwidth'] = rc['gridspec.cbar']
-            if 'wspace' not in kw:
-                default = []
-                if 'l' in which:
-                    default.append(rc['gridspec.ylab'])
-                if 'r' in which:
-                    default.append(rc['gridspec.nolab'])
-                kw['wspace'] = default
-            if 'wspace' not in kwargs:
-                kwargs['wspace'] = rc['gridspec.ylab']
+    for num,kw,which1,which2 in zip(innerpanels_kw.keys(),
+            innerpanels_kw.values(), innerpanels.values(), innercolorbars.values()):
+        # Get which panels
+        which1, which2 = translate(which1), translate(which2)
+        if {*which1} & {*which2}:
+            raise ValueError('You requested same side for inner colorbar and inner panel.')
+        which = which1 + which2
+        kw['whichpanels'] = which
+        # Get widths, easy
+        # TODO: Change rc setting names
+        for width,regex in zip(('hwidth','wwidth'), ('tb', 'lr')):
+            if width in kw:
+                continue
+            kw[width] = rc['gridspec.panelwidth']
+            if re.search(f'[{regex}]', which2):
+                kw[width] = rc['gridspec.cbar']
+        # Get spaces, a bit more tricky
+        for space,regex,cspaces in zip(('hspace','wspace'), ('tb', 'lr'), (('nolab','ylab'), ('xlab','nolab'))):
+            if space in kw:
+                continue
+            cpanels = re.sub(f'[^{regex}]', '', which2)
+            ppanels = re.sub(f'[^{regex}]', '', which1)
+            rcspace = [rc['gridspec.panelspace']]*(len(cpanels) + len(ppanels))
+            if regex[0] in cpanels:
+                rcspace[0] = rc[f'gridspec.{cspaces[0]}']
+            if regex[1] in cpanels:
+                rcspace[-1] = rc[f'gridspec.{cspaces[1]}']
+            kw[space] = rcspace
 
     #--------------------------------------------------------------------------#
     # Make gridspec
