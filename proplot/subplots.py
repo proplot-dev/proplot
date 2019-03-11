@@ -23,8 +23,9 @@ import numpy as np
 # Local modules, projection sand formatters and stuff
 from .rcmod import rc
 from .utils import _default, _timer, _counter, units, ic
-from . import gridspec, projs, axes
+from . import axistools, gridspec, projs, axes
 import functools
+import warnings
 import matplotlib.pyplot as plt
 import matplotlib.scale as mscale
 import matplotlib.figure as mfigure
@@ -149,30 +150,44 @@ class Figure(mfigure.Figure):
         return super().__getattribute__(attr, *args)
 
     def _lock_twins(self):
-        """Lock shared axis limits to these axis limits. Useful for secondary
-        axis with alternate data units!"""
+        """Lock shared axis limits to these axis limits. Used for secondary
+        axis with alternate data scale."""
+        # Helper func
+        def check(lim, scale):
+            if scale=='log' and any(np.array(lim)<=0):
+                raise ValueError('Axis limits go negative, and "alternate units" axis uses log scale.')
+            if scale=='inverse' and any(np.array(lim)<=0):
+                raise ValueError('Axis limits cross zero, and "alternate units" axis uses inverse scale.')
+            if scale=='height' and any(np.array(lim)>1013.25):
+                raise ValueError('Axis limits exceed 1013.25 (hPa), and "alternate units" axis uses height scale.')
         for ax in self.main_axes:
             # Match units for x-axis
-            if ax.altx_scale:
+            if ax.dualx_scale:
+                # Get stuff
+                # transform = mscale.scale_factory(twin.get_xscale(), twin.xaxis).get_transform()
                 twin = ax.twiny_child
-                offset, scale = ax.altx_scale
-                transform = mscale.scale_factory(twin.get_xscale(), twin.xaxis).get_transform()
+                offset, scale = ax.dualx_scale
+                transform = twin.xaxis._scale.get_transform() # private API
                 xlim_orig = ax.get_xlim()
-                xlim = transform.transform(np.array(xlim_orig))
+                # Check, and set
+                check(xlim_orig, twin.get_xscale())
+                xlim = transform.inverted().transform(np.array(ylim_orig))
                 if np.sign(np.diff(xlim_orig)) != np.sign(np.diff(xlim)): # the transform flipped it, so when we try to set limits, will get flipped again!
                     xlim = xlim[::-1]
                 twin.set_xlim(offset + scale*xlim)
             # Match units for y-axis
-            if ax.alty_scale:
+            if ax.dualy_scale:
+                # Get stuff
+                # transform = mscale.scale_factory(twin.get_yscale(), ax.yaxis).get_transform()
                 twin = ax.twinx_child
-                offset, scale = ax.alty_scale
-                transform = mscale.scale_factory(twin.get_yscale(), ax.yaxis).get_transform()
+                offset, scale = ax.dualy_scale
+                transform = twin.yaxis._scale.get_transform() # private API
                 ylim_orig = ax.get_ylim()
-                ylim = transform.transform(np.array(ylim_orig))
-                print(ylim_orig, ylim)
+                check(ylim_orig, twin.get_yscale())
+                ylim = transform.inverted().transform(np.array(ylim_orig))
                 if np.sign(np.diff(ylim_orig)) != np.sign(np.diff(ylim)): # dunno why needed
                     ylim = ylim[::-1]
-                twin.set_ylim(offset + scale*ylim)
+                twin.set_ylim(offset + scale*ylim) # extra bit comes after the forward transformation
 
     def _rowlabels(self, labels, **kwargs):
         """Assign row labels."""
@@ -253,7 +268,7 @@ class Figure(mfigure.Figure):
                 if (ax.title.get_text() and not ax._title_inside) or ax.collabel.get_text():
                     title_lev2 = ax.title
                 pos = ax.xaxis.get_ticks_position()
-                if pos in ('top','unknown','default'):
+                if pos in ('top', 'unknown', 'default'):
                     label_top = pos!='default' and ax.xaxis.label.get_text()
                     ticklabels_top = ax.xaxis._major_tick_kw['label2On']
                     if ticklabels_top:
@@ -346,15 +361,21 @@ class Figure(mfigure.Figure):
         # box used for saving *figure*
         pad = self._smart_pad
         if self._subplots_kw is None or self._gridspec is None:
-            raise ValueError("Initialize figure with 'subplots_kw' and 'gridspec' to draw tight grid.")
+            warnings.warn('Could not find "_subplots_kw" or "_gridspec" attributes, cannot get tight layout.')
+            self._smart_tight_init = False
+            return
         obbox = self.bbox_inches # original bbox
         if not renderer: # cannot use the below on figure save! figure becomes a special FigurePDF class or something
             renderer = self.canvas.get_renderer()
         bbox = self.get_tightbbox(renderer)
         ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
-        left, bottom, right, top = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
+        if np.any(np.isnan(x) | np.isnan(y)):
+            warnings.warn('Bounding box has NaNs, cannot get tight layout.')
+            self._smart_tight_init = False
+            return
         # Apply new kwargs
         subplots_kw = self._subplots_kw
+        left, bottom, right, top = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
         left = subplots_kw.left - left + pad
         right = subplots_kw.right - right + pad
         bottom = subplots_kw.bottom - bottom + pad

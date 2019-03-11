@@ -16,8 +16,8 @@ XYAxes
 
    .. autosummary::
 
-      ~XYAxes.altx
-      ~XYAxes.alty
+      ~XYAxes.dualx
+      ~XYAxes.dualy
       ~XYAxes.fancy_update
       ~XYAxes.indicate_inset_zoom
       ~XYAxes.inset
@@ -32,8 +32,8 @@ XYAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: altx
-   .. automethod:: alty
+   .. automethod:: dualx
+   .. automethod:: dualy
    .. automethod:: fancy_update
    .. automethod:: indicate_inset_zoom
    .. automethod:: inset

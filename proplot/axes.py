@@ -1441,12 +1441,14 @@ class BaseAxes(maxes.Axes):
 
         # Create LineCollection and update with values
         # TODO: Why not just pass kwargs to class?
-        collection = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm, linestyles='-', joinstyle='miter')
+        collection = mcollections.LineCollection(np.array(coords),
+                cmap=cmap, norm=norm, linestyles='-', joinstyle='miter')
         collection.set_array(np.array(values))
         collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 
         # Add collection, with some custom attributes
         self.add_collection(collection)
+        self.autoscale_view() # data limits not updated otherwise
         collection.values = values
         collection.levels = levels # needed for other functions some
         return collection
@@ -1503,8 +1505,8 @@ class XYAxes(BaseAxes):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
         # Minor
-        self.alty_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
-        self.altx_scale = None
+        self.dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
+        self.dualx_scale = None
         self.twinx_child = None
         self.twiny_child = None
         self.twinx_parent = None
@@ -1584,31 +1586,25 @@ class XYAxes(BaseAxes):
         return axis.label
 
     # Cool overrides
-    def fancy_update(self,
-        # TODO: These should all be rc settings! Right?
-        # TODO: Make xcolor, ycolor a keyword arg, make ones that apply
-        # to both axes rc settings? Because idea is user would never want
-        # default to be different for each axes, right? So those don't need
-        # to be rc settings?
-        xloc=None,    yloc=None,    # aliases for 'where to put spine'
-        xmargin=None, ymargin=None,
-        xcolor=None,  ycolor=None,  # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
-        xspineloc=None,  yspineloc=None,  # deals with spine options
-        xtickloc=None,   ytickloc=None,   # which spines to draw ticks on
-        xlabelloc=None,  ylabelloc=None,
+    def fancy_update(self, tickfix=False, # whether to always transform locator to FixedLocator
+        xloc=None,          yloc=None,          # aliases for 'where to put spine'
+        xmargin=None,       ymargin=None,
+        xcolor=None,        ycolor=None,        # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
+        xspineloc=None,     yspineloc=None,     # deals with spine options
+        xtickloc=None,      ytickloc=None,      # which spines to draw ticks on
+        xlabelloc=None,     ylabelloc=None,
         xticklabelloc=None, yticklabelloc=None, # where to put tick labels
-        xtickdir=None,  ytickdir=None,    # which direction ('in', 'out', or 'inout')
-        xgrid=None,      ygrid=None,      # gridline toggle
-        xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
-        xtickminor=True, ytickminor=True, # minor ticks on/off
+        xtickdir=None,      ytickdir=None,      # which direction ('in', 'out', or 'inout')
+        xgrid=None,         ygrid=None,         # gridline toggle
+        xgridminor=None,    ygridminor=None,    # minor grids on/off (if ticks off, grid will always be off)
+        xtickminor=True,    ytickminor=True,    # minor ticks on/off
         xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
-        # TODO: Just these should be keyword args.
         xtickrange=None,    ytickrange=None,    # limit regions where we assign ticklabels to major-ticks
-        xreverse=False, yreverse=False, # special properties
-        xlabel=None,    ylabel=None,    # axis labels
-        xlim=None,      ylim=None,
-        xbounds=None,   ybounds=None, # limit spine bounds?
-        xscale=None,    yscale=None,
+        xreverse=False,     yreverse=False,     # special properties
+        xlabel=None,        ylabel=None,        # axis labels
+        xlim=None,          ylim=None,
+        xbounds=None,       ybounds=None,       # limit spine bounds?
+        xscale=None,        yscale=None,
         xformatter=None, yformatter=None, xticklabels=None, yticklabels=None,
         xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
         yticks=None, yminorticks=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
@@ -1722,7 +1718,7 @@ class XYAxes(BaseAxes):
         self.patch.update(rc.fill({'facecolor': 'axes.facecolor', 'alpha': 'axes.alpha'}))
 
         # Background hatching (useful where we want to highlight invalid data)
-        # TODO: Implement for PolarAxes and map axes
+        # TODO: Implement for PolarAxes and map axes.
         hatch = rc['axes.hatch']
         if not self._hatch and hatch: # non-empty
             self._hatch = self.fill_between([0,1], 0, 1, zorder=0, # put in back
@@ -1737,48 +1733,7 @@ class XYAxes(BaseAxes):
             self._hatch.update(kw)
             self._hatch.set_hatch(hatch)
 
-        # Set axis scaling and limits
-        # These do not seem to have their own axes-specific public methods,
-        # so do the x/y one by one here
-        # WARNING: Special override here, force custom formatter when scale
-        # is changed to log and user uses 'xlocator'/'ylocator'! Generally
-        # means want specific tick labels on log-scale plot, but log formatter
-        # will *override* and only show powers of 10.
-        if xscale is not None:
-            if hasattr(xscale,'name'):
-                xscale = xscale.name
-            self.set_xscale(axistools.Scale(xscale, **xscale_kw))
-            if xscale in ('log','inverse') and xlocator is not None and xformatter is None:
-                xformatter = 'default'
-        if yscale is not None:
-            if hasattr(yscale,'name'):
-                yscale = yscale.name
-            self.set_yscale(axistools.Scale(yscale, **yscale_kw))
-            if yscale in ('log','inverse') and ylocator is not None and yformatter is None:
-                yformatter = 'default'
-        if xlim is not None:
-            if xreverse:
-                xlim = xlim[::-1]
-            self.set_xlim(xlim)
-        if ylim is not None:
-            if yreverse:
-                ylim = ylim[::-1]
-            self.set_ylim(ylim)
-        if (xlim is not None or ylim is not None) and self._inset_parent:
-            self.indicate_inset_zoom()
-
-        # Control axis ticks and labels and stuff
-        # Grid defaults are complicated
-        grid = rc.get('axes.grid') # there is also axes.grid.which and axes.grid.axis
-        axis = rc.get('axes.grid.axis')
-        which = rc.get('axes.grid.which')
-        if axis is None or which is None:
-            raise ValueError('Setting unavailable. Older matplotlib version?')
-        xgrid         = _default(xgrid, grid and axis in ('x','both') and which in ('major','both'))
-        ygrid         = _default(ygrid, grid and axis in ('y','both') and which in ('major','both'))
-        xgridminor    = _default(xgridminor, grid and axis in ('x','both') and which in ('minor','both'))
-        ygridminor    = _default(ygridminor, grid and axis in ('y','both') and which in ('minor','both'))
-        # Allow for flexible input
+        # Flexible keyword args, declare defaults
         xmargin       = _default(xmargin, rc['axes.xmargin'])
         ymargin       = _default(ymargin, rc['axes.ymargin'])
         xtickdir      = _default(xtickdir, rc['xtick.direction'])
@@ -1793,11 +1748,19 @@ class XYAxes(BaseAxes):
         ylocator      = _default(yticks, ylocator)
         xminorlocator = _default(xminorticks, xminorlocator) # default is AutoMinorLocator, no setting
         yminorlocator = _default(yminorticks, yminorlocator)
+        # Grid defaults are more complicated
+        grid = rc.get('axes.grid') # there is also axes.grid.which and axes.grid.axis
+        axis = rc.get('axes.grid.axis')
+        which = rc.get('axes.grid.which')
+        if axis is None or which is None:
+            raise ValueError('Setting unavailable. Older matplotlib version?')
+        xgrid      = _default(xgrid, grid and axis in ('x','both') and which in ('major','both'))
+        ygrid      = _default(ygrid, grid and axis in ('y','both') and which in ('major','both'))
+        xgridminor = _default(xgridminor, grid and axis in ('x','both') and which in ('minor','both'))
+        ygridminor = _default(ygridminor, grid and axis in ('y','both') and which in ('minor','both'))
+
         # Override for weird bug where title doesn't get automatically offset
         # from ticklabels in certain circumstance; check out notebook
-        # WARNING: Bugfix here! With xticklabelloc set to 'both', the
-        # x-axis label ends up on bottom, and matplotlib does not offset
-        # correctly!
         xlabelloc = _default(xlabelloc, xticklabelloc)
         ylabelloc = _default(ylabelloc, yticklabelloc)
         xtickloc = _default(xtickloc, xticklabelloc, _rcloc_to_stringloc('x', 'xtick'))
@@ -1813,28 +1776,59 @@ class XYAxes(BaseAxes):
         if xticklabelloc in ('both','top') and (xlabelloc!='top' or not xlabel): # xtickloc *cannot* be 'top', *only* appears for 'both'
             warnings.warn('This keyword combo causes matplotlib bug where title is not offset from tick labels. Try again with xticklabelloc="bottom" or xlabelloc="top". Defaulting to the former.')
             xticklabelloc = xlabelloc = 'bottom'
+
         # Begin loop
-        for (axis, color, margin, label,
+        for (axis, label, color, margin,
             tickloc, spineloc, ticklabelloc, labelloc,
             bounds, grid, gridminor, tickminor, tickminorlocator,
-            ticklocator, tickformatter, tickrange, tickdir, ticklabeldir,
-            label_kw, formatter_kw, locator_kw, minorlocator_kw) in zip(
-            (self.xaxis, self.yaxis), (xcolor, ycolor), (xmargin, ymargin), (xlabel, ylabel),
+            lim, reverse, scale, locator, formatter, tickrange, tickdir, ticklabeldir,
+            scale_kw, label_kw, formatter_kw, locator_kw, minorlocator_kw) in zip(
+            (self.xaxis, self.yaxis), (xlabel, ylabel), (xcolor, ycolor), (xmargin, ymargin),
             (xtickloc, ytickloc), (xspineloc, yspineloc), (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
             (xbounds, ybounds), (xgrid, ygrid), (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
-            (xlocator, ylocator), (xformatter, yformatter), (xtickrange, ytickrange), (xtickdir, ytickdir), (xticklabeldir, yticklabeldir),
-            (xlabel_kw, ylabel_kw), (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
+            (xlim, ylim), (xreverse, yreverse), (xscale, yscale), (xlocator, ylocator), (xformatter, yformatter), (xtickrange, ytickrange), (xtickdir, ytickdir), (xticklabeldir, yticklabeldir),
+            (xscale_kw, yscale_kw), (xlabel_kw, ylabel_kw), (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
             ):
-            # Update spines
-            # First spine properties
+            # Axis label properties
+            # Redirect user request to the correct *shared* axes, then
+            # to the correct *spanning* axis label.
+            name = axis.axis_name
+            if label is not None:
+                kw = rc.fill({
+                    'color':    'axes.edgecolor',
+                    'fontname': 'fontname',
+                    'fontsize': 'axes.labelsize',
+                    'weight':   'axes.labelweight'
+                    })
+                if axis.get_label_position() == 'top':
+                    kw['va'] = 'bottom' # baseline was cramped if no ticklabels present
+                if color:
+                    kw['color'] = color
+                kw.update(label_kw)
+                self._share_span_label(axis).update({'text':label, **kw})
+
+            # Axis scale and limits. These don't have axis-specific setters.
+            # If user specified xlocator or ylocator and scale is log, enforce
+            # custom formatter; this generally means we want specific tick labels
+            # on a log-scale plot, but log formatter overrides this and only shows powers of 10.
+            if scale is not None:
+                if hasattr(scale, 'name'): # class was passed
+                    scale = scale.name
+                getattr(self, f'set_{name}scale')(axistools.Scale(scale, **scale_kw))
+                if scale in ('log','inverse') and locator is not None and formatter is None:
+                    formatter = 'default' # override
+            if lim is not None:
+                if reverse:
+                    lim = lim[::-1]
+                getattr(self, f'set_{name}lim')(lim)
+
+            # Fix spines
             kw = rc.fill({
                 'linewidth': 'axes.linewidth',
                 'color':     'axes.edgecolor',
                 })
             if color is not None:
                 kw['color'] = color
-            # Iterate through sides
-            name = axis.axis_name
             sides = ('bottom','top') if name=='x' else ('left','right')
             spines = [self.spines[s] for s in sides]
             for spine,side in zip(spines,sides):
@@ -1867,24 +1861,42 @@ class XYAxes(BaseAxes):
             # Get which spines are visible; needed for setting tick locations
             spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
 
-            # Set the major and minor locators and formatters
+            # Major locatof and formatter
             # Also automatically detect whether axis is a 'time axis' (i.e.
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
             time = isinstance(axis.converter, mdates.DateConverter)
-            if ticklocator is not None:
-                axis.set_major_locator(axistools.Locator(ticklocator, time=time, **locator_kw))
-            if tickformatter is not None or tickrange is not None:
-                axis.set_major_formatter(axistools.Formatter(tickformatter, tickrange=tickrange, time=time, **formatter_kw))
+            if locator is not None:
+                axis.set_major_locator(axistools.Locator(locator,
+                    time=time, **locator_kw))
+            if formatter is not None or tickrange is not None:
+                axis.set_major_formatter(axistools.Formatter(formatter,
+                    tickrange=tickrange, time=time, **formatter_kw))
+            # Minor locator and formatter
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(axistools.Locator('null'))
             elif tickminorlocator is not None:
-                locator = axistools.Locator(tickminorlocator, minor=True, time=time, **minorlocator_kw)
-                axis.set_minor_locator(locator)
+                axis.set_minor_locator(axistools.Locator(tickminorlocator,
+                    minor=True, time=time, **minorlocator_kw))
             axis.set_minor_formatter(mticker.NullFormatter())
             # Update margins
             if margin is not None:
                 axis.margins(**{name:margin})
+
+            # Ensure no out-of-bounds ticks! Even set_smart_bounds() fails sometimes.
+            # Notes
+            # * Using set_bounds also failed, and fancy method overrides did
+            #   not work, so instead just turn locators into fixed version
+            # * Most locators take no arguments in __call__, and some do not
+            #   have tick_values method, so we just call them.
+            # TODO: Add optional override to do this every time
+            if tickfix or bounds is not None or axis.get_scale()=='cutoff':
+                if bounds is None:
+                    bounds = getattr(self, f'get_{name}lim')()
+                locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
+                axis.set_major_locator(locator)
+                locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
+                axis.set_minor_locator(locator)
 
             # Tick and ticklabel properties
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid
@@ -1910,7 +1922,7 @@ class XYAxes(BaseAxes):
                 kw_sides.update({f'label{side}': (side in ticklabellocs) for side in sides})
             kw_sides.update({f'label{side}': False for side in sides
                 if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
-            # Finally the axis label side
+            # The axis label side
             if labelloc is None:
                 if ticklocs is not None:
                     options = [side for side in sides if (side in ticklocs and side in spines)]
@@ -1921,9 +1933,6 @@ class XYAxes(BaseAxes):
             if labelloc is not None:
                 axis.set_label_position(labelloc)
             # Style of ticks
-            # TODO: Shouldn't some of these, e.g. tickdir, be controlled with
-            # rc settings? Maybe add xtickdir and ytickdir? But then these are
-            # just shorthand aliases for xtick.direction!
             kw_shared = rc.fill({
                 'color':      f'{name}tick.color',
                 'labelcolor': f'{name}tick.color',
@@ -1939,8 +1948,8 @@ class XYAxes(BaseAxes):
                 kw_shared['pad'] = -pad
             if tickdir is not None:
                 kw_shared['direction'] = tickdir
-            # Finally, apply settings
-            axis.set_tick_params(which='both', **kw_sides, **kw_shared)
+            # Apply settings. Also apply gridline settings and major
+            # and minor tick settings.
             builder = lambda prefix: {
                 'grid_color':     f'{prefix}.color',
                 'grid_alpha':     f'{prefix}.alpha',
@@ -1951,19 +1960,18 @@ class XYAxes(BaseAxes):
             grid = _default(override, grid)
             gridminor = _default(override, gridminor)
             for which, grid in zip(('major', 'minor'), (grid, gridminor)):
-                # Major and minor ticks
-                kw_tick = rc[f'{name}tick.{which}']
-                kw_tick.pop('visible', None) # invalid setting
                 if which=='major':
                     kw_grid = rc.fill(builder('grid'))
                 else:
                     kw_grid_major = kw_grid
                     kw_grid = rc.fill(builder('gridminor'))
-                    kw_grid.update({key:value for key,value in
-                        kw_grid_major.items() if key not in kw_grid})
+                    kw_grid.update({key:value for key,value in kw_grid_major.items() if key not in kw_grid})
+                kw_tick = rc[f'{name}tick.{which}']
+                kw_tick.pop('visible', None) # invalid setting
                 axis.set_tick_params(which=which, **kw_tick, **kw_grid)
                 if grid is not None:
                     axis.grid(grid, which=which) # toggle with special global props
+            axis.set_tick_params(which='both', **kw_sides, **kw_shared)
             # Settings that can't be controlled by set_tick_params
             kw = rc.fill({'fontname': 'fontname'})
             if color:
@@ -1971,64 +1979,60 @@ class XYAxes(BaseAxes):
             for t in axis.get_ticklabels():
                 t.update(kw)
 
-            # Ensure no out-of-bounds ticks! Even set_smart_bounds() does not
-            # always fix this! Need to try manual approach.
-            # TODO: Add optional override to do this every time
-            # Using set_bounds also failed, and fancy method overrides did
-            # not work, so instead just turn locators into fixed version
-            # Most locators take no arguments in __call__, and some have
-            # no tick_values method, so do the following
-            if bounds is not None or axis.get_scale()=='cutoff':
-                if bounds is None: # no API for this on axis
-                    bounds = getattr(self, f'get_{name}lim')()
-                locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
-                axis.set_major_locator(locator)
-                locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
-                axis.set_minor_locator(locator)
-
-            # Axis label properties
-            # Redirect user request to the correct *shared* axes, then
-            # redirect to the correct *spanning* axes if the label is meant
-            # to span multiple subplots.
-            # The _span_label method changes label position so it spans axes
-            # If axis spanning not enabled, will just return the shared axis.
-            if label is not None:
-                kw = rc.fill({
-                    'color':    'axes.edgecolor',
-                    'fontname': 'fontname',
-                    'fontsize': 'axes.labelsize',
-                    'weight':   'axes.labelweight'
-                    })
-                if axis.get_label_position() == 'top':
-                    kw['va'] = 'bottom' # baseline was cramped if no ticklabels present
-                if color:
-                    kw['color'] = color
-                kw.update(label_kw)
-                self._share_span_label(axis).update({'text':label, **kw})
-
         # Pass stuff to parent formatter, e.g. title and abc labeling
+        if (xlim is not None or ylim is not None) and self._inset_parent:
+            self.indicate_inset_zoom()
         super().fancy_update(**kwargs)
 
-    def altx(self, xscale, xlabel, offset=0, scale=1, **kwargs):
-        """Make a dummy twin axis with alternate units. Return nothing."""
-        # Apply scale and axes sharing
-        ax = self.twiny(**kwargs)
-        ax.format(xscale=xscale, xlabel=xlabel)
-        self.altx_scale = (offset, scale)
+    def dualx(self, offset=0, scale=1, xscale='linear', **kwargs):
+        """As with `XYAxes.dualy`, but for the *x*-axis. See `XYAxes.dualy`."""
+        ax = self.twiny()
+        xscale = axistools.InvertedScaleFactory(xscale)
+        ax.format(xscale=xscale, **kwargs)
+        self.dualx_scale = (offset, scale)
 
-    def alty(self, yscale, ylabel, offset=0, scale=1, **kwargs):
-        """Make a dummy twin axis with alternate units. Return nothing."""
-        # Apply scale and axes sharing
-        ax = self.twinx(**kwargs)
-        ax.format(yscale=yscale, ylabel=ylabel)
-        self.alty_scale = (offset, scale)
+    def dualy(self, offset=0, scale=1, yscale='linear', **kwargs):
+        """
+        Makes a secondary *y* axis for denoting equivalent *y*
+        coordinates in **alternate units**. Return nothing.
 
-    def twinx(self, **kwargs):
+        Parameters
+        ----------
+        yscale : str
+            The scale name used to transform data to the alternate units. For
+            example, if your *y* axis is wavenumber and you want wavelength on
+            the opposite side, use ``yscale='inverse'``. If your *y* axis
+            is height and you want pressure on the opposite side, use
+            ``yscale='pressure'`` (and vice versa).
+        scale : float, optional
+            The constant multiple applied after scaling data with ``yscale``.
+            For example, if your *y* axis is meters and you
+            want kilometers on the other side, use ``scale=1e-3``. `scale`
+            is applied before `offset`.
+        offset : float, optional
+            The constant offset added after scaling data with ``yscale``.
+            For example, if your *y* axis is Kelvin and you want degrees
+            Celsius on the opposite side, use ``offset=-273.15``. `scale`
+            is applied before `offset`.
+        **kwargs
+            Passed to `BaseAxes.format`. I highly recommend passing the
+            `ylabel` keyword arg.
+
+        Notes
+        -----
+        The axis scale is used to transform units on the left axis, linearly
+        spaced, to units on the right axis. This means the right 'axis scale'
+        must scale its data with the *inverse* of this transform. We make
+        this inverted scale with `~proplot.axistools.InvertedScaleFactory`.
         """
-        Create second *y* axis extending from a shared ("twin") *x*
-        axis. Adds features for intelligently moving around tick and axis
-        labels, handling axis sharing.
-        """
+        ax = self.twinx()
+        yscale = axistools.InvertedScaleFactory(yscale)
+        ax.format(yscale=yscale, yformatter='default', **kwargs)
+        self.dualy_scale = (offset, scale)
+
+    def twinx(self):
+        """Makes a second *y* axis extending from a shared ("twin") *x* axis.
+        Intelligently moves around tick and axis labels, handles axis sharing."""
         # Create second y-axis extending from shared ("twin") x-axis
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format method.
@@ -2038,6 +2042,7 @@ class XYAxes(BaseAxes):
         if self.twinx_parent:
             raise ValueError('This *is* a twin axes!')
         ax = self._make_twin_axes(sharex=self, projection=self.name)
+        # Setup
         self.yaxis.tick_left()
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position('right')
@@ -2056,22 +2061,19 @@ class XYAxes(BaseAxes):
         self.twinx_child = ax
         return ax
 
-    def twiny(self, **kwargs):
-        """
-        Create second *x* axis extending from a shared ("twin") *y*
-        axis. Adds features for intelligently moving around tick and axis
-        labels, handling axis sharing.
-        """
+    def twiny(self):
+        """Makes a second *x* axis extending from a shared ("twin") *y* axis.
+        Intelligently moves around tick and axis labels, handles axis sharing."""
         # Create second x-axis extending from shared ("twin") y-axis
-        # Note: Cannot wrap twiny() because then the axes created will be
-        # instantiated from the parent class, which doesn't have format method.
-        # Instead, use hidden method _make_twin_axes.
+        # Note: Cannot wrap twiny() because we want to use our own XYAxes,
+        # not the matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
         if self.twiny_child:
             raise ValueError('No more than two twin axes!')
         if self.twiny_parent:
             raise ValueError('This *is* a twin axes!')
         ax = self._make_twin_axes(sharey=self, projection=self.name)
+        # Setup
         self.xaxis.tick_bottom()
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position('top')
@@ -2089,21 +2091,14 @@ class XYAxes(BaseAxes):
         self.twiny_child = ax
         return ax
 
-    def _make_inset_locator(self, bounds, trans):
-        # Helper function, had to be copied from private matplotlib version.
-        def inset_locator(ax, renderer):
-            bbox = mtransforms.Bbox.from_bounds(*bounds)
-            bb = mtransforms.TransformedBbox(bbox, trans)
-            tr = self.figure.transFigure.inverted()
-            bb = mtransforms.TransformedBbox(bb, tr)
-            return bb
-        return inset_locator
+    def inset(self, *args, **kwargs):
+        """Alias for `~XYAxes.inset_axes`."""
+        # Just an alias
+        return self.inset_axes(*args, **kwargs)
 
     def inset_axes(self, bounds, *, transform=None, zorder=5, zoom=True, zoom_kw={}, **kwargs):
-        """
-        Draw an inset `XYAxes` axes. Otherwise, this is a carbon copy
-        of the `~matplotlib.axes.Axes.inset_axes` method.
-        """
+        """Draw an inset `XYAxes` axes. Otherwise, this is a carbon copy
+        of the `~matplotlib.axes.Axes.inset_axes` method."""
         # Carbon copy, but use my custom axes
         # Defaults
         if transform is None:
@@ -2124,11 +2119,14 @@ class XYAxes(BaseAxes):
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
+    def inset_zoom(self, *args, **kwargs):
+        """Alias for `~XYAxes.indicate_inset_zoom`."""
+        # Just an alias
+        return self.indicate_inset_zoom(*args, **kwargs)
+
     def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
-        """
-        Custom inset zoom indicator that can be *refreshed* as the
-        parent axis limits change.
-        """
+        """Custom inset zoom indicator that can be *refreshed* as the
+        parent axis limits change."""
         # Makes more sense to be defined on the inset axes, since parent
         # could have multiple insets
         parent = self._inset_parent
@@ -2163,19 +2161,15 @@ class XYAxes(BaseAxes):
         self._zoom = (rectpatch, connects)
         return (rectpatch, connects)
 
-    def inset(self, *args, **kwargs):
-        """
-        Alias for `~XYAxes.inset_axes`.
-        """
-        # Just an alias
-        return self.inset_axes(*args, **kwargs)
-
-    def inset_zoom(self, *args, **kwargs):
-        """
-        Alias for `~XYAxes.indicate_inset_zoom`.
-        """
-        # Just an alias
-        return self.indicate_inset_zoom(*args, **kwargs)
+    def _make_inset_locator(self, bounds, trans):
+        """Helper function, coped from private matplotlib version."""
+        def inset_locator(ax, renderer):
+            bbox = mtransforms.Bbox.from_bounds(*bounds)
+            bb = mtransforms.TransformedBbox(bbox, trans)
+            tr = self.figure.transFigure.inverted()
+            bb = mtransforms.TransformedBbox(bb, tr)
+            return bb
+        return inset_locator
 
 class EmptyPanel(object):
     """
@@ -2200,9 +2194,6 @@ class PanelAxes(XYAxes):
     overridden. Calling these will "fill" the entire axes with a legend
     or colorbar.
 
-    This is suitable for axes meant to reference content in several
-    other subplots at once.
-
     Notes
     -----
     See `this post <https://stackoverflow.com/a/52121237/4970632>`_
@@ -2210,7 +2201,9 @@ class PanelAxes(XYAxes):
 
     Todo
     ----
-    Disable axis sharing when filling with colorbar!
+    Disable axis sharing when filling with colorbar! Also allow optionally
+    *filling* axes with colorbar or legend, or drawing *small* reference
+    colorbar or legend.
 
     See also
     --------
@@ -2253,13 +2246,13 @@ class PanelAxes(XYAxes):
             # Returns the axes and the output of legend_factory().
             self.invisible()
             kwargs = {'borderaxespad':  0,
-                    'frameon':        False,
-                    'loc':            'upper center',
-                    'bbox_transform': self.transAxes}
+                      'frameon':        False,
+                      'loc':            'upper center',
+                      'bbox_transform': self.transAxes}
             kwargs.update(kwargs_override)
         return legend_factory(self, handles, **kwargs)
 
-    def colorbar(self, *args, i=0, n=1, length=1,
+    def colorbar(self, *args, fill=False, i=0, n=1, length=1,
         space=0, hspace=None, wspace=None,
         **kwargs):
         """
@@ -2269,9 +2262,7 @@ class PanelAxes(XYAxes):
         ----
         Require the stacked colorbar thing to be declared right away! Will
         then have panels accessible with the slice panel[i,j] instead
-        of panel[i], for example. i represents stack number for bottom
-        panels, while j does this for right and left panels (always
-        going from inside out).
+        of panel[i], for example.
         """
         # Draw colorbar with arbitrary length relative to full length of the
         # panel, and optionally *stacking* multiple colorbars
@@ -2512,9 +2503,9 @@ class CartopyAxes(MapAxes, GeoAxes):
     """The registered projection name."""
     # Helper
     _n_bounds = 100 # number of points for drawing circle map boundary
-    _proj_circles = ('laea', 'aeqd', 'stere', 'npstere', 'spstere')
     _proj_np = ('npstere',)
     _proj_sp = ('spstere',)
+    _proj_circles = ('laea', 'aeqd', 'stere', 'npstere', 'spstere')
     def __init__(self, *args, map_projection=None, centerlat=90, boundinglat=0, **kwargs):
         """
         Parameters
@@ -2526,7 +2517,7 @@ class CartopyAxes(MapAxes, GeoAxes):
             or ``90``).
         boundinglat : float, optional
             For polar projections, the edge latitude of the circle.
-        kwargs
+        *args, **kwargs
             Passed to `BaseAxes.__init__`.
         """
         # Dependencies
@@ -2787,7 +2778,7 @@ class BasemapAxes(MapAxes):
         ----------
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
-        kwargs
+        **kwargs
             Passed to `BaseAxes.__init__`.
         """
         # Some notes
@@ -3111,8 +3102,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     else:
         legends = []
         overridden = []
-        for override in ['loc','ncol','bbox_to_anchor','borderpad',
-                         'borderaxespad','frameon','framealpha']:
+        for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
             prop = kwargs.pop(override, None)
             if prop is not None:
                 overridden.append(override)
