@@ -213,18 +213,12 @@ class Figure(mfigure.Figure):
                 ax.collabel.update({'text':label, **kwargs})
 
     def _suptitle_setup(self, renderer=None, **kwargs):
-        """
-        Intelligently determine super title position.
-
-        Notes
-        -----
-        Seems that `~matplotlib.figure.Figure.draw` is called *more than once*,
-        and the title position are appropriately offset only during the
-        *later* calls! So need to run this every time.
-        """
-        # Row label
-        # Need to update as axis tick labels are generated and axis label is
-        # offset!
+        """Intelligently determine super title position."""
+        # Seems that `~matplotlib.figure.Figure.draw` is called *more than once*,
+        # and the title position are appropriately offset only during the
+        # *later* calls! So need to run this every time.
+        # Row label; need to update as axis tick labels are generated and axis
+        # label is offset!
         for ax in self.axes:
             if  not isinstance(ax, axes.BaseAxes) or not getattr(ax, 'rowlabel', None):
                 continue
@@ -312,9 +306,7 @@ class Figure(mfigure.Figure):
             **kwargs})
 
     def _auto_smart_tight_layout(self, renderer=None):
-        """
-        Conditionally call `~Figure.smart_tight_layout`.
-        """
+        """Conditionally call `~Figure.smart_tight_layout`."""
         # Only proceed if this wasn't already done, or user did not want
         # the figure to have tight boundaries.
         if not self._smart_tight_init or not self._smart_tight:
@@ -372,10 +364,10 @@ class Figure(mfigure.Figure):
         # Apply new kwargs
         subplots_kw = self._subplots_kw
         left, bottom, right, top = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
-        left = subplots_kw.left - left + pad
-        right = subplots_kw.right - right + pad
+        left   = subplots_kw.left - left + pad
+        right  = subplots_kw.right - right + pad
         bottom = subplots_kw.bottom - bottom + pad
-        top = subplots_kw.top - top + pad + self._extra_pad
+        top    = subplots_kw.top - top + pad + self._extra_pad
         subplots_kw.update({'left':left, 'right':right, 'bottom':bottom, 'top':top})
 
         #----------------------------------------------------------------------#
@@ -521,17 +513,16 @@ class Figure(mfigure.Figure):
         #----------------------------------------------------------------------#
         # Apply changes
         #----------------------------------------------------------------------#
-        figsize, _, gridspec_kw = _subplots_kwargs(**subplots_kw)
+        figsize, _, gridspec_kw = _parse_args(**subplots_kw)
         self._smart_tight_init = False
         self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
+        self.width, self.height = figsize
 
     def draw(self, renderer, *args, **kwargs):
-        """
-        Fix the "super title" position and automatically adjust the
+        """Fix the "super title" position and automatically adjust the
         main gridspec, then call the parent `~matplotlib.figure.Figure.draw`
-        method.
-        """
+        method."""
         # Special: Figure out if other titles are present, and if not
         # bring suptitle close to center
         # Also fix spanning labels (they need figure-relative height
@@ -780,9 +771,13 @@ class axes_list(list):
             raise AttributeError(f'Found mixed types for attribute "{attr}".')
 
 # Function for processing input and generating necessary keyword args
-# TODO: Aspect ratio not preserved for some types of inner panels, generally
-# when have lots of inner space.
-def _subplots_kwargs(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, # extra space *inside* first axes, due to panels
+# TODO: Aspect ratio gets messed up for small axes sizes when inner panels
+# present, due to width/height ratios of panels to main axes changing as
+# the axes width/height changes, but we do not adjust this! The axes
+# width/height we calculate invalid, because "true" wextra and hextra
+# change, because panel widths change? Very *minor* thing, probably can
+# ignore; results in aspect ratio 1.025 for axes width 1.5 inches!
+def _parse_args(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, # extra space *inside* first axes, due to panels
     figsize=None, # figure size
     left=None, bottom=None, right=None, top=None, # spaces around edge of main plotting area, in inches
     width=None,  height=None, axwidth=None, axheight=None, journal=None,
@@ -889,7 +884,7 @@ def _subplots_kwargs(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, 
     # Determine figure size
     if journal:
         if width or height or axwidth or axheight or figsize:
-            raise ValueError('Argument conflict: Specify only a journal size, or the figure dimensions, not both.')
+            raise ValueError('Argument conflict: Specify a journal size or dimension size, not both.')
         width, height = journals(journal) # if user passed width=<string>, will use that journal size
     if not figsize:
         figsize = (width, height)
@@ -940,6 +935,7 @@ def _subplots_kwargs(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, 
     # Automatically scale fig dimensions
     # Account for space in subplotspec allotted for "inner panels" (wextra
     # and hextra). We want aspect ratio to apply to the *main* subplot.
+    # print(axwidth - wextra, axheight - hextra, (axwidth-wextra)/(axheight-hextra), axwidth, axheight, axwidth/axheight)
     if auto_width:
         axheight = axheights*hratios[0]/sum(hratios)
         axwidth  = (axheight - hextra)*aspect + wextra # bigger w ratio, bigger width
@@ -967,9 +963,9 @@ def _subplots_kwargs(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, 
         'figsize': figsize, 'aspect':  aspect,
         'hspace':  hspace,  'wspace':  wspace,
         'hratios': hratios, 'wratios': wratios,
-        'left':   left,   'bottom': bottom, 'right':  right,  'top':     top,
+        'left': left, 'bottom': bottom, 'right': right, 'top': top,
+        'bottompanels': bottompanels, 'leftpanels': leftpanels, 'rightpanels': rightpanels,
         'bwidth': bwidth, 'bspace': bspace, 'rwidth': rwidth, 'rspace': rspace, 'lwidth': lwidth, 'lspace': lspace,
-        'bottompanels': bottompanels, 'leftpanels': leftpanels, 'rightpanels': rightpanels
         })
 
     # Make sure the 'ratios' and 'spaces' are in physical units (we cast the
@@ -1429,7 +1425,7 @@ def subplots(array=None, ncols=1, nrows=1,
         sum(units(kw.get(f'{side}width', 0)) for side in 'tb')
     # Create gridspec for outer plotting regions (divides 'main area' from side panels)
     auto_adjust = _default(tight, auto_adjust)
-    figsize, subplots_kw, gridspec_kw = _subplots_kwargs(nrows, ncols, **kwargs)
+    figsize, subplots_kw, gridspec_kw = _parse_args(nrows, ncols, **kwargs)
     gs  = gridspec.FlexibleGridSpec(**gridspec_kw)
     fig = plt.figure(gridspec=gs, figsize=figsize, FigureClass=Figure,
         auto_adjust=auto_adjust, pad=pad, innerpad=innerpad, rcreset=rcreset, silent=silent,
