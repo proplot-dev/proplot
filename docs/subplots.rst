@@ -6,7 +6,7 @@ Figures and subplots
 .. automodsumm:: proplot.subplots
    :functions-only:
    :toctree: api
-   :skip: units
+   :skip: units, journals
 
 **Classes**
 

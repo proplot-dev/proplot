@@ -139,10 +139,8 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
 # Reference tables for colors, colormaps, cycles
 #------------------------------------------------------------------------------#
 def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
-    """
-    Visualize all possible named colors. Adapted from `this example
-    <https://matplotlib.org/examples/color/named_colors.html>`_.
-    """
+    """Visualize all possible named colors. Adapted from `this example
+    <https://matplotlib.org/examples/color/named_colors.html>`_."""
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map (see soure code; is just a dictionary wrapper
     # on some simple lists)
@@ -241,20 +239,15 @@ def color_show(groups=None, ncols=4, nbreak=12, minsat=0.2):
                 ax.text(xi_text, y, re.sub('^xkcd:', '', name),
                         fontsize=hsep*0.8, ha='left', va='center')
                 ax.hlines(y_line, xi_line, xf_line, color=color_dict[name], lw=hsep*0.6)
-
-        # Format and save figure
+        # Save
+        # fig.save(f'{_data}/colors/colors_{"-".join(group)}.pdf', format='pdf', transparent=False)
         ax.format(xlim=(0,X), ylim=(0,Y))
         ax.set_axis_off()
-        fig.save(f'{_data}/colors/colors_{"-".join(group)}.pdf',
-                format='pdf', transparent=False)
         figs += [fig]
     return figs
 
 def cycle_show():
-    """
-    Show off the different color cycles. Wrote this one myself, so it uses
-    the custom API.
-    """
+    """Show off the different color cycles."""
     # Get the list of cycles
     _cycles = {name:mcm.cmap_d[name].colors for name in tools.cycles}
     _cycles = {name:_cycles[name] for name in sorted(_cycles.keys())}
@@ -281,15 +274,13 @@ def cycle_show():
     if len(_cycles)%2==1:
         axs[-1].set_visible(False)
     # Save
-    fig.savefig(f'{_data}/colors/cycles.pdf', format='pdf')
+    # fig.save(f'{_data}/colors/cycles.pdf', format='pdf')
     return fig
 
 # def cmap_show(N=31):
 def cmap_show(N=129):
-    """
-    Plots all current colormaps, along with their catgories. Adapted from
-    `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_.
-    """
+    """Plots all current colormaps, along with their catgories. Adapted from
+    `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
     cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys')
             and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
@@ -315,38 +306,15 @@ def cmap_show(N=129):
     if cmaps_unknown:
         print(f'New colormaps: {", ".join(cmaps_unknown)}')
 
-    # Attempt to auto-detect diverging colormaps, just sample the points on either end
-    # Do this by simply summing the RGB channels to get HSV brightness
-    # l = lambda i: to_xyz(to_rgb(m(i)), 'hcl')[2] # get luminance
-    # if (l(0)<l(0.5) and l(1)<l(0.5)): # or (l(0)>l(0.5) and l(1)>l(0.5)):
-    # if name.lower() in custom_diverging:
-
-    # Attempt sorting based on hue
-    # for cat in []:
-    #     hues = [np.mean([tools.to_xyz(tools.to_rgb(color),'hsl')[0]
-    #         for color in mcm.cmap_d[name](np.linspace(0.3,1,20))])
-    #         for name in categories[cat]]
-    #     categories[cat] = [categories[cat][idx] for
-    #         idx,name in zip(np.argsort(hues), categories[cat])]
-
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
-
     # Figure
-    # Old method skipped missing colormaps/left blank space, new method
-    # closes blank space
     extra = 1 # number of axes-widths to allocate for titles
-    # nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories)*extra
     nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories)*extra
-    # nmaps = sum(len([name for name in names]) for names in categories_reg.values()) + len(categories_reg)*extra
-    fig, axs = subplots(nrows=nmaps, axwidth=4.5, axheight=0.23,
-                        span=False, share=False, hspace=0.07)
-
-    # Make plot
+    fig, axs = subplots(nrows=nmaps, axwidth=4.5, axheight=0.23, span=False, share=False, hspace=0.07)
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
-    # for cat,names in categories.items():
     for cat,names in categories_reg.items():
         # Space for title
         ntitles += extra # two axes-widths
@@ -365,20 +333,14 @@ def cmap_show(N=129):
                 ax.invisible() # empty space
                 continue
             # Draw map
-            # cmap = mcm.get_cmap(name, N) # interpolate
-            # print(cmap.N)
             ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
             ax.format(ylabel=name, ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
                       xticks='none',  yticks='none', # no ticks
                       xloc='neither', yloc='neither', # no spines
-                      title=(cat if imap==0 else None),
-                      )
-
+                      title=(cat if imap==0 else None))
         # Space for plots
         nplots += len(names)
-
     # Save
-    filename = f'{_data}/cmaps/colormaps.pdf'
-    fig.save(filename)
+    # fig.save(f'{_data}/cmaps/colormaps.pdf')
     return fig
 

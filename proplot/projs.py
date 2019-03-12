@@ -77,20 +77,22 @@ Key                                   Name                                      
 import numpy as np
 import matplotlib.path as mpath
 import warnings
+import cartopy
 from .rcmod import rc
 try:
     import cartopy.crs as ccrs
     from cartopy.crs import _WarpedRectangularProjection
+    # from packaging import version
+    # if version.parse(cartopy.__version__) < version.parse("0.13"):
+    #     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 except ModuleNotFoundError:
     ccrs = None
     _WarpedRectangularProjection = object
 
 # Circle path suitable for polar stereo/aeqd/lambert conformal projections
 def Circle(ax, N=100):
-    """
-    Returns a circle `~matplotlib.path.Path`. Used as the outline
-    for polar stereo, aeqd, and lambert conformal projections.
-    """
+    """Returns a circle `~matplotlib.path.Path`. Used as the outline
+    for polar stereo, aeqd, and lambert conformal projections."""
     theta = np.linspace(0, 2*np.pi, N)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T

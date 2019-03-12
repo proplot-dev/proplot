@@ -39,116 +39,9 @@ def _default(*args):
             return arg
     return arg # last one
 
-def units(value, error=True, dpi=90):
-    """
-    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
-    for info on the em square units. The `dpi` is equivalent to the one used
-    for iPython notebook inline figures: ``rc['figure.dpi']``. See the
-    `~proplot.rcmod` module for details.
-
-    Parameters
-    ----------
-    value : float or str
-        A size 'unit'. If numeric, assumed unit is inches.
-
-        If string, we look for the format ``'123.456units'``, where the
-        number is the value and `'units'` are one of the following:
-
-        ==============  ===================================================
-        Key             Description
-        ==============  ===================================================
-        ``px``, ``pp``  Pixels, assuming dpi of ``rc['figure.dpi']``
-        ``cm``          Centimeters
-        ``mm``          Millimeters
-        ``pt``          Points, or 1/72 inches
-        ``in``          Inches
-        ``em``          Em-square 
-        ``ex``          Ex-square 
-        ``lh``          Line height, or 1.2 em-squares
-        ``lem``         Em-square for large-sized text
-        ``lex``         Ex-square for large-sized text
-        ``llh``         Line height, or 1.2 em-squares for large-sized text
-        ==============  ===================================================
-
-    error : bool, optional
-        Raise error on failure?
-
-    """
-    # Possible units
-    # RC settings must be looked up every time
-    # from .rcmod import rc
-    from matplotlib import rcParams
-    _unit_dict = {
-        'em': rcParams['font.size']/72.0,
-        'ex': 0.5*rcParams['font.size']/72.0, # more or less; see URL
-        'lh': 1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
-        'lem': rcParams['figure.titlesize']/72.0, # for large text
-        'lex': 0.5*rcParams['figure.titlesize']/72.0,
-        'llh': 1.2*rcParams['figure.titlesize']/72.0,
-        'cm': 0.3937,
-        'mm': 0.03937,
-        'pt': 1/72.0,
-        'in': 1.0, # already in inches
-        'px': 1/rcParams['figure.dpi'], # dots times 1/dots per inch
-        'pp': 1/rcParams['figure.dpi'],
-        }
-    if not isinstance(value, str):
-        return value # assume int/float is in inches
-    regex = re.match('^(.*)(' + '|'.join(_unit_dict.keys()) + ')$', value)
-    if not regex:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    num, unit = regex.groups()
-    try:
-        num = float(num)
-    except ValueError:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    return num*_unit_dict[unit] # e.g. cm / (in / cm)
-
-# Throw this one out, use kwarg interpolation from method.
-# Why? Because matplotlib plot_directive sphinx extension will look for
-# gallery images in the old documentation that do not exist for ProPlot.
-# from inspect import cleandoc
-# def _docstring_fix(child):
-#     """
-#     Decorator function for appending documentation from overridden method
-#     onto the overriding method docstring.
-#     Adapted from: https://stackoverflow.com/a/8101598/4970632
-#     """
-#     for name,chfunc in vars(child).items(): # returns __dict__ object
-#         if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
-#             continue
-#         for parent in getattr(child, '__bases__', ()):
-#             # Obtain documentation
-#             parfunc = getattr(parent, name, None)
-#             if not getattr(parfunc, '__doc__', None):
-#                 continue
-#             if not getattr(chfunc, '__doc__', None):
-#                 chfunc.__doc__ = '' # in case it's None
-#
-#             # Ugly
-#             # cmessage = f'Full name: {parfunc.__qualname__}()'
-#             # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-#             # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
-#
-#             # Simple
-#             # chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n\n\n{cleandoc(parfunc.__doc__)}'
-#
-#             # Fails because numpydoc disallows custom subsections; see: https://developer.lsst.io/python/numpydoc.html#sections-are-restricted-to-the-numpydoc-section-set
-#             # chfunc.__doc__ = f'ProPlot Override\n================\n{cleandoc(chfunc.__doc__)}\n\n\n' \
-#             #                  f'Original Documentation\n======================\n{cleandoc(parfunc.__doc__)}'
-#
-#             # Differentiate with bold text
-#             chfunc.__doc__ = f'**ProPlot Override**\n{cleandoc(chfunc.__doc__)}\n\n\n' \
-#                              f'**Original Documentation**\n{cleandoc(parfunc.__doc__)}'
-#             break # only do this for the first parent class
-#     return child
-
+#------------------------------------------------------------------------------#
+# Decorators
+#------------------------------------------------------------------------------#
 def _timer(func):
     """
     A decorator that prints the time a function takes to execute.
@@ -252,4 +145,179 @@ def edges(values, axis=-1):
     # Permute back and return
     values = np.swapaxes(values, axis, -1)
     return values
+
+#------------------------------------------------------------------------------#
+# Units
+#------------------------------------------------------------------------------#
+def units(value, error=True, dpi=90):
+    """
+    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
+    for info on the em square units. The `dpi` is equivalent to the one used
+    for iPython notebook inline figures: ``rc['figure.dpi']``. See the
+    `~proplot.rcmod` module for details.
+
+    Parameters
+    ----------
+    value : float or str
+        A size "unit". If numeric, assumed unit is inches.
+
+        If string, we look for the format ``'123.456unit'``, where the
+        number is the value and ``'unit'`` is one of the following:
+
+        ==============  ===================================================
+        Key             Description
+        ==============  ===================================================
+        ``in``          Inches
+        ``cm``          Centimeters
+        ``mm``          Millimeters
+        ``pt``          Points, i.e. 1/72 inches
+        ``px``, ``pp``  Pixels, assuming dpi of ``rc['figure.dpi']``
+        ``em``          Em-square
+        ``ex``          Ex-square
+        ``lh``          Line height, or 1.2 em-squares
+        ``lem``         Em-square for title-sized text
+        ``lex``         Ex-square for title-sized text
+        ``llh``         Line height, or 1.2 em-squares for title-sized text
+        ==============  ===================================================
+
+    error : bool, optional
+        Raise error on failure?
+
+    """
+    # Possible units
+    # RC settings must be looked up every time
+    # from .rcmod import rc
+    from matplotlib import rcParams
+    _unit_dict = {
+        'in':  1.0, # already in inches
+        'cm':  0.3937,
+        'mm':  0.03937,
+        'pt':  1/72.0,
+        'px':  1/rcParams['figure.dpi'], # dots times 1/dots per inch
+        'pp':  1/rcParams['figure.dpi'],
+        'em':  rcParams['font.size']/72.0,
+        'ex':  0.5*rcParams['font.size']/72.0, # more or less; see URL
+        'lh':  1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
+        'lem': rcParams['figure.titlesize']/72.0, # for large text
+        'lex': 0.5*rcParams['figure.titlesize']/72.0,
+        'llh': 1.2*rcParams['figure.titlesize']/72.0,
+        }
+    if not isinstance(value, str):
+        return value # assume int/float is in inches
+    regex = re.match('^(.*)(' + '|'.join(_unit_dict.keys()) + ')$', value)
+    if not regex:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    num, unit = regex.groups()
+    try:
+        num = float(num)
+    except ValueError:
+        if error:
+            raise ValueError(f'Invalid size spec {value}.')
+        else:
+            return value
+    return num*_unit_dict[unit] # e.g. cm / (in / cm)
+
+def journals(journal):
+    """
+    Returns `width` and `height` matching academic journal figure
+    size standards. If height is not specified by standard, `height` takes
+    the value ``None``.
+
+    This function is used when `~proplot.subplots.subplots` is called with
+    the `journal` keyword argument.
+
+    The options for `journal` are as follows:
+
+    ===========  =====================  ====================================================
+    Key          Size description       Organization
+    ===========  =====================  ====================================================
+    ``'pnas1'``  1-column               Proceedings of the National Academy of Sciences [1]_
+    ``'pnas2'``  2-column               "
+    ``'pnas3'``  Landscape page         "
+    ``'ams1'``   1-column               American Meteorological Society [2]_
+    ``'ams2'``   Small 2-column         "
+    ``'ams3'``   Medium 2-column        "
+    ``'ams4'``   Full 2-column          "
+    ``'agu1'``   1-column               American Geophysical Union [3]_
+    ``'agu2'``   2-column               "
+    ``'agu3'``   1-column, full height  "
+    ``'agu4'``   2-column, full height  "
+    ===========  =====================  ====================================================
+
+    Feel free to submit a pull request if you'd like to add additional
+    standards.
+
+    .. [1] `PNAS recommendations <http://www.pnas.org/page/authors/submission>`_
+    .. [2] `AMS recommendations <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`_
+    .. [3] `AGU recommendations <https://publications.agu.org/author-resource-center/figures-faq/>`_
+    """
+    table = {
+        'pnas1': '8.7cm', # if 1 number specified, this is a tuple
+        'pnas2': '11.4cm',
+        'pnas3': '17.8cm',
+        'ams1': 3.2, # spec is in inches
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': ('95mm',  '115mm'),
+        'agu2': ('190mm', '115mm'),
+        'agu3': ('95mm',  '230mm'),
+        'agu4': ('190mm', '230mm'),
+        }
+    value = table.get(journal, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure size specifier "{journal}". ' +
+                          'Current options are: ' + ', '.join(table.keys()))
+    # Return width, and optionally also the height
+    width, height = None, None
+    try:
+        width, height = value
+    except TypeError:
+        width = value
+    return width, height
+
+#------------------------------------------------------------------------------#
+# Outdated
+#------------------------------------------------------------------------------#
+# Throw this one out, use kwarg interpolation from method.
+# Why? Because matplotlib plot_directive sphinx extension will look for
+# gallery images in the old documentation that do not exist for ProPlot.
+# from inspect import cleandoc
+# def _docstring_fix(child):
+#     """
+#     Decorator function for appending documentation from overridden method
+#     onto the overriding method docstring.
+#     Adapted from: https://stackoverflow.com/a/8101598/4970632
+#     """
+#     for name,chfunc in vars(child).items(): # returns __dict__ object
+#         if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
+#             continue
+#         for parent in getattr(child, '__bases__', ()):
+#             # Obtain documentation
+#             parfunc = getattr(parent, name, None)
+#             if not getattr(parfunc, '__doc__', None):
+#                 continue
+#             if not getattr(chfunc, '__doc__', None):
+#                 chfunc.__doc__ = '' # in case it's None
+#
+#             # Ugly
+#             # cmessage = f'Full name: {parfunc.__qualname__}()'
+#             # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
+#             # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Simple
+#             # chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n\n\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Fails because numpydoc disallows custom subsections; see: https://developer.lsst.io/python/numpydoc.html#sections-are-restricted-to-the-numpydoc-section-set
+#             # chfunc.__doc__ = f'ProPlot Override\n================\n{cleandoc(chfunc.__doc__)}\n\n\n' \
+#             #                  f'Original Documentation\n======================\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Differentiate with bold text
+#             chfunc.__doc__ = f'**ProPlot Override**\n{cleandoc(chfunc.__doc__)}\n\n\n' \
+#                              f'**Original Documentation**\n{cleandoc(parfunc.__doc__)}'
+#             break # only do this for the first parent class
+#     return child
 

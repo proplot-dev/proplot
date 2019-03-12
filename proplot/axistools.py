@@ -166,7 +166,7 @@ def Scale(scale, **kwargs):
     args = []
     if isinstance(scale, mscale.ScaleBase):
         scale = scale.name
-    if not np.iterable(scale) and not isinstance(scale, str): # TODO: too cumbersome?
+    if np.iterable(scale) and not isinstance(scale, str): # TODO: too cumbersome?
         scale, args = scale[0], scale[1:]
     if scale in scales:
         return scale # already registered
@@ -180,14 +180,15 @@ def Scale(scale, **kwargs):
     return scale
 
 def InvertedScaleFactory(scale, **kwargs):
-    """Returns name of newly registered *inverted* version of the scale class."""
+    """Returns name of newly registered *inverted* version of the
+    `~matplotlib.scale.ScaleBase` corresponding to the scale name."""
     # Note I use private API here; no other way to get class directly
     scale = Scale(scale, **kwargs) # get the class
     name_ = f'{scale}_inverted' # name of inverted version
     class Inverted(scales[scale]):
         name = name_
         def get_transform(self):
-            return super().get_transform().inverted() # neat!
+            return super().get_transform().inverted() # that's all we need!
     mscale.register_scale(Inverted)
     return name_
 
@@ -198,11 +199,9 @@ def InvertedScaleFactory(scale, **kwargs):
 # call.
 #------------------------------------------------------------------------------#
 def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
-    """
-    Exponential scale, used e.g. when adding a pressure coordinate axis
+    """Exponential scale, used e.g. when adding a pressure coordinate axis
     for data plotted linear w.r.t. height. Ignore this if you're not an
-    atmospheric scientist.
-    """
+    atmospheric scientist."""
     if name is None:
         name = f'exp_{expscale:.1e}_{mulscale:.1e}'
     name_ = name # must make a copy
@@ -222,8 +221,6 @@ def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
             return vmin, vmax
         def set_default_locators_and_formatters(self, axis):
             # Apply log spacing by default
-            # axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 5]))
-            # axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
             axis.set_smart_bounds(True) # unnecessary?
             axis.set_major_formatter(Formatter('default'))
             axis.set_minor_formatter(Formatter('null'))
@@ -990,11 +987,13 @@ def eFormatter():
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
 scales = mscale._scale_mapping
-"""The registered scales."""
+"""The registered scale names and their associated
+`~matplotlib.scale.ScaleBase classes."""
 
 locators = {
     'none':        mticker.NullLocator,
     'null':        mticker.NullLocator,
+    'auto':        mticker.AutoLocator,
     'log':         mticker.LogLocator,
     'maxn':        mticker.MaxNLocator,
     'linear':      mticker.LinearLocator,

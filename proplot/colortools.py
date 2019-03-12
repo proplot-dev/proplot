@@ -304,6 +304,25 @@ _cmap_categories = { # initialize as empty lists
         'IceFire', 'NegPos', 'BlueRed', 'PurplePink', 'DryWet', 'DrierWetter', 'LandSea'
         ],
 
+    # Other
+    # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
+    # website, but organization is better this way.
+    'Miscellaneous': [
+        'Temperature', # from ???
+        'BWR',
+        'ColdHot',
+        # 'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
+        # 'Star',
+        # 'JMN', # James map; ugly, so deleted
+        # 'CubeHelix', 'SatCubeHelix',
+        # 'cividis',
+        # 'Aurora', 'Space', # from PIEcrust; not uniform, so deleted
+        # 'TemperatureJJG', # from JJG; ugly, so deleted
+        # 'Kindlmann', 'ExtendedKindlmann',
+        # 'Seismic', # note this one originally had hard boundaries/no interpolation
+        # 'MutedBio', 'DarkBio', # from: ???, maybe SciVisColor
+        ],
+
     # cmOcean
     'cmOcean Sequential': [
         'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
@@ -312,25 +331,6 @@ _cmap_categories = { # initialize as empty lists
         ],
     'cmOcean Diverging': [
         'Balance', 'Curl', 'Delta'
-        ],
-
-    # Other
-    # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
-    # website, but organization is better this way.
-    'Miscellaneous': [
-        'BWR',
-        'ColdHot',
-        'Temperature', # from ???
-        'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
-        'Star',
-        'cividis',
-        # 'JMN', # James map; ugly, so deleted
-        'CubeHelix', 'SatCubeHelix',
-        # 'Aurora', 'Space', # from PIEcrust; not uniform, so deleted
-        # 'TemperatureJJG', # from JJG; ugly, so deleted
-        'Kindlmann', 'ExtendedKindlmann',
-        # 'Seismic', # note this one originally had hard boundaries/no interpolation
-        'MutedBio', 'DarkBio', # from: ???, maybe SciVisColor
         ],
 
     # Statistik
@@ -363,17 +363,6 @@ _cmap_categories = { # initialize as empty lists
     #     ],
     # 'CET Cyclic': [
     #     ],
-
-    # FabioCrameri
-    # See: http://www.fabiocrameri.ch/colourmaps.php
-    'Fabio Crameri Sequential': [
-        'Acton', 'Buda', 'Lajolla',
-        'Imola', 'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
-        'Turku', 'Bilbao', 'Lapaz',
-        ],
-    'Fabio Crameri Diverging': [
-        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
-        ],
 
     # Sky themes from rafi; not very scientifically useful, but pretty
     # 'Sky' : [
@@ -466,6 +455,17 @@ _cmap_categories = { # initialize as empty lists
     #     'Geography3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/mby/tn/mby.png.index.html
     #     ],
 
+    # FabioCrameri
+    # See: http://www.fabiocrameri.ch/colourmaps.php
+    'Fabio Crameri Sequential': [
+        'Acton', 'Buda', 'Lajolla',
+        'Imola', 'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
+        'Turku', 'Bilbao', 'Lapaz',
+        ],
+    'Fabio Crameri Diverging': [
+        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
+        ],
+
     # Gross. These ones will be deleted.
     'Alt Sequential': [
         'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
@@ -482,8 +482,11 @@ _cmap_categories = { # initialize as empty lists
     'Miscellaneous Orig': [
         'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
         'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
-        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar'
-        ]}
+        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
+        ],
+
+    }
+
 
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 _cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous Orig']
@@ -2345,7 +2348,7 @@ def register_cmaps():
             x = np.array(x)
             x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
             colors = np.array(colors)
-            if re.match('(cycle|qual)[0-9]', name.lower()):
+            if re.match('(cycle|qual)[0-9]?', name.lower()):
                 cmap = mcolors.ListedColormap([to_rgb(color) for color in colors])
                 cycles.add(name)
             else:
@@ -2467,20 +2470,14 @@ def register_cycles():
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly
 # varying LinearSegmentedColormap instances or subclasses thereof
 cmaps = set() # track *downloaded* colormaps; user can then check this list
-"""
-List of new registered colormap names.
-"""
+"""List of new registered colormap names."""
 
 cycles = set() # track *all* color cycles
-"""
-List of registered color cycle names.
-"""
+"""List of registered color cycle names."""
 
 _colors_unfiltered = {} # downloaded colors categorized by filename
 colorlist = {} # limit to 'sufficiently unique' color names
-"""
-Filtered, registered color names by category.
-"""
+"""Filtered, registered color names by category."""
 
 register_colors() # must be done first, so we can register OpenColor cmaps
 register_cmaps()
@@ -2506,7 +2503,5 @@ normalizers = {
     'power':      mcolors.PowerNorm,
     'symlog':     mcolors.SymLogNorm,
     }
-"""
-Dictionary of possible normalizers.
-"""
+"""Dictionary of possible normalizers."""
 

@@ -739,7 +739,6 @@ class BaseAxes(maxes.Axes):
     def __init__(self, *args, number=None,
             sharex=None, sharey=None, spanx=None, spany=None,
             sharex_level=0, sharey_level=0,
-            panel_parent=None, panel_side=None,
             **kwargs):
         # Copied sharex stuff from subplots documentation
         """
@@ -761,10 +760,6 @@ class BaseAxes(maxes.Axes):
             correspond to the subplot in the leftmost column, bottommost row.
 
             See `~proplot.subplots.subplots` for details.
-        panel_parent : None or `BaseAxes`, optional
-            The parent of the panel. Used only with `PanelAxes`.
-        panel_side : {None, 'left', 'right', 'top', 'bottom'}, optional
-            The side the panel was drawn on. Used only with `PanelAxes`.
         """
         # Initialize
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
@@ -772,10 +767,18 @@ class BaseAxes(maxes.Axes):
         self._hatch = None # background hatching
         self._zoom = None  # if non-empty, will make invisible
         self._insets = []  # add to these later
-        self._colorbar = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
+        self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
+        self._colorbar_parent = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
         self._inset_parent = None  # change this later
         self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
+        # Minor
+        self.dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
+        self.dualx_scale = None
+        self.twinx_child = None
+        self.twiny_child = None
+        self.twinx_parent = None
+        self.twiny_parent = None
 
         # Call parent
         super().__init__(*args, **kwargs)
@@ -784,11 +787,7 @@ class BaseAxes(maxes.Axes):
         self._title_pos_init = self.title.get_position() # position of title outside axes
         self._title_pos_transform = self.title.get_transform()
 
-        # Panels
-        if panel_side not in (None, 'left','right','bottom','top'):
-            raise ValueError(f'Invalid panel side "{panel_side}".')
-        self.panel_side = panel_side
-        self.panel_parent = panel_parent # used when declaring parent
+        # Panels, always none by default
         self.bottompanel = EmptyPanel()
         self.toppanel    = EmptyPanel()
         self.leftpanel   = EmptyPanel()
@@ -863,9 +862,7 @@ class BaseAxes(maxes.Axes):
 
     def _sharex_setup(self, sharex, level):
         """Set up shared axes."""
-        if sharex is None:
-            return
-        if self is sharex:
+        if sharex is None or sharex is self:
             return
         if isinstance(self, MapAxes) or isinstance(sharex, MapAxes):
             return
@@ -877,9 +874,9 @@ class BaseAxes(maxes.Axes):
         if self.rightpanel and sharex.rightpanel:
             self.rightpanel._sharex_setup(sharex.rightpanel, level)
         # Share horizontal panel x-axes with *sharex*
-        if self.bottompanel and sharex is not self.bottompanel:
+        if self.bottompanel and self.bottompanel._share:
             self.bottompanel._sharex_setup(sharex, level)
-        if self.toppanel and sharex is not self.toppanel:
+        if self.toppanel and self.toppanel._share:
             self.toppanel._sharex_setup(sharex, level)
         # Builtin features
         self._sharex = sharex
@@ -896,9 +893,7 @@ class BaseAxes(maxes.Axes):
 
     def _sharey_setup(self, sharey, level):
         """Set up shared axes."""
-        if sharey is None:
-            return
-        if self is sharey:
+        if sharey is None or sharey is self:
             return
         if isinstance(self, MapAxes) or isinstance(sharey, MapAxes):
             return
@@ -910,9 +905,9 @@ class BaseAxes(maxes.Axes):
         if self.toppanel and sharey.toppanel:
             self.toppanel._sharey_setup(sharey.toppanel, level)
         # Share vertical panel y-axes with *sharey*
-        if self.leftpanel:
+        if self.leftpanel and self.leftpanel._share:
             self.leftpanel._sharey_setup(sharey, level)
-        if self.rightpanel:
+        if self.rightpanel and self.rightpanel._share:
             self.rightpanel._sharey_setup(sharey, level)
             # sharey = self.leftpanel._sharey or self.leftpanel
         # Builtin features
@@ -924,22 +919,6 @@ class BaseAxes(maxes.Axes):
             for t in self.yaxis.get_ticklabels():
                 t.set_visible(False)
         self.yaxis.label.set_visible(False)
-
-    def _sharex_panels(self):
-        """Call this once panels are all declared."""
-        if self.bottompanel:
-            self._sharex_setup(self.bottompanel, 3)
-        bottom = self.bottompanel or self
-        if self.toppanel:
-            self.toppanel._sharex_setup(bottom, 3)
-
-    def _sharey_panels(self):
-        """Call this once panels are all declared."""
-        if self.leftpanel:
-            self._sharey_setup(self.leftpanel, 3)
-        left = self.leftpanel or self
-        if self.rightpanel:
-            self.rightpanel._sharey_setup(left, 3)
 
     def _update_text(self, obj, kwargs):
         """Update text, and allow for border."""
@@ -1029,8 +1008,12 @@ class BaseAxes(maxes.Axes):
             transform = self.transAxes
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
+    def set_visible(self, b):
+        """Make axes invisible, and add hidden attribute."""
+        super().set_visible(b)
+
     def invisible(self):
-        """Make axes invisible."""
+        """Make axes invisible, but children visible."""
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
@@ -1205,9 +1188,7 @@ class BaseAxes(maxes.Axes):
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
-        """
-        Add legend.
-        """
+        """Add legend."""
         # Call custom legend() function.
         return legend_factory(self, *args, **kwargs)
 
@@ -1216,9 +1197,7 @@ class BaseAxes(maxes.Axes):
     # in the axes itself with InsetAxes! Then panel axes overrides this
     # default behavior, so that panel.colorbar *fills* the axes with a colorbar.
     def colorbar(self, *args, **kwargs):
-        """
-        Add *inset* colorbar, sort of like a legend.
-        """
+        """Add *inset* colorbar, sort of like a legend."""
         raise NotImplementedError('Inset colorbars for non-panel axes is not yet implemented.')
         # WARNING: Below will have bugs because 'self' is a BaseAxes! See comment
         # under colorbar method on PanelAxes class.
@@ -1251,10 +1230,10 @@ class BaseAxes(maxes.Axes):
             Ignored if `border` is ``False``. Whether to draw black text
             with a white border (``False``), or white text on a black
             border (``True``).
-        linewidth : float, optional
-            Ignored if `border` is ``False``. The width of the text border.
         lw
             Alias for `linewidth`.
+        linewidth : float, optional
+            Ignored if `border` is ``False``. The width of the text border.
 
         Other parameters
         ----------------
@@ -1504,13 +1483,6 @@ class XYAxes(BaseAxes):
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
-        # Minor
-        self.dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
-        self.dualx_scale = None
-        self.twinx_child = None
-        self.twiny_child = None
-        self.twinx_parent = None
-        self.twiny_parent = None
         # Change the default formatter
         # My trims trailing zeros, but numbers no longer aligned. Matter
         # of taste really; will see if others like it.
@@ -1651,10 +1623,10 @@ class XYAxes(BaseAxes):
         xscale_kw, yscale_kw : dict-like, optional
             The *x* and *y* axis scale settings. Passed to
             `~proplot.axistools.Scale`.
-        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'zero'}, optional
-            The *x* and *y* axis spine locations.
         xloc, yloc
             Aliases for `xspineloc`, `yspineloc`.
+        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'zero'}, optional
+            The *x* and *y* axis spine locations.
         xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick marks.
         xtickminor, ytickminor : None or bool, optional
@@ -1669,25 +1641,25 @@ class XYAxes(BaseAxes):
         xticklabeldir, yticklabeldir : {'in', 'out'}
             Whether to place *x* and *y* axis tick label text inside
             or outside the axes.
+        xticks, yticks
+            Aliases for `xlocator`, `ylocator`.
         xlocator, ylocator : None or locator spec, optional
             The *x* and *y* axis tick mark positions. Passed to the
             `~proplot.axistools.Locator` constructor.
         xlocator_kw, ylocator_kw : dict-like, optional
             The *x* and *y* axis locator settings. Passed to
             `~proplot.axistools.Locator`.
-        xticks, yticks
-            Aliases for `xlocator`, `ylocator`.
-        xminorlocator, yminorlocator
-            As for `xlocator`, `ylocator`, but for the minor ticks.
         xminorticks, yminorticks
             Aliases for `xminorlocator`, `yminorlocator`.
+        xminorlocator, yminorlocator
+            As for `xlocator`, `ylocator`, but for the minor ticks.
         xminorlocator_kw, yminorlocator_kw
             As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
+        xticklabels, yticklabels
+            Aliases for `xformatter`, `yformatter`.
         xformatter, yformatter : None or format spec, optional
             The *x* and *y* axis tick label format. Passed to the
             `~proplot.axistools.Formatter` constructor.
-        xticklabels, yticklabels
-            Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
             The *x* and *y* axis formatter settings. Passed to
             `~proplot.axistools.Formatter`.
@@ -1861,7 +1833,7 @@ class XYAxes(BaseAxes):
             # Get which spines are visible; needed for setting tick locations
             spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
 
-            # Major locatof and formatter
+            # Major locator and formatter
             # Also automatically detect whether axis is a 'time axis' (i.e.
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
@@ -1988,7 +1960,8 @@ class XYAxes(BaseAxes):
         """As with `XYAxes.dualy`, but for the *x*-axis. See `XYAxes.dualy`."""
         ax = self.twiny()
         xscale = axistools.InvertedScaleFactory(xscale)
-        ax.format(xscale=xscale, **kwargs)
+        xformatter = kwargs.pop('xformatter', 'default')
+        ax.format(xscale=xscale, xformatter=xformatter, **kwargs)
         self.dualx_scale = (offset, scale)
 
     def dualy(self, offset=0, scale=1, yscale='linear', **kwargs):
@@ -2020,6 +1993,11 @@ class XYAxes(BaseAxes):
 
         Notes
         -----
+        For some reason, when scale is applied, it can change the default
+        formatter. For example, a linear scale will change default formatter
+        to original matplotlib version instead of my custom override. Need
+        to apply it explicitly.
+
         The axis scale is used to transform units on the left axis, linearly
         spaced, to units on the right axis. This means the right 'axis scale'
         must scale its data with the *inverse* of this transform. We make
@@ -2027,7 +2005,8 @@ class XYAxes(BaseAxes):
         """
         ax = self.twinx()
         yscale = axistools.InvertedScaleFactory(yscale)
-        ax.format(yscale=yscale, yformatter='default', **kwargs)
+        yformatter = kwargs.pop('yformatter', 'default')
+        ax.format(yscale=yscale, yformatter=yformatter, **kwargs)
         self.dualy_scale = (offset, scale)
 
     def twinx(self):
@@ -2212,12 +2191,18 @@ class PanelAxes(XYAxes):
     # Name
     name = 'panel'
     """The registered projection name."""
-    def __init__(self, *args, panel_side=None, invisible=False, **kwargs):
+    def __init__(self, *args, share=False, side=None, parent=None, invisible=False, **kwargs):
         """
         Parameters
         ----------
-        panel_side : {'left', 'right', 'bottom', 'top'}
+        side : {'left', 'right', 'bottom', 'top'}
             The side on which the panel is drawn.
+        share : bool, optional
+            Whether to share panel *x* and *y* axes with "parent" axes.
+            Irrelevant for figure panels, and defaults to ``False``.
+        parent : None or `~matplotlib.axes.Axes`
+            The "parent" of the panel. Not relevant for "outer panel"
+            axes.
         invisible : bool, optional
             Whether to make the axes invisible at the start. This is the
             default when using e.g. the `bottomlegend` keyword arg
@@ -2225,19 +2210,19 @@ class PanelAxes(XYAxes):
         *args, **kwargs
             Passed to the `XYAxes` initializer.
         """
-        # Initiate
-        if panel_side is None:
-            raise ValueError('Must specify side.')
-        super().__init__(*args, panel_side=panel_side, **kwargs)
-        # Make everything invisible
+        # Initialize
+        super().__init__(*args, **kwargs)
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid panel side "{side}".')
+        self._share = share
+        self._side = side
+        self._parent = parent # used when declaring parent
         if invisible:
             self.invisible()
 
     def legend(self, handles, fill=True, **kwargs_override):
-        """
-        "Fill the panel" with a legend. That is, draw a centered legend
-        and make the axes spines, ticks, etc. invisible.
-        """
+        """"Fill the panel" with a legend. That is, draw a centered legend
+        and make the axes spines, ticks, etc. invisible."""
         if not fill:
             # Do the normal thing
             kwargs = kwargs_override
@@ -2245,14 +2230,12 @@ class PanelAxes(XYAxes):
             # Allocate invisible axes for drawing legend.
             # Returns the axes and the output of legend_factory().
             self.invisible()
-            kwargs = {'borderaxespad':  0,
-                      'frameon':        False,
-                      'loc':            'upper center',
-                      'bbox_transform': self.transAxes}
+            kwargs = {'borderaxespad': 0, 'frameon': False,
+                      'loc': 'upper center', 'bbox_transform': self.transAxes}
             kwargs.update(kwargs_override)
         return legend_factory(self, handles, **kwargs)
 
-    def colorbar(self, *args, fill=False, i=0, n=1, length=1,
+    def colorbar(self, *args, fill=False, length=1,
         space=0, hspace=None, wspace=None,
         **kwargs):
         """
@@ -2269,65 +2252,50 @@ class PanelAxes(XYAxes):
         # Will always redraw an axes with new subspec
         self.invisible()
         space = _default(hspace, wspace, space) # flexible arguments
-        side = self.panel_side
+        side = self._side
         figure = self.figure
         subspec = self.get_subplotspec()
 
         # Create colorbar axes
-        if length!=1 or n!=1:
-            # First get gridspec
-            # Note formula: total width = n*<colorbar width> + (n-1)*<space width>
+        # TODO: Re-implement stacked colorbars as stacked panels! Expand
+        # options there! Otherwise have to mess with widths manually, which
+        # is against philosophy of package.
+        if length!=1:
             if side in ['bottom','top']:
-                hwidth = (self.height - (n-1)*space)/n # express height ratios in physical units
-                if hwidth<0:
-                    raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.height}.')
                 gridspec = FlexibleGridSpecFromSubplotSpec(
-                        nrows=n,  ncols=3,
-                        wspace=0, hspace=space,
+                        nrows=1, ncols=3, wspace=0, hspace=space,
                         subplot_spec=subspec,
                         width_ratios=((1-length)/2, length, (1-length)/2),
-                        height_ratios=hwidth,
                         )
-                subspec = gridspec[i,1]
+                subspec = gridspec[1]
             elif side in ['left','right']:
-                wwidth = (self.width - (n-1)*space)/n
-                if wwidth<0:
-                    raise ValueError(f'Space {space} too big for {n} colorbars on panel with width {self.width}.')
                 gridspec = FlexibleGridSpecFromSubplotSpec(
-                        nrows=3,  ncols=n,
-                        wspace=wspace, hspace=hspace,
+                        nrows=3, ncols=1, wspace=space, hspace=0,
                         subplot_spec=subspec,
                         height_ratios=((1-length)/2, length, (1-length)/2),
-                        width_ratios=wwidth,
                         )
-                subspec = gridspec[1,i]
-            # Next redraw axes
-            # self.remove() # save memory
+                subspec = gridspec[1]
             self.set_visible(False)
 
         # Allocate axes for drawing colorbar.
         # Returns the axes and the output of colorbar_factory().
         # WARNING: Using BaseAxes for the colorbar axes seems to cause bugs,
-        # because colorbar uses some internal methods that are wrapped by
-        # cmap_features! Not exactly sure why, but bottom line, do not use
-        # custom projection.
-        # ax = figure.add_subplot(subspec, projection='base')
+        # because colorbar uses some internal methods wrapped by cmap_features!
         ax = figure.add_subplot(subspec, projection=None)
         if side in ['bottom','top']:
             outside, inside = 'bottom', 'top'
             if side=='top':
                 outside, inside = inside, outside
-            # ticklocation = outside if i==n-1 else inside
             ticklocation = outside
             orientation  = 'horizontal'
         elif side in ['left','right']:
             outside, inside = 'left', 'right'
             if side=='right':
                 outside, inside = inside, outside
-            # ticklocation = outside if i==n-1 else inside
             ticklocation = outside
             orientation  = 'vertical'
-        self._colorbar = ax
+        self._colorbar_child = ax
+        ax._colorbar_parent = self
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         return colorbar_factory(ax, *args, **kwargs)
 
@@ -2366,18 +2334,20 @@ class MapAxes(BaseAxes):
         latmax : None or float, optional
             Meridian gridlines are cut off poleward of this latitude. If
             ``None``, read from the configuration.
-        lonlim, latlim : None or length-2 list of float, optional
-            Longitude and latitude limits of projection.
         xlim, ylim
             Aliases for `lonlim`, `latlim`.
-        lonlocator, latlocator : None or list of float, optional
-            List of longitudes and latitudes for drawing gridlines.
+        lonlim, latlim : None or length-2 list of float, optional
+            Longitude and latitude limits of projection.
         xlocator, ylocator, lonticks, latticks, xticks, yticks
             Aliases for `lonlocator`, `latlocator`.
-        lonminorlocator, latminorlocator : None or list of float, optional
-            As with `lonlocator` and `latlocator`, but for minor gridlines.
+        lonlocator, latlocator : None or list of float, optional
+            List of longitudes and latitudes for drawing gridlines.
         xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
             Aliases for `lonminorlocator`, `latminorlocator`.
+        lonminorlocator, latminorlocator : None or list of float, optional
+            As with `lonlocator` and `latlocator`, but for minor gridlines.
+        xlabels, ylabels
+            Aliases for `lonlabels`, `latlabels`.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides
             of the map. There are four different options:
@@ -2392,8 +2362,6 @@ class MapAxes(BaseAxes):
             `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
             The boolean values indicate whether to label gridlines intersecting
             the left, right, top, and bottom sides, respectively.
-        xlabels, ylabels
-            Aliases for `lonlabels`, `latlabels`.
 
         Returns
         -------
@@ -2411,11 +2379,11 @@ class MapAxes(BaseAxes):
         latminorlocator = _default(latminorlocator, latminorticks, yminorlocator, yminorticks)
         lonlocator = lonminorlocator or lonlocator # where we draw gridlines
         latlocator = latminorlocator or latlocator
-        latlocator = _default(latlocator, rc['geogrid.latlines']) # gridlines by default
-        lonlocator = _default(lonlocator, rc['geogrid.lonlines'])
+        latlocator = _default(latlocator, rc.get('geogrid.latlines')) # gridlines by default
+        lonlocator = _default(lonlocator, rc.get('geogrid.lonlines'))
 
         # Interptet latitude
-        latmax = _default(latmax, rc['geogrid.latmax'])
+        latmax = _default(latmax, rc.get('geogrid.latmax'))
         if isinstance(self, CartopyAxes):
             lon_0 = self.projection.proj4_params.get('lon_0', 0)
         else:
@@ -2430,7 +2398,7 @@ class MapAxes(BaseAxes):
             latlocator = [*latlocator]
 
         # Length-4 boolean arrays of whether and where to goggle labels
-        labels = _default(labels, rc['geogrid.labels']) or (lonlabels or latlabels) # if any are 'truthy', we toggle labelling
+        labels = _default(labels, rc.get('geogrid.labels')) or (lonlabels or latlabels) # if any are 'truthy', we toggle labelling
         lonlabels = _default(xlabels, lonlabels)
         latlabels = _default(ylabels, latlabels)
         ilabels = [lonlabels, latlabels]
@@ -2629,14 +2597,12 @@ class CartopyAxes(MapAxes, GeoAxes):
                 'color':     'geogrid.color',
                 'linewidth': 'geogrid.linewidth',
                 'linestyle': 'geogrid.linestyle',
-                })
+                }, all=True)
             labels = labels and isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree))
             gl = self.gridlines(draw_labels=labels, **kw)
             self._gl = gl
 
             # Grid locations
-            # if lonlocator: # NOTE: using mticker.NullLocator results in error!
-            # if latlocator:
             eps = 1e-3
             if latlocator[0]==-90:
                 latlocator[0] += eps
@@ -2712,7 +2678,7 @@ class CartopyAxes(MapAxes, GeoAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         super().fancy_update(**kwargs)
 
-def _ls_translate(self, obj, style):
+def _ls_translate(obj, style):
     """
     Make basemap gridlines look like cartopy lines using the `dashes`
     tuple.
@@ -2891,11 +2857,11 @@ class BasemapAxes(MapAxes):
                 'color':     'geogrid.color',
                 'linewidth': 'geogrid.linewidth',
                 'linestyle': 'geogrid.linestyle',
-                })
+                }, all=True)
             tkw = rc.fill({
                 'color':    'geogrid.color',
                 'fontsize': 'geogrid.labelsize',
-                })
+                }, all=True)
             # Latitudes
             # TODO: latlocator and lonlocator are always Truthy, because we
             # if latlocator:
@@ -3000,7 +2966,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     ncol : int, optional
         The number of columns.
     ncols
-        Alias for ncol. Added for consistency with
+        Alias for `ncol`. Added for consistency with
         `~matplotlib.pyplot.subplots`.
 
     Other parameters
@@ -3100,14 +3066,14 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     # using the original legend command
     # Means we also have to overhaul some settings
     else:
+        # overridden = []
         legends = []
-        overridden = []
         for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
             prop = kwargs.pop(override, None)
-            if prop is not None:
-                overridden.append(override)
-        if overridden:
-            warnings.warn(f'Overriding legend properties {", ".join(prop for prop in overridden)}.')
+        # if prop is not None:
+        #     overridden.append(override)
+        # if overridden:
+        #     warnings.warn(f'Overriding legend properties {", ".join(prop for prop in overridden)}.')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
@@ -3135,12 +3101,11 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
                'edgecolor': rc['axes.edgecolor'],
                'facecolor': rc['axes.facecolor']}
     for leg in legends:
+        # for t in leg.texts:
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
-        # for t in leg.texts:
-        #     t.update() # or get_texts()
-    return legends
+    return legends[0] if len(legends)==1 else legends
 
 def colorbar_factory(ax, mappable, values=None,
         orientation='horizontal', extend=None, extendlength=0.2,
@@ -3195,10 +3160,12 @@ def colorbar_factory(ax, mappable, values=None,
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
         sizes to match, because the `extendlength` units are *relative*.
+    ctickdir, ticklocation, cticklocation
+        Aliases for `tickdir`.
     tickdir : {'out', 'in'}, optional
         Whether to draw tick marks pointing inside or outside.
-    ctickdir, ticklocation, cticklocation
-        Aliases of `tickdir`.
+    clabel, ctickminor, cgrid
+        Aliases for `label`, `tickminor`, `grid`.
     label : None or str, optional
         The colorbar label.
     tickminor : bool, optional
@@ -3206,8 +3173,8 @@ def colorbar_factory(ax, mappable, values=None,
     grid : bool, optional
         Whether to draw "gridlines" (i.e. separators) between each level
         across the colorbar. Default is ``False``.
-    clabel, ctickminor, cgrid
-        Aliases for `label`, `tickminor`, `grid`.
+    clocator, cminorlocator, clocator_kw, cminorlocator_kw
+        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
     locator : None or locator spec, optional
         The colorbar tick mark positions. Passed to the
         `~proplot.axistools.Locator` constructor.
@@ -3217,13 +3184,11 @@ def colorbar_factory(ax, mappable, values=None,
         As with `locator`, but for the minor tick marks.
     minorlocator_kw
         As for `locator_kw`, but for the minor locator.
-    clocator, cminorlocator, clocator_kw, cminorlocator_kw
-        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
+    cformatter, ticklabels, cticklabels
+        Aliases for `formatter`.
     formatter : None or formatter spec, optional
         The tick label format. Passed to the `~proplot.axistools.Formatter`
         constructor.
-    cformatter, ticklabels, cticklabels
-        Aliases for `formatter`.
     norm : None or normalizer spec, optional
         Ignored if `mappable` has the ``norm`` attribute. The normalizer
         for converting `values` to colormap colors. Passed to the
