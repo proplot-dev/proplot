@@ -511,13 +511,24 @@ class Figure(mfigure.Figure):
             'lspace':lspace, 'rspace':rspace, 'bspace':bspace})
 
         #----------------------------------------------------------------------#
-        # Apply changes
+        # Finish
         #----------------------------------------------------------------------#
+        # Apply changes
         figsize, _, gridspec_kw = _parse_args(**subplots_kw)
         self._smart_tight_init = False
         self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
         self.width, self.height = figsize
+        # Update width and height ratios of axes inner panel subplotspec
+        # This could be *really* complicated to implement, so do not bother!
+        # It is easy to make axes and panels identical on declaration, but
+        # totally unclear afterward which *other* axes inner gridspecs should
+        # be adjusted along with the reference *first* one!
+        # ax = self.main_axes[0]
+        # spec = self.get_subplotspec().get_gridspec()
+        # if isinstance(gridspec, gridspec.FlexibleGridSpecFromSubplotSpec):
+        #     wratios = spec.get_width_ratios()[::2]
+        #     hratios = spec.get_height_ratios()[::2]
 
     def draw(self, renderer, *args, **kwargs):
         """Fix the "super title" position and automatically adjust the
@@ -953,10 +964,6 @@ def _parse_args(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, # ext
         raise ValueError(f"Not enough room for axes (would have height {axheights}). Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
 
     # Necessary arguments to reconstruct this grid
-    # Can follow some of the pre-processing
-    # TODO: We should actually supply with axwidth, axheight, etc. so that
-    # when tight subplot acts, axes dims will stay the same!
-    # TODO: How exactly is this used again?
     subplots_kw = _dict({
         'wextra':  wextra,  'hextra':  hextra,
         'nrows':   nrows,   'ncols':   ncols,
@@ -1002,10 +1009,10 @@ def _parse_args(nrows, ncols, rowmajor=True, aspect=1, wextra=0, hextra=0, # ext
     gridspec_kw = {
         'nrows': nrows, 'ncols': ncols,
         'left': left, 'bottom': bottom, 'right': right, 'top': top, # so far no panels allowed here
-        'wspace': wspace,        'hspace': hspace,
-        'width_ratios': wratios, 'height_ratios' : hratios,
-        } # set wspace/hspace to match the top/bottom spaces
+        'wspace': wspace, 'hspace': hspace, 'width_ratios': wratios, 'height_ratios' : hratios,
+        }
     return figsize, subplots_kw, gridspec_kw
+    # return figsize, gridspec_kw, axwidths*wratios[0]/sum(wratios), axheights*hratios[0]/sum(hratios)
 
 def subplots(array=None, ncols=1, nrows=1,
         order='C', # allow calling with subplots(array)
@@ -1416,8 +1423,6 @@ def subplots(array=None, ncols=1, nrows=1,
     # Make figure
     #--------------------------------------------------------------------------#
     # Fix subplots_kw aspect ratio in light of inner panels
-    # WARNING: Believe this will just *approximate* aspect ratio
-    # if we then determine inner panel spacing automatically
     kw = innerpanels_kw[1]
     kwargs['wextra'] = sum(units(w) for w in kw['wspace']) + \
         sum(units(kw.get(f'{side}width', 0)) for side in 'lr')
