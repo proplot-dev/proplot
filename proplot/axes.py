@@ -2286,19 +2286,15 @@ class PanelAxes(XYAxes):
         return legend_factory(self, *args, **kwargs)
 
     def colorbar(self, *args, fill=True, length=1, **kwargs):
-        """
-        Fill the panel with colorbar.
-
-        Todo
-        ----
-        Require the stacked colorbar thing to be declared right away! Will
-        then have panels accessible with the slice panel[i,j] instead
-        of panel[i], for example.
-        """
+        """Optionally fill the panel with a colorbar. Use `length` to change
+        the fractional extent of the panel to be filled."""
         # Inset 'legend-style' colorbar
         if not fill:
             return super().colorbar(*args, **kwargs)
         # Draw colorbar with arbitrary length relative to full length of panel
+        # TODO: Require the stacked colorbar thing to be declared right away! Will
+        # then have panels accessible with the slice panel[i,j] instead
+        # of panel[i], for example.
         # space = _default(hspace, wspace, space) # flexible arguments
         self.invisible()
         side = self._side
