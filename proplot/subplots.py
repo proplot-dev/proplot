@@ -79,7 +79,7 @@ class axes_list(list):
     def __getattr__(self, attr):
         """Stealthily return dummy function that actually loops through each
         axes method and calls them in succession, or returns a list of
-        attributes if the attribute is not callable."""
+        attributes if the attribute is not callable!"""
         attrs = [getattr(ax, attr, None) for ax in self]
         if None in attrs:
             raise AttributeError(f'Attribute "{attr}" not found.')
@@ -112,7 +112,7 @@ def _ax_span(ax, renderer, children=True):
     ax = ax._colorbar_parent or ax
     if children:
         children = (ax.leftpanel, ax.bottompanel, ax.rightpanel, ax.toppanel,
-            ax.twinx_child, ax.twiny_child)
+            ax._twinx_child, ax._twiny_child)
         for sub in children:
             if not sub:
                 continue
@@ -201,7 +201,7 @@ class Figure(mfigure.Figure):
         self._rcreset = rcreset
         self._extra_pad      = 0 # sometimes matplotlib fails, cuts off super title! will add to this
         self._smart_outerpad = units(_default(outerpad, rc['gridspec.outerpad']))
-        self._smart_mainpad  = units(_default(innerpad, rc['gridspec.mainpad']))
+        self._smart_mainpad  = units(_default(mainpad,  rc['gridspec.mainpad']))
         self._smart_innerpad = units(_default(innerpad, rc['gridspec.innerpad']))
         self._smart_tight       = _default(tight, rc['tight']) # note name _tight already taken!
         self._smart_tight_inner = _default(tight, rc['innertight']) # note name _tight already taken!
@@ -242,11 +242,11 @@ class Figure(mfigure.Figure):
                 raise ValueError('Axis limits cross zero, and "alternate units" axis uses inverse scale.')
         for ax in self.main_axes:
             # Match units for x-axis
-            if ax.dualx_scale:
+            if ax._dualx_scale:
                 # Get stuff
                 # transform = mscale.scale_factory(twin.get_xscale(), twin.xaxis).get_transform()
-                twin = ax.twiny_child
-                offset, scale = ax.dualx_scale
+                twin = ax._twiny_child
+                offset, scale = ax._dualx_scale
                 transform = twin.xaxis._scale.get_transform() # private API
                 xlim_orig = ax.get_xlim()
                 # Check, and set
@@ -256,11 +256,11 @@ class Figure(mfigure.Figure):
                     xlim = xlim[::-1]
                 twin.set_xlim(offset + scale*xlim)
             # Match units for y-axis
-            if ax.dualy_scale:
+            if ax._dualy_scale:
                 # Get stuff
                 # transform = mscale.scale_factory(twin.get_yscale(), ax.yaxis).get_transform()
-                twin = ax.twinx_child
-                offset, scale = ax.dualy_scale
+                twin = ax._twinx_child
+                offset, scale = ax._dualy_scale
                 transform = twin.yaxis._scale.get_transform() # private API
                 ylim_orig = ax.get_ylim()
                 check(ylim_orig, twin.get_yscale())
@@ -338,7 +338,7 @@ class Figure(mfigure.Figure):
         raxs = [ax for ax in self.main_axes if ax._yrange[0]==0]
         raxs = [ax.toppanel for ax in raxs if ax.toppanel.on()] or raxs # filter to just these if top panel is enabled
         for axm in raxs:
-            axs = [ax for ax in (axm, axm.twinx_child, axm.twiny_child) if ax]
+            axs = [ax for ax in (axm, axm._twinx_child, axm._twiny_child) if ax]
             if axm.leftpanel.on():
                 axs.append(axm.leftpanel)
             if axm.rightpanel.on():
@@ -418,10 +418,12 @@ class Figure(mfigure.Figure):
         gridspec object."""
         # Initial stuff
         pad = self._smart_innerpad
+        ic(panels)
         if all(not panel for panel in panels): # exists, but may be invisible
             return
         elif not all(panel for panel in panels):
             raise ValueError('Either all or no axes in this row should have panels.')
+        ic('made it')
         # Iterate through panels, get maximum necessary spacing; assign
         # equal spacing to all so they are still aligned
         space = []
@@ -449,11 +451,13 @@ class Figure(mfigure.Figure):
         if not space:
             warnings.warn('All panels in this row or column are invisible. That is really weird.')
             return
-        # pad = 0
         for ratio in ratios:
             idx = (-2 if side in 'br' else 1)
-            # ratio[idx] = 0
-            ratio[idx] = max([0, ratio[idx] - min(space) + pad])
+            if pad==0: # assume user means, always want panels touching, in spite of ticks, etc.
+                iratio = 0
+            else:
+                iratio = max([0, ratio[idx] - min(space) + pad])
+            ratio[idx] = iratio
 
     def smart_tight_layout(self, renderer=None):
         """
@@ -610,31 +614,54 @@ class Figure(mfigure.Figure):
         #----------------------------------------------------------------------#
         # Get bounding boxes and intervals, otherwise they are queried a bunch
         # of times which may slow things down unnecessarily (benchmark?)
+        # if False:
         if self._smart_tight_inner:
-            axs = self.main_axes
-            bboxs = [ax.get_tightbbox(renderer) for ax in axs]
-            xspans = [bbox.intervalx for bbox in bboxs]
-            yspans = [bbox.intervaly for bbox in bboxs]
-            # Bottom, top
-            for row in range(nrows):
-                pairs = [(ax.bottompanel, yspan) for ax,yspan in zip(axs,yspans) if ax._yrange[1]==row]
-                self._inner_tight_layout(*zip(*pairs), renderer, side='b')
-                pairs = [(ax.toppanel, yspan) for ax,yspan in zip(axs,yspans) if ax._yrange[0]==row]
-                self._inner_tight_layout(*zip(*pairs), renderer, side='t')
-            # Left, right
-            for col in range(ncols):
-                pairs = [(ax.leftpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[0]==col]
-                self._inner_tight_layout(*zip(*pairs), renderer, side='l')
-                pairs = [(ax.rightpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[1]==col]
-                self._inner_tight_layout(*zip(*pairs), renderer, side='r')
-            # Get the wextra and hextra kwargs
-            ax = self.main_axes[0]
-            gs = ax.get_subplotspec().get_gridspec()
-            wextra = sum(w for i,w in enumerate(gs.get_width_ratios())
-                if i!=2*int(bool(ax.leftpanel))) # main subplot index is position 2 of left panel is present, 0 if not
-            hextra = sum(w for i,w in enumerate(gs.get_height_ratios())
-                if i!=2*int(bool(ax.toppanel))) # as for wextra
-            subplots_kw.update({'wextra':wextra, 'hextra':hextra})
+            # Get reference ax, for adjusting wextra and hextra later
+            for ax in self.main_axes:
+                axref = (ax.bottompanel or ax.leftpanel or ax.rightpanel or ax.toppanel)
+                if axref:
+                    break
+            # Only continue if *some* inner panels are present
+            if axref:
+                # Get bounding boxes
+                axs = self.main_axes
+                bboxs = [ax.get_tightbbox(renderer) for ax in axs]
+                xspans = [bbox.intervalx for bbox in bboxs]
+                yspans = [bbox.intervaly for bbox in bboxs]
+                # Bottom, top
+                for row in range(nrows):
+                    pairs = [(ax.bottompanel, yspan) for ax,yspan in zip(axs,yspans) if ax._yrange[1]==row]
+                    ic(row, pairs)
+                    if pairs:
+                        self._inner_tight_layout(*zip(*pairs), renderer, side='b')
+                    pairs = [(ax.toppanel, yspan) for ax,yspan in zip(axs,yspans) if ax._yrange[0]==row]
+                    ic(row, pairs)
+                    if pairs:
+                        self._inner_tight_layout(*zip(*pairs), renderer, side='t')
+                # Left, right
+                for col in range(ncols):
+                    pairs = [(ax.leftpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[0]==col]
+                    ic(col, pairs)
+                    if pairs:
+                        self._inner_tight_layout(*zip(*pairs), renderer, side='l')
+                    pairs = [(ax.rightpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[1]==col]
+                    ic(col, pairs)
+                    if pairs:
+                        self._inner_tight_layout(*zip(*pairs), renderer, side='r')
+                # Get the wextra and hextra kwargs
+                # NOTE: Need to beware actually getting global, figure-filling
+                # gridspec instead of inner one.
+                for ax in self.main_axes:
+                    ax = (ax.bottompanel or ax.leftpanel or ax.rightpanel or ax.toppanel)
+                    if ax:
+                        break
+                # If any panels at all present, adjust
+                gs = axref.get_subplotspec().get_gridspec()
+                wextra = sum(w for i,w in enumerate(gs.get_width_ratios())
+                    if i!=2*int(bool(axref.leftpanel))) # main subplot index is position 2 of left panel is present, 0 if not
+                hextra = sum(w for i,w in enumerate(gs.get_height_ratios())
+                    if i!=2*int(bool(axref.toppanel))) # as for wextra
+                subplots_kw.update({'wextra':wextra, 'hextra':hextra})
 
         #----------------------------------------------------------------------#
         # Finish
@@ -651,8 +678,6 @@ class Figure(mfigure.Figure):
 
         # Update width and height ratios of axes inner panel subplotspec,
         # to reflect the new axes heights and widths (ratios are stored in physical units, inches)
-        # width_new = np.diff(ax._position.intervalx)*self.width
-        # height_new = np.diff(ax._position.intervaly)*self.height
         for ax in self.main_axes:
             # Get *new* axes dimensions
             if not any(bool(panel) for panel in (ax.bottompanel, ax.toppanel, ax.leftpanel, ax.rightpanel)):
@@ -673,6 +698,11 @@ class Figure(mfigure.Figure):
             gs.set_height_ratios(hratios)
         # Final update and we're good to go
         self._gridspec.update(**gridspec_kw)
+        # Update attributes
+        for ax in self.main_axes:
+            width_new = np.diff(ax._position.intervalx)*self.width
+            height_new = np.diff(ax._position.intervaly)*self.height
+            ax.width, ax.height = width_new, height_new
 
     def draw(self, renderer, *args, **kwargs):
         """Fix the "super title" position and automatically adjust the

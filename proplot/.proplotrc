@@ -170,7 +170,6 @@ rcParams_new:
     gridminor.color:
     gridminor.linestyle:
     gridminor.linewidth:
-    # lonlatlines.linestyle: --
     # Gridspec
     gridspec.axwidth:    2     # default width
     gridspec.innerpad:   0.05 # padding between main subplots and their panels
@@ -180,11 +179,17 @@ rcParams_new:
     gridspec.innerspace: 0.2   # just have ticks, no labels
     gridspec.legwidth:   0.25  # default legend space (bottom of figure)
     gridspec.cbarwidth:  0.17  # default colorbar width
-    gridspec.clegwidth:  0.12  # width of "legend" colorbars, i.e. colorbar insets
-    gridspec.cleglength: 0.48  # length of "legend" colorbars
     gridspec.ylabspace:  0.7   # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
     gridspec.xlabspace:  0.55  # for horizontal text should have more space
     gridspec.nolabspace: 0.15  # only ticks
     gridspec.panelwidth: 0.45
     gridspec.panelspace: 0.15
+    # Inset colorbar, sort of behaves like a legend
+    colorbar.extendfull: 0.15 # length of triangle or rectangle "extensions", in inches
+    colorbar.extend:     0.08 # same, for "legend" colorbars
+    colorbar.length:     0.6  # length of "legend" colorbars
+    colorbar.width:      0.12 # width of "legend" colorbars, i.e. colorbar insets
+    colorbar.loc:        'lower right'
+    colorbar.axespad:    0.5em # padding from axes edge, in font size units just like legend.axespad
+    colorbar.xspace:     0.3 # extra space for x label of colorbar
 

@@ -53,6 +53,7 @@ My brand new settings, meant to configure special ProPlot featues. The
 * Labels: ``abc``, ``rowlabel``, ``collabel``, ``title``, ``suptitle``
 * Gridlines: ``gridminor``, ``geogrid``
 * Subplots: ``gridspec``
+* Inset colorbar: ``colorbar``
 
 A miscellaneous setting is the boolean ``axes.formatter.zerotrim``; use this
 to trim trailing zeros on tick labels. Default is ``True``.
@@ -88,7 +89,7 @@ Key                                             Description
 ``geogrid.color``, ``gridminor.color``          The line color.
 ==============================================  ==================================================================
 
-The ``gridspec`` subcategories. (if float, units are inches; if string,
+The ``gridspec`` subcategory (if float, units are inches; if string,
 units are interpreted by `~proplot.utils.units`):
 
 =======================  ==================================================================
@@ -107,9 +108,22 @@ Key                      Description
 ``gridspec.axwidth``     Default width of each axes.
 ``gridspec.panelwidth``  Width of side panels.
 ``gridspec.panelspace``  Space between main axes and side panels.
-``gridspec.cleglength``  Default length for "inset" or "legend" colorbars.
-``gridspec.clegwidth``   Default length for "inset" or "legend" colorbars.
 =======================  ==================================================================
+
+And finally, the ``colorbar`` subcategory, analogous to the matplotlib
+builtin ``legend`` subcategory and used for *inset* colorbars:
+
+=======================  ===================================================================================================================
+Key                      Description
+=======================  ===================================================================================================================
+``colorbar.loc``         Default colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
+``colorbar.length``      Default length for "inset" or "legend" colorbars.
+``colorbar.width``       Default length for "inset" or "legend" colorbars.
+``colorbar.extend``      Length of rectangular or triangular "extensions".
+``colorbar.extendfull``  Same, but for full, ordinary colorbars.
+``colorbar.pad``         Default padding between figure edge of rectangular or triangular "extensions".
+``colorbar.xspace``      Extra space for x label of colorbar.
+=======================  ===================================================================================================================
 
 
 rcGlobals
@@ -248,7 +262,8 @@ _rc_names_new = {
     'gridspec.mainpad', 'gridspec.innerpad', 'gridspec.outerpad', 'gridspec.titlespace',
     'gridspec.innerspace',
     'gridspec.legwidth', 'gridspec.cbarwidth', 'gridspec.ylabspace', 'gridspec.xlabspace', 'gridspec.nolabspace',
-    'gridspec.axwidth', 'gridspec.panelwidth', 'gridspec.panelspace', 'gridspec.cleglength', 'gridspec.clegwidth',
+    'gridspec.axwidth', 'gridspec.panelwidth', 'gridspec.panelspace',
+    'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendfull', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
 # way less verbose.

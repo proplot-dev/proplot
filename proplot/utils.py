@@ -24,6 +24,7 @@ a list of contours or tick mark positions.
 # def hello():
 #     print('hello world!')
 # hello()
+import re
 import time
 import numpy as np
 import functools

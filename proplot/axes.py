@@ -765,17 +765,19 @@ class BaseAxes(maxes.Axes):
         self._hatch = None # background hatching
         self._zoom = None  # if non-empty, will make invisible
         # Children
+        self._inset_colorbar_child = None
+        self._inset_colorbar_parent = None
         self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
-        self._colorbar_parent = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
+        self._colorbar_parent = None
         self._insets = []  # add to these later
         self._inset_parent = None  # change this later
-        # Public children
-        self.dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
-        self.dualx_scale = None
-        self.twinx_child = None
-        self.twiny_child = None
-        self.twinx_parent = None
-        self.twiny_parent = None
+        self._twinx_child = None
+        self._twiny_child = None
+        self._twinx_parent = None
+        self._twiny_parent = None
+        # Properties for *special* twin axes, with locked axis limits
+        self._dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
+        self._dualx_scale = None
         # Misc
         self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
@@ -1202,22 +1204,48 @@ class BaseAxes(maxes.Axes):
                 if ax and ax.abc and not abc and abc is not None:
                     ax.abc.set_visible(False)
 
-    # Create legend creation method
+    # Legend with custom tools and some new features
     def legend(self, *args, **kwargs):
         """Add legend."""
-        # Call custom legend() function.
         return legend_factory(self, *args, **kwargs)
 
-    # Fill entire axes with colorbar
-    # TODO: Make the default behavior draw a tiny colorbar inset
-    # in the axes itself with InsetAxes! Then panel axes overrides this
-    # default behavior, so that panel.colorbar *fills* the axes with a colorbar.
-    def colorbar(self, *args, **kwargs):
+    # Inset colorbar, meant to mimick legend
+    # TODO: Account for 'extend' maybe
+    def colorbar(self, *args, loc=None, extendlength=None, xspace=None, pad=None, width=None, length=None, **kwargs):
         """Add *inset* colorbar, sort of like a legend."""
-        raise NotImplementedError('Inset colorbars for non-panel axes is not yet implemented.')
-        # WARNING: Below will have bugs because 'self' is a BaseAxes! See comment
-        # under colorbar method on PanelAxes class.
-        # return colorbar_factory(self, *args, **kwargs)
+        # Default props
+        loc = _default(loc, rc.get('colorbar.loc'))
+        extend = units(_default(extendlength, rc.get('colorbar.extend')))
+        xspace = units(_default(pad, rc.get('colorbar.xspace')))/self.width # for x label
+        length = units(_default(pad, rc.get('colorbar.length')))/self.width
+        width = units(_default(pad, rc.get('colorbar.width')))/self.height
+        pad = units(_default(pad, rc.get('colorbar.axespad')))
+        xpad = pad/self.width
+        ypad = pad/self.height
+        # Get location in axes-relative coordinates
+        if loc in (1,'upper right'):
+            bounds = (1-xpad-length, 1-ypad-width, length, width)
+        elif loc in (2,'upper left'):
+            bounds = (xpad, 1-ypad-width, length, width) # x0, y0, width, height in axes-relative coordinate to start
+        elif loc in (3,'lower left'):
+            bounds = (xpad, ypad+xspace, length, width)
+        elif loc in (4,'lower right'):
+            bounds = (1-xpad-length, ypad+xspace, length, width)
+        else:
+            raise ValueError(f'Invalid location {loc}.')
+        # Test
+        bbox = mtransforms.Bbox.from_bounds(*bounds)
+        bb = mtransforms.TransformedBbox(bbox, self.transAxes)
+        tr = self.figure.transFigure.inverted()
+        bb = mtransforms.TransformedBbox(bb, tr)
+        # Axes
+        locator = self._make_inset_locator(bounds, self.transAxes)
+        bb = locator(None, None)
+        ax = maxes.Axes(self.figure, bb.bounds, zorder=5)
+        ax.set_axes_locator(locator)
+        self.add_child_axes(ax)
+        kwargs.update({'ticklocation':'bottom', 'extendlength':extend})
+        return colorbar_factory(ax, *args, **kwargs)
 
     # Fancy wrappers
     def text(self, x, y, text,
@@ -1978,7 +2006,7 @@ class XYAxes(BaseAxes):
         xscale = axistools.InvertedScaleFactory(xscale)
         xformatter = kwargs.pop('xformatter', 'default')
         ax.format(xscale=xscale, xformatter=xformatter, **kwargs)
-        self.dualx_scale = (offset, scale)
+        self._dualx_scale = (offset, scale)
 
     def dualy(self, offset=0, scale=1, yscale='linear', **kwargs):
         """
@@ -2023,7 +2051,7 @@ class XYAxes(BaseAxes):
         yscale = axistools.InvertedScaleFactory(yscale)
         yformatter = kwargs.pop('yformatter', 'default')
         ax.format(yscale=yscale, yformatter=yformatter, **kwargs)
-        self.dualy_scale = (offset, scale)
+        self._dualy_scale = (offset, scale)
 
     def twinx(self):
         """Makes a second *y* axis extending from a shared ("twin") *x* axis.
@@ -2032,9 +2060,9 @@ class XYAxes(BaseAxes):
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format method.
         # Instead, use hidden method _make_twin_axes.
-        if self.twinx_child:
+        if self._twinx_child:
             raise ValueError('No more than two twin axes!')
-        if self.twinx_parent:
+        if self._twinx_parent:
             raise ValueError('This *is* a twin axes!')
         ax = self._make_twin_axes(sharex=self, projection=self.name)
         # Setup
@@ -2052,8 +2080,8 @@ class XYAxes(BaseAxes):
         ax.xspine_override = 'neither'
         ax.grid_override = False
         # Return
-        ax.twinx_parent = self
-        self.twinx_child = ax
+        ax._twinx_parent = self
+        self._twinx_child = ax
         return ax
 
     def twiny(self):
@@ -2063,9 +2091,9 @@ class XYAxes(BaseAxes):
         # Note: Cannot wrap twiny() because we want to use our own XYAxes,
         # not the matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
-        if self.twiny_child:
+        if self._twiny_child:
             raise ValueError('No more than two twin axes!')
-        if self.twiny_parent:
+        if self._twiny_parent:
             raise ValueError('This *is* a twin axes!')
         ax = self._make_twin_axes(sharey=self, projection=self.name)
         # Setup
@@ -2082,8 +2110,8 @@ class XYAxes(BaseAxes):
         ax.yspine_override = 'neither'
         ax.grid_override = False
         # Return
-        ax.twiny_parent = self
-        self.twiny_child = ax
+        ax._twiny_parent = self
+        self._twiny_child = ax
         return ax
 
     def inset(self, *args, **kwargs):
@@ -2100,16 +2128,17 @@ class XYAxes(BaseAxes):
             transform = self.transAxes
         label = kwargs.pop('label', 'inset_axes')
         # This puts the rectangle into figure-relative coordinates.
+        # TODO: Use default matplotlib attributes, instead of custom _insets
+        # and _inset_parent attribute?
         locator = self._make_inset_locator(bounds, transform)
         bb = locator(None, None)
-        ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        ax = maxes.Axes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
         # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         self._insets += [ax]
         ax._inset_parent = self
-        # Finally add zoom
-        # NOTE: Requirs version >=3.0
+        # Finally add zoom (NOTE: Requires version >=3.0)
         if zoom:
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
@@ -2157,7 +2186,7 @@ class XYAxes(BaseAxes):
         return (rectpatch, connects)
 
     def _make_inset_locator(self, bounds, trans):
-        """Helper function, coped from private matplotlib version."""
+        """Helper function, copied from private matplotlib version."""
         def inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
             bb = mtransforms.TransformedBbox(bbox, trans)
@@ -2243,24 +2272,20 @@ class PanelAxes(XYAxes):
         """Whether panel is "on"."""
         return self.get_visible() and self._visible_effective
 
-    def legend(self, handles, fill=True, **kwargs_override):
-        """"Fill the panel" with a legend. That is, draw a centered legend
-        and make the axes spines, ticks, etc. invisible."""
+    def legend(self, *args, fill=True, **kwargs):
+        """Optionally "fill the panel" with a legend. That is, draw a centered
+        legend and make the axes spines, ticks, etc. invisible."""
+        # Regular old inset legend
         if not fill:
-            # Do the normal thing
-            kwargs = kwargs_override
-        else:
-            # Allocate invisible axes for drawing legend.
-            # Returns the axes and the output of legend_factory().
-            self.invisible()
-            kwargs = {'borderaxespad': 0, 'frameon': False,
-                      'loc': 'upper center', 'bbox_transform': self.transAxes}
-            kwargs.update(kwargs_override)
-        return legend_factory(self, handles, **kwargs)
+            return super().legend(*args, **kwargs)
+        # Allocate invisible axes for drawing legend.
+        # Returns the axes and the output of legend_factory().
+        self.invisible()
+        kwdefault = {'borderaxespad': 0, 'frameon': False, 'loc': 'upper center', 'bbox_transform': self.transAxes}
+        kwargs.update(kwdefault)
+        return legend_factory(self, *args, **kwargs)
 
-    def colorbar(self, *args, fill=False, length=1,
-        space=0, hspace=None, wspace=None,
-        **kwargs):
+    def colorbar(self, *args, fill=True, length=1, **kwargs):
         """
         Fill the panel with colorbar.
 
@@ -2270,19 +2295,15 @@ class PanelAxes(XYAxes):
         then have panels accessible with the slice panel[i,j] instead
         of panel[i], for example.
         """
-        # Draw colorbar with arbitrary length relative to full length of the
-        # panel, and optionally *stacking* multiple colorbars
-        # Will always redraw an axes with new subspec
+        # Inset 'legend-style' colorbar
+        if not fill:
+            return super().colorbar(*args, **kwargs)
+        # Draw colorbar with arbitrary length relative to full length of panel
+        # space = _default(hspace, wspace, space) # flexible arguments
         self.invisible()
-        space = _default(hspace, wspace, space) # flexible arguments
         side = self._side
         figure = self.figure
         subspec = self.get_subplotspec()
-
-        # Create colorbar axes
-        # TODO: Re-implement stacked colorbars as stacked panels! Expand
-        # options there! Otherwise have to mess with widths manually, which
-        # is against philosophy of package.
         if side=='top': # this is ugly, and hard to implement with title, super title, and stuff
             raise NotImplementedError('Colorbars in upper panels are not allowed.')
         if length!=1:
@@ -2300,11 +2321,7 @@ class PanelAxes(XYAxes):
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subspec = gridspec[1]
-
-        # Allocate axes for drawing colorbar.
-        # Returns the axes and the output of colorbar_factory().
-        # WARNING: Using BaseAxes for the colorbar axes seems to cause bugs,
-        # because colorbar uses some internal methods wrapped by cmap_features!
+        # Get properties
         ax = figure.add_subplot(subspec, projection=None)
         if side in ['bottom','top']:
             outside, inside = 'bottom', 'top'
@@ -2320,6 +2337,7 @@ class PanelAxes(XYAxes):
             orientation  = 'vertical'
         self._colorbar_child = ax
         ax._colorbar_parent = self
+        # Make colorbar
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         return colorbar_factory(ax, *args, **kwargs)
 
@@ -3130,12 +3148,13 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     return legends[0] if len(legends)==1 else legends
 
 def colorbar_factory(ax, mappable, values=None,
-        orientation='horizontal', extend=None, extendlength=0.2,
+        orientation='horizontal', extend=None, extendlength=None,
         clabel=None, label=None,
         ctickminor=False, tickminor=None,
         cgrid=False, grid=None,
         ticklocation=None, cticklocation=None, ctickdir=None, tickdir='out',
-        clocator=None, locator=None, cminorlocator=None, minorlocator=None,
+        cticks=None, ticks=None, clocator=None, locator=None,
+        cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
         clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
         cformatter=None, formatter=None,
         cticklabels=None, ticklabels=None,
@@ -3174,7 +3193,7 @@ def colorbar_factory(ax, mappable, values=None,
         out-of-bounds data with a unique color). These are triangles by
         default. If ``None``, we try to use the ``extend`` attribute on the
         mappable object. If the attribute is unavailable, we use ``'neither'``.
-    extendlength : float or str, optional
+    extendlength : None or float or str, optional
         The length of the colorbar "extensions" in *physical units*.
         If float, units are inches. If string,
         units are interpreted by `~proplot.utils.units`.
@@ -3227,6 +3246,13 @@ def colorbar_factory(ax, mappable, values=None,
     --------
     `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
     `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, `~proplot.colortools.Norm`
+
+    Warning
+    -------
+    Colorbar axes must be of type `matplotlib.axes.Axes`,
+    not `~proplot.axes.BaseAxes` because colorbar uses some internal methods
+    that `~proplot.axes.BaseAxes` wraps using `cmap_features`, causing
+    errors due to new usage.
     """
     # Developer notes
     # * There are options on the colorbar object (cb.locator,
@@ -3251,10 +3277,10 @@ def colorbar_factory(ax, mappable, values=None,
     if isinstance(ax, BaseAxes):
         raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
     # Parse flexible input
-    clocator         = _default(locator, clocator)
+    clocator         = _default(ticks, cticks, locator, clocator)
     cgrid            = _default(grid, cgrid)
     ctickminor       = _default(tickminor, ctickminor)
-    cminorlocator    = _default(minorlocator, cminorlocator)
+    cminorlocator    = _default(minorticks, cminorticks, minorlocator, cminorlocator)
     cformatter       = _default(ticklabels, cticklabels, formatter, cformatter)
     clabel           = _default(label, clabel)
     clocator_kw      = _default(locator_kw, clocator_kw)
@@ -3376,27 +3402,28 @@ def colorbar_factory(ax, mappable, values=None,
             mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]/10000
 
     # Draw the colorbar
-    # NOTE: For whatever reason the only way to avoid bugs seems to be to pass
-    # the major formatter/locator to colorbar commmand and directly edit the
-    # minor locators/formatters; update_ticks after the fact ignores the major formatter
+    # NOTE: Only way to avoid bugs seems to be to pass the major formatter/locator
+    # to colorbar commmand and directly edit the minor locators/formatters;
+    # update_ticks after the fact ignores the major formatter.
+    # TODO: Why does ticklocation 'outer' and 'inner' sometimes work, but
+    # other times not work?
     # axis.set_major_locator(locators[0]) # does absolutely nothing
     # axis.set_major_formatter(cformatter)
     if orientation=='horizontal':
         axis = ax.xaxis
         scale = ax.figure.width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
+        # ic(scale)
     else:
         axis = ax.yaxis
         scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
-    extendlength = utils.units(extendlength)
+        # ic(scale)
+    extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
-    csettings.update({'extendfrac':extendlength}) # width of colorbar axes and stuff
     ticklocation = ticklocation or ctickdir or tickdir
     ticklocation = {'out':'outer', 'in':'inner'}.get(ticklocation, ticklocation)
-    cb = ax.figure.colorbar(mappable,
-            ticklocation=ticklocation,
-            ticks=locators[0],
-            format=cformatter,
-            **csettings)
+    csettings.update({'ticks':locators[0], 'format':cformatter,
+        'ticklocation':ticklocation, 'extendfrac':extendlength})
+    cb = ax.figure.colorbar(mappable, **csettings)
 
     # Make edges/dividers consistent with axis edges
     if cb.dividers is not None:
@@ -3460,5 +3487,6 @@ def colorbar_factory(ax, mappable, values=None,
         cb.solids.set_linewidth(0.2) # something small
         cb.solids.set_edgecolor('face')
         cb.solids.set_rasterized(False)
+    cb.ax.xaxis.set_ticks_position('bottom')
     return cb
 
