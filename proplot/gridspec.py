@@ -165,10 +165,10 @@ class FlexibleGridSpecBase(object):
         # Handle special hspace/wspace arguments, and just set the simple
         # left/right/top/bottom attributes
         wratios, hratios, edges_kw = self.spaces_as_ratios(**gridspec_kw)
-        edges_kw = {key:value for key,value in edges_kw.items()
-            if key not in ('nrows','ncols')} # cannot be modified
         self.set_width_ratios(wratios)
         self.set_height_ratios(hratios)
+        edges_kw = {key:value for key,value in edges_kw.items()
+            if key not in ('nrows','ncols')} # cannot be modified
         super().update(**edges_kw) # remaining kwargs should just be left/right/top/bottom
 
 class FlexibleGridSpec(FlexibleGridSpecBase, mgridspec.GridSpec):

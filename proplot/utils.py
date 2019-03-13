@@ -43,10 +43,8 @@ def _default(*args):
 # Decorators
 #------------------------------------------------------------------------------#
 def _timer(func):
-    """
-    A decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
+    """A decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         t = time.clock()
@@ -57,11 +55,8 @@ def _timer(func):
     return decorator
 
 def _logger(func):
-    """
-    A decorator that logs the activity of the script (it actually just prints it,
-    but it could be logging!)
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
+    """A decorator that logs the activity of the script (it actually just prints it,
+    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
@@ -70,11 +65,8 @@ def _logger(func):
     return decorator
 
 def _counter(func):
-    """
-    A decorator that counts and prints the number of times a function
-    has been executed.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
+    """ A decorator that counts and prints the number of times a function
+    has been executed. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         # decorator.count += 1
@@ -93,9 +85,7 @@ def _counter(func):
 # Accessible for user
 #------------------------------------------------------------------------------#
 def arange(min_, *args):
-    """
-    Duplicate behavior of `numpy.arange`, except with **inclusive endpoints**.
-    """
+    """Duplicate behavior of `numpy.arange`, except with **inclusive endpoints**."""
     # Optional arguments just like np.arange
     if len(args)==0:
         max_ = min_
@@ -123,9 +113,7 @@ def arange(min_, *args):
     return np.arange(min_, max_, step)
 
 def edges(values, axis=-1):
-    """
-    Get approximate edge values along arbitrary axis.
-    """
+    """Get approximate edge values along arbitrary axis."""
     # First permute
     values = np.array(values)
     values = np.swapaxes(values, axis, -1)

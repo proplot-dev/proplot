@@ -2,6 +2,9 @@
 # ProPlot global settings
 #-------------------------------------
 rcGlobals:
+    # Subplots
+    tight:      True
+    innertight: True # may mess up aspect ratios for very complex plots
     # Important settings
     # nbsetup:    True
     fontname:  # will be determined by OS in ProPlot
@@ -169,16 +172,19 @@ rcParams_new:
     gridminor.linewidth:
     # lonlatlines.linestyle: --
     # Gridspec
-    gridspec.axwidth:  2 # default width
-    gridspec.pad:      0.1 # padding around edges for tight layout
-    gridspec.innerpad: 0.15 # padding inside
-    gridspec.title:    0.2  # extra space for title/suptitle
-    gridspec.inner:    0.2  # just have ticks, no labels
-    gridspec.legend:   0.25 # default legend space (bottom of figure)
-    gridspec.cbar:     0.17 # default colorbar width
-    gridspec.ylab:     0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
-    gridspec.xlab:     0.55 # for horizontal text should have more space
-    gridspec.nolab:    0.15 # only ticks
+    gridspec.axwidth:    2     # default width
+    gridspec.innerpad:   0.05 # padding between main subplots and their panels
+    gridspec.outerpad:   0.1   # padding around edges for tight layout
+    gridspec.mainpad:    0.15  # padding between primary subplots
+    gridspec.titlespace: 0.2   # extra space for title/suptitle
+    gridspec.innerspace: 0.2   # just have ticks, no labels
+    gridspec.legwidth:   0.25  # default legend space (bottom of figure)
+    gridspec.cbarwidth:  0.17  # default colorbar width
+    gridspec.clegwidth:  0.12  # width of "legend" colorbars, i.e. colorbar insets
+    gridspec.cleglength: 0.48  # length of "legend" colorbars
+    gridspec.ylabspace:  0.7   # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
+    gridspec.xlabspace:  0.55  # for horizontal text should have more space
+    gridspec.nolabspace: 0.15  # only ticks
     gridspec.panelwidth: 0.45
     gridspec.panelspace: 0.15
 

@@ -94,18 +94,21 @@ units are interpreted by `~proplot.utils.units`):
 =======================  ==================================================================
 Key                      Description
 =======================  ==================================================================
-``gridspec.pad``         Padding around edges for tight subplot.
-``gridspec.innerpad``    Padding inside axes.
-``gridspec.title``       Vertical space for titles.
-``gridspec.legend``      Width of "legend" panels.
-``gridspec.cbar``        Width of "colorbar" panels.
-``gridspec.ylab``        Horizontal space between subplots alotted for *y*-labels.
-``gridspec.xlab``        Vertical space between subplots alotted for *x*-labels.
-``gridspec.nolab``       Space between subplots alotted for tick marks.
-``gridspec.inner``       Totally empty space between subplots.
+``gridspec.outerpad``    Padding around edges for tight subplot.
+``gridspec.mainpad``     Padding between main subplots.
+``gridspec.innerpad``    Padding between inner panels and their parents.
+``gridspec.titlespace``  Vertical space for titles.
+``gridspec.legwidth``    Width of "legend" panels.
+``gridspec.cbarwidth``   Width of "colorbar" panels.
+``gridspec.ylabspace``   Horizontal space between subplots alotted for *y*-labels.
+``gridspec.xlabspace``   Vertical space between subplots alotted for *x*-labels.
+``gridspec.nolabspace``  Space between subplots alotted for tick marks.
+``gridspec.innerspace``  Totally empty space between subplots.
 ``gridspec.axwidth``     Default width of each axes.
 ``gridspec.panelwidth``  Width of side panels.
 ``gridspec.panelspace``  Space between main axes and side panels.
+``gridspec.cleglength``  Default length for "inset" or "legend" colorbars.
+``gridspec.clegwidth``   Default length for "inset" or "legend" colorbars.
 =======================  ==================================================================
 
 
@@ -118,6 +121,8 @@ in bulk, or as shorthands for common settings with longer names.
 ==================  ==============================================================================================================
 Key                 Description
 ==================  ==============================================================================================================
+``tight``           Whether to auto-adjust figure bounds and subplot spacings.
+``innertight``      Whether to auto-adjust spacing for axes with inner panels.
 ``cycle``           The default color cycle name, used e.g. for lines.
 ``cmap``            The default colormap.
 ``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
@@ -190,25 +195,27 @@ if not os.path.exists(_default_rc):
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
-    # 'nbsetup':        [], # special toggle
-    'reso':           [], # geographic resolution
-    'cycle':          [], # special handling, passed through Cycle
-    'cmap':           [], # special handling, passed through Colormap
-    'lut':            ['image.lut'],
-    'facecolor':      ['axes.facecolor'], # simple alias
-    'hatch':          ['axes.hatch'], # boolean toggles
-    'grid':           ['axes.grid'],
-    'geogrid':        ['axes.geogrid'], # mimicks syncing with axes.grid
-    'gridminor':      ['axes.gridminor'],
-    'color':          ['axes.labelcolor', 'axes.edgecolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'margin':         ['axes.xmargin', 'axes.ymargin'],
-    'fontname':       ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
-    'small':          ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
-    'large':          ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
-    'linewidth':      ['axes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
-    'ticklen' :       ['xtick.major.size', 'ytick.major.size'],
-    'tickdir':        ['xtick.direction',  'ytick.direction'],
-    'tickpad':        ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
+    # 'nbsetup':    [], # special toggle
+    'tight':      [],
+    'innertight': [],
+    'reso':       [], # geographic resolution
+    'cycle':      [], # special handling, passed through Cycle
+    'cmap':       [], # special handling, passed through Colormap
+    'lut':        ['image.lut'],
+    'facecolor':  ['axes.facecolor'], # simple alias
+    'hatch':      ['axes.hatch'], # boolean toggles
+    'grid':       ['axes.grid'],
+    'geogrid':    ['axes.geogrid'], # mimicks syncing with axes.grid
+    'gridminor':  ['axes.gridminor'],
+    'color':      ['axes.labelcolor', 'axes.edgecolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'margin':     ['axes.xmargin', 'axes.ymargin'],
+    'fontname':   ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
+    'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
+    'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
+    'linewidth':  ['axes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
+    'ticklen' :   ['xtick.major.size', 'ytick.major.size'],
+    'tickdir':    ['xtick.direction',  'ytick.direction'],
+    'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
     # Geography
     'land':         [],
     'ocean':        [],
@@ -238,7 +245,10 @@ _rc_names_new = {
     'collabel.fontsize', 'collabel.weight', 'collabel.color',
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonlines', 'geogrid.latlines',
-    'gridspec.pad', 'gridspec.innerpad', 'gridspec.title', 'gridspec.inner', 'gridspec.legend', 'gridspec.cbar', 'gridspec.ylab', 'gridspec.xlab', 'gridspec.nolab', 'gridspec.axwidth', 'gridspec.panelwidth', 'gridspec.panelspace',
+    'gridspec.mainpad', 'gridspec.innerpad', 'gridspec.outerpad', 'gridspec.titlespace',
+    'gridspec.innerspace',
+    'gridspec.legwidth', 'gridspec.cbarwidth', 'gridspec.ylabspace', 'gridspec.xlabspace', 'gridspec.nolabspace',
+    'gridspec.axwidth', 'gridspec.panelwidth', 'gridspec.panelspace', 'gridspec.cleglength', 'gridspec.clegwidth',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
 # way less verbose.

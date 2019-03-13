@@ -158,9 +158,7 @@ _map_disabled_methods = (
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
 def _parse_args(args):
-    """
-    Helper function for `check_edges` and `check_centers`.
-    """
+    """Helper function for `check_edges` and `check_centers`."""
     # Sanitize input
     if len(args)>2:
         Zs = args[2:]
@@ -766,19 +764,22 @@ class BaseAxes(maxes.Axes):
         self._spany = spany
         self._hatch = None # background hatching
         self._zoom = None  # if non-empty, will make invisible
-        self._insets = []  # add to these later
+        # Children
         self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
         self._colorbar_parent = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
+        self._insets = []  # add to these later
         self._inset_parent = None  # change this later
-        self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
-        self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
-        # Minor
+        # Public children
         self.dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
         self.dualx_scale = None
         self.twinx_child = None
         self.twiny_child = None
         self.twinx_parent = None
         self.twiny_parent = None
+        # Misc
+        self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
+        self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
+        self._visible_effective = True
 
         # Call parent
         super().__init__(*args, **kwargs)
@@ -796,13 +797,13 @@ class BaseAxes(maxes.Axes):
         # Number and size
         if isinstance(self, maxes.SubplotBase):
             nrows, ncols, subspec = self._topmost_subspec()
-            self._yspan = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
-            self._xspan = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
+            self._yrange = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
+            self._xrange = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
             self._nrows = 1 + nrows // 2 # remember, we have rows masquerading as empty spaces!
             self._ncols = 1 + ncols // 2
         else:
-            self._yspan = None
-            self._xspan = None
+            self._yrange = None
+            self._xrange = None
             self._nrows = None
             self._ncols = None
         self.number = number # for abc numbering
@@ -869,14 +870,14 @@ class BaseAxes(maxes.Axes):
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
         # Share vertical panel x-axes with *eachother*
-        if self.leftpanel and sharex.leftpanel:
+        if self.leftpanel.on() and sharex.leftpanel.on():
             self.leftpanel._sharex_setup(sharex.leftpanel, level)
-        if self.rightpanel and sharex.rightpanel:
+        if self.rightpanel.on() and sharex.rightpanel.on():
             self.rightpanel._sharex_setup(sharex.rightpanel, level)
         # Share horizontal panel x-axes with *sharex*
-        if self.bottompanel and self.bottompanel._share:
+        if self.bottompanel.on() and self.bottompanel._share:
             self.bottompanel._sharex_setup(sharex, level)
-        if self.toppanel and self.toppanel._share:
+        if self.toppanel.on() and self.toppanel._share:
             self.toppanel._sharex_setup(sharex, level)
         # Builtin features
         self._sharex = sharex
@@ -900,14 +901,14 @@ class BaseAxes(maxes.Axes):
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
         # Share horizontal panel y-axes with *eachother*
-        if self.bottompanel and sharey.bottompanel:
+        if self.bottompanel.on() and sharey.bottompanel.on():
             self.bottompanel._sharey_setup(sharey.bottompanel, level)
-        if self.toppanel and sharey.toppanel:
+        if self.toppanel.on() and sharey.toppanel.on():
             self.toppanel._sharey_setup(sharey.toppanel, level)
         # Share vertical panel y-axes with *sharey*
-        if self.leftpanel and self.leftpanel._share:
+        if self.leftpanel.on() and self.leftpanel._share:
             self.leftpanel._sharey_setup(sharey, level)
-        if self.rightpanel and self.rightpanel._share:
+        if self.rightpanel.on() and self.rightpanel._share:
             self.rightpanel._sharey_setup(sharey, level)
             # sharey = self.leftpanel._sharey or self.leftpanel
         # Builtin features
@@ -1008,12 +1009,9 @@ class BaseAxes(maxes.Axes):
             transform = self.transAxes
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
-    def set_visible(self, b):
-        """Make axes invisible, and add hidden attribute."""
-        super().set_visible(b)
-
     def invisible(self):
         """Make axes invisible, but children visible."""
+        self._visible_effective = False
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
@@ -1066,6 +1064,7 @@ class BaseAxes(maxes.Axes):
     # The title position can be a mix of 'l/c/r' and 'i/o'
     def fancy_update(self, title=None, abc=None,
         suptitle=None, collabels=None, rowlabels=None, # label rows and columns
+        top=True, # nopanel optionally puts title and abc label in main axes
         ):
         """
         Function for formatting axes titles and labels.
@@ -1081,6 +1080,10 @@ class BaseAxes(maxes.Axes):
             If `number` is >26, labels will loop around to a, ..., z, aa,
             ..., zz, aaa, ..., zzz, ... God help you if you ever need that
             many labels.
+        top : bool, optional
+            Whether to try to put title and a-b-c label above the top
+            axes panel, if it exists (``True``), or to always put them on
+            the main subplot (``False``). Defaults to ``True``.
         rowlabels, colllabels : None or list of str, optional
             The subplot row and column labels. If list, length must match
             the number of subplot rows, columns.
@@ -1159,8 +1162,14 @@ class BaseAxes(maxes.Axes):
                 'weight':    'title.weight',
                 'fontname':  'fontname'
                 }, all=True)
-            kw = self._parse_title_args(**kw)
-            self.title = self._update_text(self.title, {'text':title, 'visible':True, **kw})
+            if top and self.toppanel.on():
+                ax = self.toppanel
+                obj = self.toppanel.title
+            else:
+                ax = self
+                obj = self.title
+            kw = obj.axes._parse_title_args(**kw)
+            ax.title = obj.axes._update_text(obj, {'text':title, 'visible':True, **kw})
 
         # Create axes numbering
         if self.number is not None and abc:
@@ -1180,11 +1189,18 @@ class BaseAxes(maxes.Axes):
                 'color':     'abc.color',
                 'fontname':  'fontname'
                 }, all=True)
-            kw = self._parse_title_args(abc=True, **kw)
-            self.abc = self._update_text(self.abc, {'text':text, 'visible':True, **kw})
-        elif getattr(self, 'abc', None) and not abc and abc is not None:
-            # Hide
-            self.abc.set_visible(False)
+            if top and self.toppanel.on():
+                ax = self.toppanel
+                obj = self.toppanel.abc
+            else:
+                ax = self
+                obj = self.abc
+            kw = ax._parse_title_args(abc=True, **kw)
+            ax.abc = ax._update_text(obj, {'text':text, 'visible':True, **kw})
+        else:
+            for ax in (self, self.toppanel):
+                if ax and ax.abc and not abc and abc is not None:
+                    ax.abc.set_visible(False)
 
     # Create legend creation method
     def legend(self, *args, **kwargs):
@@ -1521,8 +1537,8 @@ class XYAxes(BaseAxes):
             self.figure._span_labels.append(axis)
         # Get the 'edge' we want to share (bottom row, or leftmost column),
         # and then finding the coordinates for the spanning axes along that edge
-        span = lambda ax: getattr(ax, f'_{name}span')
-        edge = lambda ax: getattr(ax, '_yspan')[1] if name=='x' else getattr(ax, '_xspan')[0]
+        span = lambda ax: getattr(ax, f'_{name}range')
+        edge = lambda ax: getattr(ax, '_yrange')[1] if name=='x' else getattr(ax, '_xrange')[0]
         # Identify the *main* axes spanning this edge, and if those axes have
         # a panel and are shared with it (i.e. has a _sharex/_sharey attribute
         # declared with _sharex_panels), point to the panel label
@@ -2165,7 +2181,10 @@ class EmptyPanel(object):
         return False # it's empty, so this is 'falsey'
 
     def __getattr__(self, attr, *args):
-        raise AttributeError('Panel does not exist.')
+        if attr=='on': # mimicks on() function
+            return (lambda : False)
+        else:
+            raise AttributeError('Panel does not exist.')
 
 class PanelAxes(XYAxes):
     """
@@ -2220,6 +2239,10 @@ class PanelAxes(XYAxes):
         if invisible:
             self.invisible()
 
+    def on(self):
+        """Whether panel is "on"."""
+        return self.get_visible() and self._visible_effective
+
     def legend(self, handles, fill=True, **kwargs_override):
         """"Fill the panel" with a legend. That is, draw a centered legend
         and make the axes spines, ticks, etc. invisible."""
@@ -2260,8 +2283,10 @@ class PanelAxes(XYAxes):
         # TODO: Re-implement stacked colorbars as stacked panels! Expand
         # options there! Otherwise have to mess with widths manually, which
         # is against philosophy of package.
+        if side=='top': # this is ugly, and hard to implement with title, super title, and stuff
+            raise NotImplementedError('Colorbars in upper panels are not allowed.')
         if length!=1:
-            if side in ['bottom','top']:
+            if side in ['bottom']:
                 gridspec = FlexibleGridSpecFromSubplotSpec(
                         nrows=1, ncols=3, wspace=0, hspace=space,
                         subplot_spec=subspec,
@@ -2275,7 +2300,6 @@ class PanelAxes(XYAxes):
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subspec = gridspec[1]
-            self.set_visible(False)
 
         # Allocate axes for drawing colorbar.
         # Returns the axes and the output of colorbar_factory().
@@ -2827,10 +2851,8 @@ class BasemapAxes(MapAxes):
         #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
         # * For now will enforce that map plots *always* have background whereas
         #   axes plots can have transparent background
-        # kw_face = rc.fill({'facecolor': 'axes.facecolor'})
-        # kw_edge = rc.fill({'linewidth': 'axes.linewidth', 'color': 'axes.edgecolor'})
-        kw_face = rc.fill({'facecolor': 'facecolor'})
-        kw_edge = rc.fill({'linewidth': 'linewidth', 'edgecolor': 'color'})
+        kw_face = rc.fill({'facecolor': 'axes.facecolor'})
+        kw_edge = rc.fill({'linewidth': 'axes.linewidth', 'edgecolor': 'axes.edgecolor'})
         self.axesPatch = self.patch # bugfix or something
         if self.m.projection in self._proj_non_rectangular:
             self.patch.set_alpha(0) # make patch invisible

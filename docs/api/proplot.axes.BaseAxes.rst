@@ -24,7 +24,6 @@ BaseAxes
       ~BaseAxes.legend
       ~BaseAxes.plot
       ~BaseAxes.scatter
-      ~BaseAxes.set_visible
       ~BaseAxes.text
 
    .. rubric:: Attributes Documentation
@@ -41,5 +40,4 @@ BaseAxes
    .. automethod:: legend
    .. automethod:: plot
    .. automethod:: scatter
-   .. automethod:: set_visible
    .. automethod:: text
