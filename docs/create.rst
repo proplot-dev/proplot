@@ -56,8 +56,8 @@ Smarter subplot layout
 If you specify just one of `width`, `height`, `axwidth` (fixes
 figure width), or `axheight` (fixes figure height), the unspecified
 dimension will be **scaled** such that the top-left subplot has aspect
-ratio `aspect`. **Spacing and panel widths are held fixed** during
-this scaling.
+ratio `aspect` (inter-subplot spaces and panel widths are held fixed** during
+this scaling).
 
 This is accomplished with the new `~proplot.gridspec.FlexibleGridSpec` class, subclassed
 from matplotlib’s `~matplotlib.gridspec.GridSpec` class. The “actual” `wspace` and
@@ -90,8 +90,10 @@ inter-subplot spacings. Since your font size is specified in points
 other subplots where it didn’t before*.
 
 The new `~proplot.figure.FigureBase.smart_tight_layout` method draws a tight bounding box that
-**preserves inter-subplot spacing, panel widths, and subplot aspect
-ratios**. It does so by letting either the height or width dimension of the figure vary;
+**preserves panel widths and subplot aspect**. Not only that, it will also
+adjust the underlying `~matplotlib.gridspec.GridSpec` objects to that there is **just enough space between subplots to prevent overlap** -- no overlap, and no excessive whitespace.
+
+It does so by letting either the height or width dimension of the figure vary;
 by default, the height is allowed to vary. If you instead specify a fixed figure
 size, the aspect ratios of subplots will vary -- but inter-subplot spacing and panel widths
 will still be preserved.

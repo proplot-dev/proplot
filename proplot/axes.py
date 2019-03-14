@@ -3,8 +3,10 @@
 The axes subclasses central to this library, plus the enhanced
 colorbar and legend functions.
 
-You should focus on the `format` methods: `BaseAxes.format`,
-`XYAxes.format`, and `CartopyAxes.format` and `BasemapAxes.format`.
+You should focus on the ``format`` and ``fancy_update`` methods:
+`BaseAxes.format`, `BaseAxes.fancy_update`, `XYAxes.fancy_update`,
+and `CartopyAxes.fancy_update` and `BasemapAxes.fancy_update`.
+The `BaseAxes.format` method calls the ``fancy_update`` methods in turn.
 These methods are your one-stop-shop for changing axes settings like
 *x* and *y* axis limits, axis labels, tick locations, tick label
 format, grid lines, scales, titles, a-b-c labelling, adding
@@ -779,9 +781,10 @@ class BaseAxes(maxes.Axes):
         self._dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
         self._dualx_scale = None
         # Misc
+        self._visible_effective = True
         self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
-        self._visible_effective = True
+        self._abc_inside = False
 
         # Call parent
         super().__init__(*args, **kwargs)
@@ -989,7 +992,9 @@ class BaseAxes(maxes.Axes):
                 ha = 'right'
             # Record _title_inside so we can automatically deflect suptitle
             # If *any* object is outside (title or abc), want to deflect it up
-            if not abc:
+            if abc:
+                self._abc_inside = ('i' in pos)
+            else:
                 self._title_inside = ('i' in pos)
             if 'o' in pos:
                 y = 1 # leave it alone, may be adjusted during draw-time to account for axis label (fails to adjust for tick labels; see notebook)
@@ -1059,8 +1064,17 @@ class BaseAxes(maxes.Axes):
             else:
                 rc_kw[key_fixed] = value
         rc._getitem_mode = 0 # might still be non-zero if had error
+        # Apply custom settings, potentially
+        # TODO: Put this somewhere else?
+        kw = {}
+        if isinstance(self, PanelAxes) and self._flush:
+            if self._side=='right':
+                kw.update({'yloc':'right', 'ylabelloc':'right', 'yticklabelloc':'right'})
+            elif self._side=='top':
+                kw.update({'xloc':'top', 'ylabelloc':'top', 'yticklabelloc':'top'})
+        kw.update(kw_extra)
         with rc._context(rc_kw, mode=2):
-            self.fancy_update(**kw_extra)
+            self.fancy_update(**kw)
 
     # New convenience feature
     # The title position can be a mix of 'l/c/r' and 'i/o'
@@ -1115,7 +1129,7 @@ class BaseAxes(maxes.Axes):
         See also
         --------
         `~proplot.subplots.subplots`, `~proplot.rcmod`,
-        `XYAxes.format`, `BasemapAxes.format`, `CartopyAxes.format`
+        `XYAxes.fancy_update`, `BasemapAxes.fancy_update`, `CartopyAxes.fancy_update`
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -1170,6 +1184,9 @@ class BaseAxes(maxes.Axes):
             else:
                 ax = self
                 obj = self.title
+            if ax._twinx_child: # always on *top*!
+                ax = ax._twinx_child
+                obj = ax._twinx_child.title
             kw = obj.axes._parse_title_args(**kw)
             ax.title = obj.axes._update_text(obj, {'text':title, 'visible':True, **kw})
 
@@ -1177,10 +1194,12 @@ class BaseAxes(maxes.Axes):
         if self.number is not None and abc:
             # Position and format
             abcformat = rc.get('abc.format')
-            if 'a' not in abcformat:
+            if not ('a' in abcformat or 'A' in abcformat):
                 raise ValueError(f'Invalid abcformat {abcformat}.')
-            abcedges = abcformat.split('a')
+            abcedges = abcformat.split('a' if 'a' in abcformat else 'A')
             text = abcedges[0] + _ascii(self.number-1) + abcedges[-1]
+            if 'A' in abcformat:
+                text = text.upper()
             # Settings, make
             kw = rc.fill({
                 'pos':       'abc.pos',
@@ -1197,6 +1216,9 @@ class BaseAxes(maxes.Axes):
             else:
                 ax = self
                 obj = self.abc
+            if ax._twinx_child: # always on *top*!
+                ax = ax._twinx_child
+                obj = ax._twinx_child.title
             kw = ax._parse_title_args(abc=True, **kw)
             ax.abc = ax._update_text(obj, {'text':text, 'visible':True, **kw})
         else:
@@ -1210,18 +1232,22 @@ class BaseAxes(maxes.Axes):
         return legend_factory(self, *args, **kwargs)
 
     # Inset colorbar, meant to mimick legend
-    # TODO: Account for 'extend' maybe
-    def colorbar(self, *args, loc=None, extendlength=None, xspace=None, pad=None, width=None, length=None, **kwargs):
+    def colorbar(self, *args, loc=None, extendlength=None, xspace=None,
+        label=None, clabel=None, pad=None, width=None, length=None, **kwargs):
         """Add *inset* colorbar, sort of like a legend."""
         # Default props
         loc = _default(loc, rc.get('colorbar.loc'))
         extend = units(_default(extendlength, rc.get('colorbar.extend')))
-        xspace = units(_default(pad, rc.get('colorbar.xspace')))/self.width # for x label
         length = units(_default(pad, rc.get('colorbar.length')))/self.width
         width = units(_default(pad, rc.get('colorbar.width')))/self.height
         pad = units(_default(pad, rc.get('colorbar.axespad')))
         xpad = pad/self.width
         ypad = pad/self.height
+        # Space for labels
+        xspace = units(_default(xspace, rc.get('colorbar.xspace'))) # for x label
+        if not label and not clabel:
+            xspace -= 1.2*rc.get('font.size')/72
+        xspace /= self.height
         # Get location in axes-relative coordinates
         if loc in (1,'upper right'):
             bounds = (1-xpad-length, 1-ypad-width, length, width)
@@ -1244,7 +1270,7 @@ class BaseAxes(maxes.Axes):
         ax = maxes.Axes(self.figure, bb.bounds, zorder=5)
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
-        kwargs.update({'ticklocation':'bottom', 'extendlength':extend})
+        kwargs.update({'ticklocation':'bottom', 'extendlength':extend, 'label':label, 'clabel':clabel})
         return colorbar_factory(ax, *args, **kwargs)
 
     # Fancy wrappers
@@ -1897,7 +1923,7 @@ class XYAxes(BaseAxes):
             axis.set_minor_formatter(mticker.NullFormatter())
             # Update margins
             if margin is not None:
-                axis.margins(**{name:margin})
+                self.margins(**{name:margin})
 
             # Ensure no out-of-bounds ticks! Even set_smart_bounds() fails sometimes.
             # Notes
@@ -2264,6 +2290,7 @@ class PanelAxes(XYAxes):
             raise ValueError(f'Invalid panel side "{side}".')
         self._share = share
         self._side = side
+        self._flush = False # should panel always be flush against subplot?
         self._parent = parent # used when declaring parent
         if invisible:
             self.invisible()
@@ -2280,10 +2307,12 @@ class PanelAxes(XYAxes):
             return super().legend(*args, **kwargs)
         # Allocate invisible axes for drawing legend.
         # Returns the axes and the output of legend_factory().
+        loc = {'bottom':'upper center', 'right':'center left',
+               'left':'center right',   'top':'lower center'}[self._side]
         self.invisible()
-        kwdefault = {'borderaxespad': 0, 'frameon': False, 'loc': 'upper center', 'bbox_transform': self.transAxes}
-        kwargs.update(kwdefault)
-        return legend_factory(self, *args, **kwargs)
+        kw = {'borderaxespad':0, 'frameon':False, 'loc':loc, 'bbox_transform':self.transAxes}
+        kw.update(kwargs)
+        return legend_factory(self, *args, **kw)
 
     def colorbar(self, *args, fill=True, length=1, **kwargs):
         """Optionally fill the panel with a colorbar. Use `length` to change
@@ -2293,8 +2322,7 @@ class PanelAxes(XYAxes):
             return super().colorbar(*args, **kwargs)
         # Draw colorbar with arbitrary length relative to full length of panel
         # TODO: Require the stacked colorbar thing to be declared right away! Will
-        # then have panels accessible with the slice panel[i,j] instead
-        # of panel[i], for example.
+        # then have panels accessible with the slice panel[i,j] instead of panel[i].
         # space = _default(hspace, wspace, space) # flexible arguments
         self.invisible()
         side = self._side
@@ -2305,14 +2333,14 @@ class PanelAxes(XYAxes):
         if length!=1:
             if side in ['bottom']:
                 gridspec = FlexibleGridSpecFromSubplotSpec(
-                        nrows=1, ncols=3, wspace=0, hspace=space,
+                        nrows=1, ncols=3, wspace=0, #hspace=space,
                         subplot_spec=subspec,
                         width_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subspec = gridspec[1]
             elif side in ['left','right']:
                 gridspec = FlexibleGridSpecFromSubplotSpec(
-                        nrows=3, ncols=1, wspace=space, hspace=0,
+                        nrows=3, ncols=1, hspace=0, #wspace=space,
                         subplot_spec=subspec,
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
@@ -2331,9 +2359,9 @@ class PanelAxes(XYAxes):
                 outside, inside = inside, outside
             ticklocation = outside
             orientation  = 'vertical'
-        self._colorbar_child = ax
-        ax._colorbar_parent = self
         # Make colorbar
+        self._colorbar_child = ax # these are so far unused
+        ax._colorbar_parent = self
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         return colorbar_factory(ax, *args, **kwargs)
 
@@ -2368,7 +2396,8 @@ class MapAxes(BaseAxes):
         Parameters
         ----------
         labels : None or bool, optional
-            Whether to draw longitude and latitude labels.
+            Whether to draw longitude and latitude labels. If ``None``, read
+            from the configuration.
         latmax : None or float, optional
             Meridian gridlines are cut off poleward of this latitude. If
             ``None``, read from the configuration.
@@ -2549,7 +2578,9 @@ class CartopyAxes(MapAxes, GeoAxes):
                 centerlat = 90
             elif name in self._proj_sp:
                 centerlat = -90
-            self.set_extent([-180, 180, boundinglat, centerlat], PlateCarree()) # use platecarree transform
+            eps = 1e-3 # had bug with full -180, 180 range when lon_0 was not 0
+            center = self.projection.proj4_params['lon_0']
+            self.set_extent([center - 180 + eps, center + 180 - eps, boundinglat, centerlat], PlateCarree()) # use platecarree transform
             self.set_boundary(projs.Circle(self._n_bounds), transform=self.transAxes)
             # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
 
@@ -2657,6 +2688,8 @@ class CartopyAxes(MapAxes, GeoAxes):
                 gl.yformatter = LATITUDE_FORMATTER
                 gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
                 gl.ylabels_left, gl.ylabels_right = latlabels[:2]
+            else:
+                self._gridliner_on = False
 
         # Geographic features
         # WARNING: Seems cartopy features can't be updated!
@@ -2696,7 +2729,7 @@ class CartopyAxes(MapAxes, GeoAxes):
             # Customize
             # For 'lines', need to specify edgecolor and facecolor individually
             # See: https://github.com/SciTools/cartopy/issues/803
-            kw = dict(rc[name])
+            kw = dict(rc.get(name, nodict=False))
             if name in ('coast', 'rivers', 'borders', 'innerborders'):
                 kw['edgecolor'] = kw.pop('color')
                 kw['facecolor'] = 'none'
@@ -2865,8 +2898,8 @@ class BasemapAxes(MapAxes):
         #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
         # * For now will enforce that map plots *always* have background whereas
         #   axes plots can have transparent background
-        kw_face = rc.fill({'facecolor': 'axes.facecolor'})
-        kw_edge = rc.fill({'linewidth': 'axes.linewidth', 'edgecolor': 'axes.edgecolor'})
+        kw_face = rc.fill({'facecolor': 'axes.facecolor'}, all=True)
+        kw_edge = rc.fill({'linewidth': 'axes.linewidth', 'edgecolor': 'axes.edgecolor'}, all=True)
         self.axesPatch = self.patch # bugfix or something
         if self.m.projection in self._proj_non_rectangular:
             self.patch.set_alpha(0) # make patch invisible
@@ -2960,7 +2993,7 @@ class BasemapAxes(MapAxes):
                 continue
             if getattr(self, f'_{name}', None): # already drawn
                 continue
-            feat = getattr(self.m, method)(ax=self, **rc[name])
+            feat = getattr(self.m, method)(ax=self, **rc.get(name, nodict=False))
             setattr(self, f'_{name}', feat)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
@@ -3044,17 +3077,22 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
-    if handles is None:
+    if handles is None and not (isinstance(ax, PanelAxes) and not ax.on()):
         handles = ax.get_legend_handles_labels()[0]
+        if not handles:
+            raise ValueError('No axes artists with labels were found.')
+    elif not handles:
+        raise ValueError('You must pass a list of handles.')
     for i,handle in enumerate(handles):
-        if hasattr(handle, 'cmap'):
-            # Make sure we sample the *center* of the colormap
-            warnings.warn('Getting legend entry from colormap.')
-            size = np.mean(handle.get_sizes())
-            handles[i] = ax.scatter([0], [0],
-                                 markersize=size,
-                                 color=[handle.cmap(0.5)],
-                                 label=handle.get_label())
+        if not hasattr(handle, 'cmap'):
+            continue
+        # Make sure we sample the *center* of the colormap
+        warnings.warn('Getting legend entry from colormap.')
+        size = np.mean(handle.get_sizes())
+        handles[i] = ax.scatter([0], [0],
+                                markersize=size,
+                                color=[handle.cmap(0.5)],
+                                label=handle.get_label())
     # handles = np.array(handles).squeeze().tolist()
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
@@ -3102,10 +3140,10 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     # using the original legend command
     # Means we also have to overhaul some settings
     else:
-        # overridden = []
         legends = []
         for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
             prop = kwargs.pop(override, None)
+        # overridden = []
         # if prop is not None:
         #     overridden.append(override)
         # if overridden:
@@ -3121,7 +3159,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
         if order=='F':
             raise NotImplementedError(f'When align=False, proplot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
         for h,hs in enumerate(handles):
-            bbox = mtransforms.Bbox([[0,1-(h+1)*interval],[1,1-h*interval]])
+            bbox = mtransforms.Bbox([[0, 1-(h+1)*interval], [1, 1-h*interval]])
             leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs),
                 loc='center',
                 frameon=False,
@@ -3257,11 +3295,11 @@ def colorbar_factory(ax, mappable, values=None,
     #   when fixing ticks. Don't use this functionality because not necessary
     #   for us and is missing many features, e.g. minorlocators/minorformatters.
     #   Also is different syntax.
-    # * There is an INSANELY WEIRD problem with colorbars when simultaneously
+    # * There is an insanely weird problem with colorbars when simultaneously
     #   passing levels and norm object to a mappable; fixed by passing
-    #   vmin/vmax INSTEAD OF levels.
+    #   vmin/vmax instead of levels.
     #   (see: https://stackoverflow.com/q/40116968/4970632).
-    # * Problem is, often WANT levels instead of vmin/vmax, while simultaneously
+    # * Problem is, often want levels instead of vmin/vmax, while simultaneously
     #   using a Normalize (for example) to determine colors between the levels
     #   (see: https://stackoverflow.com/q/42723538/4970632).
     # * Workaround is to make sure locators are in vmin/vmax range exclusively;
@@ -3408,11 +3446,9 @@ def colorbar_factory(ax, mappable, values=None,
     if orientation=='horizontal':
         axis = ax.xaxis
         scale = ax.figure.width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
-        # ic(scale)
     else:
         axis = ax.yaxis
         scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
-        # ic(scale)
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
     ticklocation = ticklocation or ctickdir or tickdir

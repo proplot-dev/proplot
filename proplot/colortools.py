@@ -1766,8 +1766,8 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     else:
         _, fs, fl = to_xyz(to_rgb(fade), space)
     index = slice(None,None,-1) if reverse else slice(None)
-    return PerceptuallyUniformColormap.from_hsl(name, h, [s,fs][index], [l,fl][index],
-            space=space, **kwargs)
+    return PerceptuallyUniformColormap.from_hsl(name, h,
+            [fs,s][index], [fl,l][index], space=space, **kwargs)
 
 def clip_colors(colors, mask=True, gray=0.2, verbose=False):
     """

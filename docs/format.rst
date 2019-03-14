@@ -76,30 +76,24 @@ and some magic :ref:`rcGlobals` settings that apply to groups of other
 settings and keep them synced – e.g., tick, spine, and tick label
 colors. The global settings are tabulated in the `~proplot.rcmod` documentation.
 
-To modify any :ref:`rcGlobals` or `~matplotlib.rcParams` settings, you have three options:
+To modify any :ref:`rcGlobals` or `~matplotlib.rcParams` settings, you have four options:
 
-1. Change one global setting using ``plot.rc.name = value`` or ``plot.rc['name'] = value``.
-   Note that, for `~matplotlib.rcParams` settings with ‘dots’ in their name, you will
+1. Change the default settings for good by creating a `.proplotrc` file in your home folder. For more information, see the `~proplot.rcmod` documentation.
+2. Change one global setting using ``plot.rc.name = value`` or ``plot.rc['name'] = value``.
+   Note that, for settings with ‘dots’ in their name, you will
    have to use ``plot.rc['category.name'] = value``
-2. Update several global settings at once using
+3. Update several global settings at once using
    ``plot.rc.update({'name1':value1, 'name2':value2})`` or
    ``plot.rc.update(name1=value1, name2=value2)``, just like you would
    update a dictionary.
-3. Change local settings using
+4. Change local settings using
    ``ax.format(rc_kw={'name1':value1, 'name2':value2})`` or
-   ``ax.format(name1=value1, name2=value2)``. Note that, for this last
-   option, *the rc settings will only be applied to that specific subplot*. This can be convenient for (e.g.) drawing focus to a particular subplot by changing
-   its color.
-
-Note some of these settings can also be controlled using, e.g.,
-``ax.format(title_kw={'weight':'bold'})`` instead of
-``ax.format(rc_kw={'titleweight':'bold'})``.
+   ``ax.format(name1=value1, name2=value2)``. In this case, *the rc settings will only be applied to that specific axes*. This can be convenient for (e.g.) drawing focus to a particular subplot by changing
+   its color. If the "rc" setting you want to change has a dot in its name, simply omit the dot -- for example, the custom ProPlot setting ``title.pos`` can be changed with ``ax.format(titlepos='ci')``.
 
 To access a single setting, use ``rc.name`` or ``rc['name']``. To
 access a group of setting by category name, use e.g. ``rc.axes``
-and a **dictionary** will be returned.
+and a dictionary of settings will be returned.
 
-To reset everything to the default state, use `~proplot.rcmod.rc_configurator.reset`. By
-default, **settings are reset every time a figure is drawn** -- that is, when
-a figure is rendered by the matplotlib backend or saved to file.
+To reset everything to the default state, use `~proplot.rcmod.rc_configurator.reset`. By default, settings are reset every time a figure is drawn -- that is, when a figure is rendered by the matplotlib backend or saved to file.
 

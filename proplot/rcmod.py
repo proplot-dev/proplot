@@ -747,10 +747,10 @@ class rc_configurator(object):
             self._getitem_mode = orig
         return props_out
 
-    def get(self, key, all=True):
+    def get(self, key, all=True, nodict=True):
         """Get single value, never a dictionary from category of values, and
         look inside all possible dictionaries."""
-        self._no_dict = True
+        self._no_dict = nodict
         if all:
             orig = self._getitem_mode
             self._getitem_mode = 0

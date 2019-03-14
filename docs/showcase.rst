@@ -1,20 +1,13 @@
 
-Tutorial
-========
-
-This is a tutorial of “ProPlot”, a matplotlib wrapper I made that helps
-to create beautiful, publication-quality graphics. Not just intended for
-atmospheric scientists – this is for everyone! To differentiate from
-pyplot, we import it as ``plot``.
-
 APIS
 ====
 
 Matplotlib has two APIs – the “pyplot” API (which is MATLAB-like), and
 the “object-oriented” API (which is more “pythonic”, more clear, more
-flexible, and you should consider using!). This package is not a pyplot
-replacement – it adds to the “object-oriented” API by subclassing
-matplotlib Artists classes, like ``Axes`` and ``Figure``.
+flexible, and you should consider using!). Contrary to the similar
+names, this package is not meant to be a pyplot replacement – it adds to
+the “object-oriented” API by subclassing matplotlib Artists classes,
+like ``Axes`` and ``Figure``.
 
 .. code:: ipython3
 
@@ -26,10 +19,14 @@ matplotlib Artists classes, like ``Axes`` and ``Figure``.
 
 
 
+.. parsed-literal::
+
+    Text(0.5, 1.0, 'PyPlot API (discouraged)')
 
 
 
-.. image:: showcase/showcase_3_1.png
+
+.. image:: showcase/showcase_1_1.png
    :width: 450px
    :height: 270px
 
@@ -44,445 +41,49 @@ matplotlib Artists classes, like ``Axes`` and ``Figure``.
 
 
 
+.. parsed-literal::
+
+    Text(0.5, 1.0, 'Object-oriented API (recommended)')
 
 
 
-.. image:: showcase/showcase_4_1.png
+
+.. image:: showcase/showcase_2_1.png
    :width: 450px
    :height: 270px
 
 
-.. code:: ipython3
+General stuff
+=============
 
-    import matplotlib.pyplot as plt
-    plt.figure(figsize=(5,3))
-    plt.plot(np.random.rand(10,10), lw=3)
-    plt.title('PyPlot API')
+The basics
+----------
 
-
-
-
-
-
-
-.. image:: showcase/showcase_5_1.png
-   :width: 450px
-   :height: 270px
-
-
-Colors
-======
-
-Perceptually uniform colorspaces
---------------------------------
-
-This package includes colormaps from several other projects (see below),
-but also introduces new colormaps. The new colormaps were created by
-drawing lines across the “perceptually uniform” HCL colorspaces, or its
-two variants, the HSL and HPL colorspaces. For more info, check out
-`this page <http://www.hsluv.org/comparison/>`__.
+The ``subplots`` command is your gateway to all of ProPlot’s features.
+Its usage is sort of like the ``pyplot`` version, but it is packed with
+new features and generates a subclassed figure and specially subclassed
+axes.
 
 .. code:: ipython3
 
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.colorspace_breakdown(luminance=50)
+    f, ax = plot.subplots(width=2)
+    f, ax = plot.subplots(ncols=3, nrows=2, width=5)
 
 
 
-
-.. image:: showcase/showcase_9_1.png
-   :width: 847px
-   :height: 297px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.colorspace_breakdown(chroma=60)
-
-
-
-
-.. image:: showcase/showcase_10_1.svg
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.colorspace_breakdown(hue=0)
-
-
-
-
-.. image:: showcase/showcase_11_1.svg
-
-
-The below shows of how the “NegPos” colormap varies in the three
-HSV-like colorspaces. We see that the transitions are linear only in HSl
-space. The ``cmap_breakdown`` function can be used to test virtually any
-registered colormap.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    plot.cmap_breakdown('NegPos')
-
-
-
-
-
-
-.. image:: showcase/showcase_13_3.svg
-
-
-Colormaps
----------
-
-The below showcases every registered colormap included with ProPlot.
-We’ve filtered some older, less uniform colormaps, kept the better
-builtin ones, added our own, and added several from projects like
-`SciVisColor <https://sciviscolor.org/home/colormoves/>`__ and
-`cmOcean <https://matplotlib.org/cmocean/>`__.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.cmap_show(31)
-
-
-
-
-.. image:: showcase/showcase_16_1.png
-   :width: 481px
-   :height: 5110px
-
-
-Color cycles
-------------
-
-Added new concept of “color cycle” names. Adjust with
-``plot.rc.cycle = name``, or by passing ``cycle=name`` to any plotting
-command.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.cycle_show()
-
-
-
-.. image:: showcase/showcase_19_0.png
-   :width: 540px
-   :height: 1528px
-
-
-Colors
-------
-
-Registered new colors from the “Open Color” github project. Used for
-website UI design, but also great for selecting colors in scientific
-visualizations.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.color_show(['open'])
-
-
-
-.. image:: showcase/showcase_22_0.png
-   :width: 630px
-   :height: 225px
-
-
-Filtered all other color names to the below table, from the XKCD “color
-survey” (crowd-sourced naming of random HEX strings) and from Crayola
-crayon colors. The colors were filtered to be *sufficiently “distinct”
-in the perceptually uniform HCL colorspace*, and their names
-standardized.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.color_show(nbreak=13)
-
-
-
-.. image:: showcase/showcase_24_0.png
-   :width: 720px
-   :height: 1203px
-
-
-Usage
------
-
-Make a new colormap with ProPlot’s on-the-fly colormap generator, and it
-can be saved and stored in your home folder!
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, axwidth=2, bottomcolorbars=True, bottom=0.1)
-    data = np.random.rand(100,100).cumsum(axis=0)
-    m = axs[0].contourf(data, cmap='charcoal95')
-    f.bottompanel[0].colorbar(m)
-    m = axs[1].contourf(data, cmap=('C0', 'C1', 'charcoal'))
-    f.bottompanel[1].colorbar(m)
-    axs.format(xticks='none', yticks='none', collabels=('Single color', 'Multi-color'))
-
-
-
-.. image:: showcase/showcase_26_0.png
-   :width: 454px
-   :height: 286px
-
-
-All of the SciVisColor colormaps from their GUI “ColorMoves” interface
-are included. Easily recreate complex, beautiful colormaps, without
-having to use the GUI, thanks to ProPlot’s on-the-fly colormap
-generator!
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, bottomcolorbars=True, bottom=0.1)
-    data = np.random.rand(100,100).cumsum(axis=1)
-    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
-    m = axs[0].contourf(data, cmap=cmap, levels=100)
-    f.bottompanel[0].colorbar(m, clocator='none')
-    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
-    m = axs[1].contourf(data, cmap=cmap, levels=100)
-    f.bottompanel[1].colorbar(m, clocator='none')
-    axs.format(xticks='none', yticks='none', collabels=['Evenly spaced', 'Matching SciVisColor example'])
-
-
-
-
-.. image:: showcase/showcase_28_1.png
-   :width: 544px
-   :height: 317px
-
-
-Specify color cyclers with the ``cycle`` keyword arg, or set globally
-with ``plot.rc.cycle = name``.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(nrows=2, ncols=3, axwidth=2)
-    for ax,cycle in zip(axs,('colorblind', 'field', 'qual1', 'qual2', 'set4', 'set5')):
-        for i in range(10):
-            ax.plot((np.random.rand(20) - 0.5).cumsum(), cycle=cycle, lw=5)
-    axs.format(xformatter='none', yformatter='none', suptitle='Various named color cycles')
-
-
-
-.. image:: showcase/showcase_30_0.png
-   :width: 652px
-   :height: 447px
-
-
-Colormaps and color cycles are totally interchangeable! You can also
-pass a list of objects with ``get_color`` methods or a list of color
-strings or RGB tuples, and a colorbar will be constructed from said
-list. Note also that ``pcolormesh`` now accepts a ``levels`` argument,
-just like ``contourf``! This was previously really tricky, but now
-discrete colormap levels in ``pcolor`` and ``pcolormesh`` plots are a
-breeze.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], bottom=0.3, axwidth=2.2)
-    m = axs[0].pcolormesh(np.random.rand(20,20), cmap='colorblind', levels=np.linspace(0,1,7))
-    f.bottompanel[0].colorbar(m)
-    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=3)
-    axs.format(collabels=['Color cycler as colormap', 'Colormap as cycler, with "colorbar legend"'])
-    f.bottompanel[1].colorbar(lines, values=np.arange(0,len(lines)))
-
-
-
-
-
-
-
-.. image:: showcase/showcase_32_1.png
-   :width: 490px
-   :height: 290px
-
-
-Easily change the “gamma” of a perceptually uniform colormap on-the-fly.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=3, nrows=2, innercolorbars='r',
-                           hspace=0.3, wspace=0.2, aspect=1,
-                           bspace=0.1)
-    data = np.random.rand(10,10).cumsum(axis=1)
-    def show(ax, cmap, gamma):
-        m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
-        ax.rightpanel.colorbar(m1, clocator='none')
-        ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying gamma, inner colorbars')
-    cmap = 'verdant'
-    show(axs[0], cmap, 0.8)
-    show(axs[1], cmap, 1.0)
-    show(axs[2], cmap, 1.4)
-    cmap = 'fire'
-    show(axs[3], cmap, 0.8)
-    show(axs[4], cmap, 1.0)
-    show(axs[5], cmap, 1.4)
-
-
-
-.. image:: showcase/showcase_34_0.png
-   :width: 652px
-   :height: 422px
-
-
-Cartesian
-=========
-
-Aspect ratio and tight subplots
--------------------------------
-
-Normally, you have to specify the “figure size”, and the aspect ratios
-are hard to configure. The ProPlot default behavior fixes axes aspect
-ratios by varying either the figure width or height dimension! The
-default aspect ratio is 1, and the figure *width* is fixed while the
-height is allowed to vary. ProPlot will also adjust “inner spaces” to
-accomadate tick labels and whatnot, so you don’t have to mess with
-``wspace`` and ``hspace``!
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=0, span=0, tight=False)
-    axs[4].format(ylabel='ylabel', xlabel='xlabel', title='title\ntitle\ntitle', suptitle='Without tight subplots')
-
-
-
-.. image:: showcase/showcase_38_0.png
-   :width: 382px
-   :height: 373px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1.2, share=0, span=0)
-    axs[4].format(ylabel='ylabel', xlabel='xlabel', title='title\ntitle\ntitle', suptitle='With tight subplots')
-
-
-
-.. image:: showcase/showcase_39_0.png
-   :width: 436px
-   :height: 463px
-
-
-Axis sharing
-------------
-
-Matplotlib has an “axis sharing” feature – but this only holds the axis
-limits the same. I introduce 4 “levels” of axis sharing, visualized
-below. I also introduce an “axis spanning” label feature.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    N = 50
-    M = 40
-    colors = plot.Colors('grays_r', M, x=(0.1, 0.8))
-    for share in (0,1,2,3):
-        f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
-        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
-        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
-            array = gen(scale)
-            for l in range(array.shape[1]):
-                ax.plot(array[:,l], color=colors[l])
-            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
-
-
-
-.. image:: showcase/showcase_42_0.png
-   :width: 643px
+.. image:: showcase/showcase_6_0.png
+   :width: 180px
    :height: 174px
 
 
 
-.. image:: showcase/showcase_42_1.png
-   :width: 643px
-   :height: 172px
+.. image:: showcase/showcase_6_1.png
+   :width: 450px
+   :height: 303px
 
 
-
-.. image:: showcase/showcase_42_2.png
-   :width: 643px
-   :height: 173px
-
-
-
-.. image:: showcase/showcase_42_3.png
-   :width: 643px
-   :height: 173px
-
-
-Limit redundancy
-----------------
-
-Many new features limit redundant information in your figures. Also
-check out how easy it is add a-b-c labels to your plots now!
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    plot.rc.cycle = 'Set4'
-    titles = ['With redundant labels', 'Without redundant labels']
-    for mode in (0,1):
-        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
-        for ax in axs:
-            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
-        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcpos='il')
-
-
-
-.. image:: showcase/showcase_45_0.png
-   :width: 490px
-   :height: 491px
-
-
-
-.. image:: showcase/showcase_45_1.png
-   :width: 490px
-   :height: 498px
-
-
-Complex subplots
-----------------
+Complex subplot grids
+---------------------
 
 Set up a complex grid of subplots using a 2D array of integers – think
 of the array as a “picture” of your figure. Order of numbers determines
@@ -502,40 +103,135 @@ order of a-b-c labels.
 
 
 
+.. parsed-literal::
+
+    [<matplotlib.lines.Line2D at 0xb27b1ff28>,
+     <matplotlib.lines.Line2D at 0xb27503080>,
+     <matplotlib.lines.Line2D at 0xb27503f98>,
+     <matplotlib.lines.Line2D at 0xb275033c8>,
+     <matplotlib.lines.Line2D at 0xb27503e48>]
 
 
 
-.. image:: showcase/showcase_48_1.png
+
+.. image:: showcase/showcase_9_1.png
    :width: 450px
    :height: 543px
 
 
-Formatting axes
----------------
+A smarter “tight” layout feature
+--------------------------------
 
-Use the format command to set up your ticks, axis labels, and more! Call
-a method on every axes in the ``axes_list`` returned by ``subplots``
-**simultaneously**, thanks to the special ``axes_list`` class (this is
-particularly handy with the ``format`` function).
+Normally, you have to specify the “figure size”, and the aspect ratios
+are hard to configure. The ProPlot default behavior fixes axes aspect
+ratios by varying either the figure width or height dimension! The
+default aspect ratio is 1, and the figure *width* is fixed while the
+height is allowed to vary. ProPlot will also adjust “inner spaces” to
+accomadate tick labels and whatnot, so you don’t have to mess with
+``wspace`` and ``hspace``!
+
+With ProPlot, you will always get just the right amount of spacing
+between subplots so that elements don’t overlap, and just the right
+amount of space around the figure edge so that labels and whatnot are
+not cut off. Furthermore, despite all of the complex adjustments this
+requires, the original subplot aspect ratios are **always preserved**.
+
+You can disable this feature by passing ``tight=False`` to ``subplots``,
+but it is unbelievably useful. It works by scaling either the figure
+width or height dimension (whichever one you didn’t specify) such that
+the subplot aspect ratios will not change. It will also accomadate
+“inner panels” (see below for more on panels). This is all possible
+thanks to ProPlot’s restrictions on the subplot structure. The below
+examples demonstrate its power.
 
 .. code:: ipython3
 
+    import proplot as plot
+    plot.nbsetup()
+    f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=0, span=0, tight=False)
+    axs[4].format(ylabel='ylabel', xlabel='xlabel', title='title\ntitle\ntitle', suptitle='Without tight subplots')
+
+
+
+.. image:: showcase/showcase_13_0.png
+   :width: 382px
+   :height: 373px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1.2, share=0, span=0)
+    axs[4].format(ylabel='ylabel', xlabel='xlabel', title='title\ntitle\ntitle', suptitle='With tight subplots')
+
+
+
+.. image:: showcase/showcase_14_0.png
+   :width: 436px
+   :height: 463px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f, axs = plot.subplots([[1,2],[3,2],[3,4]], share=0, span=0, axwidth=1.5)
+    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Super title')
+    axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
+    axs[2].format(yformatter='null', title='Title', ytickloc='both')
+    axs[3].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
+
+
+
+.. image:: showcase/showcase_15_0.png
+   :width: 364px
+   :height: 557px
+
+
+.. code:: ipython3
+
+    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, innerpanels='lr', inner_kw={'rshare':False}, innertight=False)
+    axs.format(ylabel='ylabel', xlabel='xlabel')
+    axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
+
+
+
+.. image:: showcase/showcase_16_0.png
+   :width: 634px
+   :height: 214px
+
+
+Adding labels, titles, etc.
+---------------------------
+
+Use the ``format`` command to set up your ticks, axis labels, and more!
+The special ``axes_list`` class lets you call any method, including
+``format``, on every axes in the ``axes_list`` returned by ``subplots``
+**simultaneously**. To change any ``rc`` setting, either builtin or
+custom to ProPlot (see the quick start), just pass it to ``format``. If
+the setting has dots, simply omit them – for example, the ProPlot custom
+settings ``title.pos`` and ``title.weight`` can be changed with
+``titleweight='bold'`` and ``titlepos='ci'``.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
     f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2.2, share=False, span=False)
     axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(0,10), xlocator=2,
               ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'ccc', 'dd', 'e'),
-              title='Inner title', titlepos='ci', suptitle='Outer title',
+              title='Inner title', titlepos='ci', suptitle='Super title',
               abc=True, abcpos='il', abcformat='a.',
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
               linewidth=1, collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
 
 
 
-.. image:: showcase/showcase_51_0.png
+.. image:: showcase/showcase_19_0.png
    :width: 490px
    :height: 397px
 
-
-Temporarily apply an “rc” setting by passing it to the “format” command!
 
 .. code:: ipython3
 
@@ -567,20 +263,206 @@ Temporarily apply an “rc” setting by passing it to the “format” command!
 
 
 
+.. parsed-literal::
+
+    [<matplotlib.lines.Line2D at 0xb323bb550>]
 
 
 
-.. image:: showcase/showcase_53_1.png
+
+.. image:: showcase/showcase_20_1.png
    :width: 540px
    :height: 266px
 
 
-Helvetica
----------
+Colorbars and legends
+---------------------
 
-Helvetica is the MATLAB default. Matplotlib does not come packaged with
-it and does not use it as the default, but ProPlot does! Easily change
-the default font with a custom ``.proplotrc``.
+I’ve added several new features to the ``ax.legend`` method, and created
+a new ``ax.colorbar`` method. The latter draws a smaller colorbar
+**inside** the axes, sort of like a legend. A demonstration is below.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, ax = plot.subplots(bottompanel=True, tight=1)
+    m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='glacial')
+    ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
+    ax.colorbar(m, ticks=2, label='inset colorbar')
+    ax.colorbar(m, ticks=2, loc='lower left')
+    f.bottompanel.colorbar(m, label='standard outer colorbar', length=0.9)
+    ax.format(title='Title')
+
+
+
+.. image:: showcase/showcase_23_0.png
+   :width: 256px
+   :height: 317px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee', 'ffffff']
+    f, axs = plot.subplots(ncols=2, bottomlegends=True, span=False, share=0)
+    hs = []
+    for i,label in enumerate(labels):
+        hs += axs.plot(np.random.rand(20), label=label, lw=2)[0]
+    axs[0].legend(order='F', frameon=True, loc='lower left')
+    f.bpanel[0].legend(hs, ncols=4, align=True, frameon=True)
+    f.bpanel[1].legend(hs, ncols=4, align=False)
+    axs.format(ylim=(-0.1, 1.1), xlabel='xlabel', ylabel='ylabel',
+               suptitle='Demo of new legend options',
+               collabels=['Inner legend, outer aligned legend', 'Outer un-aligned legend'], collabelweight='normal')
+
+
+
+.. image:: showcase/showcase_24_0.png
+   :width: 454px
+   :height: 294px
+
+
+Inner panels, colorbars
+-----------------------
+
+I often want “panels” that represent averages across dimensions of a
+main subplot, or some secondary 1-dimensional dataset. This is hard to
+do with matplotlib by default, but easy with ProPlot! ProPlot allows
+arbitrary combinations of inner panels for specific axes, and will still
+keep the subplots aligned.
+
+.. code:: ipython3
+
+    # Arbitrarily complex combinations are possible, and inner spaces still determined automatically
+    f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2, # inner_kw={'bshare':False}, #, 'width':0.2},
+                           inner={1:'t', 2:'r', 3:'b', 4:'l'}, #innercolorbars={1:'b'},
+                           innertight=False, share=0, span=0, wratios=[1,2])
+    axs.format(title='Title', suptitle='This is a super title', collabels=['Column 1','Column 2'],
+               titlepos='ci', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
+
+
+
+.. image:: showcase/showcase_27_0.png
+   :width: 454px
+   :height: 460px
+
+
+If you want “colorbar” panels, simply use ``innercolorbars`` instead of
+``innerpanels``. This makes the width of the panels more appropriate for
+filling with a colorbar. You can modify these default spacings with a
+custom ``.proplotrc`` file (see documentation).
+
+If you want panels “flush” against the subplot, simply use the ``flush``
+keyword args.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2, share=0, span=False, innerpad=0.1, innertight=True,
+                           innerpanels='r', innercolorbars='b', inner_kw={'rshare':False, 'rflush':True})
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
+    for i,ax in enumerate(axs):
+        ax.format(title=f'Dataset {i+1}')
+    data = (np.random.rand(20,20)-0.1).cumsum(axis=1)
+    m = axs.contourf(data)[0]
+    axs.rpanel.plot(data.mean(axis=1), np.arange(20), color='k')
+    axs.rpanel.format(title='Mean')
+    axs.bpanel.colorbar(m, label='cbar')
+
+
+
+
+.. parsed-literal::
+
+    [<matplotlib.colorbar.Colorbar at 0xb367742e8>,
+     <matplotlib.colorbar.Colorbar at 0xb368609b0>,
+     <matplotlib.colorbar.Colorbar at 0xb369ed208>,
+     <matplotlib.colorbar.Colorbar at 0xb36ac6710>]
+
+
+
+
+.. image:: showcase/showcase_29_1.png
+   :width: 454px
+   :height: 487px
+
+
+Outer panels, colorbars
+-----------------------
+
+It is also common to need “global” colorbars or legends, meant to
+reference multiple subplots at once. This is easy to do with ProPlot
+too! These “global” colorbars can extend across every row and column of
+the subplot array, or across arbitrary contiguous rows and columns.
+Refer to panel attributes with their full names (“bottompanel”,
+“toppanel”, “leftpanel”, and “rightpanel”), or with their shorthands
+(“bpanel”, “lpanel”, “rpanel”, or “tpanel”).
+
+.. code:: ipython3
+
+    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1, bottompanels=[1,2,2], rightpanel=True)
+    m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
+    axs.format(suptitle='Super title', abc=True, abcpos='ol', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
+    f.bpanel[0].colorbar(m, label='label', ticks=0.5)
+    f.bpanel[1].colorbar(m, label='label', ticks=0.2)
+    f.rpanel.colorbar(m, label='label', ticks=0.1, length=0.7)
+
+
+
+
+.. parsed-literal::
+
+    <matplotlib.colorbar.Colorbar at 0xb3a9acda0>
+
+
+
+
+.. image:: showcase/showcase_32_1.png
+   :width: 460px
+   :height: 496px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=4, axwidth=1.5, bottomcolorbars=[1,1,2,2], rightpanel=True, share=0, span=0, wspace=0.3)
+    data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
+    m = axs[:2].contourf(data, cmap='grays', extend='both')
+    cycle = plot.Cycle('grays', 5)
+    hs = []
+    for abc,color in zip('ABCDEF',cycle):
+        hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')[0]
+    f.bottompanel[0].colorbar(m, length=0.8, label='label')
+    f.bottompanel[1].legend(hs, ncols=5, align=True)
+    f.rightpanel.legend(hs, ncols=1)
+    axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A',
+              collabels=['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2'], collabelweight='normal')
+
+
+
+.. image:: showcase/showcase_33_0.png
+   :width: 775px
+   :height: 261px
+
+
+Helvetica as the default font
+-----------------------------
+
+Helvetica is the MATLAB default, but matplotlib does not come packaged
+with it and defaults to a font called “DejaVu Sans”. ProPlot adds back
+Helvetica and makes it the default.
+
+In my opinion, Helvetica is much more professional-looking than the
+DejaVu Sans. Easily change the default font by modifying your
+``.proplotrc`` (see documentation).
 
 .. code:: ipython3
 
@@ -616,60 +498,129 @@ the default font with a custom ``.proplotrc``.
 
 
 
-.. image:: showcase/showcase_56_0.png
+.. image:: showcase/showcase_36_0.png
    :width: 931px
    :height: 779px
 
 
-Inner and outer panels, colorbars
----------------------------------
+Cartesian axes
+==============
 
-I often want “panels” that represent averages across dimensions of a
-main subplot, or some secondary 1-dimensional dataset. This is hard to
-do with matplotlib by default, but easy with ProPlot!
+Limiting redundancy
+-------------------
 
-.. code:: ipython3
-
-    f, ax = plot.subplots(ncols=2, innerpanels='tr')
-    data = np.random.rand(50,50)
-    ax.pcolormesh(data, cmap='Greys')
-    ax.rightpanel.plot(data.mean(axis=1), np.arange(50), lw=2, color='k') # note ax.panel returns on an axes_list will also return an axes_list
-    ax.toppanel.plot(data.mean(axis=0), lw=2, color='k')
-    ax.toppanel.format(title='Averages in panels', titleweight='bold')
-
-
-
-.. image:: showcase/showcase_59_0.png
-   :width: 454px
-   :height: 242px
-
-
-I also often want “global” colorbars or legends meant to reference
-multiple subplots. This is easy to do with ProPlot too! These “global”
-colorbars can extend across all rows/columns of the subplot array, or
-arbitrary contiguous rows/columns.
+Matplotlib has an “axis sharing” feature – but this only holds the axis
+limits the same. I introduce 4 “levels” of axis sharing, visualized
+below. I also introduce an “axis spanning” label feature.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, axs = plot.subplots(ncols=4, axwidth=1.5, bottomcolorbars=[1,1,2,2], share=0, span=0, wspace=0.3)
-    data = (np.random.rand(50,50)-0.5).cumsum(axis=0)
-    m = axs[:2].contourf(data, cmap='grays')
-    cycle = plot.Cycle('grays', 5)
-    hs = []
-    for i,color in enumerate(cycle):
-        hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line{i}')[0]
-    f.bottompanel[0].colorbar(m, length=0.8)
-    f.bottompanel[1].legend(hs, ncols=5, align=True)
-    axs.format(suptitle='Global colorbar and global legend')
+    N = 50
+    M = 40
+    colors = plot.colors('grays_r', M, x=(0.1, 0.8))
+    for share in (0,1,2,3):
+        f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
+        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
+        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
+            array = gen(scale)
+            for l in range(array.shape[1]):
+                ax.plot(array[:,l], color=colors[l])
+            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
 
 
 
-.. image:: showcase/showcase_61_0.png
-   :width: 697px
-   :height: 229px
+.. image:: showcase/showcase_40_0.png
+   :width: 643px
+   :height: 166px
+
+
+
+.. image:: showcase/showcase_40_1.png
+   :width: 643px
+   :height: 176px
+
+
+
+.. image:: showcase/showcase_40_2.png
+   :width: 643px
+   :height: 175px
+
+
+
+.. image:: showcase/showcase_40_3.png
+   :width: 643px
+   :height: 190px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    plot.rc.cycle = 'Set4'
+    titles = ['With redundant labels', 'Without redundant labels']
+    for mode in (0,1):
+        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
+        for ax in axs:
+            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
+        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcpos='il')
+
+
+
+.. image:: showcase/showcase_41_0.png
+   :width: 490px
+   :height: 491px
+
+
+
+.. image:: showcase/showcase_41_1.png
+   :width: 490px
+   :height: 498px
+
+
+“Dual” x and y axes
+-------------------
+
+The new “dual axis” feature lets you easily produce duplicate *x* and
+*y* axes meant to represent *alternate units* in the same coordinate
+range.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=3)
+    # These first 2 are for general users
+    ax = axs[0]
+    ax.format(yformatter='null', xlabel='wavenumber', xlocator=plot.arange(0.1,0.9,0.2), xlim=(0.1,1),
+              suptitle='Dual axes feature')
+    ax.dualx(xscale='inverse', xlabel='wavelength')
+    ax = axs[1]
+    ax.format(yformatter='null', xlabel='temperature (K)', title='', xlim=(200,300))
+    ax.dualx(offset=-273.15, xscale='linear')#, xlabel='temperature (\N{DEGREE SIGN}C)')
+    # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
+    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=0.5, axwidth=1.8)
+    ax = axs[0]
+    ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10))
+    ax.dualy(yscale='height', ylabel='height (km)')
+    ax = axs[1] # span
+    ax.format(xformatter='null', ylabel='height (km)', ylim=(0,20), suptitle='Dual axes feature')
+    ax.dualy(yscale='pressure', ylabel='pressure (hPa)')
+
+
+
+.. image:: showcase/showcase_44_0.png
+   :width: 454px
+   :height: 154px
+
+
+
+.. image:: showcase/showcase_44_1.png
+   :width: 418px
+   :height: 267px
 
 
 New axis formatters
@@ -688,7 +639,7 @@ default, and can be used to filter tick labels within some data range.
 
 
 
-.. image:: showcase/showcase_64_0.png
+.. image:: showcase/showcase_47_0.png
    :width: 454px
    :height: 205px
 
@@ -707,7 +658,7 @@ mention, ProPlot includes an endpoint-inclusive ``arange`` function.
 
 
 
-.. image:: showcase/showcase_66_0.png
+.. image:: showcase/showcase_49_0.png
    :width: 526px
    :height: 284px
 
@@ -742,7 +693,7 @@ latitude in the Mercator projection.
 
 
 
-.. image:: showcase/showcase_69_0.png
+.. image:: showcase/showcase_52_0.png
    :width: 540px
    :height: 282px
 
@@ -764,20 +715,21 @@ an imaginary response function.
     response = (np.tanh(-((x - cutoff)/0.03)) + 1)/2 # imgarinary response function
     f, ax = plot.subplots(aspect=(3,1), width=6)#, tight=False, top=2)
     ax.fill_between(x, 0, response, hatch='xxx', facecolor='none', edgecolor='gray8', lw=1, clip_on=True)
-    ax.axvline(cutoff, lw=2, dashes=(0.2,2), color='red')
+    ax.axvline(cutoff, lw=2, ls='-', color='red')
+    ax.fill_between([0.27, 0.33], 0, 1, color='red', alpha=0.3)
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', grid=False)
     axy = ax.twiny()
     axy.format(xlim=(1/max(x), 1/min(x)), xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
               xscale='inverse', xlabel='period (days)',
-              title='Title automatically offset above axis labels', titlepos='oc',
-              suptitle='SuperTitle above everything', 
+              title='Imgaginary response function', titlepos='oc',
+              suptitle='SuperTitle', 
               )
 
 
 
-.. image:: showcase/showcase_71_0.png
+.. image:: showcase/showcase_54_0.png
    :width: 540px
-   :height: 279px
+   :height: 272px
 
 
 The “cutoff” scale is great when you have data with a very strange
@@ -811,31 +763,31 @@ distribution in space.
 
 
 
-.. image:: showcase/showcase_73_0.png
+.. image:: showcase/showcase_56_0.png
    :width: 540px
    :height: 578px
 
 
-Map projections
-===============
+Map projection axes
+===================
 
-ProPlot isn’t just great for typical Cartesian-axis plotting. It also
-includes seamless integration with the “cartopy” and “basemap” packages.
-Note these features are **optional** – if you don’t want to use them,
-you don’t need to have “cartopy” and “basemap” installed!
+ProPlot isn’t just great for Cartesian-axis plotting. It also includes
+seamless integration with the “cartopy” and “basemap” packages. Note
+these features are **optional** – if you don’t want to use them, you
+don’t need to have “cartopy” and “basemap” installed!
 
 Cartopy vs. basemap
 -------------------
 
 Plotting with basemap is much easier – now, you just plot exactly like
-you would in Cartesian coordinates. No need to directly reference a
-``Basemap`` object! Plotting with cartopy is also much easier – now,
+you would with ordinary Cartesian axes. No need to directly reference a
+``Basemap`` instance! Plotting with cartopy is also much easier – now,
 there’s no need to reference the individual cartopy ``crs.Projection``
 class, and there’s no need to use ``transform=crs.PlateCarree()`` with
 every plotting command (this is now the default behavior).
 
-Why cartopy? Generally **cleaner integration** with matplotlib API. Why
-basemap? Has some **useful features** still.
+Why cartopy? Generally **cleaner integration** with matplotlib API, the
+way of the future. Why basemap? It still has some **useful features**.
 
 .. code:: ipython3
 
@@ -869,8 +821,12 @@ basemap? Has some **useful features** still.
             c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
 
 
+.. parsed-literal::
 
-.. image:: showcase/showcase_78_1.png
+    Warning: Cannot label meridians on Hammer basemapWarning: Cannot label meridians on Hammer basemapWarning: Cannot label meridians on Hammer basemapWarning: Cannot label meridians on Hammer basemap
+
+
+.. image:: showcase/showcase_61_1.png
    :width: 630px
    :height: 417px
 
@@ -907,8 +863,12 @@ basemap? Has some **useful features** still.
             c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
 
 
+.. parsed-literal::
 
-.. image:: showcase/showcase_79_1.png
+    Warning: Cannot label meridians on Hammer basemapWarning: Cannot label meridians on Hammer basemapWarning: Cannot label meridians on Hammer basemapWarning: Cannot label meridians on Hammer basemap
+
+
+.. image:: showcase/showcase_62_1.png
    :width: 630px
    :height: 430px
 
@@ -935,7 +895,7 @@ basemap? Has some **useful features** still.
 
 
 
-.. image:: showcase/showcase_80_0.png
+.. image:: showcase/showcase_63_0.png
    :width: 315px
    :height: 243px
 
@@ -943,9 +903,13 @@ basemap? Has some **useful features** still.
 Geography
 ---------
 
-Easily add and format geographic features. Pass keyword args to the
-``basemap.Basemap`` and ``cartopy.crs.Projection`` initializers with the
-``proj_kw`` keyword arg.
+Easily add and format geographic features like coastlines, land, country
+borders, and state borders. To modify the projections, you can also pass
+keyword args to the ``basemap.Basemap`` and ``cartopy.crs.Projection``
+initializers with the ``proj_kw`` keyword arg. Note that native
+``PROJ.4`` keyword options are now accepted along with their more
+verbose cartopy aliases – for example, you can use ``lon_0`` instead of
+``central_longitude``.
 
 .. code:: ipython3
 
@@ -955,16 +919,50 @@ Easily add and format geographic features. Pass keyword args to the
     f, axs = plot.subplots(ncols=2, nrows=2,
                            proj={(1,2):'ortho', (3,4):'npstere'},
                            basemap={(1,3):False, (2,4):True},
-                           proj_kw={(1,2):{'lon_0':0, 'lat_0':0}, (3,4):{'lon_0':0, 'boundinglat':40}})
+                           proj_kw={(1,2):{'lon_0':-60, 'lat_0':0}, (3,4):{'lon_0':-60, 'boundinglat':40}})
     axs.format(collabels=['Cartopy', 'Basemap'])
-    axs[0::2].format(reso='med', land=True, coast=True, land_color='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=2)
-    axs[1::2].format(land=True, coast=True, land_color='desert sand', facecolor='blue green', title_kw={'weight':'bold'}, linewidth=2)
+    axs[0::2].format(reso='med', land=True, coast=True, landcolor='desert sand', facecolor='blue green', titleweight='bold', linewidth=2, labels=False)
+    axs[1::2].format(land=True, coast=True, landcolor='desert sand', facecolor='blue green', titleweight='bold', linewidth=2, labels=False)
 
 
+.. parsed-literal::
 
-.. image:: showcase/showcase_83_0.png
+    Warning: Cannot label parallels on Orthographic basemap'Warning: Cannot label meridians on full-disk
+                    Geostationary, Orthographic or Azimuthal equidistant basemap
+                    Warning: Cannot label parallels on Orthographic basemap'Warning: Cannot label meridians on full-disk
+                    Geostationary, Orthographic or Azimuthal equidistant basemap
+                    
+
+
+.. image:: showcase/showcase_66_1.png
    :width: 454px
-   :height: 466px
+   :height: 472px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(axwidth=4, ncols=2, proj='robin', basemap={1:False, 2:True})
+    axs.format(collabels=['Cartopy', 'Basemap'], land=True, landcolor='pale green',
+               coast=True, innerborders=True, borders=True, labels=False)
+    axs.contourf(np.linspace(-180,180,20), np.linspace(-90,90,20), np.random.rand(20,20).cumsum(axis=0), cmap='ice_r')
+
+
+
+
+.. parsed-literal::
+
+    [<matplotlib.contour.QuadContourSet at 0xb338d37f0>,
+     <matplotlib.contour.QuadContourSet at 0xb338eddd8>]
+
+
+
+
+.. image:: showcase/showcase_67_1.png
+   :width: 814px
+   :height: 232px
 
 
 Tables of projections
@@ -989,9 +987,16 @@ available cartopy projections is below.
         ax.format(title=proj, title_kw={'weight':'bold'}, labels=False)
 
 
+.. parsed-literal::
+
+    /Users/ldavis/anaconda3/lib/python3.6/site-packages/cartopy/mpl/feature_artist.py:163: UserWarning: Unable to determine extent. Defaulting to global.
+      warnings.warn('Unable to determine extent. Defaulting to global.')
+    /Users/ldavis/anaconda3/lib/python3.6/site-packages/cartopy/mpl/feature_artist.py:163: UserWarning: Unable to determine extent. Defaulting to global.
+      warnings.warn('Unable to determine extent. Defaulting to global.')
 
 
-.. image:: showcase/showcase_86_1.png
+
+.. image:: showcase/showcase_70_1.png
    :width: 594px
    :height: 1007px
 
@@ -1017,8 +1022,354 @@ thrown. ProPlot supplies some default keyword args to prevent this.
         ax.format(title=proj, title_kw={'weight':'bold'}, labels=False)
 
 
+.. parsed-literal::
 
-.. image:: showcase/showcase_88_1.png
+    Warning: Cannot label parallels on Geostationary basemap'Warning: Cannot label meridians on full-disk
+                    Geostationary, Orthographic or Azimuthal equidistant basemap
+                    Warning: Cannot label parallels on van der Grinten basemapWarning: Cannot label meridians on van der Grinten basemapWarning: Cannot label meridians on Sinusoidal basemapWarning: Cannot label meridians on Mollweide basemapWarning: Cannot label meridians on Hammer basemapWarning: Cannot label parallels on Orthographic basemap'Warning: Cannot label meridians on full-disk
+                    Geostationary, Orthographic or Azimuthal equidistant basemap
+                    Warning: Cannot label parallels on Near-Sided Perspective basemap'Warning: Cannot label meridians on full-disk
+                    Geostationary, Orthographic or Azimuthal equidistant basemap
+                    
+
+
+.. image:: showcase/showcase_72_1.png
    :width: 594px
    :height: 998px
+
+
+Colormaps and colors
+====================
+
+Perceptually uniform colorspaces
+--------------------------------
+
+This package includes colormaps from several other projects (see below),
+but also introduces some brand new colormaps. The new colormaps were
+created by drawing lines across the “perceptually uniform” HCL
+colorspace – or across its two variants, the HSL and HPL colorspaces.
+For more info, check out `this
+page <http://www.hsluv.org/comparison/>`__.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.colorspace_breakdown(luminance=50)
+
+
+.. parsed-literal::
+
+    Configured ipython notebook.
+
+
+
+.. image:: showcase/showcase_76_1.png
+   :width: 847px
+   :height: 297px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.colorspace_breakdown(chroma=60)
+
+
+.. parsed-literal::
+
+    Configured ipython notebook.
+    Adjusting gridspec.
+    Resetting rcparams.
+
+
+
+.. image:: showcase/showcase_77_1.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.colorspace_breakdown(hue=0)
+
+
+.. parsed-literal::
+
+    Configured ipython notebook.
+    Adjusting gridspec.
+    Resetting rcparams.
+
+
+
+.. image:: showcase/showcase_78_1.svg
+
+
+The below shows how the builtin “viridis” colormap and the new ProPlot
+“fire” colormap vary in the three HSV-like colorspaces. We see that the
+“Fire” transitions are linear in HSL space, while the “virids”
+transitions are linear in hue and luminance but relatively non-linear in
+saturation. The ``cmap_breakdown`` function can be used to test
+virtually any registered colormap.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    plot.cmap_breakdown('viridis')
+    plot.cmap_breakdown('fire')
+
+
+.. parsed-literal::
+
+    /Users/ldavis/anaconda3/lib/python3.6/site-packages/matplotlib/contour.py:1557: UserWarning: Warning: converting a masked element to nan.
+      self.zmax = float(z.max())
+    /Users/ldavis/anaconda3/lib/python3.6/site-packages/matplotlib/contour.py:1558: UserWarning: Warning: converting a masked element to nan.
+      self.zmin = float(z.min())
+
+
+
+.. image:: showcase/showcase_80_1.png
+   :width: 1009px
+   :height: 306px
+
+
+
+.. image:: showcase/showcase_80_2.png
+   :width: 1009px
+   :height: 304px
+
+
+Table of colormaps
+------------------
+
+The below showcases every registered colormap included with ProPlot.
+We’ve filtered some older, less uniform colormaps, kept the better
+builtin ones, added our own, and added several from projects like
+`SciVisColor <https://sciviscolor.org/home/colormoves/>`__ and
+`cmOcean <https://matplotlib.org/cmocean/>`__.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.cmap_show(31)
+
+
+.. parsed-literal::
+
+    Missing colormaps: bluetan, purpleorange, cyanmauve, blueyellow, greenred
+    Deleted colormaps: binary, gist_yarg, gist_gray, gray, bone, pink, spring, summer, autumn, winter, cool, wistia, multi, cividis, afmhot, gist_heat, copper, multi, cividis, coolwarm, bwr, seismic, flag, prism, ocean, gist_earth, terrain, gist_stern, gnuplot, gnuplot2, cmrmap, brg, hsv, hot, rainbow, gist_rainbow, jet, nipy_spectral, gist_ncar, cubehelix
+
+
+
+.. image:: showcase/showcase_83_1.png
+   :width: 481px
+   :height: 5110px
+
+
+Table of color cycles
+---------------------
+
+Added new concept of “color cycle” names. Adjust with
+``plot.rc.cycle = name``, or by passing ``cycle=name`` to any plotting
+command.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.cycle_show()
+
+
+
+.. image:: showcase/showcase_86_0.png
+   :width: 540px
+   :height: 1528px
+
+
+Tables of colors
+----------------
+
+Registered new colors from the “Open Color” github project. Used for
+website UI design, but also great for selecting colors in scientific
+visualizations.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.color_show(['open'])
+
+
+
+.. image:: showcase/showcase_89_0.png
+   :width: 630px
+   :height: 225px
+
+
+Filtered all other color names to the below table, from the XKCD “color
+survey” (crowd-sourced naming of random HEX strings) and from Crayola
+crayon colors. The colors were filtered to be *sufficiently “distinct”
+in the perceptually uniform HCL colorspace*, and their names
+standardized.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f = plot.color_show(nbreak=13)
+
+
+
+.. image:: showcase/showcase_91_0.png
+   :width: 720px
+   :height: 1203px
+
+
+Usage and on-the-fly maps
+-------------------------
+
+Make a new colormap with ProPlot’s on-the-fly colormap generator, and it
+can be saved and stored in your home folder!
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, axwidth=2, bottomcolorbars=True, bottom=0.1)
+    data = np.random.rand(100,100).cumsum(axis=0)
+    m = axs[0].contourf(data, cmap='dark slate blue')
+    f.bottompanel[0].colorbar(m, locator='null')
+    m = axs[1].contourf(data, cmap=('cerulean', 'orange', 'steel'))
+    f.bottompanel[1].colorbar(m, locator='null')
+    axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps',
+               collabels=('One color', 'Three cmaps, merged'), collabelweight='normal')
+
+
+
+.. image:: showcase/showcase_93_0.png
+   :width: 454px
+   :height: 289px
+
+
+All of the SciVisColor colormaps from their GUI “ColorMoves” interface
+are included. Easily recreate complex, beautiful colormaps, without
+having to use the GUI, thanks to ProPlot’s on-the-fly colormap
+generator!
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, bottomcolorbars=True, bottom=0.1)
+    data = np.random.rand(100,100).cumsum(axis=1)
+    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
+    m = axs[0].contourf(data, cmap=cmap, levels=100)
+    f.bottompanel[0].colorbar(m, clocator='none')
+    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
+    m = axs[1].contourf(data, cmap=cmap, levels=100)
+    f.bottompanel[1].colorbar(m, clocator='none')
+    axs.format(xticks='none', yticks='none', collabels=['Evenly spaced', 'Matching SciVisColor example'])
+
+
+.. parsed-literal::
+
+    Saved colormap to "test1.json".
+    Saved colormap to "test2.json".
+
+
+
+.. image:: showcase/showcase_95_1.png
+   :width: 544px
+   :height: 317px
+
+
+Specify color cyclers with the ``cycle`` keyword arg, or set globally
+with ``plot.rc.cycle = name``.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(nrows=2, ncols=3, axwidth=2)
+    for ax,cycle in zip(axs,('colorblind', 'field', 'qual1', 'qual2', 'set4', 'set5')):
+        for i in range(10):
+            ax.plot((np.random.rand(20) - 0.5).cumsum(), cycle=cycle, lw=5)
+    axs.format(xformatter='none', yformatter='none', suptitle='Various named color cycles')
+
+
+
+.. image:: showcase/showcase_97_0.png
+   :width: 652px
+   :height: 447px
+
+
+Colormaps and color cycles are totally interchangeable! You can also
+pass a list of objects with ``get_color`` methods or a list of color
+strings or RGB tuples, and a colorbar will be constructed from said
+list. Note also that ``pcolormesh`` now accepts a ``levels`` argument,
+just like ``contourf``! This was previously really tricky, but now
+discrete colormap levels in ``pcolor`` and ``pcolormesh`` plots are a
+breeze.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], bottom=0.3, axwidth=2.2)
+    m = axs[0].pcolormesh(np.random.rand(20,20), cmap='colorblind', levels=np.linspace(0,1,7))
+    f.bottompanel[0].colorbar(m)
+    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=3)
+    axs.format(collabels=['Color cycler as colormap', 'Colormap as cycler, with "colorbar legend"'])
+    f.bottompanel[1].colorbar(lines, values=np.arange(0,len(lines)))
+
+
+
+
+.. parsed-literal::
+
+    <matplotlib.colorbar.Colorbar at 0xb2b090b00>
+
+
+
+
+.. image:: showcase/showcase_99_1.png
+   :width: 490px
+   :height: 290px
+
+
+Easily change the “gamma” of a perceptually uniform colormap on-the-fly.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=3, nrows=2, innercolorbars='r',
+                           hspace=0.3, wspace=0.2, aspect=1,
+                           bspace=0.1)
+    data = np.random.rand(10,10).cumsum(axis=1)
+    def show(ax, cmap, gamma):
+        m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
+        ax.rightpanel.colorbar(m1, clocator='none')
+        ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying gamma, inner colorbars')
+    cmap = 'verdant'
+    show(axs[0], cmap, 0.8)
+    show(axs[1], cmap, 1.0)
+    show(axs[2], cmap, 1.4)
+    cmap = 'fire'
+    show(axs[3], cmap, 0.8)
+    show(axs[4], cmap, 1.0)
+    show(axs[5], cmap, 1.4)
+
+
+
+.. image:: showcase/showcase_101_0.png
+   :width: 652px
+   :height: 422px
 

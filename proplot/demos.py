@@ -97,7 +97,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
                            span=0, sharey=1, wspace=0.5,
                            bottom=0.4, axwidth=2, aspect=1, tight=True)
     x = np.linspace(0, 1, N)
-    cmap = tools.colormap(cmap, N=N) # arbitrary cmap argument
+    cmap = tools.Colormap(cmap, N=N) # arbitrary cmap argument
     cmap._init()
     name = cmap.name
     for j,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl','rgb'))):
@@ -130,9 +130,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
     with np.errstate(all='ignore'):
         m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=cmap)
     f.rightpanel.colorbar(m, clocator='none', cformatter='none', clabel=f'{name} colors')
-    locator = [0, 0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 6, 7, 8, 10]
     axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
-              yscale=('cutoff', 4, 1), ylocator=locator, # progress 10x faster above x=1
               xlabel='position', ylabel='scaled channel value')
 
 #------------------------------------------------------------------------------#
