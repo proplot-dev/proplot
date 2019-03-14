@@ -111,9 +111,8 @@ between subplots so that elements don’t overlap, and just the right
 amount of space around the figure edge so that labels and whatnot are
 not cut off. Furthermore, despite all of the complex adjustments this
 requires, the original subplot aspect ratios are **always preserved**.
-This process accounts for “inner panels”, so that even when panels are
-present, the main subplot aspect ratios stay fixed (see below for more
-on panels).
+Even when inner panels are present, the main subplot aspect ratios will
+stay fixed (see below for more on panels).
 
 You can disable this feature by passing ``tight=False`` to ``subplots``,
 but it is unbelievably useful. It works by scaling either the figure
