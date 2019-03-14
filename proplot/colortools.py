@@ -2212,6 +2212,7 @@ def register_colors(nmax=np.inf, verbose=False):
     hcls = np.empty((0,3))
     correct = (('/', ' '), ("'s", ''), ('grey', 'gray'),
                ('pinky', 'pink'), ('greeny', 'green'),
+               ('bluey',  'blue'),
                ('robin egg', 'robins egg'),
                ('egg blue', 'egg'),
                (r'reddish', 'red'),

@@ -5,7 +5,7 @@
 Tutorial
 ========
 
-Below is a showcase of ProPlot's features. For a more descriptive introduction, see :ref:`getting started`. For more details once you get the hang of the API, see :ref:`documentation`.
+Below is a showcase of ProPlot's features. For a more descriptive introduction with links to the full documentation, see :ref:`getting started`. Once you have a general understanding of the API, see :ref:`documentation`.
 
 .. Please note that some features are not yet shown -- check back later for more.
 

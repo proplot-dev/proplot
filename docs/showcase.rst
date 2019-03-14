@@ -45,8 +45,8 @@ like ``Axes`` and ``Figure``.
    :height: 270px
 
 
-General stuff
-=============
+General
+=======
 
 The basics
 ----------
@@ -103,8 +103,8 @@ order of a-b-c labels.
    :height: 543px
 
 
-A smarter “tight layout” feature
---------------------------------
+A smarter “tight layout”
+------------------------
 
 With ProPlot, you will always get just the right amount of spacing
 between subplots so that elements don’t overlap, and just the right
@@ -1159,31 +1159,16 @@ command.
    :height: 1528px
 
 
-Tables of colors
-----------------
+Table of colors
+---------------
 
-Registered new colors from the “Open Color” github project. Used for
-website UI design, but also great for selecting colors in scientific
-visualizations.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f = plot.color_show(['open'])
-
-
-
-.. image:: showcase/showcase_95_0.png
-   :width: 630px
-   :height: 225px
-
-
-Filtered all other color names to the below table, from the XKCD “color
-survey” (crowd-sourced naming of random HEX strings) and from Crayola
-crayon colors. The colors were filtered to be *sufficiently “distinct”
-in the perceptually uniform HCL colorspace*, and their names
-standardized.
+ProPlot reduces the available named colors to the below table – they are
+either primary colors, or come from the XKCD “color survey”
+(crowd-sourced naming of random HEX strings) and from Crayola crayon
+colors. The colors were filtered to be *sufficiently “distinct” in the
+perceptually uniform HCL colorspace*, and their names were cleaned up –
+for example, “reddish” and “reddy” were changed to “red”, and “bluish”
+and “bluey” were changed to “blue”.
 
 .. code:: ipython3
 
@@ -1193,40 +1178,26 @@ standardized.
 
 
 
-.. image:: showcase/showcase_97_0.png
+.. image:: showcase/showcase_95_0.png
    :width: 720px
    :height: 1203px
 
 
-Interchangeability
-------------------
-
-Note that colormaps and color cycles are totally interchangeable! You
-can use a color cycler as a colormap, and vice versa.
+ProPlot also includes new colors from the “Open Color” github project.
+These colors are used for website UI design, but also great for
+selecting colors for scientific visualizations.
 
 .. code:: ipython3
 
     import proplot as plot
-    import numpy as np
     plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=2.2)
-    m = axs[0].pcolormesh(np.random.rand(20,20), cmap='538', levels=np.linspace(0,1,7))
-    f.bottompanel[0].colorbar(m, label='clabel')
-    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=3)
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
-    axs[0].format(title='Color cycler as colormap')
-    axs[1].format(title='Colormap as cycler, with "colorbar legend"')
-    f.bottompanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
+    f = plot.color_show(['open'])
 
 
 
-
-
-
-
-.. image:: showcase/showcase_100_1.png
-   :width: 490px
-   :height: 334px
+.. image:: showcase/showcase_97_0.png
+   :width: 630px
+   :height: 225px
 
 
 On-the-fly colormaps
@@ -1252,7 +1223,7 @@ constructor, as are keyword args specified with ``cmap_kw``.
 
 
 
-.. image:: showcase/showcase_102_0.png
+.. image:: showcase/showcase_99_0.png
    :width: 634px
    :height: 232px
 
@@ -1285,7 +1256,7 @@ constructor. Maps in this folder will be loaded by ProPlot on import.
 
 
 
-.. image:: showcase/showcase_104_1.png
+.. image:: showcase/showcase_101_1.png
    :width: 544px
    :height: 334px
 
@@ -1317,7 +1288,7 @@ on-the-fly.
 
 
 
-.. image:: showcase/showcase_106_0.png
+.. image:: showcase/showcase_103_0.png
    :width: 652px
    :height: 422px
 
@@ -1325,9 +1296,10 @@ on-the-fly.
 Changing the color cycle
 ------------------------
 
-You can specify the color cycler with the ``cycle`` keyword arg, passed
-to any plotting command, or change the global default cycle with
-``plot.rc.cycle = name``.
+You can specify the color cycler by passing ``cycle`` to any plotting
+command, or by changing the global default cycle with
+``plot.rc.cycle = name``. The below example demonstrates the former
+approach.
 
 .. code:: ipython3
 
@@ -1342,7 +1314,36 @@ to any plotting command, or change the global default cycle with
 
 
 
-.. image:: showcase/showcase_109_0.png
+.. image:: showcase/showcase_106_0.png
    :width: 517px
    :height: 356px
+
+
+Also note that colormaps and color cycles are totally interchangeable!
+You can use a colormap as a color cycler, and (though this isn’t
+recommended) vice versa.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=2.2)
+    m = axs[0].pcolormesh(np.random.rand(20,20), cmap='538', levels=np.linspace(0,1,7))
+    f.bottompanel[0].colorbar(m, label='clabel')
+    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=3)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
+    axs[0].format(title='Color cycler as colormap')
+    axs[1].format(title='Colormap as cycler, with "colorbar legend"')
+    f.bottompanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
+
+
+
+
+
+
+
+.. image:: showcase/showcase_108_1.png
+   :width: 490px
+   :height: 334px
 

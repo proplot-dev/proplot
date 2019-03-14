@@ -8,14 +8,13 @@ ProPlot
 =======
 
 An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
-that provides versatile plotting utilities
-for making beautiful, publication-quality graphics.
+that can help you make beautiful, publication-quality graphics.
 
 Installation
 ============
 
 This package is a work-in-progress. Currently there is no formal release
-on PyPi. However, feel free to install directly from Github using:
+on PyPi (but it's coming soon!). For the time being, you may install directly from Github using:
 
 .. code-block:: bash
 
@@ -29,44 +28,31 @@ I recommend importing with
 
    import proplot as plot
 
-to differentiate the abbreviation from the usual `~matplotlib.pyplot` abbreviation "``plt``".
-If you are in an ipython notebook, I also recommend adding
+to differentiate ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module. If you are in an ipython notebook, I also recommend adding
 
 .. code-block:: python
 
    plot.nbsetup()
 
-This enables a couple useful extensions and greatly increases the resolution of your inline figures -- ProPlot
-applies relatively small font size and line width defaults, so that the physical size matches what might appear
-in a 
-See `~proplot.notebook.nbsetup` for details.
+The `~proplot.notebook.nbsetup` command enables two useful iPython extensions and greatly increases the resolution of your inline figures -- ProPlot applies relatively small font size and line width defaults, so that the physical sizes match what might appear in print. See the `~proplot.rcmod` documentation for more on how to change these defaults.
 
 Overview
 ========
 
 On import, a bunch of new colormaps and string color names are registered.
 If this is all you want, and you don't care about other features, simply
-import ProPlot at the top of your script. See `~proplot.colortools` for details,
-and the visualizations in :ref:`Colormaps`, :ref:`Color cycles`,
-:ref:`Color names`.
+import ProPlot at the top of your script. See `~proplot.colortools` for details, and the :ref:`Table of colormaps`, :ref:`Table of color cycles`, and :ref:`Table of colors`.
 
 The remaining features mostly derive from the `~proplot.subplots.subplots` command, inspired
 by the pyplot `~matplotlib.pyplot.subplots` command. This generates a scaffolding
 of axes with new, helpful methods. It also has a bunch of other useful features, like "panels"
 and built-in geographic projections.
 
-The next most important utilities are the `format` methods on the `~proplot.axes.BaseAxes`,
-`~proplot.axes.XYAxes`, `~proplot.axes.CartopyAxes`, and `~proplot.axes.BasemapAxes` axes
-returned by `~proplot.subplots.subplots`. Use `format` to fine-tune
-your axis properties, titles, labels, limits, and much more. This API is **much less verbose**
-and **much more powerful** than the builtin
-`pyplot and object-oriented <https://matplotlib.org/api/api_overview.html>`__
-matplotlib APIs.
+The next most important utility is the ``format`` method on `~proplot.axes.BaseAxes`, which calls so-called ``smart_update`` methods on the `~proplot.axes.BaseAxes`, `~proplot.axes.XYAxes`, `~proplot.axes.CartopyAxes`, and `~proplot.axes.BasemapAxes` axes types. The latter three types can all be returned by `~proplot.subplots.subplots`, depending on the arguments you used. Use `~proplot.axes.BaseAxes.format` to fine-tune your axis properties, titles, labels, limits, and much more. This API is much **less verbose** and **more powerful** than the builtin `pyplot and object-oriented <https://matplotlib.org/api/api_overview.html>`__ matplotlib APIs.
 
 .. This is just so top-level headers in the showcase.rst
    file appear as *subsections* in the documentation to
    a parent 'showcase' section.
-
 
 .. Below replaces traditional autodoc invocation with
    .. automodule:: mods.set.tests
@@ -78,7 +64,7 @@ matplotlib APIs.
    :maxdepth: 4
    :caption: Contents
 
-   header
+   tutorial
    quickstart
    documentation
 

@@ -988,7 +988,7 @@ def eFormatter():
 # Includes some custom classes, so has to go at end
 scales = mscale._scale_mapping
 """The registered scale names and their associated
-`~matplotlib.scale.ScaleBase classes."""
+`~matplotlib.scale.ScaleBase` classes."""
 
 locators = {
     'none':        mticker.NullLocator,

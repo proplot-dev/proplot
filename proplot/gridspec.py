@@ -5,8 +5,28 @@ import re
 from .rcmod import rc
 from .utils import _default, units, ic
 
-# Generate custom GridSpec classes that override the GridSpecBase
-# __setitem__ method a* nd the 'base' __init__ method
+# Helper function
+def _adjust(n):
+    """Account for negative indices."""
+    if n<0:
+        return 2*(n+1) - 1 # want -1 to stay -1, -2 becomes -3, etc.
+    else:
+        return n*2
+
+def _normalize(key, size):
+    """Transform gridspec index into standardized form."""
+    if isinstance(key, slice):
+        start, stop, _ = key.indices(size)
+        if stop > start:
+            return start, stop - 1
+    else:
+        if key < 0:
+            key += size
+        if 0 <= key < size:
+            return key, key
+        raise IndexError(f"Invalid index: {key} with size {size}.")
+
+# Classes
 class FlexibleGridSpecBase(object):
     """
     Generalization of builtin `~matplotlib.gridspec.GridSpec` that allows for
@@ -64,42 +84,22 @@ class FlexibleGridSpecBase(object):
                 )
 
     def __getitem__(self, key):
-        # Magic obfuscation that renders rows and columns designated as
-        # 'spaces' invisible. Note: key is tuple if multiple indices requested.
-        def _normalize(key, size):
-            if isinstance(key, slice):
-                start, stop, _ = key.indices(size)
-                if stop > start:
-                    return start, stop - 1
-            else:
-                if key < 0:
-                    key += size
-                if 0 <= key < size:
-                    return key, key
-            raise IndexError(f"Invalid index: {key} with size {size}.")
-        # SubplotSpec initialization figures out the row/column
-        # geometry of these two numbers automatically
+        """Magic obfuscation that renders rows and columns designated as
+        'spaces' invisible."""
+        # Get indices
         nrows, ncols = self._nrows, self._ncols
         nrows_visible, ncols_visible = self._nrows_visible, self._ncols_visible
-        if isinstance(key, tuple):
-            try:
-                k1, k2 = key
-            except ValueError:
-                raise ValueError('Unrecognized subplot spec "{key}".')
-            num1, num2 = np.ravel_multi_index(
-                [_normalize(k1, nrows_visible), _normalize(k2, ncols_visible)],
-                (nrows, ncols),
-                )
-        else:
+        if not isinstance(key, tuple): # usage gs[1,2]
             num1, num2 = _normalize(key, nrows_visible * ncols_visible)
-        # When you move to a new column that skips a 'hspace' and when you
-        # move to a new row that skips a 'wspace' -- so, just multiply
-        # the scalar indices by 2!
-        def _adjust(n):
-            if n<0:
-                return 2*(n+1) - 1 # want -1 to stay -1, -2 becomes -3, etc.
+        else:
+            if len(key)==2:
+                k1, k2 = key
             else:
-                return n*2
+                raise ValueError(f'Invalid index: "{key}".')
+            num1 = _normalize(k1, nrows_visible)
+            num2 = _normalize(k2, ncols_visible)
+            num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
+        # Correct for negative nums
         num1, num2 = _adjust(num1), _adjust(num2)
         return mgridspec.SubplotSpec(self, num1, num2)
 
@@ -161,15 +161,13 @@ class FlexibleGridSpecBase(object):
         return wratios_final, hratios_final, kwargs # bring extra kwargs back
 
     def update(self, **gridspec_kw):
-        """Updates the width, height ratios and spacing for subplot columns, rows."""
-        # Handle special hspace/wspace arguments, and just set the simple
-        # left/right/top/bottom attributes
+        """Update the width, height ratios and spacing for subplot columns, rows."""
         wratios, hratios, edges_kw = self.spaces_as_ratios(**gridspec_kw)
         self.set_width_ratios(wratios)
         self.set_height_ratios(hratios)
-        edges_kw = {key:value for key,value in edges_kw.items()
-            if key not in ('nrows','ncols')} # cannot be modified
-        super().update(**edges_kw) # remaining kwargs should just be left/right/top/bottom
+        edges_kw.pop('nrows', None) # cannot be modified
+        edges_kw.pop('ncols', None)
+        super().update(**edges_kw) # remaining kwargs should just be left, right, top, bottom
 
 class FlexibleGridSpec(FlexibleGridSpecBase, mgridspec.GridSpec):
     """Dummy mixer class. See `FlexibleGridSpecBase`."""

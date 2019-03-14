@@ -3,10 +3,10 @@
 The axes subclasses central to this library, plus the enhanced
 colorbar and legend functions.
 
-You should focus on the ``format`` and ``fancy_update`` methods:
-`BaseAxes.format`, `BaseAxes.fancy_update`, `XYAxes.fancy_update`,
-and `CartopyAxes.fancy_update` and `BasemapAxes.fancy_update`.
-The `BaseAxes.format` method calls the ``fancy_update`` methods in turn.
+You should focus on the ``format`` and ``smart_update`` methods:
+`BaseAxes.format`, `BaseAxes.smart_update`, `XYAxes.smart_update`,
+and `CartopyAxes.smart_update` and `BasemapAxes.smart_update`.
+The `BaseAxes.format` method calls the ``smart_update`` methods in turn.
 These methods are your one-stop-shop for changing axes settings like
 *x* and *y* axis limits, axis labels, tick locations, tick label
 format, grid lines, scales, titles, a-b-c labelling, adding
@@ -1028,7 +1028,7 @@ class BaseAxes(maxes.Axes):
     # Format
     def format(self, rc_kw=None, **kwargs):
         """
-        Sets up temporary rc settings and calls `fancy_update` methods.
+        Sets up temporary rc settings and calls ``smart_update`` methods.
 
         Parameters
         ----------
@@ -1042,7 +1042,7 @@ class BaseAxes(maxes.Axes):
             * A global "rc" keyword arg, like ``linewidth`` or ``color``.
             * A standard "rc" keyword arg **with the dots omitted**.
               For example, ``land.color`` becomes ``landcolor``.
-            * Any valid keyword arg for the `fancy_update` methods.
+            * Any valid keyword arg for the ``smart_update`` methods.
 
             The first two options will update the `~proplot.rcmod.rc`
             object, just like `rc_kw`.
@@ -1050,8 +1050,8 @@ class BaseAxes(maxes.Axes):
         See also
         --------
         `~proplot.rcmod`,
-        `BaseAxes.fancy_update`, `XYAxes.fancy_update`,
-        `BasemapAxes.fancy_update`, `CartopyAxes.fancy_update`
+        `BaseAxes.smart_update`, `XYAxes.smart_update`,
+        `BasemapAxes.smart_update`, `CartopyAxes.smart_update`
         """
         # Figure out which kwargs are valid rc settings
         # WARNING: First part will fail horribly if mode is not zero!
@@ -1074,11 +1074,11 @@ class BaseAxes(maxes.Axes):
                 kw.update({'xloc':'top', 'xlabelloc':'top', 'xticklabelloc':'top'})
         kw.update(kw_extra)
         with rc._context(rc_kw, mode=2):
-            self.fancy_update(**kw)
+            self.smart_update(**kw)
 
     # New convenience feature
     # The title position can be a mix of 'l/c/r' and 'i/o'
-    def fancy_update(self, title=None, abc=None,
+    def smart_update(self, title=None, abc=None,
         suptitle=None, collabels=None, rowlabels=None, # label rows and columns
         top=True, # nopanel optionally puts title and abc label in main axes
         ):
@@ -1129,7 +1129,7 @@ class BaseAxes(maxes.Axes):
         See also
         --------
         `~proplot.subplots.subplots`, `~proplot.rcmod`,
-        `XYAxes.fancy_update`, `BasemapAxes.fancy_update`, `CartopyAxes.fancy_update`
+        `XYAxes.smart_update`, `BasemapAxes.smart_update`, `CartopyAxes.smart_update`
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -1628,7 +1628,7 @@ class XYAxes(BaseAxes):
         return axis.label
 
     # Cool overrides
-    def fancy_update(self, tickfix=False, # whether to always transform locator to FixedLocator
+    def smart_update(self, tickfix=False, # whether to always transform locator to FixedLocator
         xloc=None,          yloc=None,          # aliases for 'where to put spine'
         xmargin=None,       ymargin=None,
         xcolor=None,        ycolor=None,        # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
@@ -2024,7 +2024,7 @@ class XYAxes(BaseAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         if (xlim is not None or ylim is not None) and self._inset_parent:
             self.indicate_inset_zoom()
-        super().fancy_update(**kwargs)
+        super().smart_update(**kwargs)
 
     def dualx(self, offset=0, scale=1, xscale='linear', **kwargs):
         """As with `XYAxes.dualy`, but for the *x*-axis. See `XYAxes.dualy`."""
@@ -2439,7 +2439,7 @@ class MapAxes(BaseAxes):
         latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels
             Keyword args, standardized and with aliases interpreted.
         **kwargs
-            Passed to `BaseAxes.fancy_update`.
+            Passed to `BaseAxes.smart_update`.
         """
         # Parse alternative keyword args
         lonlim = _default(xlim, lonlim)
@@ -2603,7 +2603,7 @@ class CartopyAxes(MapAxes, GeoAxes):
 
     # Format cartopy GeoAxes.
     # Add documentation here.
-    def fancy_update(self, grid=None, **kwargs):
+    def smart_update(self, grid=None, **kwargs):
         """
         Format the map projection.
 
@@ -2612,7 +2612,7 @@ class CartopyAxes(MapAxes, GeoAxes):
         grid : None or bool, optional
             Whether to draw latitude longitude lines.
         **kwargs
-            Passed to `MapAxes.parse_args` and `BaseAxes.fancy_update`.
+            Passed to `MapAxes.parse_args` and `BaseAxes.smart_update`.
 
         See also
         --------
@@ -2751,7 +2751,7 @@ class CartopyAxes(MapAxes, GeoAxes):
         self.outline_patch.update(kw)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().fancy_update(**kwargs)
+        super().smart_update(**kwargs)
 
 def _ls_translate(obj, style):
     """
@@ -2869,7 +2869,7 @@ class BasemapAxes(MapAxes):
             obj = _m_no_recurse(self, obj)
         return obj
 
-    def fancy_update(self, grid=None, **kwargs):
+    def smart_update(self, grid=None, **kwargs):
         """
         Format the map projection.
 
@@ -2878,12 +2878,12 @@ class BasemapAxes(MapAxes):
         grid : None or bool, optional
             Whether to draw latitude longitude lines.
         **kwargs
-            Passed to `MapAxes.parse_args` and `BaseAxes.fancy_update`.
+            Passed to `MapAxes.parse_args` and `BaseAxes.smart_update`.
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `MapAxes.parse_args` and `BaseAxes.fancy_update`.
+            Passed to `MapAxes.parse_args` and `BaseAxes.smart_update`.
 
         See also
         --------
@@ -3001,7 +3001,7 @@ class BasemapAxes(MapAxes):
             setattr(self, f'_{name}', feat)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
-        super().fancy_update(**kwargs)
+        super().smart_update(**kwargs)
 
 # Register the projections
 mproj.register_projection(BaseAxes)

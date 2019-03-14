@@ -16,7 +16,7 @@ BasemapAxes
 
    .. autosummary::
 
-      ~BasemapAxes.fancy_update
+      ~BasemapAxes.smart_update
 
    .. rubric:: Attributes Documentation
 
@@ -24,4 +24,4 @@ BasemapAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: fancy_update
+   .. automethod:: smart_update

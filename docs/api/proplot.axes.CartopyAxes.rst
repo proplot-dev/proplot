@@ -16,7 +16,7 @@ CartopyAxes
 
    .. autosummary::
 
-      ~CartopyAxes.fancy_update
+      ~CartopyAxes.smart_update
 
    .. rubric:: Attributes Documentation
 
@@ -24,4 +24,4 @@ CartopyAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: fancy_update
+   .. automethod:: smart_update

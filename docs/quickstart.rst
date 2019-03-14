@@ -5,9 +5,5 @@ Getting started
 .. toctree::
    :maxdepth: 4
 
-   create
-   extras
-   maps
-   format
-   colors
+   start.rst
 

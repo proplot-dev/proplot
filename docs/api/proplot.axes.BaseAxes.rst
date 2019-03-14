@@ -18,12 +18,12 @@ BaseAxes
 
       ~BaseAxes.cmapline
       ~BaseAxes.colorbar
-      ~BaseAxes.fancy_update
       ~BaseAxes.format
       ~BaseAxes.invisible
       ~BaseAxes.legend
       ~BaseAxes.plot
       ~BaseAxes.scatter
+      ~BaseAxes.smart_update
       ~BaseAxes.text
 
    .. rubric:: Attributes Documentation
@@ -34,10 +34,10 @@ BaseAxes
 
    .. automethod:: cmapline
    .. automethod:: colorbar
-   .. automethod:: fancy_update
    .. automethod:: format
    .. automethod:: invisible
    .. automethod:: legend
    .. automethod:: plot
    .. automethod:: scatter
+   .. automethod:: smart_update
    .. automethod:: text
