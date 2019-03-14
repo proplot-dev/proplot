@@ -238,6 +238,13 @@ _space_aliases = {
     'hcl':   'hcl',
     'lch':   'hcl',
     }
+_channel_idxs = {
+    'h': 0, 'hue': 0,
+    's': 1, 'saturation': 1,
+    'c': 1, 'chroma': 1,
+    'l': 2, 'luminance': 2,
+    'a': 3, 'alpha': 3,
+    }
 
 # Names of builtin colormaps
 # NOTE: Has support for 'x' coordinates in first column.
@@ -475,11 +482,8 @@ _cmap_categories = { # initialize as empty lists
         ],
 
     }
-
-
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 _cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous Orig']
-
 # Slice indices that split up segments of names
 # WARNING: Must add to this list manually! Not worth trying to generalize.
 # List of string cmap names, and the indices where they can be broken into parts
@@ -659,7 +663,7 @@ if not isinstance(mcm.cmap_d, CmapDict):
     mcm.cmap_d = CmapDict(mcm.cmap_d)
 
 #------------------------------------------------------------------------------#
-# More generalized utility for retrieving colors
+# Color manipulation functions
 #------------------------------------------------------------------------------#
 def _get_space(space):
     """Verify requested colorspace is valid."""
@@ -668,8 +672,32 @@ def _get_space(space):
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
 
+def _get_channel(color, channel, space='hsl'):
+    """Gets hue, saturation, or luminance channel value from registered
+    string color name. The color name `color` can optionally be a string
+    with the format ``'color+x'`` or ``'color-x'``, where `x` specifies
+    the offset from the channel value."""
+    # Interpret channel
+    channel = _channel_idxs.get(channel, channel)
+    if callable(color) or isinstance(color, Number):
+        return color
+    if channel not in (0,1,2):
+        raise ValueError('Channel must be in [0,1,2].')
+    # Interpret string or RGB tuple
+    offset = 0
+    if isinstance(color, str):
+        regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
+        match = re.search(regex, color)
+        if match:
+            try:
+                offset = float(match.group(0))
+            except ValueError:
+                raise ValueError(f'Invalid channel identifier "{color}".')
+            color = color[:match.start()]
+    return offset + to_xyz(to_rgb(color, 'rgb'), space)[channel]
+
 def shade(color, shade=0.5):
-    """Change the "shade" of a color by messing with its luminance channel."""
+    """Changes the "shade" of a color by scaling its luminance channel by `shade`."""
     try:
         color = mcolors.to_rgb(color) # ensure is valid color
     except Exception:
@@ -709,7 +737,7 @@ def to_rgb(color, space='rgb'):
     return color
 
 def to_xyz(color, space):
-    """Translates to colorspace `space` from RGB space. Inverse of `to_rgb`."""
+    """Translates from RGB space to colorspace `space`. Inverse of `to_rgb`."""
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit out-of-bounds RGB values to invert conversion
     if isinstance(color, str):
@@ -730,59 +758,10 @@ def to_xyz(color, space):
         raise ValueError(f'Invalid colorspace {space}.')
     return color
 
-def add_alpha(color):
-    """Ensures presence of alpha channel."""
-    if not np.iterable(color) or isinstance(color, str):
-        raise ValueError('Input must be color tuple.')
-    if len(color)==3:
-        color = [*color, 1.0]
-    elif len(color)==4:
-        color = [*color] # copy, and put into list
-    else:
-        raise ValueError(f'Tuple length must be 3 or 4, got {len(color)}.')
-    return color
-
-def get_channel_value(color, channel, space='hsl'):
-    """
-    Gets hue, saturation, or luminance channel value from registered
-    string color name.
-
-    Parameters
-    ----------
-    color : str or (R,G,B) tuple
-        Scalar numeric ranging from 0-1, or string color name, optionally
-        with offset specified as ``'color+x'`` or ``'color-x'`` at the end of
-        the string for arbitrary float x.
-    channel : str or float
-        Channel number or name (e.g., 0, 1, 2, 'h', 's', 'l')
-    space : {'hsl', 'hcl', 'hpl'}
-        The colorspace.
-    """
-    # Interpret channel
-    channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2,
-                    'alpha': 3, 'h': 0, 's': 1, 'c': 1, 'l': 2}
-    channel = channel_idxs.get(channel, channel)
-    if callable(color) or isinstance(color, Number):
-        return color
-    if channel not in (0,1,2):
-        raise ValueError('Channel must be in [0,1,2].')
-    # Interpret string or RGB tuple
-    offset = 0
-    if isinstance(color, str):
-        regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
-        match = re.search(regex, color)
-        if match:
-            try:
-                offset = float(match.group(0))
-            except ValueError:
-                raise ValueError(f'Invalid channel identifier "{color}".')
-            color = color[:match.start()]
-    return offset + to_xyz(to_rgb(color, 'rgb'), space)[channel]
-
 #------------------------------------------------------------------------------#
-# Generalized colormap/cycle constructors
+# Helper functions
 #------------------------------------------------------------------------------#
-def clip_cmap(cmap, left=None, right=None, N=None):
+def _clip_cmap(cmap, left=None, right=None, N=None):
     """
     Helper function that cleanly divides linear segmented colormaps and
     subsamples listed colormaps.
@@ -858,6 +837,196 @@ def clip_cmap(cmap, left=None, right=None, N=None):
         # And finally rebuild map
         cmap = type(cmap)(cmap.name, newdata, **kwargs)
     return cmap
+
+def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
+    """
+    Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
+
+    Parameters
+    ----------
+    colors : list of length-3 tuples
+        The RGB colors.
+    mask : bool, optional
+        Whether to mask out (set to `gray` color) or clip (limit
+        range of each channel to 0-1) the out-of-range RGB channels.
+    gray : float, optional
+        The identical RGB channel values (gray color) to be used if `mask`
+        is ``True``.
+    verbose : bool, optional
+        Whether to print message if colors are clipped.
+
+    Notes
+    -----
+    I could use `numpy.clip` (`matplotlib.colors` uses this under the hood),
+    but we want to display messages. And anyway, premature efficiency is
+    the root of all evil, we're manipulating like 1000 colors max here, so
+    it's no big deal.
+    """
+    message = 'Invalid' if mask else 'Clipped'
+    colors = np.array(colors) # easier
+    under = (colors<0)
+    over  = (colors>1)
+    if mask:
+        colors[(under | over)] = gray
+    else:
+        colors[under] = 0
+        colors[over]  = 1
+    if verbose:
+        for i,name in enumerate('rgb'):
+            if under[:,i].any():
+                warnings.warn(f'{message} "{name}" channel (<0).')
+            if over[:,i].any():
+                warnings.warn(f'{message} "{name}" channel (>1).')
+    return colors
+
+def _make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
+    """Constructs a list of linear segments for an individual channel.
+    This was made so that user can input e.g. a callable function for
+    one channel, but request linear interpolation for another one."""
+    # Handle function handles
+    if callable(values):
+        if reverse:
+            values = lambda x: values(1-x)
+        return values # just return the callable
+    values = np.atleast_1d(values)
+    if len(values)==1:
+        value = values[0]
+        return [(0, value, value), (1, value, value)] # just return a constant transition
+
+    # Get x coordinates
+    if not np.iterable(values):
+        raise TypeError('Colors must be iterable.')
+    if ratios is not None:
+        xvals = np.atleast_1d(ratios) # could be ratios=1, i.e. dummy
+        if len(xvals) != len(values) - 1:
+            raise ValueError(f'Got {len(values)} values, but {len(ratios)} ratios.')
+        xvals = np.concatenate(([0], np.cumsum(xvals)))
+        xvals = xvals/np.max(xvals) # normalize to 0-1
+    else:
+        xvals = np.linspace(0,1,len(values))
+
+    # Build vector
+    array = []
+    slicer = slice(None,None,-1) if reverse else slice(None)
+    for x,value in zip(xvals,values[slicer]):
+        array.append((x, value, value))
+    return array
+
+def make_mapping_array(N, data, gamma=1.0, reverse=False):
+    r"""
+    Mostly a copy of `~matplotlib.colors.makeMappingArray`, but allows
+    *circular* hue gradations along 0-360, disables clipping of
+    out-of-bounds channel values, and with fancier "gamma" scaling.
+
+    Parameters
+    ----------
+    N : int
+        Number of points in the generated lookup table.
+    data : 2D array-like
+        List of :math:`(x, y_0, y_1)` tuples specifying the channel jump (from
+        :math:`y_0` to :math:`y_1`) and the :math:`x` coordinate of that
+        transition (ranges between 0 and 1).
+        See `~matplotlib.colors.LinearSegmentedColormap` for details.
+    gamma : float or list of float, optional
+        To obtain channel values between coordinates :math:`x_i` and
+        :math:`x_{i+1}` in rows :math:`i` and :math:`i+1` of `data`,
+        we use the formula:
+
+        .. math::
+
+            y = y_{1,i} + w_i^{\gamma_i}*(y_{0,i+1} - y_{1,i})
+
+        where :math:`\gamma_i` corresponds to `gamma` and the weight
+        :math:`w_i` ranges from 0 to 1 between rows ``i`` and ``i+1``.
+        If `gamma` is float, it applies to every transition. Otherwise,
+        its length must equal ``data.shape[0]-1``.
+    reverse : bool, optional
+        If ``True``, :math:`w_i^{\gamma_i}` is replaced with
+        :math:`1 - (1 - w_i)^{\gamma_i}` -- that is, when `gamma` is greater
+        than 1, this weights colors toward *higher* channel values instead
+        of lower channel values.
+
+        This is implemented in case we want to apply *equal* "gamma scaling"
+        to different HSL channels in different directions. Usually, this
+        is done to weight low data values with higher luminance *and* lower
+        saturation, thereby emphasizing "extreme" data values with stronger
+        colors.
+    """
+    # Optionally allow for ***callable*** instead of linearly interpolating
+    # between line segments
+    gammas = np.atleast_1d(gamma)
+    if (gammas < 0.01).any() or (gammas > 10).any():
+        raise ValueError('Gamma can only be in range [0.01,10].')
+    if callable(data):
+        if len(gammas)>1:
+            raise ValueError('Only one gamma allowed for functional segmentdata.')
+        x = np.linspace(0, 1, N)**gamma
+        lut = np.array(data(x), dtype=float)
+        return lut
+
+    # Get array
+    try:
+        data = np.array(data)
+    except Exception:
+        raise TypeError('Data must be convertible to an array.')
+    shape = data.shape
+    if len(shape) != 2 or shape[1] != 3:
+        raise ValueError('Data must be nx3 format.')
+    if len(gammas)!=1 and len(gammas)!=shape[0]-1:
+        raise ValueError(f'Need {shape[0]-1} gammas for {shape[0]}-level mapping array, but got {len(gamma)}.')
+    if len(gammas)==1:
+        gammas = np.repeat(gammas, shape[:1])
+
+    # Get indices
+    x  = data[:, 0]
+    y0 = data[:, 1]
+    y1 = data[:, 2]
+    if x[0] != 0.0 or x[-1] != 1.0:
+        raise ValueError('Data mapping points must start with x=0 and end with x=1.')
+    if (np.diff(x) < 0).any():
+        raise ValueError('Data mapping points must have x in increasing order.')
+    x = x*(N - 1)
+
+    # Get distances from the segmentdata entry to the *left* for each requested
+    # level, excluding ends at (0,1), which must exactly match segmentdata ends
+    xq = (N - 1)*np.linspace(0, 1, N)
+    ind = np.searchsorted(x, xq)[1:-1] # where xq[i] must be inserted so it is larger than x[ind[i]-1] but smaller than x[ind[i]]
+    distance = (xq[1:-1] - x[ind - 1])/(x[ind] - x[ind - 1])
+    # Scale distances in each segment by input gamma
+    # The ui are starting-points, the ci are counts from that point
+    # over which segment applies (i.e. where to apply the gamma)
+    _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
+    for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
+        # Test if 1
+        gamma = gammas[ind[ui]-1] # the relevant segment is to *left* of this number
+        if gamma==1:
+            continue
+        # By default, weight toward a *lower* channel value (i.e. bigger
+        # exponent implies more colors at lower value)
+        # Again, the relevant 'segment' is to the *left* of index returned by searchsorted
+        ir = False
+        if ci>1: # i.e. more than 1 color in this 'segment'
+            ir = ((y0[ind[ui]] - y1[ind[ui]-1]) < 0) # by default want to weight toward a *lower* channel value
+        if reverse:
+            ir = (not ir)
+        if ir:
+            distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
+        else:
+            distance[ui:ui + ci] **= gamma
+
+    # Perform successive linear interpolations all rolled up into one equation
+    lut = np.zeros((N,), float)
+    lut[1:-1] = distance*(y0[ind] - y1[ind - 1]) + y1[ind - 1]
+    lut[0]  = y1[0]
+    lut[-1] = y0[-1]
+    return lut
+
+#------------------------------------------------------------------------------#
+# Generalized colormap/cycle constructors
+#------------------------------------------------------------------------------#
+def colors(*args, **kwargs):
+    """Alias for `Cycle`."""
+    return Cycle(*args, **kwargs)
 
 def Colormap(*args, name=None, N=None, 
         extend='both',
@@ -1034,7 +1203,7 @@ def Colormap(*args, name=None, N=None,
             left_i = left[i]
         if np.iterable(right):
             right_i = right[i]
-        cmap = clip_cmap(cmap, left_i, right_i, N=N)
+        cmap = _clip_cmap(cmap, left_i, right_i, N=N)
         if np.iterable(reverse) and reverse[i]:
             cmap = cmap.reversed()
 
@@ -1052,7 +1221,7 @@ def Colormap(*args, name=None, N=None,
         left = None
     if np.iterable(right):
         right = None
-    cmap = clip_cmap(cmap, left, right, N=N)
+    cmap = _clip_cmap(cmap, left, right, N=N)
     if not np.iterable(reverse) and reverse:
         cmap = cmap.reversed()
 
@@ -1096,10 +1265,6 @@ def Colormap(*args, name=None, N=None,
                 json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')
     return cmap
-
-def colors(*args, **kwargs):
-    """Alias for `Cycle`."""
-    return Cycle(*args, **kwargs)
 
 def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
     """
@@ -1270,7 +1435,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             for i,xyy in enumerate(array):
                 xyy = list(xyy) # make copy!
                 for j,y in enumerate(xyy[1:]): # modify the y values
-                    xyy[j+1] = get_channel_value(y, key, space)
+                    xyy[j+1] = _get_channel(y, key, space)
                 segmentdata[key][i] = xyy
         # Initialize
         # NOTE: Our gamma1 and gamma2 scaling is just fancy per-channel
@@ -1319,7 +1484,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         # Now convert values to RGBA, and clip colors
         for i in range(self.N+3):
             self._lut[i,:3] = to_rgb(self._lut[i,:3], self.space)
-        self._lut[:,:3] = clip_colors(self._lut[:,:3], self.mask)
+        self._lut[:,:3] = _clip_colors(self._lut[:,:3], self.mask)
 
     def _resample(self, N):
         """Returns a new colormap with *N* entries."""
@@ -1383,7 +1548,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         channels = [h, s, l, a]
         cdict = {}
         for c,channel in zip(cs,channels):
-            cdict[c] = make_segmentdata_array(channel, ratios, reverse, **kwargs)
+            cdict[c] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
@@ -1426,155 +1591,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             cdict['alpha'] = 1.0 # dummy function that always returns 1.0
         # Build data arrays
         for c,channel in zip(cs,channels):
-            cdict[c] = make_segmentdata_array(channel, ratios, reverse, **kwargs)
+            cdict[c] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
-def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
-    """Constructs a list of linear segments for an individual channel.
-    This was made so that user can input e.g. a callable function for
-    one channel, but request linear interpolation for another one."""
-    # Handle function handles
-    if callable(values):
-        if reverse:
-            values = lambda x: values(1-x)
-        return values # just return the callable
-    values = np.atleast_1d(values)
-    if len(values)==1:
-        value = values[0]
-        return [(0, value, value), (1, value, value)] # just return a constant transition
-
-    # Get x coordinates
-    if not np.iterable(values):
-        raise TypeError('Colors must be iterable.')
-    if ratios is not None:
-        xvals = np.atleast_1d(ratios) # could be ratios=1, i.e. dummy
-        if len(xvals) != len(values) - 1:
-            raise ValueError(f'Got {len(values)} values, but {len(ratios)} ratios.')
-        xvals = np.concatenate(([0], np.cumsum(xvals)))
-        xvals = xvals/np.max(xvals) # normalize to 0-1
-    else:
-        xvals = np.linspace(0,1,len(values))
-
-    # Build vector
-    array = []
-    slicer = slice(None,None,-1) if reverse else slice(None)
-    for x,value in zip(xvals,values[slicer]):
-        array.append((x, value, value))
-    return array
-
-def make_mapping_array(N, data, gamma=1.0, reverse=False):
-    r"""
-    Mostly a copy of `~matplotlib.colors.makeMappingArray`, but allows
-    *circular* hue gradations along 0-360, disables clipping of
-    out-of-bounds channel values, and with fancier "gamma" scaling.
-
-    Parameters
-    ----------
-    N : int
-        Number of points in the generated lookup table.
-    data : 2D array-like
-        List of :math:`(x, y_0, y_1)` tuples specifying the channel jump (from
-        :math:`y_0` to :math:`y_1`) and the :math:`x` coordinate of that
-        transition (ranges between 0 and 1).
-        See `~matplotlib.colors.LinearSegmentedColormap` for details.
-    gamma : float or list of float, optional
-        To obtain channel values between coordinates :math:`x_i` and
-        :math:`x_{i+1}` in rows :math:`i` and :math:`i+1` of `data`,
-        we use the formula:
-
-        .. math::
-
-            y = y_{1,i} + w_i^{\gamma_i}*(y_{0,i+1} - y_{1,i})
-
-        where :math:`\gamma_i` corresponds to `gamma` and the weight
-        :math:`w_i` ranges from 0 to 1 between rows ``i`` and ``i+1``.
-        If `gamma` is float, it applies to every transition. Otherwise,
-        its length must equal ``data.shape[0]-1``.
-    reverse : bool, optional
-        If ``True``, :math:`w_i^{\gamma_i}` is replaced with
-        :math:`1 - (1 - w_i)^{\gamma_i}` -- that is, when `gamma` is greater
-        than 1, this weights colors toward *higher* channel values instead
-        of lower channel values.
-
-        This is implemented in case we want to apply *equal* "gamma scaling"
-        to different HSL channels in different directions. Usually, this
-        is done to weight low data values with higher luminance *and* lower
-        saturation, thereby emphasizing "extreme" data values with stronger
-        colors.
-    """
-    # Optionally allow for ***callable*** instead of linearly interpolating
-    # between line segments
-    gammas = np.atleast_1d(gamma)
-    if (gammas < 0.01).any() or (gammas > 10).any():
-        raise ValueError('Gamma can only be in range [0.01,10].')
-    if callable(data):
-        if len(gammas)>1:
-            raise ValueError('Only one gamma allowed for functional segmentdata.')
-        x = np.linspace(0, 1, N)**gamma
-        lut = np.array(data(x), dtype=float)
-        return lut
-
-    # Get array
-    try:
-        data = np.array(data)
-    except Exception:
-        raise TypeError('Data must be convertible to an array.')
-    shape = data.shape
-    if len(shape) != 2 or shape[1] != 3:
-        raise ValueError('Data must be nx3 format.')
-    if len(gammas)!=1 and len(gammas)!=shape[0]-1:
-        raise ValueError(f'Need {shape[0]-1} gammas for {shape[0]}-level mapping array, but got {len(gamma)}.')
-    if len(gammas)==1:
-        gammas = np.repeat(gammas, shape[:1])
-
-    # Get indices
-    x  = data[:, 0]
-    y0 = data[:, 1]
-    y1 = data[:, 2]
-    if x[0] != 0.0 or x[-1] != 1.0:
-        raise ValueError('Data mapping points must start with x=0 and end with x=1.')
-    if (np.diff(x) < 0).any():
-        raise ValueError('Data mapping points must have x in increasing order.')
-    x = x*(N - 1)
-
-    # Get distances from the segmentdata entry to the *left* for each requested
-    # level, excluding ends at (0,1), which must exactly match segmentdata ends
-    xq = (N - 1)*np.linspace(0, 1, N)
-    ind = np.searchsorted(x, xq)[1:-1] # where xq[i] must be inserted so it is larger than x[ind[i]-1] but smaller than x[ind[i]]
-    distance = (xq[1:-1] - x[ind - 1])/(x[ind] - x[ind - 1])
-    # Scale distances in each segment by input gamma
-    # The ui are starting-points, the ci are counts from that point
-    # over which segment applies (i.e. where to apply the gamma)
-    _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
-    for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
-        # Test if 1
-        gamma = gammas[ind[ui]-1] # the relevant segment is to *left* of this number
-        if gamma==1:
-            continue
-        # By default, weight toward a *lower* channel value (i.e. bigger
-        # exponent implies more colors at lower value)
-        # Again, the relevant 'segment' is to the *left* of index returned by searchsorted
-        ir = False
-        if ci>1: # i.e. more than 1 color in this 'segment'
-            ir = ((y0[ind[ui]] - y1[ind[ui]-1]) < 0) # by default want to weight toward a *lower* channel value
-        if reverse:
-            ir = (not ir)
-        if ir:
-            distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
-        else:
-            distance[ui:ui + ci] **= gamma
-
-    # Perform successive linear interpolations all rolled up into one equation
-    lut = np.zeros((N,), float)
-    lut[1:-1] = distance*(y0[ind] - y1[ind - 1]) + y1[ind - 1]
-    lut[0]  = y1[0]
-    lut[-1] = y0[-1]
-    return lut
-
-#------------------------------------------------------------------------------#
-# Colormap constructors
-#------------------------------------------------------------------------------#
 def merge_cmaps(*args, name='merged', ratios=1, N=512, **kwargs):
     """
     Merges arbitrary colormaps. This is used when you pass multiple `args`
@@ -1707,48 +1727,6 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     index = slice(None,None,-1) if reverse else slice(None)
     return PerceptuallyUniformColormap.from_hsl(name, h,
             [fs,s][index], [fl,l][index], space=space, **kwargs)
-
-def clip_colors(colors, mask=True, gray=0.2, verbose=False):
-    """
-    Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
-
-    Parameters
-    ----------
-    colors : list of length-3 tuples
-        The RGB colors.
-    mask : bool, optional
-        Whether to mask out (set to `gray` color) or clip (limit
-        range of each channel to 0-1) the out-of-range RGB channels.
-    gray : float, optional
-        The identical RGB channel values (gray color) to be used if `mask`
-        is ``True``.
-    verbose : bool, optional
-        Whether to print message if colors are clipped.
-
-    Notes
-    -----
-    I could use `numpy.clip` (`matplotlib.colors` uses this under the hood),
-    but we want to display messages. And anyway, premature efficiency is
-    the root of all evil, we're manipulating like 1000 colors max here, so
-    it's no big deal.
-    """
-    message = 'Invalid' if mask else 'Clipped'
-    colors = np.array(colors) # easier
-    under = (colors<0)
-    over  = (colors>1)
-    if mask:
-        colors[(under | over)] = gray
-    else:
-        colors[under] = 0
-        colors[over]  = 1
-    if verbose:
-        for i,name in enumerate('rgb'):
-            if under[:,i].any():
-                warnings.warn(f'{message} "{name}" channel (<0).')
-            if over[:,i].any():
-                warnings.warn(f'{message} "{name}" channel (>1).')
-    return colors
-    # return colors.tolist() # so it is *hashable*, can be cached (wrote this because had weird error, was unrelated)
 
 #------------------------------------------------------------------------------#
 # Return arbitrary normalizer
@@ -2096,8 +2074,9 @@ class MidpointNorm(mcolors.Normalize):
 #------------------------------------------------------------------------------#
 def register_colors(nmax=np.inf, verbose=False):
     """
-    Called on import. Registers new color names and **filter** them to be
-    necessarily "perceptually distinct" in the HSL colorspace.
+    Registers new color names and filters them to be
+    sufficiently "perceptually distinct" in the HSL colorspace.
+    Called on import.
 
     Use `~proplot.demos.color_show` to generate a table of the resulting
     filtered colors.
@@ -2189,8 +2168,9 @@ def register_colors(nmax=np.inf, verbose=False):
 
 def register_cmaps():
     """
-    Called on import. Registers colormaps and color cycles packaged with
+    Registers colormaps and color cycles packaged with
     ProPlot. That is, add maps to the `matplotlib.cm.cmap_d` dictionary.
+    Called on import. 
 
     Use `~proplot.demos.cmap_show` to generate a table of the resulting
     color cycles.
@@ -2337,9 +2317,8 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Called on import. Registers color cycles defined in ``.hex`` files,
-    which contain lists of hex strings, and color cycles declared at the
-    top of this file.
+    Registers lists of colors defined in ``.hex`` files and color cycles
+    declared directly in this module. Called on import.
 
     Use `~proplot.demos.cycle_show` to generate a table of the resulting
     color cycles.
