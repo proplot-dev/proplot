@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# To avoid putting sections in table of contents use:
-# .. raw:: html
-#
-#    <h1>Header</h1>
 """
 Registers colormaps, color cycles, and color string names with
 `register_cmaps`, `register_cycles`, and `register_colors`.
@@ -1105,7 +1101,7 @@ def colors(*args, **kwargs):
     """Alias for `Cycle`."""
     return Cycle(*args, **kwargs)
 
-def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
+def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
     """
     Convenience function to draw colors from arbitrary color cycles and
     colormaps stored in `matplotlib.cm.cmap_d`.
@@ -1135,6 +1131,8 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
         instance).
     vmin, vmax : float, optional
         The minimum and maximum data values, used to scale `samples`.
+    getname : bool, optional
+        Whether to also return the "cycle name".
 
     Other parameters
     ----------------
@@ -1156,6 +1154,7 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     elif len(args)>1:
         args = [args] # presumably send a list of colors
     cmap = Colormap(*args, **kwargs) # the cmap object itself
+    name = cmap.name
     if isinstance(cmap, mcolors.ListedColormap):
         # Just get the colors
         colors = cmap.colors
@@ -1171,7 +1170,11 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
         colors = cmap((samples-vmin)/(vmax-vmin))
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
-    return colors
+    # Return
+    if getname:
+        return colors, cmap.name
+    else:
+        return colors
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
@@ -1386,8 +1389,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
     @staticmethod
     def from_list(name, color_list,
-            ratios=None, reverse=False,
-            **kwargs):
+        ratios=None, reverse=False,
+        **kwargs):
         """
         Make linear segmented colormap from list of color tuples.
 
@@ -1673,9 +1676,8 @@ def merge_cmaps(*args, name='merged', ratios=1, N=512, **kwargs):
 
 def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', **kwargs):
     """
-    Make a sequential colormap that blends from some color to near-white.
-        Build colormap by varying the luminance of some RGB color while
-        keeping its saturation and hue constant.
+    Makes a monochromatic "sequential" colormap that blends from near-white
+    to the input color.
 
     Parameters
     ----------
@@ -1694,10 +1696,6 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     ----------------
     **kwargs
         Passed to `PerceptuallyUniformColormap.from_hsl` static method.
-
-    Todo
-    ----
-    Since it's a monochrome colormap, doesn't the HSL colorspace not matter?
     """
     # Get colorspace
     h, s, l = to_xyz(to_rgb(color), space)
@@ -1712,7 +1710,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
 
 def clip_colors(colors, mask=True, gray=0.2, verbose=False):
     """
-    Clip impossible colors rendered in an HSl-to-RGB colorspace conversion.
+    Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
 
     Parameters
     ----------
@@ -1753,64 +1751,34 @@ def clip_colors(colors, mask=True, gray=0.2, verbose=False):
     # return colors.tolist() # so it is *hashable*, can be cached (wrote this because had weird error, was unrelated)
 
 #------------------------------------------------------------------------------#
-# Cycle helper functions
-#------------------------------------------------------------------------------#
-def set_cycle(cmap, samples=None, rename=False):
-    """
-    Set the default color cycler.
-
-    Parameters
-    ----------
-    cmap : str or `~matplotlib.colors.Colormap`
-        Colormap from which we draw list of colors.
-    samples : None or array-like, optional
-        Array of values from 0-1 or number indicating number of evenly spaced
-        samples from 0-1 from which to draw colormap colors.
-
-        Will be ignored if the colormap is a `~matplotlib.colors.ListedColormap`,
-        for which interpolation is not possible.
-    """
-    _colors = Cycle(cmap, samples)
-    cyl = cycler.cycler('color', _colors)
-    rcParams['axes.prop_cycle'] = cyl
-    rcParams['patch.facecolor'] = _colors[0]
-    if rename:
-        rename_colors(cmap)
-
-def rename_colors(cycle='colorblind'):
-    """
-    Calling this will change how shorthand codes like "b" or "g"
-    are interpreted by matplotlib in subsequent plots.
-
-    Parameters
-    ----------
-    cycle : {'colorblind', 'deep', 'muted', 'bright'}
-        The named seaborn palette to use as the source of colors.
-    """
-    seaborn_cycles = ['colorblind', 'deep', 'muted', 'bright']
-    if cycle=='reset':
-        colors = [(0.0, 0.0, 1.0), (0.0, .50, 0.0), (1.0, 0.0, 0.0), (.75, .75, 0.0),
-                  (.75, .75, 0.0), (0.0, .75, .75), (0.0, 0.0, 0.0)]
-    elif cycle in seaborn_cycles:
-        colors = cycles[cycle] + [(0.1, 0.1, 0.1)]
-    else:
-        raise ValueError(f'Cannot set colors with color cycle {cycle}.')
-    for code, color in zip('bgrmyck', colors):
-        rgb = mcolors.colorConverter.to_rgb(color)
-        mcolors.colorConverter.colors[code] = rgb
-        mcolors.colorConverter.cache[code]  = rgb
-
-#------------------------------------------------------------------------------#
 # Return arbitrary normalizer
 #------------------------------------------------------------------------------
 def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     """
-    Return arbitrary normalizer.
+    Returns an arbitrary `~matplotlib.colors.Normalize` instance.
 
     Parameters
     ----------
     norm_in : str or `~matplotlib.colors.Normalize`
-        Key name for the normalizer.
+        Key name for the normalizer. The recognized normalizer key names
+        are as follows:
+
+        ===============  =================================
+        Key              Class
+        ===============  =================================
+        ``'none'``       `~matplotlib.colors.NoNorm`
+        ``'null'``       `~matplotlib.colors.NoNorm`
+        ``'zero'``       `MidpointNorm`
+        ``'midpoint'``   `MidpointNorm`
+        ``'segments'``   `LinearSegmentedNorm`
+        ``'segmented'``  `LinearSegmentedNorm`
+        ``'boundary'``   `~matplotlib.colors.BoundaryNorm`
+        ``'log'``        `~matplotlib.colors.LogNorm`
+        ``'linear'``     `~matplotlib.colors.Normalize`
+        ``'power'``      `~matplotlib.colors.PowerNorm`
+        ``'symlog'``     `~matplotlib.colors.SymLogNorm`
+        ===============  =================================
+
     levels, values : array-like
         The level edges (`levels`) or centers (`values`) passed
         to `LinearSegmentedNorm`.
@@ -1824,27 +1792,6 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         Passed to the `~matplotlib.colors.Normalize` initializer.
         See `this tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
         for more info.
-
-    Notes
-    -----
-    The recognized normalizer key names are as follows:
-
-    ===============  =================================
-    Key              Class
-    ===============  =================================
-    ``'none'``       `~matplotlib.colors.NoNorm`
-    ``'null'``       `~matplotlib.colors.NoNorm`
-    ``'zero'``       `MidpointNorm`
-    ``'midpoint'``   `MidpointNorm`
-    ``'segments'``   `LinearSegmentedNorm`
-    ``'segmented'``  `LinearSegmentedNorm`
-    ``'boundary'``   `~matplotlib.colors.BoundaryNorm`
-    ``'log'``        `~matplotlib.colors.LogNorm`
-    ``'linear'``     `~matplotlib.colors.Normalize`
-    ``'power'``      `~matplotlib.colors.PowerNorm`
-    ``'symlog'``     `~matplotlib.colors.SymLogNorm`
-    ===============  =================================
-
     """
     norm, norm_preprocess = norm_in, norm
     if isinstance(norm, mcolors.Normalize):
@@ -2416,7 +2363,7 @@ def register_cycles():
     # Register names
     # Note that 'loaded' cycles will overwrite any presets with same name
     for name,colors in {**_cycles_preset, **_cycles_loaded}.items():
-        mcm.cmap_d[name] = mcolors.ListedColormap([to_rgb(color) for color in colors])
+        mcm.cmap_d[name] = mcolors.ListedColormap([to_rgb(color) for color in colors], name=name)
         cycles.add(name)
 
     # Remove some redundant or ugly ones

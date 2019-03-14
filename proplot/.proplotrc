@@ -6,9 +6,9 @@ rcGlobals:
     tight:      True
     innertight: True # may mess up aspect ratios for very complex plots
     # Important settings
-    # nbsetup:    True
-    fontname:  # will be determined by OS in ProPlot
+    fontname:  # automatically determined by OS
     cycle:     colorblind
+    rgbcycle:  True # whether to change definition of 'r', 'g', 'b', etc. color strings to match color cycle names, if possible
     cmap:      sunset
     reso:      lo # for cartopy geographic features, one of {'lo', 'med', 'hi'}
     lut:       256

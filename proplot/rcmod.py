@@ -130,12 +130,13 @@ rcGlobals
 These settings are used to change :ref:`rcParams` and :ref:`rcParams_new` settings
 in bulk, or as shorthands for common settings with longer names.
 
-==================  ==============================================================================================================
+==================  ====================================================================================================================================================
 Key                 Description
-==================  ==============================================================================================================
+==================  ====================================================================================================================================================
 ``tight``           Whether to auto-adjust figure bounds and subplot spacings.
 ``innertight``      Whether to auto-adjust spacing for axes with inner panels.
 ``cycle``           The default color cycle name, used e.g. for lines.
+``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``cmap``            The default colormap.
 ``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
 ``lut``             The number of colors to put in the colormap lookup table.
@@ -152,7 +153,7 @@ Key                 Description
 ``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
 ``tickratio``       Ratio of minor to major tick line thickness.
 ``ticklenratio``    Ratio of minor to major tick lengths.
-==================  ==============================================================================================================
+==================  ====================================================================================================================================================
 
 .. [1] For example, ``'xxx'`` or ``'..'``. See `this demo
        <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
@@ -180,6 +181,7 @@ import os
 import yaml
 import cycler
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from . import colortools
 import numpy as np
 import matplotlib as mpl
@@ -205,14 +207,15 @@ _rcGlobals_children = {
     # 'nbsetup':    [], # special toggle
     'tight':      [],
     'innertight': [],
-    'reso':       [], # geographic resolution
-    'cycle':      [], # special handling, passed through Cycle
-    'cmap':       [], # special handling, passed through Colormap
+    'reso':       [],
+    'cycle':      [],
+    'rgbcycle':   [],
+    'cmap':       [],
     'lut':        ['image.lut'],
-    'facecolor':  ['axes.facecolor'], # simple alias
-    'hatch':      ['axes.hatch'], # boolean toggles
+    'facecolor':  ['axes.facecolor'],
+    'hatch':      ['axes.hatch'],
     'grid':       ['axes.grid'],
-    'geogrid':    ['axes.geogrid'], # mimicks syncing with axes.grid
+    'geogrid':    ['axes.geogrid'],
     'gridminor':  ['axes.gridminor'],
     'color':      ['axes.labelcolor', 'axes.edgecolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'margin':     ['axes.xmargin', 'axes.ymargin'],
@@ -313,13 +316,10 @@ class _locked(dict):
 class rc_configurator(object):
     _public_api = ('reset', 'get', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
     def __init__(self):
-        """
-        Magical abstract class for managing builtin :ref:`rcParams` settings, 
+        """Magical abstract class for managing builtin :ref:`rcParams` settings, 
         our artificial :ref:`rcParams_new` settings, and new "global" settings
-        that keep certain groups of settings synced.
-
-        See the module documentation for details.
-        """
+        that keep certain groups of settings synced. See the `~proplot.rcmod`
+        documentation for details."""
         # First initialize matplotlib
         # Note rcdefaults() changes the backend! Inline plotting will fail for
         # rest of notebook session if you call rcdefaults before drawing a figure!
@@ -407,11 +407,9 @@ class rc_configurator(object):
         self._context_cache_backup = {}
 
     def __getitem__(self, key):
-        """
-        Retrieve property. If we are in a `_context` block, will only
+        """Retrieves property. If we are in a `_context` block, will only
         return cached properties (i.e. properties that user wants to
-        temporarily change). If not cached, returns None.
-        """
+        temporarily change). If not cached, returns None."""
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
@@ -458,7 +456,7 @@ class rc_configurator(object):
         return None
 
     def __setitem__(self, key, value):
-        """Set :ref:`rcGlobals`, :ref:`rcParams`, or :ref:`rcParams_new` settings."""
+        """Sets :ref:`rcGlobals`, :ref:`rcParams`, or :ref:`rcParams_new` settings."""
         # Save changed properties?
         cache = self._cache
         cache[key] = value
@@ -472,6 +470,7 @@ class rc_configurator(object):
         if key=='cycle':
             if restore:
                 cache_restore[key] = _rcGlobals[key]
+                cache_restore['patch.facecolor'] = _rcParams['patch.facecolor']
                 cache_restore['axes.prop_cycle'] = _rcParams['axes.prop_cycle']
             self._set_cycler(value)
         elif key=='cmap':
@@ -573,10 +572,8 @@ class rc_configurator(object):
         return string
 
     def _set_cmap(self, value):
-        """
-        Set the default colormap. Value is passed through
-        `~proplot.colortools.Colormap`.
-        """
+        """Sets the default colormap. Value is passed through
+        `~proplot.colortools.Colormap`."""
         kw = {}
         if np.iterable(value) and len(value)==2 and isinstance(value[-1], dict):
             value, kw = value[0], value[-1]
@@ -586,23 +583,36 @@ class rc_configurator(object):
         _rcParams['image.cmap'] = cmap.name
 
     def _set_cycler(self, value):
-        """
-        Set the default color cycler. Value is passed through
-        `~proplot.colortools.Cycle`.
-        """
+        """Sets the default color cycler. Value is passed through
+        `~proplot.colortools.Cycle`."""
         # Generally if user uses 'C0', et cetera, assume they want to
         # refer to the *default* cycler colors; so we reset that first
         current = _rcGlobals['cycle']
-        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colortools.Cycle(current))
-        if value==current:
-            return
-        # Set cycler
+        colors = colortools.Cycle(current)
+        _rcParams['patch.facecolor'] = colors[0]
+        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
+        # Set arbitrary cycler
+        # First pass to constructor
         kw = {}
         if np.iterable(value) and len(value)==2 and isinstance(value[-1], dict):
             value, kw = value[0], value[-1]
         if isinstance(value, str) or not np.iterable(value):
             value = value,
-        colors = colortools.Cycle(*value, **kw)
+        colors, name = colortools.Cycle(*value, getname=True, **kw)
+        # Optionally change RGB definitions
+        if _rcGlobals['rgbcycle']:
+            if name.lower()=='colorblind':
+                regcolors = colors + [(0.1, 0.1, 0.1)]
+            else:
+                regcolors = [(0.0, 0.0, 1.0), (0.0, .50, 0.0), (1.0, 0.0, 0.0), (.75, .75, 0.0), (.75, .75, 0.0), (0.0, .75, .75), (0.0, 0.0, 0.0)]
+            for code,color in zip('brgmyck', regcolors):
+                rgb = mcolors.colorConverter.to_rgb(color)
+                mcolors.ColorConverter.colors[code] = rgb
+                mcolors.ColorConverter.cache[code]  = rgb
+        if name==current:
+            return
+        # Pass to cycle constructor
+        _rcParams['patch.facecolor'] = colors[0]
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         figs = list(map(plt.figure, plt.get_fignums()))
         for fig in figs:
@@ -610,10 +620,8 @@ class rc_configurator(object):
                 ax.set_prop_cycle(cycler.cycler('color', colors))
 
     def _get_globals(self, key=None, value=None):
-        """
-        Return dictionaries for updating "child" properties in
-        `rcParams` and `rcParams_new` with global property.
-        """
+        """Returns dictionaries for updating "child" properties in
+        `rcParams` and `rcParams_new` with global property."""
         kw = {}
         kw_new = {}
         if key is not None and value is not None:
