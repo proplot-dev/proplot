@@ -1,6 +1,6 @@
-colorlist
+colordict
 =========
 
 .. currentmodule:: proplot.colortools
 
-.. autodata:: colorlist
+.. autodata:: colordict

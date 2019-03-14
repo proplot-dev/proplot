@@ -199,9 +199,9 @@ def InvertedScaleFactory(scale, **kwargs):
 # call.
 #------------------------------------------------------------------------------#
 def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
-    """Exponential scale, used e.g. when adding a pressure coordinate axis
-    for data plotted linear w.r.t. height. Ignore this if you're not an
-    atmospheric scientist."""
+    """Exponential scale, used when adding a pressure coordinate axis
+    for data that is plotted linearly w.r.t. height, or vice versa. Ignore
+    this if you're not an atmospheric scientist."""
     if name is None:
         name = f'exp_{expscale:.1e}_{mulscale:.1e}'
     name_ = name # must make a copy
@@ -234,7 +234,7 @@ def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
     return name_
 
 class _ExpTransform(mtransforms.Transform):
-    # Exponential coordinate transform
+    """Exponential coordinate transform."""
     input_dims = 1
     output_dims = 1
     has_inverse = True
@@ -252,7 +252,7 @@ class _ExpTransform(mtransforms.Transform):
         return _InvertedExpTransform(self._expscale, self._mulscale, self.minpos)
 
 class _InvertedExpTransform(mtransforms.Transform):
-    # Inverse of _ExpTransform
+    """Inverse exponential coordinate transform."""
     input_dims = 1
     output_dims = 1
     has_inverse = True
@@ -433,6 +433,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
         axis.set_minor_formatter(Formatter('null'))
 
 class _MercatorLatitudeTransform(mtransforms.Transform):
+    """Mercator latitude coordinate transform."""
     # Default attributes
     input_dims = 1
     output_dims = 1
@@ -459,6 +460,7 @@ class _MercatorLatitudeTransform(mtransforms.Transform):
         return _InvertedMercatorLatitudeTransform(self.thresh)
 
 class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
+    """Inverse Mercator latitude coordinate transform."""
     # As above, but for the inverse transform
     input_dims = 1
     output_dims = 1
@@ -510,6 +512,7 @@ class SineLatitudeScale(mscale.ScaleBase):
         axis.set_minor_formatter(Formatter('null'))
 
 class _SineLatitudeTransform(mtransforms.Transform):
+    """Sine latitude transform."""
     # Default attributes
     input_dims = 1
     output_dims = 1
@@ -532,6 +535,7 @@ class _SineLatitudeTransform(mtransforms.Transform):
         return _InvertedSineLatitudeTransform()
 
 class _InvertedSineLatitudeTransform(mtransforms.Transform):
+    """Inverse sine latitude transform."""
     # Inverse of _SineLatitudeTransform
     input_dims = 1
     output_dims = 1
@@ -551,11 +555,9 @@ class _InvertedSineLatitudeTransform(mtransforms.Transform):
 # Scale as the *inverse* of the axis coordinate
 #------------------------------------------------------------------------------#
 class InverseScale(mscale.ScaleBase):
-    """
-    Similar to `~matplotlib.scale.LogScale`, but this scales to be linear
+    """Similar to `~matplotlib.scale.LogScale`, but this scales to be linear
     in the *inverse* of *x*. Very useful e.g. for plotting wavelengths
-    on twin axis with wavenumbers.
-    """
+    on twin axis with wavenumbers."""
     # Developer notes:
     # Unlike log-scale, we can't just warp the space between
     # the axis limits -- have to actually change axis limits. Also this
@@ -586,28 +588,8 @@ class InverseScale(mscale.ScaleBase):
         axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
 
 class _InverseTransform(mtransforms.Transform):
+    """Inverse transform."""
     # Create transform object
-    input_dims = 1
-    output_dims = 1
-    is_separable = True
-    has_inverse = True
-    def __init__(self, minpos):
-        super().__init__()
-        self.minpos = minpos
-    def transform(self, a):
-        a = np.array(a)
-        aa = a.copy()
-        # f = np.abs(a)<=self.minpos # attempt for negative-friendly
-        # aa[f] = np.sign(a[f])*self.minpos
-        aa[aa<=self.minpos] = self.minpos
-        return 1.0/aa
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _InvertedInverseTransform(self.minpos)
-
-class _InvertedInverseTransform(mtransforms.Transform):
-    # Inverse of _InverseTransform
     input_dims = 1
     output_dims = 1
     is_separable = True
@@ -690,10 +672,10 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
 
     minor : bool, optional
         Ignored if `locator` is not ``None``. Otherwise, if ``True``, returns
-        a `~matplotlib.ticker.AutoMinorLocator` instance.
+        an `~matplotlib.ticker.AutoMinorLocator` instance.
     time : bool, optional
         Ignored if `locator` is not ``None``. Otherwise, if ``True``, returns
-        a `~matplotlib.ticker.AutoDateLocator` instance.
+        an `~matplotlib.dates.AutoDateLocator` instance.
 
     Other parameters
     ----------------
@@ -711,7 +693,7 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     # Decipher user input
     if locator is None:
         if time:
-            locator = mticker.AutoDateLocator(*args, **kwargs)
+            locator = mdates.AutoDateLocator(*args, **kwargs)
         elif minor:
             locator = mticker.AutoMinorLocator(*args, **kwargs)
         else:
@@ -729,8 +711,8 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
     return locator
 
-def Formatter(formatter, *args, axis=None, time=False, tickrange=None, **kwargs):
-    """
+def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
+    r"""
     Returns a `~matplotlib.ticker.Formatter` instance.
 
     Parameters
@@ -754,9 +736,9 @@ def Formatter(formatter, *args, axis=None, time=False, tickrange=None, **kwargs)
 
         For the dictionary lookup, options are as follows:
 
-        =============  ============================================
+        =============  ====================================================================
         Key            Class
-        =============  ============================================
+        =============  ====================================================================
         `'default'`     `ScalarFormatter`
         `'none'`       `~matplotlib.ticker.NullFormatter`
         `'null'`       `~matplotlib.ticker.NullFormatter`
@@ -770,21 +752,18 @@ def Formatter(formatter, *args, axis=None, time=False, tickrange=None, **kwargs)
         `'eng'`        `~matplotlib.ticker.EngFormatter`
         `'percent'`    `~matplotlib.ticker.PercentFormatter`
         `'index'`      `~matplotlib.ticker.IndexFormatter`
-        `'pi'`         `PiFormatter`
-        `'e'`          `eFormatter`
-        `'deg'`        `CoordinateFormatter`
-        `'lat'`        `LatFormatter`, without degree symbol
-        `'lon'`        `LonFormatter`, without degree symbol
-        `'deglat'`     `LatFormatter`, with degree symbol
-        `'deglon'`     `LonFormatter`, with degree symbol
-        =============  ============================================
+        `'pi'`         `FracFormatter`, with symbol :math:`\pi` and value `numpy.pi`
+        `'e'`          `FracFormatter`, with symbol *e* and value `numpy.e`
+        `'deg'`        `CoordFormatter`, with just a degree symbol
+        `'lat'`        `CoordFormatter`, cardinal "SN" indicator without degree symbol
+        `'lon'`        `CoordFormatter`, cardinal "WE" indicator without degree symbol
+        `'deglat'`     `CoordFormatter`, cardinal "SN" indicator with degree symbol
+        `'deglon'`     `CoordFormatter`, cardinal "WE" indicator with degree symbol
+        =============  ====================================================================
 
-    axis : None or `~matplotlib.axis.Axis`, optional
-        The axis, needed by `ScalarFormatter` and
-        its derivatives.
     time : bool, optional
         Ignored if `formatter` is not ``None``. Otherwise, if ``True``, returns
-        a `~matplotlib.ticker.AutoDateFormatter` instance.
+        an `~matplotlib.dates.AutoDateFormatter` instance.
     tickrange : (float, float), optional
         See `ScalarFormatter`.
 
@@ -816,10 +795,22 @@ def Formatter(formatter, *args, axis=None, time=False, tickrange=None, **kwargs)
             else:
                 formatter = mticker.FormatStrFormatter(formatter, *args, **kwargs) # %-style, numbers
         else:
+            # Coordinate versions
+            if formatter in ['deg', 'deglon', 'deglat', 'lon', 'lat']:
+                kwargs.update({
+                    'degrees':  ('deg' in formatter),
+                    'cardinal': (None if formatter=='deg' else 'SN' if 'lat' in formatter else 'WE')
+                    })
+                formatter = 'deg'
+            # Fractions
+            if formatter=='pi':
+                kwargs.update({'symbol': r'\pi', 'number': np.pi})
+                formatter = 'frac'
+            if formatter=='e':
+                kwargs.update({'symbol': 'e', 'number': np.e})
+                formatter = 'frac'
             if formatter not in formatters:
                 raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
-            if formatter in ['deg', 'deglon', 'deglat', 'lon', 'lat']:
-                kwargs.update({'deg':('deg' in formatter)})
             formatter = formatters[formatter](*args, **kwargs)
     elif np.iterable(formatter):
         formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
@@ -842,6 +833,8 @@ class ScalarFormatter(mticker.ScalarFormatter):
         1. Trims trailing zeros if any exist.
         2. Allows user to specify *range* within which major tick marks
            are labelled.
+        3. Allows user to add arbitrary prefix or suffix to every
+           tick label string.
 
     """
     def __init__(self, *args, zerotrim=None, tickrange=None,
@@ -898,7 +891,7 @@ class ScalarFormatter(mticker.ScalarFormatter):
 #------------------------------------------------------------------------------#
 # Formatters for dealing with one axis in geographic coordinates
 #------------------------------------------------------------------------------#
-def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
+def CoordFormatter(*args, cardinal=None, degrees=True, **kwargs):
     """
     For axes corresponding to geographic coordinates.
 
@@ -907,13 +900,13 @@ def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
     cardinal : None or length-2 str, optional
         If str, indicates the "negative" and "positive" coordinate. For
         example, ``cardinal='SN'``.
-    deg : bool, optional
+    degrees : bool, optional
         Whether to add unicode degree symbol.
     """
     def f(x, pos):
         # Optional degree symbol
         suffix = ''
-        if deg:
+        if degrees:
             suffix = '\N{DEGREE SIGN}' # Unicode lookup by name
         # Apply suffix if not on equator/prime meridian
         if cardinal:
@@ -928,14 +921,6 @@ def CoordinateFormatter(*args, cardinal=None, deg=True, **kwargs):
         string = re.sub(r'^(.*\..*?)0+$', r'\1', string) # note the non-greedy secondary glob!
         return string + suffix
     return mticker.FuncFormatter(f)
-
-def LatFormatter(*args, **kwargs):
-    """Calls `CoordinateFormatter` with ``cardinal='SN'``."""
-    return CoordinateFormatter(*args, cardinal='SN', **kwargs)
-
-def LonFormatter(*args, **kwargs):
-    """Calls `CoordinateFormatter` with ``cardinal='WE'``."""
-    return CoordinateFormatter(*args, cardinal='WE', **kwargs)
 
 #------------------------------------------------------------------------------#
 # Formatters with fractions
@@ -974,19 +959,11 @@ def FracFormatter(symbol, number):
     # And create FuncFormatter class
     return mticker.FuncFormatter(f)
 
-def PiFormatter():
-    r"""Calls `FracFormatter` with ``symbol=r'$\pi$'``, ``number=numpy.pi``."""
-    return FracFormatter(r'\pi', np.pi)
-
-def eFormatter():
-    r"""Calls `FracFormatter` with ``symbol='e'``, ``number=numpy.exp(1)``."""
-    return FracFormatter('e', np.exp(1))
-
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
 scales = mscale._scale_mapping
 """The registered scale names and their associated
-`~matplotlib.scale.ScaleBase` classes."""
+`~matplotlib.scale.ScaleBase` classes. See `Scale` for a table."""
 
 locators = {
     'none':        mticker.NullLocator,
@@ -1011,7 +988,8 @@ locators = {
     'month':       mdates.MonthLocator,
     'year':        mdates.YearLocator,
     }
-"""Mapping of strings to `~matplotlib.ticker.Locator` classes."""
+"""Mapping of strings to `~matplotlib.ticker.Locator` classes. See
+`Locator` for a table."""
 
 formatters = { # note default LogFormatter uses ugly e+00 notation
     'default':   ScalarFormatter,
@@ -1027,12 +1005,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
     'index':     mticker.IndexFormatter,
-    'pi':        PiFormatter,
-    'e':         eFormatter,
-    'deg':       CoordinateFormatter,
-    'lat':       LatFormatter,
-    'lon':       LonFormatter,
-    'deglat':    LatFormatter,
-    'deglon':    LonFormatter,
+    'frac':      FracFormatter,
+    'deg':       CoordFormatter,
     }
-"""Mapping of strings to `~matplotlib.ticker.Formatter` classes."""
+"""Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
+`Formatter` for a table."""

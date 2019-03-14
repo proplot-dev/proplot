@@ -561,6 +561,7 @@ class CmapDict(dict):
 
     # Helper functions
     def _sanitize_key(self, key):
+        """Sanitizes key name."""
         # Try retrieving
         if not isinstance(key, str):
             raise ValueError(f'Invalid key {key}. Must be string.')
@@ -589,7 +590,7 @@ class CmapDict(dict):
         return key
 
     def _getitem(self, key):
-        # Call this to avoid sanitization
+        """Get value, but skip key sanitization."""
         reverse = False
         if key[-2:] == '_r':
             key = key[:-2]
@@ -604,18 +605,19 @@ class CmapDict(dict):
 
     # Indexing and 'in' behavior
     def __getitem__(self, key):
+        """Sanitizes key, then queries dictionary."""
         # Assume lowercase
         key = self._sanitize_key(key)
         return self._getitem(key)
 
     def __setitem__(self, key, item):
-        # Set item
+        """Assigns lowercase."""
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key}. Must be string.')
         return super().__setitem__(key.lower(), item)
 
     def __contains__(self, item):
-        # Must be overriden?
+        """The 'in' behavior."""
         try:
             self.__getitem__(item)
             return True
@@ -624,9 +626,7 @@ class CmapDict(dict):
 
     # Other methods
     def get(self, key, *args):
-        """
-        Case-insensitive version of ``dict.get``.
-        """
+        """Case-insensitive version of `dict.get`."""
         # Get item
         if len(args)>1:
             raise ValueError(f'Accepts only 1-2 arguments (got {len(args)+1}).')
@@ -641,9 +641,7 @@ class CmapDict(dict):
                 raise key_error
 
     def pop(self, key, *args):
-        """
-        Case-insensitive version of ``dict.pop``.
-        """
+        """Case-insensitive version of `dict.pop`."""
         # Pop item
         if len(args)>1:
             raise ValueError(f'Accepts only 1-2 arguments (got {len(args)+1}).')
@@ -1268,12 +1266,11 @@ def Colormap(*args, name=None, N=None,
 
 def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
     """
-    Convenience function to draw colors from arbitrary color cycles and
-    colormaps stored in `matplotlib.cm.cmap_d`.
+    Convenience function that builds lists of colors from colormaps or returns
+    lists of colors from existing registered cycles.
 
     For color cycles (i.e. `~matplotlib.colors.ListedColormap` instances),
     we just select colors from that list.
-
     For colormaps (i.e. `~matplotlib.colors.LinearSegmentedColormap` instances),
     we draw samples from the full range of colormap colors.
 
@@ -2122,7 +2119,7 @@ def register_colors(nmax=np.inf, verbose=False):
         i = 0
         _dict = {}
         ihcls = []
-        colorlist[category] = {} # just initialize this one
+        colordict[category] = {} # just initialize this one
         for name, color in data: # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
@@ -2160,8 +2157,8 @@ def register_colors(nmax=np.inf, verbose=False):
         if not re.match(exceptions_regex, name) and i not in index:
             deleted += 1
         else:
-            colorlist[category][name] = _colors_unfiltered[category][name]
-    for key,kw in colorlist.items():
+            colordict[category][name] = _colors_unfiltered[category][name]
+    for key,kw in colordict.items():
         mcolors._colors_full_map.update(kw)
     if verbose:
         print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
@@ -2365,7 +2362,7 @@ cycles = set() # track *all* color cycles
 """List of registered color cycle names."""
 
 _colors_unfiltered = {} # downloaded colors categorized by filename
-colorlist = {} # limit to 'sufficiently unique' color names
+colordict = {} # limit to 'sufficiently unique' color names
 """Filtered, registered color names by category."""
 
 register_colors() # must be done first, so we can register OpenColor cmaps
@@ -2392,5 +2389,5 @@ normalizers = {
     'power':      mcolors.PowerNorm,
     'symlog':     mcolors.SymLogNorm,
     }
-"""Dictionary of possible normalizers."""
+"""Dictionary of possible normalizers. See `Norm` for a table."""
 

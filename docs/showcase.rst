@@ -641,7 +641,7 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
    :height: 498px
 
 
-“Dual” x and y axes
+Alternate unit axes
 -------------------
 
 The new “dual axis” feature lets you easily produce duplicate *x* and
@@ -660,7 +660,7 @@ range.
     ax.dualx(xscale='inverse', xlabel='wavelength')
     ax = axs[1]
     ax.format(yformatter='null', xlabel='temperature (K)', title='', xlim=(200,300))
-    ax.dualx(offset=-273.15, xscale='linear')#, xlabel='temperature (\N{DEGREE SIGN}C)')
+    ax.dualx(offset=-273.15, xscale='linear', xlabel='temperature (\N{DEGREE SIGN}C)')
     # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
     f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=0.5, axwidth=1.8)
     ax = axs[0]
@@ -674,7 +674,7 @@ range.
 
 .. image:: showcase/showcase_50_0.png
    :width: 454px
-   :height: 154px
+   :height: 158px
 
 
 
