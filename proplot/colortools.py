@@ -1008,13 +1008,10 @@ def Colormap(*args, name=None, N=None,
         args = [rcParams['image.cmap']] # use default
 
     for i,cmap in enumerate(args):
-        # Retrieve Colormap instance
-        # Also make sure you reset the lookup table (get_cmap does this
-        # by calling _resample).
-        # TODO: What if colormap names conflict with color names! Maybe
-        # address this! Currently, this makes it impossible to make a
-        # monochrome colormap from some named color if that name also
-        # exists for a colormap.
+        # Retrieve Colormap instance. Makes sure lookup table is reset.
+        # TODO: What if colormap names conflict with color names! Maybe address
+        # this! Currently, this makes it impossible to make a monochrome colormap
+        # from some named color if that name also exists for a colormap.
         if cmap is None:
             cmap = rcParams['image.cmap']
         if isinstance(cmap,str) and cmap in mcm.cmap_d:

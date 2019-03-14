@@ -420,7 +420,6 @@ class Figure(mfigure.Figure):
             ratios = [gs.get_width_ratios() for gs in gspecs]
         else:
             ratios = [gs.get_height_ratios() for gs in gspecs]
-        # ic()
         for panel, span in zip(panels, spans):
             if not panel.on() and not panel._colorbar_child:
                 continue
@@ -433,21 +432,26 @@ class Figure(mfigure.Figure):
                 space.append((pspan[0] - span[1])/self.dpi)
             else:
                 space.append((span[0] - pspan[1])/self.dpi)
-            # ic(panel._parent.number, side, span, pspan, space[-1]*self.dpi)
-        # Finally update the ratios
+        # Finally update the ratios, and fix
         # NOTE: Should just be able to modify mutable width and height ratios
         # list, do not need setter! The getter does not return a copy or anything.
         if not space:
             warnings.warn('All panels in this row or column are invisible. That is really weird.')
             return
+        orig = [sum(iratios) for iratios in ratios]
         for panel,iratios in zip(panels,ratios):
             idx = (-2 if side in 'br' else 1)
             if panel._flush: # assume user means, always want panels touching, in spite of ticks, etc.
                 ispace = 0
             else:
                 ispace = max([0, iratios[idx] - min(space) + pad])
-            ic(panel._parent.number, side, iratios, iratios[idx], ispace)
             iratios[idx] = ispace
+        # Add back the difference due to changing spaces to the wratios and hratios
+        # NOTE: Do not do this because will mess up implied aspect ratio maybe?
+        # Not sure why this is not necessary.
+        # for iorig,iratios in zip(orig,ratios):
+        #     idx = (-3 if side in 'br' else 2)
+        #     iratios[idx] -= (iorig - sum(iratios))
 
     def smart_tight_layout(self, renderer=None):
         """
@@ -608,12 +612,8 @@ class Figure(mfigure.Figure):
         # if False:
         if self._smart_tight_inner:
             # Get reference ax, for adjusting wextra and hextra later
-            for ax in self.main_axes:
-                axref = (ax.bottompanel or ax.leftpanel or ax.rightpanel or ax.toppanel)
-                if axref:
-                    break
-            # Only continue if *some* inner panels are present
-            if axref:
+            panels = [(ax.bottompanel or ax.leftpanel or ax.rightpanel or ax.toppanel) for ax in self.main_axes]
+            if any(panels): # i.e. all are EmptyPanel
                 # Get bounding boxes
                 axs = self.main_axes
                 bboxs = [ax.get_tightbbox(renderer) for ax in axs]
@@ -635,15 +635,21 @@ class Figure(mfigure.Figure):
                     pairs = [(ax.rightpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[1]==col]
                     if pairs:
                         self._inner_tight_layout(*zip(*pairs), renderer, side='r')
-                # Update gridspec to reflect new panel widths
-                # self._gridspec.update()
-                # Adjust wextra and hextra
-                gs = axref.get_subplotspec().get_gridspec()
-                wextra = sum(w for i,w in enumerate(gs.get_width_ratios())
-                    if i!=2*int(bool(axref.leftpanel))) # main subplot index is position 2 of left panel is present, 0 if not
-                hextra = sum(w for i,w in enumerate(gs.get_height_ratios())
-                    if i!=2*int(bool(axref.toppanel))) # as for wextra
+                # Reference axes
+                axref = panels[0]
+                if not panels[0]:
+                    wextra, hextra = 0, 0
+                else:
+                    axref = panels[0]._parent
+                    gs = axref.get_subplotspec().get_gridspec()
+                    wextra = sum(w for i,w in enumerate(gs.get_width_ratios())
+                        if i!=2*int(bool(axref.leftpanel))) # main subplot index is position 2 of left panel is present, 0 if not
+                    hextra = sum(w for i,w in enumerate(gs.get_height_ratios())
+                        if i!=2*int(bool(axref.toppanel))) # as for wextra
                 subplots_kw.update({'wextra':wextra, 'hextra':hextra})
+                # Update gridspec to reflect new panel widths
+                # TODO: Necessary?
+                self._gridspec.update()
 
         #----------------------------------------------------------------------#
         # Finish
@@ -652,7 +658,7 @@ class Figure(mfigure.Figure):
         # WARNING: Need to update gridspec twice. First to get the width
         # and height ratios including spaces, then after because gridspec
         # changes propagate only *down*, not up; will not be applied otherwise.
-        figsize, _, gridspec_kw = _parse_args(**subplots_kw)
+        figsize, _, gridspec_kw = _get_dims(**subplots_kw)
         self._smart_tight_init = False
         self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
@@ -687,7 +693,6 @@ class Figure(mfigure.Figure):
             ihratios[2 if ax.toppanel else 0] = axheight
             igs.set_width_ratios(iwratios)
             igs.set_height_ratios(ihratios)
-            # ic(ax.number, iwratios, sum(iwratios), fullwidth, ihratios, sum(ihratios), fullheight, axwidth, axheight)
         # Final update, then update attributes, and we're good to go
         self._gridspec.update(**gridspec_kw)
         for ax in self.main_axes:
@@ -884,26 +889,18 @@ class Figure(mfigure.Figure):
                 width_ratios=wratios, height_ratios=hratios)
         ax = self.add_subplot(gs[center[0], center[1]], **kwargs)
         kwargs = {key:value for key,value in kwargs.items() if key not in ('number', 'projection')}
+        sides = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}
+        flushes = {'b':bflush, 't':tflush, 'l':lflush, 'r':rflush}
+        visibles = {'b':bvisible, 't':tvisible, 'l':lvisible, 'r':rvisible}
         for r,col in enumerate(cols): # iterate top-bottom
             for c,row in enumerate(rows): # iterate left-right
                 if (r,c) in empty or (r,c)==center:
                     continue
-                side = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}[col or row]
-                pax = self.add_subplot(gs[r,c], side=side, parent=ax, projection='panel', **kwargs)
-                setattr(ax, f'{side}panel', pax)
-        # Optionally make axes invisible, and add flush property
-        # This is done so that axes in subplots are aligned even when their
-        # inner panels are not the same.
-        for panel,visible,flush in zip(
-            (ax.leftpanel, ax.rightpanel, ax.bottompanel, ax.toppanel),
-            (lvisible, rvisible, bvisible, tvisible),
-            (lflush, rflush, bflush, tflush)
-            ):
-            if not panel:
-                continue
-            panel._flush = flush
-            if not visible:
-                panel.set_visible(False)
+                side = col or row
+                pax = self.add_subplot(gs[r,c], side=sides[side],
+                    flush=flushes[side], visible=visibles[side],
+                    parent=ax, projection='panel', **kwargs)
+                setattr(ax, f'{sides[side]}panel', pax)
         # Set up axis sharing
         # * Sharex and sharey methods should be called on the 'child' axes,
         #   with labelling preferred on the axes in the first argument.
@@ -1026,7 +1023,7 @@ def _parse_panels(nrows, ncols,
         })
     return kwargs # also return *leftover* kwargs
 
-def _parse_args(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
+def _get_dims(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     wextra=0, hextra=0, # extra space associated with inner panels; can be *arrays* matching number of columns, rows
     left=None, bottom=None, right=None, top=None, # spaces around edge of main plotting area, in inches
     width=None,  height=None, axwidth=None, axheight=None, journal=None,
@@ -1034,9 +1031,10 @@ def _parse_args(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     bottompanels=None, leftpanels=None, rightpanels=None,
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
     ):
-    """Handle complex keyword args and aliases thereof. Note bwidth, bspace,
-    etc. must be supplied or will get error, but this should be taken care
-    of by _parse_panels."""
+    """Handle complex keyword args and aliases thereof, and determine figure
+    sizes such that aspect ratio of first subplot is preserved. Note
+    bwidth, bspace, etc. must be supplied or will get error, but this should
+    be taken care of by _parse_panels."""
     # Defualt gridspec props
     left   = units(_default(left,   rc['gridspec.ylabspace']))
     bottom = units(_default(bottom, rc['gridspec.xlabspace']))
@@ -1668,7 +1666,7 @@ def subplots(array=None, ncols=1, nrows=1,
         sum(units(kw.get(f'{side}width', 0)) for side in 'tb')
 
     # Parse arguments, figure out axes dimensions, initialize gridspec
-    figsize, subplots_kw, gridspec_kw = _parse_args(nrows, ncols, **kwargs)
+    figsize, subplots_kw, gridspec_kw = _get_dims(nrows, ncols, **kwargs)
     gs  = gridspec.FlexibleGridSpec(**gridspec_kw)
     # Create figure, axes, and outer panels
     axs = naxs*[None] # list of axes
@@ -1701,7 +1699,7 @@ def subplots(array=None, ncols=1, nrows=1,
                 subspec = gs[idx,0]
             elif side=='bottom':
                 subspec = gs[-1,idx]
-            pax = fig.add_subplot(subspec, side=side, invisible=False, projection='panel')
+            pax = fig.add_subplot(subspec, side=side, projection='panel')
             paxs += [pax]
         setattr(fig, f'{side}panel', axes_list(paxs))
     add_panel('bottom')

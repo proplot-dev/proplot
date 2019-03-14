@@ -833,7 +833,7 @@ class BaseAxes(maxes.Axes):
         # Apply all 'special' props
         rc._getitem_mode = 0 # might still be non-zero if had error
         with rc._context(mode=1):
-            self.fancy_update()
+            self.format()
 
     # Apply some simple featueres, and disable spectral and triangular features
     # See: https://stackoverflow.com/a/23126260/4970632
@@ -1071,7 +1071,7 @@ class BaseAxes(maxes.Axes):
             if self._side=='right':
                 kw.update({'yloc':'right', 'ylabelloc':'right', 'yticklabelloc':'right'})
             elif self._side=='top':
-                kw.update({'xloc':'top', 'ylabelloc':'top', 'yticklabelloc':'top'})
+                kw.update({'xloc':'top', 'xlabelloc':'top', 'xticklabelloc':'top'})
         kw.update(kw_extra)
         with rc._context(rc_kw, mode=2):
             self.fancy_update(**kw)
@@ -2265,7 +2265,8 @@ class PanelAxes(XYAxes):
     # Name
     name = 'panel'
     """The registered projection name."""
-    def __init__(self, *args, share=False, side=None, parent=None, invisible=False, **kwargs):
+    def __init__(self, *args, side=None, share=False, flush=False,
+        visible=True, parent=None, **kwargs):
         """
         Parameters
         ----------
@@ -2274,26 +2275,29 @@ class PanelAxes(XYAxes):
         share : bool, optional
             Whether to share panel *x* and *y* axes with "parent" axes.
             Irrelevant for figure panels, and defaults to ``False``.
+        flush : bool, optional
+            Whether panel should always be "flush" against its parent
+            subplot or not.
+        visible : bool, optional
+            Whether to make the axes visible or not.
         parent : None or `~matplotlib.axes.Axes`
             The "parent" of the panel. Not relevant for "outer panel"
             axes.
-        invisible : bool, optional
-            Whether to make the axes invisible at the start. This is the
-            default when using e.g. the `bottomlegend` keyword arg
-            in `~proplot.subplots.subplots`.
         *args, **kwargs
             Passed to the `XYAxes` initializer.
         """
+        # Misc props
+        # WARNING: Need flush before calling super init!
+        self._share = share
+        self._side = side
+        self._flush = flush # should panel always be flush against subplot?
+        self._parent = parent # used when declaring parent
         # Initialize
         super().__init__(*args, **kwargs)
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid panel side "{side}".')
-        self._share = share
-        self._side = side
-        self._flush = False # should panel always be flush against subplot?
-        self._parent = parent # used when declaring parent
-        if invisible:
-            self.invisible()
+        if not visible:
+            self.set_visible(False)
 
     def on(self):
         """Whether panel is "on"."""
