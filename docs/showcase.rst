@@ -301,8 +301,8 @@ a new ``ax.colorbar`` method. The latter draws a smaller colorbar
 
 One particularly useful new ``colorbar`` feature is that, instead of
 passing a “mappable”, you can alternatively pass a list of objects with
-``get_color`` methods or a list of color strings or RGB tuple. A
-colorbar will be constructed from the corresponding colors!
+``get_color`` methods or a list of color strings/RGB tuples. A colorbar
+will be constructed from the corresponding colors!
 
 .. code:: ipython3
 
