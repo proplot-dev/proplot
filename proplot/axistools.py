@@ -285,10 +285,8 @@ def CutoffScaleFactory(scale, lower, upper=None):
 
     Todo
     ----
-    Create method for drawing those cutoff diagonal marks with white space
-    between.
-
-    See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
+    Create method for drawing those diagonal "cutoff" strokes with whitespace
+    between.  See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
     multi-axis solution and for this class-based solution. Note the space
     between 1-9 in Paul's answer is because actual cutoffs were 0.1 away
     (and tick locs are 0.2 apart).
@@ -704,8 +702,8 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
 
     Notes
     -----
-    `~matpltolib.ticker.AutoLocator` has a useful ``nbins`` option; no more
-    than ``nbins-1`` ticks are drawn.
+    `~matpltolib.ticker.AutoLocator` has a useful ``nbins`` option. This
+    limits the maximum number of ticks to ``nbins-1``.
     """
     # Do nothing, and return None if locator is None
     if isinstance(locator, mticker.Locator):

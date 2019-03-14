@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""This defines a custom `~matplotlib.gridspec.GridSpecBase` class. See
+`~proplot.subplots.subplots` for more info."""
 import numpy as np
 import matplotlib.gridspec as mgridspec
 import re

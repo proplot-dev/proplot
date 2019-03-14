@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-A few simple tools. `units` is called by several functions to allow for
-flexible unit sizes, instead of just inches. `arange` and `edges` are both
-often useful in the context of making plots -- for example, when creating
-a list of contours or tick mark positions.
+A few simple tools.
+
+* `units` is used everywhere throughout ProPlot. It allows you to specify
+  arbitrary sizes with arbitrary units, instead of just inches.
+* `journals` is used by `~proplot.subplots.subplots`, and returns
+  the figure dimension standards for several academic journals.
+* `arange` and `edges` are both often useful in the context of making plots
+  -- for example, when creating a list of contours or tick mark positions.
 """
 # Decorators
 # Below is very simple example that demonstrates how simple decorators work

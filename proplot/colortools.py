@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
+# To avoid putting sections in table of contents use:
+# .. raw:: html
+#
+#    <h1>Header</h1>
 """
 Registers colormaps, color cycles, and color string names with
 `register_cmaps`, `register_cycles`, and `register_colors`.
 Defines tools for creating new colormaps and color cycles, i.e. `colormap`
-and `colors`. Defines helpful new `~matplotlib.colors.Normalizer` and
+and `colors`. Defines helpful new `~matplotlib.colors.Normalize` and
 `~matplotlib.colors.Colormap` classes.
 
-.. raw:: html
+For a visual reference, see the :ref:`Table of colormaps`,
+:ref:`Table of color cycles`, and the :ref:`Table of colors`.
 
-   <h1>Perceptually uniform colormaps</h1>
+Perceptually uniform colormaps
+------------------------------
 
-
-ProPlot’s custom colormaps, and its `PerceptuallyUniformColormap` class,
-consist of *linear transitions* between channel values in any of
-three possible "perceptually uniform", HSV-like colorspaces.
-These colorspaces can be described as follows (see also `these 
-visualizations <http://www.hsluv.org/comparison/>`_):
+ProPlot's custom colormaps are instances of the new
+`PerceptuallyUniformColormap` class. These classes employ *linear transitions*
+between channel values in any of three possible "perceptually uniform",
+HSV-like colorspaces.  These colorspaces can be described as follows (see also
+`these visualizations <http://www.hsluv.org/comparison/>`_):
 
 * **HCL**: A purely perceptually uniform colorspace, where colors are
   broken down into “hue” (color, range 0-360), “chroma”
@@ -37,16 +42,13 @@ The HSLuv and HPLuv colorspaces
 were developed to resolve this issue by (respectively) scaling and clipping
 high-chroma colors across different hues and luminances.
 
-.. raw:: html
-
-   <h1>From other projects</h1>
-
+From other projects
+-------------------
 
 I’ve removed some outdated “miscellaneous” colormaps that are packaged
 by default (see `this reference
-<https://matplotlib.org/examples/color/colormaps_reference.html>`_),
-added some custom colormaps generated with the `PerceptuallyUniformColormap`
-class, and added new "perceptually uniform" colormaps from the following projects:
+<https://matplotlib.org/examples/color/colormaps_reference.html>`_)
+and added new "perceptually uniform" colormaps from the following projects:
 
 * The `cmOcean project <https://matplotlib.org/cmocean/>`_
 * The `SciVisColor project <https://sciviscolor.org/home/colormaps/>`_
@@ -66,58 +68,49 @@ Note that matplotlib comes packaged with every `ColorBrewer2.0
 "perceptually uniform".
 
 
-.. raw:: html
+Flexible colormap arguments
+---------------------------
 
-   <h1>Flexible colormap declaration</h1>
+All of the `~matplotlib.axes.Axes` methods listed in
+`~proplot.axes.cmap_methods` and
+`~proplot.axes.cycle_methods` have been wrapped by ProPlot. For the
+latter methods, ProPlot adds a brand new keyword arg called ``cycle``, used for
+changing the axes property cycler on-the-fly.
 
-
-All of the `~matplotlib.axes.Axes` methods listed in `cmap_methods` and
-`cycle_methods` have been wrapped. For the latter methods, a brand new
-keyword arg called `cycle` has been added, for changing the axes property
-cycle on-the-fly. The `cmap` and `cycle` arguments are all passed through
-the magical `Colormap` function.
-
-`Colormap` is incredibly powerful -- it can make colormaps on-the-fly, look
-up existing maps, and merge them. As such, any of the following are now
-valid `cmap` and `cycle` arguments:
+The ``cmap`` and ``cycle`` arguments
+are all passed through the magical `Colormap` function.
+`Colormap` is incredibly powerful -- it can make colormaps
+on-the-fly, look up existing maps, and merge them. As such, any of the following
+are now valid ``cmap`` and ``cycle`` arguments:
 
 1. Registered colormap names. For example, ``'Blues'`` or ``'Sunset'``.
-   See :ref:`Colors` for a visalization of the registered maps.
-
+   See :ref:`Table of colormaps` for a visalization of the registered maps.
    Cycles are constructed automatically be sampling colors from these colormaps;
    use e.g. ``('Blues', 5)`` to specify the number of colors in the cycle.
 2. Gradations of a single hue. For example, ``'maroon'`` creates colormap spanning
    white to maroon, and ``'maroon90'`` spans from a 90% luminance pale red
    color to maroon (see `~proplot.colors.Colormap`).
-
-   Cycles are once again constructed automatically; use e.g. ``('maroon', 10)``
+   Cycles are again constructed automatically; use e.g. ``('maroon', 10)``
    to specify the number of colors in the cycle.
-3. Registered color cycle names. For example, ``'Cycle1'``. See :ref:`Colors`
+3. Registered color cycle names. For example, ``'Cycle1'``. See
+   :ref:`Table of color cycles`
    for a visualization of the registered cycles.
 4. Lists of colors. For example, ``['red', 'blue', 'green']``.
-   Cycles are constructed automatically from these
+   This makes a `~matplotlib.colors.ListedColormap` map which can be trivially
+   used as a "color cycle".
 5. Dictionary containing the keys ``'h'``, ``'s'``, and ``'l'``. This builds
    a `PerceptuallyUniformColormap` using the
    `~PerceptuallyUniformColormap.from_hsl` constructor.
 6. **List of any of the above five arguments, to merge the resulting
    colormaps.** For
    example, use ``['viridis', 'navy']`` to merge the virids map with a colormap
-   spanning navy to white.
+   spanning white to navy.
 
 Note when assigning to the ``proplot.rc.cycle`` global setting (see
 `~proplot.rcmod`), the argument is also interpreted as above. For example,
 ``proplot.rc.cycle = ('blue', 10)`` will construct a color cycle with 10 colors
 ranging from white to blue.
 """
-#------------------------------------------------------------------------------#
-# Notes
-#------------------------------------------------------------------------------#
-# Note colormaps are *callable*, will just deliver the corresponding color, easy.
-# Notes on different colorspaces:
-# TODO: Allow some colormaps (e.g. topography) to have ***fixed*** levels,
-# i.e. force the user to use very high resolution (e.g. 256 levels) and the
-# 'x' coordinates will enforce discrete jumps between colors. Consider doing
-# this for 'seismic' map, and others.
 #------------------------------------------------------------------------------#
 # Interesting cpt-city colormaps that did not use:
 # * Considered Jim Mossman maps, but not very uniform.
@@ -976,22 +969,17 @@ def Colormap(*args, name=None, N=None,
 
     Notes
     -----
-    Resampling method described in `this post
-    <https://stackoverflow.com/q/48613920/4970632>`_ is awful! All it does is
+    The resampling method described in `this post
+    <https://stackoverflow.com/q/48613920/4970632>`_ is not great. All it does is
     reduce the lookup table size -- what ends up happening under the hood is
     matplotlib tries to *evenly* draw ``N-1`` (``'min'`` or ``'max'``) or ``N-2``
     (``'neither'``) colors from a lookup table with ``N`` colors, which means
     it simply *skips over* 1 or 2 colors in the middle of the lookup table,
     which will cause visual jumps!
 
-    Instead, we make stored lookup table completely independent from the
-    number of levels; will have many high-res segments while the colormap
+    Instead, we make the stored lookup table completely independent from the
+    number of levels. It will have many high-res segments while the colormap
     `N` is very small.
-
-    Warning
-    -------
-    Does colormap saving work for non-perceptually uniform maps or
-    combinations thereof?
     """
     # Turns out pcolormesh makes QuadMesh, which itself is a Collection,
     # which itself gets colors when calling draw() using update_scalarmappable(),
@@ -1257,14 +1245,11 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
         Notes
         -----
-        Why does `gamma1` emphasize *low* saturation colors, but `gamma2`
-        emphasizes *high* luminance colors? Because this seems to be what
-        the ColorBrewer2.0 maps do.
-
-        "White" and "pale" values at the
-        center of diverging maps and on the left of sequential maps are given
-        extra emphasis; the transitions don't seem to be linear in any
-        HSL space.
+        `gamma1` emphasizes *low* saturation colors and `gamma2` emphasizes
+        *high* luminance colors because this seems to be what the
+        ColorBrewer2.0 maps do.  "White" and "pale" values at the center of
+        diverging maps and on the left of sequential maps are given
+        extra emphasis.
         """
         # Attributes
         # NOTE: Don't allow power scaling for hue because that would be weird.
@@ -1633,17 +1618,6 @@ def merge_cmaps(*imaps, name='merged', N=512, ratios=1, **kwargs):
         Name of output colormap. Default is ``'merged'``.
     N : float
         Number of lookup table colors desired for output colormap.
-
-    Notes
-    -----
-    * The old method had us simply calling the colormap with arrays of fractions.
-      This was sloppy, because it just samples locations on the lookup table and
-      will therefore degrade the original, smooth, functional transitions.
-    * Better method is to combine the ``_segmentdata`` arrays and simply scale
-      the *x* coordinates in each ``(x,y1,y2)`` channel-tuple according to
-      the ratios.
-    * In the case of `~matplotlib.colors.ListedColormap`, we just combine the
-      colors.
     """
     # Initial
     if len(imaps)<=1:
@@ -1723,7 +1697,7 @@ def merge_cmaps(*imaps, name='merged', N=512, ratios=1, **kwargs):
             kwargs.update({'space':spaces.pop()})
         cmap = kind(name, segmentdata, N=N, **kwargs)
     else:
-        raise ValueError('All colormaps should be of the same type (Listed or LinearSegmented).')
+        raise ValueError('All colormaps must be of the same type (Listed or LinearSegmented).')
     return cmap
 
 def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', **kwargs):
@@ -1785,9 +1759,9 @@ def clip_colors(colors, mask=True, gray=0.2, verbose=False):
 
     Notes
     -----
-    Could use `numpy.clip` (`matplotlib.colors` uses this under the hood),
-    but we want to display messages. And anyway premature efficiency is
-    the root of all evil, we're manipulating like 1000 colors max here,
+    I could use `numpy.clip` (`matplotlib.colors` uses this under the hood),
+    but we want to display messages. And anyway, premature efficiency is
+    the root of all evil, we're manipulating like 1000 colors max here, so
     it's no big deal.
     """
     message = 'Invalid' if mask else 'Clipped'
@@ -1877,7 +1851,7 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     Other parameters
     ----------------
     **kwargs
-        Passed to the `~matplotlib.colors.Normalizer` initializer.
+        Passed to the `~matplotlib.colors.Normalize` initializer.
         See `this tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
         for more info.
 
@@ -2184,11 +2158,6 @@ def register_colors(nmax=np.inf, verbose=False):
 
     Use `~proplot.demos.color_show` to generate a table of the resulting
     filtered colors.
-
-    Notes
-    -----
-    This seems like it would be slow, but takes on average 0.03 seconds on
-    my macbook, so it's fine.
     """
     # First ***reset*** the colors dictionary
     # Why? We want to add XKCD colors *sorted by popularity* from file, along
@@ -2426,8 +2395,8 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Register color cycles defined in ``.hex`` files (lists of hex strings)
-    and those declared in this module.
+    Register color cycles defined in ``.hex`` files, which contain lists of
+    hex strings, and color cycles declared at the top of this file.
 
     Use `~proplot.demos.cycle_show` to generate a table of the resulting
     color cycles.

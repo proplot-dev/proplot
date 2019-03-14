@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 """
 The starting point for creating custom ProPlot figures and axes.
-The `subplots` command is all you'll need to directly use here;
-it returns a figure instance and list of axes.
+The `subplots` function is all you'll need to directly use here.
+It returns a `Figure` instance and an `axes_list` list of
+`~proplot.axes.BaseAxes` axes.
 
-Note that
-instead of separating features into their own functions (e.g.
-a `generate_panel` function), we specify them right when the
-figure is declared.
-
-The reason for this approach is we want to build a
-*static figure "scaffolding"* before plotting anything. This
-way, ProPlot can hold the axes aspect ratios, panel widths, colorbar
-widths, and inter-axes spaces **fixed** (note this was really hard
-to do and is **really darn cool**!).
+Note that instead of separating various features into their own functions
+(e.g.  a `generate_panel` function), we stuff most of them right into
+the `subplots` function. The reason for this approach? We want to build a
+**static "scaffolding"** before plotting anything, so that ProPlot can exert
+a ton of control over the layout and make it look "nice" without any
+manual tweaking on your part.
 
 See `~Figure.smart_tight_layout` for details.
 """
@@ -809,10 +806,6 @@ class Figure(mfigure.Figure):
         Axis sharing setup is handled after-the-fact in the `subplots`
         function using `~proplot.axes.BaseAxes._sharex_setup` and
         `~proplot.axes.BaseAxes._sharey_setup`.
-
-        Todo
-        ----
-        Make settings specific to left, right, top, bottom panels!
         """
         # Default boolean settings
         which = _default(which, whichpanels, 'r')
@@ -1438,30 +1431,12 @@ def subplots(array=None, ncols=1, nrows=1,
     See also
     --------
     `~proplot.axes.BaseAxes`, `~proplot.axes.BaseAxes.format`
-
-    Notes
-    -----
-    * Matplotlib `~matplotlib.axes.Axes.set_aspect` option seems to behave
-      strangely for some plots; for this reason we override the ``fix_aspect``
-      keyword arg provided by `~mpl_toolkits.basemap.Basemap` and just draw
-      the figure with appropriate aspect ratio to begin with. Otherwise, we
-      get weird differently-shaped subplots that seem to make no sense.
-    * All shared axes will generally end up with the same axis
-      limits, scaling, major locators, and minor locators. The
-      ``sharex`` and ``sharey`` detection algorithm really is just to get
-      instructions to make the tick labels and axis labels **invisible**
-      for certain axes.
-
-    Todo
-    ----
-    * Add options for e.g. `bpanel` keyword args.
-    * Fix axes aspect ratio stuff when width/height ratios are not one!
-    * Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
-      axes sharing mode where we *disable ticklabels and labels*, but *do not
-      use the builtin sharex/sharey API*, suitable for complex map projections.
-    * For spanning axes labels, right now only detect **x labels on bottom**
-      and **ylabels on top**. Generalize for all subplot edges.
     """
+    # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
+    # axes sharing mode where we *disable ticklabels and labels*, but *do not
+    # use the builtin sharex/sharey API*, suitable for complex map projections.
+    # For spanning axes labels, right now only detect **x labels on bottom**
+    # and **ylabels on top**. Generalize for all subplot edges.
     #--------------------------------------------------------------------------#
     # Initial stuff
     #--------------------------------------------------------------------------#

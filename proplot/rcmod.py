@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-This module manges global "rc" settings with a bunch of new convenience
-features, and defines some brand new settings.
-
-Your one-stop-shop for changing settings is the `rc` object. To change
+This manages global "rc" settings with new convenience features, and define some
+brand new settings.  Your one-stop-shop for changing settings is the `rc` object. To change
 the setting named ``name`` to ``value``, use any of the following 4
 approaches:
 
@@ -174,11 +172,6 @@ Key                 Description
        Helvetica Neue or Helvetica. Run `~proplot.fonttools.install_fonts`
        to install them when you download ProPlot for the first time, and
        whenever you update matplotlib.
-
-Todo
-----
-Disable the ``gridspec`` stuff by automating the inter-subplot spacing?
-
 """
 # ``nbsetup``         Boolean, whether to run `~proplot.notebook.nbsetup` command automatically on import.
 # First import stuff
@@ -266,8 +259,10 @@ _rc_names_new = {
     'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendfull', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
-# way less verbose.
-# For example, compare landcolor='b' to rc_kw={'land.color':'b'}.
+# way less verbose. For example, compare landcolor='b' to
+# rc_kw={'land.color':'b'}.
+# Not used by getitem, because that would be way way too many lookups; is
+# only looked up if user *manually* passes something to BaseAxes.format.
 _rc_names_nodots = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
     (_rc_names_new, _rc_names_old, _rc_names_global)
@@ -801,9 +796,6 @@ class rc_configurator(object):
 
 # Instantiate object
 rc = rc_configurator()
-"""
-Instance of `rc_configurator`. Use this to change rc settings.
-
-See the `~proplot.rcmod` root page for details.
-"""
+"""Instance of `rc_configurator`. Use this to change rc settings.
+See the `~proplot.rcmod` documentation for details."""
 

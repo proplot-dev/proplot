@@ -1,7 +1,16 @@
 Font tools
 ------------------------
 
+**Variables**
+
 .. automodsumm:: proplot.fonttools
+   :variables-only:
+   :toctree: api
+
+**Functions**
+
+.. automodsumm:: proplot.fonttools
+   :functions-only:
    :toctree: api
    :skip: matplotlib_fname, get_cachedir
 

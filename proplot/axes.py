@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
 The axes subclasses central to this library, plus the enhanced
-colorbar and legend functions.
+colorbar and legend functions. You should focus on the ``format`` and
+``smart_update`` methods:
 
-You should focus on the ``format`` and ``smart_update`` methods:
-`BaseAxes.format`, `BaseAxes.smart_update`, `XYAxes.smart_update`,
-and `CartopyAxes.smart_update` and `BasemapAxes.smart_update`.
-The `BaseAxes.format` method calls the ``smart_update`` methods in turn.
+* `BaseAxes.format`
+* `BaseAxes.smart_update`
+* `XYAxes.smart_update`
+* `CartopyAxes.smart_update`
+* `BasemapAxes.smart_update`.
+
+`BaseAxes.format` calls the ``smart_update`` methods in turn.
 These methods are your one-stop-shop for changing axes settings like
 *x* and *y* axis limits, axis labels, tick locations, tick label
 format, grid lines, scales, titles, a-b-c labelling, adding
@@ -672,14 +676,13 @@ def gridfix_cartopy(self, func):
     degrees), and to interpolate to the North and South poles, to eliminate
     all gaps in the data.
 
-    Todo
-    ----
-    Contouring methods have issues with circularly wrapped data. Triggers
-    annoying ``TopologyException`` statements, which we suppress
-    with IPython `~IPython.utils.io.capture_output` tool, like in
-    `~proplot.notebook.nbsetup`.
-
-    See `this issue <https://github.com/SciTools/cartopy/issues/946>`__.
+    Warning
+    -------
+    Cartopy contouring methods have issues with circularly wrapped data.
+    Triggers annoying ``TopologyException`` statements, which we suppress
+    with the IPython `~IPython.utils.io.capture_output` tool.
+    This is a workaround. See `this issue
+    <https://github.com/SciTools/cartopy/issues/946>`__.
     """
     @functools.wraps(func)
     def gridfix_cartopy(lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
@@ -716,24 +719,18 @@ class BaseAxes(maxes.Axes):
     Lowest-level `~matplotlib.axes.Axes` override. Handles titles and axis
     sharing. Overrides the legend, colorbar, and plot methods.
 
-    Notes
-    -----
-    It is impossible to subclass `~matplotlib.axes.SubplotBase` directly.
-    The subplot subclass is made automatically by
-    `~matplotlib.axes.subplot_class_factory`
-    after calling `~matplotlib.figure.Figure.add_subplot`.
-
     See also
     --------
-    `cmap_features`, `cycle_features`,
-    `XYAxes`, `PanelAxes`, `MapAxes`, `CartopyAxes`, `BasemapAxes`
-    `~proplot.subplots.subplots`, 
-
-    Todo
-    ----
-    Consider moving the share axis stuff to `XYAxes` class.
+    `~proplot.subplots.subplots`,
+    `XYAxes`, `CartopyAxes`, `BasemapAxes`,
+    `cmap_features`, `cycle_features`
     """
-    # Initial stuff
+    # Notes:
+    # It is impossible to subclass `~matplotlib.axes.SubplotBase` directly.
+    # The subplot subclass is made automatically by
+    # `~matplotlib.axes.subplot_class_factory` after calling
+    # `~matplotlib.figure.Figure.add_subplot`.
+    # Consider moving the share axis stuff to `XYAxes` class.
     name = 'base'
     """The registered projection name."""
     def __init__(self, *args, number=None,
@@ -1028,7 +1025,7 @@ class BaseAxes(maxes.Axes):
     # Format
     def format(self, rc_kw=None, **kwargs):
         """
-        Sets up temporary rc settings and calls ``smart_update`` methods.
+        Sets up temporary rc settings and calls `~BaseAxes.smart_update`.
 
         Parameters
         ----------
@@ -1039,10 +1036,12 @@ class BaseAxes(maxes.Axes):
         kwargs
             Any of three options:
 
+            * A keyword arg for `BaseAxes.smart_update`,
+              `XYAxes.smart_update`, `BasemapAxes.smart_update`, or
+              `CartopyAxes.smart_update`.
             * A global "rc" keyword arg, like ``linewidth`` or ``color``.
             * A standard "rc" keyword arg **with the dots omitted**.
               For example, ``land.color`` becomes ``landcolor``.
-            * Any valid keyword arg for the ``smart_update`` methods.
 
             The first two options will update the `~proplot.rcmod.rc`
             object, just like `rc_kw`.
@@ -1112,20 +1111,6 @@ class BaseAxes(maxes.Axes):
             which is just centered between the figure edges and offset from
             the top edge.
 
-        Todo
-        ----
-        * Add options for datetime handling. Note possible date axes handles
-          are `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
-        * Can fix with `~matplotlib.figure.Figure.autofmt_xdate` or manually
-          set options. The problem is there is no `~matplotib.figure.Figure.autofmt_ydate`,
-          so really should implement my own version of this.
-        * Look into `~matplotlib.axes.SubplotBase.is_last_row` and
-          `~matplotlib.axes.SubplotBase.is_first_column` methods.
-
-        Notes
-        -----
-        `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
-
         See also
         --------
         `~proplot.subplots.subplots`, `~proplot.rcmod`,
@@ -1133,6 +1118,8 @@ class BaseAxes(maxes.Axes):
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
+        # Look into `~matplotlib.axes.SubplotBase.is_last_row` and
+        # `~matplotlib.axes.SubplotBase.is_first_column` methods.
         kw = rc.fill({'facecolor':'figure.facecolor'})
         self.figure.patch.update(kw)
 
@@ -1228,13 +1215,52 @@ class BaseAxes(maxes.Axes):
 
     # Legend with custom tools and some new features
     def legend(self, *args, **kwargs):
-        """Add legend."""
+        """Adds a standard legend with `legend_factory`."""
         return legend_factory(self, *args, **kwargs)
 
     # Inset colorbar, meant to mimick legend
-    def colorbar(self, *args, loc=None, extendlength=None, xspace=None,
-        label=None, clabel=None, pad=None, width=None, length=None, **kwargs):
-        """Add *inset* colorbar, sort of like a legend."""
+    def colorbar(self, *args, loc=None, xspace=None, pad=None, width=None,
+        length=None, extendlength=None, label=None, clabel=None, 
+        **kwargs):
+        """
+        Adds an *inset* colorbar, sort of like `~BaseAxes.legend`.
+
+        Parameters
+        ----------
+        loc : None or str or int, optional
+            The colorbar location. Just like ``loc`` for the native matplotlib
+            `~matplotlib.axes.Axes.legend`, but filtered to only corner
+            positions. Options are:
+
+                * ``1`` or ``'upper right'``
+                * ``2`` or ``'upper left'``
+                * ``3`` or ``'lower left'``
+                * ``4`` or ``'lower right'``
+
+            Default is from the rc configuration.
+        xspace : None or str or float, optional
+            Space allocated for the bottom x-label of the colorbar.
+            If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. If ``None``,
+            read from `~proplot.rcmod.rc` configuration.
+        pad : None or str or float, optional
+            Space between the axes edge and the colorbar.
+            If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. If ``None``,
+            read from `~proplot.rcmod.rc` configuration.
+        width : None or str or float, optional
+            Colorbar width.
+            If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. If ``None``,
+            read from `~proplot.rcmod.rc` configuration.
+        length : None or str or float, optional
+            Colorbar length.
+            If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. If ``None``,
+            read from `~proplot.rcmod.rc` configuration.
+        **kwargs, label, clabel, extendlength
+            Passed to `colorbar_factory`.
+        """
         # Default props
         loc = _default(loc, rc.get('colorbar.loc'))
         extend = units(_default(extendlength, rc.get('colorbar.extend')))
@@ -1309,14 +1335,11 @@ class BaseAxes(maxes.Axes):
         ----------------
         **kwargs
             Passed to `~matplotlib.text.Text` instantiator.
-
-        Warning
-        -------
-        Basemap gridlining methods call text, so if you change the default
-        transform, you will not be able to draw latitude and longitude
-        labels! Leave it alone.
         """
         # Get default transform by string name
+        # Note basemap gridlining methods call text, so if you change the
+        # default transform, you will not be able to draw latitude and
+        # longitude labels! Leave it alone.
         linewidth = lw or linewidth
         if not transform:
             transform = self.transData
@@ -1386,31 +1409,44 @@ class BaseAxes(maxes.Axes):
             raise ValueError('To draw colormap line, must provide kwargs "values" and "cmap".')
         return lines
 
-    def scatter(self, *args, **kwargs):
+    def scatter(self, *args,
+        color=None, markercolor=None,
+        size=None, markersize=None,
+        lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
+        edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
+        **kwargs):
         """
-        Just makes keyword arg conventions consistent with `plot`. This is
-        something that always bothered me.
+        Simple wrapper that makes keyword name conventions consistent with
+        `~matplotlib.axes.Axes.plot`.
+
+        Parameters
+        ----------
+        c, color, markercolor : None or str or (R,G,B) tuple, or list thereof, optional
+            Aliases for the marker fill color.
+        s, size, markersize : None or float, or list thereof, optional
+            Aliases for the marker size.
+        lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
+            Aliases for the marker edge width.
+        edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
+            Aliases for the marker edge color.
+        **kwargs
+            Passed to `~matplotlib.axes.Axes.scatter`.
         """
         # Manage input arguments
         if len(args)>4:
             raise ValueError(f'Function accepts up to 4 args, received {len(args)}.')
         args = [*args]
         if len(args)>3:
-            kwargs['c'] = args.pop(3)
+            c = args.pop(3)
         if len(args)>2:
-            kwargs['s'] = args.pop(2)
+            s = args.pop(2)
         # Apply some aliases for keyword arguments
-        aliases = {
-            'c':          ['color', 'markercolor'],
-            's':          ['size', 'markersize'],
-            'linewidths': ['lw', 'linewidth', 'markeredgewidth', 'markeredgewidths'],
-            'edgecolors': ['markeredgecolor', 'markeredgecolors'],
-            }
-        for name,options in aliases.items():
-            for option in options:
-                if option in kwargs:
-                    kwargs[name] = kwargs.pop(option)
-        return super().scatter(*args, **kwargs)
+        c = _default(c, color, markercolor)
+        s = _default(s, size, markersize)
+        linewidths = _default(lw, linewidths, linewidth, markeredgewidths, markeredgewidth)
+        edgecolors = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
+        return super().scatter(*args, c=c, s=s, linewidths=linewidths,
+                                edgecolors=edgecolors, **kwargs)
 
     def cmapline(self, *args, values=None,
             cmap=None, norm=None,
@@ -1435,12 +1471,12 @@ class BaseAxes(maxes.Axes):
 
         Warning
         -------
-        So far this only works for **1D** *x* and *y* coordinates. Cannot draw
+        So far this only works for 1D *x* and *y* coordinates. Cannot draw
         multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
         """
         # First error check
         if values is None:
-            raise ValueError('For line with a "colormap", must input values=<iterable> to which colors will be mapped.')
+            raise ValueError('For a cmap line, require "values" keyword arg.')
         if len(args) not in (1,2):
             raise ValueError(f'Function requires 1-2 arguments, got {len(args)}.')
         y = np.array(args[-1]).squeeze()
@@ -1736,18 +1772,12 @@ class XYAxes(BaseAxes):
 
         Todo
         ----
-        * Consider redirecting user to another label rather than making
-          this one invisible for spanning and shared axes.
-        * More intelligent axis sharing with map axes. Consider optionally
-          anchoring them by the locator and limits like the default API, or just
-          disable ticklabels and labels for some.
-        * Some settings are also rc settings. When to dump the special
-          shorthands in favor of more verbose rc settings? Maybe just have
-          shorthands for *toggling*, rc settings for *look* of features?
-        * Why should I support the ``_kw`` args? Shouldn't user just use
-          rc setting names?
-        * Check various settings with x and y axis at the zeroline, make
-          sure all other spines get disabled.
+        Add options for datetime handling. Note the possible date axis handles
+        are `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
+        We can fix with `~matplotlib.figure.Figure.autofmt_xdate` or manually
+        set the options. The problem is there is no
+        `~matplotib.figure.Figure.autofmt_ydate`, so really should
+        implement custom version of this.
 
         See also
         --------
@@ -2063,16 +2093,16 @@ class XYAxes(BaseAxes):
 
         Notes
         -----
-        For some reason, when scale is applied, it can change the default
-        formatter. For example, a linear scale will change default formatter
-        to original matplotlib version instead of my custom override. Need
-        to apply it explicitly.
-
-        The axis scale is used to transform units on the left axis, linearly
-        spaced, to units on the right axis. This means the right 'axis scale'
-        must scale its data with the *inverse* of this transform. We make
-        this inverted scale with `~proplot.axistools.InvertedScaleFactory`.
+        The axis scale `yscale` is used to transform units on the left axis,
+        linearly spaced, to units on the right axis. This means the right
+        'axis scale' must scale its data with the *inverse* of this transform.
+        We make this inverted scale with `~proplot.axistools.InvertedScaleFactory`.
         """
+        # Notes:
+        # For some reason, when scale is applied, it can change the default
+        # formatter. For example, a linear scale will change default formatter
+        # to original matplotlib version instead of my custom override. Need
+        # to apply it explicitly.
         ax = self.twinx()
         yscale = axistools.InvertedScaleFactory(yscale)
         yformatter = kwargs.pop('yformatter', 'default')
@@ -2247,22 +2277,14 @@ class PanelAxes(XYAxes):
     overridden. Calling these will "fill" the entire axes with a legend
     or colorbar.
 
-    Notes
-    -----
-    See `this post <https://stackoverflow.com/a/52121237/4970632>`_
-    and `this example <https://stackoverflow.com/q/26236380/4970632>`_.
-
-    Todo
-    ----
-    Disable axis sharing when filling with colorbar! Also allow optionally
-    *filling* axes with colorbar or legend, or drawing *small* reference
-    colorbar or legend.
-
     See also
     --------
-    `~proplot.subplots.subplots`, `~proplot.subplots.Figure.panel_factory`, `XYAxes`, `BaseAxes`
+    `~proplot.subplots.subplots`, `~proplot.subplots.Figure.panel_factory`,
+    `XYAxes`, `BaseAxes`
     """
-    # Name
+    # Notes:
+    # See `this post <https://stackoverflow.com/a/52121237/4970632>`_
+    # and `this example <https://stackoverflow.com/q/26236380/4970632>`_.
     name = 'panel'
     """The registered projection name."""
     def __init__(self, *args, side=None, share=False, flush=False,
@@ -2401,7 +2423,7 @@ class MapAxes(BaseAxes):
         ----------
         labels : None or bool, optional
             Whether to draw longitude and latitude labels. If ``None``, read
-            from the configuration.
+            from `~proplot.rcmod.rc` configuration.
         latmax : None or float, optional
             Meridian gridlines are cut off poleward of this latitude. If
             ``None``, read from the configuration.
@@ -3047,18 +3069,15 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     **kwargs
         Passed to `~matplotlib.axes.Axes.legend`.
 
-    Todo
-    ----
-    Should update this function to clip the legend box when it goes
-    outside axes area, so the legend width and bottom or right widths can be
-    chosen propertly/separately.
-
     See also
     --------
     `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
     """
     # First get legend settings (usually just one per plot so don't need to declare
     # this dynamically/globally), and interpret kwargs.
+    # TODO: Should update this function to clip the legend box when it goes
+    # outside axes area, so the legend width and bottom or right widths can be
+    # chosen propertly/separately.
     for name,alias in [('ncol', 'ncols'), ('frameon', 'frame')]:
         if alias in kwargs:
             kwargs[name] = kwargs.pop(alias)

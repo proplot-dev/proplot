@@ -3,8 +3,9 @@
 Provides a handy list of available font names and installs some new fonts --
 most notably, Helvetica and Helvetica Neue.
 
-The `rcmod` module will *change the default* font name from DejaVu Sans (or
-Bitstream Vera) to Helvetica Neue or Helvetica.
+ProPlot will *change the default* font name from DejaVu Sans (or
+Bitstream Vera) to Helvetica Neue or Helvetica. See the `~proplot.rcmod`
+documentation for details.
 
 Todo
 ----

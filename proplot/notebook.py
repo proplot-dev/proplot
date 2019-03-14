@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""For setting up your iPython notebooks."""
 #------------------------------------------------------------------------------#
 # Unbelievably weird problem:
 #   * Warning on calling rcdefaults(): https://stackoverflow.com/q/48320804/4970632

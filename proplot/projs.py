@@ -13,6 +13,8 @@ keyword arg with the `~proplot.subplots.subplots` function.
    libraries choose to "register" certain libraries of closely-related
    classes (e.g. axis scales, projections), but not others.
 
+Table of projections
+--------------------
 The following is a table of registered projections, their full names (with a
 link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
 if it exists), and whether they are available in the cartopy and basemap packages.
