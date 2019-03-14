@@ -317,9 +317,13 @@ def cmap_features(self, func):
     """
     Wraps methods that take a `cmap` argument, like
     `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
-    Adds several new keyword args and features. Note this means
+    Adds several new keyword args and features. Note this means, for example,
     `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
     now accept a `levels` keyword arg.
+
+    Uses the ProPlot normalizer `~proplot.colortools.BinNorm` to bin data
+    into discrete color levels. `~proplot.colortools.BinNorm` has some extra
+    options and gives us more control.
 
     Parameters
     ----------

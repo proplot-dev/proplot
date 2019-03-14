@@ -534,8 +534,10 @@ _cmap_mirrors = [
 #------------------------------------------------------------------------------#
 class CmapDict(dict):
     """
-    Flexible, case-insensitive colormap identification. Behaves like a
-    dictionary, with three new features:
+    Flexible, case-insensitive colormap identification. Replaces the
+    `matplotlib.cm.cmap_d` dictionary that stores registered colormaps.
+
+    Behaves like a dictionary, with three new features:
 
     1. Names are case insensitive: ``'Blues'``, ``'blues'``, and ``'bLuEs'``
        are all valid names for the "Blues" colormap.
@@ -545,9 +547,6 @@ class CmapDict(dict):
     3. Diverging colormap names can be referenced by their "inverse" name.
        For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
        ``'BuYlRd'`` and ``'RdYlBu_r'``.
-
-    ProPlot replaces the `matplotlib.cm.cmap_d` dictionary with an instance
-    of `CmapDict`.
     """
     # Initialize -- converts keys to lower case and
     # ignores the 'reverse' maps
@@ -667,18 +666,14 @@ if not isinstance(mcm.cmap_d, CmapDict):
 # More generalized utility for retrieving colors
 #------------------------------------------------------------------------------#
 def _get_space(space):
-    """
-    Verify requested colorspace is valid.
-    """
+    """Verify requested colorspace is valid."""
     space = _space_aliases.get(space, None)
     if space is None:
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
 
 def shade(color, shade=0.5):
-    """
-    Change the "shade" of a color by messing with its luminance channel.
-    """
+    """Change the "shade" of a color by messing with its luminance channel."""
     try:
         color = mcolors.to_rgb(color) # ensure is valid color
     except Exception:
@@ -689,10 +684,9 @@ def shade(color, shade=0.5):
     return tuple(color)
 
 def to_rgb(color, space='rgb'):
-    """
-    Generalization of `~matplotlib.colors.to_rgb`. Translates color tuples
-    from *any* colorspace to rgb. Also will convert color strings to tuple.
-    """
+    """Generalization of matplotlib's `~matplotlib.colors.to_rgb`. Translates
+    colors from *any* colorspace to rgb. Also will convert color
+    strings to tuple. Inverse of `to_xyz`."""
     # First the RGB input
     # NOTE: Need isinstance here because strings stored in numpy arrays
     # are actually subclasses thereof!
@@ -714,18 +708,12 @@ def to_rgb(color, space='rgb'):
         color = colormath.hsluv_to_rgb(*color)
     elif space=='hcl':
         color = colormath.hcl_to_rgb(*color)
-    elif space=='rgb':
-        color = color[:3] # trim alpha
-        if any(c>1 for c in color):
-            color = [c/255 for c in color] # scale to within 0-1
     else:
         raise ValueError('Invalid RGB value.')
     return color
 
 def to_xyz(color, space):
-    """
-    Inverse of above, translate to some colorspace.
-    """
+    """Translates to colorspace `space` from RGB space. Inverse of `to_rgb`."""
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit out-of-bounds RGB values to invert conversion
     if isinstance(color, str):
@@ -747,9 +735,7 @@ def to_xyz(color, space):
     return color
 
 def add_alpha(color):
-    """
-    Ensures presence of alpha channel.
-    """
+    """Ensures presence of alpha channel."""
     if not np.iterable(color) or isinstance(color, str):
         raise ValueError('Input must be color tuple.')
     if len(color)==3:
@@ -765,14 +751,16 @@ def get_channel_value(color, channel, space='hsl'):
     Gets hue, saturation, or luminance channel value from registered
     string color name.
 
-    Arguments
-    ---------
-        color :
-            scalar numeric ranging from 0-1, or string color name, optionally
-            with offset specified as '+x' or '-x' at the end of the string for
-            arbitrary float x.
-        channel :
-            channel number or name (e.g., 0, 1, 2, 'h', 's', 'l')
+    Parameters
+    ----------
+    color : str or (R,G,B) tuple
+        Scalar numeric ranging from 0-1, or string color name, optionally
+        with offset specified as ``'color+x'`` or ``'color-x'`` at the end of
+        the string for arbitrary float x.
+    channel : str or float
+        Channel number or name (e.g., 0, 1, 2, 'h', 's', 'l')
+    space : {'hsl', 'hcl', 'hpl'}
+        The colorspace.
     """
     # Interpret channel
     channel_idxs = {'hue': 0, 'saturation': 1, 'chroma': 1, 'luminance': 2,
@@ -1114,9 +1102,7 @@ def Colormap(*args, name=None, N=None,
     return cmap
 
 def colors(*args, **kwargs):
-    """
-    Alias for `Cycle`.
-    """
+    """Alias for `Cycle`."""
     return Cycle(*args, **kwargs)
 
 def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
@@ -1262,8 +1248,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
         gamma1 = _default(gamma, gamma1)
         gamma2 = _default(gamma, gamma2)
-        segmentdata['gamma1'] = _default(gamma1, _default(segmentdata.get('gamma1', None), 1.0))
-        segmentdata['gamma2'] = _default(gamma2, _default(segmentdata.get('gamma2', None), 1.0))
+        segmentdata['gamma1'] = _default(gamma1, segmentdata.get('gamma1', None), 1.0)
+        segmentdata['gamma2'] = _default(gamma2, segmentdata.get('gamma2', None), 1.0)
         self.space = space
         self.mask  = mask
         # First sanitize the segmentdata by converting color strings to their
@@ -1289,9 +1275,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         super().__init__(name, segmentdata, gamma=1.0, **kwargs)
 
     def reversed(self, name=None):
-        """
-        Returns reversed colormap.
-        """
+        """Returns reversed colormap."""
         if name is None:
             name = self.name + '_r'
         def factory(dat):
@@ -1312,10 +1296,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         return PerceptuallyUniformColormap(name, data_r, space=self.space)
 
     def _init(self):
-        """
-        As with `~matplotlib.colors.LinearSegmentedColormap`, but converts
-        each value in the lookup table from 'input' to RGB.
-        """
+        """As with `~matplotlib.colors.LinearSegmentedColormap`, but converts
+        each value in the lookup table from 'input' to RGB."""
         # First generate the lookup table
         channels = ('hue','saturation','luminance')
         reverse = (False, False, True) # gamma weights *low chroma* and *high luminance*
@@ -1337,9 +1319,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         self._lut[:,:3] = clip_colors(self._lut[:,:3], self.mask)
 
     def _resample(self, N):
-        """
-        Returns a new colormap with *N* entries.
-        """
+        """Returns a new colormap with *N* entries."""
         self.N = N # that easy
         self._i_under = self.N
         self._i_over = self.N + 1
@@ -1359,7 +1339,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
         Parameters
         ----------
-        h : float, str, or list thereof, optional
+        h, hue : float, str, or list thereof, optional
             Hue channel value or list of values. Values can be
             any of the following:
 
@@ -1369,11 +1349,11 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                    value for that color is looked up.
 
             If scalar, the hue does not change across the colormap.
-        s : float, str, or list thereof, optional
+        s, saturation : float, str, or list thereof, optional
             As with hue, but for the saturation channel.
-        l : float, str, or list thereof, optional
+        l, luminance, c, chroma : float, str, or list thereof, optional
             As with hue, but for the luminance channel.
-        a : float, str, or list thereof, optional
+        a, alpha : float, str, or list thereof, optional
             As with hue, but for the alpha channel (the transparency).
         ratios : None or list of float, optional
             Relative extent of each transitions indicated by the channel
@@ -1390,23 +1370,12 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         -------
         `PerceptuallyUniformColormap`
             The colormap.
-
-        Other parameters
-        ----------------
-        hue
-            Alias for `h`.
-        c, chroma, saturation
-            Aliases for `s`.
-        luminance
-            Alias for `l`.
-        alpha
-            Alias for `a`.
         """
         # Build dictionary, easy peasy
         h = _default(hue, h)
-        s = _default(chroma, _default(c, _default(saturation, s)))
+        s = _default(chroma, c, saturation, s)
         l = _default(luminance, l)
-        a = _default(alpha, _default(a, 1.0))
+        a = _default(alpha, a, 1.0)
         cs = ['hue', 'saturation', 'luminance', 'alpha']
         channels = [h, s, l, a]
         cdict = {}
@@ -1459,11 +1428,9 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         return cmap
 
 def make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
-    """
-    Construct a list of linear segments for an individual channel.
+    """Constructs a list of linear segments for an individual channel.
     This was made so that user can input e.g. a callable function for
-    one channel, but request linear interpolation for another one.
-    """
+    one channel, but request linear interpolation for another one."""
     # Handle function handles
     if callable(values):
         if reverse:
@@ -1605,29 +1572,33 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
 #------------------------------------------------------------------------------#
 # Colormap constructors
 #------------------------------------------------------------------------------#
-def merge_cmaps(*imaps, name='merged', N=512, ratios=1, **kwargs):
+def merge_cmaps(*args, name='merged', ratios=1, N=512, **kwargs):
     """
     Merges arbitrary colormaps. This is used when you pass multiple `args`
     to the `Colormap` function.
 
     Parameters
     ----------
-    *imaps : str or `~matplotlib.colors.Colormap` instances.
+    *args : str or `~matplotlib.colors.Colormap` instances.
         The colormaps for merging.
     name : str, optional
         Name of output colormap. Default is ``'merged'``.
-    N : float
+    ratios : float or list thereof, optional
+        The ratios used to merge the colormaps. For example, with colormaps
+        ``'Blues'`` and ``'Reds'``, ``ratios=[1,2]`` would make the first
+        one third of the colormap blue, the next one third red.
+    N : float, optional
         Number of lookup table colors desired for output colormap.
     """
     # Initial
-    if len(imaps)<=1:
+    if len(args)<=1:
         raise ValueError('Need two or more input cmaps.')
     ratios = ratios or 1
     if isinstance(ratios, Number):
-        ratios = [1]*len(imaps)
+        ratios = [1]*len(args)
 
     # Combine the colors
-    imaps = [Colormap(cmap, N=None, **kwargs) for cmap in imaps] # set N=None to disable resamping
+    imaps = [Colormap(cmap, N=None, **kwargs) for cmap in args] # set N=None to disable resamping
     if all(isinstance(cmap, mcolors.ListedColormap) for cmap in imaps):
         if not np.all(ratios==1):
             raise ValueError(f'Cannot assign different ratios when mering ListedColormaps.')
@@ -1708,13 +1679,13 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
 
     Parameters
     ----------
-    color : color-like
+    color : str or (R,G,B) tuple
         Color RGB tuple, hex string, or named color string.
-    fade : float or color-like
-        The luminance channel strength, or color name from which to take the luminance channel.
-    reverse : bool
+    fade : float or str or (R,G,B) tuple
+        The luminance channel strength, or color from which to take the luminance channel.
+    reverse : bool, optional
         Whether to reverse the colormap.
-    space : ('hsl')
+    space : {'hsl', 'hcl', 'hpl'}, optional
         Colorspace in which the luminance is varied.
     name : str, optional
         Colormap name. Default is ``'monochrome'``.
@@ -1729,7 +1700,6 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     Since it's a monochrome colormap, doesn't the HSL colorspace not matter?
     """
     # Get colorspace
-    space = _get_space(space)
     h, s, l = to_xyz(to_rgb(color), space)
     if isinstance(fade, Number): # allow just specifying the luminance channel
         fs, fl = s, fade # fade to *same* saturation by default
@@ -1924,21 +1894,17 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
 # end up trying to infer boundaries from inverse() method. So make it parent class.
 class BinNorm(mcolors.BoundaryNorm):
     """
-    This is a rough copy of BoundaryNorm, but includes some extra features.
-    *Discreteizes* the possible normalized values (numbers in 0-1) that are
-    used to index a color on a high-resolution colormap lookup table. But
-    includes features for other stuff.
+    This is the default normalizer used by all functions that accept
+    the `cmap` keyword arg. It can be thought of as a "parent" normalizer:
+    it first normalizes data according to any other arbitrary
+    `~matplotlib.colors.Normalize` class, then maps the normalized
+    values ranging from 0-1 into **discrete** levels.
 
     Note
     ----
-    If you are using a diverging colormap with extend='max/min', the center
-    will get messed up. But that is very strange usage anyway... so please
-    just don't do that :)
-
-    Todo
-    ----
-    Allow this to accept transforms too, which will help prevent level edges
-    from being skewed toward left or right in case of logarithmic/exponential data.
+    If you are using a diverging colormap with ``extend='max'`` or
+    ``extend='min'``, the center will get messed up. But that is very strange
+    usage anyway... so please just don't do that :)
 
     Example
     -------
@@ -1946,15 +1912,32 @@ class BinNorm(mcolors.BoundaryNorm):
     even [0, 10, 12, 20, 22], but center "colors" are always at colormap
     coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
-    def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither', **kwargs):
-        # Declare boundaries, vmin, vmax in True coordinates. The step controls
-        # intensity transition to out-of-bounds color; by default, the step is
-        # equal to the *average* step between in-bounds colors (step == 1).
-        # NOTE: Idea is that we bin data into len(levels) discrete x-coordinates,
-        # and optionally make out-of-bounds colors the same or different
-        # NOTE: Don't need to call parent __init__, this is own implementation
-        # Do need it to subclass BoundaryNorm, so ColorbarBase will detect it
-        # See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
+    def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither'):
+        """
+        Parameters
+        ----------
+        levels : list of float
+            The discrete data levels.
+        norm : None or `~matplotlib.colors.Normalize`, optional
+            The normalizer used to transform `levels` and all data passed
+            to `BinNorm.__call__` *before* discretization.
+        step : float, optional
+            The intensity of the transition to out-of-bounds color, as a
+            faction of the *average* step between in-bounds colors. The
+            default is ``1``.
+        extend : {'neither', 'both', 'min', 'max'}, optional
+            Which direction colors will be extended. No matter the `extend`
+            option, `BinNorm` ensures colors always extend from the 
+        clip : bool, optional
+            A `~matplotlib.colors.Normalize` option.
+        """
+        # Declare boundaries, vmin, vmax in True coordinates.
+        # Notes:
+        # * Idea is that we bin data into len(levels) discrete x-coordinates,
+        #   and optionally make out-of-bounds colors the same or different
+        # * Don't need to call parent __init__, this is own implementation
+        #   Do need it to subclass BoundaryNorm, so ColorbarBase will detect it
+        #   See BoundaryNorm: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
         extend = extend or 'both'
         levels = np.atleast_1d(levels)
         if levels.size<=1:
@@ -1965,13 +1948,14 @@ class BinNorm(mcolors.BoundaryNorm):
             raise ValueError(f'Unknown extend option "{extend}". Choose from "min", "max", "both", "neither".')
 
         # Determine color ids for levels, i.e. position in 0-1 space
-        # NOTE: If user used LinearSegmentedNorm for the normalizer (the
-        # default) any monotonic levels will be even.
-        # NOTE: Length of these ids should be N + 1 -- that is, N - 1 colors
+        # Notes:
+        # * If user used LinearSegmentedNorm for the normalizer (the
+        #   default) any monotonic levels will be even.
+        # Length of these ids should be N + 1 -- that is, N - 1 colors
         # for values in-between levels, plus 2 colors for out-of-bounds.
-        #   * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
-        #   * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
-        #     where the offset X equals step/len(levels).
+        # * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
+        # * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
+        #   where the offset X equals step/len(levels).
         # First get coordinates
         norm = norm or (lambda x: x) # e.g. a logarithmic transform
         x_b = norm(levels)
@@ -2003,22 +1987,17 @@ class BinNorm(mcolors.BoundaryNorm):
         self.N = levels.size
 
     def __call__(self, xq, clip=None):
-        """
-        Normalize data values to the range 0-1.
-        """
+        """Normalizes data values to the range 0-1."""
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
-        # NOTE: The bins vector includes out-of-bounds negative (searchsorted
+        # Note the bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
         xq = self._norm(np.atleast_1d(xq))
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):
-        """
-        Dummy method.
-        """
-        # Not possible
+        """Dummy method. Inversion after discretization is impossible."""
         raise ValueError('BinNorm is not invertible.')
 
 #------------------------------------------------------------------------------#
@@ -2026,19 +2005,29 @@ class BinNorm(mcolors.BoundaryNorm):
 #------------------------------------------------------------------------------#
 class LinearSegmentedNorm(mcolors.Normalize):
     """
-    Linearly *interpolate* colors between the provided boundary levels.
-    Exactly analagous to the method in `~matplotlib.colors.LinearSegmentedColormap`:
-    performs linear interpolation between successive monotonic, but arbitrarily
-    spaced, points. Then lets this index control color intensity.
+    This is the default normalizer paired with `BinNorm`, and used
+    by all functions that accept the `cmap` keyword arg.
 
-    This class is useful when you want "evenly spaced" colors for unevenly
-    spaced levels -- e.g. when your data spans a large range of magnitudes.
+    It follows the example of the `~matplotlib.colors.LinearSegmentedColormap`
+    source code and performs efficient, vectorized linear interpolation
+    between the provided boundary levels. That is, the normalized value is
+    linear with respect to its average **index** in the `levels` vector. This
+    allows color transitions with uniform intensity across **arbitrarily
+    spaced**, monotonically increasing points.
 
-    This class is the **default** normalizer for all functions that accept
-    the `cmap` keyword arg.
+    Can be used by passing ``norm='segments'`` to any command accepting
+    ``cmap``. The default midpoint is zero.
     """
     def __init__(self, levels, clip=False, **kwargs):
-        # Test
+        """
+        Parameters
+        ----------
+        levels : list of float
+            The discrete data levels.
+        **kwargs, clip
+            Passed to `~matplotlib.colors.Normalize`.
+        """
+        # Save levels
         levels = np.atleast_1d(levels)
         if levels.size<=1:
             raise ValueError('Need at least two levels.')
@@ -2049,15 +2038,15 @@ class LinearSegmentedNorm(mcolors.Normalize):
         self._y = np.linspace(0, 1, len(levels))
 
     def __call__(self, xq, clip=None):
-        """
-        Normalize data values to the range 0-1.
-        """
+        """Normalizes data values to the range 0-1. Inverse operation
+        of `~LinearSegmentedNorm.inverse`."""
         # Follow example of make_mapping_array for efficient, vectorized
-        # linear interpolation across multiple segments
-        # NOTE: normal test puts values at a[i] if a[i-1] < v <= a[i]; for
-        # left-most data, satisfy a[0] <= v <= a[1]
-        # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
-        # than x[ind[i]-1] but smaller than x[ind[i]]
+        # linear interpolation across multiple segments.
+        # Notes:
+        # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
+        #   left-most data, satisfy a[0] <= v <= a[1]
+        # * searchsorted gives where xq[i] must be inserted so it is larger
+        #   than x[ind[i]-1] but smaller than x[ind[i]]
         x = self._x # from arbitrarily spaced monotonic levels
         y = self._y # to linear range 0-1
         xq = np.atleast_1d(xq)
@@ -2069,9 +2058,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):
-        """
-        Inverse operation of `__call__`.
-        """
+        """Inverse operation of `~LinearSegmentedNorm.__call__`."""
         x = self._x
         y = self._y
         yq = np.atleast_1d(yq)
@@ -2084,30 +2071,40 @@ class LinearSegmentedNorm(mcolors.Normalize):
 
 class MidpointNorm(mcolors.Normalize):
     """
-    Ensure a "midpoint" always lies at the central colormap color. This
-    is normally used with diverging colormaps and ``midpoint=0``.
+    Ensures a "midpoint" always lies at the central colormap color.
+    Can be used by passing ``norm='midpoint'`` to any command accepting
+    ``cmap``. The default midpoint is zero.
 
     Notes
     -----
     See `this stackoverflow thread <https://stackoverflow.com/q/25500541/4970632>`_.
     """
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
+        """
+        Parameters
+        ----------
+        midpoint : float, optional
+            The midpoint, or the data value corresponding to the normalized
+            value ``0.5`` -- halfway down the colormap.
+        vmin, vmax, clip
+            The minimum and maximum data values, and the clipping setting.
+            Passed to `~matplotlib.colors.Normalize`.
+        """
         # Bigger numbers are too one-sided
         super().__init__(vmin, vmax, clip)
         self._midpoint = midpoint
 
     def __call__(self, xq, clip=None):
-        """
-        Normalize data values to the range 0-1.
-        """
+        """Normalizes data values to the range 0-1. Inverse operation of
+        `~MidpointNorm.inverse`."""
         # Get middle point in 0-1 coords, and value
-        # NOTE: Look up these three values in case vmin/vmax changed; this is
-        # a more general normalizer than the others. Others are 'parent'
-        # normalizers, meant to be static more or less.
-        # NOTE: searchsorted gives where xq[i] must be inserted so it is larger
-        # than x[ind[i]-1] but smaller than x[ind[i]]
-        # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
-        # return ma.masked_array(np.interp(xq, x, y))
+        # Notes:
+        # * Look up these three values in case vmin/vmax changed; this is
+        #   a more general normalizer than the others. Others are 'parent'
+        #   normalizers, meant to be static more or less.
+        # * searchsorted gives where xq[i] must be inserted so it is larger
+        #   than x[ind[i]-1] but smaller than x[ind[i]]
+        #   x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
         if self.vmin >= self._midpoint or self.vmax <= self._midpoint:
             raise ValueError(f'Midpoint {self._midpoint} outside of vmin {self.vmin} and vmax {self.vmax}.')
         x = np.array([self.vmin, self._midpoint, self.vmax])
@@ -2119,11 +2116,10 @@ class MidpointNorm(mcolors.Normalize):
         distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
         yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
         return ma.masked_array(yq, np.isnan(xq))
+        # return ma.masked_array(np.interp(xq, x, y))
 
     def inverse(self, yq, clip=None):
-        """
-        Inverse operation of `__call__`.
-        """
+        """Inverse operation of `~MidpointNorm.__call__`."""
         # Invert the above
         # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
         # return ma.masked_array(np.interp(yq, y, x))
@@ -2153,8 +2149,8 @@ class MidpointNorm(mcolors.Normalize):
 #------------------------------------------------------------------------------#
 def register_colors(nmax=np.inf, verbose=False):
     """
-    Register new color names and **filter** them to be necessarily
-    "perceptually distinct" in the HSL colorspace.
+    Called on import. Registers new color names and **filter** them to be
+    necessarily "perceptually distinct" in the HSL colorspace.
 
     Use `~proplot.demos.color_show` to generate a table of the resulting
     filtered colors.
@@ -2246,9 +2242,8 @@ def register_colors(nmax=np.inf, verbose=False):
 
 def register_cmaps():
     """
-    Register colormaps and color cycles in the `cmaps` directory packaged
-    with ProPlot. That is, add colors to the `matplotlib.cm.cmap_d`
-    dictionary.
+    Called on import. Registers colormaps and color cycles packaged with
+    ProPlot. That is, add maps to the `matplotlib.cm.cmap_d` dictionary.
 
     Use `~proplot.demos.cmap_show` to generate a table of the resulting
     color cycles.
@@ -2395,8 +2390,9 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Register color cycles defined in ``.hex`` files, which contain lists of
-    hex strings, and color cycles declared at the top of this file.
+    Called on import. Registers color cycles defined in ``.hex`` files,
+    which contain lists of hex strings, and color cycles declared at the
+    top of this file.
 
     Use `~proplot.demos.cycle_show` to generate a table of the resulting
     color cycles.
