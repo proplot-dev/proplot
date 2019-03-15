@@ -518,8 +518,20 @@ _cmap_mirrors = [
     ]
 
 #------------------------------------------------------------------------------#
-# Special class for colormap names
+# Special classes
 #------------------------------------------------------------------------------#
+class CycleList(list):
+    """Simply stores a list of colors, and adds a `name` attribute corresponding
+    to the registered name."""
+    def __repr__(self):
+        """Make it clear this is no ordinary list."""
+        return 'CycleList(' + super().__repr__() + ')'
+
+    def __init__(self, list_, name):
+        """Add attribute."""
+        self.name = name
+        super().__init__(list_)
+
 class CmapDict(dict):
     """
     Flexible, case-insensitive colormap identification. Replaces the
@@ -536,9 +548,8 @@ class CmapDict(dict):
        For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
        ``'BuYlRd'`` and ``'RdYlBu_r'``.
     """
-    # Initialize -- converts keys to lower case and
-    # ignores the 'reverse' maps
     def __init__(self, kwargs):
+        """Convert keys to lower case and ignore the 'reverse' maps."""
         kwargs_filtered = {}
         for key,value in kwargs.items():
             if not isinstance(key, str):
@@ -1324,7 +1335,7 @@ def Colormap(*args, name=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
+def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     """
     Convenience function that builds lists of colors from colormaps or returns
     lists of colors from existing registered cycles.
@@ -1353,8 +1364,6 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
         instance).
     vmin, vmax : float, optional
         The minimum and maximum data values, used to scale `samples`.
-    getname : bool, optional
-        Whether to also return the "cycle name".
 
     Other parameters
     ----------------
@@ -1393,10 +1402,7 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     # Return
-    if getname:
-        return colors, cmap.name
-    else:
-        return colors
+    return CycleList(colors, name)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """

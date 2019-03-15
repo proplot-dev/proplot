@@ -602,7 +602,8 @@ class rc_configurator(object):
             value, kw = value[0], value[-1]
         if isinstance(value, str) or not np.iterable(value):
             value = value,
-        colors, name = colortools.Cycle(*value, getname=True, **kw)
+        colors = colortools.Cycle(*value, **kw)
+        name = colors.name
         # Optionally change RGB definitions
         if _rcGlobals['rgbcycle']:
             if name.lower()=='colorblind':

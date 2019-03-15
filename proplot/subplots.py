@@ -63,7 +63,7 @@ class axes_list(list):
     method (or retrieves respective attribute) on each one. For example,
     ``axs.format(color='r')`` colors all axes spines and tick marks red."""
     def __repr__(self):
-        """Make clear that this is no ordinary list."""
+        """Make it clear this is no ordinary list."""
         return 'axes_list(' + super().__repr__() + ')'
 
     def __getitem__(self, key):
@@ -92,10 +92,6 @@ class axes_list(list):
             return iterator
         elif all(not callable(_) for _ in attrs):
             return axes_list(attrs)
-            # if re.match('^(left|right|top|bottom|l|r|t|b)panel$', attr):
-            #     return axes_list(attrs) # just return the attribute list
-            # else:
-            #     return attrs[0] if len(attrs)==1 else attrs # just return the attribute list
         else:
             raise AttributeError(f'Found mixed types for attribute "{attr}".')
 

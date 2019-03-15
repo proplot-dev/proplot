@@ -110,10 +110,10 @@ Arbitrary units
 
 By default, most matplotlib sizing arguments assume the units “inches”
 or some “relative” unit size – e.g. relative to the axes width. With
-ProPlot, virtually **every** sizing argument is interpreted in the same way – if
-numeric, the units are inches, and if string, the units are interpreted
-by `~proplot.utils.units` (see `~proplot.utils.units` documentation
-for a handy table). Note this means even
+ProPlot, virtually **every** sizing argument is interpreted in the same
+way – if numeric, the units are inches, and if string, the units are
+interpreted by `~proplot.utils.units` (see `~proplot.utils.units`
+documentation for a handy table). Note this means even
 `~matplotlib.gridspec.GridSpec` arguments like ``wspace`` and
 ``hspace`` are now in inches by default (see
 `~proplot.subplots.subplots` for details).
@@ -160,8 +160,8 @@ You can disable this feature by passing ``tight=False`` to
 `~proplot.subplots.subplots`, but it is unbelievably useful. It works
 by scaling either the figure width or height dimension (whichever one
 you didn’t specify) such that the subplot aspect ratios will not change,
-and by taking advantage of ProPlot’s subplot layout restrictions. The
-below examples demonstrate its power.
+and by taking advantage of ProPlot’s subplot layout restrictions. Some
+examples are below.
 
 .. code:: ipython3
 
@@ -210,6 +210,8 @@ below examples demonstrate its power.
 
 .. code:: ipython3
 
+    import proplot as plot
+    plot.nbsetup()
     f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, innerpanels='lr', inner_kw={'rshare':False}, innertight=False)
     axs.format(ylabel='ylabel', xlabel='xlabel')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
@@ -221,21 +223,47 @@ below examples demonstrate its power.
    :height: 214px
 
 
-Adding labels, titles, etc.
----------------------------
+Formatting your axes
+--------------------
 
-Use the `~proplot.axes.BaseAxes.format` command to set up your ticks,
-axis labels, and more! The special `~proplot.subplots.axes_list` class
-lets you call any method, including `~proplot.axes.BaseAxes.format`,
-on every axes in the `~proplot.subplots.axes_list` returned by
-`~proplot.subplots.subplots` **simultaneously**.
+The `~proplot.subplots.subplots` method populates the
+`~proplot.subplots.Figure` object with either `~proplot.axes.XYAxes`
+(for cartesian axes) or `~proplot.axes.MapAxes` (for cartopy or
+basemap map projection axes). Both of these classes inherit from the
+base class `~proplot.axes.BaseAxes`.
 
-To change any `~proplot.rcmod.rc` setting, either builtin or specific
-to ProPlot (see the documentation), just pass it to
-`~proplot.axes.BaseAxes.format`. If the setting has dots, simply omit
-them – for example, the ProPlot custom settings ``title.pos`` and
-``title.weight`` can be changed with ``titleweight='bold'`` and
-``titlepos='ci'``.
+The **most important** new method you need to know is
+`~proplot.axes.BaseAxes.format`. This is your one-stop-shop for
+changing axis labels, tick labels, titles, etc. Keyword args passed to
+this function are interpreted as follows:
+
+1. Any keyword arg matching the name of a ProPlot or native matplotlib
+   “rc” setting will be applied to the axes (see the `~proplot.rcmod`
+   documentation). If the name has “dots”, **simply omit them** – for
+   example, ``title.weight`` becomes ``titleweight``, and ``title.pos``
+   becomes ``titlepos``.
+2. Remaining keyword args are passed to the ``smart_update`` methods of
+   the top-level class – that is, the `~proplot.axes.XYAxes`
+   `~proplot.axes.XYAxes.smart_update` or
+   `~proplot.axes.MapAxes.smart_update` methods. Use these to change
+   settings specific to Cartesian axes or specific to map projections,
+   like tick locations and toggling geographic features.
+3. Finally, the remaining keyword args are passed to the
+   `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.smart_update`
+   method. This one controls “universal” settings – namely, titles,
+   “super titles”, row and column labels, and a-b-c subplot labelling.
+
+Now, instead of having to remember all of these verbose, one-liner
+matplotlib commands like ``ax.set_title`` and ``ax.xaxis.tick_params``,
+or even having to invoke verbose class names like the
+`~matplotlib.ticker.Locator` class, `~proplot.axes.BaseAxes.format`
+lets you change everything all at once. This basically eliminates the
+need for boilerplate plotting code!
+
+Also note the axes returned by `~proplot.subplots.subplots` function
+are in a special `~proplot.subplots.axes_list` list. This lets you
+call any method, including `~proplot.axes.BaseAxes.format`, on every
+axes **simultaneously** (as in the below example).
 
 .. code:: ipython3
 
@@ -247,14 +275,52 @@ them – for example, the ProPlot custom settings ``title.pos`` and
               title='Inner title', titlepos='ci', suptitle='Super title',
               abc=True, abcpos='il', abcformat='a.',
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
-              linewidth=1, collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
+              collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
 
 
 
-.. image:: showcase/showcase_20_0.png
+.. image:: showcase/showcase_19_0.png
    :width: 490px
    :height: 397px
 
+
+Default configuration settings
+------------------------------
+
+A special object named `~proplot.rcmod.rc`, belonging to the
+`~proplot.rcmod.rc_configurator` class, is created whenever you import
+ProPlot. This object gives you advanced control over the look of your
+plots. **Use** `~proplot.rcmod.rc` **as your one-stop shop for
+changing global settings**.
+
+The `~proplot.rcmod.rc` object controls built-in
+`~matplotlib.rcParams` settings, a few custom :ref:``rcParams_new``
+settings, and some magic :ref:``rcGlobals`` settings that apply to
+groups of other settings and keep them synced. Tables of these settings
+are found in the `~proplot.rcmod` documentation. To modify any
+:ref:``rcGlobals``, :ref:``rcParams_new``, or `~matplotlib.rcParams`
+setting, you have four options:
+
+1. Change the default settings for good by creating a ``.proplotrc``
+   file in your home folder. For more information, see
+   :ref:``.proplotrc file``.
+2. Change one global setting using ``plot.rc.name = value`` or
+   ``plot.rc['name'] = value``. Note that, for settings with ‘dots’ in
+   their name, you will have to use ``plot.rc['category.name'] = value``
+3. Update several global settings at once using
+   ``plot.rc.update({'name1':value1, 'name2':value2})`` or
+   ``plot.rc.update(name1=value1, name2=value2)``, just like you would
+   update a dictionary.
+4. Change settings for a single axes using
+   ``ax.format(rc_kw={'name1':value1, 'name2':value2})`` or
+   ``ax.format(name1=value1, name2=value2)``, as discussed above.
+
+To access a single setting, use ``rc.name`` or ``rc['name']``. To access
+a group of setting by category name, use e.g. ``rc.axes`` and a
+dictionary of settings will be returned. To reset everything to the
+default state, use `~proplot.rcmod.rc_configurator.reset`. By default,
+settings are reset every time a figure is drawn – that is, when a figure
+is rendered by the matplotlib backend or saved to file.
 
 .. code:: ipython3
 
@@ -297,12 +363,21 @@ them – for example, the ProPlot custom settings ``title.pos`` and
 Colorbars and legends
 ---------------------
 
-I’ve added several new features to the `~proplot.axes.BaseAxes.legend`
-method, and created a new `~proplot.axes.BaseAxes.colorbar` method
-that draws a smaller colorbar **inside** the axes. These are both
-powered by the `~proplot.axes.legend_factory` and
-`~proplot.axes.colorbar_factory` functions (see documentation for full
-list of options). A demonstration is below.
+ProPlot adds several new features to the
+`~matplotlib.axes.Axes.legend` and
+`~matplotlib.figure.Figure.colorbar` commands, respectively powered by
+the `~proplot.axes.legend_factory` and
+`~proplot.axes.colorbar_factory` functions (see documentation for
+usage information).
+
+I’ve also added ``colorbar`` methods to the `~proplot.axes.BaseAxes`
+and special `~proplot.axes.PanelAxes` axes. When you call
+`~proplot.axes.BaseAxes.colorbar` on a `~proplot.axes.BaseAxes`, an
+**inset** colorbar is generated. When you call
+`~proplot.axes.PanelAxes.colorbar` on a `~proplot.axes.PanelAxes`,
+the axes is **filled** with a colorbar. See
+`~proplot.subplots.subplots` and
+`~proplot.subplots.Figure.panel_factory` for more on panels.
 
 .. code:: ipython3
 
@@ -324,6 +399,45 @@ list of options). A demonstration is below.
    :height: 317px
 
 
+A particularly useful `~proplot.axes.colorbar_factory` feature is the
+following, you no longer have to pass a “mappable” object (i.e. the
+output of `~matplotlib.axes.Axes.contourf` or similar). ``colorbar``
+will now accept any list of objects with ``get_color`` methods, or a
+list of color strings/RGB tuples! A colormap is constructed on-the-fly
+from the corresponding colors.
+
+.. code:: ipython3
+
+    f, ax = plot.subplots(bcolorbar=True)
+    plot.rc.cycle = 'qual2'
+    hs = ax.plot((np.random.rand(12,12)-0.3).cumsum(axis=0), lw=4)
+    ax.format(suptitle='Colorbar from line handles')
+    f.bpanel.colorbar(hs, values=np.arange(0,12), label='Use a colorbar to label lines that\nmap to physical values!')
+
+
+
+
+
+
+
+.. image:: showcase/showcase_26_1.png
+   :width: 256px
+   :height: 327px
+
+
+As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
+`~proplot.axes.PanelAxes`, the axes is **filled** with a legend – that
+is, a centered legend is drawn, and the axes patch and spines are made
+invisible.
+
+Some other notes: legend entries are now sorted in *row-major* order by
+default (not sure why the matplotlib authors chose column-major), and
+this is configurable with the ``order`` keyword arg. You can also
+disable vertical alignment of legend entries with the ``align`` keyword
+arg, or by passing a list of lists of plot handles. Under the hood, this
+is done by stacking multiple single-row, horizontally centered legends
+and forcing the background to be invisible.
+
 .. code:: ipython3
 
     import proplot as plot
@@ -344,37 +458,12 @@ list of options). A demonstration is below.
 
 
 
-.. image:: showcase/showcase_25_0.png
+.. image:: showcase/showcase_28_0.png
    :width: 454px
    :height: 294px
 
 
-One particularly useful new `~proplot.axes.BaseAsex.colorbar` feature
-is that, instead of passing a “mappable”, you can alternatively pass a
-list of objects with ``get_color`` methods or a list of color
-strings/RGB tuples. A colorbar will be constructed from the
-corresponding colors!
-
-.. code:: ipython3
-
-    f, ax = plot.subplots(bcolorbar=True)
-    plot.rc.cycle = 'qual2'
-    hs = ax.plot((np.random.rand(12,12)-0.3).cumsum(axis=0), lw=4)
-    ax.format(suptitle='Colorbar from line handles')
-    f.bpanel.colorbar(hs, values=np.arange(0,12), label='Use a colorbar to label lines that\nmap to physical values!')
-
-
-
-
-
-
-
-.. image:: showcase/showcase_27_1.png
-   :width: 256px
-   :height: 327px
-
-
-Enhanced plotting methods
+Improved plotting methods
 -------------------------
 
 Now, `~matplotlib.axes.Axes.pcolor` and
@@ -382,7 +471,14 @@ Now, `~matplotlib.axes.Axes.pcolor` and
 like `~matplotlib.axes.Axes.contourf`. This was previously really
 tricky to implement. Discrete levels can be preferred for scientific
 visualization, because it is easier to map colors to particular numbers
-with your eye.
+with your eye. See `~proplot.axes.cmap_wrapper` for details.
+
+I’ve also fixed the well-documented
+`white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
+and
+`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
+issues by automatically changing the edge colors after ``contourf``,
+``pcolor``, and ``pcolormesh`` are called.
 
 .. code:: ipython3
 
@@ -404,7 +500,7 @@ with your eye.
 
 
 
-.. image:: showcase/showcase_30_1.png
+.. image:: showcase/showcase_31_1.png
    :width: 454px
    :height: 293px
 
@@ -432,7 +528,7 @@ other coordinate at each point on the line. See
 
 
 
-.. image:: showcase/showcase_32_1.png
+.. image:: showcase/showcase_33_1.png
    :width: 436px
    :height: 313px
 
@@ -463,7 +559,7 @@ other coordinate at each point on the line. See
 
 
 
-.. image:: showcase/showcase_33_0.png
+.. image:: showcase/showcase_34_0.png
    :width: 454px
    :height: 309px
 
@@ -491,7 +587,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_36_0.png
+.. image:: showcase/showcase_37_0.png
    :width: 454px
    :height: 452px
 
@@ -531,7 +627,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_38_1.png
+.. image:: showcase/showcase_39_1.png
    :width: 454px
    :height: 487px
 
@@ -565,7 +661,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_41_1.png
+.. image:: showcase/showcase_42_1.png
    :width: 460px
    :height: 496px
 
@@ -590,7 +686,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_42_0.png
+.. image:: showcase/showcase_43_0.png
    :width: 775px
    :height: 261px
 
@@ -640,7 +736,7 @@ DejaVu Sans. You can change the default font by modifying your
 
 
 
-.. image:: showcase/showcase_45_0.png
+.. image:: showcase/showcase_46_0.png
    :width: 931px
    :height: 779px
 
@@ -676,25 +772,25 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_49_0.png
+.. image:: showcase/showcase_50_0.png
    :width: 643px
    :height: 166px
 
 
 
-.. image:: showcase/showcase_49_1.png
+.. image:: showcase/showcase_50_1.png
    :width: 643px
    :height: 176px
 
 
 
-.. image:: showcase/showcase_49_2.png
+.. image:: showcase/showcase_50_2.png
    :width: 643px
    :height: 175px
 
 
 
-.. image:: showcase/showcase_49_3.png
+.. image:: showcase/showcase_50_3.png
    :width: 643px
    :height: 190px
 
@@ -714,13 +810,13 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_50_0.png
+.. image:: showcase/showcase_51_0.png
    :width: 490px
    :height: 491px
 
 
 
-.. image:: showcase/showcase_50_1.png
+.. image:: showcase/showcase_51_1.png
    :width: 490px
    :height: 498px
 
@@ -757,13 +853,13 @@ same coordinate range.
 
 
 
-.. image:: showcase/showcase_53_0.png
+.. image:: showcase/showcase_54_0.png
    :width: 454px
    :height: 158px
 
 
 
-.. image:: showcase/showcase_53_1.png
+.. image:: showcase/showcase_54_1.png
    :width: 418px
    :height: 267px
 
@@ -805,7 +901,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_56_0.png
+.. image:: showcase/showcase_57_0.png
    :width: 706px
    :height: 819px
 
@@ -840,7 +936,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_59_0.png
+.. image:: showcase/showcase_60_0.png
    :width: 526px
    :height: 582px
 
@@ -862,7 +958,7 @@ some data range, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_61_0.png
+.. image:: showcase/showcase_62_0.png
    :width: 454px
    :height: 205px
 
@@ -909,7 +1005,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_64_0.png
+.. image:: showcase/showcase_65_0.png
    :width: 540px
    :height: 282px
 
@@ -938,7 +1034,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_65_0.png
+.. image:: showcase/showcase_66_0.png
    :width: 540px
    :height: 272px
 
@@ -971,7 +1067,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_66_0.png
+.. image:: showcase/showcase_67_0.png
    :width: 540px
    :height: 580px
 
@@ -1052,7 +1148,7 @@ work-around.
 
 
 
-.. image:: showcase/showcase_71_1.png
+.. image:: showcase/showcase_72_1.png
    :width: 630px
    :height: 434px
 
@@ -1079,7 +1175,7 @@ work-around.
 
 
 
-.. image:: showcase/showcase_72_0.png
+.. image:: showcase/showcase_73_0.png
    :width: 360px
    :height: 315px
 
@@ -1113,7 +1209,7 @@ Again, see `~proplot.subplots.supblots` and
 
 
 
-.. image:: showcase/showcase_75_0.png
+.. image:: showcase/showcase_76_0.png
    :width: 454px
    :height: 472px
 
@@ -1135,7 +1231,7 @@ Again, see `~proplot.subplots.supblots` and
 
 
 
-.. image:: showcase/showcase_76_0.png
+.. image:: showcase/showcase_77_0.png
    :width: 814px
    :height: 245px
 
@@ -1174,7 +1270,7 @@ cartopy projections are plotted below.
 
 
 
-.. image:: showcase/showcase_79_1.png
+.. image:: showcase/showcase_80_1.png
    :width: 594px
    :height: 1007px
 
@@ -1203,7 +1299,7 @@ args if you don’t specify them.
 
 
 
-.. image:: showcase/showcase_81_1.png
+.. image:: showcase/showcase_82_1.png
    :width: 594px
    :height: 998px
 
@@ -1232,7 +1328,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_85_1.png
+.. image:: showcase/showcase_86_1.png
    :width: 847px
    :height: 297px
 
@@ -1246,7 +1342,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_86_1.svg
+.. image:: showcase/showcase_87_1.svg
 
 
 .. code:: ipython3
@@ -1258,7 +1354,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_87_1.svg
+.. image:: showcase/showcase_88_1.svg
 
 
 Use `~proplot.demos.cmap_breakdown` with any colormap to get a
@@ -1278,13 +1374,13 @@ relatively non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_89_1.png
+.. image:: showcase/showcase_90_1.png
    :width: 1009px
    :height: 306px
 
 
 
-.. image:: showcase/showcase_89_2.png
+.. image:: showcase/showcase_90_2.png
    :width: 1009px
    :height: 304px
 
@@ -1320,7 +1416,7 @@ for usage details.
 
 
 
-.. image:: showcase/showcase_92_1.png
+.. image:: showcase/showcase_93_1.png
    :width: 436px
    :height: 4560px
 
@@ -1348,9 +1444,9 @@ See `~proplot.axes.cycle_wrapper`, `~proplot.colortools.Cycle`, and
 
 
 
-.. image:: showcase/showcase_95_0.png
+.. image:: showcase/showcase_96_0.png
    :width: 540px
-   :height: 1324px
+   :height: 1615px
 
 
 Table of colors
@@ -1389,7 +1485,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_98_0.png
+.. image:: showcase/showcase_99_0.png
    :width: 720px
    :height: 1316px
 
@@ -1402,7 +1498,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_99_0.png
+.. image:: showcase/showcase_100_0.png
    :width: 630px
    :height: 225px
 
@@ -1432,7 +1528,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_101_0.png
+.. image:: showcase/showcase_102_0.png
    :width: 544px
    :height: 478px
 
@@ -1471,7 +1567,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_103_0.png
+.. image:: showcase/showcase_104_0.png
    :width: 634px
    :height: 306px
 
@@ -1496,7 +1592,7 @@ colormap. Again, see `~proplot.axes.cmap_wrapper` for details.
 
 
 
-.. image:: showcase/showcase_105_0.png
+.. image:: showcase/showcase_106_0.png
    :width: 652px
    :height: 287px
 
@@ -1526,7 +1622,7 @@ details.
 
 
 
-.. image:: showcase/showcase_107_0.png
+.. image:: showcase/showcase_108_0.png
    :width: 652px
    :height: 424px
 
@@ -1560,10 +1656,31 @@ import.
 
 
 
-.. image:: showcase/showcase_109_1.png
+.. image:: showcase/showcase_110_1.png
    :width: 544px
    :height: 334px
 
+
+Custom perceptually uniform maps
+--------------------------------
+
+You can generate your own
+`~proplot.colortools.PerceptuallyUniformColormap` on-the-fly by
+passing a dictionary as the ``cmap`` keyword argument. This is powerd by
+the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl` static
+method.
+
+The ``h``, ``s``, and ``l`` arguments can be single numbers, lists of
+numbers, or single/lists of color strings. In the latter case, the
+corresponding channel value (hue, chroma, or luminance) for that color
+will be looked up and applied. You can end any color string with ``+N``
+or ``-N`` to offset the channel value by the number ``N``, as shown
+above
+
+.. code:: ipython3
+
+    f, ax = plot.subplots()
+    ax.contourf(np.random.rand(10,10), cmap={'h':['red', 'red+30'], 'c':80, 'l':[50, 100], 'space':'hpl'}
 
 Changing the color cycle
 ------------------------
@@ -1590,7 +1707,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_112_0.png
+.. image:: showcase/showcase_115_0.png
    :width: 517px
    :height: 356px
 
@@ -1615,7 +1732,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_113_1.png
+.. image:: showcase/showcase_116_1.png
    :width: 490px
    :height: 334px
 
