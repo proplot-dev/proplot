@@ -1,13 +1,18 @@
 
+General introduction
+====================
+
 APIS
-====
+----
 
 Matplotlib has two APIs – the “pyplot” API (which is MATLAB-like), and
 the “object-oriented” API (which is more “pythonic”, more clear, more
-flexible, and you should consider using!). Contrary to the similar
-names, this package is not meant to be a pyplot replacement – it adds to
-the “object-oriented” API by subclassing matplotlib Artists classes,
-like `~matplotlib.axes.Axes` and `~matplotlib.figure.Figure`.
+flexible, and you should consider using!).
+
+Contrary to the similar names, this package is not meant to be a pyplot
+replacement – it adds to the “object-oriented” API by subclassing
+matplotlib Artists classes, like `~matplotlib.axes.Axes` and
+`~matplotlib.figure.Figure`.
 
 .. code:: ipython3
 
@@ -22,7 +27,7 @@ like `~matplotlib.axes.Axes` and `~matplotlib.figure.Figure`.
 
 
 
-.. image:: showcase/showcase_1_1.png
+.. image:: showcase/showcase_2_1.png
    :width: 450px
    :height: 270px
 
@@ -40,13 +45,10 @@ like `~matplotlib.axes.Axes` and `~matplotlib.figure.Figure`.
 
 
 
-.. image:: showcase/showcase_2_1.png
+.. image:: showcase/showcase_3_1.png
    :width: 450px
    :height: 270px
 
-
-General
-=======
 
 The basics
 ----------
@@ -212,7 +214,7 @@ examples are below.
 
     import proplot as plot
     plot.nbsetup()
-    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, innerpanels='lr', inner_kw={'rshare':False}, innertight=False)
+    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, innerpanels='lr', inner_kw={'rshare':False})
     axs.format(ylabel='ylabel', xlabel='xlabel')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
 
@@ -220,7 +222,7 @@ examples are below.
 
 .. image:: showcase/showcase_17_0.png
    :width: 634px
-   :height: 214px
+   :height: 216px
 
 
 Formatting your axes
@@ -1154,6 +1156,12 @@ is powered by the `~proplot.axes.cartopy_gridfix_wrapper` and
 
 
 .. image:: showcase/showcase_72_1.png
+   :width: 630px
+   :height: 434px
+
+
+
+.. image:: showcase/showcase_72_2.png
    :width: 630px
    :height: 434px
 

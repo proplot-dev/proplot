@@ -192,7 +192,7 @@ def _parse_args(args):
 
 def wrapper_check_centers(func):
     """
-    Check shape of arguments passed to methods like
+    Checks shape of arguments passed to methods like
     `~matplotlib.axes.Axes.contourf`. Ensures we have coordinate *centers*,
     and will calculate centers if coordinate edges were provided.
 
@@ -232,7 +232,7 @@ def wrapper_check_centers(func):
 
 def wrapper_check_edges(func):
     """
-    Check shape of arguments passed to methods like
+    Checks shape of arguments passed to methods like
     `~matplotlib.axes.Axes.pcolormesh`. Ensures we have coordinate *edges*,
     and will *estimate* edges if coordinate centers were provided.
 

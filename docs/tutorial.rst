@@ -1,9 +1,3 @@
-========
-Tutorial
-========
-
-Below is a showcase of ProPlot's features. Once you have a general understanding of the API, see the :ref:`documentation` of ProPlot's individual classes and functions.
-
 .. include:: showcase.rst
 
 .. WARNING:
