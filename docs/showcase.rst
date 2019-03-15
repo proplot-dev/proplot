@@ -244,7 +244,7 @@ this function are interpreted as follows:
    becomes ``titlepos``.
 2. Remaining keyword args are passed to the ``smart_update`` methods of
    the top-level class – that is, the `~proplot.axes.XYAxes`
-   `~proplot.axes.XYAxes.smart_update` or
+   `~proplot.axes.XYAxes.smart_update` or `~proplot.axes.MapAxes`
    `~proplot.axes.MapAxes.smart_update` methods. Use these to change
    settings specific to Cartesian axes or specific to map projections,
    like tick locations and toggling geographic features.
@@ -255,10 +255,10 @@ this function are interpreted as follows:
 
 Now, instead of having to remember all of these verbose, one-liner
 matplotlib commands like ``ax.set_title`` and ``ax.xaxis.tick_params``,
-or even having to invoke verbose class names like the
-`~matplotlib.ticker.Locator` class, `~proplot.axes.BaseAxes.format`
-lets you change everything all at once. This basically eliminates the
-need for boilerplate plotting code!
+or even having to directly use verbose classes like the matplotlib
+`~matplotlib.ticker` classes, `~proplot.axes.BaseAxes.format` lets
+you change everything all at once. This basically eliminates the need
+for boilerplate plotting code!
 
 Also note the axes returned by `~proplot.subplots.subplots` function
 are in a special `~proplot.subplots.axes_list` list. This lets you
@@ -294,16 +294,16 @@ plots. **Use** `~proplot.rcmod.rc` **as your one-stop shop for
 changing global settings**.
 
 The `~proplot.rcmod.rc` object controls built-in
-`~matplotlib.rcParams` settings, a few custom :ref:``rcParams_new``
-settings, and some magic :ref:``rcGlobals`` settings that apply to
+`~matplotlib.rcParams` settings, a few custom :ref:`rcParams_new`
+settings, and some magic :ref:`rcGlobals` settings that apply to
 groups of other settings and keep them synced. Tables of these settings
 are found in the `~proplot.rcmod` documentation. To modify any
-:ref:``rcGlobals``, :ref:``rcParams_new``, or `~matplotlib.rcParams`
+:ref:`rcGlobals`, :ref:`rcParams_new`, or `~matplotlib.rcParams`
 setting, you have four options:
 
 1. Change the default settings for good by creating a ``.proplotrc``
    file in your home folder. For more information, see
-   :ref:``.proplotrc file``.
+   :ref:`.proplotrc file`.
 2. Change one global setting using ``plot.rc.name = value`` or
    ``plot.rc['name'] = value``. Note that, for settings with ‘dots’ in
    their name, you will have to use ``plot.rc['category.name'] = value``

@@ -13,5 +13,6 @@ Below is a showcase of ProPlot's features. Once you have a general understanding
    And used the following to transform literal double backticks into
    sphinx links:
    :%s/``\(\~.\{-}\)``/`\1`/g
+   :%s/:ref:``\(.\{-}\)``/:ref:`\1`/g
    Takes just a couple seconds.
 
