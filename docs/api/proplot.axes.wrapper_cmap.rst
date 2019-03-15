@@ -1,6 +1,6 @@
-cmap_wrapper
+wrapper_cmap
 ============
 
 .. currentmodule:: proplot.axes
 
-.. autofunction:: cmap_wrapper
+.. autofunction:: wrapper_cmap

@@ -1,6 +1,6 @@
-scatter_wrapper
+wrapper_scatter
 ===============
 
 .. currentmodule:: proplot.axes
 
-.. autofunction:: scatter_wrapper
+.. autofunction:: wrapper_scatter

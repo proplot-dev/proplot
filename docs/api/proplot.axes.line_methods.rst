@@ -1,6 +1,6 @@
-plot_wrapper
+line_methods
 ============
 
 .. currentmodule:: proplot.axes
 
-.. autofunction:: plot_wrapper
+.. autodata:: line_methods

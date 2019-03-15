@@ -1,6 +1,6 @@
-cycle_wrapper
+edges_methods
 =============
 
 .. currentmodule:: proplot.axes
 
-.. autofunction:: cycle_wrapper
+.. autodata:: edges_methods

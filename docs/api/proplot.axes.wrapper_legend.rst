@@ -1,6 +1,6 @@
-legend_wrapper
+wrapper_legend
 ==============
 
 .. currentmodule:: proplot.axes
 
-.. autofunction:: legend_wrapper
+.. autofunction:: wrapper_legend

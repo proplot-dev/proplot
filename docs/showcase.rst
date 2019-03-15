@@ -573,7 +573,7 @@ hard to do with matplotlib, but easy with ProPlot! You can specify
 arbitrary combinations of inner panels for specific axes, and ProPlot
 will always keep the subplots aligned. See
 `~proplot.subplots.subplots` and
-`~proplot.figure.Figure.panel_factory` for details.
+`~proplot.subplots.Figure.panel_factory` for details.
 
 .. code:: ipython3
 
@@ -603,7 +603,7 @@ keyword args. If you want to disable “axis sharing” with the parent
 subplot (i.e. you want to draw tick labels on the panel, and do not want
 to inherit axis limits from the main subplot), use any of the ``share``
 keyword args. Again, see `~proplot.subplots.subplots` and
-`~proplot.figure.Figure.panel_factory` for details.
+`~proplot.subplots.Figure.panel_factory` for details.
 
 .. code:: ipython3
 
@@ -1099,14 +1099,12 @@ just like basemap, you can specify a native
 projection name like ``'robin'`` or ``'merc'``, instead of referencing
 the cumbersome `~cartopy.crs.Projection` classes directly.
 
-Cartopy vs. basemap
+Cartopy and basemap
 -------------------
 
 Why cartopy? Generally **cleaner integration** with matplotlib API; it’s
 the way of the future. Why basemap? It still has some **useful
-features**.
-
-While complex plotting algorithms like
+features**. While complex plotting algorithms like
 `~matplotlib.axes.Axes.tricontourf` only work with cartopy, gridline
 labels are only possible on equirectangular and Mercator projections.
 Also, unfortunately, matplotlib’s
@@ -1115,36 +1113,43 @@ labels, but **does not detect cartopy labels** – so ProPlot has to
 disable its own “tight layout” feature. I am currently looking for a
 work-around.
 
+Anyway, the below examples show how to plot geophysical data with
+ProPlot. Use the ``globe`` keyword arg with commands like
+`~matplotlib.axes.Axes.contourf` to ensure global data coverage. This
+is powered by the `~proplot.axes.cartopy_gridfix_wrapper` and
+`~proplot.axes.basemap_gridfix_wrapper` wrappers.
+
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     plot.nbsetup()
     # First make figure
-    f, axs = plot.subplots(ncols=2, nrows=2, width=7, hspace=0.2, wspace=0.3, top=0.5,
-                           bottomcolorbars=True, bwidth=0.2, bottom=0.2,
-                           proj='hammer', proj_kw={'lon_0':0},
-                           # basemap=False,
-                           basemap={(1,3):False, (2,4):True},
-                           )
-    offset = 20
-    x = plot.arange(-180+offset,180+offset-1,60)
-    y = plot.arange(-60,60+1,30)
-    data = np.random.rand(len(y), len(x))
-    for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
-        m = None
-        cmap = ['sunset', 'sunrise'][basemap]
-        levels = [0, .3, .5, .7, .9, 1]
-        levels = np.linspace(0,1,11)
-        if pcolor:
-            m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=True)
-            ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
-        if not pcolor:
-            m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=True)
-            ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
-        ax.format(suptitle='Hammer projection in different mapping frameworks', collabels=['Cartopy', 'Basemap'], labels=True)
-        if p<2:
-            c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
+    for globe in (False,True):
+        f, axs = plot.subplots(ncols=2, nrows=2, width=7, hspace=0.2, wspace=0.3, top=0.5,
+                               bottomcolorbars=True, bwidth=0.2, bottom=0.2,
+                               proj='hammer', proj_kw={'lon_0':0},
+                               # basemap=False,
+                               basemap={(1,3):False, (2,4):True},
+                               )
+        offset = 20
+        x = plot.arange(-180+offset,180+offset-1,60)
+        y = plot.arange(-60,60+1,30)
+        data = np.random.rand(len(y), len(x))
+        for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
+            m = None
+            cmap = ['sunset', 'sunrise'][basemap]
+            levels = [0, .3, .5, .7, .9, 1]
+            levels = np.linspace(0,1,11)
+            if pcolor:
+                m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=True)
+                ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
+            if not pcolor:
+                m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=True)
+                ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
+            ax.format(suptitle='Hammer projection in different mapping frameworks', collabels=['Cartopy', 'Basemap'], labels=True)
+            if p<2:
+                c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
 
 
 
@@ -1183,13 +1188,15 @@ work-around.
 Geographic features
 -------------------
 
-Easily add and format geographic features like coastlines, land, country
-borders, and state borders. To modify the projections, you can also pass
-keyword args to the `~basemap.Basemap` and `~cartopy.crs.Projection`
-initializers with the ``proj_kw`` keyword arg. Note that native
+To modify the projections, you can also pass keyword args to the
+`~basemap.Basemap` and `~cartopy.crs.Projection` initializers with
+the ``proj_kw`` keyword arg. Note that native
 `PROJ.4 <https://proj4.org/operations/projections/index.html>`__ keyword
 options are now accepted along with their more verbose cartopy aliases –
-for example, you can use ``lon_0`` instead of ``central_longitude``.
+for example, you can use ``lon_0`` instead of ``central_longitude``. You
+can also easily add and stylize geographic features (like coastlines,
+land, country borders, and state borders), using the
+`~proplot.axes.BaseAxes.format` method as before.
 
 Again, see `~proplot.subplots.supblots` and
 `~proplot.axes.MapAxes.fancy_update` for details.

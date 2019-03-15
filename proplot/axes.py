@@ -85,42 +85,48 @@ _aliases = {
     }
 
 # Basic plotting tool categories, used in various places
-_line_methods = (
-    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
-    )
-_contour_methods = (
-    'contour', 'tricontour',
+_show_methods = (
+    'imshow', 'matshow', 'spy', 'hist2d',
     )
 _pcolor_methods = (
     'pcolor', 'pcolormesh', 'tripcolor'
     )
+_contour_methods = (
+    'contour', 'tricontour',
+    )
 _contourf_methods = (
     'contourf', 'tricontourf',
     )
-_show_methods = (
-    'imshow', 'matshow', 'spy', 'hist2d',
-    )
 
 # 2D plot functions that require coordinate centers and edges
-_center_methods = (
+centers_methods = (
     'contour', 'contourf', 'quiver', 'streamplot', 'barbs'
     )
-_edge_methods = (
+"""List of methods wrapped by `wrapper_check_centers` (and for map projection
+axes, by `wrapper_cartopy_gridfix` and `wrapper_basemap_gridfix`)."""
+edges_methods = (
     'pcolor', 'pcolormesh',
     )
+"""List of methods wrapped by `wrapper_check_edges` (and for map projection
+axes, by `wrapper_cartopy_gridfix` and `wrapper_basemap_gridfix`)."""
 
 # Whether to wrap plot functions with cycle features or cmap features
+line_methods = (
+    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
+    )
+"""List of methods wrapped by `wrapper_basemap_linefix` and
+`wrapper_cartopy_linefix` for map projection axes."""
 cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
-"""List of plotting methods wrapped by `cycle_wrapper`."""
+"""List of methods wrapped by `wrapper_cycle`."""
 cmap_methods = (
     'cmapline', 'hexbin', # special
     'contour', 'contourf', 'pcolor', 'pcolormesh',
     'matshow', 'imshow', 'spy', 'hist2d',
     'tripcolor', 'tricontour', 'tricontourf',
     )
-"""List of plotting methods wrapped by `cmap_wrapper`."""
+"""List of methods wrapped by `wrapper_cmap`."""
 
 # Finally disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
@@ -159,7 +165,7 @@ _map_disabled_methods = (
 #       color change. Standardize by messing with the colormap.
 #------------------------------------------------------------------------------
 def _parse_args(args):
-    """Helper function for `check_edges_wrapper` and `check_centers_wrapper`."""
+    """Helper function for `wrapper_check_edges` and `wrapper_check_centers`."""
     # Sanitize input
     if len(args)>2:
         Zs = args[2:]
@@ -184,7 +190,7 @@ def _parse_args(args):
         raise ValueError(f'X coordinates are {x.ndim}D, but Y coordinates are {y.ndim}D.')
     return x, y, Zs
 
-def check_centers_wrapper(func):
+def wrapper_check_centers(func):
     """
     Check shape of arguments passed to methods like
     `~matplotlib.axes.Axes.contourf`. Ensures we have coordinate *centers*,
@@ -200,7 +206,7 @@ def check_centers_wrapper(func):
     * x, y, U, V
     """
     @functools.wraps(func)
-    def check_centers_wrapper(*args, order='C', **kwargs):
+    def wrapper_check_centers(*args, order='C', **kwargs):
         # Checks whether sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[-1], y.shape[0]
@@ -222,9 +228,9 @@ def check_centers_wrapper(func):
             raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
         result = func(x, y, *Zs, **kwargs)
         return result
-    return check_centers_wrapper
+    return wrapper_check_centers
 
-def check_edges_wrapper(func):
+def wrapper_check_edges(func):
     """
     Check shape of arguments passed to methods like
     `~matplotlib.axes.Axes.pcolormesh`. Ensures we have coordinate *edges*,
@@ -240,7 +246,7 @@ def check_edges_wrapper(func):
     * x, y, U, V
     """
     @functools.wraps(func)
-    def check_edges_wrapper(*args, order='C', **kwargs):
+    def wrapper_check_edges(*args, order='C', **kwargs):
         # Checks that sizes match up, checks whether graticule was input
         x, y, Zs = _parse_args(args)
         xlen, ylen = x.shape[-1], y.shape[0]
@@ -264,19 +270,15 @@ def check_edges_wrapper(func):
             raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
         result = func(x, y, *Zs, **kwargs)
         return result
-    return check_edges_wrapper
+    return wrapper_check_edges
 
-def cmap_wrapper(self, func):
+def wrapper_cmap(self, func):
     """
-    Wraps methods that take a `cmap` argument, like
+    Wraps methods that take a ``cmap`` argument, like
     `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
-    Adds several new keyword args and features. Note this means, for example,
-    `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
-    now accept a `levels` keyword arg.
-
-    Uses the ProPlot normalizer `~proplot.colortools.BinNorm` to bin data
-    into discrete color levels. `~proplot.colortools.BinNorm` has some extra
-    options and gives us more control.
+    Adds several new keyword args and features. Uses the ProPlot normalizer
+    `~proplot.colortools.BinNorm` to bin data into discrete color levels
+    (see notes).
 
     Parameters
     ----------
@@ -322,15 +324,21 @@ def cmap_wrapper(self, func):
 
     Notes
     -----
-    Now, the colored levels always use the **full range of colors** in the
+    `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
+    now accept a `levels` keyword arg. This means you can discretize your
+    colors in a ``pcolor`` plot just like with ``contourf``.
+
+    The new default `~proplot.colortools.BinNorm` normalizer makes sure
+    that colored levels always span the **full range of colors** in the
     colormap, whether you are extending max, min, neither, or both. By default,
-    when you select `extend` not ``both``, matplotlib seems to just cut off
+    when you select `extend` not ``'both'``, matplotlib seems to just cut off
     the most intense colors on either side (reserved for coloring "out of
-    bounds" data). `This post <https://stackoverflow.com/a/48614231/4970632>`__
-    helped me figure some of this stuff out.
+    bounds" data).
     """
+    # This post https://stackoverflow.com/a/48614231/4970632
+    # helped me figure some of this stuff out.
     @functools.wraps(func)
-    def cmap_wrapper(*args, cmap=None, cmap_kw={}, extend='neither',
+    def wrapper_cmap(*args, cmap=None, cmap_kw={}, extend='neither',
                 values=None, levels=None, zero=False, # override levels to be *centered* on zero
                 norm=None, norm_kw={},
                 values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
@@ -433,19 +441,19 @@ def cmap_wrapper(self, func):
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
         return result
 
-    return cmap_wrapper
+    return wrapper_cmap
 
 #------------------------------------------------------------------------------#
 # Simpler wrappers, wrappers for plot and scatter methods
 #------------------------------------------------------------------------------#
-def legend_wrapper(self, func):
-    """Dummy wrapper, just calls `legend_factory`."""
+def wrapper_legend(self, func):
+    """Just calls `legend_factory`."""
     @functools.wraps(func)
-    def legend_wrapper(*args, order='C', **kwargs):
+    def wrapper_legend(*args, order='C', **kwargs):
         return legend_factory(self, *args, **kwargs)
-    return legend_wrapper
+    return wrapper_legend
 
-def plot_wrapper(self, func):
+def wrapper_plot(self, func):
     """
     As in `~matplotlib.axes.Axes.plot`, but calls `~BaseAxes.cmapline`
     if ``cmap`` is passed by the user.
@@ -459,7 +467,7 @@ def plot_wrapper(self, func):
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
-    def plot_wrapper(*args, cmap=None, values=None, **kwargs):
+    def wrapper_plot(*args, cmap=None, values=None, **kwargs):
         # Make normal boring lines
         if cmap is None:
             lines = func(*args, **kwargs)
@@ -467,12 +475,12 @@ def plot_wrapper(self, func):
         else:
             lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
         return lines
-    return plot_wrapper
+    return wrapper_plot
 
-def scatter_wrapper(self, func):
+def wrapper_scatter(self, func):
     """
-    Wraps the 'scatter' method. This simply makes keyword name conventions
-    consistent with `~matplotlib.axes.Axes.plot`.
+    As in `~matplotlib.axes.Axes.scatter`, but adds optional keyword args
+    more consistent with the `~matplotlib.axes.Axes.plot` keywords.
 
     Parameters
     ----------
@@ -488,7 +496,7 @@ def scatter_wrapper(self, func):
         Passed to `~matplotlib.axes.Axes.scatter`.
     """
     @functools.wraps(func)
-    def scatter_wrapper(*args,
+    def wrapper_scatter(*args,
         c=None, color=None, markercolor=None,
         s=None, size=None, markersize=None,
         lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
@@ -503,19 +511,18 @@ def scatter_wrapper(self, func):
         if len(args)>2:
             s = args.pop(2)
         # Apply some aliases for keyword arguments
-        print(len(args))
         c = _default(c, color, markercolor)
         s = _default(s, size, markersize)
         lws = _default(lw, linewidths, linewidth, markeredgewidths, markeredgewidth)
         ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
         return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
-    return scatter_wrapper
+    return wrapper_scatter
 
-def cycle_wrapper(self, func):
+def wrapper_cycle(self, func):
     """
-    Wraps methods that use the ``rcParams['axes.prop_cycle']`` "property
-    cycle" if properties were not explicitly specified, like
-    `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.bar`.
+    Wraps methods that use the color cycler for default line and patch
+    colors, like `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
+    and `~matplotlib.axes.Axes.bar`.
 
     Parameters
     ----------
@@ -542,7 +549,7 @@ def cycle_wrapper(self, func):
     `_get_lines` and `_get_patches_for_fill`.
     """
     @functools.wraps(func)
-    def cycle_wrapper(*args, cycle=None, cycle_kw={}, **kwargs):
+    def wrapper_cycle(*args, cycle=None, cycle_kw={}, **kwargs):
         # Determine and temporarily set cycler
         if not np.iterable(cycle) or isinstance(cycle, str):
             cycle = cycle,
@@ -552,30 +559,30 @@ def cycle_wrapper(self, func):
             if cycle!=self.get_prop_cycle():
                 self.set_prop_cycle(color=cycle)
         return func(*args, **kwargs)
-    return cycle_wrapper
+    return wrapper_cycle
 
 #------------------------------------------------------------------------------#
 # Helper functions for basemap and cartopy plot overrides
-# NOTE: These wrappers should be invoked *after* check_centers_wrapper and check_edges_wrapper,
+# NOTE: These wrappers should be invoked *after* wrapper_check_centers and wrapper_check_edges,
 # which perform basic shape checking and permute the data array, so the data
 # will now be y by x (or lat by lon) instead of lon by lat.
 #------------------------------------------------------------------------------#
 # Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
 # this will cause basemap's self.m.pcolormesh etc. to use my *custom* version and
 # cause a suite of weird errors. Prevent this recursion with the below decorator.
-def _m_call_wrapper(self, func):
+def _wrapper_m_call(self, func):
     """Docorator that calls the basemap version of the function of the same name."""
     name = func.__name__
     @functools.wraps(func)
-    def _m_call_wrapper(*args, **kwargs):
+    def _wrapper_m_call(*args, **kwargs):
         return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
-    return _m_call_wrapper
+    return _wrapper_m_call
 
-def _m_norecurse_wrapper(self, func):
+def _wrapper_m_norecurse(self, func):
     """Decorator to prevent recursion in Basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
     @functools.wraps(func)
-    def _m_norecurse_wrapper(*args, **kwargs):
+    def _wrapper_m_norecurse(*args, **kwargs):
         name = getattr(func, '__name__')
         if self._recurred:
             # Return the *original* version of the matplotlib method (i.e.
@@ -586,17 +593,18 @@ def _m_norecurse_wrapper(self, func):
             result = object.__getattribute__(self, name)(*args, **kwargs)
         else:
             # Return the version we have wrapped, which itself will call the
-            # basemap.Basemap method thanks to the _m_call_wrapper wrapper.
+            # basemap.Basemap method thanks to the _wrapper_m_call wrapper.
             self._recurred = True
             result = func(*args, **kwargs)
         self._recurred = False # cleanup, in case recursion never occurred
         return result
-    return _m_norecurse_wrapper
+    return _wrapper_m_norecurse
 
-def basemap_linefix_wrapper(self, func):
+def wrapper_basemap_linefix(self, func):
     """
-    This wraps `~mpl_toolkits.basemap.Basemap.plot`,
-    `~mpl_toolkits.basemap.Basemap.scatter`, and similar methods.
+    Wraps `~mpl_toolkits.basemap.Basemap.plot`,
+    `~mpl_toolkits.basemap.Basemap.scatter`, and similar for
+    `BasemapAxes`.
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude,
@@ -604,15 +612,16 @@ def basemap_linefix_wrapper(self, func):
     used.
     """
     @functools.wraps(func)
-    def basemap_linefix_wrapper(*args, **kwargs):
+    def wrapper_basemap_linefix(*args, **kwargs):
         kwargs.update(latlon=True)
         return func(*args, **kwargs)
-    return basemap_linefix_wrapper
+    return wrapper_basemap_linefix
 
-def basemap_gridfix_wrapper(self, func):
+def wrapper_basemap_gridfix(self, func):
     """
-    This wraps `~mpl_toolkits.basemap.Basemap.contourf`,
-    `~mpl_toolkits.basemap.Basemap.pcolormesh`, and similar methods.
+    Wraps `~mpl_toolkits.basemap.Basemap.contourf`,
+    `~mpl_toolkits.basemap.Basemap.pcolormesh`, and similar for
+    `BasemapAxes`.
 
     With the default `~mpl_toolkits.basemap` API, you have to be wary of
     data crossing the "edges" of your projection, and cycle the longitudes
@@ -623,7 +632,7 @@ def basemap_gridfix_wrapper(self, func):
     North and South poles, so there are no gaps in coverage.
     """
     @functools.wraps(func)
-    def basemap_gridfix_wrapper(lon, lat, Z, globe=False, **kwargs):
+    def wrapper_basemap_gridfix(lon, lat, Z, globe=False, **kwargs):
         # Raise errors
         eps = 1e-3
         lonmin, lonmax = self.m.lonmin, self.m.lonmax
@@ -714,12 +723,12 @@ def basemap_gridfix_wrapper(self, func):
         self.m._mapboundarydrawn = self.boundary # stored the axes-specific boundary here
         # Call function
         return func(x, y, Z, **kwargs)
-    return basemap_gridfix_wrapper
+    return wrapper_basemap_gridfix
 
-def cartopy_linefix_wrapper(self, func):
+def wrapper_cartopy_linefix(self, func):
     """
-    This wraps `~cartopy.mpl.geoaxes.GeoAxes.plot`,
-    `~cartopy.mpl.geoaxes.GeoAxes.scatter`, and similar methods.
+    Wraps `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
+    and similar for `CartopyAxes`.
 
     With the default `~cartopy.mpl.geoaxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -727,7 +736,7 @@ def cartopy_linefix_wrapper(self, func):
     Now, ``transform=cartopy.crs.PlateCarree()`` is the default behavior.
     """
     @functools.wraps(func)
-    def cartopy_linefix_wrapper(*args, transform=PlateCarree, **kwargs):
+    def wrapper_cartopy_linefix(*args, transform=PlateCarree, **kwargs):
         # Simple
         if isinstance(transform, type):
             transform = transform() # instantiate
@@ -736,12 +745,12 @@ def cartopy_linefix_wrapper(self, func):
         # backgroundpatch (???), so need to re-enforce settings.
         self.format()
         return result
-    return cartopy_linefix_wrapper
+    return wrapper_cartopy_linefix
 
-def cartopy_gridfix_wrapper(self, func):
+def wrapper_cartopy_gridfix(self, func):
     """
-    This wraps `~cartopy.mpl.geoaxes.GeoAxes.contourf`,
-    `~cartopy.mpl.geoaxes.GeoAxes.pcolormesh`, and similar methods.
+    Wraps `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contourf`,
+    and similar for `CartopyAxes`.
 
     Use ``globe=True`` to make the data coverage *circular* (i.e. the last
     longitude coordinate equals the first longitude coordinate plus 360
@@ -757,7 +766,7 @@ def cartopy_gridfix_wrapper(self, func):
     <https://github.com/SciTools/cartopy/issues/946>`__.
     """
     @functools.wraps(func)
-    def cartopy_gridfix_wrapper(lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
+    def wrapper_cartopy_gridfix(lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
         # Below only works for vector data
         if lon.ndim==1 and lat.ndim==1:
             # 1) Fix holes over poles by *interpolating* there (equivalent to
@@ -781,7 +790,7 @@ def cartopy_gridfix_wrapper(self, func):
         # backgroundpatch (???), so need to re-enforce settings.
         self.format()
         return result
-    return cartopy_gridfix_wrapper
+    return wrapper_cartopy_gridfix
 
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
@@ -800,7 +809,7 @@ class BaseAxes(maxes.Axes):
     --------
     `~proplot.subplots.subplots`,
     `XYAxes`, `CartopyAxes`, `BasemapAxes`,
-    `cmap_wrapper`, `cycle_wrapper`
+    `wrapper_cmap`, `wrapper_cycle`
     """
     # Notes:
     # It is impossible to subclass `~matplotlib.axes.SubplotBase` directly.
@@ -909,17 +918,27 @@ class BaseAxes(maxes.Axes):
         with rc._context(mode=1):
             self.format()
 
-    # Apply some simple featueres, and disable spectral and triangular features
+    # Apply some simple features, and disable spectral and triangular features
     # See: https://stackoverflow.com/a/23126260/4970632
     # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_axes.py
     # for all Axes methods ordered logically in class declaration.
     def __getattribute__(self, attr, *args):
         """
-        Wraps several class methods, as follows:
+        Wraps the following `~matplotlib.axes.Axes` methods:
 
-        * Methods listed in `cmap_methods` are wrapped with `cmap_wrapper`.
-        * Methods listed in `cycle_methods` are wrapped with `cycle_wrapper`.
+        * The `cmap_methods` methods are wrapped by `wrapper_cmap`.
+        * The `cycle_methods` methods are wrapped by `wrapper_cycle`.
+        * The `~matplotlib.axes.Axes.scatter` method is wrapped by
+          `wrapper_scatter` (this just enables some new keyword args).
+        * The `~matplotlib.axes.Axes.plot` method is wrapped by
+          `wrapper_plot` (this just enables an optional call to
+          `~BaseAxes.cmapline`).
+        * The `~matplotlib.axes.Axes.legend` method is wrapped by
+          `wrapper_legend` (which simply calls `legend_factory`).
 
+        Also enables the aliases ``bpanel``, ``tpanel``, ``lpanel``, and
+        ``rpanel`` for the ``bottompanel``, ``toppanel``, ``leftpanel``, and
+        ``rightpanel`` attributes.
         """
         for message,attrs in _disabled_methods.items():
             if attr in attrs:
@@ -927,15 +946,15 @@ class BaseAxes(maxes.Axes):
         attr = _aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
         if attr in cmap_methods:
-            obj = cmap_wrapper(self, obj)
+            obj = wrapper_cmap(self, obj)
         elif attr in cycle_methods:
-            obj = cycle_wrapper(self, obj)
+            obj = wrapper_cycle(self, obj)
         if attr=='scatter':
-            obj = scatter_wrapper(self, obj)
+            obj = wrapper_scatter(self, obj)
         elif attr=='plot':
-            obj = plot_wrapper(self, obj)
+            obj = wrapper_plot(self, obj)
         elif attr=='legend' and not isinstance(self, PanelAxes):
-            obj = legend_wrapper(self, obj)
+            obj = wrapper_legend(self, obj)
         return obj
 
     def _topmost_subspec(self):
@@ -1610,7 +1629,7 @@ class XYAxes(BaseAxes):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
         # Change the default formatter
-        # My trims trailing zeros, but numbers no longer aligned. Matter
+        # Mine trims trailing zeros, but numbers no longer aligned. Matter
         # of taste really; will see if others like it.
         formatter = axistools.Formatter('default')
         self.xaxis.set_major_formatter(formatter)
@@ -1622,12 +1641,23 @@ class XYAxes(BaseAxes):
         self.yaxis.isDefault_majfmt = True
 
     def __getattribute__(self, attr, *args):
-        """"Wrap" some methods."""
+        """
+        Wraps the following `~matplotlib.axes.Axes` methods:
+
+        * The `centers_methods` methods are wrapped by
+          `wrapper_check_centers`. This automatically calculates coordinate
+          centers when provided coordinate edges, as required for e.g.
+          `~matplotlib.axes.Axes.contourf`.
+        * The `edges_methods` methods are wrapped by
+          `wrapper_check_centers`. This automatically calculates coordinate
+          edges when provided the coordinate centers, as required for e.g.
+          `~matplotlib.axes.Axes.pcolormesh`.
+        """
         obj = super().__getattribute__(attr, *args)
-        if attr in _center_methods:
-            obj = check_centers_wrapper(obj)
-        elif attr in _edge_methods:
-            obj = check_edges_wrapper(obj)
+        if attr in centers_methods:
+            obj = wrapper_check_centers(obj)
+        elif attr in edges_methods:
+            obj = wrapper_check_edges(obj)
         return obj
 
     def _share_span_label(self, axis, final=False):
@@ -2600,7 +2630,7 @@ class CartopyAxes(MapAxes, GeoAxes):
 
     See also
     --------
-    `~proplot.proj`, `cartopy_gridfix_wrapper`, `cartopy_linefix_wrapper`,
+    `~proplot.proj`, `wrapper_cartopy_gridfix`, `wrapper_cartopy_linefix`,
     `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
     """
     name = 'cartopy'
@@ -2658,16 +2688,33 @@ class CartopyAxes(MapAxes, GeoAxes):
             self.set_boundary(projs.Circle(self._n_bounds), transform=self.transAxes)
 
     def __getattribute__(self, attr, *args):
-        """"Wrap" some methods."""
+        """
+        Wraps the following `~matplotlib.axes.Axes` methods:
+
+        * The `line_methods` methods are wrapped by
+          `wrapper_cartopy_linefix`. This simply makes
+          ``transform=crs.PlateCarree()`` the default behavior.
+        * The `centers_methods` methods are wrapped by
+          `wrapper_check_centers`. This automatically calculates coordinate
+          centers when provided coordinate edges, as required for e.g.
+          `~matplotlib.axes.Axes.contourf`.
+        * The `edges_methods` methods are wrapped by
+          `wrapper_check_centers`. This automatically calculates coordinate
+          edges when provided the coordinate centers, as required for e.g.
+          `~matplotlib.axes.Axes.pcolormesh`.
+        * Both groups of methods are wrapped by `wrapper_basemap_gridfix`.
+          This cyclically permutes data as needed for the projection, and can
+          optionally ensure global data coverage.
+        """
         obj = super().__getattribute__(attr, *args)
-        if attr in _line_methods:
-            obj = cartopy_linefix_wrapper(self, obj)
-        elif attr in _edge_methods or attr in _center_methods:
-            obj = cartopy_gridfix_wrapper(self, obj)
-            if attr in _edge_methods:
-                obj = check_edges_wrapper(obj)
+        if attr in line_methods:
+            obj = wrapper_cartopy_linefix(self, obj)
+        elif attr in edges_methods or attr in centers_methods:
+            obj = wrapper_cartopy_gridfix(self, obj)
+            if attr in edges_methods:
+                obj = wrapper_check_edges(obj)
             else:
-                obj = check_centers_wrapper(obj)
+                obj = wrapper_check_centers(obj)
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -2836,7 +2883,7 @@ class BasemapAxes(MapAxes):
 
     See also
     --------
-    `~proplot.proj`, `basemap_gridfix_wrapper`, `basemap_linefix_wrapper`,
+    `~proplot.proj`, `wrapper_basemap_gridfix`, `wrapper_basemap_linefix`,
     `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
     """
     name = 'basemap'
@@ -2889,23 +2936,47 @@ class BasemapAxes(MapAxes):
     # WARNING: Never ever try to just make blanket methods on the Basemap
     # instance accessible from axes instance! Can of worms and had bunch of
     # weird errors! Just pick the ones you think user will want to use.
+    # NOTE: Need to again use cmap and cycle wrapper here, because
+    # Basemap internally bypasses my BaseAxes superclass.
     def __getattribute__(self, attr, *args):
-        """"Wrap" some methods."""
+        """
+        Wraps the following `~matplotlib.axes.Axes` methods:
+
+        * The `line_methods` methods are wrapped by
+          `wrapper_basemap_linefix`. This simply makes
+          ``latlon=True`` the default behavior.
+        * The `centers_methods` methods are wrapped by
+          `wrapper_check_centers`. This automatically calculates coordinate
+          centers when provided coordinate edges, as required for e.g.
+          `~matplotlib.axes.Axes.contourf`.
+        * The `edges_methods` methods are wrapped by
+          `wrapper_check_centers`. This automatically calculates coordinate
+          edges when provided the coordinate centers, as required for e.g.
+          `~matplotlib.axes.Axes.pcolormesh`.
+        * Both groups of methods are wrapped by `wrapper_basemap_gridfix`.
+          This cyclically permutes data as needed for the projection, and can
+          optionally ensure global data coverage.
+
+        Plotting methods are also wrapped with the hidden `_wrapper_m_call` and
+        `_wrapper_m_norecurse` wrappers. These prevent recursion issues that
+        arise due to the `~mpl_toolkits.basemap.Basemap` instance internally
+        calling the axes methods.
+        """
         obj = super().__getattribute__(attr, *args)
-        if attr in _line_methods or attr in _edge_methods or attr in _center_methods:
-            obj = _m_call_wrapper(self, obj) # this must be the *last* step!
-            if attr in _line_methods:
+        if attr in line_methods or attr in edges_methods or attr in centers_methods:
+            obj = _wrapper_m_call(self, obj) # this must be the *last* step!
+            if attr in line_methods:
                 if attr[:3] != 'tri':
-                    obj = cycle_wrapper(self, obj)
-                obj = basemap_linefix_wrapper(self, obj)
-            elif attr in _edge_methods or attr in _center_methods:
-                obj = cmap_wrapper(self, obj)
-                obj = basemap_gridfix_wrapper(self, obj)
-                if attr in _edge_methods:
-                    obj = check_edges_wrapper(obj)
+                    obj = wrapper_cycle(self, obj)
+                obj = wrapper_basemap_linefix(self, obj)
+            elif attr in edges_methods or attr in centers_methods:
+                obj = wrapper_cmap(self, obj)
+                obj = wrapper_basemap_gridfix(self, obj)
+                if attr in edges_methods:
+                    obj = wrapper_check_edges(obj)
                 else:
-                    obj = check_centers_wrapper(obj)
-            obj = _m_norecurse_wrapper(self, obj)
+                    obj = wrapper_check_centers(obj)
+            obj = _wrapper_m_norecurse(self, obj)
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -3304,7 +3375,7 @@ def colorbar_factory(ax, mappable, values=None,
     -------
     Colorbar axes must be of type `matplotlib.axes.Axes`,
     not `~proplot.axes.BaseAxes` because colorbar uses some internal methods
-    that `~proplot.axes.BaseAxes` wraps using `cmap_wrapper`, causing
+    that `~proplot.axes.BaseAxes` wraps using `wrapper_cmap`, causing
     errors due to new usage.
     """
     # Developer notes
@@ -3374,10 +3445,10 @@ def colorbar_factory(ax, mappable, values=None,
         colors = [h.get_color() for h in mappable]
     # Get colors, and by default, label each value directly
     # Note contourf will not be overridden for colorbar axes! Need to
-    # manually wrap with cmap_wrapper.
+    # manually wrap with wrapper_cmap.
     if fromlines or fromcolors:
         cmap   = colortools.Colormap(colors)
-        func = cmap_wrapper(ax, ax.contourf)
+        func = wrapper_cmap(ax, ax.contourf)
         mappable = func([[0,0],[0,0]],
             values=np.array(values), cmap=cmap, extend='neither',
             norm=(norm or 'segmented')

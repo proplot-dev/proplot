@@ -27,11 +27,10 @@ import matplotlib.pyplot as plt
 import matplotlib.scale as mscale
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
-# Aliases gor panel names
+# Aliases for panel names
 _aliases = {
     'bpanel': 'bottompanel',
     'rpanel': 'rightpanel',
-    'tpanel': 'toppanel',
     'lpanel': 'leftpanel'
     }
 
@@ -75,8 +74,8 @@ class axes_list(list):
 
     def __getattr__(self, attr):
         """Stealthily return dummy function that actually loops through each
-        axes method and calls them in succession, or returns a list of
-        attributes if the attribute is not callable!"""
+        axes method and calls them in succession. If attribute is not
+        callable, instead returns an `axes_list` of attributes."""
         attrs = [getattr(ax, attr, None) for ax in self]
         if None in attrs:
             raise AttributeError(f'Attribute "{attr}" not found.')
@@ -219,7 +218,9 @@ class Figure(mfigure.Figure):
         self._suptitle_transform = None
 
     def __getattribute__(self, attr, *args):
-        """Add some aliases."""
+        """Just enables the aliases ``bpanel``, ``lpanel``, and
+        ``rpanel`` for the ``bottompanel``, ``leftpanel``, and
+        ``rightpanel`` attributes."""
         attr = _aliases.get(attr, attr)
         return super().__getattribute__(attr, *args)
 
