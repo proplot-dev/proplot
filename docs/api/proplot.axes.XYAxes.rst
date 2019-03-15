@@ -16,6 +16,7 @@ XYAxes
 
    .. autosummary::
 
+      ~XYAxes.__getattribute__
       ~XYAxes.dualx
       ~XYAxes.dualy
       ~XYAxes.indicate_inset_zoom
@@ -32,6 +33,7 @@ XYAxes
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: __getattribute__
    .. automethod:: dualx
    .. automethod:: dualy
    .. automethod:: indicate_inset_zoom

@@ -18,8 +18,6 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-sys.path.append(os.path.abspath('sphinxext')) # see: https://matplotlib.org/sampledoc/extensions.html
-
 
 # -- Project information -----------------------------------------------------
 
@@ -43,24 +41,24 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    # 'sphinx.ext.ifconfig',
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    # 'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
     'sphinx.ext.autosectionlabel',
-    # 'sphinxext.custom_roles', # copied directly from matplotlib
     'sphinx.ext.autosummary',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    'sphinx_automodapi.automodapi', # see: https://sphinx-automodapi.readthedocs.io/en/latest/
+    'sphinxext.automodapi', # see: https://sphinx-automodapi.readthedocs.io/en/latest/
+    # 'sphinxext.custom_roles', # copied directly from matplotlib
     # 'matplotlib.sphinxext.only_directives', # deprecated; see: https://github.com/statsmodels/statsmodels/issues/5291
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
     ]
@@ -142,7 +140,7 @@ language = None
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
 # NOTE: Must add 'include' files or will get duplicate label warnings.
-exclude_patterns = ['_build', '_templates', '_themes',
+exclude_patterns = ['_build', '_templates', '_themes', 'sphinxext',
                     'originals', 'showcase*', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.

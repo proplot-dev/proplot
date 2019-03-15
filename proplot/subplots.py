@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import matplotlib.scale as mscale
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
-# For panel names
+# Aliases gor panel names
 _aliases = {
     'bpanel': 'bottompanel',
     'rpanel': 'rightpanel',
@@ -293,6 +293,8 @@ class Figure(mfigure.Figure):
         for ax,label in zip(axs,labels):
             if ax.toppanel.on():
                 ax = ax.toppanel
+            # if label and not ax.collabel.get_text():
+            #     ax.collabel.update({'text':label, **kwargs})
             if label and not ax.collabel.get_text():
                 ax.collabel.update({'text':label, **kwargs})
 
@@ -348,6 +350,7 @@ class Figure(mfigure.Figure):
                 if (ax.title.get_text().strip() and not ax._title_inside) or \
                    (ax.abc.get_text().strip() and not ax._abc_inside) or \
                    ax.collabel.get_text().strip():
+                   # ax.collabel.get_text().strip():
                     line = 1.2
                     title = ax.title
                 pos = ax.xaxis.get_ticks_position()
@@ -655,7 +658,7 @@ class Figure(mfigure.Figure):
         # WARNING: Need to update gridspec twice. First to get the width
         # and height ratios including spaces, then after because gridspec
         # changes propagate only *down*, not up; will not be applied otherwise.
-        figsize, _, gridspec_kw = _get_dims(**subplots_kw)
+        figsize, _, gridspec_kw = _get_sizes(**subplots_kw)
         self._smart_tight_init = False
         self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
@@ -1016,7 +1019,7 @@ def _parse_panels(nrows, ncols,
         })
     return kwargs # also return *leftover* kwargs
 
-def _get_dims(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
+def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     wextra=0, hextra=0, # extra space associated with inner panels; can be *arrays* matching number of columns, rows
     left=None, bottom=None, right=None, top=None, # spaces around edge of main plotting area, in inches
     width=None,  height=None, axwidth=None, axheight=None, journal=None,
@@ -1641,7 +1644,7 @@ def subplots(array=None, ncols=1, nrows=1,
         sum(units(kw.get(f'{side}width', 0)) for side in 'tb')
 
     # Parse arguments, figure out axes dimensions, initialize gridspec
-    figsize, subplots_kw, gridspec_kw = _get_dims(nrows, ncols, **kwargs)
+    figsize, subplots_kw, gridspec_kw = _get_sizes(nrows, ncols, **kwargs)
     gs  = gridspec.FlexibleGridSpec(**gridspec_kw)
     # Create figure, axes, and outer panels
     axs = naxs*[None] # list of axes

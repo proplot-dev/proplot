@@ -1,0 +1,1 @@
+Non-ASCII characters

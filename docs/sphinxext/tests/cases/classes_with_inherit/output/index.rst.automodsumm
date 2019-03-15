@@ -1,0 +1,7 @@
+.. currentmodule:: sphinx_automodapi.tests.example_module.classes
+
+.. autosummary::
+    :toctree: api
+
+    Spam
+    Egg

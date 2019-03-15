@@ -216,18 +216,30 @@ _cycles_preset = {
 
 # Color stuff
 # Keep major color names, and combinations of those names
-# _distinct_colors_threshold = 0.07
-_distinct_colors_threshold = 0.07 # bigger number equals fewer colors
-_distinct_colors_space = 'hsl' # register colors distinct in this space?
-_distinct_colors_exceptions = [
-    'white', 'black', 'gray', 'red', 'pink', 'grape',
-    'sky blue', 'eggshell', 'sea blue',
-    'violet', 'indigo', 'blue',
-    'coral', 'tomato red', 'crimson',
-    'cyan', 'teal', 'green', 'lime', 'yellow', 'orange',
+_distinct_colors_threshold = 0.09 # bigger number equals fewer colors
+_distinct_colors_space = 'hcl' # register colors distinct in this space?
+_exceptions_names = (
+    'sky blue', 'eggshell', 'sea blue', 'coral', 'tomato red', 'brick red', 'crimson',
     'red orange', 'yellow orange', 'yellow green', 'blue green',
     'blue violet', 'red violet',
-    ]
+    )
+_bad_names = '(' + '|'.join(( # filter these out; let's try to be professional here...
+    'shit', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger',
+    )) + ')'
+_sanitize_names = (
+    ('/', ' '), ("'s", ''), ('grey', 'gray'),
+    ('pinky', 'pink'), ('greeny', 'green'),
+    ('bluey',  'blue'),
+    ('robin egg', 'robins egg'),
+    ('egg blue', 'egg'),
+    (r'reddish', 'red'),
+    (r'purplish', 'purple'),
+    (r'bluish',  'blue'),
+    (r'ish\b', ''),
+    ('bluegray', 'blue gray'),
+    ('grayblue', 'gray blue'),
+    ('lightblue', 'light blue')
+    )
 _space_aliases = {
     'rgb':   'rgb',
     'hsv':   'hsv',
@@ -250,7 +262,12 @@ _channel_idxs = {
 # NOTE: Has support for 'x' coordinates in first column.
 # NOTE: For 'alpha' column, must use a .rgba filename
 # TODO: Better way to save colormap files.
-_cmap_categories = { # initialize as empty lists
+_cmap_categories = {
+    # Your custom registered maps; this is a placeholder, meant to put these
+    # maps at the top of the colormap table
+    'User': [
+        ],
+
     # We keep these ones
     'Matplotlib Originals': [
         'viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted',
@@ -280,10 +297,8 @@ _cmap_categories = { # initialize as empty lists
     # TODO: Add tool for cutting center out of ***any*** colormap by ending
     # with the _cut suffix or something?
     'ColorBrewer2.0 Diverging': [
-        # 'GYPi', 'GnRP', 'BrBG', 'PuOr', 'GyRd', 'BuRd', 'BuYlRd', 'GnYlRd', 'Spectral'
-        'Spectral', 'Spectral_cut', 'PiYG', 'PiYG_cut', 'PRGn', 'PRGn_cut',
-        'BrBG', 'BrBG_cut', 'PuOr', 'PuOr_cut', 'RdGY', 'RdGY_cut',
-        'RdBu', 'RdBu_cut', 'RdYlBu', 'RdYlBu_cut', 'RdYlGn', 'RdYlGn_cut',
+        'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
+        'RdBu', 'RdYlBu', 'RdYlGn',
         ],
 
     # Custom maps
@@ -297,16 +312,16 @@ _cmap_categories = { # initialize as empty lists
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging': [
-        'IceFire', 'NegPos', 'BlueRed', 'PurplePink', 'DryWet', 'DrierWetter', 'LandSea'
+        'IceFire', 'NegPos', 'BlueRed', 'PurplePink', 'DryWet', 'AltDryWet', 'LandSea'
         ],
 
     # Other
     # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
     # website, but organization is better this way.
-    'Miscellaneous': [
-        'Temperature', # from ???
-        'BWR',
+    'Misc Diverging': [
         'ColdHot',
+        'BWR',
+        'Temp', # from ???
         # 'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
         # 'Star',
         # 'JMN', # James map; ugly, so deleted
@@ -329,21 +344,21 @@ _cmap_categories = { # initialize as empty lists
         'Balance', 'Curl', 'Delta'
         ],
 
+    # Kenneth Moreland
+    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html
+    # Soft coolwarm from: https://www.kennethmoreland.com/color-advice/
+    'Kenneth Moreland': [
+        'CoolWarm', 'MutedCoolWarm', 'SoftCoolWarm',
+        'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
+        ],
+    # 'Kenneth Moreland Sequential': [
+    #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
+    #     ],
+
     # Statistik
     'Statistik Stadt Zürich': [
         'MutedBlue', 'MutedRed', 'MutedDry', 'MutedWet',
         'MutedBuRd', 'MutedBuRd_cut', 'MutedDryWet', 'MutedDryWet_cut',
-        ],
-
-    # Kenneth Moreland
-    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html
-    # Soft coolwarm from: https://www.kennethmoreland.com/color-advice/
-    # 'Kenneth Moreland Sequential': [
-    #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
-    #     ],
-    'Kenneth Moreland': [
-        'CoolWarm', 'MutedCoolWarm', 'SoftCoolWarm',
-        'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
         ],
 
     # CET isoluminant maps
@@ -351,30 +366,7 @@ _cmap_categories = { # initialize as empty lists
     # All the others have better options
     'Isoluminant': [
         'Iso1', 'Iso2', 'Iso3', 
-        # 'CET1', 'CET2', 'CET3', 'CET4',
         ],
-    # 'CET Rainbow': [
-    #     ],
-    # 'CET Diverging': [
-    #     ],
-    # 'CET Cyclic': [
-    #     ],
-
-    # Sky themes from rafi; not very scientifically useful, but pretty
-    # 'Sky' : [
-    #     'Sky1', 'Sky2', 'Sky3', 'Sky4', 'Sky5', 'Sky6', 'Sky7',
-    #     ],
-
-    # Los Alamos
-    # See: https://datascience.lanl.gov/colormaps.html
-    # Most of these have analogues in SciVisColor, added the few unique
-    # ones to Miscellaneous category
-    # 'Los Alamos Sequential': [
-    #     'MutedRainbow', 'DarkRainbow', 'MutedBlue', 'DeepBlue', 'BrightBlue', 'BrightGreen', 'WarmGray',
-    #     ],
-    # 'Los Alamos Diverging': [
-    #     'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
-    #     ],
 
     # SciVisColor
     # Culled these because some were ugly
@@ -396,7 +388,48 @@ _cmap_categories = { # initialize as empty lists
         'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4', 'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
         ],
 
-    # Remove the "combo" maps (and ugly diverging ones) because these can
+    # FabioCrameri
+    # See: http://www.fabiocrameri.ch/colourmaps.php
+    'Fabio Crameri Sequential': [
+        'Acton', 'Buda', 'Lajolla',
+        'Imola', 'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
+        'Turku', 'Bilbao', 'Lapaz',
+        ],
+    'Fabio Crameri Diverging': [
+        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
+        ],
+
+    # Gross. These ones will be deleted.
+    'Alt Sequential': [
+        'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+        'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+        'multi', 'cividis',
+        'afmhot', 'gist_heat', 'copper'
+        ],
+    'Alt Rainbow': [
+        'multi', 'cividis'
+        ],
+    'Alt Diverging': [
+        'coolwarm', 'bwr', 'seismic'
+        ],
+    'Miscellaneous Orig': [
+        'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+        'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
+        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
+        ],
+
+    # Los Alamos
+    # See: https://datascience.lanl.gov/colormaps.html
+    # Most of these have analogues in SciVisColor, previously added the few
+    # unique ones to Miscellaneous category
+    # 'Los Alamos Sequential': [
+    #     'MutedRainbow', 'DarkRainbow', 'MutedBlue', 'DeepBlue', 'BrightBlue', 'BrightGreen', 'WarmGray',
+    #     ],
+    # 'Los Alamos Diverging': [
+    #     'MutedBlueGreen', 'DeepBlueGreen', 'DeepBlueGreenAsym', 'DeepColdHot', 'DeepColdHotAsym', 'ExtendedCoolWarm'
+    #     ],
+
+    # Removed the "combo" maps (and ugly diverging ones) because these can
     # be built in proplot with the Colormap tool!
     # 'SciVisColor Diverging': [
     #     'Div1', 'Div2', 'Div3', 'Div4', 'Div5'
@@ -450,60 +483,15 @@ _cmap_categories = { # initialize as empty lists
     #     'Geography2', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/ngdc/tn/ETOPO1.png.index.html
     #     'Geography3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/mby/tn/mby.png.index.html
     #     ],
-
-    # FabioCrameri
-    # See: http://www.fabiocrameri.ch/colourmaps.php
-    'Fabio Crameri Sequential': [
-        'Acton', 'Buda', 'Lajolla',
-        'Imola', 'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
-        'Turku', 'Bilbao', 'Lapaz',
-        ],
-    'Fabio Crameri Diverging': [
-        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
-        ],
-
-    # Gross. These ones will be deleted.
-    'Alt Sequential': [
-        'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
-        'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-        'multi', 'cividis',
-        'afmhot', 'gist_heat', 'copper'
-        ],
-    'Alt Rainbow': [
-        'multi', 'cividis'
-        ],
-    'Alt Diverging': [
-        'coolwarm', 'bwr', 'seismic'
-        ],
-    'Miscellaneous Orig': [
-        'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-        'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
-        'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
-        ],
-
     }
 # Categories to ignore/*delete* from dictionary because they suck donkey balls
 _cmap_categories_delete = ['Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous Orig']
+
 # Slice indices that split up segments of names
 # WARNING: Must add to this list manually! Not worth trying to generalize.
 # List of string cmap names, and the indices where they can be broken into parts
 _cmap_parts = {
-    # Sequential
-    # Decided these shouldn't be reversed; left colors always refer
-    # to 'light' colors, right to 'dark' colors. Also there is BuPu and PuBu
-    # 'ylorbr':       (None, 2, 4, None),
-    # 'ylorrd':       (None, 2, 4, None),
-    # 'orrd':         (None, 2, None),
-    # 'purd':         (None, 2, None),
-    # 'rdpu':         (None, 2, None),
-    # 'bupu':         (None, 2, None),
-    # 'gnbu':         (None, 2, None),
-    # 'pubu':         (None, 2, None),
-    # 'ylgnbu':       (None, 2, 4, None),
-    # 'pubugn':       (None, 2, 4, None),
-    # 'bugn':         (None, 2, None),
-    # 'ylgn':         (None, 2, None),
-    # Diverging
+    # Diverging colorbrewer
     'piyg':         (None, 2, None),
     'prgn':         (None, 1, 2, None), # purple red green
     'brbg':         (None, 2, 3, None), # brown blue green
@@ -759,86 +747,10 @@ def to_xyz(color, space):
 #------------------------------------------------------------------------------#
 # Helper functions
 #------------------------------------------------------------------------------#
-def _clip_cmap(cmap, left=None, right=None, N=None):
-    """
-    Helper function that cleanly divides linear segmented colormaps and
-    subsamples listed colormaps.
-
-    Parameters
-    ----------
-    cmap : `~matplotlib.colors.Colormap`
-        The colormap.
-    left : None or float, optional
-        Clips the "left" of the colormap. For example, ``left=0.1``
-        deletes the leftmost 10%.
-
-        For `~matplotlib.colors.ListedColormap` maps, this is an integer index
-        in the color list.
-    right : None or float, optional
-        Clips the "right" of the colormap. For example, ``right=0.9``
-        deletes the rightmost 10%.
-
-        For `~matplotlib.colors.ListedColormap` maps, this is an integer index
-        in the color list.
-    N : None or int, optional
-        For `~matplotlib.colors.ListedColormap` maps, this is an alias for
-        `right`.  Otherwise, it is ignored.
-    """
-    # Optionally clip edges or resample map.
-    if isinstance(cmap, mcolors.ListedColormap):
-        slicer = None
-        if left is not None or right is not None:
-            slicer = slice(left, right)
-        elif N is not None:
-            slicer = slice(None, N)
-        # Just sample indices for listed maps
-        if slicer:
-            try:
-                cmap = mcolors.ListedColormap(cmap.colors[slicer])
-            except Exception:
-                raise ValueError(f'Invalid indices {slicer} for listed colormap.')
-    elif left is not None or right is not None:
-        # Trickier for segment data maps
-        # First get segmentdata and parse input
-        kwargs = {}
-        olddata = cmap._segmentdata
-        newdata = {}
-        if left is None:
-            left = 0
-        if right is None:
-            right = 1
-        if hasattr(cmap, 'space'):
-            kwargs['space'] = cmap.space
-        # Next resample the segmentdata arrays
-        for key,xyy in olddata.items():
-            if key in ('gamma1', 'gamma2'):
-                newdata[key] = xyy
-                continue
-            xyy = np.array(xyy)
-            x = xyy[:,0]
-            xleft, = np.where(x>left)
-            xright, = np.where(x<right)
-            if len(xleft)==0:
-                raise ValueError(f'Invalid x minimum {left}.')
-            if len(xright)==0:
-                raise ValueError(f'Invalid x maximum {right}.')
-            l, r = xleft[0], xright[-1]
-            newxyy = xyy[l:r+1,:].copy()
-            if l>0:
-                xl = xyy[l-1,1:] + (left - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
-                newxyy = np.concatenate(([[left, *xl]], newxyy), axis=0)
-            if r<len(x)-1:
-                xr = xyy[r,1:] + (right - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
-                newxyy = np.concatenate((newxyy, [[right, *xr]]), axis=0)
-            newxyy[:,0] = (newxyy[:,0] - left)/(right - left)
-            newdata[key] = newxyy
-        # And finally rebuild map
-        cmap = type(cmap)(cmap.name, newdata, **kwargs)
-    return cmap
-
 def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
-    """
-    Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
+    """Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
+    Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
+    colors are masked out
 
     Parameters
     ----------
@@ -852,14 +764,12 @@ def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
         is ``True``.
     verbose : bool, optional
         Whether to print message if colors are clipped.
-
-    Notes
-    -----
-    I could use `numpy.clip` (`matplotlib.colors` uses this under the hood),
-    but we want to display messages. And anyway, premature efficiency is
-    the root of all evil, we're manipulating like 1000 colors max here, so
-    it's no big deal.
     """
+    # Notes:
+    # I could use `numpy.clip` (`matplotlib.colors` uses this under the hood),
+    # but we want to display messages. And anyway, premature efficiency is
+    # the root of all evil, we're manipulating like 1000 colors max here, so
+    # it's no big deal.
     message = 'Invalid' if mask else 'Clipped'
     colors = np.array(colors) # easier
     under = (colors<0)
@@ -876,6 +786,151 @@ def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
             if over[:,i].any():
                 warnings.warn(f'{message} "{name}" channel (>1).')
     return colors
+
+def _clip_cmap(cmap, left=None, right=None, N=None):
+    """Helper function that cleanly divides linear segmented colormaps and
+    subsamples listed colormaps. Full documentation is in `Colormap`. Note
+    `N` is an alias for `right` for `ListedColormap` maps."""
+    # Optionally clip edges or resample map.
+    if left is None and right is None and (N is None or isinstance(cmap, mcolors.LinearSegmentedColormap)):
+        return cmap
+    # Listed colormaps, simply truncate colors in the list
+    if isinstance(cmap, mcolors.ListedColormap):
+        if N is not None:
+            slicer = slice(None, N)
+        else:
+            slicer = slice(left, right)
+        try:
+            cmap = mcolors.ListedColormap(cmap.colors[slicer])
+        except Exception:
+            raise ValueError(f'Invalid indices {slicer} for listed colormap.')
+        return cmap
+    # Trickier procedure for segment data maps
+    # First get segmentdata and parse input
+    kwargs = {}
+    data = cmap._segmentdata
+    newdata = {}
+    if left is None:
+        left = 0
+    if right is None:
+        right = 1
+    if hasattr(cmap, 'space'):
+        kwargs['space'] = cmap.space
+    # Next resample the segmentdata arrays
+    dict_ = {key:value for key,value in data.items() if
+            key not in ('gamma1','gamma2')}
+    channels = {'saturation':'gamma1', 'luminance':'gamma2'}
+    for key,xyy in dict_.items():
+        # Get coordinates
+        xyy     = np.array(xyy)
+        x       = xyy[:,0]
+        xleft,  = np.where(x>left)
+        xright, = np.where(x<right)
+        if len(xleft)==0:
+            raise ValueError(f'Invalid x minimum {left}.')
+        if len(xright)==0:
+            raise ValueError(f'Invalid x maximum {right}.')
+        # Slice
+        # l is the first point where x>0 or x>left, should be at least 1
+        # r is the last point where r<1 or r<right
+        l, r = xleft[0], xright[-1]
+        newxyy = xyy[l:r+1,:].copy()
+        xl = xyy[l-1,1:] + (left - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
+        newxyy = np.concatenate(([[left, *xl]], newxyy), axis=0)
+        xr = xyy[r,1:] + (right - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
+        newxyy = np.concatenate((newxyy, [[right, *xr]]), axis=0)
+        newxyy[:,0] = (newxyy[:,0] - left)/(right - left)
+        newdata[key] = newxyy
+        # Retain the corresponding 'gamma' *segments*
+        # Need more testing but so far so good
+        if key in channels:
+            name = channels[key]
+            gamma = data[name]
+            if np.iterable(gamma):
+                gamma = gamma[l-1:r+1]
+            newdata[name] = gamma
+    # And finally rebuild map
+    cmap = type(cmap)(cmap.name, newdata, **kwargs)
+    return cmap
+
+def _merge_cmaps(*args, ratios=1, name='merged', N=512, **kwargs):
+    """Merges arbitrary colormaps. This is used when you pass multiple `args`
+    to the `Colormap` function. Full documentation is in `Colormap`."""
+    # Initial
+    if len(args)<=1:
+        raise ValueError('Need two or more input cmaps.')
+    ratios = ratios or 1
+    if isinstance(ratios, Number):
+        ratios = [1]*len(args)
+    imaps = [Colormap(cmap, N=None, **kwargs) for cmap in args] # set N=None to disable resamping
+
+    # Simple process for listed colormap, just combine the colors
+    if all(isinstance(cmap, mcolors.ListedColormap) for cmap in imaps):
+        if not np.all(ratios==1):
+            raise ValueError(f'Cannot assign different ratios when mering ListedColormaps.')
+        colors = [color for cmap in imaps for color in cmap.colors]
+        return mcolors.ListedColormap(colors, name=name, N=len(colors))
+    elif not all(isinstance(cmap,mcolors.LinearSegmentedColormap) for cmap in imaps):
+        raise ValueError('All colormaps must be of the same type (Listed or LinearSegmented).')
+
+    # More complex for continuous maps
+    # Get the segmentdata, and figure out x-coordinates for merging
+    keys = {key for cmap in imaps for key in cmap._segmentdata.keys()
+            if key not in ('gamma1','gamma2')}
+    ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
+    x0 = np.concatenate([[0], np.cumsum(ratios)])
+    xw = x0[1:] - x0[:-1] # weights for averages
+    # Mixed types
+    types = {type(cmap) for cmap in imaps}
+    if len(types)>1:
+        raise ValueError(f'Mixed colormap types {types}. Maps must all be LinearSegmentedColormap or PerceptuallyUniformColormap.')
+    type_ = types.pop()
+
+    # Special consideration for PerceptuallyUniformColormaps
+    kwargs = {}
+    segmentdata = {}
+    if type_ is PerceptuallyUniformColormap:
+        # Combine gamma values, where gamma1 corresponds to saturation and
+        # gamma2 to luminance. Account for scalar gamma or gamma list options.
+        channels = {0:'saturation', 1:'luminance'}
+        for i,key in enumerate(('gamma1', 'gamma2')):
+            if key not in segmentdata:
+                segmentdata[key] = []
+            for cmap in imaps:
+                gamma = cmap._segmentdata[key]
+                if not np.iterable(gamma):
+                    gamma = [gamma]*(len(cmap._segmentdata[channels[i]])-1) # length is *number* of rows in segmentdata
+                segmentdata[key].extend([*gamma])
+        # Get the colorspace
+        spaces = {cmap.space for cmap in imaps}
+        if len(spaces)>1:
+            raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
+        kwargs['space'] = spaces.pop()
+    # Combine the segmentdata, and use the y1/y2 slots at merge points
+    # so the transition is immediate (i.e. the colormap will never try to
+    # interpolate between the end colors of different colormaps)
+    for key in keys:
+        # Combine xyy data
+        datas = []
+        callable_ = [callable(cmap._segmentdata[key]) for cmap in imaps]
+        if not all(callable_) and any(callable_):
+            raise ValueError('Mixed callable and non-callable colormap values.')
+        if all(callable_): # expand range from x-to-w to 0-1
+            for x,w,cmap in zip(x0[:-1], xw, imaps):
+                data = lambda x: data((x - x0)/w) # WARNING: untested!
+                datas.append(data)
+        else:
+            for x,w,cmap in zip(x0[:-1], xw, imaps):
+                data = np.array(cmap._segmentdata[key])
+                data[:,0] = x + w*data[:,0]
+                datas.append(data)
+            for i in range(len(datas)-1):
+                datas[i][-1,2] = datas[i+1][0,2]
+                datas[i+1] = datas[i+1][1:,:]
+            data = np.concatenate(datas, axis=0)
+            data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum exactly 1 (avoid floating point errors)
+        segmentdata[key] = data
+    return type(imaps[0])(name, segmentdata, N=N, **kwargs)
 
 def _make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
     """Constructs a list of linear segments for an individual channel.
@@ -1028,7 +1083,7 @@ def colors(*args, **kwargs):
 
 def Colormap(*args, name=None, N=None, 
         extend='both',
-        left=None, right=None, x=None, reverse=False, # optionally truncate color range by these indices
+        cut=None, left=None, right=None, x=None, reverse=False,
         ratios=1, gamma=None, gamma1=None, gamma2=None,
         register=True, save=False,
         **kwargs):
@@ -1055,10 +1110,9 @@ def Colormap(*args, name=None, N=None,
           monochromatic colormap is generated with `monochrome_cmap`, spanning
           from 100% luminance and 0% saturation to that color.
 
-          The color string can also look like ``'name90'``, where the trailing
-          number indicates the luminance at the other end of the colormap (by
-          default, this is 100).
-
+        The color name string can also look like ``'name90'``, where the trailing
+        number indicates the maximum luminance of the colormap. By default,
+        this is 100 (i.e. pure white).
     name : None or str, optional
         Name of colormap. Default name is ``'no_name'``.
 
@@ -1079,7 +1133,11 @@ def Colormap(*args, name=None, N=None,
         with ``extend='both'`` in the contour or colorbar call. This
         means that colors at the ends of the main region will be same as
         the out-of-bounds colors.
-    left, right : float or list of float
+    cut : None or float, optional
+        Optionally cut out colors in the **center** of the colormap. This is
+        extremely useful for diverging colormaps, in case you want to have a
+        sharper cutoff between negative and positive values.
+    left, right : None or float or list of float, optional
         Optionally *delete* colors on the left and right sides of the
         colormap(s). For example, ``left=0.1`` deletes the leftmost
         10% of the colormap; ``right=0.9`` deletes the rightmost 10%.
@@ -1087,7 +1145,7 @@ def Colormap(*args, name=None, N=None,
         If list, length must match ``len(args)``, and applies to *each*
         colormap in the list before they are merged. If float, applies
         to the *final* colormap. No difference if ``len(args)`` is 1.
-    x : (float, float), optional
+    x : None or (float, float), optional
         List containing the keyword args `(left, right)`.
     reverse : bool or list of bool, optional
         Optionally reverse the colormap(s).
@@ -1107,7 +1165,8 @@ def Colormap(*args, name=None, N=None,
         for perceptualy uniform colormaps. See the
         `PerceptuallyUniformColormap` documentation.
 
-        So far no way to apply this differently for each colormap in `args`.
+        So far there is no way to apply this differently for each colormap
+        in `args`.
     save : bool, optional
         Whether to save the colormap in the folder ``~/.proplot``. The
         folder is created if it does not already exist.
@@ -1140,12 +1199,13 @@ def Colormap(*args, name=None, N=None,
     # actual instance, no longer does that thing where final levels equal extensions.
     # Since collection API does nothing to underlying data or cmap, must be
     # something done by pcolormesh function.
-    _N = N or _N_hires
+    N_ = N or _N_hires
     imaps = []
     name = name or 'no_name' # must have name, mcolors utilities expect this
+    if x is not None:
+        left, right = x
     if len(args)==0:
         args = [rcParams['image.cmap']] # use default
-
     for i,cmap in enumerate(args):
         # Retrieve Colormap instance. Makes sure lookup table is reset.
         # TODO: What if colormap names conflict with color names! Maybe address
@@ -1156,7 +1216,7 @@ def Colormap(*args, name=None, N=None,
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
             if isinstance(cmap, mcolors.LinearSegmentedColormap):
-                cmap = cmap._resample(_N)
+                cmap = cmap._resample(N_)
         if isinstance(cmap, mcolors.Colormap):
             # Allow overriding the gamma, otherwise do nothing
             if isinstance(cmap, PerceptuallyUniformColormap):
@@ -1181,53 +1241,53 @@ def Colormap(*args, name=None, N=None,
                 if key in kwargs:
                     warnings.warn(f'Got duplicate keys "{key}" in cmap dictionary ({cmap[key]}) and in keyword args ({kwargs[key]}). Using first one.')
             kw = kwargs.update
-            cmap = PerceptuallyUniformColormap.from_hsl(name, N=_N, **{**kwargs, **cmap})
+            cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **{**kwargs, **cmap})
         elif not isinstance(cmap, str):
             # List of colors
             cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
         else:
             # Monochrome colormap based from input color (i.e. single hue)
-            regex = '([0-9].)$'
+            regex = '([0-9]+)$'
             match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
             cmap = re.sub(regex, '', cmap) # remove options
             fade = kwargs.pop('fade', 90) if not match else float(match.group(1)) # default fade to 100 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
-            cmap = monochrome_cmap(cmap, fade, name=name, N=_N, **kwargs)
+            cmap = monochrome_cmap(cmap, fade, name=name, N=N_, **kwargs)
 
-        # Transform each colormap
-        left_i, right_i = None, None
-        if np.iterable(left):
-            left_i = left[i]
-        if np.iterable(right):
-            right_i = right[i]
-        cmap = _clip_cmap(cmap, left_i, right_i, N=N)
+        # Optionally transform colormap by clipping colors or reversing
         if np.iterable(reverse) and reverse[i]:
             cmap = cmap.reversed()
-
-        # Add to list
+        cmap = _clip_cmap(cmap, None if not np.iterable(left) else left[i],
+                                None if not np.iterable(right) else right[i], N=N)
         imaps += [cmap]
 
     # Now merge the result of this arbitrary user input
     # Since we are merging cmaps, potentially *many* color transitions; use big number by default
+    N_ = N_*len(imaps)
     if len(imaps)>1:
-        N_merge = _N*len(imaps)
-        cmap = merge_cmaps(*imaps, name=name, ratios=ratios, N=N_merge)
+        cmap = _merge_cmaps(*imaps, name=name, ratios=ratios, N=N_)
 
-    # Transform merged colormap
-    if np.iterable(left): # was applied to each map, not the final one
-        left = None
-    if np.iterable(right):
-        right = None
-    cmap = _clip_cmap(cmap, left, right, N=N)
+    # Transform colormap
     if not np.iterable(reverse) and reverse:
         cmap = cmap.reversed()
+    left = None if np.iterable(left) else left
+    right = None if np.iterable(right) else right
+    # Cut out middle colors of a diverging map
+    if cut: # non-zero and not None
+        cright, cleft = 0.5 - cut/2, 0.5 + cut/2
+        lcmap = _clip_cmap(cmap, left, cright)
+        rcmap = _clip_cmap(cmap, cleft, right)
+        cmap = _merge_cmaps(lcmap, rcmap, name=name, N=N_)
+    # Cut out either edge
+    else:
+        cmap = _clip_cmap(cmap, left, right, N=N)
 
+    # Perform a crude resampling of data, i.e. just generate a low-resolution
+    # lookup table instead.
+    # NOTE: All this does is create a new colormap with *attribute* N levels,
+    # for which '_lut' attribute has not been generated yet.
     if isinstance(cmap, mcolors.LinearSegmentedColormap) and N is not None:
-        # Perform a crude resampling of the data, i.e. just generate a
-        # low-resolution lookup table instead.
-        # NOTE: All this does is create a new colormap with *attribute* N levels,
-        # for which '_lut' attribute has not been generated yet.
         offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
         if extend not in offset:
             raise ValueError(f'Unknown extend option {extend}.')
@@ -1241,18 +1301,18 @@ def Colormap(*args, name=None, N=None,
         mcm.cmap_d[name.lower() + '_r'] = cmap.reversed()
 
     # Optionally save colormap to disk
-    if name and save:
+    if save:
         if not os.path.isdir(_data_user):
             os.mkdir(_data_user)
         # Save listed colormap i.e. color cycle
         if isinstance(cmap, mcolors.ListedColormap):
-            basename = f'{cmap.name}.hex'
+            basename = f'{name}.hex'
             filename = os.path.join(_data_user, basename)
             with open(filename, 'w') as f:
                 f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
         # Save segment data directly
         else:
-            basename = f'{cmap.name}.json'
+            basename = f'{name}.json'
             filename = os.path.join(_data_user, basename)
             data = {}
             for key,value in cmap._segmentdata.items():
@@ -1340,10 +1400,11 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, getname=False, **kwargs):
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
-    Generate a `~matplotlib.colors.LinearSegmentedColormap` in a
-    *perceptually uniform colorspace* -- that is, either HSLuv, HCL, or HPLuv.
-    See `this page <http://www.hsluv.org/comparison/>`_ for a description
-    of each colorspace.
+    Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
+    varying the hue, saturation, luminance channels of the perceptually
+    uniform HCL colorspaces or its two scalings, the HSLuv and HPLuv
+    colorspaces. See `this page <http://www.hsluv.org/comparison/>`_ for a
+    description of each colorspace.
     """
     def __init__(self, name, segmentdata,
             space='hsl', gamma=None, gamma1=None, gamma2=None,
@@ -1374,14 +1435,14 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             If >1, makes low saturation colors more prominent. If <1,
             makes high saturation colors more prominent. Similar to the
             `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-
             See `make_mapping_array` for details.
         gamma2 : None or float, optional
             If >1, makes high luminance colors more prominent. If <1,
             makes low luminance colors more prominent. Similar to the
             `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-
             See `make_mapping_array` for details.
+        gamma : None or float, optional
+            Use this to identically set `gamma1` and `gamma2` at once.
 
         Example
         -------
@@ -1535,6 +1596,12 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         -------
         `PerceptuallyUniformColormap`
             The colormap.
+
+        Todo
+        ----
+        Add ability to specify *discrete "jump" transitions*. Currently, this
+        only lets you generate colormaps with smooth transitions, and is not
+        necessarily suited for e.g. for making diverging colormaps.
         """
         # Build dictionary, easy peasy
         h = _default(hue, h)
@@ -1592,106 +1659,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
         return cmap
 
-def merge_cmaps(*args, name='merged', ratios=1, N=512, **kwargs):
-    """
-    Merges arbitrary colormaps. This is used when you pass multiple `args`
-    to the `Colormap` function.
-
-    Parameters
-    ----------
-    *args : str or `~matplotlib.colors.Colormap` instances.
-        The colormaps for merging.
-    name : str, optional
-        Name of output colormap. Default is ``'merged'``.
-    ratios : float or list thereof, optional
-        The ratios used to merge the colormaps. For example, with colormaps
-        ``'Blues'`` and ``'Reds'``, ``ratios=[1,2]`` would make the first
-        one third of the colormap blue, the next one third red.
-    N : float, optional
-        Number of lookup table colors desired for output colormap.
-    """
-    # Initial
-    if len(args)<=1:
-        raise ValueError('Need two or more input cmaps.')
-    ratios = ratios or 1
-    if isinstance(ratios, Number):
-        ratios = [1]*len(args)
-
-    # Combine the colors
-    imaps = [Colormap(cmap, N=None, **kwargs) for cmap in args] # set N=None to disable resamping
-    if all(isinstance(cmap, mcolors.ListedColormap) for cmap in imaps):
-        if not np.all(ratios==1):
-            raise ValueError(f'Cannot assign different ratios when mering ListedColormaps.')
-        colors = [color for cmap in imaps for color in cmap.colors]
-        cmap = mcolors.ListedColormap(colors, name=name, N=len(colors))
-
-    # Accurate methods for cmaps with continuous/functional transitions
-    elif all(isinstance(cmap,mcolors.LinearSegmentedColormap) for cmap in imaps):
-        # Combine the actual segmentdata
-        kinds = {type(cmap) for cmap in imaps}
-        if len(kinds)>1:
-            raise ValueError(f'Got mixed colormap types.')
-        kind = kinds.pop() # colormap kind
-        keys = {key for cmap in imaps for key in cmap._segmentdata.keys()}
-        ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
-        x0 = np.concatenate([[0], np.cumsum(ratios)])
-        xw = x0[1:] - x0[:-1]
-
-        # Combine the segmentdata, and use the y1/y2 slots at merge points
-        # so the transition is immediate (can never interpolate between end
-        # colors on the two colormaps)
-        segmentdata = {}
-        for key in keys:
-            # Combine scalar values
-            if key in ('gamma1', 'gamma2'):
-                if key not in segmentdata:
-                    segmentdata[key] = []
-                for cmap in imaps:
-                    segmentdata[key] += [cmap._segmentdata[key]]
-                continue
-            # Combine xyy data
-            datas = []
-            test = [callable(cmap._segmentdata[key]) for cmap in imaps]
-            if not all(test) and any(test):
-                raise ValueError('Mixed callable and non-callable colormap values.')
-            if all(test): # expand range from x-to-w to 0-1
-                for x,w,cmap in zip(x0[:-1], xw, imaps):
-                    data = lambda x: data((x - x0)/w) # WARNING: untested!
-                    datas.append(data)
-                def data(x):
-                    idx, = np.where(x<x0)
-                    if idx.size==0:
-                        i = 0
-                    elif idx.size==x0.size:
-                        i = x0.size-2
-                    else:
-                        i = idx[-1]
-                    return datas[i](x)
-            else:
-                for x,w,cmap in zip(x0[:-1], xw, imaps):
-                    data = np.array(cmap._segmentdata[key])
-                    data[:,0] = x + w*data[:,0]
-                    datas.append(data)
-                for i in range(len(datas)-1):
-                    datas[i][-1,2] = datas[i+1][0,2]
-                    datas[i+1] = datas[i+1][1:,:]
-                data = np.concatenate(datas, axis=0)
-                data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum exactly 1 (avoid floating point errors)
-            segmentdata[key] = data
-
-        # Create object
-        kwargs = {}
-        if kind is PerceptuallyUniformColormap:
-            spaces = {cmap.space for cmap in imaps}
-            if len(spaces)>1:
-                raise ValueError(f'Trying to merge colormaps with different HSL spaces {repr(spaces)}.')
-            kwargs.update({'space':spaces.pop()})
-        cmap = kind(name, segmentdata, N=N, **kwargs)
-    else:
-        raise ValueError('All colormaps must be of the same type (Listed or LinearSegmented).')
-    return cmap
-
-def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', **kwargs):
+def monochrome_cmap(color, fade, reverse=False, space='hpl', name='monochrome', **kwargs):
     """
     Makes a monochromatic "sequential" colormap that blends from near-white
     to the input color.
@@ -1715,6 +1683,8 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
         Passed to `PerceptuallyUniformColormap.from_hsl` static method.
     """
     # Get colorspace
+    # NOTE: If you use HSL space, will get very saturated colors in the middle
+    # of the map (around 50% luminance); otherwise chroma won't change
     h, s, l = to_xyz(to_rgb(color), space)
     if isinstance(fade, Number): # allow just specifying the luminance channel
         fs, fl = s, fade # fade to *same* saturation by default
@@ -2078,83 +2048,64 @@ def register_colors(nmax=np.inf, verbose=False):
     Use `~proplot.demos.color_show` to generate a table of the resulting
     filtered colors.
     """
-    # First ***reset*** the colors dictionary
-    # Why? We want to add XKCD colors *sorted by popularity* from file, along
-    # with crayons dictionary; having registered colors named 'xkcd:color' is
-    # annoying and not useful
+    # Reset native colors dictionary and add some default groups
+    # Add in CSS4 so no surprises for user, but we will not encourage this
+    # usage and will omit CSS4 colors from the demo table.
     scale = (360, 100, 100)
     translate =  {'b': 'blue', 'g': 'green', 'r': 'red', 'c': 'cyan',
                   'm': 'magenta', 'y': 'yellow', 'k': 'black', 'w': 'white'}
-    base1 = mcolors.BASE_COLORS # one-character names
-    base2 = {translate[key]:value for key,value in base1.items()} # full names
+    base = mcolors.BASE_COLORS
+    full = {translate[key]:value for key,value in mcolors.BASE_COLORS.items()} # full names
     mcolors._colors_full_map.clear() # clean out!
     mcolors._colors_full_map.cache.clear() # clean out!
-    mcolors._colors_full_map.update(base1)
-    mcolors._colors_full_map.update(base2)
+    for name,dict_ in (('base',base), ('full',full), ('css',mcolors.CSS4_COLORS)):
+        colordict.update({name:dict_})
 
-    # First register colors and get their HSL values
-    # Sort files in reverse order becuase I prefer XKCD color names to crayon
-    # color names; so want to overwrite identical names with XKCD name.
-    seen = set()
+    # Register 'filtered' colors, and get their HSL values
+    # The below order is order of preference for identical color names from
+    # different groups.
     names = []
+    seen = {*base, *full} # never overwrite these ones!
     hcls = np.empty((0,3))
-    correct = (('/', ' '), ("'s", ''), ('grey', 'gray'),
-               ('pinky', 'pink'), ('greeny', 'green'),
-               ('bluey',  'blue'),
-               ('robin egg', 'robins egg'),
-               ('egg blue', 'egg'),
-               (r'reddish', 'red'),
-               (r'purplish', 'purple'),
-               (r'bluish',  'blue'),
-               (r'ish\b', ''),
-               ('bluegray', 'blue gray'),
-               ('grayblue', 'gray blue'),
-               ('lightblue', 'light blue'))
-    for file in sorted(glob.glob(os.path.join(_data_colors, '*.txt'))):
-        # Read data
+    files = [os.path.join(_data_colors, f'{name}.txt') for name in ('opencolors', 'xkcd', 'crayola')]
+    for file in files:
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
-        # Sanitize names and add to dictionary
-        # NOTE: You can add to this!
+        # Immediately add all opencolors
+        if category=='opencolors':
+            dict_ = {name:color for name,color in data}
+            mcolors._colors_full_map.update(dict_)
+            colordict.update({'opencolors':dict_})
+            continue
+        # Other color dictionaries are filtered, and their names are sanitized
         i = 0
-        _dict = {}
+        dict_ = {}
         ihcls = []
         colordict[category] = {} # just initialize this one
-        for name, color in data: # is list of name, color tuples
+        for name,color in data: # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
-            # Sanitize
-            for reg,sub in correct:
-                name = re.sub(reg, sub, name)
-            # Check
-            if name in seen:
+            for regex,sub in _sanitize_names:
+                name = re.sub(regex, sub, name)
+            if name in seen or re.search(_bad_names, name):
                 continue
-            # Add
             seen.add(name)
             names.append((category, name)) # save the category name pair
             ihcls.append(to_xyz(color, space=_distinct_colors_space))
-            _dict[name] = color # save the color
+            dict_[name] = color # save the color
             i += 1
-        _colors_unfiltered[category] = _dict
-        # Concatenate HCL arrays
+        _colors_unfiltered[category] = dict_
         hcls = np.concatenate((hcls, ihcls), axis=0)
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
-    # WARNING: unique axis argument requires numpy version >=1.13
-    # WARNING: evidently it is ***impossible*** to actually delete colors
-    # from the custom_colors dictionary (perhaps due to quirk of autoreload,
-    # perhaps by some more fundamental python thing), so we instead must create
-    # *completely separate* dictionary and add colors from there
+    # WARNING: Unique axis argument requires numpy version >=1.13
+    deleted = 0
     hcls = hcls/np.array(scale)
     hcls = np.round(hcls/_distinct_colors_threshold).astype(np.int64)
     _, index, counts = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
-    deleted = 0
     counts = counts.sum()
-    exceptions_regex = '^(' + '|'.join(_distinct_colors_exceptions) + ')[0-9]?$'
-
-    # Add colors to filtered colors
     for i,(category,name) in enumerate(names):
-        if not re.match(exceptions_regex, name) and i not in index:
+        if name not in _exceptions_names and i not in index:
             deleted += 1
         else:
             colordict[category][name] = _colors_unfiltered[category][name]
@@ -2180,7 +2131,7 @@ def register_cmaps():
             continue
         name = os.path.basename(filename)
         name = name.split('.')[0]
-        # if name in mcm.cmap_d: # don't want to re-register every time
+        # if name in mcm.cmap_d:
         #     continue
         # Read .rgb, .rgba, .xrgb, and .xrgba files
         if re.search('\.x?rgba?$', filename):

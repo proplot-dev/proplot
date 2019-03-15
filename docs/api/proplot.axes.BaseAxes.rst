@@ -16,13 +16,11 @@ BaseAxes
 
    .. autosummary::
 
+      ~BaseAxes.__getattribute__
       ~BaseAxes.cmapline
       ~BaseAxes.colorbar
       ~BaseAxes.format
       ~BaseAxes.invisible
-      ~BaseAxes.legend
-      ~BaseAxes.plot
-      ~BaseAxes.scatter
       ~BaseAxes.smart_update
       ~BaseAxes.text
 
@@ -32,12 +30,10 @@ BaseAxes
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: __getattribute__
    .. automethod:: cmapline
    .. automethod:: colorbar
    .. automethod:: format
    .. automethod:: invisible
-   .. automethod:: legend
-   .. automethod:: plot
-   .. automethod:: scatter
    .. automethod:: smart_update
    .. automethod:: text

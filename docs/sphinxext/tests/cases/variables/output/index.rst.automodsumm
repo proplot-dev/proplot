@@ -1,0 +1,7 @@
+.. currentmodule:: sphinx_automodapi.tests.example_module.variables
+
+.. autosummary::
+    :toctree: api
+
+    PARROT_STATE
+    FUNNY_WALK_STEPS

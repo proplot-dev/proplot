@@ -127,7 +127,7 @@ import matplotlib.transforms as mtransforms
 #------------------------------------------------------------------------------#
 # Tick scales
 #------------------------------------------------------------------------------#
-def Scale(scale, **kwargs):
+def Scale(scale, *args, **kwargs):
     """
     Returns a `~matplotlib.scale.ScaleBase` instance.
 
@@ -166,8 +166,8 @@ def Scale(scale, **kwargs):
     args = []
     if isinstance(scale, mscale.ScaleBase):
         scale = scale.name
-    if np.iterable(scale) and not isinstance(scale, str): # TODO: too cumbersome?
-        scale, args = scale[0], scale[1:]
+    if np.iterable(scale) and not isinstance(scale, str):
+        scale, args = scale[0], [*scale[1:], *args]
     if scale in scales:
         return scale # already registered
     # Build an on-the-fly scale
@@ -176,7 +176,7 @@ def Scale(scale, **kwargs):
     elif scale in ('exp', 'height', 'pressure'): # note here args is non-zero
         scale = ExpScaleFactory(*args, to_exp=(scale!='pressure'), **kwargs)
     else:
-        raise ValueError(f'Unknown scale {scale}.')
+        raise ValueError(f'Unknown scale {scale}. Options are {", ".join(scales.keys())}.')
     return scale
 
 def InvertedScaleFactory(scale, **kwargs):
@@ -691,6 +691,8 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     if isinstance(locator, mticker.Locator):
         return locator
     # Decipher user input
+    if np.iterable(locator) and not isinstance(locator, str) and not all(isinstance(num, Number) for num in locator):
+        locator, args = locator[0], [*locator[1:], *args]
     if locator is None:
         if time:
             locator = mdates.AutoDateLocator(*args, **kwargs)
@@ -698,12 +700,17 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
             locator = mticker.AutoMinorLocator(*args, **kwargs)
         else:
             locator = mticker.AutoLocator(*args, **kwargs)
-    elif type(locator) is str: # dictionary lookup
+    elif isinstance(locator, str): # dictionary lookup
         if locator=='logminor':
             locator = 'log'
             kwargs.update({'subs':np.arange(0,10)})
         elif locator not in locators:
             raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
+        if locator=='index':
+            if not args:
+                args = [1] # step
+            if len(args)==1:
+                args += [0]
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number): # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
@@ -728,10 +735,15 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 
         If str, there are 3 possibilities:
 
-            1. If string contains ``{}``, ticks will be formatted by
-               calling ``string.format(number)``.
-            2. If string contains ``%``, ticks will be formatted
-               using the C-notation ``string % number`` method.
+            1. If string contains ``%``, ticks will be formatted
+               using the C-notation ``string % number`` method. See `this link
+               <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
+               for a review. If the axis represents time (i.e. ``time=True``,
+               passed automatically by `~proplot.axes.XYAxes.smart_update`),
+               datetime %-formatting is used, as described on `this page
+               <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
+            2. If string contains ``{x}`` or ``{x:...}``, ticks will be
+               formatted by calling ``string.format(x=number)``.
             3. Otherwise, a dictionary lookup is performed.
 
         For the dictionary lookup, options are as follows:
@@ -775,9 +787,8 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     # Already have a formatter object
     if isinstance(formatter, mticker.Formatter): # formatter object
         return formatter
-    if np.iterable(formatter) and formatter[0]=='frac':
-        args.append(formatter[1]) # the number
-        formatter = formatter[0]
+    if np.iterable(formatter) and not isinstance(formatter, str) and not all(isinstance(item, str) for item in formatter):
+        formatter, args = formatter[0], [*formatter[1:], *args]
     # Interpret user input
     if formatter is None or formatter=='default': # by default use my special super cool formatter, better than original
         if not time:
@@ -786,8 +797,8 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
             formatter = mdates.AutoDateFormatter(*args, **kwargs)
     elif isinstance(formatter, FunctionType):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
-    elif type(formatter) is str: # assumption is list of strings
-        if '{}' in formatter:
+    elif isinstance(formatter, str): # assumption is list of strings
+        if re.search(r'{x(:.+)?}', formatter):
             formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs) # new-style .format() form
         elif '%' in formatter:
             if time:

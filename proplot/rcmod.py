@@ -467,6 +467,10 @@ class rc_configurator(object):
         # First the special cycler and colormaps
         # NOTE: No matter the 'setitem mode' this will always set the axes
         # prop_cycle rc settings
+        if key=='rgbcolors':
+            _rcGlobals[key] = value
+            key = 'cycle'
+            value = _rcGlobals[key]
         if key=='cycle':
             if restore:
                 cache_restore[key] = _rcGlobals[key]

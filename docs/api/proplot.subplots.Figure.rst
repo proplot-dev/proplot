@@ -10,6 +10,7 @@ Figure
 
    .. autosummary::
 
+      ~Figure.__getattribute__
       ~Figure.draw
       ~Figure.panel_factory
       ~Figure.save
@@ -18,6 +19,7 @@ Figure
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: __getattribute__
    .. automethod:: draw
    .. automethod:: panel_factory
    .. automethod:: save

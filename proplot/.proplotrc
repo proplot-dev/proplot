@@ -8,7 +8,7 @@ rcGlobals:
     # Important settings
     fontname:  # automatically determined by OS
     cycle:     colorblind
-    rgbcycle:  True # whether to change definition of 'r', 'g', 'b', etc. color strings to match color cycle names, if possible
+    rgbcycle:  False # whether to change definition of 'r', 'g', 'b', etc. color strings to match color cycle names, if possible
     cmap:      sunset
     reso:      lo # for cartopy geographic features, one of {'lo', 'med', 'hi'}
     lut:       256
@@ -144,14 +144,14 @@ rcParams_new:
     collabel.weight:   bold
     collabel.color:    k
     # Parallels and meridians
-    geogrid.labels:    True
+    geogrid.labels:    False
     geogrid.labelsize: # 'small' font size
     geogrid.lonlines:  30 # default gridline spacing
     geogrid.latlines:  20
     geogrid.latmax:    80 # maximum latitude for gridlines
-    geogrid.alpha:     0.4
+    geogrid.alpha:     0.5
     geogrid.color:     k
-    geogrid.linewidth: 0.6
+    geogrid.linewidth: 1.0
     geogrid.linestyle: ':'
     # Geography
     land.color:             k
