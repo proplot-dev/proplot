@@ -177,9 +177,9 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from matplotlib import rcParams
+from matplotlib import rcParams # cannot import rcmod because rcmod import this!
 from . import utils, colormath
-from .utils import _default, ic
+from .utils import _default, _counter, ic
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
 _data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
@@ -226,7 +226,7 @@ _exceptions_names = (
 _bad_names = '(' + '|'.join(( # filter these out; let's try to be professional here...
     'shit', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger',
     )) + ')'
-_sanitize_names = (
+_sanitize_names = ( # replace regex (first entry) with second entry
     ('/', ' '), ("'s", ''), ('grey', 'gray'),
     ('pinky', 'pink'), ('greeny', 'green'),
     ('bluey',  'blue'),
@@ -520,6 +520,64 @@ _cmap_mirrors = [
 #------------------------------------------------------------------------------#
 # Special classes
 #------------------------------------------------------------------------------#
+# Class for flexible color names
+# WARNING: Matplotlib 'color' arguments are passed to to_rgba, which tries
+# to read directly from cache and if that fails, tries to sanitize input.
+# The sanitization raises error when encounters (colormap, idx) tuple. So
+# we need to override the *cache* instead of color dictionary itself!
+# WARNING: Builtin to_rgb tries to get cached colors as dict[name, alpha],
+# resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
+# to differentiate this from (cmapname, index) usage! Must do try except lookup
+# into colormap dictionary every time. Don't want to do this for actual
+# color dict for sake of speed, so we only wrap *cache* lookup. Also we try
+# to avoid cmap lookup attempt whenever possible.
+class ColorDictSpecial(dict):
+    """Special dictionary that lets user draw single color tuples from
+    arbitrary colormaps or color cycles. This replaces the builtin
+    matplotlib color name dictionary."""
+    def __getitem__(self, key):
+        """
+        Try to get the color name. If it is not found, try to draw the color
+        from a colormap.
+
+        For a **smooth colormap**, usage is e.g.
+        ``color=('Blues', 0.8)`` -- the number should be between 0 and 1, and
+        indicates where to draw the color from the smooth colormap. For a
+        "listed" colormap, i.e. a **color cycle**, usage is e.g.
+        ``color=('colorblind', 2)``. The number indicates the index in the
+        list of discrete colors.
+
+        These examples work with any matplotlib command that accepts
+        a ``color`` keyword arg.
+        """
+        # Pull out alpha
+        # WARNING: Possibly fragile? Does this hidden behavior ever change?
+        # NOTE: This override doubles startup time 0.0001s to 0.0002s, probably ok.
+        if np.iterable(key) and len(key)==2:
+            key, alpha = key
+        if np.iterable(key) and len(key)==2 and \
+            isinstance(key[1], Number) and isinstance(key[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
+            try:
+                cmap = mcm.cmap_d[key[0]]
+            except (TypeError, KeyError):
+                pass
+            else:
+                if isinstance(cmap, mcolors.ListedColormap):
+                    return tuple(cmap.colors[key[1]]) # draw color from the list of colors, using index
+                else:
+                    return tuple(cmap(key[1])) # interpolate color from colormap, using key in range 0-1
+        return super().__getitem__((key, alpha))
+# Wraps the cache
+class _ColorMappingOverride(mcolors._ColorMapping):
+    def __init__(self, mapping):
+        """Wraps the cache."""
+        super().__init__(mapping)
+        self.cache = ColorDictSpecial({})
+# Override default color name dictionary
+if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
+    mcolors._colors_full_map = _ColorMappingOverride(mcolors._colors_full_map)
+
+# List of colors with 'name' attribute
 class CycleList(list):
     """Simply stores a list of colors, and adds a `name` attribute corresponding
     to the registered name."""
@@ -532,6 +590,7 @@ class CycleList(list):
         self.name = name
         super().__init__(list_)
 
+# Flexible colormap identification
 class CmapDict(dict):
     """
     Flexible, case-insensitive colormap identification. Replaces the
@@ -654,8 +713,7 @@ class CmapDict(dict):
             else:
                 raise key_error
         return value
-
-# Override entire colormap dictionary
+# Override default colormap dictionary
 if not isinstance(mcm.cmap_d, CmapDict):
     mcm.cmap_d = CmapDict(mcm.cmap_d)
 
@@ -758,8 +816,26 @@ def to_xyz(color, space):
 #------------------------------------------------------------------------------#
 # Helper functions
 #------------------------------------------------------------------------------#
+def _transform_cycle(color):
+    """Transforms colors C0, C1, etc. into their corresponding color strings.
+    May be necessary trying to change the color cycler."""
+    # Optional exit
+    if not isinstance(color, str):
+        return color
+    elif not re.match('^C[0-9]$', color):
+        return color
+    # Transform color to actual cycle color
+    else:
+        cycler = rcParams['axes.prop_cycle'].by_key()
+        if 'color' not in cycler:
+            cycle = ['k']
+        else:
+            cycle = cycler['color']
+        return cycle[int(color[-1])]
+
 def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
-    """Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
+    """
+    Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
     Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
     colors are masked out
 
@@ -1202,14 +1278,7 @@ def Colormap(*args, name=None, N=None,
     number of levels. It will have many high-res segments while the colormap
     `N` is very small.
     """
-    # Turns out pcolormesh makes QuadMesh, which itself is a Collection,
-    # which itself gets colors when calling draw() using update_scalarmappable(),
-    # which itself uses to_rgba() to get facecolors, which itself is an inherited
-    # ScalarMappable method that simply calls the colormap with numbers.
-    # Anyway the issue *has* to be with pcolor, because when giving pcolor an
-    # actual instance, no longer does that thing where final levels equal extensions.
-    # Since collection API does nothing to underlying data or cmap, must be
-    # something done by pcolormesh function.
+    # Initial stuff
     N_ = N or _N_hires
     imaps = []
     name = name or 'no_name' # must have name, mcolors utilities expect this
@@ -1253,15 +1322,22 @@ def Colormap(*args, name=None, N=None,
                     warnings.warn(f'Got duplicate keys "{key}" in cmap dictionary ({cmap[key]}) and in keyword args ({kwargs[key]}). Using first one.')
             kw = kwargs.update
             cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **{**kwargs, **cmap})
-        elif not isinstance(cmap, str):
-            # List of colors
+        elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
+            # List of color tuples or color strings, i.e. iterable of iterables
+            # Transform C0, C1, etc. to their actual names first
+            cmap = [_transform_cycle(color) for color in cmap]
             cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
         else:
             # Monochrome colormap based from input color (i.e. single hue)
-            regex = '([0-9]+)$'
-            match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
-            cmap = re.sub(regex, '', cmap) # remove options
-            fade = kwargs.pop('fade', 90) if not match else float(match.group(1)) # default fade to 100 luminance
+            # Try to convert to RGB
+            cmap = _transform_cycle(cmap)
+            fade = kwargs.pop('fade', 90) 
+            if isinstance(cmap, str): # not a color tuple
+                regex = '([0-9]+)$'
+                match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
+                cmap = re.sub(regex, '', cmap) # remove options
+                if match:
+                    fade = float(match.group(1)) # default fade to 100 luminance
             # Build colormap
             cmap = to_rgb(cmap) # to ensure is hex code/registered color
             cmap = monochrome_cmap(cmap, fade, name=name, N=N_, **kwargs)
@@ -1375,10 +1451,9 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     """
     # Two modes:
     # 1) User inputs some number of samples; 99% of time, use this
-    # to get samples from a LinearSegmentedColormap
-    # draw colors.
-    if isinstance(args[-1], Number) or (np.iterable(args[-1])
-            and not isinstance(args[-1], (str, dict))):
+    # to get samples from a LinearSegmentedColormap draw colors.
+    if isinstance(args[-1], Number) or \
+            (np.iterable(args[-1]) and not isinstance(args[-1], (str, dict))):
         args, samples = args[:-1], args[-1]
     # 2) User inputs a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
@@ -1402,6 +1477,7 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     else:
         raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
     # Return
+    colors = [tuple(color) if not isinstance(color,str) else color for color in colors]
     return CycleList(colors, name)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):

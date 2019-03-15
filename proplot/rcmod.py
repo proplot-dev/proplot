@@ -56,7 +56,8 @@ My brand new settings, meant to configure special ProPlot featues. The
 A miscellaneous setting is the boolean ``axes.formatter.zerotrim``; use this
 to trim trailing zeros on tick labels. Default is ``True``.
 
-The ``abc``, ``title``, ``rowlabel``, and ``collabel`` subcategories:
+The ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``label`` subcategories (for a-b-c labelling
+axes titles, row labels, column labels, and *x* and *y* axis labels):
 
 =========================================================================================================  =======================================
 Key                                                                                                        Description
@@ -589,12 +590,6 @@ class rc_configurator(object):
     def _set_cycler(self, value):
         """Sets the default color cycler. Value is passed through
         `~proplot.colortools.Cycle`."""
-        # Generally if user uses 'C0', et cetera, assume they want to
-        # refer to the *default* cycler colors; so we reset that first
-        current = _rcGlobals['cycle']
-        colors = colortools.Cycle(current)
-        _rcParams['patch.facecolor'] = colors[0]
-        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
         # Set arbitrary cycler
         # First pass to constructor
         kw = {}
@@ -614,8 +609,6 @@ class rc_configurator(object):
                 rgb = mcolors.colorConverter.to_rgb(color)
                 mcolors.ColorConverter.colors[code] = rgb
                 mcolors.ColorConverter.cache[code]  = rgb
-        if name==current:
-            return
         # Pass to cycle constructor
         _rcParams['patch.facecolor'] = colors[0]
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)

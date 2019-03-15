@@ -551,12 +551,32 @@ def wrapper_cycle(self, func):
     @functools.wraps(func)
     def wrapper_cycle(*args, cycle=None, cycle_kw={}, **kwargs):
         # Determine and temporarily set cycler
+        # WARNING: Axes cycle as no getter, only setter (set_prop_cycle), which
+        # sets a 'prop_cycler' attribute. But this must get deleted down the line
+        # because it is never present (even using pyplot instead of proplot).
+        # Thus cannot check whether 'local' cycle has changed, can only compare
+        # against the global cycle.
         if not np.iterable(cycle) or isinstance(cycle, str):
             cycle = cycle,
-        if cycle[0] is not None and not (isinstance(cycle[0], str) and cycle == rc.cycle):
-            # rc.cycle = cycle
+        if cycle[0] is not None:
+            # Get the new group of colors
             cycle = colortools.Cycle(*cycle, **cycle_kw)
-            if cycle!=self.get_prop_cycle():
+            # Compare to the original group of colors, and only reset the
+            # cycle if this group of colors is new
+            # NOTE: If cycler is in fact unchanged, this will not reset the color
+            # position, as it cycles us back to the original position!
+            # WARNING: Did not wrap set_prop_cycle because that calls secondary
+            # functions to get the actual cycler, gets messy. Though this uses
+            # private API and may be more fragile.
+            i = 0
+            cycler = self._get_lines.prop_cycler # this is an itertools cycler, has no length, we will just cycle over user result cycle length
+            cycle_orig = []
+            while i<len(cycle):
+                next_ = next(cycler)
+                if 'color' in next_:
+                    cycle_orig.append(next_['color'])
+                i += 1
+            if {*cycle_orig} != {*cycle}: # order is immaterial
                 self.set_prop_cycle(color=cycle)
         return func(*args, **kwargs)
     return wrapper_cycle
@@ -823,7 +843,6 @@ class BaseAxes(maxes.Axes):
             sharex=None, sharey=None, spanx=None, spany=None,
             sharex_level=0, sharey_level=0,
             **kwargs):
-        # Copied sharex stuff from subplots documentation
         """
         Parameters
         ----------
@@ -2323,7 +2342,7 @@ class EmptyPanel(object):
         if attr=='on': # mimicks on() function
             return (lambda : False)
         else:
-            raise AttributeError('Panel does not exist.')
+            raise RuntimeError('Panel does not exist.')
 
 class PanelAxes(XYAxes):
     """
@@ -3414,7 +3433,8 @@ def colorbar_factory(ax, mappable, values=None,
     fromlines, fromcolors = False, False
     if np.iterable(mappable) and len(mappable)==2:
         mappable, values = mappable
-    if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
+    if not isinstance(mappable, martist.Artist) and \
+        not isinstance(mappable, mcontour.ContourSet):
         if isinstance(mappable[0], martist.Artist):
             fromlines = True # we passed a bunch of line handles; just use their colors
         else:
@@ -3425,9 +3445,10 @@ def colorbar_factory(ax, mappable, values=None,
             extend = mappable.extend or 'neither'
         else:
             extend = 'neither'
-    csettings = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
+    kwdefault = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
                  'spacing':'uniform', 'extend':extend, 'drawedges':cgrid} # this is default case unless mappable has special props
-    csettings.update(kwargs)
+    kwdefault.update(kwargs)
+    kwargs = kwdefault
 
     # Option to generate colorbar/colormap from line handles
     # * Note the colors are perfect if we don't extend them by dummy color on either side,
@@ -3540,11 +3561,12 @@ def colorbar_factory(ax, mappable, values=None,
         scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
-    ticklocation = ticklocation or ctickdir or tickdir
+    ticklocation = tickdir or ctickdir or ticklocation
     ticklocation = {'out':'outer', 'in':'inner'}.get(ticklocation, ticklocation)
-    csettings.update({'ticks':locators[0], 'format':cformatter,
-        'ticklocation':ticklocation, 'extendfrac':extendlength})
-    cb = ax.figure.colorbar(mappable, **csettings)
+    kwargs.update({'ticks':locators[0], 'format':cformatter,
+                   'ticklocation':ticklocation,
+                   'extendfrac':extendlength})
+    cb = ax.figure.colorbar(mappable, **kwargs)
 
     # Make edges/dividers consistent with axis edges
     if cb.dividers is not None:
@@ -3602,11 +3624,12 @@ def colorbar_factory(ax, mappable, values=None,
         cb.solids.set_cmap(cmap)
         cb.solids.set_alpha(1.0)
 
-    # Fix pesky white lines between levels + misalignment with border due to rasterized blocks
+    # Fix pesky white lines between levels + misalignment with border due
+    # to rasterized blocks
     if cb.solids:
         cb.solids.set_linewidth(0.2) # something small
         cb.solids.set_edgecolor('face')
         cb.solids.set_rasterized(False)
-    cb.ax.xaxis.set_ticks_position('bottom')
+    cb.ax.xaxis.set_ticks_position(ticklocation)
     return cb
 

@@ -330,26 +330,27 @@ is rendered by the matplotlib backend or saved to file.
     import numpy as np
     plot.nbsetup()
     # A bunch od different ways to update settings
-    plot.rc.linewidth = 1.2
+    plot.rc.cycle = 'colorblind'
+    plot.rc.linewidth = 1.5
     plot.rc.update({'fontname': 'DejaVu Sans'})
     plot.rc['figure.facecolor'] = 'w'
-    plot.rc.axes_facecolor = '#eeeeee' # underscore replaces the "dot"!
+    plot.rc['axes.facecolor'] = 'gray5' # underscore replaces the "dot"!
     # Make plot
     f, axs = plot.subplots(nrows=1, ncols=2, aspect=1, width=6,
                            span=0, wspace=0.5, sharey=2, hspace=0.7)
     N, M = 100, 6
     values = np.arange(1,M+1)
     for i,ax in enumerate(axs):
-        plot.rc.cycle = ['C0','C1',6]
         data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
-        lines = ax.plot(data, linewidth=2)
-    axs.format(ytickloc='both', ycolor='blue7', hatch='xxx',
+        lines = ax.plot(data, linewidth=3, cycle=('C0','C1',6)) # see "Changing the color cycle" for details
+    axs.format(ytickloc='both', ycolor='blue7',
+               hatch='xxx', hatchcolor='w',
                xlabel='x label', ylabel='y label',
                yticklabelloc='both',
-               suptitle='Set temporary rc settings')
+               suptitle='Using "format" and "plot.rc" to apply new rc settings')
     ay = axs[-1].twinx()
     ay.format(ycolor='r', ylabel='secondary axis')
-    ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=2)
+    ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=3)
 
 
 
@@ -359,7 +360,7 @@ is rendered by the matplotlib backend or saved to file.
 
 .. image:: showcase/showcase_21_1.png
    :width: 540px
-   :height: 266px
+   :height: 260px
 
 
 Colorbars and legends
@@ -386,19 +387,19 @@ the axes is **filled** with a colorbar. See
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, ax = plot.subplots(bottompanel=True, tight=1)
+    f, ax = plot.subplots(bottompanel=True, tight=1, axwidth=2.5)
     m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='glacial')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
     ax.colorbar(m, ticks=2, label='inset colorbar')
     ax.colorbar(m, ticks=2, loc='lower left')
     f.bottompanel.colorbar(m, label='standard outer colorbar', length=0.9)
-    ax.format(title='Title')
+    ax.format(suptitle='Title')
 
 
 
 .. image:: showcase/showcase_24_0.png
-   :width: 256px
-   :height: 317px
+   :width: 301px
+   :height: 362px
 
 
 A particularly useful `~proplot.axes.colorbar_factory` feature is the
@@ -410,11 +411,15 @@ from the corresponding colors.
 
 .. code:: ipython3
 
-    f, ax = plot.subplots(bcolorbar=True)
+    f, ax = plot.subplots(bcolorbar=True, axwidth=3, aspect=1.5)
     plot.rc.cycle = 'qual2'
-    hs = ax.plot((np.random.rand(12,12)-0.3).cumsum(axis=0), lw=4)
-    ax.format(suptitle='Colorbar from line handles')
-    f.bpanel.colorbar(hs, values=np.arange(0,12), label='Use a colorbar to label lines that\nmap to physical values!')
+    # plot.rc['axes.labelweight'] = 'bold'
+    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
+    ax.format(suptitle='Colorbar from line handles', xlabel='x axis', ylabel='y axis')
+    f.bpanel.colorbar(hs, values=np.arange(0,12),
+                      label='Label for lines that map to numeric values',
+                      tickdir='top', # because why not?
+                     )
 
 
 
@@ -423,8 +428,8 @@ from the corresponding colors.
 
 
 .. image:: showcase/showcase_26_1.png
-   :width: 256px
-   :height: 327px
+   :width: 346px
+   :height: 310px
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -450,7 +455,7 @@ and forcing the background to be invisible.
     f, axs = plot.subplots(ncols=2, bottomlegends=True, span=False, share=0)
     hs = []
     for i,label in enumerate(labels):
-        hs += axs.plot(np.random.rand(20), label=label, lw=2)[0]
+        hs += axs.plot(np.random.rand(20), label=label, lw=3)[0]
     axs[0].legend(order='F', frameon=True, loc='lower left')
     f.bpanel[0].legend(hs, ncols=4, align=True, frameon=True)
     f.bpanel[1].legend(hs, ncols=4, align=False)
@@ -548,7 +553,7 @@ other coordinate at each point on the line. See
     # Figure
     f, axs = plot.subplots(innercolorbars='b', ncols=2, axwidth=2, bwidth=0.8, span=False)
     axs = axs[::-1]
-    cmaps = [('navy', 'dark orange'), 'thermal']
+    cmaps = [('slate blue', 'sienna'), 'thermal']
     multipliers = [1.2, 1.4]
     for i,(ax,cmap) in enumerate(zip(axs,cmaps)):
         x = radii*np.cos(multipliers[i]*angles)
@@ -1487,9 +1492,11 @@ to pick colors from the table. Similar color names were also cleaned up
 – for example, “reddish” and “reddy” were changed to “red”, and “bluish”
 and “bluey” were changed to “blue”.
 
-ProPlot also includes new colors from the “Open Color” github project
-(the second table). These colors are used for website UI design, but
-also great for selecting colors for scientific visualizations.
+ProPlot also includes new colors from the `“Open
+color” <https://www.google.com/search?q=opencolor+github&oq=opencolor+github&aqs=chrome..69i57.2152j0j1&sourceid=chrome&ie=UTF-8>`__
+github project (the second table). These colors are used for website UI
+design, but can also be useful for selecting colors for scientific
+visualizations.
 
 The native matplotlib `CSS4 named
 colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
@@ -1519,36 +1526,6 @@ still registered, but I encourage using the below table instead.
 .. image:: showcase/showcase_100_0.png
    :width: 630px
    :height: 225px
-
-
-Flexible colormap names
------------------------
-
-All colormap names are now **case-insensitive** – this was done by
-replacing the matplotlib colormap dictionary with an instance of the
-magic `~proplot.colortools.CmapDict` class. You can also select
-reversed diverging colormaps by their “reversed” name – for example,
-``'BuRd'`` is equivalent to ``'RdBu_r'``.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    data = np.random.rand(10,10) - 0.5
-    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, innercolorbars='b', innercolorbars_kw={'hspace':0.2})
-    for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
-        ax = axs[i]
-        m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
-        ax.bottompanel.colorbar(m, locator=0.2)
-        ax.format(xlocator='null', ylocator='null', title=cmap)
-    axs.format(suptitle='Flexible naming specification for diverging colormaps')
-
-
-
-.. image:: showcase/showcase_102_0.png
-   :width: 544px
-   :height: 478px
 
 
 On-the-fly colormaps
@@ -1585,7 +1562,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_104_0.png
+.. image:: showcase/showcase_102_0.png
    :width: 634px
    :height: 306px
 
@@ -1610,7 +1587,7 @@ colormap. Again, see `~proplot.axes.cmap_wrapper` for details.
 
 
 
-.. image:: showcase/showcase_106_0.png
+.. image:: showcase/showcase_104_0.png
    :width: 652px
    :height: 287px
 
@@ -1640,7 +1617,7 @@ details.
 
 
 
-.. image:: showcase/showcase_108_0.png
+.. image:: showcase/showcase_106_0.png
    :width: 652px
    :height: 424px
 
@@ -1674,13 +1651,10 @@ import.
 
 
 
-.. image:: showcase/showcase_110_1.png
+.. image:: showcase/showcase_108_1.png
    :width: 544px
    :height: 334px
 
-
-Custom perceptually uniform maps
---------------------------------
 
 You can generate your own
 `~proplot.colortools.PerceptuallyUniformColormap` on-the-fly by
@@ -1697,8 +1671,52 @@ above
 
 .. code:: ipython3
 
-    f, ax = plot.subplots()
-    ax.contourf(np.random.rand(10,10), cmap={'h':['red', 'red+30'], 'c':80, 'l':[50, 100], 'space':'hpl'}
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, ax = plot.subplots(innercolorbars='b', axwidth=3.5, aspect=1.5)
+    m = ax.contourf(np.random.rand(10,10),
+                   cmap={'h':['red-120', 'red+90'], 'c':[50, 70, 30], 'l':[20, 100], 'space':'hcl'},
+                   levels=plot.arange(0.1,0.9,0.1), extend='both')
+    ax.bpanel.colorbar(m, label='colormap')
+    ax.format(xlabel='x axis', ylabel='y axis', suptitle='On-the-fly "PerceptuallyUniformColormap"')
+
+
+
+.. image:: showcase/showcase_110_0.png
+   :width: 391px
+   :height: 343px
+
+
+Flexible identification
+-----------------------
+
+All colormap names are now **case-insensitive** – this was done by
+replacing the matplotlib colormap dictionary with an instance of the
+magic `~proplot.colortools.CmapDict` class. You can also select
+reversed diverging colormaps by their “reversed” name – for example,
+``'BuRd'`` is equivalent to ``'RdBu_r'``.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    data = np.random.rand(10,10) - 0.5
+    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, innercolorbars='b', innercolorbars_kw={'hspace':0.2})
+    for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
+        ax = axs[i]
+        m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
+        ax.bottompanel.colorbar(m, locator=0.2)
+        ax.format(xlocator='null', ylocator='null', title=cmap)
+    axs.format(suptitle='Flexible naming specification for diverging colormaps')
+
+
+
+.. image:: showcase/showcase_112_0.png
+   :width: 544px
+   :height: 478px
+
 
 Changing the color cycle
 ------------------------
@@ -1735,10 +1753,10 @@ for details.
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=2.2)
-    m = axs[0].pcolormesh(np.random.rand(20,20), cmap='538', levels=np.linspace(0,1,7))
-    f.bottompanel[0].colorbar(m, label='clabel')
-    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=3)
+    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=3, aspect=1.5)
+    m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,12))
+    f.bottompanel[0].colorbar(m, label='clabel', formatter='%.2f')
+    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap')
     axs[1].format(title='Colormap as cycler, with "colorbar legend"')
@@ -1751,6 +1769,46 @@ for details.
 
 
 .. image:: showcase/showcase_116_1.png
-   :width: 490px
-   :height: 334px
+   :width: 634px
+   :height: 317px
+
+
+Sampling cycles and colormaps
+-----------------------------
+
+If you want to draw an individual color from a smooth colormap or a
+color cycle, use ``color=(cmapname, position)`` or
+``color=(cyclename, index)`` with any command that accepts the ``color``
+keyword! The ``position`` should be between 0 and 1, while the ``index``
+is the index on the list of colors in the cycle. This feature is powered
+by the `~proplot.colortools.ColorDictSpecial` class.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=4, innercolorbars='r', share=False)
+    m = axs[0].pcolormesh(np.random.rand(10,10), cmap='thermal', levels=np.linspace(0, 1, 101))
+    axs[0].rpanel.colorbar(m, label='colormap', locator=0.2)
+    axs[0].format(title='The "thermal" colormap')
+    l = []
+    for idx in plot.arange(0, 1, 0.1):
+        l += axs[1].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('thermal', idx), label=f'idx {idx:.1f}')
+    axs[1].rpanel.legend(l, ncols=1)
+    axs[1].format(title='Colors from the "thermal" colormap')
+    l = []
+    idxs = np.arange(7)
+    np.random.shuffle(idxs)
+    for idx in idxs:
+        l += axs[2].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('ggplot', idx), label=f'idx {idx:.0f}')
+    axs[2].rpanel.legend(l, ncols=1)
+    axs[2].format(title='Colors from the "ggplot" color cycle')
+    axs.format(xlocator='null', abc=True, abcpos='li', suptitle='Getting individual colors from colormaps and cycles')
+
+
+
+.. image:: showcase/showcase_119_0.png
+   :width: 436px
+   :height: 603px
 
