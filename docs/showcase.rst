@@ -1116,9 +1116,12 @@ disable its own “tight layout” feature. I am currently looking for a
 work-around.
 
 Anyway, the below examples show how to plot geophysical data with
-ProPlot. Use the ``globe`` keyword arg with commands like
-`~matplotlib.axes.Axes.contourf` to ensure global data coverage. This
-is powered by the `~proplot.axes.cartopy_gridfix_wrapper` and
+ProPlot. Note that longitudes are cyclically permuted so that the
+“center” of your data aligns with the central longitude of the
+projection! You can also use the ``globe`` keyword arg with commands
+like `~matplotlib.axes.Axes.contourf` to ensure global data coverage.
+These featuers are powered by the
+`~proplot.axes.cartopy_gridfix_wrapper` and
 `~proplot.axes.basemap_gridfix_wrapper` wrappers.
 
 .. code:: ipython3
@@ -1134,8 +1137,8 @@ is powered by the `~proplot.axes.cartopy_gridfix_wrapper` and
                                # basemap=False,
                                basemap={(1,3):False, (2,4):True},
                                )
-        offset = 20
-        x = plot.arange(-180+offset,180+offset-1,60)
+        offset = -40
+        x = plot.arange(0+offset, 360+offset-1, 60)
         y = plot.arange(-60,60+1,30)
         data = np.random.rand(len(y), len(x))
         for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
@@ -1144,12 +1147,12 @@ is powered by the `~proplot.axes.cartopy_gridfix_wrapper` and
             levels = [0, .3, .5, .7, .9, 1]
             levels = np.linspace(0,1,11)
             if pcolor:
-                m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=True)
+                m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
                 ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
             if not pcolor:
-                m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=True)
+                m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
                 ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
-            ax.format(suptitle='Hammer projection in different mapping frameworks', collabels=['Cartopy', 'Basemap'], labels=True)
+            ax.format(suptitle=f'Hammer projection with globe={globe}', collabels=['Cartopy', 'Basemap'], labels=True)
             if p<2:
                 c = f.bottompanel[p].colorbar(m, clabel='values', ctickminor=False)
 
