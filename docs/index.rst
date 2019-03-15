@@ -50,7 +50,7 @@ and built-in geographic projections.
 
 The next most important utility is the ``format`` method on `~proplot.axes.BaseAxes`, which calls so-called ``smart_update`` methods on the `~proplot.axes.BaseAxes`, `~proplot.axes.XYAxes`, `~proplot.axes.CartopyAxes`, and `~proplot.axes.BasemapAxes` axes types. The latter three types can all be returned by `~proplot.subplots.subplots`, depending on the arguments you used. Use `~proplot.axes.BaseAxes.format` to fine-tune your axis properties, titles, labels, limits, and much more. See :ref:`Table of projections` for the projections available to cartopy and basemap.
 
-To get started, check out the :ref:`General introduction`.
+To get started, check out the :ref:`Introduction`.
 Hopefully, you will find this API to be **less verbose** and **more powerful** than the builtin `pyplot and object-oriented <https://matplotlib.org/api/api_overview.html>`__ matplotlib APIs.
 
 .. This is just so top-level headers in the showcase.rst
@@ -64,6 +64,7 @@ Hopefully, you will find this API to be **less verbose** and **more powerful** t
    Use 'sphinx-apidoc ../proplot -o .' to auto-generate modules.rst
 
 .. toctree::
+   :hidden:
    :maxdepth: 4
    :caption: Contents
 

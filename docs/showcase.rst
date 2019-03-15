@@ -1,6 +1,6 @@
 
-General introduction
-====================
+Introduction
+============
 
 APIS
 ----
