@@ -146,9 +146,10 @@ def Scale(scale, *args, **kwargs):
         ``'log'``       `~matplotlib.scale.LogScale`             Logarithmic
         ``'symlog'``    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
         ``'logit'``     `~matplotlib.scale.LogitScale`           Logistic
-        ``'pressure'``  `ExpScale`                               Scale height coords to be linear in pressure.
-        ``'height'``    `ExpScale`                               Scale pressure coords to be linear in height.
-        ``'exp'``       `ExpScale`                               Scale with some exponential function
+        ``'cutoff'``    Result of `CutoffScaleFactory`           Linearly warps the axis scale in a variety of ways
+        ``'exp'``       Result of `ExpScaleFactory`              Scale with some exponential function
+        ``'pressure'``  Result of `ExpScaleFactory`              Scale height coords to be linear in pressure.
+        ``'height'``    Result of `ExpScaleFactory`              Scale pressure coords to be linear in height.
         ``'sine'``      `SineLatitudeScale`                      Scale with sine function (in degrees)
         ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
         ``'inverse'``   `InverseScale`                           Scale with the inverse
@@ -197,7 +198,8 @@ def InvertedScaleFactory(scale, **kwargs):
 #------------------------------------------------------------------------------#
 def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
     r"""
-    Exponential scale.
+    Returns an "exponential scale" that performs the transformation
+    :math:`Ae^{bx}`.
 
     This is used when adding a pressure coordinate axis
     for data that is plotted linearly w.r.t. height, or vice versa. Ignore
@@ -211,7 +213,7 @@ def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
         The coefficient, i.e. the :math:`A` in :math:`Ae^{bx}`.
     to_exp : float
         Whether the "forward" direction performs exponentiation, or
-        the inverse operation :math:`\log(x/A)/b`.
+        the inverse operation :math:`(\log(x) - \log(A))/b`.
     name : None or str, optional
         The scale name. Defaults to ``'exp_{expscale}_{mulscale}'``.
     """
@@ -289,7 +291,7 @@ class _InvertedExpTransform(mtransforms.Transform):
 #------------------------------------------------------------------------------#
 def CutoffScaleFactory(scale, lower, upper=None):
     """
-    Construct a scale with custom cutoffs.
+    Constructs a scale with custom cutoffs.
 
     If `upper` is ``None``, you have the following two possibilities:
 
@@ -300,12 +302,12 @@ def CutoffScaleFactory(scale, lower, upper=None):
 
     If `upper` is not ``None``, you have the following three possibilities:
 
-    1. If `scale` is >1, the axis is accelerated between `lower` and `upper`.
-       So the axis is "slow" on the edges but "fast" in middle.
-    2. If `scale` is >1, the axis is deccelerated between `lower` and `upper`.
-       So the axis is "fast" on the edges but "slow" in middle.
-    3. If `scale` is `numpy.inf`, this puts a cliff between `lower` and
+    1. If `scale` is `numpy.inf`, this puts a cliff between `lower` and
        `upper`. The axis cuts from `lower` to `upper` at a single point.
+    2. If `scale` is >1, the axis is accelerated between `lower` and `upper`.
+       So the axis is "slow" on the edges but "fast" in middle.
+    3. If `scale` is <1, the axis is deccelerated between `lower` and `upper`.
+       So the axis is "fast" on the edges but "slow" in middle.
 
     Todo
     ----
@@ -686,30 +688,30 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
 
         If str, a dictionary lookup is performed. Options are as follows:
 
-        ===============  ==========================================
-        Key              Class
-        ===============  ==========================================
-        `'none'`         `~matplotlib.ticker.NullLocator`
-        `'null'`         `~matplotlib.ticker.NullLocator`
-        `'log'`          `~matplotlib.ticker.LogLocator`
-        `'maxn'`         `~matplotlib.ticker.MaxNLocator`
-        `'linear'`       `~matplotlib.ticker.LinearLocator`
-        `'log'`          `~matplotlib.ticker.LogLocator`
-        `'multiple'`     `~matplotlib.ticker.MultipleLocator`
-        `'fixed'`        `~matplotlib.ticker.FixedLocator`
-        `'index'`        `~matplotlib.ticker.IndexLocator`
-        `'symmetric'`    `~matplotlib.ticker.SymmetricalLogLocator`
-        `'logit'`        `~matplotlib.ticker.LogitLocator`
-        `'minor'`        `~matplotlib.ticker.AutoMinorLocator`
-        `'microsecond'`  `~matplotlib.dates.MicrosecondLocator`
-        `'second'`       `~matplotlib.dates.SecondLocator`
-        `'minute'`       `~matplotlib.dates.MinuteLocator`
-        `'hour'`         `~matplotlib.dates.HourLocator`
-        `'day'`          `~matplotlib.dates.DayLocator`
-        `'weekday'`      `~matplotlib.dates.WeekdayLocator`
-        `'month'`        `~matplotlib.dates.MonthLocator`
-        `'year'`         `~matplotlib.dates.YearLocator`
-        ===============  ==========================================
+        =================  ==========================================
+        Key                Class
+        =================  ==========================================
+        ``'none'``         `~matplotlib.ticker.NullLocator`
+        ``'null'``         `~matplotlib.ticker.NullLocator`
+        ``'log'``          `~matplotlib.ticker.LogLocator`
+        ``'maxn'``         `~matplotlib.ticker.MaxNLocator`
+        ``'linear'``       `~matplotlib.ticker.LinearLocator`
+        ``'log'``          `~matplotlib.ticker.LogLocator`
+        ``'multiple'``     `~matplotlib.ticker.MultipleLocator`
+        ``'fixed'``        `~matplotlib.ticker.FixedLocator`
+        ``'index'``        `~matplotlib.ticker.IndexLocator`
+        ``'symmetric'``    `~matplotlib.ticker.SymmetricalLogLocator`
+        ``'logit'``        `~matplotlib.ticker.LogitLocator`
+        ``'minor'``        `~matplotlib.ticker.AutoMinorLocator`
+        ``'microsecond'``  `~matplotlib.dates.MicrosecondLocator`
+        ``'second'``       `~matplotlib.dates.SecondLocator`
+        ``'minute'``       `~matplotlib.dates.MinuteLocator`
+        ``'hour'``         `~matplotlib.dates.HourLocator`
+        ``'day'``          `~matplotlib.dates.DayLocator`
+        ``'weekday'``      `~matplotlib.dates.WeekdayLocator`
+        ``'month'``        `~matplotlib.dates.MonthLocator`
+        ``'year'``         `~matplotlib.dates.YearLocator`
+        =================  ==========================================
 
     minor : bool, optional
         Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
@@ -765,7 +767,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 
     Parameters
     ----------
-    formatter : float, function, list of str, or str
+    formatter : None, function, list of str, or str
         If ``None`` or ``'default'``, returns `ScalarFormatter` unless
         `time` is ``True`` (see below).
 
@@ -778,7 +780,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         If str, there are 3 possibilities:
 
             1. If string contains ``%``, ticks will be formatted
-               using the C-notation ``string % number`` method. See `this link
+               using the C-notation ``string % number`` method. See `this page
                <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
                for a review.
 
@@ -793,30 +795,32 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 
         For the dictionary lookup, options are as follows:
 
-        =============  ====================================================================
-        Key            Class
-        =============  ====================================================================
-        `'default'`     `ScalarFormatter`
-        `'none'`       `~matplotlib.ticker.NullFormatter`
-        `'null'`       `~matplotlib.ticker.NullFormatter`
-        `'strmethod'`  `~matplotlib.ticker.StrMethodFormatter`
-        `'formatstr'`  `~matplotlib.ticker.FormatStrFormatter`
-        `'scalar'`     `~matplotlib.ticker.ScalarFormatter`
-        `'log'`        `~matplotlib.ticker.LogFormatterSciNotation`
-        `'eng'`        `~matplotlib.ticker.LogFormatterMathtext`
-        `'sci'`        `~matplotlib.ticker.LogFormatterSciNotation`
-        `'logit'`      `~matplotlib.ticker.LogitFormatter`
-        `'eng'`        `~matplotlib.ticker.EngFormatter`
-        `'percent'`    `~matplotlib.ticker.PercentFormatter`
-        `'index'`      `~matplotlib.ticker.IndexFormatter`
-        `'pi'`         `FracFormatter`, with symbol :math:`\pi` and value `numpy.pi`
-        `'e'`          `FracFormatter`, with symbol *e* and value `numpy.e`
-        `'deg'`        `CoordFormatter`, with just a degree symbol
-        `'lat'`        `CoordFormatter`, cardinal "SN" indicator without degree symbol
-        `'lon'`        `CoordFormatter`, cardinal "WE" indicator without degree symbol
-        `'deglat'`     `CoordFormatter`, cardinal "SN" indicator with degree symbol
-        `'deglon'`     `CoordFormatter`, cardinal "WE" indicator with degree symbol
-        =============  ====================================================================
+        ===============  ====================================================================
+        Key              Class
+        ===============  ====================================================================
+        ``'default'``    `ScalarFormatter`
+        ``'none'``       `~matplotlib.ticker.NullFormatter`
+        ``'null'``       `~matplotlib.ticker.NullFormatter`
+        ``'strmethod'``  `~matplotlib.ticker.StrMethodFormatter`
+        ``'formatstr'``  `~matplotlib.ticker.FormatStrFormatter`
+        ``'scalar'``     `~matplotlib.ticker.ScalarFormatter`
+        ``'log'``        `~matplotlib.ticker.LogFormatterSciNotation`
+        ``'eng'``        `~matplotlib.ticker.LogFormatterMathtext`
+        ``'sci'``        `~matplotlib.ticker.LogFormatterSciNotation`
+        ``'logit'``      `~matplotlib.ticker.LogitFormatter`
+        ``'eng'``        `~matplotlib.ticker.EngFormatter`
+        ``'percent'``    `~matplotlib.ticker.PercentFormatter`
+        ``'index'``      `~matplotlib.ticker.IndexFormatter`
+        ``'frac'``       `FracFormatter`
+        ``'pi'``         `FracFormatter`, with symbol :math:`\pi` and value `numpy.pi`
+        ``'e'``          `FracFormatter`, with symbol *e* and value `numpy.e`
+        ``'coord'``      `CoordFormatter`
+        ``'deg'``        `CoordFormatter`, with just a degree symbol
+        ``'lat'``        `CoordFormatter`, cardinal "SN" indicator without degree symbol
+        ``'lon'``        `CoordFormatter`, cardinal "WE" indicator without degree symbol
+        ``'deglat'``     `CoordFormatter`, cardinal "SN" indicator with degree symbol
+        ``'deglon'``     `CoordFormatter`, cardinal "WE" indicator with degree symbol
+        ===============  ====================================================================
 
     time : bool, optional
         If ``True``, returns an `~matplotlib.dates.AutoDateFormatter` when
@@ -1069,6 +1073,7 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'index':     mticker.IndexFormatter,
     'frac':      FracFormatter,
     'deg':       CoordFormatter,
+    'coord':     CoordFormatter,
     }
 """Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 `Formatter` for a table."""

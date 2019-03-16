@@ -65,6 +65,10 @@ more powerful than the builtin matplotlib API.
       :show-inheritance:
    Use 'sphinx-apidoc ../proplot -o .' to auto-generate modules.rst
 
+Contributions
+=============
+This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! My code should be sufficiently documented and commented so that others are able to modify it.
+
 Donations
 =========
 

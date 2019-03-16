@@ -538,8 +538,8 @@ class ColorDictSpecial(dict):
     arbitrary colormaps or color cycles."""
     def __getitem__(self, key):
         """
-        Try to get the color name. If it is not found, try to draw the color
-        from a colormap.
+        Either samples the color from a colormap or color cycle,
+        or calls the parent getitem to look up the color name.
 
         For a **smooth colormap**, usage is e.g.
         ``color=('Blues', 0.8)`` -- the number should be between 0 and 1, and
@@ -583,11 +583,9 @@ class CycleList(list):
     """Simply stores a list of colors, and adds a `name` attribute corresponding
     to the registered name."""
     def __repr__(self):
-        """Wrap the string representation."""
+        """Wraps the string representation."""
         return 'CycleList(' + super().__repr__() + ')'
-
     def __init__(self, list_, name):
-        """Add attribute."""
         self.name = name
         super().__init__(list_)
 

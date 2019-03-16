@@ -2,8 +2,8 @@
 Introduction
 ============
 
-APIS
-----
+Matplotlib APIs
+---------------
 
 Matplotlib has two APIs – the “pyplot” API (which is MATLAB-like), and
 the “object-oriented” API (which is more “pythonic”, more clear, more
@@ -13,6 +13,10 @@ Contrary to the similar names, this package is not meant to be a pyplot
 replacement – it adds to the “object-oriented” API by subclassing
 matplotlib Artists classes, like `~matplotlib.axes.Axes` and
 `~matplotlib.figure.Figure`.
+
+Since `~matplotlib.pyplot` mostly just calls the object-oriented API
+under-the-hood, you can still use it to access some of ProPlot’s
+features – but this is discouraged.
 
 .. code:: ipython3
 
@@ -50,8 +54,8 @@ matplotlib Artists classes, like `~matplotlib.axes.Axes` and
    :height: 270px
 
 
-The basics
-----------
+ProPlot API
+-----------
 
 The `~proplot.subplots.subplots` command is your gateway to all of
 ProPlot’s features. Its usage is sort of like the pyplot
@@ -64,23 +68,25 @@ axes.
     import proplot as plot
     plot.nbsetup()
     f, ax = plot.subplots(width=2)
-    f, ax = plot.subplots(ncols=3, nrows=2, width=5)
+    ax.format(title='ProPlot API')
+    f, axs = plot.subplots(ncols=3, nrows=2, width=5)
+    axs.format(title='ProPlot API')
 
 
 
 .. image:: showcase/showcase_6_0.png
    :width: 180px
-   :height: 174px
+   :height: 184px
 
 
 
 .. image:: showcase/showcase_6_1.png
    :width: 450px
-   :height: 303px
+   :height: 323px
 
 
-Complex subplot grids
----------------------
+Subplot grids
+-------------
 
 Set up a complex grid of subplots using a 2D array of integers – just
 think of the array as a “picture” of your figure. Now the below grid is
@@ -288,8 +294,8 @@ axes **simultaneously** (as in the below example).
    :height: 397px
 
 
-Default configuration settings
-------------------------------
+Global settings
+---------------
 
 A special object named `~proplot.rcmod.rc`, belonging to the
 `~proplot.rcmod.rc_configurator` class, is created whenever you import

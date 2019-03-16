@@ -759,24 +759,24 @@ def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
     """
     # Determine and temporarily set cycler
     # WARNING: Axes cycle as no getter, only setter (set_prop_cycle), which
-    # sets a 'prop_cycler' attribute. But this must get deleted down the line
-    # because it is never present (even using pyplot instead of proplot).
-    # Thus cannot check whether 'local' cycle has changed, can only compare
-    # against the global cycle.
-    if not np.iterable(cycle) or isinstance(cycle, str):
-        cycle = cycle,
-    if cycle[0] is not None:
+    # sets a 'prop_cycler' attribute on the hidden _get_lines and
+    # _get_patches_for_fill objects. This is the only way to query the "current"
+    # axes cycler! Could also have wrapped set_prop_cycle but that calls
+    # several secondary methods, may get messy.
+    if cycle is not None:
         # Get the new group of colors
+        if not np.iterable(cycle) or isinstance(cycle, str):
+            cycle = cycle,
         cycle = colortools.Cycle(*cycle, **cycle_kw)
         # Compare to the original group of colors, and only reset the
         # cycle if this group of colors is new
-        # NOTE: If cycler is in fact unchanged, this will not reset the color
-        # position, as it cycles us back to the original position!
-        # WARNING: Did not wrap set_prop_cycle because that calls secondary
-        # functions to get the actual cycler, gets messy. Though this uses
-        # private API and may be more fragile.
+        # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length,
+        # so we must cycle over it with next(). We try calling next() the same
+        # number of times as the length of user input cycle.
+        # NOTE: If the input cycle *is* in fact the same, below does not reset
+        # the color position, as it cycles us back to the original position!
         i = 0
-        cycler = self._get_lines.prop_cycler # this is an itertools cycler, has no length, we will just cycle over user result cycle length
+        cycler = self._get_lines.prop_cycler
         cycle_orig = []
         while i<len(cycle):
             next_ = next(cycler)
@@ -965,12 +965,6 @@ class BaseAxes(maxes.Axes):
     """
     Lowest-level `~matplotlib.axes.Axes` override. Handles titles and axis
     sharing. Overrides the legend, colorbar, and plot methods.
-
-    See also
-    --------
-    `~proplot.subplots.subplots`,
-    `XYAxes`, `CartopyAxes`, `BasemapAxes`,
-    `wrapper_cmap`, `wrapper_cycle`
     """
     # Notes:
     # It is impossible to subclass `~matplotlib.axes.SubplotBase` directly.
@@ -993,8 +987,6 @@ class BaseAxes(maxes.Axes):
         sharex_level, sharey_level : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both
             axes.
-
-            See `~proplot.subplots.subplots` for details.
         sharex, sharey : None or `BaseAxes`, optional
             Axes to use for *x* and *y* axis sharing. Should correspond
             to the subplot in the bottommost row, leftmost column.
@@ -1002,7 +994,11 @@ class BaseAxes(maxes.Axes):
             Axes to use for the "spanning" *x* and *y* axis labels. Should
             correspond to the subplot in the leftmost column, bottommost row.
 
-            See `~proplot.subplots.subplots` for details.
+        See also
+        --------
+        `~proplot.subplots.subplots`,
+        `XYAxes`, `CartopyAxes`, `BasemapAxes`,
+        `wrapper_cmap`, `wrapper_cycle`
         """
         # Initialize
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
@@ -1307,13 +1303,14 @@ class BaseAxes(maxes.Axes):
             * A standard "rc" keyword arg **with the dots omitted**.
               For example, ``land.color`` becomes ``landcolor``.
 
-            The first two options will update the `~proplot.rcmod.rc`
+            The latter two options update the `~proplot.rcmod.rc`
             object, just like `rc_kw`.
 
         Other parameters
         ----------------
         mode : int, optional
-            The "getitem mode". Determines whether queries to the
+            The "getitem mode". This is used under-the-hood; you shouldn't
+            have to use it directly. Determines whether queries to the
             `~proplot.rcmod.rc` object will ignore :ref:`rcParams`.
             This can help prevent a massive number of unnecessary lookups
             when the settings haven't been changed by the user.
@@ -1501,7 +1498,7 @@ class BaseAxes(maxes.Axes):
         length=None, extendlength=None, label=None, clabel=None, 
         **kwargs):
         """
-        Adds an *inset* colorbar, sort of like `~BaseAxes.legend`.
+        Adds an *inset* colorbar, sort of like `~matplotlib.axes.Axes.legend`.
 
         Parameters
         ----------
@@ -1586,15 +1583,15 @@ class BaseAxes(maxes.Axes):
         added as a `~matplotlib.collections.LineCollection` instance. See `this
         matplotlib example <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
         This method is invoked if you call `~matplotlib.axes.Axes.plot` with
-        the `cmap` keyword arg.
+        the ``cmap`` keyword arg.
 
         Parameters
         ----------
         values : list of float
             Values corresponding to points on the line.
         cmap : None or colormap spec, optional
-            Colormap specifier, passed to `~proplot.colortools.colormap`.
-        norm : None or `~matplotlib.colors.Normalizer`, optional
+            Colormap specifier, passed to `~proplot.colortools.Colormap`.
+        norm : None or `~matplotlib.colors.Normalize`, optional
             The normalizer, used for mapping `values` to colormap colors.
         interp : int, optional
             Number of values between each line joint and each *halfway* point
@@ -2634,11 +2631,6 @@ class MapAxes(BaseAxes):
         **kwargs
             Passed to `BaseAxes.smart_update`.
 
-        Returns
-        -------
-        latmax, lonlim, latlim, lonlocator, latlocator, lonlabels, latlabels
-            Keyword args, standardized and with aliases interpreted.
-
         See also
         --------
         `BaseAxes.format`, `BaseAxes.smart_update`, `~proplot.subplots.subplots`, `~proplot.rcmod`
@@ -2732,16 +2724,6 @@ class CartopyAxes(MapAxes, GeoAxes):
     allows for *partial* coverage of azimuthal projections by zooming into
     the full projection, then drawing a circle boundary around some latitude
     away from the center (this is surprisingly difficult to do).
-
-    Note
-    ----
-    The circle stuff for polar projection was developed from `this example
-    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
-
-    See also
-    --------
-    `~proplot.proj`, `wrapper_cartopy_gridfix`, `wrapper_cartopy_linefix`,
-    `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
     """
     name = 'cartopy'
     """The registered projection name."""
@@ -2763,6 +2745,16 @@ class CartopyAxes(MapAxes, GeoAxes):
             For polar projections, the edge latitude of the circle.
         *args, **kwargs
             Passed to `BaseAxes.__init__`.
+
+        Note
+        ----
+        The circle stuff for polar projection was developed from `this example
+        <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
+
+        See also
+        --------
+        `~proplot.proj`, `wrapper_cartopy_gridfix`, `wrapper_cartopy_linefix`,
+        `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
         """
         # Dependencies
         import cartopy.crs as ccrs # verify package is available
@@ -2990,11 +2982,6 @@ class BasemapAxes(MapAxes):
     `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
     `~matplotlib.axes.Axes.contour` with
     your raw longitude-latitude data.
-
-    See also
-    --------
-    `~proplot.proj`, `wrapper_basemap_gridfix`, `wrapper_basemap_linefix`,
-    `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
     """
     name = 'basemap'
     """The registered projection name."""
@@ -3019,6 +3006,11 @@ class BasemapAxes(MapAxes):
             The `~mpl_toolkits.basemap.Basemap` instance.
         **kwargs
             Passed to `BaseAxes.__init__`.
+
+        See also
+        --------
+        `~proplot.proj`, `wrapper_basemap_gridfix`, `wrapper_basemap_linefix`,
+        `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
         """
         # Some notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method called

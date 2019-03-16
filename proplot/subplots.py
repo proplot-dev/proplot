@@ -64,18 +64,18 @@ class axes_list(list):
     method (or retrieves respective attribute) on each one. For example,
     ``axs.format(color='r')`` colors all axes spines and tick marks red."""
     def __repr__(self):
-        """Wrap the string representation."""
+        """Wraps the string representation."""
         return 'axes_list(' + super().__repr__() + ')'
 
     def __getitem__(self, key):
-        """Return an `axes_list` version of the slice, or just the axes."""
+        """Returns an `axes_list` version of the slice, or just the axes."""
         axs = list.__getitem__(self, key)
         if isinstance(key,slice): # i.e. returns a list
             axs = axes_list(axs)
         return axs
 
     def __getattr__(self, attr):
-        """Stealthily return dummy function that actually loops through each
+        """Stealthily returns dummy function that actually loops through each
         axes method and calls them in succession. If attribute(s) are not
         callable, instead returns an `axes_list` of the attributes."""
         attrs = [getattr(ax, attr, None) for ax in self]
