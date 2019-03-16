@@ -1178,7 +1178,7 @@ def Colormap(*args, name=None, N=None,
 
     Parameters
     ----------
-    *args : `~matplotib.colors.Colormap`, dict, list of str, or str
+    *args : `~matplotlib.colors.Colormap`, dict, list of str, or str
         Each arg generates a single colormap. If ``len(args)>1``, the colormaps
         are merged.
 

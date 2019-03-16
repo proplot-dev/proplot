@@ -1845,7 +1845,7 @@ class XYAxes(BaseAxes):
         are `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
         We can fix with `~matplotlib.figure.Figure.autofmt_xdate` or manually
         set the options. The problem is there is no
-        `~matplotib.figure.Figure.autofmt_ydate`, so really should
+        `~matplotlib.figure.Figure.autofmt_ydate`, so really should
         implement custom version of this.
 
         See also
