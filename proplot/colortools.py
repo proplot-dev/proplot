@@ -276,7 +276,7 @@ _cmap_categories = {
     # Assorted origin, but these belong together
     'Grayscale': [
         'Grays',
-        'AltGrays',
+        'Mono',
         'GrayCycle',
         'GrayCycle_shifted',
         ],
