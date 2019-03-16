@@ -1190,8 +1190,7 @@ def Colormap(*args, name=None, N=None,
         * If arg is a str and is a "registered" colormap name, that colormap
           is used.
         * If arg is a str and is a "registered" color name, a
-          monochromatic colormap is generated with `monochrome_cmap`, spanning
-          from 100% luminance to that color.
+          monochromatic colormap is generated with `monochrome_cmap`.
         * If arg is a list of str, it is assumed a list of color names or
           hex names, and is used to make a `~matplotlib.colors.ListedColormap`.
         * If arg is dict, there are two options: if the dict contains the keys
@@ -1200,20 +1199,23 @@ def Colormap(*args, name=None, N=None,
           the dict is passed to the `~PerceptuallyUniformColormap.from_hsl`
           `PerceptuallyUniformColormap` constructor.
 
-        The color name string can also look like ``'name90'``, where the trailing
+        For the monochromatic colormaps, the color name string can also
+        look like ``'name90'``, where the trailing
         number indicates the maximum luminance of the colormap. By default,
         this is 100 (i.e. pure white).
     name : None or str, optional
         Name of colormap. Default name is ``'no_name'``.
 
         The resulting colormap can then be invoked by passing ``cmap='name'``
-        to plotting functions like `~matplotlib.figure.Figure.contourf`.
+        to plotting functions like `~matplotlib.axes.Axes.contourf`.
     N : None or int, optional
         Number of colors to generate in the hidden lookupt table ``_lut``.
         By default, a relatively high resolution of 256 is chosen (see notes).
     extend : {'both', 'min', 'max', 'neither'}, optional
         Specifies sides for which you want "out-of-bounds" data to have
-        their own color. This improves upon the matplotlib API by ensuring
+        their own color.
+
+        This improves upon the matplotlib API by ensuring
         **the colors on either end of the colorbar are always the most intense
         colors in the colormap** -- no matter the extend property. By default
         when `extend` is not ``'both'``, matplotlib just lobs off the most
@@ -1226,7 +1228,8 @@ def Colormap(*args, name=None, N=None,
     cut : None or float, optional
         Optionally cut out colors in the **center** of the colormap. This is
         extremely useful for diverging colormaps, in case you want to have a
-        sharper cutoff between negative and positive values.
+        sharper cutoff between negative and positive values. For example,
+        ``cut=0.1`` cuts out the middle 10% of the colormap.
     left, right : None or float or list of float, optional
         Optionally *delete* colors on the left and right sides of the
         colormap(s). For example, ``left=0.1`` deletes the leftmost

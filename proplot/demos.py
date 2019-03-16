@@ -60,10 +60,8 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
 
     # Make figure, with hatching indiatinc invalid values
     # Note we invert the x-y ordering for imshow
-    # rc['facehatch'] = '....'
     rc['facecolor'] = 'k'
-    # rc['facehatch'] = 'xxx'
-    f, axs = subplots(ncols=3, bottomlegends=True, rightcolorbar=True,
+    f, axs = subplots(ncols=3,
                         span=0, share=0, wspace=0.6, axwidth=2.5,
                         bottom=0, left=0, right=0,
                         aspect=1, tight=True)
@@ -79,9 +77,9 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
                     rgba[k,j,:3] = rgb_jk
         ax.imshow(rgba, origin='lower', aspect='auto')
         ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
-                  grid=False, tickminor=False,
+                  grid=False, xtickminor=False, ytickminor=False,
                   xlocator=xloc, ylocator=yloc,
-                  title=space.upper(), title_kw={'weight':'bold'})
+                  title=space.upper(), titleweight='bold')
     return f
 
 def cmap_breakdown(cmap, N=100, space='hcl'):

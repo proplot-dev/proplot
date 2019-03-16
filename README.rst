@@ -54,8 +54,9 @@ Here are some highlights of the rest of the features:
    scaling.
 *  Perceptually distinct named colors with easy-to-remember names,
    a ton of beautiful new colormaps, new property cycle colors.
-*  Tool for making new make new merged colormaps and "perceptually
-   uniform colormaps" on-the-fly.
+*  Tools for making new make new merged colormaps and "perceptually
+   uniform colormaps" on-the-fly. Tools for slicing and modifying existing
+   colormaps.
 *  Making colorbars from lists of lines
    or colors, making axes "inset" colorbars.
 *  Integration with basemap and cartopy. Generate arbitrary
@@ -68,8 +69,8 @@ Here are some highlights of the rest of the features:
 Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
 guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
-How is this different from seaborn?
------------------------------------
+What about seaborn?
+-------------------
 
 There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. What makes this project
