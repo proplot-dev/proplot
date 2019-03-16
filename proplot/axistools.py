@@ -4,24 +4,14 @@ Defines various axis scales, locators, and formatters. Also "registers"
 the locator and formatter names, so that they can be called selected with
 the `~proplot.axes.XYAxes.format` method.
 
-Below is the rough overview of matplotlib API.
+This was pretty tricky. You can find my notes on overriding the
+`~matplotlib.scale.ScaleBase`, `~matplotlib.transforms.Transform`,
+`~matplotlib.ticker.Locator`, and
+`~matplotlib.ticker.Formatter` classes below.
 
 .. raw:: html
 
-   <h1>Review</h1>
-
-We want to try to avoid using the Formatter to scale/transform values, and
-passing the locator an array of scaled/transformed values.
-
-Makes more sense
-to instead define separate *axis transforms*, then can use locators and
-formatters like normal, as they were intended to be used. This way, if e.g.
-matching frequency-axis with wavelength-axis, just conver the *axis limits*
-so they match, then you're good.
-
-.. raw:: html
-
-   <h2>Scales</h2>
+   <h1>Scales</h1>
 
 
 * These are complicated. See `~matplotlib.scale.ScaleBase`. Use existing ones
@@ -29,7 +19,7 @@ so they match, then you're good.
 * Way to think of these is that *every single value you see on an axes first
   gets secretly converted through some equation*, e.g. logarithm, and plotted
   linearly in that transformation space.
-* Methods are as follows:
+* Methods:
 
    - `get_transform`: Returns a `~matplotlib.transforms.Transform` instance.
    - `set_default_locators_and_formatters`: Returns
@@ -42,7 +32,7 @@ so they match, then you're good.
      the axis range is set manually, determined automatically or changed
      through panning and zooming.
 
-* Important notes on methods:
+* Notes on methods:
 
     - When you use `set_xlim` or `set_ylim`, the `minpos` used is actually
       the *data limits* `minpos` (i.e. the minimum coordinate for plotted
@@ -60,31 +50,35 @@ so they match, then you're good.
 
 .. raw:: html
 
-   <h2>Transforms</h2>
+   <h1>Transforms</h1>
 
 
 * These are complicted. See `the transforms module <https://matplotlib.org/_modules/matplotlib/transforms.html#Transform>`_.
 * Attributes:
+
     - `input_dims`, `output_dims`, `is_separable`, and `has_inverse`. The
       `dims` are because transforms can be N-D, but for *scales* they are
       always 1. Note `is_separable` is true if the transform is separable
       in the x/y dimensions.
 
 * Methods:
+
     - `transform`: Transforms N-D coordinates, given M x N array of values. Can also
       just declare `transform_affine` or `transform_non_affine`.
     - `inverted`: If `has_inverse` is ``True``, performs the inverse transform.
 
 .. raw:: html
 
-   <h2>Locators</h2>
+   <h1>Locators</h1>
 
 
 * These are complicated. See `the ticker module <https://matplotlib.org/_modules/matplotlib/ticker.html#Locator>`_.
 * Special:
+
     - `__init__` not defined on base class but *must* be defined for subclass.
 
 * Methods include:
+
     - `tick_values`: Accepts vmin/vmax and returns values of located ticks
     - `__call__`: Can return data limits, view limits, or
       other stuff; not sure how this works or when it's invoked.
@@ -93,19 +87,24 @@ so they match, then you're good.
       method; for more info see the `matplotlib doc <https://matplotlib.org/_modules/matplotlib/transforms.html#nonsingular>`_.
 
 * Methods that usually can be left alone:
+
     - `raise_if_exceeds`: Just tests if ticks exceed ``MAXTICKS`` number.
     - `autoscale`: Calls the internal locator `view_limits` with
-      result of ``axis.get_view_interval(...)``.
+      result of `~matplotlib.axis.Axis.get_view_interval`.
     - `pan` and `zoom`: Interactive purposes.
 
 .. raw:: html
 
-   <h2>Formatters</h2>
+   <h1>Formatters</h1>
 
 
-Easy to construct: just build with `~matplotlib.formatter.FuncFormatter`
-a function that accepts the number and a 'position', which maybe is used
+Some of these are easy to construct. Just pass `~matplotlib.ticker.FuncFormatter`
+a function that accepts two arguments the number and 'position', which maybe is used
 for offset or something (don't touch it, leave it default).
+
+The matplotlib default `~matplotlib.ticker.ScalarFormatter` is much more
+complex, but can be overridden in the typical way: adding stuff to the
+`__init__` and `__call__` methods.
 """
 #------------------------------------------------------------------------------#
 # Imports
@@ -134,33 +133,31 @@ def Scale(scale, *args, **kwargs):
     Parameters
     ----------
     scale : str or (str, *args)
-        If str, use the specified names.
-
         If tuple, ``args`` are passed to the class
-        instantiator. Ignored uncless the str is ``'cutoff'``,
+        instantiator. Ignored unless the str is ``'cutoff'``,
         ``'exp'``, ``'height'``, or ``'pressure'``.
 
-        String name options are as follows:
+        If str, a dictionary lookup is performed. Options are as follows:
 
-        ============  =======================================  =========================================================
-        Key           Class                                    Description
-        ============  =======================================  =========================================================
-        `'linear'`    `~matplotlib.scale.LinearScale`          Linear
-        `'log'`       `~matplotlib.scale.LogScale`             Logarithmic
-        `'symlog'`    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
-        `'logit'`     `~matplotlib.scale.LogitScale`           Logistic
-        `'pressure'`  `ExpScale`                               Scale height coords to be linear in pressure.
-        `'height'`    `ExpScale`                               Scale pressure coords to be linear in height.
-        `'exp'`       `ExpScale`                               Scale with some exponential function
-        `'sine'`      `SineLatitudeScale`                      Scale with sine function (in degrees)
-        `'mercator'`  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
-        `'inverse'`   `InverseScale`                           Scale with the inverse
-        ============  =======================================  =========================================================
+        ==============  =======================================  =========================================================
+        Key             Class                                    Description
+        ==============  =======================================  =========================================================
+        ``'linear'``    `~matplotlib.scale.LinearScale`          Linear
+        ``'log'``       `~matplotlib.scale.LogScale`             Logarithmic
+        ``'symlog'``    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
+        ``'logit'``     `~matplotlib.scale.LogitScale`           Logistic
+        ``'pressure'``  `ExpScale`                               Scale height coords to be linear in pressure.
+        ``'height'``    `ExpScale`                               Scale pressure coords to be linear in height.
+        ``'exp'``       `ExpScale`                               Scale with some exponential function
+        ``'sine'``      `SineLatitudeScale`                      Scale with sine function (in degrees)
+        ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
+        ``'inverse'``   `InverseScale`                           Scale with the inverse
+        ==============  =======================================  =========================================================
 
     Other parameters
     ----------------
     **kwargs
-        Passed to the ``Scale`` class on instantiation.
+        Passed to the `~matplotlib.scale.ScaleBase` class on instantiation.
     """
     # Existing scales
     args = []
@@ -199,9 +196,25 @@ def InvertedScaleFactory(scale, **kwargs):
 # call.
 #------------------------------------------------------------------------------#
 def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
-    """Exponential scale, used when adding a pressure coordinate axis
+    r"""
+    Exponential scale.
+
+    This is used when adding a pressure coordinate axis
     for data that is plotted linearly w.r.t. height, or vice versa. Ignore
-    this if you're not an atmospheric scientist."""
+    this if you're not an atmospheric scientist.
+
+    Parameters
+    ----------
+    expscale : float
+        The scale for the exponent, i.e. the :math:`b` in :math:`Ae^{bx}`.
+    mulscale : float
+        The coefficient, i.e. the :math:`A` in :math:`Ae^{bx}`.
+    to_exp : float
+        Whether the "forward" direction performs exponentiation, or
+        the inverse operation :math:`\log(x/A)/b`.
+    name : None or str, optional
+        The scale name. Defaults to ``'exp_{expscale}_{mulscale}'``.
+    """
     if name is None:
         name = f'exp_{expscale:.1e}_{mulscale:.1e}'
     name_ = name # must make a copy
@@ -276,12 +289,23 @@ class _InvertedExpTransform(mtransforms.Transform):
 #------------------------------------------------------------------------------#
 def CutoffScaleFactory(scale, lower, upper=None):
     """
-    Constructer for scale with custom cutoffs. Three options here:
+    Construct a scale with custom cutoffs.
 
-      1. Put a 'cliff' between two numbers (default).
-      2. Accelerate the scale gradient between two numbers (scale>1).
-      3. Deccelerate the scale gradient between two numbers (scale<1). So
-         scale is fast on edges but slow in middle.
+    If `upper` is ``None``, you have the following two possibilities:
+
+    1. If `scale` is >1, the axis is "faster" to the right
+       of `lower`.
+    2. If `scale` is <1, the axis is "slower" to the right
+       of `lower`.
+
+    If `upper` is not ``None``, you have the following three possibilities:
+
+    1. If `scale` is >1, the axis is accelerated between `lower` and `upper`.
+       So the axis is "slow" on the edges but "fast" in middle.
+    2. If `scale` is >1, the axis is deccelerated between `lower` and `upper`.
+       So the axis is "fast" on the edges but "slow" in middle.
+    3. If `scale` is `numpy.inf`, this puts a cliff between `lower` and
+       `upper`. The axis cuts from `lower` to `upper` at a single point.
 
     Todo
     ----
@@ -420,12 +444,15 @@ class MercatorLatitudeScale(mscale.ScaleBase):
             raise ValueError('Threshold "thresh" must be <=90.')
         self.thresh = thresh
     def get_transform(self):
+        """See `~matplotlib.scale.ScaleBase`."""
         # Return special transform object
         return _MercatorLatitudeTransform(self.thresh)
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
         # *Hard* limit on axis boundaries
         return max(vmin, -self.thresh), min(vmax, self.thresh)
     def set_default_locators_and_formatters(self, axis):
+        """See `~matplotlib.scale.ScaleBase`."""
         # Apply these
         axis.set_smart_bounds(True)
         axis.set_major_locator(Locator(20)) # every 20 degrees
@@ -444,6 +471,7 @@ class _MercatorLatitudeTransform(mtransforms.Transform):
         super().__init__()
         self.thresh = thresh
     def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
         # For M N-dimensional transform, transform MxN into result
         # So numbers stay the same, but data will then be linear in the
         # result of the math below.
@@ -456,6 +484,7 @@ class _MercatorLatitudeTransform(mtransforms.Transform):
         else:
             return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
     def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
         # Just call inverse transform class
         return _InvertedMercatorLatitudeTransform(self.thresh)
 
@@ -470,9 +499,11 @@ class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
         super().__init__()
         self.thresh = thresh
     def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
         # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
         return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
     def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
         return _MercatorLatitudeTransform(self.thresh)
 
 #------------------------------------------------------------------------------#
@@ -498,14 +529,15 @@ class SineLatitudeScale(mscale.ScaleBase):
         # Initialize
         super().__init__()
     def get_transform(self):
-        # Return special transform object
+        """See `~matplotlib.scale.ScaleBase`."""
         return _SineLatitudeTransform()
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
         # *Hard* limit on axis boundaries
         # return max(vmin, -90), min(vmax, 90)
         return vmin, vmax
     def set_default_locators_and_formatters(self, axis):
-        # Apply these
+        """See `~matplotlib.scale.ScaleBase`."""
         axis.set_smart_bounds(True)
         axis.set_major_locator(Locator(20)) # every 20 degrees
         axis.set_major_formatter(Formatter('deg'))
@@ -522,7 +554,7 @@ class _SineLatitudeTransform(mtransforms.Transform):
         # Initialize, declare attribute
         super().__init__()
     def transform_non_affine(self, a):
-        # Transformation
+        """See `~matplotlib.transforms.Transform`."""
         with np.errstate(invalid='ignore'): # NaNs will always be False
             m = (a >= -90) & (a <= 90)
         if not m.all():
@@ -531,7 +563,7 @@ class _SineLatitudeTransform(mtransforms.Transform):
         else:
             return np.sin(np.deg2rad(a))
     def inverted(self):
-        # Just call inverse transform class
+        """See `~matplotlib.transforms.Transform`."""
         return _InvertedSineLatitudeTransform()
 
 class _InvertedSineLatitudeTransform(mtransforms.Transform):
@@ -544,11 +576,13 @@ class _InvertedSineLatitudeTransform(mtransforms.Transform):
     def __init__(self):
         super().__init__()
     def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
         # Clipping, instead of setting invalid
         # NOTE: Using ma.arcsin below caused super weird errors, dun do that
         aa = a.copy()
         return np.rad2deg(np.arcsin(aa))
     def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
         return _SineLatitudeTransform()
 
 #------------------------------------------------------------------------------#
@@ -570,15 +604,18 @@ class InverseScale(mscale.ScaleBase):
         super().__init__()
         self.minpos = minpos
     def get_transform(self):
+        """See `~matplotlib.scale.ScaleBase`."""
         # Return transform class
         return _InverseTransform(self.minpos)
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
         # *Hard* limit on axis boundaries
         if not np.isfinite(minpos):
             minpos = 1e-300
         return (minpos if vmin <= 0 else vmin,
                 minpos if vmax <= 0 else vmax)
     def set_default_locators_and_formatters(self, axis):
+        """See `~matplotlib.scale.ScaleBase`."""
         # TODO: Fix minor locator issue
         # NOTE: Log formatter can ignore certain major ticks! Why is that?
         axis.set_smart_bounds(True) # may prevent ticks from extending off sides
@@ -598,6 +635,7 @@ class _InverseTransform(mtransforms.Transform):
         super().__init__()
         self.minpos = minpos
     def transform(self, a):
+        """See `~matplotlib.scale.ScaleBase`."""
         a = np.array(a)
         aa = a.copy()
         # f = np.abs(a)<=self.minpos # attempt for negative-friendly
@@ -605,8 +643,10 @@ class _InverseTransform(mtransforms.Transform):
         aa[aa<=self.minpos] = self.minpos
         return 1.0/aa
     def transform_non_affine(self, a):
+        """See `~matplotlib.scale.ScaleBase`."""
         return self.transform(a)
     def inverted(self):
+        """See `~matplotlib.scale.ScaleBase`."""
         return _InverseTransform(self.minpos)
 
 # Register hard-coded scale names, so user can set_xscale and set_yscale
@@ -634,8 +674,9 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     Parameters
     ----------
     locator : None, float, list of float, or str
-        If None, returns the default `~matpltolib.ticker.AutoLocator`,
-        unless `minor` or `time` are ``True`` (see below).
+        If ``None`` or ``'default'``, returns the default
+        `~matplotlib.ticker.AutoLocator` unless `minor` or `time` are
+        ``True`` (see below).
 
         If number, specifies the *multiple* used to define tick separation.
         Returns a `~matplotlib.ticker.MultipleLocator` instance.
@@ -671,11 +712,11 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         ===============  ==========================================
 
     minor : bool, optional
-        Ignored if `locator` is not ``None``. Otherwise, if ``True``, returns
-        an `~matplotlib.ticker.AutoMinorLocator` instance.
+        Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
+        if ``True``, returns an `~matplotlib.ticker.AutoMinorLocator` instance.
     time : bool, optional
-        Ignored if `locator` is not ``None``. Otherwise, if ``True``, returns
-        an `~matplotlib.dates.AutoDateLocator` instance.
+        Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
+        if ``True``, returns an `~matplotlib.dates.AutoDateLocator` instance.
 
     Other parameters
     ----------------
@@ -684,7 +725,7 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
 
     Note
     ----
-    `~matpltolib.ticker.AutoLocator` has a useful ``nbins`` option. This
+    `~matplotlib.ticker.AutoLocator` has a useful ``nbins`` option. This
     limits the maximum number of ticks to ``nbins-1``.
     """
     # Do nothing, and return None if locator is None
@@ -693,7 +734,7 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     # Decipher user input
     if np.iterable(locator) and not isinstance(locator, str) and not all(isinstance(num, Number) for num in locator):
         locator, args = locator[0], [*locator[1:], *args]
-    if locator is None:
+    if locator is None or (isinstance(locator, str) and locator=='default'):
         if time:
             locator = mdates.AutoDateLocator(*args, **kwargs)
         elif minor:
@@ -724,8 +765,9 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 
     Parameters
     ----------
-    formatter : None, float, function, list of str, or str
-        If None, returns `ScalarFormatter`, unless `time` is ``True`` (see below).
+    formatter : float, function, list of str, or str
+        If ``None`` or ``'default'``, returns `ScalarFormatter` unless
+        `time` is ``True`` (see below).
 
         If function, function is used to output label string from numeric
         input. Returns a `~matplotlib.ticker.FuncFormatter` instance.
@@ -738,10 +780,13 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
             1. If string contains ``%``, ticks will be formatted
                using the C-notation ``string % number`` method. See `this link
                <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
-               for a review. If the axis represents time (i.e. ``time=True``,
+               for a review.
+
+               If the axis represents time (i.e. ``time=True``,
                passed automatically by `~proplot.axes.XYAxes.smart_update`),
-               datetime %-formatting is used, as described on `this page
-               <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
+               datetime %-formatting is used. See `this page
+               <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
+               for an overview.
             2. If string contains ``{x}`` or ``{x:...}``, ticks will be
                formatted by calling ``string.format(x=number)``.
             3. Otherwise, a dictionary lookup is performed.
@@ -774,8 +819,9 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         =============  ====================================================================
 
     time : bool, optional
-        Ignored if `formatter` is not ``None``. Otherwise, if ``True``, returns
-        an `~matplotlib.dates.AutoDateFormatter` instance.
+        If ``True``, returns an `~matplotlib.dates.AutoDateFormatter` when
+        `formatter` is ``None``, or a `~matplotlib.dates.DateFormatter`
+        instance when `formatter` is a string with a ``'%'`` character.
     tickrange : (float, float), optional
         See `ScalarFormatter`.
 
@@ -790,7 +836,7 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(isinstance(item, str) for item in formatter):
         formatter, args = formatter[0], [*formatter[1:], *args]
     # Interpret user input
-    if formatter is None or formatter=='default': # by default use my special super cool formatter, better than original
+    if formatter is None or (isinstance(formatter, str) and formatter=='default'): # by default use my special super cool formatter, better than original
         if not time:
             formatter = ScalarFormatter(*args, tickrange=tickrange, **kwargs)
         else:
@@ -904,15 +950,16 @@ class ScalarFormatter(mticker.ScalarFormatter):
 #------------------------------------------------------------------------------#
 def CoordFormatter(*args, cardinal=None, degrees=True, **kwargs):
     """
-    For axes corresponding to geographic coordinates.
+    Returns a `~matplotlib.ticker.FuncFormatter` that formats numbers as
+    geographic coordinates.
 
     Parameters
     ----------
     cardinal : None or length-2 str, optional
-        If str, indicates the "negative" and "positive" coordinate. For
-        example, ``cardinal='SN'``.
+        If str, indicates the "negative" and "positive" coordinate to append
+        to the end of the tick label string. For example, ``cardinal='SN'``.
     degrees : bool, optional
-        Whether to add unicode degree symbol.
+        Whether to add the unicode "degree sign" symbol.
     """
     def f(x, pos):
         # Optional degree symbol
@@ -938,8 +985,12 @@ def CoordFormatter(*args, cardinal=None, degrees=True, **kwargs):
 #------------------------------------------------------------------------------#
 def FracFormatter(symbol, number):
     r"""
-    Format as fractions and/or multiples of some value, e.g. a
-    physical constant.
+    Returns a `~matplotlib.ticker.FuncFormatter` that formats numbers as
+    fractions or multiples of some value, e.g. a physical constant.
+
+    This is powerd by the python builtin `~fractions.Fraction` class.
+    We account for floating point errors using the
+    `~fractions.Fraction.limit_denominator` method.
 
     Parameters
     ----------

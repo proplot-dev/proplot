@@ -531,8 +531,7 @@ _cmap_mirrors = [
 # to avoid cmap lookup attempt whenever possible.
 class ColorDictSpecial(dict):
     """Special dictionary that lets user draw single color tuples from
-    arbitrary colormaps or color cycles. This replaces the builtin
-    matplotlib color name dictionary."""
+    arbitrary colormaps or color cycles."""
     def __getitem__(self, key):
         """
         Try to get the color name. If it is not found, try to draw the color
@@ -606,7 +605,6 @@ class CmapDict(dict):
        ``'BuYlRd'`` and ``'RdYlBu_r'``.
     """
     def __init__(self, kwargs):
-        """Convert keys to lower case and ignore the 'reverse' maps."""
         kwargs_filtered = {}
         for key,value in kwargs.items():
             if not isinstance(key, str):

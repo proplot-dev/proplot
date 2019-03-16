@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-This manages global "rc" settings with new convenience features, and define some
-brand new settings.  Your one-stop-shop for changing settings is the `rc` object. To change
+Your one-stop-shop for changing settings is the `rc` object. To change
 the setting named ``name`` to ``value``, use any of the following 4
 approaches:
 
@@ -19,13 +18,14 @@ This package also defines three different "categories" of settings:
 
 * **Builtin** :ref:`rcParams` settings. These have the format
   ``category.subcategory``, so approaches 1 and 2 are invalid (see below).
-* **Custom** :ref:`rcParams_new` settings. These also have the format
-  ``category.subcategory``.
+* **Custom** :ref:`rcParams_new` settings. These are defined by ProPlot
+  (see below), and also have the format ``category.subcategory``.
 * **Global** :ref:`rcGlobals` settings. These are simple, short names
-  used to change **multiple** "builtin" and "custom" settings at once,
-  or as shorthands for settings with longer names.
+  used to change **multiple** matplotlib and ProPlot settings at once,
+  as shorthands for settings with longer names, or for some "special"
+  settings.
 
-These categories are described in detail below.
+The three categories are described in detail below.
 
 rcParams
 --------
@@ -45,34 +45,41 @@ The ``rcParams`` categories are as follows:
 rcParams_new
 ------------
 
-My brand new settings, meant to configure special ProPlot featues. The
-`rcParams_new` categories are as follows:
+These are brand new settings meant to configure special ProPlot features,
+with the format ``category.subcategory``. They can be grouped into the
+following 4 sections.
 
-* Labels: ``abc``, ``rowlabel``, ``collabel``, ``title``, ``suptitle``
-* Gridlines: ``gridminor``, ``geogrid``
-* Subplots: ``gridspec``
-* Inset colorbar: ``colorbar``
+Labels
+``````
+First there are the ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``
+subcategories: for a-b-c labelling
+axes titles, row labels, column labels, and *x* and *y* axis labels.
 
-A miscellaneous setting is the boolean ``axes.formatter.zerotrim``; use this
-to trim trailing zeros on tick labels. Default is ``True``.
+======================================  ===========================================================
+Key                                     Description
+======================================  ===========================================================
+``abc.format``                          a-b-c label format [1]_.
+``abc.pos``, ``title.pos``              a-b-c label position [2]_.
+``abc.border``, ``title.border``        Whether to draw labels inside the axes with a white border.
+``abc.linewidth``, ``title.linewidth``  Width of the (optional) white border.
+``[name].color``                         The font color.
+``[name].fontsize``                      The font size.
+``[name].weight``                        The font weight [3]_.
+======================================  ===========================================================
 
-The ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``label`` subcategories (for a-b-c labelling
-axes titles, row labels, column labels, and *x* and *y* axis labels):
+There are also the new ``tick.labelweight``, ``tick.labelcolor``, and ``tick.labelsize``
+settings, meant to mimick the builtin ``axes.labelweight``, ``axes.labelcolor``,
+and ``axes.labelsize`` settings.
 
-=========================================================================================================  =======================================
-Key                                                                                                        Description
-=========================================================================================================  =======================================
-``abc.format``                                                                                             a-b-c label format [2]_.
-``abc.pos``, ``title.pos``                                                                                 a-b-c label position [3]_.
-``abc.border``, ``title.border``                                                                           Whether to draw labels inside the axes with a white border.
-``abc.linewidth``, ``title.linewidth``                                                                     Width of the (optional) white border.
-``abc.color``, ``rowlabel.color``, ``collabel.color``, ``title.color``, ``suptitle.color``                 The font color.
-``abc.fontsize``, ``rowlabel.fontsize``, ``collabel.fontsize``, ``title.fontsize``, ``suptitle.fontsize``  The font size.
-``abc.weight``,   ``rowlabel.weight``,   ``collabel.weight``, ``title.weight``, ``suptitle.weight``        The font weight [4]_.
-=========================================================================================================  =======================================
+We also have the boolean ``axes.formatter.zerotrim`` setting. This controls
+whether trailing decimal zeros are trimmed on tick labels (the default
+is ``True``).
 
-The ``geogrid`` and ``gridminor`` subcategories (for ``gridminor`` properties
-equal to ``None``, the corresponding builtin ``grid`` property is used):
+Grids
+`````
+The ``gridminor`` and ``geogrid`` subcategories, for minor-tick gridline
+properties and geographic latitude-longitude gridlines. If a ``gridminor``
+property is empty, the corresponding builtin ``grid`` property is used.
 
 ==============================================  ==================================================================
 Key                                             Description
@@ -88,29 +95,35 @@ Key                                             Description
 ``geogrid.color``, ``gridminor.color``          The line color.
 ==============================================  ==================================================================
 
-The ``gridspec`` subcategory (if float, units are inches; if string,
-units are interpreted by `~proplot.utils.units`):
+Subplot
+```````
+The ``subplot`` subcategory is used to control default layout settings.
+As with all sizing arguments, if specified as a numer, the units are inches;
+if string, units are interpreted by `~proplot.utils.units`.
 
 =======================  ==================================================================
 Key                      Description
 =======================  ==================================================================
-``gridspec.outerpad``    Padding around edges for tight subplot.
-``gridspec.mainpad``     Padding between main subplots.
-``gridspec.innerpad``    Padding between inner panels and their parents.
-``gridspec.titlespace``  Vertical space for titles.
-``gridspec.legwidth``    Width of "legend" panels.
-``gridspec.cbarwidth``   Width of "colorbar" panels.
-``gridspec.ylabspace``   Horizontal space between subplots alotted for *y*-labels.
-``gridspec.xlabspace``   Vertical space between subplots alotted for *x*-labels.
-``gridspec.nolabspace``  Space between subplots alotted for tick marks.
-``gridspec.innerspace``  Totally empty space between subplots.
-``gridspec.axwidth``     Default width of each axes.
-``gridspec.panelwidth``  Width of side panels.
-``gridspec.panelspace``  Space between main axes and side panels.
+``subplot.outerpad``     Padding around edges for tight subplot.
+``subplot.subplotpad``   Padding between main subplots.
+``subplot.innerpad``     Padding between inner panels and their parents.
+``subplot.titlespace``   Vertical space for titles.
+``subplot.legwidth``     Width of "legend" panels.
+``subplot.cbarwidth``    Width of "colorbar" panels.
+``subplot.ylabspace``    Horizontal space between subplots alotted for *y*-labels.
+``subplot.xlabspace``    Vertical space between subplots alotted for *x*-labels.
+``subplot.nolabspace``   Space between subplots alotted for tick marks.
+``subplot.innerspace``   Totally empty space between subplots.
+``subplot.axwidth``      Default width of each axes.
+``subplot.panelwidth``   Width of side panels.
+``subplot.panelspace``   Space between main axes and side panels.
 =======================  ==================================================================
 
-And finally, the ``colorbar`` subcategory, analogous to the matplotlib
-builtin ``legend`` subcategory and used for *inset* colorbars:
+Colorbar
+````````
+And finally, the ``colorbar`` subcategory. This is analogous to the
+builtin ``legend`` subcategory, and is used for **inset** colorbars
+(see `~proplot.axes.Axes.colorbar` for details).
 
 =======================  ===================================================================================================================
 Key                      Description
@@ -144,7 +157,7 @@ Key                 Description
 ``color``           The color of axis spines, tick marks, tick labels, and labels.
 ``margin``          The margin of space around subplot `~matplotlib.artist.Artist` instances, if ``xlim`` and ``ylim`` are unset.
 ``facecolor``       The axes background color.
-``hatch``           The background hatching string pattern [1]_. If ``None``, no hatching.
+``hatch``           The background hatching string pattern [4]_. If ``None``, no hatching.
 ``small``           Font size for legend text, tick labels, axis labels, and text generated with `~proplot.axes.BaseAxes.text`.
 ``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
 ``fontname``        Name of font used for all text in the figure [5]_.
@@ -156,20 +169,20 @@ Key                 Description
 ``ticklenratio``    Ratio of minor to major tick lengths.
 ==================  ====================================================================================================================================================
 
-.. [1] For example, ``'xxx'`` or ``'..'``. See `this demo
-       <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
-.. [2] A string containing the character ``'a'``, specifying the
-       format of the a-b-c labelling. ``'a.'`` is the default, but (for
-       example) ``'(a)'`` or ``'a)'`` might also be desirable.
-.. [3] Positions are declared with a string up to two characters long,
+.. [1] A string containing the character ``'a'``, specifying the
+       format of the a-b-c labelling. ``'a'`` is the default, but (for
+       example) ``'a.'``, ``'a)'``, or ``'A'`` might also be desirable.
+.. [2] Positions are declared with a string up to two characters long,
        indicating whether to draw text inside (``'i'``) or outside
        (``'o'``) the axes, and on the left (``'l'``), right (``'r'``), or
        center (``'c'``) of the axes. The matplotlib default is ``'co'``.
-.. [4] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
+.. [3] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
        ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
        Note that many fonts only have ``normal`` or ``bold`` available.
        If you request another weight, the “closest” availble weight will
        be selected.
+.. [4] For example, ``'xxx'`` or ``'..'``. See `this demo
+       <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
 .. [5] This module *changes the default* from DejaVu Sans (or Bitstream Vera) to
        Helvetica Neue or Helvetica. Run `~proplot.fonttools.install_fonts`
        to install them when you download ProPlot for the first time, and
@@ -218,10 +231,10 @@ _rcGlobals_children = {
     'grid':       ['axes.grid'],
     'geogrid':    ['axes.geogrid'],
     'gridminor':  ['axes.gridminor'],
-    'color':      ['axes.labelcolor', 'axes.edgecolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'color':      ['axes.labelcolor', 'axes.edgecolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'margin':     ['axes.xmargin', 'axes.ymargin'],
     'fontname':   ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
-    'small':      ['font.size', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
+    'small':      ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
     'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
     'linewidth':  ['axes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
     'ticklen' :   ['xtick.major.size', 'ytick.major.size'],
@@ -256,10 +269,11 @@ _rc_names_new = {
     'collabel.fontsize', 'collabel.weight', 'collabel.color',
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonlines', 'geogrid.latlines',
-    'gridspec.mainpad', 'gridspec.innerpad', 'gridspec.outerpad', 'gridspec.titlespace',
-    'gridspec.innerspace',
-    'gridspec.legwidth', 'gridspec.cbarwidth', 'gridspec.ylabspace', 'gridspec.xlabspace', 'gridspec.nolabspace',
-    'gridspec.axwidth', 'gridspec.panelwidth', 'gridspec.panelspace',
+    'subplot.subplotpad', 'subplot.innerpad', 'subplot.outerpad', 'subplot.titlespace',
+    'subplot.innerspace',
+    'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
+    'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',
+    'subplot.axwidth', 'subplot.panelwidth', 'subplot.panelspace',
     'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendfull', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
@@ -315,7 +329,7 @@ class _locked(dict):
         raise NotImplementedError
 
 class rc_configurator(object):
-    _public_api = ('reset', 'get', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
+    _public_api = ('reset', 'context', 'get', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
     def __init__(self):
         """Magical abstract class for managing builtin :ref:`rcParams` settings, 
         our artificial :ref:`rcParams_new` settings, and new "global" settings
@@ -408,9 +422,9 @@ class rc_configurator(object):
         self._context_cache_backup = {}
 
     def __getitem__(self, key):
-        """Retrieves property. If we are in a `_context` block, will only
-        return cached properties (i.e. properties that user wants to
-        temporarily change). If not cached, returns None."""
+        """Retrieves property. If we are in a `~rc_configurator.context`
+        block, will return ``None`` if property is not cached (i.e.
+        property was changed by user)."""
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
@@ -457,7 +471,8 @@ class rc_configurator(object):
         return None
 
     def __setitem__(self, key, value):
-        """Sets :ref:`rcGlobals`, :ref:`rcParams`, or :ref:`rcParams_new` settings."""
+        """Sets :ref:`rcGlobals`, :ref:`rcParams`, or :ref:`rcParams_new`
+        settings."""
         # Save changed properties?
         cache = self._cache
         cache[key] = value
@@ -466,8 +481,8 @@ class rc_configurator(object):
             cache_restore = self._cache_restore
 
         # First the special cycler and colormaps
-        # NOTE: No matter the 'setitem mode' this will always set the axes
-        # prop_cycle rc settings
+        # NOTE: We don't need to cache these because props aren't looked up
+        # by format function; plot methods will read global properties
         if key=='rgbcolors':
             _rcGlobals[key] = value
             key = 'cycle'
@@ -483,15 +498,39 @@ class rc_configurator(object):
                 cache_restore[key] = _rcGlobals[key]
                 cache_restore['image.cmap'] = _rcParams['image.cmap']
             self._set_cmap(value)
-        elif key=='gridminor':
+
+        # Grid properties, not sure why it has to be this complicated
+        elif key in ('grid', 'gridminor'):
+            value_orig = _rcParams['axes.grid']
+            which_orig = _rcParams['axes.grid.which']
             if restore:
                 cache_restore[key] = _rcGlobals[key]
-                cache_restore['axes.grid.which'] = _rcParams['axes.grid.which']
-            which = _rcParams['axes.grid.which']
-            if which!='minor':
-                which = 'both'
-            _rcParams['axes.grid'] = True
-            _rcParams['axes.grid.which'] = which
+                cache_restore['axes.grid'] = value_orig
+                cache_restore['axes.grid.which'] = which_orig
+            if not value:
+                # Turn off gridlines for just major or minor ticks
+                if not value_orig or (which_orig=='major' and key=='grid') or (which_orig=='minor' and key=='gridminor'):
+                    which = 'both' # disable both sides
+                # Some gridlines were already on! Does this new setting disable
+                # everything, or just one of them?
+                elif which_orig=='both': # and value_orig is True, as we already tested
+                    value = True
+                    which = 'major' if key=='gridminor' else 'minor' # if gridminor=False, enable major, and vice versa
+                # Do nothing; e.g. if original was which=minor, user input grid=False,
+                # nothing should happen.
+                else:
+                    value = True
+                    which = which_orig
+            else:
+                # Turn on gridlines for major and minor, if was just one before
+                if which_orig=='both' or (key=='grid' and which_orig=='minor') or (key=='gridminor' and which_orig=='major'):
+                    which = 'both'
+                # Do nothing; e.g. if original was which=major, user input was grid=True
+                else:
+                    value = True
+                    which = which_orig
+            cache.update({'axes.grid':value, 'axes.grid.which':which})
+            _rcParams.update({'axes.grid':value, 'axes.grid.which':which})
 
         # Global settings
         elif key in _rcGlobals:
@@ -665,46 +704,79 @@ class rc_configurator(object):
                     kw[name] = value
         return kw, kw_new
 
-    def _context(self, *args, mode=0, **kwargs):
+    # Internally used, but public methods.
+    def context(self, *args, mode=0, **kwargs):
         """
         Temporarily modify the rc settings. Do this by simply
         saving the old cache, allowing modification of a new cache,
         then restoring the old one.
 
-        This has three modes:
+        Possible arguments for `mode` are ``0``, ``1``, and ``2``:
 
-        0. `__getitem__` searches everything, the default.
-        1. `__getitem__` ignores `_rcParams` (assumption is these
-            have already been set). Used during axes `__init__`
-            calls to `_rcupdate`.
-        2. `__getitem__` ignores `_rcParams` and `_rcParams_new`; only
-            reads from cache, i.e. settings that user has manually changed.
-            Used during `~proplot.BaseAxes.format` calls to
-            `~proplot.BaseAxes._rcupdate`.
+        0. `~rc_configurator.__getitem__` searches everything, the default.
+        1. `~rc_configurator.__getitem__` ignores :ref:`rcParams` (assumption
+           is these have already been set). Used during axes
+           `~proplot.axes.BaseAxes.__init__` calls to
+           `~proplot.axes.BaseAxes.format`.
+        2. `~rc_configurator.__getitem__` ignores :ref:`rcParams` and
+           :ref:`rcParams_new`. It only reads from cache, i.e. settings that
+           user has manually changed. Used during user calls to
+           `~proplot.axes.BaseAxes.format`.
 
-        Note
-        ----
-        This is kept private, because it's only meant to be used within
-        the '~proplot.axes.BaseAxes.format' automatically! Instead of the
-        user having to use the ``with x as y`` construct, they should just
-        pass an `rc_kw` dict or extra `kwargs` to `~proplot.axes.BaseAxes.format`.
+        Warning
+        -------
+        You should not have to use this directly! To temporarily change
+        settings, just pass them to `~proplot.axes.BaseAxes.format` (which
+        calls this method internally and applies the new properties).
         """
         # Apply mode
         if mode not in range(3):
             raise ValueError(f'Invalid _getitem_mode {mode}.')
         for arg in args:
             if not isinstance(arg, dict):
-                raise ValueError('_context only accepts dictionary args and kwarg pairs.')
+                raise ValueError('Non-dictionary argument.')
             kwargs.update(arg)
         self._context_kwargs = kwargs # could be empty
         self._getitem_mode = mode
         return self
 
+    def get(self, key, all=True, nodict=True):
+        """
+        Getter with some special options (this is for internal use by
+        `~proplot.axes.BaseAxes` and its subclasses).
+
+        Parameters
+        ----------
+        key : str
+            The key name.
+        all : bool, optional
+            Whether to look for all properties or just cached (i.e.
+            recently changed) properties.
+        nodict : bool, optional
+            Whether to disable the `~rc_configurator.__getitem__` feature
+            that returns a **dictionary** of properties belonging to
+            some category. This can be helpful when a category and a "global"
+            setting have the same name, like "land".
+        """
+        self._no_dict = nodict
+        if all:
+            orig = self._getitem_mode
+            self._getitem_mode = 0
+        try:
+            item = self[key]
+        except KeyError as err:
+            self._no_dict = False
+            self._getitem_mode = orig
+            raise err
+        self._no_dict = False
+        if all:
+            self._getitem_mode = orig
+        return item
+
     def fill(self, props, all=False):
         """
         Fill a dictionary containing rc property string names with the
-        corresponding property. This is mostly used internally by
-        `~proplot.axes.BaseAxes` and its subclasses.
+        corresponding property.
 
         Parameters
         ----------
@@ -714,7 +786,9 @@ class rc_configurator(object):
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
         all : bool, optional
-            Whether to look for all props.
+            Whether to look for all properties or just cached (i.e.
+            recently changed) properties. In the later case, keys that
+            return ``None`` will be omitted from the output dictionary.
 
         Returns
         -------
@@ -731,7 +805,7 @@ class rc_configurator(object):
         With this in mind, `~rc_configurator.__getitem__` returns ``None``
         when a setting has not been changed (changed settings are cached
         in a separate dictionary). This prevents hundreds of 1000-item
-        dictionary lookups; without caching, runtime increases by 1s even
+        dictionary lookups. Without caching, runtime increases by 1s even
         for relatively simple plots.
         """
         props_out = {}
@@ -748,28 +822,18 @@ class rc_configurator(object):
             self._getitem_mode = orig
         return props_out
 
-    def get(self, key, all=True, nodict=True):
-        """Get single value, never a dictionary from category of values, and
-        look inside all possible dictionaries."""
-        self._no_dict = nodict
-        if all:
-            orig = self._getitem_mode
-            self._getitem_mode = 0
-        try:
-            item = self[key]
-        except KeyError as err:
-            self._no_dict = False
-            self._getitem_mode = orig
-            raise err
-        self._no_dict = False
-        if all:
-            self._getitem_mode = orig
-        return item
+    def reset(self):
+        """
+        Restores settings to the default.
+        """
+        return self.__init__()
 
     def update(self, *args, **kwargs):
         """
-        Update global settings. Also can be done with ``self.name = value``
-        or ``self['name'] = value``.
+        Update global settings -- usage is just like updating with
+        `~proplot.axes.BaseAxes.format`, in that you can specify keyword args
+        with dots by omitting the dots. Note settings can also be changed with
+        ``self.name = value`` or ``self['name'] = value``.
 
         Parameters
         ----------
@@ -792,13 +856,8 @@ class rc_configurator(object):
         else:
             raise ValueError('Accepts 1-2 positional arguments only. Use rc.update(kw) to update a bunch of names, or rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
         for key,value in kw.items():
+            key = _rc_names_nodots.get(key, key)
             self[prefix + key] = value
-
-    def reset(self):
-        """
-        Restore settings to the default.
-        """
-        return self.__init__()
 
 # Instantiate object
 rc = rc_configurator()

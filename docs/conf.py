@@ -75,6 +75,7 @@ autosummary_generate = True
 # Also modify so 
 automodapi_toctreedirnm = 'api' # create much better URL for the page
 automodsumm_inherited_members = False
+automodsumm_inherited_members = False
 
 # Turn off code and image links for embedded mpl plots
 html_logo = '_static/logo.png'

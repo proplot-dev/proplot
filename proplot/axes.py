@@ -10,10 +10,45 @@ colorbar and legend functions. You should focus on the ``format`` and
 * `MapAxes.smart_update`
 
 `BaseAxes.format` calls the ``smart_update`` methods in turn.
-These methods are your one-stop-shop for changing axes settings like
+This is your one-stop-shop for changing axes settings like
 *x* and *y* axis limits, axis labels, tick locations, tick label
 format, grid lines, scales, titles, a-b-c labelling, adding
 geographic features, and much more.
+
+
+ProPlot also adds various new settings by wrapping native
+`~matplotlib.axes.Axes` plotting methods with the ``wrapper`` functions.
+See the notes below for details.
+
+.. raw:: html
+
+   <h1>Developer notes</h1>
+
+The wrapping is done by dynamically overriding the
+`~proplot.axes.BaseAxes.__getattribute__` methods on
+`~proplot.axes.BaseAxes` and its subclasses. You may be wondering: why did I
+choose to do this, rather than using **decorators**? Two reasons:
+
+1. Brevity. For example: `wrapper_cmap` overrides **a dozen** different
+   methods. This lets me override these methods in *one* line, instead of 50
+   lines. To see which methods are overriden, the user can simply check the
+   `cmap_methods` list.
+2. Documentation. If I wrapped every method, the sphinx `autodoc <http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_
+   documentation generator would inherit docstrings from the parent methods.
+   In other words, the plotting method docstrings would get duplicated on
+   my website from the matplotlib website, generally with a bunch of errors.
+
+   I could also override these methods with my own docstrings, but that would
+   mean when the user tries e.g. ``help(ax.contourf)``, they would see my
+   own, very brief docstring instead of the comprehensive matplotlib reference
+   they were probably looking for! I only add a handful of features to these
+   functions, but the native methods generally have way more options.
+
+It should be noted that dynamically wrapping every time the user accesses
+the corresponding method will be slower than "decoration", which just wraps them
+once on declaration of the axes. But this was not found to significantly affect
+performance. And anyway, `Premature Optimization is the Root of All Evil
+<http://wiki.c2.com/?PrematureOptimization>`__.
 """
 # Note that even if not in IPython notebook, io capture output still works
 # functools.wraps preserves __name__ metadata; see comment:
@@ -76,28 +111,6 @@ except ModuleNotFoundError:
 # if we look up attributes thousands of times, testing membership in a length-4
 # list is nanoseconds level
 #------------------------------------------------------------------------------#
-# Aliases for panel names
-_aliases = {
-    'bpanel': 'bottompanel',
-    'rpanel': 'rightpanel',
-    'tpanel': 'toppanel',
-    'lpanel': 'leftpanel'
-    }
-
-# Basic plotting tool categories, used in various places
-_show_methods = (
-    'imshow', 'matshow', 'spy', 'hist2d',
-    )
-_pcolor_methods = (
-    'pcolor', 'pcolormesh', 'tripcolor'
-    )
-_contour_methods = (
-    'contour', 'tricontour',
-    )
-_contourf_methods = (
-    'contourf', 'tricontourf',
-    )
-
 # 2D plot functions that require coordinate centers and edges
 centers_methods = (
     'contour', 'contourf', 'quiver', 'streamplot', 'barbs'
@@ -128,9 +141,9 @@ cmap_methods = (
     )
 """List of methods wrapped by `wrapper_cmap`."""
 
-# Finally disable some stuff for all axes, and just for map projection axes
+# Disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
-_disabled_methods = {
+disabled_methods = {
     "Unsupported plotting function {}. May be added soon.":
         ('pie', 'table', 'eventplot',
         'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
@@ -139,10 +152,11 @@ _disabled_methods = {
         ('semilogx', 'semilogy', 'loglog'),
     "Redundant function {} has been disabled. Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
         ('plot_date',),
-    "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use angle as 'x' and radius as 'y'.":
+    "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use the angle as your *x* coordinate and radius as your *y* coordinate.":
         ('polar',)
     }
-_map_disabled_methods = (
+"""Lists of disabled methods and their associated error messages."""
+map_disabled_methods = (
     'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
     # 'triplot', 'tricontour', 'tricontourf', 'tripcolor',
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
@@ -150,19 +164,34 @@ _map_disabled_methods = (
     # 'fill_between', 'fill_betweenx', 'fill',
     'stackplot'
     )
+"""List of methods disabled for `MapAxes`. These are not applicable to plotting geographic data."""
+# Used for wrapper_cmap
+_show_methods = (
+    'imshow', 'matshow', 'spy', 'hist2d',
+    )
+_pcolor_methods = (
+    'pcolor', 'pcolormesh', 'tripcolor'
+    )
+_contour_methods = (
+    'contour', 'tricontour',
+    )
+_contourf_methods = (
+    'contourf', 'tricontourf',
+    )
+
+# Aliases for panel names
+_aliases = {
+    'bpanel': 'bottompanel',
+    'rpanel': 'rightpanel',
+    'tpanel': 'toppanel',
+    'lpanel': 'leftpanel'
+    }
 
 #------------------------------------------------------------------------------
-# Wrappers for contourf, pcolormesh, etc. overrides
-# List of stuff in pcolor/contourf that need to be fixed:
-#   * White lines between the edges; cover them by changing edgecolors to 'face'.
-#   * Determination of whether we are using graticule edges/centers; not sure
-#       what default behavior is but harder to debug. My decorator is nicer.
-#   * Pcolor can't take an extend argument, and colorbar can take an extend argument
-#       but it is ignored when the mappable is a contourf. Make our pcolor decorator
-#       add an "extend" attribute on the mappable that our colorbar decorator detects.
-#   * Extend used in contourf causes color-change between in-range values and
-#       out-of-range values, while extend used in colorbar on pcolor has no such
-#       color change. Standardize by messing with the colormap.
+# Wrappers for standardizing 2D grid inputs for contour, etc.
+# NOTE: All wrappers are actully wrapper *pairs*. The hidden just call the
+# public ones of the same name.
+# used, the public ones do the work. 
 #------------------------------------------------------------------------------
 def _parse_args(args):
     """Helper function for `wrapper_check_edges` and `wrapper_check_centers`."""
@@ -190,7 +219,12 @@ def _parse_args(args):
         raise ValueError(f'X coordinates are {x.ndim}D, but Y coordinates are {y.ndim}D.')
     return x, y, Zs
 
-def wrapper_check_centers(func):
+def _wrapper_check_centers(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_check_centers(func, *args, **kwargs)
+    return wrapper
+def wrapper_check_centers(func, *args, order='C', **kwargs):
     """
     Checks shape of arguments passed to methods like
     `~matplotlib.axes.Axes.contourf`. Ensures we have coordinate *centers*,
@@ -205,32 +239,34 @@ def wrapper_check_centers(func):
     * x, y, Z
     * x, y, U, V
     """
-    @functools.wraps(func)
-    def wrapper_check_centers(*args, order='C', **kwargs):
-        # Checks whether sizes match up, checks whether graticule was input
-        x, y, Zs = _parse_args(args)
-        xlen, ylen = x.shape[-1], y.shape[0]
-        for Z in Zs:
-            if Z.ndim!=2:
-                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
-                x = (x[1:] + x[:-1])/2
-                y = (y[1:] + y[:-1])/2 # get centers, given edges
-            elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
-                raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                        f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        # Optionally re-order
-        if order=='F':
-            x, y = x.T, y.T # in case they are 2-dimensional
-            Zs = (Z.T for Z in Zs)
-        elif order!='C':
-            raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-        result = func(x, y, *Zs, **kwargs)
-        return result
-    return wrapper_check_centers
+    # Checks whether sizes match up, checks whether graticule was input
+    x, y, Zs = _parse_args(args)
+    xlen, ylen = x.shape[-1], y.shape[0]
+    for Z in Zs:
+        if Z.ndim!=2:
+            raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+        elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
+            x = (x[1:] + x[:-1])/2
+            y = (y[1:] + y[:-1])/2 # get centers, given edges
+        elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
+            raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
+                    f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
+                    f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+    # Optionally re-order
+    if order=='F':
+        x, y = x.T, y.T # in case they are 2-dimensional
+        Zs = (Z.T for Z in Zs)
+    elif order!='C':
+        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+    result = func(x, y, *Zs, **kwargs)
+    return result
 
-def wrapper_check_edges(func):
+def _wrapper_check_edges(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_check_edges(func, *args, **kwargs)
+    return wrapper
+def wrapper_check_edges(func, *args, order='C', **kwargs):
     """
     Checks shape of arguments passed to methods like
     `~matplotlib.axes.Axes.pcolormesh`. Ensures we have coordinate *edges*,
@@ -245,34 +281,285 @@ def wrapper_check_edges(func):
     * x, y, Z
     * x, y, U, V
     """
-    @functools.wraps(func)
-    def wrapper_check_edges(*args, order='C', **kwargs):
-        # Checks that sizes match up, checks whether graticule was input
-        x, y, Zs = _parse_args(args)
-        xlen, ylen = x.shape[-1], y.shape[0]
-        for Z in Zs:
-            if Z.ndim!=2:
-                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[1]==xlen and Z.shape[0]==ylen:
-                # If 2D, don't raise error, but don't fix either, because
-                # matplotlib pcolor accepts grid center inputs.
-                if x.ndim==1 and y.ndim==1:
-                    x, y = utils.edges(x), utils.edges(y)
-            elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
-                raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                        f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                        f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
-        # Optionally re-order
-        if order=='F':
-            x, y = x.T, y.T # in case they are 2-dimensional
-            Zs = (Z.T for Z in Zs)
-        elif order!='C':
-            raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-        result = func(x, y, *Zs, **kwargs)
-        return result
-    return wrapper_check_edges
+    # Checks that sizes match up, checks whether graticule was input
+    x, y, Zs = _parse_args(args)
+    xlen, ylen = x.shape[-1], y.shape[0]
+    for Z in Zs:
+        if Z.ndim!=2:
+            raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+        elif Z.shape[1]==xlen and Z.shape[0]==ylen:
+            # If 2D, don't raise error, but don't fix either, because
+            # matplotlib pcolor accepts grid center inputs.
+            if x.ndim==1 and y.ndim==1:
+                x, y = utils.edges(x), utils.edges(y)
+        elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
+            raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
+                    f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
+                    f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+    # Optionally re-order
+    if order=='F':
+        x, y = x.T, y.T # in case they are 2-dimensional
+        Zs = (Z.T for Z in Zs)
+    elif order!='C':
+        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+    result = func(x, y, *Zs, **kwargs)
+    return result
 
-def wrapper_cmap(self, func):
+#------------------------------------------------------------------------------#
+# Simple geographic wrappers
+#------------------------------------------------------------------------------#
+# First basemap recursion fix
+# Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
+# this will cause basemap's self.m.pcolormesh etc. to use *custom* version and
+# cause suite of weird errors. Prevent this recursion with the below decorator.
+def _wrapper_m_call(self, func):
+    """Docorator that calls the basemap version of the function of the same name."""
+    name = func.__name__
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
+    return wrapper
+
+def _wrapper_m_norecurse(self, func):
+    """Decorator to prevent recursion in Basemap method overrides.
+    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        name = getattr(func, '__name__')
+        if self._recurred:
+            # Return the *original* version of the matplotlib method (i.e.
+            # the one we have not wrapped by overriding the __getattribute__
+            # method). We reach this block when basemap.Basemap tries to
+            # call the original method internally.
+            self._recurred = False
+            result = object.__getattribute__(self, name)(*args, **kwargs)
+        else:
+            # Return the version we have wrapped, which itself will call the
+            # basemap.Basemap method thanks to the _wrapper_m_call wrapper.
+            self._recurred = True
+            result = func(*args, **kwargs)
+        self._recurred = False # cleanup, in case recursion never occurred
+        return result
+    return wrapper
+
+def _wrapper_cartopy_linefix(self, func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_cartopy_linefix(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_cartopy_linefix(self, func, *args, transform=PlateCarree, **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
+    and similar for `CartopyAxes`.
+
+    With the default `~cartopy.mpl.geoaxes` API, you need to pass
+    ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
+    longitude and latitude, instead of map projection coordinates.
+    Now, ``transform=cartopy.crs.PlateCarree()`` is the default behavior.
+    """
+    # Simple
+    if isinstance(transform, type):
+        transform = transform() # instantiate
+    result = func(*args, transform=transform, **kwargs)
+    # Some plot functions seem to reset the outlinepatch or
+    # backgroundpatch (???), so need to re-enforce settings.
+    # TODO: Double check this
+    self.format()
+    return result
+
+def _wrapper_basemap_linefix(self, func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_basemap_linefix(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_basemap_linefix(self, func, *args, **kwargs):
+    """
+    Wraps `~mpl_toolkits.basemap.Basemap.plot`,
+    `~mpl_toolkits.basemap.Basemap.scatter`, and similar for
+    `BasemapAxes`.
+
+    With the default `~mpl_toolkits.basemap` API, you need to pass
+    ``latlon=True`` if your data coordinates are longitude and latitude,
+    instead of map projection coordinates. Now, ``latlon=True`` is always
+    used.
+    """
+    kwargs.update(latlon=True)
+    return func(*args, **kwargs)
+
+#------------------------------------------------------------------------------#
+# Geographic grid fixes
+#------------------------------------------------------------------------------#
+def _wrapper_cartopy_gridfix(self, func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_cartopy_gridfix(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contourf`,
+    and similar for `CartopyAxes`.
+
+    Use ``globe=True`` to make the data coverage *circular* (i.e. the last
+    longitude coordinate equals the first longitude coordinate plus 360
+    degrees), and to interpolate to the North and South poles, to eliminate
+    all gaps in the data.
+
+    Warning
+    -------
+    Cartopy contouring methods have issues with circularly wrapped data.
+    Triggers annoying ``TopologyException`` statements, which we suppress
+    with the IPython `~IPython.utils.io.capture_output` tool.
+    This is a workaround. See `this issue
+    <https://github.com/SciTools/cartopy/issues/946>`__.
+    """
+    # Below only works for vector data
+    if lon.ndim==1 and lat.ndim==1:
+        # 1) Fix holes over poles by *interpolating* there (equivalent to
+        # simple mean of highest/lowest latitude points)
+        if globe:
+            Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
+            Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
+            lat = np.concatenate(([-90], lat, [90]))
+            Z = np.concatenate((Z_south, Z, Z_north), axis=0)
+        # 2) Fix seams at map boundary; by ensuring circular coverage
+        if globe and (lon[0] % 360) != ((lon[-1] + 360) % 360):
+            lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
+            Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
+    # Instantiate transform
+    if isinstance(transform, type):
+        transform = transform() # instantiate
+    # Call function
+    with io.capture_output() as captured:
+        result = func(lon, lat, Z, transform=transform, **kwargs)
+    # Some plot functions seem to reset the outlinepatch or
+    # backgroundpatch (???), so need to re-enforce settings.
+    # TODO: Double check this
+    self.format()
+    return result
+
+def _wrapper_basemap_gridfix(self, func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_basemap_gridfix(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
+    """
+    Wraps `~mpl_toolkits.basemap.Basemap.contourf`,
+    `~mpl_toolkits.basemap.Basemap.pcolormesh`, and similar for
+    `BasemapAxes`.
+
+    With the default `~mpl_toolkits.basemap` API, you have to be wary of
+    data crossing the "edges" of your projection, and cycle the longitudes
+    accordingly. Now, the data is cycled automatically to fit within the
+    left and right edges of the map.
+
+    Use ``globe=True`` to interpolate data to the exact map edges and to the
+    North and South poles, so there are no gaps in coverage.
+    """
+    # Raise errors
+    eps = 1e-3
+    lonmin, lonmax = self.m.lonmin, self.m.lonmax
+    if lon.max() > lon.min() + 360 + eps:
+        raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
+    if lon.min() < -360 or lon.max() > 360:
+        raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Must fall in range [-360, 360].')
+    # Establish 360-degree range
+    lon -= 720
+    while True:
+        filter_ = lon<lonmin
+        if filter_.sum()==0:
+            break
+        lon[filter_] += 360
+    # Below only works with vectors
+    if lon.ndim==1 and lat.ndim==1:
+        # 1. Roll, accounting for whether ends are identical
+        # If go from 0,1,...,359,0 (i.e. the borders), returns id of first zero
+        roll = -np.argmin(lon) # always returns *first* value
+        if lon[0]==lon[-1]:
+            lon = np.roll(lon[:-1], roll)
+            lon = np.append(lon, lon[0]+360)
+        else:
+            lon = np.roll(lon, roll)
+        Z = np.roll(Z, roll, axis=1)
+        # 2. Roll in same direction some more, if some points on right-edge
+        # extend more than 360 above the minimum longitude; *they* should be the
+        # ones on west/left-hand-side of map
+        lonroll = np.where(lon>lonmin+360)[0] # tuple of ids
+        if lonroll: # non-empty
+            roll = lon.size-min(lonroll) # e.g. if 10 lons, lonmax id is 9, we want to roll once
+            lon = np.roll(lon, roll) # need to roll foreward
+            Z = np.roll(Z, roll, axis=1) # roll again
+            lon[:roll] -= 360 # retains monotonicity
+        # 3. Set NaN where data not in range lonmin, lonmax
+        # This needs to be done for some regional smaller projections or otherwise
+        # might get weird side-effects due to having valid data way outside of the
+        # map boundaries -- e.g. strange polygons inside an NaN region
+        Z = Z.copy()
+        if lon.size-1==Z.shape[1]: # test western/eastern grid cell edges
+            # remove data where east boundary is east of min longitude or west
+            # boundary is west of max longitude
+            Z[:,(lon[1:]<lonmin) | (lon[:-1]>lonmax)] = np.nan
+        elif lon.size==Z.shape[1]: # test the centers
+            # this just tests centers and pads by one for safety
+            # remember that a *slice* with no valid range just returns empty array
+            where = np.where((lon<lonmin) | (lon>lonmax))[0]
+            Z[:,where[1:-1]] = np.nan
+        if globe:
+            # 4. Fix holes over poles by interpolating there (equivalent to
+            # simple mean of highest/lowest latitude points)
+            # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
+            Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
+            Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
+            lat = np.concatenate(([-90], lat, [90]))
+            Z = np.concatenate((Z_south, Z, Z_north), axis=0)
+            # 5. Fix seams at map boundary; 3 scenarios here:
+            # a. Have edges (e.g. for pcolor), and they fit perfectly against basemap seams.
+            # This does not augment size
+            if lon[0]==lonmin and lon.size-1==Z.shape[1]: # borders fit perfectly
+                pass # do nothing
+            # b. Have edges (e.g. for pcolor), and the projection edge is in-between grid cell boundaries.
+            # This augments size by 1.
+            elif lon.size-1==Z.shape[1]: # no interpolation necessary; just make a new grid cell
+                lon = np.append(lonmin, lon) # append way easier than concatenate
+                lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
+                Z = np.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
+            # c. Have centers (e.g. for contourf), and we need to interpolate to the
+            # left/right edges of the map boundary.
+            # This augments size by 2.
+            elif lon.size==Z.shape[1]: # linearly interpolate to the edges
+                x = np.array([lon[-1], lon[0]+360]) # x
+                if x[0] != x[1]:
+                    y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                    xq = lonmin+360
+                    yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
+                    Z = np.concatenate((yq, Z, yq), axis=1)
+                    lon = np.append(np.append(lonmin, lon), lonmin+360)
+            else:
+                raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
+    # Finally get grid of x/y map projection coordinates
+    lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
+    x, y = self.m(*np.meshgrid(lon, lat))
+    # Prevent error where old boundary, drawn on a different axes, remains
+    # to the Basemap instance, which means it is not in self.patches, which
+    # means Basemap tries to draw it again so it can clip the contours by the
+    # resulting path, which raises error because you can't draw on Artist on multiple axes
+    self.m._mapboundarydrawn = self.boundary # stored the axes-specific boundary here
+    # Call function
+    return func(x, y, Z, **kwargs)
+
+#------------------------------------------------------------------------------#
+# Colormaps and color cycles
+#------------------------------------------------------------------------------#
+def _wrapper_cmap(self, func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return wrapper_cmap(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={}, extend='neither',
+    values=None, levels=None, zero=False, # override levels to be *centered* on zero
+    norm=None, norm_kw={},
+    values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
+    **kwargs):
     """
     Wraps methods that take a ``cmap`` argument, like
     `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
@@ -337,188 +624,110 @@ def wrapper_cmap(self, func):
     """
     # This post https://stackoverflow.com/a/48614231/4970632
     # helped me figure some of this stuff out.
-    @functools.wraps(func)
-    def wrapper_cmap(*args, cmap=None, cmap_kw={}, extend='neither',
-                values=None, levels=None, zero=False, # override levels to be *centered* on zero
-                norm=None, norm_kw={},
-                values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
-                **kwargs):
-        # Optionally pass level centers instead of level edges
-        # NOTE: See the norm_preprocessor section below for why we funnel
-        # results through a normalizer here
-        if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
-            values_as_levels = False # get levels later down the line
-        if np.iterable(values) and values_as_levels:
-            # Special case of LinearSegmentedNorm, just get edges
-            if isinstance(norm, colortools.LinearSegmentedNorm) or \
-                (isinstance(norm, str) and 'segment' in norm):
+    # Optionally pass level centers instead of level edges
+    # NOTE: See the norm_preprocessor section below for why we funnel
+    # results through a normalizer here
+    if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
+        values_as_levels = False # get levels later down the line
+    if np.iterable(values) and values_as_levels:
+        # Special case of LinearSegmentedNorm, just get edges
+        if isinstance(norm, colortools.LinearSegmentedNorm) or \
+            (isinstance(norm, str) and 'segment' in norm):
+            levels = utils.edges(values)
+        # Else, see what pops out
+        else:
+            norm_tmp = colortools.Norm(norm, **norm_kw)
+            if norm_tmp: # is not None
+                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+            else:
                 levels = utils.edges(values)
-            # Else, see what pops out
-            else:
-                norm_tmp = colortools.Norm(norm, **norm_kw)
-                if norm_tmp: # is not None
-                    levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+    levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+
+    # Call function with custom kwargs
+    name = func.__name__
+    if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
+        kwargs.update({'levels': levels, 'extend': extend})
+    if name == 'cmapline':
+        kwargs.update({'values': values}) # implement this directly
+    if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
+        kwargs.update({'aspect': 'auto'})
+    result = func(*args, **kwargs)
+    if not getattr(result, 'extend', None):
+        result.extend = extend # will already be on there for some funcs
+
+    # Get levels automatically determined by contourf, or make them
+    # from the automatically chosen pcolor/imshow clims.
+    # TODO: This still is not respected for hexbin 'log' norm for
+    # some reason, figure out fix.
+    if not np.iterable(levels): # i.e. was an integer
+        # Some tools automatically generate levels, like contourf.
+        # Others will just automatically impose clims, like pcolor.
+        # Below accounts for both options.
+        if hasattr(result, 'levels'):
+            levels = result.levels
+        else:
+            levels = np.linspace(*result.get_clim(), levels)
+        # Center the levels
+        # NOTE: When contourf has already rendered contours, they *cannot* be
+        # changed/updated -- must be redrawn!
+        if zero:
+            abs_max = max([abs(max(levels)), abs(min(levels))])
+            levels = np.linspace(-abs_max, abs_max, len(levels))
+            if hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
+                if hasattr(result, 'collections'):
+                    for artist in result.collections:
+                        artist.set_visible(False)
+                elif hasattr(result, 'set_visible'):
+                    result.set_visible(False)
                 else:
-                    levels = utils.edges(values)
-        levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+                    raise ValueError(f'Unknown object {result}. Cannot center colormap levels.')
+                kwargs['levels'] = levels
+                result = func(*args, **kwargs)
+    result.levels = levels # make sure they are on there!
 
-        # Call function with custom kwargs
-        name = func.__name__
-        if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
-            kwargs.update({'levels': levels, 'extend': extend})
-        if name == 'cmapline':
-            kwargs.update({'values': values}) # implement this directly
-        if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
-            kwargs.update({'aspect': 'auto'})
-        result = func(*args, **kwargs)
-        if not getattr(result, 'extend', None):
-            result.extend = extend # will already be on there for some funcs
-
-        # Get levels automatically determined by contourf, or make them
-        # from the automatically chosen pcolor/imshow clims.
-        # TODO: This still is not respected for hexbin 'log' norm for
-        # some reason, figure out fix.
-        if not np.iterable(levels): # i.e. was an integer
-            # Some tools automatically generate levels, like contourf.
-            # Others will just automatically impose clims, like pcolor.
-            # Below accounts for both options.
-            if hasattr(result, 'levels'):
-                levels = result.levels
-            else:
-                levels = np.linspace(*result.get_clim(), levels)
-            # Center the levels
-            # NOTE: When contourf has already rendered contours, they *cannot* be
-            # changed/updated -- must be redrawn!
-            if zero:
-                abs_max = max([abs(max(levels)), abs(min(levels))])
-                levels = np.linspace(-abs_max, abs_max, len(levels))
-                if hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
-                    if hasattr(result, 'collections'):
-                        for artist in result.collections:
-                            artist.set_visible(False)
-                    elif hasattr(result, 'set_visible'):
-                        result.set_visible(False)
-                    else:
-                        raise ValueError(f'Unknown object {result}. Cannot center colormap levels.')
-                    kwargs['levels'] = levels
-                    result = func(*args, **kwargs)
-        result.levels = levels # make sure they are on there!
-
-        # Contour *lines* can be colormapped, but this should not be
-        # default if user did not input a cmap
-        if name in _contour_methods and cmap is None:
-            return result
-
-        # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
-        # in logarithmic space, or warped to diverge from center from a
-        # given midpoint like zero
-        norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
-        if hasattr(result, 'norm') and norm_preprocess is None:
-            norm_preprocess = result.norm
-
-        # Create colors
-        N = None # will be ignored
-        norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
-        result.set_norm(norm)
-
-        # Specify colormap
-        cmap = cmap or rc['image.cmap']
-        if isinstance(cmap, (str, dict, mcolors.Colormap)):
-            cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, N=N, extend=extend, **cmap_kw)
-        if not cmap._isinit:
-            cmap._init()
-        result.set_cmap(cmap)
-
-        # Fix white lines between filled contours/mesh
-        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-        if name in _contourf_methods:
-            for contour in result.collections:
-                contour.set_edgecolor('face')
-                contour.set_linewidth(linewidth)
-        if name in _pcolor_methods:
-            result.set_edgecolor('face')
-            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+    # Contour *lines* can be colormapped, but this should not be
+    # default if user did not input a cmap
+    if name in _contour_methods and cmap is None:
         return result
 
-    return wrapper_cmap
+    # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
+    # in logarithmic space, or warped to diverge from center from a
+    # given midpoint like zero
+    norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
+    if hasattr(result, 'norm') and norm_preprocess is None:
+        norm_preprocess = result.norm
 
-#------------------------------------------------------------------------------#
-# Simpler wrappers, wrappers for plot and scatter methods
-#------------------------------------------------------------------------------#
-def wrapper_legend(self, func):
-    """Just calls `legend_factory`."""
+    # Create colors
+    N = None # will be ignored
+    norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
+    result.set_norm(norm)
+
+    # Specify colormap
+    cmap = cmap or rc['image.cmap']
+    if isinstance(cmap, (str, dict, mcolors.Colormap)):
+        cmap = cmap, # make a tuple
+    cmap = colortools.Colormap(*cmap, N=N, extend=extend, **cmap_kw)
+    if not cmap._isinit:
+        cmap._init()
+    result.set_cmap(cmap)
+
+    # Fix white lines between filled contours/mesh
+    linewidth = 0.4 # seems to be lowest threshold where white lines disappear
+    if name in _contourf_methods:
+        for contour in result.collections:
+            contour.set_edgecolor('face')
+            contour.set_linewidth(linewidth)
+    if name in _pcolor_methods:
+        result.set_edgecolor('face')
+        result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+    return result
+
+def _wrapper_cycle(self, func):
     @functools.wraps(func)
-    def wrapper_legend(*args, order='C', **kwargs):
-        return legend_factory(self, *args, **kwargs)
-    return wrapper_legend
-
-def wrapper_plot(self, func):
-    """
-    As in `~matplotlib.axes.Axes.plot`, but calls `~BaseAxes.cmapline`
-    if ``cmap`` is passed by the user.
-
-    Parameters
-    ----------
-    *args
-        Passed to `~matplotlib.axes.Axes.plot`.
-    cmap, values
-        Passed to `~BaseAxes.cmapline`.
-    **kwargs
-        `~matplotlib.lines.Line2D` properties.
-    """
-    def wrapper_plot(*args, cmap=None, values=None, **kwargs):
-        # Make normal boring lines
-        if cmap is None:
-            lines = func(*args, **kwargs)
-        # Make special colormap lines
-        else:
-            lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
-        return lines
-    return wrapper_plot
-
-def wrapper_scatter(self, func):
-    """
-    As in `~matplotlib.axes.Axes.scatter`, but adds optional keyword args
-    more consistent with the `~matplotlib.axes.Axes.plot` keywords.
-
-    Parameters
-    ----------
-    c, color, markercolor : None or str or (R,G,B) tuple, or list thereof, optional
-        Aliases for the marker fill color.
-    s, size, markersize : None or float, or list thereof, optional
-        Aliases for the marker size.
-    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
-        Aliases for the marker edge width.
-    edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
-        Aliases for the marker edge color.
-    **kwargs
-        Passed to `~matplotlib.axes.Axes.scatter`.
-    """
-    @functools.wraps(func)
-    def wrapper_scatter(*args,
-        c=None, color=None, markercolor=None,
-        s=None, size=None, markersize=None,
-        lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
-        edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
-        **kwargs):
-        # Manage input arguments
-        if len(args)>4:
-            raise ValueError(f'Function accepts up to 4 args, received {len(args)}.')
-        args = [*args]
-        if len(args)>3:
-            c = args.pop(3)
-        if len(args)>2:
-            s = args.pop(2)
-        # Apply some aliases for keyword arguments
-        c = _default(c, color, markercolor)
-        s = _default(s, size, markersize)
-        lws = _default(lw, linewidths, linewidth, markeredgewidths, markeredgewidth)
-        ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
-        return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
-    return wrapper_scatter
-
-def wrapper_cycle(self, func):
+    def wrapper(*args, **kwargs):
+        return wrapper_cycle(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
     """
     Wraps methods that use the color cycler for default line and patch
     colors, like `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
@@ -548,269 +757,201 @@ def wrapper_cycle(self, func):
     The `set_prop_cycle` command modifies underlying 
     `_get_lines` and `_get_patches_for_fill`.
     """
-    @functools.wraps(func)
-    def wrapper_cycle(*args, cycle=None, cycle_kw={}, **kwargs):
-        # Determine and temporarily set cycler
-        # WARNING: Axes cycle as no getter, only setter (set_prop_cycle), which
-        # sets a 'prop_cycler' attribute. But this must get deleted down the line
-        # because it is never present (even using pyplot instead of proplot).
-        # Thus cannot check whether 'local' cycle has changed, can only compare
-        # against the global cycle.
-        if not np.iterable(cycle) or isinstance(cycle, str):
-            cycle = cycle,
-        if cycle[0] is not None:
-            # Get the new group of colors
-            cycle = colortools.Cycle(*cycle, **cycle_kw)
-            # Compare to the original group of colors, and only reset the
-            # cycle if this group of colors is new
-            # NOTE: If cycler is in fact unchanged, this will not reset the color
-            # position, as it cycles us back to the original position!
-            # WARNING: Did not wrap set_prop_cycle because that calls secondary
-            # functions to get the actual cycler, gets messy. Though this uses
-            # private API and may be more fragile.
-            i = 0
-            cycler = self._get_lines.prop_cycler # this is an itertools cycler, has no length, we will just cycle over user result cycle length
-            cycle_orig = []
-            while i<len(cycle):
-                next_ = next(cycler)
-                if 'color' in next_:
-                    cycle_orig.append(next_['color'])
-                i += 1
-            if {*cycle_orig} != {*cycle}: # order is immaterial
-                self.set_prop_cycle(color=cycle)
-        return func(*args, **kwargs)
-    return wrapper_cycle
+    # Determine and temporarily set cycler
+    # WARNING: Axes cycle as no getter, only setter (set_prop_cycle), which
+    # sets a 'prop_cycler' attribute. But this must get deleted down the line
+    # because it is never present (even using pyplot instead of proplot).
+    # Thus cannot check whether 'local' cycle has changed, can only compare
+    # against the global cycle.
+    if not np.iterable(cycle) or isinstance(cycle, str):
+        cycle = cycle,
+    if cycle[0] is not None:
+        # Get the new group of colors
+        cycle = colortools.Cycle(*cycle, **cycle_kw)
+        # Compare to the original group of colors, and only reset the
+        # cycle if this group of colors is new
+        # NOTE: If cycler is in fact unchanged, this will not reset the color
+        # position, as it cycles us back to the original position!
+        # WARNING: Did not wrap set_prop_cycle because that calls secondary
+        # functions to get the actual cycler, gets messy. Though this uses
+        # private API and may be more fragile.
+        i = 0
+        cycler = self._get_lines.prop_cycler # this is an itertools cycler, has no length, we will just cycle over user result cycle length
+        cycle_orig = []
+        while i<len(cycle):
+            next_ = next(cycler)
+            if 'color' in next_:
+                cycle_orig.append(next_['color'])
+            i += 1
+        if {*cycle_orig} != {*cycle}: # order is immaterial
+            self.set_prop_cycle(color=cycle)
+    return func(*args, **kwargs)
 
 #------------------------------------------------------------------------------#
-# Helper functions for basemap and cartopy plot overrides
-# NOTE: These wrappers should be invoked *after* wrapper_check_centers and wrapper_check_edges,
-# which perform basic shape checking and permute the data array, so the data
-# will now be y by x (or lat by lon) instead of lon by lat.
+# Simple wrappers that apply to just one function
 #------------------------------------------------------------------------------#
-# Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
-# this will cause basemap's self.m.pcolormesh etc. to use my *custom* version and
-# cause a suite of weird errors. Prevent this recursion with the below decorator.
-def _wrapper_m_call(self, func):
-    """Docorator that calls the basemap version of the function of the same name."""
-    name = func.__name__
+def _wrapper_legend(self, func):
+    """Just calls `legend_factory`. No public documentation necessary."""
     @functools.wraps(func)
-    def _wrapper_m_call(*args, **kwargs):
-        return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
-    return _wrapper_m_call
+    def wrapper(*args, **kwargs):
+        return legend_factory(self, *args, **kwargs)
+    return wrapper
 
-def _wrapper_m_norecurse(self, func):
-    """Decorator to prevent recursion in Basemap method overrides.
-    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
+def _wrapper_plot(self, func):
     @functools.wraps(func)
-    def _wrapper_m_norecurse(*args, **kwargs):
-        name = getattr(func, '__name__')
-        if self._recurred:
-            # Return the *original* version of the matplotlib method (i.e.
-            # the one we have not wrapped by overriding the __getattribute__
-            # method). We reach this block when basemap.Basemap tries to
-            # call the original method internally.
-            self._recurred = False
-            result = object.__getattribute__(self, name)(*args, **kwargs)
-        else:
-            # Return the version we have wrapped, which itself will call the
-            # basemap.Basemap method thanks to the _wrapper_m_call wrapper.
-            self._recurred = True
-            result = func(*args, **kwargs)
-        self._recurred = False # cleanup, in case recursion never occurred
-        return result
-    return _wrapper_m_norecurse
-
-def wrapper_basemap_linefix(self, func):
+    def wrapper(*args, **kwargs):
+        return wrapper_plot(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_plot(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Wraps `~mpl_toolkits.basemap.Basemap.plot`,
-    `~mpl_toolkits.basemap.Basemap.scatter`, and similar for
-    `BasemapAxes`.
+    As in `~matplotlib.axes.Axes.plot`, but calls `~BaseAxes.cmapline`
+    if ``cmap`` is passed by the user.
 
-    With the default `~mpl_toolkits.basemap` API, you need to pass
-    ``latlon=True`` if your data coordinates are longitude and latitude,
-    instead of map projection coordinates. Now, ``latlon=True`` is always
-    used.
+    Parameters
+    ----------
+    *args
+        Passed to `~matplotlib.axes.Axes.plot`.
+    cmap, values
+        Passed to `~BaseAxes.cmapline`.
+    **kwargs
+        `~matplotlib.lines.Line2D` properties.
     """
+    # Make normal boring lines
+    if cmap is None:
+        lines = func(*args, **kwargs)
+    # Make special colormap lines
+    else:
+        lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
+    return lines
+
+def _wrapper_scatter(self, func):
     @functools.wraps(func)
-    def wrapper_basemap_linefix(*args, **kwargs):
-        kwargs.update(latlon=True)
-        return func(*args, **kwargs)
-    return wrapper_basemap_linefix
-
-def wrapper_basemap_gridfix(self, func):
+    def wrapper(*args, **kwargs):
+        return wrapper_scatter(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_scatter(self, func, *args,
+    c=None, color=None, markercolor=None,
+    s=None, size=None, markersize=None,
+    lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
+    edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
+    **kwargs):
     """
-    Wraps `~mpl_toolkits.basemap.Basemap.contourf`,
-    `~mpl_toolkits.basemap.Basemap.pcolormesh`, and similar for
-    `BasemapAxes`.
+    As in `~matplotlib.axes.Axes.scatter`, but adds optional keyword args
+    more consistent with the `~matplotlib.axes.Axes.plot` keywords.
 
-    With the default `~mpl_toolkits.basemap` API, you have to be wary of
-    data crossing the "edges" of your projection, and cycle the longitudes
-    accordingly. Now, the data is cycled automatically to fit within the
-    left and right edges of the map.
-
-    Use ``globe=True`` to interpolate data to the exact map edges and to the
-    North and South poles, so there are no gaps in coverage.
+    Parameters
+    ----------
+    c, color, markercolor : None or str or (R,G,B) tuple, or list thereof, optional
+        Aliases for the marker fill color.
+    s, size, markersize : None or float, or list thereof, optional
+        Aliases for the marker size.
+    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
+        Aliases for the marker edge width.
+    edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
+        Aliases for the marker edge color.
+    **kwargs
+        Passed to `~matplotlib.axes.Axes.scatter`.
     """
+    # Manage input arguments
+    if len(args)>4:
+        raise ValueError(f'Function accepts up to 4 args, received {len(args)}.')
+    args = [*args]
+    if len(args)>3:
+        c = args.pop(3)
+    if len(args)>2:
+        s = args.pop(2)
+    # Apply some aliases for keyword arguments
+    c = _default(c, color, markercolor)
+    s = _default(s, size, markersize)
+    lws = _default(lw, linewidths, linewidth, markeredgewidths, markeredgewidth)
+    ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
+    return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
+
+def _wrapper_text(self, func):
     @functools.wraps(func)
-    def wrapper_basemap_gridfix(lon, lat, Z, globe=False, **kwargs):
-        # Raise errors
-        eps = 1e-3
-        lonmin, lonmax = self.m.lonmin, self.m.lonmax
-        if lon.max() > lon.min() + 360 + eps:
-            raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
-        if lon.min() < -360 or lon.max() > 360:
-            raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Must fall in range [-360, 360].')
-        # Establish 360-degree range
-        lon -= 720
-        while True:
-            filter_ = lon<lonmin
-            if filter_.sum()==0:
-                break
-            lon[filter_] += 360
-        # Below only works with vectors
-        if lon.ndim==1 and lat.ndim==1:
-            # 1. Roll, accounting for whether ends are identical
-            # If go from 0,1,...,359,0 (i.e. the borders), returns id of first zero
-            roll = -np.argmin(lon) # always returns *first* value
-            if lon[0]==lon[-1]:
-                lon = np.roll(lon[:-1], roll)
-                lon = np.append(lon, lon[0]+360)
-            else:
-                lon = np.roll(lon, roll)
-            Z = np.roll(Z, roll, axis=1)
-            # 2. Roll in same direction some more, if some points on right-edge
-            # extend more than 360 above the minimum longitude; THEY should be the
-            # ones on west/left-hand-side of map
-            lonroll = np.where(lon>lonmin+360)[0] # tuple of ids
-            if lonroll: # non-empty
-                roll = lon.size-min(lonroll) # e.g. if 10 lons, lonmax id is 9, we want to roll once
-                lon = np.roll(lon, roll) # need to roll foreward
-                Z = np.roll(Z, roll, axis=1) # roll again
-                lon[:roll] -= 360 # retains monotonicity
-            # 3. Set NaN where data not in range lonmin, lonmax
-            # This needs to be done for some regional smaller projections or otherwise
-            # might get weird side-effects due to having valid data way outside of the
-            # map boundaries -- e.g. strange polygons inside an NaN region
-            Z = Z.copy()
-            if lon.size-1==Z.shape[1]: # test western/eastern grid cell edges
-                # remove data where east boundary is east of min longitude or west
-                # boundary is west of max longitude
-                Z[:,(lon[1:]<lonmin) | (lon[:-1]>lonmax)] = np.nan
-            elif lon.size==Z.shape[1]: # test the centers
-                # this just tests centers and pads by one for safety
-                # remember that a *slice* with no valid range just returns empty array
-                where = np.where((lon<lonmin) | (lon>lonmax))[0]
-                Z[:,where[1:-1]] = np.nan
-            if globe:
-                # 4. Fix holes over poles by interpolating there (equivalent to
-                # simple mean of highest/lowest latitude points)
-                # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
-                Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-                Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-                lat = np.concatenate(([-90], lat, [90]))
-                Z = np.concatenate((Z_south, Z, Z_north), axis=0)
-                # 5. Fix seams at map boundary; 3 scenarios here:
-                # Have edges (e.g. for pcolor), and they fit perfectly against basemap seams
-                # this does not augment size
-                if lon[0]==lonmin and lon.size-1==Z.shape[1]: # borders fit perfectly
-                    pass # do nothing
-                # Have edges (e.g. for pcolor), and the projection edge is in-between grid cell boundaries
-                # this augments size by 1
-                elif lon.size-1==Z.shape[1]: # no interpolation necessary; just make a new grid cell
-                    lon = np.append(lonmin, lon) # append way easier than concatenate
-                    lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
-                    Z = np.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
-                # Have centers (e.g. for contourf), and we need to interpolate to the
-                # left/right edges of the map boundary
-                # this augments size by 2
-                elif lon.size==Z.shape[1]: # linearly interpolate to the edges
-                    x = np.array([lon[-1], lon[0]+360]) # x
-                    if x[0] != x[1]:
-                        y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-                        xq = lonmin+360
-                        yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
-                        Z = np.concatenate((yq, Z, yq), axis=1)
-                        lon = np.append(np.append(lonmin, lon), lonmin+360)
-                else:
-                    raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
-        # Finally get grid of x/y map projection coordinates
-        lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
-        x, y = self.m(*np.meshgrid(lon, lat))
-        # Prevent error where old boundary, drawn on a different axes, remains
-        # to the Basemap instance, which means it is not in self.patches, which
-        # means Basemap tries to draw it again so it can clip the contours by the
-        # resulting path, which raises error because you can't draw on Artist on multiple axes
-        self.m._mapboundarydrawn = self.boundary # stored the axes-specific boundary here
-        # Call function
-        return func(x, y, Z, **kwargs)
-    return wrapper_basemap_gridfix
-
-def wrapper_cartopy_linefix(self, func):
+    def wrapper(*args, **kwargs):
+        return wrapper_text(self, func, *args, **kwargs)
+    return wrapper
+def wrapper_text(self, func, x, y, text,
+    transform='data',
+    border=False, border_kw={},
+    invert=False,
+    linewidth=2, lw=None, **kwargs): # linewidth is for the border
     """
-    Wraps `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
-    and similar for `CartopyAxes`.
+    Wrapper around original text method. Mainly adds feature for drawing
+    "borders" around text. See `~matplotlib.axes.Axes.text` for details.
 
-    With the default `~cartopy.mpl.geoaxes` API, you need to pass
-    ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
-    longitude and latitude, instead of map projection coordinates.
-    Now, ``transform=cartopy.crs.PlateCarree()`` is the default behavior.
+    Parameters
+    ----------
+    x, y : float
+        The *x* and *y* coordinates for the text.
+    text : str
+        The text.
+    transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
+        The transform, or a string pointing to either of the
+        `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
+        or `~matplotlib.figure.Figure.transFigure` transforms. Default is
+        ``'data'`` (unchanged).
+    border : bool, optional
+        Whether to draw border around text.
+    border_kw : dict-like, optional
+        Passed to `~matplotlib.path_effects.Stroke` if drawing a border.
+    invert : bool, optional
+        Ignored if `border` is ``False``. Whether to draw black text
+        with a white border (``False``), or white text on a black
+        border (``True``).
+    lw, linewidth : float, optional
+        Ignored if `border` is ``False``. The width of the text border.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to `~matplotlib.text.Text` instantiator.
     """
-    @functools.wraps(func)
-    def wrapper_cartopy_linefix(*args, transform=PlateCarree, **kwargs):
-        # Simple
-        if isinstance(transform, type):
-            transform = transform() # instantiate
-        result = func(*args, transform=transform, **kwargs)
-        # Some plot functions seem to reset the outlinepatch or
-        # backgroundpatch (???), so need to re-enforce settings.
-        self.format()
-        return result
-    return wrapper_cartopy_linefix
-
-def wrapper_cartopy_gridfix(self, func):
-    """
-    Wraps `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contourf`,
-    and similar for `CartopyAxes`.
-
-    Use ``globe=True`` to make the data coverage *circular* (i.e. the last
-    longitude coordinate equals the first longitude coordinate plus 360
-    degrees), and to interpolate to the North and South poles, to eliminate
-    all gaps in the data.
-
-    Warning
-    -------
-    Cartopy contouring methods have issues with circularly wrapped data.
-    Triggers annoying ``TopologyException`` statements, which we suppress
-    with the IPython `~IPython.utils.io.capture_output` tool.
-    This is a workaround. See `this issue
-    <https://github.com/SciTools/cartopy/issues/946>`__.
-    """
-    @functools.wraps(func)
-    def wrapper_cartopy_gridfix(lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
-        # Below only works for vector data
-        if lon.ndim==1 and lat.ndim==1:
-            # 1) Fix holes over poles by *interpolating* there (equivalent to
-            # simple mean of highest/lowest latitude points)
-            if globe:
-                Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-                Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-                lat = np.concatenate(([-90], lat, [90]))
-                Z = np.concatenate((Z_south, Z, Z_north), axis=0)
-            # 2) Fix seams at map boundary; by ensuring circular coverage
-            if globe and (lon[0] % 360) != ((lon[-1] + 360) % 360):
-                lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
-                Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
-        # Instantiate transform
-        if isinstance(transform, type):
-            transform = transform() # instantiate
-        # Call function
-        with io.capture_output() as captured:
-            result = func(lon, lat, Z, transform=transform, **kwargs)
-        # Some plot functions seem to reset the outlinepatch or
-        # backgroundpatch (???), so need to re-enforce settings.
-        self.format()
-        return result
-    return wrapper_cartopy_gridfix
+    # Get default transform by string name
+    # Note basemap gridlining methods call text, so if you change the
+    # default transform, you will not be able to draw latitude and
+    # longitude labels! Leave it alone.
+    linewidth = lw or linewidth
+    if not transform:
+        transform = self.transData
+    elif isinstance(transform, mtransforms.Transform):
+        pass # do nothing
+    elif transform=='figure':
+        transform = self.figure.transFigure
+    elif transform=='axes':
+        transform = self.transAxes
+    elif transform=='data':
+        transform = self.transData
+    else:
+        raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
+    # Raise more helpful error message if font unavailable
+    name = kwargs.pop('fontname', rc['fontname']) # is actually font.sans-serif
+    if name not in fonttools.fonts:
+        suffix = ''
+        if name not in fonttools._missing_fonts:
+            suffix = f' Available fonts are: {", ".join(fonttools.fonts)}.'
+        warnings.warn(f'Font "{name}" unavailable, falling back to DejaVu Sans. Consider running proplot.install_fonts().' + suffix)
+        fonttools._missing_fonts.append(name)
+        name = 'DejaVu Sans'
+    # Call parent, with custom rc settings
+    # These seem to sometimes not get used by default
+    size   = kwargs.pop('fontsize', rc.get('font.size'))
+    color  = kwargs.pop('color', rc.get('text.color'))
+    weight = kwargs.pop('font', rc.get('font.weight'))
+    obj = func(x, y, text,
+        transform=transform, fontname=name,
+        fontsize=size, color=color, fontweight=weight, **kwargs)
+    # Optionally draw border around text
+    if border:
+        facecolor, bgcolor = color, 'w'
+        if invert:
+            facecolor, bgcolor = bgcolor, facecolor
+        kwargs = {'linewidth':linewidth, 'foreground':bgcolor, 'joinstyle':'miter'}
+        kwargs.update(border_kw)
+        obj.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
+            'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]})
+    return obj
 
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
@@ -934,8 +1075,7 @@ class BaseAxes(maxes.Axes):
 
         # Apply all 'special' props
         rc._getitem_mode = 0 # might still be non-zero if had error
-        with rc._context(mode=1):
-            self.format()
+        self.format(mode=1)
 
     # Apply some simple features, and disable spectral and triangular features
     # See: https://stackoverflow.com/a/23126260/4970632
@@ -943,7 +1083,8 @@ class BaseAxes(maxes.Axes):
     # for all Axes methods ordered logically in class declaration.
     def __getattribute__(self, attr, *args):
         """
-        Wraps the following `~matplotlib.axes.Axes` methods:
+        Disables methods listed in `disabled_methods`, and
+        wraps the following `~matplotlib.axes.Axes` methods:
 
         * The `cmap_methods` methods are wrapped by `wrapper_cmap`.
         * The `cycle_methods` methods are wrapped by `wrapper_cycle`.
@@ -959,21 +1100,23 @@ class BaseAxes(maxes.Axes):
         ``rpanel`` for the ``bottompanel``, ``toppanel``, ``leftpanel``, and
         ``rightpanel`` attributes.
         """
-        for message,attrs in _disabled_methods.items():
+        for message,attrs in disabled_methods.items():
             if attr in attrs:
                 raise NotImplementedError(message.format(attr))
         attr = _aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
         if attr in cmap_methods:
-            obj = wrapper_cmap(self, obj)
+            obj = _wrapper_cmap(self, obj)
         elif attr in cycle_methods:
-            obj = wrapper_cycle(self, obj)
-        if attr=='scatter':
-            obj = wrapper_scatter(self, obj)
+            obj = _wrapper_cycle(self, obj)
+        if attr=='text':
+            obj = _wrapper_text(self, obj)
         elif attr=='plot':
-            obj = wrapper_plot(self, obj)
+            obj = _wrapper_plot(self, obj)
+        elif attr=='scatter':
+            obj = _wrapper_scatter(self, obj)
         elif attr=='legend' and not isinstance(self, PanelAxes):
-            obj = wrapper_legend(self, obj)
+            obj = _wrapper_legend(self, obj)
         return obj
 
     def _topmost_subspec(self):
@@ -1092,7 +1235,7 @@ class BaseAxes(maxes.Axes):
     def _parse_title_args(self, abc=False, pos=None, border=None, linewidth=None, **kwargs):
         """Position title text to the left, center, or right and either
         inside or outside the axes (default is center, outside)."""
-        # Maybe all this crap was done already, in our first call to format()
+        # Maybe all this crap was done already in first call to format
         if pos is None:
             return kwargs
         # Determine position
@@ -1145,17 +1288,17 @@ class BaseAxes(maxes.Axes):
                 self._title_inside = ('i' in pos)
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
-    def format(self, rc_kw=None, **kwargs):
+    def format(self, rc_kw=None, mode=2, **kwargs):
         """
         Sets up temporary rc settings and calls `~BaseAxes.smart_update`.
 
         Parameters
         ----------
-        rc_kw
+        rc_kw : None or dict, optional
             A dictionary containing "rc" configuration settings that will
             be applied to this axes. Temporarily updates the
             `~proplot.rcmod.rc` object. See `~proplot.rcmod` for details.
-        kwargs
+        **kwargs
             Any of three options:
 
             * A keyword arg for `BaseAxes.smart_update`,
@@ -1166,6 +1309,15 @@ class BaseAxes(maxes.Axes):
 
             The first two options will update the `~proplot.rcmod.rc`
             object, just like `rc_kw`.
+
+        Other parameters
+        ----------------
+        mode : int, optional
+            The "getitem mode". Determines whether queries to the
+            `~proplot.rcmod.rc` object will ignore :ref:`rcParams`.
+            This can help prevent a massive number of unnecessary lookups
+            when the settings haven't been changed by the user.
+            See `~proplot.rcmod.rc_configurator` for details.
 
         See also
         --------
@@ -1194,7 +1346,7 @@ class BaseAxes(maxes.Axes):
             elif self._side=='top':
                 kw.update({'xloc':'top', 'xlabelloc':'top', 'xticklabelloc':'top'})
         kw.update(kw_extra)
-        with rc._context(rc_kw, mode=2):
+        with rc.context(rc_kw, mode=mode):
             self.smart_update(**kw)
 
     def smart_update(self, title=None, abc=None,
@@ -1425,87 +1577,6 @@ class BaseAxes(maxes.Axes):
         kwargs.update({'ticklocation':'bottom', 'extendlength':extend, 'label':label, 'clabel':clabel})
         return colorbar_factory(ax, *args, **kwargs)
 
-    def text(self, x, y, text,
-            transform='data',
-            border=False, border_kw={},
-            invert=False,
-            linewidth=2, lw=None, **kwargs): # linewidth is for the border
-        """
-        Wrapper around original text method. Mainly adds feature for drawing
-        "borders" around text. See `~matplotlib.axes.Axes.text` for details.
-
-        Parameters
-        ----------
-        x, y : float
-            The *x* and *y* coordinates for the text.
-        text : str
-            The text.
-        transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
-            The coordinate system (i.e. "transform"), or a string pointing
-            to a transform that we will look up. Default is ``'data'``.
-        border : bool, optional
-            Whether to draw border around text.
-        border_kw : dict-like, optional
-            Passed to `~matplotlib.path_effects.Stroke` if drawing a border.
-        invert : bool, optional
-            Ignored if `border` is ``False``. Whether to draw black text
-            with a white border (``False``), or white text on a black
-            border (``True``).
-        lw
-            Alias for `linewidth`.
-        linewidth : float, optional
-            Ignored if `border` is ``False``. The width of the text border.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `~matplotlib.text.Text` instantiator.
-        """
-        # Get default transform by string name
-        # Note basemap gridlining methods call text, so if you change the
-        # default transform, you will not be able to draw latitude and
-        # longitude labels! Leave it alone.
-        linewidth = lw or linewidth
-        if not transform:
-            transform = self.transData
-        elif isinstance(transform, mtransforms.Transform):
-            pass # do nothing
-        elif transform=='figure':
-            transform = self.figure.transFigure
-        elif transform=='axes':
-            transform = self.transAxes
-        elif transform=='data':
-            transform = self.transData
-        else:
-            raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
-        # Raise more helpful error message if font unavailable
-        name = kwargs.pop('fontname', rc['fontname']) # is actually font.sans-serif
-        if name not in fonttools.fonts:
-            suffix = ''
-            if name not in fonttools._missing_fonts:
-                suffix = f' Available fonts are: {", ".join(fonttools.fonts)}.'
-            warnings.warn(f'Font "{name}" unavailable, falling back to DejaVu Sans.' + suffix)
-            fonttools._missing_fonts.append(name)
-            name = 'DejaVu Sans'
-        # Call parent, with custom rc settings
-        # These seem to sometimes not get used by default
-        size   = kwargs.pop('fontsize', rc.get('font.size'))
-        color  = kwargs.pop('color', rc.get('text.color'))
-        weight = kwargs.pop('font', rc.get('font.weight'))
-        obj = super().text(x, y, text,
-            transform=transform, fontname=name,
-            fontsize=size, color=color, fontweight=weight, **kwargs)
-        # Optionally draw border around text
-        if border:
-            facecolor, bgcolor = color, 'w'
-            if invert:
-                facecolor, bgcolor = bgcolor, facecolor
-            kwargs = {'linewidth':linewidth, 'foreground':bgcolor, 'joinstyle':'miter'}
-            kwargs.update(border_kw)
-            obj.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
-                'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]})
-        return obj
-
     def cmapline(self, *args, values=None,
             cmap=None, norm=None,
             interp=0, **kwargs):
@@ -1674,9 +1745,9 @@ class XYAxes(BaseAxes):
         """
         obj = super().__getattribute__(attr, *args)
         if attr in centers_methods:
-            obj = wrapper_check_centers(obj)
+            obj = _wrapper_check_centers(obj)
         elif attr in edges_methods:
-            obj = wrapper_check_edges(obj)
+            obj = _wrapper_check_edges(obj)
         return obj
 
     def _share_span_label(self, axis, final=False):
@@ -1890,15 +1961,25 @@ class XYAxes(BaseAxes):
         xminorlocator = _default(xminorticks, xminorlocator) # default is AutoMinorLocator, no setting
         yminorlocator = _default(yminorticks, yminorlocator)
         # Grid defaults are more complicated
-        grid = rc.get('axes.grid') # there is also axes.grid.which and axes.grid.axis
-        axis = rc.get('axes.grid.axis')
-        which = rc.get('axes.grid.which')
-        if axis is None or which is None:
-            raise ValueError('Setting unavailable. Older matplotlib version?')
-        xgrid      = _default(xgrid, grid and axis in ('x','both') and which in ('major','both'))
-        ygrid      = _default(ygrid, grid and axis in ('y','both') and which in ('major','both'))
-        xgridminor = _default(xgridminor, grid and axis in ('x','both') and which in ('minor','both'))
-        ygridminor = _default(ygridminor, grid and axis in ('y','both') and which in ('minor','both'))
+        # NOTE: rcmod will always change *grid* and *grid.which* at the same time.
+        # raise ValueError('Setting unavailable. Older matplotlib version?')
+        # TODO: Make xgridminor, ygridminor, xtickloc, ytickloc all global rc
+        # settings that modify xtick.left, axes.grid.axis, etc., instead of
+        # these keyword args. Results in duplicate behavior maybe.
+        which = rc['axes.grid.which']
+        grid = rc.get('axes.grid', all=False)
+        axis = rc.get('axes.grid.axis', all=True) # always need this property
+        if which is not None or grid is not None: # only if *one* was changed recently!
+            # But no matter what we need *both* to figure out proper xgrid, ygrid arguments
+            # NOTE: Should we try to make xgridminor, ygridminor part of thing?
+            if grid is None:
+                grid = rc.get('axes.grid', all=True)
+            elif which is None:
+                which = rc.get('axes.grid.which', all=True)
+            xgrid      = _default(xgrid, grid and axis in ('x','both') and which in ('major','both'))
+            ygrid      = _default(ygrid, grid and axis in ('y','both') and which in ('major','both'))
+            xgridminor = _default(xgridminor, grid and axis in ('x','both') and which in ('minor','both'))
+            ygridminor = _default(ygridminor, grid and axis in ('y','both') and which in ('minor','both'))
 
         # Override for weird bug where title doesn't get automatically offset
         # from ticklabels in certain circumstance; check out notebook
@@ -2038,12 +2119,15 @@ class XYAxes(BaseAxes):
                 axis.set_label_position(labelloc)
             # Style of ticks
             kw_shared = rc.fill({
+                # 'labelcolor': f'{name}tick.color',
+                # 'labelsize':  f'{name}tick.labelsize'
+                'labelcolor': f'tick.labelcolor', # new props
+                'labelsize':  f'tick.labelsize',
                 'color':      f'{name}tick.color',
-                'labelcolor': f'{name}tick.color',
-                'labelsize':  'axes.labelsize'
                 })
             if color:
                 kw_shared['color'] = color
+                kw_shared['labelcolor'] = color
             if tickdir=='in':
                 kw_shared['pad'] = 1 # ticklabels should be much closer
             if ticklabeldir=='in': # put tick labels inside the plot; TODO check this
@@ -2054,32 +2138,36 @@ class XYAxes(BaseAxes):
                 kw_shared['direction'] = tickdir
             # Apply settings. Also apply gridline settings and major
             # and minor tick settings.
-            builder = lambda prefix: {
+            dict_ = lambda prefix: {
                 'grid_color':     f'{prefix}.color',
                 'grid_alpha':     f'{prefix}.alpha',
                 'grid_linewidth': f'{prefix}.linewidth',
                 'grid_linestyle': f'{prefix}.linestyle',
                 }
             override = getattr(self, 'grid_override', None)
-            grid = _default(override, grid)
-            gridminor = _default(override, gridminor)
-            for which, grid in zip(('major', 'minor'), (grid, gridminor)):
+            # The override should just be a "new default", but user should
+            # be able to override that.
+            # grid = _default(override, grid)
+            # gridminor = _default(override, gridminor)
+            grid = _default(grid, override)
+            gridminor = _default(gridminor, override)
+            for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
+                # Turn grid on
+                if igrid is not None:
+                    axis.grid(igrid, which=which) # toggle with special global props
+                # Grid and tick style
                 if which=='major':
-                    kw_grid = rc.fill(builder('grid'))
+                    kw_grid = rc.fill(dict_('grid'))
                 else:
                     kw_grid_major = kw_grid
-                    kw_grid = rc.fill(builder('gridminor'))
+                    kw_grid = rc.fill(dict_('gridminor'))
                     kw_grid.update({key:value for key,value in kw_grid_major.items() if key not in kw_grid})
                 kw_tick = rc[f'{name}tick.{which}']
                 kw_tick.pop('visible', None) # invalid setting
                 axis.set_tick_params(which=which, **kw_tick, **kw_grid)
-                if grid is not None:
-                    axis.grid(grid, which=which) # toggle with special global props
             axis.set_tick_params(which='both', **kw_sides, **kw_shared)
             # Settings that can't be controlled by set_tick_params
-            kw = rc.fill({'fontname': 'fontname'})
-            if color:
-                kw['color'] = color
+            kw = rc.fill({'fontname': 'fontname', 'weight':'tick.labelweight'})
             for t in axis.get_ticklabels():
                 t.update(kw)
 
@@ -2487,8 +2575,8 @@ class MapAxes(BaseAxes):
     # Originally used property decorators for this but way too verbose
     # See: https://stackoverflow.com/a/23126260/4970632
     def __getattribute__(self, attr, *args):
-        """Disable some methods."""
-        if attr in _map_disabled_methods:
+        """Disables methods listed in `map_disabled_methods`."""
+        if attr in map_disabled_methods:
             raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
@@ -2586,6 +2674,8 @@ class MapAxes(BaseAxes):
         labels = _default(labels, rc.get('geogrid.labels')) or (lonlabels or latlabels) # if any are 'truthy', we toggle labelling
         lonlabels = _default(xlabels, lonlabels)
         latlabels = _default(ylabels, latlabels)
+        if lonlabels or latlabels:
+            labels = True # toggle them at all?
         ilabels = [lonlabels, latlabels]
         for i,(mode,jlabels) in enumerate(zip(('x', 'y'), tuple(ilabels))):
             if jlabels is False:
@@ -2727,13 +2817,13 @@ class CartopyAxes(MapAxes, GeoAxes):
         """
         obj = super().__getattribute__(attr, *args)
         if attr in line_methods:
-            obj = wrapper_cartopy_linefix(self, obj)
+            obj = _wrapper_cartopy_linefix(self, obj)
         elif attr in edges_methods or attr in centers_methods:
-            obj = wrapper_cartopy_gridfix(self, obj)
+            obj = _wrapper_cartopy_gridfix(self, obj)
             if attr in edges_methods:
-                obj = wrapper_check_edges(obj)
+                obj = _wrapper_check_edges(obj)
             else:
-                obj = wrapper_check_centers(obj)
+                obj = _wrapper_check_centers(obj)
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -2986,15 +3076,15 @@ class BasemapAxes(MapAxes):
             obj = _wrapper_m_call(self, obj) # this must be the *last* step!
             if attr in line_methods:
                 if attr[:3] != 'tri':
-                    obj = wrapper_cycle(self, obj)
-                obj = wrapper_basemap_linefix(self, obj)
+                    obj = _wrapper_cycle(self, obj)
+                obj = _wrapper_basemap_linefix(self, obj)
             elif attr in edges_methods or attr in centers_methods:
-                obj = wrapper_cmap(self, obj)
-                obj = wrapper_basemap_gridfix(self, obj)
+                obj = _wrapper_cmap(self, obj)
+                obj = _wrapper_basemap_gridfix(self, obj)
                 if attr in edges_methods:
-                    obj = wrapper_check_edges(obj)
+                    obj = _wrapper_check_edges(obj)
                 else:
-                    obj = wrapper_check_centers(obj)
+                    obj = _wrapper_check_centers(obj)
             obj = _wrapper_m_norecurse(self, obj)
         return obj
 
@@ -3295,7 +3385,7 @@ def colorbar_factory(ax, mappable, values=None,
         clabel=None, label=None,
         ctickminor=False, tickminor=None,
         cgrid=False, grid=None,
-        ticklocation=None, cticklocation=None, ctickdir=None, tickdir=None,
+        ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
         cticks=None, ticks=None, clocator=None, locator=None,
         cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
         clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
@@ -3344,10 +3434,10 @@ def colorbar_factory(ax, mappable, values=None,
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
         sizes to match, because the `extendlength` units are *relative*.
-    ctickdir, ticklocation, cticklocation
-        Aliases for `tickdir`.
-    tickdir : {'bottom', 'top', 'left', 'right'}, optional
-        Whether to draw tick marks pointing inside or outside.
+    ctickloc, tickloc, cticklocation
+        Aliases for `ticklocation`.
+    ticklocation : {'bottom', 'top', 'left', 'right'}, optional
+        Where to draw tick marks on the colorbar.
     clabel, ctickminor, cgrid
         Aliases for `label`, `tickminor`, `grid`.
     label : None or str, optional
@@ -3423,7 +3513,7 @@ def colorbar_factory(ax, mappable, values=None,
     cgrid            = _default(grid, cgrid)
     ctickminor       = _default(tickminor, ctickminor)
     cminorlocator    = _default(minorticks, cminorticks, minorlocator, cminorlocator)
-    cformatter       = _default(ticklabels, cticklabels, formatter, cformatter)
+    cformatter       = _default(ticklabels, cticklabels, formatter, cformatter, 'default')
     clabel           = _default(label, clabel)
     clocator_kw      = _default(locator_kw, clocator_kw)
     cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
@@ -3469,7 +3559,7 @@ def colorbar_factory(ax, mappable, values=None,
     # manually wrap with wrapper_cmap.
     if fromlines or fromcolors:
         cmap   = colortools.Colormap(colors)
-        func = wrapper_cmap(ax, ax.contourf)
+        func = _wrapper_cmap(ax, ax.contourf)
         mappable = func([[0,0],[0,0]],
             values=np.array(values), cmap=cmap, extend='neither',
             norm=(norm or 'segmented')
@@ -3561,7 +3651,7 @@ def colorbar_factory(ax, mappable, values=None,
         scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
-    ticklocation = tickdir or ctickdir or ticklocation
+    ticklocation = _default(tickloc, ctickloc, ticklocation)
     kwargs.update({'ticks':locators[0], 'format':cformatter,
                    'ticklocation':ticklocation,
                    'extendfrac':extendlength})
@@ -3629,6 +3719,6 @@ def colorbar_factory(ax, mappable, values=None,
         cb.solids.set_linewidth(0.2) # something small
         cb.solids.set_edgecolor('face')
         cb.solids.set_rasterized(False)
-    cb.ax.xaxis.set_ticks_position(ticklocation)
+    axis.set_ticks_position(ticklocation)
     return cb
 

@@ -95,7 +95,7 @@ _missing_fonts = []
 #------------------------------------------------------------------------------#
 def install_fonts():
     """
-    Register matplotlib fonts from ``.ttf`` files located in the 'fonts'
+    Registers matplotlib fonts from ``.ttf`` files located in the 'fonts'
     directory.  May require restarting iPython session. Note font cache will
     be deleted in this process, which could cause delays.
 

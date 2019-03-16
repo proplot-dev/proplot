@@ -22,7 +22,6 @@ BaseAxes
       ~BaseAxes.format
       ~BaseAxes.invisible
       ~BaseAxes.smart_update
-      ~BaseAxes.text
 
    .. rubric:: Attributes Documentation
 
@@ -36,4 +35,3 @@ BaseAxes
    .. automethod:: format
    .. automethod:: invisible
    .. automethod:: smart_update
-   .. automethod:: text

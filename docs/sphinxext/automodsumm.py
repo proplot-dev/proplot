@@ -84,6 +84,7 @@ package. It accepts no options.
 """
 
 import abc
+import time
 import inspect
 import os
 import re
@@ -254,6 +255,8 @@ class Automoddiagram(InheritanceDiagram):
 
 # <---------------------automodsumm generation stuff-------------------------->
 def process_automodsumm_generation(app):
+    # print(app.config.automodsumm_inherited_members)
+
     env = app.builder.env
 
     filestosearch = []

@@ -13,7 +13,7 @@ that can help you make beautiful, publication-quality graphics.
 Installation
 ============
 
-This package is a work-in-progress. Currently there is no formal release
+This package is a work-in-progress -- currently, there is no formal release
 on PyPi (but it's coming soon!). For the time being, you may install directly from Github using:
 
 .. code-block:: bash

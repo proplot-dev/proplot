@@ -135,10 +135,9 @@ def _ax_props(axs, renderer):
     yrange = np.array([(ax._colorbar_parent or ax)._yrange for ax in axs])
     return xspans, yspans, xrange, yrange
 
-# Class
 class Figure(mfigure.Figure):
     def __init__(self, figsize, gridspec=None, subplots_kw=None, innertight=None, tight=None,
-            outerpad=None, mainpad=None, innerpad=None,
+            outerpad=None, subplotpad=None, innerpad=None,
             rcreset=True, silent=True, # print various draw statements?
             **kwargs):
         """
@@ -167,7 +166,7 @@ class Figure(mfigure.Figure):
         innertight : bool, optional
             If ``True``, the spacing between main axes and inner panels
             is also automatically adjusted. Defaults to ``True``.
-        outerpad, mainpad, innerpad : None, float, or str, optional
+        outerpad, subplotpad, innerpad : None, float, or str, optional
             Margin size around the tight bounding box around the edge of the
             figure, between main axes in the figure, and between panels
             and their parents, respecitvely. Ignored if `tight` is ``False``.
@@ -192,9 +191,9 @@ class Figure(mfigure.Figure):
         self._silent  = silent # whether to print message when we resize gridspec
         self._rcreset = rcreset
         self._extra_pad      = 0 # sometimes matplotlib fails, cuts off super title! will add to this
-        self._smart_outerpad = units(_default(outerpad, rc['gridspec.outerpad']))
-        self._smart_mainpad  = units(_default(mainpad,  rc['gridspec.mainpad']))
-        self._smart_innerpad = units(_default(innerpad, rc['gridspec.innerpad']))
+        self._smart_outerpad = units(_default(outerpad, rc['subplot.outerpad']))
+        self._smart_mainpad  = units(_default(subplotpad,  rc['subplot.subplotpad']))
+        self._smart_innerpad = units(_default(innerpad, rc['subplot.innerpad']))
         self._smart_tight       = _default(tight, rc['tight']) # note name _tight already taken!
         self._smart_tight_inner = _default(innertight, rc['innertight']) # note name _tight already taken!
         self._smart_tight_init  = True # is figure in its initial state?
@@ -366,7 +365,7 @@ class Figure(mfigure.Figure):
                         line = 1.2
         # Default to whatever last axes was
         if not title:
-            title = ax.title # always will be non-None
+            title = raxs[0].title # always will be non-None
 
         # Get the transformed position
         if self._suptitle_transform:
@@ -818,12 +817,12 @@ class Figure(mfigure.Figure):
         tflush = _default(flush, tflush)
         bflush = _default(flush, bflush)
         # Default dimensions
-        lwidth = units(_default(width, lwidth, rc['gridspec.panelwidth'])) # default is panels for plotting stuff, not colorbars
-        rwidth = units(_default(width, rwidth, rc['gridspec.panelwidth']))
-        twidth = units(_default(width, twidth, rc['gridspec.panelwidth']))
-        bwidth = units(_default(width, bwidth, rc['gridspec.panelwidth']))
-        hspace = np.atleast_1d(units(_default(hspace, rc['gridspec.panelspace']))) # teeny tiny space
-        wspace = np.atleast_1d(units(_default(wspace, rc['gridspec.panelspace'])))
+        lwidth = units(_default(width, lwidth, rc['subplot.panelwidth'])) # default is panels for plotting stuff, not colorbars
+        rwidth = units(_default(width, rwidth, rc['subplot.panelwidth']))
+        twidth = units(_default(width, twidth, rc['subplot.panelwidth']))
+        bwidth = units(_default(width, bwidth, rc['subplot.panelwidth']))
+        hspace = np.atleast_1d(units(_default(hspace, rc['subplot.panelspace']))) # teeny tiny space
+        wspace = np.atleast_1d(units(_default(wspace, rc['subplot.panelspace'])))
         if re.sub('[lrbt]', '', which): # i.e. other characters are present
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
 
@@ -938,11 +937,11 @@ def _panelprops(panel, panels, colorbar, colorbars, legend, legends, width, spac
     selected by user. For example, use "panel" when a panel for plotting stuff
     is desired, and "colorbar" when a panel filled with a colorbar is desired."""
     if colorbar or colorbars:
-        width = units(_default(width, rc['gridspec.cbarwidth']))
-        space = units(_default(space, rc['gridspec.xlabspace']))
+        width = units(_default(width, rc['subplot.cbarwidth']))
+        space = units(_default(space, rc['subplot.xlabspace']))
         panel, panels = colorbar, colorbars
     elif legend or legends:
-        width = units(_default(width, rc['gridspec.legwidth']))
+        width = units(_default(width, rc['subplot.legwidth']))
         space = units(_default(space, 0))
         panel, panels = legend, legends
     return panel, panels, width, space
@@ -986,12 +985,12 @@ def _parse_panels(nrows, ncols,
     leftcolorbar    = lcolorbar or leftcolorbar
     leftcolorbars   = lcolorbars or leftcolorbars
     # Default panel properties
-    bwidth = units(_default(bwidth, rc['gridspec.cbarwidth']))
-    rwidth = units(_default(rwidth, rc['gridspec.cbarwidth']))
-    lwidth = units(_default(lwidth, rc['gridspec.cbarwidth']))
-    bspace = units(_default(bspace, rc['gridspec.xlabspace']))
-    rspace = units(_default(rspace, rc['gridspec.ylabspace']))
-    lspace = units(_default(lspace, rc['gridspec.ylabspace']))
+    bwidth = units(_default(bwidth, rc['subplot.cbarwidth']))
+    rwidth = units(_default(rwidth, rc['subplot.cbarwidth']))
+    lwidth = units(_default(lwidth, rc['subplot.cbarwidth']))
+    bspace = units(_default(bspace, rc['subplot.xlabspace']))
+    rspace = units(_default(rspace, rc['subplot.ylabspace']))
+    lspace = units(_default(lspace, rc['subplot.ylabspace']))
     # Handle the convenience feature for specifying the desired width/spacing
     # for panels as that suitable for a colorbar or legend
     rightpanel, rightpanels, rwidth, rspace, = _panelprops(
@@ -1029,14 +1028,14 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     bwidth, bspace, etc. must be supplied or will get error, but this should
     be taken care of by _parse_panels."""
     # Defualt gridspec props
-    left   = units(_default(left,   rc['gridspec.ylabspace']))
-    bottom = units(_default(bottom, rc['gridspec.xlabspace']))
-    right  = units(_default(right,  rc['gridspec.nolabspace']))
-    top    = units(_default(top,    rc['gridspec.titlespace']))
+    left   = units(_default(left,   rc['subplot.ylabspace']))
+    bottom = units(_default(bottom, rc['subplot.xlabspace']))
+    right  = units(_default(right,  rc['subplot.nolabspace']))
+    top    = units(_default(top,    rc['subplot.titlespace']))
     wratios = np.atleast_1d(_default(wratios, 1))
     hratios = np.atleast_1d(_default(hratios, 1))
-    hspace = np.atleast_1d(_default(hspace, rc['gridspec.titlespace']))
-    wspace = np.atleast_1d(_default(wspace, rc['gridspec.innerspace']))
+    hspace = np.atleast_1d(_default(hspace, rc['subplot.titlespace']))
+    wspace = np.atleast_1d(_default(wspace, rc['subplot.innerspace']))
     if len(wratios)==1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios)==1:
@@ -1081,7 +1080,7 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     # we set figure dims according to axwidth and axheight input
     if auto_both: # get stuff directly from axes
         if axwidth is None and axheight is None:
-            axwidth = units(rc['gridspec.axwidth'])
+            axwidth = units(rc['subplot.axwidth'])
         if axheight is not None:
             height = axheight*nrows + top + bottom + sum(hspace) + bpanel_space
             axheights = axheight*nrows
@@ -1201,7 +1200,7 @@ def _axes_dict(naxs, value, kw=False, default=None):
 def subplots(array=None, ncols=1, nrows=1,
         order='C', # allow calling with subplots(array)
         emptycols=None, emptyrows=None, # obsolete?
-        tight=None, innertight=None, outerpad=None, innerpad=None, mainpad=None,
+        tight=None, innertight=None, outerpad=None, innerpad=None, subplotpad=None,
         rcreset=True, silent=True, # arguments for figure instantiation
         span=None, # bulk apply to x/y axes
         share=None, # bulk apply to x/y axes
@@ -1423,7 +1422,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    tight, innertight, outerpad, mainpad, innerpad, rcreset, silent
+    tight, innertight, outerpad, subplotpad, innerpad, rcreset, silent
         Passed to `Figure`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpec`.
@@ -1571,9 +1570,9 @@ def subplots(array=None, ncols=1, nrows=1,
             if width in kw:
                 continue
             if side in which1:
-                kw[width] = rc['gridspec.panelwidth']
+                kw[width] = rc['subplot.panelwidth']
             elif side in which2:
-                kw[width] = rc['gridspec.cbarwidth']
+                kw[width] = rc['subplot.cbarwidth']
             else:
                 kw.pop(width, None) # pull out! only specify width if panel present, used in wextra/hextra calculation
         # Get spaces, a bit more tricky
@@ -1585,11 +1584,11 @@ def subplots(array=None, ncols=1, nrows=1,
                 if not np.iterable(kw[space]):
                     kw[space] = [kw[space]]*(len(cwhich) + len(pwhich))
                 continue
-            rcspace = [rc['gridspec.panelspace']]*(len(cwhich) + len(pwhich))
+            rcspace = [rc['subplot.panelspace']]*(len(cwhich) + len(pwhich))
             if regex[0] in cwhich:
-                rcspace[0] = rc[f'gridspec.{cspaces[0]}']
+                rcspace[0] = rc[f'subplot.{cspaces[0]}']
             if regex[1] in cwhich:
-                rcspace[-1] = rc[f'gridspec.{cspaces[1]}']
+                rcspace[-1] = rc[f'subplot.{cspaces[1]}']
             kw[space] = rcspace
 
     # Make sure same panels are present on ***all rows and columns***; e.g.
@@ -1647,7 +1646,7 @@ def subplots(array=None, ncols=1, nrows=1,
     axs = naxs*[None] # list of axes
     fig = plt.figure(gridspec=gs, figsize=figsize, FigureClass=Figure,
         tight=tight, innertight=innertight,
-        outerpad=outerpad, mainpad=mainpad, innerpad=innerpad,
+        outerpad=outerpad, subplotpad=subplotpad, innerpad=innerpad,
         rcreset=rcreset, silent=silent,
         subplots_kw=subplots_kw)
     for idx in range(naxs):
