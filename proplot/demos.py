@@ -226,7 +226,7 @@ def cycle_show():
     nrows = len(_cycles)//2 + len(_cycles)%2
     # Create plot
     state = np.random.RandomState(528)
-    fig, axs = subplots(width=6, sharey=False, sharex=False, mainpad=0.05,
+    fig, axs = subplots(width=6, sharey=False, sharex=False, subplotpad=0.05,
                         aspect=2, ncols=2, nrows=nrows)
     for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
         key = key.lower()
@@ -284,7 +284,7 @@ def cmap_show(N=129):
     extra = 1 # number of axes-widths to allocate for titles
     nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
     fig, axs = subplots(nrows=nmaps, axwidth=4.0, axheight=0.08,
-            span=False, share=False, mainpad=-0.05)
+            span=False, share=False, subplotpad=-0.05)
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
     for cat,names in categories_reg.items():

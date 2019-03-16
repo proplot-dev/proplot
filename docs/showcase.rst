@@ -1471,6 +1471,19 @@ relatively non-linear in saturation.
    :height: 304px
 
 
+.. code:: ipython3
+
+    plot.cmap_breakdown('temp')
+
+
+
+
+
+.. image:: showcase/showcase_94_1.png
+   :width: 1009px
+   :height: 306px
+
+
 Table of colormaps
 ------------------
 
@@ -1502,9 +1515,9 @@ for usage details.
 
 
 
-.. image:: showcase/showcase_96_1.png
+.. image:: showcase/showcase_97_1.png
    :width: 436px
-   :height: 4509px
+   :height: 4409px
 
 
 Table of color cycles
@@ -1530,7 +1543,7 @@ See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 
 
 
-.. image:: showcase/showcase_99_0.png
+.. image:: showcase/showcase_100_0.png
    :width: 540px
    :height: 1615px
 
@@ -1573,7 +1586,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_102_0.png
+.. image:: showcase/showcase_103_0.png
    :width: 720px
    :height: 1316px
 
@@ -1586,7 +1599,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_103_0.png
+.. image:: showcase/showcase_104_0.png
    :width: 630px
    :height: 225px
 
@@ -1631,7 +1644,7 @@ import.
 
 
 
-.. image:: showcase/showcase_106_1.png
+.. image:: showcase/showcase_107_1.png
    :width: 544px
    :height: 334px
 
@@ -1672,7 +1685,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_108_0.png
+.. image:: showcase/showcase_109_0.png
    :width: 724px
    :height: 345px
 
@@ -1699,7 +1712,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_110_0.png
+.. image:: showcase/showcase_111_0.png
    :width: 634px
    :height: 306px
 
@@ -1724,7 +1737,7 @@ colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
 
 
 
-.. image:: showcase/showcase_112_0.png
+.. image:: showcase/showcase_113_0.png
    :width: 733px
    :height: 314px
 
@@ -1754,7 +1767,7 @@ details.
 
 
 
-.. image:: showcase/showcase_114_0.png
+.. image:: showcase/showcase_115_0.png
    :width: 652px
    :height: 424px
 
@@ -1784,7 +1797,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_116_0.png
+.. image:: showcase/showcase_117_0.png
    :width: 544px
    :height: 478px
 
@@ -1814,7 +1827,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_119_0.png
+.. image:: showcase/showcase_120_0.png
    :width: 517px
    :height: 356px
 
@@ -1839,7 +1852,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_120_1.png
+.. image:: showcase/showcase_121_1.png
    :width: 634px
    :height: 318px
 
@@ -1879,7 +1892,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_123_0.png
+.. image:: showcase/showcase_124_0.png
    :width: 436px
    :height: 603px
 

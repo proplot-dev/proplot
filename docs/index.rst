@@ -9,6 +9,7 @@ ProPlot
 
 An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
 that can help you make beautiful, publication-quality graphics.
+This Github page is found `here <https://github.com/lukelbd/proplot>`__.
 
 Installation
 ============
@@ -51,7 +52,8 @@ and built-in geographic projections.
 The next most important utility is the ``format`` method on `~proplot.axes.BaseAxes`, which calls so-called ``smart_update`` methods on the `~proplot.axes.BaseAxes`, `~proplot.axes.XYAxes`, `~proplot.axes.CartopyAxes`, and `~proplot.axes.BasemapAxes` axes types. The latter three types can all be returned by `~proplot.subplots.subplots`, depending on the arguments you used. Use `~proplot.axes.BaseAxes.format` to fine-tune your axis properties, titles, labels, limits, and much more. See :ref:`Table of projections` for the projections available to cartopy and basemap.
 
 To get started, check out the :ref:`Introduction`.
-Hopefully, you will find this API to be **less verbose** and **more powerful** than the builtin `pyplot and object-oriented <https://matplotlib.org/api/api_overview.html>`__ matplotlib APIs.
+Hopefully, you will find this API to be less verbose and
+more powerful than the builtin matplotlib API.
 
 .. This is just so top-level headers in the showcase.rst
    file appear as *subsections* in the documentation to
@@ -62,6 +64,16 @@ Hopefully, you will find this API to be **less verbose** and **more powerful** t
       :members:
       :show-inheritance:
    Use 'sphinx-apidoc ../proplot -o .' to auto-generate modules.rst
+
+Donations
+=========
+
+At well over 10,000 lines of code, this package took a shocking amount of time to write and to publish... so I'll just
+leave this here :)
+
+.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
+   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
+
 
 .. toctree::
    :hidden:

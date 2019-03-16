@@ -281,6 +281,14 @@ _cmap_categories = {
         'GrayCycle_shifted',
         ],
 
+    # CET isoluminant maps
+    # See: https://peterkovesi.com/projects/colourmaps/
+    # All the others have better options
+    'Isoluminant': [
+        'Iso1', 'Iso2', 'Iso3', 
+        'Phase', 'Phase_shifted', # these actually from cmocean
+        ],
+
     # Included ColorBrewer
     'ColorBrewer2.0 Sequential': [
         'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
@@ -303,8 +311,7 @@ _cmap_categories = {
     'ProPlot Sequential': [
          'Glacial',
         'Bog', 'Verdant',
-        'Lake', 'Turquoise', 'Forest',
-        'Blood',
+        'Turquoise',
         'Sunrise', 'Sunset', 'Fire',
         'Golden'
         ],
@@ -317,8 +324,11 @@ _cmap_categories = {
     # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
     # website, but organization is better this way.
     'Misc Diverging': [
+        'bwr',
+        'CoolWarm',
+        'SoftCoolWarm',
+        'MutedCoolWarm',
         'ColdHot',
-        'BWR',
         'Temp', # from ???
         # 'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
         # 'Star',
@@ -332,38 +342,21 @@ _cmap_categories = {
         # 'MutedBio', 'DarkBio', # from: ???, maybe SciVisColor
         ],
 
-    # cmOcean
-    'cmOcean Sequential': [
-        'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
-        'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
-        'Amp', 'Phase', 'Phase_shifted'
-        ],
-    'cmOcean Diverging': [
-        'Balance', 'Curl', 'Delta'
-        ],
-
-    # Kenneth Moreland
-    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html
-    # Soft coolwarm from: https://www.kennethmoreland.com/color-advice/
-    'Kenneth Moreland': [
-        'CoolWarm', 'MutedCoolWarm', 'SoftCoolWarm',
-        'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
-        ],
-    # 'Kenneth Moreland Sequential': [
-    #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
-    #     ],
-
     # Statistik
-    'Statistik Stadt Zürich': [
+    # 'Statistik Stadt Zürich': [
+    'Zürich Muted': [
         'MutedBlue', 'MutedRed', 'MutedDry', 'MutedWet',
         'MutedBuRd', 'MutedBuRd_cut', 'MutedDryWet', 'MutedDryWet_cut',
         ],
 
-    # CET isoluminant maps
-    # See: https://peterkovesi.com/projects/colourmaps/
-    # All the others have better options
-    'Isoluminant': [
-        'Iso1', 'Iso2', 'Iso3', 
+    # cmOcean
+    'cmOcean Sequential': [
+        'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
+        'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
+        'Amp',
+        ],
+    'cmOcean Diverging': [
+        'Balance', 'Curl', 'Delta'
         ],
 
     # SciVisColor
@@ -415,6 +408,17 @@ _cmap_categories = {
         'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
         'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
         ],
+
+    # Kenneth Moreland
+    # See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html
+    # Soft coolwarm from: https://www.kennethmoreland.com/color-advice/
+    # 'Kenneth Moreland': [
+    #     'CoolWarm', 'MutedCoolWarm', 'SoftCoolWarm',
+    #     'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
+    #     ],
+    # 'Kenneth Moreland Sequential': [
+    #     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
+    #     ],
 
     # Los Alamos
     # See: https://datascience.lanl.gov/colormaps.html
