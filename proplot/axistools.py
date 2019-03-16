@@ -682,8 +682,8 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class on instantiation.
 
-    Notes
-    -----
+    Note
+    ----
     `~matpltolib.ticker.AutoLocator` has a useful ``nbins`` option. This
     limits the maximum number of ticks to ``nbins-1``.
     """

@@ -196,8 +196,8 @@ def wrapper_check_centers(func):
     `~matplotlib.axes.Axes.contourf`. Ensures we have coordinate *centers*,
     and will calculate centers if coordinate edges were provided.
 
-    Notes
-    -----
+    Note
+    ----
     Optional numbers of arguments:
 
     * Z
@@ -236,8 +236,8 @@ def wrapper_check_edges(func):
     `~matplotlib.axes.Axes.pcolormesh`. Ensures we have coordinate *edges*,
     and will *estimate* edges if coordinate centers were provided.
 
-    Notes
-    -----
+    Note
+    ----
     Optional numbers of arguments:
 
     * Z
@@ -322,8 +322,8 @@ def wrapper_cmap(self, func):
     `~proplot.colortools.Norm`, `~matplotlib.colors.Colormap`,
     `~matplotlib.colors.Normalizer`
 
-    Notes
-    -----
+    Note
+    ----
     `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
     now accept a `levels` keyword arg. This means you can discretize your
     colors in a ``pcolor`` plot just like with ``contourf``.
@@ -541,8 +541,8 @@ def wrapper_cycle(self, func):
     --------
     `cycle_methods`, `BaseAxes`, `~proplot.colortools.Cycle`
 
-    Notes
-    -----
+    Note
+    ----
     See the `matplotlib source 
     <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
     The `set_prop_cycle` command modifies underlying 
@@ -2165,8 +2165,8 @@ class XYAxes(BaseAxes):
             Passed to `BaseAxes.format`. I highly recommend passing the
             `ylabel` keyword arg.
 
-        Notes
-        -----
+        Note
+        ----
         The axis scale `yscale` is used to transform units on the left axis,
         linearly spaced, to units on the right axis. This means the right
         'axis scale' must scale its data with the *inverse* of this transform.
@@ -2330,8 +2330,8 @@ class EmptyPanel(object):
     This gives a nicer error message than if we had just used ``None`` or put
     nothing there at all.
 
-    Notes
-    -----
+    Note
+    ----
     `__getattr__` is invoked only when `__getattribute__` fails, i.e.
     when the user requests anything that isn't a hidden `object` method.
     """
@@ -2642,8 +2642,8 @@ class CartopyAxes(MapAxes, GeoAxes):
     the full projection, then drawing a circle boundary around some latitude
     away from the center (this is surprisingly difficult to do).
 
-    Notes
-    -----
+    Note
+    ----
     The circle stuff for polar projection was developed from `this example
     <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
 

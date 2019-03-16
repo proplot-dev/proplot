@@ -682,8 +682,8 @@ class rc_configurator(object):
             Used during `~proplot.BaseAxes.format` calls to
             `~proplot.BaseAxes._rcupdate`.
 
-        Notes
-        -----
+        Note
+        ----
         This is kept private, because it's only meant to be used within
         the '~proplot.axes.BaseAxes.format' automatically! Instead of the
         user having to use the ``with x as y`` construct, they should just
@@ -721,8 +721,8 @@ class rc_configurator(object):
         dict
             Dictionary filled with rc properties.
 
-        Notes
-        -----
+        Note
+        ----
         `~rc_configurator.fill` is used to build dictionaries for updating
         `~matplotlib.artist.Artist` instances. Of course, the artist property
         won't need updating unless an rc setting has changed since it was

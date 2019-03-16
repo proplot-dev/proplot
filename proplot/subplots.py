@@ -801,8 +801,8 @@ class Figure(mfigure.Figure):
             bottom, top panels. Use `share` to set this property for all
             panel sides at once.
 
-        Notes
-        -----
+        Note
+        ----
         Axis sharing setup is handled after-the-fact in the `subplots`
         function using `~proplot.axes.BaseAxes._sharex_setup` and
         `~proplot.axes.BaseAxes._sharey_setup`.

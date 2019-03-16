@@ -1196,7 +1196,7 @@ def Colormap(*args, name=None, N=None,
           ``'red'``, ``'green'``, and ``'blue'``, it is passed to the
           `~matplotlib.colors.LinearSegmentedColormap` initializer. Otherwise,
           the dict is passed to the `~PerceptuallyUniformColormap.from_hsl`
-          constructor.
+          `PerceptuallyUniformColormap` constructor.
 
         The color name string can also look like ``'name90'``, where the trailing
         number indicates the maximum luminance of the colormap. By default,
@@ -1265,8 +1265,8 @@ def Colormap(*args, name=None, N=None,
         If the colormap is a `~matplotlib.colors.LinearSegmentedColormap`,
         the segment data dictionary is written to ``name.json``.
 
-    Notes
-    -----
+    Note
+    ----
     The resampling method described in `this post
     <https://stackoverflow.com/q/48613920/4970632>`_ is not great. All it does is
     reduce the lookup table size -- what ends up happening under the hood is
@@ -1492,6 +1492,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         """
         Parameters
         ----------
+        name : str
+            The colormap name.
         segmentdata : dict-like
             Dictionary mapping containing the keys ``'hue'``, ``'saturation'``,
             and ``'luminance'``. Values should be lists containing any of
@@ -1527,16 +1529,16 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         Example
         -------
         The following is a valid `segmentdata` dictionary, using color string
-        names for the hue instead of numbers between 0 and 100.
+        names for the hue instead of numbers between 0 and 360.
 
         .. code-block:: python
 
             dict(hue       = [[0, 'red', 'red'], [1, 'blue', 'blue']],
-                saturation = [[0, 1, 1], [1, 1, 1]],
-                luminance  = [[0, 1, 1], [1, 0.2, 0.2]])
+                saturation = [[0, 100, 100], [1, 100, 100]],
+                luminance  = [[0, 100, 100], [1, 20, 20]])
 
-        Notes
-        -----
+        Note
+        ----
         `gamma1` emphasizes *low* saturation colors and `gamma2` emphasizes
         *high* luminance colors because this seems to be what the
         ColorBrewer2.0 maps do.  "White" and "pale" values at the center of
@@ -1638,10 +1640,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             hue=None, saturation=None, luminance=None, chroma=None, alpha=None,
             ratios=None, reverse=False, **kwargs):
         """
-        Make linear segmented colormap by specifying channel values.
-        Usage is similar to `~PerceptuallyUniformColormap.from_list` -- except
-        instead of specifying HSL tuples, we specify the hue, saturation, and
-        luminance vectors or scalars individually.
+        Makes a `~PerceptuallyUniformColormap` by specifying the hue, saturation,
+        and luminance transitions individually.
 
         Parameters
         ----------
@@ -1649,10 +1649,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             Hue channel value or list of values. Values can be
             any of the following:
 
-                1. Numbers, within the range 0-360 for hue and 0-100 for
-                   saturation and luminance.
-                2. Color string names or hex tags, in which case the channel
-                   value for that color is looked up.
+            1. Numbers, within the range 0-360 for hue and 0-100 for
+               saturation and luminance.
+            2. Color string names or hex tags, in which case the channel
+               value for that color is looked up.
 
             If scalar, the hue does not change across the colormap.
         s, saturation : float, str, or list thereof, optional
@@ -1662,12 +1662,12 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         a, alpha : float, str, or list thereof, optional
             As with hue, but for the alpha channel (the transparency).
         ratios : None or list of float, optional
-            Relative extent of each transitions indicated by the channel
+            Relative extent of the transitions indicated by the channel
             value lists.
 
             For example, ``luminance=[100,50,0]`` with ``ratios=[2,1]``
             places the *x*-coordinate where the luminance is 50 at 0.66 --
-            the white to gray transition is slower than the gray to black
+            the white to gray transition is "slower" than the gray to black
             transition.
         reverse : bool, optional
             Whether to reverse the final colormap.
@@ -1701,7 +1701,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         ratios=None, reverse=False,
         **kwargs):
         """
-        Make linear segmented colormap from list of color tuples.
+        Makes a `PerceptuallyUniformColormap` from a list of (hue, saturation,
+        luminance) tuples.
 
         Parameters
         ----------
@@ -1711,15 +1712,15 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             List containing HSL color tuples. The tuples can contain any
             of the following channel value specifiers:
 
-                1. Numbers, within the range 0-360 for hue and 0-100 for
-                   saturation and luminance.
-                2. Color string names or hex tags, in which case the channel
-                   value for that color is looked up.
+            1. Numbers, within the range 0-360 for hue and 0-100 for
+               saturation and luminance.
+            2. Color string names or hex tags, in which case the channel
+               value for that color is looked up.
 
         ratios : None or list of float, optional
             Length ``len(color_list)-1`` list of scales for *x*-coordinate
             transitions between colors. Bigger numbers indicate a slower
-            transition, smaller a faster transition.
+            transition, smaller numbers indicate a faster transition.
         reverse : bool, optional
             Whether to reverse the result.
         """
@@ -1797,7 +1798,6 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         ``'midpoint'``   `MidpointNorm`
         ``'segments'``   `LinearSegmentedNorm`
         ``'segmented'``  `LinearSegmentedNorm`
-        ``'boundary'``   `~matplotlib.colors.BoundaryNorm`
         ``'log'``        `~matplotlib.colors.LogNorm`
         ``'linear'``     `~matplotlib.colors.Normalize`
         ``'power'``      `~matplotlib.colors.PowerNorm`
@@ -1857,7 +1857,7 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
 # discretized color levels from a functional/segmented colormap:
 #   1) Make lo-res lookup table.
 #   2) Make hi-res lookup table, but discretize the lookup table indices
-#      generated by your normalizer. This is what BoundaryNorm does.
+#      generated by your normalizer. This is what BinNorm does.
 # Have found the second method was easier to implement/more flexible. So the
 # below is used to always discretize colors.
 #------------------------------------------------------------------------------
@@ -1872,17 +1872,17 @@ class BinNorm(mcolors.BoundaryNorm):
     `~matplotlib.colors.Normalize` class, then maps the normalized
     values ranging from 0-1 into **discrete** levels.
 
+    This maps to colors by the closest **index** in the color list. Even if
+    your levels edges are weirdly spaced (e.g. [-1000, 100, 0,
+    100, 1000] or [0, 10, 12, 20, 22]), the "colormap coordinates" for these
+    levels will be [0, 0.25, 0.5, 0.75, 1]. This is very handy for weirdly
+    distributed datasets.
+
     Note
     ----
     If you are using a diverging colormap with ``extend='max'`` or
     ``extend='min'``, the center will get messed up. But that is very strange
     usage anyway... so please just don't do that :)
-
-    Example
-    -------
-    Your levels edges are weirdly spaced [-1000, 100, 0, 100, 1000] or
-    even [0, 10, 12, 20, 22], but center "colors" are always at colormap
-    coordinates [.2, .4, .6, .8] no matter the spacing; levels just must be monotonic.
     """
     def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither'):
         """
@@ -2047,8 +2047,8 @@ class MidpointNorm(mcolors.Normalize):
     Can be used by passing ``norm='midpoint'`` to any command accepting
     ``cmap``. The default midpoint is zero.
 
-    Notes
-    -----
+    Note
+    ----
     See `this stackoverflow thread <https://stackoverflow.com/q/25500541/4970632>`_.
     """
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
@@ -2196,9 +2196,8 @@ def register_colors(nmax=np.inf, verbose=False):
 
 def register_cmaps():
     """
-    Registers colormaps and color cycles packaged with
-    ProPlot. That is, add maps to the `matplotlib.cm.cmap_d` dictionary.
-    Called on import. 
+    Registers colormaps packaged with ProPlot or added by the user. That is,
+    add maps to the `matplotlib.cm.cmap_d` dictionary. Called on import.
 
     Use `~proplot.demos.cmap_show` to generate a table of the resulting
     color cycles.
@@ -2345,8 +2344,10 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Registers lists of colors defined in ``.hex`` files and color cycles
-    declared directly in this module. Called on import.
+    Registers color cycles defined by ``.hex`` files (each of which contains a
+    single comma-delimited line of HEX strings) packaged with ProPlot or
+    added by the user. Also registers some cycles hardcoded into this module.
+    Called on import.
 
     Use `~proplot.demos.cycle_show` to generate a table of the resulting
     color cycles.
@@ -2414,7 +2415,6 @@ normalizers = {
     'midpoint':   MidpointNorm,
     'segments':   LinearSegmentedNorm,
     'segmented':  LinearSegmentedNorm,
-    'boundary':   mcolors.BoundaryNorm,
     'log':        mcolors.LogNorm,
     'linear':     mcolors.Normalize,
     'power':      mcolors.PowerNorm,
