@@ -1192,10 +1192,11 @@ def Colormap(*args, name=None, N=None,
           from 100% luminance to that color.
         * If arg is a list of str, it is assumed a list of color names or
           hex names, and is used to make a `~matplotlib.colors.ListedColormap`.
-        * If arg is dict, it is passed to the `~matplotlib.colors.LinearSegmentedColormap`
-          initializer if it contains ``'red'``, ``'green'``, and ``'blue'``
-          keys. Otherwise, it is passed to the
-          `~PerceptuallyUniformColormap.from_hsl` constructor.
+        * If arg is dict, there are two options: if the dict contains the keys
+          ``'red'``, ``'green'``, and ``'blue'``, it is passed to the
+          `~matplotlib.colors.LinearSegmentedColormap` initializer. Otherwise,
+          the dict is passed to the `~PerceptuallyUniformColormap.from_hsl`
+          constructor.
 
         The color name string can also look like ``'name90'``, where the trailing
         number indicates the maximum luminance of the colormap. By default,
