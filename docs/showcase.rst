@@ -1595,12 +1595,11 @@ On-the-fly colormaps
 --------------------
 
 You can make a new colormap with ProPlot’s on-the-fly colormap
-generator! Every ``cmap`` argument for the commands in the
-`~proplot.axes.cmap_methods` list (like
-`~matplotlib.axes.Axes.contourf` and
-`~matplotlib.axes.Axes.pcolormesh`) is passed to the
-`~proplot.colortools.Colormap` constructor, as are keyword args
-specified with ``cmap_kw``. See `~proplot.colortools.Colormap` and
+generator! Every command that accepts a ``cmap`` argument (see
+`~proplot.axes.cmap_methods`) is passed to the
+`~proplot.colortools.Colormap` constructor.
+`~proplot.colortools.Colormap` keyword arguments can be specified with
+``cmap_kw``. See `~proplot.colortools.Colormap` and
 `~proplot.axes.wrapper_cmap` for details.
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
@@ -1662,8 +1661,8 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
                    levels=plot.arange(0.1,0.9,0.1), extend='both',
                    )
     ax.bpanel.colorbar(m, label='colormap')
-    ax.format(xlabel='x axis', ylabel='y axis', title='Warm colors',
-              suptitle='On-the-fly "PerceptuallyUniformColormap"s')
+    ax.format(xlabel='x axis', ylabel='y axis', title='Reminiscent of "Matter"',
+              suptitle='On-the-fly "PerceptuallyUniformColormap"')
     ax = axs[1]
     m = ax.contourf(np.random.rand(10,10),
                    cmap={'h':['red', 'red-720'], 'c':[80,20], 'l':[20, 100], 'space':'hpl'},
@@ -1750,7 +1749,7 @@ details.
             ax = axs[i]
             m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
             ax.rightpanel.colorbar(m1, clocator='none')
-            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying the gamma of "PerceptuallyUniformColormap" maps')
+            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying the "PerceptuallyUniformColormap" gamma')
             i += 1
 
 
