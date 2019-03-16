@@ -1185,18 +1185,17 @@ def Colormap(*args, name=None, N=None,
         If the arg is a `~matplotlib.colors.Colormap`, nothing more is done.
         Otherwise, the colormap is generated as follows:
 
-        * If arg is dict, it is passed to the `~matplotlib.colors.LinearSegmentedColormap`
-          initializer (if it contains ``'red'``, ``'green'``, and ``'blue'``)
-          keys, or the `~PerceptuallyUniformColormap.from_hsl` static
-          constructor.
+        * If arg is a str and is a "registered" colormap name, that colormap
+          is used.
+        * If arg is a str and is a "registered" color name, a
+          monochromatic colormap is generated with `monochrome_cmap`, spanning
+          from 100% luminance to that color.
         * If arg is a list of str, it is assumed a list of color names or
           hex names, and is used to make a `~matplotlib.colors.ListedColormap`.
-        * If arg is a str and is a "registered" colormap name (i.e. is in
-          the `matplotlib.cm.cmap_d` dictionary), that colormap is used.
-        * If arg is a str and is a "registered" color name (i.e. is in
-          the `matplotlib.colors._colors_full_map` dictionary), a
-          monochromatic colormap is generated with `monochrome_cmap`, spanning
-          from 100% luminance and 0% saturation to that color.
+        * If arg is dict, it is passed to the `~matplotlib.colors.LinearSegmentedColormap`
+          initializer if it contains ``'red'``, ``'green'``, and ``'blue'``
+          keys. Otherwise, it is passed to the
+          `~PerceptuallyUniformColormap.from_hsl` constructor.
 
         The color name string can also look like ``'name90'``, where the trailing
         number indicates the maximum luminance of the colormap. By default,
