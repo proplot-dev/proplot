@@ -1185,7 +1185,10 @@ def Colormap(*args, name=None, N=None,
         If the arg is a `~matplotlib.colors.Colormap`, nothing more is done.
         Otherwise, the colormap is generated as follows:
 
-        * If arg is dict, it is passed to `~PerceptuallyUniformColormap.from_hsl`.
+        * If arg is dict, it is passed to the `~matplotlib.colors.LinearSegmentedColormap`
+          initializer (if it contains ``'red'``, ``'green'``, and ``'blue'``)
+          keys, or the `~PerceptuallyUniformColormap.from_hsl` static
+          constructor.
         * If arg is a list of str, it is assumed a list of color names or
           hex names, and is used to make a `~matplotlib.colors.ListedColormap`.
         * If arg is a str and is a "registered" colormap name (i.e. is in
