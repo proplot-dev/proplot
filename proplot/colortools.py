@@ -579,7 +579,7 @@ class CycleList(list):
     """Simply stores a list of colors, and adds a `name` attribute corresponding
     to the registered name."""
     def __repr__(self):
-        """Make it clear this is no ordinary list."""
+        """Wrap the string representation."""
         return 'CycleList(' + super().__repr__() + ')'
 
     def __init__(self, list_, name):
@@ -1317,7 +1317,7 @@ def Colormap(*args, name=None, N=None,
             if {*cmap.keys()} == {'red','green','blue'}:
                 cmap = mcolors.LinearSegmentedColormap(name, cmap, N=N_)
             else:
-                cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **kwargs)
+                cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **cmap)
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
             # List of color tuples or color strings, i.e. iterable of iterables
             # Transform C0, C1, etc. to their actual names first

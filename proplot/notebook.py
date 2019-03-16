@@ -46,10 +46,11 @@ from .rcmod import rc
 
 def nbsetup(directory=None, autosave=30, backend='inline'):
     """
-    Set up ipython notebook with better inline figures.
-    Also enables the very useful `autoreload
+    Results in higher-quality iPython notebook inline figures.
+    Also enables the useful `autoreload
     <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
-    and autosave extensions (saves every 30s by default).
+    and autosave extensions. The latter automatically saves your notebook
+    every `autosave` seconds.
 
     Just add this to the first cell of your notebook:
 
@@ -58,8 +59,8 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
         import proplot as plot
         plot.nbsetup()
 
-    and voila! Pass an optional `directory` argument to make that the
-    new working directory.
+    and voila! Pass an optional `directory` argument to make
+    that the new working directory.
     """
     # Variables
     cd = os.getcwd()

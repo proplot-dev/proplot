@@ -1730,25 +1730,34 @@ numbers, or single/lists of color strings. In the latter case, the
 corresponding channel value (hue, chroma, or luminance) for that color
 will be looked up and applied. You can end any color string with ``+N``
 or ``-N`` to offset the channel value by the number ``N``, as shown
-above
+below.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, ax = plot.subplots(innercolorbars='b', axwidth=3.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, innercolorbars='b', axwidth=3.5, aspect=1.5)
+    ax = axs[0]
     m = ax.contourf(np.random.rand(10,10),
                    cmap={'h':['red-120', 'red+90'], 'c':[50, 70, 30], 'l':[20, 100], 'space':'hcl'},
-                   levels=plot.arange(0.1,0.9,0.1), extend='both')
+                   levels=plot.arange(0.1,0.9,0.1), extend='both',
+                   )
     ax.bpanel.colorbar(m, label='colormap')
-    ax.format(xlabel='x axis', ylabel='y axis', suptitle='On-the-fly "PerceptuallyUniformColormap"')
+    ax.format(xlabel='x axis', ylabel='y axis', title='Warm colors',
+              suptitle='On-the-fly "PerceptuallyUniformColormap"s')
+    ax = axs[1]
+    m = ax.contourf(np.random.rand(10,10),
+                   cmap={'h':['red', 'red-720'], 'c':[80,20], 'l':[20, 100], 'space':'hpl'},
+                   levels=plot.arange(0.1,0.9,0.05), extend='both')
+    ax.bpanel.colorbar(m, label='colormap', locator=0.1)
+    ax.format(xlabel='x axis', ylabel='y axis', title='Reminiscent of "cubehelix"')
 
 
 
 .. image:: showcase/showcase_113_0.png
-   :width: 391px
-   :height: 343px
+   :width: 724px
+   :height: 345px
 
 
 Flexible identification

@@ -39,12 +39,14 @@ _aliases = {
 #------------------------------------------------------------------------------#
 # Wrapper functions, so user doesn't have to import pyplot
 def close():
-    """Alias for ``matplotlib.pyplot.close('all')``. Closes all figures stored
+    """Alias for ``matplotlib.pyplot.close('all')``, included so you don't have
+    to import `~matplotlib.pyplot`. Closes all figures stored
     in memory."""
     plt.close('all') # easy peasy
 
 def show():
-    """Alias for ``matplotlib.pyplot.show()``. Note this command should be
+    """Alias for ``matplotlib.pyplot.show()``, included so you don't have
+    to import `~matplotlib.pyplot`. Note this command should be
     unnecessary if you are doing inline iPython notebook plotting and ran the
     `~proplot.notebook.nbsetup` command."""
     plt.show()
@@ -62,11 +64,11 @@ class axes_list(list):
     method (or retrieves respective attribute) on each one. For example,
     ``axs.format(color='r')`` colors all axes spines and tick marks red."""
     def __repr__(self):
-        """Make it clear this is no ordinary list."""
+        """Wrap the string representation."""
         return 'axes_list(' + super().__repr__() + ')'
 
     def __getitem__(self, key):
-        """Return an axes_list version of the slice, or just the axes."""
+        """Return an `axes_list` version of the slice, or just the axes."""
         axs = list.__getitem__(self, key)
         if isinstance(key,slice): # i.e. returns a list
             axs = axes_list(axs)
@@ -74,8 +76,8 @@ class axes_list(list):
 
     def __getattr__(self, attr):
         """Stealthily return dummy function that actually loops through each
-        axes method and calls them in succession. If attribute is not
-        callable, instead returns an `axes_list` of attributes."""
+        axes method and calls them in succession. If attribute(s) are not
+        callable, instead returns an `axes_list` of the attributes."""
         attrs = [getattr(ax, attr, None) for ax in self]
         if None in attrs:
             raise AttributeError(f'Attribute "{attr}" not found.')

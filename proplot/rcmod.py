@@ -740,9 +740,18 @@ class rc_configurator(object):
         self._getitem_mode = mode
         return self
 
+    def _get(self, key):
+        """Powers `get` and `fill` methods."""
+        try:
+            item = self[key]
+        except KeyError as err:
+            self._no_dict = False
+            self._getitem_mode = orig
+            raise err
+        return item
+
     def get(self, key, all=True, nodict=True):
-        """
-        Getter with some special options (this is for internal use by
+        """Getter with some special options (this is for internal use by
         `~proplot.axes.BaseAxes` and its subclasses).
 
         Parameters
@@ -762,18 +771,13 @@ class rc_configurator(object):
         if all:
             orig = self._getitem_mode
             self._getitem_mode = 0
-        try:
-            item = self[key]
-        except KeyError as err:
-            self._no_dict = False
-            self._getitem_mode = orig
-            raise err
+        item = self._get(key)
         self._no_dict = False
         if all:
             self._getitem_mode = orig
         return item
 
-    def fill(self, props, all=False):
+    def fill(self, props, all=False, nodict=True):
         """
         Fill a dictionary containing rc property string names with the
         corresponding property.
@@ -809,14 +813,14 @@ class rc_configurator(object):
         for relatively simple plots.
         """
         props_out = {}
-        self._no_dict = True
+        self._no_dict = nodict
         if all:
             orig = self._getitem_mode
             self._getitem_mode = 0
         for key,value in props.items():
-            value = self[value]
-            if value is not None:
-                props_out[key] = value
+            item = self._get(value)
+            if item is not None:
+                props_out[key] = item
         self._no_dict = False
         if all:
             self._getitem_mode = orig
@@ -863,4 +867,8 @@ class rc_configurator(object):
 rc = rc_configurator()
 """Instance of `rc_configurator`. Use this to change rc settings.
 See the `~proplot.rcmod` documentation for details."""
+
+# Run nbsetup if user requested it!
+# Don't do this yet, first bugfix the slow plotting issues.
+# if rc.nbsetup:
 
