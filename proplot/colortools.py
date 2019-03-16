@@ -1478,10 +1478,10 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """
     Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
-    varying the hue, saturation, luminance channels of the perceptually
-    uniform HCL colorspaces or its two scalings, the HSLuv and HPLuv
-    colorspaces. See `this page <http://www.hsluv.org/comparison/>`_ for a
-    description of each colorspace.
+    of varying the RGB channels, we vary hue, saturation, and luminance in
+    either the perceptually uniform HCL colorspace or the HSLuv or HPLuv
+    scalings of HCL. See `this page <http://www.hsluv.org/comparison/>`_ for
+    a description of each colorspace.
     """
     def __init__(self, name, segmentdata,
             space='hsl', gamma=None, gamma1=None, gamma2=None,
@@ -1497,7 +1497,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                 1. Numbers, within the range 0-360 for hue and 0-100 for
                    saturation and luminance.
                 2. Color string names or hex tags, in which case the channel
-                   value for that color is looked up. See Example.
+                   value for that color is looked up.
 
             See `~matplotlib.colors.LinearSegmentedColormap` for details.
         mask : bool, optional
