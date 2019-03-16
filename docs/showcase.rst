@@ -1603,88 +1603,6 @@ generator! Every ``cmap`` argument for the commands in the
 specified with ``cmap_kw``. See `~proplot.colortools.Colormap` and
 `~proplot.axes.wrapper_cmap` for details.
 
-In the below example, monochromatic colormaps are built from registered
-color names (this is done by varying the luminance channel from white to
-that color). The first plot shows several of these maps merged into one,
-and the second shows how the intensity of the “white” can be changed by
-adding a number to the end of the color string.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=2, axwidth=3, aspect=(4,3), bottomcolorbars=True, bottom=0.1)
-    data = np.random.rand(50,50).cumsum(axis=1)
-    m = axs[0].contourf(data, cmap=('navy', 'brick red', 'charcoal'), cmap_kw={'reverse':[True]*3})
-    f.bottompanel[0].colorbar(m, locator='null')
-    m = axs[1].contourf(data, cmap='ocean blue100', cmap_kw={'reverse':False})
-    f.bottompanel[1].colorbar(m, locator='null')
-    axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps',
-               collabels=('Three monochromatic colormaps, merged', 'Single monochromatic colormap'), collabelweight='normal')
-
-
-
-.. image:: showcase/showcase_105_0.png
-   :width: 634px
-   :height: 306px
-
-
-Diverging colormaps are easy to modify. Just use the ``cut`` argument to
-`~proplot.colortools.Colormap`; this is great when you want to have a
-sharper cutoff between negative and positive values for a diverging
-colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=3, innercolorbars='b')
-    data = np.random.rand(50,50).cumsum(axis=0) - 50
-    for ax,cut in zip(axs,(0, 0.1, 0.2)):
-        m = ax.contourf(data, cmap='ColdHot', cmap_kw={'cut':cut})
-        ax.format(xlabel='x axis', ylabel='y axis', title=f'cut = {cut}',
-                  suptitle='Cutting out the central colors from a diverging colormap')
-        ax.bpanel.colorbar(m, locator='null')
-
-
-
-.. image:: showcase/showcase_107_0.png
-   :width: 652px
-   :height: 287px
-
-
-It is also easy to change the “gamma” of perceptually uniform colormap
-on-the-fly. The “gamma” controls how the luminance and saturation
-channels vary for a `~proplot.colortools.PerceptuallyUniformColromap`
-map. A gamma larger than 1 emphasizes high luminance, low saturation
-colors, and vice versa. Again, see `~proplot.axes.wrapper_cmap` for
-details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
-    f, axs = plot.subplots(ncols=3, nrows=2, innercolorbars='r', aspect=1)
-    data = np.random.rand(10,10).cumsum(axis=1)
-    i = 0
-    for cmap in ('verdant','fire'):
-        for gamma in (0.8, 1.0, 1.4):
-            ax = axs[i]
-            m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
-            ax.rightpanel.colorbar(m1, clocator='none')
-            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying the gamma of "PerceptuallyUniformColormap" maps')
-            i += 1
-
-
-
-.. image:: showcase/showcase_109_0.png
-   :width: 652px
-   :height: 424px
-
-
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
 included, you can easily create SciVisColor-style merged colormaps with
 ProPlot’s on-the-fly colormap generator! An example is below. The
@@ -1714,7 +1632,7 @@ import.
 
 
 
-.. image:: showcase/showcase_111_1.png
+.. image:: showcase/showcase_106_1.png
    :width: 544px
    :height: 334px
 
@@ -1725,12 +1643,12 @@ passing a dictionary as the ``cmap`` keyword argument. This is powerd by
 the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl` static
 method.
 
-The ``h``, ``s``, and ``l`` arguments can be single numbers, lists of
-numbers, or single/lists of color strings. In the latter case, the
-corresponding channel value (hue, chroma, or luminance) for that color
-will be looked up and applied. You can end any color string with ``+N``
-or ``-N`` to offset the channel value by the number ``N``, as shown
-below.
+The ``h``, ``s``, and ``l`` arguments can be single numbers, color
+strings, or lists thereof. Numbers just indicate the channel value. For
+color strings, the corresponding channel value (i.e. hue, saturation, or
+luminance) for that color will be looked up. You can end any color
+string with ``+N`` or ``-N`` to offset the channel value by the number
+``N``, as shown below.
 
 .. code:: ipython3
 
@@ -1755,9 +1673,91 @@ below.
 
 
 
-.. image:: showcase/showcase_113_0.png
+.. image:: showcase/showcase_108_0.png
    :width: 724px
    :height: 345px
+
+
+In the below example, monochromatic colormaps are built from registered
+color names (this is done by varying the luminance channel from white to
+that color). The first plot shows several of these maps merged into one,
+and the second shows how the intensity of the “white” can be changed by
+adding a number to the end of the color string.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, axwidth=3, aspect=(4,3), bottomcolorbars=True, bottom=0.1)
+    data = np.random.rand(50,50).cumsum(axis=1)
+    m = axs[0].contourf(data, cmap=('navy', 'brick red', 'charcoal'), cmap_kw={'reverse':[True]*3})
+    f.bottompanel[0].colorbar(m, locator='null')
+    m = axs[1].contourf(data, cmap='ocean blue100', cmap_kw={'reverse':False})
+    f.bottompanel[1].colorbar(m, locator='null')
+    axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps',
+               collabels=('Three monochromatic colormaps, merged', 'Single monochromatic colormap'), collabelweight='normal')
+
+
+
+.. image:: showcase/showcase_110_0.png
+   :width: 634px
+   :height: 306px
+
+
+Diverging colormaps are easy to modify. Just use the ``cut`` argument to
+`~proplot.colortools.Colormap`; this is great when you want to have a
+sharper cutoff between negative and positive values for a diverging
+colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=3, innercolorbars='b', axwidth=2.3)
+    data = np.random.rand(50,50).cumsum(axis=0) - 50
+    for ax,cut in zip(axs,(0, 0.1, 0.2)):
+        m = ax.contourf(data, cmap='PurplePink', cmap_kw={'cut':cut}, levels=12)
+        ax.format(xlabel='x axis', ylabel='y axis', title=f'cut = {cut}',
+                  suptitle='Cutting out the central colors from a diverging colormap')
+        ax.bpanel.colorbar(m, locator='null')
+
+
+
+.. image:: showcase/showcase_112_0.png
+   :width: 733px
+   :height: 314px
+
+
+It is also easy to change the “gamma” of perceptually uniform colormap
+on-the-fly. The “gamma” controls how the luminance and saturation
+channels vary for a `~proplot.colortools.PerceptuallyUniformColromap`
+map. A gamma larger than 1 emphasizes high luminance, low saturation
+colors, and vice versa. Again, see `~proplot.axes.wrapper_cmap` for
+details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=3, nrows=2, innercolorbars='r', aspect=1)
+    data = np.random.rand(10,10).cumsum(axis=1)
+    i = 0
+    for cmap in ('verdant','fire'):
+        for gamma in (0.8, 1.0, 1.4):
+            ax = axs[i]
+            m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
+            ax.rightpanel.colorbar(m1, clocator='none')
+            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying the gamma of "PerceptuallyUniformColormap" maps')
+            i += 1
+
+
+
+.. image:: showcase/showcase_114_0.png
+   :width: 652px
+   :height: 424px
 
 
 Flexible identification
@@ -1785,7 +1785,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_115_0.png
+.. image:: showcase/showcase_116_0.png
    :width: 544px
    :height: 478px
 
@@ -1815,7 +1815,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_118_0.png
+.. image:: showcase/showcase_119_0.png
    :width: 517px
    :height: 356px
 
@@ -1840,7 +1840,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_119_1.png
+.. image:: showcase/showcase_120_1.png
    :width: 634px
    :height: 318px
 
@@ -1880,7 +1880,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_122_0.png
+.. image:: showcase/showcase_123_0.png
    :width: 436px
    :height: 603px
 
