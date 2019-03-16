@@ -58,7 +58,8 @@ Here are some highlights of the rest of the features:
    uniform colormaps" on-the-fly. Tools for slicing and modifying existing
    colormaps.
 *  Making colorbars from lists of lines
-   or colors, making axes "inset" colorbars.
+   or colors. Making axes "inset" colorbars. Making legends with centered
+   rows instead of aligned columns.
 *  Integration with basemap and cartopy. Generate arbitrary
    grids of map projections in one go. Switch between the cartopy and
    basemap backends painlessly. Using the axes methods directly for basemap
