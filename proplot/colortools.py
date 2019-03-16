@@ -276,9 +276,7 @@ _cmap_categories = {
     # Assorted origin, but these belong together
     'Grayscale': [
         'Grays',
-        'GrayCM',
-        'GrayC',
-        'PseudoGray',
+        'AltGrays',
         'GrayCycle',
         'GrayCycle_shifted',
         ],
@@ -1315,13 +1313,10 @@ def Colormap(*args, name=None, N=None,
                     cmap._init()
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            save = cmap.pop('save', save)
-            name = cmap.pop('name', name)
-            for key in cmap:
-                if key in kwargs:
-                    warnings.warn(f'Got duplicate keys "{key}" in cmap dictionary ({cmap[key]}) and in keyword args ({kwargs[key]}). Using first one.')
-            kw = kwargs.update
-            cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **{**kwargs, **cmap})
+            if {*cmap.keys()} == {'red','green','blue'}:
+                cmap = mcolors.LinearSegmentedColormap(name, cmap, N=N_)
+            else:
+                cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **kwargs)
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
             # List of color tuples or color strings, i.e. iterable of iterables
             # Transform C0, C1, etc. to their actual names first
