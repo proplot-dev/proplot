@@ -106,7 +106,7 @@ SPHINX_LT_17 = LooseVersion(__version__) < LooseVersion('1.7')
 
 api_class_methods = ['__init__', '__call__',
         '__getitem__', '__setitem__', '__setattr__',
-        '__getattribute__']
+        '__getattr__', '__getattribute__']
 api_ignore_methods = []
 
 def _str_list_converter(argument):

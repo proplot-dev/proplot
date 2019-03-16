@@ -2427,6 +2427,7 @@ class EmptyPanel(object):
         return False # it's empty, so this is 'falsey'
 
     def __getattr__(self, attr, *args):
+        """Raises RuntimeError."""
         if attr=='on': # mimicks on() function
             return (lambda : False)
         else:

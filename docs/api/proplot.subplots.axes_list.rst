@@ -10,8 +10,10 @@ axes_list
 
    .. autosummary::
 
+      ~axes_list.__getattr__
       ~axes_list.__getitem__
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: __getattr__
    .. automethod:: __getitem__
