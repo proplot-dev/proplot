@@ -1754,8 +1754,8 @@ for details.
     import numpy as np
     plot.nbsetup()
     f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=3, aspect=1.5)
-    m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,12))
-    f.bottompanel[0].colorbar(m, label='clabel', formatter='%.2f')
+    m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
+    f.bottompanel[0].colorbar(m, label='clabel', formatter='%.1f')
     lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap')
@@ -1770,7 +1770,7 @@ for details.
 
 .. image:: showcase/showcase_116_1.png
    :width: 634px
-   :height: 317px
+   :height: 318px
 
 
 Sampling cycles and colormaps

@@ -3295,7 +3295,7 @@ def colorbar_factory(ax, mappable, values=None,
         clabel=None, label=None,
         ctickminor=False, tickminor=None,
         cgrid=False, grid=None,
-        ticklocation=None, cticklocation=None, ctickdir=None, tickdir='out',
+        ticklocation=None, cticklocation=None, ctickdir=None, tickdir=None,
         cticks=None, ticks=None, clocator=None, locator=None,
         cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
         clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
@@ -3346,7 +3346,7 @@ def colorbar_factory(ax, mappable, values=None,
         sizes to match, because the `extendlength` units are *relative*.
     ctickdir, ticklocation, cticklocation
         Aliases for `tickdir`.
-    tickdir : {'out', 'in'}, optional
+    tickdir : {'bottom', 'top', 'left', 'right'}, optional
         Whether to draw tick marks pointing inside or outside.
     clabel, ctickminor, cgrid
         Aliases for `label`, `tickminor`, `grid`.
@@ -3562,7 +3562,6 @@ def colorbar_factory(ax, mappable, values=None,
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
     ticklocation = tickdir or ctickdir or ticklocation
-    ticklocation = {'out':'outer', 'in':'inner'}.get(ticklocation, ticklocation)
     kwargs.update({'ticks':locators[0], 'format':cformatter,
                    'ticklocation':ticklocation,
                    'extendfrac':extendlength})
