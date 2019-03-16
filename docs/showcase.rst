@@ -478,7 +478,7 @@ Now, `~matplotlib.axes.Axes.pcolor` and
 like `~matplotlib.axes.Axes.contourf`. This was previously really
 tricky to implement. Discrete levels can be preferred for scientific
 visualization, because it is easier to map colors to particular numbers
-with your eye. See `~proplot.axes.cmap_wrapper` for details.
+with your eye. See `~proplot.axes.wrapper_cmap` for details.
 
 I’ve also fixed the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
@@ -1126,8 +1126,8 @@ ProPlot. Note that longitudes are cyclically permuted so that the
 projection! You can also use the ``globe`` keyword arg with commands
 like `~matplotlib.axes.Axes.contourf` to ensure global data coverage.
 These featuers are powered by the
-`~proplot.axes.cartopy_gridfix_wrapper` and
-`~proplot.axes.basemap_gridfix_wrapper` wrappers.
+`~proplot.axes.wrapper_cartopy_gridfix` and
+`~proplot.axes.wrapper_basemap_gridfix` wrappers.
 
 .. code:: ipython3
 
@@ -1427,7 +1427,7 @@ matplotlib), and maps from several other projects like
 are removed, including the infamous ``'jet'`` map. Only the colormaps
 with poor, perceptually un-uniform transitions were thrown out.
 
-See `~proplot.axes.cmap_wrapper` and `~proplot.colortools.Colormap`
+See `~proplot.axes.wrapper_cmap` and `~proplot.colortools.Colormap`
 for usage details.
 
 .. code:: ipython3
@@ -1456,7 +1456,7 @@ you call it without a ``color`` argument. Change the color cycler with
 ``plot.rc.cycle = name``, or by passing ``cycle=name`` to any plotting
 command.
 
-See `~proplot.axes.cycle_wrapper`, `~proplot.colortools.Cycle`, and
+See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 `~proplot.rcmod` for usage details.
 
 .. code:: ipython3
@@ -1538,7 +1538,7 @@ generator! Every ``cmap`` argument for the commands in the
 `~matplotlib.axes.Axes.pcolormesh`) is passed to the
 ``proplot.Colormap`` constructor, as are keyword args specified with
 ``cmap_kw``. See `~proplot.colortools.Colormap` and
-`~proplot.axes.cmap_wrapper` for details.
+`~proplot.axes.wrapper_cmap` for details.
 
 In the below example, monochromatic colormaps are built from registered
 color names (this is done by varying the luminance channel from white to
@@ -1570,7 +1570,7 @@ adding a number to the end of the color string.
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
 `~proplot.colortools.Colormap`; this is great when you want to have a
 sharper cutoff between negative and positive values for a diverging
-colormap. Again, see `~proplot.axes.cmap_wrapper` for details.
+colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
 
 .. code:: ipython3
 
@@ -1596,7 +1596,7 @@ It is also easy to change the “gamma” of perceptually uniform colormap
 on-the-fly. The “gamma” controls how the luminance and saturation
 channels vary for a `~proplot.colortools.PerceptuallyUniformColromap`
 map. A gamma larger than 1 emphasizes high luminance, low saturation
-colors, and vice versa. Again, see `~proplot.axes.cmap_wrapper` for
+colors, and vice versa. Again, see `~proplot.axes.wrapper_cmap` for
 details.
 
 .. code:: ipython3
@@ -1727,7 +1727,7 @@ command, or by changing the global default cycle with
 totally interchangeable! You can use a colormap as a color cycler, and
 (though this isn’t recommended) vice versa.
 
-See `~proplot.colortools.Cycle` and `~proplot.axes.cycle_wrapper`
+See `~proplot.colortools.Cycle` and `~proplot.axes.wrapper_cycle`
 for details.
 
 .. code:: ipython3
