@@ -18,6 +18,7 @@ rcGlobals:
     gridminor: False
     hatch:     # hatching on background, useful for indicating invalid data
     facecolor: w
+    alpha:     1 # the background patch alpha
     small:     8
     large:     9
     linewidth: 0.6

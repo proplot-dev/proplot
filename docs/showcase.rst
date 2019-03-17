@@ -131,11 +131,12 @@ of the world doesn’t use “inches”, so I thought this would be useful.
 
 Subplot labelling is another useful ProPlot feature. The label order is
 row-major by default; to change this, use the
-`~proplot.subplots.subplot` ``order`` keyword arg. Change the label
-position with the ``abcpos`` `~proplot.rcmod` option, or the label
-style with the ``abcformat`` `~proplot.rcmod` option. Toggle labelling
-with ``abc=True``. See :ref:`Formatting your axes` and
-:ref:`Global settings` for details.
+`~proplot.subplots.subplot` ``order`` keyword arg.
+
+Change the label position with the ``abcpos`` `~proplot.rcmod` option,
+or the label style with the ``abcformat`` `~proplot.rcmod` option.
+Toggle labelling with ``abc=True``. See :ref:`Formatting your axes`
+and :ref:`Global settings` for details.
 
 .. code:: ipython3
 
@@ -143,8 +144,8 @@ with ``abc=True``. See :ref:`Formatting your axes` and
     plot.nbsetup()
     f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
     axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Title')
-    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, subplottight=False, wspace=0, hspace=0) # not 
-    axs.format(abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Title')
+    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, subplotpad=0) # not 
+    axs.format(alpha=0, abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Title')
 
 
 
@@ -155,8 +156,8 @@ with ``abc=True``. See :ref:`Formatting your axes` and
 
 
 .. image:: showcase/showcase_10_1.png
-   :width: 436px
-   :height: 446px
+   :width: 562px
+   :height: 572px
 
 
 To set up a complex grid of subplots, use a 2D array of integers. You

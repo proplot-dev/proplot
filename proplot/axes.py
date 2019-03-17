@@ -1726,6 +1726,10 @@ class XYAxes(BaseAxes):
         # formatter when it encounters certain types of data, like datetime.
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
+        # For tight layout; matplotlib draws tick bbox around ticks, even
+        # if they are actually all turned off.
+        self._xtick_pad_error = (0,0)
+        self._ytick_pad_error = (0,0)
 
     def __getattribute__(self, attr, *args):
         """

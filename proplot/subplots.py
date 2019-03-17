@@ -102,20 +102,31 @@ class axes_list(list):
 def _ax_span(ax, renderer, children=True):
     """Get span, accounting for panels, shared axes, and whether axes has
     been replaced by colorbar in same location."""
-    bboxs = [ax.get_tightbbox(renderer)]
+    # Get bounding boxes
+    pairs = [(ax, ax.get_tightbbox(renderer))]
     ax = ax._colorbar_parent or ax
     if children:
-        children = (ax.leftpanel, ax.bottompanel, ax.rightpanel, ax.toppanel,
+        axs = (ax.leftpanel, ax.bottompanel, ax.rightpanel, ax.toppanel,
             ax._twinx_child, ax._twiny_child)
-        for sub in children:
-            if not sub:
+        for iax in axs:
+            if not iax:
                 continue
-            sub = sub._colorbar_child or sub
-            if sub.get_visible():
-                bboxs.append(sub.get_tightbbox(renderer))
-    bboxs = [box for box in bboxs if box is not None]
-    xs = np.array([bbox.intervalx for bbox in bboxs])
-    ys = np.array([bbox.intervaly for bbox in bboxs])
+            iax = iax._colorbar_child or iax
+            if iax.get_visible():
+                pairs.append((iax, iax.get_tightbbox(renderer)))
+    pairs = [(_,bbox) for _,bbox in pairs if bbox is not None]
+    # Adjust spans for tick error
+    # NOTE: intervaly coordinates are from bottom to top of axes
+    for ax,bbox in pairs:
+        if not isinstance(ax, axes.XYAxes):
+            continue
+        xerr = ax._ytick_pad_error # error in x-direction, due to y ticks
+        bbox.intervalx = [bbox.intervalx[0] + xerr[0], bbox.intervalx[1] - sum(xerr)]
+        yerr = ax._xtick_pad_error # error in y-direction, due to x ticks
+        bbox.intervaly = [bbox.intervaly[0] + yerr[0], bbox.intervaly[1] - sum(yerr)]
+    # Return arrays
+    xs = np.array([bbox.intervalx for _,bbox in pairs])
+    ys = np.array([bbox.intervaly for _,bbox in pairs])
     xspan = [xs[:,0].min(), xs[:,1].max()]
     yspan = [ys[:,0].min(), ys[:,1].max()]
     return xspan, yspan
@@ -200,12 +211,12 @@ class Figure(mfigure.Figure):
         self._rcreset = rcreset
         self._extra_pad      = 0 # sometimes matplotlib fails, cuts off super title! will add to this
         self._smart_outerpad = units(_default(outerpad, rc['subplot.outerpad']))
-        self._smart_mainpad  = units(_default(subplotpad,  rc['subplot.subplotpad']))
+        self._smart_subplotpad  = units(_default(subplotpad,  rc['subplot.subplotpad']))
         self._smart_innerpad = units(_default(innerpad, rc['subplot.innerpad']))
         _false = lambda x: x is not None and not x
         if _false(outertight) and _false(subplottight) and _false(innertight):
             tight = False # weird usage, but means user turned each individual part off
-        tight        = _default(tight, rc['tight'])
+        tight  = _default(tight, rc['tight'])
         self._smart_tight         = tight # note name _tight already taken!
         self._smart_tight_outer   = _default(outertight, tight)
         self._smart_tight_subplot = _default(subplottight, tight)
@@ -489,26 +500,58 @@ class Figure(mfigure.Figure):
             # Get bounding box that encompasses *all artists*, compare to bounding
             # box used for saving *figure*
             pad = self._smart_outerpad
-            if self._subplots_kw is None or self._gridspec is None:
-                warnings.warn('Could not find "_subplots_kw" or "_gridspec" attributes, cannot get tight layout.')
-                self._smart_tight_init = False
-                return
             obbox = self.bbox_inches # original bbox
             if not renderer: # cannot use the below on figure save! figure becomes a special FigurePDF class or something
                 renderer = self.canvas.get_renderer()
             bbox = self.get_tightbbox(renderer)
             ox, oy, x, y = obbox.intervalx, obbox.intervaly, bbox.intervalx, bbox.intervaly
-            if np.any(np.isnan(x) | np.isnan(y)):
-                warnings.warn('Bounding box has NaNs, cannot get tight layout.')
-                self._smart_tight_init = False
-                return
             # Apply new kwargs
-            left, bottom, right, top = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
-            left   = subplots_kw.left - left + pad
-            right  = subplots_kw.right - right + pad
-            bottom = subplots_kw.bottom - bottom + pad
-            top    = subplots_kw.top - top + pad + self._extra_pad
-            subplots_kw.update({'left':left, 'right':right, 'bottom':bottom, 'top':top})
+            if np.any(np.isnan(x) | np.isnan(y)):
+                warnings.warn('Bounding box has NaNs, cannot get outer tight layout.')
+            else:
+                left, bottom, right, top = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
+                left   = subplots_kw.left - left + pad
+                right  = subplots_kw.right - right + pad
+                bottom = subplots_kw.bottom - bottom + pad
+                top    = subplots_kw.top - top + pad + self._extra_pad
+                subplots_kw.update({'left':left, 'right':right, 'bottom':bottom, 'top':top})
+
+        #----------------------------------------------------------------------#
+        # Tick fudge factor
+        #----------------------------------------------------------------------#
+        # matplotlib seems to always draw "tight" bounding box around tick
+        # marks, *whether or not there are actually tick marks there!* Must have
+        # to do with get_tick_padding command; matplotlib tight layout probably
+        # just queries that, doesn't check whether ticks are actually present!
+        for ax in self.main_axes:
+            iaxs = [ax]
+            iaxs += [panel for panel in (ax.leftpanel, ax.rightpanel,
+                ax.bottompanel, ax.toppanel) if panel.on()]
+            for iax in iaxs:
+                if not isinstance(ax, axes.XYAxes):
+                    continue
+                # Store error in *points*, because we use it to adjust bounding
+                # box span, whose default units are in dots.
+                # NOTE: No matter the edge linewidth, seems to be additional
+                # error of exactly 1 point in span.
+                # Left right ticks
+                yticks = [*ax.yaxis.majorTicks, *ax.yaxis.minorTicks]
+                if yticks:
+                    wticks = []
+                    for tick in yticks:
+                        pad = tick.get_tick_padding()
+                        wticks.append((pad*(not tick.tick1On), pad*(not tick.tick2On)))
+                    iax._ytick_pad_error = np.array(wticks).max(axis=0)*self.dpi/72 # is left, right tuple
+                iax._ytick_pad_error += np.array([1, 1])*self.dpi/72
+                # Bottom top ticks
+                xticks = [*ax.xaxis.majorTicks, *ax.xaxis.minorTicks]
+                if xticks:
+                    hticks = []
+                    for tick in xticks:
+                        pad = tick.get_tick_padding()
+                        hticks.append((pad*(not tick.tick1On), pad*(not tick.tick2On)))
+                    iax._xtick_pad_error = np.array(hticks).max(axis=0)*self.dpi/72 # is bottom, top tuple
+                iax._xtick_pad_error += np.array([1, 1])*self.dpi/72
 
         #----------------------------------------------------------------------#
         # Prevent overlapping axis tick labels and whatnot *within* figure
@@ -580,7 +623,7 @@ class Figure(mfigure.Figure):
                         groups.append({'b':{bottom}, 't':{top}}) # form new group
                 ygroups.append(groups)
             # Correct wspace and hspace
-            pad = self._smart_mainpad
+            pad = self._smart_subplotpad
             wspace, hspace = [], []
             for space_orig, groups in zip(wspace_orig, xgroups):
                 if not groups:
@@ -592,6 +635,7 @@ class Figure(mfigure.Figure):
                     right = min(xspans[idx,0] for idx in group['r']) # axes on right side of column
                     seps.append((right - left)/self.dpi)
                 wspace.append(max((0, space_orig - min(seps) + pad)))
+                # print('w', 72*space_orig, 72*min(seps), 72*pad)
             for space_orig, groups in zip(hspace_orig, ygroups):
                 if not groups:
                     hspace.append(space_orig)
@@ -605,6 +649,7 @@ class Figure(mfigure.Figure):
                     # top = min(yspans[idx,0] for idx in group['t'])
                     # seps.append((top - bottom)/self.dpi)
                 hspace.append(max((0, space_orig - min(seps) + pad)))
+                # print('h', 72*space_orig, 72*min(seps), 72*pad)
             # If had panels, need to pull out args
             lspace, rspace, bspace = 0, 0, 0 # does not matter if no panels
             if self.leftpanel:
@@ -630,18 +675,22 @@ class Figure(mfigure.Figure):
                 yspans = [bbox.intervaly for bbox in bboxs]
                 # Bottom, top
                 for row in range(nrows):
-                    pairs = [(ax.bottompanel, yspan) for ax,yspan in zip(axs,yspans) if ax._yrange[1]==row]
+                    pairs = [(ax.bottompanel, yspan) for ax,yspan in zip(axs,yspans)
+                            if ax._yrange[1]==row]
                     if pairs:
                         self._inner_tight_layout(*zip(*pairs), renderer, side='b')
-                    pairs = [(ax.toppanel, yspan) for ax,yspan in zip(axs,yspans) if ax._yrange[0]==row]
+                    pairs = [(ax.toppanel, yspan) for ax,yspan in zip(axs,yspans)
+                            if ax._yrange[0]==row]
                     if pairs:
                         self._inner_tight_layout(*zip(*pairs), renderer, side='t')
                 # Left, right
                 for col in range(ncols):
-                    pairs = [(ax.leftpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[0]==col]
+                    pairs = [(ax.leftpanel, xspan) for ax,xspan in zip(axs,xspans)
+                            if ax._xrange[0]==col]
                     if pairs:
                         self._inner_tight_layout(*zip(*pairs), renderer, side='l')
-                    pairs = [(ax.rightpanel, xspan) for ax,xspan in zip(axs,xspans) if ax._xrange[1]==col]
+                    pairs = [(ax.rightpanel, xspan) for ax,xspan in zip(axs,xspans)
+                            if ax._xrange[1]==col]
                     if pairs:
                         self._inner_tight_layout(*zip(*pairs), renderer, side='r')
                 # Reference axes
@@ -750,11 +799,11 @@ class Figure(mfigure.Figure):
         """
         # Notes
         # * Gridspec object must be updated before figure is printed to
-        #     screen in interactive environment; will fail to update after that.
-        #     Seems to be glitch, should open thread on GitHub.
+        #   screen in interactive environment; will fail to update after that.
+        #   Seems to be glitch, should open thread on GitHub.
         # * To color axes patches, you may have to explicitly pass the
-        #     transparent=False kwarg.
-        #     Some kwarg translations, to pass to savefig
+        #   transparent=False kwarg.
+        #   Some kwarg translations, to pass to savefig
         if 'alpha' in kwargs:
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:

@@ -225,6 +225,7 @@ _rcGlobals_children = {
     'cmap':       [],
     'lut':        ['image.lut'],
     'facecolor':  ['axes.facecolor'],
+    'alpha':      ['axes.alpha'], # this is a custom setting
     'hatch':      ['axes.hatch'],
     'grid':       ['axes.grid'],
     'geogrid':    ['axes.geogrid'],
