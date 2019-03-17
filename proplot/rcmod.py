@@ -148,7 +148,6 @@ in bulk, or as shorthands for common settings with longer names.
 Key                 Description
 ==================  ====================================================================================================================================================
 ``tight``           Whether to auto-adjust figure bounds and subplot spacings.
-``innertight``      Whether to auto-adjust spacing for axes with inner panels.
 ``cycle``           The default color cycle name, used e.g. for lines.
 ``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``cmap``            The default colormap.
@@ -220,7 +219,6 @@ _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     # 'nbsetup':    [], # special toggle
     'tight':      [],
-    'innertight': [],
     'reso':       [],
     'cycle':      [],
     'rgbcycle':   [],

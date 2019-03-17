@@ -758,7 +758,7 @@ def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
     `_get_lines` and `_get_patches_for_fill`.
     """
     # Determine and temporarily set cycler
-    # WARNING: Axes cycle as no getter, only setter (set_prop_cycle), which
+    # WARNING: Axes cycle has no getter, only setter (set_prop_cycle), which
     # sets a 'prop_cycler' attribute on the hidden _get_lines and
     # _get_patches_for_fill objects. This is the only way to query the "current"
     # axes cycler! Could also have wrapped set_prop_cycle but that calls
@@ -2493,14 +2493,22 @@ class PanelAxes(XYAxes):
         # Regular old inset legend
         if not fill:
             return super().legend(*args, **kwargs)
-        # Allocate invisible axes for drawing legend.
-        # Returns the axes and the output of legend_factory().
-        loc = {'bottom':'upper center', 'right':'center left',
-               'left':'center right',   'top':'lower center'}[self._side]
+        # Allocate invisible axes for drawing legend; by default try to
+        # make handles and stuff flush against the axes edge
         self.invisible()
-        kw = {'borderaxespad':0, 'frameon':False, 'loc':loc, 'bbox_transform':self.transAxes}
-        kw.update(kwargs)
-        return legend_factory(self, *args, **kw)
+        kwdefault = {'borderaxespad': 0}
+        if not kwargs.get('frameon', rc.get('legend.frameon')):
+            kwdefault['borderpad'] = 0
+        kwdefault.update(kwargs)
+        kwargs = kwdefault
+        # Location determined by panel side
+        # WARNING: center left and center right also turn off horizontal
+        # center alignment, so not an option.
+        if 'loc' in kwargs:
+            warnings.warn(f'Overriding user input legend property "loc".')
+        kwargs['loc'] = {'bottom':'upper center', 'right':'center',
+                          'left':'center',  'top':'lower center'}[self._side]
+        return legend_factory(self, *args, **kwargs)
 
     def colorbar(self, *args, fill=True, length=1, **kwargs):
         """Optionally fill the panel with a colorbar (``fill=True``) or draw
@@ -3257,8 +3265,6 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
         if candidate in kwargs:
             hsettings[candidate] = kwargs.pop(candidate)
-    # Overwrite alpha? Bad idea
-    # hsettings.update({'alpha':1.0})
     # Font name; 'prop' can be a FontProperties object or a dict for the kwargs
     # to instantiate one.
     kwargs.update({'prop': {'family': rc['fontname']}})
@@ -3281,38 +3287,35 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
         # Make sure we sample the *center* of the colormap
         warnings.warn('Getting legend entry from colormap.')
         size = np.mean(handle.get_sizes())
-        handles[i] = ax.scatter([0], [0],
-                                markersize=size,
+        handles[i] = ax.scatter([0], [0], markersize=size,
                                 color=[handle.cmap(0.5)],
                                 label=handle.get_label())
-    # handles = np.array(handles).squeeze().tolist()
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
         align = not list_of_lists
     else: # standardize format based on input
         if not align and not list_of_lists: # separate into columns
-            if 'ncol' not in kwargs:
-                kwargs['ncol'] = 3
-            ncol = kwargs['ncol']
-            list_of_lists = True
+            ncol = kwargs.pop('ncol', 3)
             handles = [handles[i*ncol:(i+1)*ncol]
                         for i in range(len(handles))] # to list of iterables
+            list_of_lists = True
+        elif not align and list_of_lists and 'ncol' in kwargs:
+            kwargs.pop('ncol')
+            warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
         if align and list_of_lists: # unfurl, because we just want one legend!
-            list_of_lists = False
-            handles = [handle for isiterable in handles for handle in isiterable]
+            handles = [handle for sublist in handles for handle in sublist]
             list_of_lists = False # no longer is list of lists
+    # Remove empty lists... pops up in some examples, not sure how
+    handles = [sublist for sublist in handles if sublist]
 
     # Now draw legend, with two options
     # 1) Normal legend, just draw everything like normal and columns
     # will be aligned; we re-order handles to be row-major, is only difference
     if align:
-        # Prepare settings
-        if list_of_lists:
-            kwargs['ncol'] = len(handles[0]) # choose this for column length
-        elif 'ncol' not in kwargs:
-            kwargs['ncol'] = 3
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
+        if 'ncol' not in kwargs:
+            kwargs['ncol'] = 3
         if order=='C':
             newhandles = []
             ncol = kwargs['ncol'] # number of columns
@@ -3332,14 +3335,30 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     # using the original legend command
     # Means we also have to overhaul some settings
     else:
-        legends = []
-        for override in ['loc','ncol','bbox_to_anchor','borderpad','borderaxespad','frameon','framealpha']:
+        # Warn when user input props are overridden
+        overridden = []
+        loc = kwargs.pop('loc', 'upper center')
+        loc = {0:'best',
+            1:'upper right',
+            2:'upper left',
+            3:'lower left',
+            4:'lower right',
+            5:'right',
+            6:'center left',
+            7:'center right',
+            8:'lower center',
+            9:'upper center',
+            10:'center'}.get(loc, loc)
+        if loc=='best':
+            warnings.warn('Cannot use "best" location for un-aligned legend. Defaulting to "upper center".')
+            overridden.append('loc')
+            loc = 'upper center'
+        for override in ['bbox_transform', 'bbox_to_anchor', 'frameon']:
             prop = kwargs.pop(override, None)
-        # overridden = []
-        # if prop is not None:
-        #     overridden.append(override)
-        # if overridden:
-        #     warnings.warn(f'Overriding legend properties {", ".join(prop for prop in overridden)}.')
+            if prop is not None:
+                overridden.append(override)
+        if overridden:
+            warnings.warn(f'Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
@@ -3350,12 +3369,21 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
         # Iterate and draw
         if order=='F':
             raise NotImplementedError(f'When align=False, proplot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
+        legends = []
         for h,hs in enumerate(handles):
-            bbox = mtransforms.Bbox([[0, 1-(h+1)*interval], [1, 1-h*interval]])
-            leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs),
-                loc='center',
+            if 'upper' in loc:
+                y1 = 1 - (h+1)*interval
+                y2 = 1 - h*interval
+            elif 'lower' in loc:
+                y1 = (len(handles) + h - 2)*interval
+                y2 = (len(handles) + h - 1)*interval
+            else: # center
+                y1 = 0.5 + interval*len(handles)/2 - (h+1)*interval
+                y2 = 0.5 + interval*len(handles)/2 - h*interval
+            bbox = mtransforms.Bbox([[0, y1], [1, y2]])
+            leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs), loc=loc,
                 frameon=False,
-                borderpad=0,
+                bbox_transform=ax.transAxes,
                 bbox_to_anchor=bbox,
                 **kwargs) # _format_legend is overriding original legend Method
             legends.append(leg)

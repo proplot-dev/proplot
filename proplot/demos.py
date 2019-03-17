@@ -62,9 +62,9 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
     # Note we invert the x-y ordering for imshow
     rc['facecolor'] = 'k'
     f, axs = subplots(ncols=3,
-                        span=0, share=0, wspace=0.6, axwidth=2.5,
-                        bottom=0, left=0, right=0,
-                        aspect=1, tight=True)
+                    span=0, share=0, axwidth=2,
+                    bottom=0, left=0, right=0,
+                    aspect=1, tight=True, subplotpad=0.05)
     for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
         for j in range(hsl.shape[0]):
@@ -87,8 +87,8 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
     varies in the HCL, HSLuv, and HPLuv colorspaces."""
     # Figure
     f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
-                           span=0, sharey=1, wspace=0.5,
-                           bottom=0.4, axwidth=2, aspect=1, tight=True)
+                    span=False, sharey=1, subplotpad=0.05,
+                    axwidth=1.3, aspect=1, tight=True)
     x = np.linspace(0, 1, N)
     cmap = tools.Colormap(cmap, N=N) # arbitrary cmap argument
     cmap._init()
@@ -116,7 +116,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
             h, = ax.plot(x, y, color=colors[i], lw=2, label=label)
             m = max(m, max(y))
             hs += [h]
-        f.bottompanel[j].legend(hs)
+        f.bottompanel[j].legend([hs[:2], hs[-1:]])
         ax.axhline(1, color='gray7', dashes=(1.5, 2.5), alpha=0.8, zorder=0, lw=2)
         ax.format(title=space.upper(), titlepos='oc', ylim=(0-0.1, m + 0.1))
     # Draw colorbar

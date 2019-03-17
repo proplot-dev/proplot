@@ -21,9 +21,12 @@ features – but this is discouraged.
 .. code:: ipython3
 
     import matplotlib.pyplot as plt
+    import numpy as np
     plt.figure(figsize=(5,3))
     plt.plot(np.random.rand(10,10), lw=3)
     plt.title('PyPlot API (discouraged)')
+    plt.xlabel('x axis')
+    plt.ylabel('y axis')
 
 
 
@@ -39,9 +42,12 @@ features – but this is discouraged.
 .. code:: ipython3
 
     import matplotlib.pyplot as plt
+    import numpy as np
     f, ax = plt.subplots(figsize=(5,3))
     ax.plot(np.random.rand(10,10), lw=3)
     ax.set_title('Object-oriented API (recommended)')
+    ax.set_xlabel('x axis')
+    ax.set_ylabel('y axis')
 
 
 
@@ -54,8 +60,8 @@ features – but this is discouraged.
    :height: 270px
 
 
-ProPlot API
------------
+ProPlot subplots
+----------------
 
 The `~proplot.subplots.subplots` command is your gateway to all of
 ProPlot’s features. Its usage is sort of like the pyplot
@@ -68,9 +74,9 @@ axes.
     import proplot as plot
     plot.nbsetup()
     f, ax = plot.subplots(width=2)
-    ax.format(title='ProPlot API')
+    ax.format(title='ProPlot API', xlabel='x axis', ylabel='y axis')
     f, axs = plot.subplots(ncols=3, nrows=2, width=5)
-    axs.format(title='ProPlot API')
+    axs.format(title='Axes', suptitle='ProPlot API', xlabel='x axis', ylabel='y axis')
 
 
 
@@ -82,16 +88,81 @@ axes.
 
 .. image:: showcase/showcase_6_1.png
    :width: 450px
-   :height: 323px
+   :height: 341px
 
 
-Subplot grids
--------------
+Most matplotlib sizing arguments assume the units “inches” or some
+“relative” unit size – e.g. relative to the axes width. With ProPlot,
+most sizing arguments are interpreted as follows: if numeric, the units
+are inches, and if string, the units are interpreted by
+`~proplot.utils.units` (see `~proplot.utils.units` documentation for
+a table). Note this means even `~matplotlib.gridspec.GridSpec`
+arguments like ``wspace`` and ``hspace`` accept physical units (see
+`~proplot.subplots.subplots` for details). I recognize that the rest
+of the world doesn’t use “inches”, so I thought this would be useful.
 
-Set up a complex grid of subplots using a 2D array of integers – just
-think of the array as a “picture” of your figure. Now the below grid is
-built from just one line of code, instead of 6 lines. The order of
-numbers determines order of a-b-c labels. See
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f, axs1 = plot.subplots(ncols=2, axwidth=1, height='45mm')
+    f, axs2 = plot.subplots(width='5cm', aspect=(2,1))
+    f, axs3 = plot.subplots(height='150pt', aspect=0.5)
+    plot.axes_list([*axs1,*axs2,*axs3]).format(suptitle='Title', xlabel='x axis', ylabel='y axis')
+
+
+
+.. image:: showcase/showcase_8_0.png
+   :width: 280px
+   :height: 159px
+
+
+
+.. image:: showcase/showcase_8_1.png
+   :width: 177px
+   :height: 121px
+
+
+
+.. image:: showcase/showcase_8_2.png
+   :width: 119px
+   :height: 187px
+
+
+Subplot labelling is another useful ProPlot feature. The label order is
+row-major by default; to change this, use the
+`~proplot.subplots.subplot` ``order`` keyword arg. Change the label
+position with the ``abcpos`` `~proplot.rcmod` option, or the label
+style with the ``abcformat`` `~proplot.rcmod` option. Toggle labelling
+with ``abc=True``. See :ref:`Formatting your axes` and
+:ref:`Global settings` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.nbsetup()
+    f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
+    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Title')
+    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, subplottight=False, wspace=0, hspace=0) # not 
+    axs.format(abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Title')
+
+
+
+.. image:: showcase/showcase_10_0.png
+   :width: 364px
+   :height: 393px
+
+
+
+.. image:: showcase/showcase_10_1.png
+   :width: 436px
+   :height: 446px
+
+
+To set up a complex grid of subplots, use a 2D array of integers. You
+can think of this array as a “picture” of your figure. This lets you
+build the below grid in just one line of code, instead of 6 lines. The
+order of numbers determines order of a-b-c labels. See
 `~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
@@ -110,53 +181,13 @@ numbers determines order of a-b-c labels. See
 
 
 
-.. image:: showcase/showcase_9_1.png
+.. image:: showcase/showcase_12_1.png
    :width: 450px
    :height: 543px
 
 
-Arbitrary units
----------------
-
-By default, most matplotlib sizing arguments assume the units “inches”
-or some “relative” unit size – e.g. relative to the axes width. With
-ProPlot, virtually **every** sizing argument is interpreted in the same
-way – if numeric, the units are inches, and if string, the units are
-interpreted by `~proplot.utils.units` (see `~proplot.utils.units`
-documentation for a handy table). Note this means even
-`~matplotlib.gridspec.GridSpec` arguments like ``wspace`` and
-``hspace`` are now in inches by default (see
-`~proplot.subplots.subplots` for details).
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.nbsetup()
-    f, ax = plot.subplots(ncols=2, axwidth=1, axheight='15mm')
-    f, ax = plot.subplots(width='5cm', aspect=(3,1))
-    f, ax = plot.subplots(height='120pt', aspect=1.5)
-
-
-
-.. image:: showcase/showcase_11_0.png
-   :width: 274px
-   :height: 120px
-
-
-
-.. image:: showcase/showcase_11_1.png
-   :width: 177px
-   :height: 85px
-
-
-
-.. image:: showcase/showcase_11_2.png
-   :width: 216px
-   :height: 150px
-
-
-A smarter “tight layout”
-------------------------
+Improved “tight layout”
+-----------------------
 
 With ProPlot, you will always get just the right amount of spacing
 between subplots so that elements don’t overlap, and just the right
@@ -182,7 +213,7 @@ examples are below.
 
 
 
-.. image:: showcase/showcase_14_0.png
+.. image:: showcase/showcase_15_0.png
    :width: 382px
    :height: 373px
 
@@ -196,7 +227,7 @@ examples are below.
 
 
 
-.. image:: showcase/showcase_15_0.png
+.. image:: showcase/showcase_16_0.png
    :width: 436px
    :height: 463px
 
@@ -213,7 +244,7 @@ examples are below.
 
 
 
-.. image:: showcase/showcase_16_0.png
+.. image:: showcase/showcase_17_0.png
    :width: 364px
    :height: 557px
 
@@ -224,13 +255,14 @@ examples are below.
     plot.nbsetup()
     f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, innerpanels='lr', inner_kw={'rshare':False})
     axs.format(ylabel='ylabel', xlabel='xlabel')
+    axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
 
 
 
-.. image:: showcase/showcase_17_0.png
+.. image:: showcase/showcase_18_0.png
    :width: 634px
-   :height: 216px
+   :height: 201px
 
 
 Formatting your axes
@@ -289,7 +321,7 @@ axes **simultaneously** (as in the below example).
 
 
 
-.. image:: showcase/showcase_19_0.png
+.. image:: showcase/showcase_20_0.png
    :width: 490px
    :height: 397px
 
@@ -366,7 +398,7 @@ is rendered by the matplotlib backend or saved to file.
 
 
 
-.. image:: showcase/showcase_21_1.png
+.. image:: showcase/showcase_22_1.png
    :width: 540px
    :height: 260px
 
@@ -405,17 +437,18 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_24_0.png
+.. image:: showcase/showcase_25_0.png
    :width: 301px
    :height: 362px
 
 
-A particularly useful `~proplot.axes.colorbar_factory` feature is the
-following, you no longer have to pass a “mappable” object (i.e. the
-output of `~matplotlib.axes.Axes.contourf` or similar). ``colorbar``
-will now accept any list of objects with ``get_color`` methods, or a
-list of color strings/RGB tuples! A colormap is constructed on-the-fly
-from the corresponding colors.
+A particularly useful `~proplot.axes.colorbar_factory` feature is that
+it does not require a “mappable” object (i.e. the output of
+`~matplotlib.axes.Axes.contourf` or similar). It will also accept any
+list of objects with ``get_color`` methods (for example, the “handles”
+returned by `~matplotlib.axes.Axes.plot`), or a list of color
+strings/RGB tuples! A colormap is constructed on-the-fly from the
+corresponding colors.
 
 .. code:: ipython3
 
@@ -424,9 +457,9 @@ from the corresponding colors.
     # plot.rc['axes.labelweight'] = 'bold'
     hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
     ax.format(suptitle='Colorbar from line handles', xlabel='x axis', ylabel='y axis')
-    f.bpanel.colorbar(hs, values=np.arange(0,12),
-                      label='Label for lines that map to numeric values',
-                      tickdir='top', # because why not?
+    f.bpanel.colorbar(hs, values=np.arange(0,6,0.5),
+                      label='"Legend" for lines that map to numeric values',
+                      tickloc='top', # because why not?
                      )
 
 
@@ -435,9 +468,9 @@ from the corresponding colors.
 
 
 
-.. image:: showcase/showcase_26_1.png
+.. image:: showcase/showcase_27_1.png
    :width: 346px
-   :height: 310px
+   :height: 316px
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -460,22 +493,23 @@ and forcing the background to be invisible.
     plot.nbsetup()
     plot.rc.cycle = 'intersection'
     labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee', 'ffffff']
-    f, axs = plot.subplots(ncols=2, bottomlegends=True, span=False, share=0)
+    f, axs = plot.subplots(ncols=2, bottomlegends=True, rightpanel=True, span=False, share=0)
     hs = []
     for i,label in enumerate(labels):
         hs += axs.plot(np.random.rand(20), label=label, lw=3)[0]
     axs[0].legend(order='F', frameon=True, loc='lower left')
     f.bpanel[0].legend(hs, ncols=4, align=True, frameon=True)
     f.bpanel[1].legend(hs, ncols=4, align=False)
+    f.rpanel.legend(hs, ncols=1, align=False)
     axs.format(ylim=(-0.1, 1.1), xlabel='xlabel', ylabel='ylabel',
                suptitle='Demo of new legend options',
                collabels=['Inner legend, outer aligned legend', 'Outer un-aligned legend'], collabelweight='normal')
 
 
 
-.. image:: showcase/showcase_28_0.png
-   :width: 454px
-   :height: 294px
+.. image:: showcase/showcase_29_0.png
+   :width: 532px
+   :height: 303px
 
 
 Improved plotting methods
@@ -497,15 +531,18 @@ issues by automatically changing the edge colors after ``contourf``,
 
 .. code:: ipython3
 
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
     f, axs = plot.subplots(ncols=2, innercolorbars='b')
-    data = 20*(np.random.rand(20,20) - 0.5).cumsum(axis=0).cumsum(axis=1)
-    N, step = 100, 20
+    data = 20*(np.random.rand(20,20) - 0.45).cumsum(axis=0).cumsum(axis=1)
+    N, step = 500, 75
     ax = axs[0]
-    m = ax.pcolormesh(data, levels=np.arange(-N,N,0.2), cmap='temperature', extend='both')
+    m = ax.pcolormesh(data, levels=np.arange(0,N,0.2), cmap='phase', extend='both')
     ax.format(title='Pcolor without discernible levels', suptitle='Pcolor demo')
     ax.bpanel.colorbar(m, locator=step)
     ax = axs[1]
-    m = ax.pcolormesh(data, levels=plot.arange(-N,N,step), cmap='temperature', extend='both')
+    m = ax.pcolormesh(data, levels=plot.arange(0,N,step), cmap='phase', extend='both')
     ax.format(title='Pcolor plot with levels')
     ax.bpanel.colorbar(m, locator=step)
 
@@ -515,7 +552,7 @@ issues by automatically changing the edge colors after ``contourf``,
 
 
 
-.. image:: showcase/showcase_31_1.png
+.. image:: showcase/showcase_32_1.png
    :width: 454px
    :height: 293px
 
@@ -532,51 +569,40 @@ other coordinate at each point on the line. See
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, axs = plot.subplots(bottompanel=True, axwidth=4, aspect=(2,1))
-    m = axs.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50), cmap='sunset', values=np.arange(50), lw=7, extend='both')
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Line with smooth color gradations')
-    f.bottompanel.colorbar(m, label='parametric coordinate', locator=5)
-
-
-
-
-
-
-
-.. image:: showcase/showcase_33_1.png
-   :width: 436px
-   :height: 313px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.nbsetup()
+    f, ax = plot.subplots(innercolorbars='b', axwidth=4, aspect=(2,1))
+    m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50), cmap='sunset', values=np.arange(50), lw=7, extend='both')
+    ax.format(xlabel='xlabel', ylabel='ylabel', suptitle='Line with smooth color gradations')
+    ax.bottompanel.colorbar(m, label='parametric coordinate', locator=5)
     # Make a pretty spiral
     N = 12
     values = np.arange(1, N+1)
     radii = np.linspace(1,0.2,N)
     angles = np.linspace(0,4*np.pi,N)
-    # Figure
-    f, axs = plot.subplots(innercolorbars='b', ncols=2, axwidth=2, bwidth=0.8, span=False)
+    f, ax = plot.subplots(innercolorbars='b', ncols=1, axwidth=2, bwidth=0.8, span=False)
     axs = axs[::-1]
-    cmaps = [('slate blue', 'sienna'), 'thermal']
-    multipliers = [1.2, 1.4]
-    for i,(ax,cmap) in enumerate(zip(axs,cmaps)):
-        x = radii*np.cos(multipliers[i]*angles)
-        y = radii*np.sin(multipliers[i]*angles)
-        m = ax.plot(x, y, cmap=cmap, values=values+i*12,
-                    linewidth=15, interp=1-i, cmap_kw={'left':i*0.05})
-        ax.format(xlim=(-1,1), ylim=(-1,1), suptitle='Lines with smooth color gradations',
-                  xlabel='cosine angle', ylabel='sine angle', title=f'Dataset #{i+1}')
-        ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
+    x = radii*np.cos(1.4*angles)
+    y = radii*np.sin(1.4*angles)
+    m = ax.plot(x, y, values=values,
+                linewidth=15, interp=False, cmap='thermal')
+    ax.format(xlim=(-1,1), ylim=(-1,1), suptitle='With step gradations',
+              xlabel='cosine angle', ylabel='sine angle')
+    ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
 
 
 
-.. image:: showcase/showcase_34_0.png
-   :width: 454px
-   :height: 309px
+
+
+
+
+.. image:: showcase/showcase_34_1.png
+   :width: 436px
+   :height: 304px
+
+
+
+.. image:: showcase/showcase_34_2.png
+   :width: 256px
+   :height: 302px
 
 
 Inner panels, colorbars
@@ -721,10 +747,10 @@ DejaVu Sans. You can change the default font by modifying your
 
     import proplot as plot
     plot.nbsetup()
-    plot.rc['small'] = plot.rc['large'] = 10
+    plot.rc['small'] =  8
     plot.rc['fontname'] = 'Helvetica'
     f, axs = plot.subplots(ncols=4, nrows=3, share=False, span=False,
-                           axwidth=2.0, aspect=0.85, wspace=0.5, hspace=0.5)
+                           axwidth=1.5, axheight=2, wspace=0.5, hspace=0.5)
     # options = ['ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
     #            'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black',
     #            'italic', 'oblique'] # remove redundancies below
@@ -752,8 +778,8 @@ DejaVu Sans. You can change the default font by modifying your
 
 
 .. image:: showcase/showcase_46_0.png
-   :width: 931px
-   :height: 779px
+   :width: 751px
+   :height: 697px
 
 
 Cartesian axes
@@ -1420,6 +1446,8 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 .. image:: showcase/showcase_89_0.png
+   :width: 576px
+   :height: 212px
 
 
 .. code:: ipython3
@@ -1431,6 +1459,8 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 .. image:: showcase/showcase_90_0.png
+   :width: 576px
+   :height: 212px
 
 
 .. code:: ipython3
@@ -1442,6 +1472,8 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 .. image:: showcase/showcase_91_0.png
+   :width: 576px
+   :height: 212px
 
 
 Use `~proplot.demos.cmap_breakdown` with any colormap to get a
@@ -1462,10 +1494,14 @@ relatively non-linear in saturation.
 
 
 .. image:: showcase/showcase_93_1.png
+   :width: 748px
+   :height: 249px
 
 
 
 .. image:: showcase/showcase_93_2.png
+   :width: 748px
+   :height: 245px
 
 
 Table of colormaps

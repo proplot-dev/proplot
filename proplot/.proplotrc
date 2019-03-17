@@ -4,7 +4,6 @@
 rcGlobals:
     # Subplots
     tight:      True
-    innertight: True
     # Important settings
     fontname:  # automatically determined by OS
     cycle:     colorblind
