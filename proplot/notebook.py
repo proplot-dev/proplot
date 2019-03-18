@@ -50,17 +50,12 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     Also enables the useful `autoreload
     <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     and autosave extensions. The latter automatically saves your notebook
-    every `autosave` seconds.
-
-    Just add this to the first cell of your notebook:
-
-    .. code-block:: python
-
-        import proplot as plot
-        plot.nbsetup()
-
-    and voila! Pass an optional `directory` argument to make
+    every `autosave` seconds. Pass an optional `directory` argument to make
     that the new working directory.
+
+    By default, this is called every time you ``import proplot``. To disable
+    this behavior, use ``nbsetup: False`` in your ``.proplotrc`` file. See the
+    `~proplot.rcmod` documentation for details.
     """
     # Variables
     cd = os.getcwd()
