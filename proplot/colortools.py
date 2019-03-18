@@ -1911,8 +1911,8 @@ class BinNorm(mcolors.BoundaryNorm):
         # * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
         #   where the offset X equals step/len(levels).
         # First get coordinates
-        # if not norm or type(norm) is mcolors.Normalize:
-        #     norm = lambda x: x # linear transition, no need to normalize
+        if not norm or type(norm) is mcolors.Normalize:
+            norm = lambda x: x # linear transition, no need to normalize
         x_b = norm(levels)
         x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
         y = (x_m - x_m.min())/(x_m.max() - x_m.min())
@@ -1929,6 +1929,7 @@ class BinNorm(mcolors.BoundaryNorm):
         if extend in ('max','both'):
             scale -= eps
         y = np.concatenate(([0], offset + scale*y, [1])) # insert '0' (arg 3) before index '0' (arg 2)
+        ic(y)
         self._norm = norm
         self._x_b = x_b
         self._y = y
@@ -1947,8 +1948,11 @@ class BinNorm(mcolors.BoundaryNorm):
         # just use searchsorted to bin the data.
         # Note the bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
+        ic('b',xq)
         xq = self._norm(np.atleast_1d(xq))
+        ic('a',xq)
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
+        # ic(xq, yq)
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):

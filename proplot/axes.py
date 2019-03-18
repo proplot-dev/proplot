@@ -638,10 +638,11 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
     # See this post: https://stackoverflow.com/a/48614231/4970632
     name = func.__name__
     if np.iterable(values):
-        if kwargs.get('interp', None): # e.g. for cmapline, we want to *interpolate*
+        if name=='cmapline': # e.g. for cmapline, we want to *interpolate*
             values_as_levels = False # get levels later down the line
         if not values_as_levels:
             kwargs['values'] = values
+            levels = utils.edges(values) # special case, used by colorbar factory
         else:
             if isinstance(norm, str) and 'segment' in norm or norm is None:
                 levels = utils.edges(values) # special case, used by colorbar factory
@@ -651,15 +652,18 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
                     levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
                 else:
                     levels = utils.edges(values)
-    levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
     # Input colormap
     cyclic = False
+    colors = _default(color, colors)
+    levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+    linewidths = _default(lw, linewidth, linewidths)
+    linestyles = _default(ls, linestyle, linestyles)
     if not re.match('contour$', name): # contour, tricontour, i.e. not a method where cmap is optional
         cmap = cmap or rc['image.cmap']
     if cmap is not None:
         if isinstance(cmap, (str, dict, mcolors.Colormap)):
             cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, N=10, **cmap_kw)
+        cmap = colortools.Colormap(*cmap, N=None, **cmap_kw)
         cyclic = cmap._cyclic
         if cyclic and extend!='neither':
             warnings.warn(f'Cyclic colormap selected. Overriding user input extend "{extend}".')
@@ -671,14 +675,20 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
         kwargs['aspect'] = 'auto'
     # New feature, add lines to contourf
     # TODO: Check all this stuff for quiver, etc.!
-    colors = _default(color, colors)
-    linewidths = _default(lw, linewidth, linewidths)
-    linestyles = _default(ls, linestyle, linestyles)
     if re.match('contour$', name): # add ability to specify line widths with contours!
         if colors:
             kwargs['colors'] = colors
         if linewidths:
             kwargs['linewidths'] = linewidths
+        if linestyles:
+            kwargs['linestyles'] = linestyles
+    elif name=='cmapline':
+        if colors:
+            kwargs['color'] = colors
+        if linewidths:
+            kwargs['linewidth'] = linewidths
+        if linestyles:
+            kwargs['linestyle'] = linestyles
 
     # Call function with custom kwargs, exit if no cmap
     result = func(*args, **kwargs)
