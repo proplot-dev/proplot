@@ -3,7 +3,7 @@
 #-------------------------------------
 rcGlobals:
     # Notebooks
-    nbsetup:    False
+    nbsetup:    True
     # Subplots
     tight:      True
     # Important settings
