@@ -798,6 +798,7 @@ class Figure(mfigure.Figure):
             height_new = np.diff(ax._position.intervaly)*self.height
             ax.width, ax.height = width_new, height_new
 
+    # @_counter
     def draw(self, renderer, *args, **kwargs):
         """Fix the "super title" position and automatically adjust the
         main gridspec, then call the parent `~matplotlib.figure.Figure.draw`
@@ -808,10 +809,10 @@ class Figure(mfigure.Figure):
         # coordinates, so must be updated when figure shape changes).
         self._lock_twins()
         self._suptitle_setup(renderer) # just applies the spacing
-        out = super().draw(renderer, *args, **kwargs)
         self._auto_smart_tight_layout(renderer)
         for axis in self._span_labels:
             axis.axes._share_span_label(axis, final=True)
+        out = super().draw(renderer, *args, **kwargs)
 
         # If rc settings have been changed, reset them after drawing is done
         # Usually means we have finished executing a notebook cell

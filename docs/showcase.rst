@@ -700,7 +700,7 @@ too!
 
 The “global” colorbars can extend across every row and column of the
 subplot array, or across arbitrary contiguous rows and columns. The
-associated axes instances are found on the `~proplot.figure.Figure`
+associated axes instances are found on the `~proplot.subplots.Figure`
 instance under the names ``bottompanel``, ``leftpanel``, and
 ``rightpanel`` (you can also use the shorthand ``bpanel``, ``lpanel``,
 and ``rpanel``). See `~proplot.subplots.subplots` for details.
@@ -968,9 +968,9 @@ Specifying tick locations is much easier and much less verbose with
 ProPlot. Pass a number to tick every ``N`` data values, look up a
 builtin matplotlib `~matplotlib.ticker` with a string key name, or
 pass a list of numbers to tick specific locations. I recommend using
-ProPlot’s `~proplot.arange` function to generate lists of ticks – it’s
-like numpy’s `~numpy.arange`, but is **endpoint-inclusive**, which
-more often than not is what you’ll want in this context.
+ProPlot’s `~proplot.utils.arange` function to generate lists of ticks
+– it’s like numpy’s `~numpy.arange`, but is **endpoint-inclusive**,
+which more often than not is what you’ll want in this context.
 
 See `~proplot.axes.XYAxes.smart_update` and
 `~proplot.axistools.Locator` for details.
@@ -1185,22 +1185,19 @@ See `~proplot.axes.XYAxes.smart_update` and
 Map projection axes
 ===================
 
-ProPlot isn’t just great for Cartesian-axis plotting. It also includes
-seamless integration with the `cartopy` and `basemap` packages. See
-`~proplot.subplots.subplots` and
+ProPlot includes seamless integration with the `cartopy` and
+`basemap` packages. See `~proplot.subplots.subplots` and
 `~proplot.axes.MapAxes.smart_update` for details. Note these features
 are **optional** – if you don’t want to use them, you don’t need to have
 `cartopy` or `basemap` installed.
 
 Formatting map axes is just like formatting Cartesian axes: just pass
 arguments like ``lonlim``, and ``lonlocator`` to
-`~proplot.axes.BaseAxes.format`, as before.
-
-Plotting geophysical data is also much easier. For basemap axes, you can
-plot geophysical data by calling axes methods (e.g.
-`~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.plot`) as
-usual – there is no need to directly reference the
-``~mpl_toolkits.basemap.Basemap`` instance! For cartopy axes, you no
+`~proplot.axes.BaseAxes.format`, as before. Plotting geophysical data
+is also much easier. For basemap axes, you can plot geophysical data by
+calling axes methods (e.g. `~matplotlib.axes.Axes.contourf`,
+`~matplotlib.axes.Axes.plot`) as usual – there is no need to use the
+`~mpl_toolkits.basemap.Basemap` instance! For cartopy axes, you no
 longer need to pass ``transform=crs.PlateCarree()`` to the plotting
 command, as I found myself doing 99% of the time – this is the new
 default. Declaring projections with cartopy is also much easier: now,
@@ -1316,7 +1313,7 @@ Geographic features
 -------------------
 
 To modify the projections, you can also pass keyword args to the
-``~mpl_toolkits.basemap.Basemap`` and `~cartopy.crs.Projection`
+`~mpl_toolkits.basemap.Basemap` and `~cartopy.crs.Projection`
 initializers with the ``proj_kw`` keyword arg. Note that native
 `PROJ.4 <https://proj4.org/operations/projections/index.html>`__ keyword
 options are now accepted along with their more verbose cartopy aliases –
@@ -1561,13 +1558,16 @@ Table of color cycles
 ---------------------
 
 Use `~proplot.demos.cycle_show` to generate a table of registered
-color cycles, as shown below.
+color cycles, as shown below. To add **your own** color cycler, write a
+list of comma-delimited hex strings to a file named ``cycle_name.hex``,
+and add it to the ``.proplot`` folder in your home directory.
 
-These can be used for the matplotlib “property cycler” – that is, the
-list of colors that `~matplotlib.axes.Axes.plot` loops through when
-you call it without a ``color`` argument. Change the color cycler with
-``plot.rc.cycle = name``, or by passing ``cycle=name`` to any plotting
-command.
+“Color cycles” are used for the matplotlib “property cycler” – that is,
+the list of colors that `~matplotlib.axes.Axes.plot` loops through
+when you call it without a ``color`` argument. The first color of the
+“property cycler” is used to fill patch objects, like bars. To change
+the color cycler, use ``plot.rc.cycle = name`` or pass ``cycle=name`` to
+any plotting command.
 
 See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 `~proplot.rcmod` for usage details.

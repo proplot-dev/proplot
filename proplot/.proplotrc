@@ -2,6 +2,8 @@
 # ProPlot global settings
 #-------------------------------------
 rcGlobals:
+    # Notebooks
+    nbsetup:    False
     # Subplots
     tight:      True
     # Important settings

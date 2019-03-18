@@ -185,7 +185,8 @@ _data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but 
 _data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
 
 # Default number of colors
-_N_hires = 256
+# _N_hires = 12
+_N_hires = 128
 
 # Define some new palettes
 # Note the default listed colormaps
@@ -1817,14 +1818,6 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         return norm
     if levels is None and values is not None:
         levels = utils.edges(values)
-    if not norm: # is None
-        # By default, make arbitrary monotonic user levels proceed linearly
-        # through color space
-        if levels is not None:
-            norm = 'segments'
-        # Fall back if no levels provided
-        else:
-            norm = 'linear'
     if isinstance(norm, str):
         # Get class
         norm_out = normalizers.get(norm, None)
@@ -1912,16 +1905,14 @@ class BinNorm(mcolors.BoundaryNorm):
             raise ValueError(f'Unknown extend option "{extend}". Choose from "min", "max", "both", "neither".')
 
         # Determine color ids for levels, i.e. position in 0-1 space
-        # Notes:
-        # * If user used LinearSegmentedNorm for the normalizer (the
-        #   default) any monotonic levels will be even.
         # Length of these ids should be N + 1 -- that is, N - 1 colors
         # for values in-between levels, plus 2 colors for out-of-bounds.
         # * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
         # * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
         #   where the offset X equals step/len(levels).
         # First get coordinates
-        norm = norm or (lambda x: x) # e.g. a logarithmic transform
+        # if not norm or type(norm) is mcolors.Normalize:
+        #     norm = lambda x: x # linear transition, no need to normalize
         x_b = norm(levels)
         x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
         y = (x_m - x_m.min())/(x_m.max() - x_m.min())
@@ -2342,7 +2333,7 @@ def register_cmaps():
 def register_cycles():
     """
     Registers color cycles defined by ``.hex`` files (each of which contains a
-    single comma-delimited line of HEX strings) packaged with ProPlot or
+    comma-delimited list of HEX strings) packaged with ProPlot or
     added by the user. Also registers some cycles hardcoded into this module.
     Called on import.
 
@@ -2356,12 +2347,9 @@ def register_cycles():
             continue
         name = os.path.basename(filename)
         name = name.split('.hex')[0]
-        colors = [*open(filename)] # should just be a single line
-        if len(colors)==0:
-            continue # file is empty
-        if len(colors)>1:
-            raise ValueError('.hex color cycle files should contain only one line.')
-        colors = colors[0].strip().split(',') # csv hex strings
+        colors = ''.join(s.strip() for s in open(filename)).split(',') # single or multiple lines
+        if len(colors)<2:
+            raise ValueError(f'Error reading file "{filename}".')
         colors = [mcolors.to_rgb(c) for c in colors] # from list of tuples
         _cycles_loaded[name] = colors
 

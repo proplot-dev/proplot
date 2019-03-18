@@ -148,6 +148,7 @@ in bulk, or as shorthands for common settings with longer names.
 Key                 Description
 ==================  ====================================================================================================================================================
 ``tight``           Whether to auto-adjust figure bounds and subplot spacings.
+``nbsetup``         Whether to run `~proplot.notebook.nbsetup` command automatically on import.
 ``cycle``           The default color cycle name, used e.g. for lines.
 ``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``cmap``            The default colormap.
@@ -187,7 +188,6 @@ Key                 Description
        to install them when you download ProPlot for the first time, and
        whenever you update matplotlib.
 """
-# ``nbsetup``         Boolean, whether to run `~proplot.notebook.nbsetup` command automatically on import.
 # First import stuff
 import re
 import os
@@ -198,7 +198,7 @@ import matplotlib.colors as mcolors
 from . import colortools
 import numpy as np
 import matplotlib as mpl
-from .utils import ic, units
+from .utils import ic, units, _timer, _counter
 _rcParams = mpl.rcParams
 _rcGlobals = {}
 _rcParams_new = {}
@@ -217,8 +217,8 @@ if not os.path.exists(_default_rc):
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
-    # 'nbsetup':    [], # special toggle
     'tight':      [],
+    'nbsetup':    [],
     'reso':       [],
     'cycle':      [],
     'rgbcycle':   [],
@@ -329,6 +329,7 @@ class _locked(dict):
 
 class rc_configurator(object):
     _public_api = ('reset', 'context', 'get', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
+    # @_counter # about 0.05s
     def __init__(self):
         """Magical abstract class for managing builtin :ref:`rcParams` settings, 
         our artificial :ref:`rcParams_new` settings, and new "global" settings
@@ -832,9 +833,7 @@ class rc_configurator(object):
         return props_out
 
     def reset(self):
-        """
-        Restores settings to the default.
-        """
+        """Restores settings to the default."""
         return self.__init__()
 
     def update(self, *args, **kwargs):
@@ -872,8 +871,4 @@ class rc_configurator(object):
 rc = rc_configurator()
 """Instance of `rc_configurator`. Use this to change rc settings.
 See the `~proplot.rcmod` documentation for details."""
-
-# Run nbsetup if user requested it!
-# Don't do this yet, first bugfix the slow plotting issues.
-# if rc.nbsetup:
 

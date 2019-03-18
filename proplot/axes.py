@@ -211,6 +211,7 @@ def _wrapper_check_centers(func):
     def wrapper(*args, **kwargs):
         return wrapper_check_centers(func, *args, **kwargs)
     return wrapper
+# @_counter
 def wrapper_check_centers(func, *args, order='C', **kwargs):
     """
     Checks shape of arguments passed to methods like
@@ -253,6 +254,7 @@ def _wrapper_check_edges(func):
     def wrapper(*args, **kwargs):
         return wrapper_check_edges(func, *args, **kwargs)
     return wrapper
+# @_counter
 def wrapper_check_edges(func, *args, order='C', **kwargs):
     """
     Checks shape of arguments passed to methods like
@@ -269,6 +271,7 @@ def wrapper_check_edges(func, *args, order='C', **kwargs):
     * x, y, U, V
     """
     # Checks that sizes match up, checks whether graticule was input
+    # return func(*args, **kwargs)
     x, y, Zs = _parse_args(args)
     xlen, ylen = x.shape[-1], y.shape[0]
     for Z in Zs:
@@ -381,6 +384,7 @@ def _wrapper_cartopy_gridfix(self, func):
     def wrapper(*args, **kwargs):
         return wrapper_cartopy_gridfix(self, func, *args, **kwargs)
     return wrapper
+# @_counter
 def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contourf`,
@@ -416,8 +420,8 @@ def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, glob
     if isinstance(transform, type):
         transform = transform() # instantiate
     # Call function
-    with io.capture_output() as captured:
-        result = func(lon, lat, Z, transform=transform, **kwargs)
+    # with io.capture_output() as captured:
+    result = func(lon, lat, Z, transform=transform, **kwargs)
     # Some plot functions seem to reset the outlinepatch or
     # backgroundpatch (???), so need to re-enforce settings.
     # TODO: Double check this
@@ -429,6 +433,7 @@ def _wrapper_basemap_gridfix(self, func):
     def wrapper(*args, **kwargs):
         return wrapper_basemap_gridfix(self, func, *args, **kwargs)
     return wrapper
+# @_counter
 def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
     """
     Wraps `~mpl_toolkits.basemap.Basemap.contourf`,
@@ -542,7 +547,8 @@ def _wrapper_cmap(self, func):
     def wrapper(*args, **kwargs):
         return wrapper_cmap(self, func, *args, **kwargs)
     return wrapper
-def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
+# @_counter
+def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
     extend='neither',
     values=None, levels=None, zero=False, # override levels to be *centered* on zero
     norm=None, norm_kw={},
@@ -565,6 +571,13 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         constructor. See `~proplot.colortools.Colormap` for options.
     cmap_kw : dict-like, optional
         Passed to `~proplot.colortools.Colormap`.
+    fix : bool, optional
+        Whether to fix the the `white-lines-between-filled-contours
+        <https://stackoverflow.com/q/8263769/4970632>`__
+        and `white-lines-between-pcolor-rectangles
+        <https://stackoverflow.com/q/27092991/4970632>`__
+        issues. Note this will slow down the figure rendering by a bit.
+        Defaults to ``True``.
     extend : {'neither', 'both', 'min', 'max'}, optional
         Whether to assign a unique color to out-of-bounds data. Also means
         when the colorbar is drawn, colorbar "extensions" will be drawn
@@ -599,12 +612,6 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
-    See also
-    --------
-    `cmap_methods`, `BaseAxes`, `~proplot.colortools.Colormap`,
-    `~proplot.colortools.Norm`, `~matplotlib.colors.Colormap`,
-    `~matplotlib.colors.Normalizer`
-
     Note
     ----
     The new default `~proplot.colortools.BinNorm` normalizer makes sure
@@ -620,6 +627,12 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     of always building colormaps with hi-res lookup tables, and leaving the
     job of normalizing data values to colormap locations to the
     `~matplotlib.colors.Normalize` object.
+
+    See also
+    --------
+    `cmap_methods`, `BaseAxes`, `~proplot.colortools.Colormap`,
+    `~proplot.colortools.Norm`, `~proplot.colortools.BinNorm`,
+    `~matplotlib.colors.Colormap`, `~matplotlib.colors.Normalize`
     """
     # Input levels
     # See this post: https://stackoverflow.com/a/48614231/4970632
@@ -646,7 +659,7 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     if cmap is not None:
         if isinstance(cmap, (str, dict, mcolors.Colormap)):
             cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, N=None, **cmap_kw)
+        cmap = colortools.Colormap(*cmap, N=10, **cmap_kw)
         cyclic = cmap._cyclic
         if cyclic and extend!='neither':
             warnings.warn(f'Cyclic colormap selected. Overriding user input extend "{extend}".')
@@ -667,25 +680,25 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         if linewidths:
             kwargs['linewidths'] = linewidths
 
-    # Call function with custom kwargs
-    # Add attributes, optionally exit if no cmap
+    # Call function with custom kwargs, exit if no cmap
     result = func(*args, **kwargs)
     if not cmap:
         return result
-    if not getattr(result, 'extend', None):
-        result.extend = extend # will already be on there for some funcs
 
     # Get levels automatically determined by contourf, or make them
     # from the automatically chosen pcolor/imshow clims.
-    # TODO: This still is not respected for hexbin 'log' norm for
-    # some reason, figure out fix.
+    # TODO: This still is not respected for hexbin 'log' norm for some reason, fix.
+    if not getattr(result, 'extend', None):
+        result.extend = extend # will already be on there for some funcs
     if not np.iterable(levels): # i.e. was an integer
         # Some tools automatically generate levels, like contourf.
         # Others will just automatically impose clims, like pcolor.
         levels = getattr(result, 'levels', np.linspace(*result.get_clim(), levels))
+        if not zero:
+            norm = _default(norm, 'linear') # matplotlib will have chosen *linearly* spaced levels, this helps us reduce BinNorm time
         # Get centered levels (when contourf has already rendered contours,
         # they cannot be changed or updated; must be redrawn)
-        if zero:
+        else: # non-linearly spaced, need
             abs_max = max([abs(max(levels)), abs(min(levels))])
             levels = np.linspace(-abs_max, abs_max, len(levels))
             if not hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
@@ -704,34 +717,43 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     result.levels = levels
     # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
     # in logarithmic space, or warped to diverge from center from a midpoint
-    norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
-    if hasattr(result, 'norm') and norm_preprocess is None:
-        norm_preprocess = result.norm
-    # Set colormap and normalizer
+    # NOTE: LinearSegmentedNorm is slow! Test for linearity of input levels.
+    diff = np.diff(levels)
+    if (diff<0).any() or diff.size<2:
+        raise ValueError(f'Need at least 3 monotonically increasing levels, got {levels}.')
+    if norm is None:
+        eps = diff.mean()/1e3
+        if (np.abs(np.diff(diff)) >= eps).any():
+            norm = 'segmented'
+        else:
+            norm = 'linear'
+    # Set the normalizer
     step = 1.0
     if cyclic:
         step = 0.5
         extend = 'both'
-    norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
-    result.set_norm(norm)
+    norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
+    norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
+    result.set_norm(norm_main)
 
     # Fix white lines between filled contours/mesh
-    # Also allow user override properties!
-    color = 'face'
-    linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-    linestyle = '-'
-    if colors or linewidths or linestyles:
-        color = _default(colors, 'k')
-        linewidth = _default(linewidths, 1.0)
-        linestyle = _default(linestyles, '-')
-    if 'contourf' in name: # 'contourf', 'tricontourf'
-        for contour in result.collections:
-            contour.set_edgecolor(color)
-            contour.set_linewidth(linewidth)
-            contour.set_linestyle(linestyle)
-    if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
-        result.set_edgecolor(color)
-        result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+    # Allow user to override properties!
+    if fix:
+        color = 'face'
+        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
+        linestyle = '-'
+        if colors or linewidths or linestyles:
+            color = _default(colors, 'k')
+            linewidth = _default(linewidths, 1.0)
+            linestyle = _default(linestyles, '-')
+        if 'contourf' in name: # 'contourf', 'tricontourf'
+            for contour in result.collections:
+                contour.set_edgecolor(color)
+                contour.set_linewidth(linewidth)
+                contour.set_linestyle(linestyle)
+        elif 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+            result.set_edgecolor(color)
+            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
     return result
 
 def _wrapper_cycle(self, func):
@@ -739,6 +761,7 @@ def _wrapper_cycle(self, func):
     def wrapper(*args, **kwargs):
         return wrapper_cycle(self, func, *args, **kwargs)
     return wrapper
+# @_counter
 def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
     """
     Wraps methods that use the color cycler for default line and patch
@@ -1296,6 +1319,7 @@ class BaseAxes(maxes.Axes):
                 self._title_inside = ('i' in pos)
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
+    # @_counter
     def format(self, rc_kw=None, mode=2, **kwargs):
         """
         Sets up temporary rc settings and calls `~BaseAxes.smart_update`.

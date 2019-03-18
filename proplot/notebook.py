@@ -111,6 +111,6 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     rc.reset()
 
 # Run automatically?
-# if rc['nbsetup']:
-#     nbsetup()
+if rc.nbsetup:
+    nbsetup()
 
