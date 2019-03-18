@@ -18,7 +18,6 @@ PanelAxes
 
       ~PanelAxes.colorbar
       ~PanelAxes.legend
-      ~PanelAxes.on
 
    .. rubric:: Attributes Documentation
 
@@ -28,4 +27,3 @@ PanelAxes
 
    .. automethod:: colorbar
    .. automethod:: legend
-   .. automethod:: on

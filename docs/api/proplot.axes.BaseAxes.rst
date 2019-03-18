@@ -21,6 +21,7 @@ BaseAxes
       ~BaseAxes.colorbar
       ~BaseAxes.format
       ~BaseAxes.invisible
+      ~BaseAxes.on
       ~BaseAxes.smart_update
 
    .. rubric:: Attributes Documentation
@@ -34,4 +35,5 @@ BaseAxes
    .. automethod:: colorbar
    .. automethod:: format
    .. automethod:: invisible
+   .. automethod:: on
    .. automethod:: smart_update

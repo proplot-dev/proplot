@@ -313,7 +313,7 @@ class _locked(dict):
         for key,value in self.items():
             string += (prefix + repr(key) + ': ' + repr(value))
             prefix = suffix
-        return '<_locked ' + string + '}>'
+        return '<_locked {' + string + '}>'
     def __setattr__(self, attr, value):
         """Locked."""
         raise NotImplementedError
@@ -673,34 +673,40 @@ class rc_configurator(object):
                 else:
                     ticklen = value
                     ratio = _rcGlobals['ticklenratio']
+                kw['xtick.major.size'] = ticklen
+                kw['ytick.major.size'] = ticklen
                 kw['xtick.minor.size'] = ticklen*ratio
                 kw['ytick.minor.size'] = ticklen*ratio
             # Spine width/major-minor tick width ratio
-            if key in ('linewidth', 'tickratio'):
+            elif key in ('linewidth', 'tickratio'):
                 if key=='linewidth':
                     tickwidth = value
                     ratio = _rcGlobals['tickratio']
                 else:
                     tickwidth = _rcGlobals['linewidth']
                     ratio = value
+                kw['xtick.major.width'] = tickwidth
+                kw['ytick.major.width'] = tickwidth
                 kw['xtick.minor.width'] = tickwidth*ratio
                 kw['ytick.minor.width'] = tickwidth*ratio
             # Grid line
             # NOTE: Changing minor width does not affect major width
-            if key in ('grid.linewidth', 'gridratio'):
+            elif key in ('grid.linewidth', 'gridratio'):
                 if key=='gridratio':
                     gridwidth = _rcParams['grid.linewidth']
                     ratio = value
                 else:
                     gridwidth = value
                     ratio = _rcGlobals['gridratio']
+                kw['grid.linewidth'] = gridwidth
                 kw_new['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
-            for name in _rcGlobals_children[key]:
-                if name in _rcParams_new:
-                    kw_new[name] = value
-                else:
-                    kw[name] = value
+            else:
+                for name in _rcGlobals_children[key]:
+                    if name in _rcParams_new:
+                        kw_new[name] = value
+                    else:
+                        kw[name] = value
         return kw, kw_new
 
     # Internally used, but public methods.

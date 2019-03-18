@@ -144,7 +144,7 @@ and :ref:`Global settings` for details.
     plot.nbsetup()
     f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
     axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Title')
-    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, subplotpad=0) # not 
+    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
     axs.format(alpha=0, abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Title')
 
 
@@ -536,16 +536,16 @@ issues by automatically changing the edge colors after ``contourf``,
     import numpy as np
     plot.nbsetup()
     f, axs = plot.subplots(ncols=2, innercolorbars='b')
-    data = 20*(np.random.rand(20,20) - 0.45).cumsum(axis=0).cumsum(axis=1)
-    N, step = 500, 75
+    data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
+    N, step = 360, 45
     ax = axs[0]
-    m = ax.pcolormesh(data, levels=np.arange(0,N,0.2), cmap='phase', extend='both')
+    m = ax.pcolormesh(data, levels=plot.arange(0,N,0.2), cmap='phase', extend='neither')
     ax.format(title='Pcolor without discernible levels', suptitle='Pcolor demo')
-    ax.bpanel.colorbar(m, locator=step)
+    ax.bpanel.colorbar(m, locator=2*step)
     ax = axs[1]
-    m = ax.pcolormesh(data, levels=plot.arange(0,N,step), cmap='phase', extend='both')
+    m = ax.pcolormesh(data, levels=plot.arange(0,N,step), cmap='phase', extend='neither')
     ax.format(title='Pcolor plot with levels')
-    ax.bpanel.colorbar(m, locator=step)
+    ax.bpanel.colorbar(m, locator=2*step)
 
 
 
@@ -555,11 +555,28 @@ issues by automatically changing the edge colors after ``contourf``,
 
 .. image:: showcase/showcase_32_1.png
    :width: 454px
-   :height: 293px
+   :height: 289px
 
 
-I’ve also added a ``cmap`` option to the `~matplotlib.axes.Axes.plot`
-command – this lets you draw line collections that map individual
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.nbsetup()
+    f, axs = plot.subplots(ncols=2, share=False)
+    axs[0].contourf(np.random.rand(20,20).cumsum(axis=0), cmap='bog', ls=':', lw=1, color='w')
+    axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='verdant', lw=0.5, color='k')
+    axs.format(suptitle='New contour and pcolor options')
+
+
+
+.. image:: showcase/showcase_33_0.png
+   :width: 454px
+   :height: 228px
+
+
+You can also now call `~matplotlib.axes.Axes.plot` with a ``cmap``
+option – this lets you draw line collections that map individual
 segments of the line to individual colors. This can be useful for
 drawing “parametric” plots, where you want to indicate the time or some
 other coordinate at each point on the line. See
@@ -595,13 +612,13 @@ other coordinate at each point on the line. See
 
 
 
-.. image:: showcase/showcase_34_1.png
+.. image:: showcase/showcase_35_1.png
    :width: 436px
    :height: 304px
 
 
 
-.. image:: showcase/showcase_34_2.png
+.. image:: showcase/showcase_35_2.png
    :width: 256px
    :height: 302px
 
@@ -629,7 +646,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_37_0.png
+.. image:: showcase/showcase_38_0.png
    :width: 454px
    :height: 452px
 
@@ -669,7 +686,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_39_1.png
+.. image:: showcase/showcase_40_1.png
    :width: 454px
    :height: 487px
 
@@ -703,7 +720,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_42_1.png
+.. image:: showcase/showcase_43_1.png
    :width: 460px
    :height: 496px
 
@@ -728,7 +745,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_43_0.png
+.. image:: showcase/showcase_44_0.png
    :width: 775px
    :height: 261px
 
@@ -778,7 +795,7 @@ DejaVu Sans. You can change the default font by modifying your
 
 
 
-.. image:: showcase/showcase_46_0.png
+.. image:: showcase/showcase_47_0.png
    :width: 751px
    :height: 697px
 
@@ -814,25 +831,25 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_50_0.png
+.. image:: showcase/showcase_51_0.png
    :width: 643px
    :height: 166px
 
 
 
-.. image:: showcase/showcase_50_1.png
+.. image:: showcase/showcase_51_1.png
    :width: 643px
    :height: 176px
 
 
 
-.. image:: showcase/showcase_50_2.png
+.. image:: showcase/showcase_51_2.png
    :width: 643px
    :height: 175px
 
 
 
-.. image:: showcase/showcase_50_3.png
+.. image:: showcase/showcase_51_3.png
    :width: 643px
    :height: 190px
 
@@ -852,13 +869,13 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_51_0.png
+.. image:: showcase/showcase_52_0.png
    :width: 490px
    :height: 491px
 
 
 
-.. image:: showcase/showcase_51_1.png
+.. image:: showcase/showcase_52_1.png
    :width: 490px
    :height: 498px
 
@@ -905,13 +922,13 @@ same coordinate range.
 
 
 
-.. image:: showcase/showcase_54_0.png
+.. image:: showcase/showcase_55_0.png
    :width: 634px
    :height: 222px
 
 
 
-.. image:: showcase/showcase_54_1.png
+.. image:: showcase/showcase_55_1.png
    :width: 418px
    :height: 324px
 
@@ -940,7 +957,7 @@ same coordinate range.
 
 
 
-.. image:: showcase/showcase_55_0.png
+.. image:: showcase/showcase_56_0.png
    :width: 540px
    :height: 272px
 
@@ -980,7 +997,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_58_0.png
+.. image:: showcase/showcase_59_0.png
    :width: 526px
    :height: 500px
 
@@ -1017,7 +1034,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_61_0.png
+.. image:: showcase/showcase_62_0.png
    :width: 526px
    :height: 597px
 
@@ -1041,7 +1058,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_63_0.png
+.. image:: showcase/showcase_64_0.png
    :width: 544px
    :height: 224px
 
@@ -1081,7 +1098,7 @@ Again, see `~proplot.axistools.Locator` and
 
 
 
-.. image:: showcase/showcase_66_1.png
+.. image:: showcase/showcase_67_1.png
    :width: 796px
    :height: 645px
 
@@ -1128,7 +1145,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_69_1.png
+.. image:: showcase/showcase_70_1.png
    :width: 540px
    :height: 282px
 
@@ -1161,7 +1178,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_70_0.png
+.. image:: showcase/showcase_71_0.png
    :width: 540px
    :height: 580px
 
@@ -1250,13 +1267,13 @@ These featuers are powered by the
 
 
 
-.. image:: showcase/showcase_75_1.png
+.. image:: showcase/showcase_76_1.png
    :width: 630px
    :height: 434px
 
 
 
-.. image:: showcase/showcase_75_2.png
+.. image:: showcase/showcase_76_2.png
    :width: 630px
    :height: 434px
 
@@ -1291,7 +1308,7 @@ These featuers are powered by the
 
 
 
-.. image:: showcase/showcase_76_1.png
+.. image:: showcase/showcase_77_1.png
    :width: 450px
    :height: 302px
 
@@ -1327,7 +1344,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_79_0.png
+.. image:: showcase/showcase_80_0.png
    :width: 454px
    :height: 485px
 
@@ -1350,7 +1367,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_80_1.png
+.. image:: showcase/showcase_81_1.png
    :width: 814px
    :height: 245px
 
@@ -1389,7 +1406,7 @@ cartopy projections are plotted below.
 
 
 
-.. image:: showcase/showcase_83_1.png
+.. image:: showcase/showcase_84_1.png
    :width: 594px
    :height: 1007px
 
@@ -1418,7 +1435,7 @@ args if you don’t specify them.
 
 
 
-.. image:: showcase/showcase_85_1.png
+.. image:: showcase/showcase_86_1.png
    :width: 594px
    :height: 998px
 
@@ -1446,7 +1463,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_89_0.png
+.. image:: showcase/showcase_90_0.png
    :width: 576px
    :height: 212px
 
@@ -1459,7 +1476,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_90_0.png
+.. image:: showcase/showcase_91_0.png
    :width: 576px
    :height: 212px
 
@@ -1472,7 +1489,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_91_0.png
+.. image:: showcase/showcase_92_0.png
    :width: 576px
    :height: 212px
 
@@ -1494,13 +1511,13 @@ relatively non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_93_1.png
+.. image:: showcase/showcase_94_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_93_2.png
+.. image:: showcase/showcase_94_2.png
    :width: 748px
    :height: 245px
 
@@ -1536,7 +1553,7 @@ for usage details.
 
 
 
-.. image:: showcase/showcase_96_1.png
+.. image:: showcase/showcase_97_1.png
    :width: 436px
    :height: 4409px
 
@@ -1564,7 +1581,7 @@ See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 
 
 
-.. image:: showcase/showcase_99_0.png
+.. image:: showcase/showcase_100_0.png
    :width: 540px
    :height: 1615px
 
@@ -1607,7 +1624,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_102_0.png
+.. image:: showcase/showcase_103_0.png
    :width: 720px
    :height: 1316px
 
@@ -1620,7 +1637,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_103_0.png
+.. image:: showcase/showcase_104_0.png
    :width: 630px
    :height: 225px
 
@@ -1665,7 +1682,7 @@ import.
 
 
 
-.. image:: showcase/showcase_106_1.png
+.. image:: showcase/showcase_107_1.png
    :width: 544px
    :height: 334px
 
@@ -1706,7 +1723,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_108_0.png
+.. image:: showcase/showcase_109_0.png
    :width: 724px
    :height: 345px
 
@@ -1733,7 +1750,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_110_0.png
+.. image:: showcase/showcase_111_0.png
    :width: 634px
    :height: 306px
 
@@ -1758,7 +1775,7 @@ colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
 
 
 
-.. image:: showcase/showcase_112_0.png
+.. image:: showcase/showcase_113_0.png
    :width: 733px
    :height: 314px
 
@@ -1788,7 +1805,7 @@ details.
 
 
 
-.. image:: showcase/showcase_114_0.png
+.. image:: showcase/showcase_115_0.png
    :width: 652px
    :height: 424px
 
@@ -1818,7 +1835,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_116_0.png
+.. image:: showcase/showcase_117_0.png
    :width: 544px
    :height: 478px
 
@@ -1848,7 +1865,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_119_0.png
+.. image:: showcase/showcase_120_0.png
    :width: 517px
    :height: 356px
 
@@ -1873,7 +1890,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_120_1.png
+.. image:: showcase/showcase_121_1.png
    :width: 634px
    :height: 318px
 
@@ -1913,7 +1930,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_123_0.png
+.. image:: showcase/showcase_124_0.png
    :width: 436px
    :height: 603px
 

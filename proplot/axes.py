@@ -54,6 +54,7 @@ performance. And anyway, `Premature Optimization is the Root of All Evil
 # functools.wraps preserves __name__ metadata; see comment:
 # https://stackoverflow.com/a/739665/4970632
 import os
+import re
 import numpy as np
 import warnings
 import functools
@@ -84,13 +85,12 @@ from .utils import _default, _timer, _counter, ic, units
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 
 # Silly recursive function, returns a...z...aa...zz...aaa...zzz
-# God help you if you ever need that many labels
 _abc_string = 'abcdefghijklmnopqrstuvwxyz'
-def _abc(i, prefix=''):
+def _abc(i):
     if i < 26:
-        return prefix + _abc_string[i]
+        return _abc_string[i]
     else:
-        return _abc(i - 26, prefix) + _abc_string[i % 26]
+        return _abc(i - 26) + _abc_string[i % 26]
 
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
@@ -134,6 +134,7 @@ cycle_methods  = (
     )
 """List of methods wrapped by `wrapper_cycle`."""
 cmap_methods = (
+    # 'quiver', 'streamplot',
     'cmapline', 'hexbin', # special
     'contour', 'contourf', 'pcolor', 'pcolormesh',
     'matshow', 'imshow', 'spy', 'hist2d',
@@ -145,7 +146,7 @@ cmap_methods = (
 # The keys in below dictionary are error messages
 disabled_methods = {
     "Unsupported plotting function {}. May be added soon.":
-        ('pie', 'table', 'eventplot',
+        ('table', 'eventplot', # pie?
         'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
         'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
     "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale').":
@@ -165,20 +166,6 @@ map_disabled_methods = (
     'stackplot'
     )
 """List of methods disabled for `MapAxes`. These are not applicable to plotting geographic data."""
-# Used for wrapper_cmap
-_show_methods = (
-    'imshow', 'matshow', 'spy', 'hist2d',
-    )
-_pcolor_methods = (
-    'pcolor', 'pcolormesh', 'tripcolor'
-    )
-_contour_methods = (
-    'contour', 'tricontour',
-    )
-_contourf_methods = (
-    'contourf', 'tricontourf',
-    )
-
 # Aliases for panel names
 _aliases = {
     'bpanel': 'bottompanel',
@@ -555,10 +542,14 @@ def _wrapper_cmap(self, func):
     def wrapper(*args, **kwargs):
         return wrapper_cmap(self, func, *args, **kwargs)
     return wrapper
-def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={}, extend='neither',
+def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
+    extend='neither',
     values=None, levels=None, zero=False, # override levels to be *centered* on zero
     norm=None, norm_kw={},
-    values_as_levels=True, # if values are passed, treat them as levels? or just use them for e.g. cmapline, then do whatever?
+    lw=None, linewidth=None, linewidths=None,
+    ls=None, linestyle=None, linestyles=None,
+    color=None, colors=None,
+    values_as_levels=True, # if values are passed, treat them as levels?
     **kwargs):
     """
     Wraps methods that take a ``cmap`` argument, like
@@ -582,6 +573,11 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={}, extend='neither',
         If list of float, level *edges*. If integer, the number of level
         edges, and boundaries are chosen by matplotlib based on the data
         range. Defaults to 11.
+
+        Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
+        `~matplotlib.axes.Axes.pcolormesh`, this means they now
+        accept the `levels` keyword arg. You can now discretize your
+        colors in a ``pcolor`` plot just like with ``contourf``.
     values : None or list of float, optional
         The level *centers*. If not ``None``, infers levels using
         `~proplot.utils.edges` and overrides the `levels` keyword arg.
@@ -611,47 +607,71 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={}, extend='neither',
 
     Note
     ----
-    `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
-    now accept a `levels` keyword arg. This means you can discretize your
-    colors in a ``pcolor`` plot just like with ``contourf``.
-
     The new default `~proplot.colortools.BinNorm` normalizer makes sure
     that colored levels always span the **full range of colors** in the
     colormap, whether you are extending max, min, neither, or both. By default,
     when you select `extend` not ``'both'``, matplotlib seems to just cut off
     the most intense colors on either side (reserved for coloring "out of
     bounds" data).
+
+    This could also be done by limiting the number of colormaps in the
+    colormap lookup table by selecting a smaller ``N`` (see
+    `~matplotlib.colors.LinearSegmentedColormap`) -- but I prefer the approach
+    of always building colormaps with hi-res lookup tables, and leaving the
+    job of normalizing data values to colormap locations to the
+    `~matplotlib.colors.Normalize` object.
     """
-    # This post https://stackoverflow.com/a/48614231/4970632
-    # helped me figure some of this stuff out.
-    # Optionally pass level centers instead of level edges
-    # NOTE: See the norm_preprocessor section below for why we funnel
-    # results through a normalizer here
-    if kwargs.get('interp', 0): # e.g. for cmapline, we want to *interpolate*
-        values_as_levels = False # get levels later down the line
-    if np.iterable(values) and values_as_levels:
-        # Special case of LinearSegmentedNorm, just get edges
-        if isinstance(norm, colortools.LinearSegmentedNorm) or \
-            (isinstance(norm, str) and 'segment' in norm):
-            levels = utils.edges(values)
-        # Else, see what pops out
+    # Input levels
+    # See this post: https://stackoverflow.com/a/48614231/4970632
+    # if isinstance(norm, colortools.LinearSegmentedNorm) or \
+    # (isinstance(norm, str) and 'segment' in norm):
+    # levels = utils.edges(values)
+    name = func.__name__
+    if np.iterable(values):
+        if kwargs.get('interp', None): # e.g. for cmapline, we want to *interpolate*
+            values_as_levels = False # get levels later down the line
+        if not values_as_levels:
+            kwargs['values'] = values
         else:
-            norm_tmp = colortools.Norm(norm, **norm_kw)
+            norm_tmp = colortools.Norm(norm, **norm_kw) # TODO: check if this works with LinearSegmentedNorm
             if norm_tmp: # is not None
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
             else:
                 levels = utils.edges(values)
     levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+    # Input colormap
+    cyclic = False
+    if not re.match('contour$', name): # contour, tricontour, i.e. not a method where cmap is optional
+        cmap = cmap or rc['image.cmap']
+    if cmap is not None:
+        if isinstance(cmap, (str, dict, mcolors.Colormap)):
+            cmap = cmap, # make a tuple
+        cmap = colortools.Colormap(*cmap, N=None, **cmap_kw)
+        cyclic = cmap._cyclic
+        if cyclic and extend!='neither':
+            warnings.warn(f'Cyclic colormap selected. Overriding user input extend "{extend}".')
+            extend = 'neither'
+        kwargs['cmap'] = cmap
+    if 'contour' in name: # contour, contourf, tricontour, tricontourf
+        kwargs.update({'levels': levels, 'extend': extend})
+    elif name in ('imshow', 'matshow', 'spy', 'hist2d'): # aspect ratio settings
+        kwargs['aspect'] = 'auto'
+    # New feature, add lines to contourf
+    # TODO: Check all this stuff for quiver, etc.!
+    colors = _default(color, colors)
+    linewidths = _default(lw, linewidth, linewidths)
+    linestyles = _default(ls, linestyle, linestyles)
+    if re.match('contour$', name): # add ability to specify line widths with contours!
+        if colors:
+            kwargs['colors'] = colors
+        if linewidths:
+            kwargs['linewidths'] = linewidths
 
     # Call function with custom kwargs
-    name = func.__name__
-    if name in _contour_methods or name in _contourf_methods: # only valid kwargs for contouring
-        kwargs.update({'levels': levels, 'extend': extend})
-    if name == 'cmapline':
-        kwargs.update({'values': values}) # implement this directly
-    if name in _show_methods: # *do not* auto-adjust aspect ratio! messes up subplots!
-        kwargs.update({'aspect': 'auto'})
+    # Add attributes, optionally exit if no cmap
     result = func(*args, **kwargs)
+    if not cmap:
+        return result
     if not getattr(result, 'extend', None):
         result.extend = extend # will already be on there for some funcs
 
@@ -662,18 +682,15 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={}, extend='neither',
     if not np.iterable(levels): # i.e. was an integer
         # Some tools automatically generate levels, like contourf.
         # Others will just automatically impose clims, like pcolor.
-        # Below accounts for both options.
-        if hasattr(result, 'levels'):
-            levels = result.levels
-        else:
-            levels = np.linspace(*result.get_clim(), levels)
-        # Center the levels
-        # NOTE: When contourf has already rendered contours, they *cannot* be
-        # changed/updated -- must be redrawn!
+        levels = getattr(result, 'levels', np.linspace(*result.get_clim(), levels))
+        # Get centered levels (when contourf has already rendered contours,
+        # they cannot be changed or updated; must be redrawn)
         if zero:
             abs_max = max([abs(max(levels)), abs(min(levels))])
             levels = np.linspace(-abs_max, abs_max, len(levels))
-            if hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
+            if not hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
+                result.set_clim(-abs_max, abs_max)
+            else:
                 if hasattr(result, 'collections'):
                     for artist in result.collections:
                         artist.set_visible(False)
@@ -683,42 +700,37 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={}, extend='neither',
                     raise ValueError(f'Unknown object {result}. Cannot center colormap levels.')
                 kwargs['levels'] = levels
                 result = func(*args, **kwargs)
-    result.levels = levels # make sure they are on there!
-
-    # Contour *lines* can be colormapped, but this should not be
-    # default if user did not input a cmap
-    if name in _contour_methods and cmap is None:
-        return result
-
+    # Always add 'levels' as attribute, even for pcolor
+    result.levels = levels
     # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
-    # in logarithmic space, or warped to diverge from center from a
-    # given midpoint like zero
+    # in logarithmic space, or warped to diverge from center from a midpoint
     norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
     if hasattr(result, 'norm') and norm_preprocess is None:
         norm_preprocess = result.norm
-
-    # Create colors
-    N = None # will be ignored
-    norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, extend=extend)
+    # Set colormap and normalizer
+    step = 1.0
+    if cyclic:
+        step = 0.5
+        extend = 'both'
+    norm = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
     result.set_norm(norm)
 
-    # Specify colormap
-    cmap = cmap or rc['image.cmap']
-    if isinstance(cmap, (str, dict, mcolors.Colormap)):
-        cmap = cmap, # make a tuple
-    cmap = colortools.Colormap(*cmap, N=N, extend=extend, **cmap_kw)
-    if not cmap._isinit:
-        cmap._init()
-    result.set_cmap(cmap)
-
     # Fix white lines between filled contours/mesh
+    # Also allow user override properties!
+    color = 'face'
     linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-    if name in _contourf_methods:
+    linestyle = '-'
+    if colors or linewidths or linestyles:
+        color = _default(colors, 'k')
+        linewidth = _default(linewidths, 1.0)
+        linestyle = _default(linestyles, '-')
+    if 'contourf' in name: # 'contourf', 'tricontourf'
         for contour in result.collections:
-            contour.set_edgecolor('face')
+            contour.set_edgecolor(color)
             contour.set_linewidth(linewidth)
-    if name in _pcolor_methods:
-        result.set_edgecolor('face')
+            contour.set_linestyle(linestyle)
+    if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+        result.set_edgecolor(color)
         result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
     return result
 
@@ -1485,6 +1497,10 @@ class BaseAxes(maxes.Axes):
                 if ax and ax.abc and not abc and abc is not None:
                     ax.abc.set_visible(False)
 
+    def on(self):
+        """Whether axes or panel is "on"."""
+        return self.get_visible() and self._visible_effective
+
     def invisible(self):
         """Make axes invisible, but children visible."""
         self._visible_effective = False
@@ -1872,7 +1888,7 @@ class XYAxes(BaseAxes):
             `~proplot.axistools.Scale`.
         xloc, yloc
             Aliases for `xspineloc`, `yspineloc`.
-        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'zero'}, optional
+        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
             The *x* and *y* axis spine locations.
         xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick marks.
@@ -2483,10 +2499,6 @@ class PanelAxes(XYAxes):
             raise ValueError(f'Invalid panel side "{side}".')
         if not visible:
             self.set_visible(False)
-
-    def on(self):
-        """Whether panel is "on"."""
-        return self.get_visible() and self._visible_effective
 
     def legend(self, *args, fill=True, **kwargs):
         """Optionally "fill the panel" with a legend (``fill=True``) or draw
