@@ -1929,7 +1929,6 @@ class BinNorm(mcolors.BoundaryNorm):
         if extend in ('max','both'):
             scale -= eps
         y = np.concatenate(([0], offset + scale*y, [1])) # insert '0' (arg 3) before index '0' (arg 2)
-        ic(y)
         self._norm = norm
         self._x_b = x_b
         self._y = y
@@ -1948,11 +1947,8 @@ class BinNorm(mcolors.BoundaryNorm):
         # just use searchsorted to bin the data.
         # Note the bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
-        ic('b',xq)
         xq = self._norm(np.atleast_1d(xq))
-        ic('a',xq)
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
-        # ic(xq, yq)
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):

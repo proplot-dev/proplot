@@ -25,8 +25,6 @@ This package also defines three different "categories" of settings:
   as shorthands for settings with longer names, or for some "special"
   settings.
 
-The three categories are described in detail below.
-
 rcParams
 --------
 
