@@ -131,7 +131,7 @@ of the world doesn’t use “inches”, so I thought this would be useful.
 
 Subplot labelling is another useful ProPlot feature. The label order is
 row-major by default; to change this, use the
-`~proplot.subplots.subplot` ``order`` keyword arg.
+`~proplot.subplots.subplots` ``order`` keyword arg.
 
 Change the label position with the ``abcpos`` `~proplot.rcmod` option,
 or the label style with the ``abcformat`` `~proplot.rcmod` option.
@@ -143,9 +143,9 @@ and :ref:`Global settings` for details.
     import proplot as plot
     plot.nbsetup()
     f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
-    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Title')
+    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labelling')
     f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
-    axs.format(alpha=0, abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Title')
+    axs.format(abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
 
 
 
@@ -375,7 +375,7 @@ is rendered by the matplotlib backend or saved to file.
     plot.rc.linewidth = 1.5
     plot.rc.update({'fontname': 'DejaVu Sans'})
     plot.rc['figure.facecolor'] = 'w'
-    plot.rc['axes.facecolor'] = 'gray5' # underscore replaces the "dot"!
+    plot.rc['axes.facecolor'] = 'gray5'
     # Make plot
     f, axs = plot.subplots(nrows=1, ncols=2, aspect=1, width=6,
                            span=0, wspace=0.5, sharey=2, hspace=0.7)
@@ -460,7 +460,7 @@ corresponding colors.
     ax.format(suptitle='Colorbar from line handles', xlabel='x axis', ylabel='y axis')
     f.bpanel.colorbar(hs, values=np.arange(0,6,0.5),
                       label='"Legend" for lines that map to numeric values',
-                      tickloc='top', # because why not?
+                      tickloc='bottom', # because why not?
                      )
 
 
@@ -471,7 +471,7 @@ corresponding colors.
 
 .. image:: showcase/showcase_27_1.png
    :width: 346px
-   :height: 316px
+   :height: 312px
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -730,7 +730,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
     import proplot as plot
     import numpy as np
     plot.nbsetup()
-    f, axs = plot.subplots(ncols=4, axwidth=1.5, bottomcolorbars=[1,1,2,2], rightpanel=True, share=0, span=0, wspace=0.3)
+    f, axs = plot.subplots(ncols=4, axwidth=1.3, bottomcolorbars=[1,1,2,2], share=0, span=0, wspace=0.3)
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
     cycle = plot.Cycle('grays', 5)
@@ -739,15 +739,14 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
         hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')[0]
     f.bottompanel[0].colorbar(m, length=0.8, label='label')
     f.bottompanel[1].legend(hs, ncols=5, align=True)
-    f.rightpanel.legend(hs, ncols=1)
     axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A',
               collabels=['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2'], collabelweight='normal')
 
 
 
 .. image:: showcase/showcase_44_0.png
-   :width: 775px
-   :height: 261px
+   :width: 625px
+   :height: 241px
 
 
 Helvetica as the default font

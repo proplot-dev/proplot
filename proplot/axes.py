@@ -623,9 +623,6 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     """
     # Input levels
     # See this post: https://stackoverflow.com/a/48614231/4970632
-    # if isinstance(norm, colortools.LinearSegmentedNorm) or \
-    # (isinstance(norm, str) and 'segment' in norm):
-    # levels = utils.edges(values)
     name = func.__name__
     if np.iterable(values):
         if kwargs.get('interp', None): # e.g. for cmapline, we want to *interpolate*
@@ -633,11 +630,14 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         if not values_as_levels:
             kwargs['values'] = values
         else:
-            norm_tmp = colortools.Norm(norm, **norm_kw) # TODO: check if this works with LinearSegmentedNorm
-            if norm_tmp: # is not None
-                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+            if isinstance(norm, str) and 'segment' in norm or norm is None:
+                levels = utils.edges(values) # special case, used by colorbar factory
             else:
-                levels = utils.edges(values)
+                norm_tmp = colortools.Norm(norm, **norm_kw) # TODO: check if this works with LinearSegmentedNorm
+                if norm_tmp: # is not None
+                    levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+                else:
+                    levels = utils.edges(values)
     levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
     # Input colormap
     cyclic = False
