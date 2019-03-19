@@ -644,7 +644,7 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
             kwargs['values'] = values
             levels = utils.edges(values) # special case, used by colorbar factory
         else:
-            if isinstance(norm, str) and 'segment' in norm or norm is None:
+            if norm is None or isinstance(norm, str) and 'segment' in norm:
                 levels = utils.edges(values) # special case, used by colorbar factory
             else:
                 norm_tmp = colortools.Norm(norm, **norm_kw) # TODO: check if this works with LinearSegmentedNorm
@@ -3736,26 +3736,16 @@ def colorbar_factory(ax, mappable, values=None,
     # * The minor locator must be set with set_ticks after transforming an array
     #   using the mappable norm object; see: https://stackoverflow.com/a/20079644/4970632
     # * The set_minor_locator seems to be completely ignored depending on the colorbar
-    #   in question, for whatever reason
-    # * The major locator and formatter settings here are also not ideal since we'd have to
-    #   update_ticks which might throw off the minor ticks again
-    # WARNING: If functionality of BoundaryNorm is modified so data is transformed
-    # by some linear transformation before getting binned, below may fail.
-    # WARNING: For some reason, pcolor mappables need to take *un-normalized
-    # ticks* when set_ticks is called, while contourf mappables need to
-    # take *normalized* data (verify by printing)
-    # cb.minorticks_on() # alternative, but can't control the spacing or set our own version
-    # axis.set_minor_locator(locators[1]) # does absolutely nothing
+    #   in question, for whatever reason, and cb.minorticks_on() gives no control.
     minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
-    if isinstance(mappable.norm, mcolors.BoundaryNorm): # including my own version
-        vmin, vmax = mappable.norm.vmin, mappable.norm.vmax
-        minorvals = (minorvals-vmin)/(vmax-vmin)
+    if isinstance(mappable.norm, colortools.BinNorm):
+        minorvals = mappable.norm._norm(minorvals) # use *child* normalizer
     elif hasattr(mappable, 'levels'):
         minorvals = mappable.norm(minorvals)
+    minorvals = [tick for tick in minorvals if 0<=tick<=1]
     axis.set_ticks(minorvals, minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
-
-    # Set up the label
+    # The label
     if clabel is not None:
         axis.label.update({'text':clabel})
 

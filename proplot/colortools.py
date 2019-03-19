@@ -184,10 +184,6 @@ _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
 _data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
 
-# Default number of colors
-# _N_hires = 12
-_N_hires = 128
-
 # Define some new palettes
 # Note the default listed colormaps
 _cycles_loaded = {}
@@ -1272,7 +1268,7 @@ def Colormap(*args, name=None, cyclic=False, N=None,
     `N` is very small.
     """
     # Initial stuff
-    N_ = N or _N_hires
+    N_ = N or rcParams['image.lut']
     imaps = []
     name = name or 'no_name' # must have name, mcolors utilities expect this
     if x is not None:
@@ -1851,17 +1847,15 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
 # end up trying to infer boundaries from inverse() method. So make it parent class.
 class BinNorm(mcolors.BoundaryNorm):
     """
-    This is the default normalizer used by all functions that accept
-    the `cmap` keyword arg. It can be thought of as a "parent" normalizer:
-    it first normalizes data according to any other arbitrary
-    `~matplotlib.colors.Normalize` class, then maps the normalized
+    This normalizer is used for all colormap plots. It can be thought of as a
+    "parent" normalizer: it first scales the data according to any
+    arbitrary `~matplotlib.colors.Normalize` class, then maps the normalized
     values ranging from 0-1 into **discrete** levels.
 
     This maps to colors by the closest **index** in the color list. Even if
     your levels edges are weirdly spaced (e.g. [-1000, 100, 0,
     100, 1000] or [0, 10, 12, 20, 22]), the "colormap coordinates" for these
-    levels will be [0, 0.25, 0.5, 0.75, 1]. This is very handy for weirdly
-    distributed datasets.
+    levels will be [0, 0.25, 0.5, 0.75, 1].
 
     Note
     ----
@@ -1952,16 +1946,16 @@ class BinNorm(mcolors.BoundaryNorm):
         return ma.masked_array(yq, np.isnan(xq))
 
     def inverse(self, yq):
-        """Dummy method. Inversion after discretization is impossible."""
-        raise ValueError('BinNorm is not invertible.')
+        """Raises error -- inversion after discretization is impossible."""
+        raise RuntimeError('BinNorm is not invertible.')
 
 #------------------------------------------------------------------------------#
 # Normalizers intended to *pre-scale* levels passed to BinNorm
 #------------------------------------------------------------------------------#
 class LinearSegmentedNorm(mcolors.Normalize):
     """
-    This is the default normalizer paired with `BinNorm`, and used
-    by all functions that accept the `cmap` keyword arg.
+    This is the default normalizer paired with `BinNorm` whenever `levels`
+    are non-linearly spaced.
 
     It follows the example of the `~matplotlib.colors.LinearSegmentedColormap`
     source code and performs efficient, vectorized linear interpolation
@@ -2186,6 +2180,7 @@ def register_cmaps():
     color cycles.
     """
     # First read from file
+    N_hires = rcParams['image.lut']
     for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
             sorted(glob.glob(os.path.join(_data_user, '*'))):
         # Read table of RGB values
@@ -2264,9 +2259,9 @@ def register_cmaps():
                 segmentdata = json.load(file)
             if 'space' in segmentdata:
                 space = segmentdata.pop('space')
-                cmap = PerceptuallyUniformColormap(name, segmentdata, space=space, N=_N_hires)
+                cmap = PerceptuallyUniformColormap(name, segmentdata, space=space, N=N_hires)
             else:
-                cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=_N_hires)
+                cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=N_hires)
             cmaps.add(name)
         # Register maps (this is just what register_cmap does)
         # If the _r (reversed) version is stored on file, store the straightened one
