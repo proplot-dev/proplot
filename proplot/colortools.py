@@ -1914,6 +1914,9 @@ class BinNorm(mcolors.BoundaryNorm):
             y = y.filled(np.nan)
         y = y[np.isfinite(y)]
         # Account for out of bounds colors
+        # WARNING: For some reason, "clipping" doesn't work when applying
+        # norm, end up with unpredictable fill value if norm yields invalid
+        # value. Must clip manually.
         offset = 0
         scale = 1
         eps = step/levels.size
@@ -1926,6 +1929,10 @@ class BinNorm(mcolors.BoundaryNorm):
         self._norm = norm
         self._x_b = x_b
         self._y = y
+        if isinstance(norm, mcolors.LogNorm):
+            self._norm_clip = (1e-250, None)
+        else:
+            self._norm_clip = None
 
         # Add builtin properties
         # NOTE: Are vmin/vmax even used?
@@ -1941,6 +1948,9 @@ class BinNorm(mcolors.BoundaryNorm):
         # just use searchsorted to bin the data.
         # Note the bins vector includes out-of-bounds negative (searchsorted
         # index 0) and out-of-bounds positive (searchsorted index N+1) values
+        clip = self._norm_clip
+        if clip:
+            xq = np.clip(xq, *clip)
         xq = self._norm(np.atleast_1d(xq))
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
         return ma.masked_array(yq, np.isnan(xq))

@@ -647,11 +647,8 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
             if norm is None or isinstance(norm, str) and 'segment' in norm:
                 levels = utils.edges(values) # special case, used by colorbar factory
             else:
-                norm_tmp = colortools.Norm(norm, **norm_kw) # TODO: check if this works with LinearSegmentedNorm
-                if norm_tmp: # is not None
-                    levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
-                else:
-                    levels = utils.edges(values)
+                norm_tmp = colortools.Norm(norm, **norm_kw)
+                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
     # Input colormap
     cyclic = False
     colors = _default(color, colors)
@@ -742,7 +739,7 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
     if cyclic:
         step = 0.5
         extend = 'both'
-    norm_preprocess = colortools.Norm(norm, levels=levels, **norm_kw)
+    norm_preprocess = colortools.Norm(norm, levels=levels, clip=False, **norm_kw)
     norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
     result.set_norm(norm_main)
 
@@ -3723,11 +3720,11 @@ def colorbar_factory(ax, mappable, values=None,
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
     ticklocation = _default(tickloc, ctickloc, ticklocation)
-    kwargs.update({'ticks':locators[0], 'format':cformatter,
+    kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
+                   'format':cformatter,
                    'ticklocation':ticklocation,
                    'extendfrac':extendlength})
     cb = ax.figure.colorbar(mappable, **kwargs)
-
     # Make edges/dividers consistent with axis edges
     if cb.dividers is not None:
         cb.dividers.update(rc['grid'])
@@ -3738,12 +3735,16 @@ def colorbar_factory(ax, mappable, values=None,
     # * The set_minor_locator seems to be completely ignored depending on the colorbar
     #   in question, for whatever reason, and cb.minorticks_on() gives no control.
     minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
+    majorvals = np.array(locators[0].tick_values(mappable.norm.vmin, mappable.norm.vmax))
     if isinstance(mappable.norm, colortools.BinNorm):
         minorvals = mappable.norm._norm(minorvals) # use *child* normalizer
+        majorvals = mappable.norm._norm(majorvals) # use *child* normalizer
     elif hasattr(mappable, 'levels'):
         minorvals = mappable.norm(minorvals)
     minorvals = [tick for tick in minorvals if 0<=tick<=1]
+    majorvals = [tick for tick in majorvals if 0<=tick<=1]
     axis.set_ticks(minorvals, minor=True)
+    axis.set_ticks(majorvals, minor=False)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # The label
     if clabel is not None:
