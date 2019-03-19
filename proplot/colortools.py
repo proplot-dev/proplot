@@ -1905,8 +1905,8 @@ class BinNorm(mcolors.BoundaryNorm):
         # * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
         #   where the offset X equals step/len(levels).
         # First get coordinates
-        if not norm or type(norm) is mcolors.Normalize:
-            norm = lambda x: x # linear transition, no need to normalize
+        if not norm:
+            norm = mcolors.Normalize() # WARNING: Normalization to 0-1 must always take place first, required by colorbar_factory ticks manager.
         x_b = norm(levels)
         x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
         y = (x_m - x_m.min())/(x_m.max() - x_m.min())
@@ -1914,9 +1914,8 @@ class BinNorm(mcolors.BoundaryNorm):
             y = y.filled(np.nan)
         y = y[np.isfinite(y)]
         # Account for out of bounds colors
-        # WARNING: For some reason, "clipping" doesn't work when applying
-        # norm, end up with unpredictable fill value if norm yields invalid
-        # value. Must clip manually.
+        # WARNING: For some reason must clip manually for LogNorm, or
+        # end up with unpredictable fill value, weird "out-of-bounds" colors
         offset = 0
         scale = 1
         eps = step/levels.size
@@ -1930,7 +1929,7 @@ class BinNorm(mcolors.BoundaryNorm):
         self._x_b = x_b
         self._y = y
         if isinstance(norm, mcolors.LogNorm):
-            self._norm_clip = (1e-250, None)
+            self._norm_clip = (5e-249, None)
         else:
             self._norm_clip = None
 

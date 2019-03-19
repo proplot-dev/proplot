@@ -418,12 +418,12 @@ the axes is **filled** with a colorbar. See
     import proplot as plot
     import numpy as np
     f, ax = plot.subplots(bottompanel=True, tight=1, axwidth=2.5)
-    m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='glacial')
+    m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
     ax.colorbar(m, ticks=2, label='inset colorbar')
     ax.colorbar(m, ticks=2, loc='lower left')
     f.bottompanel.colorbar(m, label='standard outer colorbar', length=0.9)
-    ax.format(suptitle='Title')
+    ax.format(suptitle='ProPlot colorbars')
 
 
 
@@ -448,9 +448,9 @@ corresponding colors.
     plot.rc.cycle = 'qual2'
     # plot.rc['axes.labelweight'] = 'bold'
     hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
-    ax.format(suptitle='Colorbar from line handles', xlabel='x axis', ylabel='y axis')
+    ax.format(suptitle='Line handle colorbar', xlabel='x axis', ylabel='y axis')
     f.bpanel.colorbar(hs, values=np.arange(0,6,0.5),
-                      label='"Legend" for lines that map to numeric values',
+                      label='Corresponding numeric values',
                       tickloc='bottom', # because why not?
                      )
 
@@ -460,10 +460,9 @@ corresponding colors.
 
 
 
-
-.. image:: showcase/showcase_27_2.png
+.. image:: showcase/showcase_27_1.png
    :width: 346px
-   :height: 312px
+   :height: 318px
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -771,11 +770,9 @@ Helvetica as the default font
 
 Helvetica is the MATLAB default, but matplotlib does not come packaged
 with it and defaults to a font called “DejaVu Sans”. ProPlot adds back
-Helvetica and makes it the default.
-
-In my opinion, Helvetica is much more professional-looking than the
-DejaVu Sans. You can change the default font by modifying your
-``.proplotrc`` (see the `~proplot.rcmod` documentation).
+Helvetica and makes it the default. Helvetica is more
+professional-looking than the DejaVu Sans, in my biased opinion. See the
+`~proplot.rcmod` documentation for changing the default font.
 
 .. code:: ipython3
 

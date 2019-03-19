@@ -3734,13 +3734,17 @@ def colorbar_factory(ax, mappable, values=None,
     #   using the mappable norm object; see: https://stackoverflow.com/a/20079644/4970632
     # * The set_minor_locator seems to be completely ignored depending on the colorbar
     #   in question, for whatever reason, and cb.minorticks_on() gives no control.
+    # NOTE: Re-apply major ticks here because for some reason minor ticks don't
+    # align with major ones for LogNorm. When we call set_ticks, labels (and
+    # numbers) are not changed; just re-adjust existing ticks to proper locations.
     minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
     majorvals = np.array(locators[0].tick_values(mappable.norm.vmin, mappable.norm.vmax))
     if isinstance(mappable.norm, colortools.BinNorm):
         minorvals = mappable.norm._norm(minorvals) # use *child* normalizer
-        majorvals = mappable.norm._norm(majorvals) # use *child* normalizer
-    elif hasattr(mappable, 'levels'):
+        majorvals = mappable.norm._norm(majorvals)
+    else:
         minorvals = mappable.norm(minorvals)
+        majorvals = mappable.norm(majorvals) # use *child* normalizer
     minorvals = [tick for tick in minorvals if 0<=tick<=1]
     majorvals = [tick for tick in majorvals if 0<=tick<=1]
     axis.set_ticks(minorvals, minor=True)
