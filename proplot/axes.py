@@ -1852,12 +1852,13 @@ class XYAxes(BaseAxes):
         return axis.label
 
     # Cool overrides
-    def smart_update(self, tickfix=False, # whether to always transform locator to FixedLocator
+    def smart_update(self,
         xloc=None,          yloc=None,          # aliases for 'where to put spine'
         xmargin=None,       ymargin=None,
         xcolor=None,        ycolor=None,        # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
         xspineloc=None,     yspineloc=None,     # deals with spine options
         xtickloc=None,      ytickloc=None,      # which spines to draw ticks on
+        fixticks=False, # whether to always transform locator to FixedLocator
         xlabelloc=None,     ylabelloc=None,
         xticklabelloc=None, yticklabelloc=None, # where to put tick labels
         xtickdir=None,      ytickdir=None,      # which direction ('in', 'out', or 'inout')
@@ -1910,6 +1911,11 @@ class XYAxes(BaseAxes):
             are labelled. For example, the tick range ``[-1,1]`` with
             axis range ``[-5,5]`` and a tick interval of 1 will only
             label the ticks marks at -1, 0, and 1.
+        fixticks : bool, optional
+            Whether to always transform the tick locators to a
+            `~matplotlib.ticker.FixedLocator` instance. Defaults to ``False``.
+            If your axis ticks are doing weird things (for example, ticks
+            drawn outside of the axis spine), try setting this to ``True``.
         xscale, yscale : None or scale spec, optional
             The *x* and *y* axis scales. Arguments are passed to and interpreted
             by `~proplot.axistools.Scale`. Examples include ``'linear'``
@@ -2253,7 +2259,7 @@ class XYAxes(BaseAxes):
             # * Most locators take no arguments in __call__, and some do not
             #   have tick_values method, so we just call them.
             # TODO: Add optional override to do this every time
-            if tickfix or fixedformatfix or bounds is not None or axis.get_scale()=='cutoff':
+            if fixticks or fixedformatfix or bounds is not None or axis.get_scale()=='cutoff':
                 if bounds is None:
                     bounds = getattr(self, f'get_{name}lim')()
                 locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
@@ -3451,7 +3457,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
 def colorbar_factory(ax, mappable, values=None,
         orientation='horizontal', extend=None, extendlength=None,
         clabel=None, label=None,
-        ctickminor=False, tickminor=None,
+        ctickminor=False, tickminor=None, fixticks=True,
         cgrid=False, grid=None,
         ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
         cticks=None, ticks=None, clocator=None, locator=None,
@@ -3506,6 +3512,11 @@ def colorbar_factory(ax, mappable, values=None,
         Aliases for `ticklocation`.
     ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
+    fixticks bool, optional
+        For complicated normalizers (e.g. `~matplotlib.ticker.LogNorm`), the
+        colorbar minor and major ticks can appear misaligned. When `fixticks`
+        is ``True`` (the default), this misalignment is fixed. Since this has
+        side effects in a few rare situations, this can be disabled.
     clabel, ctickminor, cgrid
         Aliases for `label`, `tickminor`, `grid`.
     label : None or str, optional
@@ -3748,7 +3759,8 @@ def colorbar_factory(ax, mappable, values=None,
     minorvals = [tick for tick in minorvals if 0<=tick<=1]
     majorvals = [tick for tick in majorvals if 0<=tick<=1]
     axis.set_ticks(minorvals, minor=True)
-    axis.set_ticks(majorvals, minor=False)
+    if fixticks:
+        axis.set_ticks(majorvals, minor=False)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # The label
     if clabel is not None:
