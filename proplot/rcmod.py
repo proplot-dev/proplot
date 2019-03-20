@@ -25,6 +25,37 @@ This package also defines three different "categories" of settings:
   as shorthands for settings with longer names, or for some "special"
   settings.
 
+rcGlobals
+---------
+
+These settings are used to change :ref:`rcParams` and :ref:`rcParams_new` settings
+in bulk, or as shorthands for common settings with longer names.
+
+==================  ====================================================================================================================================================
+Key                 Description
+==================  ====================================================================================================================================================
+``tight``           Whether to auto-adjust figure bounds and subplot spacings.
+``nbsetup``         Whether to run `~proplot.notebook.nbsetup` command automatically on import.
+``cycle``           The default color cycle name, used e.g. for lines.
+``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
+``cmap``            The default colormap.
+``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``lut``             The number of colors to put in the colormap lookup table.
+``color``           The color of axis spines, tick marks, tick labels, and labels.
+``margin``          The margin of space around subplot `~matplotlib.artist.Artist` instances, if ``xlim`` and ``ylim`` are unset.
+``facecolor``       The axes background color.
+``hatch``           The background hatching string pattern [1]_. If ``None``, no hatching.
+``small``           Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
+``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
+``fontname``        Name of font used for all text in the figure [2]_.
+``linewidth``       Thickness of axes spines and major tick lines.
+``gridratio``       Ratio of minor to major gridline thickness.
+``ticklen``         Length of major ticks.
+``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
+``tickratio``       Ratio of minor to major tick line thickness.
+``ticklenratio``    Ratio of minor to major tick lengths.
+==================  ====================================================================================================================================================
+
 rcParams
 --------
 
@@ -56,13 +87,13 @@ axes titles, row labels, column labels, and *x* and *y* axis labels.
 ======================================  ===========================================================
 Key                                     Description
 ======================================  ===========================================================
-``abc.format``                          a-b-c label format [1]_.
-``abc.pos``, ``title.pos``              a-b-c label position [2]_.
+``abc.format``                          a-b-c label format [3]_.
+``abc.pos``, ``title.pos``              a-b-c label position [4]_.
 ``abc.border``, ``title.border``        Whether to draw labels inside the axes with a white border.
 ``abc.linewidth``, ``title.linewidth``  Width of the (optional) white border.
 ``[name].color``                         The font color.
 ``[name].fontsize``                      The font size.
-``[name].weight``                        The font weight [3]_.
+``[name].weight``                        The font weight [5]_.
 ======================================  ===========================================================
 
 There are also the new ``tick.labelweight``, ``tick.labelcolor``, and ``tick.labelsize``
@@ -96,95 +127,64 @@ Key                                             Description
 Subplot
 ```````
 The ``subplot`` subcategory is used to control default layout settings.
-As with all sizing arguments, if specified as a numer, the units are inches;
+As with all sizing arguments, if specified as a number, the units are inches;
 if string, units are interpreted by `~proplot.utils.units`.
 
 =======================  ==================================================================
 Key                      Description
 =======================  ==================================================================
+``subplot.axwidth``      Default width of each axes.
+``subplot.panelwidth``   Width of side panels.
+``subplot.cbarwidth``    Width of "colorbar" panels.
+``subplot.legwidth``     Width of "legend" panels.
 ``subplot.outerpad``     Padding around edges for tight subplot.
 ``subplot.subplotpad``   Padding between main subplots.
 ``subplot.innerpad``     Padding between inner panels and their parents.
 ``subplot.titlespace``   Vertical space for titles.
-``subplot.legwidth``     Width of "legend" panels.
-``subplot.cbarwidth``    Width of "colorbar" panels.
 ``subplot.ylabspace``    Horizontal space between subplots alotted for *y*-labels.
 ``subplot.xlabspace``    Vertical space between subplots alotted for *x*-labels.
 ``subplot.nolabspace``   Space between subplots alotted for tick marks.
-``subplot.innerspace``   Totally empty space between subplots.
-``subplot.axwidth``      Default width of each axes.
-``subplot.panelwidth``   Width of side panels.
-``subplot.panelspace``   Space between main axes and side panels.
+``subplot.innerspace``   Purely empty space between subplots.
+``subplot.panelspace``   Purely empty space between main axes and side panels.
 =======================  ==================================================================
 
 Colorbar
 ````````
 And finally, the ``colorbar`` subcategory. This is analogous to the
 builtin ``legend`` subcategory, and is used for **inset** colorbars
-(see `~proplot.axes.Axes.colorbar` for details).
+(see `~proplot.axes.BaseAxes.colorbar` for details).
 
 =======================  ===================================================================================================================
 Key                      Description
 =======================  ===================================================================================================================
 ``colorbar.loc``         Default colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
-``colorbar.length``      Default length for "inset" or "legend" colorbars.
-``colorbar.width``       Default length for "inset" or "legend" colorbars.
+``colorbar.length``      Default length of "inset" colorbars.
+``colorbar.width``       Default width of "inset" colorbars.
 ``colorbar.extend``      Length of rectangular or triangular "extensions".
-``colorbar.extendfull``  Same, but for full, ordinary colorbars.
+``colorbar.extendfull``  Same, but for "panel" colorbars.
 ``colorbar.pad``         Default padding between figure edge of rectangular or triangular "extensions".
-``colorbar.xspace``      Extra space for x label of colorbar.
+``colorbar.xspace``      Extra space for *x* label of colorbar.
 =======================  ===================================================================================================================
 
 
-rcGlobals
----------
-
-These settings are used to change :ref:`rcParams` and :ref:`rcParams_new` settings
-in bulk, or as shorthands for common settings with longer names.
-
-==================  ====================================================================================================================================================
-Key                 Description
-==================  ====================================================================================================================================================
-``tight``           Whether to auto-adjust figure bounds and subplot spacings.
-``nbsetup``         Whether to run `~proplot.notebook.nbsetup` command automatically on import.
-``cycle``           The default color cycle name, used e.g. for lines.
-``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-``cmap``            The default colormap.
-``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
-``lut``             The number of colors to put in the colormap lookup table.
-``color``           The color of axis spines, tick marks, tick labels, and labels.
-``margin``          The margin of space around subplot `~matplotlib.artist.Artist` instances, if ``xlim`` and ``ylim`` are unset.
-``facecolor``       The axes background color.
-``hatch``           The background hatching string pattern [4]_. If ``None``, no hatching.
-``small``           Font size for legend text, tick labels, axis labels, and text generated with `~proplot.axes.BaseAxes.text`.
-``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
-``fontname``        Name of font used for all text in the figure [5]_.
-``linewidth``       Thickness of axes spines and major tick lines.
-``gridratio``       Ratio of minor to major gridline thickness.
-``ticklen``         Length of major ticks.
-``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
-``tickratio``       Ratio of minor to major tick line thickness.
-``ticklenratio``    Ratio of minor to major tick lengths.
-==================  ====================================================================================================================================================
-
-.. [1] A string containing the character ``'a'``, specifying the
+.. [1] For example, ``'xxx'`` or ``'..'``. See `this demo
+       <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
+.. [2] This module *changes the default* from DejaVu Sans (or Bitstream Vera) to
+       Helvetica Neue or Helvetica. Run `~proplot.fonttools.install_fonts`
+       to install them when you download ProPlot for the first time, and
+       whenever you update matplotlib.
+.. [3] A string containing the character ``'a'``, specifying the
        format of the a-b-c labelling. ``'a'`` is the default, but (for
        example) ``'a.'``, ``'a)'``, or ``'A'`` might also be desirable.
-.. [2] Positions are declared with a string up to two characters long,
+.. [4] Positions are declared with a string up to two characters long,
        indicating whether to draw text inside (``'i'``) or outside
        (``'o'``) the axes, and on the left (``'l'``), right (``'r'``), or
        center (``'c'``) of the axes. The matplotlib default is ``'co'``.
-.. [3] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
+.. [5] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
        ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
        Note that many fonts only have ``normal`` or ``bold`` available.
        If you request another weight, the “closest” availble weight will
        be selected.
-.. [4] For example, ``'xxx'`` or ``'..'``. See `this demo
-       <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
-.. [5] This module *changes the default* from DejaVu Sans (or Bitstream Vera) to
-       Helvetica Neue or Helvetica. Run `~proplot.fonttools.install_fonts`
-       to install them when you download ProPlot for the first time, and
-       whenever you update matplotlib.
 """
 # First import stuff
 import re

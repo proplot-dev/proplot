@@ -81,7 +81,7 @@ are now valid ``cmap`` and ``cycle`` arguments:
 
 1. Registered colormap names. For example, ``'Blues'`` or ``'Sunset'``.
    See :ref:`Table of colormaps` for a visalization of the registered maps.
-   Cycles are constructed automatically be sampling colors from these colormaps;
+   Cycles are constructed automatically by sampling colors from these colormaps;
    use e.g. ``('Blues', 5)`` to specify the number of colors in the cycle.
 2. Gradations of a single hue. For example, ``'maroon'`` creates colormap spanning
    white to maroon, and ``'maroon90'`` spans from a 90% luminance pale red
@@ -326,7 +326,7 @@ _cmap_categories = {
         'SoftCoolWarm',
         'MutedCoolWarm',
         'ColdHot',
-        'Temp', # from ???
+        # 'Temp', # too un-uniform
         # 'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
         # 'Star',
         # 'JMN', # James map; ugly, so deleted
@@ -1206,7 +1206,7 @@ def Colormap(*args, name=None, cyclic=False, N=None,
         to pass this flag to `BinNorm`. This will prevent having the same color
         on either end of the colormap.
     N : None or int, optional
-        Number of colors to generate in the hidden lookupt table ``_lut``.
+        Number of colors to generate in the hidden lookup table ``_lut``.
         By default, a relatively high resolution of 256 is chosen (see notes).
     cut : None or float, optional
         Optionally cut out colors in the **center** of the colormap. This is
@@ -1262,10 +1262,9 @@ def Colormap(*args, name=None, cyclic=False, N=None,
     (``'neither'``) colors from a lookup table with ``N`` colors, which means
     it simply *skips over* 1 or 2 colors in the middle of the lookup table,
     which will cause visual jumps!
-
     Instead, we make the stored lookup table completely independent from the
-    number of levels. It will have many high-res segments while the colormap
-    `N` is very small.
+    number of levels. It will have many high-res segments while the number
+    of levels is very small.
     """
     # Initial stuff
     N_ = N or rcParams['image.lut']
@@ -1672,7 +1671,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         ----
         Add ability to specify *discrete "jump" transitions*. Currently, this
         only lets you generate colormaps with smooth transitions, and is not
-        necessarily suited for e.g. for making diverging colormaps.
+        necessarily suited for e.g. making diverging colormaps.
         """
         # Build dictionary, easy peasy
         h = _default(hue, h)
@@ -1856,12 +1855,6 @@ class BinNorm(mcolors.BoundaryNorm):
     your levels edges are weirdly spaced (e.g. [-1000, 100, 0,
     100, 1000] or [0, 10, 12, 20, 22]), the "colormap coordinates" for these
     levels will be [0, 0.25, 0.5, 0.75, 1].
-
-    Note
-    ----
-    If you are using a diverging colormap with ``extend='max'`` or
-    ``extend='min'``, the center will get messed up. But that is very strange
-    usage anyway... so please just don't do that :)
     """
     def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither'):
         """
@@ -1882,6 +1875,12 @@ class BinNorm(mcolors.BoundaryNorm):
             extreme end colors.
         clip : bool, optional
             A `~matplotlib.colors.Normalize` option.
+
+        Note
+        ----
+        If you are using a diverging colormap with ``extend='max'`` or
+        ``extend='min'``, the center will get messed up. But that is very strange
+        usage anyway... so please just don't do that :)
         """
         # Declare boundaries, vmin, vmax in True coordinates.
         # Notes:
@@ -2032,10 +2031,6 @@ class MidpointNorm(mcolors.Normalize):
     Ensures a "midpoint" always lies at the central colormap color.
     Can be used by passing ``norm='midpoint'`` to any command accepting
     ``cmap``. The default midpoint is zero.
-
-    Note
-    ----
-    See `this stackoverflow thread <https://stackoverflow.com/q/25500541/4970632>`_.
     """
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
         """
@@ -2047,6 +2042,10 @@ class MidpointNorm(mcolors.Normalize):
         vmin, vmax, clip
             The minimum and maximum data values, and the clipping setting.
             Passed to `~matplotlib.colors.Normalize`.
+
+        Note
+        ----
+        See `this stackoverflow thread <https://stackoverflow.com/q/25500541/4970632>`_.
         """
         # Bigger numbers are too one-sided
         super().__init__(vmin, vmax, clip)

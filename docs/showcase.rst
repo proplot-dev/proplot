@@ -1543,7 +1543,7 @@ for usage details.
 
 .. image:: showcase/showcase_100_1.png
    :width: 436px
-   :height: 4409px
+   :height: 4383px
 
 
 Table of color cycles
@@ -1643,11 +1643,11 @@ generator! Every command that accepts a ``cmap`` argument (see
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
 included, you can easily create SciVisColor-style merged colormaps with
-ProPlot’s on-the-fly colormap generator! An example is below. The
-resulting colormaps are saved to the ``.proplot`` folder in your home
-directory by passing ``save`` to the `~proplot.colortools.Colormap`
-constructor. All files in this folder will be loaded by ProPlot on
-import.
+ProPlot’s on-the-fly colormap generator! An example is below. In this
+example, we also save colormaps to the ``.proplot`` folder in your home
+directory by passing ``save=True`` to the
+`~proplot.colortools.Colormap` constructor. All files in this folder
+are loaded by ProPlot on import.
 
 .. code:: ipython3
 

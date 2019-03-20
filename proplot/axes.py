@@ -617,14 +617,14 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
 
     Note
     ----
-    The new default `~proplot.colortools.BinNorm` normalizer makes sure
-    that colored levels always span the **full range of colors** in the
-    colormap, whether you are extending max, min, neither, or both. By default,
-    when you select `extend` not ``'both'``, matplotlib seems to just cut off
-    the most intense colors on either side (reserved for coloring "out of
-    bounds" data).
+    The `~proplot.colortools.BinNorm` normalizer, used with all colormap
+    plots, makes sure that your "levels" always span the full range of colors
+    in the colormap, whether you are extending max, min, neither, or both. By
+    default, when you select `extend` not ``'both'``, matplotlib seems to just
+    cut off the most intense colors (reserved for coloring "out of bounds"
+    data), even though they are not being used.
 
-    This could also be done by limiting the number of colormaps in the
+    This could also be done by limiting the number of colors in the
     colormap lookup table by selecting a smaller ``N`` (see
     `~matplotlib.colors.LinearSegmentedColormap`) -- but I prefer the approach
     of always building colormaps with hi-res lookup tables, and leaving the

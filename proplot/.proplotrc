@@ -7,20 +7,20 @@ rcGlobals:
     # Subplots
     tight:      True
     # Important settings
-    fontname:  # automatically determined by OS
+    fontname: 
     cycle:     colorblind
-    rgbcycle:  False # whether to change definition of 'r', 'g', 'b', etc. color strings to match colorblind cycle names, if colorblind cycle is active
+    rgbcycle:  False 
     cmap:      sunset
-    reso:      lo # used for cartopy geographic features, one of {'lo', 'med', 'hi'}
+    reso:      lo 
     lut:       256
     color:     k
     margin:    0.0
     grid:      True
     geogrid:   True
     gridminor: False
-    hatch:     # hatching on background, useful for indicating invalid data
+    hatch:     # background hatching, none if empty
     facecolor: w
-    alpha:     1 # the background patch alpha
+    alpha:     1 # background patch alpha
     small:     8
     large:     9
     linewidth: 0.6
@@ -30,21 +30,20 @@ rcGlobals:
     # Geography
     land:         False
     ocean:        False
-    coast:        False # coastline line
+    coast:        False # coastline
     rivers:       False
     lakes:        False
-    borders:      False # countries
-    innerborders: False # states, provinces
+    borders:      False # country borders
+    innerborders: False # state, province borders
     # Ratios
-    gridratio:    0.5 # ratio of major-to-minor grid line widths
-    tickratio:    0.8 # ratio of major-to-minor tick width
-    ticklenratio: 0.5 # ratio of major-to-minor tick size
+    gridratio:    0.5 # minor/major grid line widths
+    tickratio:    0.8 # minor/major tick width
+    ticklenratio: 0.5 # minor/major tick size
 
 #------------------
 # rcParams defaults
 #------------------
 rcParams:
-    # Change default
     figure.dpi:              90
     figure.facecolor:        '#f2f2f2'
     figure.max_open_warning: 0
@@ -64,7 +63,7 @@ rcParams:
     axes.labelweight:        normal
     axes.labelpad:           3.0
     axes.titlepad:           3.0
-    axes.axisbelow:          lines # puts ticks & gridlines *above* patches, *below* lines
+    axes.axisbelow:          lines # ticks & gridlines *above* patches, *below* lines
     axes.spines.bottom:      True
     axes.spines.top:         True
     axes.spines.left:        True
@@ -75,12 +74,12 @@ rcParams:
     ytick.left:              True
     ytick.right:             False
     ytick.minor.visible:     True
-    grid.color:              'k' # also applies to gridminor props, if not set
+    grid.color:              'k'
     grid.alpha:              0.1
     grid.linewidth:          0.6
     grid.linestyle:          '-'
-    text.usetex:             False   # if True, TeX is used for *all* font handling (limits available fonts)
-    mathtext.default:        regular # no italics
+    text.usetex:             False  
+    mathtext.default:        regular
     mathtext.bf:             'sans:bold'
     mathtext.it:             'sans:it'
     patch.facecolor:         C0
@@ -96,8 +95,8 @@ rcParams:
     lines.markersize:        3.0
     lines.dash_joinstyle:    miter
     lines.dash_capstyle:     projecting
-    lines.solid_joinstyle:   miter      # joinstyle options are miter, round, bevel
-    lines.solid_capstyle:    projecting # capstyle options are butt, round, projecting
+    lines.solid_joinstyle:   miter      # options: miter, round, bevel
+    lines.solid_capstyle:    projecting # options: butt, round, projecting
     legend.fancybox:         False
     legend.frameon:          False
     legend.labelspacing:     0.5
@@ -112,48 +111,46 @@ rcParams:
 #----------------------
 # rcParams_new defaults
 #----------------------
-# These are my "fake" rcParams
 rcParams_new:
     # Axis settings
     axes.formatter.zerotrim: True
     axes.gridminor: True
     axes.geogrid: True
-    axes.hatch: # filled with 'hatch' global setting
-    axes.alpha: # empty by default; will depend on savefig transparent setting
+    axes.hatch: # filled by 'hatch'
+    axes.alpha: # if empty, depends on 'savefig.transparent' setting
     hatch.alpha: 1
-    # Extra tick settings
-    # For axis label, use axeslabelcolor, etc.
-    tick.labelsize:   # filled by 'small' global setting
-    tick.labelcolor:  # filled by 'color' global settingk
+    # More tick label settings
+    tick.labelsize:   # filled by 'small'
+    tick.labelcolor:  # filled by 'color'
     tick.labelweight: normal
-    # Title settings
-    abc.pos:           il   # inside the axes, to the left
-    title.pos:         oc   # outside the axes, in the center
+    # More title settings
+    abc.pos:           il # inside the axes, to the left
+    title.pos:         oc # outside the axes, in the center
     abc.format:        a
-    abc.fontsize:      # filled by 'large' global setting
+    abc.fontsize:      # filled by 'large'
     abc.color:         k
     abc.weight:        bold
-    abc.border:        True # whether to draw border for interior labels
-    abc.linewidth:     1.5  # width of border
-    title.fontsize:    # filled by 'large' global setting
+    abc.border:        True
+    abc.linewidth:     1.5 
+    title.fontsize:    # filled by 'large'
     title.color:       k
     title.weight:      normal
     title.border:      True
     title.linewidth:   1.5
-    suptitle.fontsize: # filled by 'large' global setting
+    suptitle.fontsize: # filled by 'large'
     suptitle.color:    k
     suptitle.weight:   bold
-    rowlabel.fontsize: # filled by 'large' global setting
+    rowlabel.fontsize: # filled by 'large'
     rowlabel.weight:   bold
     rowlabel.color:    k
-    collabel.fontsize: # filled by 'large' global setting
+    collabel.fontsize: # filled by 'large'
     collabel.weight:   bold
     collabel.color:    k
     # Parallels and meridians
     geogrid.labels:    False
-    geogrid.labelsize: # filled by 'small' global setting
-    geogrid.latmax:    80 # maximum latitude for gridlines
-    geogrid.lonlines:  30 # default gridline spacing
+    geogrid.labelsize: # filled by 'small'
+    geogrid.latmax:    80
+    geogrid.lonlines:  30
     geogrid.latlines:  20
     geogrid.alpha:     0.5
     geogrid.color:     k
@@ -172,30 +169,30 @@ rcParams_new:
     rivers.color:           k
     rivers.linewidth:       0.6
     # Minor grid lines
-    gridminor.alpha: # if empty, properties are inherited from "grid" properties
+    gridminor.alpha: # if empty, inherited from "grid"
     gridminor.color:
     gridminor.linestyle:
-    gridminor.linewidth: # filled with the product of "grid.linewidth" and "gridratio"
+    gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
     # Gridspec
-    subplot.axwidth:    2    # default width
-    subplot.innerpad:   0.05 # padding between main subplots and their panels
-    subplot.outerpad:   0.1  # padding around edges for tight layout
-    subplot.subplotpad: 0.15 # padding between primary subplots
-    subplot.titlespace: 0.2  # extra space for title/suptitle
-    subplot.innerspace: 0.2  # just have ticks, no labels
-    subplot.legwidth:   0.25 # default legend space (bottom of figure)
-    subplot.cbarwidth:  0.17 # default colorbar width
-    subplot.ylabspace:  0.7  # default space wherever we expect tick and axis labels (a bit large if axis has no negative numbers/minus sign tick labels)
-    subplot.xlabspace:  0.55 # for horizontal text should have more space
-    subplot.nolabspace: 0.15 # only ticks
+    subplot.axwidth:    2
     subplot.panelwidth: 0.45
+    subplot.cbarwidth:  0.17
+    subplot.legwidth:   0.25
+    subplot.innerpad:   0.05
+    subplot.outerpad:   0.1
+    subplot.subplotpad: 0.15
+    subplot.titlespace: 0.2
+    subplot.innerspace: 0.2
+    subplot.ylabspace:  0.7
+    subplot.xlabspace:  0.55
+    subplot.nolabspace: 0.15
     subplot.panelspace: 0.15
     # Inset colorbar
-    colorbar.extendfull: 0.15 # length of triangle or rectangle "extensions"
-    colorbar.extend:     0.08 # same but for "inset" colorbars
-    colorbar.length:     0.6  # length of "inset" colorbars
-    colorbar.width:      0.12 # width of "inset" colorbars
+    colorbar.extendfull: 0.15
+    colorbar.extend:     0.08
+    colorbar.length:     0.6
+    colorbar.width:      0.12
     colorbar.loc:        'lower right'
-    colorbar.axespad:    0.5em # padding from axes edge
-    colorbar.xspace:     0.3   # extra space for colorbar x-ticks and x-label
+    colorbar.axespad:    0.5em
+    colorbar.xspace:     0.3
 

@@ -9,25 +9,6 @@ A few simple tools.
 * `arange` and `edges` are both often useful in the context of making plots
   -- for example, when creating a list of contours or tick mark positions.
 """
-# Decorators
-# Below is very simple example that demonstrates how simple decorators work
-# def decorator1(func):
-#     def decorator():
-#         print('decorator 1 called')
-#         func()
-#         print('decorator 1 finished')
-#     return decorator
-# def decorator2(func):
-#     def decorator():
-#         print('decorator 2 called')
-#         func()
-#         print('decorator 2 finished')
-#     return decorator
-# @decorator1
-# @decorator2
-# def hello():
-#     print('hello world!')
-# hello()
 import re
 import time
 import numpy as np
@@ -70,17 +51,15 @@ def _logger(func):
     return decorator
 
 def _counter(func):
-    """ A decorator that counts and prints the number of times a function
-    has been executed. See: https://stackoverflow.com/a/1594484/4970632"""
+    """A decorator that counts and prints the cumulative time a function
+    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        # decorator.count += 1
         t = time.clock()
         res = func(*args, **kwargs)
         decorator.time += (time.clock() - t)
         decorator.count += 1
         print(f'{func.__name__} cumulative time: {decorator.time}s ({decorator.count} calls)')
-        # print(f'{func.__name__} has been used: {decorator.count}x')
         return res
     decorator.time = 0
     decorator.count = 0 # initialize
@@ -90,11 +69,11 @@ def _counter(func):
 # Accessible for user
 #------------------------------------------------------------------------------#
 def arange(min_, *args):
-    """Duplicate behavior of `numpy.arange`, except with **inclusive endpoints**."""
+    """Identical to `numpy.arange`, except with **inclusive endpoints**."""
     # Optional arguments just like np.arange
     if len(args)==0:
         max_ = min_
-        min_ = 0 # this re-assignes the NAME "min_" to 0
+        min_ = 0
         step = 1
     elif len(args)==1:
         max_ = args[0]
@@ -104,21 +83,21 @@ def arange(min_, *args):
         step = args[1]
     else:
         raise ValueError('Function takes from one to three arguments.')
-    # All input is integer? Get new "max"
+    # All input is integer
     if min_//1==min_ and max_//1==max_ and step//1==step:
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
         max_ += 1
-    # Input is float or mixed; cast all to float64, then get new "max"
+    # Input is float or mixed, cast all to float64
     else:
-        # Get the next FLOATING POINT, in direction of the second argument
-        # Forget this; round-off errors from continually adding step to min mess this up
+        # Forget this. Round-off errors from continually adding step to min
+        # mess this up. Just run to max plus step/2.
         # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
     return np.arange(min_, max_, step)
 
 def edges(values, axis=-1):
-    """Get approximate edge values along arbitrary axis."""
+    """Gets approximate edge values along arbitrary axis."""
     # First permute
     values = np.array(values)
     values = np.swapaxes(values, axis, -1)
@@ -142,12 +121,10 @@ def edges(values, axis=-1):
 #------------------------------------------------------------------------------#
 # Units
 #------------------------------------------------------------------------------#
-def units(value, error=True, dpi=90):
+def units(value, error=True):
     """
     Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
-    for info on the em square units. The `dpi` is equivalent to the one used
-    for iPython notebook inline figures: ``rc['figure.dpi']``. See the
-    `~proplot.rcmod` module for details.
+    for info on the em square units. See the `~proplot.rcmod` module for details.
 
     Parameters
     ----------
@@ -174,7 +151,7 @@ def units(value, error=True, dpi=90):
         ==============  ===================================================
 
     error : bool, optional
-        Raise error on failure?
+        Raise error on failure, or just return input value? Used internally.
 
     """
     # Possible units
@@ -183,6 +160,8 @@ def units(value, error=True, dpi=90):
     from matplotlib import rcParams
     _unit_dict = {
         'in':  1.0, # already in inches
+        'ft':  12.0,
+        'm':   39.37,
         'cm':  0.3937,
         'mm':  0.03937,
         'pt':  1/72.0,
@@ -191,9 +170,9 @@ def units(value, error=True, dpi=90):
         'em':  rcParams['font.size']/72.0,
         'ex':  0.5*rcParams['font.size']/72.0, # more or less; see URL
         'lh':  1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
-        'lem': rcParams['figure.titlesize']/72.0, # for large text
-        'lex': 0.5*rcParams['figure.titlesize']/72.0,
-        'llh': 1.2*rcParams['figure.titlesize']/72.0,
+        'lem': rcParams['axes.titlesize']/72.0, # for large text
+        'lex': 0.5*rcParams['axes.titlesize']/72.0,
+        'llh': 1.2*rcParams['axes.titlesize']/72.0,
         }
     if not isinstance(value, str):
         return value # assume int/float is in inches
