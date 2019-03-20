@@ -10,10 +10,6 @@ ProPlot
 An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
 that can help you make beautiful, publication-quality graphics.
 
-Documentation
--------------
-The documentation is published `here <https://lukelbd.github.io/proplot>`_.
-
 Installation
 ------------
 
@@ -25,6 +21,10 @@ on PyPi (coming soon!). However, feel free to install directly from Github using
    pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
 The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://www.numpy.org/>`_.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and/or `basemap <https://matplotlib.org/basemap/index.html>`_.
+
+Documentation
+-------------
+The documentation is published `here <https://lukelbd.github.io/proplot>`_.
 
 Overview
 --------
