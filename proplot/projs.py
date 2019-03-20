@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Adds pseudocylindrical `cartopy projections
 <https://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_
@@ -72,10 +73,6 @@ Key                                   Name                                      
 ``'wintri'``                          `Winkel tripel <https://proj4.org/operations/projections/wintri.html>`_                      ✓ (added)  ✗
 ====================================  ===========================================================================================  =========  =======
 """
-#------------------------------------------------------------------------------#
-# This module contains some custom cartopy projections, and tools for
-# making stuff easier
-#------------------------------------------------------------------------------#
 import numpy as np
 import matplotlib.path as mpath
 import warnings
@@ -134,10 +131,8 @@ def Proj(name, basemap=False, **kwargs):
     --------
     `~proplot.proj`, `CartopyAxes`, `BasemapAxes`
     """
-    # Allow less verbose keywords, actually match proj4 keywords and are
-    # similar to basemap
-    name = name or 'cyl'
     # Basemap
+    name = name or 'cyl'
     kwout = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
@@ -153,7 +148,7 @@ def Proj(name, basemap=False, **kwargs):
                  (projection.urcrnry - projection.llcrnry)
     # Cartopy
     else:
-        import cartopy.crs as ccrs # verify package is importable
+        import cartopy.crs as ccrs # verify package is available
         kwargs = {_crs_translate.get(key, key): value for key,value in kwargs.items()}
         crs = crs_projs.get(name, None)
         if crs is None:
@@ -169,10 +164,8 @@ def Proj(name, basemap=False, **kwargs):
 # Simple projections
 # Inspired by source code for Mollweide implementation
 class Hammer(_WarpedRectangularProjection):
-    """
-    The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
-    projection.
-    """
+    """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
+    projection."""
     __name__ = 'hammer'
     name = 'hammer'
     """Registered projection name."""
@@ -186,10 +179,8 @@ class Hammer(_WarpedRectangularProjection):
         return 1e4
 
 class Aitoff(_WarpedRectangularProjection):
-    """
-    The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
-    projection.
-    """
+    """The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
+    projection."""
     __name__ = 'aitoff'
     name = 'aitoff'
     """Registered projection name."""
@@ -203,10 +194,8 @@ class Aitoff(_WarpedRectangularProjection):
         return 1e4
 
 class KavrayskiyVII(_WarpedRectangularProjection):
-    """
-    The `Kavrayskiy VII <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__
-    projection.
-    """
+    """The `Kavrayskiy VII <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__
+    projection."""
     __name__ = 'kavrayskiyVII'
     name = 'kavrayskiyVII'
     """Registered projection name."""
@@ -223,10 +212,8 @@ class KavrayskiyVII(_WarpedRectangularProjection):
 
 # TODO: Check this, but should be pretty much identical to above
 class WinkelTripel(_WarpedRectangularProjection):
-    """
-    The `Winkel tripel (Winkel III) <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__
-    projection.
-    """
+    """The `Winkel tripel (Winkel III) <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__
+    projection."""
     __name__ = 'winkeltripel'
     name = 'winkeltripel'
     """Registered projection name."""
@@ -278,23 +265,19 @@ _basemap_kw = { # note either llcrn/urcrnr args (all 4) can be specified, or wid
     'merc':    {'llcrnrlat':-80, 'urcrnrlat':84, 'llcrnrlon':-180, 'urcrnrlon':180},
     'omerc':   {'lat_0':0, 'lon_0':0, 'lat_1':-10, 'lat_2':10, 'lon_1':0, 'lon_2':0, 'width':10000e3, 'height':10000e3},
     }
-"""
-Default keyword args for Basemap projections. Basemap will raise error if
+"""Default keyword args for Basemap projections. Basemap will raise error if
 you don't provide them but that's annoying, better to just have some
-default behavior.
-"""
+default behavior."""
 
 # Cartopy stuff
-_crs_translate = { # ad to this
-    'lat_0': 'central_latitude',
-    'lon_0': 'central_longitude',
+_crs_translate = { # add to this
+    'lat_0':   'central_latitude',
+    'lon_0':   'central_longitude',
     'lat_min': 'min_latitude',
     'lat_max': 'max_latitude',
     }
 crs_projs = {}
-"""
-Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
-"""
+"""Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes."""
 if ccrs:
     # Custom ones, these are always present
     crs_projs = { # interpret string, create cartopy projection

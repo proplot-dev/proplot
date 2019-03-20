@@ -39,19 +39,19 @@
 # Imports
 from IPython import get_ipython
 from IPython.utils import io
+import warnings
 import os
 import sys
 import socket
 from .rcmod import rc
 
-def nbsetup(directory=None, autosave=30, backend='inline'):
+def nbsetup(autosave=30, backend='inline'):
     """
     Results in higher-quality iPython notebook inline figures.
     Also enables the useful `autoreload
     <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     and autosave extensions. The latter automatically saves your notebook
-    every `autosave` seconds. Pass an optional `directory` argument to make
-    that the new working directory.
+    every `autosave` seconds.
 
     By default, this is called every time you ``import proplot``. To disable
     this behavior, use ``nbsetup: False`` in your ``.proplotrc`` file. See the
@@ -65,13 +65,8 @@ def nbsetup(directory=None, autosave=30, backend='inline'):
     # Make sure we are in session
     ipython = get_ipython() # save session
     if ipython is None:
-        print("Warning: IPython kernel not found.")
+        warnings.warn("ProPlot should generally be used with IPython.")
         return
-
-    # Optional argument
-    if directory:
-        os.chdir(os.path.expanduser(directory)) # move to this directory
-        print(f'Moved to directory {os.path.expanduser(directory)}.')
 
     # Only do this if not already loaded -- otherwise will get *recursive* 
     # reloading, even with unload_ext command!

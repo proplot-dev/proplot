@@ -1053,6 +1053,8 @@ def _parse_panels(nrows, ncols,
     # Final keyword args
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
     bottompanels=False, rightpanels=False, leftpanels=False,
+    nbpanels=None, nrpanels=None, nlpanels=None,
+    nbottompanels=1, nrightpanels=1, nleftpanels=1, 
     # Modified by any of the below keyword args
     bottompanel=False, rightpanel=None, leftpanel=None,
     bottomcolorbar=False, bottomcolorbars=False, bottomlegend=False, bottomlegends=False, # convenient aliases that change default features
@@ -1069,24 +1071,27 @@ def _parse_panels(nrows, ncols,
     """Helper function, handles optional panel arguments. Separate function
     because of some internal stuff we do in subplots command."""
     # Shorthand aliases, because why not?
-    bottompanel  = bpanel or bottompanel
-    bottompanels = bpanels or bottompanels
-    rightpanel   = rpanel or rightpanel
-    rightpanels  = rpanels or rightpanels
-    leftpanel    = lpanel or leftpanel
-    leftpanels   = lpanels or leftpanels
-    bottomlegend  = blegend or bottomlegend
-    bottomlegends = blegends or bottomlegends # convenient aliases that change default features
-    rightlegend   = rlegend or rightlegend
-    rightlegends  = rlegends or rightlegends
-    leftlegend    = llegend or leftlegend
-    leftlegends   = llegends or leftlegends
-    bottomcolorbar  = bcolorbar or bottomcolorbar
-    bottomcolorbars = bcolorbars or bottomcolorbars
-    rightcolorbar   = rcolorbar or rightcolorbar
-    rightcolorbars  = rcolorbars or rightcolorbars
-    leftcolorbar    = lcolorbar or leftcolorbar
-    leftcolorbars   = lcolorbars or leftcolorbars
+    nbottompanels   = _default(nbpanels, nbottompanels)
+    nleftpanels     = _default(nlpanels, nleftpanels)
+    nrightpanels    = _default(nrpanels, nrightpanels)
+    bottompanel     = _default(bpanel, bottompanel)
+    bottompanels    = _default(bpanels, bottompanels)
+    rightpanel      = _default(rpanel, rightpanel)
+    rightpanels     = _default(rpanels, rightpanels)
+    leftpanel       = _default(lpanel, leftpanel)
+    leftpanels      = _default(lpanels, leftpanels)
+    bottomlegend    = _default(blegend, bottomlegend)
+    bottomlegends   = _default(blegends, bottomlegends) # convenient aliases that change default features
+    rightlegend     = _default(rlegend, rightlegend)
+    rightlegends    = _default(rlegends, rightlegends)
+    leftlegend      = _default(llegend, leftlegend)
+    leftlegends     = _default(llegends, leftlegends)
+    bottomcolorbar  = _default(bcolorbar, bottomcolorbar)
+    bottomcolorbars = _default(bcolorbars, bottomcolorbars)
+    rightcolorbar   = _default(rcolorbar, rightcolorbar)
+    rightcolorbars  = _default(rcolorbars, rightcolorbars)
+    leftcolorbar    = _default(lcolorbar, leftcolorbar)
+    leftcolorbars   = _default(lcolorbars, leftcolorbars)
     # Default panel properties
     bwidth = units(_default(bwidth, rc['subplot.cbarwidth']))
     rwidth = units(_default(rwidth, rc['subplot.cbarwidth']))
@@ -1113,6 +1118,7 @@ def _parse_panels(nrows, ncols,
     # Return updated, consolidted kwargs
     kwargs.update({
         'leftpanels':leftpanels, 'rightpanels':rightpanels, 'bottompanels':bottompanels,
+        'nleftpanels':nleftpanels, 'nrightpanels':nrightpanels, 'nbottompanels':nbottompanels,
         'bwidth':bwidth, 'bspace':bspace, 'rwidth':rwidth, 'rspace':rspace,
         'lwidth':lwidth, 'lspace':lspace,
         })
@@ -1124,6 +1130,7 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     width=None,  height=None, axwidth=None, axheight=None, journal=None,
     hspace=None, wspace=None, hratios=None, wratios=None, # spacing between axes, in inches (hspace should be bigger, allowed room for title)
     bottompanels=None, leftpanels=None, rightpanels=None,
+    nbottompanels=None, nleftpanels=None, nrightpanels=None,
     bwidth=None, bspace=None, rwidth=None, rspace=None, lwidth=None, lspace=None, # default to no space between panels
     ):
     """Handle complex keyword args and aliases thereof, and determine figure

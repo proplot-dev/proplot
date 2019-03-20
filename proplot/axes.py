@@ -145,10 +145,10 @@ cmap_methods = (
 # Disable some stuff for all axes, and just for map projection axes
 # The keys in below dictionary are error messages
 disabled_methods = {
-    "Unsupported plotting function {}. May be added soon.":
-        ('table', 'eventplot', # pie?
-        'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
-        'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
+    # "Unsupported plotting function {}. May be added soon.":
+    #     ('table', 'eventplot', # pie?
+    #     'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
+    #     'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'),
     "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale').":
         ('semilogx', 'semilogy', 'loglog'),
     "Redundant function {} has been disabled. Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
@@ -159,11 +159,14 @@ disabled_methods = {
 """Lists of disabled methods and their associated error messages."""
 map_disabled_methods = (
     'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
-    # 'triplot', 'tricontour', 'tricontourf', 'tripcolor',
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
-    # 'fill_between', 'fill_betweenx', 'fill',
-    'stackplot'
+    # 'triplot', 'tricontour', 'tricontourf', 'tripcolor',
+    # 'fill_between', 'fill_betweenx', 'fill', # can be used to fill between lons/lats
+    'stackplot',
+    'table', 'eventplot', 'pie',
+    'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
+    'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram',
     )
 """List of methods disabled for `MapAxes`. These are not applicable to plotting geographic data."""
 # Aliases for panel names
@@ -2492,11 +2495,6 @@ class PanelAxes(XYAxes):
     An `~proplot.axes.XYAxes` with `legend` and `colorbar` methods
     overridden. Calling these will "fill" the entire axes with a legend
     or colorbar.
-
-    See also
-    --------
-    `~proplot.subplots.subplots`, `~proplot.subplots.Figure.panel_factory`,
-    `XYAxes`, `BaseAxes`
     """
     # Notes:
     # See `this post <https://stackoverflow.com/a/52121237/4970632>`_
@@ -2523,6 +2521,11 @@ class PanelAxes(XYAxes):
             axes.
         *args, **kwargs
             Passed to the `XYAxes` initializer.
+
+        See also
+        --------
+        `~proplot.subplots.subplots`, `~proplot.subplots.Figure.panel_factory`,
+        `XYAxes`, `BaseAxes`
         """
         # Misc props
         # WARNING: Need to set flush property before calling super init!
@@ -2625,11 +2628,15 @@ class MapAxes(BaseAxes):
     inappropriate for map projections, and adds `MapAxes.smart_update`
     method so that `~BaseAxes.format` arguments are **identical** whether
     the axes is a `CartopyAxes` or a `BasemapAxes`.
-
-    See also
-    --------
-    `~proplot.subplots.subplots`, `BaseAxes`, `CartopyAxes`, `BasemapAxes`
     """
+    def __init__(self, *args, **kwargs): # just to disable docstring inheritence
+        """
+        See also
+        --------
+        `~proplot.subplots.subplots`, `BaseAxes`, `CartopyAxes`, `BasemapAxes`
+        """
+        super().__init__(*args, **kwargs)
+
     # Disable some methods to prevent weird shit from happening
     # Originally used property decorators for this but way too verbose
     # See: https://stackoverflow.com/a/23126260/4970632
@@ -2639,6 +2646,9 @@ class MapAxes(BaseAxes):
             raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
+    # Note this *actually* just returns some standardized arguments
+    # to the CartopyAxes.smart_update and BasemapAxes.smart_update methods; they
+    # both jump over this intermediate class and call BaseAxes.smart_update
     def smart_update(self, grid=None, labels=None, latmax=None,
         lonlim=None, latlim=None, xlim=None, ylim=None,
         xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
@@ -2761,17 +2771,27 @@ class MapAxes(BaseAxes):
 
 class PolarAxes(MapAxes, mproj.PolarAxes):
     """
-    Thin wrapper around `~matplotlib.projections.PolarAxes` with my
+    Thin wrapper around `~matplotlib.projections.polar.PolarAxes` with my
     new plotting features. So far, just mixes the two classes.
-
-    Warning
-    -------
-    Polar axes have not been tested yet!
-
-    See also
-    --------
-    `~proplot.subplots.subplots`, `BaseAxes`, `MapAxes`
     """
+    def __init__(self, *args, **kwargs):
+        """
+        See also
+        --------
+        `~proplot.subplots.subplots`, `BaseAxes`, `MapAxes`
+
+        Warning
+        -------
+        Polar axes have not been tested yet!
+        """
+        super().__init__(*args, **kwargs)
+
+    def smart_update(self, *args, **kwargs):
+        """
+        Calls `BaseAxes.smart_update`.
+        """
+        super(BaseAxes, self).smart_update(*args, **kwargs)
+
     name = 'newpolar'
     """The registered projection name."""
 
@@ -3457,7 +3477,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
 def colorbar_factory(ax, mappable, values=None,
         orientation='horizontal', extend=None, extendlength=None,
         clabel=None, label=None,
-        ctickminor=False, tickminor=None, fixticks=True,
+        ctickminor=False, tickminor=None, fixticks=False,
         cgrid=False, grid=None,
         ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
         cticks=None, ticks=None, clocator=None, locator=None,
@@ -3512,11 +3532,16 @@ def colorbar_factory(ax, mappable, values=None,
         Aliases for `ticklocation`.
     ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
-    fixticks bool, optional
-        For complicated normalizers (e.g. `~matplotlib.ticker.LogNorm`), the
+    fixticks : bool, optional
+        For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
         colorbar minor and major ticks can appear misaligned. When `fixticks`
-        is ``True`` (the default), this misalignment is fixed. Since this has
-        side effects in a few rare situations, this can be disabled.
+        is ``True``, this misalignment is fixed. The default is ``False``.
+
+        This will give incorrect positions when the colormap index does not
+        appear to vary "linearly" from left-to-right across the colorbar (for
+        example, when the leftmost colormap colors seem to be "pulled" to the
+        right farther than normal). In this case, you should stick with
+        ``fixticks=False``.
     clabel, ctickminor, cgrid
         Aliases for `label`, `tickminor`, `grid`.
     label : None or str, optional

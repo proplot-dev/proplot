@@ -29,13 +29,7 @@ I recommend importing with
 
    import proplot as plot
 
-to differentiate ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module. If you are in an ipython notebook, I also recommend adding
-
-.. code-block:: python
-
-   plot.nbsetup()
-
-The `~proplot.notebook.nbsetup` command enables two useful iPython extensions and greatly increases the resolution of your inline figures -- ProPlot applies relatively small font size and line width defaults, so that the physical sizes match what might appear in print. See the `~proplot.rcmod` documentation for more on how to change these defaults.
+to differentiate ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module.
 
 Overview
 ========
@@ -46,10 +40,9 @@ import ProPlot at the top of your script. See `~proplot.colortools` for details,
 
 The remaining features mostly derive from the `~proplot.subplots.subplots` command, inspired
 by the pyplot `~matplotlib.pyplot.subplots` command. This generates a scaffolding
-of axes with new, helpful methods. It also has a bunch of other useful features, like "panels"
-and built-in geographic projections.
+of axes with new, helpful methods. It also has a bunch of other useful features, like "panels" and built-in geographic projections (see :ref:`Table of projections` for the projections available to cartopy and basemap).
 
-The next most important utility is the ``format`` method on `~proplot.axes.BaseAxes`, which calls so-called ``smart_update`` methods on the `~proplot.axes.BaseAxes`, `~proplot.axes.XYAxes`, `~proplot.axes.CartopyAxes`, and `~proplot.axes.BasemapAxes` axes types. The latter three types can all be returned by `~proplot.subplots.subplots`, depending on the arguments you used. Use `~proplot.axes.BaseAxes.format` to fine-tune your axis properties, titles, labels, limits, and much more. See :ref:`Table of projections` for the projections available to cartopy and basemap.
+The next most important utility is the ``format`` method on `~proplot.axes.BaseAxes`, which calls ``smart_update`` methods on the `~proplot.axes.BaseAxes`, `~proplot.axes.XYAxes`, and `~proplot.axes.MapAxes` axes types. The latter two may be returned by `~proplot.subplots.subplots`, depending on the arguments you used. Use `~proplot.axes.BaseAxes.format` to fine-tune your axis properties, titles, labels, limits, and much more.
 
 To get started, check out the :ref:`Introduction`.
 Hopefully, you will find this API to be less verbose and
@@ -67,7 +60,7 @@ more powerful than the builtin matplotlib API.
 
 Contributions
 =============
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! My code should be sufficiently documented and commented so that others are able to modify it.
+So far, this entire package was written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! My code should be documented and commented well enough that others are able to modify it.
 
 Donations
 =========
