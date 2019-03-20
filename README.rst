@@ -61,11 +61,11 @@ Here are some highlights of the remaining features:
    or colors. Making axes "inset" colorbars. Making legends with centered
    rows instead of aligned columns.
 *  Integration with basemap and cartopy. Generate arbitrary
-   grids of map projections in one go. Switch between the cartopy and
+   grids of arbitrary map projections in one go. Switch between the cartopy and
    basemap backends painlessly. Use the axes methods directly for basemap
    plotting, instead of the ``Basemap`` object.
-*  Ability to add geographical features with the `format` command.
-   Formatting geographic gridlines and labels.
+*  Add geographic features with the ``format`` command.
+   Customize geographic gridlines and gridline labels.
 
 Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
 guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
