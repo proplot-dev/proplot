@@ -54,15 +54,15 @@ Here are some highlights of the remaining features:
    scaling.
 *  Perceptually distinct named colors with easy-to-remember names,
    a ton of beautiful new colormaps, new property cycle colors.
-*  Tools for making new make new merged colormaps and "perceptually
-   uniform colormaps" on-the-fly. Tools for slicing and modifying existing
+*  Tools for merging existing colormaps and making new "perceptually
+   uniform" colormaps on-the-fly. Tools for slicing and modifying existing
    colormaps.
 *  Making colorbars from lists of lines
    or colors. Making axes "inset" colorbars. Making legends with centered
    rows instead of aligned columns.
 *  Integration with basemap and cartopy. Generate arbitrary
    grids of map projections in one go. Switch between the cartopy and
-   basemap backends painlessly. Using the axes methods directly for basemap
+   basemap backends painlessly. Use the axes methods directly for basemap
    plotting, instead of the ``Basemap`` object.
 *  Ability to add geographical features with the `format` command.
    Formatting geographic gridlines and labels.
