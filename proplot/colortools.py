@@ -306,7 +306,8 @@ _cmap_categories = {
 
     # Custom maps
     'ProPlot Sequential': [
-         'Glacial',
+        'Glacial',
+        'Dusk',
         'Bog', 'Verdant',
         'Turquoise',
         'Sunrise', 'Sunset', 'Fire',
@@ -896,8 +897,8 @@ def _clip_cmap(cmap, left=None, right=None, N=None):
         left = 0
     if right is None:
         right = 1
-    if hasattr(cmap, 'space'):
-        kwargs['space'] = cmap.space
+    if hasattr(cmap, '_space'):
+        kwargs['space'] = cmap._space
     # Next resample the segmentdata arrays
     dict_ = {key:value for key,value in data.items() if
             key not in ('gamma1','gamma2')}
@@ -1393,9 +1394,9 @@ def Colormap(*args, name=None, cyclic=False, N=None,
             filename = os.path.join(_data_user, basename)
             data = {}
             for key,value in cmap._segmentdata.items():
-                data[key] = value.astype(float).tolist() # from np.float to builtin float, and to list of lists
-            if hasattr(cmap, 'space'):
-                data['space'] = cmap.space
+                data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
+            if hasattr(cmap, '_space'):
+                data['space'] = cmap._space
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')

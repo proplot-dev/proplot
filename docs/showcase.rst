@@ -1543,7 +1543,7 @@ for usage details.
 
 .. image:: showcase/showcase_100_1.png
    :width: 436px
-   :height: 4383px
+   :height: 4409px
 
 
 Table of color cycles
