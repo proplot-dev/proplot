@@ -19,7 +19,7 @@ Installation
 ------------
 
 This package is a work-in-progress. Currently there is no formal release
-on PyPi. However, feel free to install directly from Github using:
+on PyPi (coming soon!). However, feel free to install directly from Github using:
 
 ::
 
