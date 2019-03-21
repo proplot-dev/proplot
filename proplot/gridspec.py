@@ -70,14 +70,14 @@ class FlexibleGridSpecBase(object):
             region of subplots. If `~proplot.subplots.subplots` was called
             with ``tight=True`` (the default), these are ignored.
         """
-        # Add these as attributes; want spaces_as_ratios to be
+        # Add these as attributes; want _spaces_as_ratios to be
         # self-contained, so it can be invoked on already instantiated
         # gridspec (see 'update')
         self._nrows_visible = nrows
         self._ncols_visible = ncols
         self._nrows = nrows*2-1
         self._ncols = ncols*2-1
-        wratios, hratios, kwargs = self.spaces_as_ratios(**kwargs)
+        wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
         return super().__init__(self._nrows, self._ncols,
                 hspace=0, wspace=0, # we implement these as invisible rows/columns
                 width_ratios=wratios,
@@ -86,8 +86,8 @@ class FlexibleGridSpecBase(object):
                 )
 
     def __getitem__(self, key):
-        """Magic obfuscation that renders rows and columns designated as
-        'spaces' invisible."""
+        """Magic obfuscation that renders `~matplotlib.gridspec.GridSpecBase`
+        rows and columns designated as 'spaces' inaccessible."""
         # Get indices
         nrows, ncols = self._nrows, self._ncols
         nrows_visible, ncols_visible = self._nrows_visible, self._ncols_visible
@@ -105,25 +105,12 @@ class FlexibleGridSpecBase(object):
         num1, num2 = _adjust(num1), _adjust(num2)
         return mgridspec.SubplotSpec(self, num1, num2)
 
-    def spaces_as_ratios(self,
+    def _spaces_as_ratios(self,
             hspace=None, wspace=None, # spacing between axes
             hratios=None, wratios=None,
             height_ratios=None, width_ratios=None,
             **kwargs):
-        """
-        For keyword arg usage, see `FlexibleGridSpecBase`.
-
-        Returns
-        -------
-        wratios_final, hratios_final : list
-            The final width and height ratios to be passed to
-            `~matplotlib.gridspec.GridSpec` or
-            `~matplotlib.gridspec.GridSpecFromSubplotSpec`.
-        kwargs : dict
-            Leftover keyword args, to be passed to
-            `~matplotlib.gridspec.GridSpec` or
-            `~matplotlib.gridspec.GridSpecFromSubplotSpec`.
-        """
+        """For keyword arg usage, see `FlexibleGridSpecBase`."""
         # Parse flexible input
         nrows = self._nrows_visible
         ncols = self._ncols_visible
@@ -152,6 +139,8 @@ class FlexibleGridSpecBase(object):
             raise ValueError(f'Require {nrows-1} height spacings for {nrows} rows, got {len(hspace)}.')
 
         # Assign spacing as ratios
+        # Also return extra kwargs, will be passed to superclass initializers
+        # or superclass update method.
         wratios_final = [None]*self._ncols
         wratios_final[::2] = [*wratios]
         if self._ncols>1:
@@ -164,7 +153,7 @@ class FlexibleGridSpecBase(object):
 
     def update(self, **gridspec_kw):
         """Update the width, height ratios and spacing for subplot columns, rows."""
-        wratios, hratios, edges_kw = self.spaces_as_ratios(**gridspec_kw)
+        wratios, hratios, edges_kw = self._spaces_as_ratios(**gridspec_kw)
         self.set_width_ratios(wratios)
         self.set_height_ratios(hratios)
         edges_kw.pop('nrows', None) # cannot be modified

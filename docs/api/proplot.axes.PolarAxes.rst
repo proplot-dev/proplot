@@ -12,6 +12,16 @@ PolarAxes
 
       ~PolarAxes.name
 
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~PolarAxes.smart_update
+
    .. rubric:: Attributes Documentation
 
    .. autoattribute:: name
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: smart_update
