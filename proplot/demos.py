@@ -249,7 +249,7 @@ def cmap_show(N=129):
     """Plots all current colormaps, along with their catgories. Adapted from
     `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
-    cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys')
+    cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
             and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
 
     # Detect unknown/manually created colormaps, and filter out

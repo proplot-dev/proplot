@@ -1543,7 +1543,7 @@ for usage details.
 
 .. image:: showcase/showcase_100_1.png
    :width: 436px
-   :height: 4409px
+   :height: 4333px
 
 
 Table of color cycles
@@ -1743,7 +1743,7 @@ adding a number to the end of the color string.
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
 `~proplot.colortools.Colormap`; this is great when you want to have a
 sharper cutoff between negative and positive values for a diverging
-colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
+colormap.
 
 .. code:: ipython3
 
@@ -1764,12 +1764,36 @@ colormap. Again, see `~proplot.axes.wrapper_cmap` for details.
    :height: 314px
 
 
+Cyclic colormaps are also easy to modify. Just use the ``shift``
+argument to `~proplot.colortools.Colormap` to rotate the colors in
+your map. This will throw an error if the colormap is not recognized as
+cyclic; if you’d like to shift colors for an on-the-fly colormap, make
+sure to use ``cyclic=True`` to designate it so.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=3, innercolorbars='b', axwidth=2)
+    data = (np.random.rand(50,50)-0.48).cumsum(axis=1).cumsum(axis=0) - 50
+    for ax,shift in zip(axs,(0, 90, 180)):
+        m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
+        ax.format(xlabel='x axis', ylabel='y axis', title=f'shift = {shift}',
+                  suptitle='Rotating the colors in a cyclic colormap')
+        ax.bpanel.colorbar(m, locator='null')
+
+
+
+.. image:: showcase/showcase_118_0.png
+   :width: 652px
+   :height: 287px
+
+
 It is also easy to change the “gamma” of perceptually uniform colormap
 on-the-fly. The “gamma” controls how the luminance and saturation
 channels vary for a `~proplot.colortools.PerceptuallyUniformColromap`
 map. A gamma larger than 1 emphasizes high luminance, low saturation
-colors, and vice versa. Again, see `~proplot.axes.wrapper_cmap` for
-details.
+colors, and vice versa.
 
 .. code:: ipython3
 
@@ -1788,7 +1812,7 @@ details.
 
 
 
-.. image:: showcase/showcase_118_0.png
+.. image:: showcase/showcase_120_0.png
    :width: 652px
    :height: 424px
 
@@ -1817,7 +1841,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_120_0.png
+.. image:: showcase/showcase_122_0.png
    :width: 544px
    :height: 478px
 
@@ -1846,7 +1870,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_123_0.png
+.. image:: showcase/showcase_125_0.png
    :width: 517px
    :height: 356px
 
@@ -1870,7 +1894,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_124_1.png
+.. image:: showcase/showcase_126_1.png
    :width: 634px
    :height: 318px
 
@@ -1909,7 +1933,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_127_0.png
+.. image:: showcase/showcase_129_0.png
    :width: 436px
    :height: 603px
 

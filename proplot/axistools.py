@@ -395,12 +395,12 @@ def Scale(scale, *args, **kwargs):
         raise ValueError(f'Unknown scale {scale}. Options are {", ".join(scales.keys())}.')
     return scale
 
-def InvertedScaleFactory(scale, **kwargs):
+def InvertedScaleFactory(scale, name=None, **kwargs):
     """Returns name of newly registered *inverted* version of the
     `~matplotlib.scale.ScaleBase` corresponding to the scale name."""
     # Note I use private API here; no other way to get class directly
     scale = Scale(scale, **kwargs) # get the class
-    name_ = f'{scale}_inverted' # name of inverted version
+    name_ = name or f'{scale}_inverted' # name of inverted version
     class Inverted(scales[scale]):
         name = name_
         def get_transform(self):
@@ -792,7 +792,6 @@ class MercatorLatitudeScale(mscale.ScaleBase):
     name = 'mercator'
     """Registered scale name."""
     def __init__(self, axis, *, thresh=85.0, **kwargs):
-        """See `~matplotlib.scale.ScaleBase`."""
         super().__init__()
         if thresh >= 90.0:
             raise ValueError('Threshold "thresh" must be <=90.')
@@ -811,36 +810,28 @@ class MercatorLatitudeScale(mscale.ScaleBase):
         axis.set_minor_formatter(Formatter('null'))
 
 class _MercatorLatitudeTransform(mtransforms.Transform):
-    """Mercator latitude coordinate transform."""
     # Default attributes
     input_dims = 1
     output_dims = 1
     is_separable = True
     has_inverse = True
     def __init__(self, thresh):
-        # Initialize, declare attribute
         super().__init__()
         self.thresh = thresh
     def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
         # For M N-dimensional transform, transform MxN into result
         # So numbers stay the same, but data will then be linear in the
         # result of the math below.
         a = np.radians(a) # convert to radians
         m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
-        # m[m.mask] = np.nan
-        # a[m.mask] = np.nan
         if m.mask.any():
             return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
         else:
             return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
     def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
-        # Just call inverse transform class
         return _InvertedMercatorLatitudeTransform(self.thresh)
 
 class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
-    """Inverse Mercator latitude coordinate transform."""
     # As above, but for the inverse transform
     input_dims = 1
     output_dims = 1
@@ -850,31 +841,28 @@ class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
         super().__init__()
         self.thresh = thresh
     def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
         # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
         return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
     def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
         return _MercatorLatitudeTransform(self.thresh)
 
 class SineLatitudeScale(mscale.ScaleBase):
     r"""
     The scale function is as follows:
 
-    .. math:
+    .. math::
 
         y = \sin(x)
 
     The inverse scale function is as follows:
 
-    .. math:
+    .. math::
 
         x = \arcsin(y)
     """
     name = 'sine'
     """Registered scale name."""
     def __init__(self, axis, **kwargs):
-        """See `~matplotlib.scale.ScaleBase`."""
         super().__init__()
     def get_transform(self):
         """See `~matplotlib.scale.ScaleBase`."""
@@ -891,7 +879,6 @@ class SineLatitudeScale(mscale.ScaleBase):
         axis.set_minor_formatter(Formatter('null'))
 
 class _SineLatitudeTransform(mtransforms.Transform):
-    """Sine latitude transform."""
     # Default attributes
     input_dims = 1
     output_dims = 1
@@ -901,7 +888,6 @@ class _SineLatitudeTransform(mtransforms.Transform):
         # Initialize, declare attribute
         super().__init__()
     def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
         with np.errstate(invalid='ignore'): # NaNs will always be False
             m = (a >= -90) & (a <= 90)
         if not m.all():
@@ -910,11 +896,9 @@ class _SineLatitudeTransform(mtransforms.Transform):
         else:
             return np.sin(np.deg2rad(a))
     def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
         return _InvertedSineLatitudeTransform()
 
 class _InvertedSineLatitudeTransform(mtransforms.Transform):
-    """Inverse sine latitude transform."""
     # Inverse of _SineLatitudeTransform
     input_dims = 1
     output_dims = 1
@@ -923,13 +907,11 @@ class _InvertedSineLatitudeTransform(mtransforms.Transform):
     def __init__(self):
         super().__init__()
     def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
         # Clipping, instead of setting invalid
         # NOTE: Using ma.arcsin below caused super weird errors, dun do that
         aa = a.copy()
         return np.rad2deg(np.arcsin(aa))
     def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
         return _SineLatitudeTransform()
 
 #------------------------------------------------------------------------------#
@@ -939,7 +921,7 @@ class InverseScale(mscale.ScaleBase):
     r"""
     The scale function and inverse scale function are as follows:
 
-    .. math:
+    .. math::
 
         y = x^{-1}
 
@@ -953,7 +935,6 @@ class InverseScale(mscale.ScaleBase):
     name = 'inverse'
     """Registered scale name."""
     def __init__(self, axis, minpos=1e-2, **kwargs):
-        """See `~matplotlib.scale.ScaleBase`."""
         super().__init__()
         self.minpos = minpos
     def get_transform(self):
@@ -976,7 +957,6 @@ class InverseScale(mscale.ScaleBase):
         axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
 
 class _InverseTransform(mtransforms.Transform):
-    """Inverse transform."""
     # Create transform object
     input_dims = 1
     output_dims = 1
@@ -986,7 +966,6 @@ class _InverseTransform(mtransforms.Transform):
         super().__init__()
         self.minpos = minpos
     def transform(self, a):
-        """See `~matplotlib.scale.ScaleBase`."""
         a = np.array(a)
         aa = a.copy()
         # f = np.abs(a)<=self.minpos # attempt for negative-friendly
@@ -994,23 +973,21 @@ class _InverseTransform(mtransforms.Transform):
         aa[aa<=self.minpos] = self.minpos
         return 1.0/aa
     def transform_non_affine(self, a):
-        """See `~matplotlib.scale.ScaleBase`."""
         return self.transform(a)
     def inverted(self):
-        """See `~matplotlib.scale.ScaleBase`."""
         return _InverseTransform(self.minpos)
 
 class DecibelScale(mscale.ScaleBase):
     r"""
     The scale function is as follows:
 
-    .. math:
+    .. math::
 
         y = 10\log_{10}(x)
 
     The inverse scale function is as follows:
 
-    .. math:
+    .. math::
 
         x = 10^{y/10}
 
@@ -1018,8 +995,8 @@ class DecibelScale(mscale.ScaleBase):
     """
     # Declare name
     name = 'db'
+    """Registered scale name."""
     def __init__(self, axis, minpos=1e-300, **kwargs):
-        """See `~matplotlib.scale.ScaleBase`."""
         super().__init__()
         self._transform = _InvertedDecibelTransform(minpos)
     def limit_range_for_scale(self, vmin, vmax, minpos):
@@ -1039,7 +1016,7 @@ class DecibelScale(mscale.ScaleBase):
         return self._transform
 
 class _DecibelTransform(mtransforms.Transform):
-    """Exponential coordinate transform."""
+    # Create transform object
     input_dims = 1
     output_dims = 1
     has_inverse = True
@@ -1057,7 +1034,7 @@ class _DecibelTransform(mtransforms.Transform):
         return _InvertedDecibelTransform(self.minpos)
 
 class _InvertedDecibelTransform(mtransforms.Transform):
-    """Inverse exponential coordinate transform."""
+    # Create transform object
     input_dims = 1
     output_dims = 1
     has_inverse = True
@@ -1135,4 +1112,5 @@ mscale.register_scale(SineLatitudeScale)
 mscale.register_scale(MercatorLatitudeScale)
 ExpScaleFactory(-1.0/7, 1013.25, False, 'height')   # scale pressure so it matches a height axis
 ExpScaleFactory(-1.0/7, 1013.25, True,  'pressure') # scale height so it matches a pressure axis
+InvertedScaleFactory('log', 'power')
 

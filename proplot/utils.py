@@ -158,8 +158,13 @@ def units(value):
     # If number, units are inches by default
     if value is None or isinstance(value, Number):
         return value
-    elif not isinstance(value, str):
-        raise ValueError(f'Size spec must be string or number, received {type(value)}.')
+    # Otherwise loop through arbitrary list
+    if not np.iterable(value) or isinstance(value, str):
+        singleton = True
+        values = (value,)
+    else:
+        singleton = False
+        values = value
     # Possible units
     # RC settings must be looked up every time
     _unit_dict = {
@@ -181,12 +186,23 @@ def units(value):
         'EX': 0.5*rcParams['axes.titlesize']/72.0,
         'LH': 1.2*rcParams['axes.titlesize']/72.0,
         }
-    regex = re.match('^([0-9.]*)(.*)$', value)
-    num, unit = regex.groups()
-    try:
-        return float(num)*_unit_dict[unit]
-    except (KeyError, ValueError):
-        raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(_unit_dict.keys())}.')
+    # Iterate
+    result = []
+    for value in values:
+        if isinstance(value, Number):
+            result.append(value)
+            continue
+        elif not isinstance(value, str):
+            raise ValueError(f'Size spec must be string or number or list thereof, received {values}.')
+        regex = re.match('^([0-9.]*)(.*)$', value)
+        num, unit = regex.groups()
+        try:
+            result.append(float(num)*_unit_dict[unit])
+        except (KeyError, ValueError):
+            raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(_unit_dict.keys())}.')
+    if singleton:
+        result = result[0]
+    return result
 
 def journals(journal):
     """
