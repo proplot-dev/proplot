@@ -13,6 +13,8 @@ import re
 import time
 import numpy as np
 import functools
+from numbers import Number
+from matplotlib import rcParams
 try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
@@ -121,7 +123,7 @@ def edges(values, axis=-1):
 #------------------------------------------------------------------------------#
 # Units
 #------------------------------------------------------------------------------#
-def units(value, error=True):
+def units(value):
     """
     Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
     for info on the em square units. See the `~proplot.rcmod` module for details.
@@ -150,47 +152,39 @@ def units(value, error=True):
         ``llh``         Line height, or 1.2 em-squares for title-sized text
         ==============  ===================================================
 
-    error : bool, optional
-        Raise error on failure, or just return input value? Used internally.
-
     """
+    # If number, units are inches by default
+    if value is None or isinstance(value, Number):
+        return value
+    elif not isinstance(value, str):
+        raise ValueError(f'Size spec must be string or number, received {type(value)}.')
     # Possible units
     # RC settings must be looked up every time
-    # from .rcmod import rc
-    from matplotlib import rcParams
     _unit_dict = {
-        'in':  1.0, # already in inches
-        'm':   39.37,
-        'ft':  12.0,
-        'cm':  0.3937,
-        'mm':  0.03937,
-        'pt':  1/72.0,
-        'px':  1/rcParams['figure.dpi'], # dots times 1/dots per inch
-        'pp':  1/rcParams['figure.dpi'],
-        'em':  rcParams['font.size']/72.0,
-        'ex':  0.5*rcParams['font.size']/72.0, # more or less; see URL
-        'lh':  1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
-        'lem': rcParams['axes.titlesize']/72.0, # for large text
-        'lex': 0.5*rcParams['axes.titlesize']/72.0,
-        'llh': 1.2*rcParams['axes.titlesize']/72.0,
+        # Physical units
+        'in': 1.0, # already in inches
+        'm':  39.37,
+        'ft': 12.0,
+        'cm': 0.3937,
+        'mm': 0.03937,
+        'pt': 1/72.0,
+        # Display units
+        'px': 1/rcParams['figure.dpi'], # on screen
+        'pp': 1/rcParams['savefig.dpi'], # once 'printed', i.e. saved
+        # Font size
+        'em': rcParams['font.size']/72.0,
+        'ex': 0.5*rcParams['font.size']/72.0, # more or less; see URL
+        'lh': 1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
+        'EM': rcParams['axes.titlesize']/72.0, # for large text
+        'EX': 0.5*rcParams['axes.titlesize']/72.0,
+        'LH': 1.2*rcParams['axes.titlesize']/72.0,
         }
-    if not isinstance(value, str):
-        return value # assume int/float is in inches
-    regex = re.match('^([0-9.]*)(' + '|'.join(_unit_dict.keys()) + ')$', value)
-    if not regex:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
+    regex = re.match('^([0-9.]*)(.*)$', value)
     num, unit = regex.groups()
     try:
-        num = float(num)
-    except ValueError:
-        if error:
-            raise ValueError(f'Invalid size spec {value}.')
-        else:
-            return value
-    return num*_unit_dict[unit] # e.g. cm / (in / cm)
+        return float(num)*_unit_dict[unit]
+    except (KeyError, ValueError):
+        raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(_unit_dict.keys())}.')
 
 def journals(journal):
     """

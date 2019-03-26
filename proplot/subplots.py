@@ -1162,10 +1162,10 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     if not figsize:
         figsize = (width, height)
     width, height = figsize
-    width  = units(width, error=False) # if None, returns None
-    height = units(height, error=False)
-    axwidth = units(axwidth, error=False)
-    axheight = units(axheight, error=False)
+    width    = units(width)
+    height   = units(height)
+    axwidth  = units(axwidth)
+    axheight = units(axheight)
 
     # Determine figure size
     # If width and height are not fixed, will scale them to preserve aspect
