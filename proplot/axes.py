@@ -209,12 +209,6 @@ def _parse_args(args):
         raise ValueError(f'X coordinates are {x.ndim}D, but Y coordinates are {y.ndim}D.')
     return x, y, Zs
 
-def _wrapper_check_centers(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_check_centers(func, *args, **kwargs)
-    return wrapper
-# @_counter
 def wrapper_check_centers(func, *args, order='C', **kwargs):
     """
     Checks shape of arguments passed to methods like
@@ -252,12 +246,6 @@ def wrapper_check_centers(func, *args, order='C', **kwargs):
     result = func(x, y, *Zs, **kwargs)
     return result
 
-def _wrapper_check_edges(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_check_edges(func, *args, **kwargs)
-    return wrapper
-# @_counter
 def wrapper_check_edges(func, *args, order='C', **kwargs):
     """
     Checks shape of arguments passed to methods like
@@ -335,11 +323,6 @@ def _wrapper_m_norecurse(self, func):
         return result
     return wrapper
 
-def _wrapper_cartopy_linefix(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_cartopy_linefix(self, func, *args, **kwargs)
-    return wrapper
 def wrapper_cartopy_linefix(self, func, *args, transform=PlateCarree, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
@@ -360,11 +343,6 @@ def wrapper_cartopy_linefix(self, func, *args, transform=PlateCarree, **kwargs):
     self.format()
     return result
 
-def _wrapper_basemap_linefix(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_basemap_linefix(self, func, *args, **kwargs)
-    return wrapper
 def wrapper_basemap_linefix(self, func, *args, **kwargs):
     """
     Wraps `~mpl_toolkits.basemap.Basemap.plot`,
@@ -382,12 +360,6 @@ def wrapper_basemap_linefix(self, func, *args, **kwargs):
 #------------------------------------------------------------------------------#
 # Geographic grid fixes
 #------------------------------------------------------------------------------#
-def _wrapper_cartopy_gridfix(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_cartopy_gridfix(self, func, *args, **kwargs)
-    return wrapper
-# @_counter
 def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contourf`,
@@ -431,12 +403,6 @@ def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, glob
     self.format()
     return result
 
-def _wrapper_basemap_gridfix(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_basemap_gridfix(self, func, *args, **kwargs)
-    return wrapper
-# @_counter
 def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
     """
     Wraps `~mpl_toolkits.basemap.Basemap.contourf`,
@@ -545,12 +511,6 @@ def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
-def _wrapper_cmap(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_cmap(self, func, *args, **kwargs)
-    return wrapper
-# @_counter
 def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
     extend='neither',
     values=None, levels=None, zero=False, # override levels to be *centered* on zero
@@ -766,12 +726,6 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
     return result
 
-def _wrapper_cycle(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_cycle(self, func, *args, **kwargs)
-    return wrapper
-# @_counter
 def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
     """
     Wraps methods that use the color cycler for default line and patch
@@ -835,18 +789,6 @@ def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
 #------------------------------------------------------------------------------#
 # Simple wrappers that apply to just one function
 #------------------------------------------------------------------------------#
-def _wrapper_legend(self, func):
-    """Just calls `legend_factory`. No public documentation necessary."""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return legend_factory(self, *args, **kwargs)
-    return wrapper
-
-def _wrapper_plot(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_plot(self, func, *args, **kwargs)
-    return wrapper
 def wrapper_plot(self, func, *args, cmap=None, values=None, **kwargs):
     """
     As in `~matplotlib.axes.Axes.plot`, but calls `~BaseAxes.cmapline`
@@ -869,11 +811,6 @@ def wrapper_plot(self, func, *args, cmap=None, values=None, **kwargs):
         lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
     return lines
 
-def _wrapper_scatter(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_scatter(self, func, *args, **kwargs)
-    return wrapper
 def wrapper_scatter(self, func, *args,
     c=None, color=None, markercolor=None,
     s=None, size=None, markersize=None,
@@ -912,11 +849,6 @@ def wrapper_scatter(self, func, *args,
     ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
     return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
 
-def _wrapper_text(self, func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return wrapper_text(self, func, *args, **kwargs)
-    return wrapper
 def wrapper_text(self, func, x, y, text,
     transform='data',
     border=False, border_kw={},
@@ -997,6 +929,582 @@ def wrapper_text(self, func, x, y, text,
         obj.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
             'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]})
     return obj
+
+#------------------------------------------------------------------------------#
+# Legends and colorbars
+#------------------------------------------------------------------------------#
+def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
+    """
+    Function for drawing a legend, with some handy added features.
+
+    Parameters
+    ----------
+    ax : `~matplotlib.axes.Axes`
+        The axes.
+    handles : None or list of `~matplotlib.artist.Artist`, optional
+        List of artists instances -- for example, `~matplotlib.lines.Line2D`.
+    order : {'C', 'F'}, optional
+        Whether legend handles are drawn in column-major (``'C'``) or row-major
+        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
+        ``'F'`` was the original matplotlib default; the default is now ``'C'``.
+    align : None or bool, optional
+        Whether to align rows of legend handles. If ``False``, we actually
+        draw successive single-row legends stacked on top of each other,
+        and you cannot have a "legend box".
+
+        If ``None``, we try to infer this setting from the `handles` keyword
+        arg. Becomes ``True`` if `handles` is a list of lists (implies
+        each sublist is a *row* in the legend), ``False`` if not.
+    ncol : int, optional
+        The number of columns.
+    ncols
+        Alias for `ncol`. Added for consistency with
+        `~matplotlib.pyplot.subplots`.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to `~matplotlib.axes.Axes.legend`.
+
+    See also
+    --------
+    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
+    """
+    # First get legend settings (usually just one per plot so don't need to declare
+    # this dynamically/globally), and interpret kwargs.
+    # TODO: Should update this function to clip the legend box when it goes
+    # outside axes area, so the legend width and bottom or right widths can be
+    # chosen propertly/separately.
+    for name,alias in [('ncol', 'ncols'), ('frameon', 'frame')]:
+        if alias in kwargs:
+            kwargs[name] = kwargs.pop(alias)
+    if order not in ('F','C'):
+        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+    # Setup legend text and handle properties
+    hsettings = {}
+    for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
+        if candidate in kwargs:
+            hsettings[candidate] = kwargs.pop(candidate)
+    # Font name; 'prop' can be a FontProperties object or a dict for the kwargs
+    # to instantiate one.
+    kwargs.update({'prop': {'family': rc['fontname']}})
+
+    # Detect if user wants to specify rows manually
+    # Gives huge latitude for user input:
+    #   1) user can specify nothing and align will be inferred (list of iterables
+    #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
+    #   2) user can specify align (needs list of handles for True, list of handles or list
+    #      of iterables for False and if the former, will turn into list of iterables)
+    if handles is None and not (isinstance(ax, PanelAxes) and not ax.on()):
+        handles = ax.get_legend_handles_labels()[0]
+        if not handles:
+            raise ValueError('No axes artists with labels were found.')
+    elif not handles:
+        raise ValueError('You must pass a list of handles.')
+    for i,handle in enumerate(handles):
+        if not hasattr(handle, 'cmap'):
+            continue
+        # Make sure we sample the *center* of the colormap
+        warnings.warn('Getting legend entry from colormap.')
+        size = np.mean(handle.get_sizes())
+        handles[i] = ax.scatter([0], [0], markersize=size,
+                                color=[handle.cmap(0.5)],
+                                label=handle.get_label())
+    list_of_lists = not isinstance(handles[0], martist.Artist)
+    if align is None: # automatically guess
+        align = not list_of_lists
+    else: # standardize format based on input
+        if not align and not list_of_lists: # separate into columns
+            ncol = kwargs.pop('ncol', 3)
+            handles = [handles[i*ncol:(i+1)*ncol]
+                        for i in range(len(handles))] # to list of iterables
+            list_of_lists = True
+        elif not align and list_of_lists and 'ncol' in kwargs:
+            kwargs.pop('ncol')
+            warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
+        if align and list_of_lists: # unfurl, because we just want one legend!
+            handles = [handle for sublist in handles for handle in sublist]
+            list_of_lists = False # no longer is list of lists
+    # Remove empty lists... pops up in some examples, not sure how
+    handles = [sublist for sublist in handles if sublist]
+
+    # Now draw legend, with two options
+    # 1) Normal legend, just draw everything like normal and columns
+    # will be aligned; we re-order handles to be row-major, is only difference
+    if align:
+        # Optionally change order
+        # See: https://stackoverflow.com/q/10101141/4970632
+        if 'ncol' not in kwargs:
+            kwargs['ncol'] = 3
+        if order=='C':
+            newhandles = []
+            ncol = kwargs['ncol'] # number of columns
+            handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
+            nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
+            # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
+            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(kwargs['ncol']-nfinalrow)
+            for col,nrow in enumerate(nrows): # iterate through cols
+                newhandles.extend(handlesplit[row][col] for row in range(nrow))
+            handles = newhandles
+        # Finally draw legend, mimicking row-major ordering
+        leg = super(BaseAxes, ax).legend(handles=handles, **kwargs)
+        legends = [leg]
+
+    # 2) Separate legend for each row
+    # The label spacing/border spacing will be exactly replicated, as if we were
+    # using the original legend command
+    # Means we also have to overhaul some settings
+    else:
+        # Warn when user input props are overridden
+        overridden = []
+        loc = kwargs.pop('loc', 'upper center')
+        loc = {0:'best',
+            1:'upper right',
+            2:'upper left',
+            3:'lower left',
+            4:'lower right',
+            5:'right',
+            6:'center left',
+            7:'center right',
+            8:'lower center',
+            9:'upper center',
+            10:'center'}.get(loc, loc)
+        if loc=='best':
+            warnings.warn('Cannot use "best" location for un-aligned legend. Defaulting to "upper center".')
+            overridden.append('loc')
+            loc = 'upper center'
+        for override in ['bbox_transform', 'bbox_to_anchor', 'frameon']:
+            prop = kwargs.pop(override, None)
+            if prop is not None:
+                overridden.append(override)
+        if overridden:
+            warnings.warn(f'Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
+        # Determine space we want sub-legend to occupy, as fraction of height
+        # Don't normally save "height" and "width" of axes so keep here
+        fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
+        spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
+        interval = 1/len(handles) # split up axes
+        interval = (((1 + spacing)*fontsize)/72) / \
+                (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
+        # Iterate and draw
+        if order=='F':
+            raise NotImplementedError(f'When align=False, proplot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
+        legends = []
+        for h,hs in enumerate(handles):
+            if 'upper' in loc:
+                y1 = 1 - (h+1)*interval
+                y2 = 1 - h*interval
+            elif 'lower' in loc:
+                y1 = (len(handles) + h - 2)*interval
+                y2 = (len(handles) + h - 1)*interval
+            else: # center
+                y1 = 0.5 + interval*len(handles)/2 - (h+1)*interval
+                y2 = 0.5 + interval*len(handles)/2 - h*interval
+            bbox = mtransforms.Bbox([[0, y1], [1, y2]])
+            leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs), loc=loc,
+                frameon=False,
+                bbox_transform=ax.transAxes,
+                bbox_to_anchor=bbox,
+                **kwargs) # _format_legend is overriding original legend Method
+            legends.append(leg)
+        for l in legends[:-1]:
+            ax.add_artist(l) # because matplotlib deletes previous ones
+
+    # Properties for legends
+    outline = {'linewidth': rc['axes.linewidth'],
+               'edgecolor': rc['axes.edgecolor'],
+               'facecolor': rc['axes.facecolor']}
+    for leg in legends:
+        # for t in leg.texts:
+        leg.legendPatch.update(outline) # or get_frame()
+        for obj in leg.legendHandles:
+            obj.update(hsettings)
+    return legends[0] if len(legends)==1 else legends
+
+def colorbar_factory(ax, mappable, values=None,
+        orientation='horizontal', extend=None, extendlength=None,
+        clabel=None, label=None,
+        ctickminor=False, tickminor=None, fixticks=False,
+        cgrid=False, grid=None,
+        ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
+        cticks=None, ticks=None, clocator=None, locator=None,
+        cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
+        clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
+        cformatter=None, formatter=None,
+        cticklabels=None, ticklabels=None,
+        norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+        **kwargs):
+    """
+    Function for filling an axes with a colorbar, with some handy added
+    features.
+
+    Parameters
+    ----------
+    ax : `~matplotlib.axes.Axes`
+        The axes to fill with a colorbar.
+    mappable : mappable or list of str or list of plot handles
+        There are three options here:
+
+        1. A mappable object. Basically, any object with a `get_cmap` method, like
+           the objects returned by `~matplotlib.axes.Axes.contourf` and
+           `~matplotlib.axes.Axes.pcolormesh`.
+        2. A list of hex strings, color string names, or RGB tuples. From this,
+           a colormap will be generated and used with the colorbar. Requires
+           `values` is not ``None``.
+        3. A list of "plot handles". Basically, any object with a `get_color`
+           method, like `~matplotlib.lines.Line2D` instances. From this,
+           a colormap will be generated and used with the colorbar. Requires
+           `values` is not ``None``.
+
+    values : None or list of float, optional
+        Ignored if `mappable` is a mappable object. Maps each color or plot
+        handle in the `mappable` list to numeric values. From this, a
+        colormap and normalizer are constructed.
+    orientation : {'horizontal', 'vertical'}, optional
+        The colorbar orientation.
+    extend : {None, 'neither', 'both', 'min', 'max'}, optional
+        Direction for drawing colorbar "extensions" (i.e. references to
+        out-of-bounds data with a unique color). These are triangles by
+        default. If ``None``, we try to use the ``extend`` attribute on the
+        mappable object. If the attribute is unavailable, we use ``'neither'``.
+    extendlength : None or float or str, optional
+        The length of the colorbar "extensions" in *physical units*.
+        If float, units are inches. If string,
+        units are interpreted by `~proplot.utils.units`.
+
+        This is handy if you have multiple colorbars in one figure.
+        With the matplotlib API, it is really hard to get triangle
+        sizes to match, because the `extendlength` units are *relative*.
+    ctickloc, tickloc, cticklocation
+        Aliases for `ticklocation`.
+    ticklocation : {'bottom', 'top', 'left', 'right'}, optional
+        Where to draw tick marks on the colorbar.
+    fixticks : bool, optional
+        For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
+        colorbar minor and major ticks can appear misaligned. When `fixticks`
+        is ``True``, this misalignment is fixed. The default is ``False``.
+
+        This will give incorrect positions when the colormap index does not
+        appear to vary "linearly" from left-to-right across the colorbar (for
+        example, when the leftmost colormap colors seem to be "pulled" to the
+        right farther than normal). In this case, you should stick with
+        ``fixticks=False``.
+    clabel, ctickminor, cgrid
+        Aliases for `label`, `tickminor`, `grid`.
+    label : None or str, optional
+        The colorbar label.
+    tickminor : bool, optional
+        Whether to put minor ticks on the colorbar. Default is ``False``.
+    grid : bool, optional
+        Whether to draw "gridlines" (i.e. separators) between each level
+        across the colorbar. Default is ``False``.
+    clocator, cminorlocator, clocator_kw, cminorlocator_kw
+        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
+    locator : None or locator spec, optional
+        The colorbar tick mark positions. Passed to the
+        `~proplot.axistools.Locator` constructor.
+    locator_kw : dict-like, optional
+        The locator settings. Passed to `~proplot.axistools.Locator`.
+    minorlocator
+        As with `locator`, but for the minor tick marks.
+    minorlocator_kw
+        As for `locator_kw`, but for the minor locator.
+    cformatter, ticklabels, cticklabels
+        Aliases for `formatter`.
+    formatter : None or formatter spec, optional
+        The tick label format. Passed to the `~proplot.axistools.Formatter`
+        constructor.
+    norm : None or normalizer spec, optional
+        Ignored if `mappable` has the ``norm`` attribute. The normalizer
+        for converting `values` to colormap colors. Passed to the
+        `~proplot.colortools.Norm` constructor.
+    norm_kw : dict-like, optional
+        The normalizer settings. Passed to `~proplot.colortools.Norm`.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to `~matplotlib.figure.Figure.colorbar`.
+
+    See also
+    --------
+    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
+    `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, `~proplot.colortools.Norm`
+
+    Warning
+    -------
+    Colorbar axes must be of type `matplotlib.axes.Axes`,
+    not `~proplot.axes.BaseAxes` because colorbar uses some internal methods
+    that `~proplot.axes.BaseAxes` wraps using `wrapper_cmap`, causing
+    errors due to new usage.
+    """
+    # Developer notes
+    # * There are options on the colorbar object (cb.locator,
+    #   cb.formatter with cb.update_ticks) and by passing kwargs (ticks=x,
+    #   format=y) that allow user to not reference the underlying "axes"
+    #   when fixing ticks. Don't use this functionality because not necessary
+    #   for us and is missing many features, e.g. minorlocators/minorformatters.
+    #   Also is different syntax.
+    # * There is an insanely weird problem with colorbars when simultaneously
+    #   passing levels and norm object to a mappable; fixed by passing
+    #   vmin/vmax instead of levels.
+    #   (see: https://stackoverflow.com/q/40116968/4970632).
+    # * Problem is, often want levels instead of vmin/vmax, while simultaneously
+    #   using a Normalize (for example) to determine colors between the levels
+    #   (see: https://stackoverflow.com/q/42723538/4970632). Workaround is to
+    #   make sure locators are in vmin/vmax range exclusively; cannot match/exceed values.
+    # * The 'extend' kwarg is used for the case when you are manufacturing
+    #   colorbar from list of colors or lines. Most of the time want 'neither'.
+    # See comment under colorbar() method def for PanelAxes class. Will get
+    # weird results if axes is a special BaseAxes.
+    if isinstance(ax, BaseAxes):
+        raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
+    # Parse flexible input
+    clocator         = _default(ticks, cticks, locator, clocator)
+    cgrid            = _default(grid, cgrid)
+    ctickminor       = _default(tickminor, ctickminor)
+    cminorlocator    = _default(minorticks, cminorticks, minorlocator, cminorlocator)
+    cformatter       = _default(ticklabels, cticklabels, formatter, cformatter, 'default')
+    clabel           = _default(label, clabel)
+    clocator_kw      = _default(locator_kw, clocator_kw)
+    cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
+
+    # Test if we were given a mappable, or iterable of stuff; note Container and
+    # PolyCollection matplotlib classes are iterable.
+    fromlines, fromcolors = False, False
+    if np.iterable(mappable) and len(mappable)==2:
+        mappable, values = mappable
+    if not isinstance(mappable, martist.Artist) and \
+        not isinstance(mappable, mcontour.ContourSet):
+        if isinstance(mappable[0], martist.Artist):
+            fromlines = True # we passed a bunch of line handles; just use their colors
+        else:
+            fromcolors = True # we passed a bunch of color strings or tuples
+    # Update with user-kwargs
+    if extend is None:
+        if hasattr(mappable, 'extend'):
+            extend = mappable.extend or 'neither'
+        else:
+            extend = 'neither'
+    kwdefault = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
+                 'spacing':'uniform', 'extend':extend, 'drawedges':cgrid} # this is default case unless mappable has special props
+    kwdefault.update(kwargs)
+    kwargs = kwdefault
+
+    # Option to generate colorbar/colormap from line handles
+    # * Note the colors are perfect if we don't extend them by dummy color on either side,
+    #   but for some reason labels for edge colors appear offset from everything
+    # * Too tired to figure out why so just use this workaround
+    if fromcolors: # we passed the colors directly
+        colors = mappable
+        if values is None:
+            raise ValueError('Must pass "values", corresponding to list of colors.')
+    if fromlines: # the lines
+        if values is None:
+            raise ValueError('Must pass "values", corresponding to list of handles.')
+        if len(mappable)!=len(values):
+            raise ValueError('Number of "values" should equal number of handles.')
+        colors = [h.get_color() for h in mappable]
+    # Get colors, and by default, label each value directly
+    # Note contourf will not be overridden for colorbar axes! Need to
+    # manually wrap with wrapper_cmap.
+    if fromlines or fromcolors:
+        cmap   = colortools.Colormap(colors)
+        func = _wrapper_cmap(ax, ax.contourf)
+        mappable = func([[0,0],[0,0]],
+            values=np.array(values), cmap=cmap, extend='neither',
+            norm=(norm or 'segmented')
+            ) # workaround
+        if clocator is None:
+            nstep = 1 + len(values)//20
+            clocator = values[::nstep]
+    # By default, label the discretization levels (if there aren't too many)
+    # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
+    if clocator is None:
+        clocator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
+        if clocator is not None:
+            step = 1 + len(clocator)//20
+            clocator = clocator[::step]
+
+    # Determine major formatters and major/minor tick locators
+    # Can pass clocator/cminorlocator as the *jump values* between the mappables
+    # vmin/vmax if desired
+    fixed = None # so linter doesn't detect error in if i==1 block
+    normfix = False # whether we need to modify the norm object
+    locators = [] # put them here
+    for i,(locator,locator_kw) in enumerate(zip((clocator,cminorlocator),(clocator_kw,cminorlocator_kw))):
+        # Get the locator values
+        # Need to use tick_values instead of accessing 'locs' attribute because
+        # many locators don't have these attributes; require norm.vmin/vmax as input
+        if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
+            locators.append(axistools.Locator('null'))
+            continue
+        values = np.array(axistools.Locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        # Modify ticks to work around mysterious error, and to prevent annoyance
+        # where minor ticks extend beyond extendlength.
+        # We need to figure out the numbers that will eventually be rendered to
+        # solve the error, so we will always use a fixedlocator.
+        values_min = np.where(values>=mappable.norm.vmin)[0]
+        values_max = np.where(values<=mappable.norm.vmax)[0]
+        if len(values_min)==0 or len(values_max)==0:
+            locators.append(axistools.Locator('null'))
+            continue
+        values_min, values_max = values_min[0], values_max[-1]
+        values = values[values_min:values_max+1]
+        if values[0]==mappable.norm.vmin:
+            normfix = True
+        # Prevent annoying major/minor overlaps where one is slightly shifted left/right
+        # Consider floating point weirdness too
+        if i==1:
+            eps = 1e-10
+            values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
+        fixed = values # record as new variable
+        locators.append(axistools.Locator(fixed)) # final locator object
+    # Next the formatter
+    cformatter = axistools.Formatter(cformatter)
+
+    # Fix the norm object
+    # Check out the *insanely weird error* that occurs when you comment out this block!
+    # * The error is triggered when a *major* tick sits exactly on vmin, but
+    #   the actual error is due to processing of *minor* ticks, even if the 
+    #   minor locator was set to NullLocator; very weird
+    # * Happens when we call get_ticklabels(which='both') below. Can be prevented
+    #   by just calling which='major'. Minor ticklabels are never drawn anyway.
+    # * We can eliminate the normfix below, but that actually causes an annoying
+    #   warning to be printed (related to same issue I guess). So we keep this.
+    #   The culprit for all of this seems to be the colorbar API line:
+    #        z = np.take(y, i0) + (xn - np.take(b, i0)) * dy / db
+    # * Also strange that minorticks extending *below* the minimum
+    #   don't raise the error. It is only when they are exaclty on the minimum.
+    # * Note that when changing the levels attribute, need to make sure the
+    #   levels datatype is float; otherwise division will be truncated and bottom
+    #   level will still lie on same location, so error will occur
+    if normfix:
+        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/10000
+    if hasattr(mappable.norm, 'levels'):
+        mappable.norm.levels = np.atleast_1d(mappable.norm.levels).astype(np.float)
+        if normfix:
+            mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]/10000
+
+    # Draw the colorbar
+    # NOTE: Only way to avoid bugs seems to be to pass the major formatter/locator
+    # to colorbar commmand and directly edit the minor locators/formatters;
+    # update_ticks after the fact ignores the major formatter.
+    # TODO: Why does ticklocation 'outer' and 'inner' sometimes work, but
+    # other times not work?
+    # axis.set_major_locator(locators[0]) # does absolutely nothing
+    # axis.set_major_formatter(cformatter)
+    if orientation=='horizontal':
+        axis = ax.xaxis
+        scale = ax.figure.width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
+    else:
+        axis = ax.yaxis
+        scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
+    extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
+    extendlength = extendlength/(scale - 2*extendlength)
+    ticklocation = _default(tickloc, ctickloc, ticklocation)
+    kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
+                   'format':cformatter,
+                   'ticklocation':ticklocation,
+                   'extendfrac':extendlength})
+    cb = ax.figure.colorbar(mappable, **kwargs)
+    # Make edges/dividers consistent with axis edges
+    if cb.dividers is not None:
+        cb.dividers.update(rc['grid'])
+
+    # The minor locators and formatters
+    # * The minor locator must be set with set_ticks after transforming an array
+    #   using the mappable norm object; see: https://stackoverflow.com/a/20079644/4970632
+    # * The set_minor_locator seems to be completely ignored depending on the colorbar
+    #   in question, for whatever reason, and cb.minorticks_on() gives no control.
+    # NOTE: Re-apply major ticks here because for some reason minor ticks don't
+    # align with major ones for LogNorm. When we call set_ticks, labels (and
+    # numbers) are not changed; just re-adjust existing ticks to proper locations.
+    minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
+    majorvals = np.array(locators[0].tick_values(mappable.norm.vmin, mappable.norm.vmax))
+    if isinstance(mappable.norm, colortools.BinNorm):
+        minorvals = mappable.norm._norm(minorvals) # use *child* normalizer
+        majorvals = mappable.norm._norm(majorvals)
+    else:
+        minorvals = mappable.norm(minorvals)
+        majorvals = mappable.norm(majorvals) # use *child* normalizer
+    minorvals = [tick for tick in minorvals if 0<=tick<=1]
+    majorvals = [tick for tick in majorvals if 0<=tick<=1]
+    axis.set_ticks(minorvals, minor=True)
+    if fixticks:
+        axis.set_ticks(majorvals, minor=False)
+    axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
+    # The label
+    if clabel is not None:
+        axis.label.update({'text':clabel})
+
+    # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
+    # because blending will occur, will get colored lines instead of white ones;
+    # need to perform manual alpha blending)
+    # NOTE: For some reason cb solids uses listed colormap with always 1.0
+    # alpha, then alpha is applied after.
+    # See: https://stackoverflow.com/a/35672224/4970632
+    alpha = None
+    if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
+        alpha = cb.solids.get_alpha()
+    if alpha is not None and alpha<1:
+        # First get reference color
+        warnings.warn('Performing manual alpha-blending for colorbar solids.')
+        reference = mappable.axes.get_facecolor() # the axes facecolor
+        reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
+        # Next get solids
+        reference = [1,1,1] # override?
+        alpha = 1 - (1 - alpha)**2 # make more colorful
+        colors = cb.solids.get_cmap().colors
+        colors = np.array(colors)
+        for i in range(3): # Do not include the last column!
+            colors[:,i] = (reference[i] - alpha) + alpha*colors[:,i]
+        cmap = mcolors.ListedColormap(colors, name='colorbar-fix')
+        cb.solids.set_cmap(cmap)
+        cb.solids.set_alpha(1.0)
+
+    # Fix pesky white lines between levels + misalignment with border due
+    # to rasterized blocks
+    if cb.solids:
+        cb.solids.set_linewidth(0.2) # something small
+        cb.solids.set_edgecolor('face')
+        cb.solids.set_rasterized(False)
+    axis.set_ticks_position(ticklocation)
+    return cb
+
+#------------------------------------------------------------------------------#
+# Now that we have defined all wrappers in a way that will make nice documentation/
+# minimize the amount of new code that has to be generated when a method is
+# wrapped inside __getattribute__, construct the *actual* wrappers.
+#------------------------------------------------------------------------------#
+# Helper funcs
+def _wrapper_factory(driver):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return driver(func, *args, **kwargs)
+        return wrapper
+    return decorator
+def _self_wrapper_factory(driver):
+    def decorator(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return driver(self, func, *args, **kwargs)
+        return wrapper
+    return decorator
+# Build wrappers
+_wrapper_check_centers   = _wrapper_factory(wrapper_check_centers)
+_wrapper_check_edges     = _wrapper_factory(wrapper_check_edges)
+_wrapper_basemap_gridfix = _self_wrapper_factory(wrapper_basemap_gridfix)
+_wrapper_basemap_linefix = _self_wrapper_factory(wrapper_basemap_linefix)
+_wrapper_cartopy_gridfix = _self_wrapper_factory(wrapper_cartopy_gridfix)
+_wrapper_cartopy_linefix = _self_wrapper_factory(wrapper_cartopy_linefix)
+_wrapper_cmap    = _self_wrapper_factory(wrapper_cmap)
+_wrapper_cycle   = _self_wrapper_factory(wrapper_cycle)
+_wrapper_plot    = _self_wrapper_factory(wrapper_plot)
+_wrapper_scatter = _self_wrapper_factory(wrapper_scatter)
+_wrapper_text    = _self_wrapper_factory(wrapper_text)
+_wrapper_legend  = _self_wrapper_factory(legend_factory) # special
 
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
@@ -2328,6 +2836,22 @@ class XYAxes(BaseAxes):
         ax.format(yscale=yscale, yformatter=yformatter, **kwargs)
         self._dualy_scale = (offset, scale)
 
+    def altx(self, *args, **kwargs):
+        """
+        Alias (and more intuitive function name) for `BaseAxes.twiny`.
+        The matplotlib ``twiny`` function actually generates two **x**-axes
+        with a shared ("twin") **y**-axis.
+        """
+        return self.twiny(*args, **kwargs)
+
+    def alty(self, *args, **kwargs):
+        """
+        Alias (and more intuitive function name) for `BaseAxes.twinx`.
+        The matplotlib ``twinx`` function actually generates two **y**-axes
+        with a shared ("twin") **x**-axis.
+        """
+        return self.twinx(*args, **kwargs)
+
     def twinx(self):
         """Makes a second *y* axis extending from a shared ("twin") *x* axis.
         Intelligently moves around tick and axis labels, handles axis sharing."""
@@ -3282,546 +3806,4 @@ mproj.register_projection(PanelAxes)
 mproj.register_projection(PolarAxes)
 mproj.register_projection(BasemapAxes)
 mproj.register_projection(CartopyAxes)
-
-#------------------------------------------------------------------------------#
-# Legends and colorbars
-#------------------------------------------------------------------------------#
-def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
-    """
-    Function for drawing a legend, with some handy added features.
-
-    Parameters
-    ----------
-    ax : `~matplotlib.axes.Axes`
-        The axes.
-    handles : None or list of `~matplotlib.artist.Artist`, optional
-        List of artists instances -- for example, `~matplotlib.lines.Line2D`.
-    order : {'C', 'F'}, optional
-        Whether legend handles are drawn in column-major (``'C'``) or row-major
-        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
-        ``'F'`` was the original matplotlib default; the default is now ``'C'``.
-    align : None or bool, optional
-        Whether to align rows of legend handles. If ``False``, we actually
-        draw successive single-row legends stacked on top of each other,
-        and you cannot have a "legend box".
-
-        If ``None``, we try to infer this setting from the `handles` keyword
-        arg. Becomes ``True`` if `handles` is a list of lists (implies
-        each sublist is a *row* in the legend), ``False`` if not.
-    ncol : int, optional
-        The number of columns.
-    ncols
-        Alias for `ncol`. Added for consistency with
-        `~matplotlib.pyplot.subplots`.
-
-    Other parameters
-    ----------------
-    **kwargs
-        Passed to `~matplotlib.axes.Axes.legend`.
-
-    See also
-    --------
-    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
-    """
-    # First get legend settings (usually just one per plot so don't need to declare
-    # this dynamically/globally), and interpret kwargs.
-    # TODO: Should update this function to clip the legend box when it goes
-    # outside axes area, so the legend width and bottom or right widths can be
-    # chosen propertly/separately.
-    for name,alias in [('ncol', 'ncols'), ('frameon', 'frame')]:
-        if alias in kwargs:
-            kwargs[name] = kwargs.pop(alias)
-    if order not in ('F','C'):
-        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-    # Setup legend text and handle properties
-    hsettings = {}
-    for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
-        if candidate in kwargs:
-            hsettings[candidate] = kwargs.pop(candidate)
-    # Font name; 'prop' can be a FontProperties object or a dict for the kwargs
-    # to instantiate one.
-    kwargs.update({'prop': {'family': rc['fontname']}})
-
-    # Detect if user wants to specify rows manually
-    # Gives huge latitude for user input:
-    #   1) user can specify nothing and align will be inferred (list of iterables
-    #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
-    #   2) user can specify align (needs list of handles for True, list of handles or list
-    #      of iterables for False and if the former, will turn into list of iterables)
-    if handles is None and not (isinstance(ax, PanelAxes) and not ax.on()):
-        handles = ax.get_legend_handles_labels()[0]
-        if not handles:
-            raise ValueError('No axes artists with labels were found.')
-    elif not handles:
-        raise ValueError('You must pass a list of handles.')
-    for i,handle in enumerate(handles):
-        if not hasattr(handle, 'cmap'):
-            continue
-        # Make sure we sample the *center* of the colormap
-        warnings.warn('Getting legend entry from colormap.')
-        size = np.mean(handle.get_sizes())
-        handles[i] = ax.scatter([0], [0], markersize=size,
-                                color=[handle.cmap(0.5)],
-                                label=handle.get_label())
-    list_of_lists = not isinstance(handles[0], martist.Artist)
-    if align is None: # automatically guess
-        align = not list_of_lists
-    else: # standardize format based on input
-        if not align and not list_of_lists: # separate into columns
-            ncol = kwargs.pop('ncol', 3)
-            handles = [handles[i*ncol:(i+1)*ncol]
-                        for i in range(len(handles))] # to list of iterables
-            list_of_lists = True
-        elif not align and list_of_lists and 'ncol' in kwargs:
-            kwargs.pop('ncol')
-            warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
-        if align and list_of_lists: # unfurl, because we just want one legend!
-            handles = [handle for sublist in handles for handle in sublist]
-            list_of_lists = False # no longer is list of lists
-    # Remove empty lists... pops up in some examples, not sure how
-    handles = [sublist for sublist in handles if sublist]
-
-    # Now draw legend, with two options
-    # 1) Normal legend, just draw everything like normal and columns
-    # will be aligned; we re-order handles to be row-major, is only difference
-    if align:
-        # Optionally change order
-        # See: https://stackoverflow.com/q/10101141/4970632
-        if 'ncol' not in kwargs:
-            kwargs['ncol'] = 3
-        if order=='C':
-            newhandles = []
-            ncol = kwargs['ncol'] # number of columns
-            handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
-            nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
-            # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
-            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(kwargs['ncol']-nfinalrow)
-            for col,nrow in enumerate(nrows): # iterate through cols
-                newhandles.extend(handlesplit[row][col] for row in range(nrow))
-            handles = newhandles
-        # Finally draw legend, mimicking row-major ordering
-        leg = super(BaseAxes, ax).legend(handles=handles, **kwargs)
-        legends = [leg]
-
-    # 2) Separate legend for each row
-    # The label spacing/border spacing will be exactly replicated, as if we were
-    # using the original legend command
-    # Means we also have to overhaul some settings
-    else:
-        # Warn when user input props are overridden
-        overridden = []
-        loc = kwargs.pop('loc', 'upper center')
-        loc = {0:'best',
-            1:'upper right',
-            2:'upper left',
-            3:'lower left',
-            4:'lower right',
-            5:'right',
-            6:'center left',
-            7:'center right',
-            8:'lower center',
-            9:'upper center',
-            10:'center'}.get(loc, loc)
-        if loc=='best':
-            warnings.warn('Cannot use "best" location for un-aligned legend. Defaulting to "upper center".')
-            overridden.append('loc')
-            loc = 'upper center'
-        for override in ['bbox_transform', 'bbox_to_anchor', 'frameon']:
-            prop = kwargs.pop(override, None)
-            if prop is not None:
-                overridden.append(override)
-        if overridden:
-            warnings.warn(f'Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
-        # Determine space we want sub-legend to occupy, as fraction of height
-        # Don't normally save "height" and "width" of axes so keep here
-        fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
-        spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
-        interval = 1/len(handles) # split up axes
-        interval = (((1 + spacing)*fontsize)/72) / \
-                (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
-        # Iterate and draw
-        if order=='F':
-            raise NotImplementedError(f'When align=False, proplot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
-        legends = []
-        for h,hs in enumerate(handles):
-            if 'upper' in loc:
-                y1 = 1 - (h+1)*interval
-                y2 = 1 - h*interval
-            elif 'lower' in loc:
-                y1 = (len(handles) + h - 2)*interval
-                y2 = (len(handles) + h - 1)*interval
-            else: # center
-                y1 = 0.5 + interval*len(handles)/2 - (h+1)*interval
-                y2 = 0.5 + interval*len(handles)/2 - h*interval
-            bbox = mtransforms.Bbox([[0, y1], [1, y2]])
-            leg = super(BaseAxes, ax).legend(handles=hs, ncol=len(hs), loc=loc,
-                frameon=False,
-                bbox_transform=ax.transAxes,
-                bbox_to_anchor=bbox,
-                **kwargs) # _format_legend is overriding original legend Method
-            legends.append(leg)
-        for l in legends[:-1]:
-            ax.add_artist(l) # because matplotlib deletes previous ones
-
-    # Properties for legends
-    outline = {'linewidth': rc['axes.linewidth'],
-               'edgecolor': rc['axes.edgecolor'],
-               'facecolor': rc['axes.facecolor']}
-    for leg in legends:
-        # for t in leg.texts:
-        leg.legendPatch.update(outline) # or get_frame()
-        for obj in leg.legendHandles:
-            obj.update(hsettings)
-    return legends[0] if len(legends)==1 else legends
-
-def colorbar_factory(ax, mappable, values=None,
-        orientation='horizontal', extend=None, extendlength=None,
-        clabel=None, label=None,
-        ctickminor=False, tickminor=None, fixticks=False,
-        cgrid=False, grid=None,
-        ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
-        cticks=None, ticks=None, clocator=None, locator=None,
-        cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
-        clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
-        cformatter=None, formatter=None,
-        cticklabels=None, ticklabels=None,
-        norm=None, norm_kw={}, # normalizer to use when passing colors/lines
-        **kwargs):
-    """
-    Function for filling an axes with a colorbar, with some handy added
-    features.
-
-    Parameters
-    ----------
-    ax : `~matplotlib.axes.Axes`
-        The axes to fill with a colorbar.
-    mappable : mappable or list of str or list of plot handles
-        There are three options here:
-
-        1. A mappable object. Basically, any object with a `get_cmap` method, like
-           the objects returned by `~matplotlib.axes.Axes.contourf` and
-           `~matplotlib.axes.Axes.pcolormesh`.
-        2. A list of hex strings, color string names, or RGB tuples. From this,
-           a colormap will be generated and used with the colorbar. Requires
-           `values` is not ``None``.
-        3. A list of "plot handles". Basically, any object with a `get_color`
-           method, like `~matplotlib.lines.Line2D` instances. From this,
-           a colormap will be generated and used with the colorbar. Requires
-           `values` is not ``None``.
-
-    values : None or list of float, optional
-        Ignored if `mappable` is a mappable object. Maps each color or plot
-        handle in the `mappable` list to numeric values. From this, a
-        colormap and normalizer are constructed.
-    orientation : {'horizontal', 'vertical'}, optional
-        The colorbar orientation.
-    extend : {None, 'neither', 'both', 'min', 'max'}, optional
-        Direction for drawing colorbar "extensions" (i.e. references to
-        out-of-bounds data with a unique color). These are triangles by
-        default. If ``None``, we try to use the ``extend`` attribute on the
-        mappable object. If the attribute is unavailable, we use ``'neither'``.
-    extendlength : None or float or str, optional
-        The length of the colorbar "extensions" in *physical units*.
-        If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
-
-        This is handy if you have multiple colorbars in one figure.
-        With the matplotlib API, it is really hard to get triangle
-        sizes to match, because the `extendlength` units are *relative*.
-    ctickloc, tickloc, cticklocation
-        Aliases for `ticklocation`.
-    ticklocation : {'bottom', 'top', 'left', 'right'}, optional
-        Where to draw tick marks on the colorbar.
-    fixticks : bool, optional
-        For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
-        colorbar minor and major ticks can appear misaligned. When `fixticks`
-        is ``True``, this misalignment is fixed. The default is ``False``.
-
-        This will give incorrect positions when the colormap index does not
-        appear to vary "linearly" from left-to-right across the colorbar (for
-        example, when the leftmost colormap colors seem to be "pulled" to the
-        right farther than normal). In this case, you should stick with
-        ``fixticks=False``.
-    clabel, ctickminor, cgrid
-        Aliases for `label`, `tickminor`, `grid`.
-    label : None or str, optional
-        The colorbar label.
-    tickminor : bool, optional
-        Whether to put minor ticks on the colorbar. Default is ``False``.
-    grid : bool, optional
-        Whether to draw "gridlines" (i.e. separators) between each level
-        across the colorbar. Default is ``False``.
-    clocator, cminorlocator, clocator_kw, cminorlocator_kw
-        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
-    locator : None or locator spec, optional
-        The colorbar tick mark positions. Passed to the
-        `~proplot.axistools.Locator` constructor.
-    locator_kw : dict-like, optional
-        The locator settings. Passed to `~proplot.axistools.Locator`.
-    minorlocator
-        As with `locator`, but for the minor tick marks.
-    minorlocator_kw
-        As for `locator_kw`, but for the minor locator.
-    cformatter, ticklabels, cticklabels
-        Aliases for `formatter`.
-    formatter : None or formatter spec, optional
-        The tick label format. Passed to the `~proplot.axistools.Formatter`
-        constructor.
-    norm : None or normalizer spec, optional
-        Ignored if `mappable` has the ``norm`` attribute. The normalizer
-        for converting `values` to colormap colors. Passed to the
-        `~proplot.colortools.Norm` constructor.
-    norm_kw : dict-like, optional
-        The normalizer settings. Passed to `~proplot.colortools.Norm`.
-
-    Other parameters
-    ----------------
-    **kwargs
-        Passed to `~matplotlib.figure.Figure.colorbar`.
-
-    See also
-    --------
-    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
-    `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, `~proplot.colortools.Norm`
-
-    Warning
-    -------
-    Colorbar axes must be of type `matplotlib.axes.Axes`,
-    not `~proplot.axes.BaseAxes` because colorbar uses some internal methods
-    that `~proplot.axes.BaseAxes` wraps using `wrapper_cmap`, causing
-    errors due to new usage.
-    """
-    # Developer notes
-    # * There are options on the colorbar object (cb.locator,
-    #   cb.formatter with cb.update_ticks) and by passing kwargs (ticks=x,
-    #   format=y) that allow user to not reference the underlying "axes"
-    #   when fixing ticks. Don't use this functionality because not necessary
-    #   for us and is missing many features, e.g. minorlocators/minorformatters.
-    #   Also is different syntax.
-    # * There is an insanely weird problem with colorbars when simultaneously
-    #   passing levels and norm object to a mappable; fixed by passing
-    #   vmin/vmax instead of levels.
-    #   (see: https://stackoverflow.com/q/40116968/4970632).
-    # * Problem is, often want levels instead of vmin/vmax, while simultaneously
-    #   using a Normalize (for example) to determine colors between the levels
-    #   (see: https://stackoverflow.com/q/42723538/4970632). Workaround is to
-    #   make sure locators are in vmin/vmax range exclusively; cannot match/exceed values.
-    # * The 'extend' kwarg is used for the case when you are manufacturing
-    #   colorbar from list of colors or lines. Most of the time want 'neither'.
-    # See comment under colorbar() method def for PanelAxes class. Will get
-    # weird results if axes is a special BaseAxes.
-    if isinstance(ax, BaseAxes):
-        raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
-    # Parse flexible input
-    clocator         = _default(ticks, cticks, locator, clocator)
-    cgrid            = _default(grid, cgrid)
-    ctickminor       = _default(tickminor, ctickminor)
-    cminorlocator    = _default(minorticks, cminorticks, minorlocator, cminorlocator)
-    cformatter       = _default(ticklabels, cticklabels, formatter, cformatter, 'default')
-    clabel           = _default(label, clabel)
-    clocator_kw      = _default(locator_kw, clocator_kw)
-    cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
-
-    # Test if we were given a mappable, or iterable of stuff; note Container and
-    # PolyCollection matplotlib classes are iterable.
-    fromlines, fromcolors = False, False
-    if np.iterable(mappable) and len(mappable)==2:
-        mappable, values = mappable
-    if not isinstance(mappable, martist.Artist) and \
-        not isinstance(mappable, mcontour.ContourSet):
-        if isinstance(mappable[0], martist.Artist):
-            fromlines = True # we passed a bunch of line handles; just use their colors
-        else:
-            fromcolors = True # we passed a bunch of color strings or tuples
-    # Update with user-kwargs
-    if extend is None:
-        if hasattr(mappable, 'extend'):
-            extend = mappable.extend or 'neither'
-        else:
-            extend = 'neither'
-    kwdefault = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
-                 'spacing':'uniform', 'extend':extend, 'drawedges':cgrid} # this is default case unless mappable has special props
-    kwdefault.update(kwargs)
-    kwargs = kwdefault
-
-    # Option to generate colorbar/colormap from line handles
-    # * Note the colors are perfect if we don't extend them by dummy color on either side,
-    #   but for some reason labels for edge colors appear offset from everything
-    # * Too tired to figure out why so just use this workaround
-    if fromcolors: # we passed the colors directly
-        colors = mappable
-        if values is None:
-            raise ValueError('Must pass "values", corresponding to list of colors.')
-    if fromlines: # the lines
-        if values is None:
-            raise ValueError('Must pass "values", corresponding to list of handles.')
-        if len(mappable)!=len(values):
-            raise ValueError('Number of "values" should equal number of handles.')
-        colors = [h.get_color() for h in mappable]
-    # Get colors, and by default, label each value directly
-    # Note contourf will not be overridden for colorbar axes! Need to
-    # manually wrap with wrapper_cmap.
-    if fromlines or fromcolors:
-        cmap   = colortools.Colormap(colors)
-        func = _wrapper_cmap(ax, ax.contourf)
-        mappable = func([[0,0],[0,0]],
-            values=np.array(values), cmap=cmap, extend='neither',
-            norm=(norm or 'segmented')
-            ) # workaround
-        if clocator is None:
-            nstep = 1 + len(values)//20
-            clocator = values[::nstep]
-    # By default, label the discretization levels (if there aren't too many)
-    # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
-    if clocator is None:
-        clocator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
-        if clocator is not None:
-            step = 1 + len(clocator)//20
-            clocator = clocator[::step]
-
-    # Determine major formatters and major/minor tick locators
-    # Can pass clocator/cminorlocator as the *jump values* between the mappables
-    # vmin/vmax if desired
-    fixed = None # so linter doesn't detect error in if i==1 block
-    normfix = False # whether we need to modify the norm object
-    locators = [] # put them here
-    for i,(locator,locator_kw) in enumerate(zip((clocator,cminorlocator),(clocator_kw,cminorlocator_kw))):
-        # Get the locator values
-        # Need to use tick_values instead of accessing 'locs' attribute because
-        # many locators don't have these attributes; require norm.vmin/vmax as input
-        if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
-            locators.append(axistools.Locator('null'))
-            continue
-        values = np.array(axistools.Locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
-        # Modify ticks to work around mysterious error, and to prevent annoyance
-        # where minor ticks extend beyond extendlength.
-        # We need to figure out the numbers that will eventually be rendered to
-        # solve the error, so we will always use a fixedlocator.
-        values_min = np.where(values>=mappable.norm.vmin)[0]
-        values_max = np.where(values<=mappable.norm.vmax)[0]
-        if len(values_min)==0 or len(values_max)==0:
-            locators.append(axistools.Locator('null'))
-            continue
-        values_min, values_max = values_min[0], values_max[-1]
-        values = values[values_min:values_max+1]
-        if values[0]==mappable.norm.vmin:
-            normfix = True
-        # Prevent annoying major/minor overlaps where one is slightly shifted left/right
-        # Consider floating point weirdness too
-        if i==1:
-            eps = 1e-10
-            values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
-        fixed = values # record as new variable
-        locators.append(axistools.Locator(fixed)) # final locator object
-    # Next the formatter
-    cformatter = axistools.Formatter(cformatter)
-
-    # Fix the norm object
-    # Check out the *insanely weird error* that occurs when you comment out this block!
-    # * The error is triggered when a *major* tick sits exactly on vmin, but
-    #   the actual error is due to processing of *minor* ticks, even if the 
-    #   minor locator was set to NullLocator; very weird
-    # * Happens when we call get_ticklabels(which='both') below. Can be prevented
-    #   by just calling which='major'. Minor ticklabels are never drawn anyway.
-    # * We can eliminate the normfix below, but that actually causes an annoying
-    #   warning to be printed (related to same issue I guess). So we keep this.
-    #   The culprit for all of this seems to be the colorbar API line:
-    #        z = np.take(y, i0) + (xn - np.take(b, i0)) * dy / db
-    # * Also strange that minorticks extending *below* the minimum
-    #   don't raise the error. It is only when they are exaclty on the minimum.
-    # * Note that when changing the levels attribute, need to make sure the
-    #   levels datatype is float; otherwise division will be truncated and bottom
-    #   level will still lie on same location, so error will occur
-    if normfix:
-        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/10000
-    if hasattr(mappable.norm, 'levels'):
-        mappable.norm.levels = np.atleast_1d(mappable.norm.levels).astype(np.float)
-        if normfix:
-            mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]/10000
-
-    # Draw the colorbar
-    # NOTE: Only way to avoid bugs seems to be to pass the major formatter/locator
-    # to colorbar commmand and directly edit the minor locators/formatters;
-    # update_ticks after the fact ignores the major formatter.
-    # TODO: Why does ticklocation 'outer' and 'inner' sometimes work, but
-    # other times not work?
-    # axis.set_major_locator(locators[0]) # does absolutely nothing
-    # axis.set_major_formatter(cformatter)
-    if orientation=='horizontal':
-        axis = ax.xaxis
-        scale = ax.figure.width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
-    else:
-        axis = ax.yaxis
-        scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
-    extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
-    extendlength = extendlength/(scale - 2*extendlength)
-    ticklocation = _default(tickloc, ctickloc, ticklocation)
-    kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
-                   'format':cformatter,
-                   'ticklocation':ticklocation,
-                   'extendfrac':extendlength})
-    cb = ax.figure.colorbar(mappable, **kwargs)
-    # Make edges/dividers consistent with axis edges
-    if cb.dividers is not None:
-        cb.dividers.update(rc['grid'])
-
-    # The minor locators and formatters
-    # * The minor locator must be set with set_ticks after transforming an array
-    #   using the mappable norm object; see: https://stackoverflow.com/a/20079644/4970632
-    # * The set_minor_locator seems to be completely ignored depending on the colorbar
-    #   in question, for whatever reason, and cb.minorticks_on() gives no control.
-    # NOTE: Re-apply major ticks here because for some reason minor ticks don't
-    # align with major ones for LogNorm. When we call set_ticks, labels (and
-    # numbers) are not changed; just re-adjust existing ticks to proper locations.
-    minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
-    majorvals = np.array(locators[0].tick_values(mappable.norm.vmin, mappable.norm.vmax))
-    if isinstance(mappable.norm, colortools.BinNorm):
-        minorvals = mappable.norm._norm(minorvals) # use *child* normalizer
-        majorvals = mappable.norm._norm(majorvals)
-    else:
-        minorvals = mappable.norm(minorvals)
-        majorvals = mappable.norm(majorvals) # use *child* normalizer
-    minorvals = [tick for tick in minorvals if 0<=tick<=1]
-    majorvals = [tick for tick in majorvals if 0<=tick<=1]
-    axis.set_ticks(minorvals, minor=True)
-    if fixticks:
-        axis.set_ticks(majorvals, minor=False)
-    axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
-    # The label
-    if clabel is not None:
-        axis.label.update({'text':clabel})
-
-    # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
-    # because blending will occur, will get colored lines instead of white ones;
-    # need to perform manual alpha blending)
-    # NOTE: For some reason cb solids uses listed colormap with always 1.0
-    # alpha, then alpha is applied after.
-    # See: https://stackoverflow.com/a/35672224/4970632
-    alpha = None
-    if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
-        alpha = cb.solids.get_alpha()
-    if alpha is not None and alpha<1:
-        # First get reference color
-        warnings.warn('Performing manual alpha-blending for colorbar solids.')
-        reference = mappable.axes.get_facecolor() # the axes facecolor
-        reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
-        # Next get solids
-        reference = [1,1,1] # override?
-        alpha = 1 - (1 - alpha)**2 # make more colorful
-        colors = cb.solids.get_cmap().colors
-        colors = np.array(colors)
-        for i in range(3): # Do not include the last column!
-            colors[:,i] = (reference[i] - alpha) + alpha*colors[:,i]
-        cmap = mcolors.ListedColormap(colors, name='colorbar-fix')
-        cb.solids.set_cmap(cmap)
-        cb.solids.set_alpha(1.0)
-
-    # Fix pesky white lines between levels + misalignment with border due
-    # to rasterized blocks
-    if cb.solids:
-        cb.solids.set_linewidth(0.2) # something small
-        cb.solids.set_edgecolor('face')
-        cb.solids.set_rasterized(False)
-    axis.set_ticks_position(ticklocation)
-    return cb
 

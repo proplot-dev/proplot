@@ -160,8 +160,8 @@ def units(value, error=True):
     from matplotlib import rcParams
     _unit_dict = {
         'in':  1.0, # already in inches
-        'ft':  12.0,
         'm':   39.37,
+        'ft':  12.0,
         'cm':  0.3937,
         'mm':  0.03937,
         'pt':  1/72.0,
@@ -176,7 +176,7 @@ def units(value, error=True):
         }
     if not isinstance(value, str):
         return value # assume int/float is in inches
-    regex = re.match('^(.*)(' + '|'.join(_unit_dict.keys()) + ')$', value)
+    regex = re.match('^([0-9.]*)(' + '|'.join(_unit_dict.keys()) + ')$', value)
     if not regex:
         if error:
             raise ValueError(f'Invalid size spec {value}.')
