@@ -3,7 +3,7 @@ Utilities
 
 .. automodsumm:: proplot.utils
    :toctree: api
-   :skip: ic
+   :skip: ic, rcParams, Number
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

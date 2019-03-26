@@ -136,22 +136,24 @@ def units(value):
         If string, we look for the format ``'123.456unit'``, where the
         number is the value and ``'unit'`` is one of the following:
 
-        ==============  ===================================================
+        ==============  ===================================================================
         Key             Description
-        ==============  ===================================================
-        ``in``          Inches
+        ==============  ===================================================================
+        ``m``           Meters
         ``cm``          Centimeters
         ``mm``          Millimeters
-        ``pt``          Points, i.e. 1/72 inches
-        ``px``, ``pp``  Pixels, assuming dpi of ``rc['figure.dpi']``
-        ``em``          Em-square
-        ``ex``          Ex-square
-        ``lh``          Line height, or 1.2 em-squares
-        ``lem``         Em-square for title-sized text
-        ``lex``         Ex-square for title-sized text
-        ``llh``         Line height, or 1.2 em-squares for title-sized text
-        ==============  ===================================================
-
+        ``ft``          Feet
+        ``in``          Inches
+        ``pt``          Points (1/72 inches)
+        ``px``          Pixels on screen, uses dpi of ``rc['figure.dpi']``
+        ``pp``          Pixels once printed, uses dpi of ``rc['savefig.dpi']``
+        ``em``          Em-square for font size ``rc['font.size']``
+        ``ex``          Ex-square for font size ``rc['font.size']``
+        ``lh``          Line height (1.2 em-squares) for font size ``rc['font.size']``
+        ``EM``          Em-square for font size ``rc['axes.titlesize']``
+        ``EX``          Ex-square for font size ``rc['axes.titlesize']``
+        ``LH``          Line height (1.2 em-squares) for font size ``rc['axes.titlesize']``
+        ==============  ===================================================================
     """
     # If number, units are inches by default
     if value is None or isinstance(value, Number):

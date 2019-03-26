@@ -124,11 +124,11 @@ edges_methods = (
 axes, by `wrapper_cartopy_gridfix` and `wrapper_basemap_gridfix`)."""
 
 # Whether to wrap plot functions with cycle features or cmap features
-line_methods = (
+simple_methods = (
     'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
     )
-"""List of methods wrapped by `wrapper_basemap_linefix` and
-`wrapper_cartopy_linefix` for map projection axes."""
+"""List of methods wrapped by `wrapper_basemap_simplefix` and
+`wrapper_cartopy_simplefix` for map projection axes."""
 cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
@@ -323,7 +323,7 @@ def _wrapper_m_norecurse(self, func):
         return result
     return wrapper
 
-def wrapper_cartopy_linefix(self, func, *args, transform=PlateCarree, **kwargs):
+def wrapper_cartopy_simplefix(self, func, *args, transform=PlateCarree, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
     and similar for `CartopyAxes`.
@@ -343,7 +343,7 @@ def wrapper_cartopy_linefix(self, func, *args, transform=PlateCarree, **kwargs):
     self.format()
     return result
 
-def wrapper_basemap_linefix(self, func, *args, **kwargs):
+def wrapper_basemap_simplefix(self, func, *args, **kwargs):
     """
     Wraps `~mpl_toolkits.basemap.Basemap.plot`,
     `~mpl_toolkits.basemap.Basemap.scatter`, and similar for
@@ -1496,9 +1496,9 @@ def _self_wrapper_factory(driver):
 _wrapper_check_centers   = _wrapper_factory(wrapper_check_centers)
 _wrapper_check_edges     = _wrapper_factory(wrapper_check_edges)
 _wrapper_basemap_gridfix = _self_wrapper_factory(wrapper_basemap_gridfix)
-_wrapper_basemap_linefix = _self_wrapper_factory(wrapper_basemap_linefix)
+_wrapper_basemap_simplefix = _self_wrapper_factory(wrapper_basemap_simplefix)
 _wrapper_cartopy_gridfix = _self_wrapper_factory(wrapper_cartopy_gridfix)
-_wrapper_cartopy_linefix = _self_wrapper_factory(wrapper_cartopy_linefix)
+_wrapper_cartopy_simplefix = _self_wrapper_factory(wrapper_cartopy_simplefix)
 _wrapper_cmap    = _self_wrapper_factory(wrapper_cmap)
 _wrapper_cycle   = _self_wrapper_factory(wrapper_cycle)
 _wrapper_plot    = _self_wrapper_factory(wrapper_plot)
@@ -2475,14 +2475,11 @@ class XYAxes(BaseAxes):
             The *x* and *y* axis formatter settings. Passed to
             `~proplot.axistools.Formatter`.
 
-        Todo
+        Note
         ----
-        Add options for datetime handling. Note the possible date axis handles
-        are `pandas.TimeStamp`, `numpy.datetime64`, and `pandas.DateTimeIndex`.
-        We can fix with `~matplotlib.figure.Figure.autofmt_xdate` or manually
-        set the options. The problem is there is no
-        `~matplotlib.figure.Figure.autofmt_ydate`, so really should
-        implement custom version of this.
+        If you plot something with a `numpy.arrays.datetime`, `pandas.Timestamp`,
+        or `pandas.DatetimeIndex` vector as the *x* or *y* coordinate, the
+        axis ticks and tick labels will be formatted as dates by default.
 
         See also
         --------
@@ -2838,7 +2835,7 @@ class XYAxes(BaseAxes):
 
     def altx(self, *args, **kwargs):
         """
-        Alias (and more intuitive function name) for `BaseAxes.twiny`.
+        Alias (and more intuitive function name) for `~XYAxes.twiny`.
         The matplotlib ``twiny`` function actually generates two **x**-axes
         with a shared ("twin") **y**-axis.
         """
@@ -2846,7 +2843,7 @@ class XYAxes(BaseAxes):
 
     def alty(self, *args, **kwargs):
         """
-        Alias (and more intuitive function name) for `BaseAxes.twinx`.
+        Alias (and more intuitive function name) for `~XYAxes.twinx`.
         The matplotlib ``twinx`` function actually generates two **y**-axes
         with a shared ("twin") **x**-axis.
         """
@@ -3358,7 +3355,7 @@ class CartopyAxes(MapAxes, GeoAxes):
 
         See also
         --------
-        `~proplot.proj`, `wrapper_cartopy_gridfix`, `wrapper_cartopy_linefix`,
+        `~proplot.proj`, `wrapper_cartopy_gridfix`, `wrapper_cartopy_simplefix`,
         `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
         """
         # Dependencies
@@ -3398,8 +3395,8 @@ class CartopyAxes(MapAxes, GeoAxes):
         """
         Wraps the following `~matplotlib.axes.Axes` methods:
 
-        * The `line_methods` methods are wrapped by
-          `wrapper_cartopy_linefix`. This simply makes
+        * The `simple_methods` methods are wrapped by
+          `wrapper_cartopy_simplefix`. This simply makes
           ``transform=crs.PlateCarree()`` the default behavior.
         * The `centers_methods` methods are wrapped by
           `wrapper_check_centers`. This automatically calculates coordinate
@@ -3414,8 +3411,8 @@ class CartopyAxes(MapAxes, GeoAxes):
           optionally ensure global data coverage.
         """
         obj = super().__getattribute__(attr, *args)
-        if attr in line_methods:
-            obj = _wrapper_cartopy_linefix(self, obj)
+        if attr in simple_methods:
+            obj = _wrapper_cartopy_simplefix(self, obj)
         elif attr in edges_methods or attr in centers_methods:
             obj = _wrapper_cartopy_gridfix(self, obj)
             if attr in edges_methods:
@@ -3614,7 +3611,7 @@ class BasemapAxes(MapAxes):
 
         See also
         --------
-        `~proplot.proj`, `wrapper_basemap_gridfix`, `wrapper_basemap_linefix`,
+        `~proplot.proj`, `wrapper_basemap_gridfix`, `wrapper_basemap_simplefix`,
         `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
         """
         # Some notes
@@ -3649,8 +3646,8 @@ class BasemapAxes(MapAxes):
         """
         Wraps the following `~matplotlib.axes.Axes` methods:
 
-        * The `line_methods` methods are wrapped by
-          `wrapper_basemap_linefix`. This simply makes
+        * The `simple_methods` methods are wrapped by
+          `wrapper_basemap_simplefix`. This simply makes
           ``latlon=True`` the default behavior.
         * The `centers_methods` methods are wrapped by
           `wrapper_check_centers`. This automatically calculates coordinate
@@ -3670,12 +3667,12 @@ class BasemapAxes(MapAxes):
         calling the axes methods.
         """
         obj = super().__getattribute__(attr, *args)
-        if attr in line_methods or attr in edges_methods or attr in centers_methods:
+        if attr in simple_methods or attr in edges_methods or attr in centers_methods:
             obj = _wrapper_m_call(self, obj) # this must be the *last* step!
-            if attr in line_methods:
+            if attr in simple_methods:
                 if attr[:3] != 'tri':
                     obj = _wrapper_cycle(self, obj)
-                obj = _wrapper_basemap_linefix(self, obj)
+                obj = _wrapper_basemap_simplefix(self, obj)
             elif attr in edges_methods or attr in centers_methods:
                 obj = _wrapper_cmap(self, obj)
                 obj = _wrapper_basemap_gridfix(self, obj)
