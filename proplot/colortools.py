@@ -1426,7 +1426,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, N=None, name=None, shift=None, **kwargs):
+def Cycle(*args, samples=None, shift=None, name=None, **kwargs):
     """
     Convenience function that builds lists of colors from colormaps or returns
     lists of colors from existing registered cycles.
@@ -1440,20 +1440,20 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
     ----------
     *args
         Passed to `Colormap`. If ``args[-1]`` is a float or list of float,
-        it is used as the `N` argument. This allows the user to declare new
+        it is used as the `samples` argument. This allows the user to declare new
         color cycles with, for example, ``proplot.rc.cycle = ('blues',
         'reds', 20)``.
-    N : float or list of float, optional
+    samples : float or list of float, optional
         For a `~matplotlib.colors.ListedColormap`, the maximum number of colors
         to select from the list. For a `~matplotlib.colors.LinearSegmentedColormap`,
         either a list of sample coordinates used to draw colors from the map
         or the integer number of colors to draw. If the latter, the sample
-        coordinates are ``np.linspace(0, 1, N)``.
-    name : None or str, optional
-        Name of the resulting color cycler. Default name is ``'no_name'``.
+        coordinates are ``np.linspace(0, 1, samples)``.
     shift : int, optional
         Optionally **rotate** the colors by `shift` places. For example,
         ``shift=2`` rotates the cycle to the right by 2 places.
+    name : None or str, optional
+        Name of the resulting color cycler. Default name is ``'no_name'``.
 
     Other parameters
     ----------------
@@ -1466,7 +1466,7 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
     name = name or 'no_name'
     if isinstance(args[-1], Number) or (np.iterable(args[-1]) and \
             all(isinstance(item,Number) for item in args[-1])):
-        args, N = args[:-1], args[-1]
+        args, samples = args[:-1], args[-1]
     # 2) User input a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
     elif len(args)>1:
@@ -1475,15 +1475,15 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
     # Get list of colors, and construct and register ListedColormap
     cmap = Colormap(*args, **kwargs) # the cmap object itself
     if isinstance(cmap, mcolors.ListedColormap):
-        cmap.colors = cmap.colors[:N] # if N is None, does nothing
+        cmap.colors = cmap.colors[:samples] # if samples is None, does nothing
     else:
-        N = N or 10
-        if isinstance(N, Number):
-            samples = np.linspace(0, 1, N) # from edge to edge
-        elif np.iterable(N) and not isinstance(N, (str, dict)):
-            samples = np.array(N)
+        samples = _default(samples, 10)
+        if isinstance(samples, Number):
+            samples = np.linspace(0, 1, samples) # from edge to edge
+        elif np.iterable(samples) and all(isinstance(item,Number) for item in samples):
+            samples = np.array(samples)
         else:
-            raise ValueError(f'Invalid samples "{N}".')
+            raise ValueError(f'Invalid samples "{samples}".')
         cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
     # Make sure have color tuples, not mutable lists
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
