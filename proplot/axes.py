@@ -2791,7 +2791,7 @@ class XYAxes(BaseAxes):
 
     def dualy(self, offset=0, scale=1, yscale='linear', **kwargs):
         """
-        Makes a secondary *y* axis for denoting equivalent *y*
+        Makes a secondary *y*-axis for denoting equivalent *y*
         coordinates in **alternate units**. Returns nothing.
 
         Parameters
@@ -2848,9 +2848,9 @@ class XYAxes(BaseAxes):
         return self.twinx(*args, **kwargs)
 
     def twinx(self):
-        """Makes a second *y* axis extending from a shared ("twin") *x* axis.
-        Intelligently moves around tick and axis labels, handles axis sharing."""
-        # Create second y-axis extending from shared ("twin") x-axis
+        """Mimics `~matplotlib.axes.Axes.twinx` and intelligently handles
+        axis ticks, gridlines, axis tick labels, axis labels, and axis sharing.
+        Returns an `XYAxes` instance."""
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format method.
         # Instead, use hidden method _make_twin_axes.
@@ -2879,9 +2879,9 @@ class XYAxes(BaseAxes):
         return ax
 
     def twiny(self):
-        """Makes a second *x* axis extending from a shared ("twin") *y* axis.
-        Intelligently moves around tick and axis labels, handles axis sharing."""
-        # Create second x-axis extending from shared ("twin") y-axis
+        """Mimics `~matplotlib.axes.Axes.twiny` and intelligently handles
+        axis ticks, gridlines, axis tick labels, axis labels, and axis sharing.
+        Returns an `XYAxes` instance."""
         # Note: Cannot wrap twiny() because we want to use our own XYAxes,
         # not the matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
