@@ -1446,9 +1446,9 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
     N : float or list of float, optional
         For a `~matplotlib.colors.ListedColormap`, the maximum number of colors
         to select from the list. For a `~matplotlib.colors.LinearSegmentedColormap`,
-        the number of colors to draw from the map or a list of sample coordinates
-        used to draw colors. If the former, the sample indices are constructed
-        with ``np.linspace(0, 1, N)``.
+        either a list of sample coordinates used to draw colors from the map
+        or the integer number of colors to draw. If the latter, the sample
+        coordinates are ``np.linspace(0, 1, N)``.
     name : None or str, optional
         Name of the resulting color cycler. Default name is ``'no_name'``.
     shift : int, optional
@@ -1465,7 +1465,7 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
     # to get samples from a LinearSegmentedColormap draw colors.
     name = name or 'no_name'
     if isinstance(args[-1], Number) or (np.iterable(args[-1]) and \
-            not isinstance(args[-1], (str, dict))):
+            all(isinstance(item,Number) for item in args[-1])):
         args, N = args[:-1], args[-1]
     # 2) User input a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
@@ -1474,7 +1474,9 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
 
     # Get list of colors, and construct and register ListedColormap
     cmap = Colormap(*args, **kwargs) # the cmap object itself
-    if isinstance(cmap, mcolors.LinearSegmentedColormap): # or subclass
+    if isinstance(cmap, mcolors.ListedColormap):
+        cmap.colors = cmap.colors[:N] # if N is None, does nothing
+    else:
         N = N or 10
         if isinstance(N, Number):
             samples = np.linspace(0, 1, N) # from edge to edge
@@ -1483,7 +1485,6 @@ def Cycle(*args, N=None, name=None, shift=None, **kwargs):
         else:
             raise ValueError(f'Invalid samples "{N}".')
         cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
-        N = None
     # Make sure have color tuples, not mutable lists
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
 
