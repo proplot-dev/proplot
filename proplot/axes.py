@@ -726,7 +726,7 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
             result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
     return result
 
-def wrapper_cycle(self, func, *args, cycle=None, cmap_kw={}, cycle_kw={}, **kwargs):
+def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
     """
     Wraps methods that use the color cycler for default line and patch
     colors, like `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
@@ -737,10 +737,6 @@ def wrapper_cycle(self, func, *args, cycle=None, cmap_kw={}, cycle_kw={}, **kwar
     cycle : None or cycle spec, optional
         The cycle specifer, passed to the `~proplot.colortools.Cycle`
         constructor.
-    cmap_kw : dict-like, optional
-        Passed to `~proplot.colortools.Colormap`, and *bypasses*
-        `~proplot.colortools.Cycle` keyword args of the same name like
-        `left`, `right`, and `shift`.
     cycle_kw : dict-like, optional
         Passed to `~proplot.colortools.Cycle`.
 
@@ -770,7 +766,7 @@ def wrapper_cycle(self, func, *args, cycle=None, cmap_kw={}, cycle_kw={}, **kwar
         # Get the new group of colors
         if not np.iterable(cycle) or isinstance(cycle, str):
             cycle = cycle,
-        cycle = colortools.Cycle(*cycle, cmap_kw=cmap_kw, **cycle_kw)
+        cycle = colortools.Cycle(*cycle, **cycle_kw)
         # Compare to the original group of colors, and only reset the
         # cycle if this group of colors is new
         # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length,

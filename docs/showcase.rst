@@ -1875,13 +1875,11 @@ Also note that colormaps and color cycles are totally interchangeable!
 You can use a colormap as a color cycler, and (though this isn’t
 recommended) vice versa.
 
-It is common to want colors from a sequential colormap *excluding* the
-brightest, near-white colors. There are two ways to do this: by passing
-``left=N`` to `~proplot.colors.Cycle`, which skips the first ``N``
-colors in the cycler (i.e. the brightest colors), or by passing
-``cmap_kw={'left':x}`` to `~proplot.colors.Cycle`, which cuts out the
-leftmost ``x`` proportion of the smooth colormap before drawing colors
-from said map. Again, see `~proplot.colors.Cycle` for details.
+Note it is common to want colors from a sequential colormap *excluding*
+the brightest, near-white colors. This can be done by passing ``left=x``
+to `~proplot.colors.Cycle`, which cuts out the leftmost ``x``
+proportion of the smooth colormap before drawing colors from said map.
+See `~proplot.colors.Colormap` for details.
 
 .. code:: ipython3
 
@@ -1890,7 +1888,7 @@ from said map. Again, see `~proplot.colors.Cycle` for details.
     f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=3, aspect=1.5)
     m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
     f.bottompanel[0].colorbar(m, label='clabel', formatter='%.1f')
-    lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 7), cycle_kw={'left':2}, lw=5)
+    lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5), cycle_kw={'left':0.3}, lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap')
     axs[1].format(title='Colormap as cycler, with "colorbar legend"')

@@ -1364,28 +1364,27 @@ def Colormap(*args, name=None, cyclic=None, N=None,
     if len(imaps)>1:
         cmap = _merge_cmaps(*imaps, name=name, ratios=ratios, N=N_)
 
-    # Transform colormap
-    if not np.iterable(reverse) and reverse:
-        cmap = cmap.reversed()
+    # Cut out either edge
     left = None if np.iterable(left) else left
     right = None if np.iterable(right) else right
-    # Cut out either edge
     if not cut: # non-zero and not None
-        cmap = _clip_cmap(cmap, left, right, N=N)
+        cmap = _clip_cmap(cmap, left, right, name=name, N=N)
     # Cut out middle colors of a diverging map
     else:
         cright, cleft = 0.5 - cut/2, 0.5 + cut/2
         lcmap = _clip_cmap(cmap, left, cright)
         rcmap = _clip_cmap(cmap, cleft, right)
         cmap = _merge_cmaps(lcmap, rcmap, name=name, N=N_)
-    # Cyclically shift
+    # Cyclic colormap settings
     if shift: # i.e. is non-zero
-        cmap = _shift_cmap(cmap, shift)
-    # Add or overwrite property
+        cmap = _shift_cmap(cmap, shift, name=name)
     if cyclic is not None:
         cmap._cyclic = cyclic
     elif not hasattr(cmap, '_cyclic'):
         cmap._cyclic = False
+    # Optionally reverse
+    if not np.iterable(reverse) and reverse:
+        cmap = cmap.reversed()
     # Initialize (the _resample methods generate new colormaps,
     # so current one is uninitializied)
     if not cmap._isinit:
@@ -1427,9 +1426,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, N=None, name=None,
-        shift=None, left=None, right=None,
-        cmap_kw={}, **kwargs):
+def Cycle(*args, N=None, name=None, shift=None, **kwargs):
     """
     Convenience function that builds lists of colors from colormaps or returns
     lists of colors from existing registered cycles.
@@ -1457,14 +1454,10 @@ def Cycle(*args, N=None, name=None,
     shift : int, optional
         Optionally **rotate** the colors by `shift` places. For example,
         ``shift=2`` rotates the cycle to the right by 2 places.
-    left, right : int, optional
-        Optionally **delete** colors by slicing the list. For example,
-        ``left=2`` deletes the leftmost 2 colors; ``right=4`` retains only
-        the first 4 colors.
 
     Other parameters
     ----------------
-    cmap_kw, **kwargs
+    **kwargs
         Passed to `Colormap`.
     """
     # Flexible input options
@@ -1480,7 +1473,7 @@ def Cycle(*args, N=None, name=None,
         args = [args] # presumably send a list of colors
 
     # Get list of colors, and construct and register ListedColormap
-    cmap = Colormap(*args, **cmap_kw, **kwargs) # the cmap object itself
+    cmap = Colormap(*args, **kwargs) # the cmap object itself
     if isinstance(cmap, mcolors.LinearSegmentedColormap): # or subclass
         N = N or 10
         if isinstance(N, Number):
@@ -1494,11 +1487,9 @@ def Cycle(*args, N=None, name=None,
     # Make sure have color tuples, not mutable lists
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
 
-    # Modify the color cycle with special methods
-    cmap = _clip_cmap(cmap, left, right, N=N)
-    if shift: # i.e. is non-zero
-        cmap = _shift_cmap(cmap, shift)
     # Register the colormap and return a list of colors
+    if shift: # i.e. is non-zero
+        cmap = _shift_cmap(cmap, shift, name=name)
     mcm.cmap_d[name] = cmap
     return CycleList(cmap.colors, name)
 
