@@ -130,7 +130,7 @@ def units(value):
 
     Parameters
     ----------
-    value : float or str
+    value : float or str or list thereof
         A size "unit". If numeric, assumed unit is inches.
 
         If string, we look for the format ``'123.456unit'``, where the
@@ -154,11 +154,13 @@ def units(value):
         ``EX``          Ex-square for font size ``rc['axes.titlesize']``
         ``LH``          Line height (1.2 em-squares) for font size ``rc['axes.titlesize']``
         ==============  ===================================================================
+
+        Lists of size "units" are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
     """
-    # If number, units are inches by default
-    if value is None or isinstance(value, Number):
+    # Loop through arbitrary list, or return None if input was None (this
+    # is the exception).
+    if value is None:
         return value
-    # Otherwise loop through arbitrary list
     if not np.iterable(value) or isinstance(value, str):
         singleton = True
         values = (value,)

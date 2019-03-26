@@ -830,7 +830,7 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
     import numpy as np
     N = 50
     M = 40
-    colors = plot.colors('grays_r', M, x=(0.1, 0.8))
+    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
     for share in (0,1,2,3):
         f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
@@ -1851,12 +1851,8 @@ Changing the color cycle
 
 You can specify the color cycler by passing ``cycle`` to any plotting
 command, or by changing the global default cycle with
-``plot.rc.cycle = name``. Also note that colormaps and color cycles are
-totally interchangeable! You can use a colormap as a color cycler, and
-(though this isn’t recommended) vice versa.
-
-See `~proplot.colortools.Cycle` and `~proplot.axes.wrapper_cycle`
-for details.
+``plot.rc.cycle = name``. See `~proplot.colortools.Cycle` and
+`~proplot.axes.wrapper_cycle` for details.
 
 .. code:: ipython3
 
@@ -1875,6 +1871,18 @@ for details.
    :height: 356px
 
 
+Also note that colormaps and color cycles are totally interchangeable!
+You can use a colormap as a color cycler, and (though this isn’t
+recommended) vice versa.
+
+It is common to want colors from a sequential colormap *excluding* the
+brightest, near-white colors. There are two ways to do this: by passing
+``left=N`` to `~proplot.colors.Cycle`, which skips the first ``N``
+colors in the cycler (i.e. the brightest colors), or by passing
+``cmap_kw={'left':x}`` to `~proplot.colors.Cycle`, which cuts out the
+leftmost ``x`` proportion of the smooth colormap before drawing colors
+from said map. Again, see `~proplot.colors.Cycle` for details.
+
 .. code:: ipython3
 
     import proplot as plot
@@ -1882,7 +1890,7 @@ for details.
     f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=3, aspect=1.5)
     m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
     f.bottompanel[0].colorbar(m, label='clabel', formatter='%.1f')
-    lines = axs[1].plot(20*np.random.rand(10,10), cycle=('reds', 10), lw=5)
+    lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 7), cycle_kw={'left':2}, lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap')
     axs[1].format(title='Colormap as cycler, with "colorbar legend"')
@@ -1894,7 +1902,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_126_1.png
+.. image:: showcase/showcase_127_1.png
    :width: 634px
    :height: 318px
 
@@ -1933,7 +1941,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_129_0.png
+.. image:: showcase/showcase_130_0.png
    :width: 436px
    :height: 603px
 

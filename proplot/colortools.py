@@ -869,43 +869,39 @@ def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
                 warnings.warn(f'{message} "{name}" channel (>1).')
     return colors
 
-def _clip_cmap(cmap, left=None, right=None, N=None):
+def _clip_cmap(cmap, left=None, right=None, name=None, N=None):
     """Helper function that cleanly divides linear segmented colormaps and
     subsamples listed colormaps. Full documentation is in `Colormap`. Note
     `N` is an alias for `right` for `ListedColormap` maps."""
-    # Optionally clip edges or resample map.
-    if left is None and right is None and (N is None or isinstance(cmap, mcolors.LinearSegmentedColormap)):
+    # Bail out
+    if left is None and right is None and N is None:
         return cmap
-    # Listed colormaps, simply truncate colors in the list
+    # Simple process for listed colormap, just truncate the colors
+    name = name or 'no_name'
     if isinstance(cmap, mcolors.ListedColormap):
-        if N is not None:
-            slicer = slice(None, N)
-        else:
-            slicer = slice(left, right)
+        slice_ = slice(None, N) if N is not None else slice(left, right)
         try:
-            cmap = mcolors.ListedColormap(cmap.colors[slicer])
+            return mcolors.ListedColormap(cmap.colors[slice_])
         except Exception:
-            raise ValueError(f'Invalid indices {slicer} for listed colormap.')
-        return cmap
-    # Trickier procedure for segment data maps
-    # First get segmentdata and parse input
+            raise ValueError(f'Invalid indices {slice_} for listed colormap.')
+
+    # Trickier for segment data maps
+    # Initial stuff
     kwargs = {}
-    data = cmap._segmentdata
-    newdata = {}
     if left is None:
         left = 0
     if right is None:
         right = 1
     if hasattr(cmap, '_space'):
         kwargs['space'] = cmap._space
-    # Next resample the segmentdata arrays
-    dict_ = {key:value for key,value in data.items() if
-            key not in ('gamma1','gamma2')}
-    channels = {'saturation':'gamma1', 'luminance':'gamma2'}
+    # Resample the segmentdata arrays
+    data = {}
+    dict_ = {key:value for key,value in cmap._segmentdata.items() if 'gamma' not in key}
+    gammas = {'saturation':'gamma1', 'luminance':'gamma2'}
     for key,xyy in dict_.items():
         # Get coordinates
-        xyy     = np.array(xyy)
-        x       = xyy[:,0]
+        xyy = np.array(xyy)
+        x   = xyy[:,0]
         xleft,  = np.where(x>left)
         xright, = np.where(x<right)
         if len(xleft)==0:
@@ -916,32 +912,40 @@ def _clip_cmap(cmap, left=None, right=None, N=None):
         # l is the first point where x>0 or x>left, should be at least 1
         # r is the last point where r<1 or r<right
         l, r = xleft[0], xright[-1]
-        newxyy = xyy[l:r+1,:].copy()
+        ixyy = xyy[l:r+1,:].copy()
         xl = xyy[l-1,1:] + (left - x[l-1])*(xyy[l,1:] - xyy[l-1,1:])/(x[l] - x[l-1])
-        newxyy = np.concatenate(([[left, *xl]], newxyy), axis=0)
+        ixyy = np.concatenate(([[left, *xl]], ixyy), axis=0)
         xr = xyy[r,1:] + (right - x[r])*(xyy[r+1,1:] - xyy[r,1:])/(x[r+1] - x[r])
-        newxyy = np.concatenate((newxyy, [[right, *xr]]), axis=0)
-        newxyy[:,0] = (newxyy[:,0] - left)/(right - left)
-        newdata[key] = newxyy
+        ixyy = np.concatenate((ixyy, [[right, *xr]]), axis=0)
+        ixyy[:,0] = (ixyy[:,0] - left)/(right - left)
+        data[key] = ixyy
         # Retain the corresponding 'gamma' *segments*
         # Need more testing but so far so good
-        if key in channels:
-            name = channels[key]
-            gamma = data[name]
+        if key in gammas:
+            gamma = cmap._segmentdata[gammas[key]]
             if np.iterable(gamma):
                 gamma = gamma[l-1:r+1]
-            newdata[name] = gamma
+            data[gammas[key]] = gamma
     # And finally rebuild map
-    cmap = type(cmap)(cmap.name, newdata, **kwargs)
+    cmap = type(cmap)(name, data, **kwargs)
     return cmap
 
-def _shift_cmap(cmap, shift=0, name=None):
-    """Shift a cyclic colormap by `deg` degrees."""
-    # Checks
+def _shift_cmap(cmap, shift=None, name=None):
+    """Shift a cyclic colormap by `shift` degrees out of 360 degrees."""
+    # Bail out
+    if not shift:
+        return cmap
+    # Simple process for listed colormap, just rotate the colors
     name = name or 'no_name'
-    if not isinstance(cmap, mcolors.LinearSegmentedColormap) or not getattr(cmap, '_cyclic', None):
-        raise ValueError(f'Invalid colormap {cmap} for shifting.')
-    # Shift data
+    if isinstance(cmap, mcolors.ListedColormap):
+        shift = shift % len(cmap.colors)
+        colors = [*cmap.colors] # ensure list
+        colors = colors[shift:] + colors[:shift]
+        return mcolors.ListedColormap(colors, name=name, N=len(colors))
+
+    # Trickier for smooth colormaps, must shift coordinates
+    # TODO: This won't work for lo-res colormaps or percpetually
+    # uniform maps with only a couple coordiante transitions, right?
     data = cmap._segmentdata.copy()
     for key,orig in cmap._segmentdata.items():
         # Drop an end color
@@ -951,8 +955,6 @@ def _shift_cmap(cmap, shift=0, name=None):
         array[:,0] -= shift/360
         array[:,0] %= 1
         # Add end color back in
-        # TODO: This won't work for lo-res colormaps or percpetually
-        # uniform maps with only a couple coordiante transitions, right?
         array = array[array[:,0].argsort(),:]
         array = np.concatenate((array[-1:,:], array), axis=0)
         array[:1,0] = array[1:2,0] - np.diff(array[1:3,0])
@@ -965,62 +967,50 @@ def _shift_cmap(cmap, shift=0, name=None):
     cmap._cyclic = True
     return cmap
 
-def _merge_cmaps(*args, ratios=1, name='merged', N=512, **kwargs):
-    """Merges arbitrary colormaps. This is used when you pass multiple `args`
+def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
+    """Merges arbitrary colormaps. This is used when you pass multiple `imaps`
     to the `Colormap` function. Full documentation is in `Colormap`."""
-    # Initial
-    if len(args)<=1:
-        raise ValueError('Need two or more input cmaps.')
-    ratios = ratios or 1
-    if isinstance(ratios, Number):
-        ratios = [1]*len(args)
-    imaps = [Colormap(cmap, N=None, **kwargs) for cmap in args] # set N=None to disable resamping
-
+    # Bail out
+    if len(imaps)==1:
+        return imaps[0]
+    types = {type(cmap) for cmap in imaps}
+    if len(types)!=1:
+        raise ValueError(f'Mixed colormap types {types}. Maps must all be LinearSegmentedColormap or PerceptuallyUniformColormap.')
+    type_ = types.pop()
     # Simple process for listed colormap, just combine the colors
+    name = name or 'no_name'
     if all(isinstance(cmap, mcolors.ListedColormap) for cmap in imaps):
-        if not np.all(ratios==1):
-            raise ValueError(f'Cannot assign different ratios when mering ListedColormaps.')
         colors = [color for cmap in imaps for color in cmap.colors]
         return mcolors.ListedColormap(colors, name=name, N=len(colors))
-    elif not all(isinstance(cmap,mcolors.LinearSegmentedColormap) for cmap in imaps):
-        raise ValueError('All colormaps must be of the same type (Listed or LinearSegmented).')
 
-    # More complex for continuous maps
-    # Get the segmentdata, and figure out x-coordinates for merging
-    keys = {key for cmap in imaps for key in cmap._segmentdata.keys()
-            if key not in ('gamma1','gamma2')}
+    # Tricker for smooth maps
+    # Initial stuff
+    kwargs = {}
+    segmentdata = {}
+    ratios = ratios or 1
+    if isinstance(ratios, Number):
+        ratios = [1]*len(imaps)
     ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
     x0 = np.concatenate([[0], np.cumsum(ratios)])
     xw = x0[1:] - x0[:-1] # weights for averages
-    # Mixed types
-    types = {type(cmap) for cmap in imaps}
-    if len(types)>1:
-        raise ValueError(f'Mixed colormap types {types}. Maps must all be LinearSegmentedColormap or PerceptuallyUniformColormap.')
-    type_ = types.pop()
-
-    # Special consideration for PerceptuallyUniformColormaps
-    kwargs = {}
-    segmentdata = {}
+    # PerceptuallyUniformColormaps checks
     if type_ is PerceptuallyUniformColormap:
-        # Combine gamma values, where gamma1 corresponds to saturation and
-        # gamma2 to luminance. Account for scalar gamma or gamma list options.
-        channels = {0:'saturation', 1:'luminance'}
+        spaces = {cmap.space for cmap in imaps}
+        if len(spaces)>1:
+            raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
+        kwargs['space'] = spaces.pop()
+        gammas = {0:'saturation', 1:'luminance'}
         for i,key in enumerate(('gamma1', 'gamma2')):
             if key not in segmentdata:
                 segmentdata[key] = []
             for cmap in imaps:
                 gamma = cmap._segmentdata[key]
                 if not np.iterable(gamma):
-                    gamma = [gamma]*(len(cmap._segmentdata[channels[i]])-1) # length is *number* of rows in segmentdata
+                    gamma = [gamma]*(len(cmap._segmentdata[gammas[i]])-1) # length is *number* of rows in segmentdata
                 segmentdata[key].extend([*gamma])
-        # Get the colorspace
-        spaces = {cmap.space for cmap in imaps}
-        if len(spaces)>1:
-            raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
-        kwargs['space'] = spaces.pop()
-    # Combine the segmentdata, and use the y1/y2 slots at merge points
-    # so the transition is immediate (i.e. the colormap will never try to
-    # interpolate between the end colors of different colormaps)
+    # Combine the segmentdata, and use the y1/y2 slots at merge points so
+    # we never interpolate between end colors of different colormaps
+    keys = {key for cmap in imaps for key in cmap._segmentdata.keys() if 'gamma' not in key}
     for key in keys:
         # Combine xyy data
         datas = []
@@ -1042,7 +1032,7 @@ def _merge_cmaps(*args, ratios=1, name='merged', N=512, **kwargs):
             data = np.concatenate(datas, axis=0)
             data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum exactly 1 (avoid floating point errors)
         segmentdata[key] = data
-    return type(imaps[0])(name, segmentdata, N=N, **kwargs)
+    return type_(name, segmentdata, N=N, **kwargs)
 
 def _make_segmentdata_array(values, ratios=None, reverse=False, **kwargs):
     """Constructs a list of linear segments for an individual channel.
@@ -1193,8 +1183,8 @@ def colors(*args, **kwargs):
     """Alias for `Cycle`."""
     return Cycle(*args, **kwargs)
 
-def Colormap(*args, name=None, cyclic=False, N=None,
-        cut=None, shift=0, left=None, right=None, x=None, reverse=False,
+def Colormap(*args, name=None, cyclic=None, N=None,
+        shift=None, cut=None, left=None, right=None, reverse=False,
         ratios=1, gamma=None, gamma1=None, gamma2=None,
         save=False,
         **kwargs):
@@ -1239,34 +1229,30 @@ def Colormap(*args, name=None, cyclic=False, N=None,
     N : None or int, optional
         Number of colors to generate in the hidden lookup table ``_lut``.
         By default, a relatively high resolution of 256 is chosen (see notes).
-    cut : None or float, optional
-        Optionally cut out colors in the **center** of the colormap. This is
-        extremely useful for diverging colormaps, in case you want to have a
-        sharper cutoff between negative and positive values. For example,
-        ``cut=0.1`` cuts out the middle 10% of the colormap.
-    shift : float, optional
+    shift : None, or float or list of float, optional
         For cyclic colormaps, optionally **rotate** the colors by `shift`
-        degrees out of 360 degrees.
+        degrees out of 360 degrees. For example, ``shift=180`` moves the
+        edge colors to the center of the colormap.
+    cut : None or float, optional
+        For diverging colormaps, optionally cut out colors in the **center**
+        of the colormap. This is useful if you want to have a sharper cutoff
+        between "negative" and "positive" values. For example,
+        ``cut=0.1`` cuts out the middle 10% of the colormap.
     left, right : None or float or list of float, optional
-        Optionally *delete* colors on the left and right sides of the
-        colormap(s). For example, ``left=0.1`` deletes the leftmost
-        10% of the colormap; ``right=0.9`` deletes the rightmost 10%.
-
+        Optionally **delete** colors on the left and right sides of the
+        colormap(s). For example, ``left=0.1`` deletes the leftmost 10% of
+        the colormap; ``right=0.9`` deletes the rightmost 10%.
         If list, length must match ``len(args)``, and applies to *each*
         colormap in the list before they are merged. If float, applies
         to the *final* colormap. No difference if ``len(args)`` is 1.
-    x : None or (float, float), optional
-        List containing the keyword args `(left, right)`.
     reverse : bool or list of bool, optional
         Optionally reverse the colormap(s).
-
         If list, length must match ``len(args)``, and applies to *each*
         colormap in the list before they are merged. If bool, applies
         to the *final* colormap. No difference if ``len(args)`` is 1.
     ratios : list of float, optional
         Indicates the ratios used to *combine* the colormaps. Length must
         equal ``len(args)`` (ignored if ``len(args)`` is 1).
-
         For example, if `args` contains ``['blues', 'reds']`` and `ratios`
         is ``[2, 1]``, this generates a colormap with two-thirds blue
         colors on the left and one-third red colors in the right.
@@ -1274,9 +1260,6 @@ def Colormap(*args, name=None, cyclic=False, N=None,
         Gamma-scaling for the saturation, luminance, and both channels
         for perceptualy uniform colormaps. See the
         `PerceptuallyUniformColormap` documentation.
-
-        So far there is no way to apply this differently for each colormap
-        in `args`.
     save : bool, optional
         Whether to save the colormap in the folder ``~/.proplot``. The
         folder is created if it does not already exist.
@@ -1301,14 +1284,16 @@ def Colormap(*args, name=None, cyclic=False, N=None,
     ProPlot is discretized with `BinNorm` (which has a few extra, fine-tunable
     features compared to the native `~matplotlib.colors.BoundaryNorm`).
     """
-    # NOTE: See resampling method described in `this post
-    # <https://stackoverflow.com/q/48613920/4970632>`_. Makes
     # Initial stuff
+    # NOTE: See resampling method described in `this post
+    # <https://stackoverflow.com/q/48613920/4970632>`_
+    # NOTE: Documentation does not advertise that cut_cmap and shift_cmap
+    # tools work with listed colors; that is pretty weird usage, only will
+    # come up when trying to use color cycle as colormap. This behavior
+    # is only advertised in Cycle constructor.
     N_ = N or rcParams['image.lut']
     imaps = []
     name = name or 'no_name' # must have name, mcolors utilities expect this
-    if x is not None:
-        left, right = x
     if len(args)==0:
         args = [rcParams['image.cmap']] # use default
     for i,cmap in enumerate(args):
@@ -1317,7 +1302,9 @@ def Colormap(*args, name=None, cyclic=False, N=None,
             cmap = rcParams['image.cmap']
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
-        if isinstance(cmap, mcolors.LinearSegmentedColormap):
+        if isinstance(cmap, mcolors.ListedColormap):
+            pass
+        elif isinstance(cmap, mcolors.LinearSegmentedColormap):
             # Resample, allow overriding the gamma
             # Copy over this add-on attribute
             # NOTE: Calling resample means cmaps are un-initialized
@@ -1334,8 +1321,6 @@ def Colormap(*args, name=None, cyclic=False, N=None,
                     segmentdata['gamma2'] = gamma2
             elif gamma:
                 cmap._gamma = gamma
-        elif isinstance(cmap, mcolors.ListedColormap):
-            pass
         # Build colormap on-the-fly
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
@@ -1384,22 +1369,23 @@ def Colormap(*args, name=None, cyclic=False, N=None,
         cmap = cmap.reversed()
     left = None if np.iterable(left) else left
     right = None if np.iterable(right) else right
+    # Cut out either edge
+    if not cut: # non-zero and not None
+        cmap = _clip_cmap(cmap, left, right, N=N)
     # Cut out middle colors of a diverging map
-    if cut: # non-zero and not None
+    else:
         cright, cleft = 0.5 - cut/2, 0.5 + cut/2
         lcmap = _clip_cmap(cmap, left, cright)
         rcmap = _clip_cmap(cmap, cleft, right)
         cmap = _merge_cmaps(lcmap, rcmap, name=name, N=N_)
-    # Cut out either edge
-    else:
-        cmap = _clip_cmap(cmap, left, right, N=N)
     # Cyclically shift
     if shift: # i.e. is non-zero
         cmap = _shift_cmap(cmap, shift)
-    # Add property
-    # Only a couple builtin maps should already have this attribute, from register_cmaps
-    if not hasattr(cmap, '_cyclic'):
+    # Add or overwrite property
+    if cyclic is not None:
         cmap._cyclic = cyclic
+    elif not hasattr(cmap, '_cyclic'):
+        cmap._cyclic = False
     # Initialize (the _resample methods generate new colormaps,
     # so current one is uninitializied)
     if not cmap._isinit:
@@ -1441,7 +1427,9 @@ def Colormap(*args, name=None, cyclic=False, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
+def Cycle(*args, N=None, name=None,
+        shift=None, left=None, right=None,
+        cmap_kw={}, **kwargs):
     """
     Convenience function that builds lists of colors from colormaps or returns
     lists of colors from existing registered cycles.
@@ -1455,68 +1443,70 @@ def Cycle(*args, samples=10, vmin=0, vmax=1, **kwargs):
     ----------
     *args
         Passed to `Colormap`. If ``args[-1]`` is a float or list of float,
-        it is used as the `samples` argument.
-
-        This allows the user to declare new color cycles with, for example,
-        ``proplot.rc.cycle = ['blues', 'reds', 20]``
-    samples : float or list of float, optional
-        Last element of `args`; detected automatically if this element is
-        iterable or a number.
-
-        This implementation seems weird, but this allows the user to do
-        stuff like ``proplot.rc.cycle = ['blues', 'reds', 20]``
-        Required if `Colormap` returns a smooth
-        colormap (i.e. a `~matplotlib.colors.LinearSegmentedColormap` 
-        instance).
-    vmin, vmax : float, optional
-        The minimum and maximum data values, used to scale `samples`.
+        it is used as the `N` argument. This allows the user to declare new
+        color cycles with, for example, ``proplot.rc.cycle = ('blues',
+        'reds', 20)``.
+    N : float or list of float, optional
+        For a `~matplotlib.colors.ListedColormap`, the maximum number of colors
+        to select from the list. For a `~matplotlib.colors.LinearSegmentedColormap`,
+        the number of colors to draw from the map or a list of sample coordinates
+        used to draw colors. If the former, the sample indices are constructed
+        with ``np.linspace(0, 1, N)``.
+    name : None or str, optional
+        Name of the resulting color cycler. Default name is ``'no_name'``.
+    shift : int, optional
+        Optionally **rotate** the colors by `shift` places. For example,
+        ``shift=2`` rotates the cycle to the right by 2 places.
+    left, right : int, optional
+        Optionally **delete** colors by slicing the list. For example,
+        ``left=2`` deletes the leftmost 2 colors; ``right=4`` retains only
+        the first 4 colors.
 
     Other parameters
     ----------------
-    **kwargs
+    cmap_kw, **kwargs
         Passed to `Colormap`.
-
-    In the latter case, we will draw samples from that colormap by (default)
-    drawing from Use vmin/vmax to scale your samples.
     """
-    # Two modes:
-    # 1) User inputs some number of samples; 99% of time, use this
+    # Flexible input options
+    # 1) User input some number of samples; 99% of time, use this
     # to get samples from a LinearSegmentedColormap draw colors.
-    if isinstance(args[-1], Number) or \
-            (np.iterable(args[-1]) and not isinstance(args[-1], (str, dict))):
-        args, samples = args[:-1], args[-1]
-    # 2) User inputs a simple list; 99% of time, use this
+    name = name or 'no_name'
+    if isinstance(args[-1], Number) or (np.iterable(args[-1]) and \
+            not isinstance(args[-1], (str, dict))):
+        args, N = args[:-1], args[-1]
+    # 2) User input a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
     elif len(args)>1:
         args = [args] # presumably send a list of colors
-    cmap = Colormap(*args, **kwargs) # the cmap object itself
-    name = cmap.name
-    if isinstance(cmap, mcolors.ListedColormap):
-        # Just get the colors
-        colors = cmap.colors
-    elif isinstance(cmap, mcolors.LinearSegmentedColormap): # or subclass
-        # Employ ***more flexible*** version of get_cmap() method, which does this:
-        # LinearSegmentedColormap(self.name, self._segmentdata, lutsize)
-        if isinstance(samples, Number):
-            samples = np.linspace(0, 1, samples) # from edge to edge
-        elif np.iterable(samples):
-            samples = np.array(samples)
+
+    # Get list of colors, and construct and register ListedColormap
+    cmap = Colormap(*args, **cmap_kw, **kwargs) # the cmap object itself
+    if isinstance(cmap, mcolors.LinearSegmentedColormap): # or subclass
+        N = N or 10
+        if isinstance(N, Number):
+            samples = np.linspace(0, 1, N) # from edge to edge
+        elif np.iterable(N) and not isinstance(N, (str, dict)):
+            samples = np.array(N)
         else:
-            raise ValueError(f'Invalid samples "{samples}".')
-        colors = cmap((samples-vmin)/(vmax-vmin))
-    else:
-        raise ValueError(f'Colormap returned weird object type: {type(cmap)}.')
-    # Return
-    colors = [tuple(color) if not isinstance(color,str) else color for color in colors]
-    return CycleList(colors, name)
+            raise ValueError(f'Invalid samples "{N}".')
+        cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
+        N = None
+    # Make sure have color tuples, not mutable lists
+    cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
+
+    # Modify the color cycle with special methods
+    cmap = _clip_cmap(cmap, left, right, N=N)
+    if shift: # i.e. is non-zero
+        cmap = _shift_cmap(cmap, shift)
+    # Register the colormap and return a list of colors
+    mcm.cmap_d[name] = cmap
+    return CycleList(cmap.colors, name)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
-    """
-    Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
+    """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, we vary hue, saturation, and luminance in
     either the perceptually uniform HCL colorspace or the HSLuv or HPLuv
-    scalings of HCL.
-    """
+    scalings of HCL."""
     def __init__(self, name, segmentdata, space='hsl', mask=False,
         gamma=None, gamma1=None, gamma2=None, **kwargs):
         """
