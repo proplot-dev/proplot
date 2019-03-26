@@ -124,542 +124,6 @@ import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
 
 #------------------------------------------------------------------------------#
-# Tick scales
-#------------------------------------------------------------------------------#
-def Scale(scale, *args, **kwargs):
-    """
-    Returns a `~matplotlib.scale.ScaleBase` instance.
-
-    Parameters
-    ----------
-    scale : str or (str, *args)
-        If tuple, ``args`` are passed to the class
-        instantiator. Ignored unless the str is ``'cutoff'``,
-        ``'exp'``, ``'height'``, or ``'pressure'``.
-
-        If str, a dictionary lookup is performed. Options are as follows:
-
-        ==============  =======================================  =========================================================
-        Key             Class                                    Description
-        ==============  =======================================  =========================================================
-        ``'linear'``    `~matplotlib.scale.LinearScale`          Linear
-        ``'log'``       `~matplotlib.scale.LogScale`             Logarithmic
-        ``'symlog'``    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
-        ``'logit'``     `~matplotlib.scale.LogitScale`           Logistic
-        ``'cutoff'``    Result of `CutoffScaleFactory`           Linearly warps the axis scale in a variety of ways
-        ``'exp'``       Result of `ExpScaleFactory`              Scale with some exponential function
-        ``'pressure'``  Result of `ExpScaleFactory`              Scale height coords to be linear in pressure.
-        ``'height'``    Result of `ExpScaleFactory`              Scale pressure coords to be linear in height.
-        ``'sine'``      `SineLatitudeScale`                      Scale with sine function (in degrees)
-        ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
-        ``'inverse'``   `InverseScale`                           Scale with the inverse
-        ==============  =======================================  =========================================================
-
-    Other parameters
-    ----------------
-    **kwargs
-        Passed to the `~matplotlib.scale.ScaleBase` class on instantiation.
-    """
-    # Existing scales
-    args = []
-    if isinstance(scale, mscale.ScaleBase):
-        scale = scale.name
-    if np.iterable(scale) and not isinstance(scale, str):
-        scale, args = scale[0], [*scale[1:], *args]
-    if scale in scales:
-        return scale # already registered
-    # Build an on-the-fly scale
-    if scale=='cutoff':
-        scale = CutoffScaleFactory(*args, **kwargs)
-    elif scale in ('exp', 'height', 'pressure'): # note here args is non-zero
-        scale = ExpScaleFactory(*args, to_exp=(scale!='pressure'), **kwargs)
-    else:
-        raise ValueError(f'Unknown scale {scale}. Options are {", ".join(scales.keys())}.')
-    return scale
-
-def InvertedScaleFactory(scale, **kwargs):
-    """Returns name of newly registered *inverted* version of the
-    `~matplotlib.scale.ScaleBase` corresponding to the scale name."""
-    # Note I use private API here; no other way to get class directly
-    scale = Scale(scale, **kwargs) # get the class
-    name_ = f'{scale}_inverted' # name of inverted version
-    class Inverted(scales[scale]):
-        name = name_
-        def get_transform(self):
-            return super().get_transform().inverted() # that's all we need!
-    mscale.register_scale(Inverted)
-    return name_
-
-#------------------------------------------------------------------------------#
-# Exp axis
-# Why can't this just be a class that accepts args for changing
-# the scale params? Because then would need kwargs for every set_xscale
-# call.
-#------------------------------------------------------------------------------#
-def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
-    r"""
-    Returns an "exponential scale" that performs the transformation
-    :math:`Ae^{bx}`.
-
-    This is used when adding a pressure coordinate axis
-    for data that is plotted linearly w.r.t. height, or vice versa. Ignore
-    this if you're not an atmospheric scientist.
-
-    Parameters
-    ----------
-    expscale : float
-        The scale for the exponent, i.e. the :math:`b` in :math:`Ae^{bx}`.
-    mulscale : float
-        The coefficient, i.e. the :math:`A` in :math:`Ae^{bx}`.
-    to_exp : float
-        Whether the "forward" direction performs exponentiation, or
-        the inverse operation :math:`(\log(x) - \log(A))/b`.
-    name : None or str, optional
-        The scale name. Defaults to ``'exp_{expscale}_{mulscale}'``.
-    """
-    if name is None:
-        name = f'exp_{expscale:.1e}_{mulscale:.1e}'
-    name_ = name # must make a copy
-    class ExpScale(mscale.ScaleBase):
-        # Declare name
-        name = name_
-        def __init__(self, axis, minpos=1e-300, **kwargs):
-            # Initialize
-            super().__init__()
-            if to_exp:
-                transform = _ExpTransform(expscale, mulscale, minpos)
-            else:
-                transform = _InvertedExpTransform(expscale, mulscale, minpos)
-            self._transform = transform
-        def limit_range_for_scale(self, vmin, vmax, minpos):
-            # Do nothing
-            return vmin, vmax
-        def set_default_locators_and_formatters(self, axis):
-            # Apply log spacing by default
-            axis.set_smart_bounds(True) # unnecessary?
-            axis.set_major_formatter(Formatter('default'))
-            axis.set_minor_formatter(Formatter('null'))
-        def get_transform(self):
-            # Either sub into e(scale*z), the default, or invert
-            # the exponential
-            return self._transform
-
-    # Register and return
-    mscale.register_scale(ExpScale)
-    return name_
-
-class _ExpTransform(mtransforms.Transform):
-    """Exponential coordinate transform."""
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-    def __init__(self, expscale, mulscale, minpos):
-        super().__init__()
-        self.minpos = minpos
-        self._expscale = expscale
-        self._mulscale = mulscale
-    def transform(self, a):
-        return self._mulscale*np.power(np.e, self._expscale*np.array(a))
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _InvertedExpTransform(self._expscale, self._mulscale, self.minpos)
-
-class _InvertedExpTransform(mtransforms.Transform):
-    """Inverse exponential coordinate transform."""
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-    def __init__(self, expscale, mulscale, minpos):
-        super().__init__()
-        self.minpos = minpos
-        self._expscale = expscale
-        self._mulscale = mulscale
-    def transform(self, a):
-        aa = np.array(a).copy()
-        aa[aa<=self.minpos] = self.minpos # necessary
-        return (np.log(aa) - np.log(self._mulscale))/self._expscale # this one!
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _ExpTransform(self._expscale, self._mulscale, self.minpos)
-
-#------------------------------------------------------------------------------#
-# Cutoff axis
-#------------------------------------------------------------------------------#
-def CutoffScaleFactory(scale, lower, upper=None):
-    """
-    Constructs a scale with custom cutoffs.
-
-    If `upper` is ``None``, you have the following two possibilities:
-
-    1. If `scale` is >1, the axis is "faster" to the right
-       of `lower`.
-    2. If `scale` is <1, the axis is "slower" to the right
-       of `lower`.
-
-    If `upper` is not ``None``, you have the following three possibilities:
-
-    1. If `scale` is `numpy.inf`, this puts a cliff between `lower` and
-       `upper`. The axis cuts from `lower` to `upper` at a single point.
-    2. If `scale` is >1, the axis is accelerated between `lower` and `upper`.
-       So the axis is "slow" on the edges but "fast" in middle.
-    3. If `scale` is <1, the axis is deccelerated between `lower` and `upper`.
-       So the axis is "fast" on the edges but "slow" in middle.
-
-    Todo
-    ----
-    Create method for drawing those diagonal "cutoff" strokes with whitespace
-    between.  See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
-    multi-axis solution and for this class-based solution. Note the space
-    between 1-9 in Paul's answer is because actual cutoffs were 0.1 away
-    (and tick locs are 0.2 apart).
-    """
-    if scale<0:
-        raise ValueError('Scale must be a positive float.')
-    if upper is None:
-        if scale==np.inf:
-            raise ValueError('For infinite scale (i.e. discrete cutoff), need both lower and upper bounds.')
-    name = f'cutoff_{scale:.1e}_{lower:.1e}'
-    if upper is not None:
-        name = f'{name}_{upper:.1e}'
-    name_ = name # have to copy to different name
-
-    class CutoffScale(mscale.ScaleBase):
-        # Declare name
-        name = name_
-        def __init__(self, axis, **kwargs):
-            super().__init__()
-            self._transform = _CutoffTransform()
-        def get_transform(self):
-            return self._transform
-        def set_default_locators_and_formatters(self, axis):
-            axis.set_major_formatter(Formatter('default'))
-            axis.set_minor_formatter(Formatter('null'))
-            axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-
-    class _CutoffTransform(mtransforms.Transform):
-        # Create transform object
-        input_dims = 1
-        output_dims = 1
-        has_inverse = True
-        is_separable = True
-        def __init__(self):
-            super().__init__()
-        def transform(self, a):
-            a = np.array(a) # very numpy array
-            aa = a.copy()
-            if upper is None: # just scale between 2 segments
-                m = (a > lower)
-                aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
-            elif lower is None:
-                m = (a < upper)
-                aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
-            else:
-                m1 = (a > lower)
-                m2 = (a > upper)
-                m3 = (a > lower) & (a < upper)
-                if scale==np.inf:
-                    aa[m1] = a[m1] - (upper - lower)
-                    aa[m3] = lower
-                else:
-                    aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
-                    aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
-            return aa
-        def transform_non_affine(self, a):
-            return self.transform(a)
-        def inverted(self):
-            return _InvertedCutoffTransform()
-
-    class _InvertedCutoffTransform(mtransforms.Transform):
-        # Inverse of _CutoffTransform
-        input_dims = 1
-        output_dims = 1
-        has_inverse = True
-        is_separable = True
-        def __init__(self):
-            super().__init__()
-        def transform(self, a):
-            a = np.array(a)
-            aa = a.copy()
-            if upper is None:
-                m = (a > lower)
-                aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
-            elif lower is None:
-                m = (a < upper)
-                aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
-            else:
-                n = (upper-lower)*(1 - 1/scale)
-                m1 = (a > lower)
-                m2 = (a > upper - n)
-                m3 = (a > lower) & (a < (upper - n))
-                if scale==np.inf:
-                    aa[m1] = a[m1] + (upper - lower)
-                else:
-                    aa[m2] = a[m2] + n
-                    aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
-            return aa
-        def transform_non_affine(self, a):
-            return self.transform(a)
-        def inverted(self):
-            return _CutoffTransform()
-
-    # Register and return
-    mscale.register_scale(CutoffScale)
-    return name_
-
-#------------------------------------------------------------------------------#
-# Mercator axis
-#------------------------------------------------------------------------------#
-class MercatorLatitudeScale(mscale.ScaleBase):
-    r"""
-    Scales axis as with latitudes in the `Mercator projection
-    <http://en.wikipedia.org/wiki/Mercator_projection>`_. Inspired by
-    :cite:`barnes_rossby_2011`, and adapted from `this matplotlib example
-    <https://matplotlib.org/examples/api/custom_scale_example.html>`_.
-
-    The scale function is as follows:
-
-    .. math::
-
-        \ln(\tan(y) + \sec(y))
-
-    The inverse scale function is as follows:
-
-    .. math::
-
-        \arctan(\sinh(y))
-
-    Also uses a user-defined threshold :math:`\in (-90, 90)`, above and
-    below which nothing will be plotted.
-
-    .. bibliography:: ../refs.bib
-    """
-    name = 'mercator'
-    """Registered scale name."""
-    def __init__(self, axis, *, thresh=85.0, **kwargs):
-        # Initialize
-        super().__init__()
-        if thresh >= 90.0:
-            raise ValueError('Threshold "thresh" must be <=90.')
-        self.thresh = thresh
-    def get_transform(self):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # Return special transform object
-        return _MercatorLatitudeTransform(self.thresh)
-    def limit_range_for_scale(self, vmin, vmax, minpos):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # *Hard* limit on axis boundaries
-        return max(vmin, -self.thresh), min(vmax, self.thresh)
-    def set_default_locators_and_formatters(self, axis):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # Apply these
-        axis.set_smart_bounds(True)
-        axis.set_major_locator(Locator(20)) # every 20 degrees
-        axis.set_major_formatter(Formatter('deg'))
-        axis.set_minor_formatter(Formatter('null'))
-
-class _MercatorLatitudeTransform(mtransforms.Transform):
-    """Mercator latitude coordinate transform."""
-    # Default attributes
-    input_dims = 1
-    output_dims = 1
-    is_separable = True
-    has_inverse = True
-    def __init__(self, thresh):
-        # Initialize, declare attribute
-        super().__init__()
-        self.thresh = thresh
-    def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
-        # For M N-dimensional transform, transform MxN into result
-        # So numbers stay the same, but data will then be linear in the
-        # result of the math below.
-        a = np.radians(a) # convert to radians
-        m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
-        # m[m.mask] = np.nan
-        # a[m.mask] = np.nan
-        if m.mask.any():
-            return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
-        else:
-            return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
-    def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
-        # Just call inverse transform class
-        return _InvertedMercatorLatitudeTransform(self.thresh)
-
-class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
-    """Inverse Mercator latitude coordinate transform."""
-    # As above, but for the inverse transform
-    input_dims = 1
-    output_dims = 1
-    is_separable = True
-    has_inverse = True
-    def __init__(self, thresh):
-        super().__init__()
-        self.thresh = thresh
-    def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
-        # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
-        return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
-    def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
-        return _MercatorLatitudeTransform(self.thresh)
-
-#------------------------------------------------------------------------------#
-# Sine axis
-#------------------------------------------------------------------------------#
-class SineLatitudeScale(mscale.ScaleBase):
-    r"""
-    The scale function is...
-
-    .. math:
-
-        \sin((y))
-
-    The inverse scale function:
-
-    .. math:
-
-        (\arcsin(y))
-    """
-    name = 'sine'
-    """Registered scale name."""
-    def __init__(self, axis, **kwargs):
-        # Initialize
-        super().__init__()
-    def get_transform(self):
-        """See `~matplotlib.scale.ScaleBase`."""
-        return _SineLatitudeTransform()
-    def limit_range_for_scale(self, vmin, vmax, minpos):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # *Hard* limit on axis boundaries
-        # return max(vmin, -90), min(vmax, 90)
-        return vmin, vmax
-    def set_default_locators_and_formatters(self, axis):
-        """See `~matplotlib.scale.ScaleBase`."""
-        axis.set_smart_bounds(True)
-        axis.set_major_locator(Locator(20)) # every 20 degrees
-        axis.set_major_formatter(Formatter('deg'))
-        axis.set_minor_formatter(Formatter('null'))
-
-class _SineLatitudeTransform(mtransforms.Transform):
-    """Sine latitude transform."""
-    # Default attributes
-    input_dims = 1
-    output_dims = 1
-    is_separable = True
-    has_inverse = True
-    def __init__(self):
-        # Initialize, declare attribute
-        super().__init__()
-    def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
-        with np.errstate(invalid='ignore'): # NaNs will always be False
-            m = (a >= -90) & (a <= 90)
-        if not m.all():
-            aa = ma.masked_where(~m, a)
-            return ma.sin(np.deg2rad(aa))
-        else:
-            return np.sin(np.deg2rad(a))
-    def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
-        return _InvertedSineLatitudeTransform()
-
-class _InvertedSineLatitudeTransform(mtransforms.Transform):
-    """Inverse sine latitude transform."""
-    # Inverse of _SineLatitudeTransform
-    input_dims = 1
-    output_dims = 1
-    is_separable = True
-    has_inverse = True
-    def __init__(self):
-        super().__init__()
-    def transform_non_affine(self, a):
-        """See `~matplotlib.transforms.Transform`."""
-        # Clipping, instead of setting invalid
-        # NOTE: Using ma.arcsin below caused super weird errors, dun do that
-        aa = a.copy()
-        return np.rad2deg(np.arcsin(aa))
-    def inverted(self):
-        """See `~matplotlib.transforms.Transform`."""
-        return _SineLatitudeTransform()
-
-#------------------------------------------------------------------------------#
-# Scale as the *inverse* of the axis coordinate
-#------------------------------------------------------------------------------#
-class InverseScale(mscale.ScaleBase):
-    """Similar to `~matplotlib.scale.LogScale`, but this scales to be linear
-    in the *inverse* of *x*. Very useful e.g. for plotting wavelengths
-    on twin axis with wavenumbers."""
-    # Developer notes:
-    # Unlike log-scale, we can't just warp the space between
-    # the axis limits -- have to actually change axis limits. Also this
-    # scale will invert and swap the limits you provide. Weird! But works great!
-    # Declare name
-    name = 'inverse'
-    """Registered scale name."""
-    def __init__(self, axis, minpos=1e-2, **kwargs):
-        # Initialize
-        super().__init__()
-        self.minpos = minpos
-    def get_transform(self):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # Return transform class
-        return _InverseTransform(self.minpos)
-    def limit_range_for_scale(self, vmin, vmax, minpos):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # *Hard* limit on axis boundaries
-        if not np.isfinite(minpos):
-            minpos = 1e-300
-        return (minpos if vmin <= 0 else vmin,
-                minpos if vmax <= 0 else vmax)
-    def set_default_locators_and_formatters(self, axis):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # TODO: Fix minor locator issue
-        # NOTE: Log formatter can ignore certain major ticks! Why is that?
-        axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-        axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
-        axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
-        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
-        axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
-
-class _InverseTransform(mtransforms.Transform):
-    """Inverse transform."""
-    # Create transform object
-    input_dims = 1
-    output_dims = 1
-    is_separable = True
-    has_inverse = True
-    def __init__(self, minpos):
-        super().__init__()
-        self.minpos = minpos
-    def transform(self, a):
-        """See `~matplotlib.scale.ScaleBase`."""
-        a = np.array(a)
-        aa = a.copy()
-        # f = np.abs(a)<=self.minpos # attempt for negative-friendly
-        # aa[f] = np.sign(a[f])*self.minpos
-        aa[aa<=self.minpos] = self.minpos
-        return 1.0/aa
-    def transform_non_affine(self, a):
-        """See `~matplotlib.scale.ScaleBase`."""
-        return self.transform(a)
-    def inverted(self):
-        """See `~matplotlib.scale.ScaleBase`."""
-        return _InverseTransform(self.minpos)
-
-# Register hard-coded scale names, so user can set_xscale and set_yscale
-# with strings
-mscale.register_scale(InverseScale)
-mscale.register_scale(SineLatitudeScale)
-mscale.register_scale(MercatorLatitudeScale)
-ExpScaleFactory(-1.0/7, 1013.25, False, 'height')   # scale pressure so it matches a height axis
-ExpScaleFactory(-1.0/7, 1013.25, True,  'pressure') # scale height so it matches a pressure axis
-
-#------------------------------------------------------------------------------#
 # Helper functions for instantiating arbitrary Locator and Formatter classes
 # When calling these functions, the format() method should automatically
 # detect presence of date axis by testing if unit converter is on axis is
@@ -879,12 +343,76 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         raise ValueError(f'Invalid formatter "{formatter}".')
     return formatter
 
+def Scale(scale, *args, **kwargs):
+    """
+    Returns a `~matplotlib.scale.ScaleBase` instance.
+
+    Parameters
+    ----------
+    scale : str or (str, *args)
+        If tuple, ``args`` are passed to the class
+        instantiator. Ignored unless the str is ``'cutoff'``,
+        ``'exp'``, ``'height'``, or ``'pressure'``.
+
+        If str, a dictionary lookup is performed. Options are as follows:
+
+        ==============  =======================================  =========================================================
+        Key             Class                                    Description
+        ==============  =======================================  =========================================================
+        ``'linear'``    `~matplotlib.scale.LinearScale`          Linear
+        ``'log'``       `~matplotlib.scale.LogScale`             Logarithmic
+        ``'symlog'``    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
+        ``'logit'``     `~matplotlib.scale.LogitScale`           Logistic
+        ``'cutoff'``    Result of `CutoffScaleFactory`           Linearly warp the axis scale in a variety of ways
+        ``'exp'``       Result of `ExpScaleFactory`              Scale with some exponential function
+        ``'pressure'``  Result of `ExpScaleFactory`              Scale height coords to be linear in pressure.
+        ``'height'``    Result of `ExpScaleFactory`              Scale pressure coords to be linear in height.
+        ``'sine'``      `SineLatitudeScale`                      Sine (in degrees)
+        ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
+        ``'inverse'``   `InverseScale`                           Inverse
+        ``'db'``        `DecibelScale`                           Transform deciBel units to power
+        ==============  =======================================  =========================================================
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to the `~matplotlib.scale.ScaleBase` class on instantiation.
+    """
+    # Existing scales
+    args = []
+    if isinstance(scale, mscale.ScaleBase):
+        scale = scale.name
+    if np.iterable(scale) and not isinstance(scale, str):
+        scale, args = scale[0], [*scale[1:], *args]
+    if scale in scales:
+        return scale # already registered
+    # Build an on-the-fly scale
+    if scale=='cutoff':
+        scale = CutoffScaleFactory(*args, **kwargs)
+    elif scale in ('exp', 'height', 'pressure'): # note here args is non-zero
+        scale = ExpScaleFactory(*args, to_exp=(scale!='pressure'), **kwargs)
+    else:
+        raise ValueError(f'Unknown scale {scale}. Options are {", ".join(scales.keys())}.')
+    return scale
+
+def InvertedScaleFactory(scale, **kwargs):
+    """Returns name of newly registered *inverted* version of the
+    `~matplotlib.scale.ScaleBase` corresponding to the scale name."""
+    # Note I use private API here; no other way to get class directly
+    scale = Scale(scale, **kwargs) # get the class
+    name_ = f'{scale}_inverted' # name of inverted version
+    class Inverted(scales[scale]):
+        name = name_
+        def get_transform(self):
+            return super().get_transform().inverted() # that's all we need!
+    mscale.register_scale(Inverted)
+    return name_
+
 #-------------------------------------------------------------------------------
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
 # Create pseudo-class functions that actually return auto-generated formatting
 # classes by passing function references to Funcformatter
 #-------------------------------------------------------------------------------
-# First the default formatter
 class ScalarFormatter(mticker.ScalarFormatter):
     r"""
     The new default formatter, a simple wrapper around
@@ -949,9 +477,6 @@ class ScalarFormatter(mticker.ScalarFormatter):
             prefix, string = string[0], string[1:]
         return prefix + self._prefix + string + self._suffix
 
-#------------------------------------------------------------------------------#
-# Formatters for dealing with one axis in geographic coordinates
-#------------------------------------------------------------------------------#
 def CoordFormatter(*args, cardinal=None, degrees=True, **kwargs):
     """
     Returns a `~matplotlib.ticker.FuncFormatter` that formats numbers as
@@ -984,9 +509,6 @@ def CoordFormatter(*args, cardinal=None, degrees=True, **kwargs):
         return string + suffix
     return mticker.FuncFormatter(f)
 
-#------------------------------------------------------------------------------#
-# Formatters with fractions
-#------------------------------------------------------------------------------#
 def FracFormatter(symbol, number):
     r"""
     Returns a `~matplotlib.ticker.FuncFormatter` that formats numbers as
@@ -1025,8 +547,535 @@ def FracFormatter(symbol, number):
     # And create FuncFormatter class
     return mticker.FuncFormatter(f)
 
+#------------------------------------------------------------------------------#
+# Exp axis scale
+# Why can't this just be a class that accepts args for changing
+# the scale params? Because then would need kwargs for every set_xscale
+# call.
+#------------------------------------------------------------------------------#
+def ExpScaleFactory(expscale, mulscale, to_exp=True, name=None):
+    r"""
+    Returns an "exponential scale" that performs the transformation
+    :math:`Ae^{bx}`.
+
+    This is used when adding a pressure coordinate axis
+    for data that is plotted linearly w.r.t. height, or vice versa. Ignore
+    this if you're not an atmospheric scientist.
+
+    Parameters
+    ----------
+    expscale : float
+        The scale for the exponent, i.e. the :math:`b` in :math:`Ae^{bx}`.
+    mulscale : float
+        The coefficient, i.e. the :math:`A` in :math:`Ae^{bx}`.
+    to_exp : float
+        Whether the "forward" direction performs exponentiation, or
+        the inverse operation :math:`(\log(x) - \log(A))/b`.
+    name : None or str, optional
+        The scale name. Defaults to ``'exp_{expscale}_{mulscale}'``.
+    """
+    if name is None:
+        name = f'exp_{expscale:.1e}_{mulscale:.1e}'
+    name_ = name # must make a copy
+    class ExpScale(mscale.ScaleBase):
+        # Declare name
+        name = name_
+        def __init__(self, axis, minpos=1e-300, **kwargs):
+            super().__init__()
+            if to_exp:
+                transform = _ExpTransform(expscale, mulscale, minpos)
+            else:
+                transform = _InvertedExpTransform(expscale, mulscale, minpos)
+            self._transform = transform
+        def limit_range_for_scale(self, vmin, vmax, minpos):
+            return vmin, vmax
+        def set_default_locators_and_formatters(self, axis):
+            axis.set_smart_bounds(True) # unnecessary?
+            axis.set_major_formatter(Formatter('default'))
+            axis.set_minor_formatter(Formatter('null'))
+        def get_transform(self):
+            return self._transform
+
+    # Register and return
+    mscale.register_scale(ExpScale)
+    return name_
+
+class _ExpTransform(mtransforms.Transform):
+    """Exponential coordinate transform."""
+    input_dims = 1
+    output_dims = 1
+    has_inverse = True
+    is_separable = True
+    def __init__(self, expscale, mulscale, minpos):
+        super().__init__()
+        self.minpos = minpos
+        self._expscale = expscale
+        self._mulscale = mulscale
+    def transform(self, a):
+        return self._mulscale*np.power(np.e, self._expscale*np.array(a))
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return _InvertedExpTransform(self._expscale, self._mulscale, self.minpos)
+
+class _InvertedExpTransform(mtransforms.Transform):
+    """Inverse exponential coordinate transform."""
+    input_dims = 1
+    output_dims = 1
+    has_inverse = True
+    is_separable = True
+    def __init__(self, expscale, mulscale, minpos):
+        super().__init__()
+        self.minpos = minpos
+        self._expscale = expscale
+        self._mulscale = mulscale
+    def transform(self, a):
+        aa = np.array(a).copy()
+        aa[aa<=self.minpos] = self.minpos # necessary
+        return (np.log(aa) - np.log(self._mulscale))/self._expscale # this one!
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return _ExpTransform(self._expscale, self._mulscale, self.minpos)
+
+#------------------------------------------------------------------------------#
+# Cutoff axis
+#------------------------------------------------------------------------------#
+def CutoffScaleFactory(scale, lower, upper=None):
+    """
+    Constructs a scale with custom cutoffs.
+
+    If `upper` is ``None``, you have the following two possibilities:
+
+    1. If `scale` is >1, the axis is "faster" to the right
+       of `lower`.
+    2. If `scale` is <1, the axis is "slower" to the right
+       of `lower`.
+
+    If `upper` is not ``None``, you have the following three possibilities:
+
+    1. If `scale` is `numpy.inf`, this puts a cliff between `lower` and
+       `upper`. The axis cuts from `lower` to `upper` at a single point.
+    2. If `scale` is >1, the axis is accelerated between `lower` and `upper`.
+       So the axis is "slow" on the edges but "fast" in middle.
+    3. If `scale` is <1, the axis is deccelerated between `lower` and `upper`.
+       So the axis is "fast" on the edges but "slow" in middle.
+
+    Todo
+    ----
+    Create method for drawing those diagonal "cutoff" strokes with whitespace
+    between.  See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
+    multi-axis solution and for this class-based solution. Note the space
+    between 1-9 in Paul's answer is because actual cutoffs were 0.1 away
+    (and tick locs are 0.2 apart).
+    """
+    if scale<0:
+        raise ValueError('Scale must be a positive float.')
+    if upper is None:
+        if scale==np.inf:
+            raise ValueError('For infinite scale (i.e. discrete cutoff), need both lower and upper bounds.')
+    name = f'cutoff_{scale:.1e}_{lower:.1e}'
+    if upper is not None:
+        name = f'{name}_{upper:.1e}'
+    name_ = name # have to copy to different name
+
+    class CutoffScale(mscale.ScaleBase):
+        # Declare name
+        name = name_
+        def __init__(self, axis, **kwargs):
+            super().__init__()
+            self._transform = _CutoffTransform()
+        def get_transform(self):
+            return self._transform
+        def set_default_locators_and_formatters(self, axis):
+            axis.set_major_formatter(Formatter('default'))
+            axis.set_minor_formatter(Formatter('null'))
+            axis.set_smart_bounds(True) # may prevent ticks from extending off sides
+
+    class _CutoffTransform(mtransforms.Transform):
+        # Create transform object
+        input_dims = 1
+        output_dims = 1
+        has_inverse = True
+        is_separable = True
+        def __init__(self):
+            super().__init__()
+        def transform(self, a):
+            a = np.array(a) # very numpy array
+            aa = a.copy()
+            if upper is None: # just scale between 2 segments
+                m = (a > lower)
+                aa[m] = a[m] - (a[m] - lower)*(1 - 1/scale)
+            elif lower is None:
+                m = (a < upper)
+                aa[m] = a[m] - (upper - a[m])*(1 - 1/scale)
+            else:
+                m1 = (a > lower)
+                m2 = (a > upper)
+                m3 = (a > lower) & (a < upper)
+                if scale==np.inf:
+                    aa[m1] = a[m1] - (upper - lower)
+                    aa[m3] = lower
+                else:
+                    aa[m2] = a[m2] - (upper - lower)*(1 - 1/scale)
+                    aa[m3] = a[m3] - (a[m3] - lower)*(1 - 1/scale)
+            return aa
+        def transform_non_affine(self, a):
+            return self.transform(a)
+        def inverted(self):
+            return _InvertedCutoffTransform()
+
+    class _InvertedCutoffTransform(mtransforms.Transform):
+        # Inverse of _CutoffTransform
+        input_dims = 1
+        output_dims = 1
+        has_inverse = True
+        is_separable = True
+        def __init__(self):
+            super().__init__()
+        def transform(self, a):
+            a = np.array(a)
+            aa = a.copy()
+            if upper is None:
+                m = (a > lower)
+                aa[m] = a[m] + (a[m] - lower)*(1 - 1/scale)
+            elif lower is None:
+                m = (a < upper)
+                aa[m] = a[m] + (upper - a[m])*(1 - 1/scale)
+            else:
+                n = (upper-lower)*(1 - 1/scale)
+                m1 = (a > lower)
+                m2 = (a > upper - n)
+                m3 = (a > lower) & (a < (upper - n))
+                if scale==np.inf:
+                    aa[m1] = a[m1] + (upper - lower)
+                else:
+                    aa[m2] = a[m2] + n
+                    aa[m3] = a[m3] + (a[m3] - lower)*(1 - 1/scale)
+            return aa
+        def transform_non_affine(self, a):
+            return self.transform(a)
+        def inverted(self):
+            return _CutoffTransform()
+
+    # Register and return
+    mscale.register_scale(CutoffScale)
+    return name_
+
+#------------------------------------------------------------------------------#
+# Geographic axes
+#------------------------------------------------------------------------------#
+class MercatorLatitudeScale(mscale.ScaleBase):
+    r"""
+    Scales axis as with latitudes in the `Mercator projection
+    <http://en.wikipedia.org/wiki/Mercator_projection>`_. Inspired by
+    :cite:`barnes_rossby_2011`, and adapted from `this matplotlib example
+    <https://matplotlib.org/examples/api/custom_scale_example.html>`_.
+
+    The scale function is as follows:
+
+    .. math::
+
+        y = \ln(\tan(x) + \sec(x))
+
+    The inverse scale function is as follows:
+
+    .. math::
+
+        x = \arctan(\sinh(y))
+
+    Also uses a user-defined threshold :math:`\in (-90, 90)`, above and
+    below which nothing will be plotted.
+
+    .. bibliography:: ../refs.bib
+    """
+    name = 'mercator'
+    """Registered scale name."""
+    def __init__(self, axis, *, thresh=85.0, **kwargs):
+        """See `~matplotlib.scale.ScaleBase`."""
+        super().__init__()
+        if thresh >= 90.0:
+            raise ValueError('Threshold "thresh" must be <=90.')
+        self.thresh = thresh
+    def get_transform(self):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return _MercatorLatitudeTransform(self.thresh)
+    def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return max(vmin, -self.thresh), min(vmax, self.thresh)
+    def set_default_locators_and_formatters(self, axis):
+        """See `~matplotlib.scale.ScaleBase`."""
+        axis.set_smart_bounds(True)
+        axis.set_major_locator(Locator(20)) # every 20 degrees
+        axis.set_major_formatter(Formatter('deg'))
+        axis.set_minor_formatter(Formatter('null'))
+
+class _MercatorLatitudeTransform(mtransforms.Transform):
+    """Mercator latitude coordinate transform."""
+    # Default attributes
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, thresh):
+        # Initialize, declare attribute
+        super().__init__()
+        self.thresh = thresh
+    def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
+        # For M N-dimensional transform, transform MxN into result
+        # So numbers stay the same, but data will then be linear in the
+        # result of the math below.
+        a = np.radians(a) # convert to radians
+        m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+        # m[m.mask] = np.nan
+        # a[m.mask] = np.nan
+        if m.mask.any():
+            return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
+        else:
+            return np.log(np.abs(np.tan(a) + 1.0 / np.cos(a)))
+    def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
+        # Just call inverse transform class
+        return _InvertedMercatorLatitudeTransform(self.thresh)
+
+class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
+    """Inverse Mercator latitude coordinate transform."""
+    # As above, but for the inverse transform
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, thresh):
+        super().__init__()
+        self.thresh = thresh
+    def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
+        # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+        return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
+    def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
+        return _MercatorLatitudeTransform(self.thresh)
+
+class SineLatitudeScale(mscale.ScaleBase):
+    r"""
+    The scale function is as follows:
+
+    .. math:
+
+        y = \sin(x)
+
+    The inverse scale function is as follows:
+
+    .. math:
+
+        x = \arcsin(y)
+    """
+    name = 'sine'
+    """Registered scale name."""
+    def __init__(self, axis, **kwargs):
+        """See `~matplotlib.scale.ScaleBase`."""
+        super().__init__()
+    def get_transform(self):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return _SineLatitudeTransform()
+    def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return vmin, vmax
+        # return max(vmin, -90), min(vmax, 90)
+    def set_default_locators_and_formatters(self, axis):
+        """See `~matplotlib.scale.ScaleBase`."""
+        axis.set_smart_bounds(True)
+        axis.set_major_locator(Locator(20)) # every 20 degrees
+        axis.set_major_formatter(Formatter('deg'))
+        axis.set_minor_formatter(Formatter('null'))
+
+class _SineLatitudeTransform(mtransforms.Transform):
+    """Sine latitude transform."""
+    # Default attributes
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self):
+        # Initialize, declare attribute
+        super().__init__()
+    def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
+        with np.errstate(invalid='ignore'): # NaNs will always be False
+            m = (a >= -90) & (a <= 90)
+        if not m.all():
+            aa = ma.masked_where(~m, a)
+            return ma.sin(np.deg2rad(aa))
+        else:
+            return np.sin(np.deg2rad(a))
+    def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
+        return _InvertedSineLatitudeTransform()
+
+class _InvertedSineLatitudeTransform(mtransforms.Transform):
+    """Inverse sine latitude transform."""
+    # Inverse of _SineLatitudeTransform
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self):
+        super().__init__()
+    def transform_non_affine(self, a):
+        """See `~matplotlib.transforms.Transform`."""
+        # Clipping, instead of setting invalid
+        # NOTE: Using ma.arcsin below caused super weird errors, dun do that
+        aa = a.copy()
+        return np.rad2deg(np.arcsin(aa))
+    def inverted(self):
+        """See `~matplotlib.transforms.Transform`."""
+        return _SineLatitudeTransform()
+
+#------------------------------------------------------------------------------#
+# Other transformations
+#------------------------------------------------------------------------------#
+class InverseScale(mscale.ScaleBase):
+    r"""
+    The scale function and inverse scale function are as follows:
+
+    .. math:
+
+        y = x^{-1}
+
+    This scales axis coordinates to be linear in the *inverse* of *x*.
+    """
+    # Developer notes:
+    # Unlike log-scale, we can't just warp the space between
+    # the axis limits -- have to actually change axis limits. Also this
+    # scale will invert and swap the limits you provide. Weird! But works great!
+    # Declare name
+    name = 'inverse'
+    """Registered scale name."""
+    def __init__(self, axis, minpos=1e-2, **kwargs):
+        """See `~matplotlib.scale.ScaleBase`."""
+        super().__init__()
+        self.minpos = minpos
+    def get_transform(self):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return _InverseTransform(self.minpos)
+    def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
+        if not np.isfinite(minpos):
+            minpos = 1e-300
+        return (minpos if vmin <= 0 else vmin,
+                minpos if vmax <= 0 else vmax)
+    def set_default_locators_and_formatters(self, axis):
+        """See `~matplotlib.scale.ScaleBase`."""
+        # TODO: Fix minor locator issue
+        # NOTE: Log formatter can ignore certain major ticks! Why is that?
+        axis.set_smart_bounds(True) # may prevent ticks from extending off sides
+        axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
+        axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
+        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
+        axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
+
+class _InverseTransform(mtransforms.Transform):
+    """Inverse transform."""
+    # Create transform object
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, minpos):
+        super().__init__()
+        self.minpos = minpos
+    def transform(self, a):
+        """See `~matplotlib.scale.ScaleBase`."""
+        a = np.array(a)
+        aa = a.copy()
+        # f = np.abs(a)<=self.minpos # attempt for negative-friendly
+        # aa[f] = np.sign(a[f])*self.minpos
+        aa[aa<=self.minpos] = self.minpos
+        return 1.0/aa
+    def transform_non_affine(self, a):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return self.transform(a)
+    def inverted(self):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return _InverseTransform(self.minpos)
+
+class DecibelScale(mscale.ScaleBase):
+    r"""
+    The scale function is as follows:
+
+    .. math:
+
+        y = 10\log_{10}(x)
+
+    The inverse scale function is as follows:
+
+    .. math:
+
+        x = 10^{y/10}
+
+    This scales axis coordinates to be linear in the "deciBel scale."
+    """
+    # Declare name
+    name = 'db'
+    def __init__(self, axis, minpos=1e-300, **kwargs):
+        """See `~matplotlib.scale.ScaleBase`."""
+        super().__init__()
+        self._transform = _InvertedDecibelTransform(minpos)
+    def limit_range_for_scale(self, vmin, vmax, minpos):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return vmin, vmax
+    def set_default_locators_and_formatters(self, axis):
+        """See `~matplotlib.scale.ScaleBase`."""
+        # axis.set_smart_bounds(True) # unnecessary?
+        # axis.set_major_locator(mticker.LogLocator(base=10, subs=[1,2,5]))
+        # axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
+        axis.set_major_locator(Locator('log'))
+        axis.set_minor_locator(Locator('logminor'))
+        axis.set_major_formatter(Formatter('sci'))
+        axis.set_minor_formatter(Formatter('null'))
+    def get_transform(self):
+        """See `~matplotlib.scale.ScaleBase`."""
+        return self._transform
+
+class _DecibelTransform(mtransforms.Transform):
+    """Exponential coordinate transform."""
+    input_dims = 1
+    output_dims = 1
+    has_inverse = True
+    is_separable = True
+    def __init__(self, minpos):
+        super().__init__()
+        self.minpos = minpos
+    def transform(self, a):
+        aa = np.array(a).copy()
+        aa[aa<=self.minpos] = self.minpos # necessary
+        return 10.0*np.log10(aa) # this one!
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return _InvertedDecibelTransform(self.minpos)
+
+class _InvertedDecibelTransform(mtransforms.Transform):
+    """Inverse exponential coordinate transform."""
+    input_dims = 1
+    output_dims = 1
+    has_inverse = True
+    is_separable = True
+    def __init__(self, minpos):
+        super().__init__()
+        self.minpos = minpos
+    def transform(self, a):
+        return np.power(10.0, np.array(a)/10.0)
+    def transform_non_affine(self, a):
+        return self.transform(a)
+    def inverted(self):
+        return _DecibelTransform(self.minpos)
+
+#------------------------------------------------------------------------------#
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
+#------------------------------------------------------------------------------#
 scales = mscale._scale_mapping
 """The registered scale names and their associated
 `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table."""
@@ -1065,8 +1114,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'formatstr': mticker.FormatStrFormatter,
     'scalar':    mticker.ScalarFormatter,
     'log':       mticker.LogFormatterSciNotation,
-    'eng':       mticker.LogFormatterMathtext,
     'sci':       mticker.LogFormatterSciNotation,
+    'math':      mticker.LogFormatterMathtext,
     'logit':     mticker.LogitFormatter,
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
@@ -1077,3 +1126,13 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     }
 """Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 `Formatter` for a table."""
+
+# Register hard-coded scale names, so user can set_xscale and set_yscale
+# with strings
+mscale.register_scale(InverseScale)
+mscale.register_scale(DecibelScale)
+mscale.register_scale(SineLatitudeScale)
+mscale.register_scale(MercatorLatitudeScale)
+ExpScaleFactory(-1.0/7, 1013.25, False, 'height')   # scale pressure so it matches a height axis
+ExpScaleFactory(-1.0/7, 1013.25, True,  'pressure') # scale height so it matches a pressure axis
+

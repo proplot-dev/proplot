@@ -2477,9 +2477,10 @@ class XYAxes(BaseAxes):
 
         Note
         ----
-        If you plot something with a `numpy.arrays.datetime`, `pandas.Timestamp`,
-        or `pandas.DatetimeIndex` vector as the *x* or *y* coordinate, the
-        axis ticks and tick labels will be formatted as dates by default.
+        If you plot something with a `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
+        `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`, or
+        `datetime.datetime` vector as the *x* or *y*-axis coordinate, the axis
+        ticks and tick labels will be formatted as dates by default.
 
         See also
         --------
@@ -2781,7 +2782,7 @@ class XYAxes(BaseAxes):
         super().smart_update(**kwargs)
 
     def dualx(self, offset=0, scale=1, xscale='linear', **kwargs):
-        """As with `XYAxes.dualy`, but for the *x*-axis. See `XYAxes.dualy`."""
+        """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
         ax = self.twiny()
         xscale = axistools.InvertedScaleFactory(xscale)
         xformatter = kwargs.pop('xformatter', 'default')
@@ -2791,26 +2792,27 @@ class XYAxes(BaseAxes):
     def dualy(self, offset=0, scale=1, yscale='linear', **kwargs):
         """
         Makes a secondary *y* axis for denoting equivalent *y*
-        coordinates in **alternate units**. Return nothing.
+        coordinates in **alternate units**. Returns nothing.
 
         Parameters
         ----------
         yscale : str
-            The scale name used to transform data to the alternate units. For
-            example, if your *y* axis is wavenumber and you want wavelength on
-            the opposite side, use ``yscale='inverse'``. If your *y* axis
+            The scale name used to transform data to the alternate units.
+            Defaults to ``'linear'``.
+            For example, if your *y*-axis is wavenumber and you want wavelength on
+            the opposite side, use ``yscale='inverse'``. If your-*y* axis
             is height and you want pressure on the opposite side, use
             ``yscale='pressure'`` (and vice versa).
         scale : float, optional
-            The constant multiple applied after scaling data with ``yscale``.
-            For example, if your *y* axis is meters and you
-            want kilometers on the other side, use ``scale=1e-3``. `scale`
-            is applied before `offset`.
+            The constant multiple applied after scaling data with `yscale`.
+            Defaults to ``1``.
+            For example, if your *y*-axis is meters and you
+            want kilometers on the other side, use ``scale=1e-3``.
         offset : float, optional
-            The constant offset added after scaling data with ``yscale``.
-            For example, if your *y* axis is Kelvin and you want degrees
-            Celsius on the opposite side, use ``offset=-273.15``. `scale`
-            is applied before `offset`.
+            The constant offset added after multipyling by ``scale``.
+            Defaults to ``0``.
+            For example, if your *y*-axis is Kelvin and you want degrees
+            Celsius on the opposite side, use ``offset=-273.15``.
         **kwargs
             Passed to `BaseAxes.format`. I highly recommend passing the
             `ylabel` keyword arg.
@@ -2834,19 +2836,15 @@ class XYAxes(BaseAxes):
         self._dualy_scale = (offset, scale)
 
     def altx(self, *args, **kwargs):
-        """
-        Alias (and more intuitive function name) for `~XYAxes.twiny`.
-        The matplotlib ``twiny`` function actually generates two **x**-axes
-        with a shared ("twin") **y**-axis.
-        """
+        """Alias (and more intuitive name) for `~XYAxes.twiny`.
+        The matplotlib `~matplotlib.axes.Axes.twiny` function
+        actually generates two *x*-axes with a shared ("twin") *y*-axis."""
         return self.twiny(*args, **kwargs)
 
     def alty(self, *args, **kwargs):
-        """
-        Alias (and more intuitive function name) for `~XYAxes.twinx`.
-        The matplotlib ``twinx`` function actually generates two **y**-axes
-        with a shared ("twin") **x**-axis.
-        """
+        """Alias (and more intuitive name) for `~XYAxes.twinx`.
+        The matplotlib `~matplotlib.axes.Axes.twinx` function
+        actually generates two *y*-axes with a shared ("twin") *x*-axis."""
         return self.twinx(*args, **kwargs)
 
     def twinx(self):
