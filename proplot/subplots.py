@@ -1144,8 +1144,8 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     top    = units(_default(top,    rc['subplot.titlespace']))
     wratios = np.atleast_1d(_default(wratios, 1))
     hratios = np.atleast_1d(_default(hratios, 1))
-    hspace = np.atleast_1d(_default(hspace, rc['subplot.titlespace']))
-    wspace = np.atleast_1d(_default(wspace, rc['subplot.innerspace']))
+    hspace = np.atleast_1d(units(_default(hspace, rc['subplot.titlespace'])))
+    wspace = np.atleast_1d(units(_default(wspace, rc['subplot.innerspace'])))
     if len(wratios)==1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios)==1:
