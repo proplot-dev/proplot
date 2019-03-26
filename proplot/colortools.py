@@ -995,7 +995,7 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     xw = x0[1:] - x0[:-1] # weights for averages
     # PerceptuallyUniformColormaps checks
     if type_ is PerceptuallyUniformColormap:
-        spaces = {cmap.space for cmap in imaps}
+        spaces = {cmap._space for cmap in imaps}
         if len(spaces)>1:
             raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
         kwargs['space'] = spaces.pop()

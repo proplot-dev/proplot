@@ -1724,7 +1724,7 @@ adding a number to the end of the color string.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=3, aspect=(4,3), bottomcolorbars=True, bottom=0.1)
+    f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, bottomcolorbars=True, bottom=0.1)
     data = np.random.rand(50,50).cumsum(axis=1)
     m = axs[0].contourf(data, cmap=('navy', 'brick red', 'charcoal'), cmap_kw={'reverse':[True]*3})
     f.bottompanel[0].colorbar(m, locator='null')
@@ -1736,8 +1736,8 @@ adding a number to the end of the color string.
 
 
 .. image:: showcase/showcase_114_0.png
-   :width: 634px
-   :height: 306px
+   :width: 526px
+   :height: 325px
 
 
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
@@ -1749,7 +1749,7 @@ colormap.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, innercolorbars='b', axwidth=2.3)
+    f, axs = plot.subplots(ncols=3, innercolorbars='b', axwidth=2)
     data = np.random.rand(50,50).cumsum(axis=0) - 50
     for ax,cut in zip(axs,(0, 0.1, 0.2)):
         m = ax.contourf(data, cmap='PurplePink', cmap_kw={'cut':cut}, levels=12)
@@ -1760,15 +1760,13 @@ colormap.
 
 
 .. image:: showcase/showcase_116_0.png
-   :width: 733px
-   :height: 314px
+   :width: 652px
+   :height: 287px
 
 
-Cyclic colormaps are also easy to modify. Just use the ``shift``
+Cyclic colormaps are also easy to modify. Just pass the ``shift``
 argument to `~proplot.colortools.Colormap` to rotate the colors in
-your map. This will throw an error if the colormap is not recognized as
-cyclic; if you’d like to shift colors for an on-the-fly colormap, make
-sure to use ``cyclic=True`` to designate it so.
+your map.
 
 .. code:: ipython3
 
