@@ -2479,9 +2479,10 @@ class XYAxes(BaseAxes):
         ----
         If you plot something with a `numpy`
         `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
-        `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`, or
-        `datetime.datetime` array as the *x* or *y*-axis coordinate, the axis
-        ticks and tick labels will be formatted as dates by default.
+        `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
+        `datetime.time`, or `datetime.datetime` array as the *x* or *y*-axis
+        coordinate, the axis ticks and tick labels will be formatted as dates
+        by default.
 
         See also
         --------
