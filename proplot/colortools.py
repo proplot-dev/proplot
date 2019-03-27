@@ -871,29 +871,22 @@ def _clip_colors(colors, mask=True, gray=0.2, verbose=False):
 
 def _clip_cmap(cmap, left=None, right=None, name=None, N=None):
     """Helper function that cleanly divides linear segmented colormaps and
-    subsamples listed colormaps. Full documentation is in `Colormap`. Note
-    `N` is an alias for `right` for `ListedColormap` maps."""
+    subsamples listed colormaps. Full documentation is in `Colormap`."""
     # Bail out
-    if left is None and right is None and N is None:
+    if left is None and right is None:
         return cmap
     # Simple process for listed colormap, just truncate the colors
     name = name or 'no_name'
     if isinstance(cmap, mcolors.ListedColormap):
-        slice_ = slice(None, N) if N is not None else slice(left, right)
         try:
-            return mcolors.ListedColormap(cmap.colors[slice_])
+            return mcolors.ListedColormap(cmap.colors[left:right])
         except Exception:
-            raise ValueError(f'Invalid indices {slice_} for listed colormap.')
+            raise ValueError(f'Invalid slice {slice(left,right)} for listed colormap.')
 
     # Trickier for segment data maps
     # Initial stuff
-    kwargs = {}
-    if left is None:
-        left = 0
-    if right is None:
-        right = 1
-    if hasattr(cmap, '_space'):
-        kwargs['space'] = cmap._space
+    left = left or None
+    right = right or 1
     # Resample the segmentdata arrays
     data = {}
     dict_ = {key:value for key,value in cmap._segmentdata.items() if 'gamma' not in key}
@@ -927,8 +920,10 @@ def _clip_cmap(cmap, left=None, right=None, name=None, N=None):
                 gamma = gamma[l-1:r+1]
             data[gammas[key]] = gamma
     # And finally rebuild map
-    cmap = type(cmap)(name, data, **kwargs)
-    return cmap
+    kwargs = {}
+    if hasattr(cmap, '_space'):
+        kwargs['space'] = cmap._space
+    return type(cmap)(name, data, N=cmap.N, **kwargs)
 
 def _shift_cmap(cmap, shift=None, name=None):
     """Shift a cyclic colormap by `shift` degrees out of 360 degrees."""
@@ -963,7 +958,7 @@ def _shift_cmap(cmap, shift=None, name=None):
         array[:,0] /= array[:,0].max()
         data[key] = array
     # Generate shifted colormap
-    cmap = mcolors.LinearSegmentedColormap(name, data, cmap.N)
+    cmap = mcolors.LinearSegmentedColormap(name, data, N=cmap.N)
     cmap._cyclic = True
     return cmap
 
@@ -1445,7 +1440,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=None, rotate=None, name=None, **kwargs):
+def Cycle(*args, samples=None, slice=None, rotate=None, name=None, **kwargs):
     """
     Simply calls `Colormap`, then returns the corresponding list of colors
     if a `~matplotlib.colors.ListedColormap` was returned
@@ -1455,7 +1450,7 @@ def Cycle(*args, samples=None, rotate=None, name=None, **kwargs):
     Parameters
     ----------
     *args
-        Passed to `Colormap`. If ``args[-1]`` is a float or list of float,
+        Passed to `Colormap`. If ``args[-1]`` is a float,
         it is used as the `samples` argument. This allows the user to declare new
         color cycles with, for example, ``proplot.rc.cycle = ('blues',
         'reds', 20)``.
@@ -1465,11 +1460,16 @@ def Cycle(*args, samples=None, rotate=None, name=None, **kwargs):
         either a list of sample coordinates used to draw colors from the map
         or the integer number of colors to draw. If the latter, the sample
         coordinates are ``np.linspace(0, 1, samples)``.
-    rotate : int, optional
+    slice : None or int or list of int, optional
+        Optionally slice the color list. If `slice` is float, this is
+        done with ``colors[:slice]``. If `slice` is a list of float, this
+        is done with ``colors[slice(*args)]``. For example,
+        ``slice=(None,None,-1)`` will reverse the colors.
+    rotate : None or int, optional
         Optionally rotate the colors by `rotate` places. For example,
         ``rotate=2`` rotates the cycle to the right by 2 places. This does
         the same thing as the `Colormap` keyword arg `shift`, but can be
-        useful if you want to rotate colors after converting a
+        useful if you want to rotate colors after `Cycle` converts the
         `~matplotlib.colors.LinearSegmentedColormap` to a
         `~matplotlib.colors.ListedColormap`.
     name : None or str, optional
@@ -1487,9 +1487,9 @@ def Cycle(*args, samples=None, rotate=None, name=None, **kwargs):
     # Flexible input options
     # 1) User input some number of samples; 99% of time, use this
     # to get samples from a LinearSegmentedColormap draw colors.
+    # (np.iterable(args[-1]) and \ all(isinstance(item,Number) for item in args[-1]))
     name = name or 'no_name'
-    if isinstance(args[-1], Number) or (np.iterable(args[-1]) and \
-            all(isinstance(item,Number) for item in args[-1])):
+    if isinstance(args[-1], Number):
         args, samples = args[:-1], args[-1]
     # 2) User input a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
@@ -1509,12 +1509,17 @@ def Cycle(*args, samples=None, rotate=None, name=None, **kwargs):
         else:
             raise ValueError(f'Invalid samples "{samples}".')
         cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
-    # Make sure have color tuples, not mutable lists
-    cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
 
     # Register the colormap and return a list of colors
+    cmap.name = name
+    cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
+    if slice is not None:
+        if not np.iterable(slice):
+            slice = (slice,)
+        cmap.colors = cmap.colors[slice(*slice)]
     if rotate: # i.e. is non-zero
-        cmap = _shift_cmap(cmap, rotate, name=name)
+        rotate = rotate % len(cmap.colors)
+        cmap.colors = cmap.colors[rotate:] + cmap.colors[:rotate]
     mcm.cmap_d[name] = cmap
     return CycleList(cmap.colors, name)
 
