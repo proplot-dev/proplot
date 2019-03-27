@@ -183,11 +183,13 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
     time : bool, optional
         Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
         if ``True``, returns an `~matplotlib.dates.AutoDateLocator` instance.
-
-    Other parameters
-    ----------------
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class on instantiation.
+
+    Returns
+    -------
+    `~matplotlib.ticker.Locator`
+        A `~matplotlib.ticker.Locator` instance.
 
     Note
     ----
@@ -292,11 +294,13 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         instance when `formatter` is a string with a ``'%'`` character.
     tickrange : (float, float), optional
         See `ScalarFormatter`.
-
-    Other parameters
-    ----------------
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class on instantiation.
+
+    Returns
+    -------
+    `~matplotlib.ticker.Formatter`
+        A `~matplotlib.ticker.Formatter` instance.
     """
     # Already have a formatter object
     if isinstance(formatter, mticker.Formatter): # formatter object
@@ -373,10 +377,13 @@ def Scale(scale, *args, **kwargs):
         ``'db'``        `DecibelScale`                           Transform deciBel units to power
         ==============  =======================================  =========================================================
 
-    Other parameters
-    ----------------
     **kwargs
         Passed to the `~matplotlib.scale.ScaleBase` class on instantiation.
+
+    Returns
+    -------
+    `~matplotlib.scale.ScaleBase`
+        A `~matplotlib.scale.ScaleBase` instance.
     """
     # Existing scales
     args = []

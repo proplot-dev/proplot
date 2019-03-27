@@ -1189,7 +1189,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         save=False,
         **kwargs):
     """
-    Convenience function for generating and **merging** colormaps
+    Convenience function for generating and merging colormaps
     in a variety of ways.
 
     Parameters
@@ -1230,21 +1230,34 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         Number of colors to generate in the hidden lookup table ``_lut``.
         By default, a relatively high resolution of 256 is chosen (see notes).
     shift : None, or float or list of float, optional
-        For cyclic colormaps, optionally **rotate** the colors by `shift`
-        degrees out of 360 degrees. For example, ``shift=180`` moves the
+        For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
+        rotate the colors by `shift` degrees out of 360 degrees. This is
+        mainly useful for "cyclic" colormaps.
+        For example, ``shift=180`` moves the
         edge colors to the center of the colormap.
-    cut : None or float, optional
-        For diverging colormaps, optionally cut out colors in the **center**
-        of the colormap. This is useful if you want to have a sharper cutoff
-        between "negative" and "positive" values. For example,
-        ``cut=0.1`` cuts out the middle 10% of the colormap.
+
+        For `~matplotlib.colors.ListedColormap` maps, optionally rotate
+        the color list by `shift` places. For example, ``shift=2`` moves the
+        start of the color cycle two places to the right.
     left, right : None or float or list of float, optional
-        Optionally **delete** colors on the left and right sides of the
+        For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
+        delete colors on the left and right sides of the
         colormap(s). For example, ``left=0.1`` deletes the leftmost 10% of
         the colormap; ``right=0.9`` deletes the rightmost 10%.
+
+        For `~matplotlib.colors.ListedColormap` maps, optionally slice
+        the the color list using ``cmap.colors = cmap.colors[left:right]``.
+        For example, ``left=1`` with ``right=None`` deletes the first color.
+
         If list, length must match ``len(args)``, and applies to *each*
         colormap in the list before they are merged. If float, applies
         to the *final* colormap. No difference if ``len(args)`` is 1.
+    cut : None or float, optional
+        For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
+        cut out colors in the **center**
+        of the colormap. This is useful if you want to have a sharper cutoff
+        between "negative" and "positive" values in a diverging colormap. For example,
+        ``cut=0.1`` cuts out the middle 10% of the colormap.
     reverse : bool or list of bool, optional
         Optionally reverse the colormap(s).
         If list, length must match ``len(args)``, and applies to *each*
@@ -1269,6 +1282,12 @@ def Colormap(*args, name=None, cyclic=None, N=None,
 
         If the colormap is a `~matplotlib.colors.LinearSegmentedColormap`,
         the segment data dictionary is written to ``name.json``.
+
+    Returns
+    -------
+    `~matplotlib.colors.Colormap`
+        A `~matplotlib.colors.LinearSegmentedColormap` or
+        `~matplotlib.colors.ListedColormap` instance.
 
     Note
     ----
@@ -1426,15 +1445,12 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=None, shift=None, name=None, **kwargs):
+def Cycle(*args, samples=None, rotate=None, name=None, **kwargs):
     """
-    Convenience function that builds lists of colors from colormaps or returns
-    lists of colors from existing registered cycles.
-
-    For color cycles (i.e. `~matplotlib.colors.ListedColormap` instances),
-    we just select colors from that list.
-    For colormaps (i.e. `~matplotlib.colors.LinearSegmentedColormap` instances),
-    we draw samples from the full range of colormap colors.
+    Simply calls `Colormap`, then returns the corresponding list of colors
+    if a `~matplotlib.colors.ListedColormap` was returned
+    or draws samples if a `~matplotlib.colors.LinearSegmentedColormap`
+    was returned.
 
     Parameters
     ----------
@@ -1449,16 +1465,24 @@ def Cycle(*args, samples=None, shift=None, name=None, **kwargs):
         either a list of sample coordinates used to draw colors from the map
         or the integer number of colors to draw. If the latter, the sample
         coordinates are ``np.linspace(0, 1, samples)``.
-    shift : int, optional
-        Optionally **rotate** the colors by `shift` places. For example,
-        ``shift=2`` rotates the cycle to the right by 2 places.
+    rotate : int, optional
+        Optionally rotate the colors by `rotate` places. For example,
+        ``rotate=2`` rotates the cycle to the right by 2 places. This does
+        the same thing as the `Colormap` keyword arg `shift`, but can be
+        useful if you want to rotate colors after converting a
+        `~matplotlib.colors.LinearSegmentedColormap` to a
+        `~matplotlib.colors.ListedColormap`.
     name : None or str, optional
-        Name of the resulting color cycler. Default name is ``'no_name'``.
-
-    Other parameters
-    ----------------
+        Name of the resulting `~matplotlib.colors.ListedColormap`.
+        Default name is ``'no_name'``.
     **kwargs
         Passed to `Colormap`.
+
+    Returns
+    -------
+    `CycleList`
+        Just a list of colors with a name attribute. This color list is also
+        registered under the name `name` as a `~matplotlib.colors.ListedColormap`.
     """
     # Flexible input options
     # 1) User input some number of samples; 99% of time, use this
@@ -1489,8 +1513,8 @@ def Cycle(*args, samples=None, shift=None, name=None, **kwargs):
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
 
     # Register the colormap and return a list of colors
-    if shift: # i.e. is non-zero
-        cmap = _shift_cmap(cmap, shift, name=name)
+    if rotate: # i.e. is non-zero
+        cmap = _shift_cmap(cmap, rotate, name=name)
     mcm.cmap_d[name] = cmap
     return CycleList(cmap.colors, name)
 
@@ -1817,13 +1841,15 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     norm : None or normalizer spec, optional
         The normalizer for *pre-processing*. Used only for
         the `LinearSegmentedNorm` normalizer.
-
-    Other parameters
-    ----------------
     **kwargs
         Passed to the `~matplotlib.colors.Normalize` initializer.
         See `this tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
         for more info.
+
+    Returns
+    -------
+    `~matplotlib.colors.Normalize`
+        A `~matplotlib.colors.Normalize` instance.
     """
     norm, norm_preprocess = norm_in, norm
     if isinstance(norm, mcolors.Normalize):
