@@ -1440,7 +1440,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=None, slice=None, offset=None, name=None, **kwargs):
+def Cycle(*args, samples=None, left=None, right=None, name=None, **kwargs):
     """
     Simply calls `Colormap`, then returns the corresponding list of colors
     if a `~matplotlib.colors.ListedColormap` was returned
@@ -1460,18 +1460,6 @@ def Cycle(*args, samples=None, slice=None, offset=None, name=None, **kwargs):
         either a list of sample coordinates used to draw colors from the map
         or the integer number of colors to draw. If the latter, the sample
         coordinates are ``np.linspace(0, 1, samples)``.
-    slice : None or int or list of int, optional
-        Optionally slice the color list. If `slice` is float, this is
-        done with ``colors[:slice]``. If `slice` is a list of float, this
-        is done with ``colors[slice(*args)]``. For example,
-        ``slice=(None,None,-1)`` will reverse the colors.
-    offset : None or int, optional
-        Optionally rotate the colors by `offset` places. For example,
-        ``offset=2`` rotates the cycle to the right by 2 places. This does
-        the same thing as the `Colormap` keyword arg `shift`, but can be
-        useful if you want to rotate colors after `Cycle` converts the
-        `~matplotlib.colors.LinearSegmentedColormap` to a
-        `~matplotlib.colors.ListedColormap`.
     name : None or str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap`.
         Default name is ``'no_name'``.
@@ -1497,6 +1485,8 @@ def Cycle(*args, samples=None, slice=None, offset=None, name=None, **kwargs):
         args = [args] # presumably send a list of colors
 
     # Get list of colors, and construct and register ListedColormap
+    # WARNING: Have keyword args of same name here, try to auto-detect
+    # when user is referring to smooth colormap, or discrete color cycle.
     cmap = Colormap(*args, **kwargs) # the cmap object itself
     if isinstance(cmap, mcolors.ListedColormap):
         cmap.colors = cmap.colors[:samples] # if samples is None, does nothing
@@ -1509,23 +1499,9 @@ def Cycle(*args, samples=None, slice=None, offset=None, name=None, **kwargs):
         else:
             raise ValueError(f'Invalid samples "{samples}".')
         cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
-
     # Register the colormap and return a list of colors
     cmap.name = name
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
-    if slice is not None:
-        if not np.iterable(slice):
-            slice = (None, slice, None)
-        elif len(slice)==1:
-            slice = (None, *slice, None)
-        elif len(slice)==2:
-            slice = (*slice, None)
-        elif len(slice)!=3:
-            raise ValueError(f'Invalid slice {slice}.')
-        cmap.colors = cmap.colors[slice[0]:slice[1]:slice[2]]
-    if offset: # i.e. is non-zero
-        offset = offset % len(cmap.colors)
-        cmap.colors = cmap.colors[offset:] + cmap.colors[:offset]
     mcm.cmap_d[name] = cmap
     return CycleList(cmap.colors, name)
 
