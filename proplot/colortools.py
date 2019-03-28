@@ -1440,7 +1440,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=None, slice=None, rotate=None, name=None, **kwargs):
+def Cycle(*args, samples=None, slice=None, offset=None, name=None, **kwargs):
     """
     Simply calls `Colormap`, then returns the corresponding list of colors
     if a `~matplotlib.colors.ListedColormap` was returned
@@ -1465,9 +1465,9 @@ def Cycle(*args, samples=None, slice=None, rotate=None, name=None, **kwargs):
         done with ``colors[:slice]``. If `slice` is a list of float, this
         is done with ``colors[slice(*args)]``. For example,
         ``slice=(None,None,-1)`` will reverse the colors.
-    rotate : None or int, optional
-        Optionally rotate the colors by `rotate` places. For example,
-        ``rotate=2`` rotates the cycle to the right by 2 places. This does
+    offset : None or int, optional
+        Optionally rotate the colors by `offset` places. For example,
+        ``offset=2`` rotates the cycle to the right by 2 places. This does
         the same thing as the `Colormap` keyword arg `shift`, but can be
         useful if you want to rotate colors after `Cycle` converts the
         `~matplotlib.colors.LinearSegmentedColormap` to a
@@ -1515,11 +1515,17 @@ def Cycle(*args, samples=None, slice=None, rotate=None, name=None, **kwargs):
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
     if slice is not None:
         if not np.iterable(slice):
-            slice = (slice,)
-        cmap.colors = cmap.colors[slice(*slice)]
-    if rotate: # i.e. is non-zero
-        rotate = rotate % len(cmap.colors)
-        cmap.colors = cmap.colors[rotate:] + cmap.colors[:rotate]
+            slice = (None, slice, None)
+        elif len(slice)==1:
+            slice = (None, *slice, None)
+        elif len(slice)==2:
+            slice = (*slice, None)
+        elif len(slice)!=3:
+            raise ValueError(f'Invalid slice {slice}.')
+        cmap.colors = cmap.colors[slice[0]:slice[1]:slice[2]]
+    if offset: # i.e. is non-zero
+        offset = offset % len(cmap.colors)
+        cmap.colors = cmap.colors[offset:] + cmap.colors[:offset]
     mcm.cmap_d[name] = cmap
     return CycleList(cmap.colors, name)
 
