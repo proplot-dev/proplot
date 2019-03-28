@@ -1078,7 +1078,7 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
             if prop is not None:
                 overridden.append(override)
         if overridden:
-            warnings.warn(f'Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
+            warnings.warn(f'Creating unaligned legend. Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
         fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
@@ -1087,9 +1087,13 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
         interval = (((1 + spacing)*fontsize)/72) / \
                 (ax.figure.get_figheight() * np.diff(ax._position.intervaly))
         # Iterate and draw
-        if order=='F':
-            raise NotImplementedError(f'When align=False, proplot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
+        # NOTE: We confine possible bounding box (within which legend position
+        # is allowed to vary) in *y*-direction, but do not confine it in
+        # *x*-direction (notice the *x*-coordinate range 0-1). Matplotlib will
+        # automatically move left-to-right if you request this.
         legends = []
+        if order=='F':
+            raise NotImplementedError(f'When align=False, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
         for h,hs in enumerate(handles):
             if 'upper' in loc:
                 y1 = 1 - (h+1)*interval
@@ -1111,9 +1115,11 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
             ax.add_artist(l) # because matplotlib deletes previous ones
 
     # Properties for legends
-    outline = {'linewidth': rc['axes.linewidth'],
-               'edgecolor': rc['axes.edgecolor'],
-               'facecolor': rc['axes.facecolor']}
+    outline = rc.fill({
+        'linewidth':'axes.linewidth',
+        'edgecolor':'axes.edgecolor',
+        'facecolor':'axes.facecolor',
+        }, cache=False)
     for leg in legends:
         # for t in leg.texts:
         leg.legendPatch.update(outline) # or get_frame()
@@ -1958,7 +1964,7 @@ class BaseAxes(maxes.Axes):
                 'weight':   'suptitle.weight',
                 'color':    'suptitle.color',
                 'fontname': 'fontname'
-                }, all=True)
+                }, cache=False)
             fig._suptitle_setup(text=suptitle, **kw)
         if rowlabels is not None:
             kw = rc.fill({
@@ -1966,7 +1972,7 @@ class BaseAxes(maxes.Axes):
                 'weight':   'rowlabel.weight',
                 'color':    'rowlabel.color',
                 'fontname': 'fontname'
-                }, all=True)
+                }, cache=False)
             fig._rowlabels(rowlabels, **kw)
         if collabels is not None:
             kw = rc.fill({
@@ -1974,7 +1980,7 @@ class BaseAxes(maxes.Axes):
                 'weight':   'collabel.weight',
                 'color':    'collabel.color',
                 'fontname': 'fontname'
-                }, all=True)
+                }, cache=False)
             fig._collabels(collabels, **kw)
 
         # Create axes title
@@ -1990,7 +1996,7 @@ class BaseAxes(maxes.Axes):
                 'fontsize':  'title.fontsize',
                 'weight':    'title.weight',
                 'fontname':  'fontname'
-                }, all=True)
+                }, cache=False)
             if top and self.toppanel.on():
                 ax = self.toppanel
                 obj = self.toppanel.title
@@ -2022,7 +2028,7 @@ class BaseAxes(maxes.Axes):
                 'weight':    'abc.weight',
                 'color':     'abc.color',
                 'fontname':  'fontname'
-                }, all=True)
+                }, cache=False)
             if top and self.toppanel.on():
                 ax = self.toppanel
                 obj = self.toppanel.abc
@@ -2532,15 +2538,15 @@ class XYAxes(BaseAxes):
         # settings that modify xtick.left, axes.grid.axis, etc., instead of
         # these keyword args. Results in duplicate behavior maybe.
         which = rc['axes.grid.which']
-        grid = rc.get('axes.grid', all=False)
-        axis = rc.get('axes.grid.axis', all=True) # always need this property
+        grid = rc.get('axes.grid', cache=True)
+        axis = rc.get('axes.grid.axis') # always need this property
         if which is not None or grid is not None: # only if *one* was changed recently!
             # But no matter what we need *both* to figure out proper xgrid, ygrid arguments
             # NOTE: Should we try to make xgridminor, ygridminor part of thing?
             if grid is None:
-                grid = rc.get('axes.grid', all=True)
+                grid = rc.get('axes.grid')
             elif which is None:
-                which = rc.get('axes.grid.which', all=True)
+                which = rc.get('axes.grid.which')
             xgrid      = _default(xgrid, grid and axis in ('x','both') and which in ('major','both'))
             ygrid      = _default(ygrid, grid and axis in ('y','both') and which in ('major','both'))
             xgridminor = _default(xgridminor, grid and axis in ('x','both') and which in ('minor','both'))
@@ -3473,7 +3479,7 @@ class CartopyAxes(MapAxes, GeoAxes):
                 'color':     'geogrid.color',
                 'linewidth': 'geogrid.linewidth',
                 'linestyle': 'geogrid.linestyle',
-                }, all=True)
+                }, cache=False)
             labels = labels and isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree))
             gl = self.gridlines(draw_labels=labels, zorder=100, **kw)
             self._gl = gl
@@ -3536,7 +3542,7 @@ class CartopyAxes(MapAxes, GeoAxes):
             # Customize
             # For 'lines', need to specify edgecolor and facecolor individually
             # See: https://github.com/SciTools/cartopy/issues/803
-            kw = dict(rc.get(name, nodict=False))
+            kw = {**rc.get(name, nodict=False)}
             if name in ('coast', 'rivers', 'borders', 'innerborders'):
                 kw['edgecolor'] = kw.pop('color')
                 kw['facecolor'] = 'none'
@@ -3546,9 +3552,14 @@ class CartopyAxes(MapAxes, GeoAxes):
             setattr(self, f'_{name}', feat)
 
         # Update patch
-        kw = rc.fill({'facecolor': 'axes.facecolor'}, all=True)
+        kw = rc.fill({
+            'facecolor': 'axes.facecolor'
+            }, cache=False)
         self.background_patch.update(kw)
-        kw = rc.fill({'edgecolor': 'axes.edgecolor', 'linewidth': 'axes.linewidth'}, all=True)
+        kw = rc.fill({
+            'edgecolor': 'axes.edgecolor',
+            'linewidth': 'axes.linewidth'
+            }, cache=False)
         self.outline_patch.update(kw)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
@@ -3696,8 +3707,13 @@ class BasemapAxes(MapAxes):
         #   self.m._mapboundarydrawn.set_visible(False) and edges/fill color disappear
         # * For now will enforce that map plots *always* have background whereas
         #   axes plots can have transparent background
-        kw_face = rc.fill({'facecolor': 'axes.facecolor'}, all=True)
-        kw_edge = rc.fill({'linewidth': 'axes.linewidth', 'edgecolor': 'axes.edgecolor'}, all=True)
+        kw_face = rc.fill({
+            'facecolor': 'axes.facecolor'
+            }, cache=False)
+        kw_edge = rc.fill({
+            'linewidth': 'axes.linewidth',
+            'edgecolor': 'axes.edgecolor'
+            }, cache=False)
         self.axesPatch = self.patch # bugfix or something
         if self.m.projection in self._proj_non_rectangular:
             self.patch.set_alpha(0) # make patch invisible
@@ -3723,11 +3739,11 @@ class BasemapAxes(MapAxes):
                 'color':     'geogrid.color',
                 'linewidth': 'geogrid.linewidth',
                 'linestyle': 'geogrid.linestyle',
-                }, all=True)
+                }, cache=False)
             tkw = rc.fill({
                 'color':    'geogrid.color',
                 'fontsize': 'geogrid.labelsize',
-                }, all=True)
+                }, cache=False)
             # Latitudes
             # TODO: latlocator and lonlocator are always Truthy, because we
             # if latlocator:

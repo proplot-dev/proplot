@@ -885,7 +885,7 @@ def _clip_cmap(cmap, left=None, right=None, name=None, N=None):
 
     # Trickier for segment data maps
     # Initial stuff
-    left = left or None
+    left = left or 0
     right = right or 1
     # Resample the segmentdata arrays
     data = {}
@@ -1440,7 +1440,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=None, left=None, right=None, name=None, **kwargs):
+def Cycle(*args, samples=None, name=None, **kwargs):
     """
     Simply calls `Colormap`, then returns the corresponding list of colors
     if a `~matplotlib.colors.ListedColormap` was returned

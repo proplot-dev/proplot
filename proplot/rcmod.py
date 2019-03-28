@@ -684,6 +684,8 @@ class rc_configurator(object):
                 else:
                     tickwidth = _rcGlobals['linewidth']
                     ratio = value
+                kw['axes.linewidth'] = tickwidth
+                kw['hatch.linewidth'] = tickwidth
                 kw['xtick.major.width'] = tickwidth
                 kw['ytick.major.width'] = tickwidth
                 kw['xtick.minor.width'] = tickwidth*ratio
@@ -754,15 +756,16 @@ class rc_configurator(object):
             raise err
         return item
 
-    def get(self, key, all=True, nodict=True):
-        """Getter with some special options (this is for internal use by
-        `~proplot.axes.BaseAxes` and its subclasses).
+    def get(self, key, cache=False, nodict=True):
+        """Getter with some special options. This is for internal use by
+        `~proplot.axes.BaseAxes` and its subclasses. Defaults to looking
+        for **all** properties (i.e. not just the cached ones).
 
         Parameters
         ----------
         key : str
             The key name.
-        all : bool, optional
+        cache : bool, optional
             Whether to look for all properties or just cached (i.e.
             recently changed) properties.
         nodict : bool, optional
@@ -772,19 +775,20 @@ class rc_configurator(object):
             setting have the same name, like "land".
         """
         self._no_dict = nodict
-        if all:
+        if not cache:
             orig = self._getitem_mode
             self._getitem_mode = 0
         item = self._get(key)
         self._no_dict = False
-        if all:
+        if not cache:
             self._getitem_mode = orig
         return item
 
-    def fill(self, props, all=False, nodict=True):
+    def fill(self, props, cache=True, nodict=True):
         """
         Fill a dictionary containing rc property string names with the
-        corresponding property.
+        corresponding property. Defaults to **only** looking for cached
+        (i.e. changed) properties.
 
         Parameters
         ----------
@@ -793,7 +797,7 @@ class rc_configurator(object):
             are replaced with the corresponding property only if
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
-        all : bool, optional
+        cache : bool, optional
             Whether to look for all properties or just cached (i.e.
             recently changed) properties. In the later case, keys that
             return ``None`` will be omitted from the output dictionary.
@@ -818,7 +822,7 @@ class rc_configurator(object):
         """
         props_out = {}
         self._no_dict = nodict
-        if all:
+        if not cache:
             orig = self._getitem_mode
             self._getitem_mode = 0
         for key,value in props.items():
@@ -826,7 +830,7 @@ class rc_configurator(object):
             if item is not None:
                 props_out[key] = item
         self._no_dict = False
-        if all:
+        if not cache:
             self._getitem_mode = orig
         return props_out
 
