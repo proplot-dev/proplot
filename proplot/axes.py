@@ -1580,7 +1580,8 @@ class BaseAxes(maxes.Axes):
         self._dualx_scale = None
         # Misc
         self._visible_effective = True
-        self._gridliner_on = False # whether cartopy gridliners are plotted here; matplotlib tight bounding box does not detect them! so disable smart_tight_layout if True
+        self._cartopy_gridliner_on = False # whether cartopy gridliners are enabled
+        self._cartopy_limited_extent = False # whether cartopy set_extent was used
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         self._abc_inside = False
 
@@ -3376,12 +3377,11 @@ class CartopyAxes(MapAxes, GeoAxes):
         # self._hold = None # dunno
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection>.')
-        self._gl = None # gridliner
+        self._cartopy_gl = None # gridliner
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
 
-        # Below will call BaseAxes
+        # Call BaseAxes
         super().__init__(*args, map_projection=map_projection, **kwargs)
-
         # Apply circle boundary
         # self.projection.threshold = kwargs.pop('threshold', self.projection.threshold) # optionally modify threshold
         name = map_projection.proj4_params['proj']
@@ -3396,6 +3396,8 @@ class CartopyAxes(MapAxes, GeoAxes):
             center = self.projection.proj4_params['lon_0']
             self.set_extent([center - 180 + eps, center + 180 - eps, boundinglat, centerlat], PlateCarree()) # use platecarree transform
             self.set_boundary(projs.Circle(self._n_bounds), transform=self.transAxes)
+        # Untoggle limited extent after calling set extent
+        self._cartopy_limited_extent = False
 
     def __getattribute__(self, attr, *args):
         """
@@ -3416,6 +3418,7 @@ class CartopyAxes(MapAxes, GeoAxes):
           This cyclically permutes data as needed for the projection, and can
           optionally ensure global data coverage.
         """
+        # Wrappers
         obj = super().__getattribute__(attr, *args)
         if attr in simple_methods:
             obj = _wrapper_cartopy_simplefix(self, obj)
@@ -3425,6 +3428,10 @@ class CartopyAxes(MapAxes, GeoAxes):
                 obj = _wrapper_check_edges(obj)
             else:
                 obj = _wrapper_check_centers(obj)
+        # Special toggle
+        # Tight subplots fail with limited extent!
+        if attr=='set_extent':
+            self._cartopy_limited_extent = True
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -3461,8 +3468,8 @@ class CartopyAxes(MapAxes, GeoAxes):
 
         # Draw gridlines
         # Make old one invisible
-        if self._gl is not None:
-            gl = self._gl
+        if self._cartopy_gl is not None:
+            gl = self._cartopy_gl
             gl.xlines         = False
             gl.xlabels_top    = False
             gl.xlabels_bottom = False
@@ -3482,7 +3489,7 @@ class CartopyAxes(MapAxes, GeoAxes):
                 }, cache=False)
             labels = labels and isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree))
             gl = self.gridlines(draw_labels=labels, zorder=100, **kw)
-            self._gl = gl
+            self._cartopy_gl = gl
 
             # Grid locations
             eps = 1e-3
@@ -3496,13 +3503,13 @@ class CartopyAxes(MapAxes, GeoAxes):
             # Grid labels
             if labels:
                 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-                self._gridliner_on = True
+                self._cartopy_gridliner_on = True
                 gl.xformatter = LONGITUDE_FORMATTER
                 gl.yformatter = LATITUDE_FORMATTER
                 gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
                 gl.ylabels_left, gl.ylabels_right = latlabels[:2]
             else:
-                self._gridliner_on = False
+                self._cartopy_gridliner_on = False
 
         # Geographic features
         # WARNING: Seems cartopy features can't be updated!

@@ -435,7 +435,8 @@ class Figure(mfigure.Figure):
         # 1) If you used set_bounds to zoom into part of a cartopy projection,
         # this can erroneously identify invisible edges of map as being part of boundary
         # 2) If you have gridliner text labels, matplotlib won't detect them.
-        if any(ax._gridliner_on for ax in self.main_axes):
+        if any(ax._cartopy_gridliner_on or ax._cartopy_limited_extent for ax in self.main_axes):
+            warnings.warn('Tight subplots do not work with cartopy gridline labels or when zooming into a projection. Use tight=False in your call to subplots().')
             return
         # Proceed
         if not self._silent:
@@ -1215,9 +1216,9 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
         height = axheights + top + bottom + sum(hspace) + bpanel_space
     # Check
     if axwidths<0:
-        raise ValueError(f"Not enough room for axes (would have width {axwidths}). Increase width, or reduce spacings 'left', 'right', or 'wspace'.")
+        raise ValueError(f"Not enough room for axes (would have width {axwidths}). Try using tight=False, increasing figure width, or decreasing 'left', 'right', or 'wspace' spaces.")
     if axheights<0:
-        raise ValueError(f"Not enough room for axes (would have height {axheights}). Increase height, or reduce spacings 'top', 'bottom', or 'hspace'.")
+        raise ValueError(f"Not enough room for axes (would have height {axheights}). Try using tight=False, increasing figure width, or decreasing 'top', 'bottom', or 'hspace' spaces.")
     # Necessary arguments to reconstruct this grid
     subplots_kw = _dict({
         'wextra':  wextra,  'hextra':  hextra,
