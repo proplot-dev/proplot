@@ -2790,17 +2790,18 @@ class XYAxes(BaseAxes):
             self.indicate_inset_zoom()
         super().smart_update(**kwargs)
 
-    def dualx(self, transform='linear', offset=0, scale=1, xlabel=None, **kwargs):
+    def dualx(self, transform='linear', offset=0, scale=1, label=None, xlabel=None, **kwargs):
         """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
         ax = self.twiny()
         if xlabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "xlabel" keyword argument.')
         xscale = axistools.InvertedScaleFactory(transform)
         xformatter = kwargs.pop('xformatter', 'default')
+        xlabel = label or xlabel
         ax.format(xscale=xscale, xformatter=xformatter, xlabel=xlabel, **kwargs)
         self._dualx_scale = (offset, scale)
 
-    def dualy(self, transform='linear', offset=0, scale=1, ylabel=None, **kwargs):
+    def dualy(self, transform='linear', offset=0, scale=1, label=None, ylabel=None, **kwargs):
         """
         Makes a secondary *y*-axis for denoting equivalent *y*
         coordinates in **alternate units**. Returns nothing.
@@ -2824,7 +2825,7 @@ class XYAxes(BaseAxes):
             Defaults to ``0``.
             For example, if your *y*-axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
-        ylabel : None or str, optional
+        label, ylabel : None or str, optional
             The axis label (highly recommended). A warning will be issued if
             this is not supplied.
         **kwargs
@@ -2847,6 +2848,7 @@ class XYAxes(BaseAxes):
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "ylabel" keyword argument.')
         yscale = axistools.InvertedScaleFactory(transform)
         yformatter = kwargs.pop('yformatter', 'default')
+        ylabel = label or ylabel
         ax.format(yscale=yscale, yformatter=yformatter, ylabel=ylabel, **kwargs)
         self._dualy_scale = (offset, scale)
 

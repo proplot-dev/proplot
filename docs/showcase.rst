@@ -923,11 +923,11 @@ same coordinate range.
     ax = axs[0]
     ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], 
               gridcolor=c1, ycolor=c1)
-    ax.dualy(yscale='height', ylabel='height (km)', color=c2, gridcolor=c2, grid=True)
+    ax.dualy(transform='height', ylabel='height (km)', color=c2, gridcolor=c2, grid=True)
     ax = axs[1] # span
     ax.format(xformatter='null', ylabel='height (km)', ylim=(0,20), xlocator='null', gridcolor=c2, ycolor=c2,
               suptitle='Duplicate *y*-axes with special transformations', grid=True)
-    ax.dualy(yscale='pressure', ylabel='pressure (hPa)', ylocator=100, grid=True, color=c1, gridcolor=c1)
+    ax.dualy(transform='pressure', ylabel='pressure (hPa)', ylocator=100, grid=True, color=c1, gridcolor=c1)
 
 
 
@@ -957,8 +957,8 @@ same coordinate range.
     ax.fill_between([0.27, 0.33], 0, 1, color='red', alpha=0.3)
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
     # axy = ax.twiny()
-    ax.dualx(xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
-              xscale='inverse', xlabel='period (days)',
+    ax.dualx(transform='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
+              xlabel='period (days)',
               title='Imgaginary response function', titlepos='oc',
               suptitle='Duplicate x-axes with wavenumber and its inverse (i.e. wavelength)', 
               )
