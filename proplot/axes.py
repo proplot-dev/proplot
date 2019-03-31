@@ -2790,45 +2790,49 @@ class XYAxes(BaseAxes):
             self.indicate_inset_zoom()
         super().smart_update(**kwargs)
 
-    def dualx(self, offset=0, scale=1, xscale='linear', **kwargs):
+    def dualx(self, transform='linear', offset=0, scale=1, xlabel=None, **kwargs):
         """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
         ax = self.twiny()
-        xscale = axistools.InvertedScaleFactory(xscale)
+        if xlabel is None:
+            warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "xlabel" keyword argument.')
+        xscale = axistools.InvertedScaleFactory(transform)
         xformatter = kwargs.pop('xformatter', 'default')
-        ax.format(xscale=xscale, xformatter=xformatter, **kwargs)
+        ax.format(xscale=xscale, xformatter=xformatter, xlabel=xlabel, **kwargs)
         self._dualx_scale = (offset, scale)
 
-    def dualy(self, offset=0, scale=1, yscale='linear', **kwargs):
+    def dualy(self, transform='linear', offset=0, scale=1, ylabel=None, **kwargs):
         """
         Makes a secondary *y*-axis for denoting equivalent *y*
         coordinates in **alternate units**. Returns nothing.
 
         Parameters
         ----------
-        yscale : str
-            The scale name used to transform data to the alternate units.
-            Defaults to ``'linear'``.
+        transform : str, optional
+            The registered scale name used to transform data to the alternate
+            units.  Defaults to ``'linear'``.
             For example, if your *y*-axis is wavenumber and you want wavelength on
-            the opposite side, use ``yscale='inverse'``. If your-*y* axis
+            the opposite side, use ``transform='inverse'``. If your-*y* axis
             is height and you want pressure on the opposite side, use
-            ``yscale='pressure'`` (and vice versa).
+            ``transform='pressure'`` (and vice versa).
         scale : float, optional
-            The constant multiple applied after scaling data with `yscale`.
+            The constant multiple applied after scaling data with `transform`.
             Defaults to ``1``.
             For example, if your *y*-axis is meters and you
             want kilometers on the other side, use ``scale=1e-3``.
         offset : float, optional
-            The constant offset added after multipyling by ``scale``.
+            The constant offset added after multipyling by `scale`.
             Defaults to ``0``.
             For example, if your *y*-axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
+        ylabel : None or str, optional
+            The axis label (highly recommended). A warning will be issued if
+            this is not supplied.
         **kwargs
-            Passed to `BaseAxes.format`. I highly recommend passing the
-            `ylabel` keyword arg.
+            Formats the new axis. Passed to `BaseAxes.format`.
 
         Note
         ----
-        The axis scale `yscale` is used to transform units on the left axis,
+        The axis scale `transform` is used to transform units on the left axis,
         linearly spaced, to units on the right axis. This means the right
         'axis scale' must scale its data with the *inverse* of this transform.
         We make this inverted scale with `~proplot.axistools.InvertedScaleFactory`.
@@ -2839,9 +2843,11 @@ class XYAxes(BaseAxes):
         # to original matplotlib version instead of my custom override. Need
         # to apply it explicitly.
         ax = self.twinx()
-        yscale = axistools.InvertedScaleFactory(yscale)
+        if ylabel is None:
+            warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "ylabel" keyword argument.')
+        yscale = axistools.InvertedScaleFactory(transform)
         yformatter = kwargs.pop('yformatter', 'default')
-        ax.format(yscale=yscale, yformatter=yformatter, **kwargs)
+        ax.format(yscale=yscale, yformatter=yformatter, ylabel=ylabel, **kwargs)
         self._dualy_scale = (offset, scale)
 
     def altx(self, *args, **kwargs):
@@ -2857,7 +2863,7 @@ class XYAxes(BaseAxes):
         return self.twinx(*args, **kwargs)
 
     def twinx(self):
-        """Mimics `~matplotlib.axes.Axes.twinx` and intelligently handles
+        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` and intelligently handles
         axis ticks, gridlines, axis tick labels, axis labels, and axis sharing.
         Returns an `XYAxes` instance."""
         # Note: Cannot wrap twinx() because then the axes created will be
@@ -2888,7 +2894,7 @@ class XYAxes(BaseAxes):
         return ax
 
     def twiny(self):
-        """Mimics `~matplotlib.axes.Axes.twiny` and intelligently handles
+        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny` and intelligently handles
         axis ticks, gridlines, axis tick labels, axis labels, and axis sharing.
         Returns an `XYAxes` instance."""
         # Note: Cannot wrap twiny() because we want to use our own XYAxes,

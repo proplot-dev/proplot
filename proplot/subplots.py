@@ -431,16 +431,17 @@ class Figure(mfigure.Figure):
         # the figure to have tight boundaries.
         if not self._smart_tight_init or not self._smart_tight:
             return
-        # Bail if we find cartopy axes (TODO right now set_bounds may mess up tight subplot still)
+        # Bail if we find cartopy axes
         # 1) If you used set_bounds to zoom into part of a cartopy projection,
         # this can erroneously identify invisible edges of map as being part of boundary
         # 2) If you have gridliner text labels, matplotlib won't detect them.
         if any(ax._cartopy_gridliner_on or ax._cartopy_limited_extent for ax in self.main_axes):
             warnings.warn('Tight subplots do not work with cartopy gridline labels or when zooming into a projection. Use tight=False in your call to subplots().')
+            self._smart_tight = False
             return
         # Proceed
         if not self._silent:
-            print('Adjusting gridspec.')
+            print('Adjusting layout.')
         self.smart_tight_layout(renderer)
 
     def _inner_tight_layout(self, panels, spans, renderer, side='l'):
@@ -1218,7 +1219,7 @@ def _get_sizes(nrows, ncols, rowmajor=True, aspect=1, figsize=None,
     if axwidths<0:
         raise ValueError(f"Not enough room for axes (would have width {axwidths}). Try using tight=False, increasing figure width, or decreasing 'left', 'right', or 'wspace' spaces.")
     if axheights<0:
-        raise ValueError(f"Not enough room for axes (would have height {axheights}). Try using tight=False, increasing figure width, or decreasing 'top', 'bottom', or 'hspace' spaces.")
+        raise ValueError(f"Not enough room for axes (would have height {axheights}). Try using tight=False, increasing figure height, or decreasing 'top', 'bottom', or 'hspace' spaces.")
     # Necessary arguments to reconstruct this grid
     subplots_kw = _dict({
         'wextra':  wextra,  'hextra':  hextra,

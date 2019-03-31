@@ -1440,7 +1440,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         print(f'Saved colormap to "{basename}".')
     return cmap
 
-def Cycle(*args, samples=None, name=None, **kwargs):
+def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     """
     Simply calls `Colormap`, then returns the corresponding list of colors
     if a `~matplotlib.colors.ListedColormap` was returned
@@ -1463,6 +1463,10 @@ def Cycle(*args, samples=None, name=None, **kwargs):
     name : None or str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap`.
         Default name is ``'no_name'``.
+    save : bool, optional
+        Whether to save the color cycle in the folder ``~/.proplot``. The
+        folder is created if it does not already exist. The cycle is saved
+        as a list of hex strings to the file ``name.hex``.
     **kwargs
         Passed to `Colormap`.
 
@@ -1499,10 +1503,18 @@ def Cycle(*args, samples=None, name=None, **kwargs):
         else:
             raise ValueError(f'Invalid samples "{samples}".')
         cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
-    # Register the colormap and return a list of colors
+    # Register the colormap
     cmap.name = name
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
     mcm.cmap_d[name] = cmap
+    # Optionally save
+    if save:
+        if not os.path.isdir(_data_user):
+            os.mkdir(_data_user)
+        basename = f'{name}.hex'
+        filename = os.path.join(_data_user, basename)
+        with open(filename, 'w') as f:
+            f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
     return CycleList(cmap.colors, name)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
