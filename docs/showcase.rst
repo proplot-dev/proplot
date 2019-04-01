@@ -546,18 +546,17 @@ and
 `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
 issues by automatically changing the edge colors after ``contourf``,
 ``pcolor``, and ``pcolormesh`` are called. Use ``fix=False`` to disable
-this behavior (it does slow down figure rendering a bit). If desired,
-you can also customize the line properties for the lines between filled
-color patches, as is done below.
+this behavior (it does slow down figure rendering a bit), or just pass
+one of the keyword args that specifies line properties.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=2, share=False)
-    axs[0].contourf(np.random.rand(20,20).cumsum(axis=0), cmap='solar', ls='-', lw=1, color='gray2')
-    axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='k')
-    axs.format(suptitle='New contour and pcolor options')
+    axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar') # fixed bug
+    axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='gray2') # deliberate lines
+    axs.format(suptitle='White lines between patches')
 
 
 

@@ -176,6 +176,16 @@ _aliases = {
     'tpanel': 'toppanel',
     'lpanel': 'leftpanel'
     }
+# Keywords
+# These may automatically override the 'fix' option!
+# NOTE: Pcolor edgecolors is really just more *flexible* version of 'color';
+# and if the latter is specified will overwrite the former by default, so we
+# just do the same thing.
+_options = {
+    'contour$': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
+    'cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
+    '^pcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+    }
 
 #------------------------------------------------------------------------------
 # Wrappers for standardizing 2D grid inputs for contour, etc.
@@ -271,6 +281,7 @@ def wrapper_check_edges(func, *args, order='C', **kwargs):
         elif Z.shape[1]==xlen and Z.shape[0]==ylen:
             # If 2D, don't raise error, but don't fix either, because
             # matplotlib pcolor accepts grid center inputs.
+            # TODO: Fix 2D inputs?
             if x.ndim==1 and y.ndim==1:
                 x, y = utils.edges(x), utils.edges(y)
         elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
@@ -517,8 +528,7 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
     norm=None, norm_kw={},
     lw=None, linewidth=None, linewidths=None,
     ls=None, linestyle=None, linestyles=None,
-    color=None, colors=None,
-    values_as_levels=True, # if values are passed, treat them as levels?
+    color=None, colors=None, edgecolor=None, edgecolors=None,
     **kwargs):
     """
     Wraps methods that take a ``cmap`` argument, like
@@ -566,12 +576,21 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
         This is passed to the `~proplot.colortools.Norm` constructor.
     norm_kw : dict-like, optional
         Passed to `~proplot.colortools.Norm`.
-    values_as_levels : bool, optional
-        Used internally. Toggles whether to infer `values` from `levels`, or
-        to bypass them and add `values` as a keyword arg to the main function.
 
     Other parameters
     ----------------
+    lw, linewidth, linewidths
+        Aliases. Refers to `linewidths` for `~matplotlib.axes.Axes.contour`,
+        `linewidth` for `~matplotlib.axes.Axes.pcolor` and
+        `~matplotlib.axes.Axes.pcolormesh`, and `linewidth` for `BaseAxes.cmapline`.
+    ls, linestyle, linestyles
+        Aliases. Refers to `linestyles` for `~matplotlib.axes.Axes.contour`,
+        `linestyle` for `~matplotlib.axes.Axes.pcolor` and
+        `~matplotlib.axes.Axes.pcolormesh`, and `linestyle` for `BaseAxes.cmapline`.
+    color, colors, edgecolor, edgecolors
+        Aliases. Refers to `colors` for `~matplotlib.axes.Axes.contour`,
+        `edgecolors` for `~matplotlib.axes.Axes.pcolor` and
+        `~matplotlib.axes.Axes.pcolormesh`, and `color` for `BaseAxes.cmapline`.
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
@@ -600,10 +619,9 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
     # Input levels
     # See this post: https://stackoverflow.com/a/48614231/4970632
     name = func.__name__
+    values_as_keyword = (name=='cmapline') # functions for which 'values' is a native keyword
     if np.iterable(values):
-        if name=='cmapline': # e.g. for cmapline, we want to *interpolate*
-            values_as_levels = False # get levels later down the line
-        if not values_as_levels:
+        if values_as_keyword:
             kwargs['values'] = values
             levels = utils.edges(values) # special case, used by colorbar factory
         else:
@@ -614,7 +632,7 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
     # Input colormap
     cyclic = False
-    colors = _default(color, colors)
+    colors = _default(color, colors, edgecolor, edgecolors)
     levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
     linewidths = _default(lw, linewidth, linewidths)
     linestyles = _default(ls, linestyle, linestyles)
@@ -633,22 +651,21 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
         kwargs.update({'levels': levels, 'extend': extend})
     elif name in ('imshow', 'matshow', 'spy', 'hist2d'): # aspect ratio settings
         kwargs['aspect'] = 'auto'
-    # New feature, add lines to contourf
-    # TODO: Check all this stuff for quiver, etc.!
-    if re.match('contour$', name): # add ability to specify line widths with contours!
-        if colors:
-            kwargs['colors'] = colors
-        if linewidths:
-            kwargs['linewidths'] = linewidths
-        if linestyles:
-            kwargs['linestyles'] = linestyles
-    elif name=='cmapline':
-        if colors:
-            kwargs['color'] = colors
-        if linewidths:
-            kwargs['linewidth'] = linewidths
-        if linestyles:
-            kwargs['linestyle'] = linestyles
+    # Disable fix=True for certain keyword combinations, e.g. if user wants
+    # white lines around their pcolor mesh.
+    # TODO: Double check matshow, etc.!
+    for regex,names in _options.items():
+        if not re.search(regex, name):
+            continue
+        for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
+            if not value:
+                continue
+            if key not in names:
+                if value:
+                    raise ValueError(f'Unknown keyword arg {key} for function {name}.')
+                continue
+            fix = False # override!
+            kwargs[names[key]] = value
 
     # Call function with custom kwargs, exit if no cmap
     result = func(*args, **kwargs)
@@ -712,10 +729,6 @@ def wrapper_cmap(self, func, *args, fix=True, cmap=None, cmap_kw={},
         color = 'face'
         linewidth = 0.4 # seems to be lowest threshold where white lines disappear
         linestyle = '-'
-        if colors or linewidths or linestyles:
-            color = _default(colors, 'k')
-            linewidth = _default(linewidths, 1.0)
-            linestyle = _default(linestyles, '-')
         if 'contourf' in name: # 'contourf', 'tricontourf'
             for contour in result.collections:
                 contour.set_edgecolor(color)
@@ -2792,13 +2805,16 @@ class XYAxes(BaseAxes):
 
     def dualx(self, transform='linear', offset=0, scale=1, label=None, xlabel=None, **kwargs):
         """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
+        parent = self.get_xscale()
+        if parent!='linear':
+            warnings.warn('Parent axis scale must be linear.')
+            self.set_xscale('linear')
         ax = self.twiny()
         if xlabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "xlabel" keyword argument.')
         xscale = axistools.InvertedScaleFactory(transform)
-        xformatter = kwargs.pop('xformatter', 'default')
         xlabel = label or xlabel
-        ax.format(xscale=xscale, xformatter=xformatter, xlabel=xlabel, **kwargs)
+        ax.format(xscale=xscale, xlabel=xlabel, **kwargs)
         self._dualx_scale = (offset, scale)
 
     def dualy(self, transform='linear', offset=0, scale=1, label=None, ylabel=None, **kwargs):
@@ -2843,13 +2859,16 @@ class XYAxes(BaseAxes):
         # formatter. For example, a linear scale will change default formatter
         # to original matplotlib version instead of my custom override. Need
         # to apply it explicitly.
+        parent = self.get_yscale()
+        if parent!='linear':
+            warnings.warn('Parent axis scale must be linear.')
+            self.set_yscale('linear')
         ax = self.twinx()
         if ylabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "ylabel" keyword argument.')
         yscale = axistools.InvertedScaleFactory(transform)
-        yformatter = kwargs.pop('yformatter', 'default')
         ylabel = label or ylabel
-        ax.format(yscale=yscale, yformatter=yformatter, ylabel=ylabel, **kwargs)
+        ax.format(yscale=yscale, ylabel=ylabel, **kwargs)
         self._dualy_scale = (offset, scale)
 
     def altx(self, *args, **kwargs):
@@ -3187,10 +3206,10 @@ class MapAxes(BaseAxes):
     # both jump over this intermediate class and call BaseAxes.smart_update
     def smart_update(self, grid=None, labels=None, latmax=None,
         lonlim=None, latlim=None, xlim=None, ylim=None,
-        xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
-        yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
-        latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
-        lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
+        xlines=None, xminorlines=None, xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
+        ylines=None, yminorlines=None, yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
+        lonlines=None, lonminorlines=None, latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
+        latlines=None, latminorlines=None, lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
         latlabels=None, lonlabels=None, xlabels=None, ylabels=None,
         **kwargs,
         ):
@@ -3211,11 +3230,11 @@ class MapAxes(BaseAxes):
             Aliases for `lonlim`, `latlim`.
         lonlim, latlim : None or length-2 list of float, optional
             Longitude and latitude limits of projection.
-        xlocator, ylocator, lonticks, latticks, xticks, yticks
+        xlocator, ylocator, lonlines, latlines, xlines, ylines, lonticks, latticks, xticks, yticks
             Aliases for `lonlocator`, `latlocator`.
         lonlocator, latlocator : None or list of float, optional
             List of longitudes and latitudes for drawing gridlines.
-        xminorlocator, yminorlocator, lonminorticks, latminorticks, xminorticks, yminorticks
+        xminorlocator, yminorlocator, lonminorlines, latminorlines, xminorlines, yminorlines, lonminorticks, latminorticks, xminorticks, yminorticks
             Aliases for `lonminorlocator`, `latminorlocator`.
         lonminorlocator, latminorlocator : None or list of float, optional
             As with `lonlocator` and `latlocator`, but for minor gridlines.
@@ -3246,10 +3265,10 @@ class MapAxes(BaseAxes):
         grid = _default(grid, rc.get('geogrid'))
         lonlim = _default(xlim, lonlim)
         latlim = _default(ylim, latlim)
-        lonlocator = _default(lonlocator, lonticks, xlocator, xticks)
-        latlocator = _default(latlocator, latticks, ylocator, yticks)
-        lonminorlocator = _default(lonminorlocator, lonminorticks, xminorlocator, xminorticks)
-        latminorlocator = _default(latminorlocator, latminorticks, yminorlocator, yminorticks)
+        lonlocator = _default(lonlocator, lonlines, lonticks, xlocator, xlines, xticks)
+        latlocator = _default(latlocator, latlines, latticks, ylocator, ylines, yticks)
+        lonminorlocator = _default(lonminorlocator, lonminorlines, lonminorticks, xminorlocator, xminorlines, xminorticks)
+        latminorlocator = _default(latminorlocator, latminorlines, latminorticks, yminorlocator, yminorlines, yminorticks)
         lonlocator = lonminorlocator or lonlocator # where we draw gridlines
         latlocator = latminorlocator or latlocator
         latlocator = _default(latlocator, rc.get('geogrid.latlines')) # gridlines by default
