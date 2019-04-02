@@ -1462,6 +1462,7 @@ class BaseAxes(maxes.Axes):
 
     # @_cmap_features
     def cmapline(self, *args, cmap=None, norm=None,
+            ls=None, linestyle='-',
             values=None, interp=0, **kwargs):
         """
         Create lines with colormap.
@@ -1481,6 +1482,7 @@ class BaseAxes(maxes.Axes):
             we don't need any interpolation.
         """
         # First error check
+        ls = ls or linestyle # linestyle, defauls is '-'
         if values is None:
             raise ValueError('For line with a "colormap", must input values=<iterable> to which colors will be mapped.')
         if len(args) not in (1,2):
@@ -1532,7 +1534,7 @@ class BaseAxes(maxes.Axes):
 
         # Create LineCollection and update with values
         # TODO: Why not just pass kwargs to class?
-        collection = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm, linestyles='-')
+        collection = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm, linestyles=ls)
         collection.set_array(np.array(values))
         collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 

@@ -118,6 +118,7 @@ rcGlobals_children = {
 # already implemented by matplotlib
 rcDefaults = {
     # Some of these will be overwritten by global alises
+    # Figure stuff
     'figure.dpi':              90, # save ipython notebook space
     'figure.facecolor':        (0.95,0.95,0.95,1),
     'figure.max_open_warning': 0,
@@ -130,6 +131,7 @@ rcDefaults = {
     'savefig.directory':       '',
     'savefig.bbox':            'standard',
     'savefig.format':          'pdf',
+    # Axes elements
     'axes.xmargin':            0.0,
     'axes.ymargin':            0.0,
     'axes.titleweight':        'normal',
@@ -144,14 +146,7 @@ rcDefaults = {
     'grid.alpha':              0.1,
     'grid.linestyle':          '-',
     'grid.linewidth':          0.6, # a bit thinner
-    'font.family':             'DejaVu Sans', # allowed to be concrete name(s) when usetex is False
-    # 'font.family':             'sans-serif',
-    # 'font.sans-serif':         'DejaVu Sans',
-    'text.latex.preamble':      r'\usepackage{cmbright}', # https://stackoverflow.com/a/16345065/4970632
-    'text.usetex':             False, # use TeX for *all* font handling (limits available fonts)
-    'mathtext.default':        'regular', # no italics
-    'mathtext.bf' :            'sans:bold',
-    'mathtext.it' :            'sans:it',
+    # Plot elements
     'image.cmap':              'sunset',
     'image.lut':               256,
     'patch.facecolor':         'C0',
@@ -179,6 +174,19 @@ rcDefaults = {
     'legend.numpoints' :       1,
     'legend.borderpad' :       0.5,
     'legend.borderaxespad' :   0,
+    # Text
+    # Tried enabling multi-color from: https://stackoverflow.com/a/42768093/4970632, did not work
+    # 'text.usetex': True,      # use LaTeX to write all text
+    # 'pgf.rcfonts': False,     # Ignore Matplotlibrc
+    # 'pgf.preamble': [ r'\usepackage{color}' ], # xcolor for colours
+    # 'font.family': 'DejaVu Sans', # allowed to be concrete name(s) when usetex is False
+    # 'font.family':       'sans-serif',
+    # 'font.sans-serif':   'DejaVu Sans',
+    'text.latex.preamble': r'\usepackage{cmbright}', # https://stackoverflow.com/a/16345065/4970632
+    'text.usetex':         False, # use TeX for *all* font handling (limits available fonts)
+    'mathtext.default':    'regular', # no italics
+    'mathtext.bf' :        'sans:bold',
+    'mathtext.it' :        'sans:it',
     }
 # Special settings, should be thought of as extension of rcParams
 rcDefaults_sp = {
