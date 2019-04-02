@@ -1,64 +1,39 @@
 #!/usr/bin/env python3
-#------------------------------------------------------------------------------#
-# Just a few tools
-# These aren't strictly plot-related functions, but will be useful for user
-# in the context of making plots.
-#------------------------------------------------------------------------------#
+"""
+A few simple tools.
+
+* `units` is used everywhere throughout ProPlot. It allows you to specify
+  arbitrary sizes with arbitrary units, instead of just inches.
+* `journals` is used by `~proplot.subplots.subplots`, and returns
+  the figure dimension standards for several academic journals.
+* `arange` and `edges` are both often useful in the context of making plots
+  -- for example, when creating a list of contours or tick mark positions.
+"""
+import re
 import time
 import numpy as np
+import functools
 from numbers import Number
-from functools import wraps
-from inspect import cleandoc
+from matplotlib import rcParams
 try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 
+def _default(*args):
+    """Find first value not None. Usually used for setting default rc settings."""
+    for arg in args:
+        if arg is not None:
+            return arg
+    return arg # last one
+
 #------------------------------------------------------------------------------#
 # Decorators
 #------------------------------------------------------------------------------#
-def docstring_fix(child):
-    """
-    Decorator function for appending documentation from overridden method
-    onto the overriding method docstring.
-    Adapted from: https://stackoverflow.com/a/8101598/4970632
-    """
-    for name,chfunc in vars(child).items(): # returns __dict__ object
-        if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
-        # if not isinstance(chfunc, FunctionType):
-            continue
-        for parent in getattr(child, '__bases__', ()):
-            parfunc = getattr(parent, name, None)
-            if not getattr(parfunc, '__doc__', None):
-                continue
-            if not getattr(chfunc, '__doc__', None):
-                chfunc.__doc__ = '' # in case it's None
-            cmessage = f'Full name: {parfunc.__qualname__}()'
-            pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-            chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
-            break # only do this for the first parent class
-    return child
-
-def fancy_decorator(decorator):
-    """
-    Normally to make a decorator that accepts arguments, you have to create
-    3 nested function definitions. This abstracts that away -- if you decorate
-    your decorator-function declaration with this, the decorator will now accept arguments.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(decorator)
-    def decorator_maker(*args, **kwargs):
-        def decorator_wrapper(func):
-            return decorator(func, *args, **kwargs)
-        return decorator_wrapper
-    return decorator_maker
-
-def timer(func):
-    """
-    A decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(func)
+def _timer(func):
+    """A decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
         t = time.clock()
         print(f'{func.__name__}()')
@@ -67,88 +42,40 @@ def timer(func):
         return res
     return decorator
 
-def logger(func):
-    """
-    A decorator that logs the activity of the script (it actually just prints it,
-    but it could be logging!)
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(func)
+def _logger(func):
+    """A decorator that logs the activity of the script (it actually just prints it,
+    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
         print(f'{func.__name__} called with: {args} {kwargs}')
         return res
     return decorator
 
-def counter(func):
-    """
-    A decorator that counts and prints the number of times a function
-    has been executed.
-    See: https://stackoverflow.com/a/1594484/4970632
-    """
-    @wraps(func)
+def _counter(func):
+    """A decorator that counts and prints the cumulative time a function
+    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
     def decorator(*args, **kwargs):
-        # decorator.count += 1
         t = time.clock()
         res = func(*args, **kwargs)
         decorator.time += (time.clock() - t)
         decorator.count += 1
         print(f'{func.__name__} cumulative time: {decorator.time}s ({decorator.count} calls)')
-        # print(f'{func.__name__} has been used: {decorator.count}x')
         return res
     decorator.time = 0
     decorator.count = 0 # initialize
     return decorator
 
 #------------------------------------------------------------------------------#
-# Helper stuff
-#------------------------------------------------------------------------------#
-_fill = (lambda x,y: x if x is not None else y)
-
-class _dot_dict(dict):
-    """
-    Simple class for accessing elements with dot notation.
-    See: https://stackoverflow.com/a/23689767/4970632
-    """
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-def isnumber(item):
-    """
-    Just test if number.
-    See: https://stackoverflow.com/questions/4187185/how-can-i-check-if-my-python-object-is-a-number
-    Note: Numpy numbers have __getitem__ attribute! So cannot test this.
-    Why is this done? So they can be converted to ND singleton numpy arrays
-    easily with number[None,None,...].
-    """
-    return isinstance(item, Number)
-
-def isvector(item):
-    """
-    Just test if is iterable, but not a string (we almost never mean this).
-    """
-    # return hasattr(item, '__iter__') and not isinstance(item, str)
-    return np.iterable(item) and not isinstance(item, str)
-
-#------------------------------------------------------------------------------#
 # Accessible for user
 #------------------------------------------------------------------------------#
 def arange(min_, *args):
-    """
-    Duplicate behavior of np.arange, except with inclusive endpoints; dtype is
-    controlled very carefully, so should be 'most precise' among min/max/step args.
-    Input:
-        stop
-        start, stop, [step]
-        Just like np.arange!
-    Output:
-        The array sequence.
-    """
+    """Identical to `numpy.arange`, except with **inclusive endpoints**."""
     # Optional arguments just like np.arange
     if len(args)==0:
         max_ = min_
-        min_ = 0 # this re-assignes the NAME "min_" to 0
+        min_ = 0
         step = 1
     elif len(args)==1:
         max_ = args[0]
@@ -158,23 +85,21 @@ def arange(min_, *args):
         step = args[1]
     else:
         raise ValueError('Function takes from one to three arguments.')
-    # All input is integer? Get new "max"
+    # All input is integer
     if min_//1==min_ and max_//1==max_ and step//1==step:
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
         max_ += 1
-    # Input is float or mixed; cast all to float64, then get new "max"
+    # Input is float or mixed, cast all to float64
     else:
-        # Get the next FLOATING POINT, in direction of the second argument
-        # Forget this; round-off errors from continually adding step to min mess this up
+        # Forget this. Round-off errors from continually adding step to min
+        # mess this up. Just run to max plus step/2.
         # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
     return np.arange(min_, max_, step)
 
 def edges(values, axis=-1):
-    """
-    Get approximate edge values along arbitrary axis.
-    """
+    """Gets approximate edge values along arbitrary axis."""
     # First permute
     values = np.array(values)
     values = np.swapaxes(values, axis, -1)
@@ -194,4 +119,191 @@ def edges(values, axis=-1):
     # Permute back and return
     values = np.swapaxes(values, axis, -1)
     return values
+
+#------------------------------------------------------------------------------#
+# Units
+#------------------------------------------------------------------------------#
+def units(value):
+    """
+    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
+    for info on the em square units. See the `~proplot.rcmod` module for details.
+
+    Parameters
+    ----------
+    value : float or str or list thereof
+        A size "unit". If numeric, assumed unit is inches.
+
+        If string, we look for the format ``'123.456unit'``, where the
+        number is the value and ``'unit'`` is one of the following:
+
+        ==============  ===================================================================
+        Key             Description
+        ==============  ===================================================================
+        ``m``           Meters
+        ``cm``          Centimeters
+        ``mm``          Millimeters
+        ``ft``          Feet
+        ``in``          Inches
+        ``pt``          Points (1/72 inches)
+        ``px``          Pixels on screen, uses dpi of ``rc['figure.dpi']``
+        ``pp``          Pixels once printed, uses dpi of ``rc['savefig.dpi']``
+        ``em``          Em-square for font size ``rc['font.size']``
+        ``ex``          Ex-square for font size ``rc['font.size']``
+        ``lh``          Line height (1.2 em-squares) for font size ``rc['font.size']``
+        ``EM``          Em-square for font size ``rc['axes.titlesize']``
+        ``EX``          Ex-square for font size ``rc['axes.titlesize']``
+        ``LH``          Line height (1.2 em-squares) for font size ``rc['axes.titlesize']``
+        ==============  ===================================================================
+
+        Lists of size "units" are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
+    """
+    # Loop through arbitrary list, or return None if input was None (this
+    # is the exception).
+    if value is None:
+        return value
+    if not np.iterable(value) or isinstance(value, str):
+        singleton = True
+        values = (value,)
+    else:
+        singleton = False
+        values = value
+    # Possible units
+    # RC settings must be looked up every time
+    _unit_dict = {
+        # Physical units
+        'in': 1.0, # already in inches
+        'm':  39.37,
+        'ft': 12.0,
+        'cm': 0.3937,
+        'mm': 0.03937,
+        'pt': 1/72.0,
+        # Display units
+        'px': 1/rcParams['figure.dpi'], # on screen
+        'pp': 1/rcParams['savefig.dpi'], # once 'printed', i.e. saved
+        # Font size
+        'em': rcParams['font.size']/72.0,
+        'ex': 0.5*rcParams['font.size']/72.0, # more or less; see URL
+        'lh': 1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
+        'EM': rcParams['axes.titlesize']/72.0, # for large text
+        'EX': 0.5*rcParams['axes.titlesize']/72.0,
+        'LH': 1.2*rcParams['axes.titlesize']/72.0,
+        }
+    # Iterate
+    result = []
+    for value in values:
+        if isinstance(value, Number):
+            result.append(value)
+            continue
+        elif not isinstance(value, str):
+            raise ValueError(f'Size spec must be string or number or list thereof, received {values}.')
+        regex = re.match('^([0-9.]*)(.*)$', value)
+        num, unit = regex.groups()
+        try:
+            result.append(float(num)*_unit_dict[unit])
+        except (KeyError, ValueError):
+            raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(_unit_dict.keys())}.')
+    if singleton:
+        result = result[0]
+    return result
+
+def journals(journal):
+    """
+    Returns `width` and `height` matching academic journal figure
+    size standards. If height is not specified by standard, `height` takes
+    the value ``None``.
+
+    This function is used when `~proplot.subplots.subplots` is called with
+    the `journal` keyword argument.
+
+    The options for `journal` are as follows:
+
+    ===========  =====================  ====================================================
+    Key          Size description       Organization
+    ===========  =====================  ====================================================
+    ``'pnas1'``  1-column               Proceedings of the National Academy of Sciences [1]_
+    ``'pnas2'``  2-column               "
+    ``'pnas3'``  Landscape page         "
+    ``'ams1'``   1-column               American Meteorological Society [2]_
+    ``'ams2'``   Small 2-column         "
+    ``'ams3'``   Medium 2-column        "
+    ``'ams4'``   Full 2-column          "
+    ``'agu1'``   1-column               American Geophysical Union [3]_
+    ``'agu2'``   2-column               "
+    ``'agu3'``   1-column, full height  "
+    ``'agu4'``   2-column, full height  "
+    ===========  =====================  ====================================================
+
+    Feel free to submit a pull request if you'd like to add additional
+    standards.
+
+    .. [1] `PNAS recommendations <http://www.pnas.org/page/authors/submission>`_
+    .. [2] `AMS recommendations <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`_
+    .. [3] `AGU recommendations <https://publications.agu.org/author-resource-center/figures-faq/>`_
+    """
+    table = {
+        'pnas1': '8.7cm', # if 1 number specified, this is a tuple
+        'pnas2': '11.4cm',
+        'pnas3': '17.8cm',
+        'ams1': 3.2, # spec is in inches
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': ('95mm',  '115mm'),
+        'agu2': ('190mm', '115mm'),
+        'agu3': ('95mm',  '230mm'),
+        'agu4': ('190mm', '230mm'),
+        }
+    value = table.get(journal, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure size specifier "{journal}". ' +
+                          'Current options are: ' + ', '.join(table.keys()))
+    # Return width, and optionally also the height
+    width, height = None, None
+    try:
+        width, height = value
+    except TypeError:
+        width = value
+    return width, height
+
+#------------------------------------------------------------------------------#
+# Outdated
+#------------------------------------------------------------------------------#
+# Throw this one out, use kwarg interpolation from method.
+# Why? Because matplotlib plot_directive sphinx extension will look for
+# gallery images in the old documentation that do not exist for ProPlot.
+# from inspect import cleandoc
+# def _docstring_fix(child):
+#     """
+#     Decorator function for appending documentation from overridden method
+#     onto the overriding method docstring.
+#     Adapted from: https://stackoverflow.com/a/8101598/4970632
+#     """
+#     for name,chfunc in vars(child).items(): # returns __dict__ object
+#         if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
+#             continue
+#         for parent in getattr(child, '__bases__', ()):
+#             # Obtain documentation
+#             parfunc = getattr(parent, name, None)
+#             if not getattr(parfunc, '__doc__', None):
+#                 continue
+#             if not getattr(chfunc, '__doc__', None):
+#                 chfunc.__doc__ = '' # in case it's None
+#
+#             # Ugly
+#             # cmessage = f'Full name: {parfunc.__qualname__}()'
+#             # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
+#             # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Simple
+#             # chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n\n\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Fails because numpydoc disallows custom subsections; see: https://developer.lsst.io/python/numpydoc.html#sections-are-restricted-to-the-numpydoc-section-set
+#             # chfunc.__doc__ = f'ProPlot Override\n================\n{cleandoc(chfunc.__doc__)}\n\n\n' \
+#             #                  f'Original Documentation\n======================\n{cleandoc(parfunc.__doc__)}'
+#
+#             # Differentiate with bold text
+#             chfunc.__doc__ = f'**ProPlot Override**\n{cleandoc(chfunc.__doc__)}\n\n\n' \
+#                              f'**Original Documentation**\n{cleandoc(parfunc.__doc__)}'
+#             break # only do this for the first parent class
+#     return child
 

@@ -1,0 +1,12 @@
+
+sphinx_automodapi.tests.example_module.functions Module
+-------------------------------------------------------
+
+
+
+Functions
+^^^^^^^^^
+
+.. automodsumm:: sphinx_automodapi.tests.example_module.functions
+    :functions-only:
+    :toctree: api

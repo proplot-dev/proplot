@@ -1,0 +1,14 @@
+.. currentmodule:: sphinx_automodapi.tests.example_module.classes
+
+.. autosummary::
+    :toctree: api
+    :inherited-members:
+
+    Spam
+    Egg
+.. currentmodule:: sphinx_automodapi.tests.example_module.other_classes
+
+.. autosummary::
+    :toctree: api
+
+    Foo

@@ -1,0 +1,89 @@
+.. proplot documentation master file, created by
+   sphinx-quickstart on Wed Feb 20 01:31:20 2019.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+=======
+ProPlot
+=======
+
+An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
+that can help you make beautiful, publication-quality graphics.
+The Github page is `here <https://github.com/lukelbd/proplot>`__.
+
+Installation
+============
+
+This package is a work-in-progress -- currently, there is no formal release
+on PyPi (but it's coming soon!). For the time being, you may install directly from Github using:
+
+.. code-block:: bash
+
+   pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
+
+The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://www.numpy.org/>`_.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and/or `basemap <https://matplotlib.org/basemap/index.html>`_.
+
+I recommend importing with
+
+.. code-block:: python
+
+   import proplot as plot
+
+to differentiate ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module.
+
+Overview
+========
+
+On import, a bunch of new colormaps and string color names are registered.
+If this is all you want, and you don't care about other features, simply
+import ProPlot at the top of your script. See `~proplot.colortools` for details, and the :ref:`Table of colormaps`, :ref:`Table of color cycles`, and :ref:`Table of colors`.
+
+The remaining features mostly derive from the `~proplot.subplots.subplots` command, inspired
+by the pyplot `~matplotlib.pyplot.subplots` command. This generates a scaffolding
+of axes with new, helpful methods. It also has a bunch of other useful features, like "panels" and built-in geographic projections (see :ref:`Table of projections` for the projections available to cartopy and basemap).
+
+The next most important utility is the ``format`` method on `~proplot.axes.BaseAxes`, which calls ``smart_update`` methods on the `~proplot.axes.BaseAxes`, `~proplot.axes.XYAxes`, and `~proplot.axes.MapAxes` axes types. The latter two may be returned by `~proplot.subplots.subplots`, depending on the arguments you used. Use `~proplot.axes.BaseAxes.format` to fine-tune your axis properties, titles, labels, limits, and much more.
+
+To get started, check out the :ref:`Introduction`.
+Hopefully, you will find this API to be less verbose and
+more powerful than the builtin matplotlib API.
+
+.. This is just so top-level headers in the showcase.rst
+   file appear as *subsections* in the documentation to
+   a parent 'showcase' section.
+
+.. Below replaces traditional autodoc invocation with
+   .. automodule:: mods.set.tests
+      :members:
+      :show-inheritance:
+   Use 'sphinx-apidoc ../proplot -o .' to auto-generate modules.rst
+
+Contributions
+=============
+So far, this entire package was written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! My code should be documented and commented well enough that others are able to modify it.
+
+Donations
+=========
+
+At well over 10,000 lines of code, this package took a shocking amount of time to write and to publish... so I'll just
+leave this here :)
+
+.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
+   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
+
+
+.. toctree::
+   :hidden:
+   :maxdepth: 4
+   :caption: Contents
+
+   tutorial
+   documentation
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

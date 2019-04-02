@@ -5,23 +5,21 @@ from setuptools import setup
 # find . \( -name '*.ipynb' -o -name '*.py' -o -name '*.md' -o -name '*.txt' -o -name '.vimsession' \) -exec gsed -i 's/panplot/proplot/g' {} +
 setup(
     # Needed to silence warnings (and to be a worthwhile package)
-    name         = 'proplot',
-    url          = 'https://github.com/lukelbd/proplot',
-    author       = 'Luke Davis',
-    author_email = 'lukelbd@gmail.com',
+    name            = 'proplot',
+    url             = 'https://github.com/lukelbd/proplot',
+    author          = 'Luke Davis',
+    author_email    = 'lukelbd@gmail.com',
+    python_requires = '>=3.6.0', # enforce version
     # Package stuff
     # Also include package data
-    # packages     = ['proplot'],
     packages     = ['proplot'], # reserve name
-    package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*']},
-    # Command-line scripts
-    # scripts = ['scripts/proplot_fonts'],
+    package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*', '.proplotrc']},
     # Needed for dependencies
     install_requires = ['numpy', 'matplotlib'],
     # *Strongly* suggested for sharing
     version = '1.0',
     # The license can be anything you like
     license          = open('LICENSE.txt').read(),
-    description      = 'Matplotlib wrapper for making clear, concise, publication-quality graphics quickly and easily.',
-    long_description = open('README.md').read(),
+    description      = 'Matplotlib wrapper for making beautiful, publication-quality graphics.',
+    long_description = open('README.rst').read(),
 )

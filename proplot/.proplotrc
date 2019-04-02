@@ -1,0 +1,198 @@
+#-------------------------------------
+# ProPlot global settings
+#-------------------------------------
+rcGlobals:
+    # Notebooks
+    nbsetup:    True
+    # Subplots
+    tight:      True
+    # Important settings
+    fontname: 
+    cycle:     colorblind
+    rgbcycle:  False 
+    cmap:      sunset
+    reso:      lo 
+    lut:       256
+    color:     k
+    margin:    0.0
+    grid:      True
+    geogrid:   True
+    gridminor: False
+    hatch:     # background hatching, none if empty
+    facecolor: w
+    alpha:     1 # background patch alpha
+    small:     8
+    large:     9
+    linewidth: 0.6
+    ticklen:   4.0
+    tickpad:   2.0
+    tickdir:   out
+    # Geography
+    land:         False
+    ocean:        False
+    coast:        False # coastline
+    rivers:       False
+    lakes:        False
+    borders:      False # country borders
+    innerborders: False # state, province borders
+    # Ratios
+    gridratio:    0.5 # minor/major grid line widths
+    tickratio:    0.8 # minor/major tick width
+    ticklenratio: 0.5 # minor/major tick size
+
+#------------------
+# rcParams defaults
+#------------------
+rcParams:
+    figure.dpi:              90
+    figure.facecolor:        '#f2f2f2'
+    figure.max_open_warning: 0
+    figure.autolayout:       False
+    figure.titleweight:      bold
+    savefig.facecolor:       '#ffffff'
+    savefig.transparent:     True
+    savefig.dpi:             300
+    savefig.pad_inches:      0.0
+    savefig.directory:
+    savefig.bbox:            standard
+    savefig.format:          pdf
+    axes.xmargin:            0.0
+    axes.ymargin:            0.0
+    axes.titleweight:        normal
+    axes.grid:               True
+    axes.labelweight:        normal
+    axes.labelpad:           3.0
+    axes.titlepad:           3.0
+    axes.axisbelow:          lines # ticks & gridlines *above* patches, *below* lines
+    axes.spines.bottom:      True
+    axes.spines.top:         True
+    axes.spines.left:        True
+    axes.spines.right:       True
+    xtick.bottom:            True
+    xtick.top:               False
+    xtick.minor.visible:     True
+    ytick.left:              True
+    ytick.right:             False
+    ytick.minor.visible:     True
+    grid.color:              'k'
+    grid.alpha:              0.1
+    grid.linewidth:          0.6
+    grid.linestyle:          '-'
+    text.usetex:             False  
+    mathtext.default:        regular
+    mathtext.bf:             'sans:bold'
+    mathtext.it:             'sans:it'
+    patch.facecolor:         C0
+    patch.edgecolor:         k
+    patch.linewidth:         1.0
+    hatch.color:             k
+    hatch.linewidth:         0.6
+    markers.fillstyle:       full
+    scatter.marker:          o
+    lines.linewidth:         1.3
+    lines.color:             C0
+    lines.markeredgewidth:   0
+    lines.markersize:        3.0
+    lines.dash_joinstyle:    miter
+    lines.dash_capstyle:     projecting
+    lines.solid_joinstyle:   miter      # options: miter, round, bevel
+    lines.solid_capstyle:    projecting # options: butt, round, projecting
+    legend.fancybox:         False
+    legend.frameon:          False
+    legend.labelspacing:     0.5
+    legend.handletextpad:    0.5
+    legend.handlelength:     1.5
+    legend.columnspacing:    1
+    legend.facecolor:        w
+    legend.numpoints:        1
+    legend.borderpad:        0.5
+    legend.borderaxespad:    0
+
+#----------------------
+# rcParams_new defaults
+#----------------------
+rcParams_new:
+    # Axis settings
+    axes.formatter.zerotrim: True
+    axes.gridminor: True
+    axes.geogrid: True
+    axes.hatch: # filled by 'hatch'
+    axes.alpha: # if empty, depends on 'savefig.transparent' setting
+    hatch.alpha: 1
+    # More tick label settings
+    tick.labelsize:   # filled by 'small'
+    tick.labelcolor:  # filled by 'color'
+    tick.labelweight: normal
+    # More title settings
+    abc.pos:           il # inside the axes, to the left
+    title.pos:         oc # outside the axes, in the center
+    abc.format:        a
+    abc.fontsize:      # filled by 'large'
+    abc.color:         k
+    abc.weight:        bold
+    abc.border:        True
+    abc.linewidth:     1.5 
+    title.fontsize:    # filled by 'large'
+    title.color:       k
+    title.weight:      normal
+    title.border:      True
+    title.linewidth:   1.5
+    suptitle.fontsize: # filled by 'large'
+    suptitle.color:    k
+    suptitle.weight:   bold
+    rowlabel.fontsize: # filled by 'large'
+    rowlabel.weight:   bold
+    rowlabel.color:    k
+    collabel.fontsize: # filled by 'large'
+    collabel.weight:   bold
+    collabel.color:    k
+    # Parallels and meridians
+    geogrid.labels:    False
+    geogrid.labelsize: # filled by 'small'
+    geogrid.latmax:    80
+    geogrid.lonlines:  30
+    geogrid.latlines:  20
+    geogrid.alpha:     0.5
+    geogrid.color:     k
+    geogrid.linewidth: 1.0
+    geogrid.linestyle: ':'
+    # Geography
+    land.color:             k
+    ocean.color:            w
+    lakes.color:            w
+    coast.color:            k
+    coast.linewidth:        0.6
+    borders.color:          k
+    borders.linewidth:      0.6
+    innerborders.color:     k
+    innerborders.linewidth: 0.6
+    rivers.color:           k
+    rivers.linewidth:       0.6
+    # Minor grid lines
+    gridminor.alpha: # if empty, inherited from "grid"
+    gridminor.color:
+    gridminor.linestyle:
+    gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
+    # Gridspec
+    subplot.axwidth:    2
+    subplot.panelwidth: 0.45
+    subplot.cbarwidth:  0.17
+    subplot.legwidth:   0.25
+    subplot.innerpad:   0.05
+    subplot.outerpad:   0.1
+    subplot.subplotpad: 0.15
+    subplot.titlespace: 0.2
+    subplot.innerspace: 0.2
+    subplot.ylabspace:  0.7
+    subplot.xlabspace:  0.55
+    subplot.nolabspace: 0.15
+    subplot.panelspace: 0.15
+    # Inset colorbar
+    colorbar.extendfull: 0.15
+    colorbar.extend:     0.08
+    colorbar.length:     0.6
+    colorbar.width:      0.12
+    colorbar.loc:        'lower right'
+    colorbar.axespad:    0.5em
+    colorbar.xspace:     0.3
+

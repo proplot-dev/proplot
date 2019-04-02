@@ -1,0 +1,19 @@
+
+sphinx_automodapi.tests.example_module.abstract_classes Module
+--------------------------------------------------------------
+
+.. automodule:: sphinx_automodapi.tests.example_module.abstract_classes
+
+Classes
+^^^^^^^
+
+.. automodsumm:: sphinx_automodapi.tests.example_module.abstract_classes
+    :classes-only:
+    :toctree: api
+
+Class Inheritance Diagram
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automod-diagram:: sphinx_automodapi.tests.example_module.abstract_classes
+    :private-bases:
+    :parts: 1
