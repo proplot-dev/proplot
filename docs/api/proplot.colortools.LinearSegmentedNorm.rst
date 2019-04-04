@@ -10,10 +10,10 @@ LinearSegmentedNorm
 
    .. autosummary::
 
-      ~LinearSegmentedNorm.__call__
       ~LinearSegmentedNorm.inverse
+      ~LinearSegmentedNorm.__call__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __call__
    .. automethod:: inverse
+   .. automethod:: __call__

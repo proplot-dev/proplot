@@ -1,12 +1,12 @@
 Color tools
 -----------
 
-**Variables**
+**Classes**
 
 .. automodsumm:: proplot.colortools
-   :variables-only:
+   :classes-only:
    :toctree: api
-   :skip: ic, rcParams
+   :skip: Number
 
 **Functions**
 
@@ -14,12 +14,12 @@ Color tools
    :functions-only:
    :toctree: api
 
-**Classes**
+**Variables**
 
 .. automodsumm:: proplot.colortools
-   :classes-only:
+   :variables-only:
    :toctree: api
-   :skip: Number
+   :skip: ic, rcParams
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

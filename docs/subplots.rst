@@ -1,18 +1,18 @@
 Figures and subplots
 --------------------
 
+**Classes**
+
+.. automodsumm:: proplot.subplots
+   :classes-only:
+   :toctree: api
+
 **Functions**
 
 .. automodsumm:: proplot.subplots
    :functions-only:
    :toctree: api
    :skip: units, journals
-
-**Classes**
-
-.. automodsumm:: proplot.subplots
-   :classes-only:
-   :toctree: api
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

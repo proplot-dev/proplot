@@ -150,33 +150,7 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         If list of numbers, these points are ticked. Returns a
         `~matplotlib.ticker.FixedLocator` instance.
 
-        If str, a dictionary lookup is performed. Options are as follows:
-
-        =================  ==========================================
-        Key                Class
-        =================  ==========================================
-        ``'none'``         `~matplotlib.ticker.NullLocator`
-        ``'null'``         `~matplotlib.ticker.NullLocator`
-        ``'log'``          `~matplotlib.ticker.LogLocator`
-        ``'maxn'``         `~matplotlib.ticker.MaxNLocator`
-        ``'linear'``       `~matplotlib.ticker.LinearLocator`
-        ``'log'``          `~matplotlib.ticker.LogLocator`
-        ``'multiple'``     `~matplotlib.ticker.MultipleLocator`
-        ``'fixed'``        `~matplotlib.ticker.FixedLocator`
-        ``'index'``        `~matplotlib.ticker.IndexLocator`
-        ``'symmetric'``    `~matplotlib.ticker.SymmetricalLogLocator`
-        ``'logit'``        `~matplotlib.ticker.LogitLocator`
-        ``'minor'``        `~matplotlib.ticker.AutoMinorLocator`
-        ``'microsecond'``  `~matplotlib.dates.MicrosecondLocator`
-        ``'second'``       `~matplotlib.dates.SecondLocator`
-        ``'minute'``       `~matplotlib.dates.MinuteLocator`
-        ``'hour'``         `~matplotlib.dates.HourLocator`
-        ``'day'``          `~matplotlib.dates.DayLocator`
-        ``'weekday'``      `~matplotlib.dates.WeekdayLocator`
-        ``'month'``        `~matplotlib.dates.MonthLocator`
-        ``'year'``         `~matplotlib.dates.YearLocator`
-        =================  ==========================================
-
+        If str, a dictionary lookup is performed (see below table).
     minor : bool, optional
         Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
         if ``True``, returns an `~matplotlib.ticker.AutoMinorLocator` instance.
@@ -185,6 +159,34 @@ def Locator(locator, *args, minor=False, time=False, **kwargs):
         if ``True``, returns an `~matplotlib.dates.AutoDateLocator` instance.
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class on instantiation.
+
+
+    For the dictionary lookup, options are as follows:
+
+    =================  ==========================================
+    Key                Class
+    =================  ==========================================
+    ``'none'``         `~matplotlib.ticker.NullLocator`
+    ``'null'``         `~matplotlib.ticker.NullLocator`
+    ``'log'``          `~matplotlib.ticker.LogLocator`
+    ``'maxn'``         `~matplotlib.ticker.MaxNLocator`
+    ``'linear'``       `~matplotlib.ticker.LinearLocator`
+    ``'log'``          `~matplotlib.ticker.LogLocator`
+    ``'multiple'``     `~matplotlib.ticker.MultipleLocator`
+    ``'fixed'``        `~matplotlib.ticker.FixedLocator`
+    ``'index'``        `~matplotlib.ticker.IndexLocator`
+    ``'symmetric'``    `~matplotlib.ticker.SymmetricalLogLocator`
+    ``'logit'``        `~matplotlib.ticker.LogitLocator`
+    ``'minor'``        `~matplotlib.ticker.AutoMinorLocator`
+    ``'microsecond'``  `~matplotlib.dates.MicrosecondLocator`
+    ``'second'``       `~matplotlib.dates.SecondLocator`
+    ``'minute'``       `~matplotlib.dates.MinuteLocator`
+    ``'hour'``         `~matplotlib.dates.HourLocator`
+    ``'day'``          `~matplotlib.dates.DayLocator`
+    ``'weekday'``      `~matplotlib.dates.WeekdayLocator`
+    ``'month'``        `~matplotlib.dates.MonthLocator`
+    ``'year'``         `~matplotlib.dates.YearLocator`
+    =================  ==========================================
 
     Returns
     -------
@@ -245,48 +247,19 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
 
         If str, there are 3 possibilities:
 
-            1. If string contains ``%``, ticks will be formatted
-               using the C-notation ``string % number`` method. See `this page
-               <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
-               for a review.
+        1. If string contains ``%``, ticks will be formatted
+           using the C-notation ``string % number`` method. See `this page
+           <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
+           for a review.
 
-               If the axis represents time (i.e. ``time=True``,
-               passed automatically by `~proplot.axes.XYAxes.smart_update`),
-               datetime %-formatting is used. See `this page
-               <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
-               for an overview.
-            2. If string contains ``{x}`` or ``{x:...}``, ticks will be
-               formatted by calling ``string.format(x=number)``.
-            3. Otherwise, a dictionary lookup is performed.
-
-        For the dictionary lookup, options are as follows:
-
-        ===============  ====================================================================
-        Key              Class
-        ===============  ====================================================================
-        ``'default'``    `ScalarFormatter`
-        ``'none'``       `~matplotlib.ticker.NullFormatter`
-        ``'null'``       `~matplotlib.ticker.NullFormatter`
-        ``'strmethod'``  `~matplotlib.ticker.StrMethodFormatter`
-        ``'formatstr'``  `~matplotlib.ticker.FormatStrFormatter`
-        ``'scalar'``     `~matplotlib.ticker.ScalarFormatter`
-        ``'log'``        `~matplotlib.ticker.LogFormatterSciNotation`
-        ``'eng'``        `~matplotlib.ticker.LogFormatterMathtext`
-        ``'sci'``        `~matplotlib.ticker.LogFormatterSciNotation`
-        ``'logit'``      `~matplotlib.ticker.LogitFormatter`
-        ``'eng'``        `~matplotlib.ticker.EngFormatter`
-        ``'percent'``    `~matplotlib.ticker.PercentFormatter`
-        ``'index'``      `~matplotlib.ticker.IndexFormatter`
-        ``'frac'``       `FracFormatter`
-        ``'pi'``         `FracFormatter`, with symbol :math:`\pi` and value `numpy.pi`
-        ``'e'``          `FracFormatter`, with symbol *e* and value `numpy.e`
-        ``'coord'``      `CoordFormatter`
-        ``'deg'``        `CoordFormatter`, with just a degree symbol
-        ``'lat'``        `CoordFormatter`, cardinal "SN" indicator without degree symbol
-        ``'lon'``        `CoordFormatter`, cardinal "WE" indicator without degree symbol
-        ``'deglat'``     `CoordFormatter`, cardinal "SN" indicator with degree symbol
-        ``'deglon'``     `CoordFormatter`, cardinal "WE" indicator with degree symbol
-        ===============  ====================================================================
+           If the axis represents time (i.e. ``time=True``,
+           passed automatically by `~proplot.axes.XYAxes.smart_update`),
+           datetime %-formatting is used. See `this page
+           <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
+           for an overview.
+        2. If string contains ``{x}`` or ``{x:...}``, ticks will be
+           formatted by calling ``string.format(x=number)``.
+        3. Otherwise, a dictionary lookup is performed (see below table).
 
     time : bool, optional
         If ``True``, returns an `~matplotlib.dates.AutoDateFormatter` when
@@ -296,6 +269,36 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
         See `ScalarFormatter`.
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class on instantiation.
+
+
+    For the dictionary lookup, options are as follows:
+
+    ===============  ====================================================================
+    Key              Class
+    ===============  ====================================================================
+    ``'default'``    `ScalarFormatter`
+    ``'none'``       `~matplotlib.ticker.NullFormatter`
+    ``'null'``       `~matplotlib.ticker.NullFormatter`
+    ``'strmethod'``  `~matplotlib.ticker.StrMethodFormatter`
+    ``'formatstr'``  `~matplotlib.ticker.FormatStrFormatter`
+    ``'scalar'``     `~matplotlib.ticker.ScalarFormatter`
+    ``'log'``        `~matplotlib.ticker.LogFormatterSciNotation`
+    ``'eng'``        `~matplotlib.ticker.LogFormatterMathtext`
+    ``'sci'``        `~matplotlib.ticker.LogFormatterSciNotation`
+    ``'logit'``      `~matplotlib.ticker.LogitFormatter`
+    ``'eng'``        `~matplotlib.ticker.EngFormatter`
+    ``'percent'``    `~matplotlib.ticker.PercentFormatter`
+    ``'index'``      `~matplotlib.ticker.IndexFormatter`
+    ``'frac'``       `FracFormatter`
+    ``'pi'``         `FracFormatter`, with symbol :math:`\pi` and value `numpy.pi`
+    ``'e'``          `FracFormatter`, with symbol *e* and value `numpy.e`
+    ``'coord'``      `CoordFormatter`
+    ``'deg'``        `CoordFormatter`, with just a degree symbol
+    ``'lat'``        `CoordFormatter`, cardinal "SN" indicator without degree symbol
+    ``'lon'``        `CoordFormatter`, cardinal "WE" indicator without degree symbol
+    ``'deglat'``     `CoordFormatter`, cardinal "SN" indicator with degree symbol
+    ``'deglon'``     `CoordFormatter`, cardinal "WE" indicator with degree symbol
+    ===============  ====================================================================
 
     Returns
     -------
@@ -358,27 +361,30 @@ def Scale(scale, *args, **kwargs):
         instantiator. Ignored unless the str is ``'cutoff'``,
         ``'exp'``, ``'height'``, or ``'pressure'``.
 
-        If str, a dictionary lookup is performed. Options are as follows:
-
-        ==============  =======================================  =========================================================
-        Key             Class                                    Description
-        ==============  =======================================  =========================================================
-        ``'linear'``    `~matplotlib.scale.LinearScale`          Linear
-        ``'log'``       `~matplotlib.scale.LogScale`             Logarithmic
-        ``'symlog'``    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
-        ``'logit'``     `~matplotlib.scale.LogitScale`           Logistic
-        ``'cutoff'``    Result of `CutoffScaleFactory`           Linearly warp the axis scale in a variety of ways
-        ``'exp'``       Result of `ExpScaleFactory`              Scale with some exponential function
-        ``'pressure'``  Result of `ExpScaleFactory`              Scale height coords to be linear in pressure.
-        ``'height'``    Result of `ExpScaleFactory`              Scale pressure coords to be linear in height.
-        ``'sine'``      `SineLatitudeScale`                      Sine (in degrees)
-        ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
-        ``'inverse'``   `InverseScale`                           Inverse
-        ``'db'``        `DecibelScale`                           Transform deciBel units to power
-        ==============  =======================================  =========================================================
+        If str, a dictionary lookup is performed (see below table).
 
     **kwargs
         Passed to the `~matplotlib.scale.ScaleBase` class on instantiation.
+
+
+    For the dictionary lookup, options are as follows:
+
+    ==============  =======================================  =========================================================
+    Key             Class                                    Description
+    ==============  =======================================  =========================================================
+    ``'linear'``    `~matplotlib.scale.LinearScale`          Linear
+    ``'log'``       `~matplotlib.scale.LogScale`             Logarithmic
+    ``'symlog'``    `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond space around zero
+    ``'logit'``     `~matplotlib.scale.LogitScale`           Logistic
+    ``'cutoff'``    Result of `CutoffScaleFactory`           Linearly warp the axis scale in a variety of ways
+    ``'exp'``       Result of `ExpScaleFactory`              Scale with some exponential function
+    ``'pressure'``  Result of `ExpScaleFactory`              Scale height coords to be linear in pressure.
+    ``'height'``    Result of `ExpScaleFactory`              Scale pressure coords to be linear in height.
+    ``'sine'``      `SineLatitudeScale`                      Sine (in degrees)
+    ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
+    ``'inverse'``   `InverseScale`                           Inverse
+    ``'db'``        `DecibelScale`                           Transform deciBel units to power
+    ==============  =======================================  =========================================================
 
     Returns
     -------
@@ -779,17 +785,17 @@ class MercatorLatitudeScale(mscale.ScaleBase):
     :cite:`barnes_rossby_2011`, and adapted from `this matplotlib example
     <https://matplotlib.org/examples/api/custom_scale_example.html>`_.
 
-    The scale function is as follows:
+    The scale function is as follows.
 
     .. math::
 
-        y = \ln(\tan(x) + \sec(x))
+        y = \ln(\tan(\pi x/180) + \sec(\pi x/180))
 
-    The inverse scale function is as follows:
+    The inverse scale function is as follows.
 
     .. math::
 
-        x = \arctan(\sinh(y))
+        x = 180\arctan(\sinh(y))/\pi
 
     Also uses a user-defined threshold :math:`\in (-90, 90)`, above and
     below which nothing will be plotted.
@@ -829,7 +835,7 @@ class _MercatorLatitudeTransform(mtransforms.Transform):
         # For M N-dimensional transform, transform MxN into result
         # So numbers stay the same, but data will then be linear in the
         # result of the math below.
-        a = np.radians(a) # convert to radians
+        a = np.deg2rad(a) # convert to radians
         m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
         if m.mask.any():
             return ma.log(np.abs(ma.tan(m) + 1.0 / ma.cos(m)))
@@ -849,23 +855,23 @@ class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
         self.thresh = thresh
     def transform_non_affine(self, a):
         # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
-        return np.degrees(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
+        return np.rad2deg(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
     def inverted(self):
         return _MercatorLatitudeTransform(self.thresh)
 
 class SineLatitudeScale(mscale.ScaleBase):
     r"""
-    The scale function is as follows:
+    The scale function is as follows.
 
     .. math::
 
-        y = \sin(x)
+        y = \sin(\pi x/180)
 
-    The inverse scale function is as follows:
+    The inverse scale function is as follows.
 
     .. math::
 
-        x = \arcsin(y)
+        x = 180\arcsin(y)/\pi
     """
     name = 'sine'
     """Registered scale name."""
@@ -926,7 +932,7 @@ class _InvertedSineLatitudeTransform(mtransforms.Transform):
 #------------------------------------------------------------------------------#
 class InverseScale(mscale.ScaleBase):
     r"""
-    The scale function and inverse scale function are as follows:
+    The scale function and inverse scale function are as follows.
 
     .. math::
 
@@ -986,13 +992,13 @@ class _InverseTransform(mtransforms.Transform):
 
 class DecibelScale(mscale.ScaleBase):
     r"""
-    The scale function is as follows:
+    The scale function is as follows.
 
     .. math::
 
         y = 10\log_{10}(x)
 
-    The inverse scale function is as follows:
+    The inverse scale function is as follows.
 
     .. math::
 

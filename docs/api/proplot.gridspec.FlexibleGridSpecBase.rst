@@ -10,10 +10,10 @@ FlexibleGridSpecBase
 
    .. autosummary::
 
-      ~FlexibleGridSpecBase.__getitem__
       ~FlexibleGridSpecBase.update
+      ~FlexibleGridSpecBase.__getitem__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getitem__
    .. automethod:: update
+   .. automethod:: __getitem__

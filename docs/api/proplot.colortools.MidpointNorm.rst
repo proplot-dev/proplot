@@ -10,10 +10,10 @@ MidpointNorm
 
    .. autosummary::
 
-      ~MidpointNorm.__call__
       ~MidpointNorm.inverse
+      ~MidpointNorm.__call__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __call__
    .. automethod:: inverse
+   .. automethod:: __call__

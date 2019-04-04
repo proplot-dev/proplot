@@ -493,8 +493,9 @@ and forcing the background to be invisible.
     f.bpanel[1].legend(hs, ncols=4, align=False)
     f.rpanel.legend(hs, ncols=1, align=False)
     axs.format(ylim=(-0.1, 1.1), xlabel='xlabel', ylabel='ylabel',
-               suptitle='Demo of new legend options',
-               collabels=['Inner legend, outer aligned legend', 'Outer un-aligned legend'], collabelweight='normal')
+               suptitle='Demo of new legend options')
+    for ax,title in zip(axs, ['Inner legend, outer aligned legend', 'Outer un-aligned legend']):
+        ax.format(title=title)
 
 
 
@@ -754,8 +755,9 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
         hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')[0]
     f.bottompanel[0].colorbar(m, length=0.8, label='label')
     f.bottompanel[1].legend(hs, ncols=5, align=True)
-    axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A',
-              collabels=['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2'], collabelweight='normal')
+    axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A')
+    for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
+        ax.format(title=title)
 
 
 
@@ -1642,11 +1644,13 @@ generator! Every command that accepts a ``cmap`` argument (see
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
 included, you can easily create SciVisColor-style merged colormaps with
-ProPlot’s on-the-fly colormap generator! An example is below. In this
-example, we also save colormaps to the ``.proplot`` folder in your home
-directory by passing ``save=True`` to the
-`~proplot.colortools.Colormap` constructor. All files in this folder
-are loaded by ProPlot on import.
+ProPlot’s on-the-fly colormap generator! The below reconstructs the
+colormap from `this
+example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-icon-1.png>`__.
+In this example, the merged colormaps are saved to the ``.proplot``
+folder in your home directory by passing ``save=True`` to the
+`~proplot.colortools.Colormap` constructor. Files in this folder are
+loaded by ProPlot on import.
 
 .. code:: ipython3
 
@@ -1662,8 +1666,9 @@ are loaded by ProPlot on import.
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
     m = axs[1].contourf(data, cmap=cmap, levels=100)
     f.bottompanel[1].colorbar(m, clocator='none')
-    axs.format(xticks='none', yticks='none', suptitle='Merging existing colormaps',
-               collabels=['Evenly spaced', 'Matching SciVisColor example'], collabelweight='normal')
+    axs.format(xticks='none', yticks='none', suptitle='Merging existing colormaps')
+    for ax,title in zip(axs, ['Evenly spaced', 'Matching SciVisColor example']):
+        ax.format(title=title)
 
 
 
@@ -1725,12 +1730,14 @@ adding a number to the end of the color string.
     import numpy as np
     f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, bottomcolorbars=True, bottom=0.1)
     data = np.random.rand(50,50).cumsum(axis=1)
-    m = axs[0].contourf(data, cmap=('navy', 'brick red', 'charcoal'), cmap_kw={'reverse':[True]*3})
+    cmap = plot.Colormap('navy90', 'brick red90', 'charcoal90', reverse=[True,True,True])
+    m = axs[0].contourf(data, cmap=cmap, levels=12)
     f.bottompanel[0].colorbar(m, locator='null')
-    m = axs[1].contourf(data, cmap='ocean blue100', cmap_kw={'reverse':False})
+    m = axs[1].contourf(data, cmap='ocean blue')
     f.bottompanel[1].colorbar(m, locator='null')
-    axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps',
-               collabels=('Three monochromatic colormaps, merged', 'Single monochromatic colormap'), collabelweight='normal')
+    axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps')
+    for ax,title in zip(axs, ['Three monochromatic colormaps, merged', 'Single monochromatic colormap']):
+        ax.format(title=title)
 
 
 
