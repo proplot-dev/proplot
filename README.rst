@@ -66,9 +66,6 @@ Here are some highlights of the remaining features:
 *  Add geographic features with the ``format`` command.
    Customize geographic gridlines and gridline labels.
 
-Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
-
 What about seaborn?
 -------------------
 
@@ -98,7 +95,10 @@ for academics and others that need compact, fine-tuned figures for use in profes
 
 Contributions
 -------------
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! My code should be sufficiently documented and commented so that others are able to modify it.
+This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! You shouldn't have much trouble modifying it -- the comments and documentation are comprehensive.
+
+Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
+guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
 Donations
 ---------
