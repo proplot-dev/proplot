@@ -86,7 +86,6 @@ that you analyze data on your own, prior to plotting it. Anyway, both ``pandas``
 and ``xarray`` already have great built-in tools for visualizing
 tabulated and geophysical data -- and if ProPlot is imported, these tools will even work with its new
 colormaps.
-
 This narrow focus also allowed me
 to integrate my features very closely with the matplotlib API (usually
 as enhancements of existing ``Axes`` and
