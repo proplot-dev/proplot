@@ -106,7 +106,8 @@ of the world doesn’t use “inches”, so I thought this would be useful.
     f, axs1 = plot.subplots(ncols=2, axwidth=1, height='45mm')
     f, axs2 = plot.subplots(width='5cm', aspect=(2,1))
     f, axs3 = plot.subplots(height='150pt', aspect=0.5)
-    plot.axes_list([*axs1,*axs2,*axs3]).format(suptitle='Title', xlabel='x axis', ylabel='y axis')
+    for axs in (axs1,axs2,axs3):
+        axs.format(suptitle='Title', xlabel='x axis', ylabel='y axis')
 
 
 
