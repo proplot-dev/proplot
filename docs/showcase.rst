@@ -191,7 +191,7 @@ between subplots so that elements don’t overlap, and just the right
 amount of space around the figure edge so that labels and whatnot are
 not cut off. Furthermore, despite all of the complex adjustments this
 requires, the original subplot aspect ratios are **always preserved**.
-Even when inner panels are present, the main subplot aspect ratios will
+Even when axes panels are present, the main subplot aspect ratios will
 stay fixed (see below for more on panels).
 
 You can disable this feature by passing ``tight=False`` to
@@ -246,7 +246,7 @@ examples are below.
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, innerpanels='lr', inner_kw={'rshare':False})
+    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, axpanels='lr', axpanels_kw={'rshare':False})
     axs.format(ylabel='ylabel', xlabel='xlabel')
     axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
@@ -417,7 +417,7 @@ the axes is **filled** with a colorbar. See
 
     import proplot as plot
     import numpy as np
-    f, ax = plot.subplots(bottompanel=True, tight=1, axwidth=2.5)
+    f, ax = plot.subplots(colorbar='b', tight=1, axwidth=2.5)
     m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
     ax.colorbar(m, ticks=2, label='inset colorbar')
@@ -428,8 +428,8 @@ the axes is **filled** with a colorbar. See
 
 
 .. image:: showcase/showcase_25_0.png
-   :width: 301px
-   :height: 362px
+   :width: 286px
+   :height: 348px
 
 
 A particularly useful `~proplot.axes.colorbar_factory` feature is that
@@ -484,7 +484,7 @@ and forcing the background to be invisible.
     import numpy as np
     plot.rc.cycle = 'intersection'
     labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee', 'ffffff']
-    f, axs = plot.subplots(ncols=2, bottomlegends=True, rightpanel=True, span=False, share=0)
+    f, axs = plot.subplots(ncols=2, legends='b', panels='r', span=False, share=0)
     hs = []
     for i,label in enumerate(labels):
         hs += axs.plot(np.random.rand(20), label=label, lw=3)[0]
@@ -518,7 +518,7 @@ with your eye. See `~proplot.axes.wrapper_cmap` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, innercolorbars='b')
+    f, axs = plot.subplots(ncols=2, axcolorbars='b')
     data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
     N, step = 360, 45
     ax = axs[0]
@@ -575,9 +575,9 @@ and `~proplot.colors.LinearSegmentedNorm` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(bottompanels=True, ncols=2, axwidth=2.5, aspect=1.5)
-    data = (10**(2*np.random.rand(20,20))).cumsum(axis=0)
-    ticks = [10, 20, 50, 100, 200, 500, 1000]
+    f, axs = plot.subplots(colorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
+    data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
+    ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
     for i,norm in enumerate(('linear','segments')):
         m = axs[i].contourf(data, values=ticks, extend='both', cmap='mutedblue', norm=norm)
         f.bpanel[i].colorbar(m, label='clabel', locator=ticks, fixticks=False)
@@ -586,8 +586,8 @@ and `~proplot.colors.LinearSegmentedNorm` for details.
 
 
 .. image:: showcase/showcase_36_0.png
-   :width: 544px
-   :height: 284px
+   :width: 512px
+   :height: 273px
 
 
 You can now call `~matplotlib.axes.Axes.plot` with a ``cmap`` option –
@@ -601,18 +601,17 @@ details.
 
     import proplot as plot
     import numpy as np
-    f, ax = plot.subplots(innercolorbars='b', axwidth=4, aspect=(2,1))
+    f, axs = plot.subplots(ncols=2, wratios=(2,1), axcolorbars='b', axwidth=4, aspect=(2,1))
+    ax = axs[0]
     m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
                 cmap='thermal', values=np.arange(50), lw=7, extend='both')
     ax.format(xlabel='xlabel', ylabel='ylabel', suptitle='Line with smooth color gradations')
     ax.bottompanel.colorbar(m, label='parametric coordinate', locator=5)
-    # Make a pretty spiral
     N = 12
+    ax = axs[1]
     values = np.arange(1, N+1)
     radii = np.linspace(1,0.2,N)
     angles = np.linspace(0,4*np.pi,N)
-    f, ax = plot.subplots(innercolorbars='b', ncols=1, axwidth=2, bwidth=0.8, span=False)
-    axs = axs[::-1]
     x = radii*np.cos(1.4*angles)
     y = radii*np.sin(1.4*angles)
     m = ax.plot(x, y, values=values,
@@ -621,25 +620,8 @@ details.
               xlabel='cosine angle', ylabel='sine angle')
     ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
 
-
-
-
-
-
-
-.. image:: showcase/showcase_38_1.png
-   :width: 436px
-   :height: 304px
-
-
-
-.. image:: showcase/showcase_38_2.png
-   :width: 256px
-   :height: 302px
-
-
-Inner panels, colorbars
------------------------
+Axes panels, colorbars
+----------------------
 
 It is common to need “panels” that represent averages across some axis
 of the main subplot, or some secondary 1-dimensional dataset. This is
@@ -654,8 +636,8 @@ will always keep the subplots aligned. See
     # Arbitrarily complex combinations are possible, and inner spaces still determined automatically
     import proplot as plot
     f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2,
-                           inner={1:'t', 2:'l', 3:'b', 4:'r'}, inner_kw={'flush':False}, innerpad=0.001,
-                           tight=1, innertight=1, share=0, span=0, wratios=[1,2])
+                           axpanels={1:'t', 2:'l', 3:'b', 4:'r'},
+                           tight=True, share=0, span=0, wratios=[1,2])
     axs.format(title='Title', suptitle='This is a super title', collabels=['Column 1','Column 2'],
                titlepos='ci', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
     axs.format(ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
@@ -663,15 +645,15 @@ will always keep the subplots aligned. See
 
 
 .. image:: showcase/showcase_41_0.png
-   :width: 454px
-   :height: 452px
+   :width: 468px
+   :height: 466px
 
 
 If you want “colorbar” panels, the simplest option is to use the
-``innercolorbars`` keyword instead of ``innerpanels``. This makes the
-width of the panels more appropriate for filling with a colorbar. You
-can modify these default spacings with a custom ``.proplotrc`` file (see
-the `~proplot.rcmod` documentation).
+``axcolorbars`` keyword instead of ``axpanels``. This makes the width of
+the panels more appropriate for filling with a colorbar. You can modify
+these default spacings with a custom ``.proplotrc`` file (see the
+`~proplot.rcmod` documentation).
 
 If you want panels “flush” against the subplot, simply use the ``flush``
 keyword args. If you want to disable “axis sharing” with the parent
@@ -684,13 +666,13 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2, share=0, span=False, innerpad=0.1, innertight=True,
-                           innerpanels='r', innercolorbars='b', inner_kw={'rshare':False, 'rflush':True})
+    f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2, share=0, span=False, panelpad=0.1,
+                           axpanels='r', axcolorbars='b', axpanels_kw={'rshare':False, 'rflush':True})
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
     for i,ax in enumerate(axs):
         ax.format(title=f'Dataset {i+1}')
     data = (np.random.rand(20,20)-0.1).cumsum(axis=1)
-    m = axs.contourf(data, cmap='glacial')[0]
+    m = axs.contourf(data, cmap='glacial', levels=plot.arange(-1,11))[0]
     axs.rpanel.plot(data.mean(axis=1), np.arange(20), color='k')
     axs.rpanel.format(title='Mean')
     axs.bpanel.colorbar(m, label='cbar')
@@ -702,12 +684,12 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 .. image:: showcase/showcase_43_1.png
-   :width: 454px
-   :height: 487px
+   :width: 492px
+   :height: 514px
 
 
-Outer panels, colorbars
------------------------
+Figure panels, colorbars
+------------------------
 
 It is also common to need “global” colorbars or legends, meant to
 reference multiple subplots at once. This is easy to do with ProPlot
@@ -724,7 +706,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1, bottompanels=[1,2,2], rightpanel=True)
+    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, colorbar='br', bspan=[1,2,2])
     m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
     axs.format(suptitle='Super title', abc=True, abcpos='ol', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
     f.bpanel[0].colorbar(m, label='label', ticks=0.5)
@@ -738,15 +720,15 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 .. image:: showcase/showcase_46_1.png
-   :width: 460px
-   :height: 496px
+   :width: 487px
+   :height: 523px
 
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=4, axwidth=1.3, bottomcolorbars=[1,1,2,2], share=0, span=0, wspace=0.3)
+    f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', bspan=[1,1,2,2], share=0, span=0, wspace=0.3)
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
     cycle = plot.Cycle('grays', 5)
@@ -762,8 +744,8 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 .. image:: showcase/showcase_47_0.png
-   :width: 625px
-   :height: 241px
+   :width: 623px
+   :height: 240px
 
 
 Helvetica as the default font
@@ -1240,9 +1222,8 @@ These featuers are powered by the
     # First make figure
     for globe in (False,True):
         f, axs = plot.subplots(ncols=2, nrows=2, width=7, hspace=0.2, wspace=0.3, top=0.5,
-                               bottomcolorbars=True, bwidth=0.2, bottom=0.2,
+                               colorbars='b', bwidth=0.2, bottom=0.2,
                                proj='hammer', proj_kw={'lon_0':0},
-                               # basemap=False,
                                basemap={(1,3):False, (2,4):True},
                                )
         offset = -40
@@ -1268,13 +1249,13 @@ These featuers are powered by the
 
 .. image:: showcase/showcase_79_1.png
    :width: 630px
-   :height: 434px
+   :height: 426px
 
 
 
 .. image:: showcase/showcase_79_2.png
    :width: 630px
-   :height: 434px
+   :height: 426px
 
 
 .. code:: ipython3
@@ -1284,7 +1265,7 @@ These featuers are powered by the
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=1, width=5, proj='merc', wspace=0.5, basemap=False,
-                           rightcolorbar=True, rspace=1,
+                           colorbar='r', rspace=1,
                            proj_kw={'lon_0':0}, top=0.4, left=0.4, right=0.2, bottom=0.2)
     axs.set_adjustable('box')
     ax = axs[0]
@@ -1656,7 +1637,7 @@ loaded by ProPlot on import.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, bottomcolorbars=True, bottom=0.1)
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, colorbars='b', bottom=0.1)
     data = np.random.rand(100,100).cumsum(axis=1)
     # Make colormap, save as "test1.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
@@ -1695,7 +1676,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, innercolorbars='b', axwidth=3.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, axcolorbars='b', axwidth=3.5, aspect=1.5)
     ax = axs[0]
     m = ax.contourf(np.random.rand(10,10),
                    cmap={'h':['red-120', 'red+90'], 'c':[50, 70, 30], 'l':[20, 100], 'space':'hcl'},
@@ -1728,7 +1709,7 @@ adding a number to the end of the color string.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, bottomcolorbars=True, bottom=0.1)
+    f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, colorbars='b', bottom=0.1)
     data = np.random.rand(50,50).cumsum(axis=1)
     cmap = plot.Colormap('navy90', 'brick red90', 'charcoal90', reverse=[True,True,True])
     m = axs[0].contourf(data, cmap=cmap, levels=12)
@@ -1755,7 +1736,7 @@ colormap.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, innercolorbars='b', axwidth=2)
+    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
     data = np.random.rand(50,50).cumsum(axis=0) - 50
     for ax,cut in zip(axs,(0, 0.1, 0.2)):
         m = ax.contourf(data, cmap='PurplePink', cmap_kw={'cut':cut}, levels=12)
@@ -1778,7 +1759,7 @@ your map.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, innercolorbars='b', axwidth=2)
+    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
     data = (np.random.rand(50,50)-0.48).cumsum(axis=1).cumsum(axis=0) - 50
     for ax,shift in zip(axs,(0, 90, 180)):
         m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
@@ -1803,7 +1784,7 @@ colors, and vice versa.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, nrows=2, innercolorbars='r', aspect=1)
+    f, axs = plot.subplots(ncols=3, nrows=2, axcolorbars='r', aspect=1)
     data = np.random.rand(10,10).cumsum(axis=1)
     i = 0
     for cmap in ('verdant','fire'):
@@ -1835,7 +1816,7 @@ reversed diverging colormaps by their “reversed” name – for example,
     import proplot as plot
     import numpy as np
     data = np.random.rand(10,10) - 0.5
-    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, innercolorbars='b', innercolorbars_kw={'hspace':0.2})
+    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, axcolorbars='b', axcolorbars_kw={'hspace':0.2})
     for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
         ax = axs[i]
         m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
@@ -1889,7 +1870,7 @@ See `~proplot.colors.Colormap` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, bottomcolorbars=[1,2], span=False, axwidth=3, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, colorbars='b', span=False, axwidth=3, aspect=1.5)
     m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
     f.bottompanel[0].colorbar(m, label='clabel', formatter='%.1f')
     lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5), cycle_kw={'left':0.3}, lw=5)
@@ -1923,7 +1904,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=4, innercolorbars='r', share=False)
+    f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=4, axcolorbars='r', share=False)
     m = axs[0].pcolormesh(np.random.rand(10,10), cmap='thermal', levels=np.linspace(0, 1, 101))
     axs[0].rpanel.colorbar(m, label='colormap', locator=0.2)
     axs[0].format(title='The "thermal" colormap')

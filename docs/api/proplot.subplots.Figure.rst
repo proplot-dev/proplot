@@ -10,8 +10,8 @@ Figure
 
    .. autosummary::
 
+      ~Figure.add_subplot_and_panels
       ~Figure.draw
-      ~Figure.panel_factory
       ~Figure.save
       ~Figure.savefig
       ~Figure.smart_tight_layout
@@ -19,8 +19,8 @@ Figure
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: add_subplot_and_panels
    .. automethod:: draw
-   .. automethod:: panel_factory
    .. automethod:: save
    .. automethod:: savefig
    .. automethod:: smart_tight_layout

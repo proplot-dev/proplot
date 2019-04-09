@@ -891,11 +891,47 @@ def wrapper_scatter(self, func, *args,
     ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
     return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
 
+def _update_text(obj, kwargs):
+    """Allow updating new text properties introduced by override."""
+    # Allow updating properties introduced by the BaseAxes.text() override.
+    # Don't really want to subclass mtext.Text; only have a few features
+    try:
+        obj.update(kwargs)
+        return obj
+    except Exception:
+        pass
+    # Destroy original text instance and get its properties
+    obj.set_visible(False)
+    text = kwargs.pop('text', obj.get_text())
+    if 'color' not in kwargs:
+        kwargs['color'] = obj.get_color()
+    if 'weight' not in kwargs:
+        kwargs['weight'] = obj.get_weight()
+    if 'fontsize' not in kwargs:
+        kwargs['fontsize'] = obj.get_fontsize()
+    # Position
+    pos = obj.get_position()
+    x, y = None, None
+    if 'position' in kwargs:
+        x, y = kwargs.pop('position')
+    x = kwargs.pop('x', x)
+    y = kwargs.pop('y', y)
+    if x is None:
+        x = pos[0]
+    if y is None:
+        y = pos[1]
+    if np.iterable(x):
+        x = x[0]
+    if np.iterable(y):
+        y = y[0]
+    return obj.axes.text(x, y, text, **kwargs)
+
 def wrapper_text(self, func, x, y, text,
     transform='data',
     border=False, border_kw={},
     invert=False,
-    linewidth=2, lw=None, **kwargs): # linewidth is for the border
+    linewidth=2, lw=None,
+    **kwargs): # linewidth is for the border
     """
     Wraps `~matplotlib.axes.Axes.text`, enables specifying `tranform` with
     a string name and adds feature for drawing borders around text.
@@ -906,11 +942,8 @@ def wrapper_text(self, func, x, y, text,
         The *x* and *y* coordinates for the text.
     text : str
         The text.
-    transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
-        The transform, or a string pointing to either of the
-        `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-        or `~matplotlib.figure.Figure.transFigure` transforms. Default is
-        ``'data'`` (unchanged).
+    linewidth, lw : float, optional
+        Ignored if `border` is ``False``. The width of the text border.
     border : bool, optional
         Whether to draw border around text.
     border_kw : dict-like, optional
@@ -919,8 +952,11 @@ def wrapper_text(self, func, x, y, text,
         Ignored if `border` is ``False``. Whether to draw black text
         with a white border (``False``), or white text on a black
         border (``True``).
-    lw, linewidth : float, optional
-        Ignored if `border` is ``False``. The width of the text border.
+    transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
+        The transform, or a string pointing to either of the
+        `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
+        or `~matplotlib.figure.Figure.transFigure` transforms. Default is
+        ``'data'`` (unchanged).
 
     Other parameters
     ----------------
@@ -1444,12 +1480,13 @@ def colorbar_factory(ax, mappable, values=None,
     # other times not work?
     # axis.set_major_locator(locators[0]) # does absolutely nothing
     # axis.set_major_formatter(cformatter)
+    width, height = ax.figure.get_size_inches()
     if orientation=='horizontal':
         axis = ax.xaxis
-        scale = ax.figure.width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
+        scale = width*np.diff(getattr(ax.get_position(),'intervalx'))[0]
     else:
         axis = ax.yaxis
-        scale = ax.figure.height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
+        scale = height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
     ticklocation = _default(tickloc, ctickloc, ticklocation)
@@ -1608,77 +1645,62 @@ class BaseAxes(maxes.Axes):
         `XYAxes`, `CartopyAxes`, `BasemapAxes`,
         `wrapper_cmap`, `wrapper_cycle`
         """
-        # Initialize
+        # Properties
+        self.number = number # for abc numbering
+        self._hatch = None # background hatching
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
-        self._hatch = None # background hatching
-        self._zoom = None  # if non-empty, will make invisible
-        # Children
-        self._inset_colorbar_child = None
-        self._inset_colorbar_parent = None
-        self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
-        self._colorbar_parent = None
-        self._insets = []  # add to these later
-        self._inset_parent = None  # change this later
-        self._twinx_child = None
-        self._twiny_child = None
-        self._twinx_parent = None
-        self._twiny_parent = None
-        # Properties for *special* twin axes, with locked axis limits
-        self._dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
-        self._dualx_scale = None
-        # Misc
-        self._visible_effective = True
+        self._yrange = None # geometry, filled later
+        self._xrange = None
+        self._nrows = None
+        self._ncols = None
+        # Ugly but necessary
+        self._abc_inside = False
+        self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         self._cartopy_gridliner_on = False # whether cartopy gridliners are enabled
         self._cartopy_limited_extent = False # whether cartopy set_extent was used
-        self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
-        self._abc_inside = False
-
-        # Call parent
-        super().__init__(*args, **kwargs)
-
-        # Title stuff
-        self._title_pos_init = self.title.get_position() # position of title outside axes
-        self._title_pos_transform = self.title.get_transform()
-
-        # Panels, always none by default
+        # Children and related properties
         self.bottompanel = EmptyPanel()
         self.toppanel    = EmptyPanel()
         self.leftpanel   = EmptyPanel()
         self.rightpanel  = EmptyPanel()
+        self._panels_main_gridspec = None # filled with gridspec used for axes subplot and its panels
+        self._panels_stack_gridspec = None # filled with gridspec used for 'stacked' panels
+        self._zoom = None # the 'zoom lines' for inset zoom-in axes
+        self._inset_parent = None # filled later
+        self._inset_children = [] # arbitrary number of insets possible
+        self._colorbar_parent = None
+        self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
+        self._visible_effective = True # turned off when invisible() is called, makes spines, ticks, etc. invisible but axes content still visible
+        self._twinx_child = None
+        self._twiny_child = None
+        self._twinx_parent = None
+        self._twiny_parent = None
+        self._dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
+        self._dualx_scale = None
 
-        # Number and size
+        # Call parent
+        super().__init__(*args, **kwargs)
+
+        # Set up axis sharing, save geometry
+        width, height = self.figure.get_size_inches()
+        self.width  = np.diff(self._position.intervalx)*width # position is in figure units
+        self.height = np.diff(self._position.intervaly)*height
         if isinstance(self, maxes.SubplotBase):
             nrows, ncols, subspec = self._topmost_subspec()
             self._yrange = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
             self._xrange = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
             self._nrows = 1 + nrows // 2 # remember, we have rows masquerading as empty spaces!
             self._ncols = 1 + ncols // 2
-        else:
-            self._yrange = None
-            self._xrange = None
-            self._nrows = None
-            self._ncols = None
-        self.number = number # for abc numbering
-        self.width  = np.diff(self._position.intervalx)*self.figure.width # position is in figure units
-        self.height = np.diff(self._position.intervaly)*self.figure.height
-
-        # Turn off tick labels and axis label for shared axes
-        # Want to do this ***manually*** because want to have the ability to
-        # add shared axes ***after the fact in general***. If the API changes,
-        # will modify the below methods.
+        # Axis sharing, title stuff, new text attributes
         self._sharex_setup(sharex, sharex_level)
         self._sharey_setup(sharey, sharey_level)
-
-        # Add extra text properties for abc labeling, rows/columns labels
-        # (can only be filled with text if axes is on leftmost column/topmost row)
+        self._title_pos_init = self.title.get_position() # position of title outside axes
+        self._title_pos_transform = self.title.get_transform()
         self.abc = self.text(0, 0, '') # position tbd
-        self.collabel = self.text(*self._title_pos_init, '',
-                va='bottom', ha='center', transform=self._title_pos_transform)
-        self.rowlabel = self.text(*self.yaxis.label.get_position(), '',
-                va='center', ha='right', transform=self.transAxes)
-
-        # Apply all 'special' props
+        self.collabel = self.text(*self._title_pos_init, '', va='bottom', ha='center', transform=self._title_pos_transform)
+        self.rowlabel = self.text(*self.yaxis.label.get_position(), '', va='center', ha='right', transform=self.transAxes)
+        # Apply 'special' props
         rc._getitem_mode = 0 # might still be non-zero if had error
         self.format(mode=1)
 
@@ -1733,104 +1755,81 @@ class BaseAxes(maxes.Axes):
         nrows, ncols = gridspec.get_geometry()
         return nrows, ncols, subspec
 
+    def _share_short_axis(self, share, side, level):
+        """When sharing main subplots, shares the short axes of their side panels."""
+        if isinstance(self, PanelAxes):
+            return
+        axis = 'x' if side[0] in 'lr' else 'y'
+        paxs1 = getattr(self, side + 'panel') # calling this means, share properties on this axes with input 'share' axes
+        paxs2 = getattr(share, side + 'panel')
+        if not all(pax.visible() for pax in paxs1) or not all(pax.visible() for pax in paxs2):
+            return
+        if len(paxs1) != len(paxs2):
+            raise RuntimeError('Sync error. Different number of stacked panels along axes on like column/row of figure.')
+        for pax1,pax2 in zip(paxs1,paxs2):
+            getattr(pax1, '_share' + axis + '_setup')(pax2, level)
+
+    def _share_long_axis(self, share, side, level):
+        """When sharing main subplots, shares the long axes of their side panels,
+        assuming long axis sharing is enabled for that panel."""
+        if isinstance(self, PanelAxes):
+            return
+        axis = 'x' if side[0] in 'tb' else 'y'
+        paxs = getattr(self, side + 'panel') # calling this means, share properties on this axes with input 'share' axes
+        if not all(pax.visible() for pax in paxs) or not all(pax._share for pax in paxs):
+            return
+        for pax in paxs:
+            getattr(pax, '_share' + axis + '_setup')(share, level)
+
     def _sharex_setup(self, sharex, level):
-        """Set up shared axes."""
+        """Sets up shared axes. The input is the 'parent' axes, from which
+        this one will draw its properties."""
         if sharex is None or sharex is self:
             return
         if isinstance(self, MapAxes) or isinstance(sharex, MapAxes):
             return
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
-        # Share vertical panel x-axes with *eachother*
-        if self.leftpanel.visible() and sharex.leftpanel.visible():
-            self.leftpanel._sharex_setup(sharex.leftpanel, level)
-        if self.rightpanel.visible() and sharex.rightpanel.visible():
-            self.rightpanel._sharex_setup(sharex.rightpanel, level)
-        # Share horizontal panel x-axes with *sharex*
-        if self.bottompanel.visible() and self.bottompanel._share:
-            self.bottompanel._sharex_setup(sharex, level)
-        if self.toppanel.visible() and self.toppanel._share:
-            self.toppanel._sharex_setup(sharex, level)
+        # Account for side panels 
+        self._share_short_axis(sharex, 'left',   level)
+        self._share_short_axis(sharex, 'right',  level)
+        self._share_long_axis(sharex,  'bottom', level)
+        self._share_long_axis(sharex,  'top',    level)
         # Builtin features
         self._sharex = sharex
         if level>1:
             self._shared_x_axes.join(self, sharex)
-        # Simple method for setting up shared axes
-        # WARNING: It turned out setting *another axes' axis label* as
-        # this attribute caused error, because matplotlib tried to add
-        # the same artist instance twice. Can only make it invisible.
+        # "Shared" axis and tick labels
+        # WARNING: Assigning *another* axis label to this axes will raise error,
+        # because matplotlib tries to draw same Artist twice. Just make it invisible.
         if level>2:
             for t in self.xaxis.get_ticklabels():
                 t.set_visible(False)
         self.xaxis.label.set_visible(False)
 
     def _sharey_setup(self, sharey, level):
-        """Set up shared axes."""
+        """Sets up shared axes. The input is the 'parent' axes, from which
+        this one will draw its properties."""
         if sharey is None or sharey is self:
             return
         if isinstance(self, MapAxes) or isinstance(sharey, MapAxes):
             return
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
-        # Share horizontal panel y-axes with *eachother*
-        if self.bottompanel.visible() and sharey.bottompanel.visible():
-            self.bottompanel._sharey_setup(sharey.bottompanel, level)
-        if self.toppanel.visible() and sharey.toppanel.visible():
-            self.toppanel._sharey_setup(sharey.toppanel, level)
-        # Share vertical panel y-axes with *sharey*
-        if self.leftpanel.visible() and self.leftpanel._share:
-            self.leftpanel._sharey_setup(sharey, level)
-        if self.rightpanel.visible() and self.rightpanel._share:
-            self.rightpanel._sharey_setup(sharey, level)
-            # sharey = self.leftpanel._sharey or self.leftpanel
+        # Account for side panels
+        self._share_short_axis(sharey, 'bottom', level)
+        self._share_short_axis(sharey, 'top',    level)
+        self._share_long_axis(sharey,  'left',   level)
+        self._share_long_axis(sharey,  'right',  level)
         # Builtin features
         self._sharey = sharey
         if level>1:
             self._shared_y_axes.join(self, sharey)
-        # Simple method for setting up shared axes
+        # "Shared" axis and tick labels
         if level>2:
             for t in self.yaxis.get_ticklabels():
                 t.set_visible(False)
         self.yaxis.label.set_visible(False)
-
-    def _update_text(self, obj, kwargs):
-        """Update text, and allow for border."""
-        # Allow updating properties introduced by the BaseAxes.text() override.
-        # Don't really want to subclass mtext.Text; only have a few features
-        # NOTE: Don't use kwargs because want this to look like standard
-        # artist self.update.
-        try:
-            obj.update(kwargs)
-            return obj
-        except Exception:
-            pass
-
-        # Destroy original text instance and get its properties
-        obj.set_visible(False)
-        text = kwargs.pop('text', obj.get_text())
-        if 'color' not in kwargs:
-            kwargs['color'] = obj.get_color()
-        if 'weight' not in kwargs:
-            kwargs['weight'] = obj.get_weight()
-        if 'fontsize' not in kwargs:
-            kwargs['fontsize'] = obj.get_fontsize()
-
-        # Position
-        pos = obj.get_position()
-        x, y = None, None
-        if 'position' in kwargs:
-            x, y = kwargs.pop('position')
-        x = kwargs.pop('x', x)
-        y = kwargs.pop('y', y)
-        if x is None:
-            x = pos[0]
-        if y is None:
-            y = pos[1]
-        if np.iterable(x):
-            x = x[0]
-        if np.iterable(y):
-            y = y[0]
-        return self.text(x, y, text, **kwargs)
 
     def _parse_title_args(self, abc=False, pos=None, border=None, linewidth=None, **kwargs):
         """Position title text to the left, center, or right and either
@@ -1842,14 +1841,7 @@ class BaseAxes(maxes.Axes):
         ypad = rc.get('axes.titlepad')/(72*self.height) # to inches --> to axes relative
         xpad = rc.get('axes.titlepad')/(72*self.width)  # why not use the same for x?
         xpad_i, ypad_i = xpad*1.5, ypad*1.5 # inside labels need a bit more room
-        inside = False
-        if not isinstance(pos, str):
-            # Coordinate position
-            ha = va = 'center'
-            x, y = pos
-            inside = True
-            transform = self.transAxes
-        else:
+        if isinstance(pos, str):
             # Get horizontal position
             if not any(c in pos for c in 'lcr'):
                 pos += 'c'
@@ -1873,19 +1865,23 @@ class BaseAxes(maxes.Axes):
             elif 'i' in pos:
                 y = 1 - ypad_i
                 va = 'top'
-                inside = True
                 transform = self.transAxes
                 if border is not None:
                     kwargs['border'] = border
                     if border and linewidth:
                         kwargs['linewidth'] = linewidth
+        else:
+            # Coordinate position
+            ha = va = 'center'
+            x, y = pos
+            transform = self.transAxes
         # Record _title_inside so we can automatically deflect suptitle
         # If *any* object is outside (title or abc), want to deflect it up
-        if inside:
-            if abc:
-                self._abc_inside = ('i' in pos)
-            else:
-                self._title_inside = ('i' in pos)
+        inside = (not isinstance(pos, str) or 'i' in pos)
+        if abc:
+            self._abc_inside = inside
+        else:
+            self._title_inside = inside
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
     # @_counter
@@ -1952,7 +1948,7 @@ class BaseAxes(maxes.Axes):
             self.smart_update(**kw)
 
     def smart_update(self, title=None, abc=None,
-        suptitle=None, collabels=None, rowlabels=None, # label rows and columns
+        figtitle=None, suptitle=None, collabels=None, rowlabels=None, # label rows and columns
         top=True, # nopanel optionally puts title and abc label in main axes
         ):
         """
@@ -1976,7 +1972,7 @@ class BaseAxes(maxes.Axes):
         rowlabels, colllabels : None or list of str, optional
             The subplot row and column labels. If list, length must match
             the number of subplot rows, columns.
-        suptitle : None or str, optional
+        figtitle, suptitle : None or str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
             column of subplots, and automatically offset above figure titles.
@@ -2003,6 +1999,7 @@ class BaseAxes(maxes.Axes):
         # whatnot. May result in redundant assignments if formatting more than
         # one axes, but operations are fast so some redundancy is nbd.
         fig = self.figure # the figure
+        suptitle = figtitle or suptitle
         if suptitle is not None:
             kw = rc.fill({
                 'fontsize': 'suptitle.fontsize',
@@ -2042,17 +2039,13 @@ class BaseAxes(maxes.Axes):
                 'weight':    'title.weight',
                 'fontname':  'fontname'
                 }, cache=False)
-            if top and self.toppanel.visible():
-                ax = self.toppanel
-                obj = self.toppanel.title
+            if top and all(pax.visible() for pax in self.toppanel):
+                ax = self.toppanel[0]
             else:
                 ax = self
-                obj = self.title
-            if ax._twinx_child: # always on *top*!
-                ax = ax._twinx_child
-                obj = ax._twinx_child.title
-            kw = obj.axes._parse_title_args(**kw)
-            ax.title = obj.axes._update_text(obj, {'text':title, 'visible':True, **kw})
+            ax = ax._twinx_child or ax # always on top!
+            kw = ax._parse_title_args(**kw)
+            ax.title = _update_text(ax.title, {'text':title, 'visible':True, **kw})
 
         # Create axes numbering
         if self.number is not None and abc:
@@ -2074,19 +2067,15 @@ class BaseAxes(maxes.Axes):
                 'color':     'abc.color',
                 'fontname':  'fontname'
                 }, cache=False)
-            if top and self.toppanel.visible():
-                ax = self.toppanel
-                obj = self.toppanel.abc
+            if top and all(pax.visible() for pax in self.toppanel):
+                ax = self.toppanel[0]
             else:
                 ax = self
-                obj = self.abc
-            if ax._twinx_child: # always on *top*!
-                ax = ax._twinx_child
-                obj = ax._twinx_child.title
+            ax = ax._twinx_child or ax # always on top!
             kw = ax._parse_title_args(abc=True, **kw)
-            ax.abc = ax._update_text(obj, {'text':text, 'visible':True, **kw})
+            ax.abc = _update_text(ax.abc, {'text':text, 'visible':True, **kw})
         else:
-            for ax in (self, self.toppanel):
+            for ax in (self, *self.toppanel):
                 if ax and ax.abc and not abc and abc is not None:
                     ax.abc.set_visible(False)
 
@@ -2358,8 +2347,8 @@ class XYAxes(BaseAxes):
         # label crashes into tick labels on another axes.
         name = axis.axis_name
         base = self
-        base = getattr(base, '_share' + name, None) or base
-        base = getattr(base, '_share' + name, None) or base
+        for i in range(2): # try 2 levels down, should be sufficient
+            base = getattr(base, '_share' + name, None) or base
         if not getattr(base, '_span'  + name):
             return getattr(base, name + 'axis').label
         if axis not in self.figure._span_labels:
@@ -2371,7 +2360,7 @@ class XYAxes(BaseAxes):
         # Identify the *main* axes spanning this edge, and if those axes have
         # a panel and are shared with it (i.e. has a _sharex/_sharey attribute
         # declared with _sharex_panels), point to the panel label
-        axs = [ax for ax in self.figure.main_axes if edge(ax)==edge(base)]
+        axs = [ax for ax in self.figure._main_axes if edge(ax)==edge(base)]
         span_all = np.array([span(ax) for ax in axs])
 
         # Get the axis we will use for the "spanning label"
@@ -2388,9 +2377,9 @@ class XYAxes(BaseAxes):
             return axis.label
         idx = slice(span_all.min(), span_all.max() + 1)
         if name=='x': # span columns
-            subspec = self.figure._gridspec[0,idx]
+            subspec = self.figure._main_gridspec[0,idx]
         else: # spans rows
-            subspec = self.figure._gridspec[idx,0]
+            subspec = self.figure._main_gridspec[idx,0]
         bbox = subspec.get_position(self.figure) # in figure-relative coordinates
         x0, y0, width, height = bbox.bounds
         if name=='x':
@@ -2977,7 +2966,7 @@ class XYAxes(BaseAxes):
             transform = self.transAxes
         label = kwargs.pop('label', 'inset_axes')
         # This puts the rectangle into figure-relative coordinates.
-        # TODO: Use default matplotlib attributes, instead of custom _insets
+        # TODO: Use default matplotlib attributes, instead of custom _inset_children
         # and _inset_parent attribute?
         locator = self._make_inset_locator(bounds, transform)
         bb = locator(None, None)
@@ -2985,7 +2974,7 @@ class XYAxes(BaseAxes):
         # The following locator lets the axes move if in data coordinates, gets called in ax.apply_aspect()
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
-        self._insets += [ax]
+        self._inset_children.append(ax)
         ax._inset_parent = self
         # Finally add zoom (NOTE: Requires version >=3.0)
         if zoom:
@@ -3056,7 +3045,17 @@ class EmptyPanel(object):
     when the user requests anything that isn't a hidden `object` method.
     """
     def __bool__(self):
+        """Returns False. Provides shorthand way to check whether panel
+        attribute is specifically EmptyPanel."""
         return False # it's empty, so this is 'falsey'
+
+    def __getitem__(self, key):
+        """Returns itself. This allows us to iterate through EmptyPanel, just
+        like it is an `axes_list` of stacked panels."""
+        # See: https://stackoverflow.com/a/26611639/4970632
+        if key>0:
+            raise IndexError('End of panel list.')
+        return self
 
     def __getattr__(self, attr, *args):
         """Raises RuntimeError."""
@@ -3073,7 +3072,8 @@ class PanelAxes(XYAxes):
     # and `this example <https://stackoverflow.com/q/26236380/4970632>`_.
     name = 'panel'
     """The registered projection name."""
-    def __init__(self, *args, side=None, share=False, flush=False,
+    def __init__(self, *args,
+        side=None, share=False, flush=False,
         visible=True, parent=None, **kwargs):
         """
         Parameters
@@ -3096,7 +3096,8 @@ class PanelAxes(XYAxes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `~proplot.subplots.Figure.panel_factory`,
+        `~proplot.subplots.subplots`,
+        `~proplot.subplots.Figure.add_subplot_and_panels`,
         `XYAxes`, `BaseAxes`
         """
         # Misc props

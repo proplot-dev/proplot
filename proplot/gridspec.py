@@ -56,8 +56,6 @@ class FlexibleGridSpecBase(object):
             If list, length length of ``wspace`` must be ``ncols-1``,
             and length of ``hspace`` must be ``nrows-1``.
         height_ratios, width_ratios : list of float
-            Aliases for `hratios`, `wratios`.
-        hratios, wratios : list of float
             Ratios for the width/height of columns/rows of subplots.
             For example, ``wratios=[1,2]`` specifes 2 columns of subplots,
             the second one twice as wide as the first.
@@ -107,15 +105,14 @@ class FlexibleGridSpecBase(object):
 
     def _spaces_as_ratios(self,
             hspace=None, wspace=None, # spacing between axes
-            hratios=None, wratios=None,
             height_ratios=None, width_ratios=None,
             **kwargs):
         """For keyword arg usage, see `FlexibleGridSpecBase`."""
         # Parse flexible input
         nrows = self._nrows_visible
         ncols = self._ncols_visible
-        hratios = np.atleast_1d(_default(height_ratios, hratios, 1))
-        wratios = np.atleast_1d(_default(width_ratios,  wratios, 1))
+        hratios = np.atleast_1d(_default(height_ratios, 1))
+        wratios = np.atleast_1d(_default(width_ratios,  1))
         hspace = np.atleast_1d(_default(hspace, np.mean(hratios)*0.10)) # this is relative to axes
         wspace = np.atleast_1d(_default(wspace, np.mean(wratios)*0.10))
         if len(wspace)==1:

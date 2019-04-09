@@ -11,7 +11,9 @@ EmptyPanel
    .. autosummary::
 
       ~EmptyPanel.__getattr__
+      ~EmptyPanel.__getitem__
 
    .. rubric:: Methods Documentation
 
    .. automethod:: __getattr__
+   .. automethod:: __getitem__
