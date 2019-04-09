@@ -1810,9 +1810,14 @@ def subplots(array=None, ncols=1, nrows=1,
     # NOTE: Ratios are scaled to take physical units in _subplots_kwargs, so
     # user can manually provide hspace and wspace in physical units.
     hspace = np.atleast_1d(units(_default(hspace,
-        rc['subplot.innerspace'] if sharex==3 else rc['subplot.titlespace'] + rc['subplot.xlabspace'])))
-    wspace = np.atleast_1d(units(_default(hspace,
-        rc['subplot.innerspace'] if sharex==3 else rc['subplot.ylabspace'])))
+        rc['subplot.titlespace'] + rc['subplot.innerspace'] if sharex==3
+        else rc['subplot.xlabspace'] if sharex in (1,2) # space for tick labels and title
+        else rc['subplot.titlespace'] + rc['subplot.xlabspace'])))
+    wspace = np.atleast_1d(units(_default(wspace,
+        rc['subplot.innerspace'] if sharey==3
+        else rc['subplot.ylabspace'] - rc['subplot.titlespace'] if sharey in (1,2) # space for tick labels only
+        else rc['subplot.ylabspace']
+        )))
     wratios = np.atleast_1d(_default(width_ratios, wratios, 1))
     hratios = np.atleast_1d(_default(height_ratios, hratios, 1))
     if len(wspace)==1:

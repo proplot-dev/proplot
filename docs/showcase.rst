@@ -219,12 +219,12 @@ labelling; a warning will be raised in these instances). Even when
 
 .. image:: showcase/showcase_15_0.png
    :width: 355px
-   :height: 346px
+   :height: 382px
 
 
 
 .. image:: showcase/showcase_15_1.png
-   :width: 454px
+   :width: 445px
    :height: 445px
 
 
