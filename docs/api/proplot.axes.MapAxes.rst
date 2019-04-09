@@ -10,10 +10,10 @@ MapAxes
 
    .. autosummary::
 
-      ~MapAxes.__getattribute__
       ~MapAxes.smart_update
+      ~MapAxes.__getattribute__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getattribute__
    .. automethod:: smart_update
+   .. automethod:: __getattribute__

@@ -86,7 +86,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
     """Handy visualization of how a `~proplot.colortools.PerceptuallyUniformColormap`
     varies in the HCL, HSLuv, and HPLuv colorspaces."""
     # Figure
-    f, axs = subplots(ncols=4, bottomlegends=True, rightcolorbar=True,
+    f, axs = subplots(ncols=4, legends='b', colorbar='r',
                     span=False, sharey=1, subplotpad=0.05,
                     axwidth=1.3, aspect=1, tight=True)
     x = np.linspace(0, 1, N)

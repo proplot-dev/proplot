@@ -16,13 +16,13 @@ BaseAxes
 
    .. autosummary::
 
-      ~BaseAxes.__getattribute__
       ~BaseAxes.cmapline
       ~BaseAxes.colorbar
       ~BaseAxes.format
       ~BaseAxes.invisible
-      ~BaseAxes.on
       ~BaseAxes.smart_update
+      ~BaseAxes.visible
+      ~BaseAxes.__getattribute__
 
    .. rubric:: Attributes Documentation
 
@@ -30,10 +30,10 @@ BaseAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getattribute__
    .. automethod:: cmapline
    .. automethod:: colorbar
    .. automethod:: format
    .. automethod:: invisible
-   .. automethod:: on
    .. automethod:: smart_update
+   .. automethod:: visible
+   .. automethod:: __getattribute__

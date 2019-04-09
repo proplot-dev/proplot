@@ -173,14 +173,18 @@ rcParams_new:
     gridminor.color:
     gridminor.linestyle:
     gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
-    # Gridspec
+    # Sizes
     subplot.axwidth:    2
     subplot.panelwidth: 0.45
     subplot.cbarwidth:  0.17
     subplot.legwidth:   0.25
-    subplot.innerpad:   0.05
-    subplot.outerpad:   0.1
+    # Tight layout padding
+    # These only affect the figure when tight=True
+    subplot.panelpad:   0.05
+    subplot.outerpad:   0.10
     subplot.subplotpad: 0.15
+    # Spaces
+    # These only affect the figure when tight=False
     subplot.titlespace: 0.2
     subplot.innerspace: 0.2
     subplot.ylabspace:  0.7

@@ -590,6 +590,8 @@ def generate_automodsumm_docs(lines, srcfn, app=None, suffix='.rst',
                         items.append(name)
                 public = [x for x in items if x not in exclude_public and
                           (x in include_public or not x.startswith('_'))]
+                # public = [x for x in items if x not in exclude_public and not x.startswith('_')]
+                # public = public + [x for x in include_public if x not in public]
                 return public, items
 
             ns = {}
@@ -618,8 +620,17 @@ def generate_automodsumm_docs(lines, srcfn, app=None, suffix='.rst',
                 ns['attributes'], ns['all_attributes'] = \
                     get_members_class(obj, 'attribute',
                                       include_base=include_base)
-                ns['methods'].sort()
-                ns['attributes'].sort()
+                # Put underscore items *last*
+                # ns['methods'].sort()
+                # ns['attributes'].sort()
+                ns['methods'] = \
+                    sorted([m for m in ns['methods'] if not re.match('^_', m)]) + \
+                    sorted([m for m in ns['methods'] if re.match('^_[^_]', m)]) + \
+                    sorted([m for m in ns['methods'] if re.match('^__', m)])
+                ns['attributes'] = \
+                    sorted([a for a in ns['attributes'] if not re.match('^_', a)]) + \
+                    sorted([a for a in ns['attributes'] if re.match('^_[^_]', a)]) + \
+                    sorted([a for a in ns['attributes'] if re.match('^__', a)])
 
             parts = name.split('.')
             if doc.objtype in ('method', 'attribute'):

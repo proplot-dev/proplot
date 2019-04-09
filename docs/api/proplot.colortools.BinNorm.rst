@@ -10,10 +10,10 @@ BinNorm
 
    .. autosummary::
 
-      ~BinNorm.__call__
       ~BinNorm.inverse
+      ~BinNorm.__call__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __call__
    .. automethod:: inverse
+   .. automethod:: __call__

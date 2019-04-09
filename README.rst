@@ -66,9 +66,6 @@ Here are some highlights of the remaining features:
 *  Add geographic features with the ``format`` command.
    Customize geographic gridlines and gridline labels.
 
-Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
-
 What about seaborn?
 -------------------
 
@@ -80,25 +77,28 @@ While parts of ProPlot were inspired by seaborn (in particular much
 of ``colors.py`` is drawn from seaborn’s ``palettes.py``), the goal for
 this project was likely very different: It is intended to help you make
 publication-quality figures, and no more.
-
 Seaborn largely attempts to merge the tasks of data analysis and
 visualization. ProPlot contains no analysis tools – it is expected
-that you analyze your data on your own time. Anyway, both ``pandas``
+that you analyze data on your own, prior to plotting it. Anyway, both ``pandas``
 and ``xarray`` already have great built-in tools for visualizing
-tabulated and geophysical data --
-and if ProPlot is imported, these tools will even work with its new
-colormaps.  This narrow focus also allowed me
+tabulated and geophysical data -- and if ProPlot is imported, these tools will even work with its new
+colormaps.
+This narrow focus also allowed me
 to integrate my features very closely with the matplotlib API (usually
 as enhancements of existing ``Axes`` and
 ``Figure`` methods),
 while ``seaborn`` features are only accessible from commands on the module
 itself.
 
-In summary, this is a package for academics and others that need compact, fine-tuned figures for use in professional settings. As such, it provides a number of powerful, easy-to-use features well beyond the scope of `seaborn`.
+In summary, this is a package tightly integrated with `matplotlib` with a gentle learning curve,
+for academics and others that need compact, fine-tuned figures for use in professional settings. As such, it provides a number of powerful, easy-to-use features well beyond the scope of `seaborn`.
 
 Contributions
 -------------
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! My code should be sufficiently documented and commented so that others are able to modify it.
+This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! You shouldn't have much trouble modifying it -- the comments and documentation are comprehensive.
+
+Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
+guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
 Donations
 ---------

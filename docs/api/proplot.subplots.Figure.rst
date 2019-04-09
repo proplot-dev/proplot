@@ -10,18 +10,18 @@ Figure
 
    .. autosummary::
 
-      ~Figure.__getattribute__
+      ~Figure.add_subplot_and_panels
       ~Figure.draw
-      ~Figure.panel_factory
       ~Figure.save
       ~Figure.savefig
       ~Figure.smart_tight_layout
+      ~Figure.__getattribute__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getattribute__
+   .. automethod:: add_subplot_and_panels
    .. automethod:: draw
-   .. automethod:: panel_factory
    .. automethod:: save
    .. automethod:: savefig
    .. automethod:: smart_tight_layout
+   .. automethod:: __getattribute__

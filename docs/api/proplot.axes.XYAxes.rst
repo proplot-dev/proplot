@@ -16,7 +16,6 @@ XYAxes
 
    .. autosummary::
 
-      ~XYAxes.__getattribute__
       ~XYAxes.altx
       ~XYAxes.alty
       ~XYAxes.dualx
@@ -28,6 +27,7 @@ XYAxes
       ~XYAxes.smart_update
       ~XYAxes.twinx
       ~XYAxes.twiny
+      ~XYAxes.__getattribute__
 
    .. rubric:: Attributes Documentation
 
@@ -35,7 +35,6 @@ XYAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getattribute__
    .. automethod:: altx
    .. automethod:: alty
    .. automethod:: dualx
@@ -47,3 +46,4 @@ XYAxes
    .. automethod:: smart_update
    .. automethod:: twinx
    .. automethod:: twiny
+   .. automethod:: __getattribute__

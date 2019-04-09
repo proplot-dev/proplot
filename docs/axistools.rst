@@ -1,12 +1,12 @@
 Axis tools
 ------------------------
 
-**Variables**
+**Classes**
 
 .. automodsumm:: proplot.axistools
    :toctree: api
-   :variables-only:
-   :skip: ic, rc
+   :classes-only:
+   :skip: Number, Fraction, FunctionType
 
 **Functions**
 
@@ -14,12 +14,12 @@ Axis tools
    :toctree: api
    :functions-only:
 
-**Classes**
+**Variables**
 
 .. automodsumm:: proplot.axistools
    :toctree: api
-   :classes-only:
-   :skip: Number, Fraction, FunctionType
+   :variables-only:
+   :skip: ic, rc
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

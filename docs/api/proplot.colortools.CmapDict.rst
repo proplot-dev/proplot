@@ -10,14 +10,14 @@ CmapDict
 
    .. autosummary::
 
-      ~CmapDict.__getitem__
-      ~CmapDict.__setitem__
       ~CmapDict.get
       ~CmapDict.pop
+      ~CmapDict.__getitem__
+      ~CmapDict.__setitem__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getitem__
-   .. automethod:: __setitem__
    .. automethod:: get
    .. automethod:: pop
+   .. automethod:: __getitem__
+   .. automethod:: __setitem__

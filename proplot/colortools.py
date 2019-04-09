@@ -1354,7 +1354,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
             # from some named color if that name also exists for a colormap.
             # Try to convert to RGB
             cmap = _transform_cycle(cmap)
-            fade = kwargs.pop('fade', 90) 
+            fade = kwargs.pop('fade', 100)
             if isinstance(cmap, str): # not a color tuple
                 regex = '([0-9]+)$'
                 match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.

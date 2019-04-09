@@ -139,7 +139,7 @@ Key                      Description
 ``subplot.legwidth``     Width of "legend" panels.
 ``subplot.outerpad``     Padding around edges for tight subplot.
 ``subplot.subplotpad``   Padding between main subplots.
-``subplot.innerpad``     Padding between inner panels and their parents.
+``subplot.panelpad``     Padding between axes panels and their parents.
 ``subplot.titlespace``   Vertical space for titles.
 ``subplot.ylabspace``    Horizontal space between subplots alotted for *y*-labels.
 ``subplot.xlabspace``    Vertical space between subplots alotted for *x*-labels.
@@ -266,7 +266,7 @@ _rc_names_new = {
     'collabel.fontsize', 'collabel.weight', 'collabel.color',
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonlines', 'geogrid.latlines',
-    'subplot.subplotpad', 'subplot.innerpad', 'subplot.outerpad', 'subplot.titlespace',
+    'subplot.subplotpad', 'subplot.panelpad', 'subplot.outerpad', 'subplot.titlespace',
     'subplot.innerspace',
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
     'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',

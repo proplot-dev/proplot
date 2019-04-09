@@ -16,8 +16,8 @@ BasemapAxes
 
    .. autosummary::
 
-      ~BasemapAxes.__getattribute__
       ~BasemapAxes.smart_update
+      ~BasemapAxes.__getattribute__
 
    .. rubric:: Attributes Documentation
 
@@ -25,5 +25,5 @@ BasemapAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: __getattribute__
    .. automethod:: smart_update
+   .. automethod:: __getattribute__
