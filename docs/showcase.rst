@@ -202,30 +202,51 @@ you didn’t specify) such that the subplot aspect ratios will not change,
 and by taking advantage of ProPlot’s subplot layout restrictions. Some
 examples are below.
 
+Sometimes, ``tight=True`` is not possible (when using the cartopy
+``set_extent`` method or when using cartopy meridian and parallel
+labelling; a warning will be raised in these instances). Even when
+``tight=False``, ProPlot tries to make the default spacing reasonable.
+
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=0, span=0, tight=False)
-    axs[4].format(ylabel='ylabel', xlabel='xlabel', title='title\ntitle\ntitle', suptitle='Without tight subplots')
+    for share in (3,0):
+        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=False)
+        axs[4].format(title='title\ntitle\ntitle', suptitle='Without tight subplots')
+        axs[1].format(ylabel='ylabel', xlabel='xlabel')
 
 
 
 .. image:: showcase/showcase_15_0.png
-   :width: 382px
-   :height: 373px
+   :width: 355px
+   :height: 346px
+
+
+
+.. image:: showcase/showcase_15_1.png
+   :width: 454px
+   :height: 445px
 
 
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1.2, share=0, span=0)
-    axs[4].format(ylabel='ylabel', xlabel='xlabel', title='title\ntitle\ntitle', suptitle='With tight subplots')
+    for share in (3,0):
+        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=True)
+        axs[4].format(title='title\ntitle\ntitle', suptitle='With tight subplots')
+        axs[1].format(ylabel='ylabel', xlabel='xlabel')
 
 
 
 .. image:: showcase/showcase_16_0.png
-   :width: 436px
-   :height: 463px
+   :width: 366px
+   :height: 399px
+
+
+
+.. image:: showcase/showcase_16_1.png
+   :width: 412px
+   :height: 422px
 
 
 .. code:: ipython3

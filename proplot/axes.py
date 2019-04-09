@@ -179,15 +179,15 @@ _options = {
 # For documentation
 #------------------------------------------------------------------------------#
 def _sphinx_name(name):
-    # Get sphinx name
+    """Gets sphinx name."""
     if name=='cmapline':
         return f'`~BaseAxes.{name}`'
     else:
         return f'`~matplotlib.axes.Axes.{name}`'
 def _expand_wrapped_methods(func):
-    # Fills `_method_list` with a list of methods that link to matplotlib
-    # documentation, so we don't have to document the lists themselves.
-    # NOTE: Each list must be at least length 2
+    """Fills `_method_list` with a list of methods that link to matplotlib
+    documentation. Previously had documented public tuples storing the method
+    names, this is much cleaner."""
     doc = func.__doc__
     for name,methods in (
         ('_centers_methods',       _centers_methods),
@@ -196,7 +196,7 @@ def _expand_wrapped_methods(func):
         ('_simple_methods',        _simple_methods),
         ('_cycle_methods',         _cycle_methods),
         ('_cmap_methods',          _cmap_methods),
-        ('_disabled_methods',      [method for methods in _disabled_methods.values() for method in methods]),
+        ('_disabled_methods',      (*(method for methods in _disabled_methods.values() for method in methods),)),
         ('_map_disabled_methods',  _map_disabled_methods),
         ):
         if f'`{name}`' not in doc:

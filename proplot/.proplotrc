@@ -182,13 +182,13 @@ rcParams_new:
     # These only affect the figure when tight=True
     subplot.panelpad:   0.05
     subplot.outerpad:   0.10
-    subplot.subplotpad: 0.15
+    subplot.subplotpad: 0.10
     # Spaces
     # These only affect the figure when tight=False
     subplot.titlespace: 0.2
-    subplot.innerspace: 0.2
-    subplot.ylabspace:  0.7
-    subplot.xlabspace:  0.55
+    subplot.innerspace: 0.1
+    subplot.ylabspace:  0.6
+    subplot.xlabspace:  0.45
     subplot.nolabspace: 0.15
     subplot.panelspace: 0.15
     # Inset colorbar
