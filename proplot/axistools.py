@@ -289,15 +289,15 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
     ``'eng'``        `~matplotlib.ticker.EngFormatter`
     ``'percent'``    `~matplotlib.ticker.PercentFormatter`
     ``'index'``      `~matplotlib.ticker.IndexFormatter`
+    ``'simple'``     `SimpleFormatter`
+    ``'deg'``        `SimpleFormatter`, with just a degree symbol
+    ``'lat'``        `SimpleFormatter`, cardinal "SN" indicator without degree symbol
+    ``'lon'``        `SimpleFormatter`, cardinal "WE" indicator without degree symbol
+    ``'deglat'``     `SimpleFormatter`, cardinal "SN" indicator with degree symbol
+    ``'deglon'``     `SimpleFormatter`, cardinal "WE" indicator with degree symbol
     ``'frac'``       `FracFormatter`
     ``'pi'``         `FracFormatter`, with symbol :math:`\pi` and value `numpy.pi`
     ``'e'``          `FracFormatter`, with symbol *e* and value `numpy.e`
-    ``'coord'``      `CoordFormatter`
-    ``'deg'``        `CoordFormatter`, with just a degree symbol
-    ``'lat'``        `CoordFormatter`, cardinal "SN" indicator without degree symbol
-    ``'lon'``        `CoordFormatter`, cardinal "WE" indicator without degree symbol
-    ``'deglat'``     `CoordFormatter`, cardinal "SN" indicator with degree symbol
-    ``'deglon'``     `CoordFormatter`, cardinal "WE" indicator with degree symbol
     ===============  ====================================================================
 
     Returns
@@ -328,19 +328,24 @@ def Formatter(formatter, *args, time=False, tickrange=None, **kwargs):
                 formatter = mticker.FormatStrFormatter(formatter, *args, **kwargs) # %-style, numbers
         else:
             # Coordinate versions
-            if formatter in ['deg', 'deglon', 'deglat', 'lon', 'lat']:
-                kwargs.update({
-                    'degrees':  ('deg' in formatter),
-                    'cardinal': (None if formatter=='deg' else 'SN' if 'lat' in formatter else 'WE')
-                    })
-                formatter = 'deg'
+            if formatter in ('deg', 'deglon', 'deglat', 'lon', 'lat'):
+                negpos, suffix = None, None
+                if 'deg' in formatter:
+                    suffix = '\N{DEGREE SIGN}'
+                if 'lat' in formatter:
+                    negpos = 'SN'
+                if 'lon' in formatter:
+                    negpos = 'WE'
+                kwargs.update({'suffix':suffix, 'negpos':negpos})
+                formatter = 'simple'
             # Fractions
-            if formatter=='pi':
-                kwargs.update({'symbol': r'\pi', 'number': np.pi})
+            if formatter in ('pi', 'e'):
+                if formatter=='pi':
+                    kwargs.update({'symbol': r'\pi', 'number': np.pi})
+                else:
+                    kwargs.update({'symbol': 'e', 'number': np.e})
                 formatter = 'frac'
-            if formatter=='e':
-                kwargs.update({'symbol': 'e', 'number': np.e})
-                formatter = 'frac'
+            # Get formatter
             if formatter not in formatters:
                 raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
             formatter = formatters[formatter](*args, **kwargs)
@@ -427,19 +432,20 @@ def InvertedScaleFactory(scale, name=None, **kwargs):
 # classes by passing function references to Funcformatter
 #-------------------------------------------------------------------------------
 class ScalarFormatter(mticker.ScalarFormatter):
-    r"""
+    """
     The new default formatter, a simple wrapper around
     `~matplotlib.ticker.ScalarFormatter`. Differs from
     `~matplotlib.ticker.ScalarFormatter` in the following ways:
 
-        1. Trims trailing zeros if any exist.
-        2. Allows user to specify *range* within which major tick marks
-           are labelled.
-        3. Allows user to add arbitrary prefix or suffix to every
-           tick label string.
+    1. Trims trailing zeros if any exist.
+    2. Allows user to specify *range* within which major tick marks
+       are labelled.
+    3. Allows user to add arbitrary prefix or suffix to every
+       tick label string.
 
     """
     def __init__(self, *args, zerotrim=None, tickrange=None,
+                              precision=6,
                               prefix=None, suffix=None, **kwargs):
         """
         Parameters
@@ -449,7 +455,7 @@ class ScalarFormatter(mticker.ScalarFormatter):
         zerotrim : bool, optional
             Whether to trim trailing zeros.
         prefix, suffix : None or str, optional
-            Optional prefix and suffix for strings.
+            Optional prefix and suffix for all strings.
         *args, **kwargs
             Passed to `matplotlib.ticker.ScalarFormatter`.
         """
@@ -490,36 +496,42 @@ class ScalarFormatter(mticker.ScalarFormatter):
             prefix, string = string[0], string[1:]
         return prefix + self._prefix + string + self._suffix
 
-def CoordFormatter(*args, cardinal=None, degrees=True, **kwargs):
+def SimpleFormatter(*args, precision=6,
+        prefix=None, suffix=None, negpos=None,
+        **kwargs):
     """
-    Returns a `~matplotlib.ticker.FuncFormatter` that formats numbers as
-    geographic coordinates.
+    Replicates features of `ScalarFormatter`, but as a simpler
+    `~matplotlib.ticker.FuncFormatter` instance. This is more suitable for
+    arbitrary number formatting not necessarily associated with any
+    `~matplotlib.axis.Axis` instance, e.g. labelling contours.
 
     Parameters
     ----------
-    cardinal : None or length-2 str, optional
-        If str, indicates the "negative" and "positive" coordinate to append
-        to the end of the tick label string. For example, ``cardinal='SN'``.
-    degrees : bool, optional
-        Whether to add the unicode "degree sign" symbol.
+    precision : int, optional
+        The maximum possible precision.
+    prefix, suffix : None or str, optional
+        Optional prefix and suffix for all strings.
+    negpos : None or str, optional
+        Length-2 string that indicates suffix for "negative" and "positive"
+        numbers, meant to replace the minus sign. This is useful for
+        indicating cardinal geographic coordinates.
     """
+    prefix = prefix or ''
+    suffix = suffix or ''
     def f(x, pos):
-        # Optional degree symbol
-        suffix = ''
-        if degrees:
-            suffix = '\N{DEGREE SIGN}' # Unicode lookup by name
         # Apply suffix if not on equator/prime meridian
-        if cardinal:
-            if x < 0:
-                x *= -1
-                suffix += cardinal[0]
-            elif x > 0:
-                suffix += cardinal[1]
+        if not negpos:
+            negpos_ = ''
+        elif x>0:
+            negpos_ = negpos[1]
+        else:
+            x *= -1
+            negpos_ = negpos[0]
         # Finally use default formatter
-        string = '{:.6f}'.format(x).replace('-', '\N{MINUS SIGN}')
+        string = f'{{:.{precision}f}}'.format(x).replace('-', '\N{MINUS SIGN}')
         string = re.sub(r'\.0+$', '', string)
         string = re.sub(r'^(.*\..*?)0+$', r'\1', string) # note the non-greedy secondary glob!
-        return string + suffix
+        return prefix + string + suffix + negpos_
     return mticker.FuncFormatter(f)
 
 def FracFormatter(symbol, number):
@@ -1110,9 +1122,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'eng':       mticker.EngFormatter,
     'percent':   mticker.PercentFormatter,
     'index':     mticker.IndexFormatter,
+    'simple':    SimpleFormatter,
     'frac':      FracFormatter,
-    'deg':       CoordFormatter,
-    'coord':     CoordFormatter,
     }
 """Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 `Formatter` for a table."""

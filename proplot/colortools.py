@@ -9,14 +9,14 @@ and `colors`. Defines helpful new `~matplotlib.colors.Normalize` and
 For a visual reference, see the :ref:`Table of colormaps`,
 :ref:`Table of color cycles`, and the :ref:`Table of colors`.
 
-Perceptually uniform colormaps
-------------------------------
+Colormaps in non-RGB colorspaces
+--------------------------------
 
 ProPlot's custom colormaps are instances of the new
 `PerceptuallyUniformColormap` class. These classes employ *linear transitions*
 between channel values in any of three possible "perceptually uniform",
-HSV-like colorspaces.  These colorspaces can be described as follows (see also
-`these visualizations <http://www.hsluv.org/comparison/>`_):
+HSV-like colorspaces. These colorspaces are visualized in
+:ref:`Perceptually uniform colorspaces`, and can be described as follows:
 
 * **HCL**: A purely perceptually uniform colorspace, where colors are
   broken down into “hue” (color, range 0-360), “chroma”
@@ -33,13 +33,12 @@ HSV-like colorspaces.  These colorspaces can be described as follows (see also
 The HCL space is the only "purely" perceptually uniform colorspace. But
 during a linear transition between two values, we may cross over "impossible"
 colors (i.e. colors with RGB channels >1).
-
 The HSLuv and HPLuv colorspaces
 were developed to resolve this issue by (respectively) scaling and clipping
 high-chroma colors across different hues and luminances.
 
-From other projects
--------------------
+Colormaps from other projects
+-----------------------------
 
 I’ve removed some outdated “miscellaneous” colormaps that are packaged
 by default (see `this reference
@@ -58,7 +57,6 @@ Several of these were found thanks to `Riley X. Bradey
 <https://github.com/bradyrx>`_. Others were found using the `cpt-city
 <http://soliton.vm.bytemark.co.uk/pub/cpt-city/>`_ archive of color
 gradients.
-
 Note that matplotlib comes packaged with every `ColorBrewer2.0
 <http://colorbrewer2.org/>`__ colormap, which are also certainly
 "perceptually uniform".
@@ -67,13 +65,13 @@ Note that matplotlib comes packaged with every `ColorBrewer2.0
 Flexible colormap arguments
 ---------------------------
 
-All of the `~matplotlib.axes.Axes` methods listed in
-`~proplot.axes.cmap_methods` and
-`~proplot.axes.cycle_methods` have been wrapped by ProPlot. For the
-latter methods, ProPlot adds a brand new keyword arg called ``cycle``, used for
-changing the axes property cycler on-the-fly.
+Various matplotlib plotting methods have been wrapped by
+`~proplot.axes.wrapper_cmap` and `~proplot.axes.wrapper_cycle`.
+The former enhances most functions that accept a ``cmap`` argument, and the
+latter adds a brand new keyword arg called ``cycle`` that can be used to
+change the axes property cycler on-the-fly.
 
-The ``cmap`` and ``cycle`` arguments
+For every wrapped method, the ``cmap`` and ``cycle`` arguments
 are all passed through the magical `Colormap` function.
 `Colormap` is incredibly powerful -- it can make colormaps
 on-the-fly, look up existing maps, and merge them. As such, any of the following

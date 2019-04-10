@@ -550,9 +550,10 @@ def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
 @_expand_wrapped_methods
 def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     norm=None, norm_kw={},
-    fix=True,
     extend='neither',
     values=None, levels=None, zero=False, # override levels to be *centered* on zero
+    labels=False, labels_kw={}, precision=2,
+    edgefix=True,
     lw=None, linewidth=None, linewidths=None,
     ls=None, linestyle=None, linestyles=None,
     color=None, colors=None, edgecolor=None, edgecolors=None,
@@ -576,13 +577,6 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         `~proplot.colortools.Norm` constructor.
     norm_kw : dict-like, optional
         Passed to `~proplot.colortools.Norm`.
-    fix : bool, optional
-        Whether to fix the the `white-lines-between-filled-contours
-        <https://stackoverflow.com/q/8263769/4970632>`__
-        and `white-lines-between-pcolor-rectangles
-        <https://stackoverflow.com/q/27092991/4970632>`__
-        issues. Note this will slow down the figure rendering by a bit.
-        Defaults to ``True``.
     extend : {'neither', 'both', 'min', 'max'}, optional
         Whether to assign a unique color to out-of-bounds data. Also means
         when the colorbar is drawn, colorbar "extensions" will be drawn
@@ -603,6 +597,29 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         Ignored if `values` or `levels` are lists.
         If colormap levels were automatically selected by matplotlib, toggle
         this to modify the levels to be **symmetric about zero**.
+    edgefix : bool, optional
+        Whether to fix the the `white-lines-between-filled-contours
+        <https://stackoverflow.com/q/8263769/4970632>`__
+        and `white-lines-between-pcolor-rectangles
+        <https://stackoverflow.com/q/27092991/4970632>`__
+        issues. Note this will slow down the figure rendering by a bit.
+        Defaults to ``True``.
+    labels : bool, optional
+        For `~matplotlib.axes.Axes.contour`, whether to add contour labels
+        with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
+        or `~matplotlib.axes.Axes.pcolormesh`, whether to add labels to the
+        center of grid boxes. In the latter case, the text will be black
+        when the luminance of the underlying grid box color is >50%, and
+        white otherwise (see the `~proplot.colortools` documentation).
+    labels_kw
+        Ignored if `labels` is ``False``. Extra keyword args for the labels.
+        For `~matplotlib.axes.Axes.contour`, passed to `~matplotlib.axes.Axes.clabel`.
+        For `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
+        passed to `~matplotlib.axes.Axes.text`.
+    precision : int, optional
+        Maximum precision (in decimal places) for the number labels.
+        Number labels are generated with the `~proplot.axistools.SimpleFormatter`
+        formatter, which allows us to limit the precision.
 
     Other parameters
     ----------------
@@ -691,80 +708,119 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
                 if value:
                     raise ValueError(f'Unknown keyword arg {key} for function {name}.')
                 continue
-            fix = False # override!
+            edgefix = False # override!
             kwargs[names[key]] = value
 
-    # Call function with custom kwargs, exit if no cmap
-    result = func(*args, **kwargs)
-    if not cmap:
-        return result
+    # Call function with custom kwargs
+    obj = func(*args, **kwargs)
 
-    # Get levels automatically determined by contourf, or make them
-    # from the automatically chosen pcolor/imshow clims.
-    # TODO: This still is not respected for hexbin 'log' norm for some reason, fix.
-    if not getattr(result, 'extend', None):
-        result.extend = extend # will already be on there for some funcs
-    if not np.iterable(levels): # i.e. was an integer
-        # Some tools automatically generate levels, like contourf.
-        # Others will just automatically impose clims, like pcolor.
-        levels = getattr(result, 'levels', np.linspace(*result.get_clim(), levels))
-        if not zero:
-            norm = _default(norm, 'linear') # matplotlib will have chosen *linearly* spaced levels, this helps us reduce BinNorm time
-        # Get centered levels (when contourf has already rendered contours,
-        # they cannot be changed or updated; must be redrawn)
-        else: # non-linearly spaced, need
-            abs_max = max([abs(max(levels)), abs(min(levels))])
-            levels = np.linspace(-abs_max, abs_max, len(levels))
-            if not hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
-                result.set_clim(-abs_max, abs_max)
-            else:
-                if hasattr(result, 'collections'):
-                    for artist in result.collections:
-                        artist.set_visible(False)
-                elif hasattr(result, 'set_visible'):
-                    result.set_visible(False)
+    # Colormap features
+    if cmap:
+        # Get levels automatically determined by contourf, or make them
+        # from the automatically chosen pcolor/imshow clims.
+        # TODO: This still is not respected for hexbin 'log' norm for some reason, fix.
+        if not getattr(obj, 'extend', None):
+            obj.extend = extend # will already be on there for some funcs
+        if not np.iterable(levels): # i.e. was an integer
+            # Some tools automatically generate levels, like contourf.
+            # Others will just automatically impose clims, like pcolor.
+            levels = getattr(obj, 'levels', np.linspace(*obj.get_clim(), levels))
+            if not zero:
+                norm = _default(norm, 'linear') # matplotlib will have chosen *linearly* spaced levels, this helps us reduce BinNorm time
+            # Get centered levels (when contourf has already rendered contours,
+            # they cannot be changed or updated; must be redrawn)
+            else: # non-linearly spaced, need
+                abs_max = max([abs(max(levels)), abs(min(levels))])
+                levels = np.linspace(-abs_max, abs_max, len(levels))
+                if not hasattr(obj, 'levels'): # e.g. contourf, Artist must be re-drawn!
+                    obj.set_clim(-abs_max, abs_max)
                 else:
-                    raise ValueError(f'Unknown object {result}. Cannot center colormap levels.')
-                kwargs['levels'] = levels
-                result = func(*args, **kwargs)
-    # Always add 'levels' as attribute, even for pcolor
-    result.levels = levels
-    # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
-    # in logarithmic space, or warped to diverge from center from a midpoint
-    # NOTE: LinearSegmentedNorm is slow! Test for linearity of input levels.
-    diff = np.diff(levels)
-    if (diff<0).any() or diff.size<2:
-        raise ValueError(f'Need at least 3 monotonically increasing levels, got {levels}.')
-    if norm is None:
-        eps = diff.mean()/1e3
-        if (np.abs(np.diff(diff)) >= eps).any():
-            norm = 'segmented'
+                    if hasattr(obj, 'collections'):
+                        for artist in obj.collections:
+                            artist.set_visible(False)
+                    elif hasattr(obj, 'set_visible'):
+                        obj.set_visible(False)
+                    else:
+                        raise ValueError(f'Unknown object {obj}. Cannot center colormap levels.')
+                    kwargs['levels'] = levels
+                    obj = func(*args, **kwargs)
+        # Always add 'levels' as attribute, even for pcolor
+        obj.levels = levels
+        # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
+        # in logarithmic space, or warped to diverge from center from a midpoint
+        # NOTE: LinearSegmentedNorm is slow! Test for linearity of input levels.
+        diff = np.diff(levels)
+        if (diff<0).any() or diff.size<2:
+            raise ValueError(f'Need at least 3 monotonically increasing levels, got {levels}.')
+        if norm is None:
+            eps = diff.mean()/1e3
+            if (np.abs(np.diff(diff)) >= eps).any():
+                norm = 'segmented'
+            else:
+                norm = 'linear'
+        # Set the normalizer
+        step = 1.0
+        if cyclic:
+            step = 0.5
+            extend = 'both'
+        norm_preprocess = colortools.Norm(norm, levels=levels, clip=False, **norm_kw)
+        norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
+        obj.set_norm(norm_main)
+
+    # Set labels
+    if labels:
+        # Very simple, use clabel args
+        # TODO: Allow modifying text after the fact? No, because that may
+        # screw up how matplotlib
+        fmt = axistools.Formatter('simple', precision=precision)
+        if name=='contour': # TODO: document alternate keyword args!
+            labels_kw_ = {'fmt':fmt, 'inline_spacing':3, 'fontsize':rc['small']} # for rest, we keep the defaults
+            for key1,key2 in (('size','fontsize'),):
+                value = labels_kw.pop(key1, None)
+                if value:
+                    labels_kw[key2] = value
+            labels_kw_.update(labels_kw)
+            self.clabel(obj, **labels_kw_)
+        # Label each box manually
+        # See: https://stackoverflow.com/a/20998634/4970632
+        # TODO: Should use normalizer and colormap to get colors instead of
+        # update scalar mappable? Also gets called at drawtime, maybe redundant.
+        elif 'pcolor' in name:
+            obj.update_scalarmappable() # populates the _facecolors attribute, initially filled with just a single color
+            labels_kw_ = {'size':rc['small'], 'ha':'center', 'va':'center'}
+            labels_kw_.update(labels_kw)
+            array = obj.get_array()
+            paths = obj.get_paths()
+            colors = obj.get_facecolors() # *flattened* list of objects
+            for color,path,num in zip(colors,paths,array):
+                bbox = path.get_extents()
+                x, y = bbox.intervalx.mean(), bbox.intervaly.mean()
+                if 'color' not in labels_kw:
+                    _, _, lum = colortools.to_xyz(color, 'hcl')
+                    if lum<50:
+                        color = 'w'
+                    else:
+                        color = 'k'
+                    labels_kw_['color'] = color
+                self.text(x, y, fmt(num), **labels_kw_)
         else:
-            norm = 'linear'
-    # Set the normalizer
-    step = 1.0
-    if cyclic:
-        step = 0.5
-        extend = 'both'
-    norm_preprocess = colortools.Norm(norm, levels=levels, clip=False, **norm_kw)
-    norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
-    result.set_norm(norm_main)
+            raise RuntimeError(f'Not possible to add labels to {name} plot.')
 
     # Fix white lines between filled contours/mesh
     # Allow user to override properties!
-    if fix:
+    if edgefix:
         color = 'face'
         linewidth = 0.4 # seems to be lowest threshold where white lines disappear
         linestyle = '-'
-        if 'contourf' in name: # 'contourf', 'tricontourf'
-            for contour in result.collections:
+        if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+            obj.set_edgecolor(color)
+            obj.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+        elif 'contourf' in name: # 'contourf', 'tricontourf'
+            for contour in obj.collections:
                 contour.set_edgecolor(color)
                 contour.set_linewidth(linewidth)
                 contour.set_linestyle(linestyle)
-        elif 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
-            result.set_edgecolor(color)
-            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
-    return result
+    return obj
 
 @_expand_wrapped_methods
 def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
@@ -1727,10 +1783,6 @@ class BaseAxes(maxes.Axes):
                 raise NotImplementedError(message.format(attr))
         attr = _aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
-        if attr in _cmap_methods:
-            obj = _wrapper_cmap(self, obj)
-        elif attr in _cycle_methods:
-            obj = _wrapper_cycle(self, obj)
         if attr=='text':
             obj = _wrapper_text(self, obj)
         elif attr=='plot':
@@ -2251,7 +2303,7 @@ class BaseAxes(maxes.Axes):
         # Create LineCollection and update with values
         # TODO: Why not just pass kwargs to class?
         collection = mcollections.LineCollection(np.array(coords),
-                cmap=cmap, norm=norm, linestyles='-', joinstyle='miter')
+                cmap=cmap, norm=norm, linestyles='-', capstyle='butt', joinstyle='miter')
         collection.set_array(np.array(values))
         collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 
@@ -2328,10 +2380,19 @@ class XYAxes(BaseAxes):
         self._xtick_pad_error = (0,0)
         self._ytick_pad_error = (0,0)
 
+    @_expand_wrapped_methods
     def __getattribute__(self, attr, *args):
         """Wraps methods when they are requested by the user. See
-        `wrapper_check_centers` and `wrapper_check_edges` for more info."""
+        `wrapper_cmap`, `wrapper_cycle`, `wrapper_check_centers`, and
+        `wrapper_check_edges` for more info."""
+        # WARNING: The 'labels' feature of cmap_methods requires that the
+        # x, y, Z input was standardized first. So we need to wrap with
+        # the cmap and cycle wrappers first.
         obj = super().__getattribute__(attr, *args)
+        if attr in _cmap_methods:
+            obj = _wrapper_cmap(self, obj)
+        elif attr in _cycle_methods:
+            obj = _wrapper_cycle(self, obj)
         if attr in _centers_methods:
             obj = _wrapper_check_centers(obj)
         elif attr in _edges_methods:
@@ -3445,10 +3506,15 @@ class CartopyAxes(MapAxes, GeoAxes):
 
     def __getattribute__(self, attr, *args):
         """Wraps methods when they are requested by the user. See
+        `wrapper_cmap`, `wrapper_cycle`,
         `wrapper_cartopy_simplefix`, `wrapper_check_centers`,
         `wrapper_check_edges`, and `wrapper_cartopy_gridfix` for more info."""
         # Wrappers
         obj = super().__getattribute__(attr, *args)
+        if attr in _cmap_methods:
+            obj = _wrapper_cmap(self, obj)
+        elif attr in _cycle_methods:
+            obj = _wrapper_cycle(self, obj)
         if attr in _simple_methods:
             obj = _wrapper_cartopy_simplefix(self, obj)
         elif attr in _edges_methods or attr in _centers_methods:
@@ -3703,12 +3769,13 @@ class BasemapAxes(MapAxes):
         obj = super().__getattribute__(attr, *args)
         if attr in _simple_methods or attr in _edges_methods or attr in _centers_methods:
             obj = _wrapper_m_call(self, obj) # this must be the *last* step!
+            if attr in _cmap_methods:
+                obj = _wrapper_cmap(self, obj)
+            elif attr in _cycle_methods:
+                obj = _wrapper_cycle(self, obj)
             if attr in _simple_methods:
-                if attr[:3] != 'tri':
-                    obj = _wrapper_cycle(self, obj)
                 obj = _wrapper_basemap_simplefix(self, obj)
             elif attr in _edges_methods or attr in _centers_methods:
-                obj = _wrapper_cmap(self, obj)
                 obj = _wrapper_basemap_gridfix(self, obj)
                 if attr in _edges_methods:
                     obj = _wrapper_check_edges(obj)

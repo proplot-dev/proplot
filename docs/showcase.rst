@@ -130,12 +130,11 @@ of the world doesn’t use “inches”, so I thought this would be useful.
 
 Subplot labelling is another useful ProPlot feature. The label order is
 row-major by default; to change this, use the
-`~proplot.subplots.subplots` ``order`` keyword arg.
-
-Change the label position with the ``abcpos`` `~proplot.rcmod` option,
-or the label style with the ``abcformat`` `~proplot.rcmod` option.
-Toggle labelling with ``abc=True``. See :ref:`Formatting your axes`
-and :ref:`Global settings` for details.
+`~proplot.subplots.subplots` ``order`` keyword arg. Change the label
+position with the ``abcpos`` `~proplot.rcmod` option, or the label
+style with the ``abcformat`` `~proplot.rcmod` option. Toggle labelling
+with ``abc=True``. See :ref:`Formatting your axes` and
+:ref:`Global settings` for details.
 
 .. code:: ipython3
 
@@ -161,7 +160,7 @@ and :ref:`Global settings` for details.
 To set up a complex grid of subplots, use a 2D array of integers. You
 can think of this array as a “picture” of your figure. This lets you
 build the below grid in just one line of code, instead of 6 lines. The
-order of numbers determines order of a-b-c labels. See
+numbering determines the order of a-b-c labels. See
 `~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
@@ -212,7 +211,7 @@ labelling; a warning will be raised in these instances). Even when
     import proplot as plot
     for share in (3,0):
         f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=False)
-        axs[4].format(title='title\ntitle\ntitle', suptitle='Without tight subplots')
+        axs[4].format(title='title\ntitle\ntitle', suptitle='Default spacing')
         axs[1].format(ylabel='ylabel', xlabel='xlabel')
 
 
@@ -233,7 +232,7 @@ labelling; a warning will be raised in these instances). Even when
     import proplot as plot
     for share in (3,0):
         f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=True)
-        axs[4].format(title='title\ntitle\ntitle', suptitle='With tight subplots')
+        axs[4].format(title='title\ntitle\ntitle', suptitle='"Tight layout" automatic spacing')
         axs[1].format(ylabel='ylabel', xlabel='xlabel')
 
 
@@ -466,13 +465,13 @@ corresponding colors.
 
     import proplot as plot
     import numpy as np
-    f, ax = plot.subplots(bcolorbar=True, axwidth=3, aspect=1.5)
+    f, ax = plot.subplots(colorbar='b', axwidth=3, aspect=1.5)
     plot.rc.cycle = 'qual2'
     # plot.rc['axes.labelweight'] = 'bold'
     hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
     ax.format(suptitle='Line handle colorbar', xlabel='x axis', ylabel='y axis')
-    f.bpanel.colorbar(hs, values=np.arange(0,6,0.5),
-                      label='Corresponding numeric values',
+    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)/10,0.1),
+                      label='Numeric values',
                       tickloc='bottom', # because why not?
                      )
 
@@ -483,8 +482,8 @@ corresponding colors.
 
 
 .. image:: showcase/showcase_27_1.png
-   :width: 346px
-   :height: 318px
+   :width: 332px
+   :height: 298px
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -526,15 +525,55 @@ and forcing the background to be invisible.
    :height: 303px
 
 
-Improved plotting methods
--------------------------
+Wrapped plotting methods
+------------------------
 
-Now, `~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh` accept a ``levels`` argument, just
-like `~matplotlib.axes.Axes.contourf`. This was previously really
-tricky to implement. Discrete levels can be preferred for scientific
-visualization, because it is easier to map colors to particular numbers
-with your eye. See `~proplot.axes.wrapper_cmap` for details.
+Various native matplotlib plotting methods have been enhanced using the
+``wrapper_`` functions (see documentation). The most interesting of
+these are `~proplot.axes.wrapper_cmap` and
+`~proplot.axes.wrapper_cycle`. For details on the former, see the
+below examples and :ref:`On-the-fly colormaps`. For details on the
+latter, see :ref:`Changing the color cycle`.
+
+An especially handy `~proplot.axes.wrapper_cmap` feature is the
+ability to label `~matplotlib.axes.Axes.contourf` plots with
+`~matplotlib.axes.Axes.clabel` in one go, and the added ability to
+label grid boxes in `~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh` plots.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=2, span=False, share=False)
+    data = np.random.rand(7,7)
+    ax = axs[0]
+    m = ax.pcolormesh(data, cmap='greys', labels=True)
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
+    ax = axs[1]
+    m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
+    m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels', titleweight='bold')
+
+
+
+.. image:: showcase/showcase_32_0.png
+   :width: 446px
+   :height: 241px
+
+
+`~proplot.colortools.wrapper_cmap` assigns the
+`~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
+for all plots. This allows for discrete levels in all situations – that
+is, `~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh` now accept a ``levels`` keyword
+arg, just like `~matplotlib.axes.Axes.contourf`. It was previously
+really tricky to implement discrete levels for ``pcolor`` plots, even
+though they are arguably preferable for many scientific applications
+(discrete levels make it easier to associate particular colors with hard
+numbers). `~proplot.colortools.BinNorm` also does some other handy
+things, like ensuring that colors on the ends of “cyclic” colormaps are
+never the same (see below).
 
 .. code:: ipython3
 
@@ -558,19 +597,20 @@ with your eye. See `~proplot.axes.wrapper_cmap` for details.
 
 
 
-.. image:: showcase/showcase_32_1.png
+.. image:: showcase/showcase_34_1.png
    :width: 454px
    :height: 289px
 
 
-I’ve also fixed the well-documented
+`~proplot.colortools.wrapper_cmap` also fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
 and
 `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
 issues by automatically changing the edge colors after ``contourf``,
-``pcolor``, and ``pcolormesh`` are called. Use ``fix=False`` to disable
-this behavior (it does slow down figure rendering a bit), or just pass
-one of the keyword args that specifies line properties.
+``pcolor``, and ``pcolormesh`` are called. Use ``edgefix=False`` to
+disable this behavior (it does slow down figure rendering a bit). Note
+that if you manually specify line properties for a ``pcolor`` plot, this
+feature is disabled (see below).
 
 .. code:: ipython3
 
@@ -579,19 +619,22 @@ one of the keyword args that specifies line properties.
     f, axs = plot.subplots(ncols=2, share=False)
     axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar') # fixed bug
     axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='gray2') # deliberate lines
-    axs.format(suptitle='White lines between patches')
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='White lines between patches')
 
 
 
-.. image:: showcase/showcase_34_0.png
-   :width: 454px
-   :height: 228px
+.. image:: showcase/showcase_36_0.png
+   :width: 475px
+   :height: 241px
 
 
-Provide arbitrarily spaced, monotonically increasing levels, and ProPlot
-will make sure the color gradations between each number in the level are
-the same, no matter the step size. See `~proplot.axes.wrapper_cmap`
-and `~proplot.colors.LinearSegmentedNorm` for details.
+`~proplot.colortools.wrapper_cmap` also lets you provide arbitrarily
+spaced, monotonically increasing levels, and by default the color
+gradations between each number in the level list will be the same, no
+matter the step size. This is powered by the
+`~proplot.colors.LinearSegmentedNorm` normalizer, and can be
+overridden with the ``norm`` keyword arg, which constructs an arbitrary
+normalizer from the `~proplot.colortools.Norm` constructor.
 
 .. code:: ipython3
 
@@ -607,7 +650,7 @@ and `~proplot.colors.LinearSegmentedNorm` for details.
 
 
 
-.. image:: showcase/showcase_36_0.png
+.. image:: showcase/showcase_38_0.png
    :width: 512px
    :height: 273px
 
@@ -623,11 +666,11 @@ details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, wratios=(2,1), axcolorbars='b', axwidth=4, aspect=(2,1))
+    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth=3, aspect=(2,1))
     ax = axs[0]
     m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
                 cmap='thermal', values=np.arange(50), lw=7, extend='both')
-    ax.format(xlabel='xlabel', ylabel='ylabel', suptitle='Line with smooth color gradations')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
     ax.bottompanel.colorbar(m, label='parametric coordinate', locator=5)
     N = 12
     ax = axs[1]
@@ -638,9 +681,20 @@ details.
     y = radii*np.sin(1.4*angles)
     m = ax.plot(x, y, values=values,
                 linewidth=15, interp=False, cmap='thermal')
-    ax.format(xlim=(-1,1), ylim=(-1,1), suptitle='With step gradations',
+    ax.format(xlim=(-1,1), ylim=(-1,1), title='With step gradations', titleweight='bold',
               xlabel='cosine angle', ylabel='sine angle')
     ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
+
+
+
+
+
+
+
+.. image:: showcase/showcase_40_1.png
+   :width: 655px
+   :height: 294px
+
 
 Axes panels, colorbars
 ----------------------
@@ -666,7 +720,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_41_0.png
+.. image:: showcase/showcase_43_0.png
    :width: 468px
    :height: 466px
 
@@ -705,7 +759,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_43_1.png
+.. image:: showcase/showcase_45_1.png
    :width: 492px
    :height: 514px
 
@@ -741,7 +795,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_46_1.png
+.. image:: showcase/showcase_48_1.png
    :width: 487px
    :height: 523px
 
@@ -765,7 +819,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_47_0.png
+.. image:: showcase/showcase_49_0.png
    :width: 623px
    :height: 240px
 
@@ -812,7 +866,7 @@ professional-looking than the DejaVu Sans, in my biased opinion. See the
 
 
 
-.. image:: showcase/showcase_50_0.png
+.. image:: showcase/showcase_52_0.png
    :width: 751px
    :height: 697px
 
@@ -847,25 +901,25 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_54_0.png
+.. image:: showcase/showcase_56_0.png
    :width: 643px
    :height: 166px
 
 
 
-.. image:: showcase/showcase_54_1.png
+.. image:: showcase/showcase_56_1.png
    :width: 643px
    :height: 176px
 
 
 
-.. image:: showcase/showcase_54_2.png
+.. image:: showcase/showcase_56_2.png
    :width: 643px
    :height: 175px
 
 
 
-.. image:: showcase/showcase_54_3.png
+.. image:: showcase/showcase_56_3.png
    :width: 643px
    :height: 190px
 
@@ -884,95 +938,15 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_55_0.png
+.. image:: showcase/showcase_57_0.png
    :width: 490px
    :height: 491px
 
 
 
-.. image:: showcase/showcase_55_1.png
+.. image:: showcase/showcase_57_1.png
    :width: 490px
    :height: 498px
-
-
-Alternate unit axes
--------------------
-
-The new `~proplot.axes.XYAxes.dualx` and
-`~proplot.axes.XYAxes.dualy` functions let you easily produce
-duplicate *x* and *y* axes meant to represent *alternate units* in the
-same coordinate range.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.rc.update({'grid.alpha':0.4, 'grid.linewidth':1.0})
-    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=2.2, axwidth=3)
-    N = 200
-    c1, c2 = plot.shade('C0', 0.8), plot.shade('C1', 0.8)
-    # These first 2 are for general users
-    ax = axs[0]
-    ax.format(yformatter='null', xlabel='meters', xlocator=1000, xlim=(0,5000),
-              xcolor=c2, gridcolor=c2,
-              suptitle='Duplicate x-axes with custom unit transformations', ylocator=[], # locator=[] has same result as locator='null'
-              )
-    ax.dualx(scale=1e-3, xlabel='kilometers', grid=True, xcolor=c1, gridcolor=c1)
-    ax = axs[1]
-    ax.format(yformatter='null', xlabel='temperature (K)', title='', xlim=(200,300), ylocator='null',
-             xcolor=c2, gridcolor=c2)
-    ax.dualx(offset=-273.15, xscale='linear', xlabel='temperature (\N{DEGREE SIGN}C)',
-             xcolor=c1, gridcolor=c1, grid=True)
-    
-    # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
-    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=0.4, axwidth=1.8)
-    ax = axs[0]
-    ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], 
-              gridcolor=c1, ycolor=c1)
-    ax.dualy(transform='height', ylabel='height (km)', color=c2, gridcolor=c2, grid=True)
-    ax = axs[1] # span
-    ax.format(xformatter='null', ylabel='height (km)', ylim=(0,20), xlocator='null', gridcolor=c2, ycolor=c2,
-              suptitle='Duplicate *y*-axes with special transformations', grid=True)
-    ax.dualy(transform='pressure', ylabel='pressure (hPa)', ylocator=100, grid=True, color=c1, gridcolor=c1)
-
-
-
-.. image:: showcase/showcase_58_0.png
-   :width: 634px
-   :height: 222px
-
-
-
-.. image:: showcase/showcase_58_1.png
-   :width: 418px
-   :height: 324px
-
-
-.. code:: ipython3
-
-    # Plot the response function for an imaginary 5-day lowpass filter
-    import proplot as plot
-    import numpy as np
-    plot.rc['axes.ymargin'] = 0
-    cutoff = 0.3
-    x = np.linspace(0.01,0.5,1000) # in wavenumber days
-    response = (np.tanh(-((x - cutoff)/0.03)) + 1)/2 # imgarinary response function
-    f, ax = plot.subplots(aspect=(3,1), width=6)#, tight=False, top=2)
-    ax.fill_between(x, 0, response, facecolor='none', edgecolor='gray8', lw=1, clip_on=True)
-    ax.axvline(cutoff, lw=2, ls='-', color='red')
-    ax.fill_between([0.27, 0.33], 0, 1, color='red', alpha=0.3)
-    ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
-    # axy = ax.twiny()
-    ax.dualx(transform='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
-              xlabel='period (days)',
-              title='Imgaginary response function', titlepos='oc',
-              suptitle='Duplicate x-axes with wavenumber and its inverse (i.e. wavelength)', 
-              )
-
-
-
-.. image:: showcase/showcase_59_0.png
-   :width: 540px
-   :height: 272px
 
 
 Axis ticks and scales
@@ -1009,13 +983,36 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_62_0.png
-   :width: 526px
-   :height: 500px
+.. image:: showcase/showcase_60_0.png
+   :width: 510px
+   :height: 472px
 
 
 Axis tick labels
 ----------------
+
+ProPlot changes the default axis formatter (i.e. the class used to
+convert float numbers to tick label strings). The new formatter trims
+trailing zeros by default, and can be used to *filter tick labels within
+some data range*, as demonstrated below. See
+`~proplot.axistools.ScalarFormatter` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    locator = [0, 0.25, 0.5, 0.75, 1]
+    plot.rc.linewidth = 2
+    plot.rc.small = plot.rc.large = 12
+    f, axs = plot.subplots(ncols=2, axwidth=2, share=0, subplotpad=0.5) # change subplotpad to change padding between subplots
+    axs[1].format(xlocator=locator, ylocator=locator, xtickrange=[0,0.5], yticklabelloc='both', title='ProPlot formatter', titleweight='bold')
+    axs[0].format(xlocator=locator, ylocator=locator, yticklabelloc='both', xformatter='scalar', yformatter='scalar', title='Matplotlib formatter', titleweight='bold')
+
+
+
+.. image:: showcase/showcase_63_0.png
+   :width: 569px
+   :height: 237px
+
 
 ProPlot also lets you easily change the axis formatter with
 `~proplot.axes.BaseAxes.format` (keywords ``xformatter`` and
@@ -1046,31 +1043,8 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 .. image:: showcase/showcase_65_0.png
-   :width: 526px
-   :height: 597px
-
-
-ProPlot changes the default axis formatter (i.e. the class used to
-convert float numbers to tick label strings). The new formatter trims
-trailing zeros by default, and can be used to *filter tick labels within
-some data range*, as demonstrated below. See
-`~proplot.axistools.ScalarFormatter` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    locator = [0, 0.25, 0.5, 0.75, 1]
-    plot.rc.linewidth = 2
-    plot.rc.small = plot.rc.large = 12
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, share=0, subplotpad=0.5) # change subplotpad to change padding between subplots
-    axs[1].format(xlocator=locator, ylocator=locator, xtickrange=[0,0.5], yticklabelloc='both', title='ProPlot formatter', titleweight='bold')
-    axs[0].format(xlocator=locator, ylocator=locator, yticklabelloc='both', xformatter='scalar', yformatter='scalar', title='Matplotlib formatter', titleweight='bold')
-
-
-
-.. image:: showcase/showcase_67_0.png
-   :width: 544px
-   :height: 224px
+   :width: 502px
+   :height: 557px
 
 
 Datetime axes
@@ -1089,7 +1063,7 @@ Again, see `~proplot.axistools.Locator` and
 
     import proplot as plot
     import numpy as np
-    plot.rc.update(linewidth=2, small=9, large=10, ticklabelweight='bold',
+    plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=1,
                    figurefacecolor='w', facecolor=plot.shade('C0', 2.7), abcformat='BBBa')
     f, axs = plot.subplots(nrows=5, axwidth=8, aspect=(8,1), share=0, span=0, hspace=0.3)
     axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02'))) # default date locator enabled if you plot datetime data or set datetime limits
@@ -1101,31 +1075,28 @@ Again, see `~proplot.axistools.Locator` and
     axs[3].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')),
                   xlocator=('year', 10), xformatter='\'%y') # minor ticks every month
     axs[4].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')),
-                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute', range(0,60,10)), xformatter='T%H:%M:%S') # minor ticks every 10 minutes, major every 2
-    axs.format(ylocator='null', suptitle='Datetime axis tick labelling with ProPlot')
+                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S') # minor ticks every 10 minutes, major every 2
+    axs.format(ylocator='null', suptitle='Datetime axis tick labels with ProPlot')
 
 
 
+.. image:: showcase/showcase_68_0.png
+   :width: 793px
+   :height: 630px
 
-.. image:: showcase/showcase_70_1.png
-   :width: 796px
-   :height: 645px
 
+Axis scales
+-----------
 
-New axis scales
----------------
-
-ProPlot adds several handy axis “scales” that can make axis coordinates
-non-linear, like the builtin ``'log'`` scale. The axis scale can be
-changed with `~proplot.axes.BaseAxes.format`.
-
-The ``'inverse'`` scale is perfect for labeling spectral coordinates –
-for example, wavenumber on one axis, wavelength on the opposite axis.
+The axis scale (e.g. ``'log'``, ``'linear'``) can now be changed with
+`~proplot.axes.BaseAxes.format`, and ProPlot adds several new ones.
 The ``'cutoff'`` scale is great when you have weirdly distributed data
 (see `~proplot.axistools.CutoffScaleFactory`). The ``'sine'`` scale
-scales the axis as the sine of the latitude – this is useful for getting
-an area-weighted latitude coordinate. The ``'mercator'`` scale scales
-the axis as with latitude in the Mercator projection.
+scales the axis as the sine of the coordinate, resulting in an
+“area-weighted” spherical latitude coordinate. The ``'inverse'`` scale
+is perfect for labeling spectral coordinates (this is more useful with
+the `~proplot.axes.XYAxes.dualx` and `~proplot.axes.XYAxes.dualy`
+commands; see :ref:`Alternative units`).
 
 See `~proplot.axes.XYAxes.smart_update` and
 `~proplot.axistools.Scale` for details.
@@ -1152,10 +1123,9 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-
-.. image:: showcase/showcase_73_1.png
+.. image:: showcase/showcase_71_0.png
    :width: 540px
-   :height: 282px
+   :height: 284px
 
 
 .. code:: ipython3
@@ -1185,9 +1155,92 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_74_0.png
+.. image:: showcase/showcase_72_0.png
    :width: 540px
    :height: 580px
+
+
+Alternative units
+-----------------
+
+The new `~proplot.axes.XYAxes.dualx` and
+`~proplot.axes.XYAxes.dualy` methods build duplicate *x* and *y* axes
+meant to represent *alternate units* in the same coordinate range as the
+“parent” axis. For simple transformations, just use the ``offset`` and
+``scale`` keyword args. For more complex transformations, pass the name
+of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
+``transform`` keyword arg.
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.rc.update({'grid.alpha':0.4, 'grid.linewidth':1.0})
+    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=2.2, axwidth=3)
+    N = 200
+    c1, c2 = plot.shade('cerulean', 0.5), plot.shade('red', 0.5)
+    # These first 2 are for general users
+    ax = axs[0]
+    ax.format(yformatter='null', xlabel='meters', xlocator=1000, xlim=(0,5000),
+              xcolor=c2, gridcolor=c2,
+              suptitle='Duplicate x-axes with simple, custom transformations', ylocator=[], # locator=[] has same result as locator='null'
+              )
+    ax.dualx(scale=1e-3, xlabel='kilometers', grid=True, xcolor=c1, gridcolor=c1)
+    ax = axs[1]
+    ax.format(yformatter='null', xlabel='temperature (K)', title='', xlim=(200,300), ylocator='null',
+             xcolor=c2, gridcolor=c2)
+    ax.dualx(offset=-273.15, xlabel='temperature (\N{DEGREE SIGN}C)',
+             xcolor=c1, gridcolor=c1, grid=True)
+    
+    # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
+    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=0.4, axwidth=1.8)
+    ax = axs[0]
+    ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], 
+              gridcolor=c1, ycolor=c1)
+    ax.dualy(transform='height', ylabel='height (km)', yticks=2.5, color=c2, gridcolor=c2, grid=True)
+    ax = axs[1] # span
+    ax.format(xformatter='null', ylabel='height (km)', ylim=(0,20), xlocator='null', gridcolor=c2, ycolor=c2,
+              suptitle='Duplicate y-axes with special transformations', grid=True)
+    ax.dualy(transform='pressure', ylabel='pressure (hPa)', ylocator=100, grid=True, color=c1, gridcolor=c1)
+
+
+
+.. image:: showcase/showcase_75_0.png
+   :width: 599px
+   :height: 215px
+
+
+
+.. image:: showcase/showcase_75_1.png
+   :width: 516px
+   :height: 442px
+
+
+.. code:: ipython3
+
+    # Plot the response function for an imaginary 5-day lowpass filter
+    import proplot as plot
+    import numpy as np
+    plot.rc['axes.ymargin'] = 0
+    cutoff = 0.3
+    x = np.linspace(0.01,0.5,1000) # in wavenumber days
+    response = (np.tanh(-((x - cutoff)/0.03)) + 1)/2 # imgarinary response function
+    f, ax = plot.subplots(aspect=(3,1), width=6)#, tight=False, top=2)
+    ax.fill_between(x, 0, response, facecolor='none', edgecolor='gray8', lw=1, clip_on=True)
+    ax.axvline(cutoff, lw=2, ls='-', color='red')
+    ax.fill_between([0.27, 0.33], 0, 1, color='red', alpha=0.3)
+    ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
+    # axy = ax.twiny()
+    ax.dualx(transform='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
+              xlabel='period (days)',
+              title='Imgaginary response function', titlepos='oc',
+              suptitle='Duplicate x-axes with wavenumber and its inverse (i.e. wavelength)', 
+              )
+
+
+
+.. image:: showcase/showcase_76_0.png
+   :width: 540px
+   :height: 272px
 
 
 Map projection axes
@@ -1223,17 +1276,18 @@ features**. While complex plotting algorithms like
 `~matplotlib.axes.Axes.tricontourf` only work with cartopy, gridline
 labels are only possible on equirectangular and Mercator projections.
 Also, unfortunately, matplotlib’s
-`~matplotlib.figure.Figure.tight_layout` method detects basemap
-labels, but **does not detect cartopy labels** – so ProPlot has to
-disable its own “tight layout” feature. I am currently looking for a
-work-around.
+`~matplotlib.figure.Figure.tight_layout` method fails when cartopy
+gridline labels are present or when zooming into a projection with
+`~cartopy.mpl.geoaxes.GeoAxes.set_extent` – so the “tight layout”
+feature must sometimes be disabled when cartopy projections are present.
+I am currently looking for a work-around.
 
-Anyway, the below examples show how to plot geophysical data with
-ProPlot. Note that longitudes are cyclically permuted so that the
-“center” of your data aligns with the central longitude of the
+The below examples show how to plot geophysical data with ProPlot. Note
+that for basemap projections, longitudes are cyclically permuted so that
+the “center” of your data aligns with the central longitude of the
 projection! You can also use the ``globe`` keyword arg with commands
 like `~matplotlib.axes.Axes.contourf` to ensure global data coverage.
-These featuers are powered by the
+These features are powered by the
 `~proplot.axes.wrapper_cartopy_gridfix` and
 `~proplot.axes.wrapper_basemap_gridfix` wrappers.
 
@@ -1242,16 +1296,15 @@ These featuers are powered by the
     import proplot as plot
     import numpy as np
     # First make figure
+    offset = -40
+    x = plot.arange(0+offset, 360+offset-1, 60)
+    y = plot.arange(-60,60+1,30)
+    data = np.random.rand(len(y), len(x))
     for globe in (False,True):
-        f, axs = plot.subplots(ncols=2, nrows=2, width=7, hspace=0.2, wspace=0.3, top=0.5,
-                               colorbars='b', bwidth=0.2, bottom=0.2,
-                               proj='hammer', proj_kw={'lon_0':0},
+        f, axs = plot.subplots(ncols=2, nrows=2, width=7,
+                               colorbars='b', proj='hammer', proj_kw={'lon_0':0},
                                basemap={(1,3):False, (2,4):True},
                                )
-        offset = -40
-        x = plot.arange(0+offset, 360+offset-1, 60)
-        y = plot.arange(-60,60+1,30)
-        data = np.random.rand(len(y), len(x))
         for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
             m = None
             cmap = ['sunset', 'sunrise'][basemap]
@@ -1269,15 +1322,15 @@ These featuers are powered by the
 
 
 
-.. image:: showcase/showcase_79_1.png
+.. image:: showcase/showcase_81_1.png
    :width: 630px
-   :height: 426px
+   :height: 417px
 
 
 
-.. image:: showcase/showcase_79_2.png
+.. image:: showcase/showcase_81_2.png
    :width: 630px
-   :height: 426px
+   :height: 417px
 
 
 .. code:: ipython3
@@ -1309,7 +1362,7 @@ These featuers are powered by the
 
 
 
-.. image:: showcase/showcase_80_1.png
+.. image:: showcase/showcase_82_1.png
    :width: 450px
    :height: 302px
 
@@ -1344,7 +1397,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_83_0.png
+.. image:: showcase/showcase_85_0.png
    :width: 454px
    :height: 485px
 
@@ -1366,7 +1419,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_84_1.png
+.. image:: showcase/showcase_86_1.png
    :width: 814px
    :height: 245px
 
@@ -1404,7 +1457,7 @@ cartopy projections are plotted below.
 
 
 
-.. image:: showcase/showcase_87_1.png
+.. image:: showcase/showcase_89_1.png
    :width: 594px
    :height: 1007px
 
@@ -1432,7 +1485,7 @@ args if you don’t specify them.
 
 
 
-.. image:: showcase/showcase_89_1.png
+.. image:: showcase/showcase_91_1.png
    :width: 594px
    :height: 998px
 
@@ -1459,7 +1512,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_93_0.png
+.. image:: showcase/showcase_95_0.png
    :width: 576px
    :height: 212px
 
@@ -1471,7 +1524,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_94_0.png
+.. image:: showcase/showcase_96_0.png
    :width: 576px
    :height: 212px
 
@@ -1483,7 +1536,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_95_0.png
+.. image:: showcase/showcase_97_0.png
    :width: 576px
    :height: 212px
 
@@ -1504,13 +1557,13 @@ relatively non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_97_1.png
+.. image:: showcase/showcase_99_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_97_2.png
+.. image:: showcase/showcase_99_2.png
    :width: 748px
    :height: 245px
 
@@ -1545,7 +1598,7 @@ for usage details.
 
 
 
-.. image:: showcase/showcase_100_1.png
+.. image:: showcase/showcase_102_1.png
    :width: 436px
    :height: 4333px
 
@@ -1575,7 +1628,7 @@ See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 
 
 
-.. image:: showcase/showcase_103_0.png
+.. image:: showcase/showcase_105_0.png
    :width: 540px
    :height: 1615px
 
@@ -1617,7 +1670,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_106_0.png
+.. image:: showcase/showcase_108_0.png
    :width: 720px
    :height: 1316px
 
@@ -1629,7 +1682,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_107_0.png
+.. image:: showcase/showcase_109_0.png
    :width: 630px
    :height: 225px
 
@@ -1676,7 +1729,7 @@ loaded by ProPlot on import.
 
 
 
-.. image:: showcase/showcase_110_1.png
+.. image:: showcase/showcase_112_1.png
    :width: 544px
    :height: 334px
 
@@ -1716,7 +1769,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_112_0.png
+.. image:: showcase/showcase_114_0.png
    :width: 724px
    :height: 345px
 
@@ -1744,7 +1797,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_114_0.png
+.. image:: showcase/showcase_116_0.png
    :width: 526px
    :height: 325px
 
@@ -1768,7 +1821,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_116_0.png
+.. image:: showcase/showcase_118_0.png
    :width: 652px
    :height: 287px
 
@@ -1791,7 +1844,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_118_0.png
+.. image:: showcase/showcase_120_0.png
    :width: 652px
    :height: 287px
 
@@ -1819,7 +1872,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_120_0.png
+.. image:: showcase/showcase_122_0.png
    :width: 652px
    :height: 424px
 
@@ -1848,7 +1901,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_122_0.png
+.. image:: showcase/showcase_124_0.png
    :width: 544px
    :height: 478px
 
@@ -1873,7 +1926,7 @@ command, or by changing the global default cycle with
 
 
 
-.. image:: showcase/showcase_125_0.png
+.. image:: showcase/showcase_127_0.png
    :width: 517px
    :height: 356px
 
@@ -1907,7 +1960,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_127_1.png
+.. image:: showcase/showcase_129_1.png
    :width: 634px
    :height: 318px
 
@@ -1946,7 +1999,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_130_0.png
+.. image:: showcase/showcase_132_0.png
    :width: 436px
    :height: 603px
 
