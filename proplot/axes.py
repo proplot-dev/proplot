@@ -793,6 +793,8 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
             paths = obj.get_paths()
             colors = obj.get_facecolors() # *flattened* list of objects
             for color,path,num in zip(colors,paths,array):
+                if not np.isfinite(num):
+                    continue
                 bbox = path.get_extents()
                 x, y = bbox.intervalx.mean(), bbox.intervaly.mean()
                 if 'color' not in labels_kw:
