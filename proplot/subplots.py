@@ -1437,8 +1437,23 @@ def subplots(array=None, ncols=1, nrows=1,
         identical aspect ratios.
     hratios, wratios
         Shorthands for `height_ratios`, `width_ratios`.
-    hspace, wspace, height_ratios, width_ratios, left, right, top, bottom : optional
-        Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
+    height_ratios, width_ratios : float or list thereof, optional
+        Passed to `~proplot.gridspec.FlexibleGridSpecBase`. The height
+        and width ratios for the subplot grid. Length of `height_ratios`
+        must match the number of rows, and length of `width_ratios` must
+        match the number of columns.
+    hspace, wspace : float or str or list thereof, optional
+        Passed to `~proplot.gridspec.FlexibleGridSpecBase`. Ignored if
+        `tight` is ``True`` or `subplottight` is ``True``. If float or string,
+        expanded into lists of length ``ncols-1`` (for `wspace`) or length
+        ``nrows-1`` (for `hspace`). For each element of the list, if float,
+        units are inches. If string, units are interpreted by `~proplot.utils.units`.
+    top, bottom, left, right : float or str, optional
+        Passed to `~proplot.gridspec.FlexibleGridSpecBase`, except `right` and
+        `top` now refer to the **margin widths** instead of the *x* and *y*
+        coordinates for the right and top of the gridspec grid. Ignored if
+        `tight` is ``True`` or `outertight` is ``True``. If float,
+        units are inches. If string, units are interpreted by `~proplot.utils.units`.
 
     sharex, sharey, share : {3, 2, 1, 0}, optional
         The "axis sharing level" for the *x* axis, *y* axis, or both
@@ -1554,7 +1569,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
         The argument is interpreted as follows:
 
-            * If str, panels are drawn on the same side for all subplots.
+            * If string, panels are drawn on the same side for all subplots.
               String should contain any of the characters ``'l'`` (left panel),
               ``'r'`` (right panel), ``'t'`` (top panel), or ``'b'`` (bottom panel).
               For example, ``'rt'`` will draw a right and top panel.

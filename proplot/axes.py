@@ -118,10 +118,16 @@ _centers_methods = (
 _edges_methods = (
     'pcolor', 'pcolormesh',
     )
-# Whether to wrap plot functions with cycle features or cmap features
-_simple_methods = (
-    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
+_latlon_methods = ( # adds latlon=True, methods not in edges or centers methods
+    'plot', 'scatter',
     )
+_transform_methods = ( # adds transform=PlateCarree, methods not in edges or centers methods
+    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf',
+    )
+_crs_methods = ( # special extras
+    'get_extent', 'set_extent', 'set_xticks', 'set_yticks',
+    )
+# Whether to wrap plot functions with cycle features or cmap features
 _cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
@@ -193,11 +199,13 @@ def _expand_wrapped_methods(func):
         ('_centers_methods',       _centers_methods),
         ('_edges_methods',         _edges_methods),
         ('_centers_edges_methods', (*_centers_methods, *_edges_methods)),
-        ('_simple_methods',        _simple_methods),
-        ('_cycle_methods',         _cycle_methods),
-        ('_cmap_methods',          _cmap_methods),
-        ('_disabled_methods',      (*(method for methods in _disabled_methods.values() for method in methods),)),
-        ('_map_disabled_methods',  _map_disabled_methods),
+        ('_latlon_methods',       _latlon_methods),
+        ('_crs_methods',          _crs_methods),
+        ('_transform_methods',    _transform_methods),
+        ('_cycle_methods',        _cycle_methods),
+        ('_cmap_methods',         _cmap_methods),
+        ('_disabled_methods',     (*(method for methods in _disabled_methods.values() for method in methods),)),
+        ('_map_disabled_methods', _map_disabled_methods),
         ):
         if f'`{name}`' not in doc:
             continue
@@ -354,9 +362,9 @@ def _wrapper_m_norecurse(self, func):
     return wrapper
 
 @_expand_wrapped_methods
-def wrapper_cartopy_simplefix(self, func, *args, transform=PlateCarree, **kwargs):
+def wrapper_cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
     """
-    Wraps simple plotting functions for `CartopyAxes` (`_simple_methods`).
+    Wraps plotting functions for `CartopyAxes` (`_transform_methods`).
 
     With the default `~cartopy.mpl.geoaxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -374,17 +382,36 @@ def wrapper_cartopy_simplefix(self, func, *args, transform=PlateCarree, **kwargs
     return result
 
 @_expand_wrapped_methods
-def wrapper_basemap_simplefix(self, func, *args, **kwargs):
+def wrapper_cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     """
-    Wraps simple plotting functions for `BasemapAxes` (`_simple_methods`).
+    Wraps axes functions for `CartopyAxes` (`_crs_methods`).
+
+    As in `wrapper_cartopy_transform`, but sets ``crs=cartopy.crs.PlateCarree()``
+    as the default.
+    """
+    # Simple
+    if isinstance(crs, type):
+        crs = crs() # instantiate
+    try:
+        result = func(*args, crs=crs, **kwargs)
+    except TypeError as err:
+        if not args:
+            raise err
+        args, crs = args[:-1], args[-1]
+        result = func(*args, crs=crs, **kwargs)
+    return result
+
+@_expand_wrapped_methods
+def wrapper_basemap_latlon(self, func, *args, latlon=True, **kwargs):
+    """
+    Wraps plotting functions for `BasemapAxes` (`_latlon_methods`).
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude,
     instead of map projection coordinates. Now, ``latlon=True`` is always
     used.
     """
-    kwargs.update(latlon=True)
-    return func(*args, **kwargs)
+    return func(*args, latlon=latlon, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Geographic grid fixes
@@ -394,7 +421,7 @@ def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, glob
     """
     Wraps 2D plotting functions for `CartopyAxes` (`_centers_edges_methods`).
 
-    As in `wrapper_cartopy_simplefix`, but adds the `globe` keyword arg
+    As in `wrapper_cartopy_transform`, but adds the `globe` keyword arg
     to optionally make data coverage *global*. Passing ``globe=True``
     does the following:
 
@@ -437,11 +464,11 @@ def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, glob
     return result
 
 @_expand_wrapped_methods
-def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
+def wrapper_basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
     """
     Wraps 2D plotting functions for `BasemapAxes` (`_centers_edges_methods`).
 
-    As in `wrapper_basemap_simplefix`, but cycles longitudes to fit within the
+    As in `wrapper_basemap_latlon`, but cycles longitudes to fit within the
     map edges (i.e. if the projection central longitude is 90 degrees, will
     permute data to span from -90 degrees to 270 degrees longitude).
 
@@ -453,8 +480,12 @@ def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
        degrees).
     2. Interpolates data to the North and South poles.
     """
+    # Bail out if map coordinates already provided
+    if not latlon:
+        return func(x, y, Z, **kwargs)
     # Raise errors
     eps = 1e-3
+    lon, lat = x, y
     lonmin, lonmax = self.m.lonmin, self.m.lonmax
     if lon.max() > lon.min() + 360 + eps:
         raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
@@ -1138,13 +1169,14 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     elif not handles:
         raise ValueError('You must pass a list of handles.')
     for i,handle in enumerate(handles):
-        if not hasattr(handle, 'cmap'):
+        if not hasattr(handle, 'get_cmap') or hasattr(handle, 'get_facecolor'): # latter is for scatter (TODO: add wrapper_cmap for scatter?)
             continue
         # Make sure we sample the *center* of the colormap
         warnings.warn('Getting legend entry from colormap.')
         size = np.mean(handle.get_sizes())
+        cmap = handle.get_cmap()
         handles[i] = ax.scatter([0], [0], markersize=size,
-                                color=[handle.cmap(0.5)],
+                                color=[cmap(0.5)],
                                 label=handle.get_label())
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
@@ -1648,9 +1680,10 @@ def _func_wrapper(driver):
 _wrapper_check_centers = _func_wrapper(wrapper_check_centers)
 _wrapper_check_edges   = _func_wrapper(wrapper_check_edges)
 _wrapper_basemap_gridfix   = _self_func_wrapper(wrapper_basemap_gridfix)
-_wrapper_basemap_simplefix = _self_func_wrapper(wrapper_basemap_simplefix)
+_wrapper_basemap_latlon    = _self_func_wrapper(wrapper_basemap_latlon)
 _wrapper_cartopy_gridfix   = _self_func_wrapper(wrapper_cartopy_gridfix)
-_wrapper_cartopy_simplefix = _self_func_wrapper(wrapper_cartopy_simplefix)
+_wrapper_cartopy_transform = _self_func_wrapper(wrapper_cartopy_transform)
+_wrapper_cartopy_crs       = _self_func_wrapper(wrapper_cartopy_crs)
 _wrapper_legend  = _self_wrapper(legend_factory) # special
 _wrapper_cmap    = _self_func_wrapper(wrapper_cmap)
 _wrapper_cycle   = _self_func_wrapper(wrapper_cycle)
@@ -3509,7 +3542,7 @@ class CartopyAxes(MapAxes, GeoAxes):
     def __getattribute__(self, attr, *args):
         """Wraps methods when they are requested by the user. See
         `wrapper_cmap`, `wrapper_cycle`,
-        `wrapper_cartopy_simplefix`, `wrapper_check_centers`,
+        `wrapper_cartopy_transform`, `wrapper_check_centers`,
         `wrapper_check_edges`, and `wrapper_cartopy_gridfix` for more info."""
         # Wrappers
         obj = super().__getattribute__(attr, *args)
@@ -3517,8 +3550,10 @@ class CartopyAxes(MapAxes, GeoAxes):
             obj = _wrapper_cmap(self, obj)
         elif attr in _cycle_methods:
             obj = _wrapper_cycle(self, obj)
-        if attr in _simple_methods:
-            obj = _wrapper_cartopy_simplefix(self, obj)
+        if attr in _transform_methods:
+            obj = _wrapper_cartopy_transform(self, obj)
+        elif attr in _crs_methods:
+            obj = _wrapper_cartopy_crs(self, obj)
         elif attr in _edges_methods or attr in _centers_methods:
             obj = _wrapper_cartopy_gridfix(self, obj)
             if attr in _edges_methods:
@@ -3759,7 +3794,7 @@ class BasemapAxes(MapAxes):
     def __getattribute__(self, attr, *args):
         """
         Wraps methods when they are requested by the user. See
-        `wrapper_basemap_simplefix`, `wrapper_check_centers`,
+        `wrapper_basemap_latlon`, `wrapper_check_centers`,
         `wrapper_check_edges`, and `wrapper_basemap_gridfix` for more info.
 
         Wraps all plotting methods with ``_wrapper_m_call`` and
@@ -3769,14 +3804,14 @@ class BasemapAxes(MapAxes):
         the `~mpl_toolkits.basemap.Basemap` instance.
         """
         obj = super().__getattribute__(attr, *args)
-        if attr in _simple_methods or attr in _edges_methods or attr in _centers_methods:
+        if attr in _latlon_methods or attr in _edges_methods or attr in _centers_methods:
             obj = _wrapper_m_call(self, obj) # this must be the *last* step!
             if attr in _cmap_methods:
                 obj = _wrapper_cmap(self, obj)
             elif attr in _cycle_methods:
                 obj = _wrapper_cycle(self, obj)
-            if attr in _simple_methods:
-                obj = _wrapper_basemap_simplefix(self, obj)
+            if attr in _latlon_methods:
+                obj = _wrapper_basemap_latlon(self, obj)
             elif attr in _edges_methods or attr in _centers_methods:
                 obj = _wrapper_basemap_gridfix(self, obj)
                 if attr in _edges_methods:
