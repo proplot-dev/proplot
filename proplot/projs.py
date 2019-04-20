@@ -76,7 +76,6 @@ Key                                   Name                                      
 import numpy as np
 import matplotlib.path as mpath
 import warnings
-import cartopy
 from .rcmod import rc
 try:
     import cartopy.crs as ccrs
