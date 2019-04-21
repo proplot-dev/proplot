@@ -548,7 +548,7 @@ label grid boxes in `~matplotlib.axes.Axes.pcolor` and
     f, axs = plot.subplots(ncols=2, span=False, share=False)
     data = np.random.rand(7,7)
     ax = axs[0]
-    m = ax.pcolormesh(data, cmap='greys', labels=True)
+    m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
@@ -1023,7 +1023,7 @@ easily label your axes as fractions or as geographic coordinates. You
 can also just pass a list of strings or a ``%``-style format directive.
 
 See `~proplot.axes.XYAxes.smart_update` and
-`~proplot.axes.XYAxes.Formatter` for details.
+`~proplot.axistools.Formatter` for details.
 
 .. code:: ipython3
 
@@ -1056,8 +1056,9 @@ ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
 ``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
 formatting of
 datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
-Again, see `~proplot.axistools.Locator` and
-`~proplot.axistools.Formatter` for details.
+Again, see `~proplot.axes.XYAxes.smart_update`,
+`~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
+details.
 
 .. code:: ipython3
 
@@ -1398,8 +1399,8 @@ Again, see `~proplot.subplots.subplots` and
 
 
 .. image:: showcase/showcase_85_0.png
-   :width: 454px
-   :height: 485px
+   :width: 394px
+   :height: 426px
 
 
 .. code:: ipython3
