@@ -95,16 +95,17 @@ for academics and others that need compact, fine-tuned figures for use in profes
 
 Contributions
 -------------
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! You shouldn't have much trouble modifying it -- the comments and documentation are comprehensive.
+This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! You shouldn't have much trouble modifying it -- the comments and documentation are fairly comprehensive.
 
 Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig and helping me fix a lot of the initial bugs. Check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
+guinea pig and helping me fix a lot of the initial bugs. If your field is
+atmospheric science, check out his awesome
+`decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
 Donations
 ---------
 
-At well over 10,000 lines of code, this package took a shocking amount of time to write and to publish... so I'll just
-leave this here :)
+At well over 10,000 lines of code, this package took a huge amount of time to write and document. If ProPlot has been useful for you, consider sending me a small donation.
 
 .. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
