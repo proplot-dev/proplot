@@ -388,7 +388,6 @@ def Scale(scale, *args, **kwargs):
     ``'sine'``      `SineLatitudeScale`                      Sine (in degrees)
     ``'mercator'``  `MercatorLatitudeScale`                  Scale with Mercator latitude projection coords
     ``'inverse'``   `InverseScale`                           Inverse
-    ``'db'``        `DecibelScale`                           Transform deciBel units to power
     ==============  =======================================  =========================================================
 
     Returns
@@ -1002,78 +1001,6 @@ class _InverseTransform(mtransforms.Transform):
     def inverted(self):
         return _InverseTransform(self.minpos)
 
-class DecibelScale(mscale.ScaleBase):
-    r"""
-    The scale function is as follows.
-
-    .. math::
-
-        y = 10\log_{10}(x)
-
-    The inverse scale function is as follows.
-
-    .. math::
-
-        x = 10^{y/10}
-
-    This scales axis coordinates to be linear in the "deciBel scale."
-    """
-    # Declare name
-    name = 'db'
-    """Registered scale name."""
-    def __init__(self, axis, minpos=1e-300, **kwargs):
-        super().__init__()
-        self._transform = _InvertedDecibelTransform(minpos)
-    def limit_range_for_scale(self, vmin, vmax, minpos):
-        """See `~matplotlib.scale.ScaleBase`."""
-        return vmin, vmax
-    def set_default_locators_and_formatters(self, axis):
-        """See `~matplotlib.scale.ScaleBase`."""
-        # axis.set_smart_bounds(True) # unnecessary?
-        # axis.set_major_locator(mticker.LogLocator(base=10, subs=[1,2,5]))
-        # axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
-        axis.set_major_locator(Locator('log'))
-        axis.set_minor_locator(Locator('logminor'))
-        axis.set_major_formatter(Formatter('sci'))
-        axis.set_minor_formatter(Formatter('null'))
-    def get_transform(self):
-        """See `~matplotlib.scale.ScaleBase`."""
-        return self._transform
-
-class _DecibelTransform(mtransforms.Transform):
-    # Create transform object
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-    def __init__(self, minpos):
-        super().__init__()
-        self.minpos = minpos
-    def transform(self, a):
-        aa = np.array(a).copy()
-        aa[aa<=self.minpos] = self.minpos # necessary
-        return 10.0*np.log10(aa) # this one!
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _InvertedDecibelTransform(self.minpos)
-
-class _InvertedDecibelTransform(mtransforms.Transform):
-    # Create transform object
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-    def __init__(self, minpos):
-        super().__init__()
-        self.minpos = minpos
-    def transform(self, a):
-        return np.power(10.0, np.array(a)/10.0)
-    def transform_non_affine(self, a):
-        return self.transform(a)
-    def inverted(self):
-        return _DecibelTransform(self.minpos)
-
 #------------------------------------------------------------------------------#
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
@@ -1128,13 +1055,14 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
 """Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 `Formatter` for a table."""
 
-# Register hard-coded scale names, so user can set_xscale and set_yscale
-# with strings
+# Register scale names, so user can set_xscale and set_yscale with strings.
+# Misc
 mscale.register_scale(InverseScale)
-mscale.register_scale(DecibelScale)
+# Geographic coordinates
 mscale.register_scale(SineLatitudeScale)
 mscale.register_scale(MercatorLatitudeScale)
+# Height coordinates
+# TODO: Some overlap maybe, since this sort-of duplicates a log scale?
 ExpScaleFactory(-1.0/7, 1013.25, False, 'height')   # scale pressure so it matches a height axis
 ExpScaleFactory(-1.0/7, 1013.25, True,  'pressure') # scale height so it matches a pressure axis
-InvertedScaleFactory('log', 'power')
 
