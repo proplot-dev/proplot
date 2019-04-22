@@ -1134,10 +1134,10 @@ See `~proplot.axes.XYAxes.smart_update` and
         ax.plot(x, y, lw=4, color='sky')
         ax.format(ylim=(0.1,10), yscale=('power',power), title=f'$x^{power}$')
     # Exp scales
-    for ax,a,c in zip(axs[4:],(np.e,5,2,10),(1,0.2,-3,-0.2)):
+    for ax,a,c in zip(axs[4:],(np.e,1.1,2,10),(1,5,-3,-0.2)):
         ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
         ax.plot(x, y, lw=4, color='coral')
-        ax.format(ylim=(0.1,10), yscale=('exp',a,1,c), title=f'${a}^{{{c}x}}$')
+        ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${a}^{{{c}x}}$')
 
 
 
@@ -1272,8 +1272,9 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
     response = (np.tanh(-((x - cutoff)/0.03)) + 1)/2 # imgarinary response function
     f, ax = plot.subplots(aspect=(3,1), width=6)#, tight=False, top=2)
     ax.fill_between(x, 0, response, facecolor='none', edgecolor='gray8', lw=1, clip_on=True)
-    ax.axvline(cutoff, lw=2, ls='-', color='red')
-    ax.fill_between([0.27, 0.33], 0, 1, color='red', alpha=0.3)
+    red = plot.shade('red', 0.5)
+    ax.axvline(cutoff, lw=2, ls='-', color=red)
+    ax.fill_between([0.27, 0.33], 0, 1, color=red, alpha=0.3)
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
     ax.dualx(xscale='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
               xlabel='period (days)',

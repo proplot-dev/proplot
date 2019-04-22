@@ -672,10 +672,10 @@ class _InvertedPowerTransform(mtransforms.Transform):
 # Why can't this just be a class that accepts args for changing the scale
 # params? Because then would need kwargs for every set_xscale call.
 #------------------------------------------------------------------------------#
-def ExpScaleFactory(base, scale, exp, inverse=False, name=None):
+def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
     r"""
     Returns an "exponential scale" that performs the transformation
-    :math:`Ba^{cx}`.
+    :math:`Ca^{bx}`.
 
     This is used when adding a pressure coordinate axis
     for data that is plotted linearly w.r.t. height, or vice versa. Ignore
@@ -684,27 +684,27 @@ def ExpScaleFactory(base, scale, exp, inverse=False, name=None):
     Parameters
     ----------
     base : float
-        The base, i.e. the :math:`a` in :math:`Ba^{cx}`.
-    scale : float
-        The coefficient, i.e. the :math:`A` in :math:`Ae^{bx}`.
+        The base, i.e. the :math:`a` in :math:`Ca^{bx}`.
     exp : float
-        The scale for the exonent, i.e. the :math:`c` in :math:`Ba^{cx}`.
+        The scale for the exonent, i.e. the :math:`b` in :math:`Ca^{bx}`.
+    scale : float, optional
+        The coefficient, i.e. the :math:`C` in :math:`Ce^{bx}`.
     inverse : bool, optional
         If ``True``, the "forward" direction performs
         the inverse operation :math:`(\log(x) - \log(A))/b`.
     name : None or str, optional
-        The registered scale name. Defaults to ``'power_{exp}_{scale}'``.
+        The registered scale name. Defaults to ``'power_{base}_{exp}_{scale}'``.
     """
-    name_ = _default(name, f'power_{scale:.1e}_{exp:.1e}')
+    name_ = _default(name, f'exp_{base:.1e}_{scale:.1e}_{exp:.1e}')
     class ExpScale(mscale.ScaleBase):
         # Declare name
         name = name_
         def __init__(self, axis, minpos=1e-300, **kwargs):
             super().__init__()
             if not inverse:
-                transform = _ExpTransform(base, scale, exp, minpos)
+                transform = _ExpTransform(base, exp, scale, minpos)
             else:
-                transform = _InvertedExpTransform(base, scale, exp, minpos)
+                transform = _InvertedExpTransform(base, exp, scale, minpos)
             self._transform = transform
         def limit_range_for_scale(self, vmin, vmax, minpos):
             # return min(vmin, minpos), min(vmax, minpos)
@@ -726,18 +726,18 @@ class _ExpTransform(mtransforms.Transform):
     output_dims = 1
     has_inverse = True
     is_separable = True
-    def __init__(self, base, scale, exp, minpos):
+    def __init__(self, base, exp, scale, minpos):
         super().__init__()
         self.minpos = minpos
         self._base = base
-        self._scale = scale
         self._exp = exp
+        self._scale = scale
     def transform(self, a):
         return self._scale*np.power(self._base, self._exp*np.array(a))
     def transform_non_affine(self, a):
         return self.transform(a)
     def inverted(self):
-        return _InvertedExpTransform(self._base, self._scale, self._exp, self.minpos)
+        return _InvertedExpTransform(self._base, self._exp, self._scale, self.minpos)
 
 class _InvertedExpTransform(mtransforms.Transform):
     """Inverse exponential coordinate transform."""
@@ -745,12 +745,12 @@ class _InvertedExpTransform(mtransforms.Transform):
     output_dims = 1
     has_inverse = True
     is_separable = True
-    def __init__(self, base, scale, exp, minpos):
+    def __init__(self, base, exp, scale, minpos):
         super().__init__()
         self.minpos = minpos
         self._base = base
-        self._scale = scale
         self._exp = exp
+        self._scale = scale
     def transform(self, a):
         aa = np.array(a).copy()
         aa[aa<=self.minpos] = self.minpos # necessary
@@ -758,7 +758,7 @@ class _InvertedExpTransform(mtransforms.Transform):
     def transform_non_affine(self, a):
         return self.transform(a)
     def inverted(self):
-        return _ExpTransform(self._base, self._scale, self._exp, self.minpos)
+        return _ExpTransform(self._base, self._exp, self._scale, self.minpos)
 
 #------------------------------------------------------------------------------#
 # Cutoff axis
@@ -1159,6 +1159,6 @@ mscale.register_scale(SineLatitudeScale)
 mscale.register_scale(MercatorLatitudeScale)
 # Height coordinates
 # TODO: Some overlap maybe, since this sort-of duplicates a log scale?
-ExpScaleFactory(np.e, 1013.25, -1/7, True, 'height')   # scale pressure so it matches a height axis
-ExpScaleFactory(np.e, 1013.25, -1/7, False, 'pressure') # scale height so it matches a pressure axis
+ExpScaleFactory(np.e, -1/7, 1013.25, True, 'height')   # scale pressure so it matches a height axis
+ExpScaleFactory(np.e, -1/7, 1013.25, False, 'pressure') # scale height so it matches a pressure axis
 
