@@ -366,7 +366,7 @@ def wrapper_cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs
     """
     Wraps plotting functions for `CartopyAxes` (`_transform_methods`).
 
-    With the default `~cartopy.mpl.geoaxes` API, you need to pass
+    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
     longitude and latitude, instead of map projection coordinates.
     Now, ``transform=cartopy.crs.PlateCarree()`` is the default behavior.
@@ -801,8 +801,6 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     # Set labels
     if labels:
         # Very simple, use clabel args
-        # TODO: Allow modifying text after the fact? No, because that may
-        # screw up how matplotlib
         fmt = axistools.Formatter('simple', precision=precision)
         if name=='contour': # TODO: document alternate keyword args!
             labels_kw_ = {'fmt':fmt, 'inline_spacing':3, 'fontsize':rc['small']} # for rest, we keep the defaults
@@ -1296,17 +1294,13 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     return legends[0] if len(legends)==1 else legends
 
 def colorbar_factory(ax, mappable, values=None,
-        orientation='horizontal', extend=None, extendlength=None,
-        clabel=None, label=None,
-        ctickminor=False, tickminor=None, fixticks=False,
-        cgrid=False, grid=None,
-        ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
-        cticks=None, ticks=None, clocator=None, locator=None,
-        cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
-        clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
-        cformatter=None, formatter=None,
-        cticklabels=None, ticklabels=None,
-        norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+        extend=None, extendlength=None, label=None,
+        grid=None, tickminor=None,
+        tickloc=None, ticklocation=None,
+        locator=None, ticks=None, minorlocator=None, minorticks=None, locator_kw={}, minorlocator_kw={},
+        formatter=None, ticklabels=None, formatter_kw={},
+        fixticks=False, norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+        orientation='horizontal',
         **kwargs):
     """
     Function for filling an axes with a colorbar, with some handy added
@@ -1334,8 +1328,6 @@ def colorbar_factory(ax, mappable, values=None,
         Ignored if `mappable` is a mappable object. Maps each color or plot
         handle in the `mappable` list to numeric values. From this, a
         colormap and normalizer are constructed.
-    orientation : {'horizontal', 'vertical'}, optional
-        The colorbar orientation.
     extend : {None, 'neither', 'both', 'min', 'max'}, optional
         Direction for drawing colorbar "extensions" (i.e. references to
         out-of-bounds data with a unique color). These are triangles by
@@ -1349,10 +1341,31 @@ def colorbar_factory(ax, mappable, values=None,
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
         sizes to match, because the `extendlength` units are *relative*.
-    ctickloc, tickloc, cticklocation
-        Aliases for `ticklocation`.
+    tickloc
+        Alias for `ticklocation`.
     ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
+    label : None or str, optional
+        The colorbar label.
+    grid : bool, optional
+        Whether to draw "gridlines" (i.e. separators) between each level
+        across the colorbar. Default is ``False``.
+    tickminor : bool, optional
+        Whether to put minor ticks on the colorbar. Default is ``False``.
+    locator : None or locator spec, optional
+        The colorbar tick mark positions. Passed to the
+        `~proplot.axistools.Locator` constructor.
+    locator_kw : dict-like, optional
+        The locator settings. Passed to `~proplot.axistools.Locator`.
+    minorlocator
+        As with `locator`, but for the minor tick marks.
+    minorlocator_kw
+        As for `locator_kw`, but for the minor locator.
+    formatter : None or formatter spec, optional
+        The tick label format. Passed to the `~proplot.axistools.Formatter`
+        constructor.
+    formatter_kw : dict-like, optional
+        The formatter settings. Passed to `~proplot.axistools.Formatter`.
     fixticks : bool, optional
         For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
         colorbar minor and major ticks can appear misaligned. When `fixticks`
@@ -1363,31 +1376,6 @@ def colorbar_factory(ax, mappable, values=None,
         example, when the leftmost colormap colors seem to be "pulled" to the
         right farther than normal). In this case, you should stick with
         ``fixticks=False``.
-    clabel, ctickminor, cgrid
-        Aliases for `label`, `tickminor`, `grid`.
-    label : None or str, optional
-        The colorbar label.
-    tickminor : bool, optional
-        Whether to put minor ticks on the colorbar. Default is ``False``.
-    grid : bool, optional
-        Whether to draw "gridlines" (i.e. separators) between each level
-        across the colorbar. Default is ``False``.
-    clocator, cminorlocator, clocator_kw, cminorlocator_kw
-        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
-    locator : None or locator spec, optional
-        The colorbar tick mark positions. Passed to the
-        `~proplot.axistools.Locator` constructor.
-    locator_kw : dict-like, optional
-        The locator settings. Passed to `~proplot.axistools.Locator`.
-    minorlocator
-        As with `locator`, but for the minor tick marks.
-    minorlocator_kw
-        As for `locator_kw`, but for the minor locator.
-    cformatter, ticklabels, cticklabels
-        Aliases for `formatter`.
-    formatter : None or formatter spec, optional
-        The tick label format. Passed to the `~proplot.axistools.Formatter`
-        constructor.
     norm : None or normalizer spec, optional
         Ignored if `values` is ``None``. The normalizer
         for converting `values` to colormap colors. Passed to the
@@ -1397,6 +1385,9 @@ def colorbar_factory(ax, mappable, values=None,
         ``norm='log'``.
     norm_kw : dict-like, optional
         The normalizer settings. Passed to `~proplot.colortools.Norm`.
+    orientation : {'horizontal', 'vertical'}, optional
+        The colorbar orientation. Generally, you shouldn't have to explicitly
+        set this.
 
     Other parameters
     ----------------
@@ -1437,14 +1428,10 @@ def colorbar_factory(ax, mappable, values=None,
     if isinstance(ax, BaseAxes):
         raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
     # Parse flexible input
-    clocator         = _default(ticks, cticks, locator, clocator)
-    cgrid            = _default(grid, cgrid)
-    ctickminor       = _default(tickminor, ctickminor)
-    cminorlocator    = _default(minorticks, cminorticks, minorlocator, cminorlocator)
-    cformatter       = _default(ticklabels, cticklabels, formatter, cformatter, 'default')
-    clabel           = _default(label, clabel)
-    clocator_kw      = _default(locator_kw, clocator_kw)
-    cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
+    ticklocation = _default(tickloc, ticklocation)
+    locator = _default(ticks, locator)
+    minorlocator = _default(minorticks, minorlocator)
+    formatter = _default(ticklabels, formatter, 'default')
 
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
@@ -1464,7 +1451,7 @@ def colorbar_factory(ax, mappable, values=None,
         else:
             extend = 'neither'
     kwdefault = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
-                 'spacing':'uniform', 'extend':extend, 'drawedges':cgrid} # this is default case unless mappable has special props
+                 'spacing':'uniform', 'extend':extend, 'drawedges':grid} # this is default case unless mappable has special props
     kwdefault.update(kwargs)
     kwargs = kwdefault
 
@@ -1491,53 +1478,51 @@ def colorbar_factory(ax, mappable, values=None,
         mappable = func([[0,0],[0,0]],
             values=np.array(values), cmap=cmap, extend='neither',
             norm=norm, norm_kw=norm_kw) # workaround
-        if clocator is None:
+        if locator is None:
             nstep = 1 + len(values)//20
-            clocator = values[::nstep]
+            locator = values[::nstep]
     # By default, label the discretization levels (if there aren't too many)
     # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
-    if clocator is None:
-        clocator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
-        if clocator is not None:
-            step = 1 + len(clocator)//20
-            clocator = clocator[::step]
+    if locator is None:
+        locator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
+        if locator is not None:
+            step = 1 + len(locator)//20
+            locator = locator[::step]
 
     # Determine major formatters and major/minor tick locators
-    # Can pass clocator/cminorlocator as the *jump values* between the mappables
+    # Can pass locator/minorlocator as the *jump values* between the mappables
     # vmin/vmax if desired
-    fixed = None # so linter doesn't detect error in if i==1 block
+    ivalues = None # so linter doesn't detect error in if i==1 block
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
-    for i,(locator,locator_kw) in enumerate(zip((clocator,cminorlocator),(clocator_kw,cminorlocator_kw))):
+    for i,(ilocator,ilocator_kw) in enumerate(zip((locator,minorlocator), (locator_kw,minorlocator_kw))):
         # Get the locator values
         # Need to use tick_values instead of accessing 'locs' attribute because
         # many locators don't have these attributes; require norm.vmin/vmax as input
-        if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
+        if i==1 and (not tickminor and ilocator is None): # means we never wanted minor ticks
             locators.append(axistools.Locator('null'))
             continue
-        values = np.array(axistools.Locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        jvalues = np.array(axistools.Locator(ilocator, **ilocator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendlength.
         # We need to figure out the numbers that will eventually be rendered to
         # solve the error, so we will always use a fixedlocator.
-        values_min = np.where(values>=mappable.norm.vmin)[0]
-        values_max = np.where(values<=mappable.norm.vmax)[0]
+        values_min = np.where(jvalues>=mappable.norm.vmin)[0]
+        values_max = np.where(jvalues<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
             locators.append(axistools.Locator('null'))
             continue
         values_min, values_max = values_min[0], values_max[-1]
-        values = values[values_min:values_max+1]
-        if values[0]==mappable.norm.vmin:
+        jvalues = jvalues[values_min:values_max+1]
+        if jvalues[0]==mappable.norm.vmin:
             normfix = True
         # Prevent annoying major/minor overlaps where one is slightly shifted left/right
         # Consider floating point weirdness too
         if i==1:
             eps = 1e-10
-            values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
-        fixed = values # record as new variable
-        locators.append(axistools.Locator(fixed)) # final locator object
-    # Next the formatter
-    cformatter = axistools.Formatter(cformatter)
+            jvalues = [v for v in jvalues if not any(o+eps >= v >= o-eps for o in ivalues)]
+        ivalues = jvalues # record as new variable
+        locators.append(axistools.Locator(ivalues)) # final locator object
 
     # Fix the norm object
     # Check out the *insanely weird error* that occurs when you comment out this block!
@@ -1566,10 +1551,8 @@ def colorbar_factory(ax, mappable, values=None,
     # NOTE: Only way to avoid bugs seems to be to pass the major formatter/locator
     # to colorbar commmand and directly edit the minor locators/formatters;
     # update_ticks after the fact ignores the major formatter.
-    # TODO: Why does ticklocation 'outer' and 'inner' sometimes work, but
-    # other times not work?
     # axis.set_major_locator(locators[0]) # does absolutely nothing
-    # axis.set_major_formatter(cformatter)
+    # axis.set_major_formatter(formatter)
     width, height = ax.figure.get_size_inches()
     if orientation=='horizontal':
         axis = ax.xaxis
@@ -1579,9 +1562,9 @@ def colorbar_factory(ax, mappable, values=None,
         scale = height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
-    ticklocation = _default(tickloc, ctickloc, ticklocation)
+    formatter    = axistools.Formatter(formatter, **formatter_kw)
     kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
-                   'format':cformatter,
+                   'format':formatter,
                    'ticklocation':ticklocation,
                    'extendfrac':extendlength})
     cb = ax.figure.colorbar(mappable, **kwargs)
@@ -1612,8 +1595,8 @@ def colorbar_factory(ax, mappable, values=None,
         axis.set_ticks(majorvals, minor=False)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # The label
-    if clabel is not None:
-        axis.label.update({'text':clabel})
+    if label is not None:
+        axis.label.update({'text':label})
 
     # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
     # because blending will occur, will get colored lines instead of white ones;
@@ -2882,6 +2865,12 @@ class XYAxes(BaseAxes):
             # Major and minor formatter
             fixedformatfix = False
             if formatter is not None or tickrange is not None:
+                # Override
+                if tickrange is not None:
+                    if formatter not in (None, 'default'):
+                        warnings.warn('The tickrange feature requires proplot.ScalarFormatter formatter. Overriding input formatter.')
+                    formatter = 'default'
+                # Set the formatter
                 formatter = axistools.Formatter(formatter, tickrange=tickrange, time=time, **formatter_kw)
                 axis.set_major_formatter(formatter)
                 if isinstance(formatter, mticker.FixedFormatter): # if locator is MultipleLocator, first tick gets cut off!
@@ -2908,34 +2897,26 @@ class XYAxes(BaseAxes):
             self.indicate_inset_zoom()
         super().smart_update(**kwargs)
 
-    def dualx(self, transform='linear', offset=0, scale=1, label=None, xlabel=None, **kwargs):
+    def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
         """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
         parent = self.get_xscale()
         if parent!='linear':
-            warnings.warn('Parent axis scale must be linear.')
+            warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
             self.set_xscale('linear')
         ax = self.twiny()
         if xlabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "xlabel" keyword argument.')
-        xscale = axistools.InvertedScaleFactory(transform)
-        xlabel = label or xlabel
+        xscale = axistools.InvertedScaleFactory(xscale)
         ax.format(xscale=xscale, xlabel=xlabel, **kwargs)
         self._dualx_scale = (offset, scale)
 
-    def dualy(self, transform='linear', offset=0, scale=1, label=None, ylabel=None, **kwargs):
+    def dualy(self, offset=0, scale=1, yscale='linear', ylabel=None, **kwargs):
         """
         Makes a secondary *y*-axis for denoting equivalent *y*
         coordinates in **alternate units**. Returns nothing.
 
         Parameters
         ----------
-        transform : str, optional
-            The registered scale name used to transform data to the alternate
-            units.  Defaults to ``'linear'``.
-            For example, if your *y*-axis is wavenumber and you want wavelength on
-            the opposite side, use ``transform='inverse'``. If your-*y* axis
-            is height and you want pressure on the opposite side, use
-            ``transform='pressure'`` (and vice versa).
         scale : float, optional
             The constant multiple applied after scaling data with `transform`.
             Defaults to ``1``.
@@ -2946,7 +2927,14 @@ class XYAxes(BaseAxes):
             Defaults to ``0``.
             For example, if your *y*-axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
-        label, ylabel : None or str, optional
+        yscale : str, optional
+            The registered scale name used to transform data to the alternate
+            units.  Defaults to ``'linear'``.
+            For example, if your *y*-axis is wavenumber and you want wavelength on
+            the opposite side, use ``yscale='inverse'``. If your-*y* axis
+            is height and you want pressure on the opposite side, use
+            ``yscale='pressure'`` (and vice versa).
+        ylabel : None or str, optional
             The axis label (highly recommended). A warning will be issued if
             this is not supplied.
         **kwargs
@@ -2954,7 +2942,7 @@ class XYAxes(BaseAxes):
 
         Note
         ----
-        The axis scale `transform` is used to transform units on the left axis,
+        The axis scale `yscale` is used to transform units on the left axis,
         linearly spaced, to units on the right axis. This means the right
         'axis scale' must scale its data with the *inverse* of this transform.
         We make this inverted scale with `~proplot.axistools.InvertedScaleFactory`.
@@ -2966,13 +2954,12 @@ class XYAxes(BaseAxes):
         # to apply it explicitly.
         parent = self.get_yscale()
         if parent!='linear':
-            warnings.warn('Parent axis scale must be linear.')
+            warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
             self.set_yscale('linear')
         ax = self.twinx()
         if ylabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "ylabel" keyword argument.')
-        yscale = axistools.InvertedScaleFactory(transform)
-        ylabel = label or ylabel
+        yscale = axistools.InvertedScaleFactory(yscale)
         ax.format(yscale=yscale, ylabel=ylabel, **kwargs)
         self._dualy_scale = (offset, scale)
 
@@ -3322,13 +3309,10 @@ class MapAxes(BaseAxes):
     # Note this *actually* just returns some standardized arguments
     # to the CartopyAxes.smart_update and BasemapAxes.smart_update methods; they
     # both jump over this intermediate class and call BaseAxes.smart_update
-    def smart_update(self, grid=None, labels=None, latmax=None,
-        lonlim=None, latlim=None, xlim=None, ylim=None,
-        xlines=None, xminorlines=None, xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
-        ylines=None, yminorlines=None, yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
-        lonlines=None, lonminorlines=None, latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
-        latlines=None, latminorlines=None, lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
-        latlabels=None, lonlabels=None, xlabels=None, ylabels=None,
+    def smart_update(self, labels=None, latlabels=None, lonlabels=None,
+        latmax=None, lonlim=None, latlim=None, grid=None,
+        lonlocator=None, lonlines=None, lonticks=None,
+        latlocator=None, latlines=None, latticks=None,
         **kwargs,
         ):
         """
@@ -3336,28 +3320,9 @@ class MapAxes(BaseAxes):
 
         Parameters
         ----------
-        grid : None or bool, optional
-            Whether to add gridlines.
         labels : None or bool, optional
             Whether to draw longitude and latitude labels. If ``None``, read
             from `~proplot.rcmod.rc` configuration.
-        latmax : None or float, optional
-            Meridian gridlines are cut off poleward of this latitude. If
-            ``None``, read from the configuration.
-        xlim, ylim
-            Aliases for `lonlim`, `latlim`.
-        lonlim, latlim : None or length-2 list of float, optional
-            Longitude and latitude limits of projection.
-        xlocator, ylocator, lonlines, latlines, xlines, ylines, lonticks, latticks, xticks, yticks
-            Aliases for `lonlocator`, `latlocator`.
-        lonlocator, latlocator : None or list of float, optional
-            List of longitudes and latitudes for drawing gridlines.
-        xminorlocator, yminorlocator, lonminorlines, latminorlines, xminorlines, yminorlines, lonminorticks, latminorticks, xminorticks, yminorticks
-            Aliases for `lonminorlocator`, `latminorlocator`.
-        lonminorlocator, latminorlocator : None or list of float, optional
-            As with `lonlocator` and `latlocator`, but for minor gridlines.
-        xlabels, ylabels
-            Aliases for `lonlabels`, `latlabels`.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides
             of the map. There are four different options:
@@ -3372,6 +3337,19 @@ class MapAxes(BaseAxes):
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
                The boolean values indicate whether to label gridlines intersecting
                the left, right, top, and bottom sides, respectively.
+
+        latmax : None or float, optional
+            Meridian gridlines are cut off poleward of this latitude. If
+            ``None``, read from the configuration.
+        lonlim, latlim : None or length-2 list of float, optional
+            Longitude and latitude limits of projection, applied
+            with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+        grid : None or bool, optional
+            Whether to add gridlines.
+        lonlines, latlines, lonticks, latticks
+            Aliases for `lonlocator`, `latlocator`.
+        lonlocator, latlocator : None or list of float, optional
+            List of longitudes and latitudes for drawing gridlines.
         **kwargs
             Passed to `BaseAxes.smart_update`.
 
@@ -3380,15 +3358,11 @@ class MapAxes(BaseAxes):
         `BaseAxes.format`, `BaseAxes.smart_update`, `~proplot.subplots.subplots`, `~proplot.rcmod`
         """
         # Parse alternative keyword args
+        # NOTE: If labels keyword args were passed, automatically turn grid on
         grid = _default(grid, rc.get('geogrid'))
-        lonlim = _default(xlim, lonlim)
-        latlim = _default(ylim, latlim)
-        lonlocator = _default(lonlocator, lonlines, lonticks, xlocator, xlines, xticks)
-        latlocator = _default(latlocator, latlines, latticks, ylocator, ylines, yticks)
-        lonminorlocator = _default(lonminorlocator, lonminorlines, lonminorticks, xminorlocator, xminorlines, xminorticks)
-        latminorlocator = _default(latminorlocator, latminorlines, latminorticks, yminorlocator, yminorlines, yminorticks)
-        lonlocator = lonminorlocator or lonlocator # where we draw gridlines
-        latlocator = latminorlocator or latlocator
+        labels = _default(labels, rc.get('geogrid.labels')) or bool(lonlabels or latlabels)
+        lonlocator = _default(lonlines, lonticks, lonlocator)
+        latlocator = _default(latlines, latticks, latlocator)
         latlocator = _default(latlocator, rc.get('geogrid.latlines')) # gridlines by default
         lonlocator = _default(lonlocator, rc.get('geogrid.lonlines'))
 
@@ -3408,9 +3382,6 @@ class MapAxes(BaseAxes):
             latlocator = [*latlocator]
 
         # Length-4 boolean arrays of whether and where to goggle labels
-        labels = _default(labels, rc.get('geogrid.labels')) or (lonlabels or latlabels) # if any are 'truthy', we toggle labelling
-        lonlabels = _default(xlabels, lonlabels)
-        latlabels = _default(ylabels, latlabels)
         if lonlabels or latlabels:
             labels = True # toggle them at all?
         ilabels = [lonlabels, latlabels]
@@ -3488,9 +3459,8 @@ class CartopyAxes(MapAxes, GeoAxes):
         ----------
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
-        centerlat : float, optional
-            For polar projections, the center latitude of the circle (``-90``
-            or ``90``).
+        centerlat : {90, -90}, optional
+            For polar projections, the center latitude of the circle.
         boundinglat : float, optional
             For polar projections, the edge latitude of the circle.
         *args, **kwargs

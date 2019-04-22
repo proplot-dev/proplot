@@ -1306,12 +1306,10 @@ def Colormap(*args, name=None, cyclic=None, N=None,
     N_ = N or rcParams['image.lut']
     imaps = []
     name = name or 'no_name' # must have name, mcolors utilities expect this
-    if len(args)==0:
-        args = [rcParams['image.cmap']] # use default
+    args = args or (None,)
     for i,cmap in enumerate(args):
         # Retrieve Colormap instance. Makes sure lookup table is reset.
-        if cmap is None:
-            cmap = rcParams['image.cmap']
+        cmap = _default(cmap, rcParams['image.cmap'])
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
         if isinstance(cmap, mcolors.ListedColormap):
@@ -1479,12 +1477,16 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     # to get samples from a LinearSegmentedColormap draw colors.
     # (np.iterable(args[-1]) and \ all(isinstance(item,Number) for item in args[-1]))
     name = name or 'no_name'
-    if isinstance(args[-1], Number):
+    if args and isinstance(args[-1], Number):
         args, samples = args[:-1], args[-1]
     # 2) User input a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
     elif len(args)>1:
-        args = [args] # presumably send a list of colors
+        args = (args,) # presumably send a list of colors
+    # 3) Just return the current cycler; this is for consistency with other
+    # constructor functions that return the default with no argument
+    elif len(args)==0:
+        args = (rcParams['axes.prop_cycle'].by_key()['color'],)
 
     # Get list of colors, and construct and register ListedColormap
     # WARNING: Have keyword args of same name here, try to auto-detect

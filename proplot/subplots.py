@@ -317,7 +317,7 @@ class Figure(mfigure.Figure):
                 # universal dots, then back to axes
                 label_to_ax = ax.yaxis.label.get_transform() + ax.transAxes.inverted()
                 x, _ = label_to_ax.transform(ax.yaxis.label.get_position())
-                ax.rowlabel.update({'x':x, 'text':f'{label.strip()}   ', 'visible':True, **kwargs})
+                ax.rowlabel.update({'x':x, 'text':f'{label.strip()}', 'visible':True, **kwargs})
 
     def _collabels(self, labels, **kwargs):
         """Assign column labels."""
