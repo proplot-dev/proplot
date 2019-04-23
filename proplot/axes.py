@@ -118,10 +118,16 @@ _centers_methods = (
 _edges_methods = (
     'pcolor', 'pcolormesh',
     )
-# Whether to wrap plot functions with cycle features or cmap features
-_simple_methods = (
-    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf'
+_latlon_methods = ( # adds latlon=True, methods not in edges or centers methods
+    'plot', 'scatter',
     )
+_transform_methods = ( # adds transform=PlateCarree, methods not in edges or centers methods
+    'plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf',
+    )
+_crs_methods = ( # special extras
+    'get_extent', 'set_extent', 'set_xticks', 'set_yticks',
+    )
+# Whether to wrap plot functions with cycle features or cmap features
 _cycle_methods  = (
     'plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar'
     )
@@ -179,25 +185,27 @@ _options = {
 # For documentation
 #------------------------------------------------------------------------------#
 def _sphinx_name(name):
-    # Get sphinx name
+    """Gets sphinx name."""
     if name=='cmapline':
         return f'`~BaseAxes.{name}`'
     else:
         return f'`~matplotlib.axes.Axes.{name}`'
 def _expand_wrapped_methods(func):
-    # Fills `_method_list` with a list of methods that link to matplotlib
-    # documentation, so we don't have to document the lists themselves.
-    # NOTE: Each list must be at least length 2
+    """Fills `_method_list` with a list of methods that link to matplotlib
+    documentation. Previously had documented public tuples storing the method
+    names, this is much cleaner."""
     doc = func.__doc__
     for name,methods in (
         ('_centers_methods',       _centers_methods),
         ('_edges_methods',         _edges_methods),
         ('_centers_edges_methods', (*_centers_methods, *_edges_methods)),
-        ('_simple_methods',        _simple_methods),
-        ('_cycle_methods',         _cycle_methods),
-        ('_cmap_methods',          _cmap_methods),
-        ('_disabled_methods',      [method for methods in _disabled_methods.values() for method in methods]),
-        ('_map_disabled_methods',  _map_disabled_methods),
+        ('_latlon_methods',       _latlon_methods),
+        ('_crs_methods',          _crs_methods),
+        ('_transform_methods',    _transform_methods),
+        ('_cycle_methods',        _cycle_methods),
+        ('_cmap_methods',         _cmap_methods),
+        ('_disabled_methods',     (*(method for methods in _disabled_methods.values() for method in methods),)),
+        ('_map_disabled_methods', _map_disabled_methods),
         ):
         if f'`{name}`' not in doc:
             continue
@@ -354,11 +362,11 @@ def _wrapper_m_norecurse(self, func):
     return wrapper
 
 @_expand_wrapped_methods
-def wrapper_cartopy_simplefix(self, func, *args, transform=PlateCarree, **kwargs):
+def wrapper_cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
     """
-    Wraps simple plotting functions for `CartopyAxes` (`_simple_methods`).
+    Wraps plotting functions for `CartopyAxes` (`_transform_methods`).
 
-    With the default `~cartopy.mpl.geoaxes` API, you need to pass
+    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
     longitude and latitude, instead of map projection coordinates.
     Now, ``transform=cartopy.crs.PlateCarree()`` is the default behavior.
@@ -374,17 +382,36 @@ def wrapper_cartopy_simplefix(self, func, *args, transform=PlateCarree, **kwargs
     return result
 
 @_expand_wrapped_methods
-def wrapper_basemap_simplefix(self, func, *args, **kwargs):
+def wrapper_cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     """
-    Wraps simple plotting functions for `BasemapAxes` (`_simple_methods`).
+    Wraps axes functions for `CartopyAxes` (`_crs_methods`).
+
+    As in `wrapper_cartopy_transform`, but sets ``crs=cartopy.crs.PlateCarree()``
+    as the default.
+    """
+    # Simple
+    if isinstance(crs, type):
+        crs = crs() # instantiate
+    try:
+        result = func(*args, crs=crs, **kwargs)
+    except TypeError as err:
+        if not args:
+            raise err
+        args, crs = args[:-1], args[-1]
+        result = func(*args, crs=crs, **kwargs)
+    return result
+
+@_expand_wrapped_methods
+def wrapper_basemap_latlon(self, func, *args, latlon=True, **kwargs):
+    """
+    Wraps plotting functions for `BasemapAxes` (`_latlon_methods`).
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude,
     instead of map projection coordinates. Now, ``latlon=True`` is always
     used.
     """
-    kwargs.update(latlon=True)
-    return func(*args, **kwargs)
+    return func(*args, latlon=latlon, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Geographic grid fixes
@@ -394,7 +421,7 @@ def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, glob
     """
     Wraps 2D plotting functions for `CartopyAxes` (`_centers_edges_methods`).
 
-    As in `wrapper_cartopy_simplefix`, but adds the `globe` keyword arg
+    As in `wrapper_cartopy_transform`, but adds the `globe` keyword arg
     to optionally make data coverage *global*. Passing ``globe=True``
     does the following:
 
@@ -437,11 +464,11 @@ def wrapper_cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, glob
     return result
 
 @_expand_wrapped_methods
-def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
+def wrapper_basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
     """
     Wraps 2D plotting functions for `BasemapAxes` (`_centers_edges_methods`).
 
-    As in `wrapper_basemap_simplefix`, but cycles longitudes to fit within the
+    As in `wrapper_basemap_latlon`, but cycles longitudes to fit within the
     map edges (i.e. if the projection central longitude is 90 degrees, will
     permute data to span from -90 degrees to 270 degrees longitude).
 
@@ -453,8 +480,12 @@ def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
        degrees).
     2. Interpolates data to the North and South poles.
     """
+    # Bail out if map coordinates already provided
+    if not latlon:
+        return func(x, y, Z, **kwargs)
     # Raise errors
     eps = 1e-3
+    lon, lat = x, y
     lonmin, lonmax = self.m.lonmin, self.m.lonmax
     if lon.max() > lon.min() + 360 + eps:
         raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
@@ -550,9 +581,10 @@ def wrapper_basemap_gridfix(self, func, lon, lat, Z, globe=False, **kwargs):
 @_expand_wrapped_methods
 def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
     norm=None, norm_kw={},
-    fix=True,
     extend='neither',
     values=None, levels=None, zero=False, # override levels to be *centered* on zero
+    labels=False, labels_kw={}, precision=2,
+    edgefix=True,
     lw=None, linewidth=None, linewidths=None,
     ls=None, linestyle=None, linestyles=None,
     color=None, colors=None, edgecolor=None, edgecolors=None,
@@ -576,13 +608,6 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         `~proplot.colortools.Norm` constructor.
     norm_kw : dict-like, optional
         Passed to `~proplot.colortools.Norm`.
-    fix : bool, optional
-        Whether to fix the the `white-lines-between-filled-contours
-        <https://stackoverflow.com/q/8263769/4970632>`__
-        and `white-lines-between-pcolor-rectangles
-        <https://stackoverflow.com/q/27092991/4970632>`__
-        issues. Note this will slow down the figure rendering by a bit.
-        Defaults to ``True``.
     extend : {'neither', 'both', 'min', 'max'}, optional
         Whether to assign a unique color to out-of-bounds data. Also means
         when the colorbar is drawn, colorbar "extensions" will be drawn
@@ -603,6 +628,29 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
         Ignored if `values` or `levels` are lists.
         If colormap levels were automatically selected by matplotlib, toggle
         this to modify the levels to be **symmetric about zero**.
+    edgefix : bool, optional
+        Whether to fix the the `white-lines-between-filled-contours
+        <https://stackoverflow.com/q/8263769/4970632>`__
+        and `white-lines-between-pcolor-rectangles
+        <https://stackoverflow.com/q/27092991/4970632>`__
+        issues. Note this will slow down the figure rendering by a bit.
+        Defaults to ``True``.
+    labels : bool, optional
+        For `~matplotlib.axes.Axes.contour`, whether to add contour labels
+        with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
+        or `~matplotlib.axes.Axes.pcolormesh`, whether to add labels to the
+        center of grid boxes. In the latter case, the text will be black
+        when the luminance of the underlying grid box color is >50%, and
+        white otherwise (see the `~proplot.colortools` documentation).
+    labels_kw
+        Ignored if `labels` is ``False``. Extra keyword args for the labels.
+        For `~matplotlib.axes.Axes.contour`, passed to `~matplotlib.axes.Axes.clabel`.
+        For `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
+        passed to `~matplotlib.axes.Axes.text`.
+    precision : int, optional
+        Maximum precision (in decimal places) for the number labels.
+        Number labels are generated with the `~proplot.axistools.SimpleFormatter`
+        formatter, which allows us to limit the precision.
 
     Other parameters
     ----------------
@@ -691,80 +739,119 @@ def wrapper_cmap(self, func, *args, cmap=None, cmap_kw={},
                 if value:
                     raise ValueError(f'Unknown keyword arg {key} for function {name}.')
                 continue
-            fix = False # override!
+            edgefix = False # override!
             kwargs[names[key]] = value
 
-    # Call function with custom kwargs, exit if no cmap
-    result = func(*args, **kwargs)
-    if not cmap:
-        return result
+    # Call function with custom kwargs
+    obj = func(*args, **kwargs)
 
-    # Get levels automatically determined by contourf, or make them
-    # from the automatically chosen pcolor/imshow clims.
-    # TODO: This still is not respected for hexbin 'log' norm for some reason, fix.
-    if not getattr(result, 'extend', None):
-        result.extend = extend # will already be on there for some funcs
-    if not np.iterable(levels): # i.e. was an integer
-        # Some tools automatically generate levels, like contourf.
-        # Others will just automatically impose clims, like pcolor.
-        levels = getattr(result, 'levels', np.linspace(*result.get_clim(), levels))
-        if not zero:
-            norm = _default(norm, 'linear') # matplotlib will have chosen *linearly* spaced levels, this helps us reduce BinNorm time
-        # Get centered levels (when contourf has already rendered contours,
-        # they cannot be changed or updated; must be redrawn)
-        else: # non-linearly spaced, need
-            abs_max = max([abs(max(levels)), abs(min(levels))])
-            levels = np.linspace(-abs_max, abs_max, len(levels))
-            if not hasattr(result, 'levels'): # e.g. contourf, Artist must be re-drawn!
-                result.set_clim(-abs_max, abs_max)
-            else:
-                if hasattr(result, 'collections'):
-                    for artist in result.collections:
-                        artist.set_visible(False)
-                elif hasattr(result, 'set_visible'):
-                    result.set_visible(False)
+    # Colormap features
+    if cmap:
+        # Get levels automatically determined by contourf, or make them
+        # from the automatically chosen pcolor/imshow clims.
+        # TODO: This still is not respected for hexbin 'log' norm for some reason, fix.
+        if not getattr(obj, 'extend', None):
+            obj.extend = extend # will already be on there for some funcs
+        if not np.iterable(levels): # i.e. was an integer
+            # Some tools automatically generate levels, like contourf.
+            # Others will just automatically impose clims, like pcolor.
+            levels = getattr(obj, 'levels', np.linspace(*obj.get_clim(), levels))
+            if not zero:
+                norm = _default(norm, 'linear') # matplotlib will have chosen *linearly* spaced levels, this helps us reduce BinNorm time
+            # Get centered levels (when contourf has already rendered contours,
+            # they cannot be changed or updated; must be redrawn)
+            else: # non-linearly spaced, need
+                abs_max = max([abs(max(levels)), abs(min(levels))])
+                levels = np.linspace(-abs_max, abs_max, len(levels))
+                if not hasattr(obj, 'levels'): # e.g. contourf, Artist must be re-drawn!
+                    obj.set_clim(-abs_max, abs_max)
                 else:
-                    raise ValueError(f'Unknown object {result}. Cannot center colormap levels.')
-                kwargs['levels'] = levels
-                result = func(*args, **kwargs)
-    # Always add 'levels' as attribute, even for pcolor
-    result.levels = levels
-    # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
-    # in logarithmic space, or warped to diverge from center from a midpoint
-    # NOTE: LinearSegmentedNorm is slow! Test for linearity of input levels.
-    diff = np.diff(levels)
-    if (diff<0).any() or diff.size<2:
-        raise ValueError(f'Need at least 3 monotonically increasing levels, got {levels}.')
-    if norm is None:
-        eps = diff.mean()/1e3
-        if (np.abs(np.diff(diff)) >= eps).any():
-            norm = 'segmented'
+                    if hasattr(obj, 'collections'):
+                        for artist in obj.collections:
+                            artist.set_visible(False)
+                    elif hasattr(obj, 'set_visible'):
+                        obj.set_visible(False)
+                    else:
+                        raise ValueError(f'Unknown object {obj}. Cannot center colormap levels.')
+                    kwargs['levels'] = levels
+                    obj = func(*args, **kwargs)
+        # Always add 'levels' as attribute, even for pcolor
+        obj.levels = levels
+        # Get 'pre-processor' norm -- e.g. maybe user wants colormap scaled
+        # in logarithmic space, or warped to diverge from center from a midpoint
+        # NOTE: LinearSegmentedNorm is slow! Test for linearity of input levels.
+        diff = np.diff(levels)
+        if (diff<0).any() or diff.size<2:
+            raise ValueError(f'Need at least 3 monotonically increasing levels, got {levels}.')
+        if norm is None:
+            eps = diff.mean()/1e3
+            if (np.abs(np.diff(diff)) >= eps).any():
+                norm = 'segmented'
+            else:
+                norm = 'linear'
+        # Set the normalizer
+        step = 1.0
+        if cyclic:
+            step = 0.5
+            extend = 'both'
+        norm_preprocess = colortools.Norm(norm, levels=levels, clip=False, **norm_kw)
+        norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
+        obj.set_norm(norm_main)
+
+    # Set labels
+    if labels:
+        # Very simple, use clabel args
+        fmt = axistools.Formatter('simple', precision=precision)
+        if name=='contour': # TODO: document alternate keyword args!
+            labels_kw_ = {'fmt':fmt, 'inline_spacing':3, 'fontsize':rc['small']} # for rest, we keep the defaults
+            for key1,key2 in (('size','fontsize'),):
+                value = labels_kw.pop(key1, None)
+                if value:
+                    labels_kw[key2] = value
+            labels_kw_.update(labels_kw)
+            self.clabel(obj, **labels_kw_)
+        # Label each box manually
+        # See: https://stackoverflow.com/a/20998634/4970632
+        # TODO: Should use normalizer and colormap to get colors instead of
+        # update scalar mappable? Also gets called at drawtime, maybe redundant.
+        elif 'pcolor' in name:
+            obj.update_scalarmappable() # populates the _facecolors attribute, initially filled with just a single color
+            labels_kw_ = {'size':rc['small'], 'ha':'center', 'va':'center'}
+            labels_kw_.update(labels_kw)
+            array = obj.get_array()
+            paths = obj.get_paths()
+            colors = obj.get_facecolors() # *flattened* list of objects
+            for color,path,num in zip(colors,paths,array):
+                if not np.isfinite(num):
+                    continue
+                bbox = path.get_extents()
+                x, y = bbox.intervalx.mean(), bbox.intervaly.mean()
+                if 'color' not in labels_kw:
+                    _, _, lum = colortools.to_xyz(color, 'hcl')
+                    if lum<50:
+                        color = 'w'
+                    else:
+                        color = 'k'
+                    labels_kw_['color'] = color
+                self.text(x, y, fmt(num), **labels_kw_)
         else:
-            norm = 'linear'
-    # Set the normalizer
-    step = 1.0
-    if cyclic:
-        step = 0.5
-        extend = 'both'
-    norm_preprocess = colortools.Norm(norm, levels=levels, clip=False, **norm_kw)
-    norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
-    result.set_norm(norm_main)
+            raise RuntimeError(f'Not possible to add labels to {name} plot.')
 
     # Fix white lines between filled contours/mesh
     # Allow user to override properties!
-    if fix:
+    if edgefix:
         color = 'face'
         linewidth = 0.4 # seems to be lowest threshold where white lines disappear
         linestyle = '-'
-        if 'contourf' in name: # 'contourf', 'tricontourf'
-            for contour in result.collections:
+        if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+            obj.set_edgecolor(color)
+            obj.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
+        elif 'contourf' in name: # 'contourf', 'tricontourf'
+            for contour in obj.collections:
                 contour.set_edgecolor(color)
                 contour.set_linewidth(linewidth)
                 contour.set_linestyle(linestyle)
-        elif 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
-            result.set_edgecolor(color)
-            result.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
-    return result
+    return obj
 
 @_expand_wrapped_methods
 def wrapper_cycle(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
@@ -1080,13 +1167,14 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     elif not handles:
         raise ValueError('You must pass a list of handles.')
     for i,handle in enumerate(handles):
-        if not hasattr(handle, 'cmap'):
+        if not hasattr(handle, 'get_cmap') or hasattr(handle, 'get_facecolor'): # latter is for scatter (TODO: add wrapper_cmap for scatter?)
             continue
         # Make sure we sample the *center* of the colormap
         warnings.warn('Getting legend entry from colormap.')
         size = np.mean(handle.get_sizes())
+        cmap = handle.get_cmap()
         handles[i] = ax.scatter([0], [0], markersize=size,
-                                color=[handle.cmap(0.5)],
+                                color=[cmap(0.5)],
                                 label=handle.get_label())
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
@@ -1206,17 +1294,13 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     return legends[0] if len(legends)==1 else legends
 
 def colorbar_factory(ax, mappable, values=None,
-        orientation='horizontal', extend=None, extendlength=None,
-        clabel=None, label=None,
-        ctickminor=False, tickminor=None, fixticks=False,
-        cgrid=False, grid=None,
-        ticklocation=None, cticklocation=None, tickloc=None, ctickloc=None,
-        cticks=None, ticks=None, clocator=None, locator=None,
-        cminorticks=None, minorticks=None, cminorlocator=None, minorlocator=None,
-        clocator_kw={}, locator_kw=None, cminorlocator_kw={}, minorlocator_kw=None,
-        cformatter=None, formatter=None,
-        cticklabels=None, ticklabels=None,
-        norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+        extend=None, extendlength=None, label=None,
+        grid=None, tickminor=None,
+        tickloc=None, ticklocation=None,
+        locator=None, ticks=None, minorlocator=None, minorticks=None, locator_kw={}, minorlocator_kw={},
+        formatter=None, ticklabels=None, formatter_kw={},
+        fixticks=False, norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+        orientation='horizontal',
         **kwargs):
     """
     Function for filling an axes with a colorbar, with some handy added
@@ -1244,8 +1328,6 @@ def colorbar_factory(ax, mappable, values=None,
         Ignored if `mappable` is a mappable object. Maps each color or plot
         handle in the `mappable` list to numeric values. From this, a
         colormap and normalizer are constructed.
-    orientation : {'horizontal', 'vertical'}, optional
-        The colorbar orientation.
     extend : {None, 'neither', 'both', 'min', 'max'}, optional
         Direction for drawing colorbar "extensions" (i.e. references to
         out-of-bounds data with a unique color). These are triangles by
@@ -1259,10 +1341,31 @@ def colorbar_factory(ax, mappable, values=None,
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
         sizes to match, because the `extendlength` units are *relative*.
-    ctickloc, tickloc, cticklocation
-        Aliases for `ticklocation`.
+    tickloc
+        Alias for `ticklocation`.
     ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
+    label : None or str, optional
+        The colorbar label.
+    grid : bool, optional
+        Whether to draw "gridlines" (i.e. separators) between each level
+        across the colorbar. Default is ``False``.
+    tickminor : bool, optional
+        Whether to put minor ticks on the colorbar. Default is ``False``.
+    locator : None or locator spec, optional
+        The colorbar tick mark positions. Passed to the
+        `~proplot.axistools.Locator` constructor.
+    locator_kw : dict-like, optional
+        The locator settings. Passed to `~proplot.axistools.Locator`.
+    minorlocator
+        As with `locator`, but for the minor tick marks.
+    minorlocator_kw
+        As for `locator_kw`, but for the minor locator.
+    formatter : None or formatter spec, optional
+        The tick label format. Passed to the `~proplot.axistools.Formatter`
+        constructor.
+    formatter_kw : dict-like, optional
+        The formatter settings. Passed to `~proplot.axistools.Formatter`.
     fixticks : bool, optional
         For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
         colorbar minor and major ticks can appear misaligned. When `fixticks`
@@ -1273,31 +1376,6 @@ def colorbar_factory(ax, mappable, values=None,
         example, when the leftmost colormap colors seem to be "pulled" to the
         right farther than normal). In this case, you should stick with
         ``fixticks=False``.
-    clabel, ctickminor, cgrid
-        Aliases for `label`, `tickminor`, `grid`.
-    label : None or str, optional
-        The colorbar label.
-    tickminor : bool, optional
-        Whether to put minor ticks on the colorbar. Default is ``False``.
-    grid : bool, optional
-        Whether to draw "gridlines" (i.e. separators) between each level
-        across the colorbar. Default is ``False``.
-    clocator, cminorlocator, clocator_kw, cminorlocator_kw
-        Aliases for `locator`, `minorlocator`, `locator_kw`, `minorlocator_kw`
-    locator : None or locator spec, optional
-        The colorbar tick mark positions. Passed to the
-        `~proplot.axistools.Locator` constructor.
-    locator_kw : dict-like, optional
-        The locator settings. Passed to `~proplot.axistools.Locator`.
-    minorlocator
-        As with `locator`, but for the minor tick marks.
-    minorlocator_kw
-        As for `locator_kw`, but for the minor locator.
-    cformatter, ticklabels, cticklabels
-        Aliases for `formatter`.
-    formatter : None or formatter spec, optional
-        The tick label format. Passed to the `~proplot.axistools.Formatter`
-        constructor.
     norm : None or normalizer spec, optional
         Ignored if `values` is ``None``. The normalizer
         for converting `values` to colormap colors. Passed to the
@@ -1307,6 +1385,9 @@ def colorbar_factory(ax, mappable, values=None,
         ``norm='log'``.
     norm_kw : dict-like, optional
         The normalizer settings. Passed to `~proplot.colortools.Norm`.
+    orientation : {'horizontal', 'vertical'}, optional
+        The colorbar orientation. Generally, you shouldn't have to explicitly
+        set this.
 
     Other parameters
     ----------------
@@ -1347,14 +1428,10 @@ def colorbar_factory(ax, mappable, values=None,
     if isinstance(ax, BaseAxes):
         raise ValueError('The colorbar axes cannot be an instance of proplot.BaseAxes. Must be native matplotlib axes.Axes class.')
     # Parse flexible input
-    clocator         = _default(ticks, cticks, locator, clocator)
-    cgrid            = _default(grid, cgrid)
-    ctickminor       = _default(tickminor, ctickminor)
-    cminorlocator    = _default(minorticks, cminorticks, minorlocator, cminorlocator)
-    cformatter       = _default(ticklabels, cticklabels, formatter, cformatter, 'default')
-    clabel           = _default(label, clabel)
-    clocator_kw      = _default(locator_kw, clocator_kw)
-    cminorlocator_kw = _default(minorlocator_kw, cminorlocator_kw)
+    ticklocation = _default(tickloc, ticklocation)
+    locator = _default(ticks, locator)
+    minorlocator = _default(minorticks, minorlocator)
+    formatter = _default(ticklabels, formatter, 'default')
 
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
@@ -1374,7 +1451,7 @@ def colorbar_factory(ax, mappable, values=None,
         else:
             extend = 'neither'
     kwdefault = {'cax':ax, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
-                 'spacing':'uniform', 'extend':extend, 'drawedges':cgrid} # this is default case unless mappable has special props
+                 'spacing':'uniform', 'extend':extend, 'drawedges':grid} # this is default case unless mappable has special props
     kwdefault.update(kwargs)
     kwargs = kwdefault
 
@@ -1401,53 +1478,51 @@ def colorbar_factory(ax, mappable, values=None,
         mappable = func([[0,0],[0,0]],
             values=np.array(values), cmap=cmap, extend='neither',
             norm=norm, norm_kw=norm_kw) # workaround
-        if clocator is None:
+        if locator is None:
             nstep = 1 + len(values)//20
-            clocator = values[::nstep]
+            locator = values[::nstep]
     # By default, label the discretization levels (if there aren't too many)
     # Prefer centers (i.e. 'values') to edges (i.e. 'levels')
-    if clocator is None:
-        clocator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
-        if clocator is not None:
-            step = 1 + len(clocator)//20
-            clocator = clocator[::step]
+    if locator is None:
+        locator = getattr(mappable, 'values', getattr(mappable, 'levels', None))
+        if locator is not None:
+            step = 1 + len(locator)//20
+            locator = locator[::step]
 
     # Determine major formatters and major/minor tick locators
-    # Can pass clocator/cminorlocator as the *jump values* between the mappables
+    # Can pass locator/minorlocator as the *jump values* between the mappables
     # vmin/vmax if desired
-    fixed = None # so linter doesn't detect error in if i==1 block
+    ivalues = None # so linter doesn't detect error in if i==1 block
     normfix = False # whether we need to modify the norm object
     locators = [] # put them here
-    for i,(locator,locator_kw) in enumerate(zip((clocator,cminorlocator),(clocator_kw,cminorlocator_kw))):
+    for i,(ilocator,ilocator_kw) in enumerate(zip((locator,minorlocator), (locator_kw,minorlocator_kw))):
         # Get the locator values
         # Need to use tick_values instead of accessing 'locs' attribute because
         # many locators don't have these attributes; require norm.vmin/vmax as input
-        if i==1 and not ctickminor and locator is None: # means we never wanted minor ticks
+        if i==1 and (not tickminor and ilocator is None): # means we never wanted minor ticks
             locators.append(axistools.Locator('null'))
             continue
-        values = np.array(axistools.Locator(locator, **locator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        jvalues = np.array(axistools.Locator(ilocator, **ilocator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendlength.
         # We need to figure out the numbers that will eventually be rendered to
         # solve the error, so we will always use a fixedlocator.
-        values_min = np.where(values>=mappable.norm.vmin)[0]
-        values_max = np.where(values<=mappable.norm.vmax)[0]
+        values_min = np.where(jvalues>=mappable.norm.vmin)[0]
+        values_max = np.where(jvalues<=mappable.norm.vmax)[0]
         if len(values_min)==0 or len(values_max)==0:
             locators.append(axistools.Locator('null'))
             continue
         values_min, values_max = values_min[0], values_max[-1]
-        values = values[values_min:values_max+1]
-        if values[0]==mappable.norm.vmin:
+        jvalues = jvalues[values_min:values_max+1]
+        if jvalues[0]==mappable.norm.vmin:
             normfix = True
         # Prevent annoying major/minor overlaps where one is slightly shifted left/right
         # Consider floating point weirdness too
         if i==1:
             eps = 1e-10
-            values = [v for v in values if not any(o+eps >= v >= o-eps for o in fixed)]
-        fixed = values # record as new variable
-        locators.append(axistools.Locator(fixed)) # final locator object
-    # Next the formatter
-    cformatter = axistools.Formatter(cformatter)
+            jvalues = [v for v in jvalues if not any(o+eps >= v >= o-eps for o in ivalues)]
+        ivalues = jvalues # record as new variable
+        locators.append(axistools.Locator(ivalues)) # final locator object
 
     # Fix the norm object
     # Check out the *insanely weird error* that occurs when you comment out this block!
@@ -1476,10 +1551,8 @@ def colorbar_factory(ax, mappable, values=None,
     # NOTE: Only way to avoid bugs seems to be to pass the major formatter/locator
     # to colorbar commmand and directly edit the minor locators/formatters;
     # update_ticks after the fact ignores the major formatter.
-    # TODO: Why does ticklocation 'outer' and 'inner' sometimes work, but
-    # other times not work?
     # axis.set_major_locator(locators[0]) # does absolutely nothing
-    # axis.set_major_formatter(cformatter)
+    # axis.set_major_formatter(formatter)
     width, height = ax.figure.get_size_inches()
     if orientation=='horizontal':
         axis = ax.xaxis
@@ -1489,9 +1562,9 @@ def colorbar_factory(ax, mappable, values=None,
         scale = height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
     extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
     extendlength = extendlength/(scale - 2*extendlength)
-    ticklocation = _default(tickloc, ctickloc, ticklocation)
+    formatter    = axistools.Formatter(formatter, **formatter_kw)
     kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
-                   'format':cformatter,
+                   'format':formatter,
                    'ticklocation':ticklocation,
                    'extendfrac':extendlength})
     cb = ax.figure.colorbar(mappable, **kwargs)
@@ -1522,8 +1595,8 @@ def colorbar_factory(ax, mappable, values=None,
         axis.set_ticks(majorvals, minor=False)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # The label
-    if clabel is not None:
-        axis.label.update({'text':clabel})
+    if label is not None:
+        axis.label.update({'text':label})
 
     # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
     # because blending will occur, will get colored lines instead of white ones;
@@ -1590,9 +1663,10 @@ def _func_wrapper(driver):
 _wrapper_check_centers = _func_wrapper(wrapper_check_centers)
 _wrapper_check_edges   = _func_wrapper(wrapper_check_edges)
 _wrapper_basemap_gridfix   = _self_func_wrapper(wrapper_basemap_gridfix)
-_wrapper_basemap_simplefix = _self_func_wrapper(wrapper_basemap_simplefix)
+_wrapper_basemap_latlon    = _self_func_wrapper(wrapper_basemap_latlon)
 _wrapper_cartopy_gridfix   = _self_func_wrapper(wrapper_cartopy_gridfix)
-_wrapper_cartopy_simplefix = _self_func_wrapper(wrapper_cartopy_simplefix)
+_wrapper_cartopy_transform = _self_func_wrapper(wrapper_cartopy_transform)
+_wrapper_cartopy_crs       = _self_func_wrapper(wrapper_cartopy_crs)
 _wrapper_legend  = _self_wrapper(legend_factory) # special
 _wrapper_cmap    = _self_func_wrapper(wrapper_cmap)
 _wrapper_cycle   = _self_func_wrapper(wrapper_cycle)
@@ -1727,10 +1801,6 @@ class BaseAxes(maxes.Axes):
                 raise NotImplementedError(message.format(attr))
         attr = _aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
-        if attr in _cmap_methods:
-            obj = _wrapper_cmap(self, obj)
-        elif attr in _cycle_methods:
-            obj = _wrapper_cycle(self, obj)
         if attr=='text':
             obj = _wrapper_text(self, obj)
         elif attr=='plot':
@@ -2251,7 +2321,7 @@ class BaseAxes(maxes.Axes):
         # Create LineCollection and update with values
         # TODO: Why not just pass kwargs to class?
         collection = mcollections.LineCollection(np.array(coords),
-                cmap=cmap, norm=norm, linestyles='-', joinstyle='miter')
+                cmap=cmap, norm=norm, linestyles='-', capstyle='butt', joinstyle='miter')
         collection.set_array(np.array(values))
         collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 
@@ -2328,10 +2398,19 @@ class XYAxes(BaseAxes):
         self._xtick_pad_error = (0,0)
         self._ytick_pad_error = (0,0)
 
+    @_expand_wrapped_methods
     def __getattribute__(self, attr, *args):
         """Wraps methods when they are requested by the user. See
-        `wrapper_check_centers` and `wrapper_check_edges` for more info."""
+        `wrapper_cmap`, `wrapper_cycle`, `wrapper_check_centers`, and
+        `wrapper_check_edges` for more info."""
+        # WARNING: The 'labels' feature of cmap_methods requires that the
+        # x, y, Z input was standardized first. So we need to wrap with
+        # the cmap and cycle wrappers first.
         obj = super().__getattribute__(attr, *args)
+        if attr in _cmap_methods:
+            obj = _wrapper_cmap(self, obj)
+        elif attr in _cycle_methods:
+            obj = _wrapper_cycle(self, obj)
         if attr in _centers_methods:
             obj = _wrapper_check_centers(obj)
         elif attr in _edges_methods:
@@ -2786,6 +2865,12 @@ class XYAxes(BaseAxes):
             # Major and minor formatter
             fixedformatfix = False
             if formatter is not None or tickrange is not None:
+                # Override
+                if tickrange is not None:
+                    if formatter not in (None, 'default'):
+                        warnings.warn('The tickrange feature requires proplot.ScalarFormatter formatter. Overriding input formatter.')
+                    formatter = 'default'
+                # Set the formatter
                 formatter = axistools.Formatter(formatter, tickrange=tickrange, time=time, **formatter_kw)
                 axis.set_major_formatter(formatter)
                 if isinstance(formatter, mticker.FixedFormatter): # if locator is MultipleLocator, first tick gets cut off!
@@ -2812,34 +2897,26 @@ class XYAxes(BaseAxes):
             self.indicate_inset_zoom()
         super().smart_update(**kwargs)
 
-    def dualx(self, transform='linear', offset=0, scale=1, label=None, xlabel=None, **kwargs):
+    def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
         """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
         parent = self.get_xscale()
         if parent!='linear':
-            warnings.warn('Parent axis scale must be linear.')
+            warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
             self.set_xscale('linear')
         ax = self.twiny()
         if xlabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "xlabel" keyword argument.')
-        xscale = axistools.InvertedScaleFactory(transform)
-        xlabel = label or xlabel
+        xscale = axistools.InvertedScaleFactory(xscale)
         ax.format(xscale=xscale, xlabel=xlabel, **kwargs)
         self._dualx_scale = (offset, scale)
 
-    def dualy(self, transform='linear', offset=0, scale=1, label=None, ylabel=None, **kwargs):
+    def dualy(self, offset=0, scale=1, yscale='linear', ylabel=None, **kwargs):
         """
         Makes a secondary *y*-axis for denoting equivalent *y*
         coordinates in **alternate units**. Returns nothing.
 
         Parameters
         ----------
-        transform : str, optional
-            The registered scale name used to transform data to the alternate
-            units.  Defaults to ``'linear'``.
-            For example, if your *y*-axis is wavenumber and you want wavelength on
-            the opposite side, use ``transform='inverse'``. If your-*y* axis
-            is height and you want pressure on the opposite side, use
-            ``transform='pressure'`` (and vice versa).
         scale : float, optional
             The constant multiple applied after scaling data with `transform`.
             Defaults to ``1``.
@@ -2850,7 +2927,14 @@ class XYAxes(BaseAxes):
             Defaults to ``0``.
             For example, if your *y*-axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
-        label, ylabel : None or str, optional
+        yscale : str, optional
+            The registered scale name used to transform data to the alternate
+            units.  Defaults to ``'linear'``.
+            For example, if your *y*-axis is wavenumber and you want wavelength on
+            the opposite side, use ``yscale='inverse'``. If your-*y* axis
+            is height and you want pressure on the opposite side, use
+            ``yscale='pressure'`` (and vice versa).
+        ylabel : None or str, optional
             The axis label (highly recommended). A warning will be issued if
             this is not supplied.
         **kwargs
@@ -2858,7 +2942,7 @@ class XYAxes(BaseAxes):
 
         Note
         ----
-        The axis scale `transform` is used to transform units on the left axis,
+        The axis scale `yscale` is used to transform units on the left axis,
         linearly spaced, to units on the right axis. This means the right
         'axis scale' must scale its data with the *inverse* of this transform.
         We make this inverted scale with `~proplot.axistools.InvertedScaleFactory`.
@@ -2870,13 +2954,12 @@ class XYAxes(BaseAxes):
         # to apply it explicitly.
         parent = self.get_yscale()
         if parent!='linear':
-            warnings.warn('Parent axis scale must be linear.')
+            warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
             self.set_yscale('linear')
         ax = self.twinx()
         if ylabel is None:
             warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "ylabel" keyword argument.')
-        yscale = axistools.InvertedScaleFactory(transform)
-        ylabel = label or ylabel
+        yscale = axistools.InvertedScaleFactory(yscale)
         ax.format(yscale=yscale, ylabel=ylabel, **kwargs)
         self._dualy_scale = (offset, scale)
 
@@ -3226,13 +3309,10 @@ class MapAxes(BaseAxes):
     # Note this *actually* just returns some standardized arguments
     # to the CartopyAxes.smart_update and BasemapAxes.smart_update methods; they
     # both jump over this intermediate class and call BaseAxes.smart_update
-    def smart_update(self, grid=None, labels=None, latmax=None,
-        lonlim=None, latlim=None, xlim=None, ylim=None,
-        xlines=None, xminorlines=None, xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
-        ylines=None, yminorlines=None, yticks=None, yminorticks=None, ylocator=None, yminorlocator=None,
-        lonlines=None, lonminorlines=None, latticks=None, latminorticks=None, latlocator=None, latminorlocator=None,
-        latlines=None, latminorlines=None, lonticks=None, lonminorticks=None, lonlocator=None, lonminorlocator=None,
-        latlabels=None, lonlabels=None, xlabels=None, ylabels=None,
+    def smart_update(self, labels=None, latlabels=None, lonlabels=None,
+        latmax=None, lonlim=None, latlim=None, grid=None,
+        lonlocator=None, lonlines=None, lonticks=None,
+        latlocator=None, latlines=None, latticks=None,
         **kwargs,
         ):
         """
@@ -3240,28 +3320,9 @@ class MapAxes(BaseAxes):
 
         Parameters
         ----------
-        grid : None or bool, optional
-            Whether to add gridlines.
         labels : None or bool, optional
             Whether to draw longitude and latitude labels. If ``None``, read
             from `~proplot.rcmod.rc` configuration.
-        latmax : None or float, optional
-            Meridian gridlines are cut off poleward of this latitude. If
-            ``None``, read from the configuration.
-        xlim, ylim
-            Aliases for `lonlim`, `latlim`.
-        lonlim, latlim : None or length-2 list of float, optional
-            Longitude and latitude limits of projection.
-        xlocator, ylocator, lonlines, latlines, xlines, ylines, lonticks, latticks, xticks, yticks
-            Aliases for `lonlocator`, `latlocator`.
-        lonlocator, latlocator : None or list of float, optional
-            List of longitudes and latitudes for drawing gridlines.
-        xminorlocator, yminorlocator, lonminorlines, latminorlines, xminorlines, yminorlines, lonminorticks, latminorticks, xminorticks, yminorticks
-            Aliases for `lonminorlocator`, `latminorlocator`.
-        lonminorlocator, latminorlocator : None or list of float, optional
-            As with `lonlocator` and `latlocator`, but for minor gridlines.
-        xlabels, ylabels
-            Aliases for `lonlabels`, `latlabels`.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides
             of the map. There are four different options:
@@ -3276,6 +3337,19 @@ class MapAxes(BaseAxes):
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
                The boolean values indicate whether to label gridlines intersecting
                the left, right, top, and bottom sides, respectively.
+
+        latmax : None or float, optional
+            Meridian gridlines are cut off poleward of this latitude. If
+            ``None``, read from the configuration.
+        lonlim, latlim : None or length-2 list of float, optional
+            Longitude and latitude limits of projection, applied
+            with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+        grid : None or bool, optional
+            Whether to add gridlines.
+        lonlines, latlines, lonticks, latticks
+            Aliases for `lonlocator`, `latlocator`.
+        lonlocator, latlocator : None or list of float, optional
+            List of longitudes and latitudes for drawing gridlines.
         **kwargs
             Passed to `BaseAxes.smart_update`.
 
@@ -3284,15 +3358,11 @@ class MapAxes(BaseAxes):
         `BaseAxes.format`, `BaseAxes.smart_update`, `~proplot.subplots.subplots`, `~proplot.rcmod`
         """
         # Parse alternative keyword args
+        # NOTE: If labels keyword args were passed, automatically turn grid on
         grid = _default(grid, rc.get('geogrid'))
-        lonlim = _default(xlim, lonlim)
-        latlim = _default(ylim, latlim)
-        lonlocator = _default(lonlocator, lonlines, lonticks, xlocator, xlines, xticks)
-        latlocator = _default(latlocator, latlines, latticks, ylocator, ylines, yticks)
-        lonminorlocator = _default(lonminorlocator, lonminorlines, lonminorticks, xminorlocator, xminorlines, xminorticks)
-        latminorlocator = _default(latminorlocator, latminorlines, latminorticks, yminorlocator, yminorlines, yminorticks)
-        lonlocator = lonminorlocator or lonlocator # where we draw gridlines
-        latlocator = latminorlocator or latlocator
+        labels = _default(labels, rc.get('geogrid.labels')) or bool(lonlabels or latlabels)
+        lonlocator = _default(lonlines, lonticks, lonlocator)
+        latlocator = _default(latlines, latticks, latlocator)
         latlocator = _default(latlocator, rc.get('geogrid.latlines')) # gridlines by default
         lonlocator = _default(lonlocator, rc.get('geogrid.lonlines'))
 
@@ -3312,9 +3382,6 @@ class MapAxes(BaseAxes):
             latlocator = [*latlocator]
 
         # Length-4 boolean arrays of whether and where to goggle labels
-        labels = _default(labels, rc.get('geogrid.labels')) or (lonlabels or latlabels) # if any are 'truthy', we toggle labelling
-        lonlabels = _default(xlabels, lonlabels)
-        latlabels = _default(ylabels, latlabels)
         if lonlabels or latlabels:
             labels = True # toggle them at all?
         ilabels = [lonlabels, latlabels]
@@ -3392,9 +3459,8 @@ class CartopyAxes(MapAxes, GeoAxes):
         ----------
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
-        centerlat : float, optional
-            For polar projections, the center latitude of the circle (``-90``
-            or ``90``).
+        centerlat : {90, -90}, optional
+            For polar projections, the center latitude of the circle.
         boundinglat : float, optional
             For polar projections, the edge latitude of the circle.
         *args, **kwargs
@@ -3445,12 +3511,19 @@ class CartopyAxes(MapAxes, GeoAxes):
 
     def __getattribute__(self, attr, *args):
         """Wraps methods when they are requested by the user. See
-        `wrapper_cartopy_simplefix`, `wrapper_check_centers`,
+        `wrapper_cmap`, `wrapper_cycle`,
+        `wrapper_cartopy_transform`, `wrapper_check_centers`,
         `wrapper_check_edges`, and `wrapper_cartopy_gridfix` for more info."""
         # Wrappers
         obj = super().__getattribute__(attr, *args)
-        if attr in _simple_methods:
-            obj = _wrapper_cartopy_simplefix(self, obj)
+        if attr in _cmap_methods:
+            obj = _wrapper_cmap(self, obj)
+        elif attr in _cycle_methods:
+            obj = _wrapper_cycle(self, obj)
+        if attr in _transform_methods:
+            obj = _wrapper_cartopy_transform(self, obj)
+        elif attr in _crs_methods:
+            obj = _wrapper_cartopy_crs(self, obj)
         elif attr in _edges_methods or attr in _centers_methods:
             obj = _wrapper_cartopy_gridfix(self, obj)
             if attr in _edges_methods:
@@ -3691,7 +3764,7 @@ class BasemapAxes(MapAxes):
     def __getattribute__(self, attr, *args):
         """
         Wraps methods when they are requested by the user. See
-        `wrapper_basemap_simplefix`, `wrapper_check_centers`,
+        `wrapper_basemap_latlon`, `wrapper_check_centers`,
         `wrapper_check_edges`, and `wrapper_basemap_gridfix` for more info.
 
         Wraps all plotting methods with ``_wrapper_m_call`` and
@@ -3701,14 +3774,15 @@ class BasemapAxes(MapAxes):
         the `~mpl_toolkits.basemap.Basemap` instance.
         """
         obj = super().__getattribute__(attr, *args)
-        if attr in _simple_methods or attr in _edges_methods or attr in _centers_methods:
+        if attr in _latlon_methods or attr in _edges_methods or attr in _centers_methods:
             obj = _wrapper_m_call(self, obj) # this must be the *last* step!
-            if attr in _simple_methods:
-                if attr[:3] != 'tri':
-                    obj = _wrapper_cycle(self, obj)
-                obj = _wrapper_basemap_simplefix(self, obj)
-            elif attr in _edges_methods or attr in _centers_methods:
+            if attr in _cmap_methods:
                 obj = _wrapper_cmap(self, obj)
+            elif attr in _cycle_methods:
+                obj = _wrapper_cycle(self, obj)
+            if attr in _latlon_methods:
+                obj = _wrapper_basemap_latlon(self, obj)
+            elif attr in _edges_methods or attr in _centers_methods:
                 obj = _wrapper_basemap_gridfix(self, obj)
                 if attr in _edges_methods:
                     obj = _wrapper_check_edges(obj)

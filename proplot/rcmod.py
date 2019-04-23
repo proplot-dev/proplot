@@ -616,12 +616,9 @@ class rc_configurator(object):
     def _set_cmap(self, value):
         """Sets the default colormap. Value is passed through
         `~proplot.colortools.Colormap`."""
-        kw = {}
-        if np.iterable(value) and len(value)==2 and isinstance(value[-1], dict):
-            value, kw = value[0], value[-1]
         if isinstance(value, str) or not np.iterable(value):
-            value = value,
-        cmap = colortools.Colormap(*value, **kw)
+            value = (value,)
+        cmap = colortools.Colormap(*value)
         _rcParams['image.cmap'] = cmap.name
 
     def _set_cycler(self, value):
@@ -629,18 +626,15 @@ class rc_configurator(object):
         `~proplot.colortools.Cycle`."""
         # Set arbitrary cycler
         # First pass to constructor
-        kw = {}
-        if np.iterable(value) and len(value)==2 and isinstance(value[-1], dict):
-            value, kw = value[0], value[-1]
         if isinstance(value, str) or not np.iterable(value):
-            value = value,
-        colors = colortools.Cycle(*value, **kw)
+            value = (value,)
+        colors = colortools.Cycle(*value)
         name = colors.name
         # Optionally change RGB definitions
         if _rcGlobals['rgbcycle']:
             if name.lower()=='colorblind':
                 regcolors = colors + [(0.1, 0.1, 0.1)]
-            else:
+            else: # reset, but only if rgbcycle==True suggests colors may have been changed before
                 regcolors = [(0.0, 0.0, 1.0), (0.0, .50, 0.0), (1.0, 0.0, 0.0), (.75, .75, 0.0), (.75, .75, 0.0), (0.0, .75, .75), (0.0, 0.0, 0.0)]
             for code,color in zip('brgmyck', regcolors):
                 rgb = mcolors.colorConverter.to_rgb(color)

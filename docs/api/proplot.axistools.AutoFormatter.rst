@@ -1,16 +1,16 @@
-ScalarFormatter
-===============
+AutoFormatter
+=============
 
 .. currentmodule:: proplot.axistools
 
-.. autoclass:: ScalarFormatter
+.. autoclass:: AutoFormatter
    :show-inheritance:
 
    .. rubric:: Methods Summary
 
    .. autosummary::
 
-      ~ScalarFormatter.__call__
+      ~AutoFormatter.__call__
 
    .. rubric:: Methods Documentation
 

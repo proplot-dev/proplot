@@ -9,14 +9,14 @@ and `colors`. Defines helpful new `~matplotlib.colors.Normalize` and
 For a visual reference, see the :ref:`Table of colormaps`,
 :ref:`Table of color cycles`, and the :ref:`Table of colors`.
 
-Perceptually uniform colormaps
-------------------------------
+Colormaps in non-RGB colorspaces
+--------------------------------
 
 ProPlot's custom colormaps are instances of the new
 `PerceptuallyUniformColormap` class. These classes employ *linear transitions*
 between channel values in any of three possible "perceptually uniform",
-HSV-like colorspaces.  These colorspaces can be described as follows (see also
-`these visualizations <http://www.hsluv.org/comparison/>`_):
+HSV-like colorspaces. These colorspaces are visualized in
+:ref:`Perceptually uniform colorspaces`, and can be described as follows:
 
 * **HCL**: A purely perceptually uniform colorspace, where colors are
   broken down into “hue” (color, range 0-360), “chroma”
@@ -33,13 +33,12 @@ HSV-like colorspaces.  These colorspaces can be described as follows (see also
 The HCL space is the only "purely" perceptually uniform colorspace. But
 during a linear transition between two values, we may cross over "impossible"
 colors (i.e. colors with RGB channels >1).
-
 The HSLuv and HPLuv colorspaces
 were developed to resolve this issue by (respectively) scaling and clipping
 high-chroma colors across different hues and luminances.
 
-From other projects
--------------------
+Colormaps from other projects
+-----------------------------
 
 I’ve removed some outdated “miscellaneous” colormaps that are packaged
 by default (see `this reference
@@ -58,7 +57,6 @@ Several of these were found thanks to `Riley X. Bradey
 <https://github.com/bradyrx>`_. Others were found using the `cpt-city
 <http://soliton.vm.bytemark.co.uk/pub/cpt-city/>`_ archive of color
 gradients.
-
 Note that matplotlib comes packaged with every `ColorBrewer2.0
 <http://colorbrewer2.org/>`__ colormap, which are also certainly
 "perceptually uniform".
@@ -67,13 +65,13 @@ Note that matplotlib comes packaged with every `ColorBrewer2.0
 Flexible colormap arguments
 ---------------------------
 
-All of the `~matplotlib.axes.Axes` methods listed in
-`~proplot.axes.cmap_methods` and
-`~proplot.axes.cycle_methods` have been wrapped by ProPlot. For the
-latter methods, ProPlot adds a brand new keyword arg called ``cycle``, used for
-changing the axes property cycler on-the-fly.
+Various matplotlib plotting methods have been wrapped by
+`~proplot.axes.wrapper_cmap` and `~proplot.axes.wrapper_cycle`.
+The former enhances most functions that accept a ``cmap`` argument, and the
+latter adds a brand new keyword arg called ``cycle`` that can be used to
+change the axes property cycler on-the-fly.
 
-The ``cmap`` and ``cycle`` arguments
+For every wrapped method, the ``cmap`` and ``cycle`` arguments
 are all passed through the magical `Colormap` function.
 `Colormap` is incredibly powerful -- it can make colormaps
 on-the-fly, look up existing maps, and merge them. As such, any of the following
@@ -1308,12 +1306,10 @@ def Colormap(*args, name=None, cyclic=None, N=None,
     N_ = N or rcParams['image.lut']
     imaps = []
     name = name or 'no_name' # must have name, mcolors utilities expect this
-    if len(args)==0:
-        args = [rcParams['image.cmap']] # use default
+    args = args or (None,)
     for i,cmap in enumerate(args):
         # Retrieve Colormap instance. Makes sure lookup table is reset.
-        if cmap is None:
-            cmap = rcParams['image.cmap']
+        cmap = _default(cmap, rcParams['image.cmap'])
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
         if isinstance(cmap, mcolors.ListedColormap):
@@ -1478,15 +1474,19 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     """
     # Flexible input options
     # 1) User input some number of samples; 99% of time, use this
-    # to get samples from a LinearSegmentedColormap draw colors.
+    # to get samples from a LinearSegmentedColormap
     # (np.iterable(args[-1]) and \ all(isinstance(item,Number) for item in args[-1]))
     name = name or 'no_name'
-    if isinstance(args[-1], Number):
+    if args and isinstance(args[-1], Number):
         args, samples = args[:-1], args[-1]
     # 2) User input a simple list; 99% of time, use this
     # to build up a simple ListedColormap.
     elif len(args)>1:
-        args = [args] # presumably send a list of colors
+        args = (args,) # presumably send a list of colors
+    # 3) Just return the current cycler; this is for consistency with other
+    # constructor functions that return the default with no argument
+    elif len(args)==0:
+        args = (rcParams['axes.prop_cycle'].by_key()['color'],)
 
     # Get list of colors, and construct and register ListedColormap
     # WARNING: Have keyword args of same name here, try to auto-detect

@@ -16,6 +16,7 @@ dist
 
 # Private files
 *.pdf
+*.png
 *.log
 *.tex
 *.dfont
