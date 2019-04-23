@@ -1123,33 +1123,6 @@ See `~proplot.axes.XYAxes.smart_update` and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=2, ncols=4, axwidth=1.5, share=0)
-    axs.format(rowlabels=['Power\nscales', 'Exp\nscales'], suptitle='Scale factory showcase')
-    x = np.linspace(0,1,50)
-    y = 10*x
-    data = np.random.rand(len(y)-1, len(x)-1)
-    # Power scales
-    for ax,power in zip(axs[:4],(2,4,6,8)):
-        ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
-        ax.plot(x, y, lw=4, color='sky')
-        ax.format(ylim=(0.1,10), yscale=('power',power), title=f'$x^{power}$')
-    # Exp scales
-    for ax,a,c in zip(axs[4:],(np.e,1.1,2,10),(1,5,-3,-0.2)):
-        ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
-        ax.plot(x, y, lw=4, color='coral')
-        ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${a}^{{{c}x}}$')
-
-
-
-.. image:: showcase/showcase_72_0.png
-   :width: 728px
-   :height: 374px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
     # plot.rc.fontname = 'Verdana'
     f, axs = plot.subplots(width=6, nrows=4, aspect=(5,1), sharey=False, sharex=False)
     # Compression
@@ -1169,11 +1142,11 @@ See `~proplot.axes.XYAxes.smart_update` and
         ax.format(xscale=('cutoff', *scale), title=title,
                   xlim=(0,4*np.pi), ylabel='wave amplitude', # note since 'spanning labels' turned on by default, only one label is drawn
                   xformatter='pi', xlocator=locator,
-                  xtickminor=False, xgrid=True, ygrid=False, suptitle='Cutoff scale factory showcase')
+                  xtickminor=False, xgrid=True, ygrid=False, suptitle='Cutoff scales showcase')
 
 
 
-.. image:: showcase/showcase_73_0.png
+.. image:: showcase/showcase_72_0.png
    :width: 540px
    :height: 567px
 
@@ -1182,28 +1155,40 @@ See `~proplot.axes.XYAxes.smart_update` and
 
     import proplot as plot
     import numpy as np
-    plot.rc.update(titleweight='bold')
-    f, axs = plot.subplots(ncols=2, axwidth=2, share=0, span=False)
-    n = 30
+    f, axs = plot.subplots(nrows=3, ncols=2, axwidth=1.5, span=False, share=0)
+    axs.format(rowlabels=['Power\nscales', 'Exp\nscales', 'Geographic\nscales'], suptitle='Esoteric scales showcase')
+    x = np.linspace(0,1,50)
+    y = 10*x
+    data = np.random.rand(len(y)-1, len(x)-1)
+    # Power scales
+    colors = ('coral','sky')
+    for ax,power,color in zip(axs[:2],(2,1/4),colors):
+        ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+        ax.plot(x, y, lw=4, color=color)
+        ax.format(ylim=(0.1,10), yscale=('power',power), title=f'$x^{{{power}}}$')
+    # Exp scales
+    for ax,a,c,color in zip(axs[2:4],(np.e,2),(0.5,-1),colors):
+        ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+        ax.plot(x, y, lw=4, color=color)
+        ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${a}^{{{c}x}}$')
+    # Geographic scales
     x = np.linspace(-180,180,n)
     y = np.linspace(-85,85,n) # note sine just truncated values not in [-90,90], but Mercator transformation can reflect them
     y2 = np.linspace(-85,85,n) # for pcolor
-    # Geographic scales
     data = np.random.rand(len(x), len(y2))
-    for i,(ax,scale,color) in enumerate(zip(axs,['sine','mercator'],['coral','sky'])):
-        ax = axs[i]
+    for ax,scale,color in zip(axs[4:],('sine','mercator'),('coral','sky')):
         ax.plot(x, y, '-', color=color, lw=4)
         ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8}) # use 'right' to trim the colormap from 0-1 color range to 0-0.8 color range
-        ax.format(xlabel='x axis', ylabel='latitude', title=scale.title() + ' y-axis', yscale=scale,
-                  ytickloc='left', suptitle='Latitude scale showcase',
-                  yformatter='deglat', grid=False,
+        ax.format(title=scale.title() + ' y-axis', yscale=scale,
+                  ytickloc='left',
+                  yformatter='deglat', grid=False, ylocator=20,
                   xscale='linear', xlim=None, ylim=(-85,85))
 
 
 
-.. image:: showcase/showcase_74_0.png
-   :width: 480px
-   :height: 254px
+.. image:: showcase/showcase_73_0.png
+   :width: 420px
+   :height: 549px
 
 
 Alternative units
@@ -1250,13 +1235,13 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
 
 
 
-.. image:: showcase/showcase_77_0.png
+.. image:: showcase/showcase_76_0.png
    :width: 599px
    :height: 215px
 
 
 
-.. image:: showcase/showcase_77_1.png
+.. image:: showcase/showcase_76_1.png
    :width: 516px
    :height: 442px
 
@@ -1284,7 +1269,7 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
 
 
 
-.. image:: showcase/showcase_78_0.png
+.. image:: showcase/showcase_77_0.png
    :width: 540px
    :height: 272px
 
@@ -1368,13 +1353,13 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_83_1.png
+.. image:: showcase/showcase_82_1.png
    :width: 630px
    :height: 417px
 
 
 
-.. image:: showcase/showcase_83_2.png
+.. image:: showcase/showcase_82_2.png
    :width: 630px
    :height: 417px
 
@@ -1408,7 +1393,7 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_84_1.png
+.. image:: showcase/showcase_83_1.png
    :width: 450px
    :height: 302px
 
@@ -1443,7 +1428,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_87_0.png
+.. image:: showcase/showcase_86_0.png
    :width: 394px
    :height: 426px
 
@@ -1464,7 +1449,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_88_0.png
+.. image:: showcase/showcase_87_0.png
    :width: 755px
    :height: 231px
 
@@ -1502,7 +1487,7 @@ cartopy projections are plotted below.
 
 
 
-.. image:: showcase/showcase_91_1.png
+.. image:: showcase/showcase_90_1.png
    :width: 576px
    :height: 1037px
 
@@ -1530,7 +1515,7 @@ args if you don’t specify them.
 
 
 
-.. image:: showcase/showcase_93_0.png
+.. image:: showcase/showcase_92_0.png
    :width: 598px
    :height: 1073px
 
@@ -1557,7 +1542,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_97_0.png
+.. image:: showcase/showcase_96_0.png
    :width: 576px
    :height: 212px
 
@@ -1569,7 +1554,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_98_0.png
+.. image:: showcase/showcase_97_0.png
    :width: 576px
    :height: 212px
 
@@ -1581,7 +1566,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_99_0.png
+.. image:: showcase/showcase_98_0.png
    :width: 576px
    :height: 212px
 
@@ -1602,13 +1587,13 @@ relatively non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_101_1.png
+.. image:: showcase/showcase_100_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_101_2.png
+.. image:: showcase/showcase_100_2.png
    :width: 748px
    :height: 245px
 
@@ -1643,7 +1628,7 @@ for usage details.
 
 
 
-.. image:: showcase/showcase_104_1.png
+.. image:: showcase/showcase_103_1.png
    :width: 436px
    :height: 4333px
 
@@ -1673,7 +1658,7 @@ See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 
 
 
-.. image:: showcase/showcase_107_0.png
+.. image:: showcase/showcase_106_0.png
    :width: 540px
    :height: 1615px
 
@@ -1715,7 +1700,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_110_0.png
+.. image:: showcase/showcase_109_0.png
    :width: 720px
    :height: 1316px
 
@@ -1727,7 +1712,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_111_0.png
+.. image:: showcase/showcase_110_0.png
    :width: 630px
    :height: 225px
 
@@ -1774,7 +1759,7 @@ loaded by ProPlot on import.
 
 
 
-.. image:: showcase/showcase_114_1.png
+.. image:: showcase/showcase_113_1.png
    :width: 544px
    :height: 334px
 
@@ -1814,7 +1799,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_116_0.png
+.. image:: showcase/showcase_115_0.png
    :width: 724px
    :height: 345px
 
@@ -1842,7 +1827,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_118_0.png
+.. image:: showcase/showcase_117_0.png
    :width: 526px
    :height: 325px
 
@@ -1866,7 +1851,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_120_0.png
+.. image:: showcase/showcase_119_0.png
    :width: 652px
    :height: 287px
 
@@ -1889,7 +1874,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_122_0.png
+.. image:: showcase/showcase_121_0.png
    :width: 652px
    :height: 287px
 
@@ -1917,7 +1902,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_124_0.png
+.. image:: showcase/showcase_123_0.png
    :width: 652px
    :height: 424px
 
@@ -1946,7 +1931,7 @@ reversed diverging colormaps by their “reversed” name – for example,
 
 
 
-.. image:: showcase/showcase_126_0.png
+.. image:: showcase/showcase_125_0.png
    :width: 544px
    :height: 478px
 
@@ -1971,7 +1956,7 @@ command, or by changing the global default cycle with
 
 
 
-.. image:: showcase/showcase_129_0.png
+.. image:: showcase/showcase_128_0.png
    :width: 517px
    :height: 356px
 
@@ -2005,7 +1990,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_131_1.png
+.. image:: showcase/showcase_130_1.png
    :width: 634px
    :height: 318px
 
@@ -2044,7 +2029,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_134_0.png
+.. image:: showcase/showcase_133_0.png
    :width: 436px
    :height: 603px
 

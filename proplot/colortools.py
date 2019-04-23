@@ -1474,7 +1474,7 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     """
     # Flexible input options
     # 1) User input some number of samples; 99% of time, use this
-    # to get samples from a LinearSegmentedColormap draw colors.
+    # to get samples from a LinearSegmentedColormap
     # (np.iterable(args[-1]) and \ all(isinstance(item,Number) for item in args[-1]))
     name = name or 'no_name'
     if args and isinstance(args[-1], Number):
