@@ -1097,7 +1097,8 @@ def _panels_kwargs(panels, colorbars, legends, panels_kw, colorbars_kw=None, leg
     for side in {*allsides} - {*allpanels}: # add in specific ones
         for name in names:
             kwout[side + name] = None
-    regex = re.compile(f'^[tlrb]?({"|".join(names)})$')
+    extra = (*names, 'stack') # if keyword arg matches this name, ignore it
+    regex = re.compile(f'^[tlrb]?({"|".join(extra)})$')
     if colorbars_kw is None:
         colorbars_kw = panels_kw
     if legends_kw is None:
