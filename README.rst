@@ -120,23 +120,29 @@ different?
 
 While parts of ProPlot were inspired by seaborn (in particular much
 of ``colors.py`` is drawn from seaborn’s ``palettes.py``), the goal for
-this project was likely very different: It is intended to help you make
-publication-quality figures, and no more.
+this project was likely very different.
 Seaborn largely attempts to merge the tasks of data analysis and
-visualization. ProPlot contains no analysis tools – it is expected
-that you analyze data on your own, prior to plotting it. Anyway, both ``pandas``
-and ``xarray`` already have great built-in tools for visualizing
-tabulated and geophysical data -- and if ProPlot is imported, these tools will even work with its new
-colormaps.
-This narrow focus also allowed me
-to integrate my features very closely with the matplotlib API (usually
-as enhancements of existing ``Axes`` and
-``Figure`` methods),
-while ``seaborn`` features are only accessible from commands on the module
-itself.
+visualization, and seems to be geared toward statisticians, data scientists,
+and the private sector
+rather than physical scientists, academia, and the public sector.
+ProPlot is geared toward the latter group and is intended to help you make
+publication-quality figures, period.
+It contains no data analysis tools – it is expected
+that you perform data analysis with other tools, or
+use the built-in tools offered by ``pandas`` and ``xarray``
+when you do need quick, on-the-fly plots.
 
-In summary, this is a package tightly integrated with `matplotlib` with a gentle learning curve,
-for academics and others that need compact, fine-tuned figures for use in professional settings. As such, it provides a number of powerful, easy-to-use features well beyond the scope of `seaborn`.
+Further, most of Seaborn's features are also only accessible from commands
+on the module itself.
+ProPlot is also integrated much more closely with the matplotlib API,
+relying on special subclasses of the native matplotlib ``Figure`` and ``Axes``
+classes. This gives new users a very gentle learning curve, while
+permitting the development of a number of powerful features well beyond
+the scope of Seaborn.
+
+In summary, this project is meant as a companion or alternative to Seaborn
+to serve the needs of a mostly distinct audience -- especially
+frustrated grad students like me.
 
 Contributions
 -------------
