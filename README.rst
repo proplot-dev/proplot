@@ -118,9 +118,9 @@ There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. What makes this project
 different?
 
-While parts of ProPlot were inspired by seaborn (e.g. some
-of ``colors.py`` is drawn from ``palettes.py``), the goal for
-this project was likely very different.
+While parts of ProPlot were inspired by Seaborn (e.g. some
+of ``colors.py`` is drawn from ``palettes.py``), the goals
+seem to be very different.
 Seaborn largely attempts to merge the tasks of data analysis and
 visualization, and seems to be geared toward statisticians, data scientists,
 and the private sector
