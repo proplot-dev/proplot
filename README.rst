@@ -97,8 +97,6 @@ ProPlot imposes a strict framework for working with figures, with "static"
 figure scaffoldings and new ``format`` and ``smart_update`` methods
 meant to replace more verbose calls to various individual axes and axis methods.
 Meanwhile the "smart tight layout" feature also conflicts directly with
-.. This project's features also conflict with matplotlib's features -- for example,
-.. ProPlot's "smart tight layout" is intended as an alternative
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability
 to preserve axes aspect ratios by sacrificing fixed figure dimensions,
 and various other features may be seen as an alternative to
