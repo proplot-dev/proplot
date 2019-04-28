@@ -118,8 +118,8 @@ There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. What makes this project
 different?
 
-While parts of ProPlot were inspired by seaborn (in particular much
-of ``colors.py`` is drawn from seaborn’s ``palettes.py``), the goal for
+While parts of ProPlot were inspired by seaborn (e.g. some
+of ``colors.py`` is drawn from ``palettes.py``), the goal for
 this project was likely very different.
 Seaborn largely attempts to merge the tasks of data analysis and
 visualization, and seems to be geared toward statisticians, data scientists,
@@ -134,9 +134,10 @@ when you do need quick, on-the-fly plots.
 
 Further, most of Seaborn's features are also only accessible from commands
 on the module itself.
-ProPlot is also integrated much more closely with the matplotlib API,
+ProPlot is integrated much more closely with the matplotlib API,
 relying on special subclasses of the native matplotlib ``Figure`` and ``Axes``
-classes. This gives new users a very gentle learning curve, while
+classes and the native matplotlib ``Colormap`` classes as opposed
+to "palettes". This gives new users a very gentle learning curve, while
 permitting the development of a number of powerful features well beyond
 the scope of Seaborn.
 
