@@ -21,14 +21,13 @@ on PyPi (coming soon!). However, feel free to install directly from Github using
    pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
 The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://www.numpy.org/>`_.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and/or `basemap <https://matplotlib.org/basemap/index.html>`_.
-
 I recommend importing with
 
 .. code-block:: python
 
    import proplot as plot
 
-to differentiate ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module.
+to differentiate ProPlot from the usual "``plt``" abbreviation used for the ``pyplot`` module.
 
 Documentation
 -------------
