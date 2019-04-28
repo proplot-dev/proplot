@@ -94,8 +94,8 @@ with cartographic toolkits and "dual" axes).
 
 There are also some philosophical differences and more direct conflicts.
 ProPlot imposes a strict framework for working with figures, with "static"
-figure scaffoldings and new `format` and `smart_update` methods
-for controlling all sorts of axes settings.
+figure scaffoldings and new ``format`` and ``smart_update`` methods
+meant to replace more verbose calls to various individual axes and axis methods.
 Meanwhile the "smart tight layout" feature also conflicts directly with
 .. This project's features also conflict with matplotlib's features -- for example,
 .. ProPlot's "smart tight layout" is intended as an alternative
