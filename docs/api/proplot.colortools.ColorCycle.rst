@@ -1,7 +1,7 @@
-CycleList
-=========
+ColorCycle
+==========
 
 .. currentmodule:: proplot.colortools
 
-.. autoclass:: CycleList
+.. autoclass:: ColorCycle
    :show-inheritance:

@@ -78,7 +78,7 @@ automodsumm_inherited_members = False
 automodsumm_inherited_members = False
 
 # Turn off code and image links for embedded mpl plots
-html_logo = '_static/logo.png'
+html_logo = '_static/logo_crop.png'
 # plot_html_show_source_link = False
 # plot_html_show_formats = False
 
@@ -160,6 +160,8 @@ default_role = 'py:obj' # default family is py, but can also set default role so
 html_theme = 'rtd_custom'
 html_theme_path = ['_themes']
 html_theme_options = {
+    'logo_only': True,
+    'display_version': False,
     'collapse_navigation': True,
     'navigation_depth': 4,
     }

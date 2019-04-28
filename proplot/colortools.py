@@ -574,12 +574,12 @@ if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     mcolors._colors_full_map = _ColorMappingOverride(mcolors._colors_full_map)
 
 # List of colors with 'name' attribute
-class CycleList(list):
+class ColorCycle(list):
     """Simply stores a list of colors, and adds a `name` attribute corresponding
     to the registered name."""
     def __repr__(self):
         """Wraps the string representation."""
-        return 'CycleList(' + super().__repr__() + ')'
+        return 'ColorCycle(' + super().__repr__() + ')'
     def __init__(self, list_, name):
         self.name = name
         super().__init__(list_)
@@ -1468,11 +1468,13 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
 
     Returns
     -------
-    `CycleList`
+    `ColorCycle`
         Just a list of colors with a name attribute. This color list is also
         registered under the name `name` as a `~matplotlib.colors.ListedColormap`.
     """
     # Flexible input options
+    # TODO: Allow repeating the color cycle with, e.g., different
+    # line styles or other properties.
     # 1) User input some number of samples; 99% of time, use this
     # to get samples from a LinearSegmentedColormap
     # (np.iterable(args[-1]) and \ all(isinstance(item,Number) for item in args[-1]))
@@ -1515,7 +1517,7 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
         filename = os.path.join(_data_user, basename)
         with open(filename, 'w') as f:
             f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
-    return CycleList(cmap.colors, name)
+    return ColorCycle(cmap.colors, name)
 
 class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead

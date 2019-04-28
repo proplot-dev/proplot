@@ -883,6 +883,15 @@ class Figure(mfigure.Figure):
             print(f'Saving to "{filename}".')
         return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
 
+    # WARNING: This causes error, for some reason prevents subclassed axes
+    # from being assigned. Forget the lock.
+    # def add_subplot(self, *args, **kwargs):
+    #     """Create axes. This is called by `subplots` -- you
+    #     should not have to use this directly."""
+    #     if self._subplots_lock:
+    #         warnings.warn('Calling add_subplot manually is highly discouraged! To generate subplots, use the proplot.subplots function.')
+    #     super().add_subplot(*args, **kwargs)
+
     def add_subplot_and_panels(self, subspec, which=None, *,
             hspace, wspace,
             bwidth, bvisible, bflush, bshare, bsep,

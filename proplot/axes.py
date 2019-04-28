@@ -3243,8 +3243,8 @@ class PanelAxes(XYAxes):
         # then have panels accessible with the slice panel[i,j] instead of panel[i].
         # space = _default(hspace, wspace, space) # flexible arguments
         self.invisible()
+        fig = self.figure
         side = self._side
-        figure = self.figure
         subspec = self.get_subplotspec()
         if side=='top': # this is ugly, and hard to implement with title, super title, and stuff
             raise NotImplementedError('Colorbars in upper panels are not allowed.')
@@ -3264,7 +3264,7 @@ class PanelAxes(XYAxes):
                         )
                 subspec = gridspec[1]
         # Get properties
-        ax = figure.add_subplot(subspec, projection=None)
+        ax = fig.add_subplot(subspec, projection=None)
         if side in ['bottom','top']:
             outside, inside = 'bottom', 'top'
             if side=='top':
