@@ -99,7 +99,7 @@ meant to replace more verbose calls to various individual axes and axis methods.
 Meanwhile the "smart tight layout" feature also conflicts directly with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability
 to preserve axes aspect ratios by sacrificing fixed figure dimensions,
-and various other features may be seen as an alternative to
+while functionality offered by the ``subplots`` command may be seen as an alternative to
 the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ toolkit.
 Further, by deleting several native matplotlib colormaps,
 this project represents a backwards incompatible break with matplotlib...
