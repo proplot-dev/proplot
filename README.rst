@@ -22,6 +22,8 @@ on PyPi (coming soon!). However, feel free to install directly from Github using
 
 The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://www.numpy.org/>`_.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and/or `basemap <https://matplotlib.org/basemap/index.html>`_.
 
+Importing
+---------
 I recommend importing with
 
 .. code-block:: python
