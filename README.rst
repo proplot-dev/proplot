@@ -147,7 +147,7 @@ frustrated grad students like me.
 
 Contributions
 -------------
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request! You shouldn't have much trouble modifying it -- the comments and documentation are fairly comprehensive.
+This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request!
 
 Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
 guinea pig and helping me fix a lot of the initial bugs. If your field is
