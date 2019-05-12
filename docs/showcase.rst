@@ -294,10 +294,9 @@ changing axis labels, tick labels, titles, etc. Keyword args passed to
 this function are interpreted as follows:
 
 1. Any keyword arg matching the name of a ProPlot or native matplotlib
-   “rc” setting will be applied to the axes (see the `~proplot.rcmod`
-   documentation). If the name has “dots”, **simply omit them** – for
-   example, ``title.weight`` becomes ``titleweight``, and ``title.pos``
-   becomes ``titlepos``.
+   “rc” setting will be applied to the axes. If the name has “dots”,
+   **simply** omit them. See the `~proplot.rcmod` documentation for
+   details.
 2. Remaining keyword args are passed to the ``smart_update`` methods of
    the top-level class – that is, the `~proplot.axes.XYAxes`
    `~proplot.axes.XYAxes.smart_update` or `~proplot.axes.MapAxes`
@@ -346,36 +345,12 @@ A special object named `~proplot.rcmod.rc`, belonging to the
 `~proplot.rcmod.rc_configurator` class, is created whenever you import
 ProPlot. This object gives you advanced control over the look of your
 plots. **Use** `~proplot.rcmod.rc` **as your one-stop shop for
-changing global settings**.
+changing global settings**. To reset everything to the default state,
+use `~proplot.rcmod.rc_configurator.reset`. This happens by default
+every time a figure is rendered by the matplotlib backend or saved to
+file.
 
-The `~proplot.rcmod.rc` object controls built-in
-`~matplotlib.rcParams` settings, a few custom :ref:`rcParams_new`
-settings, and some magic :ref:`rcGlobals` settings that apply to
-groups of other settings and keep them synced. Tables of these settings
-are found in the `~proplot.rcmod` documentation. To modify any
-:ref:`rcGlobals`, :ref:`rcParams_new`, or `~matplotlib.rcParams`
-setting, you have four options:
-
-1. Change the default settings for good by creating a ``.proplotrc``
-   file in your home folder. For more information, see
-   :ref:`.proplotrc file`.
-2. Change one global setting using ``plot.rc.name = value`` or
-   ``plot.rc['name'] = value``. Note that, for settings with ‘dots’ in
-   their name, you will have to use ``plot.rc['category.name'] = value``
-3. Update several global settings at once using
-   ``plot.rc.update({'name1':value1, 'name2':value2})`` or
-   ``plot.rc.update(name1=value1, name2=value2)``, just like you would
-   update a dictionary.
-4. Change settings for a single axes using
-   ``ax.format(rc_kw={'name1':value1, 'name2':value2})`` or
-   ``ax.format(name1=value1, name2=value2)``, as discussed above.
-
-To access a single setting, use ``rc.name`` or ``rc['name']``. To access
-a group of setting by category name, use e.g. ``rc.axes`` and a
-dictionary of settings will be returned. To reset everything to the
-default state, use `~proplot.rcmod.rc_configurator.reset`. By default,
-settings are reset every time a figure is drawn – that is, when a figure
-is rendered by the matplotlib backend or saved to file.
+For more information, see the `~proplot.rcmod` documentation.
 
 .. code:: ipython3
 
