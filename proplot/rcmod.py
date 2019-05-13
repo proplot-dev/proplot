@@ -153,11 +153,13 @@ rcGlobals
 These settings are used to change :ref:`rcParams` and :ref:`rcParams_new` settings
 in bulk, or as shorthands for common settings with longer names.
 
-==================  ====================================================================================================================================================
+==================  ================================================================================================================================================================
 Key                 Description
-==================  ====================================================================================================================================================
+==================  ================================================================================================================================================================
 ``tight``           Whether to auto-adjust figure bounds and subplot spacings.
-``nbsetup``         Whether to run `~proplot.notebook.nbsetup` command automatically on import.
+``nbsetup``         Whether to run `~proplot.notebook.nbsetup` on import.
+``autosave``        If non-empty and `nbsetup` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
+``autoreload``      If non-empty and `nbsetup` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
 ``cycle``           The default color cycle name, used e.g. for lines.
 ``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``cmap``            The default colormap.
@@ -176,7 +178,7 @@ Key                 Description
 ``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
 ``tickratio``       Ratio of minor to major tick line thickness.
 ``ticklenratio``    Ratio of minor to major tick lengths.
-==================  ====================================================================================================================================================
+==================  ================================================================================================================================================================
 
 
 .. [1] A string containing the character ``'a'``, specifying the
@@ -229,6 +231,8 @@ _rcGlobals_children = {
     # Most important ones, expect these to be used a lot
     'tight':      [],
     'nbsetup':    [],
+    'autosave':   [],
+    'autoreload': [],
     'reso':       [],
     'cycle':      [],
     'rgbcycle':   [],

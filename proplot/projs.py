@@ -87,8 +87,11 @@ except ModuleNotFoundError:
     ccrs = None
     _WarpedRectangularProjection = object
 
-# Circle path suitable for polar stereo/aeqd/lambert conformal projections
-def Circle(ax, N=100):
+# Paths for cartopy projection boundaries
+# WARNING: Tempting to use classmethod mpath.Path.circle, but this ends up
+# failing and drawing weird polygon. Need manual approach.
+# mpath.Path([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]) # rectangle
+def Circle(N=100):
     """Returns a circle `~matplotlib.path.Path`. Used as the outline
     for polar stereo, aeqd, and lambert conformal projections."""
     theta = np.linspace(0, 2*np.pi, N)
@@ -96,6 +99,7 @@ def Circle(ax, N=100):
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
     return mpath.Path(verts * radius + center)
 
+# Constructor function
 def Proj(name, basemap=False, **kwargs):
     """
     Returns a `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`

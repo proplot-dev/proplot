@@ -390,6 +390,7 @@ def wrapper_cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     as the default.
     """
     # Simple
+    name = func.__name__
     if isinstance(crs, type):
         crs = crs() # instantiate
     try:
@@ -399,6 +400,14 @@ def wrapper_cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
             raise err
         args, crs = args[:-1], args[-1]
         result = func(*args, crs=crs, **kwargs)
+    # Fix extent, so axes tight bounding box gets correct box!
+    # From this issue: https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
+    # NOTE: May still get weird positioning because ProPlot assumes aspect
+    # ratio from the full size projection, not the zoomed in version
+    if name=='set_extent':
+        clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim) 
+        self.outline_patch._path = clipped_path 
+        self.background_patch._path = clipped_path 
     return result
 
 @_expand_wrapped_methods
@@ -1731,8 +1740,7 @@ class BaseAxes(maxes.Axes):
         # Ugly but necessary
         self._abc_inside = False
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
-        self._cartopy_gridliner_on = False # whether cartopy gridliners are enabled
-        self._cartopy_limited_extent = False # whether cartopy set_extent was used
+        self._gridliner_on = False # whether cartopy gridliners are enabled
         # Children and related properties
         self.bottompanel = EmptyPanel()
         self.toppanel    = EmptyPanel()
@@ -1911,7 +1919,12 @@ class BaseAxes(maxes.Axes):
         ypad = rc.get('axes.titlepad')/(72*self.height) # to inches --> to axes relative
         xpad = rc.get('axes.titlepad')/(72*self.width)  # why not use the same for x?
         xpad_i, ypad_i = xpad*1.5, ypad*1.5 # inside labels need a bit more room
-        if isinstance(pos, str):
+        if not isinstance(pos, str):
+            # Coordinate position
+            ha = va = 'center'
+            x, y = pos
+            transform = self.transAxes
+        else:
             # Get horizontal position
             if not any(c in pos for c in 'lcr'):
                 pos += 'c'
@@ -1938,13 +1951,8 @@ class BaseAxes(maxes.Axes):
                 transform = self.transAxes
                 if border is not None:
                     kwargs['border'] = border
-                    if border and linewidth:
-                        kwargs['linewidth'] = linewidth
-        else:
-            # Coordinate position
-            ha = va = 'center'
-            x, y = pos
-            transform = self.transAxes
+                if border and linewidth:
+                    kwargs['linewidth'] = linewidth
         # Record _title_inside so we can automatically deflect suptitle
         # If *any* object is outside (title or abc), want to deflect it up
         inside = (not isinstance(pos, str) or 'i' in pos)
@@ -2077,7 +2085,7 @@ class BaseAxes(maxes.Axes):
                 'color':    'suptitle.color',
                 'fontname': 'fontname'
                 }, cache=False)
-            fig._suptitle_setup(text=suptitle, **kw)
+            fig._suptitle_setup(suptitle, **kw)
         if rowlabels is not None:
             kw = rc.fill({
                 'fontsize': 'rowlabel.fontsize',
@@ -3506,8 +3514,6 @@ class CartopyAxes(MapAxes, GeoAxes):
             center = self.projection.proj4_params['lon_0']
             self.set_extent([center - 180 + eps, center + 180 - eps, boundinglat, centerlat], PlateCarree()) # use platecarree transform
             self.set_boundary(projs.Circle(self._n_bounds), transform=self.transAxes)
-        # Untoggle limited extent after calling set extent
-        self._cartopy_limited_extent = False
 
     def __getattribute__(self, attr, *args):
         """Wraps methods when they are requested by the user. See
@@ -3530,10 +3536,6 @@ class CartopyAxes(MapAxes, GeoAxes):
                 obj = _wrapper_check_edges(obj)
             else:
                 obj = _wrapper_check_centers(obj)
-        # Special toggle
-        # Tight subplots fail with limited extent!
-        if attr=='set_extent':
-            self._cartopy_limited_extent = True
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -3546,12 +3548,12 @@ class CartopyAxes(MapAxes, GeoAxes):
         grid, _, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
                 super().smart_update(**kwargs)
 
-        # Configure extents?
-        # WARNING: The set extents method tries to set a *rectangle* between
-        # the *4* (x,y) coordinate pairs (each corner), so something like
-        # (-180,180,-90,90) will result in *line*, causing error!
+        # Projection extent
         # NOTE: They may add this as part of set_xlim and set_ylim in the
         # near future; see: https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638
+        # WARNING: The set_extent method tries to set a *rectangle* between
+        # the *4* (x,y) coordinate pairs (each corner), so something like
+        # (-180,180,-90,90) will result in *line*, causing error!
         if lonlim is not None or latlim is not None:
             lonlim = lonlim or [None, None]
             latlim = latlim or [None, None]
@@ -3561,6 +3563,7 @@ class CartopyAxes(MapAxes, GeoAxes):
                 lonlim[0] = lon_0 - 180
             if lonlim[1] is None:
                 lonlim[1] = lon_0 + 180
+            eps = 1e-3 # had bug with full -180, 180 range when lon_0 was not 0
             lonlim[0] += eps
             if latlim[0] is None:
                 latlim[0] = -90
@@ -3605,13 +3608,13 @@ class CartopyAxes(MapAxes, GeoAxes):
             # Grid labels
             if labels:
                 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-                self._cartopy_gridliner_on = True
+                self._gridliner_on = True
                 gl.xformatter = LONGITUDE_FORMATTER
                 gl.yformatter = LATITUDE_FORMATTER
                 gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
                 gl.ylabels_left, gl.ylabels_right = latlabels[:2]
             else:
-                self._cartopy_gridliner_on = False
+                self._gridliner_on = False
 
         # Geographic features
         # WARNING: Seems cartopy features can't be updated!
@@ -3796,6 +3799,8 @@ class BasemapAxes(MapAxes):
         # Parse flexible input
         grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
                 super().smart_update(**kwargs)
+        if lonlim is not None or latlim is not None:
+            warnings.warn('You cannot "zoom into" a basemap projection after creating it. Pass a proj_kw dictionary in your call to subplots, with any of the following basemap keywords: llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, llcrnrx, llcrnry, urcrnrx, urcrnry, width, or height.')
 
         # Map boundary
         # * First have to *manually replace* the old boundary by just deleting

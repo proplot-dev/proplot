@@ -303,6 +303,12 @@ class Figure(mfigure.Figure):
                     ylim = ylim[::-1]
                 twin.set_ylim(offset + scale*ylim) # extra bit comes after the forward transformation
 
+    def _suptitle_setup(self, title, **kwargs):
+        """Assign figure "super title"."""
+        title = title.strip()
+        if self._suptitle.get_text()!=title:
+            self._suptitle.update({'text': title, **kwargs})
+
     def _rowlabels(self, labels, **kwargs):
         """Assign row labels."""
         axs = [ax for ax in self._main_axes if ax._xrange[0]==0]
@@ -312,12 +318,9 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
         axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))]
         for ax,label in zip(axs,labels):
-            if label and not ax.rowlabel.get_text():
-                # Create a CompositeTransform that converts coordinates to
-                # universal dots, then back to axes
-                label_to_ax = ax.yaxis.label.get_transform() + ax.transAxes.inverted()
-                x, _ = label_to_ax.transform(ax.yaxis.label.get_position())
-                ax.rowlabel.update({'x':x, 'text':f'{label.strip()}', 'visible':True, **kwargs})
+            label = label.strip()
+            if label and ax.rowlabel.get_text()!=label:
+                ax.rowlabel.update({'text':label, **kwargs})
 
     def _collabels(self, labels, **kwargs):
         """Assign column labels."""
@@ -328,29 +331,56 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} columns.')
         axs = [ax for _,ax in sorted(zip([ax._xrange[0] for ax in axs],axs))]
         for ax,label in zip(axs,labels):
+            label = label.strip()
             if all(pax.visible() for pax in ax.toppanel):
                 ax = ax.toppanel[0]
-            # if label and not ax.collabel.get_text():
-            #     ax.collabel.update({'text':label, **kwargs})
-            if label and not ax.collabel.get_text():
+            if label and ax.collabel.get_text()!=label:
                 ax.collabel.update({'text':label, **kwargs})
 
-    def _suptitle_setup(self, renderer=None, **kwargs):
-        """Intelligently determine super title position."""
-        # Seems that `~matplotlib.figure.Figure.draw` is called *more than once*,
-        # and the title position are appropriately offset only during the
-        # *later* calls! So need to run this every time.
-        # Row label; need to update as axis tick labels are generated and axis
-        # label is offset!
+    def _auto_title_pos(self, renderer=None):
+        """Adjusts position of row titles and figure super title."""
+        # Adjust row labels as axis tick labels are generated and y-axis labels
+        # is generated. To position, we use a CompositeTransform that converts
+        # coordinates to universal dots, then back to figure.
+        # WARNING: Text rotation and alignment behavior is different from ylabel
+        # For ylabel, alignment seems to come *before* positioning. For manual
+        # text() call, alignment comes after: https://matplotlib.org/gallery/text_labels_and_annotations/text_rotation.html
+        # WARNING: Since y label is totally messed up for some cartopy
+        # projections (weirdly, even for zoomed in circular projections for
+        # which tight layout still works), just always use the tight
+        # bounding box to position axis label.
+        # ax.yaxis._update_ticks(renderer)
+        # ax.yaxis._update_label_position(renderer)
         for ax in self._main_axes:
-            if all(pax.visible() for pax in ax.toppanel):
-                ax = ax.toppanel[0]
-            label_to_ax = ax.yaxis.label.get_transform() + ax.transAxes.inverted()
-            x, _ = label_to_ax.transform(ax.yaxis.label.get_position())
-            ax.rowlabel.update({'x':x, 'ha':'center', 'transform':ax.transAxes})
+            # Update position
+            # NOTE: Need to temporarily make invisible, want bounding box
+            # *without* the label obviously!
+            if not ax.rowlabel.get_text():
+                continue
+            ax.rowlabel.set_visible(False)
+            bbox = ax.get_tightbbox(renderer)
+            # Figure relative
+            # NOTE: We separate by one half a line width
+            transform = mtransforms.blended_transform_factory(self.transFigure, ax.transAxes)
+            x, _ = transform.inverted().transform((bbox.intervalx[0], 0))
+            w, _ = self.get_size_inches()
+            x = x - (0.6*ax.rowlabel.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            ax.rowlabel.update({'x':x, 'y':0.5, 'ha':'right', 'va':'center', 'transform':transform})
+            ax.rowlabel.set_visible(True)
 
-        # Super title
-        # Determine x by the underlying gridspec structure, where main axes lie.
+        # Adjust col labels -- this is much simpler
+        # TODO: Currently can *only* have column labels or outer titles,
+        # not both, but maybe this is confusing?
+        # for ax in self._main_axes:
+        #     if not ax.collabel.get_text():
+        #         continue
+        #     title = ax.title
+        #     # if ax.title.get_text().strip() and not ax._title_inside:
+
+        # Determine super title *x*-position by the underlying gridspec
+        # structure, where main axes lie.
+        if not self._suptitle.get_text():
+            return
         left = self._subplots_kw['left']
         right = self._subplots_kw['right']
         width, height = self.get_size_inches()
@@ -360,18 +390,13 @@ class Figure(mfigure.Figure):
             right += (self._subplots_kw['rwidth'] + self._subplots_kw['rspace'])
         xpos = left/width + 0.5*(width - left - right)/width
 
-        # Figure out which title on the top-row axes will be offset the most
-        # See: https://matplotlib.org/_modules/matplotlib/axis.html#Axis.set_tick_params
-        # TODO: Modify self.axes? Maybe add a axes_main and axes_panel
-        # attribute or something? Because if have insets and other stuff
-        # won't that fuck shit up?
+        # Determine super title *y*-position by figuring out which title on
+        # the top-row axes will be offset the most
         # WARNING: Have to use private API to figure out whether axis has
         # tick labels or not! And buried in docs (https://matplotlib.org/api/_as_gen/matplotlib.axis.Axis.set_ticklabels.html)
         # label1 refers to left or bottom, label2 to right or top!
         # WARNING: Found with xtickloc='both', xticklabelloc='top' or 'both',
         # got x axis ticks position 'unknown'!
-        # NOTE: Default linespacing is 1.2; it has no get, only a setter.
-        # See: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
         line = 0
         xline = 0
         xlabel = 0 # room for x-label
@@ -385,61 +410,58 @@ class Figure(mfigure.Figure):
             if all(pax.visible() for pax in axm.rightpanel):
                 axs.extend(axm.rightpanel)
             for ax in axs:
+                # Title adjust
+                # outer = (ax.title.get_text().strip() and not ax._title_inside) or \
+                # (ax.abc.get_text().strip() and not ax._abc_inside) or \
                 if (ax.title.get_text().strip() and not ax._title_inside) or \
                    (ax.abc.get_text().strip() and not ax._abc_inside) or \
                    ax.collabel.get_text().strip():
-                    line = 1.2
+                    line = 1.2 # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
                     title = ax.title
+                # Axes adjust
                 pos = ax.xaxis.get_ticks_position()
                 if pos in ('top', 'unknown', 'default'):
                     label_top = pos!='default' and ax.xaxis.label.get_text().strip()
                     ticklabels_top = ax.xaxis._major_tick_kw['label2On']
                     if ticklabels_top:
                         if label_top: # offset above *tick labels* and *axis label*
-                            # xline = max((xline, 2.8))
                             xline = max((xline, 3.2)) # empirically best
                         else:
                             xline = max((xline, 1.6))
                     xlabel = xline*(ax.xaxis.label.get_size()/72)/height
                     if (label_top or ticklabels_top) and ax.title.get_text().strip():
                         title = ax.title
-                        line = 1.2
-        # Default to whatever last axes was
+                        line = 1.2 # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
         if not title:
-            title = raxs[0].title # always will be non-None
-
-        # Get the transformed position
+            title = raxs[0].title # default title to use
         if self._suptitle_transform:
             transform = self._suptitle_transform
         else:
             transform = title.axes._title_pos_transform + self.transFigure.inverted()
-        ypos = transform.transform(title.axes._title_pos_init)[1]
-        line = line*(title.get_size()/72)/height + xlabel
-        ypos = ypos + line
-        # Update settings
+        ypos = transform.transform(title.axes._title_pos_init)[1] # title position
+        ypos += (line*(title.get_size()/72)/height + xlabel) # offset
+
+        # Apply super title position
         self._suptitle.update({
             'position': (xpos, ypos), 'transform': self.transFigure,
             'ha':'center', 'va':'bottom',
-            **kwargs})
+            })
 
     def _auto_smart_tight_layout(self, renderer=None):
         """Conditionally call `~Figure.smart_tight_layout`."""
         # Only proceed if this wasn't already done, or user did not want
         # the figure to have tight boundaries.
-        if not self._smart_tight_init or not (\
+        if not self._smart_tight_init or not (
             self._smart_tight_outer or
             self._smart_tight_subplot or
             self._smart_tight_panel):
             return
-        # Bail if we find cartopy axes
-        # 1) If you used set_bounds to zoom into part of a cartopy projection,
-        # this can erroneously identify invisible edges of map as being part of boundary
-        # 2) If you have gridliner text labels, matplotlib won't detect them.
-        if any(ax._cartopy_gridliner_on or ax._cartopy_limited_extent for ax in self._main_axes):
-            warnings.warn('Tight subplots do not work with cartopy gridline labels or when zooming into a projection. Use tight=False in your call to subplots().')
+        # Bail if gridliner was enabled
+        if any(ax._gridliner_on for ax in self._main_axes):
+            warnings.warn('Tight subplots do not work with cartopy gridline labels or after zooming into a projection. Use tight=False in your call to subplots().')
             self._smart_tight_init = False
             return
-        # Proceed
+        # Apply tight layout
         if not self._silent:
             print('Adjusting layout.')
         self.smart_tight_layout(renderer)
@@ -468,10 +490,8 @@ class Figure(mfigure.Figure):
             bbox = (panel._colorbar_child or panel).get_tightbbox(renderer)
             if side in 'lr':
                 pspan = _intervalx_errfix(panel, bbox)
-                # pspan = bbox.intervalx
             else:
                 pspan = _intervaly_errfix(panel, bbox)
-                # pspan = bbox.intervaly
             if side in 'tr':
                 space.append((pspan[0] - span[1])/self.dpi)
             else:
@@ -565,29 +585,48 @@ class Figure(mfigure.Figure):
         #         # iax._ytick_pad_error += np.array(pad)*self.dpi/72 # is left, right tuple
 
         #----------------------------------------------------------------------#
+        # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
+        # basemap axes so its aspect ratio will not have changed.
+        #----------------------------------------------------------------------#
+        # WARNING: If ratio changes, you have to run smart tight layout twice,
+        # or get incorrect spacing along the dimension contracted by the change.
+        # TODO: Expand this functionality to work for *any* case where user
+        # changes the aspect ratio manually?
+        ax = self._main_axes[self._ref_num-1]
+        redo = False
+        subplots_kw = self._subplots_kw
+        if isinstance(ax, axes.CartopyAxes):
+            bbox = ax.background_patch._path.get_extents()
+            aspect = (np.diff(bbox.intervalx) / \
+                      np.diff(bbox.intervaly))[0]
+            if aspect!=subplots_kw['aspect']:
+                redo = True
+                subplots_kw['aspect'] = aspect
+
+        #----------------------------------------------------------------------#
         # Put tight box *around* figure
         #----------------------------------------------------------------------#
-        subplots_kw = self._subplots_kw
         if self._smart_tight_outer:
             # Get bounding box that encompasses *all artists*, compare to bounding
             # box used for saving *figure*
             pad = self._smart_outerpad
             obbox = self.bbox_inches # original bbox
+            ox, oy = obbox.intervalx, obbox.intervaly
             if not renderer: # cannot use the below on figure save! figure becomes a special FigurePDF class or something
                 renderer = self.canvas.get_renderer()
             bbox = self.get_tightbbox(renderer)
-            ox, oy = obbox.intervalx, obbox.intervaly
             x, y = bbox.intervalx, bbox.intervaly
             # Apply new kwargs
             if np.any(np.isnan(x) | np.isnan(y)):
                 warnings.warn('Bounding box has NaNs, cannot get outer tight layout.')
             else:
-                left, bottom, right, top = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
-                left   = subplots_kw['left'] - left + pad
-                right  = subplots_kw['right'] - right + pad
-                bottom = subplots_kw['bottom'] - bottom + pad
-                top    = subplots_kw['top'] - top + pad + self._extra_pad
-                subplots_kw.update({'left':left, 'right':right, 'bottom':bottom, 'top':top})
+                # loff, boff, roff, toff = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
+                loff, boff, roff, toff = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
+                for key,off in zip(('left','right','bottom','top'),(loff,roff,boff,toff)):
+                    margin = subplots_kw[key] - off + pad
+                    if margin<0:
+                        warnings.warn(f'Got negative {key} margin in smart tight layout.')
+                    subplots_kw[key] = margin
 
         #----------------------------------------------------------------------#
         # Prevent overlapping axis tick labels and whatnot *within* figure
@@ -735,8 +774,6 @@ class Figure(mfigure.Figure):
             pairs = [(ax,ax.get_tightbbox(renderer)) for ax in axs]
             xspans = [_intervalx_errfix(ax,bbox) for ax,bbox in pairs]
             yspans = [_intervaly_errfix(ax,bbox) for ax,bbox in pairs]
-            # xspans = [bbox.intervalx for ax,bbox in pairs]
-            # yspans = [bbox.intervaly for ax,bbox in pairs]
             # Bottom, top
             for row in range(nrows):
                 pairs = [(ax.bottompanel[0], yspan) for ax,yspan in zip(axs,yspans)
@@ -820,17 +857,22 @@ class Figure(mfigure.Figure):
             width_new = np.diff(ax._position.intervalx)*width
             height_new = np.diff(ax._position.intervaly)*height
             ax.width, ax.height = width_new, height_new
+        # Special redo in case of cartopy axes
+        if redo:
+            self.smart_tight_layout(renderer)
 
-    # @_counter
     def draw(self, renderer, *args, **kwargs):
-        """Fix the "super title" position and automatically adjust the
-        main gridspec, then call the parent `~matplotlib.figure.Figure.draw`
+        """Fixes row and "super" title positions and automatically adjusts the
+        main gridspec, then calls the parent `~matplotlib.figure.Figure.draw`
         method."""
         # Figure out if other titles are present, and if not bring suptitle
         # close to center. Also fix spanning labels (they need figure-relative
         # height coordinates, so must be updated when figure shape changes).
+        # WARNING: `~matplotlib.figure.Figure.draw` is called *more than once*,
+        # and the title position are appropriately offset only during the
+        # *later* calls! So need to call auto_title_pos every time.
         self._lock_twins()
-        self._suptitle_setup(renderer) # just applies the spacing
+        self._auto_title_pos(renderer) # just applies the spacing
         self._auto_smart_tight_layout(renderer)
         for axis in self._span_labels:
             axis.axes._share_span_label(axis, final=True)
@@ -850,8 +892,8 @@ class Figure(mfigure.Figure):
 
     def savefig(self, filename, **kwargs):
         """
-        Fix the "super title" position and automatically adjust the
-        main gridspec, then call the parent `~matplotlib.figure.Figure.savefig`
+        Fixes row and "super" title positions and automatically adjusts the
+        main gridspec, then calls the parent `~matplotlib.figure.Figure.savefig`
         method.
 
         Parameters
@@ -875,7 +917,7 @@ class Figure(mfigure.Figure):
             kwargs['transparent'] = False
         # Finally, save
         self._lock_twins()
-        self._suptitle_setup() # just applies the spacing
+        self._auto_title_pos() # just applies the spacing
         self._auto_smart_tight_layout()
         for axis in self._span_labels:
             axis.axes._share_span_label(axis, final=True)

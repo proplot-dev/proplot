@@ -6,6 +6,13 @@
 #------------------------------------------------------------------------------#
 # First set up notebook
 name = 'ProPlot'
+# Monkey patch warnings format
+# See: https://stackoverflow.com/a/2187390/4970632
+# For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
+import warnings
+def _warning_no_line(message, category, filename, lineno, file=None, line=None):
+    return f'{filename}:{lineno}: ProPlotWarning: {message}'
+warnings.formatwarning = _warning_no_line
 # Then import stuff
 from .rcmod import *      # custom configuration implementation
 from .utils import *      # misc stuff

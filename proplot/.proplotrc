@@ -4,10 +4,12 @@
 rcGlobals:
     # Notebooks
     nbsetup:    True
+    autosave:   30
+    autoreload: 2
     # Subplots
     tight:      True
     # Important settings
-    fontname: 
+    fontname:
     cycle:     colorblind
     rgbcycle:  False 
     cmap:      sunset

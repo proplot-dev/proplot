@@ -295,7 +295,7 @@ this function are interpreted as follows:
 
 1. Any keyword arg matching the name of a ProPlot or native matplotlib
    “rc” setting will be applied to the axes. If the name has “dots”,
-   **simply** omit them. See the `~proplot.rcmod` documentation for
+   simply omit them. See the `~proplot.rcmod` documentation for
    details.
 2. Remaining keyword args are passed to the ``smart_update`` methods of
    the top-level class – that is, the `~proplot.axes.XYAxes`
@@ -323,10 +323,10 @@ axes **simultaneously** (as in the below example).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2.2, share=False, span=False)
+    f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True)
     axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(0,10), xlocator=2,
               ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'ccc', 'dd', 'e'),
-              title='Inner title', titlepos='ci', suptitle='Super title',
+              title='Inner title', titlepos='co', suptitle='Super title',
               abc=True, abcpos='il', abcformat='a.',
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
               collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
@@ -334,8 +334,8 @@ axes **simultaneously** (as in the below example).
 
 
 .. image:: showcase/showcase_20_0.png
-   :width: 490px
-   :height: 397px
+   :width: 575px
+   :height: 486px
 
 
 Global settings
@@ -418,7 +418,7 @@ the axes is **filled** with a colorbar. See
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
     ax.colorbar(m, ticks=2, label='inset colorbar')
     ax.colorbar(m, ticks=2, loc='lower left')
-    f.bottompanel.colorbar(m, label='standard outer colorbar', length=0.9)
+    f.bpanel.colorbar(m, label='standard outer colorbar', length=0.9)
     ax.format(suptitle='ProPlot colorbars')
 
 
@@ -646,7 +646,7 @@ details.
     m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
                 cmap='thermal', values=np.arange(50), lw=7, extend='both')
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
-    ax.bottompanel.colorbar(m, label='parametric coordinate', locator=5)
+    ax.bpanel.colorbar(m, label='parametric coordinate', locator=5)
     N = 12
     ax = axs[1]
     values = np.arange(1, N+1)
@@ -786,8 +786,8 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
     hs = []
     for abc,color in zip('ABCDEF',cycle):
         hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')[0]
-    f.bottompanel[0].colorbar(m, length=0.8, label='label')
-    f.bottompanel[1].legend(hs, ncols=5, align=True)
+    f.bpanel[0].colorbar(m, length=0.8, label='label')
+    f.bpanel[1].legend(hs, ncols=5, align=True)
     axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A')
     for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
         ax.format(title=title)
@@ -1324,7 +1324,7 @@ These features are powered by the
                 ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
             ax.format(suptitle=f'Hammer projection with globe={globe}', collabels=['Cartopy', 'Basemap'], labels=True)
             if p<2:
-                c = f.bottompanel[p].colorbar(m, label='values', tickminor=False)
+                c = f.bpanel[p].colorbar(m, label='values', tickminor=False)
 
 
 
@@ -1348,7 +1348,6 @@ These features are powered by the
     f, axs = plot.subplots(ncols=1, width=5, proj='merc', wspace=0.5, basemap=False,
                            colorbar='r', rspace=1, tight=False,
                            proj_kw={'lon_0':0}, top=0.4, left=0.4, right=0.2, bottom=0.2)
-    axs.set_adjustable('box')
     ax = axs[0]
     np.random.seed(3498)
     x, y = np.random.uniform(size=(100, 2)).T
@@ -1360,7 +1359,7 @@ These features are powered by the
     z = np.exp(-(x-10)**2 - (y+10)**2)
     ax.format(suptitle='Pros and cons', title='"Tight subplots" must be disabled when labels present',
               lonlabels='b', latlabels='lr', lonlocator=60, latlocator=20, latmax=90)
-    f.rightpanel.colorbar(cnt, tickloc='left', label='clabel', formatter_kw={'precision':2})
+    f.rpanel.colorbar(cnt, tickloc='left', label='clabel', formatter_kw={'precision':2})
 
 
 
@@ -1397,14 +1396,14 @@ Again, see `~proplot.subplots.subplots` and
                            proj={(1,2):'ortho', (3,4):'npstere'},
                            basemap={(1,3):False, (2,4):True},
                            proj_kw={(1,2):{'lon_0':-60, 'lat_0':0}, (3,4):{'lon_0':-60, 'boundinglat':40}})
-    axs.format(collabels=['Cartopy', 'Basemap'], suptitle='Geographic features with ProPlot')
+    axs.format(collabels=['Cartopy', 'Basemap'], rowlabels=['Orthographic', 'Stereographic'], suptitle='Geographic features with ProPlot')
     axs[0::2].format(reso='med', land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
     axs[1::2].format(land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
 
 
 
 .. image:: showcase/showcase_86_0.png
-   :width: 394px
+   :width: 478px
    :height: 426px
 
 
@@ -1722,11 +1721,11 @@ loaded by ProPlot on import.
     # Make colormap, save as "test1.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
     m = axs[0].contourf(data, cmap=cmap, levels=100)
-    f.bottompanel[0].colorbar(m, locator='none')
+    f.bpanel[0].colorbar(m, locator='none')
     # Make colormap, save as "test2.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
     m = axs[1].contourf(data, cmap=cmap, levels=100)
-    f.bottompanel[1].colorbar(m, locator='none')
+    f.bpanel[1].colorbar(m, locator='none')
     axs.format(xticks='none', yticks='none', suptitle='Merging existing colormaps')
     for ax,title in zip(axs, ['Evenly spaced', 'Matching SciVisColor example']):
         ax.format(title=title)
@@ -1793,9 +1792,9 @@ adding a number to the end of the color string.
     data = np.random.rand(50,50).cumsum(axis=1)
     cmap = plot.Colormap('navy90', 'brick red90', 'charcoal90', reverse=[True,True,True])
     m = axs[0].contourf(data, cmap=cmap, levels=12)
-    f.bottompanel[0].colorbar(m, locator='null')
+    f.bpanel[0].colorbar(m, locator='null')
     m = axs[1].contourf(data, cmap='ocean blue')
-    f.bottompanel[1].colorbar(m, locator='null')
+    f.bpanel[1].colorbar(m, locator='null')
     axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps')
     for ax,title in zip(axs, ['Three monochromatic colormaps, merged', 'Single monochromatic colormap']):
         ax.format(title=title)
@@ -1871,7 +1870,7 @@ colors, and vice versa.
         for gamma in (0.8, 1.0, 1.4):
             ax = axs[i]
             m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
-            ax.rightpanel.colorbar(m1, locator='none')
+            ax.rpanel.colorbar(m1, locator='none')
             ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying the "PerceptuallyUniformColormap" gamma')
             i += 1
 
@@ -1900,7 +1899,7 @@ reversed diverging colormaps by their “reversed” name – for example,
     for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
         ax = axs[i]
         m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
-        ax.bottompanel.colorbar(m, locator=0.2)
+        ax.bpanel.colorbar(m, locator=0.2)
         ax.format(xlocator='null', ylocator='null', title=cmap)
     axs.format(suptitle='Flexible naming specification for diverging colormaps')
 
@@ -1952,12 +1951,12 @@ See `~proplot.colors.Colormap` for details.
     import numpy as np
     f, axs = plot.subplots(ncols=2, colorbars='b', span=False, axwidth=3, aspect=1.5)
     m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
-    f.bottompanel[0].colorbar(m, label='clabel', formatter='%.1f')
+    f.bpanel[0].colorbar(m, label='clabel', formatter='%.1f')
     lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5), cycle_kw={'left':0.3}, lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap')
     axs[1].format(title='Colormap as cycler, with "colorbar legend"')
-    f.bottompanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
+    f.bpanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
 
 
 

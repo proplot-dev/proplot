@@ -37,15 +37,12 @@
 #       the new settings; just copy it over to current notebook to update
 #------------------------------------------------------------------------------#
 # Imports
+import warnings
 from IPython import get_ipython
 from IPython.utils import io
-import warnings
-import os
-import sys
-import socket
 from .rcmod import rc
 
-def nbsetup(autosave=30, backend='inline'):
+def nbsetup(backend='inline'):
     """
     Results in higher-quality iPython notebook inline figures.
     Also enables the useful `autoreload
@@ -57,11 +54,6 @@ def nbsetup(autosave=30, backend='inline'):
     this behavior, use ``nbsetup: False`` in your ``.proplotrc`` file. See the
     `~proplot.rcmod` documentation for details.
     """
-    # Variables
-    cd = os.getcwd()
-    home = os.path.expanduser('~')
-    hostname = socket.gethostname().split('.')[0]
-
     # Make sure we are in session
     ipython = get_ipython() # save session
     if ipython is None:
@@ -70,14 +62,16 @@ def nbsetup(autosave=30, backend='inline'):
 
     # Only do this if not already loaded -- otherwise will get *recursive* 
     # reloading, even with unload_ext command!
-    if 'autoreload' not in ipython.magics_manager.magics['line']:
-        ipython.magic("reload_ext autoreload") # reload instead of load, to avoid annoying message
-        ipython.magic("autoreload 2") # turn on expensive autoreloading
+    if rc.autoreload:
+        if 'autoreload' not in ipython.magics_manager.magics['line']:
+            ipython.magic("reload_ext autoreload") # reload instead of load, to avoid annoying message
+        ipython.magic("autoreload " + str(rc.autoreload)) # turn on expensive autoreloading
 
     # Autosaving
     # Capture the annoying message + 2 line breaks
-    with io.capture_output() as captured:
-        ipython.magic(f"autosave {autosave:d}") # autosave every minute
+    if rc.autosave:
+        with io.capture_output() as captured:
+            ipython.magic("autosave " + str(rc.autosave)) # autosave every minute
 
     # Initialize with default 'inline' settings
     ipython.magic("matplotlib " + backend) # change print_figure_kwargs to see edges
