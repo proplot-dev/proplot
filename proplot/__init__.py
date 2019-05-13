@@ -14,12 +14,14 @@ def _warning_no_line(message, category, filename, lineno, file=None, line=None):
     return f'{filename}:{lineno}: ProPlotWarning: {message}'
 warnings.formatwarning = _warning_no_line
 # Then import stuff
-from .rcmod import *      # custom configuration implementation
+# WARNING: Must import colortools and register names first, since rcmod will
+# try to look up e.g. 'sunset' in the colormap dictionary!
 from .utils import *      # misc stuff
+from .colortools import * # color tools
+from .rcmod import *      # custom configuration implementation
 from .axes import *       # everything, axes definitions
 from .subplots import *
 from .gridspec import *
-from .colortools import * # color tools
 from .fonttools import *  # fonts
 from .axistools import *  # locators, normalizers, and formatters
 from .projs import *      # projections and whatnot

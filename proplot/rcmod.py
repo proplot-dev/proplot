@@ -207,7 +207,7 @@ import yaml
 import cycler
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from . import colortools
+import matplotlib.cm as mcm
 import numpy as np
 import matplotlib as mpl
 from .utils import ic, units, _timer, _counter
@@ -642,23 +642,18 @@ class rc_configurator(object):
         string = ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
         return string
 
-    def _set_cmap(self, value):
-        """Sets the default colormap. Value is passed through
-        `~proplot.colortools.Colormap`."""
-        if isinstance(value, str) or not np.iterable(value):
-            value = (value,)
-        cmap = colortools.Colormap(*value)
+    def _set_cmap(self, name):
+        """Sets the default colormap."""
+        # if isinstance(value, str) or not np.iterable(value):
+        #     value = (value,)
+        cmap = mcm.cmap_d[name] # colortools.Colormap(*value)
         _rcParams['image.cmap'] = cmap.name
 
-    def _set_cycler(self, value):
-        """Sets the default color cycler. Value is passed through
-        `~proplot.colortools.Cycle`."""
-        # Set arbitrary cycler
-        # First pass to constructor
-        if isinstance(value, str) or not np.iterable(value):
-            value = (value,)
-        colors = colortools.Cycle(*value)
-        name = colors.name
+    def _set_cycler(self, name):
+        """Sets the default color cycler."""
+        # if isinstance(value, str) or not np.iterable(value):
+        #     value = (value,)
+        colors = mcm.cmap_d[name].colors # colortools.Cycle(*value)
         # Optionally change RGB definitions
         if _rcGlobals['rgbcycle']:
             if name.lower()=='colorblind':

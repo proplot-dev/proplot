@@ -508,7 +508,7 @@ Various native matplotlib plotting methods have been enhanced using the
 these are `~proplot.axes.wrapper_cmap` and
 `~proplot.axes.wrapper_cycle`. For details on the former, see the
 below examples and :ref:`On-the-fly colormaps`. For details on the
-latter, see :ref:`Changing the color cycle`.
+latter, see :ref:`On-the-fly color cycles`.
 
 An especially handy `~proplot.axes.wrapper_cmap` feature is the
 ability to label `~matplotlib.axes.Axes.contourf` plots with
@@ -1577,10 +1577,9 @@ Use `~proplot.demos.cmap_show` to generate a table of registered
 colormaps, as shown below.
 
 The “User” section is automatically populated with colormaps saved to
-your ``.proplot`` folder in the home directory (the “test1” and “test2”
-maps were created from an example farther down). The other sections
-break down the colormaps by category: original matplotlib maps, new
-ProPlot maps belonging to the
+your ``~/.proplot`` folder (see :ref:`On-the-fly colormaps`). The
+other sections break down the colormaps by category: original matplotlib
+maps, new ProPlot maps belonging to the
 `~proplot.colortools.PerceptuallyUniformColormap` class,
 `ColorBrewer <http://colorbrewer2.org/>`__ maps (already included with
 matplotlib), and maps from several other projects like
@@ -1609,13 +1608,11 @@ Table of color cycles
 ---------------------
 
 Use `~proplot.demos.cycle_show` to generate a table of registered
-color cycles, as shown below. To add **your own** color cycler, write a
-list of comma-delimited hex strings to a file named ``cycle_name.hex``,
-and add it to the ``.proplot`` folder in your home directory.
-
-“Color cycles” are used for the matplotlib “property cycler” – that is,
-the list of colors that `~matplotlib.axes.Axes.plot` loops through
-when you call it without a ``color`` argument. The first color of the
+color cycles. This will also show color cycles saved to your
+``~/.proplot`` folder (see :ref:`On-the-fly color cycles`). “Color
+cycles” are used for the matplotlib “property cycler” – that is, the
+list of colors that `~matplotlib.axes.Axes.plot` loops through when
+you call it without a ``color`` argument. The first color of the
 “property cycler” is used to fill patch objects, like bars. To change
 the color cycler, use ``plot.rc.cycle = name`` or pass ``cycle=name`` to
 any plotting command.
@@ -1697,18 +1694,20 @@ generator! Every command that accepts a ``cmap`` argument (see
 `~proplot.axes.cmap_methods`) is passed to the
 `~proplot.colortools.Colormap` constructor.
 `~proplot.colortools.Colormap` keyword arguments can be specified with
-``cmap_kw``. See `~proplot.colortools.Colormap` and
-`~proplot.axes.wrapper_cmap` for details.
+``cmap_kw``. If you want to save your own custom colormap into
+``~/.proplot``, simply pass ``save=True`` to the
+`~proplot.colortools.Colormap` constructor (or supply a plotting
+command with ``cmap_kw={'save':True, 'name':name}``, and it will be
+loaded every time you import ProPlot.
+
+See `~proplot.colortools.Colormap` and `~proplot.axes.wrapper_cmap`
+for details.
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
 included, you can easily create SciVisColor-style merged colormaps with
 ProPlot’s on-the-fly colormap generator! The below reconstructs the
 colormap from `this
 example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-icon-1.png>`__.
-In this example, the merged colormaps are saved to the ``.proplot``
-folder in your home directory by passing ``save=True`` to the
-`~proplot.colortools.Colormap` constructor. Files in this folder are
-loaded by ProPlot on import.
 
 .. code:: ipython3
 
@@ -1879,42 +1878,20 @@ colors, and vice versa.
    :height: 424px
 
 
-Flexible identification
+On-the-fly color cycles
 -----------------------
-
-All colormap names are now **case-insensitive** – this was done by
-replacing the matplotlib colormap dictionary with an instance of the
-magic `~proplot.colortools.CmapDict` class. You can also select
-reversed diverging colormaps by their “reversed” name – for example,
-``'BuRd'`` is equivalent to ``'RdBu_r'``.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    data = np.random.rand(10,10) - 0.5
-    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, axcolorbars='b', axcolorbars_kw={'hspace':0.2})
-    for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
-        ax = axs[i]
-        m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
-        ax.bpanel.colorbar(m, locator=0.2)
-        ax.format(xlocator='null', ylocator='null', title=cmap)
-    axs.format(suptitle='Flexible naming specification for diverging colormaps')
-
-
-
-.. image:: showcase/showcase_125_0.png
-   :width: 544px
-   :height: 478px
-
-
-Changing the color cycle
-------------------------
 
 You can specify the color cycler by passing ``cycle`` to any plotting
 command, or by changing the global default cycle with
-``plot.rc.cycle = name``. See `~proplot.colortools.Cycle` and
-`~proplot.axes.wrapper_cycle` for details.
+``plot.rc.cycle = name``. `~proplot.colortools.Cycle` keyword
+arguments can be specified with ``cycle_kw``. If you want to save your
+own, custom color cycler, simply pass ``save=True`` to the
+`~proplot.colortools.Cycle` constructor (or supply a plotting command
+with ``cycle_kw={'save':True, 'name':name}``, and it will be loaded
+every time you import ProPlot.
+
+See `~proplot.colortools.Cycle` and `~proplot.axes.wrapper_cycle`
+for details.
 
 .. code:: ipython3
 
@@ -1928,9 +1905,9 @@ command, or by changing the global default cycle with
 
 
 
-.. image:: showcase/showcase_128_0.png
-   :width: 517px
-   :height: 356px
+.. image:: showcase/showcase_126_0.png
+   :width: 465px
+   :height: 326px
 
 
 Also note that colormaps and color cycles are totally interchangeable!
@@ -1952,8 +1929,8 @@ See `~proplot.colors.Colormap` for details.
     f.bpanel[0].colorbar(m, label='clabel', formatter='%.1f')
     lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5), cycle_kw={'left':0.3}, lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
-    axs[0].format(title='Color cycler as colormap')
-    axs[1].format(title='Colormap as cycler, with "colorbar legend"')
+    axs[0].format(title='Color cycler as colormap with colorbar')
+    axs[1].format(title='Colormap as cycler with "colorbar legend"')
     f.bpanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
 
 
@@ -1962,13 +1939,42 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_130_1.png
-   :width: 634px
-   :height: 318px
+.. image:: showcase/showcase_128_1.png
+   :width: 619px
+   :height: 311px
 
 
-Sampling cycles and colormaps
------------------------------
+Flexible identification
+-----------------------
+
+All colormap and color cycle names are now **case-insensitive** – this
+was done by replacing the matplotlib colormap dictionary with an
+instance of the magic `~proplot.colortools.CmapDict` class. You can
+also select reversed diverging colormaps by their “reversed” name – for
+example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    data = np.random.rand(10,10) - 0.5
+    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, axcolorbars='b', axcolorbars_kw={'hspace':0.2})
+    for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
+        ax = axs[i]
+        m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
+        ax.bpanel.colorbar(m, locator=0.2)
+        ax.format(xlocator='null', ylocator='null', title=cmap)
+    axs.format(suptitle='Flexible naming specification for diverging colormaps')
+
+
+
+.. image:: showcase/showcase_130_0.png
+   :width: 544px
+   :height: 478px
+
+
+Sub-sampling
+------------
 
 If you want to draw an individual color from a smooth colormap or a
 color cycle, use ``color=(cmapname, position)`` or
@@ -2002,6 +2008,6 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 .. image:: showcase/showcase_133_0.png
-   :width: 436px
-   :height: 603px
+   :width: 431px
+   :height: 582px
 

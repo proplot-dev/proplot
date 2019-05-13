@@ -100,10 +100,6 @@ are now valid ``cmap`` and ``cycle`` arguments:
    example, use ``['viridis', 'navy']`` to merge the virids map with a colormap
    spanning white to navy.
 
-Note when assigning to the ``proplot.rc.cycle`` global setting (see
-`~proplot.rcmod`), the argument is also interpreted as above. For example,
-``proplot.rc.cycle = ('blue', 10)`` will construct a color cycle with 10 colors
-ranging from white to blue.
 """
 #------------------------------------------------------------------------------#
 # Interesting cpt-city colormaps that did not use:
@@ -175,9 +171,10 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from matplotlib import rcParams # cannot import rcmod because rcmod import this!
+import matplotlib as mpl
 from . import utils, colormath
 from .utils import _default, _counter, ic
+rcParams = mpl.rcParams
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
 _data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
@@ -1446,10 +1443,8 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     Parameters
     ----------
     *args
-        Passed to `Colormap`. If ``args[-1]`` is a float,
-        it is used as the `samples` argument. This allows the user to declare new
-        color cycles with, for example, ``proplot.rc.cycle = ('blues',
-        'reds', 20)``.
+        Passed to `Colormap`. If ``args[-1]`` is a float, it is used as
+        the `samples` argument.
     samples : float or list of float, optional
         For a `~matplotlib.colors.ListedColormap`, the maximum number of colors
         to select from the list. For a `~matplotlib.colors.LinearSegmentedColormap`,

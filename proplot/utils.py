@@ -13,8 +13,9 @@ import re
 import time
 import numpy as np
 import functools
+import matplotlib as mpl
 from numbers import Number
-from matplotlib import rcParams
+rcParams = mpl.rcParams
 try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
