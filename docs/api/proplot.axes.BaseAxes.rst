@@ -19,9 +19,7 @@ BaseAxes
       ~BaseAxes.cmapline
       ~BaseAxes.colorbar
       ~BaseAxes.format
-      ~BaseAxes.invisible
       ~BaseAxes.smart_update
-      ~BaseAxes.visible
       ~BaseAxes.__getattribute__
 
    .. rubric:: Attributes Documentation
@@ -33,7 +31,5 @@ BaseAxes
    .. automethod:: cmapline
    .. automethod:: colorbar
    .. automethod:: format
-   .. automethod:: invisible
    .. automethod:: smart_update
-   .. automethod:: visible
    .. automethod:: __getattribute__

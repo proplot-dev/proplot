@@ -111,8 +111,7 @@ class axes_list(tuple):
                     return (*ret,) # expand to tuple
             return iterator
         elif not any(callable(_) for _ in attrs):
-            # return attrs
-            return axes_list(attrs)
+            return axes_list(attrs) # or just attrs?
         else:
             raise AttributeError(f'Found mixed types for attribute "{attr}".')
 
@@ -142,14 +141,14 @@ def _ax_span(ax, renderer, children=True):
     pairs = [(ax, ax.get_tightbbox(renderer))]
     ax = ax._colorbar_parent or ax
     if children:
-        axs = (*ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel,
-            ax._twinx_child, ax._twiny_child)
+        axs = (*ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel, ax._altx_child, ax._alty_child)
         for iax in axs:
             if not iax:
                 continue
+            if not iax.get_visible():
+                continue
             iax = iax._colorbar_child or iax
-            if iax.get_visible():
-                pairs.append((iax, iax.get_tightbbox(renderer)))
+            pairs.append((iax, iax.get_tightbbox(renderer)))
     pairs = [(_,bbox) for _,bbox in pairs if bbox is not None]
     # Return arrays
     xs = np.array([_intervalx_errfix(ax,bbox) for ax,bbox in pairs])
@@ -164,8 +163,7 @@ def _ax_props(axs, renderer):
     tight bounding box for."""
     if not axs: # e.g. an "empty panel" was passed
         return (np.empty((0,2)),)*4
-    axs = [(ax._colorbar_child or ax) for ax in axs]
-    axs = [ax for ax in axs if ax.get_visible()]
+    axs = [(ax._colorbar_child or ax) for ax in axs if ax and ax.get_visible()]
     if not axs:
         return (np.empty((0,2)),)*4
     spans = [_ax_span(ax, renderer) for ax in axs]
@@ -279,7 +277,7 @@ class Figure(mfigure.Figure):
             if ax._dualx_scale:
                 # Get stuff
                 # transform = mscale.scale_factory(twin.get_xscale(), twin.xaxis).get_transform()
-                twin = ax._twiny_child
+                twin = ax._altx_child
                 offset, scale = ax._dualx_scale
                 transform = twin.xaxis._scale.get_transform() # private API
                 xlim_orig = ax.get_xlim()
@@ -293,7 +291,7 @@ class Figure(mfigure.Figure):
             if ax._dualy_scale:
                 # Get stuff
                 # transform = mscale.scale_factory(twin.get_yscale(), ax.yaxis).get_transform()
-                twin = ax._twinx_child
+                twin = ax._alty_child
                 offset, scale = ax._dualy_scale
                 transform = twin.yaxis._scale.get_transform() # private API
                 ylim_orig = ax.get_ylim()
@@ -332,8 +330,6 @@ class Figure(mfigure.Figure):
         axs = [ax for _,ax in sorted(zip([ax._xrange[0] for ax in axs],axs))]
         for ax,label in zip(axs,labels):
             label = label.strip()
-            if all(pax.visible() for pax in ax.toppanel):
-                ax = ax.toppanel[0]
             if label and ax.collabel.get_text()!=label:
                 ax.collabel.update({'text':label, **kwargs})
 
@@ -346,106 +342,84 @@ class Figure(mfigure.Figure):
         # For ylabel, alignment seems to come *before* positioning. For manual
         # text() call, alignment comes after: https://matplotlib.org/gallery/text_labels_and_annotations/text_rotation.html
         # WARNING: Since y label is totally messed up for some cartopy
-        # projections (weirdly, even for zoomed in circular projections for
-        # which tight layout still works), just always use the tight
-        # bounding box to position axis label.
-        # ax.yaxis._update_ticks(renderer)
-        # ax.yaxis._update_label_position(renderer)
+        # projections, just always use the tight bounding box to position axis
+        # label instead of calling _update_ticks and _update_label_position.
+        w, h = self.get_size_inches()
         for ax in self._main_axes:
-            # Update position
-            # NOTE: Need to temporarily make invisible, want bounding box
-            # *without* the label obviously!
-            if not ax.rowlabel.get_text():
+            label = ax.rowlabel
+            if not label.get_text():
                 continue
-            ax.rowlabel.set_visible(False)
+            # Update position
+            # transform = ax.transAxes
+            # x, _ = transform.inverted().transform((bbox.intervalx[0], 0))
+            # x = x - (0.6*label.get_fontsize()/72)/ax.width # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
             bbox = ax.get_tightbbox(renderer)
-            # Figure relative
-            # NOTE: We separate by one half a line width
             transform = mtransforms.blended_transform_factory(self.transFigure, ax.transAxes)
             x, _ = transform.inverted().transform((bbox.intervalx[0], 0))
-            w, _ = self.get_size_inches()
-            x = x - (0.6*ax.rowlabel.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-            ax.rowlabel.update({'x':x, 'y':0.5, 'ha':'right', 'va':'center', 'transform':transform})
-            ax.rowlabel.set_visible(True)
+            x = x - (0.6*label.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            label.update({'x':x, 'y':0.5, 'ha':'right', 'va':'center', 'transform':transform})
+            label.set_visible(True)
 
         # Adjust col labels -- this is much simpler
-        # TODO: Currently can *only* have column labels or outer titles,
-        # not both, but maybe this is confusing?
-        # for ax in self._main_axes:
-        #     if not ax.collabel.get_text():
-        #         continue
-        #     title = ax.title
-        #     # if ax.title.get_text().strip() and not ax._title_inside:
+        ys = []
+        suptitle = self._suptitle
+        suptitle.set_visible(False)
+        for ax in self._main_axes:
+            label = ax.collabel
+            label.set_visible(False)
+            if not label.get_text() and not suptitle.get_text().strip():
+                continue
+            # Get maximum y-position among all children, necessary because
+            # e.g. twin x-axes with their own labels are common
+            iys = []
+            for iax in (ax, *ax.toppanel, *ax.leftpanel, *ax.rightpanel):
+                if not iax:
+                    continue
+                if not iax.get_visible():
+                    continue
+                # for jax in (iax, iax._colorbar_child, iax._altx_child, iax._alty_child):
+                for j,jax in enumerate((iax, iax._colorbar_child, iax._altx_child, iax._alty_child)):
+                    if not jax:
+                        continue
+                    # Box for column label
+                    bbox = jax.get_tightbbox(renderer)
+                    _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
+                    iys.append(y)
+            # Update column label position
+            label.set_visible(True)
+            if label.get_text():
+                y = max(iys)
+                transform = mtransforms.blended_transform_factory(ax.transAxes, self.transFigure)
+                y = y + (0.3*label.get_fontsize()/72)/h # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                label.update({'x':0.5, 'y':y, 'ha':'center', 'va':'bottom', 'transform':transform})
+            # Box for super title
+            # This time account for column labels of course!
+            if suptitle.get_text().strip():
+                if label.get_text(): # by construction it is above everything else!
+                    bbox = ax.get_tightbbox(renderer)
+                    _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
+                else:
+                    y = max(iys)
+                ys.append(y)
 
-        # Determine super title *x*-position by the underlying gridspec
-        # structure, where main axes lie.
-        if not self._suptitle.get_text():
+        # Super title position
+        suptitle.set_visible(True)
+        if not suptitle.get_text().strip():
             return
-        left = self._subplots_kw['left']
-        right = self._subplots_kw['right']
-        width, height = self.get_size_inches()
+        # Get x position as center between left edge of leftmost main axes
+        # and right edge of rightmost main axes
+        kw = self._subplots_kw
+        left = kw['left']
+        right = kw['right']
         if self.leftpanel:
-            left += (self._subplots_kw['lwidth'] + self._subplots_kw['lspace'])
+            left += (kw['lwidth'] + kw['lspace'])
         if self.rightpanel:
-            right += (self._subplots_kw['rwidth'] + self._subplots_kw['rspace'])
-        xpos = left/width + 0.5*(width - left - right)/width
-
-        # Determine super title *y*-position by figuring out which title on
-        # the top-row axes will be offset the most
-        # WARNING: Have to use private API to figure out whether axis has
-        # tick labels or not! And buried in docs (https://matplotlib.org/api/_as_gen/matplotlib.axis.Axis.set_ticklabels.html)
-        # label1 refers to left or bottom, label2 to right or top!
-        # WARNING: Found with xtickloc='both', xticklabelloc='top' or 'both',
-        # got x axis ticks position 'unknown'!
-        line = 0
-        xline = 0
-        xlabel = 0 # room for x-label
-        title = None
-        raxs = [ax for ax in self._main_axes if ax._yrange[0]==0]
-        raxs = [pax for ax in raxs for pax in ax.toppanel if pax.visible()] or raxs # filter to just these if top panel is enabled
-        for axm in raxs:
-            axs = [ax for ax in (axm, axm._twinx_child, axm._twiny_child) if ax]
-            if all(pax.visible() for pax in axm.leftpanel): # note that if there are any top panels in the top row, they will of course not have their own panel attributes
-                axs.extend(axm.leftpanel)
-            if all(pax.visible() for pax in axm.rightpanel):
-                axs.extend(axm.rightpanel)
-            for ax in axs:
-                # Title adjust
-                # outer = (ax.title.get_text().strip() and not ax._title_inside) or \
-                # (ax.abc.get_text().strip() and not ax._abc_inside) or \
-                if (ax.title.get_text().strip() and not ax._title_inside) or \
-                   (ax.abc.get_text().strip() and not ax._abc_inside) or \
-                   ax.collabel.get_text().strip():
-                    line = 1.2 # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-                    title = ax.title
-                # Axes adjust
-                pos = ax.xaxis.get_ticks_position()
-                if pos in ('top', 'unknown', 'default'):
-                    label_top = pos!='default' and ax.xaxis.label.get_text().strip()
-                    ticklabels_top = ax.xaxis._major_tick_kw['label2On']
-                    if ticklabels_top:
-                        if label_top: # offset above *tick labels* and *axis label*
-                            xline = max((xline, 3.2)) # empirically best
-                        else:
-                            xline = max((xline, 1.6))
-                    xlabel = xline*(ax.xaxis.label.get_size()/72)/height
-                    if (label_top or ticklabels_top) and ax.title.get_text().strip():
-                        title = ax.title
-                        line = 1.2 # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-        if not title:
-            title = raxs[0].title # default title to use
-        if self._suptitle_transform:
-            transform = self._suptitle_transform
-        else:
-            transform = title.axes._title_pos_transform + self.transFigure.inverted()
-        ypos = transform.transform(title.axes._title_pos_init)[1] # title position
-        ypos += (line*(title.get_size()/72)/height + xlabel) # offset
-
-        # Apply super title position
-        self._suptitle.update({
-            'position': (xpos, ypos), 'transform': self.transFigure,
-            'ha':'center', 'va':'bottom',
-            })
+            right += (kw['rwidth'] + kw['rspace'])
+        # Update position
+        x = left/w + 0.5*(w - left - right)/w
+        y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
+        suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
 
     def _auto_smart_tight_layout(self, renderer=None):
         """Conditionally call `~Figure.smart_tight_layout`."""
@@ -485,7 +459,9 @@ class Figure(mfigure.Figure):
         else:
             ratios = [gs.get_height_ratios() for gs in gspecs]
         for panel,span in zip(panels,spans):
-            if not panel.visible() and not panel._colorbar_child:
+            if not panel:
+                continue
+            if not panel.get_visible():
                 continue
             bbox = (panel._colorbar_child or panel).get_tightbbox(renderer)
             if side in 'lr':

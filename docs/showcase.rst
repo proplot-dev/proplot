@@ -275,8 +275,8 @@ labelling; a warning will be raised in these instances). Even when
 
 
 .. image:: showcase/showcase_18_0.png
-   :width: 634px
-   :height: 201px
+   :width: 643px
+   :height: 212px
 
 
 Formatting your axes
@@ -326,7 +326,7 @@ axes **simultaneously** (as in the below example).
     f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True)
     axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(0,10), xlocator=2,
               ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'ccc', 'dd', 'e'),
-              title='Inner title', titlepos='co', suptitle='Super title',
+              title='Axes title', titlepos='co', suptitle='Super title',
               abc=True, abcpos='il', abcformat='a.',
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
               collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
@@ -334,8 +334,8 @@ axes **simultaneously** (as in the below example).
 
 
 .. image:: showcase/showcase_20_0.png
-   :width: 575px
-   :height: 486px
+   :width: 579px
+   :height: 499px
 
 
 Global settings
@@ -1212,13 +1212,13 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
 
 .. image:: showcase/showcase_76_0.png
    :width: 599px
-   :height: 215px
+   :height: 212px
 
 
 
 .. image:: showcase/showcase_76_1.png
    :width: 516px
-   :height: 442px
+   :height: 445px
 
 
 .. code:: ipython3
@@ -1246,7 +1246,7 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
 
 .. image:: showcase/showcase_77_0.png
    :width: 540px
-   :height: 272px
+   :height: 269px
 
 
 Map projection axes
@@ -1282,11 +1282,10 @@ features**. While complex plotting algorithms like
 `~matplotlib.axes.Axes.tricontourf` only work with cartopy, gridline
 labels are only possible on equirectangular and Mercator projections.
 Also, unfortunately, matplotlib’s
-`~matplotlib.figure.Figure.tight_layout` method fails when cartopy
-gridline labels are present or when zooming into a projection with
-`~cartopy.mpl.geoaxes.GeoAxes.set_extent` – so the “tight layout”
-feature must sometimes be disabled when cartopy projections are present.
-I am currently looking for a work-around.
+`~matplotlib.figure.Figure.tight_layout` does not account for cartopy
+gridline labels – so, when they are present, the “smart tight layout”
+feature is automatically disabled. I am currently looking for a
+work-around.
 
 The below examples show how to plot geophysical data with ProPlot. Note
 that for basemap projections, longitudes are cyclically permuted so that
@@ -1345,10 +1344,9 @@ These features are powered by the
     # supports lat lon labels for Mercator and equirectangular projections.
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=1, width=5, proj='merc', wspace=0.5, basemap=False,
+    f, ax = plot.subplots(ncols=1, width=5, proj='merc', wspace=0.5, basemap=False,
                            colorbar='r', rspace=1, tight=False,
-                           proj_kw={'lon_0':0}, top=0.4, left=0.4, right=0.2, bottom=0.2)
-    ax = axs[0]
+                           proj_kw={'lon_0':0}, top=0.4, left=0.4, right=0.2, bottom=0.3)
     np.random.seed(3498)
     x, y = np.random.uniform(size=(100, 2)).T
     z = np.exp(-x**2 - y**2)
@@ -1369,7 +1367,7 @@ These features are powered by the
 
 .. image:: showcase/showcase_83_1.png
    :width: 450px
-   :height: 302px
+   :height: 311px
 
 
 Geographic features
@@ -1396,15 +1394,15 @@ Again, see `~proplot.subplots.subplots` and
                            proj={(1,2):'ortho', (3,4):'npstere'},
                            basemap={(1,3):False, (2,4):True},
                            proj_kw={(1,2):{'lon_0':-60, 'lat_0':0}, (3,4):{'lon_0':-60, 'boundinglat':40}})
-    axs.format(collabels=['Cartopy', 'Basemap'], rowlabels=['Orthographic', 'Stereographic'], suptitle='Geographic features with ProPlot')
+    axs.format(collabels=['Cartopy', 'Basemap'], rowlabels=['proj=ortho', 'proj=stere'], suptitle='Geographic features with ProPlot')
     axs[0::2].format(reso='med', land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
     axs[1::2].format(land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
 
 
 
 .. image:: showcase/showcase_86_0.png
-   :width: 478px
-   :height: 426px
+   :width: 479px
+   :height: 429px
 
 
 .. code:: ipython3
@@ -1416,7 +1414,7 @@ Again, see `~proplot.subplots.subplots` and
     axs.pcolormesh(np.linspace(-180,180,N+1), np.linspace(-90,90,N+1), np.random.rand(N,N), globe=True,
                cmap='grays', cmap_kw={'x':(0.3,0.9)}) # the 'x' argument truncates the colormap to within those bounds
     axs.format(collabels=['Cartopy', 'Basemap'], land=True, landcolor='jade',
-               suptitle='More geographic features',
+               suptitle='Geographic features with ProPlot',
                borderscolor='w', coastcolor='w', innerborderscolor='w', # these are rc settings, without dots
                geogridlinewidth=1.5, geogridcolor='red', geogridalpha=0.8, # these are rc settings, without dots
                coast=True, innerborders=True, borders=True, labels=False) # these are "global" rc settings (setting names that dont' have dots)
@@ -1425,7 +1423,7 @@ Again, see `~proplot.subplots.subplots` and
 
 .. image:: showcase/showcase_87_0.png
    :width: 755px
-   :height: 231px
+   :height: 235px
 
 
 Tables of projections

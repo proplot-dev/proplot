@@ -1169,12 +1169,12 @@ def legend_factory(ax, handles=None, align=None, order='C', **kwargs):
     #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
     #   2) user can specify align (needs list of handles for True, list of handles or list
     #      of iterables for False and if the former, will turn into list of iterables)
-    if handles is None and not (isinstance(ax, PanelAxes) and not ax.visible()):
+    if not handles and not ax._filled:
         handles = ax.get_legend_handles_labels()[0]
         if not handles:
             raise ValueError('No axes artists with labels were found.')
     elif not handles:
-        raise ValueError('You must pass a list of handles.')
+        raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
     for i,handle in enumerate(handles):
         if not hasattr(handle, 'get_cmap') or hasattr(handle, 'get_facecolor'): # latter is for scatter (TODO: add wrapper_cmap for scatter?)
             continue
@@ -1753,11 +1753,11 @@ class BaseAxes(maxes.Axes):
         self._inset_children = [] # arbitrary number of insets possible
         self._colorbar_parent = None
         self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
-        self._visible_effective = True # turned off when invisible() is called, makes spines, ticks, etc. invisible but axes content still visible
-        self._twinx_child = None
-        self._twiny_child = None
-        self._twinx_parent = None
-        self._twiny_parent = None
+        self._filled = False # turned off when panels filled with colorbar or legend
+        self._alty_child = None
+        self._altx_child = None
+        self._alty_parent = None
+        self._altx_parent = None
         self._dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
         self._dualx_scale = None
 
@@ -1777,11 +1777,10 @@ class BaseAxes(maxes.Axes):
         # Axis sharing, title stuff, new text attributes
         self._sharex_setup(sharex, sharex_level)
         self._sharey_setup(sharey, sharey_level)
-        self._title_pos_init = self.title.get_position() # position of title outside axes
-        self._title_pos_transform = self.title.get_transform()
+        self._title_transform = self.title.get_transform() # save in case it changes
         self.abc = self.text(0, 0, '') # position tbd
-        self.collabel = self.text(*self._title_pos_init, '', va='bottom', ha='center', transform=self._title_pos_transform)
-        self.rowlabel = self.text(*self.yaxis.label.get_position(), '', va='center', ha='right', transform=self.transAxes)
+        self.collabel = self.text(0, 0, '', va='bottom', ha='center', transform=self._title_transform)
+        self.rowlabel = self.text(0, 0, '', va='center', ha='right', transform=self.transAxes)
         # Apply 'special' props
         rc._getitem_mode = 0 # might still be non-zero if had error
         self.format(mode=1)
@@ -1840,7 +1839,8 @@ class BaseAxes(maxes.Axes):
         axis = 'x' if side[0] in 'lr' else 'y'
         paxs1 = getattr(self, side + 'panel') # calling this means, share properties on this axes with input 'share' axes
         paxs2 = getattr(share, side + 'panel')
-        if not all(pax.visible() for pax in paxs1) or not all(pax.visible() for pax in paxs2):
+        if not all(pax and pax.get_visible() and not pax._filled for pax in paxs1) or \
+           not all(pax and pax.get_visible() and not pax._filled for pax in paxs2):
             return
         if len(paxs1) != len(paxs2):
             raise RuntimeError('Sync error. Different number of stacked panels along axes on like column/row of figure.')
@@ -1854,7 +1854,8 @@ class BaseAxes(maxes.Axes):
             return
         axis = 'x' if side[0] in 'tb' else 'y'
         paxs = getattr(self, side + 'panel') # calling this means, share properties on this axes with input 'share' axes
-        if not all(pax.visible() for pax in paxs) or not all(pax._share for pax in paxs):
+        if not all(pax and pax.get_visible() and not pax._filled for pax in paxs) or \
+           not all(pax._share for pax in paxs):
             return
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share, level)
@@ -1943,7 +1944,7 @@ class BaseAxes(maxes.Axes):
             if 'o' in pos:
                 y = 1 # leave it alone, may be adjusted during draw-time to account for axis label (fails to adjust for tick labels; see notebook)
                 va = 'bottom' # matches title alignment maybe
-                transform = self._title_pos_transform
+                transform = self._title_transform
                 kwargs['border'] = False
             elif 'i' in pos:
                 y = 1 - ypad_i
@@ -2117,11 +2118,12 @@ class BaseAxes(maxes.Axes):
                 'weight':    'title.weight',
                 'fontname':  'fontname'
                 }, cache=False)
-            if top and all(pax.visible() for pax in self.toppanel):
+            pax = self.toppanel[0]
+            if top and pax and pax.get_visible() and not pax._filled:
                 ax = self.toppanel[0]
             else:
                 ax = self
-            ax = ax._twinx_child or ax # always on top!
+            ax = ax._altx_child or ax # always on top!
             kw = ax._parse_title_args(**kw)
             ax.title = _update_text(ax.title, {'text':title, 'visible':True, **kw})
 
@@ -2145,30 +2147,18 @@ class BaseAxes(maxes.Axes):
                 'color':     'abc.color',
                 'fontname':  'fontname'
                 }, cache=False)
-            if top and all(pax.visible() for pax in self.toppanel):
+            pax = self.toppanel[0]
+            if top and pax and pax.get_visible() and not pax._filled:
                 ax = self.toppanel[0]
             else:
                 ax = self
-            ax = ax._twinx_child or ax # always on top!
+            ax = ax._altx_child or ax # always on top!
             kw = ax._parse_title_args(abc=True, **kw)
             ax.abc = _update_text(ax.abc, {'text':text, 'visible':True, **kw})
         else:
             for ax in (self, *self.toppanel):
                 if ax and ax.abc and not abc and abc is not None:
                     ax.abc.set_visible(False)
-
-    def invisible(self):
-        """Makes axes invisible but children visible, useful for `PanelAxes`."""
-        self._visible_effective = False
-        for s in self.spines.values():
-            s.set_visible(False)
-        self.xaxis.set_visible(False)
-        self.yaxis.set_visible(False)
-        self.patch.set_alpha(0)
-
-    def visible(self):
-        """Returns whether the axes is "on", useful for `PanelAxes`."""
-        return self.get_visible() and self._visible_effective
 
     def colorbar(self, *args, loc=None, xspace=None, pad=None, width=None,
         length=None, extendlength=None, label=None, clabel=None, 
@@ -2990,9 +2980,9 @@ class XYAxes(BaseAxes):
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format method.
         # Instead, use hidden method _make_twin_axes.
-        if self._twinx_child:
+        if self._alty_child:
             raise ValueError('No more than two twin axes!')
-        if self._twinx_parent:
+        if self._alty_parent:
             raise ValueError('This *is* a twin axes!')
         ax = self._make_twin_axes(sharex=self, projection=self.name)
         # Setup
@@ -3010,8 +3000,8 @@ class XYAxes(BaseAxes):
         ax.xspine_override = 'neither'
         ax.grid_override = False
         # Return
-        ax._twinx_parent = self
-        self._twinx_child = ax
+        ax._alty_parent = self
+        self._alty_child = ax
         return ax
 
     def twiny(self):
@@ -3021,9 +3011,9 @@ class XYAxes(BaseAxes):
         # Note: Cannot wrap twiny() because we want to use our own XYAxes,
         # not the matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
-        if self._twiny_child:
+        if self._altx_child:
             raise ValueError('No more than two twin axes!')
-        if self._twiny_parent:
+        if self._altx_parent:
             raise ValueError('This *is* a twin axes!')
         ax = self._make_twin_axes(sharey=self, projection=self.name)
         # Setup
@@ -3040,8 +3030,8 @@ class XYAxes(BaseAxes):
         ax.yspine_override = 'neither'
         ax.grid_override = False
         # Return
-        ax._twiny_parent = self
-        self._twiny_child = ax
+        ax._altx_parent = self
+        self._altx_child = ax
         return ax
 
     def inset(self, *args, **kwargs):
@@ -3127,13 +3117,14 @@ class XYAxes(BaseAxes):
 class EmptyPanel(object):
     """
     Replaces `PanelAxes` when the axes or figure panel does not exist.
-    This gives a nicer error message than if we had just used ``None`` or put
-    nothing there at all.
+    This gives a nicer error message than if we had just ``None``, and
+    permits indexing to mimick the behavior of a singleton
+    `~proplot.subplots.axes_list`.
 
     Note
     ----
     `__getattr__` is invoked only when `__getattribute__` fails, i.e.
-    when the user requests anything that isn't a hidden `object` method.
+    when the user requests anything that isn't a builtin method.
     """
     def __bool__(self):
         """Returns False. Provides shorthand way to check whether panel
@@ -3142,7 +3133,7 @@ class EmptyPanel(object):
 
     def __getitem__(self, key):
         """Returns itself. This allows us to iterate through EmptyPanel, just
-        like it is an `axes_list` of stacked panels."""
+        like it is an `~proplot.subplots.axes_list` of stacked panels."""
         # See: https://stackoverflow.com/a/26611639/4970632
         if key>0:
             raise IndexError('End of panel list.')
@@ -3150,10 +3141,7 @@ class EmptyPanel(object):
 
     def __getattr__(self, attr, *args):
         """Raises RuntimeError."""
-        if attr=='visible': # mimicks visible() function
-            return (lambda : False)
-        else:
-            raise RuntimeError('Panel does not exist.')
+        raise RuntimeError('Panel does not exist.')
 
 class PanelAxes(XYAxes):
     """`~proplot.axes.XYAxes` subclass, adds `~PanelAxes.legend` and
@@ -3216,9 +3204,15 @@ class PanelAxes(XYAxes):
         # Regular old inset legend
         if not fill:
             return super().legend(*args, **kwargs)
+        # Hide content
+        self._filled = True
+        for s in self.spines.values():
+            s.set_visible(False)
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+        self.patch.set_alpha(0)
         # Allocate invisible axes for drawing legend; by default try to
         # make handles and stuff flush against the axes edge
-        self.invisible()
         kwdefault = {'borderaxespad': 0}
         if not kwargs.get('frameon', rc.get('legend.frameon')):
             kwdefault['borderpad'] = 0
@@ -3246,11 +3240,17 @@ class PanelAxes(XYAxes):
         # Inset 'legend-style' colorbar
         if not fill:
             return super().colorbar(*args, **kwargs)
+        # Hide content
+        self._filled = True
+        for s in self.spines.values():
+            s.set_visible(False)
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+        self.patch.set_alpha(0)
         # Draw colorbar with arbitrary length relative to full length of panel
         # TODO: Require the stacked colorbar thing to be declared right away! Will
         # then have panels accessible with the slice panel[i,j] instead of panel[i].
         # space = _default(hspace, wspace, space) # flexible arguments
-        self.invisible()
         fig = self.figure
         side = self._side
         subspec = self.get_subplotspec()

@@ -104,7 +104,7 @@ __all__ = ['Automoddiagram', 'Automodsumm', 'automodsumm_to_autosummary_lines',
 SPHINX_LT_16 = LooseVersion(__version__) < LooseVersion('1.6')
 SPHINX_LT_17 = LooseVersion(__version__) < LooseVersion('1.7')
 
-api_class_methods = ['__init__', '__call__',
+api_class_methods = ['__init__', '__call__', '__bool__',
         '__getitem__', '__setitem__', '__setattr__',
         '__getattr__', '__getattribute__']
 api_ignore_methods = []
