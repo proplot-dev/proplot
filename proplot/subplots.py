@@ -1404,7 +1404,7 @@ def subplots(array=None, ncols=1, nrows=1,
         axpanels=None, axlegends=None, axcolorbars=None,
         axpanel_kw=None, axcolorbar_kw=None, axlegend_kw=None,
         axpanels_kw=None, axcolorbars_kw=None, axlegends_kw=None,
-        basemap=False, proj=None, projection=None, proj_kw=None, projection_kw=None,
+        basemap=False, proj=None, proj_kw=None,
         rcreset=True, silent=True, # arguments for figure instantiation
         **kwargs):
     """
@@ -1510,9 +1510,7 @@ def subplots(array=None, ncols=1, nrows=1,
         for a 3-row, 3-column figure, with ``sharey>1`` and ``spany=1``,
         your figure will have **1** *y*-axis label instead of 9.
 
-    proj, proj_kw
-        Aliases for `projection`, `projection_kw`.
-    projection : str or dict-like, optional
+    proj : str or dict-like, optional
         The map projection name.
 
         If string, applies to all subplots. If dictionary, can be
@@ -1522,7 +1520,7 @@ def subplots(array=None, ncols=1, nrows=1,
         With ``projection={1:'mercator', (2,3):'hammer'}``,
         the leftmost subplot is a Mercator projection, the middle 2 are Hammer
         projections, and the rightmost is a normal x/y axes.
-    projection_kw : dict-like, optional
+    proj_kw : dict-like, optional
         Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
         cartopy `~cartopy.crs.Projection` class on instantiation.
 
@@ -1813,8 +1811,8 @@ def subplots(array=None, ncols=1, nrows=1,
     # NOTE: Cannot have mutable dict as default arg, because it changes the
     # "default" if user calls function more than once! Swap dicts for None.
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    proj    = _axes_dict(naxs, _default(proj, projection, 'xy'), kw=False, default='xy')
-    proj_kw = _axes_dict(naxs, _default(proj_kw, projection_kw, {}), kw=True)
+    proj    = _axes_dict(naxs, _default(proj, 'xy'), kw=False, default='xy')
+    proj_kw = _axes_dict(naxs, _default(proj_kw, {}), kw=True)
     axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
     for num,name in proj.items():
         # The default, my XYAxes projection

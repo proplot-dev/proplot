@@ -111,6 +111,9 @@ def Proj(name, basemap=False, **kwargs):
         The projection name.
     basemap : bool, optional
         Whether to use the basemap or cartopy package. Defaults to ``False``.
+    **kwargs
+        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
+        initializers.
 
     Returns
     -------
@@ -118,17 +121,11 @@ def Proj(name, basemap=False, **kwargs):
         The projection instance.
     aspect : float
         The aspect ratio.
-    kwout : dict
+    kwextra : dict
         Extra keyword args. These are still "projection" arguments but
         need to be passed to the *axes* initializer instead of the
         `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
         initializers. So far only used by `~proplot.axes.CartopyAxes`.
-
-    Other parameters
-    ----------------
-    **kwargs
-        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-        initializers.
 
     See also
     --------
@@ -136,7 +133,7 @@ def Proj(name, basemap=False, **kwargs):
     """
     # Basemap
     name = name or 'cyl'
-    kwout = {}
+    kwextra = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         name = _basemap_cyl.get(name, name)
@@ -158,11 +155,11 @@ def Proj(name, basemap=False, **kwargs):
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(crs_projs.keys())}.')
         for arg in ('boundinglat', 'centrallat'):
             if arg in kwargs:
-                kwout[arg] = kwargs.pop(arg)
+                kwextra[arg] = kwargs.pop(arg)
         projection = crs(**kwargs)
         aspect = (np.diff(projection.x_limits) / \
                   np.diff(projection.y_limits))[0]
-    return projection, aspect, kwout
+    return projection, aspect, kwextra
 
 # Simple projections
 # Inspired by source code for Mollweide implementation
