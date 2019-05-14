@@ -117,7 +117,7 @@ def Proj(name, basemap=False, **kwargs):
 
     Returns
     -------
-    projection : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
+    proj : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
         The projection instance.
     aspect : float
         The aspect ratio.
@@ -143,9 +143,9 @@ def Proj(name, basemap=False, **kwargs):
         if name in _basemap_circles:
             kwproj.update({'round': True})
         reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
-        projection = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
-        aspect = (projection.urcrnrx - projection.llcrnrx) / \
-                 (projection.urcrnry - projection.llcrnry)
+        proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
+        aspect = (proj.urcrnrx - proj.llcrnrx) / \
+                 (proj.urcrnry - proj.llcrnry)
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is available
@@ -156,10 +156,10 @@ def Proj(name, basemap=False, **kwargs):
         for arg in ('boundinglat', 'centrallat'):
             if arg in kwargs:
                 kwextra[arg] = kwargs.pop(arg)
-        projection = crs(**kwargs)
-        aspect = (np.diff(projection.x_limits) / \
-                  np.diff(projection.y_limits))[0]
-    return projection, aspect, kwextra
+        proj = crs(**kwargs)
+        aspect = (np.diff(proj.x_limits) / \
+                  np.diff(proj.y_limits))[0]
+    return proj, aspect, kwextra
 
 # Simple projections
 # Inspired by source code for Mollweide implementation
