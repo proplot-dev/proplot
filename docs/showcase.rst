@@ -133,7 +133,7 @@ row-major by default; to change this, use the
 `~proplot.subplots.subplots` ``order`` keyword arg. Change the label
 position with the ``abcpos`` `~proplot.rcmod` option, or the label
 style with the ``abcformat`` `~proplot.rcmod` option. Toggle labelling
-with ``abc=True``. See :ref:`Formatting your axes` and
+with ``abc=True``. See :ref:`Axes formatting` and
 :ref:`Global settings` for details.
 
 .. code:: ipython3
@@ -183,8 +183,8 @@ numbering determines the order of a-b-c labels. See
    :height: 543px
 
 
-Improved “tight layout”
------------------------
+Smart tight layout
+------------------
 
 With ProPlot, you will always get just the right amount of spacing
 between subplots so that elements don’t overlap, and just the right
@@ -279,8 +279,8 @@ labelling; a warning will be raised in these instances). Even when
    :height: 212px
 
 
-Formatting your axes
---------------------
+Axes formatting
+---------------
 
 The `~proplot.subplots.subplots` method populates the
 `~proplot.subplots.Figure` object with either `~proplot.axes.XYAxes`
@@ -849,6 +849,11 @@ professional-looking than the DejaVu Sans, in my biased opinion. See the
 Cartesian axes
 ==============
 
+The previous sections discussed features relevant to all figures
+generated with ProPlot, or with axes regardless of whether or not they
+contain map projections. This section discusses a few features specific
+to Cartesian axes, powered by the `~proplot.axes.XYAxes` class.
+
 Limiting redundancy
 -------------------
 
@@ -1253,45 +1258,115 @@ Map projection axes
 ===================
 
 ProPlot includes seamless integration with the `cartopy` and
-`basemap` packages. See `~proplot.subplots.subplots` and
-`~proplot.axes.MapAxes.smart_update` for details. Note these features
-are **optional** – if you don’t want to use them, you don’t need to have
-`cartopy` or `basemap` installed.
+`~mpl_toolkits.basemap` packages. This feature is optional – if you
+don’t care about cartographic projections, you don’t need to have
+`cartopy` or `~mpl_toolkits.basemap` installed.
 
-Formatting map axes is just like formatting Cartesian axes: just pass
-arguments like ``lonlim``, and ``lonlocator`` to
-`~proplot.axes.BaseAxes.format`, as before. Plotting geophysical data
-is also much easier. For basemap axes, you can plot geophysical data by
-calling axes methods (e.g. `~matplotlib.axes.Axes.contourf`,
-`~matplotlib.axes.Axes.plot`) as usual – there is no need to use the
-`~mpl_toolkits.basemap.Basemap` instance! For cartopy axes, you no
-longer need to pass ``transform=crs.PlateCarree()`` to the plotting
-command, as I found myself doing 99% of the time – this is the new
-default. Declaring projections with cartopy is also much easier: now,
-just like basemap, you can specify a native
+To specify the projection, supply `~proplot.subplots.subplots` with
+the ``proj`` keyword arg. To specify the projection properties, use the
+``proj_kw`` keyword arg (see below). To toggle `~mpl_toolkits.basemap`
+for arbitrary subplots, use the `basemap` keyword arg. See
+`~proplot.subplots.subplots` for details.
+
+Note that in 2020, active development for `~mpl_toolkits.basemap` will
+stop. Its users are encouraged to switch to `cartopy`, which is
+integrated more closely with the matplotlib API and has more room for
+growth. However for the time being, `~mpl_toolkits.basemap` has one
+major advantage: meridian and parallel labelling. With `cartopy`,
+gridline labels are only possible with equirectangular and Mercator
+projections. With `~mpl_toolkits.basemap`, labels are possible with
+all projections. Further, the `~matplotlib.axes.Axes.tight_layout`
+method does not currently detect `cartopy` gridline labels – so when
+labels are present, the :ref:`Smart tight layout` feature must be
+automatically disabled.
+
+Table of cartopy projections
+----------------------------
+
+Below is an illustration of the available `cartopy` projections. See
+the `~proplot.projs` documentation for a table of projection names,
+short names, and links to the
 `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
-projection name like ``'robin'`` or ``'merc'``, instead of referencing
-the cumbersome `~cartopy.crs.Projection` classes directly.
+documentation (both `cartopy` and `~mpl_toolkits.basemap` are
+internally powered by `PROJ.4 <https://proj4.org>`__).
 
-Cartopy and basemap
--------------------
+Note that you no longer have to reference the `~cartopy.crs`
+projection classes directly – instead, just like
+`~mpl_toolkits.basemap`, you can specify a native PROJ.4 short name
+(e.g. ``'robin'`` or ``'merc'``). ProPlot also adds to `cartopy` the
+previously unavailable Aitoff, Hammer, Winkel Tripel, and Kavrisky VII
+projections by subclassing the `~cartopy.crs.Projection` class.
 
-Why cartopy? Generally **cleaner integration** with matplotlib API; it’s
-the way of the future. Why basemap? It still has some **useful
-features**. While complex plotting algorithms like
-`~matplotlib.axes.Axes.tricontourf` only work with cartopy, gridline
-labels are only possible on equirectangular and Mercator projections.
-Also, unfortunately, matplotlib’s
-`~matplotlib.figure.Figure.tight_layout` does not account for cartopy
-gridline labels – so, when they are present, the “smart tight layout”
-feature is automatically disabled. I am currently looking for a
-work-around.
+.. code:: ipython3
 
-The below examples show how to plot geophysical data with ProPlot. Note
-that for basemap projections, longitudes are cyclically permuted so that
-the “center” of your data aligns with the central longitude of the
-projection! You can also use the ``globe`` keyword arg with commands
-like `~matplotlib.axes.Axes.contourf` to ensure global data coverage.
+    import proplot as plot
+    import numpy as np
+    projs = ['cyl', 'merc', 'mill', 'lcyl', 'tmerc',
+             'robin', 'hammer', 'moll', 'kav7', 'aitoff', 'wintri', 'sinu',
+             'geos', 'ortho', 'nsper', 'aea', 'eqdc', 'lcc', 'gnom', 'npstere', 'igh',
+             'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6']
+    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, proj=projs)
+    axs.format(land=True, reso='lo', labels=False, suptitle='Table of cartopy projections')
+    for proj,ax in zip(projs,axs):
+        ax.format(title=proj, titleweight='bold', labels=False)
+
+
+
+
+.. image:: showcase/showcase_82_1.png
+   :width: 576px
+   :height: 1037px
+
+
+Table of basemap projections
+----------------------------
+
+Below is an illustration of the available `~mpl_toolkits.basemap`
+projections. `~mpl_toolkits.basemap` projection bounds are more
+limited than `cartopy` bounds, and tend to be “rectangles.” Also, with
+the default `~mpl_toolkits.basemap` API, you must specify projection
+keyword args *explicitly* or an error is thrown (e.g. failing to set
+``lon_0`` or ``lat_0``). To prevent this annoyance, ProPlot passes
+default keyword args to `~mpl_toolkits.basemap.Basemap` if you fail to
+specify them.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    projs = ['cyl', 'merc', 'mill', 'cea', 'gall', 'sinu',
+             'eck4', 'robin', 'moll', 'kav7', 'hammer', 'mbtfpq',
+             'geos', 'ortho', 'nsper',
+             'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
+             'npstere', 'npaeqd', 'nplaea', 'spstere', 'spaeqd', 'splaea']
+    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, basemap=True, proj=projs)
+    axs.format(land=True, labels=False, suptitle='Table of basemap projections')
+    for proj,ax in zip(projs,axs):
+        ax.format(title=proj, titleweight='bold', labels=False)
+
+
+
+.. image:: showcase/showcase_85_0.png
+   :width: 598px
+   :height: 1073px
+
+
+Geophysical data
+----------------
+
+The below demonstrates how to plot geophysical data with ProPlot. You’ll
+note that ProPlot considerably simplifies `~mpl_toolkits.basemap`
+usage. For data plotted on `~mpl_toolkits.basemap` projections, the
+longitudes are *cyclically permuted* so that the “center” aligns with
+the central longitude of the projection. You can also simply call the
+axes method, e.g. `~matplotlib.axes.Axes.contourf`, instead of calling
+the method on the `~mpl_toolkits.basemap.Basemap` instance! And for
+`cartopy` axes, you no longer need to pass
+``transform=crs.PlateCarree()`` to the plotting method (as I found
+myself doing 99% of the time); ProPlot makes this the default. Finally,
+for both `~mpl_toolkits.basemap` and `cartopy`, you can pass
+``globe=True`` to plotting commands to ensure global data coverage.
+
 These features are powered by the
 `~proplot.axes.wrapper_cartopy_gridfix` and
 `~proplot.axes.wrapper_basemap_gridfix` wrappers.
@@ -1306,7 +1381,7 @@ These features are powered by the
     y = plot.arange(-60,60+1,30)
     data = np.random.rand(len(y), len(x))
     for globe in (False,True):
-        f, axs = plot.subplots(ncols=2, nrows=2, width=7,
+        f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2,
                                colorbars='b', proj='hammer', proj_kw={'lon_0':0},
                                basemap={(1,3):False, (2,4):True},
                                )
@@ -1327,64 +1402,57 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_82_1.png
-   :width: 630px
-   :height: 417px
+.. image:: showcase/showcase_88_1.png
+   :width: 591px
+   :height: 405px
 
 
 
-.. image:: showcase/showcase_82_2.png
-   :width: 630px
-   :height: 417px
+.. image:: showcase/showcase_88_2.png
+   :width: 591px
+   :height: 405px
 
+
+Projection formatting
+---------------------
+
+To pass keywords to `~mpl_toolkits.basemap.Basemap` and
+`cartopy.crs` projection classes on instantiation, pass a ``proj_kw``
+dictionary of keyword args to `~proplot.subplots.subplots`. With
+ProPlot, you can supply native PROJ.4 keyword names to the
+`cartopy.crs` classes just like `~mpl_toolkits.basemap` (e.g.
+``lon_0`` instead of ``central_longitude``). This is just meant to make
+things a bit less verbose.
+
+To add and stylize geographic features (e.g. coastlines, land, country
+borders, and state borders), just use the
+`~proplot.axes.BaseAxes.format` method as with ordinary Cartesian
+axes. This time, `~proplot.axes.BaseAxes.format` will call the special
+`~proplot.axes.MapAxes` `~proplot.axes.MapAxes.smart_update` method.
+
+See `~proplot.subplots.subplots`,
+`~proplot.axes.MapAxes.smart_update`, and `~proplot.projs.Proj` for
+details.
 
 .. code:: ipython3
 
-    # Tricontour is only possible with cartopy! But also note, cartopy only
-    # supports lat lon labels for Mercator and equirectangular projections.
     import proplot as plot
     import numpy as np
-    f, ax = plot.subplots(ncols=1, width=5, proj='merc', wspace=0.5, basemap=False,
-                           colorbar='r', rspace=1, tight=False,
-                           proj_kw={'lon_0':0}, top=0.4, left=0.4, right=0.2, bottom=0.3)
-    np.random.seed(3498)
-    x, y = np.random.uniform(size=(100, 2)).T
-    z = np.exp(-x**2 - y**2)
-    x = (x-0.5)*360
-    y = (y-0.5)*180
-    levels = np.linspace(0, 1, 100)
-    cnt = ax.tripcolor(x, y, z, levels=levels, cmap='Turquoise')
-    z = np.exp(-(x-10)**2 - (y+10)**2)
-    ax.format(suptitle='Pros and cons', title='"Tight subplots" must be disabled when labels present',
-              lonlabels='b', latlabels='lr', lonlocator=60, latlocator=20, latmax=90)
-    f.rpanel.colorbar(cnt, tickloc='left', label='clabel', formatter_kw={'precision':2})
+    N = 40
+    f, ax = plot.subplots(axwidth=4, ncols=1, proj='robin', basemap=True)
+    ax.pcolormesh(np.linspace(-180,180,N+1), np.linspace(-90,90,N+1), np.random.rand(N,N), globe=True,
+               cmap='grays', cmap_kw={'left':0.2, 'right':0.8})
+    ax.format(land=True, landcolor='w', suptitle='Geographic features with ProPlot',
+               borderscolor='w', coastcolor='k', innerborderscolor='k', # these are rc settings, without dots
+               geogridlinewidth=1.5, geogridcolor='red', geogridalpha=0.8, # these are rc settings, without dots
+               coast=True, innerborders=True, borders=True, labels=False) # these are "global" rc settings (setting names that dont' have dots)
 
 
 
+.. image:: showcase/showcase_91_0.png
+   :width: 386px
+   :height: 221px
 
-
-
-
-.. image:: showcase/showcase_83_1.png
-   :width: 450px
-   :height: 311px
-
-
-Geographic features
--------------------
-
-To modify the projections, you can also pass keyword args to the
-`~mpl_toolkits.basemap.Basemap` and `~cartopy.crs.Projection`
-initializers with the ``proj_kw`` keyword arg. Note that native
-`PROJ.4 <https://proj4.org/operations/projections/index.html>`__ keyword
-options are now accepted along with their more verbose cartopy aliases –
-for example, you can use ``lon_0`` instead of ``central_longitude``. You
-can also easily add and stylize geographic features (like coastlines,
-land, country borders, and state borders), using the
-`~proplot.axes.BaseAxes.format` method as before.
-
-Again, see `~proplot.subplots.subplots` and
-`~proplot.axes.MapAxes.smart_update` for details.
 
 .. code:: ipython3
 
@@ -1394,118 +1462,69 @@ Again, see `~proplot.subplots.subplots` and
                            proj={(1,2):'ortho', (3,4):'npstere'},
                            basemap={(1,3):False, (2,4):True},
                            proj_kw={(1,2):{'lon_0':-60, 'lat_0':0}, (3,4):{'lon_0':-60, 'boundinglat':40}})
-    axs.format(collabels=['Cartopy', 'Basemap'], rowlabels=['proj=ortho', 'proj=stere'], suptitle='Geographic features with ProPlot')
+    axs.format(collabels=['Cartopy', 'Basemap'], rowlabels=['proj="ortho"', 'proj="spstere"'])
     axs[0::2].format(reso='med', land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
     axs[1::2].format(land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
 
 
 
-.. image:: showcase/showcase_86_0.png
-   :width: 479px
-   :height: 429px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    N = 40
-    f, axs = plot.subplots(axwidth=4, ncols=2, proj='robin', basemap={1:False, 2:True})
-    axs.pcolormesh(np.linspace(-180,180,N+1), np.linspace(-90,90,N+1), np.random.rand(N,N), globe=True,
-               cmap='grays', cmap_kw={'x':(0.3,0.9)}) # the 'x' argument truncates the colormap to within those bounds
-    axs.format(collabels=['Cartopy', 'Basemap'], land=True, landcolor='jade',
-               suptitle='Geographic features with ProPlot',
-               borderscolor='w', coastcolor='w', innerborderscolor='w', # these are rc settings, without dots
-               geogridlinewidth=1.5, geogridcolor='red', geogridalpha=0.8, # these are rc settings, without dots
-               coast=True, innerborders=True, borders=True, labels=False) # these are "global" rc settings (setting names that dont' have dots)
-
-
-
-.. image:: showcase/showcase_87_0.png
-   :width: 755px
-   :height: 235px
-
-
-Tables of projections
----------------------
-
-Next we produce tables of available cartopy and basemap projections. For
-a nice table of full projection names, links to the
-`PROJ.4 <https://proj4.org/operations/projections/index.html>`__
-documentation, and their short-name keywords, see the `~proplot.projs`
-documentation.
-
-Many of the
-`PROJ.4 <https://proj4.org/operations/projections/index.html>`__
-projections are already included with cartopy, but ProPlot adds the
-Aitoff, Hammer, Winkel Tripel, and Kavrisky VII projections by
-subclassing their `~cartopy.crs.Projection` class (these may be
-directly added to the cartopy package at some point). The available
-cartopy projections are plotted below.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    projs = ['cyl', 'merc', 'mill', 'lcyl', 'tmerc',
-             'robin', 'hammer', 'moll', 'kav7', 'aitoff', 'wintri', 'sinu',
-             'geos', 'ortho', 'nsper', 'aea', 'eqdc', 'lcc', 'gnom', 'npstere', 'igh',
-             'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6']
-    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, proj=projs)
-    axs.format(land=True, reso='lo', labels=False, suptitle='Table of cartopy projections')
-    for proj,ax in zip(projs,axs):
-        ax.format(title=proj, titleweight='bold', labels=False)
-
-
-
-
-.. image:: showcase/showcase_90_1.png
-   :width: 576px
-   :height: 1037px
-
-
-Basemap tends to prefer “rectangles” over their projections. The
-available basemap projections are plotted below. Note that with the
-default API, projection keyword args need to be specified explicitly or
-an error is thrown – e.g. if you fail to specify ``lon_0`` or ``lat_0``.
-To get around this, ProPlot supplies basemap with some default keyword
-args if you don’t specify them.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    projs = ['cyl', 'merc', 'mill', 'cea', 'gall', 'sinu',
-             'eck4', 'robin', 'moll', 'kav7', 'hammer', 'mbtfpq',
-             'geos', 'ortho', 'nsper',
-             'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
-             'npstere', 'npaeqd', 'nplaea', 'spstere', 'spaeqd', 'splaea']
-    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, basemap=True, proj=projs)
-    axs.format(land=True, labels=False, suptitle='Table of basemap projections')
-    for proj,ax in zip(projs,axs):
-        ax.format(title=proj, titleweight='bold', labels=False)
-
-
-
 .. image:: showcase/showcase_92_0.png
-   :width: 598px
-   :height: 1073px
+   :width: 490px
+   :height: 416px
+
+
+Zooming into projections
+------------------------
+
+Zooming into projections is done much as before. For
+`~mpl_toolkits.basemap` projections, simply pass ``proj_kw`` to
+`~proplot.subplots.subplots` with any of the ``llcrnrlon``,
+``llcrnrlat``, ``urcrnrlon``, ``urcrnrlat``, ``llcrnrx``, ``llcrnry``,
+``urcrnrx``, ``urcrnry``, ``width``, and/or ``height`` keyword args. For
+`cartopy` projections, you can use
+`~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or alternatively pass
+``lonlim`` and/or ``latlim`` to `~proplot.axes.MapAxes.smart_update`.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=3.3,
+                           basemap={1:False, 2:True},
+                           proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-20, 'urcrnrlon':180, 'urcrnrlat':80}})
+    axs[0].format(lonlim=(-20,180), latlim=(-20,80), title='Cartopy')
+    axs[1].format(title='Basemap')
+    axs.format(land=True, landcolor='blue green',
+               coast=True, coastcolor='forest green', coastlinewidth=1.5,
+               suptitle='Zooming into projections')
+
+
+
+.. image:: showcase/showcase_94_0.png
+   :width: 323px
+   :height: 387px
 
 
 Colormaps and colors
 ====================
 
+ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
+introduces some neat features to help you use colors effectively and
+make your visualizations as aesthetically pleasing as possible. This
+section documents these features.
+
 Perceptually uniform colorspaces
 --------------------------------
 
-This package includes colormaps from several other projects (see below),
-but also introduces some brand new colormaps. The new colormaps were
-created by drawing lines across the “perceptually uniform” HCL
-colorspace, or across its two variants: the HSL and HPL colorspaces. For
-more info, check out `this page <http://www.hsluv.org/comparison/>`__.
+First things first, ProPlot introduces several brand new colormaps built
+with the `~proplot.colortools.PerceptuallyUniformColormap` class. This
+class works by interpolating between points within the “perceptually
+uniform” **HCL** colorspace or its two variants: the **HSL** and **HPL**
+colorspaces. For more info, see
+`~proplot.colortools.PerceptuallyUniformColormap` and check out `this
+page <http://www.hsluv.org/comparison/>`__.
 
-You can generate your own cross-sections of these colorspaces with the
-handy `~proplot.demos.colorspace_breakdown` function, as shown below.
+Use `~proplot.demos.colorspace_breakdown` to plot arbitrary
+cross-sections of these colorspaces, as shown below.
 
 .. code:: ipython3
 
@@ -1514,7 +1533,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_96_0.png
+.. image:: showcase/showcase_98_0.png
    :width: 576px
    :height: 212px
 
@@ -1526,7 +1545,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_97_0.png
+.. image:: showcase/showcase_99_0.png
    :width: 576px
    :height: 212px
 
@@ -1538,7 +1557,7 @@ handy `~proplot.demos.colorspace_breakdown` function, as shown below.
 
 
 
-.. image:: showcase/showcase_98_0.png
+.. image:: showcase/showcase_100_0.png
    :width: 576px
    :height: 212px
 
@@ -1559,13 +1578,13 @@ relatively non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_100_1.png
+.. image:: showcase/showcase_102_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_100_2.png
+.. image:: showcase/showcase_102_2.png
    :width: 748px
    :height: 245px
 
@@ -1573,13 +1592,18 @@ relatively non-linear in saturation.
 Table of colormaps
 ------------------
 
-Use `~proplot.demos.cmap_show` to generate a table of registered
+In addition to `~proplot.colortools.PerceptuallyUniformColormap` maps,
+ProPlot adds colormaps from a bunch of cool data viz projects. Use
+`~proplot.demos.cmap_show` to generate a table of registered
 colormaps, as shown below.
 
 The “User” section is automatically populated with colormaps saved to
-your ``~/.proplot`` folder (see :ref:`On-the-fly colormaps`). The
-other sections break down the colormaps by category: original matplotlib
-maps, new ProPlot maps belonging to the
+your ``~/.proplot`` folder (see :ref:`On-the-fly colormaps`). You can
+make your own colormaps using the `~proplot.colortools.Colormap`
+constructor function. See below for details.
+
+The other sections break down the colormaps by category: original
+matplotlib maps, new ProPlot maps belonging to the
 `~proplot.colortools.PerceptuallyUniformColormap` class,
 `ColorBrewer <http://colorbrewer2.org/>`__ maps (already included with
 matplotlib), and maps from several other projects like
@@ -1587,9 +1611,6 @@ matplotlib), and maps from several other projects like
 `cmOcean <https://matplotlib.org/cmocean/>`__. Many outdated colormaps
 are removed, including the infamous ``'jet'`` map. Only the colormaps
 with poor, perceptually un-uniform transitions were thrown out.
-
-See `~proplot.axes.wrapper_cmap` and `~proplot.colortools.Colormap`
-for usage details.
 
 .. code:: ipython3
 
@@ -1599,7 +1620,7 @@ for usage details.
 
 
 
-.. image:: showcase/showcase_103_1.png
+.. image:: showcase/showcase_105_1.png
    :width: 436px
    :height: 4333px
 
@@ -1607,18 +1628,23 @@ for usage details.
 Table of color cycles
 ---------------------
 
-Use `~proplot.demos.cycle_show` to generate a table of registered
-color cycles. This will also show color cycles saved to your
-``~/.proplot`` folder (see :ref:`On-the-fly color cycles`). “Color
-cycles” are used for the matplotlib “property cycler” – that is, the
-list of colors that `~matplotlib.axes.Axes.plot` loops through when
-you call it without a ``color`` argument. The first color of the
-“property cycler” is used to fill patch objects, like bars. To change
-the color cycler, use ``plot.rc.cycle = name`` or pass ``cycle=name`` to
-any plotting command.
+When you plot successive lines in matplotlib and don’t specify the
+color, or when you plot patch objects (e.g. bar plots), line/patch
+colors are selected from a “property cycler” (see the
+``axes.prop_cycle`` `~matplotlib.rcParams` property).
 
-See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
-`~proplot.rcmod` for usage details.
+ProPlot makes it easy to switch between different property cycles,
+focusing on color changes. To change the property cycle, set the
+`~proplot.rc` ``cycle`` property (e.g. ``plot.rc.cycle = '538'``; see
+the `~proplot.rcmod` documentation for details) or pass ``cycle=name``
+to any plotting command (powered by the `~proplot.axes.wrapper_cycle`
+function). See below for details.
+
+Use `~proplot.demos.cycle_show` to generate a table of registered
+color cycles, as shown below. This will also show color cycles saved to
+your ``~/.proplot`` folder (see :ref:`On-the-fly color cycles`). You
+can make your own color cycles using the `~proplot.colortools.Cycle`
+constructor function. See below for details.
 
 .. code:: ipython3
 
@@ -1627,7 +1653,7 @@ See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 
 
 
-.. image:: showcase/showcase_106_0.png
+.. image:: showcase/showcase_108_0.png
    :width: 540px
    :height: 1615px
 
@@ -1635,32 +1661,29 @@ See `~proplot.axes.wrapper_cycle`, `~proplot.colortools.Cycle`, and
 Table of colors
 ---------------
 
-Use `~proplot.demos.color_show` to generate a table of registered
-color names, as shown below.
+ProPlot defined a lot of new color names. Use
+`~proplot.demos.color_show` to generate tables of these new colors, as
+shown below. Note that the native matplotlib `CSS4 named
+colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
+still registered, but I encourage using colors from the below table
+instead.
 
-ProPlot adds the below table. Colors in the first table are from the
-`XKCD “color
+The colors in the first table are from the `XKCD “color
 survey” <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__
-(crowd-sourced naming of random HEX strings) and the list of `Crayola
-crayon color
-names <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__
+(crowd-sourced naming of random HEX strings) and `Crayola crayon
+colors <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__
 (inspired by
 `seaborn <https://seaborn.pydata.org/generated/seaborn.crayon_palette.html>`__).
-Colors from these sources were filtered to be *sufficiently “distinct”
-in the HCL perceptually uniform colorspace*. This makes it a bit easier
-to pick colors from the table. Similar color names were also cleaned up
-– for example, “reddish” and “reddy” were changed to “red”, and “bluish”
-and “bluey” were changed to “blue”.
+To reduce this list to a more manageable size, colors must be
+*sufficiently “distinct”* in the HCL perceptually uniform colorspace
+before they are added to ProPlot. This makes it a bit easier to pick out
+colors from a table. Similar names were also cleaned up – for example,
+“reddish” and “reddy” were changed to “red”.
 
-ProPlot also includes new colors from the `“Open
+The colors in the second table are from the `“Open
 color” <https://www.google.com/search?q=opencolor+github&oq=opencolor+github&aqs=chrome..69i57.2152j0j1&sourceid=chrome&ie=UTF-8>`__
-github project (the second table). These colors are used for website UI
-design, but can also be useful for selecting colors for scientific
-visualizations.
-
-The native matplotlib `CSS4 named
-colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
-still registered, but I encourage using the below table instead.
+Github project. This project was intended for web UI design, but it is
+also useful for selecting colors for scientific visualizations.
 
 .. code:: ipython3
 
@@ -1669,7 +1692,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_109_0.png
+.. image:: showcase/showcase_111_0.png
    :width: 720px
    :height: 1316px
 
@@ -1681,7 +1704,7 @@ still registered, but I encourage using the below table instead.
 
 
 
-.. image:: showcase/showcase_110_0.png
+.. image:: showcase/showcase_112_0.png
    :width: 630px
    :height: 225px
 
@@ -1730,7 +1753,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_113_1.png
+.. image:: showcase/showcase_115_1.png
    :width: 544px
    :height: 334px
 
@@ -1770,7 +1793,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_115_0.png
+.. image:: showcase/showcase_117_0.png
    :width: 724px
    :height: 345px
 
@@ -1798,7 +1821,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_117_0.png
+.. image:: showcase/showcase_119_0.png
    :width: 526px
    :height: 325px
 
@@ -1822,7 +1845,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_119_0.png
+.. image:: showcase/showcase_121_0.png
    :width: 652px
    :height: 287px
 
@@ -1845,7 +1868,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_121_0.png
+.. image:: showcase/showcase_123_0.png
    :width: 652px
    :height: 287px
 
@@ -1873,7 +1896,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_123_0.png
+.. image:: showcase/showcase_125_0.png
    :width: 652px
    :height: 424px
 
@@ -1905,7 +1928,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_126_0.png
+.. image:: showcase/showcase_128_0.png
    :width: 465px
    :height: 326px
 
@@ -1939,7 +1962,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_128_1.png
+.. image:: showcase/showcase_130_1.png
    :width: 619px
    :height: 311px
 
@@ -1968,7 +1991,7 @@ example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
 
 
 
-.. image:: showcase/showcase_130_0.png
+.. image:: showcase/showcase_132_0.png
    :width: 544px
    :height: 478px
 
@@ -2007,7 +2030,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_133_0.png
+.. image:: showcase/showcase_135_0.png
    :width: 431px
    :height: 582px
 
