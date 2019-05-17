@@ -413,7 +413,7 @@ the axes is **filled** with a colorbar. See
 
     import proplot as plot
     import numpy as np
-    f, ax = plot.subplots(colorbar='b', tight=1, axwidth=2.5)
+    f, ax = plot.subplots(colorbar='b', tight=True, axwidth=2.5)
     m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
     ax.colorbar(m, ticks=2, label='inset colorbar')

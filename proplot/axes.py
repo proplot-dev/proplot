@@ -3131,9 +3131,14 @@ class EmptyPanel(object):
         attribute is specifically EmptyPanel."""
         return False # it's empty, so this is 'falsey'
 
+    def __len__(self, key):
+        """Returns 1. This allows us to treat `EmptyPanel` like an
+        `~proplot.subplots.axes_list` of stacked panels."""
+        return 1
+
     def __getitem__(self, key):
-        """Returns itself. This allows us to iterate through EmptyPanel, just
-        like it is an `~proplot.subplots.axes_list` of stacked panels."""
+        """Returns itself. This allows us to treat `EmptyPanel` like an
+        `~proplot.subplots.axes_list` of stacked panels."""
         # See: https://stackoverflow.com/a/26611639/4970632
         if key>0:
             raise IndexError('End of panel list.')

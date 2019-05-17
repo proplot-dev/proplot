@@ -183,7 +183,7 @@ rcParams_new:
     # Tight layout padding
     # These only affect the figure when tight=True
     subplot.panelpad:   0.05
-    subplot.outerpad:   0.10
+    subplot.borderpad:  0.10
     subplot.subplotpad: 0.10
     # Spaces
     # These only affect the figure when tight=False
