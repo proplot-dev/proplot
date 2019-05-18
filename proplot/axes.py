@@ -1750,6 +1750,7 @@ class BaseAxes(maxes.Axes):
         self._panels_stack_gridspec = None # filled with gridspec used for 'stacked' panels
         self._tight_bbox = None # save these
         self._zoom = None # the 'zoom lines' for inset zoom-in axes
+        self._panel_parent = None
         self._inset_parent = None # filled later
         self._inset_children = [] # arbitrary number of insets possible
         self._colorbar_parent = None

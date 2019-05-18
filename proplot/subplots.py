@@ -470,10 +470,12 @@ class Figure(mfigure.Figure):
             print('Adjusting layout.')
         self.smart_tight_layout(renderer)
 
-    def _panel_tight_layout(self, side, paxs, spans, renderer):
+    def _panel_tight_layout(self, side, paxs, renderer, figure=False):
         """From list of panels and the axes coordinates spanned by the
         main axes, figure out the necessary new 'spacing' to apply to the inner
-        gridspec object."""
+        gridspec object. For axes panels, this function just modifies mutable
+        width/height ratio lists in place, returns nothing. For figure panels, it
+        returns the lsep, rspe, or bsep argument needed for _subplots_kwargs."""
         # Initial stuff
         # Check that none of input panels are EmptyPanel, although they can
         # certainly be invisible/allocated to make spacing even.
@@ -484,22 +486,11 @@ class Figure(mfigure.Figure):
             raise ValueError('Either all or no axes in this row should have panels.')
         elif len({len(pax) for pax in paxs})>1:
             raise ValueError('Different numbers of stacked panels in same row or column.')
-        # Bounding boxes for all visible panels
-        # Get panels *adjacent* to the main axes from the list of
-        # axes_lists of panels
-        bboxs = [
-            [None if not ipanel or not ipanel.get_visible() else ipanel._tight_bbox
-            for ipanel in pax] # stacked panels
-            for pax in paxs] # list of panels
+        # Get full width/height ratios for main gridspec
         if side in 'br':
-            bboxs_adj = [bbox[0] for bbox in bboxs]
             paxs_adj = [pax[0] for pax in paxs]
         else:
-            bboxs_adj = [bbox[-1] for bbox in bboxs]
             paxs_adj = [pax[-1] for pax in paxs]
-        # Get full width/height ratios for main gridspec
-        # WARNING: Whole point of this function is to write to mutable
-        # width/height ratio lists; returns nothing
         gspecs = [pax._panels_main_gridspec for pax in paxs_adj]
         pgspecs = [pax._panels_stack_gridspec for pax in paxs_adj]
         if side in 'lr':
@@ -515,23 +506,22 @@ class Figure(mfigure.Figure):
         # that to adjust the inner panel separation.
         # WARNING: Order of stacks is always left-right and top-bottom
         space = []
-        for pax,bbox in zip(paxs,bboxs):
+        for pax in paxs:
             # Ratios
             ispace = []
             for i in range(len(pax)-1):
                 ipaxs = pax[i:i+2] # lists are left-to-right, top-to-bottom
-                ibboxs = bbox[i:i+2]
-                if any(ibbox is None for ibbox in ibboxs):
+                if any(ipax._tight_bbox is None for ipax in ipaxs):
                     ispace.append(None)
                     continue
                 # Get intervals and spacing. Options are:
                 # 1) Bottom of top panel minus top of bottom panel
                 # 2) Left of right panel minus right of left panel
                 if side in 'lr':
-                    ispans = [_intervalx_errfix(pax) for pax in zip(ipaxs,ibboxs)]
+                    ispans = [_intervalx_errfix(pax) for pax in ipaxs]
                     ispace.append((ispans[1][0] - ispans[0][1])/self.dpi) # bottom of top one minus top of bottom one
                 else: # 'tb'
-                    ispans = [_intervaly_errfix(pax) for pax in zip(ipaxs,ibboxs)]
+                    ispans = [_intervaly_errfix(pax) for pax in ipaxs]
                     ispace.append((ispans[0][0] - ispans[1][1])/self.dpi) # bottom of top one minus top of bottom one
             # Add to list of lists
             space.append(ispace)
@@ -540,37 +530,46 @@ class Figure(mfigure.Figure):
         # NOTE: All ispace will be empty unless have any stacked panels
         if any(space):
             # Iterate through axes, then through gaps
-            seps = [[*_] for _ in zip(*space)]
-            for pax,iratios,ipratios in zip(paxs_adj,ratios,pratios): # use paxs_adj for flush property
+            # NOTE: Iterate through paxs_adj just to use it for _flush setting
+            space = [[*_] for _ in zip(*space)] # grouped by axes
+            for pax,iratios,ipratios in zip(paxs_adj,ratios,pratios):
+                sep = []
                 flush = pax._flush # must be same for all panels!
-                for idx,iseps in enumerate(seps):
+                for idx,ispace in enumerate(space):
                     idx = 1 + idx*2 # index of *spaces* in ratios list
-                    iseps = [i for i in iseps if i is not None] # if panel invisible
-                    if not iseps:
+                    ispace = [i for i in ispace if i is not None] # if panel invisible
+                    if not ispace:
                         warnings.warn('All panels in this row or column at some stack level are invisible. That is really weird.')
                         continue
                     # Adjust ratios for panel gridspec
                     if flush: # assume user means, always want panels touching, in spite of ticks, etc.
                         isep = 0
                     else:
-                        isep = max([0, ipratios[idx] - min(iseps) + pad])
+                        isep = max([0, ipratios[idx] - min(ispace) + pad])
                     ipratios[idx] = isep
-                    # Adjust ratio for main gridspec
-                    istack = (-1 if side in 'br' else 0)
-                    iratios[istack] = sum(ipratios)
+                    # Adjust ratio for main gridspec, or save stats for figure panels
+                    if figure:
+                        sep.append(isep)
+                    else:
+                        idx_stack = (-1 if side in 'br' else 0)
+                        iratios[idx_stack] = sum(ipratios)
+        # Bail
+        if figure:
+            return sep # should be same for each "panel"!
 
         # Space between main subplot and adjacent panels
         # Iterate through panels, get maximum necessary spacing; assign
         # equal spacing to all so they are still aligned
         space = []
-        for pax,span in zip(paxs_adj,spans):
-            bbox = pax._tight_bbox
-            if bbox is None:
+        for pax in paxs_adj:
+            if pax._tight_bbox is None:
                 continue
             if side in 'lr':
                 pspan = _intervalx_errfix(pax)
+                span = _intervalx_errfix(pax._parent)
             else:
                 pspan = _intervaly_errfix(pax)
+                span = _intervaly_errfix(pax._parent)
             if side in 'tr':
                 space.append((pspan[0] - span[1])/self.dpi)
             else:
@@ -612,10 +611,6 @@ class Figure(mfigure.Figure):
         # NOTE: Matplotlib majorTicks, minorTicks attributes contain *un-updated*
         # lists of ticks. To internally update the list and get actual ticks
         # in light of axis locator, use get_major_ticks and get_minor_ticks.
-        # WARNING: Matplotlib seems to always draw "tight" bounding box around
-        # tick marks, whether or not there are actually tick marks there! Must have
-        # to do with get_tick_padding command; matplotlib tight layout just
-        # queries that, which checks .majorTicks and .minorTicks, doesn't use getters.
         # WARNING: Could not figure out consistent recipe for calculating tick
         # pad errors in the seemingly infinite number of possible combos of
         # major and minor tick lengths, sides, label sides, and axis label sides.
@@ -700,8 +695,6 @@ class Figure(mfigure.Figure):
 
         #----------------------------------------------------------------------#
         # Prevent overlapping axis tick labels and whatnot *within* figure
-        # TODO: Need to test for spacing between stacked panels, but have no
-        # way of knowing shape of panels region yet!
         #----------------------------------------------------------------------#
         if self._smart_tight_subplot:
             # First for the main axes, then add in the panels
@@ -709,84 +702,32 @@ class Figure(mfigure.Figure):
             xspans, yspans, xrange, yrange = _ax_props(self._main_axes, renderer)
             for side,paxs in zip('lbr', (self.leftpanel, self.bottompanel, self.rightpanel)):
                 # Only test panels on *inside* of subplot region
-                # If have overlap panels due to content from outer stacked panel
-                # your shit's fucked up.
-                # TODO: Consolidate this stuff into one function
-                # TODO: See if can implement _ax_props for panel stuff
                 if not any(paxs):
                     continue
-                # Border panel and span
                 npanel = len(paxs)
+                order = paxs._order
                 n = paxs._n # rows or columns
                 m = npanel//n # columns or rows
-                if paxs._order=='C': # _n is number of columns
-                    if side=='b':
-                        pax_adj = paxs[:n]
-                    elif side=='l':
-                        pax_adj = paxs[n-1::n]
-                    else:
-                        pax_adj = paxs[::n]
-                else: # _n is number of rows
-                    if side=='b':
-                        pax_adj = paxs[::n]
-                    elif side=='l':
-                        pax_adj = paxs[-n:]
-                    else:
-                        pax_adj = paxs[:n]
+                # Add bbox spans and "ranges" for figure panels
+                if (side=='b' and order=='C') or (side=='r' and order!='C'):
+                    pax_adj = paxs[:n]
+                elif (side=='l' and order=='C'):
+                    pax_adj = paxs[n-1::n]
+                elif (side=='l' and order!='C'):
+                    pax_adj = paxs[-n:]
+                elif (side=='r' and order=='C') or (side=='b' and order!='C'):
+                    pax_adj = paxs[::n]
                 xs, ys, xr, yr = _ax_props(pax_adj, renderer)
                 xspans, yspans = np.vstack((xspans, xs)), np.vstack((yspans, ys))
                 xrange, yrange = np.vstack((xrange, xr)), np.vstack((yrange, yr))
                 # Space between border panels
-                # Get stacks, so list of lists of rows
-                if paxs._order=='C': # _n is number of columns
-                    if side=='b':
-                        paxs_stack = [paxs[i*n:i*n+n] for i in range(m)] # m is number of stacks
-                    else: # lr
-                        paxs_stack = [paxs[i::n] for i in range(n)] # n is number of stacks
-                else: # _n is number of rows
-                    if side=='b':
-                        paxs_stack = [paxs[i::n] for i in range(n)] # n is number of stacks
-                    else: # lr
-                        paxs_stack = [paxs[i*n:i*n+n] for i in range(m)] # m is number of stacks
-                # Get ratios
-                pratios = []
-                for paxs in paxs_stack[0]:
-                    igs = paxs._panels_stack_gridspec
-                    if side=='b':
-                        ipratios = igs.get_height_ratios()
-                    else:
-                        ipratios = igs.get_width_ratios()
-                    pratios.append(ipratios)
-                # Get spacing and apply to ratios
-                sep = []
-                for i in range(len(paxs_stack)-1):
-                    idx = 1 + 2*i
-                    istack = paxs_stack[i]
-                    jstack = paxs_stack[i+1]
-                    if side=='b':
-                        func = _intervaly_errfix
-                    else:
-                        func = _intervalx_errfix
-                    # Get proper space
-                    flush = istack[0]._flush
-                    if flush:
-                        isep = 0
-                    elif side=='b':
-                        isep = min((func(ipanel)[0] - func(jpanel)[1])/self.dpi
-                                   for ipanel,jpanel in zip(istack,jstack))
-                    else:
-                        isep = min((func(jpanel)[0] - func(ipanel)[1])/self.dpi
-                                   for ipanel,jpanel in zip(istack,jstack))
-                    # Adjust ratios for panel gridspec
-                    # WARNING: Assumes ratios are same across rows/columns
-                    isep = max([0, pratios[0][idx] - isep + pad])
-                    sep.append(isep)
-                    for ipratios in pratios:
-                        ipratios[idx] = isep
-                # Supply information for adjusting main gridspec
+                # Turn 2D list of panels into list of stacked panels!
+                if (side=='b' and order=='C') or (side!='b' and order!='C'):
+                    paxs = [paxs[i::n] for i in range(n)] # n is number of panels
+                else:
+                    paxs = [paxs[i*n:i*n+n] for i in range(m)] # m is number of panels
+                sep = self._panel_tight_layout(side, paxs, renderer, figure=True)
                 subplots_kw[side + 'sep'] = sep
-            xrange[:,1] += 1 # now, ids are not endpoint inclusive
-            yrange[:,1] += 1
             # Construct "wspace" and "hspace" including panel spaces
             wspace_orig, hspace_orig = subplots_kw['wspace'], subplots_kw['hspace'] # originals
             if self.leftpanel:
@@ -800,6 +741,8 @@ class Figure(mfigure.Figure):
             # column of *space*, containing lists of dictionaries with 'l' and
             # 'r' keys, describing groups of "touching" axes in that column
             xgroups = []
+            xrange[:,1] += 1 # now, ids are not endpoint inclusive
+            yrange[:,1] += 1
             ncols = self._main_axes[0]._ncols # includes panels?
             nrows = self._main_axes[0]._nrows
             for cspace in range(1, ncols): # spaces between columns
@@ -890,36 +833,25 @@ class Figure(mfigure.Figure):
         # The same, but for spaces between *axes panels*
         #----------------------------------------------------------------------#
         if self._smart_tight_panel and any(ax._panels_main_gridspec for ax in self._main_axes): # i.e. any axes has non-EmptyPanel panels
-            # Get bounding boxes right now, otherwise they are queried a bunch
-            # of times which may slow things down unnecessarily (benchmark?)
-            # WARNING: Seems the erroneous padding is only issue for
-            # subplots in the *main* gridspec; subplots inside inner
-            # gridspecs to fine. Maybe depends on version though?
-            axs = self._main_axes
-            xspans = [_intervalx_errfix(ax,ax._tight_bbox) for ax in axs]
-            yspans = [_intervaly_errfix(ax,ax._tight_bbox) for ax in axs]
             # Bottom, top panels in same rows
             # TODO: Don't just check space between panel and main axes, also
             # check space between panels
+            axs = self._main_axes
             for row in range(nrows):
-                pairs = [(ax.bottompanel, yspan) for ax,yspan in zip(axs,yspans)
-                        if ax._yrange[1]==row]
-                if pairs: # usage is (side, panels, spans, renderer)
-                    self._panel_tight_layout('b', *zip(*pairs), renderer)
-                pairs = [(ax.toppanel, yspan) for ax,yspan in zip(axs,yspans)
-                        if ax._yrange[0]==row]
-                if pairs:
-                    self._panel_tight_layout('t', *zip(*pairs), renderer)
+                paxs = [ax.bottompanel for ax in axs if ax._yrange[1]==row]
+                if paxs: # usage is (side, panels, spans, renderer)
+                    self._panel_tight_layout('b', paxs, renderer)
+                paxs = [ax.toppanel for ax in axs if ax._yrange[0]==row]
+                if paxs:
+                    self._panel_tight_layout('t', paxs, renderer)
             # Left, right panels in same columns
             for col in range(ncols):
-                pairs = [(ax.leftpanel, xspan) for ax,xspan in zip(axs,xspans)
-                        if ax._xrange[0]==col]
-                if pairs:
-                    self._panel_tight_layout('l', *zip(*pairs), renderer)
-                pairs = [(ax.rightpanel, xspan) for ax,xspan in zip(axs,xspans)
-                        if ax._xrange[1]==col]
-                if pairs:
-                    self._panel_tight_layout('r', *zip(*pairs), renderer)
+                paxs = [ax.leftpanel for ax in axs if ax._xrange[0]==col]
+                if paxs:
+                    self._panel_tight_layout('l', paxs, renderer)
+                paxs = [ax.rightpanel for ax in axs if ax._xrange[1]==col]
+                if paxs:
+                    self._panel_tight_layout('r', paxs, renderer)
             # Reference axes
             axref = axs[self._ref_num - 1]
             gs = axref._panels_main_gridspec
@@ -985,6 +917,7 @@ class Figure(mfigure.Figure):
             ax.width, ax.height = width_new, height_new
         # Special redo in case of cartopy axes
         if aspect_changed:
+            self._auto_bboxs(renderer)
             self.smart_tight_layout(renderer)
 
     def draw(self, renderer, *args, **kwargs):
