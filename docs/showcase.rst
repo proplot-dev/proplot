@@ -1477,7 +1477,7 @@ Zooming into projections
 ------------------------
 
 Zooming into projections is done much as before. For
-`~mpl_toolkits.basemap` projections, simply pass ``proj_kw`` to
+`~mpl_toolkits.basemap` non-polar projections, simply pass ``proj_kw`` to
 `~proplot.subplots.subplots` with any of the ``llcrnrlon``,
 ``llcrnrlat``, ``urcrnrlon``, ``urcrnrlat``, ``llcrnrx``, ``llcrnry``,
 ``urcrnrx``, ``urcrnry``, ``width``, and/or ``height`` keyword args. For
@@ -1503,6 +1503,18 @@ Zooming into projections is done much as before. For
    :width: 323px
    :height: 387px
 
+To zoom into `~mpl_toolkits.basemap` polar projections, pass ``proj_kw`` to
+`~proplot.subplots.subplots` with the ``boundinglat`` keyword arg.
+
+.. code:: ipython3
+    
+    import proplot as plot
+    f, ax = plot.subplots(proj='spstere', basemap=True, axwidth=3.3,
+                          proj_kw={'boundinglat': -30, 'lon_0': 120})
+    ax.format(land=True, landcolor='black',
+              suptitle='Zooming into Polar Stereographic Projections')
+
+.. image:: showcase/showcase_spstere.png
 
 Colormaps and colors
 ====================
