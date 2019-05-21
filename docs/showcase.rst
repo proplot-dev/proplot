@@ -799,6 +799,48 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
    :height: 240px
 
 
+Stacked panels
+--------------
+
+ProPlot also allows arbitrarily *stacking* panels with the ``lstack``,
+``bstack``, ``rstack``, and ``tstack`` keyword args. This can be useful
+when you want multiple figure colorbars, when you have illustrations
+with multiple colormaps inside a single axes, or when you need multiple
+panels for displaing various statistics across one dimension of a
+primary axes.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(nrows=2, axwidth=1.2, span=False, share=0,
+                          axcolorbars='l', axcolorbars_kw={'lstack':4},
+                          axpanels='r', axpanels_kw={'rstack':2, 'rflush':True, 'rwidth':0.5}
+                          )
+    axs[0].format(title='Stacked panel demo', titleweight='bold')
+    # Draw stuff in axes
+    n = 10
+    for ax in axs:
+        # Colormap data
+        ax.format(xlabel='data', xlocator=np.linspace(0, 0.8, 5))
+        for i,(x0,y0,cmap,scale) in enumerate(((0,0,'greys',0.5), (0,0.5,'reds',1), (0.5,0,'blues',2), (0.5,0.5,'oranges',1))):
+            data = np.random.rand(n,n)*scale
+            x, y = np.linspace(x0, x0+0.5, 11), np.linspace(y0, y0+0.5, 11)
+            m = ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0,scale,11))
+            ax.lpanel[i].colorbar(m)
+        # Plot data
+        for i,pax in enumerate(ax.rpanel):
+            func = data.mean if i==0 else data.std
+            pax.plot(func(axis=1), plot.arange(0.05, 0.95, 0.1), lw=2, color='k')
+            pax.format(xlabel='mean' if i==0 else 'stdev', xlim=(0,1), xlocator=(0,0.5))
+
+
+
+.. image:: showcase/showcase_51_0.png
+   :width: 524px
+   :height: 510px
+
+
 Helvetica as the default font
 -----------------------------
 
@@ -841,7 +883,7 @@ professional-looking than the DejaVu Sans, in my biased opinion. See the
 
 
 
-.. image:: showcase/showcase_52_0.png
+.. image:: showcase/showcase_54_0.png
    :width: 751px
    :height: 697px
 
@@ -881,25 +923,25 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_56_0.png
+.. image:: showcase/showcase_58_0.png
    :width: 643px
    :height: 166px
 
 
 
-.. image:: showcase/showcase_56_1.png
+.. image:: showcase/showcase_58_1.png
    :width: 643px
    :height: 176px
 
 
 
-.. image:: showcase/showcase_56_2.png
+.. image:: showcase/showcase_58_2.png
    :width: 643px
    :height: 175px
 
 
 
-.. image:: showcase/showcase_56_3.png
+.. image:: showcase/showcase_58_3.png
    :width: 643px
    :height: 190px
 
@@ -918,13 +960,13 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_57_0.png
+.. image:: showcase/showcase_59_0.png
    :width: 490px
    :height: 491px
 
 
 
-.. image:: showcase/showcase_57_1.png
+.. image:: showcase/showcase_59_1.png
    :width: 490px
    :height: 498px
 
@@ -963,7 +1005,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_60_0.png
+.. image:: showcase/showcase_62_0.png
    :width: 510px
    :height: 472px
 
@@ -989,7 +1031,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_63_0.png
+.. image:: showcase/showcase_65_0.png
    :width: 569px
    :height: 237px
 
@@ -1022,7 +1064,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_65_0.png
+.. image:: showcase/showcase_67_0.png
    :width: 502px
    :height: 557px
 
@@ -1061,7 +1103,7 @@ details.
 
 
 
-.. image:: showcase/showcase_68_0.png
+.. image:: showcase/showcase_70_0.png
    :width: 793px
    :height: 630px
 
@@ -1094,7 +1136,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_71_0.png
+.. image:: showcase/showcase_73_0.png
    :width: 446px
    :height: 223px
 
@@ -1126,7 +1168,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_72_0.png
+.. image:: showcase/showcase_74_0.png
    :width: 540px
    :height: 567px
 
@@ -1166,7 +1208,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_73_0.png
+.. image:: showcase/showcase_75_0.png
    :width: 420px
    :height: 549px
 
@@ -1215,13 +1257,13 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
 
 
 
-.. image:: showcase/showcase_76_0.png
+.. image:: showcase/showcase_78_0.png
    :width: 599px
    :height: 212px
 
 
 
-.. image:: showcase/showcase_76_1.png
+.. image:: showcase/showcase_78_1.png
    :width: 516px
    :height: 445px
 
@@ -1249,7 +1291,7 @@ of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
 
 
 
-.. image:: showcase/showcase_77_0.png
+.. image:: showcase/showcase_79_0.png
    :width: 540px
    :height: 269px
 
@@ -1313,7 +1355,7 @@ projections by subclassing the `~cartopy.crs.Projection` class.
 
 
 
-.. image:: showcase/showcase_82_1.png
+.. image:: showcase/showcase_84_1.png
    :width: 576px
    :height: 1037px
 
@@ -1346,7 +1388,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_85_0.png
+.. image:: showcase/showcase_87_0.png
    :width: 598px
    :height: 1073px
 
@@ -1402,13 +1444,13 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_88_1.png
+.. image:: showcase/showcase_90_1.png
    :width: 591px
    :height: 405px
 
 
 
-.. image:: showcase/showcase_88_2.png
+.. image:: showcase/showcase_90_2.png
    :width: 591px
    :height: 405px
 
@@ -1449,7 +1491,7 @@ details.
 
 
 
-.. image:: showcase/showcase_91_0.png
+.. image:: showcase/showcase_93_0.png
    :width: 386px
    :height: 221px
 
@@ -1468,7 +1510,7 @@ details.
 
 
 
-.. image:: showcase/showcase_92_0.png
+.. image:: showcase/showcase_94_0.png
    :width: 490px
    :height: 416px
 
@@ -1499,7 +1541,7 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_94_0.png
+.. image:: showcase/showcase_96_0.png
    :width: 323px
    :height: 387px
 
@@ -1533,7 +1575,7 @@ cross-sections of these colorspaces, as shown below.
 
 
 
-.. image:: showcase/showcase_98_0.png
+.. image:: showcase/showcase_100_0.png
    :width: 576px
    :height: 212px
 
@@ -1545,7 +1587,7 @@ cross-sections of these colorspaces, as shown below.
 
 
 
-.. image:: showcase/showcase_99_0.png
+.. image:: showcase/showcase_101_0.png
    :width: 576px
    :height: 212px
 
@@ -1557,7 +1599,7 @@ cross-sections of these colorspaces, as shown below.
 
 
 
-.. image:: showcase/showcase_100_0.png
+.. image:: showcase/showcase_102_0.png
    :width: 576px
    :height: 212px
 
@@ -1578,13 +1620,13 @@ relatively non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_102_1.png
+.. image:: showcase/showcase_104_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_102_2.png
+.. image:: showcase/showcase_104_2.png
    :width: 748px
    :height: 245px
 
@@ -1620,7 +1662,7 @@ with poor, perceptually un-uniform transitions were thrown out.
 
 
 
-.. image:: showcase/showcase_105_1.png
+.. image:: showcase/showcase_107_1.png
    :width: 436px
    :height: 4333px
 
@@ -1653,7 +1695,7 @@ constructor function. See below for details.
 
 
 
-.. image:: showcase/showcase_108_0.png
+.. image:: showcase/showcase_110_0.png
    :width: 540px
    :height: 1615px
 
@@ -1692,7 +1734,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_111_0.png
+.. image:: showcase/showcase_113_0.png
    :width: 720px
    :height: 1316px
 
@@ -1704,7 +1746,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_112_0.png
+.. image:: showcase/showcase_114_0.png
    :width: 630px
    :height: 225px
 
@@ -1753,7 +1795,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_115_1.png
+.. image:: showcase/showcase_117_1.png
    :width: 544px
    :height: 334px
 
@@ -1793,7 +1835,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_117_0.png
+.. image:: showcase/showcase_119_0.png
    :width: 724px
    :height: 345px
 
@@ -1821,7 +1863,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_119_0.png
+.. image:: showcase/showcase_121_0.png
    :width: 526px
    :height: 325px
 
@@ -1845,7 +1887,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_121_0.png
+.. image:: showcase/showcase_123_0.png
    :width: 652px
    :height: 287px
 
@@ -1868,7 +1910,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_123_0.png
+.. image:: showcase/showcase_125_0.png
    :width: 652px
    :height: 287px
 
@@ -1896,7 +1938,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_125_0.png
+.. image:: showcase/showcase_127_0.png
    :width: 652px
    :height: 424px
 
@@ -1928,7 +1970,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_128_0.png
+.. image:: showcase/showcase_130_0.png
    :width: 465px
    :height: 326px
 
@@ -1962,7 +2004,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_130_1.png
+.. image:: showcase/showcase_132_1.png
    :width: 619px
    :height: 311px
 
@@ -1991,7 +2033,7 @@ example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
 
 
 
-.. image:: showcase/showcase_132_0.png
+.. image:: showcase/showcase_134_0.png
    :width: 544px
    :height: 478px
 
@@ -2030,7 +2072,7 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_135_0.png
+.. image:: showcase/showcase_137_0.png
    :width: 431px
    :height: 582px
 

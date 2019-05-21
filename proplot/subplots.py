@@ -154,7 +154,6 @@ def _ax_span(ax, renderer, children=True):
     been replaced by colorbar in same location."""
     # Get bounding boxes
     axs = [ax]
-    ax = ax._colorbar_parent or ax
     if children:
         iaxs = (*ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel, ax._altx_child, ax._alty_child)
         for iax in iaxs:
@@ -177,7 +176,7 @@ def _ax_props(axs, renderer):
     tight bounding box for."""
     if not axs: # e.g. an "empty panel" was passed
         return (np.empty((0,2)),)*4
-    axs = [(ax._colorbar_child or ax) for ax in axs if ax and ax.get_visible()]
+    axs = [ax for ax in axs if ax and ax.get_visible()]
     if not axs:
         return (np.empty((0,2)),)*4
     spans = [_ax_span(ax, renderer) for ax in axs]
@@ -350,6 +349,8 @@ class Figure(mfigure.Figure):
     def _auto_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have
         to call the tight bbox algorithm multiple times."""
+        if renderer is None:
+            renderer = self.canvas.get_renderer()
         for ax in (*self._main_axes, *self.leftpanel, *self.bottompanel, *self.rightpanel):
             if not ax:
                 continue
@@ -408,8 +409,8 @@ class Figure(mfigure.Figure):
                     continue
                 if not iax.get_visible():
                     continue
-                # for jax in (iax, iax._colorbar_child, iax._altx_child, iax._alty_child):
-                for j,jax in enumerate((iax, iax._colorbar_child, iax._altx_child, iax._alty_child)):
+                # for jax in (iax, iax._altx_child, iax._alty_child):
+                for j,jax in enumerate((iax, iax._altx_child, iax._alty_child)):
                     if not jax:
                         continue
                     # Box for column label
@@ -959,9 +960,10 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         filename : str
-            The file name and path.
+            The file name and path. Use a tilde ``~`` to represent the home
+            directory.
         **kwargs
-            Passed to the matplotlib `~matplotlib.figure.Figure.savefig` method.
+            Passed to the parent `~matplotlib.figure.Figure.savefig` method.
         """
         # Notes
         # * Gridspec object must be updated before figure is printed to
@@ -969,7 +971,9 @@ class Figure(mfigure.Figure):
         #   Seems to be glitch, should open thread on GitHub.
         # * To color axes patches, you may have to explicitly pass the
         #   transparent=False kwarg.
-        #   Some kwarg translations, to pass to savefig
+        # Expand user
+        filename = os.path.expanduser(filename)
+        # Standardize
         if 'alpha' in kwargs:
             kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
         if 'color' in kwargs:
@@ -984,7 +988,7 @@ class Figure(mfigure.Figure):
             axis.axes._share_span_label(axis, final=True)
         if not self._silent:
             print(f'Saving to "{filename}".')
-        return super().savefig(os.path.expanduser(filename), **kwargs) # specify DPI for embedded raster objects
+        return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
     # WARNING: This causes error, for some reason prevents subclassed axes
     # from being assigned. Forget the lock.
@@ -1963,6 +1967,10 @@ def subplots(array=None, ncols=1, nrows=1,
     hextra = sum(axkw['hspace']) + \
             sum(sum(_default(axkw[side + 'width'], [0])) for side in 'tb') + \
             sum(sum(_default(axkw[side + 'sep'], [0])) for side in 'tb')
+    if axwidth is not None:
+        axwidth += wextra
+    if axheight is not None:
+        axheight += hextra
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = _subplots_kwargs(nrows, ncols, aspect, ref,
             left=left, right=right, bottom=bottom, top=top,
