@@ -977,7 +977,7 @@ class Figure(mfigure.Figure):
             kwargs['transparent'] = False
         # Finally, save
         self._lock_twins()
-        self._auto_bboxs(renderer)
+        self._auto_bboxs()
         self._auto_title_pos() # just applies the spacing
         self._auto_smart_tight_layout()
         for axis in self._span_labels:
