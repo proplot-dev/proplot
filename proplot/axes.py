@@ -3445,7 +3445,7 @@ class PolarAxes(MapAxes, mproj.PolarAxes):
 
     def smart_update(self, *args, **kwargs):
         """Calls `BaseAxes.smart_update`."""
-        super(BaseAxes, self).smart_update(*args, **kwargs)
+        super(MapAxes, self).smart_update(*args, **kwargs)
 
     name = 'newpolar'
     """The registered projection name."""
