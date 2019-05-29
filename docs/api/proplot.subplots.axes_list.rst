@@ -12,8 +12,12 @@ axes_list
 
       ~axes_list.__getattr__
       ~axes_list.__getitem__
+      ~axes_list.__setattr__
+      ~axes_list.__setitem__
 
    .. rubric:: Methods Documentation
 
    .. automethod:: __getattr__
    .. automethod:: __getitem__
+   .. automethod:: __setattr__
+   .. automethod:: __setitem__

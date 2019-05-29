@@ -3,9 +3,14 @@ Figures and subplots
 
 **Classes**
 
+.. automodsumm:: proplot.gridspec
+   :classes-only:
+   :toctree: api
 .. automodsumm:: proplot.subplots
    :classes-only:
    :toctree: api
+   :skip: FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
+
 
 **Functions**
 

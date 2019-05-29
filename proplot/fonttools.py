@@ -9,7 +9,7 @@ documentation for details.
 
 Todo
 ----
-Make temp file of something that indicates whether fonts have been installed,
+Make temp file or something that indicates whether fonts have been installed,
 and call `install_fonts` automatically?
 """
 import os
@@ -30,22 +30,14 @@ from matplotlib import matplotlib_fname, get_cachedir
 _dir_data = re.sub('/matplotlibrc$', '', matplotlib_fname())
 
 fonts_mpl_files = sorted(glob.glob(f"{_dir_data}/fonts/ttf/*.[ot]tf"))
-"""
-Font files provided by matplotlib or ProPlot.
-"""
+"""Font filenames provided by matplotlib or ProPlot."""
 fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf')) # even with that fontext, will include otf! weird
-"""
-Font files provided by your operating system.
-"""
+"""Font filenames provided by your operating system."""
 
 fonts_mpl = set()
-"""
-Registered font names provided by matplotlib or ProPlot.
-"""
+"""Registered font names provided by matplotlib or ProPlot."""
 fonts_os = set()
-"""
-Registered font names provided by your operating system.
-"""
+"""Registered font names provided by your operating system."""
 for _file in fonts_os_files:
     try:
         fonts_os.add(mfonts.FontProperties(fname=_file).get_name())
@@ -57,9 +49,7 @@ for _file in fonts_mpl_files:
     except Exception as err:
         pass # fails sometimes
 fonts = {*fonts_os, *fonts_mpl}
-"""
-All registered font names.
-"""
+"""All registered font names."""
 
 # Missing fonts (this list is filled whenever user requests one)
 _missing_fonts = []

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Tools for visualizing colorspaces, colormaps, color names, and color cycles."""
 from matplotlib import rcParams
 import os
 import re
@@ -83,8 +84,8 @@ def colorspace_breakdown(luminance=None, chroma=None, saturation=None, hue=None,
     return f
 
 def cmap_breakdown(cmap, N=100, space='hcl'):
-    """Handy visualization of how a `~proplot.colortools.PerceptuallyUniformColormap`
-    varies in the HCL, HSLuv, and HPLuv colorspaces."""
+    """Shows how an arbitrary colormap varies in the HCL, HSLuv, and HPLuv
+    colorspaces."""
     # Figure
     f, axs = subplots(ncols=4, legends='b', colorbar='r',
                     span=False, sharey=1, subplotpad=0.05,
@@ -130,7 +131,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
 # Reference tables for colors, colormaps, cycles
 #------------------------------------------------------------------------------#
 def color_show(opencolors=False, ncols=4, nbreak=12, minsat=0.2):
-    """Visualizes all possible named colors. Adapted from `this example
+    """Visualizes all named colors. Adapted from `this example
     <https://matplotlib.org/examples/color/named_colors.html>`_."""
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map (see soure code; is just a dictionary wrapper
@@ -216,37 +217,8 @@ def color_show(opencolors=False, ncols=4, nbreak=12, minsat=0.2):
     ax.set_axis_off()
     return fig
 
-def cycle_show():
-    """Visualizes the registered color cycles names."""
-    # Get the list of cycles
-    _cycles = {name:mcm.cmap_d[name].colors for name in tools.cycles}
-    _cycles = {name:_cycles[name] for name in sorted(_cycles.keys())}
-    nrows = len(_cycles)//2 + len(_cycles)%2
-    # Create plot
-    state = np.random.RandomState(528)
-    fig, axs = subplots(width=6, sharey=False, sharex=False, subplotpad=0.05,
-                        aspect=2, ncols=2, nrows=nrows)
-    for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
-        key = key.lower()
-        array = state.rand(20,len(cycle)) - 0.5
-        array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
-        for j,color in enumerate(cycle):
-            l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
-            l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
-        title = f'{key}: {len(cycle)} colors'
-        ax.set_title(title)
-        ax.grid(True)
-        for axis in 'xy':
-            ax.tick_params(axis=axis,
-                    which='both', labelbottom=False, labelleft=False,
-                    bottom=False, top=False, left=False, right=False)
-    if len(_cycles)%2==1:
-        axs[-1].set_visible(False)
-    return fig
-
-# def cmap_show(N=31):
 def cmap_show(N=129):
-    """Plots all current colormaps, along with their catgories. Adapted from
+    """Visualizes the registered colormaps. Adapted from
     `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
     cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
@@ -311,5 +283,33 @@ def cmap_show(N=129):
                       title=(cat if imap==0 else None))
         # Space for plots
         nplots += len(names)
+    return fig
+
+def cycle_show():
+    """Visualizes the registered color cycles."""
+    # Get the list of cycles
+    _cycles = {name:mcm.cmap_d[name].colors for name in tools.cycles}
+    _cycles = {name:_cycles[name] for name in sorted(_cycles.keys())}
+    nrows = len(_cycles)//2 + len(_cycles)%2
+    # Create plot
+    state = np.random.RandomState(528)
+    fig, axs = subplots(width=6, sharey=False, sharex=False, subplotpad=0.05,
+                        aspect=2, ncols=2, nrows=nrows)
+    for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
+        key = key.lower()
+        array = state.rand(20,len(cycle)) - 0.5
+        array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
+        for j,color in enumerate(cycle):
+            l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
+            l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
+        title = f'{key}: {len(cycle)} colors'
+        ax.set_title(title)
+        ax.grid(True)
+        for axis in 'xy':
+            ax.tick_params(axis=axis,
+                    which='both', labelbottom=False, labelleft=False,
+                    bottom=False, top=False, left=False, right=False)
+    if len(_cycles)%2==1:
+        axs[-1].set_visible(False)
     return fig
 

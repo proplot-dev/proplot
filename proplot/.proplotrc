@@ -9,7 +9,7 @@ rcGlobals:
     # Subplots
     tight:      True
     # Important settings
-    fontname:
+    fontname:  # if empty, default is 'Helvetica Neue' for Mac, 'Helvetica' for Linux
     cycle:     colorblind
     rgbcycle:  False 
     cmap:      sunset
@@ -20,7 +20,7 @@ rcGlobals:
     grid:      True
     geogrid:   True
     gridminor: False
-    hatch:     # background hatching, none if empty
+    hatch:     # background hatching; if empty, no hatching
     facecolor: w
     alpha:     1 # background patch alpha
     small:     8

@@ -1,5 +1,5 @@
-Color tools
------------
+Colormaps, cycles, and colors
+-----------------------------
 
 **Classes**
 

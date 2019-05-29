@@ -1,5 +1,5 @@
-Font tools
-------------------------
+Font management
+---------------
 
 **Variables**
 

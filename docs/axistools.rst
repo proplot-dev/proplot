@@ -1,5 +1,5 @@
-Axis tools
-------------------------
+Axis locators, formatters, and scales
+-------------------------------------
 
 **Classes**
 

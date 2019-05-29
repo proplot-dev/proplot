@@ -1569,7 +1569,7 @@ def colorbar_factory(ax, mappable, values=None,
     else:
         axis = ax.yaxis
         scale = height*np.diff(getattr(ax.get_position(),'intervaly'))[0]
-    extendlength = utils.units(_default(extendlength, rc.get('colorbar.extendfull')))
+    extendlength = utils.units(_default(extendlength, rc.get('colorbar.extend')))
     extendlength = extendlength/(scale - 2*extendlength)
     formatter    = axistools.Formatter(formatter, **formatter_kw)
     kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
@@ -2206,7 +2206,7 @@ class BaseAxes(maxes.Axes):
         """
         # Default props
         loc = _default(loc, rc.get('colorbar.loc'))
-        extend = units(_default(extendlength, rc.get('colorbar.extend')))
+        extend = units(_default(extendlength, rc.get('colorbar.insetextend')))
         length = units(_default(pad, rc.get('colorbar.length')))/self.width
         width = units(_default(pad, rc.get('colorbar.width')))/self.height
         pad = units(_default(pad, rc.get('colorbar.axespad')))
@@ -3238,7 +3238,7 @@ class PanelAxes(XYAxes):
         """
         Use ``fill=True`` (the default) to fill the panel with a colorbar.
         Use ``fill=False`` to add an inset colorbar with `BaseAxes.colorbar`.
-        If the former, `length` changes the fractional extent of the panel
+        If the former, `length` denotes the fractional extent of the panel
         that is filled.
 
         See `~matplotlib.figure.Figure.colorbar` and `colorbar_factory`

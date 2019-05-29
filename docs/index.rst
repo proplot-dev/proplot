@@ -111,10 +111,24 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. toctree::
    :hidden:
    :maxdepth: 4
-   :caption: Contents
+   :caption: Getting Started
 
-   tutorial
-   documentation
+   showcase
+
+.. toctree::
+   :hidden:
+   :maxdepth: 4
+   :caption: API Reference
+
+   subplots
+   axes
+   axistools
+   colortools
+   demos
+   projs
+   rcmod
+   utils
+   fonttools
 
 
 Indices and tables

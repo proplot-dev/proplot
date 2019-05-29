@@ -158,10 +158,10 @@ class FlexibleGridSpecBase(object):
         super().update(**edges_kw) # remaining kwargs should just be left, right, top, bottom
 
 class FlexibleGridSpec(FlexibleGridSpecBase, mgridspec.GridSpec):
-    """Dummy mixer class. See `FlexibleGridSpecBase`."""
+    """Mixes `FlexibleGridSpecBase` with `~matplotlib.gridspec.GridSpec`."""
     pass
 
 class FlexibleGridSpecFromSubplotSpec(FlexibleGridSpecBase, mgridspec.GridSpecFromSubplotSpec):
-    """Dummy mixer class. See `FlexibleGridSpecBase`."""
+    """Mixes `FlexibleGridSpecBase` with `~matplotlib.gridspec.GridSpecFromSubplotSpec`."""
     pass
 

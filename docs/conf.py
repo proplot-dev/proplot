@@ -140,9 +140,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-# NOTE: Must add 'include' files or will get duplicate label warnings.
+# WARNING: Must add 'include' files or will get duplicate label warnings.
+# WARNING: Must add files containing showcase examples
 exclude_patterns = ['_build', '_templates', '_themes', 'sphinxext',
-                    'originals', 'showcase*', 'Thumbs.db', '.DS_Store']
+                    'originals', 'showcase', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'

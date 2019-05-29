@@ -26,4 +26,3 @@ from .fonttools import *  # fonts
 from .axistools import *  # locators, normalizers, and formatters
 from .projs import *      # projections and whatnot
 from .demos import *      # demonstrations
-from .notebook import *

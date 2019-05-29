@@ -18,9 +18,12 @@ import os
 import re
 import numpy as np
 # Local modules, projection sand formatters and stuff
+# Note we want gridspec classes documented in this section!
 from .rcmod import rc
 from .utils import _default, _timer, _counter, units, journals, ic
 from . import axistools, gridspec, projs, axes
+from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
+# Other tools
 import functools
 import warnings
 import matplotlib.pyplot as plt
@@ -57,8 +60,8 @@ def show():
 class axes_list(list):
     """Magical class that iterates through items and calls respective
     method (or retrieves respective attribute) on each one. For example,
-    ``axs.format(color='r')`` colors all axes spines and tick marks red."""
-    def __init__(self, list_, order='C', n=1):
+    ``axs.format(color='r')`` colors all axis spines red."""
+    def __init__(self, list_, n=1, order='C'):
         """Adds special attributes."""
         self._n = n # means ncols or nrows, depending on order
         self._order = order
@@ -69,11 +72,11 @@ class axes_list(list):
         return 'axes_list(' + super().__repr__() + ')'
 
     def __setitem__(self, key):
-        """Immutable object."""
+        """Pseudo immutability; raises error."""
         raise RuntimeError('axes_list is immutable.')
 
     def __setattr__(self, key, value):
-        """Immutable object."""
+        """Pseudo immutability; raises error."""
         if key in ('_n','_order'):
             object.__setattr__(self, key, value)
         else:
@@ -1106,7 +1109,7 @@ class Figure(mfigure.Figure):
         ncols = 1 + len(re.sub('[^lr]', '', which))
         rows = np.array([w for w in ('t', 'c', 'b') if w in ('c', *which)])
         cols = np.array([w for w in ('l', 'c', 'r') if w in ('c', *which)])
-        gs = gridspec.FlexibleGridSpecFromSubplotSpec(subplot_spec=subspec,
+        gs = FlexibleGridSpecFromSubplotSpec(subplot_spec=subspec,
             nrows=nrows, ncols=ncols,
             wspace=wspace, hspace=hspace,
             width_ratios=wratios, height_ratios=hratios)
@@ -1144,7 +1147,7 @@ class Figure(mfigure.Figure):
             # Make gridspec and draw panels
             paxs = []
             name = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}[side]
-            igs = gridspec.FlexibleGridSpecFromSubplotSpec(
+            igs = FlexibleGridSpecFromSubplotSpec(
                 subplot_spec=gs[r[0],c[0]],
                 nrows=nrows, ncols=ncols,
                 wspace=wspace, hspace=hspace,
@@ -1722,7 +1725,7 @@ def subplots(array=None, ncols=1, nrows=1,
     tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, rcreset, silent
         Passed to `Figure`.
     **kwargs
-        Passed to `~proplot.gridspec.FlexibleGridSpec`.
+        Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
 
     See also
     --------
@@ -1978,7 +1981,7 @@ def subplots(array=None, ncols=1, nrows=1,
             wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace, wextra=wextra, hextra=hextra,
             **kwargs)
     # Apply settings and add attributes
-    gs = gridspec.FlexibleGridSpec(**gridspec_kw)
+    gs = FlexibleGridSpec(**gridspec_kw)
     fig.set_size_inches(figsize)
     fig._main_gridspec = gs
     fig._subplots_kw = subplots_kw
@@ -2031,7 +2034,7 @@ def subplots(array=None, ncols=1, nrows=1,
                 nrows, ncols = len(hratios), 1
             # Make gridspec for containing the "stack" of panels
             ipaxs = []
-            igs = gridspec.FlexibleGridSpecFromSubplotSpec(subplot_spec=subspec,
+            igs = FlexibleGridSpecFromSubplotSpec(subplot_spec=subspec,
                     nrows=nrows, ncols=ncols,
                     wspace=wspace, hspace=hspace,
                     width_ratios=wratios, height_ratios=hratios,

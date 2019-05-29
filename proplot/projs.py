@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-Adds pseudocylindrical `cartopy projections
-<https://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_
-that are currently unavailable: Hammer, Aitoff, Kavrayskiy VII,
-and Winkel tripel.
-
+Introduces the generalized `~mpl_toolkits.basemap` `~mpl_toolkits.basemap.Basemap`
+and `cartopy.crs.Projection` projection instantiator "`Proj`".
 Also "registers" cartopy projections by their `PROJ.4 aliases
 <https://proj4.org/operations/projections/index.html>`_ like in
-`~mpl_toolkits.basemap`. Projections can be drawn using the `proj`
-keyword arg with the `~proplot.subplots.subplots` function.
+`~mpl_toolkits.basemap`.
 
 .. I'm not sure why the architects of matplotlib and related
    libraries choose to "register" certain libraries of closely-related
    classes (e.g. axis scales, projections), but not others.
 
+Also adds pseudocylindrical `cartopy projections
+<https://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_
+that are currently unavailable: Hammer, Aitoff, Kavrayskiy VII,
+and Winkel tripel.
+
 Table of projections
---------------------
+====================
 The following is a table of registered projections, their full names (with a
 link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
 if it exists), and whether they are available in the cartopy and basemap packages.
@@ -137,7 +138,7 @@ def Proj(name, basemap=False, **kwargs):
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         name = _basemap_cyl.get(name, name)
-        kwproj = _basemap_kw.get(name, {})
+        kwproj = basemap_rc.get(name, {})
         kwproj.update(kwargs)
         kwproj.update({'fix_aspect': True})
         if name in _basemap_circles:
@@ -210,7 +211,6 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         """Projection resolution."""
         return 1e4
 
-# TODO: Check this, but should be pretty much identical to above
 class WinkelTripel(_WarpedRectangularProjection):
     """The `Winkel tripel (Winkel III) <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__
     projection."""
@@ -237,7 +237,7 @@ _basemap_cyl = { # aliases for 'cyl', that match PROJ4 name and common name
     'eqc':     'cyl',
     'pcarree': 'cyl',
     }
-_basemap_kw = { # note either llcrn/urcrnr args (all 4) can be specified, or width and height can be specified
+basemap_rc = { # note either llcrn/urcrnr args (all 4) can be specified, or width and height can be specified
     'eck4':    {'lon_0':0},
     'geos':    {'lon_0':0},
     'hammer':  {'lon_0':0},
@@ -265,9 +265,9 @@ _basemap_kw = { # note either llcrn/urcrnr args (all 4) can be specified, or wid
     'merc':    {'llcrnrlat':-80, 'urcrnrlat':84, 'llcrnrlon':-180, 'urcrnrlon':180},
     'omerc':   {'lat_0':0, 'lon_0':0, 'lat_1':-10, 'lat_2':10, 'lon_1':0, 'lon_2':0, 'width':10000e3, 'height':10000e3},
     }
-"""Default keyword args for Basemap projections. Basemap will raise error if
-you don't provide them but that's annoying, better to just have some
-default behavior."""
+"""Default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
+`~mpl_toolkits.basemap` will raise an error if you don't provide them,
+so ProPlot imposes some sensible default behavior."""
 
 # Cartopy stuff
 _crs_translate = { # add to this

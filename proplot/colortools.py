@@ -2,8 +2,8 @@
 """
 Registers colormaps, color cycles, and color string names with
 `register_cmaps`, `register_cycles`, and `register_colors`.
-Defines tools for creating new colormaps and color cycles, i.e. `colormap`
-and `colors`. Defines helpful new `~matplotlib.colors.Normalize` and
+Defines tools for creating new colormaps and color cycles, i.e. `Colormap`
+and `Cycle`. Defines helpful new `~matplotlib.colors.Normalize` and
 `~matplotlib.colors.Colormap` classes.
 
 For a visual reference, see the :ref:`Table of colormaps`,
@@ -1180,7 +1180,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         **kwargs):
     """
     Convenience function for generating and merging colormaps
-    in a variety of ways.
+    in a variety of ways. See also `~proplot.axes.wrapper_cmap`.
 
     Parameters
     ----------
@@ -1194,7 +1194,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         * If arg is a str and is a "registered" colormap name or color cycle
           name, that `~matplotlib.colors.LinearSegmentedColormap` or
           `~matplotlib.colors.ListedColormap` is used.
-        * If arg is a str and is a "registered" color name, a
+        * If arg is a str and is a color string, a
           monochromatic colormap is generated with `monochrome_cmap`.
         * If arg is a list of color strings or RGB tuples, the list is used to
           make a `~matplotlib.colors.ListedColormap`.
@@ -1205,9 +1205,8 @@ def Colormap(*args, name=None, cyclic=None, N=None,
           or the `~PerceptuallyUniformColormap.from_hsl` static method.
 
         For the monochromatic colormaps, the color name string can also
-        look like ``'name90'``, where the trailing
-        number indicates the maximum luminance of the colormap. By default,
-        this is 100 (i.e. pure white).
+        look like ``'name90'``, where ``90`` indicates the maximum luminance
+        of the colormap. By default, this is 100 (i.e. pure white).
     name : None or str, optional
         Name of the resulting colormap. Default name is ``'no_name'``.
         The resulting colormap can then be invoked by passing ``cmap='name'``
@@ -1241,7 +1240,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
 
         If list, length must match ``len(args)``, and applies to *each*
         colormap in the list before they are merged. If float, applies
-        to the *final* colormap. No difference if ``len(args)`` is 1.
+        to the *merged* colormap. No difference if ``len(args)`` is 1.
     cut : None or float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
         cut out colors in the **center**
@@ -1252,7 +1251,7 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         Optionally reverse the colormap(s).
         If list, length must match ``len(args)``, and applies to *each*
         colormap in the list before they are merged. If bool, applies
-        to the *final* colormap. No difference if ``len(args)`` is 1.
+        to the *merged* colormap. No difference if ``len(args)`` is 1.
     ratios : list of float, optional
         Indicates the ratios used to *combine* the colormaps. Length must
         equal ``len(args)`` (ignored if ``len(args)`` is 1).
@@ -1438,7 +1437,7 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     Simply calls `Colormap`, then returns the corresponding list of colors
     if a `~matplotlib.colors.ListedColormap` was returned
     or draws samples if a `~matplotlib.colors.LinearSegmentedColormap`
-    was returned.
+    was returned. See also `~proplot.axes.wrapper_cycle`.
 
     Parameters
     ----------
