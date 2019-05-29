@@ -1546,8 +1546,8 @@ Zooming into projections is done much as before. For
    :height: 387px
 
 
-Colormaps and colors
-====================
+Color usage
+===========
 
 ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
 introduces some neat features to help you use colors effectively and
