@@ -87,13 +87,13 @@ non-linear in saturation.
 
 .. image:: showcase/showcase_104_1.png
    :width: 748px
-   :height: 245px
+   :height: 249px
 
 
 
 .. image:: showcase/showcase_104_2.png
    :width: 748px
-   :height: 249px
+   :height: 245px
 
 
 Table of colormaps
