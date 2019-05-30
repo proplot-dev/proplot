@@ -126,8 +126,10 @@ def edges(values, axis=-1):
 #------------------------------------------------------------------------------#
 def units(value):
     """
-    Flexible units! See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
-    for info on the em square units. See the `~proplot.rcmod` module for details.
+    Flexible units! This function is used internally all over ProPlot, so that
+    you don't have to use "inches" for sizing arguments.
+    See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
+    for info on the em square units.
 
     Parameters
     ----------
@@ -150,10 +152,8 @@ def units(value):
         ``pp``          Pixels once printed, uses dpi of ``rc['savefig.dpi']``
         ``em``          Em-square for font size ``rc['font.size']``
         ``ex``          Ex-square for font size ``rc['font.size']``
-        ``lh``          Line height (1.2 em-squares) for font size ``rc['font.size']``
-        ``EM``          Em-square for font size ``rc['axes.titlesize']``
-        ``EX``          Ex-square for font size ``rc['axes.titlesize']``
-        ``LH``          Line height (1.2 em-squares) for font size ``rc['axes.titlesize']``
+        ``Em``          Em-square for font size ``rc['axes.titlesize']``
+        ``Ex``          Ex-square for font size ``rc['axes.titlesize']``
         ==============  ===================================================================
 
         Lists of size "units" are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
@@ -184,10 +184,8 @@ def units(value):
         # Font size
         'em': rcParams['font.size']/72.0,
         'ex': 0.5*rcParams['font.size']/72.0, # more or less; see URL
-        'lh': 1.2*rcParams['font.size']/72.0, # line height units (default spacing is 1.2 em squares)
-        'EM': rcParams['axes.titlesize']/72.0, # for large text
-        'EX': 0.5*rcParams['axes.titlesize']/72.0,
-        'LH': 1.2*rcParams['axes.titlesize']/72.0,
+        'Em': rcParams['axes.titlesize']/72.0, # for large text
+        'Ex': 0.5*rcParams['axes.titlesize']/72.0,
         }
     # Iterate
     result = []
