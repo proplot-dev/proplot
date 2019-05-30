@@ -6,19 +6,26 @@ introduces some neat features to help you use colors effectively and
 make your visualizations as aesthetically pleasing as possible. This
 section documents these features.
 
-Perceptually uniform colorspaces
---------------------------------
+Background
+----------
 
-First things first, ProPlot introduces several brand new colormaps built
-with the `~proplot.colortools.PerceptuallyUniformColormap` class. This
-class works by interpolating between points within the “perceptually
-uniform” **HCL** colorspace or its two variants: the **HSL** and **HPL**
-colorspaces. For more info, see
-`~proplot.colortools.PerceptuallyUniformColormap` and check out `this
-page <http://www.hsluv.org/comparison/>`__.
+“Colorspaces” are 3-D coordinate systems used to encode colors. The most
+common ones are red-green-blue (RGB) and hue-saturation-value (HSV). It
+might seem reasonable to create a colormap by drawing a “line” across
+this 3-D space, like the “jet” colormap does. Unfortunately, this tends
+to result in colormaps that are misleading to the eye, with eratic jumps
+in color or brightness.
+
+The hue-chroma-luminance (HCL) colorspace represents colors with
+“perceptually uniform” coordinates – that is, lines drawn in this space
+create smooth, aesthetically pleasing colormaps. Since some of the
+colors in this space are impossible, we can also use two variants: the
+HSL and HPL colorspaces. These are perceptually uniform in hue and
+luminance, but not saturation.
 
 Use `~proplot.demos.colorspace_breakdown` to plot arbitrary
-cross-sections of these colorspaces, as shown below.
+cross-sections of these colorspaces, as shown below. Also see `this
+page <http://www.hsluv.org/comparison/>`__.
 
 .. code:: ipython3
 
@@ -56,31 +63,37 @@ cross-sections of these colorspaces, as shown below.
    :height: 212px
 
 
-Use `~proplot.demos.cmap_breakdown` with any colormap to get a
-depiction of how its colors vary in different colorspaces. The below
-depicts the builtin “viridis” colormap and the new ProPlot “Fire”
-colormap. We see that the “Fire” transitions are linear in HSL space,
-while the “virids” transitions are linear in hue and luminance but
-relatively non-linear in saturation.
+In light of the above, ProPlot adds the new
+`~proplot.colortools.PerceptuallyUniformColormap` class for generating
+colormaps from the HCL, HSL, or HPL colorspaces. It also registers
+several new colormaps that are members of this class by default.
+
+Use `~proplot.demos.cmap_breakdown` with any colormap to visualize how
+its colors vary in different colorspaces. The below depicts the builtin
+“viridis” colormap and the “Fire”
+`~proplot.colortools.PerceptuallyUniformColormap`. We see that
+transitions for “Fire” are linear in HSL space, while transitions for
+“virids” are linear in hue and luminance for all colorspaces, but
+non-linear in saturation.
 
 .. code:: ipython3
 
     import proplot as plot
-    plot.cmap_breakdown('viridis')
     plot.cmap_breakdown('fire')
+    plot.cmap_breakdown('viridis')
 
 
 
 
 .. image:: showcase/showcase_104_1.png
    :width: 748px
-   :height: 249px
+   :height: 245px
 
 
 
 .. image:: showcase/showcase_104_2.png
    :width: 748px
-   :height: 245px
+   :height: 249px
 
 
 Table of colormaps
@@ -208,7 +221,7 @@ On-the-fly colormaps
 
 You can make a new colormap with ProPlot’s on-the-fly colormap
 generator! Every command that accepts a ``cmap`` argument (see
-`~proplot.axes.cmap_methods`) is passed to the
+`~proplot.axes.wrapper_cmap`) is passed to the
 `~proplot.colortools.Colormap` constructor.
 `~proplot.colortools.Colormap` keyword arguments can be specified with
 ``cmap_kw``. If you want to save your own custom colormap into
