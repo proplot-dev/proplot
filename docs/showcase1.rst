@@ -709,7 +709,9 @@ If you want panels “flush” against the subplot, simply use the ``flush``
 keyword args. If you want to disable “axis sharing” with the parent
 subplot (i.e. you want to draw tick labels on the panel, and do not want
 to inherit axis limits from the main subplot), use any of the ``share``
-keyword args. Again, see `~proplot.subplots.subplots` and
+keyword args.
+
+Again, see `~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.panel_factory` for details.
 
 .. code:: ipython3

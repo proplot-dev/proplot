@@ -6,8 +6,8 @@ generated with ProPlot, or with axes regardless of whether or not they
 contain map projections. This section discusses a few features specific
 to Cartesian axes, powered by the `~proplot.axes.XYAxes` class.
 
-Limiting redundancy
--------------------
+Shared and spanning labels
+--------------------------
 
 Matplotlib has an “axis sharing” feature – but all this can do is hold
 the axis limits the same. ProPlot introduces **4 axis-sharing
@@ -126,8 +126,9 @@ Axis tick labels
 ProPlot changes the default axis formatter (i.e. the class used to
 convert float numbers to tick label strings). The new formatter trims
 trailing zeros by default, and can be used to *filter tick labels within
-some data range*, as demonstrated below. See
-`~proplot.axistools.ScalarFormatter` for details.
+some data range*, as demonstrated below.
+
+See `~proplot.axistools.AutoFormatter` for details.
 
 .. code:: ipython3
 
@@ -188,6 +189,7 @@ ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
 ``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
 formatting of
 datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
+
 Again, see `~proplot.axes.XYAxes.smart_update`,
 `~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
 details.
@@ -329,10 +331,12 @@ Alternative units
 The new `~proplot.axes.XYAxes.dualx` and
 `~proplot.axes.XYAxes.dualy` methods build duplicate *x* and *y* axes
 meant to represent *alternate units* in the same coordinate range as the
-“parent” axis. For simple transformations, just use the ``offset`` and
-``scale`` keyword args. For more complex transformations, pass the name
-of any registered “axis scale” like ``'log'`` or ``'inverse'`` to the
-``transform`` keyword arg.
+“parent” axis.
+
+For simple transformations, just use the ``offset`` and ``scale``
+keyword args. For more complex transformations, pass the name of any
+registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
+(see below).
 
 .. code:: ipython3
 
