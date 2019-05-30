@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Provides a handy list of available font names and installs some new fonts --
-most notably, Helvetica and Helvetica Neue.
+Provides handy lists of available font names and adds a function
+for installing new fonts -- notably Helvetica Neue and Helvetica.
 
-ProPlot will *change the default* font name from DejaVu Sans (or
-Bitstream Vera) to Helvetica Neue or Helvetica. See the `~proplot.rcmod`
-documentation for details.
+By default, ProPlot *changes* the default font from DejaVu Sans or
+Bitstream Vera to one of the Helveticas (see the `~proplot.rcmod` documentation
+for details). Please run `install_fonts` to install these fonts after
+installing or updating ProPlot or matplotlib.
 
 Todo
 ----
@@ -88,9 +89,6 @@ def install_fonts():
     Registers matplotlib fonts from ``.ttf`` files located in the 'fonts'
     directory.  May require restarting iPython session. Note font cache will
     be deleted in this process, which could cause delays.
-
-    Run this after installing ProPlot for the first time, and after updating
-    matplotlib.
     """
     # See: https://stackoverflow.com/a/2502883/4970632
     # Just print strings because in notebooks will get printed
