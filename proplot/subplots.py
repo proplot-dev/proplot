@@ -194,7 +194,7 @@ class Figure(mfigure.Figure):
             tight=True, tightborder=None, tightsubplot=None, tightpanel=None,
             flush=False, wflush=None, hflush=None,
             borderpad=None, subplotpad=None, panelpad=None,
-            rcreset=True, silent=True, # print various draw statements?
+            rcreset=True,
             **kwargs):
         """
         The `~matplotlib.figure.Figure` instance returned by `subplots`.
@@ -231,16 +231,10 @@ class Figure(mfigure.Figure):
         rcreset : bool, optional
             Whether to reset all `~proplot.rcmod.rc` settings to their
             default values once the figure is drawn.
-        silent : bool, optional
-            Whether to silence messages related to drawing and printing
-            the figure.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
         """
-        # NOTE: Do not document hidden args, or stuff that needs to
-        # be set manually by subplots() after declaration.
         # Initialize figure with some custom attributes
-        self._silent  = silent # whether to print message when we resize gridspec
         self._rcreset = rcreset
         # Tight toggling
         tight = _default(tight, rc['tight'])
@@ -260,7 +254,7 @@ class Figure(mfigure.Figure):
         self._subplots_kw = None # extra special settings
         self._main_gridspec = None # gridspec encompassing drawing area
         self._main_axes = []  # list of 'main' axes (i.e. not insets or panels)
-        self._span_labels = [] # add axis instances to this, and label position will be updated
+        self._spanning_axes = [] # add axis instances to this, and label position will be updated
         # Panels, initiate as empty
         self.leftpanel   = axes.EmptyPanel()
         self.bottompanel = axes.EmptyPanel()
@@ -278,7 +272,7 @@ class Figure(mfigure.Figure):
         attr = _aliases.get(attr, attr)
         return super().__getattribute__(attr, *args)
 
-    def _lock_twins(self):
+    def _twin_axes_lock(self):
         """Lock shared axis limits to these axis limits. Used for secondary
         axis with alternate data scale."""
         # Helper func
@@ -349,7 +343,7 @@ class Figure(mfigure.Figure):
             if label and ax.collabel.get_text()!=label:
                 ax.collabel.update({'text':label, **kwargs})
 
-    def _auto_bboxs(self, renderer=None):
+    def _tight_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have
         to call the tight bbox algorithm multiple times."""
         if renderer is None:
@@ -368,27 +362,74 @@ class Figure(mfigure.Figure):
                 bbox = (ax._colorbar_child or ax).get_tightbbox(renderer)
                 ax._tight_bbox = bbox
 
-    def _auto_title_pos(self, renderer=None):
+    def _axis_label_update(self, axis, span=False, **kwargs):
+        """Get axis label for axes with axis sharing or spanning enabled.
+        When `span` is False, we add labels to all axes. When `span` is
+        True, we filter to one axes."""
+        # Get the axes
+        # NOTE: Only do this *after* tight bounding boxes have been drawn!
+        # TODO: Account for axis with different size tick labels?
+        name = axis.axis_name
+        base = axis.axes
+        for i in range(2): # try 2 levels down, should be sufficient
+            base = getattr(base, '_share' + name, None) or base
+        if not getattr(base, '_span'  + name):
+            return getattr(base, name + 'axis').label
+        # Get the 'edge' we want to share (bottom row, or leftmost column)
+        # Identify the *main* axes spanning this edge, and if those axes have
+        # a panel and are shared with it, point to the panel label
+        idx = (name=='x')
+        if name=='x':
+            axs = [ax for ax in self._main_axes if ax._yrange[1]==base._yrange[1]]
+        else:
+            axs = [ax for ax in self._main_axes if ax._xrange[0]==base._xrange[0]]
+        ranges = np.array([getattr(ax, '_' + name + 'range') for ax in axs])
+        # Get list of axes that span this one
+        # Store original position and transform
+        axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axs]
+        for axis in axes:
+            if axis not in self._spanning_axes:
+                self._spanning_axes.append(axis)
+            axis.label.update({'visible':True, **kwargs})
+        # If requested, turn on spanning
+        if span:
+            # Axis to use for spanning label
+            saxis = axes[np.argmin(ranges[:,0])]
+            for axis in axes:
+                if saxis is not axis:
+                    axis.label.update({'visible':False})
+            # Reposition to "span" other axes
+            idx = slice(ranges.min(), ranges.max() + 1)
+            if name=='x': # span columns
+                subspec = self._main_gridspec[0,idx]
+            else: # spans rows
+                subspec = self._main_gridspec[idx,0]
+            bbox = subspec.get_position(self) # in figure-relative coordinates
+            x0, y0, width, height = bbox.bounds
+            if name=='x':
+                transform = mtransforms.blended_transform_factory(self.transFigure, mtransforms.IdentityTransform())
+                position = (x0 + width/2, 1)
+            else:
+                transform = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.transFigure)
+                position = (1, y0 + height/2)
+            saxis.label.update({'position':position, 'transform':transform})
+
+    def _text_align(self, renderer=None):
         """Adjusts position of row titles and figure super title."""
-        # Adjust row labels as axis tick labels are generated and y-axis labels
-        # is generated.
-        # WARNING: Since ylabel is totally messed up for some cartopy
-        # projections, just always use the tight bounding box to position axis
-        # label instead of calling _update_ticks and _update_label_position.
-        # WARNING: Text rotation and alignment behavior is different from ylabel
-        # For ylabel, alignment seems to come *before* positioning. For manual
-        # text() call, alignment comes after: https://matplotlib.org/gallery/text_labels_and_annotations/text_rotation.html
+        # Adjust row labels as axis tick labels are generated and y-axis
+        # labels is generated.
+        # WARNING: Must call get_tightbbox manually, since the _tight_bbox
+        # attribute *includes* labels for appropriate tight layout, but we need
+        # to *exlude* labels before positioning them by making them invisible!
         w, h = self.get_size_inches()
         for ax in self._main_axes:
             label = ax.rowlabel
             if not label.get_text():
                 continue
             # Update position
-            # transform = ax.transAxes
-            # x, _ = transform.inverted().transform((bbox.intervalx[0], 0))
-            # x = x - (0.6*label.get_fontsize()/72)/ax.width # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            # bbox = ax._tight_bbox
             label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
-            bbox = ax._tight_bbox
+            bbox = ax.get_tightbbox(renderer)
             transform = mtransforms.blended_transform_factory(self.transFigure, ax.transAxes)
             x, _ = transform.inverted().transform((bbox.intervalx[0], 0))
             x = x - (0.6*label.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
@@ -417,7 +458,8 @@ class Figure(mfigure.Figure):
                     if not jax:
                         continue
                     # Box for column label
-                    bbox = jax._tight_bbox
+                    # bbox = jax._tight_bbox
+                    bbox = jax.get_tightbbox(renderer)
                     _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
                     iys.append(y)
             # Update column label position
@@ -431,48 +473,55 @@ class Figure(mfigure.Figure):
             # This time account for column labels of course!
             if suptitle.get_text().strip():
                 if label.get_text(): # by construction it is above everything else!
-                    bbox = ax._tight_bbox
+                    # bbox = ax._tight_bbox
+                    bbox = ax.get_tightbbox(renderer)
                     _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
                 else:
                     y = max(iys)
                 ys.append(y)
 
         # Super title position
-        suptitle.set_visible(True)
-        if not suptitle.get_text().strip():
-            return
         # Get x position as center between left edge of leftmost main axes
         # and right edge of rightmost main axes
-        kw = self._subplots_kw
-        left = kw['left']
-        right = kw['right']
-        if self.leftpanel:
-            left += (kw['lwidth'] + kw['lspace'])
-        if self.rightpanel:
-            right += (kw['rwidth'] + kw['rspace'])
-        # Update position
-        x = left/w + 0.5*(w - left - right)/w
-        y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
-        suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
+        suptitle.set_visible(True)
+        if suptitle.get_text().strip():
+            kw = self._subplots_kw
+            left = kw['left']
+            right = kw['right']
+            if self.leftpanel:
+                left += (kw['lwidth'] + kw['lspace'])
+            if self.rightpanel:
+                right += (kw['rwidth'] + kw['rspace'])
+            x = left/w + 0.5*(w - left - right)/w
+            y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
+            suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
 
-    def _auto_smart_tight_layout(self, renderer=None):
-        """Conditionally call `~Figure.smart_tight_layout`."""
-        # Only proceed if this wasn't already done, or user did not want
-        # the figure to have tight boundaries.
-        if not self._smart_tight_init or not (
-            self._smart_tight_outer or
-            self._smart_tight_subplot or
-            self._smart_tight_panel):
-            return
-        # Bail if gridliner was enabled
-        if any(ax._gridliner_on for ax in self._main_axes):
+    def _auto_adjust(self, renderer=None):
+        """Performs various post-procesing tasks."""
+        # Lock twin axes
+        self._twin_axes_lock()
+        # Align text and fix labels
+        # WARNING: draw() is called *more than once* and title positions are
+        # appropriately offset only during the *later* calls! Must run each time.
+        for axis in self._spanning_axes:
+            self._axis_label_update(axis, span=False)
+        self._text_align(renderer) # just applies the spacing
+        # Tight layout
+        # WARNING: For now just call this once, get bugs if call it every
+        # time draw() is called, but also means bbox accounting for titles
+        # and labels may be slightly off
+        if not self._smart_tight_init or not (self._smart_tight_outer or self._smart_tight_subplot or self._smart_tight_panel):
+            pass
+        elif any(ax._gridliner_on for ax in self._main_axes):
             warnings.warn('Tight subplots do not work with cartopy gridline labels or after zooming into a projection. Use tight=False in your call to subplots().')
-            self._smart_tight_init = False
-            return
-        # Apply tight layout
-        if not self._silent:
-            print('Adjusting layout.')
-        self.smart_tight_layout(renderer)
+        else:
+            self.smart_tight_layout(renderer)
+        # Set up spanning labels
+        for axis in self._spanning_axes:
+            self._axis_label_update(axis, span=True)
+        # If rc settings have been changed, reset them after drawing is done
+        if not rc._init and self._rcreset:
+            rc.reset()
 
     def _panel_tight_layout(self, side, paxs, renderer, figure=False):
         """From list of panels and the axes coordinates spanned by the
@@ -594,9 +643,8 @@ class Figure(mfigure.Figure):
     def smart_tight_layout(self, renderer=None):
         """
         This is called automatically when `~Figure.draw` or
-        `~Figure.savefig` are called,
-        unless the user set `tight` to ``False`` in their original
-        call to `subplots`.
+        `~Figure.savefig` are called, unless the user set `tight` to
+        ``False`` in their original call to `subplots`.
 
         Conforms figure edges to tight bounding box around content, without
         screwing up subplot aspect ratios, empty spaces, panel sizes, and such.
@@ -609,6 +657,26 @@ class Figure(mfigure.Figure):
         renderer : None or `~matplotlib.backend_bases.RendererBase`, optional
             The backend renderer.
         """
+        #----------------------------------------------------------------------#
+        # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
+        # basemap axes so its aspect ratio will not have changed.
+        #----------------------------------------------------------------------#
+        # TODO: Expand this functionality to work for *any* case where user
+        # changes the aspect ratio manually?
+        # WARNING: If ratio changes, you have to run smart tight layout twice,
+        # or get incorrect spacing along the dimension contracted by the change.
+        self._tight_bboxs(renderer)
+        ax = self._main_axes[self._ref_num-1]
+        subplots_kw = self._subplots_kw
+        aspect_changed = False
+        if isinstance(ax, axes.CartopyAxes):
+            bbox = ax.background_patch._path.get_extents()
+            aspect = (np.diff(bbox.intervalx) / \
+                      np.diff(bbox.intervaly))[0]
+            if aspect!=subplots_kw['aspect']:
+                aspect_changed = True
+                subplots_kw['aspect'] = aspect
+
         #----------------------------------------------------------------------#
         # Tick fudge factor
         #----------------------------------------------------------------------#
@@ -653,25 +721,6 @@ class Figure(mfigure.Figure):
         #         #     pad = (pad*ticks[0].tick1On*(side != 'left'),
         #         #            pad*ticks[0].tick2On*(side != 'right'))
         #         # iax._ytick_pad_error += np.array(pad)*self.dpi/72 # is left, right tuple
-
-        #----------------------------------------------------------------------#
-        # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
-        # basemap axes so its aspect ratio will not have changed.
-        #----------------------------------------------------------------------#
-        # WARNING: If ratio changes, you have to run smart tight layout twice,
-        # or get incorrect spacing along the dimension contracted by the change.
-        # TODO: Expand this functionality to work for *any* case where user
-        # changes the aspect ratio manually?
-        ax = self._main_axes[self._ref_num-1]
-        subplots_kw = self._subplots_kw
-        aspect_changed = False
-        if isinstance(ax, axes.CartopyAxes):
-            bbox = ax.background_patch._path.get_extents()
-            aspect = (np.diff(bbox.intervalx) / \
-                      np.diff(bbox.intervaly))[0]
-            if aspect!=subplots_kw['aspect']:
-                aspect_changed = True
-                subplots_kw['aspect'] = aspect
 
         #----------------------------------------------------------------------#
         # Put tight box *around* figure
@@ -921,40 +970,23 @@ class Figure(mfigure.Figure):
             ax.width, ax.height = width_new, height_new
         # Special redo in case of cartopy axes
         if aspect_changed:
-            self._auto_bboxs(renderer)
             self.smart_tight_layout(renderer)
 
     def draw(self, renderer, *args, **kwargs):
         """Fixes row and "super" title positions and automatically adjusts the
         main gridspec, then calls the parent `~matplotlib.figure.Figure.draw`
         method."""
-        # Figure out if other titles are present, and if not bring suptitle
-        # close to center. Also fix spanning labels (they need figure-relative
-        # height coordinates, so must be updated when figure shape changes).
-        # WARNING: `~matplotlib.figure.Figure.draw` is called *more than once*,
-        # and the title position are appropriately offset only during the
-        # *later* calls! So need to call auto_title_pos every time.
-        self._lock_twins()
-        self._auto_bboxs(renderer)
-        self._auto_title_pos(renderer) # just applies the spacing
-        self._auto_smart_tight_layout(renderer)
-        for axis in self._span_labels:
-            axis.axes._share_span_label(axis, final=True)
+        # Prepare for rendering
+        self._auto_adjust(renderer)
+        # Render
         out = super().draw(renderer, *args, **kwargs)
-
-        # If rc settings have been changed, reset them after drawing is done
-        # Usually means we have finished executing a notebook cell
-        if not rc._init and self._rcreset:
-            if not self._silent:
-                print('Resetting rcparams.')
-            rc.reset()
         return out
 
     def save(self, *args, **kwargs):
         """Alias for `~Figure.savefig`."""
         return self.savefig(*args, **kwargs)
 
-    def savefig(self, filename, **kwargs):
+    def savefig(self, filename, alpha=None, color=None, **kwargs):
         """
         Fixes row and "super" title positions and automatically adjusts the
         main gridspec, then calls the parent `~matplotlib.figure.Figure.savefig`
@@ -965,42 +997,26 @@ class Figure(mfigure.Figure):
         filename : str
             The file name and path. Use a tilde ``~`` to represent the home
             directory.
+        alpha : None or float, optional
+            Alternative for the `~matplotlib.figure.Figure.savefig`
+            `transparent` keyword arg.
+        color : None or str or RGB tuple, optional
+            Alternative for the `~matplotlib.figure.Figure.savefig`
+            `facecolor` keyword arg.
         **kwargs
-            Passed to the parent `~matplotlib.figure.Figure.savefig` method.
+            Passed to `~matplotlib.figure.Figure.savefig`.
         """
-        # Notes
-        # * Gridspec object must be updated before figure is printed to
-        #   screen in interactive environment; will fail to update after that.
-        #   Seems to be glitch, should open thread on GitHub.
-        # * To color axes patches, you may have to explicitly pass the
-        #   transparent=False kwarg.
-        # Expand user
+        # Minor changes
         filename = os.path.expanduser(filename)
-        # Standardize
-        if 'alpha' in kwargs:
-            kwargs['transparent'] = not bool(kwargs.pop('alpha')) # 1 is non-transparent
-        if 'color' in kwargs:
-            kwargs['facecolor'] = kwargs.pop('color') # the color
+        if alpha is not None:
+            kwargs['transparent'] = not bool(alpha) # 1 is non-transparent
+        if color is not None:
+            kwargs['facecolor'] = color
             kwargs['transparent'] = False
-        # Finally, save
-        self._lock_twins()
-        self._auto_bboxs()
-        self._auto_title_pos() # just applies the spacing
-        self._auto_smart_tight_layout()
-        for axis in self._span_labels:
-            axis.axes._share_span_label(axis, final=True)
-        if not self._silent:
-            print(f'Saving to "{filename}".')
+        # Prepare for rendering
+        self._auto_adjust(renderer)
+        # Render
         return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
-
-    # WARNING: This causes error, for some reason prevents subclassed axes
-    # from being assigned. Forget the lock.
-    # def add_subplot(self, *args, **kwargs):
-    #     """Create axes. This is called by `subplots` -- you
-    #     should not have to use this directly."""
-    #     if self._subplots_lock:
-    #         warnings.warn('Calling add_subplot manually is highly discouraged! To generate subplots, use the proplot.subplots function.')
-    #     super().add_subplot(*args, **kwargs)
 
     def add_subplot_and_panels(self, subspec, which=None, *,
             hspace, wspace,
@@ -1495,7 +1511,7 @@ def subplots(array=None, ncols=1, nrows=1,
         axpanels=None, axlegends=None, axcolorbars=None,
         axpanels_kw=None, axcolorbars_kw=None, axlegends_kw=None,
         basemap=False, proj=None, proj_kw=None,
-        rcreset=True, silent=True, # arguments for figure instantiation
+        rcreset=True, # arguments for figure instantiation
         **kwargs):
     """
     Analagous to `matplotlib.pyplot.subplots`. Create a figure with a single
@@ -1722,7 +1738,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, rcreset, silent
+    tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, rcreset
         Passed to `Figure`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
@@ -1731,19 +1747,20 @@ def subplots(array=None, ncols=1, nrows=1,
     --------
     `~proplot.axes.BaseAxes`, `~proplot.axes.BaseAxes.format`
     """
+    #--------------------------------------------------------------------------#
+    # Create blank figure
+    # Will adjust dimensions and stuff later
+    #--------------------------------------------------------------------------#
     # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
     # axes sharing mode where we *disable ticklabels and labels*, but *do not
     # use the builtin sharex/sharey API*, suitable for complex map projections.
     # For spanning axes labels, right now only detect **x labels on bottom**
     # and **ylabels on top**. Generalize for all subplot edges.
     #--------------------------------------------------------------------------#
-    # Create blank figure
-    # Will adjust dimensions and stuff later
-    #--------------------------------------------------------------------------#
     fig = plt.figure(FigureClass=Figure, tight=tight,
         tightborder=tightborder, tightsubplot=tightsubplot, tightpanel=tightpanel,
         borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
-        flush=flush, wflush=wflush, hflush=hflush, rcreset=rcreset, silent=silent,
+        flush=flush, wflush=wflush, hflush=hflush, rcreset=rcreset,
         )
 
     #--------------------------------------------------------------------------#

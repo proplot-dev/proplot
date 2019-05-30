@@ -1689,17 +1689,11 @@ _wrapper_text    = _self_func_wrapper(wrapper_text)
 # this would just wrap method *once* and not every single time user accesses
 # object. More elegant, but __new__ *does not receive inherited methods* (that
 # comes later down the line), so we can't wrap them. Anyway overriding
-# __getattribute__ is fine, and premature optimiztaion is the root of all evil!
+# __getattribute__ is fine, and premature optimiztaion is root of all evil!
 #------------------------------------------------------------------------------#
 class BaseAxes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
-    # Notes:
-    # It is impossible to subclass `~matplotlib.axes.SubplotBase` directly.
-    # The subplot subclass is made automatically by
-    # `~matplotlib.axes.subplot_class_factory` after calling
-    # `~matplotlib.figure.Figure.add_subplot`.
-    # Consider moving the share axis stuff to `XYAxes` class.
     name = 'base'
     """The registered projection name."""
     def __init__(self, *args, number=None,
@@ -1787,10 +1781,6 @@ class BaseAxes(maxes.Axes):
         rc._getitem_mode = 0 # might still be non-zero if had error
         self.format(mode=1)
 
-    # Apply some simple features, and disable spectral and triangular features
-    # See: https://stackoverflow.com/a/23126260/4970632
-    # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_axes.py
-    # for all Axes methods ordered logically in class declaration.
     @_expand_wrapped_methods
     def __getattribute__(self, attr, *args):
         """
@@ -1965,7 +1955,6 @@ class BaseAxes(maxes.Axes):
             self._title_inside = inside
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
-    # @_counter
     def format(self, rc_kw=None, mode=2, **kwargs):
         """
         Sets up temporary rc settings and calls `~BaseAxes.smart_update`.
@@ -2376,7 +2365,6 @@ class XYAxes(BaseAxes):
     --------
     `~proplot.subplots.subplots`, `BaseAxes`, `PanelAxes`
     """
-    # Initialize
     name = 'xy'
     """The registered projection name."""
     def __init__(self, *args, **kwargs):
@@ -2403,11 +2391,8 @@ class XYAxes(BaseAxes):
         """Wraps methods when they are requested by the user. See
         `wrapper_cmap`, `wrapper_cycle`, `wrapper_check_centers`, and
         `wrapper_check_edges` for more info."""
-        # WARNING: The 'labels' feature of cmap_methods requires that the
-        # x, y, Z input was standardized first. So we need to wrap with
-        # the cmap and cycle wrappers first.
         obj = super().__getattribute__(attr, *args)
-        if attr in _cmap_methods:
+        if attr in _cmap_methods: # must come first!
             obj = _wrapper_cmap(self, obj)
         elif attr in _cycle_methods:
             obj = _wrapper_cycle(self, obj)
@@ -2417,60 +2402,6 @@ class XYAxes(BaseAxes):
             obj = _wrapper_check_edges(obj)
         return obj
 
-    def _share_span_label(self, axis, final=False):
-        """Get an axis label for axes with axis sharing and/or spanning
-        labels enabled."""
-        # For given axes, return the label object
-        # TODO: This works, but for spanning y-axes there is danger that we
-        # pick the y-label where y ticks are really narrow and spanning
-        # label crashes into tick labels on another axes.
-        name = axis.axis_name
-        base = self
-        for i in range(2): # try 2 levels down, should be sufficient
-            base = getattr(base, '_share' + name, None) or base
-        if not getattr(base, '_span'  + name):
-            return getattr(base, name + 'axis').label
-        if axis not in self.figure._span_labels:
-            self.figure._span_labels.append(axis)
-        # Get the 'edge' we want to share (bottom row, or leftmost column),
-        # and then finding the coordinates for the spanning axes along that edge
-        span = lambda ax: getattr(ax, f'_{name}range')
-        edge = lambda ax: getattr(ax, '_yrange')[1] if name=='x' else getattr(ax, '_xrange')[0]
-        # Identify the *main* axes spanning this edge, and if those axes have
-        # a panel and are shared with it (i.e. has a _sharex/_sharey attribute
-        # declared with _sharex_panels), point to the panel label
-        axs = [ax for ax in self.figure._main_axes if edge(ax)==edge(base)]
-        span_all = np.array([span(ax) for ax in axs])
-
-        # Get the axis we will use for the "spanning label"
-        ax = axs[np.argmin(span_all[:,0])]
-        if name=='x':
-            axis = (ax._sharex or ax).xaxis
-        else:
-            axis = (ax._sharey or ax).yaxis
-        axis.label.update({'visible':True})
-
-        # Reposition to "span" the other axes.
-        # NOTE: Only do this *after* tight bouding boxes have been drawn!
-        if not final:
-            return axis.label
-        idx = slice(span_all.min(), span_all.max() + 1)
-        if name=='x': # span columns
-            subspec = self.figure._main_gridspec[0,idx]
-        else: # spans rows
-            subspec = self.figure._main_gridspec[idx,0]
-        bbox = subspec.get_position(self.figure) # in figure-relative coordinates
-        x0, y0, width, height = bbox.bounds
-        if name=='x':
-            transform = mtransforms.blended_transform_factory(self.figure.transFigure, mtransforms.IdentityTransform())
-            position = (x0 + width/2, 1)
-        else:
-            transform = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.figure.transFigure)
-            position = (1, y0 + height/2)
-        axis.label.update({'position':position, 'transform':transform})
-        return axis.label
-
-    # Cool overrides
     def smart_update(self,
         xloc=None,          yloc=None,          # aliases for 'where to put spine'
         xmargin=None,       ymargin=None,
@@ -2700,7 +2631,7 @@ class XYAxes(BaseAxes):
                 if color:
                     kw['color'] = color
                 kw.update(label_kw)
-                self._share_span_label(axis).update({'text':label, **kw})
+                self.figure._axis_label_update(axis, text=label, **kw)
 
             # Axis scale and limits. These don't have axis-specific setters.
             # If user specified xlocator or ylocator and scale is log, enforce
