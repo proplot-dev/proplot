@@ -374,7 +374,9 @@ class Figure(mfigure.Figure):
         for i in range(2): # try 2 levels down, should be sufficient
             base = getattr(base, '_share' + name, None) or base
         if not getattr(base, '_span'  + name):
-            return getattr(base, name + 'axis').label
+            axis = getattr(base, name + 'axis')
+            axis.label.update({'visible':True, **kwargs})
+            return
         # Get the 'edge' we want to share (bottom row, or leftmost column)
         # Identify the *main* axes spanning this edge, and if those axes have
         # a panel and are shared with it, point to the panel label
