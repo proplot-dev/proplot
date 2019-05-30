@@ -113,7 +113,10 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    :maxdepth: 4
    :caption: Getting Started
 
-   showcase
+   introduction
+   cartesian
+   map
+   color
 
 .. toctree::
    :hidden:
