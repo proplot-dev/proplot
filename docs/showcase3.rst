@@ -33,25 +33,25 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_59_0.png
+.. image:: showcase/showcase_58_0.png
    :width: 643px
    :height: 166px
 
 
 
-.. image:: showcase/showcase_59_1.png
+.. image:: showcase/showcase_58_1.png
    :width: 643px
    :height: 176px
 
 
 
-.. image:: showcase/showcase_59_2.png
+.. image:: showcase/showcase_58_2.png
    :width: 643px
    :height: 175px
 
 
 
-.. image:: showcase/showcase_59_3.png
+.. image:: showcase/showcase_58_3.png
    :width: 643px
    :height: 190px
 
@@ -70,13 +70,13 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_60_0.png
+.. image:: showcase/showcase_59_0.png
    :width: 490px
    :height: 491px
 
 
 
-.. image:: showcase/showcase_60_1.png
+.. image:: showcase/showcase_59_1.png
    :width: 490px
    :height: 498px
 
@@ -114,7 +114,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_63_0.png
+.. image:: showcase/showcase_62_0.png
    :width: 510px
    :height: 472px
 
@@ -140,7 +140,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_66_0.png
+.. image:: showcase/showcase_65_0.png
    :width: 569px
    :height: 237px
 
@@ -172,7 +172,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_68_0.png
+.. image:: showcase/showcase_67_0.png
    :width: 502px
    :height: 557px
 
@@ -211,7 +211,7 @@ details.
 
 
 
-.. image:: showcase/showcase_71_0.png
+.. image:: showcase/showcase_70_0.png
    :width: 793px
    :height: 630px
 
@@ -243,7 +243,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_74_0.png
+.. image:: showcase/showcase_73_0.png
    :width: 446px
    :height: 223px
 
@@ -275,7 +275,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_75_0.png
+.. image:: showcase/showcase_74_0.png
    :width: 540px
    :height: 567px
 
@@ -315,7 +315,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_76_0.png
+.. image:: showcase/showcase_75_0.png
    :width: 420px
    :height: 549px
 
@@ -366,13 +366,13 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_79_0.png
+.. image:: showcase/showcase_78_0.png
    :width: 599px
    :height: 212px
 
 
 
-.. image:: showcase/showcase_79_1.png
+.. image:: showcase/showcase_78_1.png
    :width: 516px
    :height: 445px
 
@@ -400,7 +400,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_80_0.png
+.. image:: showcase/showcase_79_0.png
    :width: 540px
    :height: 269px
 

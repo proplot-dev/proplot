@@ -182,102 +182,6 @@ numbering determines the order of a-b-c labels. See
    :height: 543px
 
 
-Smart tight layout
-------------------
-
-With ProPlot, you will always get just the right amount of spacing
-between subplots so that elements don’t overlap, and just the right
-amount of space around the figure edge so that labels and whatnot are
-not cut off. Furthermore, despite all of the complex adjustments this
-requires, the original subplot aspect ratios are **always preserved**.
-Even when axes panels are present, the main subplot aspect ratios will
-stay fixed (see below for more on panels).
-
-You can disable this feature by passing ``tight=False`` to
-`~proplot.subplots.subplots`, but it is unbelievably useful. It works
-by scaling either the figure width or height dimension (whichever one
-you didn’t specify) such that the subplot aspect ratios will not change,
-and by taking advantage of ProPlot’s subplot layout restrictions. Some
-examples are below.
-
-Sometimes, ``tight=True`` is not possible (when using the cartopy
-``set_extent`` method or when using cartopy meridian and parallel
-labelling; a warning will be raised in these instances). Even when
-``tight=False``, ProPlot tries to make the default spacing reasonable.
-
-.. code:: ipython3
-
-    import proplot as plot
-    for share in (3,0):
-        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=False)
-        axs[4].format(title='title\ntitle\ntitle', suptitle='Default spacing')
-        axs[1].format(ylabel='ylabel', xlabel='xlabel')
-
-
-
-.. image:: showcase/showcase_15_0.png
-   :width: 355px
-   :height: 382px
-
-
-
-.. image:: showcase/showcase_15_1.png
-   :width: 445px
-   :height: 445px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    for share in (3,0):
-        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=True)
-        axs[4].format(title='title\ntitle\ntitle', suptitle='"Tight layout" automatic spacing')
-        axs[1].format(ylabel='ylabel', xlabel='xlabel')
-
-
-
-.. image:: showcase/showcase_16_0.png
-   :width: 366px
-   :height: 399px
-
-
-
-.. image:: showcase/showcase_16_1.png
-   :width: 412px
-   :height: 422px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots([[1,2],[3,2],[3,4]], share=0, span=0, axwidth=1.5)
-    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Super title')
-    axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
-    axs[2].format(yformatter='null', title='Title', ytickloc='both')
-    axs[3].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
-
-
-
-.. image:: showcase/showcase_17_0.png
-   :width: 364px
-   :height: 557px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, axpanels='lr', axpanels_kw={'rshare':False})
-    axs.format(ylabel='ylabel', xlabel='xlabel')
-    axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
-    axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
-
-
-
-.. image:: showcase/showcase_18_0.png
-   :width: 643px
-   :height: 212px
-
-
 Axes formatting
 ---------------
 
@@ -332,9 +236,105 @@ axes **simultaneously** (as in the below example).
 
 
 
-.. image:: showcase/showcase_20_0.png
+.. image:: showcase/showcase_14_0.png
    :width: 579px
    :height: 499px
+
+
+Smart tight layout
+------------------
+
+With ProPlot, you will always get just the right amount of spacing
+between subplots so that elements don’t overlap, and just the right
+amount of space around the figure edge so that labels and whatnot are
+not cut off. Furthermore, despite all of the complex adjustments this
+requires, the original subplot aspect ratios are **always preserved**.
+Even when axes panels are present, the main subplot aspect ratios will
+stay fixed (see below for more on panels).
+
+You can disable this feature by passing ``tight=False`` to
+`~proplot.subplots.subplots`, but it is unbelievably useful. It works
+by scaling either the figure width or height dimension (whichever one
+you didn’t specify) such that the subplot aspect ratios will not change,
+and by taking advantage of ProPlot’s subplot layout restrictions. Some
+examples are below.
+
+Sometimes, ``tight=True`` is not possible (when using the cartopy
+``set_extent`` method or when using cartopy meridian and parallel
+labelling; a warning will be raised in these instances). Even when
+``tight=False``, ProPlot tries to make the default spacing reasonable.
+
+.. code:: ipython3
+
+    import proplot as plot
+    for share in (3,0):
+        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=False)
+        axs[4].format(title='title\ntitle\ntitle', suptitle='Default spacing')
+        axs[1].format(ylabel='ylabel', xlabel='xlabel')
+
+
+
+.. image:: showcase/showcase_17_0.png
+   :width: 355px
+   :height: 382px
+
+
+
+.. image:: showcase/showcase_17_1.png
+   :width: 445px
+   :height: 445px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    for share in (3,0):
+        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=True)
+        axs[4].format(title='title\ntitle\ntitle', suptitle='"Tight layout" automatic spacing')
+        axs[1].format(ylabel='ylabel', xlabel='xlabel')
+
+
+
+.. image:: showcase/showcase_18_0.png
+   :width: 366px
+   :height: 399px
+
+
+
+.. image:: showcase/showcase_18_1.png
+   :width: 412px
+   :height: 422px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots([[1,2],[3,2],[3,4]], share=0, span=0, axwidth=1.5)
+    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Super title')
+    axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
+    axs[2].format(yformatter='null', title='Title', ytickloc='both')
+    axs[3].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
+
+
+
+.. image:: showcase/showcase_19_0.png
+   :width: 364px
+   :height: 557px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(axwidth=3, ncols=2, span=False, share=0, axpanels='lr', axpanels_kw={'rshare':False})
+    axs.format(ylabel='ylabel', xlabel='xlabel')
+    axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
+    axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right', suptitle='Super title', collabels=['Column 1', 'Column 2'])
+
+
+
+.. image:: showcase/showcase_20_0.png
+   :width: 643px
+   :height: 212px
 
 
 Global settings
@@ -389,14 +389,11 @@ For more information, see the `~proplot.rcmod` documentation.
    :height: 260px
 
 
-Fonts
------
-
-The `~proplot.rcmod.rc` object can be used to change the default font,
-as demonstrated below. By default, ProPlot adds Helvetica and makes it
-the new default. Helvetica is the MATLAB default – matplotlib normally
-does not come packaged with Helvetica, but in my biased opinion it looks
-more professional than the default “DejaVu Sans”. See the
+The `~proplot.rcmod.rc` object can also be used to change the default
+font, as demonstrated below. By default, ProPlot adds Helvetica and
+makes it the new default. Helvetica is the MATLAB default – matplotlib
+normally does not come packaged with Helvetica, but in my biased opinion
+it looks more professional than the default “DejaVu Sans”. See the
 `~proplot.fonttools` documentation for more info on fonts.
 
 .. code:: ipython3
@@ -432,7 +429,7 @@ more professional than the default “DejaVu Sans”. See the
 
 
 
-.. image:: showcase/showcase_25_0.png
+.. image:: showcase/showcase_24_0.png
    :width: 751px
    :height: 697px
 

@@ -57,7 +57,7 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: showcase/showcase_85_1.png
+.. image:: showcase/showcase_84_1.png
    :width: 576px
    :height: 1037px
 
@@ -90,7 +90,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_88_0.png
+.. image:: showcase/showcase_87_0.png
    :width: 598px
    :height: 1073px
 
@@ -146,13 +146,13 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_91_1.png
+.. image:: showcase/showcase_90_1.png
    :width: 591px
    :height: 405px
 
 
 
-.. image:: showcase/showcase_91_2.png
+.. image:: showcase/showcase_90_2.png
    :width: 591px
    :height: 405px
 
@@ -192,7 +192,7 @@ details.
 
 
 
-.. image:: showcase/showcase_94_0.png
+.. image:: showcase/showcase_93_0.png
    :width: 386px
    :height: 221px
 
@@ -211,7 +211,7 @@ details.
 
 
 
-.. image:: showcase/showcase_95_0.png
+.. image:: showcase/showcase_94_0.png
    :width: 490px
    :height: 416px
 
@@ -242,7 +242,7 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_97_0.png
+.. image:: showcase/showcase_96_0.png
    :width: 323px
    :height: 387px
 
