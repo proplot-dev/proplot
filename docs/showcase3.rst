@@ -1,250 +1,412 @@
-Map projection axes
-===================
+Cartesian axes
+==============
 
-ProPlot includes seamless integration with the `cartopy` and
-`~mpl_toolkits.basemap` packages. This feature is optional – if you
-don’t care about cartographic projections, you don’t need to have
-`cartopy` or `~mpl_toolkits.basemap` installed.
+The previous sections discussed features relevant to all figures
+generated with ProPlot, or with axes regardless of whether or not they
+contain map projections. This section discusses a few features specific
+to Cartesian axes, powered by the `~proplot.axes.XYAxes` class.
 
-To specify the projection, supply `~proplot.subplots.subplots` with
-the ``proj`` keyword arg. To specify the projection properties, use the
-``proj_kw`` keyword arg (see below). To toggle `~mpl_toolkits.basemap`
-for arbitrary subplots, use the `basemap` keyword arg. See
+Shared and spanning labels
+--------------------------
+
+Matplotlib has an “axis sharing” feature – but all this can do is hold
+the axis limits the same. ProPlot introduces **4 axis-sharing
+“levels”**, as demonstrated below. It also introduces a new
+**axis-spanning label** feature, as seen below. See
 `~proplot.subplots.subplots` for details.
 
-Note that in 2020, active development for `~mpl_toolkits.basemap` will
-stop. Its users are encouraged to switch to `cartopy`, which is
-integrated more closely with the matplotlib API and has more room for
-growth. However for the time being, `~mpl_toolkits.basemap` has one
-major advantage: meridian and parallel labelling. With `cartopy`,
-gridline labels are only possible with equirectangular and Mercator
-projections. With `~mpl_toolkits.basemap`, labels are possible with
-all projections. Further, the `~matplotlib.axes.Axes.tight_layout`
-method does not currently detect `cartopy` gridline labels – so when
-labels are present, the :ref:`Smart tight layout` feature must be
-automatically disabled.
+.. code:: ipython3
 
-Table of cartopy projections
-----------------------------
+    import proplot as plot
+    import numpy as np
+    N = 50
+    M = 40
+    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
+    for share in (0,1,2,3):
+        f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
+        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
+        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
+            array = gen(scale)
+            for l in range(array.shape[1]):
+                ax.plot(array[:,l], color=colors[l])
+            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
 
-Below is an illustration of the available `cartopy` projections. See
-the `~proplot.projs` documentation for a table of projection names,
-short names, and links to the
-`PROJ.4 <https://proj4.org/operations/projections/index.html>`__
-documentation (both `cartopy` and `~mpl_toolkits.basemap` are
-internally powered by `PROJ.4 <https://proj4.org>`__).
 
-Note that you no longer have to reference the `~cartopy.crs`
-projection classes directly – instead, just like
-`~mpl_toolkits.basemap`, you can specify a native PROJ.4 short name
-(e.g. ``'robin'`` or ``'merc'``). ProPlot also adds to `cartopy` the
-previously unavailable Aitoff, Hammer, Winkel Tripel, and Kavrisky VII
-projections by subclassing the `~cartopy.crs.Projection` class.
+
+.. image:: showcase/showcase_59_0.png
+   :width: 643px
+   :height: 166px
+
+
+
+.. image:: showcase/showcase_59_1.png
+   :width: 643px
+   :height: 176px
+
+
+
+.. image:: showcase/showcase_59_2.png
+   :width: 643px
+   :height: 175px
+
+
+
+.. image:: showcase/showcase_59_3.png
+   :width: 643px
+   :height: 190px
+
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    projs = ['cyl', 'merc', 'mill', 'lcyl', 'tmerc',
-             'robin', 'hammer', 'moll', 'kav7', 'aitoff', 'wintri', 'sinu',
-             'geos', 'ortho', 'nsper', 'aea', 'eqdc', 'lcc', 'gnom', 'npstere', 'igh',
-             'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6']
-    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, proj=projs)
-    axs.format(land=True, reso='lo', labels=False, suptitle='Table of cartopy projections')
-    for proj,ax in zip(projs,axs):
-        ax.format(title=proj, titleweight='bold', labels=False)
+    plot.rc.cycle = 'Set4'
+    titles = ['With redundant labels', 'Without redundant labels']
+    for mode in (0,1):
+        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
+        for ax in axs:
+            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
+        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcpos='il')
 
 
 
-
-.. image:: showcase/showcase_84_1.png
-   :width: 576px
-   :height: 1037px
-
-
-Table of basemap projections
-----------------------------
-
-Below is an illustration of the available `~mpl_toolkits.basemap`
-projections. `~mpl_toolkits.basemap` projection bounds are more
-limited than `cartopy` bounds, and tend to be “rectangles.” Also, with
-the default `~mpl_toolkits.basemap` API, you must specify projection
-keyword args *explicitly* or an error is thrown (e.g. failing to set
-``lon_0`` or ``lat_0``). To prevent this annoyance, ProPlot passes
-default keyword args to `~mpl_toolkits.basemap.Basemap` if you fail to
-specify them.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    projs = ['cyl', 'merc', 'mill', 'cea', 'gall', 'sinu',
-             'eck4', 'robin', 'moll', 'kav7', 'hammer', 'mbtfpq',
-             'geos', 'ortho', 'nsper',
-             'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
-             'npstere', 'npaeqd', 'nplaea', 'spstere', 'spaeqd', 'splaea']
-    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, basemap=True, proj=projs)
-    axs.format(land=True, labels=False, suptitle='Table of basemap projections')
-    for proj,ax in zip(projs,axs):
-        ax.format(title=proj, titleweight='bold', labels=False)
+.. image:: showcase/showcase_60_0.png
+   :width: 490px
+   :height: 491px
 
 
 
-.. image:: showcase/showcase_87_0.png
-   :width: 598px
-   :height: 1073px
+.. image:: showcase/showcase_60_1.png
+   :width: 490px
+   :height: 498px
 
 
-Geophysical data
-----------------
-
-The below demonstrates how to plot geophysical data with ProPlot. You’ll
-note that ProPlot considerably simplifies `~mpl_toolkits.basemap`
-usage. For data plotted on `~mpl_toolkits.basemap` projections, the
-longitudes are *cyclically permuted* so that the “center” aligns with
-the central longitude of the projection. You can also simply call the
-axes method, e.g. `~matplotlib.axes.Axes.contourf`, instead of calling
-the method on the `~mpl_toolkits.basemap.Basemap` instance! And for
-`cartopy` axes, you no longer need to pass
-``transform=crs.PlateCarree()`` to the plotting method (as I found
-myself doing 99% of the time); ProPlot makes this the default. Finally,
-for both `~mpl_toolkits.basemap` and `cartopy`, you can pass
-``globe=True`` to plotting commands to ensure global data coverage.
-
-These features are powered by the
-`~proplot.axes.wrapper_cartopy_gridfix` and
-`~proplot.axes.wrapper_basemap_gridfix` wrappers.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    # First make figure
-    offset = -40
-    x = plot.arange(0+offset, 360+offset-1, 60)
-    y = plot.arange(-60,60+1,30)
-    data = np.random.rand(len(y), len(x))
-    for globe in (False,True):
-        f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2,
-                               colorbars='b', proj='hammer', proj_kw={'lon_0':0},
-                               basemap={(1,3):False, (2,4):True},
-                               )
-        for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
-            m = None
-            cmap = ['sunset', 'sunrise'][basemap]
-            levels = [0, .3, .5, .7, .9, 1]
-            levels = np.linspace(0,1,11)
-            if pcolor:
-                m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-                ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
-            if not pcolor:
-                m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-                ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
-            ax.format(suptitle=f'Hammer projection with globe={globe}', collabels=['Cartopy', 'Basemap'], labels=True)
-            if p<2:
-                c = f.bpanel[p].colorbar(m, label='values', tickminor=False)
-
-
-
-.. image:: showcase/showcase_90_1.png
-   :width: 591px
-   :height: 405px
-
-
-
-.. image:: showcase/showcase_90_2.png
-   :width: 591px
-   :height: 405px
-
-
-Projection formatting
+Axis ticks and scales
 ---------------------
 
-To pass keywords to `~mpl_toolkits.basemap.Basemap` and
-`cartopy.crs` projection classes on instantiation, pass a ``proj_kw``
-dictionary of keyword args to `~proplot.subplots.subplots`. With
-ProPlot, you can supply native PROJ.4 keyword names to the
-`cartopy.crs` classes just like `~mpl_toolkits.basemap` (e.g.
-``lon_0`` instead of ``central_longitude``). This is just meant to make
-things a bit less verbose.
+Specifying tick locations is much easier and much less verbose with
+ProPlot. Pass a number to tick every ``N`` data values, look up a
+builtin matplotlib `~matplotlib.ticker` with a string key name, or
+pass a list of numbers to tick specific locations. I recommend using
+ProPlot’s `~proplot.utils.arange` function to generate lists of ticks
+– it’s like numpy’s `~numpy.arange`, but is **endpoint-inclusive**,
+which more often than not is what you’ll want in this context.
 
-To add and stylize geographic features (e.g. coastlines, land, country
-borders, and state borders), just use the
-`~proplot.axes.BaseAxes.format` method as with ordinary Cartesian
-axes. This time, `~proplot.axes.BaseAxes.format` will call the special
-`~proplot.axes.MapAxes` `~proplot.axes.MapAxes.smart_update` method.
+See `~proplot.axes.XYAxes.smart_update` and
+`~proplot.axistools.Locator` for details.
 
-See `~proplot.subplots.subplots`,
-`~proplot.axes.MapAxes.smart_update`, and `~proplot.projs.Proj` for
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.rc.facecolor = plot.shade('powder blue', 1.15) # shade makes it a bit brighter, multiplies luminance channel by this much!
+    plot.rc.update(linewidth=1, small=10, large=12, color='dark blue', suptitlecolor='dark blue')
+    f, axs = plot.subplots(nrows=5, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
+    # Basic locators
+    axs[0].format(xlim=(0,200), xminorlocator=10, xlocator=30, suptitle='Declaring tick locations with ProPlot')
+    axs[1].format(xlim=(0,10), xlocator=[0, 0.3,0.8,1.6, 4.4, 8, 8.8, 10], xminorlocator=0.1)
+    axs[2].format(xlim=(1,100), xscale='log', xformatter='default') # use this to prevent exponential notation
+    axs[3].format(xlim=(1,10), xscale='inverse', xlocator='linear')
+    # Index locators are weird...require something plotted in the axes, will only label up bounds of data range
+    # For below, could also use ('index', [...]) (i.e. an IndexFormatter), but not sure why this exists when we can just use FixedFormatter
+    axs[4].plot(np.arange(10)-5, np.random.rand(10), alpha=0) # index locators 
+    axs[4].format(xlim=(0,6), xlocator='index',
+                  xformatter=[r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$', r'$\epsilon$', r'$\zeta$', r'$\eta$'])
+
+
+
+.. image:: showcase/showcase_63_0.png
+   :width: 510px
+   :height: 472px
+
+
+Axis tick labels
+----------------
+
+ProPlot changes the default axis formatter (i.e. the class used to
+convert float numbers to tick label strings). The new formatter trims
+trailing zeros by default, and can be used to *filter tick labels within
+some data range*, as demonstrated below.
+
+See `~proplot.axistools.AutoFormatter` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    locator = [0, 0.25, 0.5, 0.75, 1]
+    plot.rc.linewidth = 2
+    plot.rc.small = plot.rc.large = 12
+    f, axs = plot.subplots(ncols=2, axwidth=2, share=0, subplotpad=0.5) # change subplotpad to change padding between subplots
+    axs[1].format(xlocator=locator, ylocator=locator, xtickrange=[0,0.5], yticklabelloc='both', title='ProPlot formatter', titleweight='bold')
+    axs[0].format(xlocator=locator, ylocator=locator, yticklabelloc='both', xformatter='scalar', yformatter='scalar', title='Matplotlib formatter', titleweight='bold')
+
+
+
+.. image:: showcase/showcase_66_0.png
+   :width: 569px
+   :height: 237px
+
+
+ProPlot also lets you easily change the axis formatter with
+`~proplot.axes.BaseAxes.format` (keywords ``xformatter`` and
+``yformatter``, or their aliases ``xticklabels`` and ``yticklabels``).
+The builtin matplotlib formatters can be referenced by string name, and
+several new formatters have been introduced – for example, you can now
+easily label your axes as fractions or as geographic coordinates. You
+can also just pass a list of strings or a ``%``-style format directive.
+
+See `~proplot.axes.XYAxes.smart_update` and
+`~proplot.axistools.Formatter` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
+    plot.rc.update(linewidth=1.2, small=10, large=12, facecolor='gray8', figurefacecolor='gray8',
+                   suptitlecolor='w', gridcolor='w', color='w')
+    axs[0].format(xlim=(0,4*np.pi), xlocator=plot.arange(0, 4, 0.25)*np.pi, xformatter='pi')
+    axs[1].format(xlim=(0,2*np.e), xlocator=plot.arange(0, 2, 0.5)*np.e, xticklabels='e')
+    axs[2].format(xlim=(-90,90), xlocator=plot.arange(-90, 90, 30), xformatter='deglat')
+    axs[3].format(xlim=(-1.01,1), xlocator=0.5, xticklabels=['a', 'b', 'c', 'd', 'e'])
+    axs[4].format(xlim=(0, 0.001), xlocator=0.0001, xformatter='%.E')
+    axs[5].format(xlim=(0,100), xtickminor=False, xlocator=20, xformatter='{x:.1f}')
+    axs.format(ylocator='null', suptitle='Setting tick styles with ProPlot')
+
+
+
+.. image:: showcase/showcase_68_0.png
+   :width: 502px
+   :height: 557px
+
+
+Datetime axes
+-------------
+
+Labelling datetime axes is incredibly easy with ProPlot. Pass a
+time-unit string as the ``locator`` argument, and the axis will be
+ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
+``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
+formatting of
+datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
+
+Again, see `~proplot.axes.XYAxes.smart_update`,
+`~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
 details.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    N = 40
-    f, ax = plot.subplots(axwidth=4, ncols=1, proj='robin', basemap=True)
-    ax.pcolormesh(np.linspace(-180,180,N+1), np.linspace(-90,90,N+1), np.random.rand(N,N), globe=True,
-               cmap='grays', cmap_kw={'left':0.2, 'right':0.8})
-    ax.format(land=True, landcolor='w', suptitle='Geographic features with ProPlot',
-               borderscolor='w', coastcolor='k', innerborderscolor='k', # these are rc settings, without dots
-               geogridlinewidth=1.5, geogridcolor='red', geogridalpha=0.8, # these are rc settings, without dots
-               coast=True, innerborders=True, borders=True, labels=False) # these are "global" rc settings (setting names that dont' have dots)
+    plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=1,
+                   figurefacecolor='w', facecolor=plot.shade('C0', 2.7), abcformat='BBBa')
+    f, axs = plot.subplots(nrows=5, axwidth=8, aspect=(8,1), share=0, span=0, hspace=0.3)
+    axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02'))) # default date locator enabled if you plot datetime data or set datetime limits
+    axs[1].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
+                  xgridminor=True, xgrid=False,
+                  xlocator='month', xminorlocator='weekday', xformatter='%B') # minor ticks every Monday, major every month
+    axs[2].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
+                  xlocator='year', xminorlocator='month', xformatter='%b %Y') # minor ticks every month
+    axs[3].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')),
+                  xlocator=('year', 10), xformatter='\'%y') # minor ticks every month
+    axs[4].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')),
+                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S') # minor ticks every 10 minutes, major every 2
+    axs.format(ylocator='null', suptitle='Datetime axis tick labels with ProPlot')
 
 
 
-.. image:: showcase/showcase_93_0.png
-   :width: 386px
-   :height: 221px
+.. image:: showcase/showcase_71_0.png
+   :width: 793px
+   :height: 630px
+
+
+Axis scales
+-----------
+
+The axis scale (e.g. ``'log'``, ``'linear'``) can now be changed with
+`~proplot.axes.BaseAxes.format`, and ProPlot adds several new ones.
+The ``'cutoff'`` scale is great when you have weirdly distributed data
+(see `~proplot.axistools.CutoffScaleFactory`). The ``'sine'`` scale
+scales the axis as the sine of the coordinate, resulting in an
+“area-weighted” spherical latitude coordinate. The ``'inverse'`` scale
+is perfect for labeling spectral coordinates (this is more useful with
+the `~proplot.axes.XYAxes.dualx` and `~proplot.axes.XYAxes.dualy`
+commands; see :ref:`Alternative units`).
+
+See `~proplot.axes.XYAxes.smart_update` and
+`~proplot.axistools.Scale` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=0, span=False)
+    ax = axs[0]
+    ax.format(xlim=(0,1), ylim=(1e-3, 1e3), xscale='linear', yscale='log',
+              ylabel='log scale', xlabel='linear scale', suptitle='Changing the axis scale')
+    ax = axs[1]
+    ax.format(xlim=(0,1), ylim=(-1e3, 1e3), yscale='symlog', xlabel='linear', ylabel='symlog scale')
+
+
+
+.. image:: showcase/showcase_74_0.png
+   :width: 446px
+   :height: 223px
 
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, nrows=2,
-                           proj={(1,2):'ortho', (3,4):'npstere'},
-                           basemap={(1,3):False, (2,4):True},
-                           proj_kw={(1,2):{'lon_0':-60, 'lat_0':0}, (3,4):{'lon_0':-60, 'boundinglat':40}})
-    axs.format(collabels=['Cartopy', 'Basemap'], rowlabels=['proj="ortho"', 'proj="spstere"'])
-    axs[0::2].format(reso='med', land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
-    axs[1::2].format(land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
+    # plot.rc.fontname = 'Verdana'
+    f, axs = plot.subplots(width=6, nrows=4, aspect=(5,1), sharey=False, sharex=False)
+    # Compression
+    ax = axs[0]
+    x = np.linspace(0,4*np.pi,100)
+    dy = np.linspace(-1,1,5)
+    y1 = np.sin(x)
+    y2 = np.cos(x)
+    data = np.random.rand(len(dy)-1, len(x)-1)
+    scales = [(3, np.pi), (0.3, 3*np.pi), (np.inf, np.pi, 2*np.pi), (5, np.pi, 2*np.pi)]
+    titles = ('Zoom out of left', 'Zoom into left', 'Discrete cutoff', 'Fast jump')
+    locators = [np.pi/3, np.pi/3, *([x*np.pi for x in plot.arange(0, 4, 0.25) if not (1 < x <= 2)] for i in range(2))]
+    for ax,scale,title,locator in zip(axs,scales,titles,locators):
+        ax.pcolormesh(x, dy, data, cmap='grays', cmap_kw={'right': 0.8})
+        for y,color in zip((y1,y2), ('coral','sky')):
+            ax.plot(x, y, lw=4, color=color)
+        ax.format(xscale=('cutoff', *scale), title=title,
+                  xlim=(0,4*np.pi), ylabel='wave amplitude', # note since 'spanning labels' turned on by default, only one label is drawn
+                  xformatter='pi', xlocator=locator,
+                  xtickminor=False, xgrid=True, ygrid=False, suptitle='Cutoff scales showcase')
 
 
 
-.. image:: showcase/showcase_94_0.png
-   :width: 490px
-   :height: 416px
+.. image:: showcase/showcase_75_0.png
+   :width: 540px
+   :height: 567px
 
-
-Zooming into projections
-------------------------
-
-Zooming into projections is done much as before. For
-`~mpl_toolkits.basemap` projections, simply pass ``proj_kw`` to
-`~proplot.subplots.subplots` with any of the ``llcrnrlon``,
-``llcrnrlat``, ``urcrnrlon``, ``urcrnrlat``, ``llcrnrx``, ``llcrnry``,
-``urcrnrx``, ``urcrnry``, ``width``, and/or ``height`` keyword args. For
-`cartopy` projections, you can use
-`~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or alternatively pass
-``lonlim`` and/or ``latlim`` to `~proplot.axes.MapAxes.smart_update`.
 
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=3.3,
-                           basemap={1:False, 2:True},
-                           proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-20, 'urcrnrlon':180, 'urcrnrlat':80}})
-    axs[0].format(lonlim=(-20,180), latlim=(-20,80), title='Cartopy')
-    axs[1].format(title='Basemap')
-    axs.format(land=True, landcolor='blue green',
-               coast=True, coastcolor='forest green', coastlinewidth=1.5,
-               suptitle='Zooming into projections')
+    import numpy as np
+    f, axs = plot.subplots(nrows=3, ncols=2, axwidth=1.5, span=False, share=0)
+    axs.format(rowlabels=['Power\nscales', 'Exp\nscales', 'Geographic\nscales'], suptitle='Esoteric scales showcase')
+    x = np.linspace(0,1,50)
+    y = 10*x
+    data = np.random.rand(len(y)-1, len(x)-1)
+    # Power scales
+    colors = ('coral','sky')
+    for ax,power,color in zip(axs[:2],(2,1/4),colors):
+        ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+        ax.plot(x, y, lw=4, color=color)
+        ax.format(ylim=(0.1,10), yscale=('power',power), title=f'$x^{{{power}}}$')
+    # Exp scales
+    for ax,a,c,color in zip(axs[2:4],(np.e,2),(0.5,-1),colors):
+        ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+        ax.plot(x, y, lw=4, color=color)
+        ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${a}^{{{c}x}}$')
+    # Geographic scales
+    x = np.linspace(-180,180,n)
+    y = np.linspace(-85,85,n) # note sine just truncated values not in [-90,90], but Mercator transformation can reflect them
+    y2 = np.linspace(-85,85,n) # for pcolor
+    data = np.random.rand(len(x), len(y2))
+    for ax,scale,color in zip(axs[4:],('sine','mercator'),('coral','sky')):
+        ax.plot(x, y, '-', color=color, lw=4)
+        ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8}) # use 'right' to trim the colormap from 0-1 color range to 0-0.8 color range
+        ax.format(title=scale.title() + ' y-axis', yscale=scale,
+                  ytickloc='left',
+                  yformatter='deglat', grid=False, ylocator=20,
+                  xscale='linear', xlim=None, ylim=(-85,85))
 
 
 
-.. image:: showcase/showcase_96_0.png
-   :width: 323px
-   :height: 387px
+.. image:: showcase/showcase_76_0.png
+   :width: 420px
+   :height: 549px
+
+
+Alternative units
+-----------------
+
+The new `~proplot.axes.XYAxes.dualx` and
+`~proplot.axes.XYAxes.dualy` methods build duplicate *x* and *y* axes
+meant to represent *alternate units* in the same coordinate range as the
+“parent” axis.
+
+For simple transformations, just use the ``offset`` and ``scale``
+keyword args. For more complex transformations, pass the name of any
+registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
+(see below).
+
+.. code:: ipython3
+
+    import proplot as plot
+    plot.rc.update({'grid.alpha':0.4, 'grid.linewidth':1.0})
+    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=2.2, axwidth=3)
+    N = 200
+    c1, c2 = plot.shade('cerulean', 0.5), plot.shade('red', 0.5)
+    # These first 2 are for general users
+    ax = axs[0]
+    ax.format(yformatter='null', xlabel='meters', xlocator=1000, xlim=(0,5000),
+              xcolor=c2, gridcolor=c2,
+              suptitle='Duplicate x-axes with simple, custom transformations', ylocator=[], # locator=[] has same result as locator='null'
+              )
+    ax.dualx(scale=1e-3, xlabel='kilometers', grid=True, xcolor=c1, gridcolor=c1)
+    ax = axs[1]
+    ax.format(yformatter='null', xlabel='temperature (K)', title='', xlim=(200,300), ylocator='null',
+             xcolor=c2, gridcolor=c2)
+    ax.dualx(offset=-273.15, xlabel='temperature (\N{DEGREE SIGN}C)',
+             xcolor=c1, gridcolor=c1, grid=True)
+    
+    # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
+    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=0.4, axwidth=1.8)
+    ax = axs[0]
+    ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], 
+              gridcolor=c1, ycolor=c1)
+    ax.dualy(yscale='height', ylabel='height (km)', yticks=2.5, color=c2, gridcolor=c2, grid=True)
+    ax = axs[1] # span
+    ax.format(xformatter='null', ylabel='height (km)', ylim=(0,20), xlocator='null', gridcolor=c2, ycolor=c2,
+              suptitle='Duplicate y-axes with special transformations', grid=True)
+    ax.dualy(yscale='pressure', ylabel='pressure (hPa)', ylocator=100, grid=True, color=c1, gridcolor=c1)
+
+
+
+.. image:: showcase/showcase_79_0.png
+   :width: 599px
+   :height: 212px
+
+
+
+.. image:: showcase/showcase_79_1.png
+   :width: 516px
+   :height: 445px
+
+
+.. code:: ipython3
+
+    # Plot the response function for an imaginary 5-day lowpass filter
+    import proplot as plot
+    import numpy as np
+    plot.rc['axes.ymargin'] = 0
+    cutoff = 0.3
+    x = np.linspace(0.01,0.5,1000) # in wavenumber days
+    response = (np.tanh(-((x - cutoff)/0.03)) + 1)/2 # imgarinary response function
+    f, ax = plot.subplots(aspect=(3,1), width=6)#, tight=False, top=2)
+    ax.fill_between(x, 0, response, facecolor='none', edgecolor='gray8', lw=1, clip_on=True)
+    red = plot.shade('red', 0.5)
+    ax.axvline(cutoff, lw=2, ls='-', color=red)
+    ax.fill_between([0.27, 0.33], 0, 1, color=red, alpha=0.3)
+    ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
+    ax.dualx(xscale='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
+              xlabel='period (days)',
+              title='Imgaginary response function', titlepos='oc',
+              suptitle='Duplicate x-axes with wavenumber and period', 
+              )
+
+
+
+.. image:: showcase/showcase_80_0.png
+   :width: 540px
+   :height: 269px
 
 

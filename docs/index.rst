@@ -117,6 +117,7 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    showcase2
    showcase3
    showcase4
+   showcase5
 
 .. toctree::
    :hidden:
