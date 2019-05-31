@@ -34,12 +34,12 @@ short names, and links to the
 documentation (both `cartopy` and `~mpl_toolkits.basemap` are
 internally powered by `PROJ.4 <https://proj4.org>`__).
 
-Note that you no longer have to reference the `~cartopy.crs`
-projection classes directly – instead, just like
-`~mpl_toolkits.basemap`, you can specify a native PROJ.4 short name
-(e.g. ``'robin'`` or ``'merc'``). ProPlot also adds to `cartopy` the
-previously unavailable Aitoff, Hammer, Winkel Tripel, and Kavrisky VII
-projections by subclassing the `~cartopy.crs.Projection` class.
+Note that you no longer have to reference the `cartopy.crs.Projection`
+classes directly – instead, just like `~mpl_toolkits.basemap`, you can
+specify a native PROJ.4 short name (e.g. ``'robin'`` or ``'merc'``).
+ProPlot also adds to `cartopy` the previously unavailable Aitoff,
+Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
+`cartopy.crs.Projection` class.
 
 .. code:: ipython3
 
@@ -161,12 +161,12 @@ Projection formatting
 ---------------------
 
 To pass keywords to `~mpl_toolkits.basemap.Basemap` and
-`cartopy.crs` projection classes on instantiation, pass a ``proj_kw``
+`cartopy.crs.Projection` classes on instantiation, pass a ``proj_kw``
 dictionary of keyword args to `~proplot.subplots.subplots`. With
 ProPlot, you can supply native PROJ.4 keyword names to the
-`cartopy.crs` classes just like `~mpl_toolkits.basemap` (e.g.
-``lon_0`` instead of ``central_longitude``). This is just meant to make
-things a bit less verbose.
+`cartopy.crs.Projection` classes just like `~mpl_toolkits.basemap`
+(e.g. ``lon_0`` instead of ``central_longitude``). This is just meant to
+make things a bit less verbose.
 
 To add and stylize geographic features (e.g. coastlines, land, country
 borders, and state borders), just use the
