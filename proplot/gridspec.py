@@ -53,8 +53,8 @@ class FlexibleGridSpecBase(object):
             ratios. For example, ``wspace=0.1`` with the default ``wratios=1``
             yields a space 10% the width of the axes.
 
-            If list, length length of ``wspace`` must be ``ncols-1``,
-            and length of ``hspace`` must be ``nrows-1``.
+            If list, length of ``wspace`` must be ``ncols - 1``,
+            and length of ``hspace`` must be ``nrows - 1``.
         height_ratios, width_ratios : list of float
             Ratios for the width/height of columns/rows of subplots.
             For example, ``wratios=[1,2]`` specifes 2 columns of subplots,
