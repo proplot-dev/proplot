@@ -346,8 +346,6 @@ class Figure(mfigure.Figure):
     def _tight_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have
         to call the tight bbox algorithm multiple times."""
-        if renderer is None:
-            renderer = self.canvas.get_renderer()
         for ax in (*self._main_axes, *self.leftpanel, *self.bottompanel, *self.rightpanel):
             if not ax:
                 continue
@@ -416,7 +414,7 @@ class Figure(mfigure.Figure):
                 position = (1, y0 + height/2)
             saxis.label.update({'position':position, 'transform':transform})
 
-    def _text_align(self, renderer=None):
+    def _text_align(self, renderer):
         """Adjusts position of row titles and figure super title."""
         # Adjust row labels as axis tick labels are generated and y-axis
         # labels is generated.
@@ -500,6 +498,9 @@ class Figure(mfigure.Figure):
 
     def _auto_adjust(self, renderer=None):
         """Performs various post-procesing tasks."""
+        # Get renderer
+        if renderer is None:
+            renderer = self.canvas.get_renderer()
         # Lock twin axes
         self._twin_axes_lock()
         # Align text and fix labels
@@ -642,7 +643,7 @@ class Figure(mfigure.Figure):
                     ispace = max([0, iratios[idx] - min(space) + pad])
                 iratios[idx] = ispace
 
-    def smart_tight_layout(self, renderer=None):
+    def smart_tight_layout(self, renderer):
         """
         This is called automatically when `~Figure.draw` or
         `~Figure.savefig` are called, unless the user set `tight` to
@@ -656,9 +657,14 @@ class Figure(mfigure.Figure):
 
         Parameters
         ----------
-        renderer : None or `~matplotlib.backend_bases.RendererBase`, optional
+        renderer : `~matplotlib.backend_bases.RendererBase`
             The backend renderer.
         """
+        #----------------------------------------------------------------------#
+        # Get tight bboxs
+        #----------------------------------------------------------------------#
+        self._tight_bboxs(renderer)
+
         #----------------------------------------------------------------------#
         # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
         # basemap axes so its aspect ratio will not have changed.
@@ -667,7 +673,6 @@ class Figure(mfigure.Figure):
         # changes the aspect ratio manually?
         # WARNING: If ratio changes, you have to run smart tight layout twice,
         # or get incorrect spacing along the dimension contracted by the change.
-        self._tight_bboxs(renderer)
         ax = self._main_axes[self._ref_num-1]
         subplots_kw = self._subplots_kw
         aspect_changed = False
