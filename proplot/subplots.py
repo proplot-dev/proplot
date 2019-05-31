@@ -1016,7 +1016,7 @@ class Figure(mfigure.Figure):
             kwargs['facecolor'] = color
             kwargs['transparent'] = False
         # Prepare for rendering
-        self._auto_adjust(renderer)
+        self._auto_adjust()
         # Render
         return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
