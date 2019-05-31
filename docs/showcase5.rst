@@ -228,10 +228,9 @@ generator! Every command that accepts a ``cmap`` argument (see
 ``~/.proplot``, simply pass ``save=True`` to the
 `~proplot.colortools.Colormap` constructor (or supply a plotting
 command with ``cmap_kw={'save':True, 'name':name}``, and it will be
-loaded every time you import ProPlot.
-
-See `~proplot.colortools.Colormap` and `~proplot.axes.wrapper_cmap`
-for details.
+loaded every time you import ProPlot. See
+`~proplot.colortools.Colormap` and `~proplot.axes.wrapper_cmap` for
+details.
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
 included, you can easily create SciVisColor-style merged colormaps with
@@ -418,10 +417,8 @@ arguments can be specified with ``cycle_kw``. If you want to save your
 own, custom color cycler, simply pass ``save=True`` to the
 `~proplot.colortools.Cycle` constructor (or supply a plotting command
 with ``cycle_kw={'save':True, 'name':name}``, and it will be loaded
-every time you import ProPlot.
-
-See `~proplot.colortools.Cycle` and `~proplot.axes.wrapper_cycle`
-for details.
+every time you import ProPlot. See `~proplot.colortools.Cycle` and
+`~proplot.axes.wrapper_cycle` for details.
 
 .. code:: ipython3
 

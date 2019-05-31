@@ -173,7 +173,6 @@ borders, and state borders), just use the
 `~proplot.axes.BaseAxes.format` method as with ordinary Cartesian
 axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 `~proplot.axes.MapAxes` `~proplot.axes.MapAxes.smart_update` method.
-
 See `~proplot.subplots.subplots`,
 `~proplot.axes.MapAxes.smart_update`, and `~proplot.projs.Proj` for
 details.

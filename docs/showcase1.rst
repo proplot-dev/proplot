@@ -393,12 +393,10 @@ Fonts
 -----
 
 The `~proplot.rcmod.rc` object can be used to change the default font,
-as demonstrated below.
-
-By default, ProPlot adds Helvetica and makes it the new default.
-Helvetica is the MATLAB default – matplotlib normally does not come
-packaged with Helvetica, but in my biased opinion it looks more
-professional than the default “DejaVu Sans”. See the
+as demonstrated below. By default, ProPlot adds Helvetica and makes it
+the new default. Helvetica is the MATLAB default – matplotlib normally
+does not come packaged with Helvetica, but in my biased opinion it looks
+more professional than the default “DejaVu Sans”. See the
 `~proplot.fonttools` documentation for more info on fonts.
 
 .. code:: ipython3

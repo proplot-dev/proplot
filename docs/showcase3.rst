@@ -90,10 +90,9 @@ builtin matplotlib `~matplotlib.ticker` with a string key name, or
 pass a list of numbers to tick specific locations. I recommend using
 ProPlot’s `~proplot.utils.arange` function to generate lists of ticks
 – it’s like numpy’s `~numpy.arange`, but is **endpoint-inclusive**,
-which more often than not is what you’ll want in this context.
-
-See `~proplot.axes.XYAxes.smart_update` and
-`~proplot.axistools.Locator` for details.
+which more often than not is what you’ll want in this context. See
+`~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Locator`
+for details.
 
 .. code:: ipython3
 
@@ -126,9 +125,8 @@ Axis tick labels
 ProPlot changes the default axis formatter (i.e. the class used to
 convert float numbers to tick label strings). The new formatter trims
 trailing zeros by default, and can be used to *filter tick labels within
-some data range*, as demonstrated below.
-
-See `~proplot.axistools.AutoFormatter` for details.
+some data range*, as demonstrated below. See
+`~proplot.axistools.AutoFormatter` for details.
 
 .. code:: ipython3
 
@@ -154,7 +152,6 @@ The builtin matplotlib formatters can be referenced by string name, and
 several new formatters have been introduced – for example, you can now
 easily label your axes as fractions or as geographic coordinates. You
 can also just pass a list of strings or a ``%``-style format directive.
-
 See `~proplot.axes.XYAxes.smart_update` and
 `~proplot.axistools.Formatter` for details.
 
@@ -189,7 +186,6 @@ ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
 ``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
 formatting of
 datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
-
 Again, see `~proplot.axes.XYAxes.smart_update`,
 `~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
 details.
@@ -231,10 +227,9 @@ scales the axis as the sine of the coordinate, resulting in an
 “area-weighted” spherical latitude coordinate. The ``'inverse'`` scale
 is perfect for labeling spectral coordinates (this is more useful with
 the `~proplot.axes.XYAxes.dualx` and `~proplot.axes.XYAxes.dualy`
-commands; see :ref:`Alternative units`).
-
-See `~proplot.axes.XYAxes.smart_update` and
-`~proplot.axistools.Scale` for details.
+commands; see :ref:`Alternative units`). See
+`~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Scale`
+for details.
 
 .. code:: ipython3
 
