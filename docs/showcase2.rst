@@ -18,7 +18,7 @@ and special `~proplot.axes.PanelAxes` axes. When you call
 `~proplot.axes.PanelAxes.colorbar` on a `~proplot.axes.PanelAxes`,
 the axes is **filled** with a colorbar. See
 `~proplot.subplots.subplots` and
-`~proplot.subplots.Figure.panel_factory` for more on panels.
+`~proplot.subplots.Figure.add_subplot_and_panels` for more on panels.
 
 .. code:: ipython3
 
@@ -291,7 +291,7 @@ hard to do with matplotlib, but easy with ProPlot! You can specify
 arbitrary combinations of inner panels for specific axes, and ProPlot
 will always keep the subplots aligned. See
 `~proplot.subplots.subplots` and
-`~proplot.subplots.Figure.panel_factory` for details.
+`~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
 
@@ -324,7 +324,7 @@ to inherit axis limits from the main subplot), use any of the ``share``
 keyword args.
 
 Again, see `~proplot.subplots.subplots` and
-`~proplot.subplots.Figure.panel_factory` for details.
+`~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
 
