@@ -1,5 +1,5 @@
-Axes subclasses
----------------
+Axes and wrappers
+-----------------
 
 **Classes**
 

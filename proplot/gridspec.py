@@ -36,7 +36,7 @@ class FlexibleGridSpecBase(object):
 
     Accomplishes this by actually drawing ``nrows*2 + 1`` and ``ncols*2 + 1``
     `~matplotlib.gridspec.GridSpecBase` rows and columns, setting
-    `wspace` and `hspace` to 0, and masking out every other row/column
+    `wspace` and `hspace` to ``0``, and masking out every other row/column
     of the `~matplotlib.gridspec.GridSpecBase`, so they act as "spaces".
     These "spaces" are allowed to vary in width using the builtin `wratios`
     and `hratios` keyword args.
