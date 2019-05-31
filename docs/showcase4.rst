@@ -267,9 +267,9 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 You can generate your own
 `~proplot.colortools.PerceptuallyUniformColormap` on-the-fly by
-passing a dictionary as the ``cmap`` keyword argument. This is powerd by
-the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl` static
-method.
+passing a dictionary as the ``cmap`` keyword argument. This is powered
+by the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl`
+static method.
 
 The ``h``, ``s``, and ``l`` arguments can be single numbers, color
 strings, or lists thereof. Numbers just indicate the channel value. For

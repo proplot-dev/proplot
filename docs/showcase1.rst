@@ -536,7 +536,7 @@ label grid boxes in `~matplotlib.axes.Axes.pcolor` and
    :height: 241px
 
 
-`~proplot.colortools.wrapper_cmap` assigns the
+`~proplot.axes.wrapper_cmap` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
 for all plots. This allows for discrete levels in all situations – that
 is, `~matplotlib.axes.Axes.pcolor` and
@@ -576,7 +576,7 @@ never the same (see below).
    :height: 289px
 
 
-`~proplot.colortools.wrapper_cmap` also fixes the well-documented
+`~proplot.axes.wrapper_cmap` also fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
 and
 `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
@@ -602,11 +602,11 @@ feature is disabled (see below).
    :height: 241px
 
 
-`~proplot.colortools.wrapper_cmap` also lets you provide arbitrarily
-spaced, monotonically increasing levels, and by default the color
-gradations between each number in the level list will be the same, no
-matter the step size. This is powered by the
-`~proplot.colors.LinearSegmentedNorm` normalizer, and can be
+`~proplot.axes.wrapper_cmap` also lets you provide arbitrarily spaced,
+monotonically increasing levels, and by default the color gradations
+between each number in the level list will be the same, no matter the
+step size. This is powered by the
+`~proplot.colortools.LinearSegmentedNorm` normalizer, and can be
 overridden with the ``norm`` keyword arg, which constructs an arbitrary
 normalizer from the `~proplot.colortools.Norm` constructor.
 
