@@ -2195,7 +2195,7 @@ class BaseAxes(maxes.Axes):
         """
         # Default props
         loc = _default(loc, rc.get('colorbar.loc'))
-        extend = units(_default(extendlength, rc.get('colorbar.insetextend')))
+        extend = units(_default(extendlength, rc.get('colorbar.extendinset')))
         length = units(_default(pad, rc.get('colorbar.length')))/self.width
         width = units(_default(pad, rc.get('colorbar.width')))/self.height
         pad = units(_default(pad, rc.get('colorbar.axespad')))

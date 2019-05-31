@@ -199,8 +199,8 @@ Key                       Description
 ``colorbar.loc``          Default inset colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
 ``colorbar.length``       Default length of inset colorbars.
 ``colorbar.width``        Default width of inset colorbars.
-``colorbar.insetextend``  Length of rectangular or triangular "extensions" for inset colorbars.
 ``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
+``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
 ``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
 ``colorbar.xspace``       Extra space for *x* label of inset colorbars.
 ========================  =========================================================================================================================
@@ -302,7 +302,7 @@ _rc_names_new = {
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
     'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',
     'subplot.axwidth', 'subplot.panelwidth', 'subplot.panelspace',
-    'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendfull', 'colorbar.axespad', 'colorbar.xspace',
+    'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, compare landcolor='b' to

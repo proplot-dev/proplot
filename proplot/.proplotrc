@@ -194,11 +194,11 @@ rcParams_new:
     subplot.nolabspace: 0.15
     subplot.panelspace: 0.15
     # Inset colorbar
-    colorbar.extendfull: 0.15
-    colorbar.extend:     0.08
-    colorbar.length:     0.6
-    colorbar.width:      0.12
-    colorbar.loc:        'lower right'
-    colorbar.axespad:    0.5em
-    colorbar.xspace:     0.3
+    colorbar.extendinset: 0.08
+    colorbar.extend:      0.15
+    colorbar.length:      0.6
+    colorbar.width:       0.12
+    colorbar.loc:         'lower right'
+    colorbar.axespad:     0.5em
+    colorbar.xspace:      0.3
 
