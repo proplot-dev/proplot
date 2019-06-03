@@ -33,25 +33,25 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_59_0.png
+.. image:: showcase/showcase_58_0.png
    :width: 643px
    :height: 166px
 
 
 
-.. image:: showcase/showcase_59_1.png
+.. image:: showcase/showcase_58_1.png
    :width: 643px
    :height: 176px
 
 
 
-.. image:: showcase/showcase_59_2.png
+.. image:: showcase/showcase_58_2.png
    :width: 643px
    :height: 175px
 
 
 
-.. image:: showcase/showcase_59_3.png
+.. image:: showcase/showcase_58_3.png
    :width: 643px
    :height: 190px
 
@@ -70,13 +70,13 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_60_0.png
+.. image:: showcase/showcase_59_0.png
    :width: 490px
    :height: 491px
 
 
 
-.. image:: showcase/showcase_60_1.png
+.. image:: showcase/showcase_59_1.png
    :width: 490px
    :height: 498px
 
@@ -90,10 +90,9 @@ builtin matplotlib `~matplotlib.ticker` with a string key name, or
 pass a list of numbers to tick specific locations. I recommend using
 ProPlot’s `~proplot.utils.arange` function to generate lists of ticks
 – it’s like numpy’s `~numpy.arange`, but is **endpoint-inclusive**,
-which more often than not is what you’ll want in this context.
-
-See `~proplot.axes.XYAxes.smart_update` and
-`~proplot.axistools.Locator` for details.
+which more often than not is what you’ll want in this context. See
+`~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Locator`
+for details.
 
 .. code:: ipython3
 
@@ -115,7 +114,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_63_0.png
+.. image:: showcase/showcase_62_0.png
    :width: 510px
    :height: 472px
 
@@ -126,9 +125,8 @@ Axis tick labels
 ProPlot changes the default axis formatter (i.e. the class used to
 convert float numbers to tick label strings). The new formatter trims
 trailing zeros by default, and can be used to *filter tick labels within
-some data range*, as demonstrated below.
-
-See `~proplot.axistools.AutoFormatter` for details.
+some data range*, as demonstrated below. See
+`~proplot.axistools.AutoFormatter` for details.
 
 .. code:: ipython3
 
@@ -142,7 +140,7 @@ See `~proplot.axistools.AutoFormatter` for details.
 
 
 
-.. image:: showcase/showcase_66_0.png
+.. image:: showcase/showcase_65_0.png
    :width: 569px
    :height: 237px
 
@@ -154,7 +152,6 @@ The builtin matplotlib formatters can be referenced by string name, and
 several new formatters have been introduced – for example, you can now
 easily label your axes as fractions or as geographic coordinates. You
 can also just pass a list of strings or a ``%``-style format directive.
-
 See `~proplot.axes.XYAxes.smart_update` and
 `~proplot.axistools.Formatter` for details.
 
@@ -175,7 +172,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_68_0.png
+.. image:: showcase/showcase_67_0.png
    :width: 502px
    :height: 557px
 
@@ -189,7 +186,6 @@ ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
 ``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
 formatting of
 datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
-
 Again, see `~proplot.axes.XYAxes.smart_update`,
 `~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
 details.
@@ -215,7 +211,7 @@ details.
 
 
 
-.. image:: showcase/showcase_71_0.png
+.. image:: showcase/showcase_70_0.png
    :width: 793px
    :height: 630px
 
@@ -231,10 +227,9 @@ scales the axis as the sine of the coordinate, resulting in an
 “area-weighted” spherical latitude coordinate. The ``'inverse'`` scale
 is perfect for labeling spectral coordinates (this is more useful with
 the `~proplot.axes.XYAxes.dualx` and `~proplot.axes.XYAxes.dualy`
-commands; see :ref:`Alternative units`).
-
-See `~proplot.axes.XYAxes.smart_update` and
-`~proplot.axistools.Scale` for details.
+commands; see :ref:`Alternative units`). See
+`~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Scale`
+for details.
 
 .. code:: ipython3
 
@@ -248,7 +243,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_74_0.png
+.. image:: showcase/showcase_73_0.png
    :width: 446px
    :height: 223px
 
@@ -280,7 +275,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_75_0.png
+.. image:: showcase/showcase_74_0.png
    :width: 540px
    :height: 567px
 
@@ -320,7 +315,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_76_0.png
+.. image:: showcase/showcase_75_0.png
    :width: 420px
    :height: 549px
 
@@ -371,13 +366,13 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_79_0.png
+.. image:: showcase/showcase_78_0.png
    :width: 599px
    :height: 212px
 
 
 
-.. image:: showcase/showcase_79_1.png
+.. image:: showcase/showcase_78_1.png
    :width: 516px
    :height: 445px
 
@@ -405,7 +400,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_80_0.png
+.. image:: showcase/showcase_79_0.png
    :width: 540px
    :height: 269px
 

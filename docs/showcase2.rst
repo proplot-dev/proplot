@@ -34,7 +34,7 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_29_0.png
+.. image:: showcase/showcase_28_0.png
    :width: 286px
    :height: 348px
 
@@ -67,7 +67,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_31_1.png
+.. image:: showcase/showcase_30_1.png
    :width: 332px
    :height: 298px
 
@@ -106,7 +106,7 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_33_0.png
+.. image:: showcase/showcase_32_0.png
    :width: 532px
    :height: 303px
 
@@ -143,7 +143,7 @@ label grid boxes in `~matplotlib.axes.Axes.pcolor` and
 
 
 
-.. image:: showcase/showcase_36_0.png
+.. image:: showcase/showcase_35_0.png
    :width: 446px
    :height: 241px
 
@@ -183,7 +183,7 @@ never the same (see below).
 
 
 
-.. image:: showcase/showcase_38_1.png
+.. image:: showcase/showcase_37_1.png
    :width: 454px
    :height: 289px
 
@@ -209,7 +209,7 @@ feature is disabled (see below).
 
 
 
-.. image:: showcase/showcase_40_0.png
+.. image:: showcase/showcase_39_0.png
    :width: 475px
    :height: 241px
 
@@ -236,7 +236,7 @@ normalizer from the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: showcase/showcase_42_0.png
+.. image:: showcase/showcase_41_0.png
    :width: 512px
    :height: 273px
 
@@ -277,7 +277,7 @@ details.
 
 
 
-.. image:: showcase/showcase_44_1.png
+.. image:: showcase/showcase_43_1.png
    :width: 655px
    :height: 294px
 
@@ -306,7 +306,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_47_0.png
+.. image:: showcase/showcase_46_0.png
    :width: 468px
    :height: 466px
 
@@ -321,9 +321,7 @@ If you want panels “flush” against the subplot, simply use the ``flush``
 keyword args. If you want to disable “axis sharing” with the parent
 subplot (i.e. you want to draw tick labels on the panel, and do not want
 to inherit axis limits from the main subplot), use any of the ``share``
-keyword args.
-
-Again, see `~proplot.subplots.subplots` and
+keyword args. Again, see `~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
@@ -347,7 +345,7 @@ Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_49_1.png
+.. image:: showcase/showcase_48_1.png
    :width: 492px
    :height: 514px
 
@@ -383,7 +381,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_52_1.png
+.. image:: showcase/showcase_51_1.png
    :width: 487px
    :height: 523px
 
@@ -407,7 +405,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_53_0.png
+.. image:: showcase/showcase_52_0.png
    :width: 623px
    :height: 240px
 
@@ -449,7 +447,7 @@ primary axes.
 
 
 
-.. image:: showcase/showcase_55_0.png
+.. image:: showcase/showcase_54_0.png
    :width: 524px
    :height: 510px
 

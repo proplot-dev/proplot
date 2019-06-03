@@ -34,7 +34,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_101_0.png
+.. image:: showcase/showcase_100_0.png
    :width: 576px
    :height: 212px
 
@@ -46,7 +46,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_102_0.png
+.. image:: showcase/showcase_101_0.png
    :width: 576px
    :height: 212px
 
@@ -58,7 +58,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_103_0.png
+.. image:: showcase/showcase_102_0.png
    :width: 576px
    :height: 212px
 
@@ -85,13 +85,13 @@ non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_105_1.png
+.. image:: showcase/showcase_104_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_105_2.png
+.. image:: showcase/showcase_104_2.png
    :width: 748px
    :height: 245px
 
@@ -127,7 +127,7 @@ with poor, perceptually un-uniform transitions were thrown out.
 
 
 
-.. image:: showcase/showcase_108_1.png
+.. image:: showcase/showcase_107_1.png
    :width: 436px
    :height: 4333px
 
@@ -160,7 +160,7 @@ constructor function. See below for details.
 
 
 
-.. image:: showcase/showcase_111_0.png
+.. image:: showcase/showcase_110_0.png
    :width: 540px
    :height: 1615px
 
@@ -199,7 +199,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_114_0.png
+.. image:: showcase/showcase_113_0.png
    :width: 720px
    :height: 1316px
 
@@ -211,7 +211,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_115_0.png
+.. image:: showcase/showcase_114_0.png
    :width: 630px
    :height: 225px
 
@@ -228,10 +228,9 @@ generator! Every command that accepts a ``cmap`` argument (see
 ``~/.proplot``, simply pass ``save=True`` to the
 `~proplot.colortools.Colormap` constructor (or supply a plotting
 command with ``cmap_kw={'save':True, 'name':name}``, and it will be
-loaded every time you import ProPlot.
-
-See `~proplot.colortools.Colormap` and `~proplot.axes.wrapper_cmap`
-for details.
+loaded every time you import ProPlot. See
+`~proplot.colortools.Colormap` and `~proplot.axes.wrapper_cmap` for
+details.
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
 included, you can easily create SciVisColor-style merged colormaps with
@@ -260,7 +259,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_118_1.png
+.. image:: showcase/showcase_117_1.png
    :width: 544px
    :height: 334px
 
@@ -300,7 +299,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_120_0.png
+.. image:: showcase/showcase_119_0.png
    :width: 724px
    :height: 345px
 
@@ -328,7 +327,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_122_0.png
+.. image:: showcase/showcase_121_0.png
    :width: 526px
    :height: 325px
 
@@ -352,7 +351,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_124_0.png
+.. image:: showcase/showcase_123_0.png
    :width: 652px
    :height: 287px
 
@@ -375,7 +374,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_126_0.png
+.. image:: showcase/showcase_125_0.png
    :width: 652px
    :height: 287px
 
@@ -403,7 +402,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_128_0.png
+.. image:: showcase/showcase_127_0.png
    :width: 652px
    :height: 424px
 
@@ -418,10 +417,8 @@ arguments can be specified with ``cycle_kw``. If you want to save your
 own, custom color cycler, simply pass ``save=True`` to the
 `~proplot.colortools.Cycle` constructor (or supply a plotting command
 with ``cycle_kw={'save':True, 'name':name}``, and it will be loaded
-every time you import ProPlot.
-
-See `~proplot.colortools.Cycle` and `~proplot.axes.wrapper_cycle`
-for details.
+every time you import ProPlot. See `~proplot.colortools.Cycle` and
+`~proplot.axes.wrapper_cycle` for details.
 
 .. code:: ipython3
 
@@ -435,7 +432,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_131_0.png
+.. image:: showcase/showcase_130_0.png
    :width: 465px
    :height: 326px
 
@@ -469,7 +466,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_133_1.png
+.. image:: showcase/showcase_132_1.png
    :width: 619px
    :height: 311px
 
@@ -498,7 +495,7 @@ example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
 
 
 
-.. image:: showcase/showcase_135_0.png
+.. image:: showcase/showcase_134_0.png
    :width: 544px
    :height: 478px
 
@@ -537,6 +534,6 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_138_0.png
+.. image:: showcase/showcase_137_0.png
    :width: 431px
    :height: 582px

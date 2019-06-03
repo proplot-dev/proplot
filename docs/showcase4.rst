@@ -34,12 +34,12 @@ short names, and links to the
 documentation (both `cartopy` and `~mpl_toolkits.basemap` are
 internally powered by `PROJ.4 <https://proj4.org>`__).
 
-Note that you no longer have to reference the `~cartopy.crs`
-projection classes directly – instead, just like
-`~mpl_toolkits.basemap`, you can specify a native PROJ.4 short name
-(e.g. ``'robin'`` or ``'merc'``). ProPlot also adds to `cartopy` the
-previously unavailable Aitoff, Hammer, Winkel Tripel, and Kavrisky VII
-projections by subclassing the `~cartopy.crs.Projection` class.
+Note that you no longer have to reference the `cartopy.crs.Projection`
+classes directly – instead, just like `~mpl_toolkits.basemap`, you can
+specify a native PROJ.4 short name (e.g. ``'robin'`` or ``'merc'``).
+ProPlot also adds to `cartopy` the previously unavailable Aitoff,
+Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
+`cartopy.crs.Projection` class.
 
 .. code:: ipython3
 
@@ -57,7 +57,7 @@ projections by subclassing the `~cartopy.crs.Projection` class.
 
 
 
-.. image:: showcase/showcase_85_1.png
+.. image:: showcase/showcase_84_1.png
    :width: 576px
    :height: 1037px
 
@@ -90,7 +90,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_88_0.png
+.. image:: showcase/showcase_87_0.png
    :width: 598px
    :height: 1073px
 
@@ -146,13 +146,13 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_91_1.png
+.. image:: showcase/showcase_90_1.png
    :width: 591px
    :height: 405px
 
 
 
-.. image:: showcase/showcase_91_2.png
+.. image:: showcase/showcase_90_2.png
    :width: 591px
    :height: 405px
 
@@ -161,19 +161,18 @@ Projection formatting
 ---------------------
 
 To pass keywords to `~mpl_toolkits.basemap.Basemap` and
-`cartopy.crs` projection classes on instantiation, pass a ``proj_kw``
+`cartopy.crs.Projection` classes on instantiation, pass a ``proj_kw``
 dictionary of keyword args to `~proplot.subplots.subplots`. With
 ProPlot, you can supply native PROJ.4 keyword names to the
-`cartopy.crs` classes just like `~mpl_toolkits.basemap` (e.g.
-``lon_0`` instead of ``central_longitude``). This is just meant to make
-things a bit less verbose.
+`cartopy.crs.Projection` classes just like `~mpl_toolkits.basemap`
+(e.g. ``lon_0`` instead of ``central_longitude``). This is just meant to
+make things a bit less verbose.
 
 To add and stylize geographic features (e.g. coastlines, land, country
 borders, and state borders), just use the
 `~proplot.axes.BaseAxes.format` method as with ordinary Cartesian
 axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 `~proplot.axes.MapAxes` `~proplot.axes.MapAxes.smart_update` method.
-
 See `~proplot.subplots.subplots`,
 `~proplot.axes.MapAxes.smart_update`, and `~proplot.projs.Proj` for
 details.
@@ -193,7 +192,7 @@ details.
 
 
 
-.. image:: showcase/showcase_94_0.png
+.. image:: showcase/showcase_93_0.png
    :width: 386px
    :height: 221px
 
@@ -212,7 +211,7 @@ details.
 
 
 
-.. image:: showcase/showcase_95_0.png
+.. image:: showcase/showcase_94_0.png
    :width: 490px
    :height: 416px
 
@@ -243,7 +242,7 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_97_0.png
+.. image:: showcase/showcase_96_0.png
    :width: 323px
    :height: 387px
 
