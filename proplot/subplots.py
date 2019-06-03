@@ -324,7 +324,7 @@ class Figure(mfigure.Figure):
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
-        axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))]
+        axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))] # order by yrange
         for ax,label in zip(axs,labels):
             label = label.strip()
             if label and ax.rowlabel.get_text()!=label:
@@ -332,7 +332,7 @@ class Figure(mfigure.Figure):
 
     def _collabels(self, labels, **kwargs):
         """Assign column labels."""
-        axs = [ax for ax in self._main_axes if ax._yrange[0]==0]
+        axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
         if isinstance(labels, str):
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
@@ -392,6 +392,7 @@ class Figure(mfigure.Figure):
                 self._spanning_axes.append(axis)
             axis.label.update({'visible':True, **kwargs})
         # If requested, turn on spanning
+        # TODO: Use tightbbox for this?
         if span:
             # Axis to use for spanning label
             saxis = axes[np.argmin(ranges[:,0])]
@@ -422,39 +423,67 @@ class Figure(mfigure.Figure):
         # attribute *includes* labels for appropriate tight layout, but we need
         # to *exlude* labels before positioning them by making them invisible!
         w, h = self.get_size_inches()
-        for ax in self._main_axes:
+        axs = [ax for ax in self._main_axes if ax._xrange[0]==0] # order by xrange
+        for ax in axs:
             label = ax.rowlabel
-            if not label.get_text():
+            label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
+            if not label.get_text().strip():
+                continue
+            # Iterate panels
+            ixs = []
+            if ax.leftpanel:
+                iaxs = ax.leftpanel
+            else:
+                iaxs = (ax, *ax.toppanel, *ax.bottompanel)
+            for iax in iaxs:
+                if not iax:
+                    continue
+                if not iax.get_visible():
+                    continue
+                for jax in (iax, iax._altx_child, iax._alty_child):
+                    if not jax:
+                        continue
+                    # Box for column label
+                    # bbox = jax._tight_bbox
+                    bbox = jax.get_tightbbox(renderer)
+                    x, _ = self.transFigure.inverted().transform((bbox.intervalx[0], 0))
+                    ixs.append(x)
+            # Verify, be careful!
+            label.set_visible(True)
+            if not ixs:
+                warnings.warn('Axes on left row are invisible. Cannot determine rowtitle position.')
                 continue
             # Update position
             # bbox = ax._tight_bbox
-            label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
-            bbox = ax.get_tightbbox(renderer)
+            label.set_visible(True)
+            x = min(ixs)
             transform = mtransforms.blended_transform_factory(self.transFigure, ax.transAxes)
-            x, _ = transform.inverted().transform((bbox.intervalx[0], 0))
             x = x - (0.6*label.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
             label.update({'x':x, 'y':0.5, 'ha':'right', 'va':'center', 'transform':transform})
-            label.set_visible(True)
 
         # Adjust col labels -- this is much simpler
         ys = []
         suptitle = self._suptitle
         suptitle.set_visible(False)
-        for ax in self._main_axes:
+        axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
+        for ax in axs:
             label = ax.collabel
             label.set_visible(False)
-            if not label.get_text() and not suptitle.get_text().strip():
+            if not label.get_text().strip() and not suptitle.get_text().strip():
                 continue
             # Get maximum y-position among all children, necessary because
             # e.g. twin x-axes with their own labels are common
             iys = []
-            for iax in (ax, *ax.toppanel, *ax.leftpanel, *ax.rightpanel):
+            if ax.toppanel:
+                iaxs = ax.toppanel
+            else:
+                iaxs = (ax, *ax.leftpanel, *ax.rightpanel)
+            for iax in iaxs:
                 if not iax:
                     continue
                 if not iax.get_visible():
                     continue
-                # for jax in (iax, iax._altx_child, iax._alty_child):
-                for j,jax in enumerate((iax, iax._altx_child, iax._alty_child)):
+                for jax in (iax, iax._altx_child, iax._alty_child):
                     if not jax:
                         continue
                     # Box for column label
@@ -464,7 +493,10 @@ class Figure(mfigure.Figure):
                     iys.append(y)
             # Update column label position
             label.set_visible(True)
-            if label.get_text():
+            if not iys:
+                warnings.warn('Axes on top row is invisible. Cannot determine coltitle position.')
+                continue
+            if label.get_text().strip():
                 y = max(iys)
                 transform = mtransforms.blended_transform_factory(ax.transAxes, self.transFigure)
                 y = y + (0.3*label.get_fontsize()/72)/h # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
@@ -472,7 +504,7 @@ class Figure(mfigure.Figure):
             # Box for super title
             # This time account for column labels of course!
             if suptitle.get_text().strip():
-                if label.get_text(): # by construction it is above everything else!
+                if label.get_text().strip(): # by construction it is above everything else!
                     # bbox = ax._tight_bbox
                     bbox = ax.get_tightbbox(renderer)
                     _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
@@ -485,16 +517,19 @@ class Figure(mfigure.Figure):
         # and right edge of rightmost main axes
         suptitle.set_visible(True)
         if suptitle.get_text().strip():
-            kw = self._subplots_kw
-            left = kw['left']
-            right = kw['right']
-            if self.leftpanel:
-                left += (kw['lwidth'] + kw['lspace'])
-            if self.rightpanel:
-                right += (kw['rwidth'] + kw['rspace'])
-            x = left/w + 0.5*(w - left - right)/w
-            y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
-            suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
+            if not ys:
+                warnings.warn('All axes on top row are invisible. Cannot determine suptitle position.')
+            else:
+                kw = self._subplots_kw
+                left = kw['left']
+                right = kw['right']
+                if self.leftpanel:
+                    left += (kw['lwidth'] + kw['lspace'])
+                if self.rightpanel:
+                    right += (kw['rwidth'] + kw['rspace'])
+                x = left/w + 0.5*(w - left - right)/w
+                y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
+                suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
 
     def _auto_adjust(self, renderer=None):
         """Performs various post-procesing tasks."""
@@ -584,6 +619,7 @@ class Figure(mfigure.Figure):
         # Update the panel stack gridspec ratios, *and*, correspondingly, the
         # ratios for the main gridspec containing panels and main axes
         # NOTE: All ispace will be empty unless have any stacked panels
+        sep = []
         if any(space):
             # Iterate through axes, then through gaps
             # NOTE: Iterate through paxs_adj just to use it for _flush setting
@@ -1815,7 +1851,7 @@ def subplots(array=None, ncols=1, nrows=1,
     colorbars = _default(colorbar, colorbars, '')
     # Get panel props
     kwargs = _panels_kwargs(panels, colorbars, legends, kwargs,
-            figure=True, ncols=ncols, nrows=nrows)
+                ncols=ncols, nrows=nrows, figure=True)
     # Create dictionary of panel toggles and settings
     # Input can be string e.g. 'rl' or dictionary e.g. {(1,2,3):'r', 4:'l'}
     # TODO: Allow separate settings for separate colorbar, legend, etc. panels
