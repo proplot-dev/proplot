@@ -34,7 +34,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_100_0.png
+.. image:: showcase/showcase_105_0.png
    :width: 576px
    :height: 212px
 
@@ -46,7 +46,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_101_0.png
+.. image:: showcase/showcase_106_0.png
    :width: 576px
    :height: 212px
 
@@ -58,7 +58,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_102_0.png
+.. image:: showcase/showcase_107_0.png
    :width: 576px
    :height: 212px
 
@@ -85,13 +85,13 @@ non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_104_1.png
+.. image:: showcase/showcase_109_1.png
    :width: 748px
    :height: 249px
 
 
 
-.. image:: showcase/showcase_104_2.png
+.. image:: showcase/showcase_109_2.png
    :width: 748px
    :height: 245px
 
@@ -127,7 +127,7 @@ with poor, perceptually un-uniform transitions were thrown out.
 
 
 
-.. image:: showcase/showcase_107_1.png
+.. image:: showcase/showcase_112_1.png
    :width: 436px
    :height: 4333px
 
@@ -144,7 +144,7 @@ ProPlot makes it easy to switch between different property cycles,
 focusing on color changes. To change the property cycle, set the
 `~proplot.rc` ``cycle`` property (e.g. ``plot.rc.cycle = '538'``; see
 the `~proplot.rcmod` documentation for details) or pass ``cycle=name``
-to any plotting command (powered by the `~proplot.axes.wrapper_cycle`
+to any plotting command (powered by the `~proplot.axes.cycle_wrapper`
 function). See below for details.
 
 Use `~proplot.demos.cycle_show` to generate a table of registered
@@ -160,7 +160,7 @@ constructor function. See below for details.
 
 
 
-.. image:: showcase/showcase_110_0.png
+.. image:: showcase/showcase_115_0.png
    :width: 540px
    :height: 1615px
 
@@ -199,7 +199,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_113_0.png
+.. image:: showcase/showcase_118_0.png
    :width: 720px
    :height: 1316px
 
@@ -211,7 +211,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_114_0.png
+.. image:: showcase/showcase_119_0.png
    :width: 630px
    :height: 225px
 
@@ -221,7 +221,7 @@ On-the-fly colormaps
 
 You can make a new colormap with ProPlot’s on-the-fly colormap
 generator! Every command that accepts a ``cmap`` argument (see
-`~proplot.axes.wrapper_cmap`) is passed to the
+`~proplot.axes.cmap_wrapper`) is passed to the
 `~proplot.colortools.Colormap` constructor.
 `~proplot.colortools.Colormap` keyword arguments can be specified with
 ``cmap_kw``. If you want to save your own custom colormap into
@@ -229,7 +229,7 @@ generator! Every command that accepts a ``cmap`` argument (see
 `~proplot.colortools.Colormap` constructor (or supply a plotting
 command with ``cmap_kw={'save':True, 'name':name}``, and it will be
 loaded every time you import ProPlot. See
-`~proplot.colortools.Colormap` and `~proplot.axes.wrapper_cmap` for
+`~proplot.colortools.Colormap` and `~proplot.axes.cmap_wrapper` for
 details.
 
 Since all of the SciVisColor colormaps from the “ColorMoves” GUI are
@@ -259,7 +259,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_117_1.png
+.. image:: showcase/showcase_122_1.png
    :width: 544px
    :height: 334px
 
@@ -299,7 +299,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_119_0.png
+.. image:: showcase/showcase_124_0.png
    :width: 724px
    :height: 345px
 
@@ -316,7 +316,7 @@ adding a number to the end of the color string.
     import numpy as np
     f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, colorbars='b', bottom=0.1)
     data = np.random.rand(50,50).cumsum(axis=1)
-    cmap = plot.Colormap('navy90', 'brick red90', 'charcoal90', reverse=[True,True,True])
+    cmap = plot.Colormap('charcoal', 'navy', 'brick red', fade=90, reverse=True)
     m = axs[0].contourf(data, cmap=cmap, levels=12)
     f.bpanel[0].colorbar(m, locator='null')
     m = axs[1].contourf(data, cmap='ocean blue')
@@ -327,9 +327,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_121_0.png
-   :width: 526px
-   :height: 325px
+.. image:: showcase/showcase_126_0.svg
 
 
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
@@ -351,7 +349,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_123_0.png
+.. image:: showcase/showcase_128_0.png
    :width: 652px
    :height: 287px
 
@@ -374,7 +372,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_125_0.png
+.. image:: showcase/showcase_130_0.png
    :width: 652px
    :height: 287px
 
@@ -402,7 +400,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_127_0.png
+.. image:: showcase/showcase_132_0.png
    :width: 652px
    :height: 424px
 
@@ -418,7 +416,7 @@ own, custom color cycler, simply pass ``save=True`` to the
 `~proplot.colortools.Cycle` constructor (or supply a plotting command
 with ``cycle_kw={'save':True, 'name':name}``, and it will be loaded
 every time you import ProPlot. See `~proplot.colortools.Cycle` and
-`~proplot.axes.wrapper_cycle` for details.
+`~proplot.axes.cycle_wrapper` for details.
 
 .. code:: ipython3
 
@@ -432,9 +430,7 @@ every time you import ProPlot. See `~proplot.colortools.Cycle` and
 
 
 
-.. image:: showcase/showcase_130_0.png
-   :width: 465px
-   :height: 326px
+.. image:: showcase/showcase_135_0.svg
 
 
 Also note that colormaps and color cycles are totally interchangeable!
@@ -466,7 +462,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_132_1.png
+.. image:: showcase/showcase_137_1.png
    :width: 619px
    :height: 311px
 
@@ -495,7 +491,7 @@ example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
 
 
 
-.. image:: showcase/showcase_134_0.png
+.. image:: showcase/showcase_139_0.png
    :width: 544px
    :height: 478px
 
@@ -534,6 +530,6 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_137_0.png
+.. image:: showcase/showcase_142_0.png
    :width: 431px
    :height: 582px

@@ -1,5 +1,175 @@
-Panels and plotting
+Plotting and panels
 ===================
+
+Wrapped methods
+---------------
+
+Various native matplotlib plotting methods have been enhanced using
+wrapper functions (see the `~proplot.axes` documentation). The most
+interesting of these are `~proplot.axes.cmap_wrapper` and
+`~proplot.axes.cycle_wrapper`. For details on the former, see the
+below examples and :ref:`On-the-fly colormaps`. For details on the
+latter, see :ref:`On-the-fly color cycles`.
+
+`~proplot.axes.cmap_wrapper` assigns the
+`~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
+for all plots. This allows for discrete levels in all situations – that
+is, `~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh` now accept a ``levels`` keyword
+arg, just like `~matplotlib.axes.Axes.contourf`. It was previously
+really tricky to implement discrete levels for ``pcolor`` plots, even
+though they are arguably preferable for many scientific applications
+(discrete levels make it easier to associate particular colors with hard
+numbers). `~proplot.colortools.BinNorm` also does some other handy
+things, like ensuring that colors on the ends of “cyclic” colormaps are
+never the same (see below).
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=2, axcolorbars='b')
+    data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
+    N, step = 360, 45
+    ax = axs[0]
+    m = ax.pcolormesh(data, levels=plot.arange(0,N,0.2), cmap='phase', extend='neither')
+    ax.format(title='Pcolor without discernible levels', suptitle='Pcolor demo')
+    ax.bpanel.colorbar(m, locator=2*step)
+    ax = axs[1]
+    m = ax.pcolormesh(data, levels=plot.arange(0,N,step), cmap='phase', extend='neither')
+    ax.format(title='Pcolor plot with levels')
+    ax.bpanel.colorbar(m, locator=2*step)
+
+
+
+
+
+
+
+.. image:: showcase/showcase_33_1.png
+   :width: 454px
+   :height: 289px
+
+
+`~proplot.axes.cmap_wrapper` also adds the ability to label
+`~matplotlib.axes.Axes.contourf` plots with
+`~matplotlib.axes.Axes.clabel` in one go, and the added ability to
+label grid boxes in `~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh` plots.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=2, span=False, share=False)
+    data = np.random.rand(7,7)
+    ax = axs[0]
+    m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
+    ax = axs[1]
+    m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
+    m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels', titleweight='bold')
+
+
+
+.. image:: showcase/showcase_35_0.png
+   :width: 446px
+   :height: 241px
+
+
+`~proplot.axes.cmap_wrapper` also lets you provide arbitrarily spaced,
+monotonically increasing levels, and by default the color gradations
+between each number in the level list will be the same, no matter the
+step size. This is powered by the
+`~proplot.colortools.LinearSegmentedNorm` normalizer, and can be
+overridden with the ``norm`` keyword arg, which constructs an arbitrary
+normalizer from the `~proplot.colortools.Norm` constructor.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(colorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
+    data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
+    ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
+    for i,norm in enumerate(('linear','segments')):
+        m = axs[i].contourf(data, values=ticks, extend='both', cmap='mutedblue', norm=norm)
+        f.bpanel[i].colorbar(m, label='clabel', locator=ticks, fixticks=False)
+    axs.format(suptitle='Unevenly spaced color levels', collabels=['Linear normalizer', 'LinearSegmentedNorm'])
+
+
+
+.. image:: showcase/showcase_37_0.png
+   :width: 512px
+   :height: 273px
+
+
+`~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
+lets you draw line collections that map individual segments of the line
+to individual colors. This can be useful for drawing “parametric” plots,
+where you want to indicate the time or some other coordinate at each
+point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth=3, aspect=(2,1))
+    ax = axs[0]
+    m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
+                cmap='thermal', values=np.arange(50), lw=7, extend='both')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
+    ax.bpanel.colorbar(m, label='parametric coordinate', locator=5)
+    N = 12
+    ax = axs[1]
+    values = np.arange(1, N+1)
+    radii = np.linspace(1,0.2,N)
+    angles = np.linspace(0,4*np.pi,N)
+    x = radii*np.cos(1.4*angles)
+    y = radii*np.sin(1.4*angles)
+    m = ax.plot(x, y, values=values,
+                linewidth=15, interp=False, cmap='thermal')
+    ax.format(xlim=(-1,1), ylim=(-1,1), title='With step gradations', titleweight='bold',
+              xlabel='cosine angle', ylabel='sine angle')
+    ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
+
+
+
+
+
+
+
+.. image:: showcase/showcase_39_1.png
+   :width: 655px
+   :height: 294px
+
+
+Finally, `~proplot.axes.cmap_wrapper` fixes the well-documented
+`white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
+and
+`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
+issues by automatically changing the edge colors after ``contourf``,
+``pcolor``, and ``pcolormesh`` are called. Use ``edgefix=False`` to
+disable this behavior (it does slow down figure rendering a bit). Note
+that if you manually specify line properties for a ``pcolor`` plot, this
+feature is disabled (see below).
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=2, share=False)
+    axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar') # fixed bug
+    axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='gray2') # deliberate lines
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='White lines between patches')
+
+
+
+.. image:: showcase/showcase_41_0.png
+   :width: 475px
+   :height: 241px
+
 
 Colorbars and legends
 ---------------------
@@ -7,9 +177,8 @@ Colorbars and legends
 ProPlot adds several new features to the
 `~matplotlib.axes.Axes.legend` and
 `~matplotlib.figure.Figure.colorbar` commands, respectively powered by
-the `~proplot.axes.legend_factory` and
-`~proplot.axes.colorbar_factory` functions (see documentation for
-usage information).
+the `~proplot.axes.legend` and `~proplot.axes.colorbar` functions
+(see documentation for usage information).
 
 I’ve also added ``colorbar`` methods to the `~proplot.axes.BaseAxes`
 and special `~proplot.axes.PanelAxes` axes. When you call
@@ -34,7 +203,7 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_28_0.png
+.. image:: showcase/showcase_44_0.png
    :width: 286px
    :height: 348px
 
@@ -67,7 +236,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_30_1.png
+.. image:: showcase/showcase_46_1.png
    :width: 332px
    :height: 298px
 
@@ -106,180 +275,9 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_32_0.png
+.. image:: showcase/showcase_48_0.png
    :width: 532px
    :height: 303px
-
-
-Wrapped plotting methods
-------------------------
-
-Various native matplotlib plotting methods have been enhanced using the
-``wrapper_`` functions (see documentation). The most interesting of
-these are `~proplot.axes.wrapper_cmap` and
-`~proplot.axes.wrapper_cycle`. For details on the former, see the
-below examples and :ref:`On-the-fly colormaps`. For details on the
-latter, see :ref:`On-the-fly color cycles`.
-
-An especially handy `~proplot.axes.wrapper_cmap` feature is the
-ability to label `~matplotlib.axes.Axes.contourf` plots with
-`~matplotlib.axes.Axes.clabel` in one go, and the added ability to
-label grid boxes in `~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh` plots.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=2, span=False, share=False)
-    data = np.random.rand(7,7)
-    ax = axs[0]
-    m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
-    ax = axs[1]
-    m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
-    m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels', titleweight='bold')
-
-
-
-.. image:: showcase/showcase_35_0.png
-   :width: 446px
-   :height: 241px
-
-
-`~proplot.axes.wrapper_cmap` assigns the
-`~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
-for all plots. This allows for discrete levels in all situations – that
-is, `~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh` now accept a ``levels`` keyword
-arg, just like `~matplotlib.axes.Axes.contourf`. It was previously
-really tricky to implement discrete levels for ``pcolor`` plots, even
-though they are arguably preferable for many scientific applications
-(discrete levels make it easier to associate particular colors with hard
-numbers). `~proplot.colortools.BinNorm` also does some other handy
-things, like ensuring that colors on the ends of “cyclic” colormaps are
-never the same (see below).
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=2, axcolorbars='b')
-    data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
-    N, step = 360, 45
-    ax = axs[0]
-    m = ax.pcolormesh(data, levels=plot.arange(0,N,0.2), cmap='phase', extend='neither')
-    ax.format(title='Pcolor without discernible levels', suptitle='Pcolor demo')
-    ax.bpanel.colorbar(m, locator=2*step)
-    ax = axs[1]
-    m = ax.pcolormesh(data, levels=plot.arange(0,N,step), cmap='phase', extend='neither')
-    ax.format(title='Pcolor plot with levels')
-    ax.bpanel.colorbar(m, locator=2*step)
-
-
-
-
-
-
-
-.. image:: showcase/showcase_37_1.png
-   :width: 454px
-   :height: 289px
-
-
-`~proplot.axes.wrapper_cmap` also fixes the well-documented
-`white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
-and
-`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
-issues by automatically changing the edge colors after ``contourf``,
-``pcolor``, and ``pcolormesh`` are called. Use ``edgefix=False`` to
-disable this behavior (it does slow down figure rendering a bit). Note
-that if you manually specify line properties for a ``pcolor`` plot, this
-feature is disabled (see below).
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=2, share=False)
-    axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar') # fixed bug
-    axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='gray2') # deliberate lines
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='White lines between patches')
-
-
-
-.. image:: showcase/showcase_39_0.png
-   :width: 475px
-   :height: 241px
-
-
-`~proplot.axes.wrapper_cmap` also lets you provide arbitrarily spaced,
-monotonically increasing levels, and by default the color gradations
-between each number in the level list will be the same, no matter the
-step size. This is powered by the
-`~proplot.colortools.LinearSegmentedNorm` normalizer, and can be
-overridden with the ``norm`` keyword arg, which constructs an arbitrary
-normalizer from the `~proplot.colortools.Norm` constructor.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(colorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
-    data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
-    ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
-    for i,norm in enumerate(('linear','segments')):
-        m = axs[i].contourf(data, values=ticks, extend='both', cmap='mutedblue', norm=norm)
-        f.bpanel[i].colorbar(m, label='clabel', locator=ticks, fixticks=False)
-    axs.format(suptitle='Unevenly spaced color levels', collabels=['Linear normalizer', 'LinearSegmentedNorm'])
-
-
-
-.. image:: showcase/showcase_41_0.png
-   :width: 512px
-   :height: 273px
-
-
-You can now call `~matplotlib.axes.Axes.plot` with a ``cmap`` option –
-this lets you draw line collections that map individual segments of the
-line to individual colors. This can be useful for drawing “parametric”
-plots, where you want to indicate the time or some other coordinate at
-each point on the line. See `~proplot.axes.BaseAxes.cmapline` for
-details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth=3, aspect=(2,1))
-    ax = axs[0]
-    m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
-                cmap='thermal', values=np.arange(50), lw=7, extend='both')
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
-    ax.bpanel.colorbar(m, label='parametric coordinate', locator=5)
-    N = 12
-    ax = axs[1]
-    values = np.arange(1, N+1)
-    radii = np.linspace(1,0.2,N)
-    angles = np.linspace(0,4*np.pi,N)
-    x = radii*np.cos(1.4*angles)
-    y = radii*np.sin(1.4*angles)
-    m = ax.plot(x, y, values=values,
-                linewidth=15, interp=False, cmap='thermal')
-    ax.format(xlim=(-1,1), ylim=(-1,1), title='With step gradations', titleweight='bold',
-              xlabel='cosine angle', ylabel='sine angle')
-    ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
-
-
-
-
-
-
-
-.. image:: showcase/showcase_43_1.png
-   :width: 655px
-   :height: 294px
 
 
 Axes panels, colorbars
@@ -306,7 +304,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_46_0.png
+.. image:: showcase/showcase_51_0.png
    :width: 468px
    :height: 466px
 
@@ -345,7 +343,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_48_1.png
+.. image:: showcase/showcase_53_1.png
    :width: 492px
    :height: 514px
 
@@ -381,7 +379,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_51_1.png
+.. image:: showcase/showcase_56_1.png
    :width: 487px
    :height: 523px
 
@@ -405,7 +403,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_52_0.png
+.. image:: showcase/showcase_57_0.png
    :width: 623px
    :height: 240px
 
@@ -447,7 +445,7 @@ primary axes.
 
 
 
-.. image:: showcase/showcase_54_0.png
+.. image:: showcase/showcase_59_0.png
    :width: 524px
    :height: 510px
 

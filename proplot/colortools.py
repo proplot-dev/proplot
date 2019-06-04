@@ -102,6 +102,11 @@ are now valid ``cmap`` and ``cycle`` arguments:
 
 """
 #------------------------------------------------------------------------------#
+# Potential bottleneck, loading all this stuff?
+# *No*. Try using @timer on register functions, turns out worst is colormap
+# one at 0.1 seconds. Just happens to be a big package, takes a bit to compile
+# to bytecode (done every time module changed) then import.
+#------------------------------------------------------------------------------#
 # Interesting cpt-city colormaps that did not use:
 # * Considered Jim Mossman maps, but not very uniform.
 # * Erik Jeschke grayscale ones are also neat, but probably not much
@@ -124,22 +129,6 @@ are now valid ``cmap`` and ``cycle`` arguments:
 # * ESRI seems to have best geographic maps.
 # * Wiki schemes are also pretty good, but not great.
 #------------------------------------------------------------------------------#
-# Notes on 'channel-wise alpha':
-# * Colormaps generated from HCL space (and cmOcean ones) are indeed perfectly
-#   perceptually uniform, but this still looks bad sometimes -- usually we
-#   *want* to focus on the *extremes*, so want to weight colors more heavily
-#   on the brighters/whiter part of the map! That's what the ColdHot map does,
-#   it's what most of the ColorBrewer maps do, and it's what ColorWizard does.
-# * By default extremes are stored at end of *lookup table*, not as
-#   separate RGBA values (so look under cmap._lut, indexes cmap._i_over and
-#   cmap._i_under). You can verify that your cmap is using most extreme values
-#   by comparing high-resolution one to low-resolution one.
-#------------------------------------------------------------------------------#
-# Potential bottleneck, loading all this stuff?
-# NO. Try using @timer on register functions, turns out worst is colormap
-# one at 0.1 seconds. Just happens to be a big package, takes a bit to compile
-# to bytecode (done every time module changed) then import.
-#------------------------------------------------------------------------------#
 # Here's some useful info on colorspaces
 # https://en.wikipedia.org/wiki/HSL_and_HSV
 # http://www.hclwizard.org/color-scheme/
@@ -158,6 +147,17 @@ are now valid ``cmap`` and ``cycle`` arguments:
 # https://flowingdata.com/tag/color/
 # http://tools.medialab.sciences-po.fr/iwanthue/index.php
 # https://learntocodewith.me/posts/color-palette-tools/
+#------------------------------------------------------------------------------#
+# Notes on 'channel-wise alpha':
+# * Colormaps generated from HCL space (and cmOcean ones) are indeed perfectly
+#   perceptually uniform, but this still looks bad sometimes -- usually we
+#   *want* to focus on the *extremes*, so want to weight colors more heavily
+#   on the brighters/whiter part of the map! That's what the ColdHot map does,
+#   it's what most of the ColorBrewer maps do, and it's what ColorWizard does.
+# * By default extremes are stored at end of *lookup table*, not as
+#   separate RGBA values (so look under cmap._lut, indexes cmap._i_over and
+#   cmap._i_under). You can verify that your cmap is using most extreme values
+#   by comparing high-resolution one to low-resolution one.
 #------------------------------------------------------------------------------
 import os
 import re
@@ -1173,10 +1173,10 @@ def colors(*args, **kwargs):
     """Alias for `Cycle`."""
     return Cycle(*args, **kwargs)
 
-def Colormap(*args, name=None, cyclic=None, N=None,
+def Colormap(*args, name=None, cyclic=None, fade=None,
         shift=None, cut=None, left=None, right=None, reverse=False,
         ratios=1, gamma=None, gamma1=None, gamma2=None,
-        save=False,
+        save=False, N=None,
         **kwargs):
     """
     Convenience function for generating and merging colormaps
@@ -1215,9 +1215,9 @@ def Colormap(*args, name=None, cyclic=None, N=None,
         Whether the colormap is cyclic. Will cause `~proplot.axes.wrapper_cmap`
         to pass this flag to `BinNorm`. This will prevent having the same color
         on either end of the colormap.
-    N : None or int, optional
-        Number of colors to generate in the hidden lookup table ``_lut``.
-        By default, a relatively high resolution of 256 is chosen (see notes).
+    fade : float, optional
+        The maximum luminosity, between 0 and 100, to use when generating
+        `monochrome_cmap` colormaps. The default is ``100``.
     shift : None, or float or list of float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
         rotate the colors by `shift` degrees out of 360 degrees. This is
@@ -1271,6 +1271,9 @@ def Colormap(*args, name=None, cyclic=None, N=None,
 
         If the colormap is a `~matplotlib.colors.LinearSegmentedColormap`,
         the segment data dictionary is written to ``name.json``.
+    N : None or int, optional
+        Number of colors to generate in the hidden lookup table ``_lut``.
+        By default, a relatively high resolution of 256 is chosen (see notes).
 
     Returns
     -------
@@ -1339,23 +1342,16 @@ def Colormap(*args, name=None, cyclic=None, N=None,
             # Transform C0, C1, etc. to their actual names first
             cmap = [_transform_cycle(color) for color in cmap]
             cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
-        else:
+        elif isinstance(cmap, str) or (np.iterable(cmap) and len(cmap) in (3,4)):
             # Monochrome colormap based from input color (i.e. single hue)
-            # TODO: What if colormap names conflict with color names! Maybe address
-            # this! Currently, this makes it impossible to make a monochrome colormap
-            # from some named color if that name also exists for a colormap.
-            # Try to convert to RGB
-            cmap = _transform_cycle(cmap)
-            fade = kwargs.pop('fade', 100)
-            if isinstance(cmap, str): # not a color tuple
-                regex = '([0-9]+)$'
-                match = re.search(regex, cmap) # declare maximum luminance with e.g. red90, blue70, etc.
-                cmap = re.sub(regex, '', cmap) # remove options
-                if match:
-                    fade = float(match.group(1)) # default fade to 100 luminance
-            # Build colormap
-            cmap = to_rgb(cmap) # to ensure is hex code/registered color
-            cmap = monochrome_cmap(cmap, fade, name=name, N=N_, **kwargs)
+            # TODO: What if colormap names conflict with color names!
+            # TODO: Support for e.g. automatically determining number of samples
+            # when cycle declared on-the-fly in call to plot?
+            color = to_rgb(_transform_cycle(cmap)) # to ensure is hex code/registered color
+            fade = _default(fade, 100)
+            cmap = monochrome_cmap(color, fade, name=name, N=N_, **kwargs)
+        else:
+            raise ValueError(f'Invalid cmap input "{cmap}".')
 
         # Optionally transform colormap by clipping colors or reversing
         if np.iterable(reverse) and reverse[i]:
@@ -1473,16 +1469,28 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     # to get samples from a LinearSegmentedColormap
     # (np.iterable(args[-1]) and \ all(isinstance(item,Number) for item in args[-1]))
     name = name or 'no_name'
-    if args and isinstance(args[-1], Number):
-        args, samples = args[:-1], args[-1]
-    # 2) User input a simple list; 99% of time, use this
-    # to build up a simple ListedColormap.
-    elif len(args)>1:
-        args = (args,) # presumably send a list of colors
-    # 3) Just return the current cycler; this is for consistency with other
-    # constructor functions that return the default with no argument
-    elif len(args)==0:
+    # Return the current cycler if empty
+    if len(args)==0:
         args = (rcParams['axes.prop_cycle'].by_key()['color'],)
+    # Optionally pass (color, fade) or (color, fade, samples) tuples
+    else:
+        # Draw from smooth colormaps
+        # WARNING: When passing cycle=color, wrapper unfurls the RGB tuple,
+        # so try to detect that here.
+        smooth = False
+        if all(isinstance(arg, Number) for arg in args) and len(args) in (3,4):
+            args = (args,)
+        else:
+            if isinstance(args[-1], Number):
+                smooth = True
+                args, kwargs['fade'] = args[:-1], args[-1]
+            if isinstance(args[-1], Number):
+                smooth = True
+                args, samples = args[:-1], args[-1]
+        # Input was just list of color strings or RGB tuples, means user
+        # wanted this list of colors as the cycle!
+        if not smooth and len(args)>1:
+            args = (args,)
 
     # Get list of colors, and construct and register ListedColormap
     # WARNING: Have keyword args of same name here, try to auto-detect

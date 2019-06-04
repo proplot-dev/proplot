@@ -106,6 +106,9 @@ Misc
 Use the boolean ``axes.formatter.zerotrim`` setting to control whether trailing
 decimal zeros are trimmed on tick labels (the default is ``True``).
 
+Use the ``axes.formatter.timerotation`` setting to control the default *x*-axis
+tick label rotation for datetime axis labels.
+
 Text
 ````
 Use the new ``tick.labelweight``, ``tick.labelcolor``, and ``tick.labelsize``
@@ -286,7 +289,7 @@ _rcGlobals_children = {
 _rc_names_global = {*_rcGlobals_children.keys()}
 _rc_names_old = {*_rcParams.keys()}
 _rc_names_new = {
-    'axes.formatter.zerotrim',
+    'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.hatch', 'axes.alpha', 'hatch.alpha',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
     'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',

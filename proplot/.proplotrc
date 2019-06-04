@@ -116,6 +116,7 @@ rcParams:
 rcParams_new:
     # Axis settings
     axes.formatter.zerotrim: True
+    axes.formatter.timerotation: 30
     axes.gridminor: True
     axes.geogrid: True
     axes.hatch: # filled by 'hatch'

@@ -15,6 +15,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.patheffects as mpatheffects
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
+from numbers import Number
 from .rcmod import rc
 
 # Xarray and pandas integration
@@ -24,9 +25,9 @@ try:
 except ModuleNotFoundError:
     DataArray = ndarray
 try:
-    from pandas import DataFrame, Series
+    from pandas import DataFrame, Series, Index
 except ModuleNotFoundError:
-    Series, DataFrame = ndarray, ndarray
+    DataFrame, Series, Index = ndarray, ndarray, ndarray
 
 # Cartopy
 try:
@@ -113,29 +114,111 @@ def _expand_methods_list(func):
 # Standardized inputs and automatic formatting
 # NOTE: These do not have to be used explicitly, they are called by wrappers
 #------------------------------------------------------------------------------#
-def _label_xarray(data, units=True):
-    """Gets label."""
-    label = ''
+def _array_std(data):
+    """Converts list of lists to array, but no other input."""
+    # First convert to array
+    if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
+        data = np.array(data)
+    return data
+
+def _auto_label(data, units=True):
+    """Gets label from pandas or xarray objects."""
     if isinstance(data, ndarray):
-        return label
-    for key in ('standard_name', 'long_name'):
-        label = data.attrs.get(key, label)
-    if units:
-        units = data.attrs.get('units', '')
-        if label and units:
-            label = f'{label} ({units})'
-        elif units:
-            label = units
+        return ''
+    # Xarray with common NetCDF attribute names
+    elif isinstance(data, DataArray):
+        label = getattr(data, 'name', '') or ''
+        for key in ('standard_name', 'long_name'):
+            label = data.attrs.get(key, label)
+        if units:
+            units = data.attrs.get('units', '')
+            if label and units:
+                label = f'{label} ({units})'
+            elif units:
+                label = units
+    # Pandas, account for common situation with 1-column DataFrame where the
+    # column label is descriptor for the data
+    elif isinstance(data, (DataFrame, Series, Index)):
+        label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
+        if not label and isinstance(data, DataFrame) and data.columns.size==1:
+            label = str(df.columns[0])
     return label.strip()
 
-def _parse_1d(self, args, order='C'):
-    """Get 1d or series of 1d data. Accepts 1d DataArray or Series, or
+def _parse_1d(self, args):
+    """Gets 1d or list of 1d data. Accepts 1d DataArray or Series, or
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
-    return args
+    # Sanitize input
+    extra = () # e.g. scatter 'c' and 's' arrays
+    if len(args)==1:
+        x = None
+        y, = args
+    elif len(args)==2:
+        x, y = args # same
+    elif len(args) in (3,4):
+        x, y, *extra = args # same
+    else:
+        raise ValueError(f'Passed {len(args)} arguments to plotting command. Only 1-4 are valid.')
+    # Detect 1d
+    is1d = True # i.e. args is a 1d vector
+    if not np.iterable(y):
+        raise ValueError(f'Invalid y data {y}.')
+    elif getattr(y, 'ndim', None)==2: # e.g. DataFrame[0] can raise error, indexing is by column name, so this test is best
+        is1d = False
+    elif np.iterable(y[0]): # e.g. list of lists
+        is1d = False
+    # Ensure 2d and draw sample column
+    y = _array_std(y)
+    if y.ndim==2:
+        iy = getattr(y, 'iloc', y)
+        iy = iy[:,0]
+    elif y.ndim==1:
+        iy = y
+    else:
+        raise ValueError(f'y must be 1 or 2-dimensional, got shape {y.shape}.')
+    # Auto coords
+    if x is None:
+        if isinstance(iy, ndarray):
+            x = np.arange(iy.size)
+        elif isinstance(iy, DataArray): # DataArray
+            x = iy.coords[iy.dims[0]]
+        elif isinstance(iy, Series): # Series
+            x = iy.index
+        else: # Index
+            raise ValueError(f'Unable to infer x coordinates from pandas.Index-type y coordinates.')
+    # Check coordinates
+    x = _array_std(x)
+    if x.ndim!=1:
+        raise ValueError(f'x coordinates must be 1-dimensional, but got {x.ndim}.')
+    # Auto formatting
+    if self.figure._autoformat:
+        kw = {}
+        label = _auto_label(x)
+        if label:
+            kw['xlabel'] = label
+        if all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
+            kw['xreverse'] = True
+        # For ylabel, only try if the input was 1d; otherwise
+        # use info as the title
+        iy = None
+        if y.ndim==2 and y.shape[1]==1:
+            iy = getattr(y, 'iloc', y)
+            iy = iy[:,0]
+        elif y.ndim==1:
+            iy = y
+        if iy is not None:
+            label = _auto_label(iy)
+            if label:
+                kw['ylabel'] = label
+        else:
+            label = _auto_label(y)
+            if label:
+                kw['title'] = label
+        self.format(**kw)
+    return (x, y, *extra)
 
 def _parse_2d(self, args, order='C'):
-    """Get 2d data. Accepts ndarray and DataArray. Used by `check_centers`
+    """Gets 2d data. Accepts ndarray and DataArray. Used by `check_centers`
     and `check_edges`, which are used for all 2d plot methods."""
     # Sanitize input
     if len(args)>4:
@@ -145,11 +228,12 @@ def _parse_2d(self, args, order='C'):
     x, y = None, None
     if len(args)>2:
         x, y, *args = args
-    # Ensure DataArray or ndarray
+    # Ensure DataArray, DataFrame or ndarray
+    # NOTE: All of these have shape and ndim attributes
+    # WARNING: Why is DataFrame always column major? Is this best behavior?
     Zs = []
     for Z in args:
-        if not isinstance(Z, (ndarray, DataArray)):
-            Z = np.array(Z)
+        Z = _array_std(Z)
         if Z.ndim!=2:
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
@@ -165,27 +249,33 @@ def _parse_2d(self, args, order='C'):
         if isinstance(Z, ndarray):
             x = np.arange(Z.shape[idx])
             y = np.arange(Z.shape[idy])
-        else:
+        elif isinstance(Z, DataArray): # DataArray
             x = Z.coords[Z.dims[idx]]
             y = Z.coords[Z.dims[idy]]
-    else:
-        x, y = np.array(x), np.array(y)
-        if x.ndim != y.ndim:
-            raise ValueError(f'X coordinates are {x.ndim}-dimensional, but Y coordinates are {y.ndim}-dimensional.')
-        for name,array in zip(('x','y'), (x,y)):
-            if array.ndim not in (1,2):
-                raise ValueError(f'{name} coordinates are {array.ndim}-dimensional, but should be 1 or 2-dimensional.')
+        else: # DataFrame; never Series or Index because these are 1d
+            x = Z.index
+            y = Z.columns
+    # Check coordinates
+    x, y = _array_std(x), _array_std(y)
+    if x.ndim != y.ndim:
+        raise ValueError(f'x coordinates are {x.ndim}-dimensional, but y coordinates are {y.ndim}-dimensional.')
+    for name,array in zip(('x','y'), (x,y)):
+        if array.ndim not in (1,2):
+            raise ValueError(f'{name} coordinates are {array.ndim}-dimensional, but must be 1 or 2-dimensional.')
     # Auto formatting
     if self.figure._autoformat:
         kw = {}
-        for key,data in zip(('xlabel','ylabel','title'), (x,y,Zs[0])):
-            label = _label_xarray(data, units=(key!='title'))
+        # Labels
+        for key,z in zip(('xlabel','ylabel'), (x,y)):
+            label = _auto_label(z)
             if label:
                 kw[key] = label
-            if key!='title' and data[1]<data[0]:
+            if z[1]<z[0]:
                 kw[key[0] + 'reverse'] = True
-        if kw:
-            self.smart_update(**kw)
+        title = _auto_label(Zs[0], units=False)
+        if title:
+            kw['title'] = title
+        self.format(**kw)
     return x, y, Zs
 
 #------------------------------------------------------------------------------
@@ -217,9 +307,7 @@ def check_centers(self, func, *args, order='C', **kwargs):
             x = (x[1:] + x[:-1])/2
             y = (y[1:] + y[:-1])/2 # get centers, given edges
         elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
-            raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                    f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                    f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+            raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
     if order=='F':
         x, y = x.T, y.T # in case they are 2-dimensional
@@ -258,9 +346,7 @@ def check_edges(self, func, *args, order='C', **kwargs):
             if x.ndim==1 and y.ndim==1:
                 x, y = utils.edges(x), utils.edges(y)
         elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
-            raise ValueError(f'X ({"x".join(str(i) for i in x.shape)}) '
-                    f'and Y ({"x".join(str(i) for i in y.shape)}) must correspond to '
-                    f'nrows ({Z.shape[0]}) and ncolumns ({Z.shape[1]}) of Z, or its borders.')
+            raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
     if order=='F':
         x, y = x.T, y.T # in case they are 2-dimensional
@@ -287,6 +373,11 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
+    # Parse input
+    args_orig = args
+    args = _parse_1d(self, args)
+    if len(args)!=2:
+        raise ValueError(f'Invalid number of plot args: {len(args_orig)}')
     # Make normal boring lines
     if cmap is None:
         lines = func(*args, **kwargs)
@@ -318,9 +409,9 @@ def scatter_wrapper(self, func, *args,
     **kwargs
         Passed to `~matplotlib.axes.Axes.scatter`.
     """
+    # Parse remaining input
+    args = _parse_1d(self, args)
     # Manage input arguments
-    if len(args)>4:
-        raise ValueError(f'Function accepts up to 4 args, received {len(args)}.')
     args = [*args] # convert to list
     if len(args)>3:
         c = args.pop(3)
@@ -713,8 +804,34 @@ def basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
+def _get_panel(self, arg):
+    """Used to interpret colorbar=x and legend=x keyword args."""
+    # Panel index
+    if np.iterable(arg) and not isinstance(arg, str) and len(arg)==2:
+        idx, arg = arg
+    else:
+        idx = 0
+    # Add colorbar
+    if not isinstance(arg, str) or arg in ('i','inset'): # but truthy
+        ax = self
+    else:
+        # Existence of panel
+        ax = getattr(self, arg + 'panel')
+        if not ax or not ax.get_visible():
+            raise ValueError(f'Panel "{arg}" does not exist. You must make room for it in your call to subplots() with e.g. axcolorbars="{arg}".')
+        try:
+            ax = ax[idx]
+        except IndexError:
+            raise ValueError(f'Stack index {idx} for panel "{arg}" is invalid. You must make room for it in your call to subplots() with e.g. axcolorbars_kw={{"{arg}stack":2}}.')
+    return ax
+
 @_expand_methods_list
-def cycle_wrapper(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
+def cycle_wrapper(self, func, *args,
+        labels=None, values=None,
+        cycle=None, cycle_kw={},
+        legend=None, legend_kw={},
+        colorbar=None, colorbar_kw={},
+        **kwargs):
     """
     Wraps methods that use the property cycler (`_cycle_methods`),
     adds features for controlling colors in the property cycler.
@@ -728,6 +845,31 @@ def cycle_wrapper(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
         position.
     cycle_kw : dict-like, optional
         Passed to `~proplot.colortools.Cycle`.
+    labels, values : None or list, optional
+        The legend labels or colorbar coordinates for each line in the
+        input array. Can be numeric or string.
+    legend : bool or str, optional
+        Whether to draw a legend from the resulting handle list.
+        If ``True``, ``'i'``, or ``'inset'``, an inset legend is drawn (see
+        `~proplot.axes.BaseAxes.legend`). If ``'l'``, ``'r'``, ``'b'``,
+        ``'left'``, ``'right'``, or ``'bottom'``, an axes panel is filled
+        with a legend. Note in this case that the panel must already exist
+        (i.e. it was generated by your call to `~proplot.subplots.subplots`)!
+    legend_kw : dict-like, optional
+        Ignored if `legend` is ``None``. Extra keyword args for our call
+        to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.legend` or
+        `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`.
+    colorbar : bool or str, optional
+        Whether to draw a colorbar from the resulting handle list.
+        If ``True``, ``'i'``, or ``'inset'``, an inset colorbar is drawn (see
+        `~proplot.axes.BaseAxes.colorbar`). If ``'l'``, ``'r'``, ``'b'``,
+        ``'left'``, ``'right'``, or ``'bottom'``, an axes panel is filled
+        with a colorbar. Note in this case that the panel must already exist
+        (i.e. it was generated by your call to `~proplot.subplots.subplots`)!
+    colorbar_kw : dict-like, optional
+        Ignored if `colorbar` is ``None``. Extra keyword args for our call
+        to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
+        `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`.
 
     Other parameters
     ----------------
@@ -773,7 +915,48 @@ def cycle_wrapper(self, func, *args, cycle=None, cycle_kw={}, **kwargs):
             i += 1
         if {*cycle_orig} != {*cycle} or cycle_kw.get('shift', None): # order is immaterial
             self.set_prop_cycle(color=cycle)
-    return func(*args, **kwargs)
+
+    # Test input
+    # NOTE: Since _plot_wrapper and _scatter_wrapper come before this, input
+    # will be standardized, so below is valid.
+    x, y, *args = args
+    is1d = (y.ndim==1)
+    # Iterate
+    labels = _default(values, labels, [None]*(1 if is1d else y.shape[1]))
+    clabel = None
+    objs = []
+    y = getattr(y, 'iloc', y) # for indexing
+    for i,label in enumerate(labels):
+        iy = y if is1d else y[:,i]
+        if not label:
+            # Try to get it from coordiantes
+            if isinstance(y, ndarray):
+                pass
+            elif isinstance(y, DataArray):
+                label = y.coords[y.dims[1]].values[i]
+                clabel = _auto_label(y.coords[y.dims[1]])
+            elif isinstance(y, DataFrame):
+                label = y.columns[i]
+                clabel = _auto_label(y.columns)
+            # Try just getting e.g. a pd.Series name
+            else:
+                label = _auto_label(iy)
+        obj = func(x, iy, *args, label=label, **kwargs)
+        if isinstance(obj, (list,tuple)): # plot always returns list or tuple
+            obj = obj[0]
+        objs.append(obj)
+    if colorbar:
+        ax = _get_panel(self, colorbar)
+        ax._auto_colorbar.extend(objs)
+        ax._auto_colorbar_kw.update(colorbar_kw)
+        if clabel:
+            ax._auto_colorbar_kw.update({'label':clabel})
+    if legend:
+        ax = _get_panel(self, legend)
+        ax._auto_legend.extend(objs)
+        ax._auto_legend_kw.update(legend_kw)
+
+    return objs[0] if is1d else objs # list of PathCollection or Line2D
 
 @_expand_methods_list
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
@@ -833,6 +1016,17 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         <https://stackoverflow.com/q/27092991/4970632>`__
         issues. Note this will slow down the figure rendering by a bit.
         Defaults to ``True``.
+    colorbar : bool or str, optional
+        Whether to draw a colorbar from the resulting mappable object.
+        If ``True``, ``'i'``, or ``'inset'``, an inset colorbar is drawn (see
+        `~proplot.axes.BaseAxes.colorbar`). If ``'l'``, ``'r'``, ``'b'``,
+        ``'left'``, ``'right'``, or ``'bottom'``, an axes panel is filled
+        with a colorbar. Note in this case that the panel must already exist
+        (i.e. it was generated by your call to `~proplot.subplots.subplots`)!
+    colorbar_kw : dict-like, optional
+        Ignored if `colorbar` is ``None``. Extra keyword args for our call
+        to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
+        `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`.
     labels : bool, optional
         For `~matplotlib.axes.Axes.contour`, whether to add contour labels
         with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
@@ -840,7 +1034,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         center of grid boxes. In the latter case, the text will be black
         when the luminance of the underlying grid box color is >50%, and
         white otherwise (see the `~proplot.colortools` documentation).
-    labels_kw
+    labels_kw : dict-like, optional
         Ignored if `labels` is ``False``. Extra keyword args for the labels.
         For `~matplotlib.axes.Axes.contour`, passed to `~matplotlib.axes.Axes.clabel`.
         For `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
@@ -1005,7 +1199,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     if labels:
         # Very simple, use clabel args
         fmt = axistools.Formatter('simple', precision=precision)
-        if name=='contour': # TODO: document alternate keyword args!
+        if name=='contour': # TODO: Document alternate keyword args!
             labels_kw_ = {'fmt':fmt, 'inline_spacing':3, 'fontsize':rc['small']} # for rest, we keep the defaults
             for key1,key2 in (('size','fontsize'),):
                 value = labels_kw.pop(key1, None)
@@ -1055,40 +1249,17 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 contour.set_linestyle(linestyle)
 
     # Add colorbar
-    # WARNING: Requires wrapping with check edges before this
-    # TODO: Add similar stuff to wrapper_cycle maybe
     # TODO: Add similar support for quiver keys
-    # TODO: Just use colorbar=True or colorbar='i' for inset, or
-    # colorbar='brlt' to use one of the panels, then raise an error if
-    # the panel does not exist! Just say ProPlot features require a static
-    # subplots layout, you must declare the panel at the start.
     if colorbar:
-        # Panel index
-        if np.iterable(colorbar) and not isinstance(colorbar, str) and len(colorbar)==2:
-            idx, colorbar = colorbar
-        else:
-            idx = 0
-        # Add colorbar
-        if not isinstance(colorbar, str) or colorbar=='i': # but truthy
-            ax = self
-        else:
-            # Argument validity
-            try:
-                ax = getattr(self, colorbar + 'panel')
-            except AttributeError:
-                raise ValueError(f'Invalid colorbar spec "{colorbar}".')
-            # Existence of panel
-            if not ax:
-                raise ValueError(f'Panel "{colorbar}" does not exist. You must make room for it in your call to subplots() with e.g. axcolorbars="{colorbar}".')
-            try:
-                ax = ax[idx]
-            except IndexError:
-                raise ValueError(f'Stack index {idx} for panel "{colorbar}" is invalid. You must make room for it in your call to subplots() with e.g. axcolorbars_kw={{"{colorbar}stack":2}}.')
         # Use standardized x, y, Z input
+        ax = _get_panel(self, colorbar)
+        colorbar_kw = {**colorbar_kw} # make copy of mutable default object!
         if 'label' not in colorbar_kw and self.figure._autoformat:
-            label = _label_xarray(args[-1]) # last one is data, we assume
+            label = _auto_label(args[-1]) # last one is data, we assume
             if label:
                 colorbar_kw['label'] = label
+        if values_as_keyword and values is not None:
+            colorbar_kw['values'] = values
         ax.colorbar(obj, **colorbar_kw)
 
     return obj
@@ -1431,8 +1602,7 @@ def colorbar_wrapper(self, mappable, values=None,
     fromlines, fromcolors = False, False
     if np.iterable(mappable) and len(mappable)==2:
         mappable, values = mappable
-    if not isinstance(mappable, martist.Artist) and \
-        not isinstance(mappable, mcontour.ContourSet):
+    if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
         if isinstance(mappable[0], martist.Artist):
             fromlines = True # we passed a bunch of line handles; just use their colors
         else:
@@ -1455,19 +1625,28 @@ def colorbar_wrapper(self, mappable, values=None,
     if fromcolors: # we passed the colors directly
         colors = mappable
         if values is None:
-            raise ValueError('Must pass "values", corresponding to list of colors.')
+            raise ValueError('Must pass "values" corresponding to list of colors.')
     if fromlines: # the lines
         if values is None:
-            raise ValueError('Must pass "values", corresponding to list of handles.')
+            values = []
+            for obj in mappable:
+                val = obj.get_label()
+                try:
+                    val = float(val)
+                except ValueError:
+                    pass
+                values.append(val)
         if len(mappable)!=len(values):
             raise ValueError('Number of "values" should equal number of handles.')
+        if any((not val and val!=0) for val in values):
+            raise ValueError('Must pass "values" corresponding to list of handles.')
         colors = [h.get_color() for h in mappable]
     # Get colors, and by default, label each value directly
     # Note contourf will not be overridden for colorbar axes! Need to
     # manually wrap with cmap_wrapper.
     if fromlines or fromcolors:
-        cmap   = colortools.Colormap(colors)
-        func = _wrapper_cmap(self, self.contourf)
+        cmap = colortools.Colormap(colors)
+        func = _cmap_wrapper(self, self.contourf)
         mappable = func([[0,0],[0,0]],
             values=np.array(values), cmap=cmap, extend='neither',
             norm=norm, norm_kw=norm_kw) # workaround

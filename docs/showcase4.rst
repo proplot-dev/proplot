@@ -57,7 +57,7 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: showcase/showcase_84_1.png
+.. image:: showcase/showcase_89_1.png
    :width: 576px
    :height: 1037px
 
@@ -90,7 +90,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_87_0.png
+.. image:: showcase/showcase_92_0.png
    :width: 598px
    :height: 1073px
 
@@ -111,9 +111,8 @@ myself doing 99% of the time); ProPlot makes this the default. Finally,
 for both `~mpl_toolkits.basemap` and `cartopy`, you can pass
 ``globe=True`` to plotting commands to ensure global data coverage.
 
-These features are powered by the
-`~proplot.axes.wrapper_cartopy_gridfix` and
-`~proplot.axes.wrapper_basemap_gridfix` wrappers.
+These features are powered by the `~proplot.axes.cartopy_gridfix` and
+`~proplot.axes.basemap_gridfix` wrappers.
 
 .. code:: ipython3
 
@@ -146,13 +145,13 @@ These features are powered by the
 
 
 
-.. image:: showcase/showcase_90_1.png
+.. image:: showcase/showcase_95_1.png
    :width: 591px
    :height: 405px
 
 
 
-.. image:: showcase/showcase_90_2.png
+.. image:: showcase/showcase_95_2.png
    :width: 591px
    :height: 405px
 
@@ -192,7 +191,7 @@ details.
 
 
 
-.. image:: showcase/showcase_93_0.png
+.. image:: showcase/showcase_98_0.png
    :width: 386px
    :height: 221px
 
@@ -211,7 +210,7 @@ details.
 
 
 
-.. image:: showcase/showcase_94_0.png
+.. image:: showcase/showcase_99_0.png
    :width: 490px
    :height: 416px
 
@@ -242,7 +241,7 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_96_0.png
+.. image:: showcase/showcase_101_0.png
    :width: 323px
    :height: 387px
 

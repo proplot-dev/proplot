@@ -146,6 +146,8 @@ class BaseAxes(maxes.Axes):
         self._nrows = None
         self._ncols = None
         # Ugly but necessary
+        self._xrotated = False # whether manual rotation was applied
+        self._yrotated = False # change default tick label rotation when datetime labels present, if user did not override
         self._abc_inside = False
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         self._gridliner_on = False # whether cartopy gridliners are enabled
@@ -154,8 +156,6 @@ class BaseAxes(maxes.Axes):
         self.toppanel    = EmptyPanel()
         self.leftpanel   = EmptyPanel()
         self.rightpanel  = EmptyPanel()
-        self._panels_main_gridspec = None # filled with gridspec used for axes subplot and its panels
-        self._panels_stack_gridspec = None # filled with gridspec used for 'stacked' panels
         self._tight_bbox = None # save these
         self._zoom = None # the 'zoom lines' for inset zoom-in axes
         self._panel_parent = None
@@ -163,6 +163,10 @@ class BaseAxes(maxes.Axes):
         self._inset_children = [] # arbitrary number of insets possible
         self._colorbar_parent = None
         self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
+        self._auto_colorbar = [] # stores plot handles for filling with a colorbar!
+        self._auto_legend = [] # as above, but for legend
+        self._auto_colorbar_kw = {} # keyword args for automatic colorbar() call
+        self._auto_legend_kw = {} # as above, but for automatic legend() call
         self._filled = False # turned off when panels filled with colorbar or legend
         self._alty_child = None
         self._altx_child = None
@@ -170,6 +174,8 @@ class BaseAxes(maxes.Axes):
         self._altx_parent = None
         self._dualy_scale = None # for scaling units on opposite side of ax, and holding data limits fixed
         self._dualx_scale = None
+        self._panels_main_gridspec = None # filled with gridspec used for axes subplot and its panels
+        self._panels_stack_gridspec = None # filled with gridspec used for 'stacked' panels
 
         # Call parent
         super().__init__(*args, **kwargs)
@@ -191,16 +197,13 @@ class BaseAxes(maxes.Axes):
         self.abc = self.text(0, 0, '') # position tbd
         self.collabel = self.text(0, 0, '', va='bottom', ha='center', transform=self._title_transform)
         self.rowlabel = self.text(0, 0, '', va='center', ha='right', transform=self.transAxes)
-        # Apply 'special' props
-        rc._getitem_mode = 0 # might still be non-zero if had error
+        # Apply custom props
         self.format(mode=1)
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):
         """
         Wraps methods when they are requested by the user. See
-        `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-        `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
         `~proplot.wrappers.text_wrapper`, and `~proplot.wrappers.legend_wrapper`
         for more info.
 
@@ -216,14 +219,12 @@ class BaseAxes(maxes.Axes):
         for message,attrs in wrappers._disabled_methods.items():
             if attr in attrs:
                 raise NotImplementedError(message.format(attr))
-        # Universal overrides
-        # TODO: Better approach for legends?
+        # Non-plotting overrides
+        # WARNING: All plotting overrides must come after cmap and cycle
+        # wrappers but before check centers and edges overrides, so set
+        # them specifically for each plot
         if attr=='text':
             obj = wrappers._text_wrapper(self, obj)
-        elif attr=='plot':
-            obj = wrappers._plot_wrapper(self, obj)
-        elif attr=='scatter':
-            obj = wrappers._scatter_wrapper(self, obj)
         elif attr=='legend' and not isinstance(self, PanelAxes):
             obj = wrappers._legend_wrapper(self, obj)
         return obj
@@ -373,7 +374,7 @@ class BaseAxes(maxes.Axes):
             self._title_inside = inside
         return {'x':x, 'y':y, 'ha':ha, 'va':va, 'transform':transform, **kwargs}
 
-    def format(self, rc_kw=None, mode=2, **kwargs):
+    def format(self, *, mode=2, rc_kw=None, **kwargs):
         """
         Sets up temporary rc settings and calls `~BaseAxes.smart_update`.
 
@@ -572,8 +573,8 @@ class BaseAxes(maxes.Axes):
                     ax.abc.set_visible(False)
 
     def colorbar(self, *args, loc=None, xspace=None, pad=None, width=None,
-        length=None, label=None, extendsize=None,
-        **kwargs):
+            length=None, label=None, extendsize=None,
+            **kwargs):
         """
         Adds an *inset* colorbar, sort of like `~matplotlib.axes.Axes.legend`.
 
@@ -616,8 +617,8 @@ class BaseAxes(maxes.Axes):
         # Default props
         loc = _default(loc, rc.get('colorbar.loc'))
         extend = units(_default(extendsize, rc.get('colorbar.extendinset')))
-        length = units(_default(pad, rc.get('colorbar.length')))/self.width
-        width = units(_default(pad, rc.get('colorbar.width')))/self.height
+        length = units(_default(length, rc.get('colorbar.length')))/self.width
+        width = units(_default(width, rc.get('colorbar.width')))/self.height
         pad = units(_default(pad, rc.get('colorbar.axespad')))
         xpad = pad/self.width
         ypad = pad/self.height
@@ -729,17 +730,17 @@ class BaseAxes(maxes.Axes):
 
         # Create LineCollection and update with values
         # TODO: Why not just pass kwargs to class?
-        collection = mcollections.LineCollection(np.array(coords),
+        hs = mcollections.LineCollection(np.array(coords),
                 cmap=cmap, norm=norm, linestyles='-', capstyle='butt', joinstyle='miter')
-        collection.set_array(np.array(values))
-        collection.update({key:value for key,value in kwargs.items() if key not in ('color',)})
+        hs.set_array(np.array(values))
+        hs.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 
         # Add collection, with some custom attributes
-        self.add_collection(collection)
+        self.add_collection(hs)
         self.autoscale_view() # data limits not updated otherwise
-        collection.values = values
-        collection.levels = levels # needed for other functions some
-        return collection
+        hs.values = values
+        hs.levels = levels # needed for other functions some
+        return hs
 
 #------------------------------------------------------------------------------#
 # Specific classes, which subclass the base one
@@ -817,8 +818,12 @@ class XYAxes(BaseAxes):
             obj = wrappers._cmap_wrapper(self, obj)
         elif attr in wrappers._cycle_methods:
             obj = wrappers._cycle_wrapper(self, obj)
-        # Standardized input wrappers
-        if attr in wrappers._centers_methods:
+        # Plotting wrappers
+        if attr=='plot':
+            obj = wrappers._plot_wrapper(self, obj)
+        elif attr=='scatter':
+            obj = wrappers._scatter_wrapper(self, obj)
+        elif attr in wrappers._centers_methods:
             obj = wrappers._check_centers(self, obj)
         elif attr in wrappers._edges_methods:
             obj = wrappers._check_edges(self, obj)
@@ -844,6 +849,7 @@ class XYAxes(BaseAxes):
         xlim=None,          ylim=None,
         xbounds=None,       ybounds=None,       # limit spine bounds?
         xscale=None,        yscale=None,
+        xrotation=None,     yrotation=None,     # tick label rotation
         xformatter=None, yformatter=None, xticklabels=None, yticklabels=None,
         xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
         yticks=None, yminorticks=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
@@ -935,6 +941,9 @@ class XYAxes(BaseAxes):
         xformatter_kw, yformatter_kw : dict-like, optional
             The *x* and *y* axis formatter settings. Passed to
             `~proplot.axistools.Formatter`.
+        xrotation, yrotation : None or float, optional
+            The rotation for *x* and *y* axis tick labels. Defaults to ``0``
+            for normal axes, ``45`` for time axes.
 
         Note
         ----
@@ -988,7 +997,6 @@ class XYAxes(BaseAxes):
         yminorlocator = _default(yminorticks, yminorlocator)
         # Grid defaults are more complicated
         # NOTE: rcmod will always change *grid* and *grid.which* at the same time.
-        # raise ValueError('Setting unavailable. Older matplotlib version?')
         # TODO: Make xgridminor, ygridminor, xtickloc, ytickloc all global rc
         # settings that modify xtick.left, axes.grid.axis, etc., instead of
         # these keyword args. Results in duplicate behavior maybe.
@@ -1029,12 +1037,14 @@ class XYAxes(BaseAxes):
         for (axis, label, color, margin,
             tickloc, spineloc, ticklabelloc, labelloc,
             bounds, grid, gridminor, tickminor, tickminorlocator,
-            lim, reverse, scale, locator, formatter, tickrange, tickdir, ticklabeldir,
+            lim, reverse, scale, locator,
+            formatter, tickrange, tickdir, ticklabeldir, rotation,
             scale_kw, label_kw, formatter_kw, locator_kw, minorlocator_kw) in zip(
             (self.xaxis, self.yaxis), (xlabel, ylabel), (xcolor, ycolor), (xmargin, ymargin),
             (xtickloc, ytickloc), (xspineloc, yspineloc), (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
             (xbounds, ybounds), (xgrid, ygrid), (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
-            (xlim, ylim), (xreverse, yreverse), (xscale, yscale), (xlocator, ylocator), (xformatter, yformatter), (xtickrange, ytickrange), (xtickdir, ytickdir), (xticklabeldir, yticklabeldir),
+            (xlim, ylim), (xreverse, yreverse), (xscale, yscale), (xlocator, ylocator),
+            (xformatter, yformatter), (xtickrange, ytickrange), (xtickdir, ytickdir), (xticklabeldir, yticklabeldir), (xrotation, yrotation),
             (xscale_kw, yscale_kw), (xlabel_kw, ylabel_kw), (xformatter_kw, yformatter_kw), (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
             ):
             # Axis label properties
@@ -1071,6 +1081,8 @@ class XYAxes(BaseAxes):
                 # axis.set_inverted(True) # 3.1+, the below is from source code
                 lo, hi = axis.get_view_interval()
                 axis.set_view_interval(max(lo, hi), min(lo, hi), ignore=True)
+            # Detect if time axis
+            time = isinstance(axis.converter, mdates.DateConverter) # is this a time axis?
 
             # Fix spines
             kw = rc.fill({
@@ -1111,72 +1123,15 @@ class XYAxes(BaseAxes):
             # Get which spines are visible; needed for setting tick locations
             spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
 
-            # Tick and ticklabel properties
-            # * Weird issue seems to cause set_tick_params to reset/forget that the grid
-            #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
-            #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
-            # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
-            #   group of left/right or top/bottom
-            # * Includes option to draw spines but not draw ticks on that spine, e.g.
-            #   on the left/right edges
-            # First determine tick sides
-            kw_sides = {}
-            translate = {None: None, 'both': sides, 'neither': (), 'none': ()}
-            if bounds is not None and tickloc not in sides:
-                tickloc = sides[0] # override to just one side
-            ticklocs = translate.get(tickloc, (tickloc,))
-            if ticklocs is not None:
-                kw_sides.update({side: (side in ticklocs) for side in sides})
-            kw_sides.update({side: False for side in sides if side not in spines}) # override
-            # Next the tick label sides
-            # Will override to make sure only appear where ticks are
-            ticklabellocs = translate.get(ticklabelloc, (ticklabelloc,))
-            if ticklabellocs is not None:
-                kw_sides.update({f'label{side}': (side in ticklabellocs) for side in sides})
-            kw_sides.update({f'label{side}': False for side in sides
-                if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
-            # The axis label side
-            if labelloc is None:
-                if ticklocs is not None:
-                    options = [side for side in sides if (side in ticklocs and side in spines)]
-                    if len(options)==1:
-                        labelloc = options[0]
-            elif labelloc not in sides:
-                raise ValueError(f'Got labelloc "{labelloc}", valid options are {sides}.')
-            if labelloc is not None:
-                axis.set_label_position(labelloc)
-            # Style of ticks
-            kw_shared = rc.fill({
-                # 'labelcolor': f'{name}tick.color',
-                # 'labelsize':  f'{name}tick.labelsize'
-                'labelcolor': f'tick.labelcolor', # new props
-                'labelsize':  f'tick.labelsize',
-                'color':      f'{name}tick.color',
-                })
-            if color:
-                kw_shared['color'] = color
-                kw_shared['labelcolor'] = color
-            if tickdir=='in':
-                kw_shared['pad'] = 1 # ticklabels should be much closer
-            if ticklabeldir=='in': # put tick labels inside the plot; TODO check this
-                tickdir = 'in'
-                pad = rc.get(f'{name}tick.major.size') + rc.get(f'{name}tick.major.pad') + rc.get(f'{name}tick.labelsize')
-                kw_shared['pad'] = -pad
-            if tickdir is not None:
-                kw_shared['direction'] = tickdir
-            # Apply settings. Also apply gridline settings and major
-            # and minor tick settings.
+            # Rc settings, grid settings, major and minor settings
+            # Override is just a "new default", but user can override this
             dict_ = lambda prefix: {
-                'grid_color':     f'{prefix}.color',
-                'grid_alpha':     f'{prefix}.alpha',
-                'grid_linewidth': f'{prefix}.linewidth',
-                'grid_linestyle': f'{prefix}.linestyle',
+                'grid_color':     prefix + '.color',
+                'grid_alpha':     prefix + '.alpha',
+                'grid_linewidth': prefix + '.linewidth',
+                'grid_linestyle': prefix + '.linestyle',
                 }
             override = getattr(self, 'grid_override', None)
-            # The override should just be a "new default", but user should
-            # be able to override that.
-            # grid = _default(override, grid)
-            # gridminor = _default(override, gridminor)
             grid = _default(grid, override)
             gridminor = _default(gridminor, override)
             for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
@@ -1187,26 +1142,92 @@ class XYAxes(BaseAxes):
                 if which=='major':
                     kw_grid = rc.fill(dict_('grid'))
                 else:
-                    kw_grid_major = kw_grid
+                    kw_major = kw_grid
                     kw_grid = rc.fill(dict_('gridminor'))
-                    kw_grid.update({key:value for key,value in kw_grid_major.items() if key not in kw_grid})
-                kw_tick = rc[f'{name}tick.{which}']
-                kw_tick.pop('visible', None) # invalid setting
-                axis.set_tick_params(which=which, **kw_tick, **kw_grid)
-            axis.set_tick_params(which='both', **kw_sides, **kw_shared)
+                    kw_grid.update({key:value for key,value in kw_major.items() if key not in kw_grid})
+                # Changed rc settings
+                kw = rc[name + 'tick.' + which]
+                kw.pop('visible', None) # invalid setting
+                axis.set_tick_params(which=which, **kw_grid, **kw)
+
+            # Tick and ticklabel properties
+            # * Weird issue seems to cause set_tick_params to reset/forget that the grid
+            #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
+            #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
+            # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
+            #   group of left/right or top/bottom
+            # * Includes option to draw spines but not draw ticks on that spine, e.g.
+            #   on the left/right edges
+            # First tick sides
+            kw = {}
+            translate = {None: None, 'both': sides, 'neither': (), 'none': ()}
+            if bounds is not None and tickloc not in sides:
+                tickloc = sides[0] # override to just one side
+            ticklocs = translate.get(tickloc, (tickloc,))
+            if ticklocs is not None:
+                kw.update({side: (side in ticklocs) for side in sides})
+            kw.update({side: False for side in sides if side not in spines}) # override
+            # Tick label sides
+            # Will override to make sure only appear where ticks are
+            ticklabellocs = translate.get(ticklabelloc, (ticklabelloc,))
+            if ticklabellocs is not None:
+                kw.update({f'label{side}': (side in ticklabellocs) for side in sides})
+            kw.update({f'label{side}': False for side in sides
+                if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
+            # The axis label side
+            if labelloc is None:
+                if ticklocs is not None:
+                    options = [side for side in sides if (side in ticklocs and side in spines)]
+                    if len(options)==1:
+                        labelloc = options[0]
+            elif labelloc not in sides:
+                raise ValueError(f'Got labelloc "{labelloc}", valid options are {sides}.')
+            # Apply
+            axis.set_tick_params(which='both', **kw)
+            if labelloc is not None:
+                axis.set_label_position(labelloc)
+
+            # The tick style
+            # First color and size
+            kw = rc.fill({
+                'labelcolor': 'tick.labelcolor', # new props
+                'labelsize':  'tick.labelsize',
+                'color':      name + 'tick.color',
+                })
+            if color:
+                kw['color'] = color
+                kw['labelcolor'] = color
+            # Tick direction and rotation
+            if tickdir=='in':
+                kw['pad'] = 1 # ticklabels should be much closer
+            if ticklabeldir=='in': # put tick labels inside the plot; TODO check this
+                tickdir = 'in'
+                pad = rc.get(name + 'tick.major.size') + rc.get(name + 'tick.major.pad') + rc.get(name + 'tick.labelsize')
+                kw['pad'] = -pad
+            if tickdir is not None:
+                kw['direction'] = tickdir
+            # Apply
+            axis.set_tick_params(which='both', **kw)
+
             # Settings that can't be controlled by set_tick_params
+            # Also set rotation here, otherwise get weird alignment
+            # See discussion: https://stackoverflow.com/q/11264521/4970632
             kw = rc.fill({'fontname': 'fontname', 'weight':'tick.labelweight'})
+            if rotation is not None:
+                kw.update({'rotation':rotation})
+                if name=='x':
+                    kw.update({'ha':'right' if rotation>0 else 'left'})
+                setattr(self, f'_{name}rotated', True)
             for t in axis.get_ticklabels():
                 t.update(kw)
-
-            # Update margins
+            # Margins
             if margin is not None:
-                self.margins(**{name:margin})
+                self.margins(**{name: margin})
+
             # Major and minor locator
             # Also automatically detect whether axis is a 'time axis' (i.e.
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
-            time = isinstance(axis.converter, mdates.DateConverter)
             if locator is not None:
                 locator = axistools.Locator(locator, time=time, **locator_kw)
                 axis.set_major_locator(locator)
@@ -1217,6 +1238,7 @@ class XYAxes(BaseAxes):
             elif tickminorlocator is not None:
                 axis.set_minor_locator(axistools.Locator(tickminorlocator,
                     minor=True, time=time, **minorlocator_kw))
+
             # Major and minor formatter
             fixedformatfix = False
             if formatter is not None or tickrange is not None:
@@ -1233,7 +1255,6 @@ class XYAxes(BaseAxes):
             axis.set_minor_formatter(mticker.NullFormatter())
 
             # Ensure no out-of-bounds ticks! Even set_smart_bounds() fails sometimes.
-            # Notes
             # * Using set_bounds also failed, and fancy method overrides did
             #   not work, so instead just turn locators into fixed version
             # * Most locators take no arguments in __call__, and some do not
@@ -1887,17 +1908,22 @@ class CartopyAxes(MapAxes, GeoAxes):
             obj = wrappers._cmap_wrapper(self, obj)
         elif attr in wrappers._cycle_methods:
             obj = wrappers._cycle_wrapper(self, obj)
-        # Standardized input wrappers
-        if attr in wrappers._transform_methods:
-            obj = wrappers._cartopy_transform(self, obj)
-        elif attr in wrappers._crs_methods:
-            obj = wrappers._cartopy_crs(self, obj)
+        # Plotting wrappers
+        if attr=='plot':
+            obj = wrappers._plot_wrapper(self, obj)
+        elif attr=='scatter':
+            obj = wrappers._scatter_wrapper(self, obj)
         elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
             obj = wrappers._cartopy_gridfix(self, obj)
             if attr in wrappers._edges_methods:
                 obj = wrappers._check_edges(self, obj)
             else:
                 obj = wrappers._check_centers(self, obj)
+        # Standardized input
+        if attr in wrappers._transform_methods:
+            obj = wrappers._cartopy_transform(self, obj)
+        elif attr in wrappers._crs_methods:
+            obj = wrappers._cartopy_crs(self, obj)
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -2148,15 +2174,20 @@ class BasemapAxes(MapAxes):
                 obj = wrappers._cmap_wrapper(self, obj)
             elif attr in wrappers._cycle_methods:
                 obj = wrappers._cycle_wrapper(self, obj)
-            # Standardized input wrappers
-            if attr in wrappers._latlon_methods:
-                obj = wrappers._basemap_latlon(self, obj)
+            # Plotting wrappers
+            if attr=='plot':
+                obj = wrappers._plot_wrapper(self, obj)
+            elif attr=='scatter':
+                obj = wrappers._scatter_wrapper(self, obj)
             elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
                 obj = wrappers._basemap_gridfix(self, obj)
                 if attr in wrappers._edges_methods:
                     obj = wrappers._check_edges(self, obj)
                 else:
                     obj = wrappers._check_centers(self, obj)
+            # Standardized input wrappers
+            if attr in wrappers._latlon_methods:
+                obj = wrappers._basemap_latlon(self, obj)
             # Recursion fix at top level
             obj = wrappers._wrapper_m_norecurse(self, obj)
         return obj

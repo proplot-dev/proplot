@@ -27,6 +27,7 @@ from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 import functools
 import warnings
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import matplotlib.scale as mscale
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
@@ -542,6 +543,32 @@ class Figure(mfigure.Figure):
             renderer = self.canvas.get_renderer()
         # Lock twin axes
         self._twin_axes_lock()
+        # Post-plotting defaults
+        for ax in self._main_axes:
+            if not self._smart_tight_init:
+                continue
+            for ax in (ax, *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel):
+                if not ax:
+                    continue
+                elif not ax.get_visible():
+                    continue
+                # Axis rotation, if user drew anything that triggered datetime x-axis
+                # WARNING: Do not just use set_tick_params rotation because will mess up
+                # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
+                # See discussion: https://stackoverflow.com/q/11264521/4970632
+                if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
+                    # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
+                    rotation = rc['axes.formatter.timerotation']
+                    ha = 'right' if rotation>0 else 'left'
+                    for label in ax.xaxis.get_ticklabels():
+                        label.set_rotation(rotation)
+                        label.set_horizontalalignment(ha)
+                # Automatic labels and colorbars for plot
+                # TODO: Support for multiple legends?
+                if ax._auto_colorbar:
+                    ax.colorbar(ax._auto_colorbar, **ax._auto_colorbar_kw)
+                if ax._auto_legend:
+                    ax.legend(ax._auto_legend, **ax._auto_legend_kw)
         # Align text and fix labels
         # WARNING: draw() is called *more than once* and title positions are
         # appropriately offset only during the *later* calls! Must run each time.
@@ -558,6 +585,7 @@ class Figure(mfigure.Figure):
             warnings.warn('Tight subplots do not work with cartopy gridline labels or after zooming into a projection. Use tight=False in your call to subplots().')
         else:
             self.smart_tight_layout(renderer)
+        self._smart_tight_init = False
         # Set up spanning labels
         for axis in self._spanning_axes:
             self._axis_label_update(axis, span=True)
@@ -977,7 +1005,6 @@ class Figure(mfigure.Figure):
         # changes propagate only *down*, not up; will not be applied otherwise.
         figsize, gridspec_kw, _ = _subplots_kwargs(**subplots_kw)
         self._main_gridspec.update(**gridspec_kw)
-        self._smart_tight_init = False
         self.set_size_inches(figsize)
         width, height = figsize
         # Update width and height ratios of axes panel subplotspec,
@@ -1530,7 +1557,7 @@ def _axes_dict(naxs, value, kw=False, default=None):
                 kwargs[num] = default
     # Verify numbers
     if {*range(1, naxs+1)} != {*kwargs.keys()}:
-        raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i+1) for i in sorted(kwargs.keys()))}.')
+        raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i) for i in sorted(kwargs.keys()))}.')
     return kwargs
 
 # Primary function
