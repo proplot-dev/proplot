@@ -316,10 +316,13 @@ ProPlot also adds back some of the convenience you get with the
 `~pandas.DataFrame` or `~xarray.DataArray`, the x-axis label, y-axis
 label, and title are updated from the metadata. To disable this
 behavior, pass ``autoformat=False`` to `~proplot.subplots.subplots`.
+
 The below examples showcase this feature for 1-dimensional and
-2-dimensional datasets. For more on the ``colorbar`` keyword, see
-`~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-and the :ref:`Wrapped methods` section.
+2-dimensional datasets. It also demonstrates automatic generation of
+colorbars and legends. For more on the ``colorbar`` and ``legend``
+keywords, see `~proplot.wrappers.cmap_wrapper`,
+`~proplot.wrappers.cycle_wrapper`, and the :ref:`Wrapped methods`
+section. For more on panels, see the :ref:`Axes panels` section.
 
 .. code:: ipython3
 

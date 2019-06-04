@@ -163,8 +163,8 @@ class BaseAxes(maxes.Axes):
         self._inset_children = [] # arbitrary number of insets possible
         self._colorbar_parent = None
         self._colorbar_child = None # the *actual* axes, with content and whatnot; may be needed for tight subplot stuff
-        self._auto_colorbar = [] # stores plot handles for filling with a colorbar!
-        self._auto_legend = [] # as above, but for legend
+        self._auto_colorbar = {} # stores plot handles for filling with a colorbar, as function of location
+        self._auto_legend = {} # as above, but for legend
         self._auto_colorbar_kw = {} # keyword args for automatic colorbar() call
         self._auto_legend_kw = {} # as above, but for automatic legend() call
         self._filled = False # turned off when panels filled with colorbar or legend
@@ -573,8 +573,8 @@ class BaseAxes(maxes.Axes):
                     ax.abc.set_visible(False)
 
     def colorbar(self, *args, loc=None, xspace=None, pad=None, width=None,
-            length=None, label=None, extendsize=None,
-            **kwargs):
+        length=None, label=None, extendsize=None,
+        **kwargs):
         """
         Adds an *inset* colorbar, sort of like `~matplotlib.axes.Axes.legend`.
 
@@ -585,10 +585,10 @@ class BaseAxes(maxes.Axes):
             `~matplotlib.axes.Axes.legend`, but filtered to only corner
             positions. Options are:
 
-                * ``1`` or ``'upper right'``
-                * ``2`` or ``'upper left'``
-                * ``3`` or ``'lower left'``
-                * ``4`` or ``'lower right'``
+            * ``'ur'`` or ``'upper right'``
+            * ``'ul'`` or ``'upper left'``
+            * ``'ll'`` or ``'lower left'``
+            * ``'lr'`` or ``'lower right'``
 
             Default is from the rc configuration.
         xspace : None or str or float, optional
@@ -628,13 +628,13 @@ class BaseAxes(maxes.Axes):
             xspace -= 1.2*rc.get('font.size')/72
         xspace /= self.height
         # Get location in axes-relative coordinates
-        if loc in (1,'upper right'):
+        if loc in ('upper right','ur'):
             bounds = (1-xpad-length, 1-ypad-width, length, width)
-        elif loc in (2,'upper left'):
+        elif loc in ('upper left','ul'):
             bounds = (xpad, 1-ypad-width, length, width) # x0, y0, width, height in axes-relative coordinate to start
-        elif loc in (3,'lower left'):
+        elif loc in ('lower left','ll'):
             bounds = (xpad, ypad+xspace, length, width)
-        elif loc in (4,'lower right'):
+        elif loc in ('lower right','lr','b','best'):
             bounds = (1-xpad-length, ypad+xspace, length, width)
         else:
             raise ValueError(f'Invalid location {loc}.')

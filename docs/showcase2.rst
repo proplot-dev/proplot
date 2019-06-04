@@ -280,8 +280,8 @@ and forcing the background to be invisible.
    :height: 303px
 
 
-Axes panels, colorbars
-----------------------
+Axes panels
+-----------
 
 It is common to need “panels” that represent averages across some axis
 of the main subplot, or some secondary 1-dimensional dataset. This is
@@ -348,8 +348,8 @@ keyword args. Again, see `~proplot.subplots.subplots` and
    :height: 514px
 
 
-Figure panels, colorbars
-------------------------
+Figure panels
+-------------
 
 It is also common to need “global” colorbars or legends, meant to
 reference multiple subplots at once. This is easy to do with ProPlot

@@ -21,8 +21,8 @@ gridline labels are only possible with equirectangular and Mercator
 projections. With `~mpl_toolkits.basemap`, labels are possible with
 all projections. Further, the `~matplotlib.axes.Axes.tight_layout`
 method does not currently detect `cartopy` gridline labels – so when
-labels are present, the :ref:`Smart tight layout` feature must be
-automatically disabled.
+labels are present, the :ref:`Automatic subplot spacing` feature must
+be automatically disabled.
 
 Table of cartopy projections
 ----------------------------

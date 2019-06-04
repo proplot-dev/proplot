@@ -565,10 +565,12 @@ class Figure(mfigure.Figure):
                         label.set_horizontalalignment(ha)
                 # Automatic labels and colorbars for plot
                 # TODO: Support for multiple legends?
-                if ax._auto_colorbar:
-                    ax.colorbar(ax._auto_colorbar, **ax._auto_colorbar_kw)
-                if ax._auto_legend:
-                    ax.legend(ax._auto_legend, **ax._auto_legend_kw)
+                for loc,handles in ax._auto_colorbar.items():
+                    ax.colorbar(handles, **ax._auto_colorbar_kw[loc])
+                for loc,handles in ax._auto_legend.items():
+                    # ax.legend(handles, **ax._auto_legend_kw[loc]) # delets other ones!
+                    leg = plt.legend(handles, **ax._auto_legend_kw[loc])
+                    ax.add_artist(leg)
         # Align text and fix labels
         # WARNING: draw() is called *more than once* and title positions are
         # appropriately offset only during the *later* calls! Must run each time.

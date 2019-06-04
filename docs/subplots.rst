@@ -8,17 +8,19 @@ Figures and subplots
    :toctree: api
    :skip: FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 
-.. automodsumm:: proplot.gridspec
-   :classes-only:
-   :toctree: api
-   :skip: FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
-
 **Functions**
 
 .. automodsumm:: proplot.subplots
    :functions-only:
    :toctree: api
    :skip: units, journals
+
+**Misc**
+
+.. automodsumm:: proplot.gridspec
+   :classes-only:
+   :toctree: api
+   :skip: FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html
