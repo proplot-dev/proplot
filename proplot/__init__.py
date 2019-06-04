@@ -10,9 +10,13 @@ name = 'ProPlot'
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
 import warnings
-def _warning_no_line(message, category, filename, lineno, file=None, line=None):
-    return f'{filename}:{lineno}: ProPlotWarning: {message}'
-warnings.formatwarning = _warning_no_line
+_warning_default = warnings.formatwarning
+def _warning_proplot(message, category, filename, lineno, line=None):
+    if 'proplot' in filename or _warning_default is _warning_proplot:
+        return f'{filename}:{lineno}: ProPlotWarning: {message}'
+    else:
+        return _warning_default(message, category, filename, lineno, line=line)
+warnings.formatwarning = _warning_proplot
 # Then import stuff
 # WARNING: Must import colortools and register names first, since rcmod will
 # try to look up e.g. 'sunset' in the colormap dictionary!
