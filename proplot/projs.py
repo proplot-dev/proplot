@@ -81,12 +81,12 @@ from .rcmod import rc
 try:
     import cartopy.crs as ccrs
     from cartopy.crs import _WarpedRectangularProjection
-    # from packaging import version
-    # if version.parse(cartopy.__version__) < version.parse("0.13"):
-    #     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 except ModuleNotFoundError:
     ccrs = None
     _WarpedRectangularProjection = object
+# from packaging import version
+# if version.parse(cartopy.__version__) < version.parse("0.13"):
+#     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 
 # Paths for cartopy projection boundaries
 # WARNING: Tempting to use classmethod mpath.Path.circle, but this ends up

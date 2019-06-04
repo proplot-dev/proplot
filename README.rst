@@ -55,13 +55,16 @@ Here are some highlights of the remaining features:
    scales so that subplot **aspect ratios** are fixed, inner space
    between subplots automatically scaled so subplot tick labels, etc. do
    not overlap with each other.
-*  Easy setting customization with a user ``.proplotrc`` file. Option
-   to save custom colormaps, and they will be loaded every time on startup.
 *  Axes panels and figure panels, for global colorbars, global legends,
    or tertiary data. Panel widths always held fixed during "tight layout"
    scaling.
+*  Automatic axes formatting when ``xarray.DataArray`` or ``pandas.DataFrame``
+   are passed to a plotting command, just like ``DataArray.plot`` and
+   ``DataFrame.plot``.
 *  Specify figure, axes, panel, etc. sizes with arbitrary physical units --
    not just inches or "relative" units.
+*  Easy setting customization with a user ``.proplotrc`` file. Option
+   to save custom colormaps, and they will be loaded every time on startup.
 *  Perceptually distinct named colors with easy-to-remember names,
    a ton of beautiful new colormaps, new property cycle colors.
 *  Tools for merging existing colormaps and making new "perceptually

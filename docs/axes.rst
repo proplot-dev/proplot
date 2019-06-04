@@ -1,19 +1,19 @@
 Axes and wrappers
 -----------------
+.. Also contains gridspec and wrapper docs
 
 **Classes**
 
 .. automodsumm:: proplot.axes
    :toctree: api
    :classes-only:
-   :skip: Number, GeoAxes, PlateCarree, mplDeprecation, FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
+   :skip: Number, GeoAxes, mplDeprecation, FlexibleGridSpecFromSubplotSpec
 
 **Functions**
 
-.. automodsumm:: proplot.axes
+.. automodsumm:: proplot.wrappers
    :toctree: api
    :functions-only:
-   :skip: units
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

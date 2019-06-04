@@ -16,7 +16,7 @@ ProPlot's custom colormaps are instances of the new
 `PerceptuallyUniformColormap` class. These classes employ *linear transitions*
 between channel values in any of three possible "perceptually uniform",
 HSV-like colorspaces. These colorspaces are visualized in
-:ref:`Perceptually uniform colorspaces`, and can be described as follows:
+:ref:`Background`, and can be described as follows:
 
 * **HCL**: A purely perceptually uniform colorspace, where colors are
   broken down into “hue” (color, range 0-360), “chroma”

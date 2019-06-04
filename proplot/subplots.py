@@ -23,7 +23,7 @@ from .rcmod import rc
 from .utils import _default, _timer, _counter, units, journals, ic
 from . import axistools, gridspec, projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
-# Other tools
+# Special
 import functools
 import warnings
 import matplotlib.pyplot as plt
@@ -194,7 +194,7 @@ class Figure(mfigure.Figure):
             tight=True, tightborder=None, tightsubplot=None, tightpanel=None,
             flush=False, wflush=None, hflush=None,
             borderpad=None, subplotpad=None, panelpad=None,
-            rcreset=True,
+            autoformat=True, rcreset=True,
             **kwargs):
         """
         The `~matplotlib.figure.Figure` instance returned by `subplots`.
@@ -228,14 +228,16 @@ class Figure(mfigure.Figure):
             axes, and just want axes spines touching each other. Note that
             instead of ``flush=0``, you can also use ``tightsubplot=False``
             with manual gridspec spacings ``wspace=0`` and ``hspace=0``.
+        autoformat : bool, optional
+            Whether to automatically format the axes when a `~pandas.Series`,
+            `~pandas.DataFrame` or `~xarray.DataArray` is passed to a plotting
+            command.
         rcreset : bool, optional
             Whether to reset all `~proplot.rcmod.rc` settings to their
             default values once the figure is drawn.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
         """
-        # Initialize figure with some custom attributes
-        self._rcreset = rcreset
         # Tight toggling
         tight = _default(tight, rc['tight'])
         self._smart_tight_outer   = _default(tightborder, tight)
@@ -249,12 +251,14 @@ class Figure(mfigure.Figure):
         self._smart_panelpad = units(_default(panelpad, rc['subplot.panelpad']))
         self._subplot_wflush = _default(flush, wflush)
         self._subplot_hflush = _default(flush, hflush)
-        # Gridspec information
-        # These are filled in by subplots()
+        # Gridspec information, filled in by subplots()
         self._subplots_kw = None # extra special settings
         self._main_gridspec = None # gridspec encompassing drawing area
         self._main_axes = []  # list of 'main' axes (i.e. not insets or panels)
         self._spanning_axes = [] # add axis instances to this, and label position will be updated
+        # Figure-wide settings
+        self._rcreset = rcreset
+        self._autoformat = autoformat
         # Panels, initiate as empty
         self.leftpanel   = axes.EmptyPanel()
         self.bottompanel = axes.EmptyPanel()
@@ -1215,7 +1219,8 @@ class Figure(mfigure.Figure):
 # to use the other features
 #-------------------------------------------------------------------------------
 # Helper functions
-def _panels_kwargs(panels, colorbars, legends, panels_kw, colorbars_kw=None, legends_kw=None,
+def _panels_kwargs(panels, colorbars, legends,
+        panels_kw, colorbars_kw=None, legends_kw=None,
         figure=False, ncols=None, nrows=None):
     """Returns standardized keyword args for axes and figure panels."""
     # Get which panels
@@ -1345,8 +1350,7 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
     hspace, wspace, hratios, wratios,
     left,   bottom, right,   top,
     # Panels
-    # Empty args are filled with rc settings by _panels_kwargs (helper function
-    # meant to make figure panel, axes panel keyword args consistent)
+    # Empty args are filled with rc settings by _panels_kwargs
     bspan, bwidth, bspace, bsep, bflush, bshare,
     lspan, lwidth, lspace, lsep, lflush, lshare,
     rspan, rwidth, rspace, rsep, rflush, rshare,
@@ -1518,7 +1522,7 @@ def subplots(array=None, ncols=1, nrows=1,
         axpanels=None, axlegends=None, axcolorbars=None,
         axpanels_kw=None, axcolorbars_kw=None, axlegends_kw=None,
         basemap=False, proj=None, proj_kw=None,
-        rcreset=True, # arguments for figure instantiation
+        autoformat=True, rcreset=True, # arguments for figure instantiation
         **kwargs):
     """
     Analagous to `matplotlib.pyplot.subplots`. Create a figure with a single
@@ -1745,7 +1749,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, rcreset
+    tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat, rcreset
         Passed to `Figure`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
@@ -1767,7 +1771,8 @@ def subplots(array=None, ncols=1, nrows=1,
     fig = plt.figure(FigureClass=Figure, tight=tight,
         tightborder=tightborder, tightsubplot=tightsubplot, tightpanel=tightpanel,
         borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
-        flush=flush, wflush=wflush, hflush=hflush, rcreset=rcreset,
+        flush=flush, wflush=wflush, hflush=hflush,
+        autoformat=autoformat, rcreset=rcreset,
         )
 
     #--------------------------------------------------------------------------#
@@ -1815,7 +1820,7 @@ def subplots(array=None, ncols=1, nrows=1,
     colorbars = _default(colorbar, colorbars, '')
     # Get panel props
     kwargs = _panels_kwargs(panels, colorbars, legends, kwargs,
-            figure=True, ncols=ncols, nrows=nrows)
+        figure=True, ncols=ncols, nrows=nrows)
     # Create dictionary of panel toggles and settings
     # Input can be string e.g. 'rl' or dictionary e.g. {(1,2,3):'r', 4:'l'}
     # TODO: Allow separate settings for separate colorbar, legend, etc. panels

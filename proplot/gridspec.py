@@ -38,8 +38,8 @@ class FlexibleGridSpecBase(object):
     `~matplotlib.gridspec.GridSpecBase` rows and columns, setting
     `wspace` and `hspace` to ``0``, and masking out every other row/column
     of the `~matplotlib.gridspec.GridSpecBase`, so they act as "spaces".
-    These "spaces" are allowed to vary in width using the builtin `wratios`
-    and `hratios` keyword args.
+    These "spaces" are allowed to vary in width using the builtin
+    `width_ratios` and `height_ratios` keyword args.
     """
     def __init__(self, nrows, ncols, **kwargs):
         """
@@ -57,7 +57,7 @@ class FlexibleGridSpecBase(object):
             ``nrows-1``.
         height_ratios, width_ratios : list of float
             Ratios for the width/height of columns/rows of subplots.
-            For example, ``wratios=[1,2]`` specifes 2 columns of subplots,
+            For example, ``width_ratios=[1,2]`` specifes 2 columns of subplots,
             the second one twice as wide as the first.
         left, right, top, bottom : float or str
             Passed to `~matplotlib.gridspec.GridSpec`. Indicates width of "margins"

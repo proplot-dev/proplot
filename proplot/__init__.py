@@ -20,8 +20,9 @@ from .utils import *      # misc stuff
 from .colortools import * # color tools
 from .rcmod import *      # custom configuration implementation
 from .axes import *       # everything, axes definitions
+from .gridspec import *   # gridspec objects
+from .wrappers import *   # wrappers
 from .subplots import *
-from .gridspec import *
 from .fonttools import *  # fonts
 from .axistools import *  # locators, normalizers, and formatters
 from .projs import *      # projections and whatnot
