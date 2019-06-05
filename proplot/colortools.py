@@ -514,18 +514,18 @@ _cmap_mirrors = [
 #------------------------------------------------------------------------------#
 # Special classes
 #------------------------------------------------------------------------------#
-# Class for flexible color names
-# WARNING: Matplotlib 'color' arguments are passed to to_rgba, which tries
-# to read directly from cache and if that fails, tries to sanitize input.
-# The sanitization raises error when encounters (colormap, idx) tuple. So
-# we need to override the *cache* instead of color dictionary itself!
-# WARNING: Builtin to_rgb tries to get cached colors as dict[name, alpha],
-# resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
-# to differentiate this from (cmapname, index) usage! Must do try except lookup
-# into colormap dictionary every time. Don't want to do this for actual
-# color dict for sake of speed, so we only wrap *cache* lookup. Also we try
-# to avoid cmap lookup attempt whenever possible.
-class ColorDictSpecial(dict):
+# Class for flexible color names. Explanation:
+# 1. Matplotlib 'color' arguments are passed to to_rgba, which tries
+#    to read directly from cache and if that fails, tries to sanitize input.
+#    The sanitization raises error when encounters (colormap, idx) tuple. So
+#    we need to override the *cache* instead of color dictionary itself!
+# 2. Builtin to_rgb tries to get cached colors as dict[name, alpha],
+#    resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
+#    to differentiate this from (cmapname, index) usage! Must do try except lookup
+#    into colormap dictionary every time. Don't want to do this for actual
+#    color dict for sake of speed, so we only wrap *cache* lookup. Also we try
+#    to avoid cmap lookup attempt whenever possible with if statements.
+class ColorCacheDict(dict): # cannot be ColorDict because sphinx has issues, conflicts with colordict variable!
     """Special dictionary that lets user draw single color tuples from
     arbitrary colormaps or color cycles."""
     def __getitem__(self, key):
@@ -545,7 +545,6 @@ class ColorDictSpecial(dict):
         """
         # Pull out alpha
         # WARNING: Possibly fragile? Does this hidden behavior ever change?
-        # NOTE: This override doubles startup time 0.0001s to 0.0002s, probably ok.
         if np.iterable(key) and len(key)==2:
             key, alpha = key
         if np.iterable(key) and len(key)==2 and \
@@ -556,16 +555,19 @@ class ColorDictSpecial(dict):
                 pass
             else:
                 if isinstance(cmap, mcolors.ListedColormap):
-                    return tuple(cmap.colors[key[1]]) # draw color from the list of colors, using index
+                    rgb = tuple(cmap.colors[key[1]]) # draw color from the list of colors, using index
                 else:
-                    return tuple(cmap(key[1])) # interpolate color from colormap, using key in range 0-1
+                    rgb = tuple(cmap(key[1])) # interpolate color from colormap, using key in range 0-1
+                if len(rgb)==3:
+                    rgb = (*rgb, 1)
+                return rgb
         return super().__getitem__((key, alpha))
 # Wraps the cache
 class _ColorMappingOverride(mcolors._ColorMapping):
     def __init__(self, mapping):
         """Wraps the cache."""
         super().__init__(mapping)
-        self.cache = ColorDictSpecial({})
+        self.cache = ColorCacheDict({})
 # Override default color name dictionary
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     mcolors._colors_full_map = _ColorMappingOverride(mcolors._colors_full_map)
@@ -1204,9 +1206,6 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
           the dict is passed to the `PerceptuallyUniformColormap` initializer
           or the `~PerceptuallyUniformColormap.from_hsl` static method.
 
-        For the monochromatic colormaps, the color name string can also
-        look like ``'name90'``, where ``90`` indicates the maximum luminance
-        of the colormap. By default, this is 100 (i.e. pure white).
     name : None or str, optional
         Name of the resulting colormap. Default name is ``'no_name'``.
         The resulting colormap can then be invoked by passing ``cmap='name'``
@@ -1215,8 +1214,8 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         Whether the colormap is cyclic. Will cause `~proplot.axes.wrapper_cmap`
         to pass this flag to `BinNorm`. This will prevent having the same color
         on either end of the colormap.
-    fade : float, optional
-        The maximum luminosity, between 0 and 100, to use when generating
+    fade : None or float, optional
+        The maximum luminosity, between 0 and 100, used when generating
         `monochrome_cmap` colormaps. The default is ``100``.
     shift : None, or float or list of float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
@@ -1438,8 +1437,10 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     Parameters
     ----------
     *args
-        Passed to `Colormap`. If ``args[-1]`` is a float, it is used as
-        the `samples` argument.
+        Either ``args``, ``(*args, samples)``, or ``(*args, samples, fade)``.
+        ``args`` are passed to `Colormap` as ``Colormap(*args)``, ``samples``
+        is used in this function (see below), and ``fade`` is passed as a keyword
+        argument to `Colormap`.
     samples : float or list of float, optional
         For a `~matplotlib.colors.ListedColormap`, the maximum number of colors
         to select from the list. For a `~matplotlib.colors.LinearSegmentedColormap`,
@@ -1481,12 +1482,12 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
         if all(isinstance(arg, Number) for arg in args) and len(args) in (3,4):
             args = (args,)
         else:
-            if isinstance(args[-1], Number):
+            if len(args)>=2 and all(isinstance(arg, Number) for arg in args[-2:]):
+                args, samples, kwargs['fade'] = args[:-2], args[-2], args[-1]
                 smooth = True
-                args, kwargs['fade'] = args[:-1], args[-1]
-            if isinstance(args[-1], Number):
-                smooth = True
+            elif isinstance(args[-1], Number):
                 args, samples = args[:-1], args[-1]
+                smooth = True
         # Input was just list of color strings or RGB tuples, means user
         # wanted this list of colors as the cycle!
         if not smooth and len(args)>1:

@@ -112,9 +112,9 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
         colors = ['C1', 'C2', 'C0'] # corresponds with RGB roughly
         m = 0
         for i,label in enumerate(labels):
-            y = lut[:-2,i]/scale[i]
+            y = lut[:-3,i]/scale[i]
             y = np.clip(y, 0, 5)
-            h, = ax.plot(x, y, color=colors[i], lw=2, label=label)
+            h = ax.plot(x, y, color=colors[i], lw=2, label=label)
             m = max(m, max(y))
             hs += [h]
         f.bottompanel[j].legend([hs[:2], hs[-1:]])
@@ -123,7 +123,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
     # Draw colorbar
     with np.errstate(all='ignore'):
         m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=cmap)
-    f.rightpanel.colorbar(m, clocator='none', cformatter='none', clabel=f'{name} colors')
+    f.rightpanel.colorbar(m, locator='none', formatter='none', label=f'{name} colors')
     axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
               xlabel='position', ylabel='scaled channel value')
 
@@ -253,8 +253,11 @@ def cmap_show(N=129):
     # Figure
     extra = 1 # number of axes-widths to allocate for titles
     nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
-    fig, axs = subplots(nrows=nmaps, axwidth=4.0, axheight=0.08,
-            span=False, share=False, subplotpad=-0.05)
+    fig, axs = subplots(
+            nrows=nmaps, axwidth=4.0, axheight=0.2,
+            span=False, share=False, hspace=0.03,
+            tightsubplot=False,
+            )
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
     for cat,names in categories_reg.items():
@@ -266,15 +269,15 @@ def cmap_show(N=129):
             # Draw coorbar
             iax += 1
             if imap + ntitles + nplots > nmaps:
-                ax.invisible()
+                ax.set_visible(False)
                 break
             ax = axs[iax]
             if imap==0:
                 iax += 1
-                ax.invisible()
+                ax.set_visible(False)
                 ax = axs[iax]
             if name not in mcm.cmap_d or name.lower() not in cmaps_reg: # i.e. the expected builtin colormap is missing
-                ax.invisible() # empty space
+                ax.set_visible(False) # empty space
                 continue
             ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
             ax.format(ylabel=name, ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
@@ -290,17 +293,17 @@ def cycle_show():
     # Get the list of cycles
     _cycles = {name:mcm.cmap_d[name].colors for name in tools.cycles}
     _cycles = {name:_cycles[name] for name in sorted(_cycles.keys())}
-    nrows = len(_cycles)//2 + len(_cycles)%2
+    nrows = len(_cycles)//3 + len(_cycles)%3
     # Create plot
     state = np.random.RandomState(528)
-    fig, axs = subplots(width=6, sharey=False, sharex=False, subplotpad=0.05,
-                        aspect=2, ncols=2, nrows=nrows)
+    fig, axs = subplots(axwidth=1.5, sharey=False, sharex=False, subplotpad=0.05,
+                        aspect=1, ncols=3, nrows=nrows)
     for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
         key = key.lower()
         array = state.rand(20,len(cycle)) - 0.5
         array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
         for j,color in enumerate(cycle):
-            l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
+            l = ax.plot(array[:,j], lw=5, ls='-', color=color)
             l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
         title = f'{key}: {len(cycle)} colors'
         ax.set_title(title)
@@ -309,7 +312,6 @@ def cycle_show():
             ax.tick_params(axis=axis,
                     which='both', labelbottom=False, labelleft=False,
                     bottom=False, top=False, left=False, right=False)
-    if len(_cycles)%2==1:
-        axs[-1].set_visible(False)
+    axs[i+1:].set_visible(False)
     return fig
 

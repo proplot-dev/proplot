@@ -420,6 +420,36 @@ class Figure(mfigure.Figure):
                 position = (1, y0 + height/2)
             saxis.label.update({'position':position, 'transform':transform})
 
+    def _misc_post(self):
+        """Does various post-processing steps involving plotted content."""
+        for ax in self._main_axes:
+            if not self._smart_tight_init:
+                continue
+            for ax in (ax, *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel):
+                if not ax:
+                    continue
+                elif not ax.get_visible():
+                    continue
+                # Axis rotation, if user drew anything that triggered datetime x-axis
+                # WARNING: Do not just use set_tick_params rotation because will mess up
+                # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
+                # See discussion: https://stackoverflow.com/q/11264521/4970632
+                if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
+                    # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
+                    rotation = rc['axes.formatter.timerotation']
+                    ha = 'right' if rotation>0 else 'left'
+                    for label in ax.xaxis.get_ticklabels():
+                        label.set_rotation(rotation)
+                        label.set_horizontalalignment(ha)
+                # Automatic labels and colorbars for plot
+                # TODO: Support for multiple legends?
+                for loc,handles in ax._auto_colorbar.items():
+                    ax.colorbar(handles, **ax._auto_colorbar_kw[loc])
+                for loc,handles in ax._auto_legend.items():
+                    # ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
+                    leg = plt.legend(handles, **ax._auto_legend_kw[loc])
+                    ax.add_artist(leg)
+
     def _text_align(self, renderer):
         """Adjusts position of row titles and figure super title."""
         # Adjust row labels as axis tick labels are generated and y-axis
@@ -479,7 +509,7 @@ class Figure(mfigure.Figure):
             # Get maximum y-position among all children, necessary because
             # e.g. twin x-axes with their own labels are common
             iys = []
-            if ax.toppanel:
+            if ax.toppanel and ax.toppanel.get_visible():
                 iaxs = ax.toppanel
             else:
                 iaxs = (ax, *ax.leftpanel, *ax.rightpanel)
@@ -541,41 +571,16 @@ class Figure(mfigure.Figure):
         # Get renderer
         if renderer is None:
             renderer = self.canvas.get_renderer()
+        # Post-plotting defaults
+        self._misc_post()
         # Lock twin axes
         self._twin_axes_lock()
-        # Post-plotting defaults
-        for ax in self._main_axes:
-            if not self._smart_tight_init:
-                continue
-            for ax in (ax, *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel):
-                if not ax:
-                    continue
-                elif not ax.get_visible():
-                    continue
-                # Axis rotation, if user drew anything that triggered datetime x-axis
-                # WARNING: Do not just use set_tick_params rotation because will mess up
-                # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
-                # See discussion: https://stackoverflow.com/q/11264521/4970632
-                if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
-                    # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
-                    rotation = rc['axes.formatter.timerotation']
-                    ha = 'right' if rotation>0 else 'left'
-                    for label in ax.xaxis.get_ticklabels():
-                        label.set_rotation(rotation)
-                        label.set_horizontalalignment(ha)
-                # Automatic labels and colorbars for plot
-                # TODO: Support for multiple legends?
-                for loc,handles in ax._auto_colorbar.items():
-                    ax.colorbar(handles, **ax._auto_colorbar_kw[loc])
-                for loc,handles in ax._auto_legend.items():
-                    # ax.legend(handles, **ax._auto_legend_kw[loc]) # delets other ones!
-                    leg = plt.legend(handles, **ax._auto_legend_kw[loc])
-                    ax.add_artist(leg)
-        # Align text and fix labels
-        # WARNING: draw() is called *more than once* and title positions are
-        # appropriately offset only during the *later* calls! Must run each time.
+        # Spanning labels
         for axis in self._spanning_axes:
             self._axis_label_update(axis, span=False)
+        # Row, column, figure labels
+        # WARNING: draw() is called *more than once* and title positions are
+        # appropriately offset only during the *later* calls! Must run each time.
         self._text_align(renderer) # just applies the spacing
         # Tight layout
         # WARNING: For now just call this once, get bugs if call it every
@@ -731,11 +736,6 @@ class Figure(mfigure.Figure):
             The backend renderer.
         """
         #----------------------------------------------------------------------#
-        # Get tight bboxs
-        #----------------------------------------------------------------------#
-        self._tight_bboxs(renderer)
-
-        #----------------------------------------------------------------------#
         # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
         # basemap axes so its aspect ratio will not have changed.
         #----------------------------------------------------------------------#
@@ -803,7 +803,7 @@ class Figure(mfigure.Figure):
         # Put tight box *around* figure
         #----------------------------------------------------------------------#
         if self._smart_tight_outer:
-            # Get bounding box that encompasses *all artists*, compare to bounding
+            # Get bounding box encompassing *all artists*, compare to bounding
             # box used for saving *figure*
             pad = self._smart_borderpad
             obbox = self.bbox_inches # original bbox
@@ -827,6 +827,9 @@ class Figure(mfigure.Figure):
         # Prevent overlapping axis tick labels and whatnot *within* figure
         #----------------------------------------------------------------------#
         if self._smart_tight_subplot:
+            # Get bounding box for each axes
+            self._tight_bboxs(renderer) # can use same bboxs
+
             # First for the main axes, then add in the panels
             pad = self._smart_subplotpad
             xspans, yspans, xrange, yrange = _ax_props(self._main_axes, renderer)
@@ -866,6 +869,7 @@ class Figure(mfigure.Figure):
                 wspace_orig = [*wspace_orig, subplots_kw['rspace']]
             if self.bottompanel:
                 hspace_orig = [*hspace_orig, subplots_kw['bspace']]
+
             # Find groups of axes with touching left/right sides
             # We generate a list (xgroups), each element corresponding to a
             # column of *space*, containing lists of dictionaries with 'l' and
@@ -896,6 +900,7 @@ class Figure(mfigure.Figure):
                     if not added:
                         groups.append({'l':{left}, 'r':{right}}) # form new group
                 xgroups.append(groups)
+
             # Find groups of axes with touching bottom/top sides
             ygroups = []
             for rspace in range(1, nrows): # spaces between rows
@@ -917,6 +922,7 @@ class Figure(mfigure.Figure):
                     if not added:
                         groups.append({'b':{bottom}, 't':{top}}) # form new group
                 ygroups.append(groups)
+
             # Correct wspace and hspace
             if self._subplot_wflush:
                 wspace = [0]*len(wspace_orig)
@@ -946,6 +952,7 @@ class Figure(mfigure.Figure):
                         top = max(yspans[idx,1] for idx in group['t'])
                         seps.append((bottom - top)/self.dpi)
                     hspace.append(max((0, space_orig - min(seps) + pad)))
+
             # If had panels, need to pull out args
             lspace, rspace, bspace = 0, 0, 0 # does not matter if no panels
             if self.leftpanel:
@@ -963,6 +970,12 @@ class Figure(mfigure.Figure):
         # The same, but for spaces between *axes panels*
         #----------------------------------------------------------------------#
         if self._smart_tight_panel and any(ax._panels_main_gridspec for ax in self._main_axes): # i.e. any axes has non-EmptyPanel panels
+            # Update bboxs
+            for ax in self._main_axes:
+                ax.rowlabel.set_visible(False) # needed for panel tight layout!
+                ax.collabel.set_visible(False)
+            self._tight_bboxs(renderer) # can use same bboxs
+
             # Bottom, top panels in same rows
             # TODO: Don't just check space between panel and main axes, also
             # check space between panels
@@ -974,6 +987,7 @@ class Figure(mfigure.Figure):
                 paxs = [ax.toppanel for ax in axs if ax._yrange[0]==row]
                 if paxs:
                     self._panel_tight_layout('t', paxs, renderer)
+
             # Left, right panels in same columns
             for col in range(ncols):
                 paxs = [ax.leftpanel for ax in axs if ax._xrange[0]==col]
@@ -982,6 +996,7 @@ class Figure(mfigure.Figure):
                 paxs = [ax.rightpanel for ax in axs if ax._xrange[1]==col]
                 if paxs:
                     self._panel_tight_layout('r', paxs, renderer)
+
             # Reference axes
             axref = axs[self._ref_num - 1]
             gs = axref._panels_main_gridspec
@@ -994,12 +1009,16 @@ class Figure(mfigure.Figure):
                 hextra = sum(w for i,w in enumerate(gs.get_height_ratios())
                     if i!=2*int(bool(axref.toppanel))) # as for wextra
             subplots_kw.update({'wextra':wextra, 'hextra':hextra})
+
             # Update main gridspec to reflect new panel widths
             # TODO: Necessary?
             self._main_gridspec.update()
+            for ax in self._main_axes:
+                ax.rowlabel.set_visible(True) # needed for panel tight layout!
+                ax.collabel.set_visible(True)
 
         #----------------------------------------------------------------------#
-        # Finish
+        # Update gridspec(s)
         #----------------------------------------------------------------------#
         # Parse arguments and update stuff
         # WARNING: Need to update gridspec twice. First to get the width
@@ -1010,10 +1029,10 @@ class Figure(mfigure.Figure):
         self.set_size_inches(figsize)
         width, height = figsize
         # Update width and height ratios of axes panel subplotspec,
-        # to reflect the new axes heights and widths (ratios are stored in physical units, inches)
-        # NOTE: These will show us the *new* width and height ratios
+        # to reflect the new axes heights and widths (ratios are stored in
+        # physical units, inches).
         for ax in self._main_axes:
-            # Outer ratios
+            # Ratios for outer gridspec
             igs = ax._panels_main_gridspec
             if not igs:
                 continue
@@ -1038,13 +1057,16 @@ class Figure(mfigure.Figure):
             ihratios[2 if ax.toppanel else 0] = axheight
             igs.set_width_ratios(iwratios)
             igs.set_height_ratios(ihratios)
-        # Final update, then update attributes, and we're good to go
+        # Final update
+        # TODO: Why update with gridspec_kw twice? Maybe can just update
+        # with no args, and will still adjust subplot positions?
         self._main_gridspec.update(**gridspec_kw)
         for ax in self._main_axes:
             width_new = np.diff(ax._position.intervalx)*width
             height_new = np.diff(ax._position.intervaly)*height
             ax.width, ax.height = width_new, height_new
-        # Special redo in case of cartopy axes
+
+        # Redo in case of zoomed in cartopy axes
         if aspect_changed:
             self.smart_tight_layout(renderer)
 

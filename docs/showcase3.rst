@@ -21,7 +21,7 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
     import numpy as np
     N = 50
     M = 40
-    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
+    colors = plot.Cycle('grays_r', M, 90, left=0.1, right=0.8)
     for share in (0,1,2,3):
         f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
@@ -33,27 +33,19 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_63_0.png
-   :width: 643px
-   :height: 166px
+.. image:: showcase/showcase_64_0.svg
 
 
 
-.. image:: showcase/showcase_63_1.png
-   :width: 643px
-   :height: 176px
+.. image:: showcase/showcase_64_1.svg
 
 
 
-.. image:: showcase/showcase_63_2.png
-   :width: 643px
-   :height: 175px
+.. image:: showcase/showcase_64_2.svg
 
 
 
-.. image:: showcase/showcase_63_3.png
-   :width: 643px
-   :height: 190px
+.. image:: showcase/showcase_64_3.svg
 
 
 .. code:: ipython3
@@ -70,15 +62,11 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_64_0.png
-   :width: 490px
-   :height: 491px
+.. image:: showcase/showcase_65_0.svg
 
 
 
-.. image:: showcase/showcase_64_1.png
-   :width: 490px
-   :height: 498px
+.. image:: showcase/showcase_65_1.svg
 
 
 Axis ticks and scales
@@ -114,9 +102,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_67_0.png
-   :width: 510px
-   :height: 472px
+.. image:: showcase/showcase_68_0.svg
 
 
 Axis tick labels
@@ -140,7 +126,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_70_0.png
+.. image:: showcase/showcase_71_0.png
    :width: 569px
    :height: 237px
 
@@ -159,9 +145,9 @@ See `~proplot.axes.XYAxes.smart_update` and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
     plot.rc.update(linewidth=1.2, small=10, large=12, facecolor='gray8', figurefacecolor='gray8',
                    suptitlecolor='w', gridcolor='w', color='w')
+    f, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
     axs[0].format(xlim=(0,4*np.pi), xlocator=plot.arange(0, 4, 0.25)*np.pi, xformatter='pi')
     axs[1].format(xlim=(0,2*np.e), xlocator=plot.arange(0, 2, 0.5)*np.e, xticklabels='e')
     axs[2].format(xlim=(-90,90), xlocator=plot.arange(-90, 90, 30), xformatter='deglat')
@@ -172,9 +158,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_72_0.png
-   :width: 502px
-   :height: 557px
+.. image:: showcase/showcase_73_0.svg
 
 
 Datetime axes
@@ -212,7 +196,7 @@ details.
 
 
 
-.. image:: showcase/showcase_75_0.svg
+.. image:: showcase/showcase_76_0.svg
 
 
 Axis scales
@@ -242,9 +226,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_78_0.png
-   :width: 446px
-   :height: 223px
+.. image:: showcase/showcase_79_0.svg
 
 
 .. code:: ipython3
@@ -274,9 +256,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_79_0.png
-   :width: 540px
-   :height: 567px
+.. image:: showcase/showcase_80_0.svg
 
 
 .. code:: ipython3
@@ -300,6 +280,7 @@ for details.
         ax.plot(x, y, lw=4, color=color)
         ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${a}^{{{c}x}}$')
     # Geographic scales
+    n = 20
     x = np.linspace(-180,180,n)
     y = np.linspace(-85,85,n) # note sine just truncated values not in [-90,90], but Mercator transformation can reflect them
     y2 = np.linspace(-85,85,n) # for pcolor
@@ -314,9 +295,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_80_0.png
-   :width: 420px
-   :height: 549px
+.. image:: showcase/showcase_81_0.svg
 
 
 Alternative units
@@ -335,7 +314,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 .. code:: ipython3
 
     import proplot as plot
-    plot.rc.update({'grid.alpha':0.4, 'grid.linewidth':1.0})
+    plot.rc.update({'grid.alpha':0.4, 'linewidth':1, 'grid.linewidth':1})
     f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=2.2, axwidth=3)
     N = 200
     c1, c2 = plot.shade('cerulean', 0.5), plot.shade('red', 0.5)
@@ -365,15 +344,11 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_83_0.png
-   :width: 599px
-   :height: 212px
+.. image:: showcase/showcase_84_0.svg
 
 
 
-.. image:: showcase/showcase_83_1.png
-   :width: 516px
-   :height: 445px
+.. image:: showcase/showcase_84_1.svg
 
 
 .. code:: ipython3
@@ -399,8 +374,6 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_84_0.png
-   :width: 540px
-   :height: 269px
+.. image:: showcase/showcase_85_0.svg
 
 

@@ -29,11 +29,12 @@ never the same (see below).
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=2, axcolorbars='b')
+    axs.format(suptitle='Pcolor demo', titleweight='bold')
     data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
     N, step = 360, 45
     ax = axs[0]
     m = ax.pcolormesh(data, levels=plot.arange(0,N,0.2), cmap='phase', extend='neither')
-    ax.format(title='Pcolor without discernible levels', suptitle='Pcolor demo')
+    ax.format(title='Pcolor without discernible levels')
     ax.bpanel.colorbar(m, locator=2*step)
     ax = axs[1]
     m = ax.pcolormesh(data, levels=plot.arange(0,N,step), cmap='phase', extend='neither')
@@ -46,9 +47,7 @@ never the same (see below).
 
 
 
-.. image:: showcase/showcase_33_1.png
-   :width: 454px
-   :height: 289px
+.. image:: showcase/showcase_34_1.svg
 
 
 `~proplot.axes.cmap_wrapper` also adds the ability to label
@@ -73,9 +72,7 @@ label grid boxes in `~matplotlib.axes.Axes.pcolor` and
 
 
 
-.. image:: showcase/showcase_35_0.png
-   :width: 446px
-   :height: 241px
+.. image:: showcase/showcase_36_0.svg
 
 
 `~proplot.axes.cmap_wrapper` also lets you provide arbitrarily spaced,
@@ -100,9 +97,7 @@ normalizer from the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: showcase/showcase_37_0.png
-   :width: 512px
-   :height: 273px
+.. image:: showcase/showcase_38_0.svg
 
 
 `~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
@@ -140,9 +135,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: showcase/showcase_39_1.png
-   :width: 655px
-   :height: 294px
+.. image:: showcase/showcase_40_1.svg
 
 
 Finally, `~proplot.axes.cmap_wrapper` fixes the well-documented
@@ -159,16 +152,14 @@ feature is disabled (see below).
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, share=False)
+    f, axs = plot.subplots(ncols=2, span=False, share=False)
     axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar') # fixed bug
     axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='gray2') # deliberate lines
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='White lines between patches')
 
 
 
-.. image:: showcase/showcase_41_0.png
-   :width: 475px
-   :height: 241px
+.. image:: showcase/showcase_42_0.svg
 
 
 Colorbars and legends
@@ -203,9 +194,7 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_44_0.png
-   :width: 286px
-   :height: 348px
+.. image:: showcase/showcase_45_0.svg
 
 
 A particularly useful `~proplot.axes.colorbar_factory` feature is that
@@ -225,7 +214,7 @@ corresponding colors.
     # plot.rc['axes.labelweight'] = 'bold'
     hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
     ax.format(suptitle='Line handle colorbar', xlabel='x axis', ylabel='y axis')
-    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)/10,0.1),
+    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)),
                       label='Numeric values',
                       tickloc='bottom', # because why not?
                      )
@@ -236,9 +225,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_46_1.png
-   :width: 332px
-   :height: 298px
+.. image:: showcase/showcase_47_1.svg
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -263,7 +250,8 @@ and forcing the background to be invisible.
     f, axs = plot.subplots(ncols=2, legends='b', panels='r', span=False, share=0)
     hs = []
     for i,label in enumerate(labels):
-        hs += axs.plot(np.random.rand(20), label=label, lw=3)[0]
+        h = axs.plot(np.random.rand(20), label=label, lw=3)[0]
+        hs.append(h)
     axs[0].legend(order='F', frameon=True, loc='lower left')
     f.bpanel[0].legend(hs, ncols=4, align=True, frameon=True)
     f.bpanel[1].legend(hs, ncols=4, align=False)
@@ -275,9 +263,7 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_48_0.png
-   :width: 532px
-   :height: 303px
+.. image:: showcase/showcase_49_0.svg
 
 
 Axes panels
@@ -304,9 +290,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_51_0.png
-   :width: 468px
-   :height: 466px
+.. image:: showcase/showcase_52_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -326,7 +310,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2, share=0, span=False, panelpad=0.1,
+    f, axs = plot.subplots(axwidth=1.7, nrows=2, ncols=2, share=0, span=False, panelpad=0.1,
                            axpanels='r', axcolorbars='b', axpanels_kw={'rshare':False, 'rflush':True})
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
     for i,ax in enumerate(axs):
@@ -343,9 +327,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_53_1.png
-   :width: 492px
-   :height: 514px
+.. image:: showcase/showcase_54_1.svg
 
 
 Figure panels
@@ -379,9 +361,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_56_1.png
-   :width: 487px
-   :height: 523px
+.. image:: showcase/showcase_57_1.svg
 
 
 .. code:: ipython3
@@ -394,7 +374,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
     cycle = plot.Cycle('grays', 5)
     hs = []
     for abc,color in zip('ABCDEF',cycle):
-        hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')[0]
+        hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')
     f.bpanel[0].colorbar(m, length=0.8, label='label')
     f.bpanel[1].legend(hs, ncols=5, align=True)
     axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A')
@@ -403,9 +383,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_57_0.png
-   :width: 623px
-   :height: 240px
+.. image:: showcase/showcase_58_0.svg
 
 
 Stacked panels
@@ -422,7 +400,7 @@ primary axes.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=2, axwidth=1.2, span=False, share=0,
+    f, axs = plot.subplots(nrows=2, axwidth=1, span=False, share=0,
                           axcolorbars='l', axcolorbars_kw={'lstack':4},
                           axpanels='r', axpanels_kw={'rstack':2, 'rflush':True, 'rwidth':0.5}
                           )
@@ -445,8 +423,6 @@ primary axes.
 
 
 
-.. image:: showcase/showcase_59_0.png
-   :width: 524px
-   :height: 510px
+.. image:: showcase/showcase_60_0.svg
 
 

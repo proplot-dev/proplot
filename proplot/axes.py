@@ -105,6 +105,35 @@ except ModuleNotFoundError:
 # comes later down the line), so we can't wrap them. Anyway overriding
 # __getattribute__ is fine, and premature optimiztaion is root of all evil!
 #------------------------------------------------------------------------------#
+def _update_text(obj, **kwargs):
+    """Allows updating new text properties introduced by override."""
+    # Attempt update
+    try:
+        obj.update(kwargs)
+        return obj
+    except Exception:
+        pass
+    # Destroy original text instance and get its properties
+    obj.set_visible(False)
+    text = kwargs.pop('text', obj.get_text())
+    if 'color' not in kwargs:
+        kwargs['color'] = obj.get_color()
+    if 'weight' not in kwargs:
+        kwargs['weight'] = obj.get_weight()
+    if 'fontsize' not in kwargs:
+        kwargs['fontsize'] = obj.get_fontsize()
+    # Position
+    pos = obj.get_position()
+    x, y = kwargs.pop('position', (None,None))
+    x, y = kwargs.pop('x', x), kwargs.pop('y', y)
+    x, y = _default(x, pos[0]), _default(y, pos[1])
+    if np.iterable(x):
+        x = x[0]
+    if np.iterable(y):
+        y = y[0]
+    # Return new object
+    return obj.axes.text(x, y, text, **kwargs)
+
 class BaseAxes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
@@ -151,6 +180,7 @@ class BaseAxes(maxes.Axes):
         self._abc_inside = False
         self._title_inside = False # toggle this to figure out whether we need to push 'super title' up
         self._gridliner_on = False # whether cartopy gridliners are enabled
+        self._is_map = False # needed by wrappers, which can't import this file
         # Children and related properties
         self.bottompanel = EmptyPanel()
         self.toppanel    = EmptyPanel()
@@ -514,63 +544,60 @@ class BaseAxes(maxes.Axes):
                 }, cache=False)
             fig._collabels(collabels, **kw)
 
+        # Axes for title or abc
+        pax = self.toppanel[0]
+        if top and pax and pax.get_visible() and not pax._filled:
+            tax = self.toppanel[0]
+        else:
+            tax = self
+        tax = tax._altx_child or tax # always on top!
+
         # Create axes title
-        # WARNING: Aligning title flush against left or right of axes is
+        # TODO: We check _filled here, but no support for filled top
+        # panels; maybe add support?
+        # NOTE: Aligning title flush against left or right of axes is
         # actually already a matplotlib feature! Use set_title(loc=loc), and
         # it assigns text to a different hidden object. My version is just
         # more flexible, allows specifying arbitrary postiion.
-        if title is not None:
-            kw = rc.fill({
-                'pos':       'title.pos',
-                'border':    'title.border',
-                'linewidth': 'title.linewidth',
-                'fontsize':  'title.fontsize',
-                'weight':    'title.weight',
-                'fontname':  'fontname'
-                }, cache=False)
-            pax = self.toppanel[0]
-            if top and pax and pax.get_visible() and not pax._filled:
-                ax = self.toppanel[0]
-            else:
-                ax = self
-            ax = ax._altx_child or ax # always on top!
-            kw = ax._parse_title_args(**kw)
-            ax.title = wrappers._update_text(ax.title,
-                    {'text':title, 'visible':True, **kw})
+        kw = rc.fill({
+            'pos':       'title.pos',
+            'border':    'title.border',
+            'linewidth': 'title.linewidth',
+            'fontsize':  'title.fontsize',
+            'weight':    'title.weight',
+            'fontname':  'fontname'
+            }, cache=True)
+        kw = tax._parse_title_args(**kw)
+        if title:
+            kw['text'] = title
+        if kw:
+            tax.title = _update_text(tax.title, **kw)
 
-        # Create axes numbering
-        if self.number is not None and abc:
-            # Position and format
-            abcformat = rc.get('abc.format')
-            if not ('a' in abcformat or 'A' in abcformat):
-                raise ValueError(f'Invalid abcformat {abcformat}.')
+        # Initial text setup
+        # Will only occur if user requests change, or on initial run
+        abcformat = rc['abc.format']
+        if abcformat and self.number is not None:
+            if 'a' not in abcformat and 'A' not in abcformat:
+                raise ValueError(f'Invalid abcformat "{abcformat}". Must include letter "a" or "A".')
             abcedges = abcformat.split('a' if 'a' in abcformat else 'A')
             text = abcedges[0] + _abc(self.number-1) + abcedges[-1]
             if 'A' in abcformat:
                 text = text.upper()
-            # Settings, make
-            kw = rc.fill({
-                'pos':       'abc.pos',
-                'border':    'abc.border',
-                'linewidth': 'abc.linewidth',
-                'fontsize':  'abc.fontsize',
-                'weight':    'abc.weight',
-                'color':     'abc.color',
-                'fontname':  'fontname'
-                }, cache=False)
-            pax = self.toppanel[0]
-            if top and pax and pax.get_visible() and not pax._filled:
-                ax = self.toppanel[0]
-            else:
-                ax = self
-            ax = ax._altx_child or ax # always on top!
-            kw = ax._parse_title_args(abc=True, **kw)
-            ax.abc = wrappers._update_text(ax.abc,
-                    {'text':text, 'visible':True, **kw})
-        else:
-            for ax in (self, *self.toppanel):
-                if ax and ax.abc and not abc and abc is not None:
-                    ax.abc.set_visible(False)
+            tax.abc.set_text(text)
+        # Apply any changed or new settings
+        kw = rc.fill({
+            'pos':       'abc.pos',
+            'border':    'abc.border',
+            'linewidth': 'abc.linewidth',
+            'fontsize':  'abc.fontsize',
+            'weight':    'abc.weight',
+            'color':     'abc.color',
+            'fontname':  'fontname'
+            }, cache=True)
+        kw = tax._parse_title_args(abc=True, **kw)
+        if kw:
+            tax.abc = _update_text(tax.abc, **kw)
+        tax.abc.set_visible(bool(abc))
 
     def colorbar(self, *args, loc=None, xspace=None, pad=None, width=None,
         length=None, label=None, extendsize=None,
@@ -1687,6 +1714,7 @@ class MapAxes(BaseAxes):
         `~proplot.subplots.subplots`, `BaseAxes`, `CartopyAxes`, `BasemapAxes`
         """
         super().__init__(*args, **kwargs)
+        self._is_map = True # needed by wrappers, which can't import this file
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):

@@ -308,6 +308,22 @@ axes **simultaneously** (as in the below example).
 .. image:: showcase/showcase_20_0.svg
 
 
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True, axwidth=1.5)
+    axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(0,10), xlocator=2,
+              ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'ccc', 'dd', 'e'),
+              title='Axes title', titlepos='co', suptitle='Super title',
+              abc=True, abcpos='il', abcformat='a.',
+              ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
+              collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
+
+
+
+.. image:: showcase/showcase_21_0.svg
+
+
 Automatic formatting
 --------------------
 
@@ -333,34 +349,34 @@ section. For more on panels, see the :ref:`Axes panels` section.
     plot.rc['axes.formatter.timerotation']
     # DataArray
     # Must be column major since plot draws lines from columns of arrays
-    data = np.sin(np.linspace(0, 2*np.pi, 20))[:,None] + np.random.rand(20,5).cumsum(axis=1)
+    data = np.sin(np.linspace(0, 2*np.pi, 20))[:,None] + np.random.rand(20,8).cumsum(axis=1)
     da = xr.DataArray(data, dims=('x', 'cat'), coords={
         'x':xr.DataArray(np.linspace(0,1,20), dims=('x',), attrs={'long_name':'distance', 'units':'km'}),
-        'cat':xr.DataArray(np.arange(0,50,10), dims=('cat',), attrs={'long_name':'parameter', 'units':'K'})
+        'cat':xr.DataArray(np.arange(0,80,10), dims=('cat',), attrs={'long_name':'parameter', 'units':'K'})
         }, name='position series')
     # DataFrame
     ts = pd.date_range('1/1/2000', periods=20)
     data = (np.cos(np.linspace(0, 2*np.pi, 20))**4)[:,None] + np.random.rand(20,5)**2
-    df = pd.DataFrame(data, index=ts, columns=['foo','bar','baz','foobar','barbaz'])
+    df = pd.DataFrame(data, index=ts, columns=['foo','bar','baz','zap','baf'])
     df.name = 'time series'
     df.index.name = 'time (s)'
     df.columns.name = 'name'
     # Series
     series = pd.Series(np.random.rand(20).cumsum())
     # Figure
-    f, axs = plot.subplots(ncols=2, share=False, span=False)
+    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=False, span=False)
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
-    ax.plot(da, cycle=plot.shade('grass green', 0.3), lw=2, colorbar=True, colorbar_kw={'length':'2cm'})
+    ax.plot(da, cycle=(plot.shade('sky', 0.2), 90), lw=3, colorbar='ll', colorbar_kw={'length':'3cm'})
     # Plot Dataframe
     ax = axs[1]
-    ax.plot(df, cycle=plot.shade('caribbean green', 0.3), legend=True, legend_kw={'frameon':True}, lw=2)
+    ax.plot(df, cycle=(plot.shade('caribbean green', 0.15), 90), legend='uc', legend_kw={'frameon':True}, lw=3)
     ax.format(xrotation=45)
 
 
 
-.. image:: showcase/showcase_23_0.svg
+.. image:: showcase/showcase_24_0.svg
 
 
 .. code:: ipython3
@@ -387,16 +403,16 @@ section. For more on panels, see the :ref:`Axes panels` section.
     f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=2, share=False, span=False)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
-    ax = axs[0]
-    ax.contourf(da, cmap='Tempo', colorbar='r')
-    # Plot DataFrame
     ax = axs[1]
-    ax.contourf(df, cmap='Speed', colorbar='l')
+    ax.contourf(da, cmap='Tempo', cmap_kw={'left':0.05}, colorbar='l')
+    # Plot DataFrame
+    ax = axs[0]
+    ax.contourf(df, cmap='Ice_r', colorbar='r')
     ax.format(xtickminor=False)
 
 
 
-.. image:: showcase/showcase_24_0.svg
+.. image:: showcase/showcase_25_0.svg
 
 
 Rc settings control
@@ -424,7 +440,7 @@ For more information, see the `~proplot.rcmod` documentation.
     plot.rc.cycle = 'colorblind'
     plot.rc.linewidth = 1.5
     plot.rc.update({'fontname': 'DejaVu Sans'})
-    plot.rc['figure.facecolor'] = 'w'
+    plot.rc['figure.facecolor'] = 'gray3'
     plot.rc['axes.facecolor'] = 'gray5'
     # Make plot
     f, axs = plot.subplots(nrows=1, ncols=2, aspect=1, width=6,
@@ -433,7 +449,7 @@ For more information, see the `~proplot.rcmod` documentation.
     values = np.arange(1,M+1)
     for i,ax in enumerate(axs):
         data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
-        lines = ax.plot(data, linewidth=3, cycle=('C0','C1',6)) # see "Changing the color cycle" for details
+        lines = ax.plot(data, linewidth=3, cycle=('C0','C1',5,80)) # see "Changing the color cycle" for details
     axs.format(ytickloc='both', ycolor='blue7',
                hatch='xxx', hatchcolor='w',
                xlabel='x label', ylabel='y label',
@@ -449,9 +465,7 @@ For more information, see the `~proplot.rcmod` documentation.
 
 
 
-.. image:: showcase/showcase_26_1.png
-   :width: 540px
-   :height: 260px
+.. image:: showcase/showcase_27_1.svg
 
 
 The `~proplot.rcmod.rc` object can also be used to change the default
@@ -490,6 +504,6 @@ professional than the default “DejaVu Sans”. See the
 
 
 
-.. image:: showcase/showcase_28_0.svg
+.. image:: showcase/showcase_29_0.svg
 
 

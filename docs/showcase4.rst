@@ -57,9 +57,7 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: showcase/showcase_89_1.png
-   :width: 576px
-   :height: 1037px
+.. image:: showcase/showcase_90_1.svg
 
 
 Table of basemap projections
@@ -90,9 +88,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_92_0.png
-   :width: 598px
-   :height: 1073px
+.. image:: showcase/showcase_93_0.svg
 
 
 Geophysical data
@@ -124,7 +120,7 @@ These features are powered by the `~proplot.axes.cartopy_gridfix` and
     y = plot.arange(-60,60+1,30)
     data = np.random.rand(len(y), len(x))
     for globe in (False,True):
-        f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2,
+        f, axs = plot.subplots(ncols=2, nrows=2, axwidth=3,
                                colorbars='b', proj='hammer', proj_kw={'lon_0':0},
                                basemap={(1,3):False, (2,4):True},
                                )
@@ -135,25 +131,21 @@ These features are powered by the `~proplot.axes.cartopy_gridfix` and
             levels = np.linspace(0,1,11)
             if pcolor:
                 m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-                ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
+                ax.scatter(np.random.rand(50)*180, 180*np.random.rand(50), color='charcoal')
             if not pcolor:
                 m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-                ax.scatter(np.random.rand(5,5)*180, 180*np.random.rand(5,5), color='charcoal')
+                ax.scatter(np.random.rand(50)*180, 180*np.random.rand(50), color='charcoal')
             ax.format(suptitle=f'Hammer projection with globe={globe}', collabels=['Cartopy', 'Basemap'], labels=True)
             if p<2:
                 c = f.bpanel[p].colorbar(m, label='values', tickminor=False)
 
 
 
-.. image:: showcase/showcase_95_1.png
-   :width: 591px
-   :height: 405px
+.. image:: showcase/showcase_96_1.svg
 
 
 
-.. image:: showcase/showcase_95_2.png
-   :width: 591px
-   :height: 405px
+.. image:: showcase/showcase_96_2.svg
 
 
 Projection formatting
@@ -191,9 +183,7 @@ details.
 
 
 
-.. image:: showcase/showcase_98_0.png
-   :width: 386px
-   :height: 221px
+.. image:: showcase/showcase_99_0.svg
 
 
 .. code:: ipython3
@@ -210,9 +200,7 @@ details.
 
 
 
-.. image:: showcase/showcase_99_0.png
-   :width: 490px
-   :height: 416px
+.. image:: showcase/showcase_100_0.svg
 
 
 Zooming into projections
@@ -241,8 +229,6 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_101_0.png
-   :width: 323px
-   :height: 387px
+.. image:: showcase/showcase_102_0.svg
 
 

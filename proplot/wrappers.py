@@ -32,8 +32,9 @@ except ModuleNotFoundError:
 # Cartopy
 try:
     from cartopy.crs import PlateCarree
+    from cartopy.mpl.geoaxes import GeoAxes
 except ModuleNotFoundError:
-    PlateCarree = object
+    PlateCarree, GeoAxes = object, object
 
 # Keywords
 # These may automatically override the 'fix' option!
@@ -222,24 +223,26 @@ def _parse_1d(self, args):
     # Auto formatting
     if self.figure._autoformat:
         kw = {}
-        label = _auto_label(x)
-        if label:
-            kw['xlabel'] = label
-        if all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
-            kw['xreverse'] = True
-        # For ylabel, only try if the input was 1d; otherwise
-        # use info as the title
         iy = None
-        if y.ndim==2 and y.shape[1]==1:
-            iy = getattr(y, 'iloc', y)
-            iy = iy[:,0]
-        elif y.ndim==1:
-            iy = y
-        if iy is not None:
-            label = _auto_label(iy)
+        if not self._is_map:
+            # Xlabel
+            label = _auto_label(x)
             if label:
-                kw['ylabel'] = label
-        else:
+                kw['xlabel'] = label
+            if all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
+                kw['xreverse'] = True
+            # Ylabel; only try if the input was 1d, otherwise info is title
+            if y.ndim==2 and y.shape[1]==1:
+                iy = getattr(y, 'iloc', y)
+                iy = iy[:,0]
+            elif y.ndim==1:
+                iy = y
+            if iy is not None:
+                label = _auto_label(iy)
+                if label:
+                    kw['ylabel'] = label
+        # Title
+        if iy is None:
             label = _auto_label(y)
             if label:
                 kw['title'] = label
@@ -295,12 +298,14 @@ def _parse_2d(self, args, order='C'):
     if self.figure._autoformat:
         kw = {}
         # Labels
-        for key,z in zip(('xlabel','ylabel'), (x,y)):
-            label = _auto_label(z)
-            if label:
-                kw[key] = label
-            if z[1]<z[0]:
-                kw[key[0] + 'reverse'] = True
+        if not self._is_map:
+            for key,z in zip(('xlabel','ylabel'), (x,y)):
+                label = _auto_label(z)
+                if label:
+                    kw[key] = label
+                if z[1]<z[0]:
+                    kw[key[0] + 'reverse'] = True
+        # Title
         title = _auto_label(Zs[0], units=False)
         if title:
             kw['title'] = title
@@ -338,6 +343,7 @@ def check_centers(self, func, *args, order='C', **kwargs):
         elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
             raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
+    # TODO: Double check this
     if order=='F':
         x, y = x.T, y.T # in case they are 2-dimensional
         Zs = (Z.T for Z in Zs)
@@ -405,8 +411,8 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     # Parse input
     args_orig = args
     args = _parse_1d(self, args)
-    if len(args)!=2:
-        raise ValueError(f'Invalid number of plot args: {len(args_orig)}')
+    if len(args) not in (2,3): # e.g. with fmt string
+        raise ValueError(f'Expected 1-3 plot args, got {len(args_orig)}')
     # Make normal boring lines
     if cmap is None:
         lines = func(*args, **kwargs)
@@ -456,41 +462,6 @@ def scatter_wrapper(self, func, *args,
 #------------------------------------------------------------------------------#
 # Text wrapper
 #------------------------------------------------------------------------------#
-def _update_text(obj, kwargs):
-    """Allows updating new text properties introduced by override."""
-    # First try to update
-    try:
-        obj.update(kwargs)
-        return obj
-    except Exception:
-        pass
-    # Destroy original text instance and get its properties
-    obj.set_visible(False)
-    text = kwargs.pop('text', obj.get_text())
-    if 'color' not in kwargs:
-        kwargs['color'] = obj.get_color()
-    if 'weight' not in kwargs:
-        kwargs['weight'] = obj.get_weight()
-    if 'fontsize' not in kwargs:
-        kwargs['fontsize'] = obj.get_fontsize()
-    # Set potision
-    pos = obj.get_position()
-    x, y = None, None
-    if 'position' in kwargs:
-        x, y = kwargs.pop('position')
-    x = kwargs.pop('x', x)
-    y = kwargs.pop('y', y)
-    if x is None:
-        x = pos[0]
-    if y is None:
-        y = pos[1]
-    if np.iterable(x):
-        x = x[0]
-    if np.iterable(y):
-        y = y[0]
-    # Return new object
-    return obj.axes.text(x, y, text, **kwargs)
-
 def text_wrapper(self, func, x, y, text,
     transform='data',
     border=False, border_kw={},
@@ -672,7 +643,7 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     return result
 
 @_expand_methods_list
-def cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, globe=False, **kwargs):
+def cartopy_gridfix(self, func, lon, lat, *Zs, transform=PlateCarree, globe=False, **kwargs):
     """
     Wraps 2D plotting functions for `CartopyAxes` (`_centers_edges_methods`).
 
@@ -693,33 +664,51 @@ def cartopy_gridfix(self, func, lon, lat, Z, transform=PlateCarree, globe=False,
     This is a workaround. See `this issue
     <https://github.com/SciTools/cartopy/issues/946>`__.
     """
+    # Ensure monotonic lons or things get messed up
+    # Unlike basemap can be monotonic from any starting point
+    # WARNING: In first geophysical data example, got persistent
+    # changes to input data arrays without below line, resulting in non
+    # monotonic coordinates and discovery of this error
+    lon, lat = np.array(lon), np.array(lat) # no need to retain metadata on e.g. DataArray
+    if lon.ndim==1 and not (lon<lon[0]).all(): # skip backwards data
+        lonmin = lon[0]
+        while True:
+            filter_ = (lon<lonmin)
+            if filter_.sum()==0:
+                break
+            lon[filter_] += 360
     # Below only works for vector data
-    if lon.ndim==1 and lat.ndim==1:
+    Zss = []
+    for Z in Zs:
+        if not globe or lon.ndim!=1 or lat.ndim!=1:
+            Zss.append(Z)
+            continue
         # 1) Fix holes over poles by *interpolating* there (equivalent to
         # simple mean of highest/lowest latitude points)
-        if globe:
-            Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-            Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-            lat = np.concatenate(([-90], lat, [90]))
-            Z = np.concatenate((Z_south, Z, Z_north), axis=0)
+        Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
+        Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
+        lat = np.concatenate(([-90], lat, [90]))
+        Z = np.concatenate((Z_south, Z, Z_north), axis=0)
         # 2) Fix seams at map boundary; by ensuring circular coverage
-        if globe and (lon[0] % 360) != ((lon[-1] + 360) % 360):
+        if (lon[0] % 360) != ((lon[-1] + 360) % 360):
             lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
             Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
-    # Instantiate transform
-    if isinstance(transform, type):
-        transform = transform() # instantiate
+        # Append
+        Zss.append(Z)
+
     # Call function
     # with io.capture_output() as captured:
-    result = func(lon, lat, Z, transform=transform, **kwargs)
-    # Some plot functions seem to reset the outlinepatch or
-    # backgroundpatch (???), so need to re-enforce settings.
+    if isinstance(transform, type):
+        transform = transform() # instantiate
+    result = func(lon, lat, *Zss, transform=transform, **kwargs)
+    # Re-enforce settings because some plot functions seem to reset the
+    # outlinepatch or backgroundpatch (???)
     # TODO: Double check this
     self.format()
     return result
 
 @_expand_methods_list
-def basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
+def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, latlon=True, **kwargs):
     """
     Wraps 2D plotting functions for `BasemapAxes` (`_centers_edges_methods`).
 
@@ -736,11 +725,11 @@ def basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
     2. Interpolates data to the North and South poles.
     """
     # Bail out if map coordinates already provided
+    lon, lat = np.array(lon), np.array(lat) # no need to retain metadata on e.g. DataArray
     if not latlon:
-        return func(x, y, Z, **kwargs)
+        return func(lon, lat, *Zs, **kwargs)
     # Raise errors
     eps = 1e-3
-    lon, lat = x, y
     lonmin, lonmax = self.m.lonmin, self.m.lonmax
     if lon.max() > lon.min() + 360 + eps:
         raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
@@ -749,12 +738,16 @@ def basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
     # Establish 360-degree range
     lon -= 720
     while True:
-        filter_ = lon<lonmin
+        filter_ = (lon<lonmin)
         if filter_.sum()==0:
             break
         lon[filter_] += 360
     # Below only works with vectors
-    if lon.ndim==1 and lat.ndim==1:
+    Zss = []
+    for Z in Zs:
+        if lon.ndim!=1 or lat.ndim!=1:
+            Zss.append(Z)
+            continue
         # 1. Roll, accounting for whether ends are identical
         # If go from 0,1,...,359,0 (i.e. the borders), returns id of first zero
         roll = -np.argmin(lon) # always returns *first* value
@@ -787,6 +780,7 @@ def basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
             # remember that a *slice* with no valid range just returns empty array
             where = np.where((lon<lonmin) | (lon>lonmax))[0]
             Z[:,where[1:-1]] = np.nan
+        # Global coverage
         if globe:
             # 4. Fix holes over poles by interpolating there (equivalent to
             # simple mean of highest/lowest latitude points)
@@ -819,16 +813,19 @@ def basemap_gridfix(self, func, x, y, Z, globe=False, latlon=True, **kwargs):
                     lon = np.append(np.append(lonmin, lon), lonmin+360)
             else:
                 raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
-    # Finally get grid of x/y map projection coordinates
-    lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
-    x, y = self.m(*np.meshgrid(lon, lat))
+        # Add
+        Zss.append(Z)
+
     # Prevent error where old boundary, drawn on a different axes, remains
-    # to the Basemap instance, which means it is not in self.patches, which
-    # means Basemap tries to draw it again so it can clip the contours by the
+    # on the Basemap instance, which means it is not in self.patches, which
+    # means Basemap tries to draw it again so it can clip the *contours* by the
     # resulting path, which raises error because you can't draw on Artist on multiple axes
     self.m._mapboundarydrawn = self.boundary # stored the axes-specific boundary here
-    # Call function
-    return func(x, y, Z, **kwargs)
+
+    # Convert to projection coordinates and call function
+    lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
+    x, y = self.m(*np.meshgrid(lon, lat))
+    return func(x, y, *Zss, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
@@ -847,13 +844,13 @@ def _get_panel(self, loc):
         ax = getattr(self, loc + 'panel', None)
     if ax is not None:
         # Verify panel is available
-        loc = 'fill'
         try:
             ax = ax[idx]
         except IndexError:
             raise ValueError(f'Stack index {idx} for panel "{loc}" is invalid. You must make room for it in your call to subplots() with e.g. axcolorbars_kw={{"{loc}stack":2}}.')
         if not ax or not ax.get_visible():
             raise ValueError(f'Panel "{loc}" does not exist. You must make room for it in your call to subplots() with e.g. axcolorbars="{loc}".')
+        loc = 'fill'
     else:
         # Translate to a location
         ax = self
@@ -862,7 +859,7 @@ def _get_panel(self, loc):
 
 @_expand_methods_list
 def cycle_wrapper(self, func, *args,
-        labels=None, values=None,
+        label=None, labels=None, values=None,
         cycle=None, cycle_kw={},
         legend=None, legend_kw={},
         colorbar=None, colorbar_kw={},
@@ -972,7 +969,9 @@ def cycle_wrapper(self, func, *args,
     x, y, *args = args
     is1d = (y.ndim==1)
     # Iterate
-    labels = _default(values, labels, [None]*(1 if is1d else y.shape[1]))
+    labels = _default(values, labels, label, None)
+    if isinstance(labels, str) or labels is None:
+        labels = [labels]*(1 if is1d else y.shape[1])
     clabel = None
     objs = []
     y = getattr(y, 'iloc', y) # for indexing
@@ -1334,7 +1333,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 #------------------------------------------------------------------------------#
 def legend_wrapper(self, handles=None, align=None, order='C',
         loc=None, color=False, linewidth=False, linestyle=False,
-        ncol=1, ncols=None,
+        ncol=None, ncols=None, frameon=None, frame=None,
         **kwargs):
     """
     Function for drawing a legend, with some handy added features.
@@ -1372,24 +1371,33 @@ def legend_wrapper(self, handles=None, align=None, order='C',
     --------
     `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
     """
-    # First get legend settings (usually just one per plot so don't need to declare
-    # this dynamically/globally), and interpret kwargs.
+    # Parse input
+    if order not in ('F','C'):
+        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+    # First get legend settings and interpret kwargs.
     # TODO: Should update this function to clip the legend box when it goes
     # outside axes area, so the legend width and bottom or right widths can be
     # chosen propertly/separately.
-    for name,alias in [('ncol', 'ncols'), ('frameon', 'frame')]:
-        if alias in kwargs:
-            kwargs[name] = kwargs.pop(alias)
-    if order not in ('F','C'):
-        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-    # Setup legend text and handle properties
+    ncol = _default(ncols, ncol) # may still be None, wait till later
+    frameon = _default(frame, frameon)
+    if frameon is not None:
+        kwargs.update({'frameon':frameon})
+    kwargs.update({'prop': {'family': rc['fontname']}}) # 'prop' can be a FontProperties object or a dict for the kwargs
+    # Legend text and handle properties
     hsettings = {}
     for candidate in ['linewidth', 'color']: # candidates for modifying legend objects
         if candidate in kwargs:
             hsettings[candidate] = kwargs.pop(candidate)
-    # Font name; 'prop' can be a FontProperties object or a dict for the kwargs
-    # to instantiate one.
-    kwargs.update({'prop': {'family': rc['fontname']}})
+    # Legend entry for colormap object
+    for i,handle in enumerate(handles):
+        if hasattr(handle, 'get_facecolor') or not hasattr(handle, 'get_cmap'): # latter is for scatter (TODO: add cmap_wrapper for scatter?)
+            continue
+        warnings.warn('Getting legend entry from colormap.')
+        size = np.mean(handle.get_sizes())
+        cmap = handle.get_cmap()
+        handles[i] = self.scatter([0], [0], markersize=size,
+                                color=[cmap(0.5)],
+                                label=handle.get_label())
 
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
@@ -1403,32 +1411,20 @@ def legend_wrapper(self, handles=None, align=None, order='C',
             raise ValueError('No axes artists with labels were found.')
     elif not handles:
         raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
-    for i,handle in enumerate(handles):
-        if not hasattr(handle, 'get_cmap') or hasattr(handle, 'get_facecolor'): # latter is for scatter (TODO: add cmap_wrapper for scatter?)
-            continue
-        # Make sure we sample the *center* of the colormap
-        warnings.warn('Getting legend entry from colormap.')
-        size = np.mean(handle.get_sizes())
-        cmap = handle.get_cmap()
-        handles[i] = self.scatter([0], [0], markersize=size,
-                                color=[cmap(0.5)],
-                                label=handle.get_label())
+    # Mange input
     list_of_lists = not isinstance(handles[0], martist.Artist)
     if align is None: # automatically guess
         align = not list_of_lists
-    else: # standardize format based on input
-        if not align and not list_of_lists: # separate into columns
-            ncol = kwargs.pop('ncol', 3)
-            handles = [handles[i*ncol:(i+1)*ncol]
-                        for i in range(len(handles))] # to list of iterables
-            list_of_lists = True
-        elif not align and list_of_lists and 'ncol' in kwargs:
-            kwargs.pop('ncol')
-            warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
-        if align and list_of_lists: # unfurl, because we just want one legend!
-            handles = [handle for sublist in handles for handle in sublist]
-            list_of_lists = False # no longer is list of lists
-    # Remove empty lists... pops up in some examples, not sure how
+    elif align and list_of_lists: # standardize format based on input
+        handles = [handle for sublist in handles for handle in sublist]
+        list_of_lists = False # no longer is list of lists
+    elif not align and not list_of_lists:
+        list_of_lists = True
+        ncol = _default(ncol, 3)
+        handles = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles))] # to list of iterables
+    elif not align and list_of_lists and ncol is not None:
+        warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
+    # Remove empty lists; pops up in some examples, not sure how
     handles = [sublist for sublist in handles if sublist]
 
     # Now draw legend, with two options
@@ -1437,15 +1433,13 @@ def legend_wrapper(self, handles=None, align=None, order='C',
     if align:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
-        if 'ncol' not in kwargs:
-            kwargs['ncol'] = 3
+        ncol = _default(ncol, 1)
         if order=='C':
             newhandles = []
-            ncol = kwargs['ncol'] # number of columns
             handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
             nrowsmax, nfinalrow = len(handlesplit), len(handlesplit[-1]) # max possible row count, and columns in final row
             # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
-            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(kwargs['ncol']-nfinalrow)
+            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(ncol-nfinalrow)
             for col,nrow in enumerate(nrows): # iterate through cols
                 newhandles.extend(handlesplit[row][col] for row in range(nrow))
             handles = newhandles

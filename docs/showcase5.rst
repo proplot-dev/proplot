@@ -34,9 +34,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_105_0.png
-   :width: 576px
-   :height: 212px
+.. image:: showcase/showcase_106_0.svg
 
 
 .. code:: ipython3
@@ -46,9 +44,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_106_0.png
-   :width: 576px
-   :height: 212px
+.. image:: showcase/showcase_107_0.svg
 
 
 .. code:: ipython3
@@ -58,9 +54,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_107_0.png
-   :width: 576px
-   :height: 212px
+.. image:: showcase/showcase_108_0.svg
 
 
 In light of the above, ProPlot adds the new
@@ -85,15 +79,11 @@ non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_109_1.png
-   :width: 748px
-   :height: 249px
+.. image:: showcase/showcase_110_1.svg
 
 
 
-.. image:: showcase/showcase_109_2.png
-   :width: 748px
-   :height: 245px
+.. image:: showcase/showcase_110_2.svg
 
 
 Table of colormaps
@@ -127,9 +117,20 @@ with poor, perceptually un-uniform transitions were thrown out.
 
 
 
-.. image:: showcase/showcase_112_1.png
+.. image:: showcase/showcase_113_1.png
    :width: 436px
    :height: 4333px
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    f = plot.cmap_show(31)
+
+
+
+
+.. image:: showcase/showcase_114_1.svg
 
 
 Table of color cycles
@@ -160,9 +161,7 @@ constructor function. See below for details.
 
 
 
-.. image:: showcase/showcase_115_0.png
-   :width: 540px
-   :height: 1615px
+.. image:: showcase/showcase_117_0.svg
 
 
 Table of colors
@@ -199,9 +198,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_118_0.png
-   :width: 720px
-   :height: 1316px
+.. image:: showcase/showcase_120_0.svg
 
 
 .. code:: ipython3
@@ -211,9 +208,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_119_0.png
-   :width: 630px
-   :height: 225px
+.. image:: showcase/showcase_121_0.svg
 
 
 On-the-fly colormaps
@@ -259,9 +254,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_122_1.png
-   :width: 544px
-   :height: 334px
+.. image:: showcase/showcase_124_1.svg
 
 
 You can generate your own
@@ -281,7 +274,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axcolorbars='b', axwidth=3.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, axcolorbars='b', axwidth=3, aspect=1.5)
     ax = axs[0]
     m = ax.contourf(np.random.rand(10,10),
                    cmap={'h':['red-120', 'red+90'], 'c':[50, 70, 30], 'l':[20, 100], 'space':'hcl'},
@@ -299,9 +292,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_124_0.png
-   :width: 724px
-   :height: 345px
+.. image:: showcase/showcase_126_0.svg
 
 
 In the below example, monochromatic colormaps are built from registered
@@ -327,7 +318,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_126_0.svg
+.. image:: showcase/showcase_128_0.svg
 
 
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
@@ -342,16 +333,14 @@ colormap.
     f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
     data = np.random.rand(50,50).cumsum(axis=0) - 50
     for ax,cut in zip(axs,(0, 0.1, 0.2)):
-        m = ax.contourf(data, cmap='PurplePink', cmap_kw={'cut':cut}, levels=12)
+        m = ax.contourf(data, cmap='PurplePink', cmap_kw={'cut':cut}, levels=13)
         ax.format(xlabel='x axis', ylabel='y axis', title=f'cut = {cut}',
                   suptitle='Cutting out the central colors from a diverging colormap')
         ax.bpanel.colorbar(m, locator='null')
 
 
 
-.. image:: showcase/showcase_128_0.png
-   :width: 652px
-   :height: 287px
+.. image:: showcase/showcase_130_0.svg
 
 
 Cyclic colormaps are also easy to modify. Just pass the ``shift``
@@ -372,9 +361,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_130_0.png
-   :width: 652px
-   :height: 287px
+.. image:: showcase/showcase_132_0.svg
 
 
 It is also easy to change the “gamma” of perceptually uniform colormap
@@ -400,9 +387,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_132_0.png
-   :width: 652px
-   :height: 424px
+.. image:: showcase/showcase_134_0.svg
 
 
 On-the-fly color cycles
@@ -430,7 +415,7 @@ every time you import ProPlot. See `~proplot.colortools.Cycle` and
 
 
 
-.. image:: showcase/showcase_135_0.svg
+.. image:: showcase/showcase_137_0.svg
 
 
 Also note that colormaps and color cycles are totally interchangeable!
@@ -447,10 +432,10 @@ See `~proplot.colors.Colormap` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, colorbars='b', span=False, axwidth=3, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, colorbars='b', span=False, axwidth=2.5, aspect=1.5)
     m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
     f.bpanel[0].colorbar(m, label='clabel', formatter='%.1f')
-    lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5), cycle_kw={'left':0.3}, lw=5)
+    lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5, 90), cycle_kw={'left':0.3}, lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap with colorbar')
     axs[1].format(title='Colormap as cycler with "colorbar legend"')
@@ -462,9 +447,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_137_1.png
-   :width: 619px
-   :height: 311px
+.. image:: showcase/showcase_139_1.svg
 
 
 Flexible identification
@@ -491,9 +474,7 @@ example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
 
 
 
-.. image:: showcase/showcase_139_0.png
-   :width: 544px
-   :height: 478px
+.. image:: showcase/showcase_141_0.svg
 
 
 Sub-sampling
@@ -510,26 +491,26 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=4, axcolorbars='r', share=False)
+    f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=3.5, axcolorbars='r', share=False)
     m = axs[0].pcolormesh(np.random.rand(10,10), cmap='thermal', levels=np.linspace(0, 1, 101))
     axs[0].rpanel.colorbar(m, label='colormap', locator=0.2)
     axs[0].format(title='The "thermal" colormap')
     l = []
     for idx in plot.arange(0, 1, 0.1):
-        l += axs[1].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('thermal', idx), label=f'idx {idx:.1f}')
+        h = axs[1].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('thermal', idx), label=f'idx {idx:.1f}')
+        l.append(h)
     axs[1].rpanel.legend(l, ncols=1)
     axs[1].format(title='Colors from the "thermal" colormap')
     l = []
     idxs = np.arange(7)
     np.random.shuffle(idxs)
     for idx in idxs:
-        l += axs[2].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('ggplot', idx), label=f'idx {idx:.0f}')
+        h = axs[2].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('ggplot', idx), label=f'idx {idx:.0f}')
+        l.append(h)
     axs[2].rpanel.legend(l, ncols=1)
     axs[2].format(title='Colors from the "ggplot" color cycle')
     axs.format(xlocator='null', abc=True, abcpos='li', suptitle='Getting individual colors from colormaps and cycles')
 
 
 
-.. image:: showcase/showcase_142_0.png
-   :width: 431px
-   :height: 582px
+.. image:: showcase/showcase_144_0.svg
