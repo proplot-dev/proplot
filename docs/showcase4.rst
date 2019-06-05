@@ -57,7 +57,7 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: showcase/showcase_90_1.svg
+.. image:: showcase/showcase_91_1.svg
 
 
 Table of basemap projections
@@ -88,7 +88,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_93_0.svg
+.. image:: showcase/showcase_94_0.svg
 
 
 Geophysical data
@@ -141,11 +141,11 @@ These features are powered by the `~proplot.axes.cartopy_gridfix` and
 
 
 
-.. image:: showcase/showcase_96_1.svg
+.. image:: showcase/showcase_97_1.svg
 
 
 
-.. image:: showcase/showcase_96_2.svg
+.. image:: showcase/showcase_97_2.svg
 
 
 Projection formatting
@@ -183,7 +183,7 @@ details.
 
 
 
-.. image:: showcase/showcase_99_0.svg
+.. image:: showcase/showcase_100_0.svg
 
 
 .. code:: ipython3
@@ -200,7 +200,7 @@ details.
 
 
 
-.. image:: showcase/showcase_100_0.svg
+.. image:: showcase/showcase_101_0.svg
 
 
 Zooming into projections
@@ -229,6 +229,6 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_102_0.svg
+.. image:: showcase/showcase_103_0.svg
 
 

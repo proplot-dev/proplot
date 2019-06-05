@@ -47,7 +47,7 @@ never the same (see below).
 
 
 
-.. image:: showcase/showcase_34_1.svg
+.. image:: showcase/showcase_35_1.svg
 
 
 `~proplot.axes.cmap_wrapper` also adds the ability to label
@@ -72,7 +72,7 @@ label grid boxes in `~matplotlib.axes.Axes.pcolor` and
 
 
 
-.. image:: showcase/showcase_36_0.svg
+.. image:: showcase/showcase_37_0.svg
 
 
 `~proplot.axes.cmap_wrapper` also lets you provide arbitrarily spaced,
@@ -97,7 +97,7 @@ normalizer from the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: showcase/showcase_38_0.svg
+.. image:: showcase/showcase_39_0.svg
 
 
 `~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
@@ -135,7 +135,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: showcase/showcase_40_1.svg
+.. image:: showcase/showcase_41_1.svg
 
 
 Finally, `~proplot.axes.cmap_wrapper` fixes the well-documented
@@ -159,7 +159,7 @@ feature is disabled (see below).
 
 
 
-.. image:: showcase/showcase_42_0.svg
+.. image:: showcase/showcase_43_0.svg
 
 
 Colorbars and legends
@@ -194,7 +194,7 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_45_0.svg
+.. image:: showcase/showcase_46_0.svg
 
 
 A particularly useful `~proplot.axes.colorbar_factory` feature is that
@@ -225,7 +225,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_47_1.svg
+.. image:: showcase/showcase_48_1.svg
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -263,7 +263,7 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_49_0.svg
+.. image:: showcase/showcase_50_0.svg
 
 
 Axes panels
@@ -290,7 +290,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_52_0.svg
+.. image:: showcase/showcase_53_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -327,7 +327,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_54_1.svg
+.. image:: showcase/showcase_55_1.svg
 
 
 Figure panels
@@ -361,7 +361,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_57_1.svg
+.. image:: showcase/showcase_58_1.svg
 
 
 .. code:: ipython3
@@ -383,7 +383,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_58_0.svg
+.. image:: showcase/showcase_59_0.svg
 
 
 Stacked panels
@@ -423,6 +423,6 @@ primary axes.
 
 
 
-.. image:: showcase/showcase_60_0.svg
+.. image:: showcase/showcase_61_0.svg
 
 

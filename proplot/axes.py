@@ -10,8 +10,8 @@ You should focus on the ``format`` and ``smart_update`` methods:
 
 `BaseAxes.format` calls the ``smart_update`` methods in turn.
 This is your one-stop-shop for changing axes settings like
-*x* and *y* axis limits, axis labels, tick locations, tick label
-format, grid lines, scales, titles, a-b-c labelling, adding
+*x* and *y* axis limits, axis labels, tick locations, tick labels
+grid lines, axis scales, titles, a-b-c labelling, adding
 geographic features, and much more.
 
 .. raw:: html
@@ -885,8 +885,8 @@ class XYAxes(BaseAxes):
         xminorlocator_kw={}, yminorlocator_kw={},
         **kwargs): # formatter
         """
-        Format the *x* and *y* axis labels, tick locations, tick label
-        format, scales, and more.
+        Format the *x* and *y* axis labels, tick locations, tick labels,
+        axis scales, and more.
 
         Parameters
         ----------
@@ -1116,8 +1116,8 @@ class XYAxes(BaseAxes):
                 })
             if color is not None:
                 kw['color'] = color
-            if isinstance(self, mproj.PolarAxes):
-                sides = ('inner','polar') if name=='x' else ('start','end')
+            if isinstance(self, mproj.PolarAxes): # names are 'radius' and 'theta'
+                sides = ('inner','polar') if name=='radius' else ('start','end')
             else:
                 sides = ('bottom','top') if name=='x' else ('left','right')
             spines = [self.spines[s] for s in sides]
@@ -1842,8 +1842,20 @@ class PolarAxes(XYAxes, mproj.PolarAxes):
         """
         super().__init__(*args, **kwargs)
 
-    def smart_update(self, *args, **kwargs):
-        """Calls `BaseAxes.smart_update`."""
+    def smart_update(self, *args, ytickloc=None, **kwargs):
+        """
+        Format the tick locations, tick labels, grid lines, and more.
+        The keyword args are idential to those in `XYAxes.smart_update`,
+        except the "theta" and "radius" axis properties respectively
+        correspond to ``x`` and ``y`` keyword arguments.
+
+        To change the azimuthal position of radius labels, use ``ytickloc``.
+        For everything else, see `XYAxes.smart_update`.
+        """
+        # Extra stuff
+        if ytickloc is not None:
+            self.set_rlabel_position(ytickloc)
+        # Call parent
         super().smart_update(*args, **kwargs)
 
     name = 'propolar'

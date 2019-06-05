@@ -308,20 +308,30 @@ axes **simultaneously** (as in the below example).
 .. image:: showcase/showcase_20_0.svg
 
 
+Formatting also works with polar axes. Just use
+`~proplot.sublots.subplots` to set the global projection
+``proj='polar'`` or an axes-specific projection ``proj={1:'polar'}``, as
+with :ref:`Map projection axes`. The `~proplot.axes.PolarAxes`
+`~proplot.axes.PolarAxes.format` keyword args are identical to the
+`~proplot.axes.XYAxes` `~proplot.axes.XYAxes.format` keyword args.
+See :ref:`Cartesian axes` for details.
+
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True, axwidth=1.5)
-    axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(0,10), xlocator=2,
-              ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'ccc', 'dd', 'e'),
-              title='Axes title', titlepos='co', suptitle='Super title',
-              abc=True, abcpos='il', abcformat='a.',
-              ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
-              collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
+    import numpy as np
+    # Figure
+    f, axs = plot.subplots(proj='polar', ncols=2)
+    axs.format(suptitle='Polar axes demo', collabels=['Line 1', 'Line 2'])
+    # Plot and format
+    N = 20
+    axs.plot(np.linspace(0, 2*np.pi, N), np.random.rand(N,5).cumsum(axis=0), cycle='ggplot', lw=3)
+    axs.format(xlabel='hello', linewidth=1.2, ticklabelsize=9, ticklabelweight='bold',
+               xformatter='pi', ylocator=2, ytickloc=45)
 
 
 
-.. image:: showcase/showcase_21_0.svg
+.. image:: showcase/showcase_22_0.svg
 
 
 Automatic formatting
@@ -376,7 +386,7 @@ section. For more on panels, see the :ref:`Axes panels` section.
 
 
 
-.. image:: showcase/showcase_24_0.svg
+.. image:: showcase/showcase_25_0.svg
 
 
 .. code:: ipython3
@@ -412,7 +422,7 @@ section. For more on panels, see the :ref:`Axes panels` section.
 
 
 
-.. image:: showcase/showcase_25_0.svg
+.. image:: showcase/showcase_26_0.svg
 
 
 Rc settings control
@@ -465,7 +475,7 @@ For more information, see the `~proplot.rcmod` documentation.
 
 
 
-.. image:: showcase/showcase_27_1.svg
+.. image:: showcase/showcase_28_1.svg
 
 
 The `~proplot.rcmod.rc` object can also be used to change the default
@@ -504,6 +514,6 @@ professional than the default “DejaVu Sans”. See the
 
 
 
-.. image:: showcase/showcase_29_0.svg
+.. image:: showcase/showcase_30_0.svg
 
 
