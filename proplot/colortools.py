@@ -1437,10 +1437,9 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
     Parameters
     ----------
     *args
-        Either ``args``, ``(*args, samples)``, or ``(*args, samples, fade)``.
-        ``args`` are passed to `Colormap` as ``Colormap(*args)``, ``samples``
-        is used in this function (see below), and ``fade`` is passed as a keyword
-        argument to `Colormap`.
+        Either ``args`` or ``(*args, samples)``, where ``args`` are passed to
+        `Colormap` as ``Colormap(*args)`` and ``samples`` is used in this
+        function to sample smooth colormaps (see below).
     samples : float or list of float, optional
         For a `~matplotlib.colors.ListedColormap`, the maximum number of colors
         to select from the list. For a `~matplotlib.colors.LinearSegmentedColormap`,

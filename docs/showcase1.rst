@@ -308,32 +308,6 @@ axes **simultaneously** (as in the below example).
 .. image:: showcase/showcase_20_0.svg
 
 
-Formatting also works with polar axes. Just use
-`~proplot.sublots.subplots` to set the global projection
-``proj='polar'`` or an axes-specific projection ``proj={1:'polar'}``, as
-with :ref:`Map projection axes`. The `~proplot.axes.PolarAxes`
-`~proplot.axes.PolarAxes.format` keyword args are identical to the
-`~proplot.axes.XYAxes` `~proplot.axes.XYAxes.format` keyword args.
-See :ref:`Cartesian axes` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    # Figure
-    f, axs = plot.subplots(proj='polar', ncols=2)
-    axs.format(suptitle='Polar axes demo', collabels=['Line 1', 'Line 2'])
-    # Plot and format
-    N = 20
-    axs.plot(np.linspace(0, 2*np.pi, N), np.random.rand(N,5).cumsum(axis=0), cycle='ggplot', lw=3)
-    axs.format(xlabel='hello', linewidth=1.2, ticklabelsize=9, ticklabelweight='bold',
-               xformatter='pi', ylocator=2, ytickloc=45)
-
-
-
-.. image:: showcase/showcase_22_0.svg
-
-
 Automatic formatting
 --------------------
 
@@ -378,15 +352,15 @@ section. For more on panels, see the :ref:`Axes panels` section.
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
-    ax.plot(da, cycle=(plot.shade('sky', 0.2), 90), lw=3, colorbar='ll', colorbar_kw={'length':'3cm'})
+    ax.plot(da, cycle=plot.shade('sky', 0.2), cycle_kw={'fade':90}, lw=3, colorbar='ll', colorbar_kw={'length':'3cm'})
     # Plot Dataframe
     ax = axs[1]
-    ax.plot(df, cycle=(plot.shade('caribbean green', 0.15), 90), legend='uc', legend_kw={'frameon':True}, lw=3)
+    ax.plot(df, cycle=plot.shade('caribbean green', 0.15), cycle_kw={'fade':90}, legend='uc', legend_kw={'frameon':True}, lw=3)
     ax.format(xrotation=45)
 
 
 
-.. image:: showcase/showcase_25_0.svg
+.. image:: showcase/showcase_23_0.svg
 
 
 .. code:: ipython3
@@ -410,7 +384,7 @@ section. For more on panels, see the :ref:`Axes panels` section.
     df.columns.name = 'time (days)'
     # Figure
     # We must make room for the axes panels during subplots call!
-    f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=2, share=False, span=False)
+    f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=1.8, share=False, span=False)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
     ax = axs[1]
@@ -422,7 +396,7 @@ section. For more on panels, see the :ref:`Axes panels` section.
 
 
 
-.. image:: showcase/showcase_26_0.svg
+.. image:: showcase/showcase_24_0.svg
 
 
 Rc settings control
@@ -459,7 +433,7 @@ For more information, see the `~proplot.rcmod` documentation.
     values = np.arange(1,M+1)
     for i,ax in enumerate(axs):
         data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
-        lines = ax.plot(data, linewidth=3, cycle=('C0','C1',5,80)) # see "Changing the color cycle" for details
+        lines = ax.plot(data, linewidth=3, cycle=('C0','C1',data.shape[1]), cycle_kw={'fade':80}) # see "Changing the color cycle" for details
     axs.format(ytickloc='both', ycolor='blue7',
                hatch='xxx', hatchcolor='w',
                xlabel='x label', ylabel='y label',
@@ -475,7 +449,7 @@ For more information, see the `~proplot.rcmod` documentation.
 
 
 
-.. image:: showcase/showcase_28_1.svg
+.. image:: showcase/showcase_26_1.svg
 
 
 The `~proplot.rcmod.rc` object can also be used to change the default
@@ -514,6 +488,6 @@ professional than the default “DejaVu Sans”. See the
 
 
 
-.. image:: showcase/showcase_30_0.svg
+.. image:: showcase/showcase_28_0.svg
 
 

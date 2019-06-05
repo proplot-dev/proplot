@@ -852,6 +852,11 @@ class XYAxes(BaseAxes):
             obj = wrappers._check_centers(self, obj)
         elif attr in wrappers._edges_methods:
             obj = wrappers._check_edges(self, obj)
+        # Parse input
+        if attr in wrappers._2d_methods:
+            obj = wrappers._parse_2d_(self, obj)
+        elif attr in wrappers._1d_methods:
+            obj = wrappers._parse_1d_(self, obj)
         return obj
 
     def smart_update(self,
@@ -1954,11 +1959,16 @@ class CartopyAxes(MapAxes, GeoAxes):
                 obj = wrappers._check_edges(self, obj)
             else:
                 obj = wrappers._check_centers(self, obj)
-        # Standardized input
+        # Standardized keywords
         if attr in wrappers._transform_methods:
             obj = wrappers._cartopy_transform(self, obj)
         elif attr in wrappers._crs_methods:
             obj = wrappers._cartopy_crs(self, obj)
+        # Parse input
+        if attr in wrappers._2d_methods:
+            obj = wrappers._parse_2d_(self, obj)
+        elif attr in wrappers._1d_methods:
+            obj = wrappers._parse_1d_(self, obj)
         return obj
 
     def smart_update(self, grid=None, **kwargs):
@@ -2193,17 +2203,16 @@ class BasemapAxes(MapAxes):
         `~proplot.wrappers.basemap_latlon`, `~proplot.wrappers.check_centers`,
         `~proplot.wrappers.check_edges`, and `~proplot.wrappers.basemap_gridfix` for more info.
 
-        Wraps all plotting methods with ``_wrapper_m_call`` and
-        ``_wrapper_m_norecurse``, which (former) calls methods on the
-        `~mpl_toolkits.basemap.Basemap` instance and (latter) prevents
-        recursion issues arising from internal calls to axes methods by
-        the `~mpl_toolkits.basemap.Basemap` instance.
+        Wraps all plotting methods with ``_m_call`` and ``_m_norecurse``,
+        which (former) calls methods on the `~mpl_toolkits.basemap.Basemap`
+        instance and (latter) prevents recursion issues arising from internal
+        calls to axes methods by the `~mpl_toolkits.basemap.Basemap` instance.
         """
         obj = super().__getattribute__(attr, *args)
         if attr in wrappers._latlon_methods or attr in wrappers._edges_methods \
                 or attr in wrappers._centers_methods:
             # Call Basemap method at bottom level
-            obj = wrappers._wrapper_m_call(self, obj)
+            obj = wrappers._m_call(self, obj)
             # Color wrappers
             if attr in wrappers._cmap_methods:
                 obj = wrappers._cmap_wrapper(self, obj)
@@ -2220,11 +2229,16 @@ class BasemapAxes(MapAxes):
                     obj = wrappers._check_edges(self, obj)
                 else:
                     obj = wrappers._check_centers(self, obj)
-            # Standardized input wrappers
+            # Standardized input
             if attr in wrappers._latlon_methods:
                 obj = wrappers._basemap_latlon(self, obj)
+            # Parse input
+            if attr in wrappers._2d_methods:
+                obj = wrappers._parse_2d_(self, obj)
+            elif attr in wrappers._1d_methods:
+                obj = wrappers._parse_1d_(self, obj)
             # Recursion fix at top level
-            obj = wrappers._wrapper_m_norecurse(self, obj)
+            obj = wrappers._m_norecurse(self, obj)
         return obj
 
     def smart_update(self, grid=None, **kwargs):

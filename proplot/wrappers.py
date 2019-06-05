@@ -77,6 +77,8 @@ _loc_translate = {
 # TODO: 'quiver', 'streamplot' for cmap?
 _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _edges_methods = ('pcolor', 'pcolormesh',)
+_2d_methods = (*_centers_methods, *_edges_methods)
+_1d_methods = ('plot', 'scatter')
 _cycle_methods  = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf',
@@ -177,8 +179,8 @@ def _auto_label(data, units=True):
             label = str(df.columns[0])
     return label.strip()
 
-def _parse_1d(self, args):
-    """Gets 1d or list of 1d data. Accepts 1d DataArray or Series, or
+def _parse_1d(self, func, *args, **kwargs):
+    """Accepts 1d DataArray or Series, or
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
@@ -250,9 +252,9 @@ def _parse_1d(self, args):
             if label:
                 kw['title'] = label
         self.format(**kw)
-    return (x, y, *extra)
+    return func(x, y, *extra, **kwargs)
 
-def _parse_2d(self, args, order='C'):
+def _parse_2d(self, func, *args, order='C', **kwargs):
     """Gets 2d data. Accepts ndarray and DataArray. Used by `check_centers`
     and `check_edges`, which are used for all 2d plot methods."""
     # Sanitize input
@@ -313,7 +315,7 @@ def _parse_2d(self, args, order='C'):
         if title:
             kw['title'] = title
         self.format(**kw)
-    return x, y, Zs
+    return func(x, y, *Zs, **kwargs)
 
 #------------------------------------------------------------------------------
 # 2D plot wrappers
@@ -334,7 +336,7 @@ def check_centers(self, func, *args, order='C', **kwargs):
     * x, y, U, V
     """
     # Checks whether sizes match up, checks whether graticule was input
-    x, y, Zs = _parse_2d(self, args, order=order)
+    x, y, *Zs = args
     xlen, ylen = x.shape[-1], y.shape[0]
     for Z in Zs:
         if Z.ndim!=2:
@@ -371,7 +373,7 @@ def check_edges(self, func, *args, order='C', **kwargs):
     """
     # Checks that sizes match up, checks whether graticule was input
     # return func(*args, **kwargs)
-    x, y, Zs = _parse_2d(self, args, order=order)
+    x, y, *Zs = args
     xlen, ylen = x.shape[-1], y.shape[0]
     for Z in Zs:
         if Z.ndim!=2:
@@ -411,10 +413,8 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
         `~matplotlib.lines.Line2D` properties.
     """
     # Parse input
-    args_orig = args
-    args = _parse_1d(self, args)
     if len(args) not in (2,3): # e.g. with fmt string
-        raise ValueError(f'Expected 1-3 plot args, got {len(args_orig)}')
+        raise ValueError(f'Expected 1-3 plot args, got {len(args)}')
     # Make normal boring lines
     if cmap is None:
         lines = func(*args, **kwargs)
@@ -446,8 +446,6 @@ def scatter_wrapper(self, func, *args,
     **kwargs
         Passed to `~matplotlib.axes.Axes.scatter`.
     """
-    # Parse remaining input
-    args = _parse_1d(self, args)
     # Manage input arguments
     args = [*args] # convert to list
     if len(args)>3:
@@ -553,7 +551,7 @@ def text_wrapper(self, func, x, y, text,
 # Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
 # this will cause basemap's self.m.pcolormesh etc. to use *custom* version and
 # cause suite of weird errors. Prevent this recursion with the below decorator.
-def _wrapper_m_call(self, func):
+def _m_call(self, func):
     """Docorator that calls the basemap version of the function of the same name."""
     name = func.__name__
     @functools.wraps(func)
@@ -561,7 +559,7 @@ def _wrapper_m_call(self, func):
         return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
     return wrapper
 
-def _wrapper_m_norecurse(self, func):
+def _m_norecurse(self, func):
     """Decorator to prevent recursion in Basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
     @functools.wraps(func)
@@ -576,7 +574,7 @@ def _wrapper_m_norecurse(self, func):
             result = object.__getattribute__(self, name)(*args, **kwargs)
         else:
             # Return the version we have wrapped, which itself will call the
-            # basemap.Basemap method thanks to the _wrapper_m_call wrapper.
+            # basemap.Basemap method thanks to the _m_call wrapper.
             self._recurred = True
             result = func(*args, **kwargs)
         self._recurred = False # cleanup, in case recursion never occurred
@@ -861,8 +859,8 @@ def _get_panel(self, loc):
 
 @_expand_methods_list
 def cycle_wrapper(self, func, *args,
-        label=None, labels=None, values=None,
         cycle=None, cycle_kw={},
+        label=None, labels=None, values=None,
         legend=None, legend_kw={},
         colorbar=None, colorbar_kw={},
         **kwargs):
@@ -872,11 +870,11 @@ def cycle_wrapper(self, func, *args,
 
     Parameters
     ----------
-    cycle : None or cycle spec, optional
+    cycle : None or cycle-spec, optional
         The cycle specifer, passed to the `~proplot.colortools.Cycle`
         constructor. If the returned list of colors is unchanged from the
-        current axes color cycler, the axes cycle will not be reset to the first
-        position.
+        current axes color cycler, the axes cycle will **not** be reset to the
+        first position.
     cycle_kw : dict-like, optional
         Passed to `~proplot.colortools.Cycle`.
     labels, values : None or list, optional
@@ -936,24 +934,31 @@ def cycle_wrapper(self, func, *args,
     The `set_prop_cycle` command modifies underlying 
     `_get_lines` and `_get_patches_for_fill`.
     """
+    # Test input
+    # NOTE: Since _plot_wrapper and _scatter_wrapper come before this, input
+    # will be standardized, so below is valid.
+    x, y, *args = args
+    is1d = (y.ndim==1)
+
     # Determine and temporarily set cycler
     # WARNING: Axes cycle has no getter, only setter (set_prop_cycle), which
     # sets a 'prop_cycler' attribute on the hidden _get_lines and
-    # _get_patches_for_fill objects. This is the only way to query the "current"
-    # axes cycler! Could also have wrapped set_prop_cycle but that calls
-    # several secondary methods, may get messy.
+    # _get_patches_for_fill objects. Only way to query current axes cycler!
+    # NOTE: Should not wrap set_prop_cycle because it calls several secondary
+    # methods, would get messy and fragile.
     if cycle is not None:
         # Get the new group of colors
         if not np.iterable(cycle) or isinstance(cycle, str):
             cycle = cycle,
+        if not is1d and y.shape[1]>1: # apply new default
+            cycle_kw['samples'] = y.shape[1]
         cycle = colortools.Cycle(*cycle, **cycle_kw)
-        # Compare to the original group of colors, and only reset the
-        # cycle if this group of colors is new
+        # Compare to the original group of colors, reset if different
         # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length,
         # so we must cycle over it with next(). We try calling next() the same
-        # number of times as the length of user input cycle.
-        # NOTE: If the input cycle *is* in fact the same, below does not reset
-        # the color position, as it cycles us back to the original position!
+        # number of times as the length of user input cycle. If the input cycle
+        # *is* in fact the same, below does not reset the color position, cycles
+        # us back to start!
         i = 0
         cycler = self._get_lines.prop_cycler
         cycle_orig = []
@@ -965,11 +970,6 @@ def cycle_wrapper(self, func, *args,
         if {*cycle_orig} != {*cycle} or cycle_kw.get('shift', None): # order is immaterial
             self.set_prop_cycle(color=cycle)
 
-    # Test input
-    # NOTE: Since _plot_wrapper and _scatter_wrapper come before this, input
-    # will be standardized, so below is valid.
-    x, y, *args = args
-    is1d = (y.ndim==1)
     # Iterate
     labels = _default(values, labels, label, None)
     if isinstance(labels, str) or labels is None:
@@ -1429,7 +1429,7 @@ def legend_wrapper(self, handles=None, align=None, order='C',
     if align:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
-        ncol = _default(ncol, 1)
+        ncol = _default(ncol, 3)
         if order=='C':
             newhandles = []
             handlesplit = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
@@ -1442,7 +1442,7 @@ def legend_wrapper(self, handles=None, align=None, order='C',
         # Finally draw legend, mimicking row-major ordering
         if loc is not None:
             kwargs['loc'] = _loc_translate.get(loc, loc)
-        leg = maxes.Axes.legend(self, handles=handles, **kwargs)
+        leg = maxes.Axes.legend(self, ncol=ncol, handles=handles, **kwargs)
         legends = [leg]
 
     # 2) Separate legend for each row
@@ -1874,7 +1874,11 @@ def _simple_wrapper(driver):
             return driver(self, *args, **kwargs)
         return wrapper
     return decorator
-# Build wrappers
+# Hidden wrappers
+# Also _m_call and _m_norecurse
+_parse_1d_ = _wrapper(_parse_1d)
+_parse_2d_ = _wrapper(_parse_2d)
+# Documented
 _check_centers = _wrapper(check_centers)
 _check_edges   = _wrapper(check_edges)
 _basemap_gridfix   = _wrapper(basemap_gridfix)

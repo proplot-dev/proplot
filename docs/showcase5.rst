@@ -34,7 +34,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_107_0.svg
+.. image:: showcase/showcase_109_0.svg
 
 
 .. code:: ipython3
@@ -44,7 +44,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_108_0.svg
+.. image:: showcase/showcase_110_0.svg
 
 
 .. code:: ipython3
@@ -54,7 +54,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_109_0.svg
+.. image:: showcase/showcase_111_0.svg
 
 
 In light of the above, ProPlot adds the new
@@ -79,11 +79,11 @@ non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_111_1.svg
+.. image:: showcase/showcase_113_1.svg
 
 
 
-.. image:: showcase/showcase_111_2.svg
+.. image:: showcase/showcase_113_2.svg
 
 
 Table of colormaps
@@ -117,7 +117,32 @@ with poor, perceptually un-uniform transitions were thrown out.
 
 
 
-.. image:: showcase/showcase_114_1.svg
+.. image:: showcase/showcase_116_1.svg
+
+
+Note that all colormap and color cycle names are now
+**case-insensitive** – this was done by replacing the matplotlib
+colormap dictionary with an instance of the magic
+`~proplot.colortools.CmapDict` class. You can also select reversed
+diverging colormaps by their “reversed” name – for example, ``'BuRd'``
+is equivalent to ``'RdBu_r'``.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    data = np.random.rand(10,10) - 0.5
+    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.3, aspect=1, axcolorbars='b', axcolorbars_kw={'hspace':0.2})
+    for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
+        ax = axs[i]
+        m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
+        ax.bpanel.colorbar(m, locator=0.2)
+        ax.format(xlocator='null', ylocator='null', title=cmap)
+    axs.format(suptitle='Flexible naming specification for diverging colormaps')
+
+
+
+.. image:: showcase/showcase_118_0.svg
 
 
 Table of color cycles
@@ -148,7 +173,7 @@ constructor function. See below for details.
 
 
 
-.. image:: showcase/showcase_117_0.svg
+.. image:: showcase/showcase_121_0.svg
 
 
 Table of colors
@@ -185,7 +210,7 @@ selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_120_0.svg
+.. image:: showcase/showcase_124_0.svg
 
 
 .. code:: ipython3
@@ -195,7 +220,7 @@ selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_121_0.svg
+.. image:: showcase/showcase_125_0.svg
 
 
 On-the-fly colormaps
@@ -241,7 +266,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_124_1.svg
+.. image:: showcase/showcase_128_1.svg
 
 
 You can generate your own
@@ -279,7 +304,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_126_0.svg
+.. image:: showcase/showcase_130_0.svg
 
 
 In the below example, monochromatic colormaps are built from registered
@@ -305,7 +330,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_128_0.svg
+.. image:: showcase/showcase_132_0.svg
 
 
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
@@ -327,7 +352,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_130_0.svg
+.. image:: showcase/showcase_134_0.svg
 
 
 Cyclic colormaps are also easy to modify. Just pass the ``shift``
@@ -348,7 +373,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_132_0.svg
+.. image:: showcase/showcase_136_0.svg
 
 
 It is also easy to change the “gamma” of perceptually uniform colormap
@@ -374,7 +399,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_134_0.svg
+.. image:: showcase/showcase_138_0.svg
 
 
 On-the-fly color cycles
@@ -402,7 +427,7 @@ every time you import ProPlot. See `~proplot.colortools.Cycle` and
 
 
 
-.. image:: showcase/showcase_137_0.svg
+.. image:: showcase/showcase_141_0.svg
 
 
 Also note that colormaps and color cycles are totally interchangeable!
@@ -419,10 +444,11 @@ See `~proplot.colors.Colormap` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, colorbars='b', span=False, axwidth=2.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, colorbars='b', share=0, span=False, axwidth=2.5, aspect=1.5)
     m = axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=1), cmap='set5', levels=np.linspace(0,11,21))
     f.bpanel[0].colorbar(m, label='clabel', formatter='%.1f')
-    lines = axs[1].plot(20*np.random.rand(10,5), cycle=('reds', 5, 90), cycle_kw={'left':0.3}, lw=5)
+    data = (20*np.random.rand(10,10)-10).cumsum(axis=0)
+    lines = axs[1].plot(data, cycle='oranges', cycle_kw={'left':0.3}, lw=5)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Another colormap demo')
     axs[0].format(title='Color cycler as colormap with colorbar')
     axs[1].format(title='Colormap as cycler with "colorbar legend"')
@@ -434,38 +460,11 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_139_1.svg
+.. image:: showcase/showcase_143_1.svg
 
 
-Flexible identification
------------------------
-
-All colormap and color cycle names are now **case-insensitive** – this
-was done by replacing the matplotlib colormap dictionary with an
-instance of the magic `~proplot.colortools.CmapDict` class. You can
-also select reversed diverging colormaps by their “reversed” name – for
-example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    data = np.random.rand(10,10) - 0.5
-    f, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.6, aspect=1, axcolorbars='b', axcolorbars_kw={'hspace':0.2})
-    for i,cmap in enumerate(('RdBu', 'BuRd', 'RdBu_r', 'DryWet', 'WetDry', 'WetDry_r')):
-        ax = axs[i]
-        m = ax.pcolormesh(data, cmap=cmap, levels=np.linspace(-0.5,0.5,11))
-        ax.bpanel.colorbar(m, locator=0.2)
-        ax.format(xlocator='null', ylocator='null', title=cmap)
-    axs.format(suptitle='Flexible naming specification for diverging colormaps')
-
-
-
-.. image:: showcase/showcase_141_0.svg
-
-
-Sub-sampling
-------------
+Individual color sampling
+-------------------------
 
 If you want to draw an individual color from a smooth colormap or a
 color cycle, use ``color=(cmapname, position)`` or
@@ -500,4 +499,4 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_144_0.svg
+.. image:: showcase/showcase_146_0.svg
