@@ -57,8 +57,8 @@ Here are some highlights of the remaining features:
    or tertiary data. Panel widths always held fixed during "tight layout"
    scaling.
 *  Automatic axes formatting when `xarray.DataArray`, `pandas.DataFrame`,
-   or `pandas.Series` are passed to a plotting command, just like `xarray.DataArray.plot` and
-   `pandas.DataFrame.plot`.
+   or `pandas.Series` objects are passed to a plotting command, just like 
+   `xarray.DataArray.plot` and `DataFrame.plot`.
 *  Specify figure, axes, panel, etc. sizes with arbitrary physical units --
    not just inches or "relative" units.
 *  Easy setting customization with a user ``.proplotrc`` file. Option
