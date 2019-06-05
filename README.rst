@@ -51,6 +51,8 @@ The next most important utility is the ``format`` method, available on every axe
 
 Here are some highlights of the remaining features:
 
+*  Specify figure, axes, panel, etc. sizes with arbitrary physical units --
+   not just inches or "relative" units.
 *  A smarter "tight layout" feature. Figure width or height alternately
    scales so that subplot **aspect ratios** are fixed, inner space
    between subplots automatically scaled so subplot tick labels, etc. do
@@ -61,8 +63,6 @@ Here are some highlights of the remaining features:
 *  Automatic axes formatting when ``xarray.DataArray``, ``pandas.DataFrame``,
    or ``pandas.Series`` objects are passed to a plotting command, just like 
    ``xarray.DataArray.plot`` and ``DataFrame.plot``.
-*  Specify figure, axes, panel, etc. sizes with arbitrary physical units --
-   not just inches or "relative" units.
 *  Easy setting customization with a user ``.proplotrc`` file. Option
    to save custom colormaps, and they will be loaded every time on startup.
 *  Perceptually distinct named colors with easy-to-remember names,
