@@ -5,17 +5,11 @@ Matplotlib APIs
 ---------------
 
 Matplotlib has two APIs – the “pyplot” API (which is MATLAB-like), and
-the “object-oriented” API (which is more “pythonic”, more clear, more
-flexible, and you should consider using!).
-
-Contrary to the similar names, this package is not meant to be a pyplot
-replacement – it adds to the “object-oriented” API by subclassing
-matplotlib Artists classes, like `~matplotlib.axes.Axes` and
-`~matplotlib.figure.Figure`.
-
-Since `~matplotlib.pyplot` mostly just calls the object-oriented API
-under-the-hood, you can still use it to access some of ProPlot’s
-features – but this is discouraged.
+the “object-oriented” API (which is more “pythonic”). Contrary to the
+similar names, this package is not meant to be a pyplot replacement.
+ProPlot’s features are invoked with the “object-oriented” API thanks to
+subclasses of the `~matplotlib.axes.Axes` and
+`~matplotlib.figure.Figure` classes.
 
 .. code:: ipython3
 
@@ -321,8 +315,9 @@ The below examples showcase this feature for 1-dimensional and
 2-dimensional datasets. It also demonstrates automatic generation of
 colorbars and legends. For more on the ``colorbar`` and ``legend``
 keywords, see `~proplot.wrappers.cmap_wrapper`,
-`~proplot.wrappers.cycle_wrapper`, and the :ref:`Wrapped methods`
-section. For more on panels, see the :ref:`Axes panels` section.
+`~proplot.wrappers.cycle_wrapper`, and :ref:`2d plot wrappers` and
+:ref:`1d plot wrappers` sections. For more on panels, see the
+:ref:`Axes panels` section.
 
 .. code:: ipython3
 

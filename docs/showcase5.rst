@@ -95,9 +95,9 @@ ProPlot adds colormaps from a bunch of cool data viz projects. Use
 colormaps, as shown below.
 
 The “User” section is automatically populated with colormaps saved to
-your ``~/.proplot`` folder (see :ref:`On-the-fly colormaps`). You can
-make your own colormaps using the `~proplot.colortools.Colormap`
-constructor function. See below for details.
+your ``~/.proplot`` folder. A great way to save colormaps to this folder
+is using the `~proplot.colortools.Colormap` constructor function. See
+:ref:`On-the-fly colormaps` for details.
 
 The other sections break down the colormaps by category: original
 matplotlib maps, new ProPlot maps belonging to the

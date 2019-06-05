@@ -574,33 +574,38 @@ if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
 
 # List of colors with 'name' attribute
 class ColorCycle(list):
-    """Simply stores a list of colors, and adds a `name` attribute corresponding
-    to the registered name."""
     def __repr__(self):
         """Wraps the string representation."""
         return 'ColorCycle(' + super().__repr__() + ')'
+
+    def __getitem__(self, key):
+        """Cyclic getitem."""
+        return super().__getitem__(key % len(self))
+
     def __init__(self, list_, name):
-        self.name = name
+        """Simply stores a list of colors, and adds a `name` attribute
+        corresponding to the registered name."""
         super().__init__(list_)
+        self.name = name
 
 # Flexible colormap identification
 class CmapDict(dict):
-    """
-    Flexible, case-insensitive colormap identification. Replaces the
-    `matplotlib.cm.cmap_d` dictionary that stores registered colormaps.
-
-    Behaves like a dictionary, with three new features:
-
-    1. Names are case insensitive: ``'Blues'``, ``'blues'``, and ``'bLuEs'``
-       are all valid names for the "Blues" colormap.
-    2. "Reversed" colormaps are not stored directly: Requesting e.g.
-       ``'Blues_r'`` will just look up ``'Blues'``, then return the result
-       of the `~matplotlib.colors.Colormap.reversed` method.
-    3. Diverging colormap names can be referenced by their "inverse" name.
-       For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
-       ``'BuYlRd'`` and ``'RdYlBu_r'``.
-    """
     def __init__(self, kwargs):
+        """
+        Flexible, case-insensitive colormap identification. Replaces the
+        `matplotlib.cm.cmap_d` dictionary that stores registered colormaps.
+
+        Behaves like a dictionary, with three new features:
+
+        1. Names are case insensitive: ``'Blues'``, ``'blues'``, and ``'bLuEs'``
+           are all valid names for the "Blues" colormap.
+        2. "Reversed" colormaps are not stored directly: Requesting e.g.
+           ``'Blues_r'`` will just look up ``'Blues'``, then return the result
+           of the `~matplotlib.colors.Colormap.reversed` method.
+        3. Diverging colormap names can be referenced by their "inverse" name.
+           For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
+           ``'BuYlRd'`` and ``'RdYlBu_r'``.
+        """
         kwargs_filtered = {}
         for key,value in kwargs.items():
             if not isinstance(key, str):
@@ -609,7 +614,6 @@ class CmapDict(dict):
                 kwargs_filtered[key.lower()] = value
         super().__init__(kwargs_filtered)
 
-    # Helper functions
     def _sanitize_key(self, key):
         """Sanitizes key name."""
         # Try retrieving
@@ -620,9 +624,9 @@ class CmapDict(dict):
         if key[-2:] == '_r':
             key = key[:-2]
             reverse = True
+        # Attempt to get 'mirror' key, maybe that's the one
+        # stored in colormap dict
         if not super().__contains__(key):
-            # Attempt to get 'mirror' key, maybe that's the one
-            # stored in colormap dict
             key_mirror = key
             for mirror in _cmap_mirrors:
                 try:
@@ -653,10 +657,8 @@ class CmapDict(dict):
                 raise KeyError(f'Dictionary value in {key} must have reversed() method.')
         return value
 
-    # Indexing and 'in' behavior
     def __getitem__(self, key):
         """Sanitizes key, then queries dictionary."""
-        # Assume lowercase
         key = self._sanitize_key(key)
         return self._getitem(key)
 
@@ -674,10 +676,8 @@ class CmapDict(dict):
         except KeyError:
             return False
 
-    # Other methods
     def get(self, key, *args):
         """Case-insensitive version of `dict.get`."""
-        # Get item
         if len(args)>1:
             raise ValueError(f'Accepts only 1-2 arguments (got {len(args)+1}).')
         try:
@@ -692,7 +692,6 @@ class CmapDict(dict):
 
     def pop(self, key, *args):
         """Case-insensitive version of `dict.pop`."""
-        # Pop item
         if len(args)>1:
             raise ValueError(f'Accepts only 1-2 arguments (got {len(args)+1}).')
         try:

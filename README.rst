@@ -58,9 +58,9 @@ Here are some highlights of the remaining features:
 *  Axes panels and figure panels, for global colorbars, global legends,
    or tertiary data. Panel widths always held fixed during "tight layout"
    scaling.
-*  Automatic axes formatting when ``xarray.DataArray`` or ``pandas.DataFrame``
-   are passed to a plotting command, just like ``DataArray.plot`` and
-   ``DataFrame.plot``.
+*  Automatic axes formatting when ``xarray.DataArray`` or ``pandas.DataFrame`` objects
+   or ``pandas.Series`` are passed to a plotting command, just like 
+   ``xarray.DataArray.plot`` and ``DataFrame.plot``.
 *  Specify figure, axes, panel, etc. sizes with arbitrary physical units --
    not just inches or "relative" units.
 *  Easy setting customization with a user ``.proplotrc`` file. Option
