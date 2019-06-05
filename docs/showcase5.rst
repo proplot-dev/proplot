@@ -117,20 +117,7 @@ with poor, perceptually un-uniform transitions were thrown out.
 
 
 
-.. image:: showcase/showcase_113_1.png
-   :width: 436px
-   :height: 4333px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    f = plot.cmap_show(31)
-
-
-
-
-.. image:: showcase/showcase_114_1.svg
+.. image:: showcase/showcase_113_1.svg
 
 
 Table of color cycles
@@ -161,7 +148,7 @@ constructor function. See below for details.
 
 
 
-.. image:: showcase/showcase_117_0.svg
+.. image:: showcase/showcase_116_0.svg
 
 
 Table of colors
@@ -198,7 +185,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_120_0.svg
+.. image:: showcase/showcase_119_0.svg
 
 
 .. code:: ipython3
@@ -208,7 +195,7 @@ also useful for selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_121_0.svg
+.. image:: showcase/showcase_120_0.svg
 
 
 On-the-fly colormaps
@@ -254,7 +241,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_124_1.svg
+.. image:: showcase/showcase_123_1.svg
 
 
 You can generate your own
@@ -292,7 +279,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_126_0.svg
+.. image:: showcase/showcase_125_0.svg
 
 
 In the below example, monochromatic colormaps are built from registered
@@ -318,7 +305,7 @@ adding a number to the end of the color string.
 
 
 
-.. image:: showcase/showcase_128_0.svg
+.. image:: showcase/showcase_127_0.svg
 
 
 Diverging colormaps are easy to modify. Just use the ``cut`` argument to
@@ -340,7 +327,7 @@ colormap.
 
 
 
-.. image:: showcase/showcase_130_0.svg
+.. image:: showcase/showcase_129_0.svg
 
 
 Cyclic colormaps are also easy to modify. Just pass the ``shift``
@@ -361,7 +348,7 @@ your map.
 
 
 
-.. image:: showcase/showcase_132_0.svg
+.. image:: showcase/showcase_131_0.svg
 
 
 It is also easy to change the “gamma” of perceptually uniform colormap
@@ -387,7 +374,7 @@ colors, and vice versa.
 
 
 
-.. image:: showcase/showcase_134_0.svg
+.. image:: showcase/showcase_133_0.svg
 
 
 On-the-fly color cycles
@@ -415,7 +402,7 @@ every time you import ProPlot. See `~proplot.colortools.Cycle` and
 
 
 
-.. image:: showcase/showcase_137_0.svg
+.. image:: showcase/showcase_136_0.svg
 
 
 Also note that colormaps and color cycles are totally interchangeable!
@@ -447,7 +434,7 @@ See `~proplot.colors.Colormap` for details.
 
 
 
-.. image:: showcase/showcase_139_1.svg
+.. image:: showcase/showcase_138_1.svg
 
 
 Flexible identification
@@ -474,7 +461,7 @@ example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
 
 
 
-.. image:: showcase/showcase_141_0.svg
+.. image:: showcase/showcase_140_0.svg
 
 
 Sub-sampling
@@ -513,4 +500,4 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_144_0.svg
+.. image:: showcase/showcase_143_0.svg
