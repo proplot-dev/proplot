@@ -62,7 +62,7 @@ Here are some highlights of the remaining features:
    scaling.
 *  Automatic axes formatting when ``xarray.DataArray``, ``pandas.DataFrame``,
    or ``pandas.Series`` objects are passed to a plotting command, just like 
-   ``xarray.DataArray.plot`` and ``DataFrame.plot``.
+   ``xarray.DataArray.plot`` and ``pandas.DataFrame.plot``.
 *  Easy setting customization with a user ``.proplotrc`` file. Option
    to save custom colormaps, and they will be loaded every time on startup.
 *  Perceptually distinct named colors with easy-to-remember names,
