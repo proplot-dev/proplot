@@ -370,9 +370,11 @@ class Figure(mfigure.Figure):
         When `span` is False, we add labels to all axes. When `span` is
         True, we filter to one axes."""
         # Get the axes
-        # NOTE: Only do this *after* tight bounding boxes have been drawn!
         # TODO: Account for axis with different size tick labels?
+        # NOTE: Only do this *after* tight bounding boxes have been drawn!
         name = axis.axis_name
+        if name not in 'xy': # i.e. theta or radius
+            return
         base = axis.axes
         for i in range(2): # try 2 levels down, should be sufficient
             base = getattr(base, '_share' + name, None) or base
@@ -739,10 +741,8 @@ class Figure(mfigure.Figure):
         # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
         # basemap axes so its aspect ratio will not have changed.
         #----------------------------------------------------------------------#
-        # TODO: Expand this functionality to work for *any* case where user
-        # changes the aspect ratio manually?
-        # WARNING: If ratio changes, you have to run smart tight layout twice,
-        # or get incorrect spacing along the dimension contracted by the change.
+        # If ratio changes, you have to run smart tight layout twice, or get
+        # incorrect spacing along the dimension contracted by the change.
         ax = self._main_axes[self._ref_num-1]
         subplots_kw = self._subplots_kw
         aspect_changed = False
@@ -977,8 +977,6 @@ class Figure(mfigure.Figure):
             self._tight_bboxs(renderer) # can use same bboxs
 
             # Bottom, top panels in same rows
-            # TODO: Don't just check space between panel and main axes, also
-            # check space between panels
             axs = self._main_axes
             for row in range(nrows):
                 paxs = [ax.bottompanel for ax in axs if ax._yrange[1]==row]
@@ -1175,11 +1173,6 @@ class Figure(mfigure.Figure):
             Use `flush` to set for all sides at once.
         """
         # Which panels
-        # TODO: Allow visibility for some panels in stack, but not others?
-        # This starts getting way too complicated.
-        # NOTE: Axis sharing setup is handled after-the-fact in the `subplots`
-        # function using `~proplot.axes.BaseAxes._sharex_setup` and
-        # `~proplot.axes.BaseAxes._sharey_setup`.
         which = _default(which, 'r')
         if re.sub('[lrbt]', '', which): # i.e. other characters are present
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
@@ -1233,7 +1226,6 @@ class Figure(mfigure.Figure):
         ax = self.add_subplot(gs[r[0],c[0]], **kwargs)
         ax._panels_main_gridspec = gs
         # Draw panels
-        # TODO: Is this kwargs stuff necessary? What keyword args can user even supply?
         kwargs = {key:value for key,value in kwargs.items() if key not in ('number', 'projection')}
         for side,width,sep,flush,share,visible, in zip('lrbt',
                 (lwidth, rwidth, bwidth, twidth),
@@ -1369,8 +1361,6 @@ def _panels_kwargs(panels, colorbars, legends,
             raise ValueError(f'For side "{side}", have {stack} stacked panels, but got {len(width)} widths.')
         kwout[side + 'width'] = width
         # Panel separation
-        # TODO: Figure out how to specify, e.g., a side panel and a side
-        # colorbar together.
         flush = _get(side, 'flush', False)
         if stack==1 or flush:
             sep = 0
@@ -1494,9 +1484,7 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
         figsize = (width, height) # again
 
     # Automatically scale fig dimensions
-    # TODO: The reference axes shit fails for complex grids!
-    # TODO: Maybe it should refer to a *position on the grid*, since super hard
-    # to generalize for arbitrary axes occupying arbitrary boxes on the grid?
+    # TODO: Fails for complex grids?
     href = (ref - 1) % ncols
     wref = (ref - 1) // ncols
     if auto_width:
@@ -2024,7 +2012,7 @@ def subplots(array=None, ncols=1, nrows=1,
             axes_kw[num]['projection'] = 'xy'
         # Builtin matplotlib polar axes, just use my overridden version
         elif name=='polar':
-            axes_kw[num]['projection'] = 'newpolar'
+            axes_kw[num]['projection'] = 'propolar'
             if num==ref:
                 aspect = 1
         # Custom Basemap and Cartopy axes

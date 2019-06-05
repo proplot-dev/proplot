@@ -440,9 +440,6 @@ class rc_configurator(object):
             _rcParams_new[key] = value
 
         # Caching stuff
-        # TODO: Looks like _getitem_mode can get stuck on a higher, more
-        # restrictive value (e.g. 1 or 2) when cell fails to execute. Should
-        # consider improving this.
         self._init = True
         self._no_dict = False # whether to prevent returning dictionary of category values
         self._getitem_mode = 0

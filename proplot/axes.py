@@ -65,7 +65,6 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 
 # Local modules, projection sand formatters and stuff
-# TODO: Import matplotlib docstring func, use it?
 from .rcmod import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
 from .utils import _default, ic, units
@@ -756,9 +755,8 @@ class BaseAxes(maxes.Axes):
             coords.append(np.concatenate((pleft, pright), axis=0))
 
         # Create LineCollection and update with values
-        # TODO: Why not just pass kwargs to class?
-        hs = mcollections.LineCollection(np.array(coords),
-                cmap=cmap, norm=norm, linestyles='-', capstyle='butt', joinstyle='miter')
+        hs = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm,
+                linestyles='-', capstyle='butt', joinstyle='miter')
         hs.set_array(np.array(values))
         hs.update({key:value for key,value in kwargs.items() if key not in ('color',)})
 
@@ -992,7 +990,7 @@ class XYAxes(BaseAxes):
         self.patch.update(rc.fill({'facecolor': 'axes.facecolor', 'alpha': 'axes.alpha'}))
 
         # Background hatching (useful where we want to highlight invalid data)
-        # TODO: Implement for PolarAxes and map axes.
+        # TODO: Implement hatching for PolarAxes and map axes?
         hatch = rc['axes.hatch']
         if not self._hatch and hatch: # non-empty
             self._hatch = self.fill_between([0,1], 0, 1, zorder=0, # put in back
@@ -1029,7 +1027,7 @@ class XYAxes(BaseAxes):
         # these keyword args. Results in duplicate behavior maybe.
         which = rc['axes.grid.which']
         grid = rc.get('axes.grid', cache=True)
-        axis = rc.get('axes.grid.axis') # always need this property
+        axis = rc.get('axes.grid.axis', cache=False) # always need this property
         if which is not None or grid is not None: # only if *one* was changed recently!
             # But no matter what we need *both* to figure out proper xgrid, ygrid arguments
             # NOTE: Should we try to make xgridminor, ygridminor part of thing?
@@ -1118,12 +1116,15 @@ class XYAxes(BaseAxes):
                 })
             if color is not None:
                 kw['color'] = color
-            sides = ('bottom','top') if name=='x' else ('left','right')
+            if isinstance(self, mproj.PolarAxes):
+                sides = ('inner','polar') if name=='x' else ('start','end')
+            else:
+                sides = ('bottom','top') if name=='x' else ('left','right')
             spines = [self.spines[s] for s in sides]
             for spine,side in zip(spines,sides):
                 # Line properties
                 # Override if we're settings spine bounds
-                spineloc = getattr(self, f'{name}spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
+                spineloc = getattr(self, name + 'spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
                 if bounds is not None and spineloc not in sides:
                     spineloc = sides[0] # by default, should just have spines on edges in this case
                 # Eliminate sides
@@ -1173,7 +1174,7 @@ class XYAxes(BaseAxes):
                     kw_grid = rc.fill(dict_('gridminor'))
                     kw_grid.update({key:value for key,value in kw_major.items() if key not in kw_grid})
                 # Changed rc settings
-                kw = rc[name + 'tick.' + which]
+                kw = _default(rc[name + 'tick.' + which], {})
                 kw.pop('visible', None) # invalid setting
                 axis.set_tick_params(which=which, **kw_grid, **kw)
 
@@ -1186,35 +1187,36 @@ class XYAxes(BaseAxes):
             # * Includes option to draw spines but not draw ticks on that spine, e.g.
             #   on the left/right edges
             # First tick sides
-            kw = {}
-            translate = {None: None, 'both': sides, 'neither': (), 'none': ()}
-            if bounds is not None and tickloc not in sides:
-                tickloc = sides[0] # override to just one side
-            ticklocs = translate.get(tickloc, (tickloc,))
-            if ticklocs is not None:
-                kw.update({side: (side in ticklocs) for side in sides})
-            kw.update({side: False for side in sides if side not in spines}) # override
-            # Tick label sides
-            # Will override to make sure only appear where ticks are
-            ticklabellocs = translate.get(ticklabelloc, (ticklabelloc,))
-            if ticklabellocs is not None:
-                kw.update({f'label{side}': (side in ticklabellocs) for side in sides})
-            kw.update({f'label{side}': False for side in sides
-                if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
-            # The axis label side
-            if labelloc is None:
+            if not isinstance(self, mproj.PolarAxes):
+                kw = {}
+                translate = {None: None, 'both': sides, 'neither': (), 'none': ()}
+                if bounds is not None and tickloc not in sides:
+                    tickloc = sides[0] # override to just one side
+                ticklocs = translate.get(tickloc, (tickloc,))
                 if ticklocs is not None:
-                    options = [side for side in sides if (side in ticklocs and side in spines)]
-                    if len(options)==1:
-                        labelloc = options[0]
-            elif labelloc not in sides:
-                raise ValueError(f'Got labelloc "{labelloc}", valid options are {sides}.')
-            # Apply
-            axis.set_tick_params(which='both', **kw)
-            if labelloc is not None:
-                axis.set_label_position(labelloc)
+                    kw.update({side: (side in ticklocs) for side in sides})
+                kw.update({side: False for side in sides if side not in spines}) # override
+                # Tick label sides
+                # Will override to make sure only appear where ticks are
+                ticklabellocs = translate.get(ticklabelloc, (ticklabelloc,))
+                if ticklabellocs is not None:
+                    kw.update({f'label{side}': (side in ticklabellocs) for side in sides})
+                kw.update({'label' + side: False for side in sides
+                    if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
+                # The axis label side
+                if labelloc is None:
+                    if ticklocs is not None:
+                        options = [side for side in sides if (side in ticklocs and side in spines)]
+                        if len(options)==1:
+                            labelloc = options[0]
+                elif labelloc not in sides:
+                    raise ValueError(f'Got labelloc "{labelloc}", valid options are {sides}.')
+                # Apply
+                axis.set_tick_params(which='both', **kw)
+                if labelloc is not None:
+                    axis.set_label_position(labelloc)
 
-            # The tick style
+            # The tick styles
             # First color and size
             kw = rc.fill({
                 'labelcolor': 'tick.labelcolor', # new props
@@ -1227,13 +1229,12 @@ class XYAxes(BaseAxes):
             # Tick direction and rotation
             if tickdir=='in':
                 kw['pad'] = 1 # ticklabels should be much closer
-            if ticklabeldir=='in': # put tick labels inside the plot; TODO check this
+            if ticklabeldir=='in': # put tick labels inside the plot
                 tickdir = 'in'
                 pad = rc.get(name + 'tick.major.size') + rc.get(name + 'tick.major.pad') + rc.get(name + 'tick.labelsize')
                 kw['pad'] = -pad
             if tickdir is not None:
                 kw['direction'] = tickdir
-            # Apply
             axis.set_tick_params(which='both', **kw)
 
             # Settings that can't be controlled by set_tick_params
@@ -1286,7 +1287,6 @@ class XYAxes(BaseAxes):
             #   not work, so instead just turn locators into fixed version
             # * Most locators take no arguments in __call__, and some do not
             #   have tick_values method, so we just call them.
-            # TODO: Add optional override to do this every time
             if fixticks or fixedformatfix or bounds is not None or axis.get_scale()=='cutoff':
                 if bounds is None:
                     bounds = getattr(self, f'get_{name}lim')()
@@ -1452,8 +1452,6 @@ class XYAxes(BaseAxes):
             transform = self.transAxes
         label = kwargs.pop('label', 'inset_axes')
         # This puts the rectangle into figure-relative coordinates.
-        # TODO: Use default matplotlib attributes, instead of custom _inset_children
-        # and _inset_parent attribute?
         locator = self._make_inset_locator(bounds, transform)
         bb = locator(None, None)
         ax = maxes.Axes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
@@ -1659,9 +1657,6 @@ class PanelAxes(XYAxes):
         self.yaxis.set_visible(False)
         self.patch.set_alpha(0)
         # Draw colorbar with arbitrary length relative to full length of panel
-        # TODO: Require the stacked colorbar thing to be declared right away! Will
-        # then have panels accessible with the slice panel[i,j] instead of panel[i].
-        # space = _default(hspace, wspace, space) # flexible arguments
         fig = self.figure
         side = self._side
         subspec = self.get_subplotspec()
@@ -1832,7 +1827,7 @@ class MapAxes(BaseAxes):
         lonlabels, latlabels = ilabels
         return grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs
 
-class PolarAxes(MapAxes, mproj.PolarAxes):
+class PolarAxes(XYAxes, mproj.PolarAxes):
     """Intermediate class, mixes `~matplotlib.projections.polar.PolarAxes`
     with `MapAxes`."""
     def __init__(self, *args, **kwargs):
@@ -1849,9 +1844,9 @@ class PolarAxes(MapAxes, mproj.PolarAxes):
 
     def smart_update(self, *args, **kwargs):
         """Calls `BaseAxes.smart_update`."""
-        super(MapAxes, self).smart_update(*args, **kwargs)
+        super().smart_update(*args, **kwargs)
 
-    name = 'newpolar'
+    name = 'propolar'
     """The registered projection name."""
 
 # Cartopy takes advantage of documented feature where any class with method
@@ -2272,10 +2267,6 @@ class BasemapAxes(MapAxes):
                 'color':    'geogrid.color',
                 'fontsize': 'geogrid.labelsize',
                 }, cache=False)
-            # Latitudes
-            # TODO: latlocator and lonlocator are always Truthy, because we
-            # if latlocator:
-            # if lonlocator:
             # Remove old ones
             if self._parallels:
                 for pi in self._parallels.values():

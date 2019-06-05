@@ -86,6 +86,7 @@ _transform_methods = ('plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf
 _crs_methods = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks',) # adds crs=PlateCarree()
 
 # Disabled methods; keys are error messages
+# TODO: rigorous support for violin plots, bar, barh, streamline and quiver
 # TODO: 'table', 'eventplot', 'pie', 'xcorr', 'acorr', 'psd', 'csd',
 # 'magnitude_spectrum', 'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'
 _disabled_methods = {
@@ -97,9 +98,11 @@ _disabled_methods = {
         ('polar',)
     }
 _map_disabled_methods = (
+    # These are obvious
     'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
     'hist', 'hist2d', 'errorbar', 'boxplot', 'violinplot', 'step', 'stem',
     'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
+    # Look into these
     'stackplot', 'table', 'eventplot', 'pie',
     'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
     'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram',
@@ -314,7 +317,6 @@ def _parse_2d(self, args, order='C'):
 
 #------------------------------------------------------------------------------
 # 2D plot wrappers
-# TODO: Add as methods? Or keep here for sake of organization?
 #------------------------------------------------------------------------------
 @_expand_methods_list
 def check_centers(self, func, *args, order='C', **kwargs):
@@ -377,12 +379,12 @@ def check_edges(self, func, *args, order='C', **kwargs):
         elif Z.shape[1]==xlen and Z.shape[0]==ylen:
             # If 2D, don't raise error, but don't fix either, because
             # matplotlib pcolor accepts grid center inputs.
-            # TODO: Fix 2D inputs?
             if x.ndim==1 and y.ndim==1:
                 x, y = utils.edges(x), utils.edges(y)
         elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
             raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
+    # TODO: Double check this
     if order=='F':
         x, y = x.T, y.T # in case they are 2-dimensional
         Zs = (Z.T for Z in Zs)
@@ -607,8 +609,8 @@ def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
     if isinstance(transform, type):
         transform = transform() # instantiate
     result = func(*args, transform=transform, **kwargs)
-    # Some plot functions seem to reset the outlinepatch or
-    # backgroundpatch (???), so need to re-enforce settings.
+    # Re-enforce settings because some plot functions seem to reset the
+    # outlinepatch or backgroundpatch (???)
     # TODO: Double check this
     self.format()
     return result
@@ -1162,8 +1164,9 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 norm_tmp = colortools.Norm(norm, **norm_kw)
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
     # Input colormap and other args
-    # TODO: Just like aspect ratios can change for cartopy plots, allow
-    # aspect ratio to change for imshow, matshow, etc. plots!
+    # TODO: Add similar support for quiver, and automatic quiver keys
+    # TODO: Make sure matshow, imshow, work! And just like aspect ratios can
+    # change for cartopy plots, allow aspect ratio to change for these
     cyclic = False
     colors = _default(color, colors, edgecolor, edgecolors)
     levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
@@ -1186,13 +1189,12 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         kwargs['aspect'] = 'auto'
     # Disable fix=True for certain keyword combinations, e.g. if user wants
     # white lines around their pcolor mesh.
-    # TODO: Make sure matshow, imshow, work!
+    # TODO: Allow calling contourf with linewidth?
     for regex,names in _options.items():
         if not re.search(regex, name):
             continue
         # Different cmap functions may or may not accept 'colors', 'linewidths',
         # or 'linestyles' as arguments
-        # TODO: Allow calling contourf with linewidth?
         for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
             if not value:
                 continue
@@ -1210,7 +1212,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     if cmap:
         # Get levels automatically determined by contourf, or make them
         # from the automatically chosen pcolor/imshow clims.
-        # TODO: This still is not respected for hexbin 'log' norm for some reason, fix.
+        # TODO: This still is not respected for hexbin 'log' norm
         if not getattr(obj, 'extend', None):
             obj.extend = extend # will already be on there for some funcs
         if not np.iterable(levels): # i.e. was an integer
@@ -1263,7 +1265,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     if labels:
         # Very simple, use clabel args
         fmt = axistools.Formatter('simple', precision=precision)
-        if name=='contour': # TODO: Document alternate keyword args!
+        if name=='contour': # TODO: document alternate keyword args!
             labels_kw_ = {'fmt':fmt, 'inline_spacing':3, 'fontsize':rc['small']} # for rest, we keep the defaults
             for key1,key2 in (('size','fontsize'),):
                 value = labels_kw.pop(key1, None)
@@ -1273,8 +1275,6 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
             self.clabel(obj, **labels_kw_)
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
-        # TODO: Should use normalizer and colormap to get colors instead of
-        # update scalar mappable? Also gets called at drawtime, maybe redundant.
         elif 'pcolor' in name:
             obj.update_scalarmappable() # populates the _facecolors attribute, initially filled with just a single color
             labels_kw_ = {'size':rc['small'], 'ha':'center', 'va':'center'}
@@ -1313,7 +1313,6 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 contour.set_linestyle(linestyle)
 
     # Add colorbar
-    # TODO: Add similar support for quiver keys
     if colorbar:
         ax, loc = _get_panel(self, colorbar)
         colorbar_kw = {**colorbar_kw} # make copy of mutable default object!
@@ -1375,9 +1374,6 @@ def legend_wrapper(self, handles=None, align=None, order='C',
     if order not in ('F','C'):
         raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
     # First get legend settings and interpret kwargs.
-    # TODO: Should update this function to clip the legend box when it goes
-    # outside axes area, so the legend width and bottom or right widths can be
-    # chosen propertly/separately.
     ncol = _default(ncols, ncol) # may still be None, wait till later
     frameon = _default(frame, frameon)
     if frameon is not None:

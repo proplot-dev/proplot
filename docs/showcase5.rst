@@ -174,9 +174,9 @@ colors from a table. Similar names were also cleaned up – for example,
 “reddish” and “reddy” were changed to “red”.
 
 The colors in the second table are from the `“Open
-color” <https://www.google.com/search?q=opencolor+github&oq=opencolor+github&aqs=chrome..69i57.2152j0j1&sourceid=chrome&ie=UTF-8>`__
-Github project. This project was intended for web UI design, but it is
-also useful for selecting colors for scientific visualizations.
+color” <https://github.com/yeun/open-color>`__ Github project. This
+project was intended for web UI design, but it is also useful for
+selecting colors for scientific visualizations.
 
 .. code:: ipython3
 
