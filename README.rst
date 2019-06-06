@@ -61,8 +61,8 @@ Here are some highlights of the remaining features:
    or tertiary data. Panel widths always held fixed during "tight layout"
    scaling.
 *  Automatic axes formatting when ``xarray.DataArray``, ``pandas.DataFrame``,
-   or ``pandas.Series`` objects are passed to a plotting command, just like 
-   ``xarray.DataArray.plot``, ``pandas.DataFrame.plot``, and ``pandas.Series.plot``.
+   or ``pandas.Series`` objects are passed to a plotting command, just like the
+   ``xarray.DataArray.plot``, ``pandas.DataFrame.plot``, and ``pandas.Series.plot`` methods.
 *  Easy setting customization with a user ``.proplotrc`` file. Option
    to save custom colormaps, and they will be loaded every time on startup.
 *  Perceptually distinct named colors with easy-to-remember names,
