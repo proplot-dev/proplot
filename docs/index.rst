@@ -52,7 +52,7 @@ Here are some highlights of the remaining features:
 *  Specify figure, axes, panel, etc. sizes with arbitrary physical units 
    or pixels -- not just inches.
 *  A smarter "tight layout" feature. Figure width or height alternately
-   scales so that subplot **aspect ratios** are fixed, inner space
+   scales so that subplot aspect ratios are fixed, inner space
    between subplots automatically scaled so subplot tick labels, etc. do
    not overlap with each other.
 *  Axes panels and figure panels, for global colorbars, global legends,
