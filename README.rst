@@ -87,32 +87,29 @@ Why not add to matplotlib directly?
 .. wonky (but very useful) ``axes_list`` class,
 .. harmonized usage of physical units across the entire project
 This project can be thought of as "matplotlib for power users."
-Many of its features represent an "alternative" to the existing matplotlib API -- and
+Many of its features represent an alternative to the existing matplotlib API -- and
 following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
-they probably should remain here as a side project.
-And while some of its features represent an enhancement to matplotlib,
-they can be relatively esoteric for normal users (for example,
+they should perhaps remain here as a side project.
+Some of its may be relatively esoteric for the average user (for example,
 "perceptually uniform" colormaps), or 
 can be seen as "convenience features" that perhaps do not belong
 with the core API for the sake of minimalism (for example, direct integration
-with cartographic toolkits and "dual" axes).
+with cartographic toolkits).
 
 There are also some philosophical differences and more direct conflicts.
-ProPlot imposes a strict framework for working with figures, with "static"
-figure scaffoldings and new ``format`` and ``smart_update`` methods
-meant to replace more verbose calls to various individual axes and axis methods.
-Meanwhile the "smart tight layout" feature also conflicts directly with
+ProPlot enforces a "static"
+figure scaffolding, and introduces the ``format`` and ``smart_update`` methods
+meant to replace various existing axes and axis methods.
+The "smart tight layout" feature also conflicts directly with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability
-to preserve axes aspect ratios by sacrificing fixed figure dimensions,
-while functionality offered by the ``subplots`` command may be seen as an alternative to
+to preserve axes aspect ratios by sacrificing fixed figure dimensions.
+And some ``subplots`` features might be seen as an alternative
 the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ toolkit.
-Further, by deleting several native matplotlib colormaps,
-this project represents a backwards incompatible break with matplotlib...
-but IMHO no one should be using these colormaps anyway ;)
+Finally, ProPlot represents a backwards-incompatible break from matplotlib
+by deleting several native matplotlib colormaps.
 
-Nevertheless, if there are any matplotlib developers out there that think
-some of these features should be added to matplotlib directly, please contact me!
-And feel free to copy my code.
+Despite all this, if there are any matplotlib developers out there that think
+some ProPlot features could be added to matplotlib directly, please contact me!
 
 What about seaborn?
 -------------------
@@ -123,25 +120,19 @@ different?
 
 While parts of ProPlot were inspired by Seaborn (e.g. some
 of ``colors.py`` is drawn from ``palettes.py``), the goals
-seem to be very different.
+are largely different.
 Seaborn largely attempts to merge the tasks of data analysis and
-visualization, and seems to be geared toward statisticians, data scientists,
-and the private sector
-rather than physical scientists, academia, and the public sector.
-ProPlot is geared toward the latter group and is intended to help you make
-publication-quality figures, period.
-It contains no data analysis tools – it is expected
-that you perform data analysis with other tools, or
-use the built-in tools offered by ``pandas`` and ``xarray``
-when you do need quick, on-the-fly plots.
+visualization, and seems geared toward non-academics and data scientists.
+ProPlot is intended just to help you make highly-configurable, publication-quality figures,
+and is geared toward scientists and academics.
 
-Further, most of Seaborn's features are also only accessible from commands
+Most of Seaborn's features are also only accessible from commands
 on the module itself.
-ProPlot is integrated much more closely with the matplotlib API,
+ProPlot is integrated directly with the matplotlib API,
 relying on special subclasses of the native matplotlib ``Figure`` and ``Axes``
 classes and the native matplotlib ``Colormap`` classes as opposed
-to "palettes". This gives new users a very gentle learning curve, while
-permitting the development of a number of powerful features well beyond
+to "palettes". This gives new users a gentle learning curve, but
+still permits a number of powerful features well beyond
 the scope of Seaborn.
 
 In summary, this project is meant as a companion or alternative to Seaborn

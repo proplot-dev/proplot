@@ -78,7 +78,7 @@ _loc_translate = {
 _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _edges_methods = ('pcolor', 'pcolormesh',)
 _2d_methods = (*_centers_methods, *_edges_methods)
-_1d_methods = ('plot', 'scatter')
+_1d_methods = ('plot', 'scatter', 'bar', 'barh')
 _cycle_methods  = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf',
@@ -177,7 +177,7 @@ def _auto_label(data, units=True):
         label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
         if not label and isinstance(data, DataFrame) and data.columns.size==1:
             label = str(df.columns[0])
-    return label.strip()
+    return str(label).strip()
 
 def _parse_1d(self, func, *args, **kwargs):
     """Accepts 1d DataArray or Series, or

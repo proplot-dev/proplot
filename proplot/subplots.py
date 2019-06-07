@@ -156,7 +156,6 @@ def _intervaly_errfix(ax):
 def _ax_span(ax, renderer, children=True):
     """Get span, accounting for panels, shared axes, and whether axes has
     been replaced by colorbar in same location."""
-    # Get bounding boxes
     axs = [ax]
     if children:
         iaxs = (*ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel, ax._altx_child, ax._alty_child)
@@ -402,7 +401,13 @@ class Figure(mfigure.Figure):
         # TODO: Use tightbbox for this?
         if span:
             # Axis to use for spanning label
-            saxis = axes[np.argmin(ranges[:,0])]
+            # NOTE: Try halfway point because if odd number of columns or rows,
+            # can get the perfect offset.
+            # TODO: If tick labels are different size, can get different row label offsets
+            # Figure out how to always align row labels?
+            # saxis = axes[np.argmin(ranges[:,0])]
+            half = (np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2
+            saxis = axes[half]
             for axis in axes:
                 if saxis is not axis:
                     axis.label.update({'visible':False})
