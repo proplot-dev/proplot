@@ -426,16 +426,15 @@ every time you import ProPlot.
 .. image:: showcase/showcase_137_0.svg
 
 
-And finally my favorite ProPlot feature: *colormaps*, and combinations
-thereof, can also be used as color cycles. Just pass a tuple of colormap
-name(s) to the `~proplot.colors.Cycle` constructor, with the last
-entry of the tuple indicating the number of samples you want to draw. To
-exclude near-white colors on the end of a colormap, just pass e.g.
-``left=x`` to `~proplot.colors.Cycle` (or supply a plotting command
-with e.g. ``cycle_kw={'left':x}``). This cuts out the leftmost ``x``
-proportion of the colormap before drawing colors from said map.
-
-See `~proplot.colors.Colormap` for details.
+Finally, *colormaps* (or combinations thereof) can be used as sources
+for generating color cycles. Just pass a tuple of colormap name(s) to
+the `~proplot.colortools.Cycle` constructor, with the last entry of
+the tuple indicating the number of samples you want to draw. To exclude
+near-white colors on the end of a colormap, just pass e.g. ``left=x`` to
+`~proplot.colortools.Cycle` (or supply a plotting command with e.g.
+``cycle_kw={'left':x}``). This cuts out the leftmost ``x`` proportion of
+the colormap before drawing colors from said map. See
+`~proplot.colortools.Colormap` for details.
 
 .. code:: ipython3
 
