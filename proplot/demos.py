@@ -10,13 +10,16 @@ import matplotlib.colors as mcolors
 from .rcmod import rc
 from . import colortools as tools
 from . import subplots # actually imports the function, since __init__ makes it global
-_data = f'{os.path.dirname(__file__)}' # or parent, but that makes pip install distribution hard
-_scales = {'rgb':(1,1,1), 'default':(360,100,100)}
-_names  = {'rgb':('red', 'green', 'blue'),
-            'hcl':('hue', 'chroma', 'luminance'),
-            'hsl':('hue', 'saturation', 'luminance'),
-            'hsv':('hue', 'saturation', 'value'),
-            'hpl':('hue', 'partial sat', 'luminance')}
+_data = os.path.dirname(__file__) # or parent, but that makes pip install distribution hard
+_scales = {'rgb':(1,1,1), # for scaling channel values to 0-1 range
+           'hsl':(360,100,100),
+           'hcl':(360,100,100),
+           'hpl':(360,100,100)}
+_names  = {'rgb':('red', 'green', 'blue'), # names for segmentdata LinearSegmentedColormap dicts
+           'hcl':('hue', 'chroma', 'luminance'),
+           'hsl':('hue', 'saturation', 'luminance'),
+           'hsv':('hue', 'saturation', 'value'),
+           'hpl':('hue', 'partial sat', 'luminance')}
 
 #------------------------------------------------------------------------------#
 # Demo of channel values and colorspaces
@@ -106,7 +109,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
         # Convert RGB to space
         for i in range(len(lut)):
             lut[i,:] = tools.to_xyz(lut[i,:], space=space)
-        scale  = _scales.get(space, _scales['default'])
+        scale  = _scales[space]
         labels = _names[space]
         # Draw line, add legend
         colors = ['C1', 'C2', 'C0'] # corresponds with RGB roughly
@@ -291,8 +294,8 @@ def cmap_show(N=129):
 def cycle_show():
     """Visualizes the registered color cycles."""
     # Get the list of cycles
-    _cycles = {name:mcm.cmap_d[name].colors for name in tools.cycles}
-    _cycles = {name:_cycles[name] for name in sorted(_cycles.keys())}
+    _cycles = {key:mcm.cmap_d[key].colors for key in tools.cycles}
+    _cycles = {key:_cycles[key] for key in sorted(_cycles.keys())}
     nrows = len(_cycles)//3 + len(_cycles)%3
     # Create plot
     state = np.random.RandomState(528)

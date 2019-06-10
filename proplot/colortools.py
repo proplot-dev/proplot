@@ -6,100 +6,7 @@ Defines tools for creating new colormaps and color cycles, i.e. `Colormap`
 and `Cycle`. Defines helpful new `~matplotlib.colors.Normalize` and
 `~matplotlib.colors.Colormap` classes.
 
-For a visual reference, see the :ref:`Table of colormaps`,
-:ref:`Table of color cycles`, and the :ref:`Table of colors`.
-
-Colormaps in non-RGB colorspaces
---------------------------------
-
-ProPlot's custom colormaps are instances of the new
-`PerceptuallyUniformColormap` class. These classes employ *linear transitions*
-between channel values in any of three possible "perceptually uniform",
-HSV-like colorspaces. These colorspaces are visualized in
-:ref:`Background`, and can be described as follows:
-
-* **HCL**: A purely perceptually uniform colorspace, where colors are
-  broken down into “hue” (color, range 0-360), “chroma”
-  (colorfulness, range 0-100), and “luminance” (brightness, range 0-100).
-* **HPLuv**: As with HCL, but 100 chroma is scaled to be the *minimum maximum
-  chroma* across all hues for a given luminance, and is hence more
-  appropriate for multi-hue colormaps.
-* **HSLuv**: As with HCL, but 100 chroma is scaled to be the *maximum
-  possible chroma* for a given hue and luminance. This is more appropriate for
-  single-hue colormaps, because crossing hues in
-  this space make it more likely that bands of higher absolute chroma are
-  crossed.
-
-The HCL space is the only "purely" perceptually uniform colorspace. But
-during a linear transition between two values, we may cross over "impossible"
-colors (i.e. colors with RGB channels >1).
-The HSLuv and HPLuv colorspaces
-were developed to resolve this issue by (respectively) scaling and clipping
-high-chroma colors across different hues and luminances.
-
-Colormaps from other projects
------------------------------
-
-I’ve removed some outdated “miscellaneous” colormaps that are packaged
-by default (see `this reference
-<https://matplotlib.org/examples/color/colormaps_reference.html>`_)
-and added new "perceptually uniform" colormaps from the following projects:
-
-* The `cmOcean project <https://matplotlib.org/cmocean/>`_
-* The `SciVisColor project <https://sciviscolor.org/home/colormaps/>`_
-* `Kenneth Moreland's colormaps <http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html>`_
-* `Fabio Crameri's colormaps <http://www.fabiocrameri.ch/colourmaps.php>`_
-* Colormaps commissioned by `Statistik Stadt Zürich
-  <http://soliton.vm.bytemark.co.uk/pub/cpt-city/ssz/index.html>`_
-* Peter Koveski's `CET colormaps <https://peterkovesi.com/projects/colourmaps/>`_
-
-Several of these were found thanks to `Riley X. Bradey
-<https://github.com/bradyrx>`_. Others were found using the `cpt-city
-<http://soliton.vm.bytemark.co.uk/pub/cpt-city/>`_ archive of color
-gradients.
-Note that matplotlib comes packaged with every `ColorBrewer2.0
-<http://colorbrewer2.org/>`__ colormap, which are also certainly
-"perceptually uniform".
-
-
-Flexible colormap arguments
----------------------------
-
-Various matplotlib plotting methods have been wrapped by
-`~proplot.axes.wrapper_cmap` and `~proplot.axes.wrapper_cycle`.
-The former enhances most functions that accept a ``cmap`` argument, and the
-latter adds a brand new keyword arg called ``cycle`` that can be used to
-change the axes property cycler on-the-fly.
-
-For every wrapped method, the ``cmap`` and ``cycle`` arguments
-are all passed through the magical `Colormap` function.
-`Colormap` is incredibly powerful -- it can make colormaps
-on-the-fly, look up existing maps, and merge them. As such, any of the following
-are now valid ``cmap`` and ``cycle`` arguments:
-
-1. Registered colormap names. For example, ``'Blues'`` or ``'Sunset'``.
-   See :ref:`Table of colormaps` for a visalization of the registered maps.
-   Cycles are constructed automatically by sampling colors from these colormaps;
-   use e.g. ``('Blues', 5)`` to specify the number of colors in the cycle.
-2. Gradations of a single hue. For example, ``'maroon'`` creates colormap spanning
-   white to maroon, and ``'maroon90'`` spans from a 90% luminance pale red
-   color to maroon (see `~proplot.colors.Colormap`).
-   Cycles are again constructed automatically; use e.g. ``('maroon', 10)``
-   to specify the number of colors in the cycle.
-3. Registered color cycle names. For example, ``'Cycle1'``. See
-   :ref:`Table of color cycles`
-   for a visualization of the registered cycles.
-4. Lists of colors. For example, ``['red', 'blue', 'green']``.
-   This makes a `~matplotlib.colors.ListedColormap` map which can be trivially
-   used as a "color cycle".
-5. Dictionary containing the keys ``'h'``, ``'s'``, and ``'l'``. This builds
-   a `PerceptuallyUniformColormap` using the
-   `~PerceptuallyUniformColormap.from_hsl` constructor.
-6. **List of any of the above five arguments, to merge the resulting
-   colormaps.** For
-   example, use ``['viridis', 'navy']`` to merge the virids map with a colormap
-   spanning white to navy.
-
+See the :ref:`Color usage` section of "Getting Started" for details.
 """
 #------------------------------------------------------------------------------#
 # Potential bottleneck, loading all this stuff?
@@ -195,21 +102,19 @@ _cycles_preset = {
     'FlatUI':       ["#3498db", "#e74c3c", "#95a5a6", "#34495e", "#2ecc71", "#9b59b6"],
     # Created with online tools; add to this
     # See: http://tools.medialab.sciences-po.fr/iwanthue/index.php
-    'Cinematic':    [(51,92,103), (158,42,43), (255,243,176), (224,159,62), (84,11,14)],
-    'Cool':         ["#6C464F", "#9E768F", "#9FA4C4", "#B3CDD1", "#C7F0BD"],
-    'Sugar':        ["#007EA7", "#B4654A", "#80CED7", "#B3CDD1", "#003249"],
-    'Vibrant':      ["#007EA7", "#D81159", "#B3CDD1", "#FFBC42", "#0496FF"],
-    'Office':       ["#252323", "#70798C", "#DAD2BC", "#F5F1ED", "#A99985"],
-    'Industrial':   ["#38302E", "#6F6866", "#788585", "#BABF95", "#CCDAD1"],
-    'Tropical':     ["#0D3B66", "#F95738", "#F4D35E", "#FAF0CA", "#EE964B"],
-    'Intersection': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
-    'Field':        ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
+    'Warm':     [(51,92,103), (158,42,43), (255,243,176), (224,159,62), (84,11,14)],
+    'Cool':     ["#6C464F", "#9E768F", "#9FA4C4", "#B3CDD1", "#C7F0BD"],
+    'Sharp':    ["#007EA7", "#D81159", "#B3CDD1", "#FFBC42", "#0496FF"],
+    'Hot':      ["#0D3B66", "#F95738", "#F4D35E", "#FAF0CA", "#EE964B"],
+    'Contrast': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
+    'Floral':   ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
     }
 
 # Color stuff
 # Keep major color names, and combinations of those names
-_distinct_colors_threshold = 0.09 # bigger number equals fewer colors
+# TODO: Let user adjust color params? Maybe nobody cares.
 _distinct_colors_space = 'hcl' # register colors distinct in this space?
+_distinct_colors_threshold = 0.09 # bigger number equals fewer colors
 _exceptions_names = (
     'sky blue', 'eggshell', 'sea blue', 'coral', 'tomato red', 'brick red', 'crimson',
     'red orange', 'yellow orange', 'yellow green', 'blue green',
@@ -300,27 +205,28 @@ _cmap_categories = {
 
     # Custom maps
     'ProPlot Sequential': [
+        'Marine',
+        'Boreal',
         'Glacial',
         'Dusk',
-        'Bog', 'Verdant',
-        'Turquoise',
         'Sunrise', 'Sunset', 'Fire',
-        'Golden'
+        'Stellar'
         ],
         # 'Vibrant'], # empty at first, fill automatically
     'ProPlot Diverging': [
-        'IceFire', 'NegPos', 'BlueRed', 'PurplePink', 'DryWet', 'AltDryWet', 'LandSea'
+        'NegPos1', 'NegPos2', 'DryWet1', 'DryWet2',
         ],
 
     # Other
     # BlackBody2 is actually from Los Alamos, and a couple are from Kenneth's
     # website, but organization is better this way.
-    'Misc Diverging': [
-        'bwr',
-        'CoolWarm',
-        'SoftCoolWarm',
-        'MutedCoolWarm',
+    'Misc': [
         'ColdHot',
+        'bwr',
+        'CoolWarm1',
+        'CoolWarm2',
+        'VizPalette',
+        'MuBlue', 'MuRed', 'MuDry', 'MuWet',
         # 'Temp', # too un-uniform
         # 'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
         # 'Star',
@@ -332,13 +238,10 @@ _cmap_categories = {
         # 'Kindlmann', 'ExtendedKindlmann',
         # 'Seismic', # note this one originally had hard boundaries/no interpolation
         # 'MutedBio', 'DarkBio', # from: ???, maybe SciVisColor
-        ],
-
+        # ],
     # Statistik
     # 'Statistik Stadt Zürich': [
-    'Zürich Muted': [
-        'MutedBlue', 'MutedRed', 'MutedDry', 'MutedWet',
-        'MutedBuRd', 'MutedBuRd_cut', 'MutedDryWet', 'MutedDryWet_cut',
+    # 'Zürich Muted': [
         ],
 
     # cmOcean
@@ -375,11 +278,15 @@ _cmap_categories = {
     # See: http://www.fabiocrameri.ch/colourmaps.php
     'Fabio Crameri Sequential': [
         'Acton', 'Buda', 'Lajolla',
-        'Imola', 'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo', 'Hawaii', 'Batlow',
+        # 'Imola',
+        'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo',
+        # 'Hawaii',
+        'Batlow',
         'Turku', 'Bilbao', 'Lapaz',
         ],
     'Fabio Crameri Diverging': [
-        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron', 'Lisbon', 'Tofino', 'Berlin',
+        'Roma', 'Broc', 'Cork',  'Vik', 'Oleron',
+        # 'Lisbon', 'Tofino', 'Berlin',
         ],
 
     # Gross. These ones will be deleted.
@@ -495,15 +402,10 @@ _cmap_parts = {
     'rdylbu':       (None, 2, 4, None),
     'rdylgn':       (None, 2, 4, None),
     # Other diverging
-    'coldhot':      (None, 4, None),
     'bwr':          (None, 1, 2, None),
-    'icefire':      (None, 3, None),
+    'coldhot':      (None, 4, None),
     'negpos':       (None, 3, None),
-    'bluered':      (None, 4, None),
-    'purplepink':   (None, 4, None),
     'drywet':       (None, 3, None),
-    'drierwetter':  (None, 5, None),
-    'landsea':      (None, 4, None),
     }
 # Tuple pairs of mirror image cmap names
 _cmap_mirrors = [
@@ -1492,8 +1394,6 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
             args = (args,)
 
     # Get list of colors, and construct and register ListedColormap
-    # WARNING: Have keyword args of same name here, try to auto-detect
-    # when user is referring to smooth colormap, or discrete color cycle.
     cmap = Colormap(*args, **kwargs) # the cmap object itself
     if isinstance(cmap, mcolors.ListedColormap):
         cmap.colors = cmap.colors[:samples] # if samples is None, does nothing
@@ -2145,12 +2045,10 @@ class MidpointNorm(mcolors.Normalize):
 #------------------------------------------------------------------------------#
 def register_colors(nmax=np.inf, verbose=False):
     """
-    Registers new color names and filters them to be
-    sufficiently "perceptually distinct" in the HSL colorspace.
-    Called on import.
-
-    Use `~proplot.demos.color_show` to generate a table of the resulting
-    filtered colors.
+    Reads full database of crowd-sourced XKCD color names and official
+    Crayola color names, then filters them to be sufficiently "perceptually
+    distinct" in the HCL colorspace. Use `~proplot.demos.color_show` to
+    generate a table of the resulting filtered colors.
     """
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
@@ -2220,11 +2118,20 @@ def register_colors(nmax=np.inf, verbose=False):
 
 def register_cmaps():
     """
-    Registers colormaps packaged with ProPlot or added by the user. That is,
-    add maps to the `matplotlib.cm.cmap_d` dictionary. Called on import.
+    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot``
+    folder. Maps are named according to their filenames -- for example,
+    ``name.xyz`` will be registered as ``'name'``. Use `~proplot.demos.cmap_show`
+    to generate a table of the registered colormaps.  Valid extensions for
+    colormap files are described in the below table.
 
-    Use `~proplot.demos.cmap_show` to generate a table of the resulting
-    color cycles.
+    =====================  =============================================================================================================================================================================================================
+    Extension              Description
+    =====================  =============================================================================================================================================================================================================
+    ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
+    ``.rgb``               3-column CSV files, each column indicating red, blue and green color values.
+    ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+    ``.rgba``, ``.xrgba``  As with ``.rgb`` and ``.xrgb`` but with an additional trailing column indicating the opacity (or "alpha") value.
+    =====================  =============================================================================================================================================================================================================
     """
     # First read from file
     N_hires = rcParams['image.lut']
@@ -2272,6 +2179,7 @@ def register_cmaps():
                 cmaps.add(name)
         # Load XML files created with scivizcolor
         # Adapted from script found here: https://sciviscolor.org/matlab-matplotlib-pv44/
+        # TODO: Add alpha channel support!
         elif re.search('\.xml$', filename):
             try:
                 xmldoc = etree.parse(filename)
@@ -2280,25 +2188,38 @@ def register_cmaps():
             x = []
             colors = []
             for s in xmldoc.getroot().findall('.//Point'):
+                if any(key not in s.attrib for key in 'xrgb'):
+                    raise RuntimeError(f'File {filename} missing an x, r, g, or b specification inside one or more <Point> tags.')
                 x.append(float(s.attrib['x']))
-                colors.append((float(s.attrib['r']), float(s.attrib['g']), float(s.attrib['b'])))
+                color = []
+                for key in 'rgboa': # o for opacity
+                    if key not in s.attrib:
+                        continue
+                    color.append(float(s.attrib[key]))
+                colors.append(color)
+            if not all(len(colors[0])==len(color) for color in colors):
+                raise ValueError(f'Got some points with alpha channel specified, some without.')
             N = len(x)
             x = np.array(x)
             x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
             colors = np.array(colors)
             if re.match('(cycle|qual)[0-9]?', name.lower()):
-                cmap = mcolors.ListedColormap([to_rgb(color) for color in colors])
+                # cmap = mcolors.ListedColormap([to_rgb(color) for color in colors])
+                cmap = mcolors.ListedColormap(colors)
                 cycles.add(name)
             else:
                 cdict = {}
-                for i,channel in enumerate(('red', 'green', 'blue')):
+                names = ('red', 'green', 'blue')
+                if colors.shape[1]==4:
+                    names = (*names, 'alpha')
+                for i,channel in enumerate(names):
                     vector = colors[:,i:i+1]
                     cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
                 cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
                 cmaps.add(name)
         # Directly read segmentdata json file
         # Will ensure that HSL colormaps have the 'space' entry
-        # WARNING: This does not adjust 'x' to be in rane 0 to 1, assumes
+        # WARNING: This does not adjust 'x' to be in range 0 to 1, assumes
         # is already fixed, matplotlib will raise warning down the line.
         else:
             with open(filename, 'r') as file:
@@ -2345,13 +2266,11 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Registers color cycles defined by ``.hex`` files (each of which contains a
-    comma-delimited list of HEX strings) packaged with ProPlot or
-    added by the user. Also registers some cycles hardcoded into this module.
-    Called on import.
-
-    Use `~proplot.demos.cycle_show` to generate a table of the resulting
-    color cycles.
+    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot``
+    folder. Cycles are named according to their filenames -- for example,
+    ``name.hex`` will be registered as ``'name'``. Use `~proplot.demos.cycle_show`
+    to generate a table of the registered cycles. Color cycle extensions must
+    be ``.hex`` and contain a comma-separated list of HEX values.
     """
     # Read lists of hex strings from disk
     for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
@@ -2372,11 +2291,11 @@ def register_cycles():
         mcm.cmap_d[name] = mcolors.ListedColormap([to_rgb(color) for color in colors], name=name)
         cycles.add(name)
 
-    # Remove some redundant or ugly ones
-    for key in ('tab10', 'tab20', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
+    # Remove redundant or ugly ones, plus ones that are just merged existing maps
+    for key in ('tab10', 'tab20', 'tab20b', 'tab20c', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
         mcm.cmap_d.pop(key, None)
     # *Change* the name of some more useful ones
-    for (name1,name2) in [('Accent','Set1'), ('tab20b','Set4'), ('tab20c','Set5')]:
+    for (name1,name2) in [('Accent','Set1')]:
         orig = mcm.cmap_d.pop(name1, None)
         if orig:
             mcm.cmap_d[name2] = orig

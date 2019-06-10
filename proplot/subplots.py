@@ -105,16 +105,26 @@ class axes_list(list):
             axs = axes_list(axs)
         return axs
 
+    # This is only called when __getattribute__ fails, so builtin
+    # methods and hidden stuff like _n work fine
     def __getattr__(self, attr):
         """Stealthily returns dummy function that actually loops through each
         axes method and calls them in succession. If attribute(s) are not
         callable, instead returns a tuple of the attributes."""
-        # This is only called when __getattribute__ fails, so builtin
-        # methods and hidden stuff like _n work fine
         attrs = *(getattr(ax, attr, None) for ax in self), # magical tuple expansion
+        # Not found
         if None in attrs:
             raise AttributeError(f'Attribute "{attr}" not found.')
-        elif all(callable(_) for _ in attrs):
+        # Empty
+        if not attrs:
+            def null_iterator(*args, **kwargs):
+                return None
+            return null_iterator
+        # Objects
+        if not any(callable(_) for _ in attrs):
+            return axes_list(attrs) # or just attrs?
+        # Methods
+        if all(callable(_) for _ in attrs):
             @functools.wraps(attrs[0])
             def iterator(*args, **kwargs):
                 ret = []
@@ -127,10 +137,8 @@ class axes_list(list):
                 else:
                     return (*ret,) # expand to tuple
             return iterator
-        elif not any(callable(_) for _ in attrs):
-            return axes_list(attrs) # or just attrs?
-        else:
-            raise AttributeError(f'Found mixed types for attribute "{attr}".')
+        # Mixed
+        raise AttributeError(f'Found mixed types for attribute "{attr}".')
 
 #------------------------------------------------------------------------------#
 # Figure class

@@ -38,7 +38,7 @@ Overview
 
 Importing ProPlot registers a bunch of new colormaps and color names.
 If this is all you want and you don't care about other features, simply
-import ProPlot at the top of your script. See `~proplot.colortools` for details, and the :ref:`Table of colormaps`, :ref:`Table of color cycles`, and :ref:`Table of colors`.
+import ProPlot at the top of your script. See `~proplot.colortools` and the :ref:`Registered colormaps`, :ref:`Registered color cycles`, and :ref:`Registered color names` tables for details.
 
 Most of ProPlot's features derive from the `~proplot.subplots.subplots` command, inspired
 by the pyplot `~matplotlib.pyplot.subplots` command.

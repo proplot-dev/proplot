@@ -1690,7 +1690,7 @@ def colorbar_wrapper(self, mappable, values=None,
             try:
                 val = float(val)
             except ValueError:
-                raise ValueError(f'Numeric labels are required for generating colorbars from line handles.')
+                raise ValueError(f'To generate colorbars from line handles or other objects, pass the "values" keyword arg to colorbar(), or give your handles numeric values with e.g. plot(..., label=123) or line.set_label(123).')
             ivalues.append(val)
         values = np.array(ivalues)
         # Make plot

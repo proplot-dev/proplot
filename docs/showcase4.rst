@@ -24,8 +24,8 @@ method does not currently detect `cartopy` gridline labels – so when
 labels are present, the :ref:`Automatic subplot spacing` feature must
 be automatically disabled.
 
-Table of cartopy projections
-----------------------------
+Registered cartopy projections
+------------------------------
 
 Below is an illustration of the available `cartopy` projections. See
 the `~proplot.projs` documentation for a table of projection names,
@@ -60,8 +60,8 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 .. image:: showcase/showcase_93_1.svg
 
 
-Table of basemap projections
-----------------------------
+Registered basemap projections
+------------------------------
 
 Below is an illustration of the available `~mpl_toolkits.basemap`
 projections. `~mpl_toolkits.basemap` projection bounds are more
