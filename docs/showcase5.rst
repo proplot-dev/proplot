@@ -95,7 +95,7 @@ On-the-fly colormaps
 
 You can make a new colormap with ProPlot’s on-the-fly colormap
 generator! Every command that accepts a ``cmap`` argument (see
-`~proplot.axes.cmap_wrapper`) is passed to the
+`~proplot.wrappers.cmap_wrapper`) is passed to the
 `~proplot.colortools.Colormap` constructor.
 `~proplot.colortools.Colormap` keyword arguments can be specified with
 ``cmap_kw``. If you want to save your own colormap into ``~/.proplot``,
@@ -103,7 +103,7 @@ simply pass ``save=True`` to the `~proplot.colortools.Colormap`
 constructor (or supply a plotting command with
 ``cmap_kw={'save':True, 'name':name}``, and it will be loaded every time
 you import ProPlot. See `~proplot.colortools.Colormap` and
-`~proplot.axes.cmap_wrapper` for details.
+`~proplot.wrappers.cmap_wrapper` for details.
 
 As a first example: To merge colormaps, simply pass multiple arguments
 to the `~proplot.colortools.Colormap` constructor. This makes it easy
@@ -390,7 +390,7 @@ On-the-fly color cycles
 
 With ProPlot, you can specify the color cycle by passing ``cycle`` to
 any plotting command (e.g. ``cycle='538'``; see
-`~proplot.axes.cycle_wrapper`), or by changing the global default
+`~proplot.wrappers.cycle_wrapper`), or by changing the global default
 cycle (e.g. ``plot.rc.cycle = '538'``; see the `~proplot.rcmod`
 documentation for details). In both cases, the arguments are passed to
 the `~proplot.colortools.Cycle` constructor.

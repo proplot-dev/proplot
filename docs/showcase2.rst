@@ -6,12 +6,12 @@ Plotting and panels
 
 Various native matplotlib plotting methods have been enhanced using
 wrapper functions (see the `~proplot.axes` documentation). The most
-interesting of these are `~proplot.axes.cmap_wrapper` and
-`~proplot.axes.cycle_wrapper`. For details on the former, see the
+interesting of these are `~proplot.wrappers.cmap_wrapper` and
+`~proplot.wrappers.cycle_wrapper`. For details on the former, see the
 below examples and :ref:`On-the-fly colormaps`. For details on the
 latter, see :ref:`On-the-fly color cycles`.
 
-`~proplot.axes.cmap_wrapper` assigns the
+`~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
 for all plots. This allows for discrete levels in all situations – that
 is, `~matplotlib.axes.Axes.pcolor` and
@@ -50,7 +50,7 @@ never the same (see below).
 .. image:: showcase/showcase_33_1.svg
 
 
-`~proplot.axes.cmap_wrapper` also adds the ability to label
+`~proplot.wrappers.cmap_wrapper` also adds the ability to label
 `~matplotlib.axes.Axes.contourf` plots with
 `~matplotlib.axes.Axes.clabel` in one go, and the added ability to
 label grid boxes in `~matplotlib.axes.Axes.pcolor` and
@@ -75,10 +75,10 @@ label grid boxes in `~matplotlib.axes.Axes.pcolor` and
 .. image:: showcase/showcase_35_0.svg
 
 
-`~proplot.axes.cmap_wrapper` also lets you provide arbitrarily spaced,
-monotonically increasing levels, and by default the color gradations
-between each number in the level list will be the same, no matter the
-step size. This is powered by the
+`~proplot.wrappers.cmap_wrapper` also lets you provide arbitrarily
+spaced, monotonically increasing levels, and by default the color
+gradations between each number in the level list will be the same, no
+matter the step size. This is powered by the
 `~proplot.colortools.LinearSegmentedNorm` normalizer, and can be
 overridden with the ``norm`` keyword arg, which constructs an arbitrary
 normalizer from the `~proplot.colortools.Norm` constructor.
@@ -100,7 +100,7 @@ normalizer from the `~proplot.colortools.Norm` constructor.
 .. image:: showcase/showcase_37_0.svg
 
 
-Finally, `~proplot.axes.cmap_wrapper` fixes the well-documented
+Finally, `~proplot.wrappers.cmap_wrapper` fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
 and
 `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
