@@ -48,67 +48,43 @@ rcGlobals:
 rcParams:
     figure.dpi:              90
     figure.facecolor:        '#f2f2f2'
-    figure.max_open_warning: 0
     figure.autolayout:       False
     figure.titleweight:      bold
-    savefig.facecolor:       '#ffffff'
-    savefig.transparent:     True
-    savefig.dpi:             300
-    savefig.pad_inches:      0.0
+    figure.max_open_warning: 0
     savefig.directory:
-    savefig.bbox:            standard
+    savefig.dpi:             300
     savefig.format:          pdf
+    savefig.bbox:            standard
+    savefig.pad_inches:      0.0
+    savefig.transparent:     True
+    axes.titleweight:        normal
     axes.xmargin:            0.0
     axes.ymargin:            0.0
-    axes.titleweight:        normal
     axes.grid:               True
-    axes.labelweight:        normal
     axes.labelpad:           3.0
     axes.titlepad:           3.0
-    axes.axisbelow:          lines # ticks & gridlines *above* patches, *below* lines
-    axes.spines.bottom:      True
-    axes.spines.top:         True
-    axes.spines.left:        True
-    axes.spines.right:       True
-    xtick.bottom:            True
-    xtick.top:               False
-    xtick.minor.visible:     True
-    ytick.left:              True
-    ytick.right:             False
-    ytick.minor.visible:     True
     grid.color:              'k'
     grid.alpha:              0.1
     grid.linewidth:          0.6
     grid.linestyle:          '-'
-    text.usetex:             False  
-    mathtext.default:        regular
-    mathtext.bf:             'sans:bold'
-    mathtext.it:             'sans:it'
-    patch.facecolor:         C0
-    patch.edgecolor:         k
-    patch.linewidth:         1.0
     hatch.color:             k
     hatch.linewidth:         0.6
-    markers.fillstyle:       full
-    scatter.marker:          o
     lines.linewidth:         1.3
-    lines.color:             C0
-    lines.markeredgewidth:   0
     lines.markersize:        3.0
-    lines.dash_joinstyle:    miter
-    lines.dash_capstyle:     projecting
-    lines.solid_joinstyle:   miter      # options: miter, round, bevel
-    lines.solid_capstyle:    projecting # options: butt, round, projecting
+    lines.markeredgewidth:   0
+    legend.frameon:          True
     legend.fancybox:         False
-    legend.frameon:          False
     legend.labelspacing:     0.5
     legend.handletextpad:    0.5
     legend.handlelength:     1.5
-    legend.columnspacing:    1
-    legend.facecolor:        w
-    legend.numpoints:        1
+    legend.columnspacing:    1.0
     legend.borderpad:        0.5
     legend.borderaxespad:    0
+    xtick.minor.visible:     True
+    ytick.minor.visible:     True
+    mathtext.bf:             'sans:bold'
+    mathtext.it:             'sans:it'
+    mathtext.default:        regular
 
 #----------------------
 # rcParams_new defaults
