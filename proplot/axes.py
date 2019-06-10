@@ -16,7 +16,7 @@ geographic features, and much more.
 
 .. raw:: html
 
-   <h1>Method wrappers</h1>
+   <h1>Developer notes</h1>
 
 Wrappers for ProPlot axes methods are documented in the "functions" table.
 Method wrapping is done by dynamically overriding the

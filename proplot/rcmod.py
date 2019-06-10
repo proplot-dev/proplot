@@ -13,23 +13,19 @@ ProPlot defines three distinct categories of global settings:
 
 A special object named `~proplot.rcmod.rc`, belonging to the
 `~proplot.rcmod.rc_configurator` class, is created whenever you import ProPlot.
-This object gives you advanced control over the look of your plots.
-**Use** `rc` **as your one-stop shop for changing global settings**.
+**This is your one-stop shop for changing global settings.**
 
-To change the setting named ``name`` to ``value``, use either of:
+To change a setting, use any of the following:
 
-    1. ``rc.name = value``
-    2. ``rc['name'] = value``
-
-To bulk change multiple settings, use either of:
-
-    1. ``rc.update(name1=value1, name2=value2)``
-    2. ``rc.update({'name1':value1, 'name2':value2})``
+* ``rc.name = value``
+* ``rc['name'] = value``
+* ``rc.update(name1=value1, name2=value2)``
+* ``rc.update({'name1':value1, 'name2':value2})``
 
 To temporarily change settings on a particular axes, use either of:
 
-    1. ``ax.format(name=value)``
-    2. ``ax.format(rc_kw={'name':value})``
+1. ``ax.format(name=value)``
+2. ``ax.format(rc_kw={'name':value})``
 
 In all of these examples, if the setting name ``name`` contains
 any dots, you can simply **omit the dots**. For example, to change the
@@ -37,8 +33,9 @@ any dots, you can simply **omit the dots**. For example, to change the
 ``rc.update(titlepos=value)``, or
 ``ax.format(titlepos=value)``.
 
+#########
 rcGlobals
----------
+#########
 
 These settings are used to change :ref:`rcParams` and :ref:`rcParams_new` settings
 in bulk, or as shorthands for common settings with longer names.
@@ -77,8 +74,12 @@ Key                 Description
 ``ticklenratio``    Ratio of minor to major tick lengths.
 ==================  ================================================================================================================================================================
 
+.. [1] For example, ``'xxx'`` or ``'..'``. See `this demo
+       <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
+
+########
 rcParams
---------
+########
 
 These are the builtin matplotlib settings. See `this page
 <https://matplotlib.org/users/customizing.html>`_ for more info.
@@ -94,31 +95,25 @@ These are the builtin matplotlib settings. See `this page
     * Printing and saving: ``path``, ``figure``, ``savefig``, ``ps``, ``tk``, ``pdf``, ``svg``.
     * Other: ``keymap``, ``examples``, ``debug``.
 
+############
 rcParams_new
-------------
+############
 
 These are brand new settings meant to configure special ProPlot features,
 with the format ``category.subcategory``. They can be grouped into the
-following 4 sections.
+following sections.
 
-Misc
-````
-Use the boolean ``axes.formatter.zerotrim`` setting to control whether trailing
-decimal zeros are trimmed on tick labels (the default is ``True``).
-
-Use the ``axes.formatter.timerotation`` setting to control the default *x*-axis
-tick label rotation for datetime axis labels.
-
-Text
-````
+******
+Labels
+******
 Use the new ``tick.labelweight``, ``tick.labelcolor``, and ``tick.labelsize``
-settings for *x* and *y* axis **tick label** settings, meant to mimick the
+settings for *x* and *y* axis *tick* label settings, meant to mimick the
 builtin ``axes.labelweight``, ``axes.labelcolor``, and ``axes.labelsize``
-**axis label** settings.
+settings for axis labels.
 
-For a-b-c label, axes title, row label, column label,
-and figure title settings, use the new ``abc``, ``title``, ``rowlabel``,
-``collabel``, and ``suptitle`` categories, respectively.
+For a-b-c labels and axes title settings, use the new ``abc`` and ``title``
+categories. For figure title, row label, and column label settings,
+use the new ``suptitle``, ``rowlabel``, and ``collabel`` categories.
 Important notes on some of these settings:
 
 * ``abc.format`` is a string containing the character ``a`` or ``A``,
@@ -131,20 +126,26 @@ Important notes on some of these settings:
   center (``'c'``) of the axes. The defaults are ``'lo'`` and ``'co'``,
   respectively.
 
-======================================  ===========================================================
+======================================  =================================================================================================
 Key                                     Description
-======================================  ===========================================================
+======================================  =================================================================================================
 ``abc.format``                          a-b-c label format (see above).
 ``abc.pos``, ``title.pos``              a-b-c label position (see above).
 ``abc.border``, ``title.border``        Whether to draw labels inside the axes with a white border.
 ``abc.linewidth``, ``title.linewidth``  Width of the (optional) white border.
-``[category].color``                    The font color.
-``[category].fontsize``                 The font size.
-``[category].weight``                   The font weight [2]_.
-======================================  ===========================================================
+``xxxx.color``                          The font color, valid for ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``.
+``xxxx.fontsize``                       The font size, valid for ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``.
+``xxxx.weight``                         The font weight [2]_, valid for ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``.
+======================================  =================================================================================================
 
+.. [2] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
+       ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
+       Many fonts only have ``normal`` or ``bold``. If you request an
+       unavailable weight, matplotlib picks the “closest” availble weight.
+
+*****
 Grids
-`````
+*****
 For minor tick grid properties and cartographic latitude, longitude grid
 lines, we introduce the ``gridminor`` and ``geogrid`` categories.
 If a ``gridminor`` property is empty, the corresponding builtin ``grid``
@@ -164,8 +165,9 @@ Key                                             Description
 ``geogrid.color``, ``gridminor.color``          The line color.
 ==============================================  ==================================================================
 
+********
 Subplots
-````````
+********
 The ``subplot`` category is used for settings controlling the default figure
 layout. As with all sizing arguments, if specified as a number, the units
 are inches; if string, the units are interpreted by `~proplot.utils.units`.
@@ -188,8 +190,9 @@ Key                      Description
 ``subplot.panelspace``   Purely empty space between main axes and side panels.
 =======================  ==================================================================
 
+*********
 Colorbars
-`````````
+*********
 The ``colorbar`` category, analogous to the builtin ``legend`` category, has
 been added to control the default **inset** colorbar settings and a few
 **panel** colorbar settings (see the `~proplot.axes.BaseAxes`
@@ -208,12 +211,14 @@ Key                       Description
 ``colorbar.xspace``       Extra space for *x* label of inset colorbars.
 ========================  =========================================================================================================================
 
-.. [1] For example, ``'xxx'`` or ``'..'``. See `this demo
-       <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
-.. [2] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
-       ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
-       Many fonts only have ``normal`` or ``bold``. If you request an
-       unavailable weight, matplotlib picks the “closest” availble weight.
+****
+Misc
+****
+Use the boolean ``axes.formatter.zerotrim`` setting to control whether trailing
+decimal zeros are trimmed on tick labels.
+
+Use the ``axes.formatter.timerotation`` setting to control the default *x*-axis
+tick label rotation for datetime axis labels.
 """
 # First import stuff
 import re

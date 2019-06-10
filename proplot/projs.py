@@ -15,8 +15,9 @@ Also adds pseudocylindrical `cartopy projections
 that are currently unavailable: Hammer, Aitoff, Kavrayskiy VII,
 and Winkel tripel.
 
+####################
 Table of projections
-====================
+####################
 The following is a table of registered projections, their full names (with a
 link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
 if it exists), and whether they are available in the cartopy and basemap packages.

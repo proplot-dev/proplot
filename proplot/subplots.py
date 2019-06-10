@@ -10,9 +10,7 @@ Note that instead of separating various features into their own functions
 the `subplots` function. The reason for this approach? We want to build a
 **static "scaffolding"** before plotting anything, so that ProPlot can exert
 a ton of control over the layout and make it look "nice" without any
-manual tweaking on your part.
-
-See `~Figure.smart_tight_layout` for details.
+manual tweaking on your part. See `~Figure.smart_tight_layout` for details.
 """
 import os
 import re
@@ -202,7 +200,7 @@ class Figure(mfigure.Figure):
             tight=True, tightborder=None, tightsubplot=None, tightpanel=None,
             flush=False, wflush=None, hflush=None,
             borderpad=None, subplotpad=None, panelpad=None,
-            autoformat=True, rcreset=True,
+            autoformat=True,
             **kwargs):
         """
         The `~matplotlib.figure.Figure` instance returned by `subplots`.
@@ -240,9 +238,6 @@ class Figure(mfigure.Figure):
             Whether to automatically format the axes when a `~pandas.Series`,
             `~pandas.DataFrame` or `~xarray.DataArray` is passed to a plotting
             command.
-        rcreset : bool, optional
-            Whether to reset all `~proplot.rcmod.rc` settings to their
-            default values once the figure is drawn.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
         """
@@ -265,7 +260,6 @@ class Figure(mfigure.Figure):
         self._main_axes = []  # list of 'main' axes (i.e. not insets or panels)
         self._spanning_axes = [] # add axis instances to this, and label position will be updated
         # Figure-wide settings
-        self._rcreset = rcreset
         self._autoformat = autoformat
         # Panels, initiate as empty
         self.leftpanel   = axes.EmptyPanel()
@@ -611,9 +605,6 @@ class Figure(mfigure.Figure):
         # Set up spanning labels
         for axis in self._spanning_axes:
             self._axis_label_update(axis, span=True)
-        # If rc settings have been changed, reset them after drawing is done
-        if not rc._init and self._rcreset:
-            rc.reset()
 
     def _panel_tight_layout(self, side, paxs, renderer, figure=False):
         """From list of panels and the axes coordinates spanned by the
@@ -1610,7 +1601,7 @@ def subplots(array=None, ncols=1, nrows=1,
         axpanels=None, axlegends=None, axcolorbars=None,
         axpanels_kw=None, axcolorbars_kw=None, axlegends_kw=None,
         basemap=False, proj=None, proj_kw=None,
-        autoformat=True, rcreset=True, # arguments for figure instantiation
+        autoformat=True, # arguments for figure instantiation
         **kwargs):
     """
     Analagous to `matplotlib.pyplot.subplots`. Create a figure with a single
@@ -1837,7 +1828,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat, rcreset
+    tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat
         Passed to `Figure`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
@@ -1860,7 +1851,7 @@ def subplots(array=None, ncols=1, nrows=1,
         tightborder=tightborder, tightsubplot=tightsubplot, tightpanel=tightpanel,
         borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
         flush=flush, wflush=wflush, hflush=hflush,
-        autoformat=autoformat, rcreset=rcreset,
+        autoformat=autoformat,
         )
 
     #--------------------------------------------------------------------------#

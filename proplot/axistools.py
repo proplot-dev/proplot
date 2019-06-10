@@ -4,110 +4,109 @@ Defines various axis scales, locators, and formatters. Also "registers"
 the locator and formatter names, so that they can be called selected with
 the `~proplot.axes.XYAxes.format` method.
 
-This was pretty tricky. You can find my notes on overriding the
+This was pretty tricky, and involved overriding various
 `~matplotlib.scale.ScaleBase`, `~matplotlib.transforms.Transform`,
 `~matplotlib.ticker.Locator`, and
-`~matplotlib.ticker.Formatter` classes below.
-
-.. raw:: html
-
-   <h1>Scales</h1>
-
-
-* These are complicated. See `~matplotlib.scale.ScaleBase`. Use existing ones
-  as inspiration -- e.g. `InverseScale` modeled after `~matplotlib.scale.LogScale`.
-* Way to think of these is that *every single value you see on an axes first
-  gets secretly converted through some equation*, e.g. logarithm, and plotted
-  linearly in that transformation space.
-* Methods:
-
-   - `get_transform`: Returns a `~matplotlib.transforms.Transform` instance.
-   - `set_default_locators_and_formatters`: Returns
-     the default locators and formatters.
-   - `limit_range_for_scale`: Can be used to raise errors or clip
-     stuff not within that range.
-
-     From the Mercator example: unlike the autoscaling provided by the
-     tick locators, this range limiting will always be adhered to, whether
-     the axis range is set manually, determined automatically or changed
-     through panning and zooming.
-
-* Notes on methods:
-
-    - When you use `set_xlim` or `set_ylim`, the `minpos` used is actually
-      the *data limits* `minpos` (i.e. the minimum coordinate for plotted
-      data). So don't try to e.g. clip data less than 0. That is job for
-      transform. If you use `minpos` in `limit_range_for_scale`, will get
-      wrong and weird results.
-    - Common to use `set_smart_bounds(True)` in the call to
-      `set_default_locators_and_formatters` call -- but this only draws ticks
-      where **data exists**. Often this may not be what we want. Check out
-      source code, see if we can develop own version smarter than this,
-      that still prevents these hanging ticks.
-
-* Note scales have to be *registered* unlike locators and formatters, which
-  can be passed to the setter methods directly.
-
-.. raw:: html
-
-   <h1>Transforms</h1>
-
-
-* These are complicted. See `the transforms module <https://matplotlib.org/_modules/matplotlib/transforms.html#Transform>`_.
-* Attributes:
-
-    - `input_dims`, `output_dims`, `is_separable`, and `has_inverse`. The
-      `dims` are because transforms can be N-D, but for *scales* they are
-      always 1. Note `is_separable` is true if the transform is separable
-      in the x/y dimensions.
-
-* Methods:
-
-    - `transform`: Transforms N-D coordinates, given M x N array of values. Can also
-      just declare `transform_affine` or `transform_non_affine`.
-    - `inverted`: If `has_inverse` is ``True``, performs the inverse transform.
-
-.. raw:: html
-
-   <h1>Locators</h1>
-
-
-* These are complicated. See `the ticker module <https://matplotlib.org/_modules/matplotlib/ticker.html#Locator>`_.
-* Special:
-
-    - `__init__` not defined on base class but *must* be defined for subclass.
-
-* Methods include:
-
-    - `tick_values`: Accepts vmin/vmax and returns values of located ticks
-    - `__call__`: Can return data limits, view limits, or
-      other stuff; not sure how this works or when it's invoked.
-    - `view_limits`: Changes the *view* limits from default `vmin`, `vmax`
-      to prevent singularities. Uses `~matplotlib.transforms.nonsingular`
-      method; for more info see the `matplotlib doc <https://matplotlib.org/_modules/matplotlib/transforms.html#nonsingular>`_.
-
-* Methods that usually can be left alone:
-
-    - `raise_if_exceeds`: Just tests if ticks exceed ``MAXTICKS`` number.
-    - `autoscale`: Calls the internal locator `view_limits` with
-      result of `~matplotlib.axis.Axis.get_view_interval`.
-    - `pan` and `zoom`: Interactive purposes.
-
-.. raw:: html
-
-   <h1>Formatters</h1>
-
-
-Some of these are easy to construct. Just pass `~matplotlib.ticker.FuncFormatter`
-a function that accepts two arguments the number and 'position', which maybe is used
-for offset or something (don't touch it, leave it default).
-
-The matplotlib default `~matplotlib.ticker.ScalarFormatter` is much more
-complex, but can be overridden in the typical way: adding stuff to the
-`__init__` and `__call__` methods.
+`~matplotlib.ticker.Formatter` classes.
 """
-#------------------------------------------------------------------------------#
-# Imports
+################################################################################
+# Developer notes section?
+# Too damn long, comments are fine.
+# .. raw:: html
+#
+#    <h1>Scales</h1>
+#
+#
+# * These are complicated. See `~matplotlib.scale.ScaleBase`. Use existing ones
+#   as inspiration -- e.g. `InverseScale` modeled after `~matplotlib.scale.LogScale`.
+# * Way to think of these is that *every single value you see on an axes first
+#   gets secretly converted through some equation*, e.g. logarithm, and plotted
+#   linearly in that transformation space.
+# * Methods:
+#
+#    - `get_transform`: Returns a `~matplotlib.transforms.Transform` instance.
+#    - `set_default_locators_and_formatters`: Returns
+#      the default locators and formatters.
+#    - `limit_range_for_scale`: Can be used to raise errors or clip
+#      stuff not within that range.
+#
+#      From the Mercator example: unlike the autoscaling provided by the
+#      tick locators, this range limiting will always be adhered to, whether
+#      the axis range is set manually, determined automatically or changed
+#      through panning and zooming.
+#
+# * Notes on methods:
+#
+#     - When you use `set_xlim` or `set_ylim`, the `minpos` used is actually
+#       the *data limits* `minpos` (i.e. the minimum coordinate for plotted
+#       data). So don't try to e.g. clip data less than 0. That is job for
+#       transform. If you use `minpos` in `limit_range_for_scale`, will get
+#       wrong and weird results.
+#     - Common to use `set_smart_bounds(True)` in the call to
+#       `set_default_locators_and_formatters` call -- but this only draws ticks
+#       where **data exists**. Often this may not be what we want. Check out
+#       source code, see if we can develop own version smarter than this,
+#       that still prevents these hanging ticks.
+#
+# * Note scales have to be *registered* unlike locators and formatters, which
+#   can be passed to the setter methods directly.
+#
+# .. raw:: html
+#
+#    <h1>Transforms</h1>
+#
+#
+# * These are complicted. See `the transforms module <https://matplotlib.org/_modules/matplotlib/transforms.html#Transform>`_.
+# * Attributes:
+#
+#     - `input_dims`, `output_dims`, `is_separable`, and `has_inverse`. The
+#       `dims` are because transforms can be N-D, but for *scales* they are
+#       always 1. Note `is_separable` is true if the transform is separable
+#       in the x/y dimensions.
+#
+# * Methods:
+#
+#     - `transform`: Transforms N-D coordinates, given M x N array of values. Can also
+#       just declare `transform_affine` or `transform_non_affine`.
+#     - `inverted`: If `has_inverse` is ``True``, performs the inverse transform.
+#
+# .. raw:: html
+#
+#    <h1>Locators</h1>
+#
+#
+# * These are complicated. See `the ticker module <https://matplotlib.org/_modules/matplotlib/ticker.html#Locator>`_.
+# * Special:
+#
+#     - `__init__` not defined on base class but *must* be defined for subclass.
+#
+# * Methods include:
+#
+#     - `tick_values`: Accepts vmin/vmax and returns values of located ticks
+#     - `__call__`: Can return data limits, view limits, or
+#       other stuff; not sure how this works or when it's invoked.
+#     - `view_limits`: Changes the *view* limits from default `vmin`, `vmax`
+#       to prevent singularities. Uses `~matplotlib.transforms.nonsingular`
+#       method; for more info see the `matplotlib doc <https://matplotlib.org/_modules/matplotlib/transforms.html#nonsingular>`_.
+#
+# * Methods that usually can be left alone:
+#
+#     - `raise_if_exceeds`: Just tests if ticks exceed ``MAXTICKS`` number.
+#     - `autoscale`: Calls the internal locator `view_limits` with
+#       result of `~matplotlib.axis.Axis.get_view_interval`.
+#     - `pan` and `zoom`: Interactive purposes.
+#
+# .. raw:: html
+#
+#    <h1>Formatters</h1>
+#
+# Some of these are easy to construct. Just pass `~matplotlib.ticker.FuncFormatter`
+# a function that accepts two arguments the number and 'position', which maybe is used
+# for offset or something (don't touch it, leave it default).
+#
+# The matplotlib default `~matplotlib.ticker.ScalarFormatter` is much more
+# complex, but can be overridden in the typical way: adding stuff to the
+# `__init__` and `__call__` methods.
 #------------------------------------------------------------------------------#
 import re
 from .utils import ic, _default
@@ -125,6 +124,7 @@ import matplotlib.transforms as mtransforms
 
 #------------------------------------------------------------------------------#
 # Helper functions for instantiating arbitrary Locator and Formatter classes
+#------------------------------------------------------------------------------#
 # When calling these functions, the format() method should automatically
 # detect presence of date axis by testing if unit converter is on axis is
 # DateConverter instance
@@ -132,7 +132,6 @@ import matplotlib.transforms as mtransforms
 # And: https://matplotlib.org/api/dates_api.html
 # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py
 # The axis_date() method just sets the converter to the date one
-#------------------------------------------------------------------------------#
 def Locator(locator=None, *args, minor=False, time=False, **kwargs):
     """
     Returns a `~matplotlib.ticker.Locator` instance.
