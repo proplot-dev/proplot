@@ -240,7 +240,8 @@ scaling and clipping high-chroma colors across different hues and
 luminances.
 
 Use `~proplot.demos.colorspace_breakdown` to plot arbitrary
-cross-sections of these colorspaces, as shown below.
+cross-sections of these colorspaces. Also see `this
+page <http://www.hsluv.org/comparison/>`__.
 
 .. code:: ipython3
 
