@@ -79,7 +79,7 @@ _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _edges_methods = ('pcolor', 'pcolormesh',)
 _2d_methods = (*_centers_methods, *_edges_methods)
 _1d_methods = ('plot', 'scatter', 'bar', 'barh')
-_cycle_methods  = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'errorbar')
+_cycle_methods  = ('plot', 'scatter', 'bar', 'barh')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf',
     'cmapline', 'hexbin', 'matshow', 'imshow', 'spy', 'hist2d',)
@@ -184,14 +184,11 @@ def _parse_1d(self, func, *args, **kwargs):
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
-    extra = () # e.g. scatter 'c' and 's' arrays
     if len(args)==1:
         x = None
-        y, = args
-    elif len(args)==2:
-        x, y = args # same
-    elif len(args) in (3,4):
-        x, y, *extra = args # same
+        y, *args = args
+    elif len(args) in (2,3,4):
+        x, y, *args = args # same
     else:
         raise ValueError(f'Passed {len(args)} arguments to plotting command. Only 1-4 are valid.')
     # Detect 1d
@@ -252,7 +249,7 @@ def _parse_1d(self, func, *args, **kwargs):
             if label:
                 kw['title'] = label
         self.format(**kw)
-    return func(x, y, *extra, **kwargs)
+    return func(x, y, *args, **kwargs)
 
 def _parse_2d(self, func, *args, order='C', **kwargs):
     """Gets 2d data. Accepts ndarray and DataArray. Used by `check_centers`
