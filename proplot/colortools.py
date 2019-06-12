@@ -8,71 +8,15 @@ and `Cycle`. Defines helpful new `~matplotlib.colors.Normalize` and
 
 See the :ref:`Color usage` section of "Getting Started" for details.
 """
-#------------------------------------------------------------------------------#
-# Potential bottleneck, loading all this stuff?
-# *No*. Try using @timer on register functions, turns out worst is colormap
-# one at 0.1 seconds. Just happens to be a big package, takes a bit to compile
-# to bytecode (done every time module changed) then import.
-#------------------------------------------------------------------------------#
-# Interesting cpt-city colormaps that did not use:
-# * Considered Jim Mossman maps, but not very uniform.
-# * Erik Jeschke grayscale ones are also neat, but probably not much
-#   scientific use.
-# * Rafi 'sky' themes were pretty, but ultimately not useful.
-# * Crumblingwalls also interesting, but too many/some are weird.
-# * NCL gradients mostly ugly, forget them.
-# * Piecrust design has interesting 'nature' colormaps, but they are
-#   not practical. Just added a couple astro ones (aurora, space, star).
-# * Elvensword is cool, but most are pretty banded.
-# Geographic ones not used:
-# * Christian Heine geologic time maps are interesting, but again not
-#   uniform and not useful.
-# * IBCA could have been good, but bathymetry has ugly jumps.
-# * GMT maps also interesting, but non uniform.
-# * Victor Huérfano Caribbean map almost useful, but has banding.
-# * Christopher Wesson martian topo map sort of cool, but too pale.
-# * Thomas Deweez has more topo colors, but kind of ugly.
-# Geographic ones to be adapted:
-# * ESRI seems to have best geographic maps.
-# * Wiki schemes are also pretty good, but not great.
-#------------------------------------------------------------------------------#
-# Here's some useful info on colorspaces
-# https://en.wikipedia.org/wiki/HSL_and_HSV
-# http://www.hclwizard.org/color-scheme/
-# http://www.hsluv.org/comparison/ compares lch, hsluv (scaled lch), and hpluv (truncated lch)
-# Info on the CIE conventions
-# https://en.wikipedia.org/wiki/CIE_1931_color_space
-# https://en.wikipedia.org/wiki/CIELUV
-# https://en.wikipedia.org/wiki/CIELAB_color_space
-# And some useful tools for creating colormaps and cycles
-# https://nrlmry.navy.mil/TC.html
-# http://help.mail.colostate.edu/tt_o365_imap.aspx
-# http://schumacher.atmos.colostate.edu/resources/archivewx.php
-# https://coolors.co/
-# http://tristen.ca/hcl-picker/#/hlc/12/0.99/C6F67D/0B2026
-# http://gka.github.io/palettes/#diverging|c0=darkred,deeppink,lightyellow|c1=lightyellow,lightgreen,teal|steps=13|bez0=1|bez1=1|coL0=1|coL1=1
-# https://flowingdata.com/tag/color/
-# http://tools.medialab.sciences-po.fr/iwanthue/index.php
-# https://learntocodewith.me/posts/color-palette-tools/
-#------------------------------------------------------------------------------#
-# Notes on 'channel-wise alpha':
-# * Colormaps generated from HCL space (and cmOcean ones) are indeed perfectly
-#   perceptually uniform, but this still looks bad sometimes -- usually we
-#   *want* to focus on the *extremes*, so want to weight colors more heavily
-#   on the brighters/whiter part of the map! That's what the ColdHot map does,
-#   it's what most of the ColorBrewer maps do, and it's what ColorWizard does.
-# * By default extremes are stored at end of *lookup table*, not as
-#   separate RGBA values (so look under cmap._lut, indexes cmap._i_over and
-#   cmap._i_under). You can verify that your cmap is using most extreme values
-#   by comparing high-resolution one to low-resolution one.
-#------------------------------------------------------------------------------
+# Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
+# register functions, turns out worst is colormap one at 0.1 seconds. Just happens
+# to be a big package, takes a bit to compile to bytecode then import.
 import os
 import re
 import json
 import glob
 from lxml import etree
 from numbers import Number
-import cycler
 import warnings
 import numpy as np
 import numpy.ma as ma
@@ -80,15 +24,25 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 from . import utils, colormath
-from .utils import _default, _counter, ic
+from .utils import _default, _counter, _timer, ic
 rcParams = mpl.rcParams
+# Data diretories
+_delim = re.compile('[,\s]+')
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
+_data_user_cmaps = os.path.join(_data_user, 'cmaps')
+_data_user_cycles = os.path.join(_data_user, 'cycles')
 _data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
+_data_cycles = os.path.join(os.path.dirname(__file__), 'cycles') # or parent, but that makes pip install distribution hard
 _data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
+if not os.path.isdir(_data_user):
+    os.mkdir(_data_user)
+if not os.path.isdir(_data_user_cmaps):
+    os.mkdir(_data_user_cmaps)
+if not os.path.isdir(_data_user_cycles):
+    os.mkdir(_data_user_cycles)
 
 # Define some new palettes
 # Note the default listed colormaps
-_cycles_loaded = {}
 _cycles_preset = {
     # Default matplotlib v2
     'default':      ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
@@ -223,9 +177,9 @@ _cmap_categories = {
     'Misc': [
         'ColdHot',
         'bwr',
-        'CoolWarm1',
-        'CoolWarm2',
-        'VizPalette',
+        'CoolWarm',
+        'BuPi',
+        'Viz',
         'MuBlue', 'MuRed', 'MuDry', 'MuWet',
         # 'Temp', # too un-uniform
         # 'BlackBody1', 'BlackBody2', 'BlackBody3', # 3rd one is actually sky theme from rafi
@@ -606,6 +560,7 @@ class CmapDict(dict):
             else:
                 raise key_error
         return value
+
 # Override default colormap dictionary
 if not isinstance(mcm.cmap_d, CmapDict):
     mcm.cmap_d = CmapDict(mcm.cmap_d)
@@ -1306,18 +1261,16 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
     mcm.cmap_d[name] = cmap
     # Optionally save colormap to disk
     if save:
-        if not os.path.isdir(_data_user):
-            os.mkdir(_data_user)
         # Save listed colormap i.e. color cycle
         if isinstance(cmap, mcolors.ListedColormap):
             basename = f'{name}.hex'
-            filename = os.path.join(_data_user, basename)
+            filename = os.path.join(_data_user_cycles, basename)
             with open(filename, 'w') as f:
                 f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
         # Save segment data directly
         else:
             basename = f'{name}.json'
-            filename = os.path.join(_data_user, basename)
+            filename = os.path.join(_data_user_cmaps, basename)
             data = {}
             for key,value in cmap._segmentdata.items():
                 data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
@@ -1407,15 +1360,12 @@ def Cycle(*args, samples=None, name=None, save=False, **kwargs):
             raise ValueError(f'Invalid samples "{samples}".')
         cmap = mcolors.ListedColormap(cmap(samples), name=name, N=len(samples))
     # Register the colormap
-    cmap.name = name
     cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors]
     mcm.cmap_d[name] = cmap
     # Optionally save
     if save:
-        if not os.path.isdir(_data_user):
-            os.mkdir(_data_user)
         basename = f'{name}.hex'
-        filename = os.path.join(_data_user, basename)
+        filename = os.path.join(_data_user_cycles, basename)
         with open(filename, 'w') as f:
             f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
     return ColorCycle(cmap.colors, name)
@@ -2030,20 +1980,201 @@ class MidpointNorm(mcolors.Normalize):
         xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
         return ma.masked_array(xq, np.isnan(yq))
 
-#------------------------------------------------------------------------------#
-# Register new colormaps; must come before registering the color cycles
-# * If leave 'name' empty in register_cmap, name will be taken from the
-#   Colormap instance. So do that.
-# * Note that **calls to cmap instance do not interpolate values**; this is only
-#   done by specifying levels in contourf call, specifying lut in get_cmap,
-#   and using LinearSegmentedColormap.from_list with some N.
-# * The cmap object itself only **picks colors closest to the "correct" one
-#   in a "lookup table**; using lut in get_cmap interpolates lookup table.
-#   See LinearSegmentedColormap doc: https://matplotlib.org/api/_as_gen/matplotlib.colors.LinearSegmentedColormap.html#matplotlib.colors.LinearSegmentedColormap
-# * If you want to always disable interpolation, use ListedColormap. This type
-#   of colormap instance will choose nearest-neighbors when using get_cmap, levels, etc.
-#------------------------------------------------------------------------------#
-def register_colors(nmax=np.inf, verbose=False):
+def _read_cmap_cycle_data(filename):
+    """
+    Helper function that reads generalized colormap and color cycle files.
+    """
+    empty = (None, None, None)
+    if os.path.isdir(filename): # no warning
+        return empty
+    # Directly read segmentdata json file
+    # NOTE: This is special case! Immediately return name and cmap
+    split = os.path.basename(filename).split('.')
+    if len(split)==1:
+        return empty
+    *name, ext = split
+    name = ''.join(name)
+    if ext=='json':
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        N = rcParams['image.lut']
+        if 'space' in data:
+            space = data.pop('space')
+            cmap = PerceptuallyUniformColormap(name, data, space=space, N=N)
+        else:
+            cmap = mcolors.LinearSegmentedColormap(name, data, N=N)
+        if name[-2:]=='_r':
+            cmap = cmap.reversed(name[:-2])
+        return name, None, cmap
+    # Read .rgb, .rgba, .xrgb, and .xrgba files
+    elif ext in ('rgb', 'xrgb', 'rgba', 'xrgba'):
+        # Load
+        # NOTE: This appears to be biggest import time bottleneck! Increases
+        # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
+        data = [_delim.split(line.strip()) for line in open(filename).readlines()]
+        try:
+            data = [[float(num) for num in line] for line in data]
+        except ValueError:
+            warnings.warn(f'Failed to load "{filename}". Expected a table of comma or space-separated values.')
+            return empty
+        # Build x-coordinates and standardize shape
+        data = np.array(data)
+        if data.shape[1]!=len(ext):
+            warnings.warn(f'Failed to load "{filename}". Got {data.shape[1]} columns, but expected {len(ext)}.')
+            return empty
+        if ext[0]!='x': # i.e. no x-coordinates specified explicitly
+            x = np.linspace(0, 1, data.shape[0])
+        else:
+            x, data = data[:,0], data[:,1:]
+    # Load XML files created with scivizcolor
+    # Adapted from script found here: https://sciviscolor.org/matlab-matplotlib-pv44/
+    elif ext=='xml':
+        try:
+            xmldoc = etree.parse(filename)
+        except IOError:
+            warnings.warn(f'Failed to load "{filename}".')
+            return empty
+        x, data = [], []
+        for s in xmldoc.getroot().findall('.//Point'):
+            # Verify keys
+            if any(key not in s.attrib for key in 'xrgb'):
+                warnings.warn(f'Failed to load "{filename}". Missing an x, r, g, or b specification inside one or more <Point> tags.')
+                return empty
+            if 'o' in s.attrib and 'a' in s.attrib:
+                warnings.warn(f'Failed to load "{filename}". Contains ambiguous opacity key.')
+                return empty
+            # Get data
+            color = []
+            for key in 'rgbao': # o for opacity
+                if key not in s.attrib:
+                    continue
+                color.append(float(s.attrib[key]))
+            x.append(float(s.attrib['x']))
+            data.append(color)
+        # Convert to array
+        if not all(len(data[0])==len(color) for color in data):
+             warnings.warn(f'File {filename} has some points with alpha channel specified, some without.')
+             return empty
+    elif ext=='hex':
+        # Read hex strings
+        string = open(filename).read() # into single string
+        data = re.findall('#[0-9a-fA-F]{6}', string) # list of strings
+        if len(data)<2:
+            warnings.warn(f'Failed to load "{filename}".')
+            return empty
+        # Convert to array
+        x = np.linspace(0, 1, len(data))
+        data = [mcolors.to_rgb(color) for color in data]
+    else:
+        warnings.warn(f'Colormap/cycle file "{filename}" has unknown extension.')
+        return empty
+    # Standardize and reverse if necessary to cmap
+    x, data = np.array(x), np.array(data)
+    x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
+    if (data>2).any(): # from 0-255 to 0-1
+        data = data/255
+    if name[-2:]=='_r':
+        name = name[:-2]
+        data = data[::-1,:]
+        x = 1 - x[::-1]
+    # Return data
+    return name, x, data
+
+def register_cmaps():
+    """
+    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
+    folder. Maps are named according to their filenames -- for example,
+    ``name.xyz`` will be registered as ``'name'``. Use `~proplot.demos.cmap_show`
+    to generate a table of the registered colormaps
+
+    Valid file extensions are described in the below table.
+
+    =====================  =============================================================================================================================================================================================================
+    Extension              Description
+    =====================  =============================================================================================================================================================================================================
+    ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
+    ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
+    ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+    ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+    ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
+    =====================  =============================================================================================================================================================================================================
+    """
+    # Read colormaps from directories
+    N = rcParams['image.lut'] # query this when register function is called
+    for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
+                sorted(glob.glob(os.path.join(_data_user_cmaps, '*'))):
+        name, x, data = _read_cmap_cycle_data(filename)
+        if name is None:
+            continue
+        if isinstance(data, mcolors.LinearSegmentedColormap):
+            cmap = data
+        else:
+            data = [(x,color) for x,color in zip(x,data)]
+            cmap = mcolors.LinearSegmentedColormap.from_list(name, data, N=N)
+        mcm.cmap_d[name] = cmap
+        cmaps.add(name)
+
+    # Fix the builtin rainbow colormaps by switching from Listed to
+    # LinearSegmented -- don't know why matplotlib stores these as
+    # discrete maps by default, dumb.
+    for name in _cmap_categories['Matplotlib Originals']: # initialize as empty lists
+        cmap = mcm.cmap_d.get(name, None)
+        if cmap and isinstance(cmap, mcolors.ListedColormap):
+            mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
+
+    # Reverse some included colormaps, so colors
+    # go from 'cold' to 'hot'
+    for name in ('Spectral',):
+        mcm.cmap_d[name] = mcm.cmap_d[name].reversed()
+
+    # Delete ugly cmaps (strong-arm user into using the better ones)
+    greys = mcm.cmap_d.get('Greys', None)
+    if greys is not None:
+        mcm.cmap_d['Grays'] = greys
+    for category in _cmap_categories_delete:
+        for name in _cmap_categories:
+            mcm.cmap_d.pop(name, None)
+
+    # Add shifted versions of cyclic colormaps, and prevent same colors on ends
+    for cmap in mcm.cmap_d.values():
+        cmap._cyclic = (cmap.name.lower() in ('twilight', 'phase', 'graycycle'))
+
+def register_cycles():
+    """
+    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot/cycles``
+    folder. Cycles are named according to their filenames -- for example,
+    ``name.hex`` will be registered as ``'name'``. Use `~proplot.demos.cycle_show`
+    to generate a table of the registered cycles.
+
+    For valid file extensions, see `register_cmaps`.
+    """
+    # Read cycles from directories
+    icycles = {}
+    for filename in sorted(glob.glob(os.path.join(_data_cycles, '*'))) + \
+                sorted(glob.glob(os.path.join(_data_user_cycles, '*'))):
+        name, x, data = _read_cmap_cycle_data(filename)
+        if name is None:
+            continue
+        if isinstance(data, mcolors.LinearSegmentedColormap):
+            warnings.warn(f'Failed to load {filename} as color cycle.')
+            continue
+        icycles[name] = data
+    for name,colors in {**_cycles_preset, **icycles}.items():
+        mcm.cmap_d[name] = mcolors.ListedColormap([to_rgb(color) for color in colors], name=name)
+        cycles.add(name)
+
+    # Remove redundant or ugly ones, plus ones that are just merged existing maps
+    for name in ('tab10', 'tab20', 'tab20b', 'tab20c', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
+        mcm.cmap_d.pop(name, None)
+
+    # *Change* the name of some more useful ones
+    for (name1,name2) in [('Accent','Set1')]:
+        cycle = mcm.cmap_d.pop(name1, None)
+        if cycle:
+            mcm.cmap_d[name2] = cycle
+            cycles.add(name2)
+
+def register_colors(nmax=np.inf):
     """
     Reads full database of crowd-sourced XKCD color names and official
     Crayola color names, then filters them to be sufficiently "perceptually
@@ -2101,6 +2232,7 @@ def register_colors(nmax=np.inf, verbose=False):
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
+    # print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
     deleted = 0
     hcls = hcls/np.array(scale)
     hcls = np.round(hcls/_distinct_colors_threshold).astype(np.int64)
@@ -2113,193 +2245,6 @@ def register_colors(nmax=np.inf, verbose=False):
             colordict[category][name] = _colors_unfiltered[category][name]
     for key,kw in colordict.items():
         mcolors._colors_full_map.update(kw)
-    if verbose:
-        print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
-
-def register_cmaps():
-    """
-    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot``
-    folder. Maps are named according to their filenames -- for example,
-    ``name.xyz`` will be registered as ``'name'``. Use `~proplot.demos.cmap_show`
-    to generate a table of the registered colormaps.  Valid extensions for
-    colormap files are described in the below table.
-
-    =====================  =============================================================================================================================================================================================================
-    Extension              Description
-    =====================  =============================================================================================================================================================================================================
-    ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
-    ``.rgb``               3-column CSV files, each column indicating red, blue and green color values.
-    ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
-    ``.rgba``, ``.xrgba``  As with ``.rgb`` and ``.xrgb`` but with an additional trailing column indicating the opacity (or "alpha") value.
-    =====================  =============================================================================================================================================================================================================
-    """
-    # First read from file
-    N_hires = rcParams['image.lut']
-    for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
-            sorted(glob.glob(os.path.join(_data_user, '*'))):
-        # Read table of RGB values
-        if not re.search('\.(x?rgba?|json|xml)$', filename):
-            continue
-        name = os.path.basename(filename)
-        name = name.split('.')[0]
-        # Read .rgb, .rgba, .xrgb, and .xrgba files
-        if re.search('\.x?rgba?$', filename):
-            # Load
-            ext = filename.split('.')[-1]
-            try:
-                cmap = np.loadtxt(filename, delimiter=',') # simple
-            except:
-                print(f'Failed to load {os.path.basename(filename)}.')
-                continue
-            # Build x-coordinates and standardize shape
-            N = cmap.shape[0]
-            if ext[0] != 'x': # i.e. no x-coordinates specified explicitly
-                x = np.linspace(0, 1, N)
-                cmap = np.concatenate((x[:,None], cmap), axis=1)
-            if cmap.shape[1]==5:
-                channels = ('red', 'green', 'blue', 'alpha')
-            elif cmap.shape[1]==4:
-                channels = ('red', 'green', 'blue')
-            else:
-                raise ValueError(f'Invalid number of columns for colormap "{name}": {cmap.shape[1]}.')
-            if (cmap[:,1:4]>10).any(): # from 0-255 to 0-1
-                cmap[:,1:4] = cmap[:,1:4]/255
-            # Build color dict
-            if re.match('(cycle|qual)[0-9]', name.lower()):
-                cmap = mcolors.ListedColormap(cmap[:,1:])
-                cycles.add(name)
-            else:
-                x = cmap[:,0]
-                x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
-                cdict = {}
-                for i,channel in enumerate(channels):
-                    vector = cmap[:,i+1:i+2]
-                    cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
-                cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
-                cmaps.add(name)
-        # Load XML files created with scivizcolor
-        # Adapted from script found here: https://sciviscolor.org/matlab-matplotlib-pv44/
-        # TODO: Add alpha channel support!
-        elif re.search('\.xml$', filename):
-            try:
-                xmldoc = etree.parse(filename)
-            except IOError:
-                raise ValueError('The input file is invalid. It must be a colormap xml file. Go to https://sciviscolor.org/home/colormaps/ for some good options.')
-            x = []
-            colors = []
-            for s in xmldoc.getroot().findall('.//Point'):
-                if any(key not in s.attrib for key in 'xrgb'):
-                    raise RuntimeError(f'File {filename} missing an x, r, g, or b specification inside one or more <Point> tags.')
-                x.append(float(s.attrib['x']))
-                color = []
-                for key in 'rgboa': # o for opacity
-                    if key not in s.attrib:
-                        continue
-                    color.append(float(s.attrib[key]))
-                colors.append(color)
-            if not all(len(colors[0])==len(color) for color in colors):
-                raise ValueError(f'Got some points with alpha channel specified, some without.')
-            N = len(x)
-            x = np.array(x)
-            x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
-            colors = np.array(colors)
-            if re.match('(cycle|qual)[0-9]?', name.lower()):
-                # cmap = mcolors.ListedColormap([to_rgb(color) for color in colors])
-                cmap = mcolors.ListedColormap(colors)
-                cycles.add(name)
-            else:
-                cdict = {}
-                names = ('red', 'green', 'blue')
-                if colors.shape[1]==4:
-                    names = (*names, 'alpha')
-                for i,channel in enumerate(names):
-                    vector = colors[:,i:i+1]
-                    cdict[channel] = np.concatenate((x[:,None], vector, vector), axis=1).tolist()
-                cmap = mcolors.LinearSegmentedColormap(name, cdict, N) # using static method is way easier
-                cmaps.add(name)
-        # Directly read segmentdata json file
-        # Will ensure that HSL colormaps have the 'space' entry
-        # WARNING: This does not adjust 'x' to be in range 0 to 1, assumes
-        # is already fixed, matplotlib will raise warning down the line.
-        else:
-            with open(filename, 'r') as file:
-                segmentdata = json.load(file)
-            if 'space' in segmentdata:
-                space = segmentdata.pop('space')
-                cmap = PerceptuallyUniformColormap(name, segmentdata, space=space, N=N_hires)
-            else:
-                cmap = mcolors.LinearSegmentedColormap(name, segmentdata, N=N_hires)
-            cmaps.add(name)
-        # Register maps (this is just what register_cmap does)
-        # If the _r (reversed) version is stored on file, store the reversed one
-        if re.search('_r$', name):
-            name = name[:-2]
-            cmap = cmap.reversed()
-            cmap.name = name
-        mcm.cmap_d[name] = cmap
-
-    # Fix the builtin rainbow colormaps by switching from Listed to
-    # LinearSegmented -- don't know why matplotlib stores these as
-    # discrete maps by default, dumb.
-    for name in _cmap_categories['Matplotlib Originals']: # initialize as empty lists
-        cmap = mcm.cmap_d.get(name, None)
-        if cmap and isinstance(cmap, mcolors.ListedColormap):
-            mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
-
-    # Reverse some included colormaps, so colors
-    # go from 'cold' to 'hot'
-    for name in ('Spectral',):
-        mcm.cmap_d[name] = mcm.cmap_d[name].reversed()
-
-    # Add shifted versions of cyclic colormaps, and prevent same colors on ends
-    for cmap in mcm.cmap_d.values():
-        cmap._cyclic = (cmap.name.lower() in ('twilight', 'phase', 'graycycle'))
-
-    # Delete ugly cmaps (strong-arm user into using the better ones)
-    # TODO: Add this to cmap dict __init__?
-    greys = mcm.cmap_d.get('Greys', None)
-    if greys is not None:
-        mcm.cmap_d['Grays'] = greys
-    for category in _cmap_categories_delete:
-        for name in _cmap_categories:
-            mcm.cmap_d.pop(name, None)
-
-def register_cycles():
-    """
-    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot``
-    folder. Cycles are named according to their filenames -- for example,
-    ``name.hex`` will be registered as ``'name'``. Use `~proplot.demos.cycle_show`
-    to generate a table of the registered cycles. Color cycle extensions must
-    be ``.hex`` and contain a comma-separated list of HEX values.
-    """
-    # Read lists of hex strings from disk
-    for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
-            sorted(glob.glob(os.path.join(_data_user, '*'))):
-        if not re.search('\.hex$', filename):
-            continue
-        name = os.path.basename(filename)
-        name = name.split('.hex')[0]
-        colors = ''.join(s.strip() for s in open(filename)).split(',') # single or multiple lines
-        if len(colors)<2:
-            raise ValueError(f'Error reading file "{filename}".')
-        colors = [mcolors.to_rgb(c) for c in colors] # from list of tuples
-        _cycles_loaded[name] = colors
-
-    # Register names
-    # Note that 'loaded' cycles will overwrite any presets with same name
-    for name,colors in {**_cycles_preset, **_cycles_loaded}.items():
-        mcm.cmap_d[name] = mcolors.ListedColormap([to_rgb(color) for color in colors], name=name)
-        cycles.add(name)
-
-    # Remove redundant or ugly ones, plus ones that are just merged existing maps
-    for key in ('tab10', 'tab20', 'tab20b', 'tab20c', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
-        mcm.cmap_d.pop(key, None)
-    # *Change* the name of some more useful ones
-    for (name1,name2) in [('Accent','Set1')]:
-        orig = mcm.cmap_d.pop(name1, None)
-        if orig:
-            mcm.cmap_d[name2] = orig
-            cycles.add(name2)
 
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly

@@ -49,8 +49,8 @@ from other online data viz projects. Use `~proplot.demos.cmap_show` to
 generate a table of registered maps, as shown below. The figure is
 broken down into the following sections:
 
--  “User” colormaps, i.e. colormaps saved to your ``~/.proplot`` folder.
-   A great way to save colormaps to this folder is using the
+-  “User” colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
+   folder. A great way to save colormaps to this folder is using the
    `~proplot.colortools.Colormap` constructor function. See
    :ref:`On-the-fly colormaps` for details.
 -  Original matplotlib maps, created by the matplotlib team.
@@ -366,14 +366,29 @@ non-linear in saturation.
 Adding online colormaps
 -----------------------
 
+There are plenty of online interactive tools for generating perceptually
+uniform colormaps, including
+`HCLWizard <http://hclwizard.org:64230/hclwizard/>`__,
+`Chroma.js <https://gka.github.io/palettes/#colors=lightyellow,orange,deeppink,darkred%7Csteps=7%7Cbez=1%7CcoL=1>`__,
+`SciVisColor <https://sciviscolor.org/home/colormaps/>`__, and `HCL
+picker <http://tristen.ca/hcl-picker/#/hlc/12/0.99/C6F67D/0B2026>`__.
+
+To add colormaps downloaded from any of these sources, save the colormap
+data to a file in your ``~/.proplot/cmaps`` folder, then call
+`~proplot.colortools.register_cmaps`. The file should be named
+``name.ext``, where ``name`` is the registered colormap name and ``ext``
+is the file extension. See `~proplot.colortools.register_cmaps` for
+valid file extensions.
+
 Registered color cycles
 -----------------------
 
 Use `~proplot.demos.cycle_show` to generate a table of registered
-color cycles, and color cycles saved to your ``~/.proplot`` folder. You
-can make your own color cycles using the `~proplot.colortools.Cycle`
-constructor function. See the :ref:`Color usage` introduction for more
-on the differences between colormaps and color cycles.
+color cycles, and color cycles saved to your ``~/.proplot/cycles``
+folder. You can make your own color cycles using the
+`~proplot.colortools.Cycle` constructor function. See the
+:ref:`Color usage` introduction for more on the differences between
+colormaps and color cycles.
 
 .. code:: ipython3
 
@@ -382,7 +397,7 @@ on the differences between colormaps and color cycles.
 
 
 
-.. image:: showcase/showcase_134_0.svg
+.. image:: showcase/showcase_135_0.svg
 
 
 On-the-fly color cycles
@@ -423,7 +438,7 @@ every time you import ProPlot.
 
 
 
-.. image:: showcase/showcase_137_0.svg
+.. image:: showcase/showcase_138_0.svg
 
 
 Finally, *colormaps* (or combinations thereof) can be used as sources
@@ -455,11 +470,24 @@ the colormap before drawing colors from said map. See
 
 
 
-.. image:: showcase/showcase_139_0.svg
+.. image:: showcase/showcase_140_0.svg
 
 
 Adding online color cycles
 --------------------------
+
+There are plenty of online interactive tools for generating and testing
+color cycles, including `i want
+hue <http://tools.medialab.sciences-po.fr/iwanthue/index.php>`__,
+`coolers <https://coolors.co>`__, and `viz
+palette <https://projects.susielu.com/viz-palette>`__.
+
+To add color cycles downloaded from any of these sources, save the cycle
+data to a file in your ``~/.proplot/cycles`` folder, then call
+`~proplot.colortools.register_cycles`. The file should be named
+``name.ext``, where ``name`` is the registered cycle name and ``ext`` is
+the file extension. See `~proplot.colortools.register_cmaps` for valid
+file extensions.
 
 Registered color names
 ----------------------
@@ -495,7 +523,7 @@ selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_143_0.svg
+.. image:: showcase/showcase_145_0.svg
 
 
 .. code:: ipython3
@@ -505,7 +533,7 @@ selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_144_0.svg
+.. image:: showcase/showcase_146_0.svg
 
 
 Individual color sampling
@@ -544,4 +572,4 @@ by the `~proplot.colortools.ColorDictSpecial` class.
 
 
 
-.. image:: showcase/showcase_147_0.svg
+.. image:: showcase/showcase_149_0.svg
