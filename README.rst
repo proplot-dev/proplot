@@ -90,6 +90,7 @@ This project can be thought of as "matplotlib for power users."
 Many of its features represent an alternative to the existing matplotlib API -- and
 following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
 they should perhaps remain here as a side project.
+
 .. Some features could be relatively esoteric for the average user (for example,
    "perceptually uniform" colormaps), or
    could be seen as "convenience features" that perhaps do not belong
