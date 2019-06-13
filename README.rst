@@ -103,7 +103,7 @@ successively adding axes to an existing figure instance.
 The "smart tight layout" feature conflicts directly with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability
 to preserve axes aspect ratios by sacrificing fixed figure dimensions.
-And much of ``subplots`` might be seen as an alternative to
+And much of ``subplots`` could be seen as a more flexible alternative to
 the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ toolkit.
 
 Despite all this, if there are any matplotlib developers out there that think
