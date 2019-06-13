@@ -1022,7 +1022,7 @@ def cycle_wrapper(self, func, *args,
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     norm=None, norm_kw={},
     extend='neither',
-    values=None, levels=None, zero=False, # override levels to be *centered* on zero
+    values=None, levels=None, zero=False, vmin=None, vmax=None, # override levels to be *centered* on zero
     edgefix=True, labels=False, labels_kw={}, precision=2,
     colorbar=False, colorbar_kw={},
     lw=None, linewidth=None, linewidths=None,
@@ -1167,6 +1167,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     cyclic = False
     colors = _default(color, colors, edgecolor, edgecolors)
     levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+    if vmin is not None and vmax is not None and not np.iterable(levels):
+        levels = np.linspace(vmin, vmax, levels)
     linewidths = _default(lw, linewidth, linewidths)
     linestyles = _default(ls, linestyle, linestyles)
     if not re.match('contour$', name): # contour, tricontour, i.e. not a method where cmap is optional

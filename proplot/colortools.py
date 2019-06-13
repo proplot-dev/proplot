@@ -861,16 +861,20 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     keys = {key for cmap in imaps for key in cmap._segmentdata.keys() if 'gamma' not in key}
     for key in keys:
         # Combine xyy data
-        # WARNING: callable stuff is untested!
-        datas = []
         callable_ = [callable(cmap._segmentdata[key]) for cmap in imaps]
         if all(callable_): # expand range from x-to-w to 0-1
-            for x,w,cmap in zip(x0[:-1], xw, imaps):
-                data = cmap._segmentdata[key]
-                data = lambda ix: data((ix - x)/w)
-                datas.append(data)
-            data = lambda ix: datas[max(np.searchsorted(x0, ix), len(datas)-1)](ix)
+            funcs = [cmap._segmentdata[key] for cmap in imaps]
+            def data(ix):
+                ix = np.atleast_1d(ix)
+                kx = np.empty(ix.shape)
+                ifuncs = [*funcs]
+                nfuncs = len(ifuncs)
+                for j,jx in enumerate(ix.flat):
+                    idx = max(np.searchsorted(x0, jx)-1, 0)
+                    kx.flat[j] = ifuncs[idx]((jx - x0[idx])/xw[idx])
+                return kx
         elif not any(callable_):
+            datas = []
             for x,w,cmap in zip(x0[:-1], xw, imaps):
                 data = np.array(cmap._segmentdata[key])
                 data[:,0] = x + w*data[:,0]
@@ -1858,8 +1862,6 @@ class BinNorm(mcolors.BoundaryNorm):
         """Normalizes data values to the range 0-1."""
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
-        # Note the bins vector includes out-of-bounds negative (searchsorted
-        # index 0) and out-of-bounds positive (searchsorted index N+1) values
         clip = self._norm_clip
         if clip:
             xq = np.clip(xq, *clip)
@@ -1987,7 +1989,6 @@ class MidpointNorm(mcolors.Normalize):
         distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
         yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
         return ma.masked_array(yq, np.isnan(xq))
-        # return ma.masked_array(np.interp(xq, x, y))
 
     def inverse(self, yq, clip=None):
         """Inverse operation of `~MidpointNorm.__call__`."""

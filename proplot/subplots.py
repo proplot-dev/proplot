@@ -1599,6 +1599,8 @@ def subplots(array=None, ncols=1, nrows=1,
         share=None, sharex=3, sharey=3, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
         # Panels and projections
         panel=None, panels=None, legend=None, legends=None, colorbar=None, colorbars=None,
+        axpanel=None, axlegend=None, axcolorbar=None,
+        axpanel_kw=None, axcolorbar_kw=None, axlegend_kw=None,
         axpanels=None, axlegends=None, axcolorbars=None,
         axpanels_kw=None, axcolorbars_kw=None, axlegends_kw=None,
         basemap=False, proj=None, proj_kw=None,
@@ -1783,8 +1785,9 @@ def subplots(array=None, ncols=1, nrows=1,
         As in `~Figure.add_subplot_and_panels`, but only controls axis
         sharing between *stacked* panels.
 
-    axpanels : str or dict-like, optional
-        Specifies which axes should have "panels".
+    axpanel, axpanels : str or dict-like, optional
+        Specifies which axes should have "panels". Both `axpanel` and `axpanels`
+        are acceptable, because it is hard to remember otherwise.
         The argument is interpreted as follows:
 
             * If string, panels are drawn on the same side for all subplots.
@@ -1801,12 +1804,12 @@ def subplots(array=None, ncols=1, nrows=1,
         ``bottompanel`` and ``toppanel`` attributes on the axes instance.
         You can also use the aliases ``lpanel``, ``rpanel``, ``bpanel``,
         or ``tpanel``.
-    axcolorbars, axlegends
+    axcolorbar, axcolorbars, axlegend, axlegends
         Identical to `axpanels`, except the *default* panel width is
         more appropriate for a colorbar or legend. The panel can then be
         "filled" with a colorbar or legend with e.g.
         ``ax.rightpanel.colorbar()`` or ``ax.rightpanel.legend()``.
-    axpanels_kw : dict-like, optional
+    axpanel_kw, axpanels_kw : dict-like, optional
         Keyword args passed to `~Figure.add_subplot_and_panels`.
         Can be dict of properties (applies globally), or **dict of dicts** of
         properties (applies to specific axes, as with `axpanels`).
@@ -1816,7 +1819,7 @@ def subplots(array=None, ncols=1, nrows=1,
         With ``{1:{'lwidth':1}, 2:{'lwidth':0.5}}``, the left subplot
         panel will be 1 inch wide and the right subplot panel will be
         0.5 inches wide.
-    axcolorbars_kw, axlegends_kw
+    axcolorbar_kw, axcolorbars_kw, axlegend_kw, axlegends_kw
         As with `axpanels_kw`, but applies to panels declared with the
         `axcolorbars` and `axlegends` keywords, respectively.
 
@@ -1904,12 +1907,12 @@ def subplots(array=None, ncols=1, nrows=1,
     # Create dictionary of panel toggles and settings
     # Input can be string e.g. 'rl' or dictionary e.g. {(1,2,3):'r', 4:'l'}
     # TODO: Allow separate settings for separate colorbar, legend, etc. panels
-    axpanels    = _axes_dict(naxs, _default(axpanels, ''), kw=False, default='')
-    axcolorbars = _axes_dict(naxs, _default(axcolorbars, ''), kw=False, default='')
-    axlegends   = _axes_dict(naxs, _default(axlegends, ''), kw=False, default='')
-    axpanels_kw    = _axes_dict(naxs, _default(axpanels_kw, {}), kw=True)
-    axcolorbars_kw = _axes_dict(naxs, _default(axcolorbars_kw, {}), kw=True)
-    axlegends_kw   = _axes_dict(naxs, _default(axlegends_kw, {}), kw=True)
+    axpanels    = _axes_dict(naxs, _default(axpanel, axpanels, ''), kw=False, default='')
+    axcolorbars = _axes_dict(naxs, _default(axcolorbar, axcolorbars, ''), kw=False, default='')
+    axlegends   = _axes_dict(naxs, _default(axlegend, axlegends, ''), kw=False, default='')
+    axpanels_kw    = _axes_dict(naxs, _default(axpanel_kw, axpanels_kw, {}), kw=True)
+    axcolorbars_kw = _axes_dict(naxs, _default(axcolorbar_kw, axcolorbars_kw, {}), kw=True)
+    axlegends_kw   = _axes_dict(naxs, _default(axlegend_kw, axlegends_kw, {}), kw=True)
     # Get which panels
     for num in range(1,naxs+1):
         axpanels_kw[num] = _panels_kwargs(
