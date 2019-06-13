@@ -90,11 +90,11 @@ This project can be thought of as "matplotlib for power users."
 Many of its features represent an alternative to the existing matplotlib API -- and
 following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
 they should perhaps remain here as a side project.
-Some of its may be relatively esoteric for the average user (for example,
-"perceptually uniform" colormaps), or 
-can be seen as "convenience features" that perhaps do not belong
-with the core API for the sake of minimalism (for example, direct integration
-with cartographic toolkits).
+.. Some features could be relatively esoteric for the average user (for example,
+   "perceptually uniform" colormaps), or
+   could be seen as "convenience features" that perhaps do not belong
+   with the core API for the sake of minimalism (for example, direct integration
+   with cartographic toolkits).
 
 There are also some philosophical differences and more direct conflicts.
 ProPlot enforces a "static"
