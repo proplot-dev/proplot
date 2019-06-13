@@ -89,7 +89,7 @@ Why not add to matplotlib directly?
 This project can be thought of as "matplotlib for power users."
 Many of its features represent an alternative to the existing matplotlib API -- and
 following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
-they should perhaps remain here as a side project.
+they should perhaps remain here as a side project. For example: the ``format`` and ``smart_update`` methods, which are meant to replace existing axes and axis methods.
 
 .. Some features could be relatively esoteric for the average user (for example,
    "perceptually uniform" colormaps), or
@@ -98,16 +98,13 @@ they should perhaps remain here as a side project.
    with cartographic toolkits).
 
 There are also some philosophical differences and more direct conflicts.
-ProPlot enforces a "static"
-figure scaffolding, and introduces the ``format`` and ``smart_update`` methods
-meant to replace various existing axes and axis methods.
-The "smart tight layout" feature also conflicts directly with
+ProPlot enforces **static** figure scaffoldings, while matplotlib encourages
+successively adding axes to an existing figure instance.
+The "smart tight layout" feature conflicts directly with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability
 to preserve axes aspect ratios by sacrificing fixed figure dimensions.
-And some ``subplots`` features might be seen as an alternative
+And much of ``subplots`` might be seen as an alternative to
 the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ toolkit.
-Finally, ProPlot represents a backwards-incompatible break from matplotlib
-by deleting several native matplotlib colormaps.
 
 Despite all this, if there are any matplotlib developers out there that think
 some ProPlot features could be added to matplotlib directly, please contact me!
