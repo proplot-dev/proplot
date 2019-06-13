@@ -1129,6 +1129,8 @@ locators = {
 formatters = { # note default LogFormatter uses ugly e+00 notation
     'default':    AutoFormatter,
     'auto':       AutoFormatter,
+    'frac':       FracFormatter,
+    'simple':     SimpleFormatter,
     'scalar':     mticker.ScalarFormatter,
     'none':       mticker.NullFormatter,
     'null':       mticker.NullFormatter,
@@ -1141,8 +1143,6 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'eng':        mticker.EngFormatter,
     'percent':    mticker.PercentFormatter,
     'index':      mticker.IndexFormatter,
-    'simple':     SimpleFormatter,
-    'frac':       FracFormatter,
     }
 """Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 `Formatter` for a table."""

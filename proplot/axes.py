@@ -1103,8 +1103,8 @@ class XYAxes(BaseAxes):
                 if hasattr(scale, 'name'): # class was passed
                     scale = scale.name
                 getattr(self, f'set_{name}scale')(axistools.Scale(scale, **scale_kw))
-                if scale in ('log','inverse') and locator is not None and formatter is None:
-                    formatter = 'default' # override
+                if scale in ('log','inverse') and formatter is None:
+                    formatter = 'simple' # WARNING: matplotlib ScalarFormatter fails with logarithmic axes, trims trailing decimals, need my formatter
             if lim is not None:
                 getattr(self, f'set_{name}lim')(lim)
             if reverse:
