@@ -1083,7 +1083,8 @@ class Figure(mfigure.Figure):
         return out
 
     def save(self, *args, **kwargs):
-        """Alias for `~Figure.savefig`."""
+        """Alias for `~Figure.savefig`... because ``Figure.savefig`` is
+        completely redundant."""
         return self.savefig(*args, **kwargs)
 
     def savefig(self, filename, alpha=None, color=None, **kwargs):

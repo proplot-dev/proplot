@@ -6,8 +6,8 @@ adds some neat features to help you use colors effectively in your
 figures, and integrates palettes from several online data visualization
 tools.
 
-First things first, ProPlot makes an artificial distinction between
-*colormaps* and *color cycles*.
+First things first, ProPlot makes a distinction between *colormaps* and
+*color cycles*.
 
 -  A *colormap* is a palette constructed by sampling some *smooth,
    linear* function between two end colors. Colormaps are generally used
@@ -29,15 +29,11 @@ First things first, ProPlot makes an artificial distinction between
    *Colormaps* can also be cut up and used as color cycles (see
    :ref:`On-the-fly color cycles`).
 
-Various matplotlib plotting methods have been wrapped by
-`~proplot.axes.wrapper_cmap` and `~proplot.axes.wrapper_cycle`. The
-former enhances most functions that accept a ``cmap`` argument, and the
-latter adds a brand new keyword arg called ``cycle`` that can be used to
-change the axes property cycler on-the-fly.
-
 This section documents the colormaps and cycles registered after
 importing ProPlot, explains how to make custom colormaps and cycles, and
-shows how to apply them to your plots.
+shows how to apply them to your plots using axes methods wrapped by
+`~proplot.wrappers.cmap_wrapper` or
+`~proplot.wrappers.cycle_wrapper`.
 
 Registered colormaps
 --------------------
@@ -383,8 +379,8 @@ valid file extensions.
 Registered color cycles
 -----------------------
 
-Use `~proplot.demos.cycle_show` to generate a table of registered
-color cycles, and color cycles saved to your ``~/.proplot/cycles``
+Use `~proplot.demos.cycle_show` to generate a table of the color
+cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
 `~proplot.colortools.Cycle` constructor function. See the
 :ref:`Color usage` introduction for more on the differences between
@@ -404,17 +400,19 @@ On-the-fly color cycles
 -----------------------
 
 With ProPlot, you can specify the color cycle by passing ``cycle`` to
-any plotting command (e.g. ``cycle='538'``; see
-`~proplot.wrappers.cycle_wrapper`), or by changing the global default
-cycle (e.g. ``plot.rc.cycle = '538'``; see the `~proplot.rcmod`
-documentation for details). In both cases, the arguments are passed to
-the `~proplot.colortools.Cycle` constructor.
-`~proplot.colortools.Cycle` keyword arguments can be specified with
-``cycle_kw``. If you want to save your own color cycle into
-``~/.proplot``, simply pass ``save=True`` to the
+plotting commands like `~matplotlib.axes.Axes.plot` or
+`~matplotlib.axes.Axes.scatter` (e.g. ``ax.plot(..., cycle='538')`` –
+see `~proplot.wrappers.cycle_wrapper`), or by changing the global
+default cycle (e.g. ``plot.rc.cycle = '538'`` – see the
+`~proplot.rcmod` documentation). In both cases, the arguments are
+passed to the `~proplot.colortools.Cycle` constructor.
+`~proplot.colortools.Cycle` keyword arguments can be specified by
+passing ``cycle_kw`` to a plotting command. If you want to save your own
+color cycle into ``~/.proplot``, simply pass ``save=True`` to the
 `~proplot.colortools.Cycle` constructor (or supply a plotting command
 with ``cycle_kw={'save':True, 'name':name}``), and it will be loaded
-every time you import ProPlot.
+every time you import ProPlot. The below example demonstrates these
+methods.
 
 .. code:: ipython3
 

@@ -839,8 +839,8 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     if isinstance(ratios, Number):
         ratios = [1]*len(imaps)
     ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
-    x0 = np.concatenate([[0], np.cumsum(ratios)])
-    xw = x0[1:] - x0[:-1] # weights for averages
+    x0 = np.concatenate([[0], np.cumsum(ratios)]) # coordinates for edges
+    xw = x0[1:] - x0[:-1] # widths between edges
     # PerceptuallyUniformColormaps checks
     if type_ is PerceptuallyUniformColormap:
         spaces = {cmap._space for cmap in imaps}
@@ -861,24 +861,27 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     keys = {key for cmap in imaps for key in cmap._segmentdata.keys() if 'gamma' not in key}
     for key in keys:
         # Combine xyy data
+        # WARNING: callable stuff is untested!
         datas = []
         callable_ = [callable(cmap._segmentdata[key]) for cmap in imaps]
-        if not all(callable_) and any(callable_):
-            raise ValueError('Mixed callable and non-callable colormap values.')
         if all(callable_): # expand range from x-to-w to 0-1
             for x,w,cmap in zip(x0[:-1], xw, imaps):
-                data = lambda x: data((x - x0)/w) # WARNING: untested!
+                data = cmap._segmentdata[key]
+                data = lambda ix: data((ix - x)/w)
                 datas.append(data)
-        else:
+            data = lambda ix: datas[max(np.searchsorted(x0, ix), len(datas)-1)](ix)
+        elif not any(callable_):
             for x,w,cmap in zip(x0[:-1], xw, imaps):
                 data = np.array(cmap._segmentdata[key])
                 data[:,0] = x + w*data[:,0]
                 datas.append(data)
             for i in range(len(datas)-1):
-                datas[i][-1,2] = datas[i+1][0,2]
-                datas[i+1] = datas[i+1][1:,:]
+                datas[i][-1,2] = datas[i+1][0,2] # jump to next colormap, never interpolate between colors from different maps
+                datas[i+1] = datas[i+1][1:,:] # shave off initial color on next colormap
             data = np.concatenate(datas, axis=0)
             data[:,0] = data[:,0]/data[:,0].max(axis=0) # scale to make maximum exactly 1 (avoid floating point errors)
+        else:
+            raise ValueError('Mixed callable and non-callable colormap values.')
         segmentdata[key] = data
     return type_(name, segmentdata, N=N, **kwargs)
 
@@ -1740,10 +1743,31 @@ class BinNorm(mcolors.BoundaryNorm):
     arbitrary `~matplotlib.colors.Normalize` class, then maps the normalized
     values ranging from 0-1 into **discrete** levels.
 
-    This maps to colors by the closest **index** in the color list. Even if
-    your levels edges are weirdly spaced (e.g. [-1000, 100, 0,
-    100, 1000] or [0, 10, 12, 20, 22]), the "colormap coordinates" for these
-    levels will be [0, 0.25, 0.5, 0.75, 1].
+    Consider input levels of ``[0, 3, 6, 9, 12, 15]``. The algorithm is
+    as follows:
+
+    1. `levels` are normalized according to the input normalizer `norm`.
+       If it is ``None``, they are not changed. Possible normalizers include
+       `~matplotlib.colors.LogNorm`, which makes color transitions linear in
+       the logarithm of the value, or `LinearSegmentedNorm`, which makes
+       color transitions linear in the **index** of the level array.
+    2. Possible colormap coordinates, corresponding to bins delimited by the
+       normalized `levels` array, are calculated.  In this case, the bin centers
+       are simply ``[1.5, 4.5, 7.5, 10.5, 13.5]``, which gives us normalized
+       colormap coordinates of ``[0, 0.25, 0.5, 0.75, 1]``.
+    3. Out-of-bounds coordinates are added. These depend on the value of the
+       `extend` keyword argument. For `extend` equal to ``'neither'``,
+       the coordinates including out-of-bounds values are ``[0, 0, 0.25, 0.5, 0.75, 1, 1]`` --
+       out-of-bounds values have the same color as the nearest in-bounds values.
+       For `extend` equal to ``'both'``, the bins are ``[0, 0.16, 0.33, 0.5, 0.66, 0.83, 1]`` --
+       out-of-bounds values are given distinct colors. This makes sure your
+       colorbar always shows the **full range of colors** in the colormap.
+    4. Whenever `BinNorm.__call__` is invoked, the input value normalized by
+       `norm` is compared against the normalized `levels` array. Its bin index
+       is determined with `numpy.searchsorted`, and its corresponding
+       colormap coordinate is selected using this index.
+
+    The input parameters are as follows.
     """
     def __init__(self, levels, norm=None, clip=False, step=1.0, extend='neither'):
         """
@@ -1806,7 +1830,8 @@ class BinNorm(mcolors.BoundaryNorm):
         # end up with unpredictable fill value, weird "out-of-bounds" colors
         offset = 0
         scale = 1
-        eps = step/levels.size
+        eps = step/(y.size - 1)
+        # eps = step/levels.size
         if extend in ('min','both'):
             offset = eps
             scale -= eps
