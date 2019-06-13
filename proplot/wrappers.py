@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 """
 Imported by axes.py, wrappers for various plotting functions.
 """
