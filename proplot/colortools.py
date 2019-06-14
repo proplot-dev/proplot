@@ -67,8 +67,8 @@ _cycles_preset = {
 # Color stuff
 # Keep major color names, and combinations of those names
 # TODO: Let user adjust color params? Maybe nobody cares.
-_color_filter_space = 'hcl' # register colors distinct in this space?
 # _color_filter_threshold = 0.09 # bigger number equals fewer colors
+_color_filter_space = 'hcl' # register colors distinct in this space?
 _color_filter_threshold = 0.10 # bigger number equals fewer colors
 _color_names_shorthands = {
     'b': 'blue', 'g': 'green', 'r': 'red', 'c': 'cyan',
@@ -79,10 +79,10 @@ _color_names_include = (
     'red orange', 'yellow orange', 'yellow green', 'blue green',
     'blue violet', 'red violet',
     )
-_color_names_bad = '(' + '|'.join(( # filter these out; let's try to be professional here...
+_color_names_bad = re.compile('(' + '|'.join(( # filter these out; let's try to be professional here...
     'shit', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger',
-    )) + ')'
-_color_names_translate = ( # replace regex (first entry) with second entry
+    )) + ')')
+_color_names_translate = [(re.compile(regex), sub) for regex,sub in (
     ('/', ' '), ("'s", ''), ('grey', 'gray'),
     ('pinky', 'pink'), ('greeny', 'green'),
     ('bluey',  'blue'),
@@ -95,7 +95,7 @@ _color_names_translate = ( # replace regex (first entry) with second entry
     ('bluegray', 'blue gray'),
     ('grayblue', 'gray blue'),
     ('lightblue', 'light blue')
-    )
+    )]
 _color_space_aliases = {
     'rgb':   'rgb',
     'hsv':   'hsv',
@@ -2246,8 +2246,8 @@ def register_colors(nmax=np.inf):
             if i>=nmax: # e.g. for xkcd colors
                 break
             for regex,sub in _color_names_translate:
-                name = re.sub(regex, sub, name)
-            if name in seen or re.search(_color_names_bad, name):
+                name = regex.sub(sub, name)
+            if name in seen or _color_names_bad.search(name):
                 continue
             seen.add(name)
             pairs.append((category, name)) # save the category name pair

@@ -133,7 +133,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
 #------------------------------------------------------------------------------#
 # Reference tables for colors, colormaps, cycles
 #------------------------------------------------------------------------------#
-def color_show(opencolors=False, ncols=4, nbreak=13, minsat=0.2):
+def color_show(opencolors=False, ncols=4, nbreak=17, minsat=0.2):
     """Visualizes all named colors. Adapted from `this example
     <https://matplotlib.org/examples/color/named_colors.html>`_."""
     # Get colors explicitly defined in _colors_full_map, or the default
