@@ -517,7 +517,7 @@ selecting colors for scientific visualizations.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.color_show(nbreak=13)
+    f = plot.color_show()
 
 
 

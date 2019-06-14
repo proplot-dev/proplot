@@ -133,7 +133,7 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
 #------------------------------------------------------------------------------#
 # Reference tables for colors, colormaps, cycles
 #------------------------------------------------------------------------------#
-def color_show(opencolors=False, ncols=4, nbreak=12, minsat=0.2):
+def color_show(opencolors=False, ncols=4, nbreak=13, minsat=0.2):
     """Visualizes all named colors. Adapted from `this example
     <https://matplotlib.org/examples/color/named_colors.html>`_."""
     # Get colors explicitly defined in _colors_full_map, or the default
@@ -144,10 +144,10 @@ def color_show(opencolors=False, ncols=4, nbreak=12, minsat=0.2):
     if opencolors:
         group = ['opencolors']
     else:
-        group = [name for name in tools.colordict if name not in ('css','opencolors')]
+        group = [name for name in tools.colors_filtered if name not in ('css','opencolors')]
     color_dict = {}
     for name in group:
-        color_dict.update(tools.colordict[name]) # add category dictionary
+        color_dict.update(tools.colors_filtered[name]) # add category dictionary
 
     # Group colors together by discrete range of hue, then sort by value
     # For opencolors this is not necessary
@@ -168,7 +168,7 @@ def color_show(opencolors=False, ncols=4, nbreak=12, minsat=0.2):
         wscale = 1
         swatch = 1
         colors_hcl = {
-            key: [c/s for c,s in zip(tools.to_xyz(value, tools._distinct_colors_space), scale)]
+            key: [c/s for c,s in zip(tools.to_xyz(value, tools._color_filter_space), scale)]
             for key,value in color_dict.items()
             }
         # Separate into columns and roughly sort by brightness in these columns

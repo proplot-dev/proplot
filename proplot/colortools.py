@@ -67,17 +67,22 @@ _cycles_preset = {
 # Color stuff
 # Keep major color names, and combinations of those names
 # TODO: Let user adjust color params? Maybe nobody cares.
-_distinct_colors_space = 'hcl' # register colors distinct in this space?
-_distinct_colors_threshold = 0.09 # bigger number equals fewer colors
-_exceptions_names = (
+_color_filter_space = 'hcl' # register colors distinct in this space?
+# _color_filter_threshold = 0.09 # bigger number equals fewer colors
+_color_filter_threshold = 0.10 # bigger number equals fewer colors
+_color_names_shorthands = {
+    'b': 'blue', 'g': 'green', 'r': 'red', 'c': 'cyan',
+    'm': 'magenta', 'y': 'yellow', 'k': 'black', 'w': 'white'
+    }
+_color_names_include = (
     'sky blue', 'eggshell', 'sea blue', 'coral', 'tomato red', 'brick red', 'crimson',
     'red orange', 'yellow orange', 'yellow green', 'blue green',
     'blue violet', 'red violet',
     )
-_bad_names = '(' + '|'.join(( # filter these out; let's try to be professional here...
+_color_names_bad = '(' + '|'.join(( # filter these out; let's try to be professional here...
     'shit', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger',
     )) + ')'
-_sanitize_names = ( # replace regex (first entry) with second entry
+_color_names_translate = ( # replace regex (first entry) with second entry
     ('/', ' '), ("'s", ''), ('grey', 'gray'),
     ('pinky', 'pink'), ('greeny', 'green'),
     ('bluey',  'blue'),
@@ -91,7 +96,7 @@ _sanitize_names = ( # replace regex (first entry) with second entry
     ('grayblue', 'gray blue'),
     ('lightblue', 'light blue')
     )
-_space_aliases = {
+_color_space_aliases = {
     'rgb':   'rgb',
     'hsv':   'hsv',
     'hpl':   'hpl',
@@ -101,7 +106,7 @@ _space_aliases = {
     'hcl':   'hcl',
     'lch':   'hcl',
     }
-_channel_idxs = {
+_color_channel_idxs = {
     'h': 0, 'hue': 0,
     's': 1, 'saturation': 1,
     'c': 1, 'chroma': 1,
@@ -381,7 +386,7 @@ _cmap_mirrors = [
 #    into colormap dictionary every time. Don't want to do this for actual
 #    color dict for sake of speed, so we only wrap *cache* lookup. Also we try
 #    to avoid cmap lookup attempt whenever possible with if statements.
-class ColorCacheDict(dict): # cannot be ColorDict because sphinx has issues, conflicts with colordict variable!
+class ColorCacheDict(dict):
     """Special dictionary that lets user draw single color tuples from
     arbitrary colormaps or color cycles."""
     def __getitem__(self, key):
@@ -570,7 +575,7 @@ if not isinstance(mcm.cmap_d, CmapDict):
 #------------------------------------------------------------------------------#
 def _get_space(space):
     """Verify requested colorspace is valid."""
-    space = _space_aliases.get(space, None)
+    space = _color_space_aliases.get(space, None)
     if space is None:
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
@@ -581,7 +586,7 @@ def _get_channel(color, channel, space='hsl'):
     with the format ``'color+x'`` or ``'color-x'``, where `x` specifies
     the offset from the channel value."""
     # Interpret channel
-    channel = _channel_idxs.get(channel, channel)
+    channel = _color_channel_idxs.get(channel, channel)
     if callable(color) or isinstance(color, Number):
         return color
     if channel not in (0,1,2):
@@ -2211,46 +2216,42 @@ def register_colors(nmax=np.inf):
     # Add in CSS4 so no surprises for user, but we will not encourage this
     # usage and will omit CSS4 colors from the demo table.
     scale = (360, 100, 100)
-    translate =  {'b': 'blue',    'g': 'green',  'r': 'red',   'c': 'cyan',
-                  'm': 'magenta', 'y': 'yellow', 'k': 'black', 'w': 'white'}
-    base = mcolors.BASE_COLORS
-    full = {translate[key]:value for key,value in mcolors.BASE_COLORS.items()} # full names
+    base = {**mcolors.BASE_COLORS} # make copy
+    base.update({_color_names_shorthands[key]:value for key,value in base.items()}) # full names
     mcolors._colors_full_map.clear() # clean out!
     mcolors._colors_full_map.cache.clear() # clean out!
-    for name,dict_ in (('base',base), ('full',full), ('css',mcolors.CSS4_COLORS)):
-        colordict.update({name:dict_})
+    for name,dict_ in (('base',base), ('css',mcolors.CSS4_COLORS)):
+        colors_filtered.update({name:dict_})
 
-    # Register 'filtered' colors, and get their HSL values
-    # The below order is order of preference for identical color names from
-    # different groups.
-    names = []
-    seen = {*base, *full} # never overwrite these ones!
+    # Load colors from file and get their HCL values
+    names = ('opencolors', 'xkcd', 'crayola') # order is preference for identical color names from different groups
+    files = [os.path.join(_data_colors, f'{name}.txt') for name in names]
+    pairs = []
+    seen = {*base} # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = np.empty((0,3))
-    files = [os.path.join(_data_colors, f'{name}.txt') for name in ('opencolors', 'xkcd', 'crayola')]
     for file in files:
         category, _ = os.path.splitext(os.path.basename(file))
         data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
         # Immediately add all opencolors
         if category=='opencolors':
             dict_ = {name:color for name,color in data}
-            mcolors._colors_full_map.update(dict_)
-            colordict.update({'opencolors':dict_})
+            colors_filtered.update({'opencolors':dict_})
             continue
         # Other color dictionaries are filtered, and their names are sanitized
         i = 0
         dict_ = {}
         ihcls = []
-        colordict[category] = {} # just initialize this one
+        colors_filtered[category] = {} # just initialize this one
         for name,color in data: # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
-            for regex,sub in _sanitize_names:
+            for regex,sub in _color_names_translate:
                 name = re.sub(regex, sub, name)
-            if name in seen or re.search(_bad_names, name):
+            if name in seen or re.search(_color_names_bad, name):
                 continue
             seen.add(name)
-            names.append((category, name)) # save the category name pair
-            ihcls.append(to_xyz(color, space=_distinct_colors_space))
+            pairs.append((category, name)) # save the category name pair
+            ihcls.append(to_xyz(color, space=_color_filter_space))
             dict_[name] = color # save the color
             i += 1
         _colors_unfiltered[category] = dict_
@@ -2258,38 +2259,39 @@ def register_colors(nmax=np.inf):
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
-    # print(f'Started with {len(names)} colors, removed {deleted} insufficiently distinct colors.')
+    # print(f'Started with {len(pairs)} colors, removed {deleted} insufficiently distinct colors.')
     deleted = 0
     hcls = hcls/np.array(scale)
-    hcls = np.round(hcls/_distinct_colors_threshold).astype(np.int64)
-    _, index, counts = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
+    hcls = np.round(hcls/_color_filter_threshold).astype(np.int64)
+    _, idxs, counts = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
     counts = counts.sum()
-    for i,(category,name) in enumerate(names):
-        if name not in _exceptions_names and i not in index:
+    for idx,(category,name) in enumerate(pairs):
+        if name not in _color_names_include and idx not in idxs:
             deleted += 1
         else:
-            colordict[category][name] = _colors_unfiltered[category][name]
-    for key,kw in colordict.items():
+            colors_filtered[category][name] = _colors_unfiltered[category][name]
+    # Add to colors mapping
+    for _,kw in colors_filtered.items():
         mcolors._colors_full_map.update(kw)
 
 # Register stuff when this module is imported
 # The 'cycles' are simply listed colormaps, and the 'cmaps' are the smoothly
 # varying LinearSegmentedColormap instances or subclasses thereof
-cmaps = set() # track *downloaded* colormaps; user can then check this list
+cmaps = {*()} # track *downloaded* colormaps; user can then check this list
 """List of new registered colormap names."""
 
-cycles = set() # track *all* color cycles
+cycles = {*()} # track *all* color cycles
 """List of registered color cycle names."""
 
 _colors_unfiltered = {} # downloaded colors categorized by filename
-colordict = {} # limit to 'sufficiently unique' color names
+colors_filtered = {} # limit to 'sufficiently unique' color names
 """Filtered, registered color names by category."""
 
 register_colors() # must be done first, so we can register OpenColor cmaps
 register_cmaps()
 register_cycles()
-cmaps = set(sorted(cmaps))
-cycles = set(sorted(cycles))
+cmaps = {*sorted(cmaps)}
+cycles = {*sorted(cycles)}
 
 # Finally our dictionary of normalizers
 # Includes some custom classes, so has to go at end

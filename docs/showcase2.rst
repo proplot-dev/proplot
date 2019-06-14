@@ -91,7 +91,7 @@ normalizer from the `~proplot.colortools.Norm` constructor.
     data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
     for i,norm in enumerate(('linear','segments')):
-        m = axs[i].contourf(data, values=ticks, extend='both', cmap='mutedblue', norm=norm)
+        m = axs[i].contourf(data, values=ticks, extend='both', cmap='mublue', norm=norm)
         f.bpanel[i].colorbar(m, label='clabel', locator=ticks, fixticks=False)
     axs.format(suptitle='Unevenly spaced color levels', collabels=['Linear normalizer', 'LinearSegmentedNorm'])
 
