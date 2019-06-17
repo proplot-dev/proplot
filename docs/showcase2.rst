@@ -228,10 +228,11 @@ Colorbars and legends
 ProPlot adds several new features to the
 `~matplotlib.axes.Axes.legend` and
 `~matplotlib.figure.Figure.colorbar` commands, respectively powered by
-the `~proplot.axes.legend` and `~proplot.axes.colorbar` functions
-(see documentation for usage information).
+the `~proplot.wrappers.legend_factory` and
+`~proplot.wrappers.colorbar_factory` wrappers (see documentation for
+details).
 
-I’ve also added ``colorbar`` methods to the `~proplot.axes.BaseAxes`
+ProPlot also adds ``colorbar`` methods to the `~proplot.axes.BaseAxes`
 and special `~proplot.axes.PanelAxes` axes. When you call
 `~proplot.axes.BaseAxes.colorbar` on a `~proplot.axes.BaseAxes`, an
 **inset** colorbar is generated. When you call
@@ -255,37 +256,6 @@ the axes is **filled** with a colorbar. See
 
 
 .. image:: showcase/showcase_49_0.svg
-
-
-A particularly useful `~proplot.axes.colorbar_factory` feature is that
-it does not require a “mappable” object (i.e. the output of
-`~matplotlib.axes.Axes.contourf` or similar). It will also accept any
-list of objects with ``get_color`` methods (for example, the “handles”
-returned by `~matplotlib.axes.Axes.plot`), or a list of color
-strings/RGB tuples! A colormap is constructed on-the-fly from the
-corresponding colors.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, ax = plot.subplots(colorbar='b', axwidth=3, aspect=1.5)
-    plot.rc.cycle = 'qual2'
-    # plot.rc['axes.labelweight'] = 'bold'
-    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
-    ax.format(suptitle='Line handle colorbar', xlabel='x axis', ylabel='y axis')
-    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)),
-                      label='Numeric values',
-                      tickloc='bottom', # because why not?
-                     )
-
-
-
-
-
-
-
-.. image:: showcase/showcase_51_1.svg
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -323,7 +293,38 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_53_0.svg
+.. image:: showcase/showcase_51_0.svg
+
+
+A particularly useful `~proplot.wrappers.colorbar_factory` feature is
+that it does not require a “mappable” object (i.e. the output of
+`~matplotlib.axes.Axes.contourf` or similar). It will also accept any
+list of objects with ``get_color`` methods (for example, the “handles”
+returned by `~matplotlib.axes.Axes.plot`), or a list of color
+strings/RGB tuples! A colormap is constructed on-the-fly from the
+corresponding colors.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, ax = plot.subplots(colorbar='b', axwidth=3, aspect=1.5)
+    plot.rc.cycle = 'qual2'
+    # plot.rc['axes.labelweight'] = 'bold'
+    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
+    ax.format(suptitle='Line handle colorbar', xlabel='x axis', ylabel='y axis')
+    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)),
+                      label='Numeric values',
+                      tickloc='bottom', # because why not?
+                     )
+
+
+
+
+
+
+
+.. image:: showcase/showcase_53_1.svg
 
 
 Axes panels
