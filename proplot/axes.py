@@ -249,9 +249,7 @@ class BaseAxes(maxes.Axes):
             if attr in attrs:
                 raise NotImplementedError(message.format(attr))
         # Non-plotting overrides
-        # WARNING: All plotting overrides must come after cmap and cycle
-        # wrappers but before check centers and edges overrides, so set
-        # them specifically for each plot
+        # All plotting overrides are implemented in individual subclasses
         if attr=='text':
             obj = wrappers._text_wrapper(self, obj)
         elif attr=='legend' and not isinstance(self, PanelAxes):
@@ -838,18 +836,20 @@ class XYAxes(BaseAxes):
         `~proplot.wrappers.check_centers`, and `~proplot.wrappers.check_edges`
         for more info."""
         obj = super().__getattribute__(attr, *args)
-        # Color wrappers
+        # Step 3) Color usage wrappers
         if attr in wrappers._cmap_methods: # must come first!
             obj = wrappers._cmap_wrapper(self, obj)
         elif attr in wrappers._cycle_methods:
             obj = wrappers._cycle_wrapper(self, obj)
-        # Plotting wrappers
+        # Step 2) Wrappers specific to plot methods
         if attr=='plot':
             obj = wrappers._plot_wrapper(self, obj)
         elif attr=='scatter':
             obj = wrappers._scatter_wrapper(self, obj)
         elif attr=='bar':
             obj = wrappers._bar_wrapper(self, obj)
+        elif attr=='barh': # skips cycle wrapper and calls bar method
+            obj = wrappers._barh_wrapper(self, obj)
         elif attr=='boxplot':
             obj = wrappers._boxplot_wrapper(self, obj)
         elif attr=='violinplot':
@@ -858,7 +858,7 @@ class XYAxes(BaseAxes):
             obj = wrappers._check_centers(self, obj)
         elif attr in wrappers._edges_methods:
             obj = wrappers._check_edges(self, obj)
-        # Parse input
+        # Step 1) Parse input
         if attr in wrappers._2d_methods:
             obj = wrappers._parse_2d_(self, obj)
         elif attr in wrappers._1d_methods:
@@ -1951,12 +1951,12 @@ class CartopyAxes(MapAxes, GeoAxes):
         `~proplot.wrappers.check_edges`, and `~proplot.wrappers.cartopy_gridfix`
         for more info."""
         obj = super().__getattribute__(attr, *args)
-        # Color wrappers
+        # Step 4) Color usage wrappers
         if attr in wrappers._cmap_methods:
             obj = wrappers._cmap_wrapper(self, obj)
         elif attr in wrappers._cycle_methods:
             obj = wrappers._cycle_wrapper(self, obj)
-        # Plotting wrappers
+        # Step 3) Individual plot method wrappers
         if attr=='plot':
             obj = wrappers._plot_wrapper(self, obj)
         elif attr=='scatter':
@@ -1967,12 +1967,12 @@ class CartopyAxes(MapAxes, GeoAxes):
                 obj = wrappers._check_edges(self, obj)
             else:
                 obj = wrappers._check_centers(self, obj)
-        # Standardized keywords
+        # Step 2) Better default keywords
         if attr in wrappers._transform_methods:
             obj = wrappers._cartopy_transform(self, obj)
         elif attr in wrappers._crs_methods:
             obj = wrappers._cartopy_crs(self, obj)
-        # Parse input
+        # Step 1) Parse args input
         if attr in wrappers._2d_methods:
             obj = wrappers._parse_2d_(self, obj)
         elif attr in wrappers._1d_methods:
@@ -2177,7 +2177,7 @@ class BasemapAxes(MapAxes):
         --------
         `~proplot.proj`, `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
         """
-        # Some notes
+        # Notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
         #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
         #   "limb2" automatically: one for fill and the other for the edges
@@ -2195,16 +2195,8 @@ class BasemapAxes(MapAxes):
         self._recurred = False # use this so we can override plotting methods
         self._parallels = None
         self._meridians = None
-
-        # Initialize
         super().__init__(*args, **kwargs)
 
-    # Basemap overrides
-    # WARNING: Never ever try to just make blanket methods on the Basemap
-    # instance accessible from axes instance! Can of worms and had bunch of
-    # weird errors! Just pick the ones you think user will want to use.
-    # NOTE: Need to again use cmap and cycle wrapper here, because
-    # Basemap internally bypasses my BaseAxes superclass.
     def __getattribute__(self, attr, *args):
         """
         Wraps methods when they are requested by the user. See
@@ -2216,17 +2208,20 @@ class BasemapAxes(MapAxes):
         instance and (latter) prevents recursion issues arising from internal
         calls to axes methods by the `~mpl_toolkits.basemap.Basemap` instance.
         """
+        # WARNING: Never ever try to just make blanket methods on the Basemap
+        # instance accessible from axes instance! Can of worms and had bunch of
+        # weird errors! Just pick the ones you think user will want to use.
         obj = super().__getattribute__(attr, *args)
         if attr in wrappers._latlon_methods or attr in wrappers._edges_methods \
                 or attr in wrappers._centers_methods:
-            # Call Basemap method at bottom level
+            # Step 5) Call identically named Basemap object method
             obj = wrappers._m_call(self, obj)
-            # Color wrappers
+            # Step 4) Color usage wrappers
             if attr in wrappers._cmap_methods:
                 obj = wrappers._cmap_wrapper(self, obj)
             elif attr in wrappers._cycle_methods:
                 obj = wrappers._cycle_wrapper(self, obj)
-            # Plotting wrappers
+            # Step 3) Individual plot method wrappers
             if attr=='plot':
                 obj = wrappers._plot_wrapper(self, obj)
             elif attr=='scatter':
@@ -2237,15 +2232,15 @@ class BasemapAxes(MapAxes):
                     obj = wrappers._check_edges(self, obj)
                 else:
                     obj = wrappers._check_centers(self, obj)
-            # Standardized input
+            # Step 2) Better default keywords
             if attr in wrappers._latlon_methods:
                 obj = wrappers._basemap_latlon(self, obj)
-            # Parse input
+            # Step 1) Parse args input
             if attr in wrappers._2d_methods:
                 obj = wrappers._parse_2d_(self, obj)
             elif attr in wrappers._1d_methods:
                 obj = wrappers._parse_1d_(self, obj)
-            # Recursion fix at top level
+            # Step 0) Recursion fix at top level
             obj = wrappers._m_norecurse(self, obj)
         return obj
 

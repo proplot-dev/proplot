@@ -16,6 +16,7 @@ import matplotlib.patheffects as mpatheffects
 import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
+import matplotlib.legend as mlegend
 from numbers import Number
 from .rcmod import rc
 
@@ -185,8 +186,9 @@ def _parse_1d(self, func, *args, **kwargs):
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
+    # WARNING: Bail if barh, because only want to parse data once
     name = func.__name__
-    if len(args)==0:
+    if len(args)==0 or name=='barh':
         return func(*args, **kwargs)
     elif len(args)==1:
         x = None
@@ -201,16 +203,22 @@ def _parse_1d(self, func, *args, **kwargs):
         x = np.atleast_1d(x)
     if not np.iterable(y):
         y = np.atleast_1d(y)
-    if getattr(y, 'ndim', None)==2: # e.g. DataFrame[0] can raise error, indexing is by column name, so this test is best
+    ndim = getattr(y, 'ndim', None)
+    if ndim==2: # e.g. DataFrame[0] can raise error, indexing is by column name, so this test is best
         is1d = False
-    elif len(y) and np.iterable(y[0]): # e.g. list of lists
+    elif ndim is None and len(y) and np.iterable(y[0]): # e.g. list of lists
         is1d = False
     y = _array_std(y)
     # Auto coords
     # Requires drawing a sample column
+    # WARNING: Try to migrate this stuff to individual functions?
+    columns = (name in ('boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None))
     if y.ndim==2:
         iy = getattr(y, 'iloc', y)
-        iy = iy[:,0]
+        if columns: # we take summary statistics along rows, so columns represent x axis
+            iy = iy[0,:]
+        else:
+            iy = iy[:,0]
     elif y.ndim==1:
         iy = y
     else:
@@ -219,7 +227,7 @@ def _parse_1d(self, func, *args, **kwargs):
         if isinstance(iy, ndarray):
             x = np.arange(iy.size)
         elif isinstance(iy, DataArray): # DataArray
-            x = iy.coords[iy.dims[0]]
+            x = iy.coords[iy.dims[1 if columns else 0]]
         elif isinstance(iy, Series): # Series
             x = iy.index
         else: # Index
@@ -233,13 +241,13 @@ def _parse_1d(self, func, *args, **kwargs):
         kw = {}
         iy = None
         if not self._is_map:
-            xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal' or name=='barh') else 'x'
+            xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal') else 'x'
             yaxis = 'x' if xaxis=='y' else 'x'
             # Xlabel
             label = _auto_label(x)
             if label:
                 kw[xaxis + 'label'] = label
-            if len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
+            if name!='scatter' and len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
                 kw[xaxis + 'reverse'] = True
             # Try to apply ylabel if dataset is 1d
             if y.ndim==1:
@@ -254,7 +262,7 @@ def _parse_1d(self, func, *args, **kwargs):
             # Extra special cases
             # For bar plots, so we can offset by widths, need to convert to
             # array prematurely and apply the IndexFormatter.
-            if name in ('bar','barh'):
+            if name in ('bar',):
                 x = getattr(x, 'values', x) # TODO: restore datetime support!
                 x = np.array(x)
                 if x.dtype=='object':
@@ -360,7 +368,7 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
                 label = _auto_label(z)
                 if label:
                     kw[key] = label
-                if z[1]<z[0]:
+                if len(z)>1 and all(isinstance(z, Number) for z in z[:2]) and z[1]<z[0]:
                     kw[key[0] + 'reverse'] = True
         # Title
         title = _auto_label(Zs[0], units=False)
@@ -429,7 +437,22 @@ def check_edges(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------#
 # 1D plot wrappers
 #------------------------------------------------------------------------------#
-def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None, stacked=False, **kwargs):
+def barh_wrapper(self, func, *args, **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.barh`, bypasses `cycle_wrapper` so it is
+    not called twice and calls `~matplotlib.axes.Axes.bar` directly.
+    """
+    kwargs['orientation'] = 'horizontal'
+    return self.bar(*args, **kwargs)
+
+def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
+    vert=True, orientation='vertical',
+    stacked=False, medians=False, means=False,
+    box=True, bar=True, boxrange=(25, 75), barrange=(5, 95),
+    boxcolor=None, barcolor=None,
+    boxlw=None, barlw=None,
+    capsize=None,
+    **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.bar`, applies sensible defaults.
 
@@ -439,14 +462,97 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None, stac
         The default edge color.
     lw, linewidth : None or float, optional
         The default edge width.
+    orientation : {'vertical', 'horizontal'}, optional
+        The orientation of the bars.
+    vert : bool, optional
+        Alternative to the `orientation` keyword arg. If ``False``, horizontal
+        bars are drawn. This is for consistency with `~matplotlib.axes.Axes.boxplot`
+        and `~matplotlib.axes.Axes.violinplot`.
     stacked : bool, optional
         Whether to stack columns of input data, or plot the bars side-by-side.
+    medians : bool, optional
+        Whether to plot the mean of columns of input data, instead of stacking
+        or grouping the bars.
+    means : bool, optional
+        Whether to plot the median of columns of input data, instead of stacking
+        or grouping the bars.
+    box, bar : bool, optional
+        Toggles thick and thin error bars when either of `means` or `medians`
+        is ``True``.
+    boxrange : (float, float), optional
+        Percentile range for drawing thick central error bars. Ignored if `medians`
+        or `means` are both ``False``.
+    barrange : (float, float), optional
+        Percentile range for drawing thin error bars with whiskers. Ignored if `medians`
+        or `means` are both ``False``.
+    boxcolor, barcolor : None or float, optional
+        Colors for the thick and thin error bars.
+    boxlw, barlw : None or float, optional
+        Line widths for the thick and thin error bars.
+    capsize : None or float, optional
+        The cap size for thin error bars.
     """
+    # Bail
     # TODO: Stacked feature is implemented in `cycle_wrapper`, but makes more
     # sense do document here; figure out way to move it here?
+    # TODO: The 1d parser picks column index for x-coordinates if it detects
+    # the means or medians keyword arg; move that behavior to this function?
+    if not args:
+        return func(*args, **kwargs)
+    if len(args) not in (1,2,3,4):
+        raise ValueError(f'Expected 1-4 positional args, got {len(args)}.')
+    if len(args)==4: # note these are translated by cycle_wrapper for horizontal bars
+        *args, kwargs['bottom'] = args
+    if len(args)==3:
+        *args, kwargs['width'] = args
+    if 'left' in kwargs: # 'left' does not exist
+        kwargs['bottom'] = kwargs.pop('left')
+    # Defaults
     lw = _default(lw, linewidth, 0.7)
     edgecolor = _default(edgecolor, 'k')
-    return func(*args, linewidth=lw, edgecolor=edgecolor, stacked=stacked, **kwargs)
+    x, y, *args = args
+    if not vert:
+        orientation = 'horizontal'
+    # Function
+    iy = y
+    if means:
+        iy = y.mean(axis=0) # should work with DataFrame and DataArray
+    if medians:
+        if hasattr(y, 'median'): # true for DataFrame and DataArray
+            iy = y.median(axis=0)
+        else:
+            iy = np.percentile(y, 50, axis=0)
+    obj = func(x, iy, *args, linewidth=lw, edgecolor=edgecolor, stacked=stacked, orientation=orientation, **kwargs)
+    # Add error bars
+    if means or medians:
+        if orientation=='horizontal':
+            axis = 'x' # xerr
+            xy = (iy,x)
+        else:
+            axis = 'y' # yerr
+            xy = (x,iy)
+        if box:
+            err = np.percentile(y, boxrange, axis=0)
+            err = err - np.array(iy)
+            err[0,:] *= -1 # array now represents error bar sizes
+            boxlw = _default(boxlw, 4*lw)
+            boxcolor = _default(boxcolor, edgecolor)
+            self.scatter(*xy, marker='o', color='white', s=boxlw, zorder=5)
+            self.errorbar(*xy, **{axis+'err': err, 'capsize':0,
+                'linestyle':'None',
+                'color':boxcolor, 'linewidth':boxlw})
+        if bar: # note it is now impossible to make thin bar width different from cap width!
+            err = np.percentile(y, barrange, axis=0)
+            err = err - np.array(iy)
+            err[0,:] *= -1 # array now represents error bar sizes
+            barlw = _default(barlw, lw)
+            barcolor = _default(barcolor, edgecolor)
+            capsize = _default(capsize, 3) # better default than 5
+            self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize,
+                'color':barcolor, 'linewidth':barlw, 'linestyle':'None',
+                'markeredgecolor':barcolor, 'markeredgewidth':barlw})
+    # Return object
+    return obj
 
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
@@ -463,7 +569,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
         `~matplotlib.lines.Line2D` properties.
     """
     if len(args) not in (2,3): # e.g. with fmt string
-        raise ValueError(f'Expected 1-3 plot args, got {len(args)}')
+        raise ValueError(f'Expected 1-3 plot args, got {len(args)}.')
     if cmap is None:
         lines = func(*args, **kwargs)
     else:
@@ -547,6 +653,8 @@ def boxplot_wrapper(self, func, *args,
         don't have to pass e.g. a ``boxprops`` dictionary.
     """
     # Call function
+    if not args:
+        return func(*args, **kwargs)
     if orientation is not None:
         if orientation=='horizontal':
             kwargs['vert'] = False
@@ -639,6 +747,8 @@ def violinplot_wrapper(self, func, *args,
         minimum and maximum markers.
     """
     # Call function
+    if not args:
+        return func(*args, **kwargs)
     if orientation is not None:
         if orientation=='horizontal':
             kwargs['vert'] = False
@@ -655,8 +765,6 @@ def violinplot_wrapper(self, func, *args,
     # WARNING: This wrapper comes after the parse 1d wrapper, which always
     # passes an (x,y) pair as args; but in this case the x is nonsense, just
     # indicates each datum index. We want the positions keyword arg.
-    if not args:
-        return obj
     if 'positions' not in kwargs:
         raise ValueError('Could not find violinplot positions, but 1d parser should have supplied them.')
     x, y = kwargs['positions'], args[1]
@@ -1106,11 +1214,11 @@ def _get_panel(self, loc):
 
 @_expand_methods_list
 def cycle_wrapper(self, func, *args,
-        cycle=None, cycle_kw={},
-        label=None, labels=None, values=None,
-        legend=None, legend_kw={},
-        colorbar=None, colorbar_kw={},
-        **kwargs):
+    cycle=None, cycle_kw={},
+    label=None, labels=None, values=None,
+    legend=None, legend_kw={},
+    colorbar=None, colorbar_kw={},
+    **kwargs):
     """
     Wraps methods that use the property cycler (`_cycle_methods`),
     adds features for controlling colors in the property cycler and drawing
@@ -1139,7 +1247,7 @@ def cycle_wrapper(self, func, *args,
         panel must already exist (i.e. it was generated by your call to
         `~proplot.subplots.subplots`)!
 
-        Otherwise, an inset legend is drawn, and this sets the position.
+        Otherwise, an *inset* legend is drawn, and this sets the position.
         The following position keys and position key aliases are valid:
 
         ==================  ==============================================
@@ -1191,6 +1299,7 @@ def cycle_wrapper(self, func, *args,
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
+    barh = (name=='bar' and kwargs.get('orientation', None)=='horizontal')
     x, y, *args = args
     is1d = (y.ndim==1)
 
@@ -1238,28 +1347,27 @@ def cycle_wrapper(self, func, *args,
             labels = [labels]*ncols
     objs = []
     clabel = None
-    y = getattr(y, 'iloc', y) # for indexing
-    if name in ('bar','barh'):
+    iy = getattr(y, 'iloc', y) # for indexing
+    if name in ('bar',):
         stacked = kwargs.pop('stacked', False)
         width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
-        kwargs['width'] = width if stacked else width/ncols
+        key = 'height' if barh else 'width'
+        kwargs[key] = width if stacked else width/ncols
     for i in range(ncols):
         # Adjust x coordinates
         kw = {**kwargs} # copy
-        if name in ('bar','barh'):
-            if stacked:
-                ix = x
-                if not is1d:
-                    kw['bottom'] = y[:,:i].sum(axis=1) # sum of empty slice will be zero
-            else:
+        ix = x
+        if name=='bar':
+            if not stacked:
                 ix = x + (i - ncols/2 + 0.5)*width/ncols
-        else:
-            ix = x
+            elif stacked and not is1d:
+                key = 'x' if barh else 'bottom'
+                kw[key] = iy[:,:i].sum(axis=1) # sum of empty slice will be zero
         # Get object label and potentially the colorbar label
         if name in ('boxplot','violinplot'): # these cannot have a 'label'
-            iy = y[:] if is1d else y[:,:]
+            jy = iy[:] if is1d else iy[:,:]
         else:
-            iy = y[:] if is1d else y[:,i]
+            jy = iy[:] if is1d else iy[:,i]
             label = labels[i]
             if label or isinstance(y, ndarray):
                 pass
@@ -1270,13 +1378,19 @@ def cycle_wrapper(self, func, *args,
                 label = y.columns[i]
                 clabel = _auto_label(y.columns) # coordinate label
             else:
-                label = _auto_label(iy) # e.g. a pd.Series name
+                label = _auto_label(jy) # e.g. a pd.Series name
+            # if name=='hist':
+            #     label = (label, *[None for i in range()])
             kw['label'] = label
         # Call function
-        if name in ('hist','boxplot','violinplot'): # no x-coordinate
-            xy = (iy,)
+        if barh:
+            xy = ()
+            kw.update({'bottom':ix, 'width':jy})
+            kw.setdefault('x', kwargs.get('bottom', 0)) # must always be provided
+        elif name in ('hist','boxplot','violinplot'): # no x-coordinate
+            xy = (jy,)
         else: # has x-coordinates
-            xy = (ix,iy)
+            xy = (ix,jy)
         obj = func(*xy, *args, **kw)
         if isinstance(obj, (list,tuple)) and len(obj)==1: # plot always returns list or tuple
             obj = obj[0]
@@ -1308,12 +1422,12 @@ def cycle_wrapper(self, func, *args,
     # WARNING: Make sure plot always returns tuple of objects, and bar
     # always returns singleton unless we have bulk drawn bar plots! Other
     # matplotlib methods call these internally!
+    if name in ('hist',):
+        objs = [obj[-1] for obj in objs] # just the patch objects
     if name=='plot':
         return (*objs,) # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
         return objs[0] # always singleton, because these methods accept the whole 2d object
-    elif name in ('hist',):
-        return tuple(obj[-1] for obj in objs) # just the patch objects
     else:
         return objs[0] if is1d else objs # sensible default behavior
 
@@ -1392,15 +1506,14 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         formatter, which allows us to limit the precision.
     colorbar : bool or str, optional
         Whether to draw a colorbar from the resulting mappable object.
-
         If ``'l'``, ``'r'``, ``'b'``, ``'left'``, ``'right'``, or ``'bottom'``,
         an axes panel is filled with a colorbar. Note in this case that the
         panel must already exist (i.e. it was generated by your call to
         `~proplot.subplots.subplots`)!
 
         Otherwise, an *inset* colorbar is drawn, and this sets the position
-        (e.g. `'upper right'`). See `~proplot.axes.BaseAxes.colorbar` for
-        details.
+        (e.g. `'upper right'`). For valid inset colorbar locations, see the
+        `~proplot.axes.BaseAxes.colorbar` method.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
@@ -1741,12 +1854,13 @@ def legend_wrapper(self, handles=None, align=None, order='C',
             for col,nrow in enumerate(nrows): # iterate through cols
                 newhandles.extend(handlesplit[row][col] for row in range(nrow))
             handles = newhandles
-        # Finally draw legend, mimicking row-major ordering
         if loc is not None:
             kwargs['loc'] = _loc_translate.get(loc, loc)
-        leg = maxes.Axes.legend(self, ncol=ncol, handles=handles, **kwargs)
-        legends = [leg]
-
+        # Apply manually
+        # leg = maxes.Axes.legend(self, ncol=ncol, handles=handles, **kwargs)
+        labels = [handle.get_label() for handle in handles]
+        leg = mlegend.Legend(handles=handles, labels=labels, parent=self, ncol=ncol, **kwargs)
+        legs = [leg]
     # 2) Separate legend for each row
     #    The label spacing/border spacing will be exactly replicated, as if we were
     #    using the original legend command
@@ -1778,42 +1892,41 @@ def legend_wrapper(self, handles=None, align=None, order='C',
         # is allowed to vary) in *y*-direction, but do not confine it in
         # *x*-direction (notice the *x*-coordinate range 0-1). Matplotlib will
         # automatically move left-to-right if you request this.
-        legends = []
+        legs = []
         if order=='F':
             raise NotImplementedError(f'When align=False, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
-        for h,hs in enumerate(handles):
+        for i,ihandles in enumerate(handles):
             if 'upper' in loc:
-                y1 = 1 - (h+1)*interval
-                y2 = 1 - h*interval
+                y1 = 1 - (i+1)*interval
+                y2 = 1 - i*interval
             elif 'lower' in loc:
-                y1 = (len(handles) + h - 2)*interval
-                y2 = (len(handles) + h - 1)*interval
+                y1 = (len(handles) + i - 2)*interval
+                y2 = (len(handles) + i - 1)*interval
             else: # center
-                y1 = 0.5 + interval*len(handles)/2 - (h+1)*interval
-                y2 = 0.5 + interval*len(handles)/2 - h*interval
+                y1 = 0.5 + interval*len(handles)/2 - (i+1)*interval
+                y2 = 0.5 + interval*len(handles)/2 - i*interval
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
-            leg = maxes.Axes.legend(self,
-                handles=hs, ncol=len(hs), loc=loc,
-                frameon=False,
+            ilabels = [handle.get_label() for handle in handles]
+            leg = mlegend.Legend(parent=self, handles=ihandles, labels=ilabels,
+                ncol=len(ihandles), frameon=False, loc=loc,
                 bbox_transform=self.transAxes,
                 bbox_to_anchor=bbox,
                 **kwargs) # _format_legend is overriding original legend Method
-            legends.append(leg)
-        for l in legends[:-1]:
-            self.add_artist(l) # because matplotlib deletes previous ones
-
+            legs.append(leg)
+    # Add legends manually so matplotlib does not remove old ones
+    for leg in legs:
+        self.add_artist(leg)
     # Properties for legends
     outline = rc.fill({
         'linewidth':'axes.linewidth',
         'edgecolor':'axes.edgecolor',
         'facecolor':'axes.facecolor',
         }, cache=False)
-    for leg in legends:
-        # for t in leg.texts:
+    for leg in legs: # for t in leg.texts:
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
-    return legends[0] if len(legends)==1 else legends
+    return legs[0] if len(legs)==1 else legs
 
 def colorbar_wrapper(self, mappable, values=None,
         extend=None, extendsize=None, label=None,
@@ -2194,6 +2307,7 @@ _cartopy_crs        = _wrapper(cartopy_crs)
 _cmap_wrapper       = _wrapper(cmap_wrapper)
 _cycle_wrapper      = _wrapper(cycle_wrapper)
 _bar_wrapper        = _wrapper(bar_wrapper)
+_barh_wrapper       = _wrapper(barh_wrapper)
 _plot_wrapper       = _wrapper(plot_wrapper)
 _scatter_wrapper    = _wrapper(scatter_wrapper)
 _boxplot_wrapper    = _wrapper(boxplot_wrapper)

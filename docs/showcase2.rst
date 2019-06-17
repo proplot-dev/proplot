@@ -13,7 +13,7 @@ features enabled by the plotting wrappers, along with axes and figure
 1d plot wrappers
 ----------------
 
-Various statistical plotting methods have also been wrapped.
+Various statistical plotting methods have been wrapped.
 `~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
 lets you draw line collections that map individual segments of the line
 to individual colors. This can be useful for drawing “parametric” plots,
@@ -70,8 +70,10 @@ automatic axis labelling.
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
     ax = axs[0]
     obj1 = ax.boxplot(data, lw=0.7, marker='x', color='gray7', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
+    ax.format(title='Box plots', titlepos='ci')
     ax = axs[1]
     obj2 = ax.violinplot(data, lw=0.7, fillcolor='C1', showmeans=True)
+    ax.format(title='Violin plots', titlepos='ci')
     axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
 
 
@@ -79,12 +81,12 @@ automatic axis labelling.
 .. image:: showcase/showcase_35_0.svg
 
 
-`~proplot.wrappers.cycle_wrapper` and
-`~proplot.wrappers.bar_wrapper` makesit easier to generate useful bar
-plots. You can now pass 2d arrays to `~matplotlib.axes.Axes.bar` or
-`~matplotlib.axes.Axes.barh`, and columns of data will be grouped or
-stacked together. You can also request that columns are interpreted as
-data ranges, and use bars to plot the medians with error bars
+`~proplot.wrappers.bar_wrapper` and
+`~proplot.wrappers.cycle_wrapper` make it easier to generate useful
+bar plots. You can now pass 2d arrays to `~matplotlib.axes.Axes.bar`
+or `~matplotlib.axes.Axes.barh`, and columns of data will be grouped
+or stacked together. You can also request that columns are interpreted
+as data ranges, and use bars to plot the medians with error bars
 representing percentile ranges.
 
 .. code:: ipython3
@@ -92,14 +94,20 @@ representing percentile ranges.
     import proplot as plot
     import numpy as np
     import pandas as pd
-    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, share=False)
+    plot.rc['title.pos'] = 'ci'
+    plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
+    f, axs = plot.subplots(nrows=3, aspect=2, axwidth=3, span=False, share=False)
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
-    data = pd.DataFrame(data, columns=np.arange(1,6), index=pd.Index(['a','b','c','d','e'], name='name'))
+    data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
     ax = axs[0]
     obj = ax.bar(data, cycle='Reds', colorbar='ul') #, orientation='horizontal')
-    ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, suptitle='Bar plot wrapper demo')
+    ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side', suptitle='Bar plot wrapper demo')
     ax = axs[1]
-    obj = ax.bar(data.iloc[::-1,::-1], cycle='Grays', legend='ur', stacked=True) #, orientation='horizontal')
+    obj = ax.barh(data.iloc[::-1,:], cycle='Grays', legend='ur', stacked=True) #, orientation='horizontal')
+    ax.format(title='Stacked')
+    ax = axs[2]
+    obj = ax.barh(data.iloc[:,:], color='red orange', means=True) #, orientation='horizontal')
+    ax.format(title='Column statistics')
 
 
 
@@ -228,8 +236,8 @@ Colorbars and legends
 ProPlot adds several new features to the
 `~matplotlib.axes.Axes.legend` and
 `~matplotlib.figure.Figure.colorbar` commands, respectively powered by
-the `~proplot.wrappers.legend_factory` and
-`~proplot.wrappers.colorbar_factory` wrappers (see documentation for
+the `~proplot.wrappers.legend_wrapper` and
+`~proplot.wrappers.colorbar_wrapper` wrappers (see documentation for
 details).
 
 ProPlot also adds ``colorbar`` methods to the `~proplot.axes.BaseAxes`
@@ -296,7 +304,7 @@ and forcing the background to be invisible.
 .. image:: showcase/showcase_51_0.svg
 
 
-A particularly useful `~proplot.wrappers.colorbar_factory` feature is
+A particularly useful `~proplot.wrappers.colorbar_wrapper` feature is
 that it does not require a “mappable” object (i.e. the output of
 `~matplotlib.axes.Axes.contourf` or similar). It will also accept any
 list of objects with ``get_color`` methods (for example, the “handles”

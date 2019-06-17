@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.scale as mscale
 import matplotlib.figure as mfigure
+import matplotlib.legend as mlegend
 import matplotlib.transforms as mtransforms
 # Aliases for panel names
 _aliases = {
@@ -431,9 +432,9 @@ class Figure(mfigure.Figure):
 
     def _misc_post(self):
         """Does various post-processing steps involving plotted content."""
+        if not self._smart_tight_init:
+            return
         for ax in self._main_axes:
-            if not self._smart_tight_init:
-                continue
             for ax in (ax, *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel):
                 if not ax:
                     continue
@@ -451,13 +452,12 @@ class Figure(mfigure.Figure):
                         label.set_rotation(rotation)
                         label.set_horizontalalignment(ha)
                 # Automatic labels and colorbars for plot
-                # TODO: Support for multiple legends?
+                # NOTE: The legend wrapper supports multiple legends in one axes
+                # by adding legend artists manually.
                 for loc,handles in ax._auto_colorbar.items():
                     ax.colorbar(handles, **ax._auto_colorbar_kw[loc])
                 for loc,handles in ax._auto_legend.items():
-                    # ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
-                    leg = plt.legend(handles, **ax._auto_legend_kw[loc])
-                    ax.add_artist(leg)
+                    ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
 
     def _text_align(self, renderer):
         """Adjusts position of row titles and figure super title."""

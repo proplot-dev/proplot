@@ -405,11 +405,8 @@ changing global settings**.
 
 To modify a setting for just one subplot, pass it to the
 `~proplot.axes.BaseAxes.format` command. To reset everything to the
-default state, use `~proplot.rcmod.rc_configurator.reset` (called by
-default when a figure is rendered or saved by matplotlib; see
-`~proplot.subplots.Figure`).
-
-For more information, see the `~proplot.rcmod` documentation.
+default state, use `~proplot.rcmod.rc_configurator.reset`. See the
+`~proplot.rcmod` documentation for more information.
 
 .. code:: ipython3
 
