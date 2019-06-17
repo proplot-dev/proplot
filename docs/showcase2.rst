@@ -9,7 +9,8 @@ wrapper functions (see the `~proplot.axes` documentation). The most
 interesting of these are `~proplot.wrappers.cmap_wrapper` and
 `~proplot.wrappers.cycle_wrapper`. For details on the former, see the
 below examples and :ref:`On-the-fly colormaps`. For details on the
-latter, see :ref:`On-the-fly color cycles`.
+latter, see :ref:`On-the-fly color cycles`. This section documents the
+other features enabled by these wrappers.
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
@@ -100,7 +101,7 @@ normalizer from the `~proplot.colortools.Norm` constructor.
 .. image:: showcase/showcase_37_0.svg
 
 
-Finally, `~proplot.wrappers.cmap_wrapper` fixes the well-documented
+`~proplot.wrappers.cmap_wrapper` also fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
 and
 `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
@@ -127,6 +128,7 @@ feature is disabled (see below).
 1d plot wrappers
 ----------------
 
+Various statistical plotting methods have also been wrapped.
 `~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
 lets you draw line collections that map individual segments of the line
 to individual colors. This can be useful for drawing “parametric” plots,
@@ -137,7 +139,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth=3, aspect=(2,1))
+    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth='5cm', aspect=(2,1))
     ax = axs[0]
     m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
                 cmap='thermal', values=np.arange(50), lw=7, extend='both')
@@ -163,6 +165,61 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 .. image:: showcase/showcase_42_1.svg
+
+
+`~matplotlib.axes.Axes.boxplot` and
+`~matplotlib.axes.Axes.violinplot` are now wrapped with
+`~proplot.wrappers.boxplot_wrapper`,
+`~proplot.wrappers.violinplot_wrapper`, and
+`~proplot.wrappers.cycle_wrapper`, making it much easier to plot
+distributions of data with aesthetically pleasing default settings and
+automatic axis labelling.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    f, axs = plot.subplots(ncols=2)
+    data = np.random.normal(size=(20,5))
+    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
+    ax = axs[0]
+    obj1 = ax.boxplot(data, lw=0.7, marker='x', color='gray7', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
+    ax = axs[1]
+    obj2 = ax.violinplot(data, lw=0.7, fillcolor='C1', showmeans=True)
+    axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
+
+
+
+.. image:: showcase/showcase_44_0.svg
+
+
+`~proplot.wrappers.cycle_wrapper` and
+`~proplot.wrappers.bar_wrapper` makesit easier to generate useful bar
+plots. You can now pass 2d arrays to `~matplotlib.axes.Axes.bar` or
+`~matplotlib.axes.Axes.barh`, and columns of data will be grouped or
+stacked together. You can also request that columns are interpreted as
+data ranges, and use bars to plot the medians with error bars
+representing percentil ranges. And as always, the axes are formatted
+automatically.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, share=False)
+    data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
+    data = pd.DataFrame(data, columns=np.arange(1,6), index=pd.Index(['a','b','c','d','e'], name='name'))
+    ax = axs[0]
+    obj = ax.bar(data, cycle='Reds', colorbar='ul') #, orientation='horizontal')
+    ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, suptitle='Bar plot wrapper demo')
+    ax = axs[1]
+    obj = ax.bar(data.iloc[::-1,::-1], cycle='Grays', legend='ur', stacked=True) #, orientation='horizontal')
+
+
+
+.. image:: showcase/showcase_46_0.svg
 
 
 Colorbars and legends
@@ -197,7 +254,7 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_45_0.svg
+.. image:: showcase/showcase_49_0.svg
 
 
 A particularly useful `~proplot.axes.colorbar_factory` feature is that
@@ -228,7 +285,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_47_1.svg
+.. image:: showcase/showcase_51_1.svg
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -266,7 +323,7 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_49_0.svg
+.. image:: showcase/showcase_53_0.svg
 
 
 Axes panels
@@ -293,7 +350,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_52_0.svg
+.. image:: showcase/showcase_56_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -330,7 +387,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_54_1.svg
+.. image:: showcase/showcase_58_1.svg
 
 
 Figure panels
@@ -364,7 +421,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_57_1.svg
+.. image:: showcase/showcase_61_1.svg
 
 
 .. code:: ipython3
@@ -386,7 +443,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_58_0.svg
+.. image:: showcase/showcase_62_0.svg
 
 
 Stacked panels
@@ -426,6 +483,6 @@ primary axes.
 
 
 
-.. image:: showcase/showcase_60_0.svg
+.. image:: showcase/showcase_64_0.svg
 
 

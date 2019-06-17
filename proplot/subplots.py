@@ -126,8 +126,8 @@ class axes_list(list):
             @functools.wraps(attrs[0])
             def iterator(*args, **kwargs):
                 ret = []
-                for attr in attrs:
-                    ret.append(attr(*args, **kwargs))
+                for func in attrs:
+                    ret.append(func(*args, **kwargs))
                 if len(ret)==1:
                     return ret[0]
                 elif all(res is None for res in ret):

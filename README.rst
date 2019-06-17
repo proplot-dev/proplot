@@ -116,26 +116,19 @@ There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. What makes this project
 different?
 
-While parts of ProPlot were inspired by Seaborn (e.g. some
-of ``colors.py`` is drawn from ``palettes.py``), the goals
-are largely different.
-Seaborn largely attempts to merge the tasks of data analysis and
-visualization, and seems geared toward non-academics and data scientists.
-ProPlot is intended just to help you make highly-configurable, publication-quality figures,
-and is geared toward scientists and academics.
+While parts of ProPlot were inspired by seaborn, the goals
+are largely different. Seaborn introduces new functions for
+generating useful visualizations quickly, and works best when used with ``pandas.DataFrame``
+objects. ProPlot incorporates similar automation when plotting
+``pandas.DataFrame`` or ``xarray.DataArray`` objects, but critically, it
+focuses on allowing the user to build highly customized plots and complex grids
+of subplots when necessary, and allows users to work painlessly with geographic data.
+Seaborn's features are accessible only from commands
+on the module itself, while ProPlot's features are built right into the matplotlib API, thanks
+to special subclasses of the native matplotlib ``Figure`` and ``Axes``
+classes. Notably, rather than using "palettes", ProPlot uses the native matplotlib ``LinearSegmentedColormap`` and ``ListedColormap`` for color control. This gives user a gentle learning curve, but also permits a number of powerful features well beyond the scope of seaborn.
 
-Most of Seaborn's features are also only accessible from commands
-on the module itself.
-ProPlot is integrated directly with the matplotlib API,
-relying on special subclasses of the native matplotlib ``Figure`` and ``Axes``
-classes and the native matplotlib ``Colormap`` classes as opposed
-to "palettes". This gives new users a gentle learning curve, but
-still permits a number of powerful features well beyond
-the scope of Seaborn.
-
-In summary, this project is meant as a companion or alternative to Seaborn
-to serve the needs of a mostly distinct audience -- especially
-frustrated grad students like me.
+In summary, this project is intended as a companion or alternative to Seaborn, designed from the ground up to seamlessly wrap the matplotlib API rather than relying on a set of external functions.
 
 Contributions
 -------------

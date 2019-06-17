@@ -866,18 +866,22 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     keys = {key for cmap in imaps for key in cmap._segmentdata.keys() if 'gamma' not in key}
     for key in keys:
         # Combine xyy data
+        # WARNING: If just reference a global 'funcs' list from inside the
+        # 'data' function, end up with grayscale colormap because each 'data'
+        # function reads 'funcs' as from the final channel in 'keys'. Must
+        # embed 'funcs' into each definition using a keyword argument.
         callable_ = [callable(cmap._segmentdata[key]) for cmap in imaps]
         if all(callable_): # expand range from x-to-w to 0-1
             funcs = [cmap._segmentdata[key] for cmap in imaps]
-            def data(ix):
+            def data(ix, funcs=funcs):
                 ix = np.atleast_1d(ix)
                 kx = np.empty(ix.shape)
-                ifuncs = [*funcs]
-                nfuncs = len(ifuncs)
+                nfuncs = len(funcs)
                 for j,jx in enumerate(ix.flat):
                     idx = max(np.searchsorted(x0, jx)-1, 0)
-                    kx.flat[j] = ifuncs[idx]((jx - x0[idx])/xw[idx])
+                    kx.flat[j] = funcs[idx]((jx - x0[idx])/xw[idx])
                 return kx
+            data.__name__ = key + '_data'
         elif not any(callable_):
             datas = []
             for x,w,cmap in zip(x0[:-1], xw, imaps):

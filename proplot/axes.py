@@ -848,6 +848,12 @@ class XYAxes(BaseAxes):
             obj = wrappers._plot_wrapper(self, obj)
         elif attr=='scatter':
             obj = wrappers._scatter_wrapper(self, obj)
+        elif attr=='bar':
+            obj = wrappers._bar_wrapper(self, obj)
+        elif attr=='boxplot':
+            obj = wrappers._boxplot_wrapper(self, obj)
+        elif attr=='violinplot':
+            obj = wrappers._violinplot_wrapper(self, obj)
         elif attr in wrappers._centers_methods:
             obj = wrappers._check_centers(self, obj)
         elif attr in wrappers._edges_methods:
@@ -1261,6 +1267,8 @@ class XYAxes(BaseAxes):
             # Also automatically detect whether axis is a 'time axis' (i.e.
             # whether user has plotted something with x/y as datetime/date/np.datetime64
             # objects, and matplotlib automatically set the unit converter)
+            # WARNING: MultipleLocator fails sometimes, notably when doing
+            # boxplot. Tick labels moved to left and are incorrect.
             if locator is not None:
                 locator = axistools.Locator(locator, time=time, **locator_kw)
                 axis.set_major_locator(locator)

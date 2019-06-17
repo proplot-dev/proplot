@@ -13,6 +13,7 @@ import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import matplotlib.patheffects as mpatheffects
+import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
 from numbers import Number
@@ -75,17 +76,17 @@ _loc_translate = {
 
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
-_centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _edges_methods = ('pcolor', 'pcolormesh',)
+_centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _2d_methods = (*_centers_methods, *_edges_methods)
-_1d_methods = ('plot', 'scatter', 'bar', 'barh')
-_cycle_methods  = ('plot', 'scatter', 'bar', 'barh')
+_1d_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot')
+_cycle_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
-    'tripcolor', 'tricontour', 'tricontourf',
-    'cmapline', 'hexbin', 'matshow', 'imshow', 'spy', 'hist2d',)
-_latlon_methods = ('plot', 'scatter',) # adds latlon=True
-_transform_methods = ('plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf',) # adds transform=PlateCarree()
+    'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
+    'hexbin', 'matshow', 'imshow', 'spy', 'hist2d')
 _crs_methods = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks',) # adds crs=PlateCarree()
+_latlon_methods = ('plot', 'scatter') # adds latlon=True
+_transform_methods = ('plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf',) # adds transform=PlateCarree()
 
 # Disabled methods; keys are error messages
 # TODO: rigorous support for violin plots, bar, barh, streamline and quiver
@@ -129,13 +130,13 @@ def _expand_methods_list(func):
         ('_centers_methods',       _centers_methods),
         ('_edges_methods',         _edges_methods),
         ('_centers_edges_methods', (*_centers_methods, *_edges_methods)),
-        ('_latlon_methods',       _latlon_methods),
-        ('_crs_methods',          _crs_methods),
-        ('_transform_methods',    _transform_methods),
-        ('_cycle_methods',        _cycle_methods),
-        ('_cmap_methods',         _cmap_methods),
-        ('_disabled_methods',     (*(method for methods in _disabled_methods.values() for method in methods),)),
-        ('_map_disabled_methods', _map_disabled_methods),
+        ('_latlon_methods',        _latlon_methods),
+        ('_crs_methods',           _crs_methods),
+        ('_transform_methods',     _transform_methods),
+        ('_cycle_methods',         _cycle_methods),
+        ('_cmap_methods',          _cmap_methods),
+        ('_disabled_methods',      (*(method for methods in _disabled_methods.values() for method in methods),)),
+        ('_map_disabled_methods',  _map_disabled_methods),
         ):
         if f'`{name}`' not in doc:
             continue
@@ -184,23 +185,29 @@ def _parse_1d(self, func, *args, **kwargs):
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
-    if len(args)==1:
+    name = func.__name__
+    if len(args)==0:
+        return func(*args, **kwargs)
+    elif len(args)==1:
         x = None
         y, *args = args
     elif len(args) in (2,3,4):
         x, y, *args = args # same
     else:
-        raise ValueError(f'Passed {len(args)} arguments to plotting command. Only 1-4 are valid.')
+        raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
     # Detect 1d
     is1d = True # i.e. args is a 1d vector
+    if x is not None and not np.iterable(x):
+        x = np.atleast_1d(x)
     if not np.iterable(y):
-        raise ValueError(f'Invalid y data {y}.')
-    elif getattr(y, 'ndim', None)==2: # e.g. DataFrame[0] can raise error, indexing is by column name, so this test is best
+        y = np.atleast_1d(y)
+    if getattr(y, 'ndim', None)==2: # e.g. DataFrame[0] can raise error, indexing is by column name, so this test is best
         is1d = False
-    elif np.iterable(y[0]): # e.g. list of lists
+    elif len(y) and np.iterable(y[0]): # e.g. list of lists
         is1d = False
-    # Ensure 2d and draw sample column
     y = _array_std(y)
+    # Auto coords
+    # Requires drawing a sample column
     if y.ndim==2:
         iy = getattr(y, 'iloc', y)
         iy = iy[:,0]
@@ -208,7 +215,6 @@ def _parse_1d(self, func, *args, **kwargs):
         iy = y
     else:
         raise ValueError(f'y must be 1 or 2-dimensional, got shape {y.shape}.')
-    # Auto coords
     if x is None:
         if isinstance(iy, ndarray):
             x = np.arange(iy.size)
@@ -227,38 +233,87 @@ def _parse_1d(self, func, *args, **kwargs):
         kw = {}
         iy = None
         if not self._is_map:
+            xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal' or name=='barh') else 'x'
+            yaxis = 'x' if xaxis=='y' else 'x'
             # Xlabel
             label = _auto_label(x)
             if label:
-                kw['xlabel'] = label
-            if all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
-                kw['xreverse'] = True
-            # Ylabel; only try if the input was 1d, otherwise info is title
-            if y.ndim==2 and y.shape[1]==1:
+                kw[xaxis + 'label'] = label
+            if len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
+                kw[xaxis + 'reverse'] = True
+            # Try to apply ylabel if dataset is 1d
+            if y.ndim==1:
+                iy = y
+            elif y.ndim==2 and y.shape[1]==1:
                 iy = getattr(y, 'iloc', y)
                 iy = iy[:,0]
-            elif y.ndim==1:
-                iy = y
             if iy is not None:
                 label = _auto_label(iy)
                 if label:
-                    kw['ylabel'] = label
+                    kw[yaxis + 'label'] = label
+            # Extra special cases
+            # For bar plots, so we can offset by widths, need to convert to
+            # array prematurely and apply the IndexFormatter.
+            if name in ('bar','barh'):
+                x = getattr(x, 'values', x) # TODO: restore datetime support!
+                x = np.array(x)
+                if x.dtype=='object':
+                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
+                    x = np.arange(len(x))
+            # For histograms, y data is actually on the x axis, so pull metadata
+            if name in ('hist',):
+                label = None
+                if isinstance(y, (DataFrame, Series)):
+                    label = _auto_label(y.index)
+                elif isinstance(y, DataArray):
+                    label = _auto_label(y.coords[y.dims[0]])
+                if label:
+                    kw[xaxis + 'label'] = label
+                y = getattr(y, 'values', y)
+                y = np.array(y)
+            # Boxplot accepts a 'labels' argument but violinplot does not, so
+            # we try to set the locators and formatters here.
+            if name in ('boxplot','violinplot'):
+                label, labels = None, None
+                if isinstance(y, DataFrame):
+                    label = _auto_label(y.columns)
+                    labels = y.columns
+                elif isinstance(y, DataArray) and y.ndim>1:
+                    label = _auto_label(y.coords[y.dims[1]])
+                    labels = y.coords[y.dims[1]].values
+                if label:
+                    kw[xaxis + 'label'] = label
+                if labels is not None: # TODO: support for e.g. date axes?
+                    labels = getattr(labels, 'values', labels)
+                    labels = np.array(labels)
+                    if labels.dtype=='object':
+                        kw[xaxis + 'formatter'] = mticker.IndexFormatter(labels)
+                        if name=='boxplot':
+                            kwargs['labels'] = labels # requires or get overwritten
+                        else:
+                            kwargs['positions'] = np.arange(len(labels))
+                    else:
+                        kwargs['positions'] = np.arange(len(labels))
+                y = getattr(y, 'values', y)
+                y = np.array(y)
         # Title
         if iy is None:
             label = _auto_label(y)
             if label:
                 kw['title'] = label
-        self.format(**kw)
+        if kw:
+            self.format(**kw)
     return func(x, y, *args, **kwargs)
 
 def _parse_2d(self, func, *args, order='C', **kwargs):
     """Gets 2d data. Accepts ndarray and DataArray. Used by `check_centers`
     and `check_edges`, which are used for all 2d plot methods."""
     # Sanitize input
-    if len(args)>4:
-        raise ValueError(f'Too many arguments passed to plotting command. Max is 4.')
-    elif len(args)<1:
-        raise ValueError(f'Too few arguments passed to plotting command. Min is 1.')
+    name = func.__name__
+    if len(args)==0:
+        return func(*args, **kwargs)
+    elif len(args)>4:
+        raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
     x, y = None, None
     if len(args)>2:
         x, y, *args = args
@@ -311,7 +366,8 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
         title = _auto_label(Zs[0], units=False)
         if title:
             kw['title'] = title
-        self.format(**kw)
+        if kw:
+            self.format(**kw)
     return func(x, y, *Zs, **kwargs)
 
 #------------------------------------------------------------------------------
@@ -319,19 +375,8 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------
 @_expand_methods_list
 def check_centers(self, func, *args, order='C', **kwargs):
-    """
-    Wraps 2D plotting functions that take coordinate *centers* (`_centers_methods`),
-    calculates centers if graticule *edges* were provided.
-
-    Note
-    ----
-    Optional numbers of arguments:
-
-    * Z
-    * U, V
-    * x, y, Z
-    * x, y, U, V
-    """
+    """Wraps 2D plotting functions that take coordinate *centers* (`_centers_methods`),
+    calculates centers if graticule *edges* were provided."""
     # Checks whether sizes match up, checks whether graticule was input
     x, y, *Zs = args
     xlen, ylen = x.shape[-1], y.shape[0]
@@ -355,19 +400,8 @@ def check_centers(self, func, *args, order='C', **kwargs):
 
 @_expand_methods_list
 def check_edges(self, func, *args, order='C', **kwargs):
-    """
-    Wraps 2D plotting functions that take graticule *edges* (`_edges_methods`),
-    calculates edges if coordinate *centers* were provided.
-
-    Note
-    ----
-    Optional numbers of arguments:
-
-    * Z
-    * U, V
-    * x, y, Z
-    * x, y, U, V
-    """
+    """Wraps 2D plotting functions that take graticule *edges* (`_edges_methods`),
+    calculates edges if coordinate *centers* were provided."""
     # Checks that sizes match up, checks whether graticule was input
     # return func(*args, **kwargs)
     x, y, *Zs = args
@@ -395,6 +429,25 @@ def check_edges(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------#
 # 1D plot wrappers
 #------------------------------------------------------------------------------#
+def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None, stacked=False, **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.bar`, applies sensible defaults.
+
+    Parameters
+    ----------
+    edgecolor : None or color-spec, optional
+        The default edge color.
+    lw, linewidth : None or float, optional
+        The default edge width.
+    stacked : bool, optional
+        Whether to stack columns of input data, or plot the bars side-by-side.
+    """
+    # TODO: Stacked feature is implemented in `cycle_wrapper`, but makes more
+    # sense do document here; figure out way to move it here?
+    lw = _default(lw, linewidth, 0.7)
+    edgecolor = _default(edgecolor, 'k')
+    return func(*args, linewidth=lw, edgecolor=edgecolor, stacked=stacked, **kwargs)
+
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.plot`, calls `~BaseAxes.cmapline`
@@ -409,13 +462,10 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
-    # Parse input
     if len(args) not in (2,3): # e.g. with fmt string
         raise ValueError(f'Expected 1-3 plot args, got {len(args)}')
-    # Make normal boring lines
     if cmap is None:
         lines = func(*args, **kwargs)
-    # Make special colormap lines
     else:
         lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
     return lines
@@ -455,6 +505,206 @@ def scatter_wrapper(self, func, *args,
     lws = _default(lw, linewidths, linewidth, markeredgewidths, markeredgewidth)
     ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
     return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
+
+def boxplot_wrapper(self, func, *args,
+    color=None, fill=True, fillcolor=None, fillalpha=None,
+    lw=None, linewidth=None, orientation=None,
+    marker=None, markersize=None,
+    boxcolor=None, boxlw=None,
+    capcolor=None, caplw=None,
+    meancolor=None, meanlw=None,
+    mediancolor=None, medianlw=None,
+    whiskercolor=None, whiskerlw=None,
+    fliercolor=None, flierlw=None,
+    **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.boxplot`, adds convenient keyword args.
+    Fills the objects with a cycle color by default.
+
+    Parameters
+    ----------
+    color : None or color-spec, optional
+        The color of all objects.
+    fill : bool, optional
+        Whether to fill the box with a color.
+    fillcolor : None or color-spec, optional
+        The fill color for the boxes. Defaults to the next color cycler color.
+    fillalpha : None or float, optional
+        The opacity of the boxes. Defaults to ``1``.
+    lw, linewidth : None or float, optional
+        The linewidth of all objects.
+    orientation : {None, 'horizontal', 'vertical'}, optional
+        Alternative to the native `vert` keyword arg. Controls orientation.
+    marker : None or marker-spec, optional
+        Marker style for the 'fliers', i.e. outliers.
+    markersize : None or float, optional
+        Marker size for the 'fliers', i.e. outliers.
+    boxcolor, capcolor, meancolor, mediancolor, whiskercolor : None or color-spec, optional
+        The color of various boxplot components. These are shorthands so you
+        don't have to pass e.g. a ``boxprops`` dictionary.
+    boxlw, caplw, meanlw, medianlw, whiskerlw : None or float, optional
+        The line width of various boxplot components. These are shorthands so you
+        don't have to pass e.g. a ``boxprops`` dictionary.
+    """
+    # Call function
+    if orientation is not None:
+        if orientation=='horizontal':
+            kwargs['vert'] = False
+        elif orientation!='vertical':
+            raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
+    obj = func(*args, **kwargs)
+    # Modify results
+    # TODO: Pass props keyword args instead? Maybe does not matter.
+    lw = _default(lw, linewidth)
+    fillalpha = _default(fillalpha, 0.7)
+    if fillcolor is None:
+        cycler = next(self._get_lines.prop_cycler)
+        fillcolor = cycler.get('color', None)
+    for key,icolor,ilw in (
+        ('boxes',boxcolor,boxlw),
+        ('caps',capcolor,caplw),
+        ('whiskers',whiskercolor,whiskerlw),
+        ('means',meancolor,meanlw),
+        ('medians',mediancolor,medianlw),
+        ('fliers',fliercolor,flierlw),
+        ):
+        if key not in obj: # possible if not rendered
+            continue
+        artists = obj[key]
+        ilw = _default(ilw, lw)
+        icolor = _default(icolor, color)
+        for artist in artists:
+            if icolor is not None:
+                artist.set_color(icolor)
+                artist.set_markeredgecolor(icolor)
+            if ilw is not None:
+                artist.set_linewidth(ilw)
+                artist.set_markeredgewidth(ilw)
+            if key=='boxes' and fill:
+                patch = mpatches.PathPatch(artist.get_path(), color=fillcolor, alpha=fillalpha, linewidth=0)
+                self.add_artist(patch)
+            if key=='fliers':
+                if marker is not None:
+                    artist.set_marker(marker)
+                if markersize is not None:
+                    artist.set_markersize(markersize)
+    return obj
+
+def violinplot_wrapper(self, func, *args,
+    color=None, fillcolor=None, fillalpha=None,
+    lw=None, linewidth=None, orientation=None,
+    boxrange=(25, 75), barrange=(5, 95),
+    showboxes=True, showbars=True, showmedians=None, showmeans=None,
+    bodycolor=None, bodylw=None,
+    boxcolor=None, boxlw=None,
+    barcolor=None, barlw=None,
+    meancolor=None, meanlw=None,
+    mediancolor=None, medianlw=None,
+    mincolor=None, minlw=None,
+    maxcolor=None, maxlw=None,
+    **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.violinplot`, adds convenient keyword args.
+    Makes the style shown in right plot of `this matplotlib example
+    <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
+    the default. Among other things, it is no longer possible to show minima
+    and maxima with whiskers, because that is redundant anyway.
+
+    Parameters
+    ----------
+    color : None or color-spec, optional
+        The color of all line objects. Defaults to ``'k'``.
+    fillcolor : None or color-spec, optional
+        The violin plot fill color. Defaults to the next color cycler color.
+    fillalpha : None or float, optional
+        The opacity of the violins. Defaults to ``1``.
+    lw, linewidth : None or float, optional
+        The linewidth of all line objects. Defaults to ``1``.
+    orientation : {None, 'horizontal', 'vertical'}, optional
+        Alternative to the native `vert` keyword arg. Controls orientation.
+    boxrange, barrange : (float, float), optional
+        Percentile ranges for the thick and thin central bars. The defaults
+        are ``(25, 75)`` and ``(2.5, 97.5)``, respectively.
+    showboxes, showbars, showmedians, showmeans : bool, optional
+        Toggles showing the central thick vertical bar, thin vertical bar,
+        median position marker, mean position marker, and the minimum maximum
+        datum markers. These defaults are different from the matplotlib defaults.
+    bodycolor, boxcolor, barcolor, meancolor, mediancolor, mincolor, maxcolor : None or color-spec, optional
+        The color of various violin plot components. Applies to violin body,
+        thick central bar, thin central bar, mean and median markers, and
+        minimum and maximum markers.
+    bodylw, boxlw, barlw, meanlw, medianlw, minlw, maxlw : None or float, optional
+        The line width of various violin plot components. Applies to violin body,
+        thick central bar, thin central bar, mean and median markers, and
+        minimum and maximum markers.
+    """
+    # Call function
+    if orientation is not None:
+        if orientation=='horizontal':
+            kwargs['vert'] = False
+        elif orientation!='vertical':
+            raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
+    obj = func(*args, showmeans=False, showmedians=False, showextrema=False, **kwargs)
+    # Defaults
+    lw = _default(lw, linewidth)
+    color = _default(color, 'k') # use black for edges
+    fillalpha = _default(fillalpha, 0.7)
+    if boxlw is None: # use a multiplier
+        boxlw = 4*_default(lw, rc.get('lines.linewidth'))
+    # Add custom thin and thick lines
+    # WARNING: This wrapper comes after the parse 1d wrapper, which always
+    # passes an (x,y) pair as args; but in this case the x is nonsense, just
+    # indicates each datum index. We want the positions keyword arg.
+    if not args:
+        return obj
+    if 'positions' not in kwargs:
+        raise ValueError('Could not find violinplot positions, but 1d parser should have supplied them.')
+    x, y = kwargs['positions'], args[1]
+    if showboxes:
+        box1, box2 = np.percentile(y, boxrange, axis=0)
+        obj['cboxes'] = self.vlines(x, box1, box2, linestyle='-')
+    if showbars:
+        bar1, bar2 = np.percentile(y, barrange, axis=0)
+        obj['cbars'] = self.vlines(x, bar1, bar2, linestyle='-')
+    if showmeans is None and showmedians is None:
+        showmeans = True
+    if showmeans:
+        means = np.mean(y, axis=0)
+        obj['cmeans'] = self.scatter(x, means, marker='o', color='white', s=boxlw, zorder=5)
+    if showmedians:
+        medians = np.percentile(y, 50, axis=0)
+        obj['cmedians'] = self.scatter(x, medians, marker='o', color='white', s=boxlw, zorder=5)
+    # Modify results
+    # NOTE: In this case we can *only* modify after instantiation
+    for key,icolor,ilw in (
+        ('bodies',bodycolor,bodylw), # poly collection
+        ('cboxes',boxcolor,boxlw), # line collections
+        ('cbars',barcolor,barlw), # line collections
+        # ('cmeans',meancolor,meanlw),
+        # ('cmedians',mediancolor,medianlw),
+        ):
+        if key not in obj: # possible if not rendered
+            continue
+        artists = obj[key]
+        ilw = _default(ilw, lw)
+        icolor = _default(icolor, color)
+        if not isinstance(artists, (list,tuple)): # only for bodies
+            artists = [artists]
+        for artist in artists:
+            if key=='bodies':
+                artist.set_alpha(fillalpha)
+                if fillcolor is not None:
+                    artist.set_facecolor(fillcolor)
+                if icolor is not None:
+                    artist.set_edgecolor(icolor)
+                if ilw is not None:
+                    artist.set_linewidths(ilw)
+            else:
+                if icolor is not None:
+                    artist.set_color(icolor)
+                if ilw is not None:
+                    artist.set_linewidth(ilw)
+    return obj
 
 #------------------------------------------------------------------------------#
 # Text wrapper
@@ -514,7 +764,7 @@ def text_wrapper(self, func, x, y, text,
     else:
         raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
     # Raise more helpful error message if font unavailable
-    name = kwargs.pop('fontname', rc['fontname']) # is actually font.sans-serif
+    name = kwargs.pop('fontname', rc.get('fontname')) # is actually font.sans-serif
     if name not in fonttools.fonts:
         suffix = ''
         if name not in fonttools._missing_fonts:
@@ -863,7 +1113,12 @@ def cycle_wrapper(self, func, *args,
         **kwargs):
     """
     Wraps methods that use the property cycler (`_cycle_methods`),
-    adds features for controlling colors in the property cycler.
+    adds features for controlling colors in the property cycler and drawing
+    legends or colorbars in one go. Critically, this wrapper also **standardizes
+    acceptable input** -- these methods now all accept 2D arrays holding columns
+    of data, and *x*-coordinates are always optional. Note this alters the
+    behavior of `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`,
+    which now compile statistics on *columns* of data instead of *rows*.
 
     Parameters
     ----------
@@ -932,17 +1187,23 @@ def cycle_wrapper(self, func, *args,
     `_get_lines` and `_get_patches_for_fill`.
     """
     # Test input
-    # NOTE: Since _plot_wrapper and _scatter_wrapper come before this, input
-    # will be standardized, so below is valid.
+    # NOTE: Requires _parse_1d wrapper before this
+    name = func.__name__
+    if not args:
+        return func(*args, **kwargs)
     x, y, *args = args
     is1d = (y.ndim==1)
 
     # Determine and temporarily set cycler
+    # NOTE: Should not wrap set_prop_cycle because it calls several secondary
+    # methods, would get messy and fragile.
+    # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
+    # we must cycle over it with next(). We try calling next() the same number
+    # of times as the length of user input cycle. If the input cycle *is* in
+    # fact the same, below does not reset the color position, cycles us to start!
     # WARNING: Axes cycle has no getter, only setter (set_prop_cycle), which
     # sets a 'prop_cycler' attribute on the hidden _get_lines and
     # _get_patches_for_fill objects. Only way to query current axes cycler!
-    # NOTE: Should not wrap set_prop_cycle because it calls several secondary
-    # methods, would get messy and fragile.
     if cycle is not None:
         # Get the new group of colors
         if not np.iterable(cycle) or isinstance(cycle, str):
@@ -951,11 +1212,6 @@ def cycle_wrapper(self, func, *args,
             cycle_kw['samples'] = y.shape[1]
         cycle = colortools.Cycle(*cycle, **cycle_kw)
         # Compare to the original group of colors, reset if different
-        # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length,
-        # so we must cycle over it with next(). We try calling next() the same
-        # number of times as the length of user input cycle. If the input cycle
-        # *is* in fact the same, below does not reset the color position, cycles
-        # us back to start!
         i = 0
         cycler = self._get_lines.prop_cycler
         cycle_orig = []
@@ -968,29 +1224,61 @@ def cycle_wrapper(self, func, *args,
             self.set_prop_cycle(color=cycle)
 
     # Iterate
+    # WARNING: Most methods that accept 2d arrays use columns of data, but when
+    # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data assumed!
+    # This is fixed in parse_1d by converting to values.
     labels = _default(values, labels, label, None)
-    if isinstance(labels, str) or labels is None:
-        labels = [labels]*(1 if is1d else y.shape[1])
-    clabel = None
+    if name in ('boxplot','violinplot'):
+        ncols = 1
+        if labels is not None:
+            kwargs['labels'] = labels
+    else:
+        ncols = (1 if is1d else y.shape[1])
+        if isinstance(labels, str) or labels is None:
+            labels = [labels]*ncols
     objs = []
+    clabel = None
     y = getattr(y, 'iloc', y) # for indexing
-    for i,label in enumerate(labels):
-        iy = y if is1d else y[:,i]
-        if not label:
-            # Try to get it from coordiantes
-            if isinstance(y, ndarray):
+    if name in ('bar','barh'):
+        stacked = kwargs.pop('stacked', False)
+        width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
+        kwargs['width'] = width if stacked else width/ncols
+    for i in range(ncols):
+        # Adjust x coordinates
+        kw = {**kwargs} # copy
+        if name in ('bar','barh'):
+            if stacked:
+                ix = x
+                if not is1d:
+                    kw['bottom'] = y[:,:i].sum(axis=1) # sum of empty slice will be zero
+            else:
+                ix = x + (i - ncols/2 + 0.5)*width/ncols
+        else:
+            ix = x
+        # Get object label and potentially the colorbar label
+        if name in ('boxplot','violinplot'): # these cannot have a 'label'
+            iy = y[:] if is1d else y[:,:]
+        else:
+            iy = y[:] if is1d else y[:,i]
+            label = labels[i]
+            if label or isinstance(y, ndarray):
                 pass
             elif isinstance(y, DataArray):
                 label = y.coords[y.dims[1]].values[i]
-                clabel = _auto_label(y.coords[y.dims[1]])
+                clabel = _auto_label(y.coords[y.dims[1]]) # coordinate label
             elif isinstance(y, DataFrame):
                 label = y.columns[i]
-                clabel = _auto_label(y.columns)
-            # Try just getting e.g. a pd.Series name
+                clabel = _auto_label(y.columns) # coordinate label
             else:
-                label = _auto_label(iy)
-        obj = func(x, iy, *args, label=label, **kwargs)
-        if isinstance(obj, (list,tuple)): # plot always returns list or tuple
+                label = _auto_label(iy) # e.g. a pd.Series name
+            kw['label'] = label
+        # Call function
+        if name in ('hist','boxplot','violinplot'): # no x-coordinate
+            xy = (iy,)
+        else: # has x-coordinates
+            xy = (ix,iy)
+        obj = func(*xy, *args, **kw)
+        if isinstance(obj, (list,tuple)) and len(obj)==1: # plot always returns list or tuple
             obj = obj[0]
         objs.append(obj)
 
@@ -1016,7 +1304,18 @@ def cycle_wrapper(self, func, *args,
         if loc!='fill':
             ax._auto_legend_kw[loc].update({'loc':loc})
 
-    return objs[0] if is1d else objs # list of PathCollection or Line2D
+    # Return
+    # WARNING: Make sure plot always returns tuple of objects, and bar
+    # always returns singleton unless we have bulk drawn bar plots! Other
+    # matplotlib methods call these internally!
+    if name=='plot':
+        return (*objs,) # always return tuple of objects
+    elif name in ('boxplot', 'violinplot'):
+        return objs[0] # always singleton, because these methods accept the whole 2d object
+    elif name in ('hist',):
+        return tuple(obj[-1] for obj in objs) # just the patch objects
+    else:
+        return objs[0] if is1d else objs # sensible default behavior
 
 @_expand_methods_list
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
@@ -1149,9 +1448,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     # Input levels
     # See this post: https://stackoverflow.com/a/48614231/4970632
     name = func.__name__
-    values_as_keyword = (name=='cmapline') # functions for which 'values' is a native keyword
+    if not args:
+        return func(*args, **kwargs)
     if np.iterable(values):
-        if values_as_keyword:
+        if name in ('cmapline',):
             kwargs['values'] = values
             levels = utils.edges(values) # special case, used by colorbar factory
         else:
@@ -1319,7 +1619,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
             label = _auto_label(args[-1]) # last one is data, we assume
             if label:
                 colorbar_kw['label'] = label
-        if values_as_keyword and values is not None:
+        if name in ('cmapline',) and values is not None:
             colorbar_kw['values'] = values
         if loc!='fill':
             colorbar_kw['loc'] = loc
@@ -1384,30 +1684,33 @@ def legend_wrapper(self, handles=None, align=None, order='C',
         if candidate in kwargs:
             hsettings[candidate] = kwargs.pop(candidate)
     # Legend entry for colormap object
+    handles = handles or []
+    handles = [*handles] # ensure is mutable
     for i,handle in enumerate(handles):
         if hasattr(handle, 'get_facecolor') or not hasattr(handle, 'get_cmap'): # latter is for scatter (TODO: add cmap_wrapper for scatter?)
             continue
         warnings.warn('Getting legend entry from colormap.')
         size = np.mean(handle.get_sizes())
         cmap = handle.get_cmap()
-        handles[i] = self.scatter([0], [0], markersize=size,
-                                color=[cmap(0.5)],
-                                label=handle.get_label())
+        handles[i] = self.scatter([0], [0],
+            markersize=size, color=[cmap(0.5)], label=handle.get_label()
+            )
 
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
-    #   1) user can specify nothing and align will be inferred (list of iterables
-    #      will always be False, i.e. we draw consecutive legends, and list of handles is always true)
-    #   2) user can specify align (needs list of handles for True, list of handles or list
-    #      of iterables for False and if the former, will turn into list of iterables)
+    # 1) User can specify nothing and align will be inferred (list of iterables
+    #    will always be False, i.e. we draw consecutive legends, and list of handles is always true)
+    # 2) User can specify align (needs list of handles for True, list of handles or list
+    #    of iterables for False and if the former, will turn into list of iterables)
     if not handles and not self._filled:
-        handles = self.get_legend_handles_labels()[0]
+        handles = self.get_legend_handles_labels()[0] # ignores artists with labels '_nolegend_'
         if not handles:
             raise ValueError('No axes artists with labels were found.')
     elif not handles:
         raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
     # Mange input
-    list_of_lists = not isinstance(handles[0], martist.Artist)
+    # list_of_lists = not isinstance(handles[0], martist.Artist)
+    list_of_lists = not hasattr(handles[0], 'get_label') # e.g. not including BarContainer
     if align is None: # automatically guess
         align = not list_of_lists
     elif align and list_of_lists: # standardize format based on input
@@ -1424,7 +1727,7 @@ def legend_wrapper(self, handles=None, align=None, order='C',
 
     # Now draw legend, with two options
     # 1) Normal legend, just draw everything like normal and columns
-    # will be aligned; we re-order handles to be row-major, is only difference
+    #    will be aligned; we re-order handles to be row-major, is only difference
     if align:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
@@ -1445,9 +1748,9 @@ def legend_wrapper(self, handles=None, align=None, order='C',
         legends = [leg]
 
     # 2) Separate legend for each row
-    # The label spacing/border spacing will be exactly replicated, as if we were
-    # using the original legend command
-    # Means we also have to overhaul some settings
+    #    The label spacing/border spacing will be exactly replicated, as if we were
+    #    using the original legend command
+    #    Means we also have to overhaul some settings
     else:
         # Warn when user input props are overridden
         overridden = []
@@ -1651,10 +1954,11 @@ def colorbar_wrapper(self, mappable, values=None,
     if np.iterable(mappable) and len(mappable)==2:
         mappable, values = mappable
     if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
-        if isinstance(mappable[0], martist.Artist):
-            fromlines = True # we passed a bunch of line handles; just use their colors
-        else:
-            fromcolors = True # we passed a bunch of color strings or tuples
+        obj = mappable[0]
+        if np.iterable(obj): # e.g. BarContainer
+            obj = obj[0]
+        fromlines = hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor') # simplest approach
+        fromcolors = (not fromlines)
     # Update with user-kwargs
     if extend is None:
         if hasattr(mappable, 'extend'):
@@ -1672,27 +1976,29 @@ def colorbar_wrapper(self, mappable, values=None,
     #   Too tired to figure out why so just use this workaround
     # * Note contourf will not be overridden for colorbar axes! Need to
     #   manually wrap with cmap_wrapper.
-    if fromlines or fromcolors:
-        # Colors
-        if fromcolors:
-            colors = mappable
-        else:
-            colors = [h.get_color() for h in mappable]
-            if values is None:
-                values = []
-                for obj in mappable:
-                    val = obj.get_label()
-                    values.append(val)
-        # Verify values are numeric
-        ivalues = []
-        for val in values:
-            try:
-                val = float(val)
-            except ValueError:
-                raise ValueError(f'To generate colorbars from line handles or other objects, pass the "values" keyword arg to colorbar(), or give your handles numeric values with e.g. plot(..., label=123) or line.set_label(123).')
-            ivalues.append(val)
-        values = np.array(ivalues)
-        # Make plot
+    if fromcolors:
+        colors = mappable
+        if values is None:
+            raise ValueError(f'To generate colorbars from lists of colors, pass the "values" keyword arg to colorbar().')
+    if fromlines:
+        colors = []
+        for obj in mappable:
+            if np.iterable(obj):
+                obj = obj[0]
+            color = getattr(obj, 'get_color', None)
+            color = color or getattr(obj, 'get_facecolor')
+            colors.append(color())
+        if values is None:
+            values = []
+            for obj in mappable:
+                val = obj.get_label()
+                try:
+                    val = float(val)
+                except ValueError:
+                    raise ValueError(f'To generate colorbars from line handles or other objects, pass the "values" keyword arg to colorbar(), or give your handles numeric values with e.g. plot(..., label=123) or line.set_label(123).')
+                values.append(val)
+    if fromcolors or fromlines:
+        values = np.array(values)
         cmap = colortools.Colormap(colors)
         func = _cmap_wrapper(self, self.contourf)
         mappable = func([[0,0],[0,0]],
@@ -1878,17 +2184,20 @@ def _simple_wrapper(driver):
 _parse_1d_ = _wrapper(_parse_1d)
 _parse_2d_ = _wrapper(_parse_2d)
 # Documented
-_check_centers = _wrapper(check_centers)
-_check_edges   = _wrapper(check_edges)
-_basemap_gridfix   = _wrapper(basemap_gridfix)
-_basemap_latlon    = _wrapper(basemap_latlon)
-_cartopy_gridfix   = _wrapper(cartopy_gridfix)
-_cartopy_transform = _wrapper(cartopy_transform)
-_cartopy_crs       = _wrapper(cartopy_crs)
-_cmap_wrapper    = _wrapper(cmap_wrapper)
-_cycle_wrapper   = _wrapper(cycle_wrapper)
-_plot_wrapper    = _wrapper(plot_wrapper)
-_scatter_wrapper = _wrapper(scatter_wrapper)
-_text_wrapper    = _wrapper(text_wrapper)
-_legend_wrapper  = _simple_wrapper(legend_wrapper) # special
+_check_centers      = _wrapper(check_centers)
+_check_edges        = _wrapper(check_edges)
+_basemap_gridfix    = _wrapper(basemap_gridfix)
+_basemap_latlon     = _wrapper(basemap_latlon)
+_cartopy_gridfix    = _wrapper(cartopy_gridfix)
+_cartopy_transform  = _wrapper(cartopy_transform)
+_cartopy_crs        = _wrapper(cartopy_crs)
+_cmap_wrapper       = _wrapper(cmap_wrapper)
+_cycle_wrapper      = _wrapper(cycle_wrapper)
+_bar_wrapper        = _wrapper(bar_wrapper)
+_plot_wrapper       = _wrapper(plot_wrapper)
+_scatter_wrapper    = _wrapper(scatter_wrapper)
+_boxplot_wrapper    = _wrapper(boxplot_wrapper)
+_violinplot_wrapper = _wrapper(violinplot_wrapper)
+_text_wrapper       = _wrapper(text_wrapper)
+_legend_wrapper     = _simple_wrapper(legend_wrapper) # special
 
