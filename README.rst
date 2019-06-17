@@ -128,7 +128,7 @@ on the module itself, while ProPlot's features are built right into the matplotl
 to special subclasses of the native matplotlib ``Figure`` and ``Axes``
 classes. Notably, rather than using "palettes", ProPlot uses the native matplotlib ``LinearSegmentedColormap`` and ``ListedColormap`` for color control. This gives user a gentle learning curve, but also permits a number of powerful features well beyond the scope of seaborn.
 
-In summary, this project is intended as a companion or alternative to Seaborn, designed from the ground up to seamlessly wrap the matplotlib API rather than relying on a set of external functions.
+In summary, this project is intended as a companion or alternative to Seaborn, designed from the ground up to wrap the matplotlib API directly rather than relying on external functions.
 
 Contributions
 -------------
