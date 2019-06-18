@@ -33,19 +33,19 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_68_0.svg
+.. image:: showcase/showcase_70_0.svg
 
 
 
-.. image:: showcase/showcase_68_1.svg
+.. image:: showcase/showcase_70_1.svg
 
 
 
-.. image:: showcase/showcase_68_2.svg
+.. image:: showcase/showcase_70_2.svg
 
 
 
-.. image:: showcase/showcase_68_3.svg
+.. image:: showcase/showcase_70_3.svg
 
 
 .. code:: ipython3
@@ -62,11 +62,11 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_69_0.svg
+.. image:: showcase/showcase_71_0.svg
 
 
 
-.. image:: showcase/showcase_69_1.svg
+.. image:: showcase/showcase_71_1.svg
 
 
 Axis ticks and scales
@@ -102,7 +102,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_72_0.svg
+.. image:: showcase/showcase_74_0.svg
 
 
 Axis tick labels
@@ -126,7 +126,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_75_0.png
+.. image:: showcase/showcase_77_0.png
    :width: 569px
    :height: 237px
 
@@ -158,7 +158,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_77_0.svg
+.. image:: showcase/showcase_79_0.svg
 
 
 Datetime axes
@@ -196,7 +196,7 @@ details.
 
 
 
-.. image:: showcase/showcase_80_0.svg
+.. image:: showcase/showcase_82_0.svg
 
 
 Axis scales
@@ -226,7 +226,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_83_0.svg
+.. image:: showcase/showcase_85_0.svg
 
 
 .. code:: ipython3
@@ -256,7 +256,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_84_0.svg
+.. image:: showcase/showcase_86_0.svg
 
 
 .. code:: ipython3
@@ -295,7 +295,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_85_0.svg
+.. image:: showcase/showcase_87_0.svg
 
 
 Alternative units
@@ -344,11 +344,11 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_88_0.svg
+.. image:: showcase/showcase_90_0.svg
 
 
 
-.. image:: showcase/showcase_88_1.svg
+.. image:: showcase/showcase_90_1.svg
 
 
 .. code:: ipython3
@@ -374,7 +374,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_89_0.svg
+.. image:: showcase/showcase_91_0.svg
 
 
 Polar projections
@@ -403,6 +403,6 @@ more on specifying the projection.
 
 
 
-.. image:: showcase/showcase_92_0.svg
+.. image:: showcase/showcase_94_0.svg
 
 

@@ -9,14 +9,23 @@ name = 'ProPlot'
 # Monkey patch warnings format
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
+# For default warning source code see: https://github.com/python/cpython/blob/master/Lib/warnings.py
 import warnings
-_warning_default = warnings.formatwarning
 def _warning_proplot(message, category, filename, lineno, line=None):
-    if 'proplot' in filename or _warning_default is _warning_proplot:
-        return f'{filename}:{lineno}: ProPlotWarning: {message}'
+    if 'proplot' in filename:
+        string = f'{filename}:{lineno}: ProPlotWarning: {message}'
     else:
-        return _warning_default(message, category, filename, lineno, line=line)
-warnings.formatwarning = _warning_proplot
+        string = f'{filename}:{lineno}: {category.__name__}: {message}'
+        if line is None:
+            try:
+                import linecache
+                line = linecache.getline(filename, lineno)
+                string = f'{string}\n{line}'
+            except Exception:
+                pass
+    return string
+if warnings.formatwarning is not _warning_proplot:
+    warnings.formatwarning = _warning_proplot
 # Then import stuff
 # WARNING: Must import colortools and register names first, since rcmod will
 # try to look up e.g. 'sunset' in the colormap dictionary!

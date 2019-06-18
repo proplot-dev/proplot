@@ -113,7 +113,6 @@ from .utils import ic, _default
 from .rcmod import rc
 from numbers import Number
 from fractions import Fraction
-from types import FunctionType
 import numpy as np
 import numpy.ma as ma
 import matplotlib.dates as mdates
@@ -320,7 +319,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
             if formatter not in formatters:
                 raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
             formatter = formatters[formatter](*args, **kwargs)
-    elif isinstance(formatter, FunctionType):
+    elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif np.iterable(formatter): # list of strings on the major ticks, wherever they may be
         formatter = mticker.FixedFormatter(formatter)

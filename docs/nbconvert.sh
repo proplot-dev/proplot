@@ -23,7 +23,7 @@ for notebook in "${notebooks[@]}"; do
   # module (e.g. ``numpy``) literals, hence the search for specific packages.
   echo "Running vi search and replace."
   command vi -c \
-     '%s/``\(\~\?\)\(datetime\|mpl_toolkits\|numpy\|pandas\|climpy\|metpy\|scipy\|xarray\|matplotlib\|cartopy\|basemap\|proplot\)\(.\{-}\)``/`\1\2\3`/ge | '"\
+     '%s/``\(\~\?\)\(datetime\|cycler\|mpl_toolkits\|numpy\|pandas\|climpy\|metpy\|scipy\|xarray\|matplotlib\|cartopy\|basemap\|proplot\)\(.\{-}\)``/`\1\2\3`/ge | '"\
     "'%s/:ref:``\(.\{-}\)``/:ref:`\1`/ge | '"\
     "'%s/code::\s*$/code:: ipython3/ge | '"\
     "'%s/.. parsed-literal::\n\n.\+\_.\{-}\n\n//ge | wq' ${base}.rst &>/dev/null

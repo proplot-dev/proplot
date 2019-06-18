@@ -14,6 +14,7 @@ import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import matplotlib.patheffects as mpatheffects
+import matplotlib.collections as mcollections
 import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
@@ -44,7 +45,7 @@ except ModuleNotFoundError:
 _edges_methods = ('pcolor', 'pcolormesh',)
 _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _2d_methods = (*_centers_methods, *_edges_methods)
-_1d_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie')
+_1d_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie', 'hexbin')
 _cycle_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
@@ -449,6 +450,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
 def scatter_wrapper(self, func, *args,
     s=None, size=None, markersize=None,
     c=None, color=None, markercolor=None,
+    cmap=None, norm=None, cmap_kw={}, norm_kw={},
     lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
     edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
     **kwargs):
@@ -462,6 +464,16 @@ def scatter_wrapper(self, func, *args,
         Aliases for the marker size.
     c, color, markercolor : None or str or (R,G,B) tuple, or list thereof, optional
         Aliases for the marker fill color.
+    cmap : None or colormap-spec, optional
+        The colormap specifer, passed to the `~proplot.colortools.Colormap`
+        constructor.
+    cmap_kw : dict-like, optional
+        Passed to `~proplot.colortools.Colormap`.
+    norm : None or normalizer spec, optional
+        The colormap normalizer, passed to the `~proplot.colortools.Norm`
+        constructor.
+    norm_kw : None or norm-spec, optional
+        Passed to `~proplot.colortools.Norm`.
     lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
         Aliases for the marker edge width.
     edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
@@ -478,13 +490,22 @@ def scatter_wrapper(self, func, *args,
         s = args.pop(0)
     if args:
         raise ValueError(f'Expected 1-4 scatter args, got {len(args)}.')
+    # Format cmap and norm
+    if cmap is not None:
+        if isinstance(cmap, (str, dict, mcolors.Colormap)):
+            cmap = cmap, # make a tuple
+        cmap = colortools.Colormap(*cmap, N=None, **cmap_kw)
+    if norm is not None:
+        if isinstance(norm, (str, dict, mcolors.Normalize)):
+            norm = norm,
+        norm = colortools.Norm(*norm, N=None, **norm_kw)
     # Apply some aliases for keyword arguments
     c = _default(c, color, markercolor)
     s = _default(s, size, markersize)
     lw = _default(lw, linewidth, linewidths, markeredgewidth, markeredgewidths)
     ec = _default(edgecolor, edgecolors, markeredgecolor, markeredgecolors)
     # Call function
-    return func(x, y, c=c, s=s, linewidths=lw, edgecolors=ec, **kwargs)
+    return func(x, y, c=c, s=s, cmap=cmap, norm=norm, linewidths=lw, edgecolors=ec, **kwargs)
 
 def barh_wrapper(self, func, *args, **kwargs):
     """
@@ -1341,11 +1362,10 @@ def cycle_wrapper(self, func, *args,
     # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
     # for scatter properties! So we simultaneously iterate through the
     # _get_lines property cycler and apply them.
-    props = []
+    apply = {*()} # which keys to apply from property cycler
     if name=='scatter':
         # Figure out which props should be updated
         keys = {*self._get_lines._prop_keys} - {'color','linestyle','dashes'} # color already applied, linestyle ignored
-        apply = {*()} # which keys to apply from property cycler
         for key,prop in (
             ('markersize','s'),
             ('linewidth','linewidths'),
@@ -1357,25 +1377,6 @@ def cycle_wrapper(self, func, *args,
             prop = kwargs.get(prop,None)
             if key in keys and prop is None:
                 apply.add(key)
-        # Update properties
-        if apply:
-            ncols = 1 if y.ndim==1 else y.shape[1]
-            for i in range(ncols):
-                # Build dictionary of properties to apply to scatter object
-                jprops = {} # add to this
-                iprops = next(self._get_lines.prop_cycler)
-                for key in apply:
-                    value = iprops[key]
-                    # Apply
-                    if key in ('linewidth', 'markeredgewidth'): # translate
-                        key = 'linewidths'
-                    elif key in ('size','markersize'):
-                        key = 's'
-                    elif key=='markeredgecolor':
-                        key = 'edgecolors'
-                    # Add to filtered dictionary
-                    jprops[key] = value # filtered to desired settings
-                props.append(jprops)
 
     # Plot susccessive columns
     # WARNING: Most methods that accept 2d arrays use columns of data, but when
@@ -1428,6 +1429,18 @@ def cycle_wrapper(self, func, *args,
             else:
                 label = _auto_label(jy) # e.g. a pd.Series name
             kw['label'] = label
+        # Update properties
+        if apply:
+            props = next(self._get_lines.prop_cycler)
+            for key in apply:
+                value = props[key]
+                if key in ('linewidth', 'markeredgewidth'): # translate
+                    key = 'linewidths'
+                elif key in ('size','markersize'):
+                    key = 's'
+                elif key=='markeredgecolor':
+                    key = 'edgecolors'
+                kw[key] = value
         # Call function with correct args
         if barh: # special!
             xy = ()
@@ -1437,8 +1450,6 @@ def cycle_wrapper(self, func, *args,
             xy = (jy,)
         else: # has x-coordinates
             xy = (ix,jy)
-        if props: # not None and non-empty
-            kw.update(props[i]) # may override existing names
         obj = func(*xy, *args, **kw)
         if isinstance(obj, (list,tuple)) and len(obj)==1: # plot always returns list or tuple
             obj = obj[0]
@@ -1500,7 +1511,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     ----------
     cmap : None or colormap spec, optional
         The colormap specifer, passed to the `~proplot.colortools.Colormap`
-        constructor. See `~proplot.colortools.Colormap` for options.
+        constructor.
     cmap_kw : dict-like, optional
         Passed to `~proplot.colortools.Colormap`.
     norm : None or normalizer spec, optional
@@ -1656,7 +1667,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         # Different cmap functions may or may not accept 'colors', 'linewidths',
         # or 'linestyles' as arguments
         for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
-            if not value:
+            if value is None:
                 continue
             if key not in names:
                 if value:
@@ -2020,9 +2031,7 @@ def colorbar_wrapper(self, mappable, values=None,
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
         sizes to match, because the `extendsize` units are *relative*.
-    tickloc
-        Alias for `ticklocation`.
-    ticklocation : {'bottom', 'top', 'left', 'right'}, optional
+    tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
     label : None or str, optional
         The colorbar label.
@@ -2085,12 +2094,6 @@ def colorbar_wrapper(self, mappable, values=None,
     that are wrapped by `~proplot.axes.BaseAxes`.
     """
     # Developer notes
-    # * There are options on the colorbar object (cb.locator,
-    #   cb.formatter with cb.update_ticks) and by passing kwargs (ticks=x,
-    #   format=y) that allow user to not reference the underlying "axes"
-    #   when fixing ticks. Don't use this functionality because not necessary
-    #   for us and is missing many features, e.g. minorlocators/minorformatters.
-    #   Also is different syntax.
     # * There is an insanely weird problem with colorbars when simultaneously
     #   passing levels and norm object to a mappable; fixed by passing
     #   vmin/vmax instead of levels.
@@ -2099,28 +2102,15 @@ def colorbar_wrapper(self, mappable, values=None,
     #   using a Normalize (for example) to determine colors between the levels
     #   (see: https://stackoverflow.com/q/42723538/4970632). Workaround is to
     #   make sure locators are in vmin/vmax range exclusively; cannot match/exceed values.
-    # * The 'extend' kwarg is used for the case when you are manufacturing
-    #   colorbar from list of colors or lines. Most of the time want 'neither'.
     # Parse flexible input
     ticklocation = _default(tickloc, ticklocation)
     locator = _default(ticks, locator)
     minorlocator = _default(minorticks, minorlocator)
     formatter = _default(ticklabels, formatter, 'default')
-
-    # Test if we were given a mappable, or iterable of stuff; note Container and
-    # PolyCollection matplotlib classes are iterable.
-    fromlines, fromcolors = False, False
-    if np.iterable(mappable) and len(mappable)==2:
-        mappable, values = mappable
-    if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
-        obj = mappable[0]
-        if np.iterable(obj): # e.g. BarContainer
-            obj = obj[0]
-        fromlines = hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor') # simplest approach
-        fromcolors = (not fromlines)
-    # Update with user-kwargs
+    # Apply user-kwargs
+    # WARNING: PathCollection scatter objects have an extend method!
     if extend is None:
-        if hasattr(mappable, 'extend'):
+        if isinstance(getattr(mappable, 'extend', None), str):
             extend = mappable.extend or 'neither'
         else:
             extend = 'neither'
@@ -2129,39 +2119,52 @@ def colorbar_wrapper(self, mappable, values=None,
     kwdefault.update(kwargs)
     kwargs = kwdefault
 
-    # Option to generate colorbar/colormap from line handles
-    # * Note the colors are perfect if we don't extend them by dummy color on either side,
-    #   but for some reason labels for edge colors appear offset from everything
-    #   Too tired to figure out why so just use this workaround
-    # * Note contourf will not be overridden for colorbar axes! Need to
-    #   manually wrap with cmap_wrapper.
-    if fromcolors:
-        colors = mappable
-        if values is None:
-            raise ValueError(f'To generate colorbars from lists of colors, pass the "values" keyword arg to colorbar().')
-    if fromlines:
-        colors = []
-        for obj in mappable:
-            if np.iterable(obj):
-                obj = obj[0]
-            color = getattr(obj, 'get_color', None)
-            color = color or getattr(obj, 'get_facecolor')
-            colors.append(color())
-        if values is None:
-            values = []
+    # Special case where auto colorbar is generated from 1d methods, a list is
+    # always passed but some 1d methods (scatter) do have colormaps.
+    if np.iterable(mappable) and len(mappable)==1 and hasattr(mappable[0], 'get_cmap'):
+        mappable = mappable[0]
+    # Test if we were given a mappable, or iterable of stuff; note Container and
+    # PolyCollection matplotlib classes are iterable.
+    cmap = None
+    if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
+        # Get object for testing
+        if not np.iterable(mappable):
+            mappable = [None] # raises error below
+        obj = mappable[0]
+        if np.iterable(obj): # e.g. BarContainer
+            obj = mappable[0]
+        # Draw from handles
+        if hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor'): # simplest approach
+            colors = []
             for obj in mappable:
-                val = obj.get_label()
-                try:
-                    val = float(val)
-                except ValueError:
-                    raise ValueError(f'To generate colorbars from line handles or other objects, pass the "values" keyword arg to colorbar(), or give your handles numeric values with e.g. plot(..., label=123) or line.set_label(123).')
-                values.append(val)
-    if fromcolors or fromlines:
-        values = np.array(values)
-        cmap = colortools.Colormap(colors)
+                if np.iterable(obj):
+                    obj = obj[0]
+                color = getattr(obj, 'get_color', None)
+                color = color or getattr(obj, 'get_facecolor')
+                colors.append(color())
+            cmap = colortools.Colormap(mappable)
+            if values is None:
+                values = []
+                for obj in mappable:
+                    val = obj.get_label()
+                    try:
+                        val = float(val)
+                    except ValueError:
+                        raise ValueError(f'To generate colorbars from line handles or other objects, pass the "values" keyword arg to colorbar(), or give your handles numeric values with e.g. plot(..., label=123) or line.set_label(123).')
+                    values.append(val)
+        # List of colors
+        elif all(isinstance(obj, str) for obj in mappable) or all(np.iterable(obj) and len(obj) in (3,4) for obj in mappable):
+            cmap = colortools.Colormap(mappable)
+            if values is None:
+                raise ValueError(f'To generate colorbars from lists of colors, pass the "values" keyword arg to colorbar().')
+        # Invalid
+        else:
+            raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, or list of colors.')
+    # Build new ad hoc mappable object
+    if cmap is not None:
         func = _cmap_wrapper(self, self.contourf)
         mappable = func([[0,0],[0,0]],
-            values=values, cmap=cmap, extend='neither',
+            cmap=cmap, extend='neither', values=np.array(values),
             norm=norm, norm_kw=norm_kw) # workaround
         if locator is None:
             nstep = 1 + len(values)//20
@@ -2188,6 +2191,7 @@ def colorbar_wrapper(self, mappable, values=None,
         if i==1 and (not tickminor and ilocator is None): # means we never wanted minor ticks
             locators.append(axistools.Locator('null'))
             continue
+        ilocator = _default(ilocator, 'auto')
         jvalues = np.array(axistools.Locator(ilocator, **ilocator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendsize.

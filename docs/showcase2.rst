@@ -51,6 +51,32 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 .. image:: showcase/showcase_33_1.svg
 
 
+`~proplot.wrappers.cycle_wrapper` is primarily meant to let you easily
+change the color cycle, but it can also change arbitrary properties in
+the property cycle. It is used below by passing a ``cycle_kw``
+dictionary to `~matplotlib.axes.Axes.plot`, enabling a single-color
+dash style cycler. You can also get a `~cycler.cycler` object directly
+by calling the `~proplot.colortools.Cycle` command, and apply it to
+axes with `~matplotlib.axes.Axes.set_prop_cycle`.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    f, axs = plot.subplots(ncols=1, share=1)
+    x = (np.random.rand(20)-0).cumsum()
+    data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
+    data = pd.DataFrame(data, columns=['a','b','c','d'])
+    ax = axs[0]
+    ax.format(title='Plot without color cycle', titleweight='bold')
+    obj = ax.plot(x, data, lw=2, legend='ul', legend_kw={'ncols':2}, cycle_kw={'dashes':[(1,0.5),(1,1.5),(3,1.5),(3,3)]})
+
+
+
+.. image:: showcase/showcase_35_0.svg
+
+
 Thanks to `~proplot.wrappers.scatter_wrapper` and
 `~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
 now accepts 2D arrays like `~matplotlib.axes.Axes.plot`, and
@@ -58,27 +84,31 @@ successive calls to `~matplotlib.axes.Axes.scatter` can apply property
 cycle keys other than ``color`` – for example, ``marker`` and
 ``markersize``. `~matplotlib.axes.Axes.scatter` also now optionally
 accepts keywords that look like the `~matplotlib.axes.Axes.plot`
-keywords (for example, ``color`` and ``size`` instead of ``c`` and
-``s``), which is a bit less confusing.
+keywords, which is a bit less confusing.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     import pandas as pd
-    f, axs = plot.subplots()
-    # data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
+    f, axs = plot.subplots(ncols=2, share=1)
     x = (np.random.rand(20)-0).cumsum()
     data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
-    data = pd.DataFrame(data, columns=['a','b','c','d'], index=pd.Index(x, name='xlabel'))
+    data = pd.DataFrame(data, columns=['a','b','c','d'])
     ax = axs[0]
-    obj = ax.scatter(data, legend='ul', legend_kw={'ncol':2}, cycle='538',
-                     cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
-    ax.format(suptitle='Marker demo')
+    ax.format(title='Scatter prop cycle')
+    obj = ax.scatter(x, data, legend='ul', cycle='538', legend_kw={'ncols':2},
+                    cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
+    ax = axs[1]
+    ax.format(title='Scatter with colormap')
+    data = (np.random.rand(2,100)-0.5)
+    obj = ax.scatter(*data, color=data.sum(axis=0), size=10*(data.sum(axis=0)+1),
+                     marker='s', cmap='fire', colorbar='ll', colorbar_kw={'locator':0.5})
+    axs.format(xlabel='xlabel', ylabel='ylabel', titleweight='bold')
 
 
 
-.. image:: showcase/showcase_35_0.svg
+.. image:: showcase/showcase_37_0.svg
 
 
 `~proplot.wrappers.bar_wrapper` and
@@ -111,7 +141,7 @@ representing percentile ranges.
 
 
 
-.. image:: showcase/showcase_37_0.svg
+.. image:: showcase/showcase_39_0.svg
 
 
 `~matplotlib.axes.Axes.boxplot` and
@@ -140,7 +170,7 @@ automatic axis labelling.
 
 
 
-.. image:: showcase/showcase_39_0.svg
+.. image:: showcase/showcase_41_0.svg
 
 
 2d plot wrappers
@@ -188,7 +218,7 @@ and `~matplotlib.axes.Axes.pcolormesh` are called. Use
 
 
 
-.. image:: showcase/showcase_42_1.svg
+.. image:: showcase/showcase_44_1.svg
 
 
 To change the colormap normalizer, just pass ``norm`` and optionally
@@ -213,7 +243,7 @@ matter their spacing.
 
 
 
-.. image:: showcase/showcase_44_0.svg
+.. image:: showcase/showcase_46_0.svg
 
 
 To add `~matplotlib.axes.Axes.clabel` labels to
@@ -240,7 +270,7 @@ of the underlying box color.
 
 
 
-.. image:: showcase/showcase_46_0.svg
+.. image:: showcase/showcase_48_0.svg
 
 
 Colorbars and legends
@@ -276,7 +306,7 @@ the axes is **filled** with a colorbar. See
 
 
 
-.. image:: showcase/showcase_49_0.svg
+.. image:: showcase/showcase_51_0.svg
 
 
 As shown below, when you call `~proplot.axes.PanelAxes.legend` on a
@@ -314,7 +344,7 @@ and forcing the background to be invisible.
 
 
 
-.. image:: showcase/showcase_51_0.svg
+.. image:: showcase/showcase_53_0.svg
 
 
 A particularly useful `~proplot.wrappers.colorbar_wrapper` feature is
@@ -345,7 +375,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_53_1.svg
+.. image:: showcase/showcase_55_1.svg
 
 
 Axes panels
@@ -372,7 +402,7 @@ will always keep the subplots aligned. See
 
 
 
-.. image:: showcase/showcase_56_0.svg
+.. image:: showcase/showcase_58_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -409,7 +439,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_58_1.svg
+.. image:: showcase/showcase_60_1.svg
 
 
 Figure panels
@@ -443,7 +473,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_61_1.svg
+.. image:: showcase/showcase_63_1.svg
 
 
 .. code:: ipython3
@@ -465,7 +495,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_62_0.svg
+.. image:: showcase/showcase_64_0.svg
 
 
 Stacked panels
@@ -505,6 +535,6 @@ primary axes.
 
 
 
-.. image:: showcase/showcase_64_0.svg
+.. image:: showcase/showcase_66_0.svg
 
 
