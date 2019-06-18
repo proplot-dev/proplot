@@ -91,6 +91,7 @@ autoclass_content = 'both'
 
 # Set up mapping for other projects' docs
 intersphinx_mapping = {
+                       'cycler': ('https://matplotlib.org/cycler/', None),
                        'matplotlib': ('https://matplotlib.org', None),
                        'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
                        'python': ('https://docs.python.org/3', None),

@@ -132,32 +132,22 @@ import matplotlib.transforms as mtransforms
 # And: https://matplotlib.org/api/dates_api.html
 # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py
 # The axis_date() method just sets the converter to the date one
-def Locator(locator=None, *args, minor=False, time=False, **kwargs):
+def Locator(locator, *args, **kwargs):
     """
     Returns a `~matplotlib.ticker.Locator` instance.
 
     Parameters
     ----------
-    locator : None, float, list of float, or str
-        If ``None``, ``'default'``, or ``'auto'``, returns the default
-        `~matplotlib.ticker.AutoLocator` unless `minor` or `time` are
-        ``True`` (see below).
+    locator : float, list of float, or str
+        If str, a dictionary lookup is performed (see below table).
 
         If number, specifies the *multiple* used to define tick separation.
         Returns a `~matplotlib.ticker.MultipleLocator` instance.
 
         If list of numbers, these points are ticked. Returns a
         `~matplotlib.ticker.FixedLocator` instance.
-
-        If str, a dictionary lookup is performed (see below table).
-    minor : bool, optional
-        Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
-        if ``True``, returns an `~matplotlib.ticker.AutoMinorLocator` instance.
-    time : bool, optional
-        Ignored if `locator` is not ``None`` or ``'default'``. Otherwise,
-        if ``True``, returns an `~matplotlib.dates.AutoDateLocator` instance.
     *args, **kwargs
-        Passed to the `~matplotlib.ticker.Locator` class on instantiation.
+        Passed to the `~matplotlib.ticker.Locator` class.
 
 
     For the dictionary lookup, options are as follows:
@@ -165,7 +155,9 @@ def Locator(locator=None, *args, minor=False, time=False, **kwargs):
     ===================================  ===========================================
     Key                                  Class
     ===================================  ===========================================
-    ``None``, ``'default'``, ``'auto'``  `~matplotlib.ticker.AutoLocator`
+    ``'auto'``                           `~matplotlib.ticker.AutoLocator`
+    ``'minor'``                          `~matplotlib.ticker.AutoMinorLocator`
+    ``'date'``                           `~matplotlib.dates.AutoDateLocator`
     ``'none'``, ``'null'``               `~matplotlib.ticker.NullLocator`
     ``'log'``                            `~matplotlib.ticker.LogLocator`
     ``'maxn'``                           `~matplotlib.ticker.MaxNLocator`
@@ -176,15 +168,14 @@ def Locator(locator=None, *args, minor=False, time=False, **kwargs):
     ``'index'``                          `~matplotlib.ticker.IndexLocator`
     ``'symmetric'``                      `~matplotlib.ticker.SymmetricalLogLocator`
     ``'logit'``                          `~matplotlib.ticker.LogitLocator`
-    ``'minor'``                          `~matplotlib.ticker.AutoMinorLocator`
-    ``'microsecond'``                    `~matplotlib.dates.MicrosecondLocator`
-    ``'second'``                         `~matplotlib.dates.SecondLocator`
-    ``'minute'``                         `~matplotlib.dates.MinuteLocator`
-    ``'hour'``                           `~matplotlib.dates.HourLocator`
-    ``'day'``                            `~matplotlib.dates.DayLocator`
-    ``'weekday'``                        `~matplotlib.dates.WeekdayLocator`
-    ``'month'``                          `~matplotlib.dates.MonthLocator`
     ``'year'``                           `~matplotlib.dates.YearLocator`
+    ``'month'``                          `~matplotlib.dates.MonthLocator`
+    ``'weekday'``                        `~matplotlib.dates.WeekdayLocator`
+    ``'day'``                            `~matplotlib.dates.DayLocator`
+    ``'hour'``                           `~matplotlib.dates.HourLocator`
+    ``'minute'``                         `~matplotlib.dates.MinuteLocator`
+    ``'second'``                         `~matplotlib.dates.SecondLocator`
+    ``'microsecond'``                    `~matplotlib.dates.MicrosecondLocator`
     ===================================  ===========================================
 
     Returns
@@ -197,78 +188,64 @@ def Locator(locator=None, *args, minor=False, time=False, **kwargs):
     `~matplotlib.ticker.AutoLocator` has a useful ``nbins`` option. This
     limits the maximum number of ticks to ``nbins-1``.
     """
-    # Do nothing, and return None if locator is None
     if isinstance(locator, mticker.Locator):
         return locator
-    # Decipher user input
+    # Pull out extra args
     if np.iterable(locator) and not isinstance(locator, str) and not all(isinstance(num, Number) for num in locator):
-        locator, args = locator[0], [*locator[1:], *args]
-    locator = _default(locator, 'default')
-    if isinstance(locator, str) and locator=='default':
-        if time:
-            locator = mdates.AutoDateLocator(*args, **kwargs)
-        elif minor:
-            locator = mticker.AutoMinorLocator(*args, **kwargs)
-        else:
-            locator = mticker.AutoLocator(*args, **kwargs)
-    elif isinstance(locator, str): # dictionary lookup
+        locator, args = locator[0], (*locator[1:], *args)
+    # Get the locator
+    if isinstance(locator, str): # dictionary lookup
+        # Shorthands and defaults
         if locator=='logminor':
             locator = 'log'
-            kwargs.update({'subs':np.arange(0,10)})
-        elif locator not in locators:
-            raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
-        if locator=='index':
-            if not args:
-                args = [1] # step
+            kwargs.setdefault('subs', np.arange(10))
+        elif locator=='index':
+            args = args or (1,)
             if len(args)==1:
-                args += [0]
+                args = (*args, 0)
+        # Lookup
+        if locator not in locators:
+            raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number): # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
-    else:
+    elif np.iterable(locator):
         locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
+    else:
+        raise ValueError(f'Invalid locator "{locator}".')
     return locator
 
-def Formatter(formatter=None, *args, time=False, tickrange=None, **kwargs):
+def Formatter(formatter, *args, date=False, **kwargs):
     r"""
     Returns a `~matplotlib.ticker.Formatter` instance.
 
     Parameters
     ----------
     formatter : None, function, list of str, or str
-        If ``None``, ``'default'``, or ``'auto'``, returns `AutoFormatter`
-        unless `time` is ``True`` (see below).
+        If str, there are 4 possibilities:
 
-        If function, function is used to output label string from numeric
-        input. Returns a `~matplotlib.ticker.FuncFormatter` instance.
+        1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
+           using the C-notation ``string % number`` method. See `this page
+           <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
+           for a review.
+        2. If string contains ``'%'`` and `date` is ``True``, datetime
+           ``string % number`` formatting is used. See `this page
+           <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
+           for a review.
+        3. If string contains ``{x}`` or ``{x:...}``, ticks will be
+           formatted by calling ``string.format(x=number)``.
+        4. In all other cases, a dictionary lookup is performed (see below table).
 
         If list of str, labels major ticks with these strings. Returns a
         `~matplotlib.ticker.FixedFormatter` instance.
 
-        If str, there are 3 possibilities:
-
-        1. If string contains ``%``, ticks will be formatted
-           using the C-notation ``string % number`` method. See `this page
-           <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
-           for a review.
-
-           If the axis represents time (i.e. ``time=True``,
-           passed automatically by `~proplot.axes.XYAxes.smart_update`),
-           datetime %-formatting is used. See `this page
-           <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
-           for an overview.
-        2. If string contains ``{x}`` or ``{x:...}``, ticks will be
-           formatted by calling ``string.format(x=number)``.
-        3. Otherwise, a dictionary lookup is performed (see below table).
-
-    time : bool, optional
-        If ``True``, returns an `~matplotlib.dates.AutoDateFormatter` when
-        `formatter` is ``None``, or a `~matplotlib.dates.DateFormatter`
-        instance when `formatter` is a string with a ``'%'`` character.
-    tickrange : (float, float), optional
-        See `AutoFormatter`.
+        If function, function is used to output label string from numeric
+        input. Returns a `~matplotlib.ticker.FuncFormatter` instance.
+    date : bool, optional
+        Toggles the behavior when `formatter` contains a ``'%'`` sign (see
+        above).
     *args, **kwargs
-        Passed to the `~matplotlib.ticker.Formatter` class on instantiation.
+        Passed to the `~matplotlib.ticker.Formatter` class.
 
 
     For the dictionary lookup, options are as follows:
@@ -276,7 +253,8 @@ def Formatter(formatter=None, *args, time=False, tickrange=None, **kwargs):
     ===================================  ================================================================
     Key                                  Class
     ===================================  ================================================================
-    ``None``, ``'default'``, ``'auto'``  `AutoFormatter` or `~matplotlib.dates.AutoDateFormatter`
+    ``'auto'``                           `AutoFormatter`
+    ``'date'``                           `~matplotlib.dates.AutoDateFormatter`
     ``'scalar'``                         `~matplotlib.ticker.ScalarFormatter`
     ``'none'``, ``'null'``               `~matplotlib.ticker.NullFormatter`
     ``'null'``                           `~matplotlib.ticker.NullFormatter`
@@ -304,30 +282,30 @@ def Formatter(formatter=None, *args, time=False, tickrange=None, **kwargs):
     `~matplotlib.ticker.Formatter`
         A `~matplotlib.ticker.Formatter` instance.
     """
-    # Already have a formatter object
     if isinstance(formatter, mticker.Formatter): # formatter object
         return formatter
+    # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(isinstance(item, str) for item in formatter):
         formatter, args = formatter[0], [*formatter[1:], *args]
-    # Interpret user input
-    formatter = _default(formatter, 'default')
-    if isinstance(formatter, str) and formatter=='default': # by default use my special super cool formatter, better than original
-        if not time:
-            formatter = AutoFormatter(*args, tickrange=tickrange, **kwargs)
-        else:
-            formatter = mdates.AutoDateFormatter(*args, **kwargs)
-    elif isinstance(formatter, FunctionType):
-        formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
-    elif isinstance(formatter, str): # assumption is list of strings
+    # Get the formatter
+    if isinstance(formatter, str): # assumption is list of strings
+        # Format strings
         if re.search(r'{x(:.+)?}', formatter):
             formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs) # new-style .format() form
         elif '%' in formatter:
-            if time:
+            if date:
                 formatter = mdates.DateFormatter(formatter, *args, **kwargs) # %-style, dates
             else:
                 formatter = mticker.FormatStrFormatter(formatter, *args, **kwargs) # %-style, numbers
         else:
-            # Coordinate versions
+            # Fraction shorthands
+            if formatter in ('pi', 'e'):
+                if formatter=='pi':
+                    kwargs.update({'symbol': r'\pi', 'number': np.pi})
+                else:
+                    kwargs.update({'symbol': 'e', 'number': np.e})
+                formatter = 'frac'
+            # Cartographic shorthands
             if formatter in ('deg', 'deglon', 'deglat', 'lon', 'lat'):
                 negpos, suffix = None, None
                 if 'deg' in formatter:
@@ -338,38 +316,32 @@ def Formatter(formatter=None, *args, time=False, tickrange=None, **kwargs):
                     negpos = 'WE'
                 kwargs.update({'suffix':suffix, 'negpos':negpos})
                 formatter = 'simple'
-            # Fractions
-            if formatter in ('pi', 'e'):
-                if formatter=='pi':
-                    kwargs.update({'symbol': r'\pi', 'number': np.pi})
-                else:
-                    kwargs.update({'symbol': 'e', 'number': np.e})
-                formatter = 'frac'
-            # Get formatter
+            # Lookup
             if formatter not in formatters:
                 raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
             formatter = formatters[formatter](*args, **kwargs)
-    elif np.iterable(formatter):
-        formatter = mticker.FixedFormatter(formatter) # list of strings on the major ticks, wherever they may be
+    elif isinstance(formatter, FunctionType):
+        formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
+    elif np.iterable(formatter): # list of strings on the major ticks, wherever they may be
+        formatter = mticker.FixedFormatter(formatter)
     else:
         raise ValueError(f'Invalid formatter "{formatter}".')
     return formatter
 
-def Scale(scale=None, *args, **kwargs):
+def Scale(scale, *args, **kwargs):
     """
     Returns a `~matplotlib.scale.ScaleBase` instance.
 
     Parameters
     ----------
     scale : str or (str, *args)
-        For the str, a dictionary lookup is performed (see below table).
+        If str, a dictionary lookup is performed (see below table).
 
         If tuple and the str corresponds to one of the "factory"
         functions (see below table), the ``args`` are passed to the
         factory function.
-
     **kwargs
-        Passed to the `~matplotlib.scale.ScaleBase` class on instantiation.
+        Passed to the `~matplotlib.scale.ScaleBase` class.
 
 
     For the dictionary lookup, options are as follows:
@@ -377,7 +349,7 @@ def Scale(scale=None, *args, **kwargs):
     ========================  =======================================  ====================================================
     Key                       Class or Factory                         Description
     ========================  =======================================  ====================================================
-    ``None``, ``'linear'``    `~matplotlib.scale.LinearScale`          Linear
+    ``'linear'``              `~matplotlib.scale.LinearScale`          Linear
     ``'log'``                 `~matplotlib.scale.LogScale`             Logarithmic
     ``'symlog'``              `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond finite space around zero
     ``'logit'``               `~matplotlib.scale.LogitScale`           Logistic
@@ -398,28 +370,27 @@ def Scale(scale=None, *args, **kwargs):
     `~matplotlib.scale.ScaleBase`
         A `~matplotlib.scale.ScaleBase` instance.
     """
-    # Existing scales
-    args = ()
-    scale = _default(scale, 'linear')
     if isinstance(scale, mscale.ScaleBase):
         mscale.register_scale(scale) # ensure it is registered!
-        scale = scale.name
+        return scale.name
+    # Pull out extra args
     if np.iterable(scale) and not isinstance(scale, str):
         scale, args = scale[0], (*scale[1:], *args)
+    # Lookup
     if scale in scales:
         if args:
             warnings.warn(f'Scale constructor ignored positional arguments {args}.')
         return scale # already registered
     # Build an on-the-fly scale
-    if scale=='cutoff':
-        scale = CutoffScaleFactory(*args, **kwargs)
-    elif scale=='exp':
-        scale = ExpScaleFactory(*args, **kwargs)
+    # NOTE: The factories register the scales in one go
+    if scale=='exp':
+        return ExpScaleFactory(*args, **kwargs)
     elif scale=='power':
-        scale = PowerScaleFactory(*args, **kwargs)
+        return PowerScaleFactory(*args, **kwargs)
+    elif scale=='cutoff':
+        return CutoffScaleFactory(*args, **kwargs)
     else:
         raise ValueError(f'Unknown scale {scale}. Options are {", ".join(scales.keys())}.')
-    return scale
 
 def InvertedScaleFactory(scale, name=None, **kwargs):
     """Returns name of newly registered *inverted* version of the

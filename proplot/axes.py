@@ -18,12 +18,10 @@ geographic features, and much more.
 
    <h1>Developer notes</h1>
 
-Wrappers for ProPlot axes methods are documented in the "functions" table.
-Method wrapping is done by dynamically overriding the
-`~proplot.axes.BaseAxes.__getattribute__` methods on
-`~proplot.axes.BaseAxes` and its subclasses.
-You may be wondering: why did I choose to do this, rather than using
-**decorators**? Two reasons:
+Axes method wrappers are documented in the "functions" table. The wrappers are
+dynamically applied within the `~proplot.axes.BaseAxes.__getattribute__` methods
+on `~proplot.axes.BaseAxes` and its subclasses. You may be wondering: why
+didn't I just use *decorators*? Two reasons:
 
 1. Brevity. For example: `~proplot.wrappers.cmap_wrapper` overrides **a dozen** different
    methods. This lets me override these methods in *one* line, instead of 50
@@ -33,16 +31,15 @@ You may be wondering: why did I choose to do this, rather than using
    documentation generator would inherit docstrings from the parent methods.
    In other words, the plotting method docstrings would get duplicated on
    my website from the matplotlib website, generally with a bunch of errors.
-
    I could also override these methods with my own docstrings, but that would
    mean when the user tries e.g. ``help(ax.contourf)``, they would see my
-   own, very brief docstring instead of the comprehensive matplotlib reference
+   own, brief docstring instead of the comprehensive matplotlib reference
    they were probably looking for! I only add a handful of features to these
    functions, but the native methods generally have way more options.
 
 It should be noted that dynamically wrapping every time the user accesses
 the corresponding method will be slower than "decoration", which just wraps them
-once on declaration of the axes. But this was not found to significantly affect
+once the class is declared. But this was not found to significantly affect
 performance. And anyway, `Premature Optimization is the Root of All Evil
 <http://wiki.c2.com/?PrematureOptimization>`__.
 """
@@ -89,7 +86,7 @@ def _abc(i):
 # Filter warnings, seems to be necessary before drawing stuff for first time,
 # otherwise this has no effect (e.g. if you stick it in a function)
 warnings.filterwarnings('ignore', category=mplDeprecation)
-# Optionally import mapping toolboxes
+# Import mapping toolboxes
 # Main conda distro says they are incompatible, so make sure not required!
 try:
     from cartopy.mpl.geoaxes import GeoAxes
@@ -234,9 +231,7 @@ class BaseAxes(maxes.Axes):
         """
         Wraps methods when they are requested by the user. See
         `~proplot.wrappers.text_wrapper`, and `~proplot.wrappers.legend_wrapper`
-        for more info.
-
-        Disables the redundant methods `wrappers._disabled_methods`.
+        for more info. Disables redundant methods: `_disabled_methods`.
 
         Enables the attribute aliases ``bpanel`` for ``bottompanel``,
         ``tpanel`` for ``toppanel``, ``lpanel`` for ``leftpanel``, and
@@ -1117,8 +1112,8 @@ class XYAxes(BaseAxes):
                 # axis.set_inverted(True) # 3.1+, the below is from source code
                 lo, hi = axis.get_view_interval()
                 axis.set_view_interval(max(lo, hi), min(lo, hi), ignore=True)
-            # Detect if time axis
-            time = isinstance(axis.converter, mdates.DateConverter) # is this a time axis?
+            # Detect if datetime axis
+            date = isinstance(axis.converter, mdates.DateConverter) # is this a time axis?
 
             # Fix spines
             kw = rc.fill({
@@ -1264,32 +1259,29 @@ class XYAxes(BaseAxes):
                 self.margins(**{name: margin})
 
             # Major and minor locator
-            # Also automatically detect whether axis is a 'time axis' (i.e.
-            # whether user has plotted something with x/y as datetime/date/np.datetime64
-            # objects, and matplotlib automatically set the unit converter)
             # WARNING: MultipleLocator fails sometimes, notably when doing
             # boxplot. Tick labels moved to left and are incorrect.
             if locator is not None:
-                locator = axistools.Locator(locator, time=time, **locator_kw)
+                locator = axistools.Locator(locator, **locator_kw)
                 axis.set_major_locator(locator)
                 if isinstance(locator, mticker.IndexLocator):
                     tickminor = False # minor ticks make no sense for 'index' data
             if not tickminor and tickminorlocator is None:
                 axis.set_minor_locator(axistools.Locator('null'))
             elif tickminorlocator is not None:
-                axis.set_minor_locator(axistools.Locator(tickminorlocator,
-                    minor=True, time=time, **minorlocator_kw))
+                axis.set_minor_locator(axistools.Locator(tickminorlocator, **minorlocator_kw))
 
             # Major and minor formatter
             fixedformatfix = False
             if formatter is not None or tickrange is not None:
-                # Override
+                # Tick range
                 if tickrange is not None:
-                    if formatter not in (None, 'default'):
-                        warnings.warn('The tickrange feature requires proplot.ScalarFormatter formatter. Overriding input formatter.')
-                    formatter = 'default'
+                    if formatter not in (None,'auto'):
+                        warnings.warn('The tickrange feature requires proplot.AutoFormatter formatter. Overriding input formatter.')
+                    formatter = 'auto'
+                    formatter_kw.setdefault('tickrange', tickrange)
                 # Set the formatter
-                formatter = axistools.Formatter(formatter, tickrange=tickrange, time=time, **formatter_kw)
+                formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
                 axis.set_major_formatter(formatter)
                 if isinstance(formatter, mticker.FixedFormatter): # if locator is MultipleLocator, first tick gets cut off!
                     fixedformatfix = True

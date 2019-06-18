@@ -221,6 +221,8 @@ Use the ``axes.formatter.timerotation`` setting to control the default *x*-axis
 tick label rotation for datetime axis labels.
 """
 # First import stuff
+# WARNING: Must import pyplot here, because otherwise 'style' attribute
+# is not added to matplotlib top-level module!
 import re
 import os
 import yaml
@@ -663,33 +665,30 @@ class rc_configurator(object):
 
     def _set_cmap(self, name):
         """Sets the default colormap."""
-        # if isinstance(value, str) or not np.iterable(value):
-        #     value = (value,)
+        # Draw from dictionary
         cmap = mcm.cmap_d[name] # colortools.Colormap(*value)
         _rcParams['image.cmap'] = cmap.name
 
     def _set_cycler(self, name):
         """Sets the default color cycler."""
-        # if isinstance(value, str) or not np.iterable(value):
-        #     value = (value,)
+        # Draw from dictionary
         colors = mcm.cmap_d[name].colors # colortools.Cycle(*value)
-        # Optionally change RGB definitions
+        # Apply new color name definitions
         if _rcGlobals['rgbcycle']:
-            if name.lower()=='colorblind':
+            if name.lower()=='colorblind': # apply
                 regcolors = colors + [(0.1, 0.1, 0.1)]
-            else: # reset, but only if rgbcycle==True suggests colors may have been changed before
+            else: # reset
                 regcolors = [(0.0, 0.0, 1.0), (0.0, .50, 0.0), (1.0, 0.0, 0.0), (.75, .75, 0.0), (.75, .75, 0.0), (0.0, .75, .75), (0.0, 0.0, 0.0)]
             for code,color in zip('brgmyck', regcolors):
                 rgb = mcolors.colorConverter.to_rgb(color)
                 mcolors.ColorConverter.colors[code] = rgb
                 mcolors.ColorConverter.cache[code]  = rgb
         # Pass to cycle constructor
+        # WARNING: Used to apply to every axes: list(map(plt.figure, plt.get_fignums()))
+        # This was dumb because should not be expected in general that properties
+        # apply to figures that already exist, right?
         _rcParams['patch.facecolor'] = colors[0]
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-        figs = list(map(plt.figure, plt.get_fignums()))
-        for fig in figs:
-            for ax in fig.axes:
-                ax.set_prop_cycle(cycler.cycler('color', colors))
 
     def _get_globals(self, key=None, value=None):
         """Returns dictionaries for updating "child" properties in

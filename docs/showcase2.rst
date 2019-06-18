@@ -13,7 +13,6 @@ features enabled by the plotting wrappers, along with axes and figure
 1d plot wrappers
 ----------------
 
-Various statistical plotting methods have been wrapped.
 `~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
 lets you draw line collections that map individual segments of the line
 to individual colors. This can be useful for drawing “parametric” plots,
@@ -52,29 +51,30 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 .. image:: showcase/showcase_33_1.svg
 
 
-`~matplotlib.axes.Axes.boxplot` and
-`~matplotlib.axes.Axes.violinplot` are now wrapped with
-`~proplot.wrappers.boxplot_wrapper`,
-`~proplot.wrappers.violinplot_wrapper`, and
-`~proplot.wrappers.cycle_wrapper`, making it much easier to plot
-distributions of data with aesthetically pleasing default settings and
-automatic axis labelling.
+Thanks to `~proplot.wrappers.scatter_wrapper` and
+`~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
+now accepts 2D arrays like `~matplotlib.axes.Axes.plot`, and
+successive calls to `~matplotlib.axes.Axes.scatter` can apply property
+cycle keys other than ``color`` – for example, ``marker`` and
+``markersize``. `~matplotlib.axes.Axes.scatter` also now optionally
+accepts keywords that look like the `~matplotlib.axes.Axes.plot`
+keywords (for example, ``color`` and ``size`` instead of ``c`` and
+``s``), which is a bit less confusing.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     import pandas as pd
-    f, axs = plot.subplots(ncols=2)
-    data = np.random.normal(size=(20,5))
-    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
+    f, axs = plot.subplots()
+    # data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
+    x = (np.random.rand(20)-0).cumsum()
+    data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
+    data = pd.DataFrame(data, columns=['a','b','c','d'], index=pd.Index(x, name='xlabel'))
     ax = axs[0]
-    obj1 = ax.boxplot(data, lw=0.7, marker='x', color='gray7', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
-    ax.format(title='Box plots', titlepos='ci')
-    ax = axs[1]
-    obj2 = ax.violinplot(data, lw=0.7, fillcolor='C1', showmeans=True)
-    ax.format(title='Violin plots', titlepos='ci')
-    axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
+    obj = ax.scatter(data, legend='ul', legend_kw={'ncol':2}, cycle='538',
+                     cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
+    ax.format(suptitle='Marker demo')
 
 
 
@@ -114,6 +114,35 @@ representing percentile ranges.
 .. image:: showcase/showcase_37_0.svg
 
 
+`~matplotlib.axes.Axes.boxplot` and
+`~matplotlib.axes.Axes.violinplot` are now wrapped with
+`~proplot.wrappers.boxplot_wrapper`,
+`~proplot.wrappers.violinplot_wrapper`, and
+`~proplot.wrappers.cycle_wrapper`, making it much easier to plot
+distributions of data with aesthetically pleasing default settings and
+automatic axis labelling.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    f, axs = plot.subplots(ncols=2)
+    data = np.random.normal(size=(20,5))
+    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
+    ax = axs[0]
+    obj1 = ax.boxplot(data, lw=0.7, marker='x', color='gray7', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
+    ax.format(title='Box plots', titlepos='ci')
+    ax = axs[1]
+    obj2 = ax.violinplot(data, lw=0.7, fillcolor='C1', showmeans=True)
+    ax.format(title='Violin plots', titlepos='ci')
+    axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
+
+
+
+.. image:: showcase/showcase_39_0.svg
+
+
 2d plot wrappers
 ----------------
 
@@ -122,13 +151,19 @@ representing percentile ranges.
 for all plots. This allows for discrete levels in all situations – that
 is, `~matplotlib.axes.Axes.pcolor` and
 `~matplotlib.axes.Axes.pcolormesh` now accept a ``levels`` keyword
-arg, just like `~matplotlib.axes.Axes.contourf`. It was previously
-really tricky to implement discrete levels for ``pcolor`` plots, even
-though they are arguably preferable for many scientific applications
-(discrete levels make it easier to associate particular colors with hard
-numbers). `~proplot.colortools.BinNorm` also does some other handy
-things, like ensuring that colors on the ends of “cyclic” colormaps are
-never the same (see below).
+arg, just like `~matplotlib.axes.Axes.contourf`.
+`~proplot.colortools.BinNorm` also ensures the colorbar colors span
+the entire colormap range, and that “cyclic” colorbar colors are
+distinct on each end.
+
+`~proplot.wrappers.cmap_wrapper` also fixes the well-documented
+`white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
+and
+`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
+issues by automatically changing the edge colors after
+`~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`,
+and `~matplotlib.axes.Axes.pcolormesh` are called. Use
+``edgefix=False`` to disable this behavior.
 
 .. code:: ipython3
 
@@ -153,41 +188,16 @@ never the same (see below).
 
 
 
-.. image:: showcase/showcase_40_1.svg
+.. image:: showcase/showcase_42_1.svg
 
 
-`~proplot.wrappers.cmap_wrapper` also adds the ability to label
-`~matplotlib.axes.Axes.contourf` plots with
-`~matplotlib.axes.Axes.clabel` in one go, and the added ability to
-label grid boxes in `~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh` plots.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=2, span=False, share=False)
-    data = np.random.rand(7,7)
-    ax = axs[0]
-    m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
-    ax = axs[1]
-    m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
-    m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels', titleweight='bold')
-
-
-
-.. image:: showcase/showcase_42_0.svg
-
-
-`~proplot.wrappers.cmap_wrapper` also lets you provide arbitrarily
-spaced, monotonically increasing levels, and by default the color
-gradations between each number in the level list will be the same, no
-matter the step size. This is powered by the
-`~proplot.colortools.LinearSegmentedNorm` normalizer, and can be
-overridden with the ``norm`` keyword arg, which constructs an arbitrary
-normalizer from the `~proplot.colortools.Norm` constructor.
+To change the colormap normalizer, just pass ``norm`` and optionally
+``norm_kw`` to a command wrapped by `~proplot.wrappers.cmap_wrapper`.
+These arguments are passed to the `~proplot.colortools.Norm`
+constructor. If you pass unevenly spaced ``levels``,the
+`~proplot.colortools.LinearSegmentedNorm` is selected by default. This
+results in even color gradations across *indices* of the level list, no
+matter their spacing.
 
 .. code:: ipython3
 
@@ -206,24 +216,27 @@ normalizer from the `~proplot.colortools.Norm` constructor.
 .. image:: showcase/showcase_44_0.svg
 
 
-`~proplot.wrappers.cmap_wrapper` also fixes the well-documented
-`white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
-and
-`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
-issues by automatically changing the edge colors after ``contourf``,
-``pcolor``, and ``pcolormesh`` are called. Use ``edgefix=False`` to
-disable this behavior (it does slow down figure rendering a bit). Note
-that if you manually specify line properties for a ``pcolor`` plot, this
-feature is disabled (see below).
+To add `~matplotlib.axes.Axes.clabel` labels to
+`~matplotlib.axes.Axes.contour` plots or add grid box labels to
+`~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh` plots, just pass ``labels=True`` to
+any command wrapped by `~proplot.wrappers.cmap_wrapper`. For grid box
+labels, the label color is automatically chosen based on the luminance
+of the underlying box color.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=2, span=False, share=False)
-    axs[0].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar') # fixed bug
-    axs[1].pcolormesh(np.random.rand(20,20).cumsum(axis=0), cmap='solar', lw=0.5, color='gray2') # deliberate lines
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='White lines between patches')
+    data = np.random.rand(7,7)
+    ax = axs[0]
+    m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
+    ax = axs[1]
+    m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
+    m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels', titleweight='bold')
 
 
 
@@ -440,7 +453,7 @@ and ``rpanel``). See `~proplot.subplots.subplots` for details.
     f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', bspan=[1,1,2,2], share=0, span=0, wspace=0.3)
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
-    cycle = plot.Cycle('grays', 5)
+    cycle = plot.colors('grays', 5)
     hs = []
     for abc,color in zip('ABCDEF',cycle):
         hs += axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')

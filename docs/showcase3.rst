@@ -21,7 +21,7 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
     import numpy as np
     N = 50
     M = 40
-    colors = plot.Cycle('grays_r', M, 90, left=0.1, right=0.8)
+    colors = plot.colors('grays_r', M, 90, left=0.1, right=0.8)
     for share in (0,1,2,3):
         f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]

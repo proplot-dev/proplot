@@ -289,7 +289,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
     f, axs = plot.subplots(ncols=2, axcolorbars='b', axwidth=3, aspect=1.5)
     ax = axs[0]
     m = ax.contourf(np.random.rand(10,10),
-                   cmap={'h':['red-120', 'red+90'], 'c':[50, 70, 30], 'l':[20, 100], 'space':'hcl'},
+                   cmap={'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100], 'space':'hcl'},
                    levels=plot.arange(0.1,0.9,0.1), extend='both',
                    )
     ax.bpanel.colorbar(m, label='colormap')
@@ -297,7 +297,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
               suptitle='On-the-fly "PerceptuallyUniformColormap"')
     ax = axs[1]
     m = ax.contourf(np.random.rand(10,10),
-                   cmap={'h':['red', 'red-720'], 'c':[80,20], 'l':[20, 100], 'space':'hpl'},
+                   cmap={'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100], 'space':'hpl'},
                    levels=plot.arange(0.1,0.9,0.05), extend='both')
     ax.bpanel.colorbar(m, label='colormap', locator=0.1)
     ax.format(xlabel='x axis', ylabel='y axis', title='Reminiscent of "cubehelix"')

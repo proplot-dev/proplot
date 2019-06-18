@@ -134,7 +134,6 @@ def Proj(name, basemap=False, **kwargs):
     `~proplot.proj`, `CartopyAxes`, `BasemapAxes`
     """
     # Basemap
-    name = name or 'cyl'
     kwextra = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available

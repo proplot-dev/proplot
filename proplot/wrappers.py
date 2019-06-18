@@ -8,6 +8,7 @@ import warnings
 import functools
 from . import utils, colortools, fonttools, axistools
 from .utils import _default, ic
+import cycler
 import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
@@ -38,50 +39,13 @@ try:
 except ModuleNotFoundError:
     PlateCarree, GeoAxes = object, object
 
-# Keywords
-# These may automatically override the 'fix' option!
-_options = {
-    'contour$': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    '^cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
-    '^pcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
-    }
-
-# Translator for inset colorbars and legends
-_loc_translate = {
-    # Numbers
-    0:'best',
-    1:'upper right',
-    2:'upper left',
-    3:'lower left',
-    4:'lower right',
-    5:'center left',
-    6:'center right',
-    7:'lower center',
-    8:'upper center',
-    9:'center',
-    # Simple
-    'i':'best', # for inset
-    'b':'best',
-    True:'best', # i.e. "just turn this thing on"
-    'inset':'best',
-    'ur':'upper right',
-    'ul':'upper left',
-    'll':'lower left',
-    'lr':'lower right',
-    # Centered
-    'cr':'center right',
-    'cl':'center left',
-    'uc':'upper center',
-    'lc':'lower center',
-    }
-
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
 _edges_methods = ('pcolor', 'pcolormesh',)
 _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _2d_methods = (*_centers_methods, *_edges_methods)
-_1d_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot')
-_cycle_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot')
+_1d_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie')
+_cycle_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
     'hexbin', 'matshow', 'imshow', 'spy', 'hist2d')
@@ -111,6 +75,43 @@ _map_disabled_methods = (
     'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
     'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram',
     )
+
+# Keywords
+# These may automatically override the 'fix' option!
+_cmap_options = {
+    'contour$': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
+    '^cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
+    '^pcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+    }
+# Translator for inset colorbars and legends
+_loc_translate = {
+    # Numbers
+    0:'best',
+    1:'upper right',
+    2:'upper left',
+    3:'lower left',
+    4:'lower right',
+    5:'center left',
+    6:'center right',
+    7:'lower center',
+    8:'upper center',
+    9:'center',
+    # Simple
+    'i':'best', # for inset
+    'b':'best',
+    True:'best', # i.e. "just turn this thing on"
+    'inset':'best',
+    'ur':'upper right',
+    'ul':'upper left',
+    'll':'lower left',
+    'lr':'lower right',
+    # Centered
+    'cr':'center right',
+    'cl':'center left',
+    'uc':'upper center',
+    'lc':'lower center',
+    }
+
 
 #------------------------------------------------------------------------------#
 # For documentation
@@ -161,7 +162,7 @@ def _array_std(data):
 def _auto_label(data, units=True):
     """Gets label from pandas or xarray objects."""
     if isinstance(data, ndarray):
-        return ''
+        label = ''
     # Xarray with common NetCDF attribute names
     elif isinstance(data, DataArray):
         label = getattr(data, 'name', '') or ''
@@ -175,10 +176,12 @@ def _auto_label(data, units=True):
                 label = units
     # Pandas, account for common situation with 1-column DataFrame where the
     # column label is descriptor for the data
+    # if not label and isinstance(data, DataFrame) and data.columns.size==1:
+    #     label = str(data.columns[0])
     elif isinstance(data, (DataFrame, Series, Index)):
         label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
-        if not label and isinstance(data, DataFrame) and data.columns.size==1:
-            label = str(df.columns[0])
+    else:
+        label = ''
     return str(label).strip()
 
 def _parse_1d(self, func, *args, **kwargs):
@@ -197,32 +200,26 @@ def _parse_1d(self, func, *args, **kwargs):
         x, y, *args = args # same
     else:
         raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
-    # Detect 1d
-    is1d = True # i.e. args is a 1d vector
-    if x is not None and not np.iterable(x):
-        x = np.atleast_1d(x)
+    # Sanitize y input, and draw sample column
+    columns = (name in ('boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None))
     if not np.iterable(y):
         y = np.atleast_1d(y)
-    ndim = getattr(y, 'ndim', None)
-    if ndim==2: # e.g. DataFrame[0] can raise error, indexing is by column name, so this test is best
+    else:
+        y = _array_std(y) # enforce array if list of lists
+    if y.ndim==1:
+        is1d = True
+        iy = y
+    elif y.ndim==2:
         is1d = False
-    elif ndim is None and len(y) and np.iterable(y[0]): # e.g. list of lists
-        is1d = False
-    y = _array_std(y)
-    # Auto coords
-    # Requires drawing a sample column
-    # WARNING: Try to migrate this stuff to individual functions?
-    columns = (name in ('boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None))
-    if y.ndim==2:
         iy = getattr(y, 'iloc', y)
         if columns: # we take summary statistics along rows, so columns represent x axis
             iy = iy[0,:]
         else:
             iy = iy[:,0]
-    elif y.ndim==1:
-        iy = y
     else:
         raise ValueError(f'y must be 1 or 2-dimensional, got shape {y.shape}.')
+    # Auto coords
+    # WARNING: Try to migrate this stuff to individual functions?
     if x is None:
         if isinstance(iy, ndarray):
             x = np.arange(iy.size)
@@ -232,83 +229,73 @@ def _parse_1d(self, func, *args, **kwargs):
             x = iy.index
         else: # Index
             raise ValueError(f'Unable to infer x coordinates from pandas.Index-type y coordinates.')
-    # Check coordinates
-    x = _array_std(x)
+    if not np.iterable(x):
+        x = np.atleast_1d(x)
+    else:
+        x = _array_std(x)
     if x.ndim!=1:
         raise ValueError(f'x coordinates must be 1-dimensional, but got {x.ndim}.')
     # Auto formatting
     if self.figure._autoformat:
         kw = {}
         iy = None
+        # Title
+        label = _auto_label(y)
+        if label:
+            kw['title'] = label
+        # Xlabel
         if not self._is_map:
             xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal') else 'x'
-            yaxis = 'x' if xaxis=='y' else 'x'
-            # Xlabel
             label = _auto_label(x)
             if label:
                 kw[xaxis + 'label'] = label
             if name!='scatter' and len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
                 kw[xaxis + 'reverse'] = True
-            # Try to apply ylabel if dataset is 1d
-            if y.ndim==1:
-                iy = y
-            elif y.ndim==2 and y.shape[1]==1:
-                iy = getattr(y, 'iloc', y)
-                iy = iy[:,0]
-            if iy is not None:
-                label = _auto_label(iy)
-                if label:
-                    kw[yaxis + 'label'] = label
-            # Extra special cases
-            # For bar plots, so we can offset by widths, need to convert to
-            # array prematurely and apply the IndexFormatter.
-            if name in ('bar',):
-                x = getattr(x, 'values', x) # TODO: restore datetime support!
-                x = np.array(x)
-                if x.dtype=='object':
-                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
-                    x = np.arange(len(x))
-            # For histograms, y data is actually on the x axis, so pull metadata
-            if name in ('hist',):
-                label = None
-                if isinstance(y, (DataFrame, Series)):
-                    label = _auto_label(y.index)
-                elif isinstance(y, DataArray):
-                    label = _auto_label(y.coords[y.dims[0]])
-                if label:
-                    kw[xaxis + 'label'] = label
-                y = getattr(y, 'values', y)
-                y = np.array(y)
-            # Boxplot accepts a 'labels' argument but violinplot does not, so
-            # we try to set the locators and formatters here.
-            if name in ('boxplot','violinplot'):
-                label, labels = None, None
-                if isinstance(y, DataFrame):
-                    label = _auto_label(y.columns)
-                    labels = y.columns
-                elif isinstance(y, DataArray) and y.ndim>1:
-                    label = _auto_label(y.coords[y.dims[1]])
-                    labels = y.coords[y.dims[1]].values
-                if label:
-                    kw[xaxis + 'label'] = label
-                if labels is not None: # TODO: support for e.g. date axes?
-                    labels = getattr(labels, 'values', labels)
-                    labels = np.array(labels)
-                    if labels.dtype=='object':
-                        kw[xaxis + 'formatter'] = mticker.IndexFormatter(labels)
-                        if name=='boxplot':
-                            kwargs['labels'] = labels # requires or get overwritten
-                        else:
-                            kwargs['positions'] = np.arange(len(labels))
+        # For bar plots, so we can offset by widths, need to convert to
+        # array prematurely and apply the IndexFormatter
+        if name in ('bar',):
+            x = getattr(x, 'values', x) # TODO: restore datetime support!
+            x = np.array(x)
+            if x.dtype=='object':
+                kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
+                x = np.arange(len(x))
+        # For histograms, y data is actually on the x axis, so pull metadata
+        if name in ('hist',):
+            label = None
+            if isinstance(y, (DataFrame, Series)):
+                label = _auto_label(y.index)
+            elif isinstance(y, DataArray):
+                label = _auto_label(y.coords[y.dims[0]])
+            if label:
+                kw[xaxis + 'label'] = label
+            y = getattr(y, 'values', y)
+            y = np.array(y)
+        # Boxplot accepts a 'labels' argument but violinplot does not, so
+        # we try to set the locators and formatters here.
+        if name in ('boxplot','violinplot'):
+            label, labels = None, None
+            if isinstance(y, DataFrame):
+                label = _auto_label(y.columns)
+                labels = y.columns
+            elif isinstance(y, DataArray) and y.ndim>1:
+                label = _auto_label(y.coords[y.dims[1]])
+                labels = y.coords[y.dims[1]].values
+            if label:
+                kw[xaxis + 'label'] = label
+            if labels is not None: # TODO: support for e.g. date axes?
+                labels = getattr(labels, 'values', labels)
+                labels = np.array(labels)
+                if labels.dtype=='object':
+                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(labels)
+                    if name=='boxplot':
+                        kwargs['labels'] = labels # requires or get overwritten
                     else:
                         kwargs['positions'] = np.arange(len(labels))
-                y = getattr(y, 'values', y)
-                y = np.array(y)
-        # Title
-        if iy is None:
-            label = _auto_label(y)
-            if label:
-                kw['title'] = label
+                else:
+                    kwargs['positions'] = np.arange(len(labels))
+            y = getattr(y, 'values', y)
+            y = np.array(y)
+        # Apply
         if kw:
             self.format(**kw)
     return func(x, y, *args, **kwargs)
@@ -437,6 +424,68 @@ def check_edges(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------#
 # 1D plot wrappers
 #------------------------------------------------------------------------------#
+def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.plot`, calls `~BaseAxes.cmapline`
+    if ``cmap`` is passed by the user.
+
+    Parameters
+    ----------
+    *args
+        Passed to `~matplotlib.axes.Axes.plot`.
+    cmap, values
+        Passed to `~BaseAxes.cmapline`.
+    **kwargs
+        `~matplotlib.lines.Line2D` properties.
+    """
+    if len(args) not in (2,3): # e.g. with fmt string
+        raise ValueError(f'Expected 1-3 plot args, got {len(args)}.')
+    if cmap is None:
+        lines = func(*args, **kwargs)
+    else:
+        lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
+    return lines
+
+def scatter_wrapper(self, func, *args,
+    s=None, size=None, markersize=None,
+    c=None, color=None, markercolor=None,
+    lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
+    edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
+    **kwargs):
+    """
+    Wraps `~matplotlib.axes.Axes.scatter`, adds optional keyword args
+    more consistent with the `~matplotlib.axes.Axes.plot` keywords.
+
+    Parameters
+    ----------
+    s, size, markersize : None or float, or list thereof, optional
+        Aliases for the marker size.
+    c, color, markercolor : None or str or (R,G,B) tuple, or list thereof, optional
+        Aliases for the marker fill color.
+    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
+        Aliases for the marker edge width.
+    edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
+        Aliases for the marker edge color.
+    **kwargs
+        Passed to `~matplotlib.axes.Axes.scatter`.
+    """
+    # Manage input arguments
+    # NOTE: Parse 1d must come before this
+    x, y, *args = args
+    if len(args)==2:
+        c = args.pop(1)
+    if len(args)==1:
+        s = args.pop(0)
+    if args:
+        raise ValueError(f'Expected 1-4 scatter args, got {len(args)}.')
+    # Apply some aliases for keyword arguments
+    c = _default(c, color, markercolor)
+    s = _default(s, size, markersize)
+    lw = _default(lw, linewidth, linewidths, markeredgewidth, markeredgewidths)
+    ec = _default(edgecolor, edgecolors, markeredgecolor, markeredgecolors)
+    # Call function
+    return func(x, y, c=c, s=s, linewidths=lw, edgecolors=ec, **kwargs)
+
 def barh_wrapper(self, func, *args, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.barh`, bypasses `cycle_wrapper` so it is
@@ -553,64 +602,6 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
                 'markeredgecolor':barcolor, 'markeredgewidth':barlw})
     # Return object
     return obj
-
-def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
-    """
-    Wraps `~matplotlib.axes.Axes.plot`, calls `~BaseAxes.cmapline`
-    if ``cmap`` is passed by the user.
-
-    Parameters
-    ----------
-    *args
-        Passed to `~matplotlib.axes.Axes.plot`.
-    cmap, values
-        Passed to `~BaseAxes.cmapline`.
-    **kwargs
-        `~matplotlib.lines.Line2D` properties.
-    """
-    if len(args) not in (2,3): # e.g. with fmt string
-        raise ValueError(f'Expected 1-3 plot args, got {len(args)}.')
-    if cmap is None:
-        lines = func(*args, **kwargs)
-    else:
-        lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
-    return lines
-
-def scatter_wrapper(self, func, *args,
-    c=None, color=None, markercolor=None,
-    s=None, size=None, markersize=None,
-    lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
-    edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
-    **kwargs):
-    """
-    Wraps `~matplotlib.axes.Axes.scatter`, adds optional keyword args
-    more consistent with the `~matplotlib.axes.Axes.plot` keywords.
-
-    Parameters
-    ----------
-    c, color, markercolor : None or str or (R,G,B) tuple, or list thereof, optional
-        Aliases for the marker fill color.
-    s, size, markersize : None or float, or list thereof, optional
-        Aliases for the marker size.
-    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
-        Aliases for the marker edge width.
-    edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
-        Aliases for the marker edge color.
-    **kwargs
-        Passed to `~matplotlib.axes.Axes.scatter`.
-    """
-    # Manage input arguments
-    args = [*args] # convert to list
-    if len(args)>3:
-        c = args.pop(3)
-    if len(args)>2:
-        s = args.pop(2)
-    # Apply some aliases for keyword arguments
-    c = _default(c, color, markercolor)
-    s = _default(s, size, markersize)
-    lws = _default(lw, linewidths, linewidth, markeredgewidths, markeredgewidth)
-    ecs = _default(edgecolors, edgecolor, markeredgecolors, markeredgecolor)
-    return func(*args, c=c, s=s, linewidths=lws, edgecolors=ecs, **kwargs)
 
 def boxplot_wrapper(self, func, *args,
     color=None, fill=True, fillcolor=None, fillalpha=None,
@@ -1215,6 +1206,7 @@ def _get_panel(self, loc):
 @_expand_methods_list
 def cycle_wrapper(self, func, *args,
     cycle=None, cycle_kw={},
+    markers=None, linestyles=None,
     label=None, labels=None, values=None,
     legend=None, legend_kw={},
     colorbar=None, colorbar_kw={},
@@ -1295,7 +1287,8 @@ def cycle_wrapper(self, func, *args,
     `_get_lines` and `_get_patches_for_fill`.
     """
     # Test input
-    # NOTE: Requires _parse_1d wrapper before this
+    # NOTE: Requires _parse_1d wrapper before reaching this. Also note that
+    # the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
@@ -1304,40 +1297,92 @@ def cycle_wrapper(self, func, *args,
     is1d = (y.ndim==1)
 
     # Determine and temporarily set cycler
-    # NOTE: Should not wrap set_prop_cycle because it calls several secondary
-    # methods, would get messy and fragile.
+    # NOTE: Axes cycle has no getter, only set_prop_cycle, which sets a
+    # prop_cycler attribute on the hidden _get_lines and _get_patches_for_fill
+    # objects. This is the only way to query current axes cycler! Should not
+    # wrap set_prop_cycle because would get messy and fragile.
     # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
     # we must cycle over it with next(). We try calling next() the same number
     # of times as the length of user input cycle. If the input cycle *is* in
     # fact the same, below does not reset the color position, cycles us to start!
-    # WARNING: Axes cycle has no getter, only setter (set_prop_cycle), which
-    # sets a 'prop_cycler' attribute on the hidden _get_lines and
-    # _get_patches_for_fill objects. Only way to query current axes cycler!
-    if cycle is not None:
+    if cycle is not None or cycle_kw:
         # Get the new group of colors
-        if not np.iterable(cycle) or isinstance(cycle, str):
-            cycle = cycle,
-        if not is1d and y.shape[1]>1: # apply new default
+        cycle_kw = {**cycle_kw} # copy
+        if isinstance(cycle, str) or isinstance(cycle, cycler.Cycler):
+            cycle = (cycle,)
+        elif cycle is None:
+            cycle = ()
+        if not is1d and y.shape[1]>1: # default samples count
             cycle_kw['samples'] = y.shape[1]
         cycle = colortools.Cycle(*cycle, **cycle_kw)
-        # Compare to the original group of colors, reset if different
+        # Compare to the original group of colors
+        # WARNING: Matplotlib saves itertools.cycle(cycler), not the original
+        # cycler object, so we must build up the keys again.
         i = 0
-        cycler = self._get_lines.prop_cycler
-        cycle_orig = []
-        while i<len(cycle):
-            next_ = next(cycler)
-            if 'color' in next_:
-                cycle_orig.append(next_['color'])
-            i += 1
-        if {*cycle_orig} != {*cycle} or cycle_kw.get('shift', None): # order is immaterial
-            self.set_prop_cycle(color=cycle)
+        cycle_orig = {}
+        prop_cycle = self._get_lines.prop_cycler
+        for i in range(len(cycle)): # use the cycler object length as a guess
+            prop = next(prop_cycle)
+            for key,value in prop.items():
+                if key not in cycle_orig:
+                    cycle_orig[key] = {*()} # set
+                cycle_orig[key].add(value)
+        # Update cycler if different
+        reset = ({*cycle_orig} != {*cycle.by_key()}) # reset if keys are different
+        if not reset: # test individual entries
+            for key,value in cycle.by_key().items():
+                if cycle_orig[key] != {*value}:
+                    reset = True
+                    break
+        if reset:
+            self.set_prop_cycle(cycle)
 
-    # Iterate
+    # Custom property cycler additions
+    # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
+    # for scatter properties! So we simultaneously iterate through the
+    # _get_lines property cycler and apply them.
+    props = []
+    if name=='scatter':
+        # Figure out which props should be updated
+        keys = {*self._get_lines._prop_keys} - {'color','linestyle','dashes'} # color already applied, linestyle ignored
+        apply = {*()} # which keys to apply from property cycler
+        for key,prop in (
+            ('markersize','s'),
+            ('linewidth','linewidths'),
+            ('markeredgewidth','linewidths'),
+            ('markeredgecolor','edgecolors'),
+            ('alpha','alpha'),
+            ('marker','marker'),
+            ):
+            prop = kwargs.get(prop,None)
+            if key in keys and prop is None:
+                apply.add(key)
+        # Update properties
+        if apply:
+            ncols = 1 if y.ndim==1 else y.shape[1]
+            for i in range(ncols):
+                # Build dictionary of properties to apply to scatter object
+                jprops = {} # add to this
+                iprops = next(self._get_lines.prop_cycler)
+                for key in apply:
+                    value = iprops[key]
+                    # Apply
+                    if key in ('linewidth', 'markeredgewidth'): # translate
+                        key = 'linewidths'
+                    elif key in ('size','markersize'):
+                        key = 's'
+                    elif key=='markeredgecolor':
+                        key = 'edgecolors'
+                    # Add to filtered dictionary
+                    jprops[key] = value # filtered to desired settings
+                props.append(jprops)
+
+    # Plot susccessive columns
     # WARNING: Most methods that accept 2d arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data assumed!
     # This is fixed in parse_1d by converting to values.
     labels = _default(values, labels, label, None)
-    if name in ('boxplot','violinplot'):
+    if name in ('pie','boxplot','violinplot'):
         ncols = 1
         if labels is not None:
             kwargs['labels'] = labels
@@ -1354,18 +1399,21 @@ def cycle_wrapper(self, func, *args,
         key = 'height' if barh else 'width'
         kwargs[key] = width if stacked else width/ncols
     for i in range(ncols):
-        # Adjust x coordinates
+        # Get x coordinates
         kw = {**kwargs} # copy
         ix = x
-        if name=='bar':
+        if name=='bar': # adjust
             if not stacked:
                 ix = x + (i - ncols/2 + 0.5)*width/ncols
             elif stacked and not is1d:
                 key = 'x' if barh else 'bottom'
                 kw[key] = iy[:,:i].sum(axis=1) # sum of empty slice will be zero
-        # Get object label and potentially the colorbar label
+        # Get y coordinates and labels
         if name in ('boxplot','violinplot'): # these cannot have a 'label'
             jy = iy[:] if is1d else iy[:,:]
+        elif name in ('pie',):
+            jy = iy[:]
+            kw['labels'] = _default(labels, ix) # TODO: move to pie wrapper?
         else:
             jy = iy[:] if is1d else iy[:,i]
             label = labels[i]
@@ -1379,18 +1427,18 @@ def cycle_wrapper(self, func, *args,
                 clabel = _auto_label(y.columns) # coordinate label
             else:
                 label = _auto_label(jy) # e.g. a pd.Series name
-            # if name=='hist':
-            #     label = (label, *[None for i in range()])
             kw['label'] = label
-        # Call function
-        if barh:
+        # Call function with correct args
+        if barh: # special!
             xy = ()
             kw.update({'bottom':ix, 'width':jy})
             kw.setdefault('x', kwargs.get('bottom', 0)) # must always be provided
-        elif name in ('hist','boxplot','violinplot'): # no x-coordinate
+        elif name in ('pie','hist','boxplot','violinplot'): # no x-coordinate
             xy = (jy,)
         else: # has x-coordinates
             xy = (ix,jy)
+        if props: # not None and non-empty
+            kw.update(props[i]) # may override existing names
         obj = func(*xy, *args, **kw)
         if isinstance(obj, (list,tuple)) and len(obj)==1: # plot always returns list or tuple
             obj = obj[0]
@@ -1429,7 +1477,7 @@ def cycle_wrapper(self, func, *args,
     elif name in ('boxplot', 'violinplot'):
         return objs[0] # always singleton, because these methods accept the whole 2d object
     else:
-        return objs[0] if is1d else objs # sensible default behavior
+        return objs[0] if is1d else (*objs,) # sensible default behavior
 
 @_expand_methods_list
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
@@ -1602,7 +1650,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     # Disable fix=True for certain keyword combinations, e.g. if user wants
     # white lines around their pcolor mesh.
     # TODO: Allow calling contourf with linewidth?
-    for regex,names in _options.items():
+    for regex,names in _cmap_options.items():
         if not re.search(regex, name):
             continue
         # Different cmap functions may or may not accept 'colors', 'linewidths',
@@ -1914,19 +1962,17 @@ def legend_wrapper(self, handles=None, align=None, order='C',
                 **kwargs) # _format_legend is overriding original legend Method
             legs.append(leg)
     # Add legends manually so matplotlib does not remove old ones
-    for leg in legs:
-        self.add_artist(leg)
-    # Properties for legends
     outline = rc.fill({
         'linewidth':'axes.linewidth',
         'edgecolor':'axes.edgecolor',
         'facecolor':'axes.facecolor',
         }, cache=False)
-    for leg in legs: # for t in leg.texts:
+    for leg in legs:
+        self.add_artist(leg)
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(hsettings)
-    return legs[0] if len(legs)==1 else legs
+    return legs[0] if len(legs)==1 else (*legs,)
 
 def colorbar_wrapper(self, mappable, values=None,
         extend=None, extendsize=None, label=None,
