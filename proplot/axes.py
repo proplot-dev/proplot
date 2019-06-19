@@ -57,6 +57,7 @@ import matplotlib.axes as maxes
 import matplotlib.dates as mdates
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
+import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
@@ -208,8 +209,8 @@ class BaseAxes(maxes.Axes):
 
         # Set up axis sharing, save geometry
         width, height = self.figure.get_size_inches()
-        self.width  = np.diff(self._position.intervalx)*width # position is in figure units
-        self.height = np.diff(self._position.intervaly)*height
+        self.width = abs(self._position.width)*width # position is in figure units
+        self.height = abs(self._position.height)*height
         if isinstance(self, maxes.SubplotBase):
             nrows, ncols, subspec = self._topmost_subspec()
             self._yrange = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
@@ -591,8 +592,10 @@ class BaseAxes(maxes.Axes):
             tax.abc = _update_text(tax.abc, **kw)
         tax.abc.set_visible(bool(abc))
 
-    def colorbar(self, *args, loc=None, xspace=None, pad=None, width=None,
-        length=None, label=None, extendsize=None,
+    def colorbar(self, *args, loc=None, pad=None,
+        length=None, width=None, xspace=None,
+        label=None, extendsize=None,
+        frame=None, frameon=None,
         **kwargs):
         """
         Adds an *inset* colorbar, sort of like `~matplotlib.axes.Axes.legend`.
@@ -610,26 +613,30 @@ class BaseAxes(maxes.Axes):
             * ``'lr'`` or ``'lower right'``
 
             Default is from the rc configuration.
-        xspace : None or str or float, optional
-            Space allocated for the bottom x-label of the colorbar.
-            If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. If ``None``,
-            read from `~proplot.rcmod.rc` configuration.
         pad : None or str or float, optional
             Space between the axes edge and the colorbar.
             If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`. If ``None``,
             read from `~proplot.rcmod.rc` configuration.
-        width : None or str or float, optional
-            Colorbar width.
-            If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. If ``None``,
-            read from `~proplot.rcmod.rc` configuration.
         length : None or str or float, optional
-            Colorbar length.
-            If float, units are inches. If string,
+            The colorbar length.  If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`. If ``None``,
             read from `~proplot.rcmod.rc` configuration.
+        width : None or str or float, optional
+            The colorbar width.  If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. If ``None``,
+            read from `~proplot.rcmod.rc` configuration.
+        xspace : None or str or float, optional
+            Space allocated for the bottom x-label of the colorbar.
+            If float, units are inches. If string, units are interpreted
+            by `~proplot.utils.units`. If ``None``, read from
+            `~proplot.rcmod.rc` configuration.
+        frame, frameon : None or bool, optional
+            Whether to draw a frame behind the inset colorbar, just like
+            `~matplotlib.axes.Axes.legend`. If ``None``, read
+            from the `~proplot.rcmod.rc` configuration.
+        alpha, edgecolor, facecolor : None or property-spec, optional
+            Properties for the frame.
         **kwargs, label, extendsize
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
@@ -647,16 +654,23 @@ class BaseAxes(maxes.Axes):
             xspace -= 1.2*rc.get('font.size')/72
         xspace /= self.height
         # Get location in axes-relative coordinates
+        # Bounds are x0, y0, width, height in axes-relative coordinate to start
         if loc in ('upper right','ur'):
-            bounds = (1-xpad-length, 1-ypad-width, length, width)
+            bounds = (1-xpad-length, 1-ypad-width)
+            fbounds = (1-2*xpad-length, 1-2*ypad-width)
         elif loc in ('upper left','ul'):
-            bounds = (xpad, 1-ypad-width, length, width) # x0, y0, width, height in axes-relative coordinate to start
+            bounds = (xpad, 1-ypad-width)
+            fbounds = (0, 1-2*ypad-width)
         elif loc in ('lower left','ll'):
-            bounds = (xpad, ypad+xspace, length, width)
+            bounds = (xpad, ypad+xspace)
+            fbounds = (0, 0)
         elif loc in ('lower right','lr','b','best'):
-            bounds = (1-xpad-length, ypad+xspace, length, width)
+            bounds = (1-xpad-length, ypad+xspace)
+            fbounds = (1-2*xpad-length, 0)
         else:
             raise ValueError(f'Invalid location {loc}.')
+        bounds = (*bounds, length, width)
+        fbounds = (*fbounds, 2*xpad+length, 2*ypad+width+xspace)
         # Make axes
         locator = self._make_inset_locator(bounds, self.transAxes)
         bbox = locator(None, None)
@@ -667,7 +681,30 @@ class BaseAxes(maxes.Axes):
         # WARNING: Inset colorbars are tiny! So use smart default locator
         kwargs.update({'ticklocation':'bottom', 'extendsize':extend, 'label':label})
         kwargs.setdefault('locator', ('maxn', 4))
-        return wrappers.colorbar_wrapper(ax, *args, **kwargs)
+        cbar = wrappers.colorbar_wrapper(ax, *args, **kwargs)
+        # Make frame
+        # NOTE: We do not allow shadow effects or fancy edges effect.
+        # Also keep zorder same as with legend.
+        frameon = _default(frame, frameon, rc.get('colorbar.frameon'))
+        if frameon:
+            # Make object
+            xmin, ymin, width, height = fbounds
+            patch = mpatches.Rectangle((xmin,ymin), width, height,
+                    snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
+            # Properties
+            outline = rc.fill({
+                'linewidth':'axes.linewidth',
+                'edgecolor':'axes.edgecolor',
+                'facecolor':'axes.facecolor',
+                'alpha':'legend.framealpha',
+                }, cache=False)
+            for key in (*outline,):
+                if key!='linewidth':
+                    if kwargs.get(key, None):
+                        outline.pop(key, None)
+            patch.update(outline)
+            self.add_artist(patch)
+        return cbar
 
     def cmapline(self, *args, values=None,
             cmap=None, norm=None,

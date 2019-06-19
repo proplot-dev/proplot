@@ -789,7 +789,7 @@ def violinplot_wrapper(self, func, *args,
     color = _default(color, 'k') # use black for edges
     fillalpha = _default(fillalpha, 0.7)
     if boxlw is None: # use a multiplier
-        boxlw = 4*_default(lw, rc.get('lines.linewidth'))
+        boxlw = 4*_default(lw, rc['lines.linewidth'])
     # Add custom thin and thick lines
     # WARNING: This wrapper comes after the parse 1d wrapper, which always
     # passes an (x,y) pair as args; but in this case the x is nonsense, just
@@ -1086,7 +1086,7 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, transform=PlateCarree, globe=Fals
         transform = transform() # instantiate
     result = func(lon, lat, *Zss, transform=transform, **kwargs)
     # Re-enforce settings because some plot functions seem to reset the
-    # outlinepatch or backgroundpatch (???)
+    # outlinepatch or backgroundpatch.
     # TODO: Double check this
     self.format()
     return result
@@ -1782,7 +1782,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 if not np.isfinite(num):
                     continue
                 bbox = path.get_extents()
-                x, y = bbox.intervalx.mean(), bbox.intervaly.mean()
+                x = (bbox.xmin + bbox.xmax)/2
+                y = (bbox.ymin + bbox.ymax)/2
                 if 'color' not in labels_kw:
                     _, _, lum = colortools.to_xyz(color, 'hcl')
                     if lum<50:
@@ -1827,7 +1828,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 # Legends and colorbars
 #------------------------------------------------------------------------------#
 def legend_wrapper(self, handles=None, ncol=None, ncols=None,
-    align=None, order='C', loc=None, label=None, title=None,
+    center=None, order='C', loc=None, label=None, title=None,
     color=None, marker=None, lw=None, linewidth=None,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs):
@@ -1843,8 +1844,8 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
     ncol, ncols : int, optional
         The number of columns. `ncols` is an alias, added
         for consistency with `~matplotlib.pyplot.subplots`.
-    align : None or bool, optional
-        Whether to align rows of legend handles. If ``False``, we actually
+    center : None or bool, optional
+        Whether to center rows of legend handles. If ``True``, we actually
         draw successive single-row legends stacked on top of each other,
         and you cannot have a "legend box".
 
@@ -1880,7 +1881,10 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
     color, lw, linewidth, marker, linestyle, dashes, markersize : None or property-spec, optional
         Properties used to override the legend handles. For example, if you
         want a legend that describes variations in line style ignoring variations
-        in color, you might want to use ``color='k'``.
+        in color, you might want to use ``color='k'``. For now this does not
+        include `facecolor`, `edgecolor`, and `alpha`, because
+        `~matplotlib.axes.Axes.legend` uses these keyword args to modify the
+        frame properties.
 
     Other parameters
     ----------------
@@ -1891,13 +1895,12 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
     --------
     `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
     """
-    # Parse input
+    # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
         raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-    # First get legend settings and interpret kwargs.
     ncol = _default(ncols, ncol) # may still be None, wait till later
     title = _default(label, title)
-    frameon = _default(frame, frameon)
+    frameon = _default(frame, frameon, rc['legend.frameon'])
     if title is not None:
         kwargs['title'] = title
     if frameon is not None:
@@ -1925,24 +1928,26 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
     # Mange input
     # list_of_lists = not isinstance(handles[0], martist.Artist)
     list_of_lists = not hasattr(handles[0], 'get_label') # e.g. not including BarContainer
-    if align is None: # automatically guess
-        align = not list_of_lists
-    elif align and list_of_lists: # standardize format based on input
+    if center is None: # automatically guess
+        center = list_of_lists
+    elif not center and list_of_lists: # standardize format based on input
         handles = [handle for sublist in handles for handle in sublist]
         list_of_lists = False # no longer is list of lists
-    elif not align and not list_of_lists:
+    elif center and not list_of_lists:
         list_of_lists = True
         ncol = _default(ncol, 3)
         handles = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles))] # to list of iterables
-    elif not align and list_of_lists and ncol is not None:
+    elif center and list_of_lists and ncol is not None:
         warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
     # Remove empty lists; pops up in some examples, not sure how
     handles = [sublist for sublist in handles if sublist]
 
     # Now draw legend, with two options
-    # 1) Normal legend, just draw everything like normal and columns
-    #    will be aligned; we re-order handles to be row-major, is only difference
-    if align:
+    width, height = self.figure.get_size_inches()
+    width, height = width*abs(self._position.width), height*abs(self._position.height)
+    # Normal legend, just draw everything like normal and columns
+    # will be aligned; we re-order handles to be row-major, is only difference
+    if not center:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
         ncol = _default(ncol, 3)
@@ -1962,32 +1967,30 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         labels = [handle.get_label() for handle in handles]
         leg = mlegend.Legend(handles=handles, labels=labels, parent=self, ncol=ncol, **kwargs)
         legs = [leg]
-    # 2) Separate legend for each row
-    #    The label spacing/border spacing will be exactly replicated, as if we were
-    #    using the original legend command
-    #    Means we also have to overhaul some settings
+    # Separate legend for each row. The label spacing/border spacing will be
+    # exactly replicated, as if we were using the original legend command.
     else:
-        # Warn when user input props are overridden
+        # Message when overriding some properties
         overridden = []
-        loc = _default(loc, 'upper center')
-        loc = _loc_translate.get(loc, loc)
-        if loc=='best':
-            warnings.warn('Cannot use "best" location for un-aligned legend. Defaulting to "upper center".')
-            overridden.append('loc')
-            loc = 'upper center'
-        for override in ['bbox_transform', 'bbox_to_anchor', 'frameon']:
+        kwargs.pop('frameon', None) # then add back later!
+        for override in ('bbox_transform', 'bbox_to_anchor'):
             prop = kwargs.pop(override, None)
             if prop is not None:
                 overridden.append(override)
         if overridden:
-            warnings.warn(f'Creating unaligned legend. Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
-        # Determine space we want sub-legend to occupy, as fraction of height
-        # Don't normally save "height" and "width" of axes so keep here
+            warnings.warn(f'For centered-row legends, must override user input properties "' + '", "'.join(prop for prop in overridden) + '".')
+        # Default location
+        loc = _loc_translate.get(_default(loc, 'upper center'), loc)
+        if loc=='best':
+            warnings.warn('For centered-row legends, cannot use "best" location. Defaulting to "upper center".')
+            loc = 'upper center'
+        # Determine space we want sub-legend to occupy as fraction of height
+        # NOTE: Empirical testing shows spacing fudge factor necessary to exactly
+        # replicate the spacing of standard aligned legends.
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
         spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1/len(handles) # split up axes
-        interval = (((1 + spacing)*fontsize)/72) / \
-                (self.figure.get_figheight() * np.diff(self._position.intervaly))
+        interval = (((1 + spacing*0.85)*fontsize)/72)/height
         # Iterate and draw
         # NOTE: We confine possible bounding box (within which legend position
         # is allowed to vary) in *y*-direction, but do not confine it in
@@ -1996,7 +1999,7 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         legs = []
         ymin, ymax = None, None
         if order=='F':
-            raise NotImplementedError(f'When align=False, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
+            raise NotImplementedError(f'When center=True, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
         for i,ihandles in enumerate(handles):
             if i==1:
                 kwargs.pop('title', None)
@@ -2018,9 +2021,8 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
             ilabels = [handle.get_label() for handle in ihandles]
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
             leg = mlegend.Legend(parent=self, handles=ihandles, labels=ilabels,
-                ncol=len(ihandles), frameon=False, loc=loc,
-                bbox_transform=self.transAxes,
-                bbox_to_anchor=bbox,
+                loc=loc, ncol=len(ihandles), frameon=False,
+                bbox_transform=self.transAxes, bbox_to_anchor=bbox,
                 **kwargs) # _format_legend is overriding original legend Method
             legs.append(leg)
 
@@ -2031,7 +2033,12 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         'linewidth':'axes.linewidth',
         'edgecolor':'axes.edgecolor',
         'facecolor':'axes.facecolor',
+        'alpha':'legend.framealpha',
         }, cache=False)
+    for key in (*outline,):
+        if key!='linewidth':
+            if kwargs.get(key, None):
+                outline.pop(key, None)
     for key,value in (
         ('color',color),
         ('marker',marker),
@@ -2048,18 +2055,56 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
             obj.update(override)
+    # Draw manual fancy bounding box for un-aligned legend
+    # WARNING: The matplotlib legendPatch transform is the default transform,
+    # i.e. universal coordinates in points. Means we have to transform
+    # mutation scale into transAxes sizes.
+    # WARNING: Tempting to use legendPatch for everything but for some reason
+    # coordinates are messed up. In some tests all coordinates were just result
+    # of get window extent multiplied by 2 (???). Anyway actual box is found in
+    # _legend_box attribute, which is accessed by get_window_extent.
+    if center and frameon:
+        if len(legs)==1:
+            legs[0].set_frame_on(True) # easy!
+        else:
+            # Get coordinates
+            renderer = self.figure.canvas.get_renderer()
+            bboxs = [leg.get_window_extent(renderer).transformed(self.transAxes.inverted()) for leg in legs]
+            xmin, xmax = min(bbox.xmin for bbox in bboxs), max(bbox.xmax for bbox in bboxs)
+            ymin, ymax = min(bbox.ymin for bbox in bboxs), max(bbox.ymax for bbox in bboxs)
+            fontsize = (fontsize/72)/width # axes relative units
+            fontsize = renderer.points_to_pixels(fontsize)
+            # Draw and format patch
+            patch = mpatches.FancyBboxPatch((xmin,ymin), xmax-xmin, ymax-ymin,
+                    snap=True, zorder=4.5,
+                    mutation_scale=fontsize, transform=self.transAxes) # fontsize defined in if statement
+            if kwargs.get('fancybox', rc['legend.fancybox']):
+                patch.set_boxstyle('round', pad=0, rounding_size=0.2)
+            else:
+                patch.set_boxstyle('square', pad=0)
+            patch.set_clip_on(False)
+            patch.update(outline)
+            self.add_artist(patch)
+            # Add shadow
+            # TODO: This does not work, figure out
+            if kwargs.get('shadow', rc['legend.shadow']):
+                shadow = mpatches.Shadow(patch, 20, -20)
+                self.add_artist(patch)
+            # Add patch to list
+            legs = (patch, *legs)
+    # Return legend(s)
     return legs[0] if len(legs)==1 else (*legs,)
 
 def colorbar_wrapper(self, mappable, values=None,
-        extend=None, extendsize=None,
-        title=None, label=None,
-        grid=None, tickminor=None,
-        tickloc=None, ticklocation=None,
-        locator=None, ticks=None, minorlocator=None, minorticks=None, locator_kw={}, minorlocator_kw={},
-        formatter=None, ticklabels=None, formatter_kw={},
-        fixticks=False, norm=None, norm_kw={}, # normalizer to use when passing colors/lines
-        orientation='horizontal',
-        **kwargs):
+    extend=None, extendsize=None,
+    title=None, label=None,
+    grid=None, tickminor=None,
+    tickloc=None, ticklocation=None,
+    locator=None, ticks=None, minorlocator=None, minorticks=None, locator_kw={}, minorlocator_kw={},
+    formatter=None, ticklabels=None, formatter_kw={},
+    fixticks=False, norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+    orientation='horizontal',
+    **kwargs):
     """
     Function for filling an axes with a colorbar, with some handy added
     features.
@@ -2207,10 +2252,9 @@ def colorbar_wrapper(self, mappable, values=None,
             for obj in mappable:
                 if np.iterable(obj):
                     obj = obj[0]
-                color = getattr(obj, 'get_color', None)
-                color = color or getattr(obj, 'get_facecolor')
+                color = getattr(obj, 'get_color', None) or getattr(obj, 'get_facecolor')
                 colors.append(color())
-            cmap = colortools.Colormap(mappable)
+            cmap = colortools.Colormap(colors)
             if values is None:
                 values = []
                 for obj in mappable:
@@ -2228,7 +2272,7 @@ def colorbar_wrapper(self, mappable, values=None,
         # Invalid
         else:
             raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, or list of colors.')
-    # Build new ad hoc mappable object
+    # Build new ad hoc mappable object from handles
     if cmap is not None:
         func = _cmap_wrapper(self, self.contourf)
         mappable = func([[0,0],[0,0]],
@@ -2282,21 +2326,20 @@ def colorbar_wrapper(self, mappable, values=None,
         ivalues = jvalues # record as new variable
         locators.append(axistools.Locator(ivalues)) # final locator object
 
-    # Fix the norm object
-    # Check out the *insanely weird error* that occurs when you comment out this block!
+    # Fix the norm object; get weird error without this block
     # * The error is triggered when a *major* tick sits exactly on vmin, but
     #   the actual error is due to processing of *minor* ticks, even if the 
-    #   minor locator was set to NullLocator; very weird
-    # * Happens when we call get_ticklabels(which='both') below. Can be prevented
-    #   by just calling which='major'. Minor ticklabels are never drawn anyway.
+    #   minor locator was set to NullLocator; very weird. Happens when we call
+    #   get_ticklabels(which='both') below. Can be prevented by just calling
+    #   which='major'. Minor ticklabels are never drawn anyway.
     # * We can eliminate the normfix below, but that actually causes an annoying
     #   warning to be printed (related to same issue I guess). So we keep this.
     #   The culprit for all of this seems to be the colorbar API line:
     #        z = np.take(y, i0) + (xn - np.take(b, i0)) * dy / db
-    # * Also strange that minorticks extending *below* the minimum
-    #   don't raise the error. It is only when they are exaclty on the minimum.
-    # * Note that when changing the levels attribute, need to make sure the
-    #   levels datatype is float; otherwise division will be truncated and bottom
+    #   Also strange that minorticks extending *below* the minimum
+    #   don't raise the error. It is only when they are exactly on the minimum.
+    # * When changing the levels attribute, need to make sure the levels
+    #   datatype is float; otherwise division will be truncated and bottom
     #   level will still lie on same location, so error will occur
     if normfix:
         mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/10000
@@ -2305,39 +2348,32 @@ def colorbar_wrapper(self, mappable, values=None,
         if normfix:
             mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]/10000
 
-    # Draw the colorbar
-    # NOTE: Only way to avoid bugs seems to be to pass the major formatter/locator
-    # to colorbar commmand and directly edit the minor locators/formatters;
-    # update_ticks after the fact ignores the major formatter.
-    # axis.set_major_locator(locators[0]) # does absolutely nothing
-    # axis.set_major_formatter(formatter)
+    # Final settings
+    # NOTE: The only way to avoid bugs seems to be to pass the major formatter
+    # and locator to colorbar commmand directly, but edit the minor locators
+    # and formatters manually; set_locator methods are completely ignored.
     width, height = self.figure.get_size_inches()
+    formatter = axistools.Formatter(formatter, **formatter_kw)
     if orientation=='horizontal':
-        axis = self.xaxis
-        scale = width*np.diff(getattr(self.get_position(),'intervalx'))[0]
+        scale = width*abs(self.get_position().width)
     else:
-        axis = self.yaxis
-        scale = height*np.diff(getattr(self.get_position(),'intervaly'))[0]
-    extendsize = utils.units(_default(extendsize, rc.get('colorbar.extend')))
+        scale = height*abs(self.get_position().height)
+    extendsize = utils.units(_default(extendsize, rc['colorbar.extend']))
     extendsize = extendsize/(scale - 2*extendsize)
-    formatter    = axistools.Formatter(formatter, **formatter_kw)
     kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
                    'format':formatter,
                    'ticklocation':ticklocation,
                    'extendfrac':extendsize})
+    # Draw the colorbar
     cb = self.figure.colorbar(mappable, **kwargs)
     # Make edges/dividers consistent with axis edges
     if cb.dividers is not None:
         cb.dividers.update(rc['grid'])
 
     # The minor locators and formatters
-    # * The minor locator must be set with set_ticks after transforming an array
-    #   using the mappable norm object; see: https://stackoverflow.com/a/20079644/4970632
-    # * The set_minor_locator seems to be completely ignored depending on the colorbar
-    #   in question, for whatever reason, and cb.minorticks_on() gives no control.
     # NOTE: Re-apply major ticks here because for some reason minor ticks don't
-    # align with major ones for LogNorm. When we call set_ticks, labels (and
-    # numbers) are not changed; just re-adjust existing ticks to proper locations.
+    # align with major ones for LogNorm. When we call set_ticks, labels and
+    # numbers are not changed; just re-adjust existing ticks to proper locations.
     minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
     majorvals = np.array(locators[0].tick_values(mappable.norm.vmin, mappable.norm.vmax))
     if isinstance(mappable.norm, colortools.BinNorm):
@@ -2348,17 +2384,22 @@ def colorbar_wrapper(self, mappable, values=None,
         majorvals = mappable.norm(majorvals) # use *child* normalizer
     minorvals = [tick for tick in minorvals if 0<=tick<=1]
     majorvals = [tick for tick in majorvals if 0<=tick<=1]
-    axis.set_ticks(minorvals, minor=True)
+    # Apply minor settings
+    if orientation=='horizontal':
+        axis = self.xaxis
+    else:
+        axis = self.yaxis
     if fixticks:
         axis.set_ticks(majorvals, minor=False)
+    axis.set_ticks(minorvals, minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
     # The label
     if label is not None:
         axis.label.update({'text':label})
 
-    # Fix alpha issues (cannot set edgecolor to 'face' if alpha non-zero
+    # Fix alpha issues. Cannot set edgecolor to 'face' if alpha non-zero
     # because blending will occur, will get colored lines instead of white ones;
-    # need to perform manual alpha blending)
+    # need to perform manual alpha blending.
     # NOTE: For some reason cb solids uses listed colormap with always 1.0
     # alpha, then alpha is applied after.
     # See: https://stackoverflow.com/a/35672224/4970632
@@ -2382,9 +2423,9 @@ def colorbar_wrapper(self, mappable, values=None,
         cb.solids.set_alpha(1.0)
 
     # Fix pesky white lines between levels + misalignment with border due
-    # to rasterized blocks
+    # to rasterized blocks.
     if cb.solids:
-        cb.solids.set_linewidth(0.2) # something small
+        cb.solids.set_linewidth(0.4) # lowest size that works
         cb.solids.set_edgecolor('face')
         cb.solids.set_rasterized(False)
     axis.set_ticks_position(ticklocation)

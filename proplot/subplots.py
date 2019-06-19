@@ -147,18 +147,18 @@ def _intervalx_errfix(ax):
     matplotlib "tight layout" error associated with invisible y ticks."""
     bbox = ax._tight_bbox
     if not isinstance(ax, axes.XYAxes):
-        return bbox.intervalx
+        return (bbox.xmin, bbox.xmax)
     xerr = ax._ytick_pad_error # error in x-direction, due to y ticks
-    return (bbox.intervalx[0] + xerr[0], bbox.intervalx[1] - sum(xerr))
+    return (bbox.xmin + xerr[0], bbox.xmax - sum(xerr))
 
 def _intervaly_errfix(ax):
     """Given an axes and a bounding box, pads the intervaly according to the
     matplotlib "tight layout" error associated with invisible x ticks."""
     bbox = ax._tight_bbox
     if not isinstance(ax, axes.XYAxes):
-        return bbox.intervaly
+        return (bbox.ymin, bbox.ymax)
     yerr = ax._xtick_pad_error # error in y-direction, due to x ticks
-    return (bbox.intervaly[0] + yerr[0], bbox.intervaly[1] - sum(yerr))
+    return (bbox.ymin + yerr[0], bbox.ymax - sum(yerr))
 
 def _ax_span(ax, renderer, children=True):
     """Get span, accounting for panels, shared axes, and whether axes has
@@ -490,7 +490,7 @@ class Figure(mfigure.Figure):
                     # Box for column label
                     # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)
-                    x, _ = self.transFigure.inverted().transform((bbox.intervalx[0], 0))
+                    x, _ = self.transFigure.inverted().transform((bbox.xmin, 0))
                     ixs.append(x)
             # Verify, be careful!
             label.set_visible(True)
@@ -533,7 +533,7 @@ class Figure(mfigure.Figure):
                     # Box for column label
                     # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)
-                    _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
+                    _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                     iys.append(y)
             # Update column label position
             label.set_visible(True)
@@ -551,7 +551,7 @@ class Figure(mfigure.Figure):
                 if label.get_text().strip(): # by construction it is above everything else!
                     # bbox = ax._tight_bbox
                     bbox = ax.get_tightbbox(renderer)
-                    _, y = self.transFigure.inverted().transform((0, bbox.intervaly[1]))
+                    _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                 else:
                     y = max(iys)
                 ys.append(y)
@@ -601,6 +601,7 @@ class Figure(mfigure.Figure):
             warnings.warn('Tight subplots do not work with cartopy gridline labels or after zooming into a projection. Use tight=False in your call to subplots().')
         else:
             self.smart_tight_layout(renderer)
+        # Set flag
         self._smart_tight_init = False
         # Set up spanning labels
         for axis in self._spanning_axes:
@@ -752,8 +753,7 @@ class Figure(mfigure.Figure):
         aspect_changed = False
         if isinstance(ax, axes.CartopyAxes):
             bbox = ax.background_patch._path.get_extents()
-            aspect = (np.diff(bbox.intervalx) / \
-                      np.diff(bbox.intervaly))[0]
+            aspect = abs(bbox.width)/abs(bbox.height)
             if aspect!=subplots_kw['aspect']:
                 aspect_changed = True
                 subplots_kw['aspect'] = aspect
@@ -807,21 +807,25 @@ class Figure(mfigure.Figure):
         # Put tight box *around* figure
         #----------------------------------------------------------------------#
         if self._smart_tight_outer:
-            # Get bounding box encompassing *all artists*, compare to bounding
-            # box used for saving *figure*
+            # Get old un-updated bounding box
             pad = self._smart_borderpad
             obbox = self.bbox_inches # original bbox
-            ox, oy = obbox.intervalx, obbox.intervaly
+            oxmax, oymax = obbox.xmax, obbox.ymax
+            # Get new bounding box
             if not renderer: # cannot use the below on figure save! figure becomes a special FigurePDF class or something
                 renderer = self.canvas.get_renderer()
             bbox = self.get_tightbbox(renderer)
-            x, y = bbox.intervalx, bbox.intervaly
-            # Apply new kwargs
-            if np.any(np.isnan(x) | np.isnan(y)):
+            xmin, xmax, ymin, ymax = bbox.xmin, bbox.xmax, bbox.ymin, bbox.ymax
+            # Calculate new edges
+            if any(coord is None or np.isnan(coord) for coord in (xmin, xmax, ymin, ymax)):
                 warnings.warn('Bounding box has NaNs, cannot get outer tight layout.')
             else:
-                loff, boff, roff, toff = x[0], y[0], ox[1]-x[1], oy[1]-y[1] # want *deltas*
-                for key,off in zip(('left','right','bottom','top'),(loff,roff,boff,toff)):
+                loff, boff = xmin, ymin # left bottom margins
+                roff, toff = oxmax - xmax, oymax - ymax # top right margin *deltas*
+                for key,off in zip(
+                    ('left','right','bottom','top'),
+                    (loff,roff,boff,toff)
+                    ):
                     margin = subplots_kw[key] - off + pad
                     if margin<0:
                         warnings.warn(f'Got negative {key} margin in smart tight layout.')
@@ -1064,8 +1068,8 @@ class Figure(mfigure.Figure):
         # with no args, and will still adjust subplot positions?
         self._main_gridspec.update(**gridspec_kw)
         for ax in self._main_axes:
-            width_new = np.diff(ax._position.intervalx)*width
-            height_new = np.diff(ax._position.intervaly)*height
+            width_new = abs(ax._position.width)*width
+            height_new = abs(ax._position.height)*height
             ax.width, ax.height = width_new, height_new
 
         # Redo in case of zoomed in cartopy axes
@@ -1187,8 +1191,8 @@ class Figure(mfigure.Figure):
         # Fix widths and heights
         bbox = subspec.get_position(self) # valid since axes not drawn yet
         figwidth, figheight = self.get_size_inches()
-        boxheight = np.diff(bbox.intervaly)[0]*figheight
-        boxwidth = np.diff(bbox.intervalx)[0]*figwidth
+        boxheight = abs(bbox.height)*figheight
+        boxwidth = abs(bbox.width)*figwidth
         height = boxheight - sum(hspace)
         width = boxwidth - sum(wspace)
         # hspace = hspace/(height/nrows)

@@ -202,6 +202,8 @@ been added to control the default **inset** colorbar settings and a few
 ========================  =========================================================================================================================
 Key                       Description
 ========================  =========================================================================================================================
+``colorbar.frameon``      Boolean value. Indicates whether to draw a frame behind inset colorbars.
+``colorbar.framealpha``   The opacity of colorbar frame.
 ``colorbar.loc``          Default inset colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
 ``colorbar.length``       Default length of inset colorbars.
 ``colorbar.width``        Default width of inset colorbars.
@@ -312,7 +314,7 @@ _rc_names_new = {
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
     'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',
     'subplot.axwidth', 'subplot.panelwidth', 'subplot.panelspace',
-    'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
+    'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, compare landcolor='b' to

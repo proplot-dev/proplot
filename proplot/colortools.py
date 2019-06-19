@@ -1032,7 +1032,7 @@ def colors(*args, **kwargs):
     """Returns the list of colors embedded in the `~cycler.cycler` object
     returned by `Cycle`."""
     cycle = Cycle(*args, **kwargs)
-    return [dict_[cycle] for dict_ in cycle]
+    return [dict_['color'] for dict_ in cycle]
 
 def Colormap(*args, name=None, cyclic=None, fade=None,
         shift=None, cut=None, left=None, right=None, reverse=False,

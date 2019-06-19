@@ -73,6 +73,7 @@ rcParams:
     lines.linewidth:         1.3
     lines.markersize:        3.0
     legend.frameon:          True
+    legend.framealpha:       0.8
     legend.fancybox:         False
     legend.labelspacing:     0.5
     legend.handletextpad:    0.5
@@ -130,6 +131,8 @@ rcParams_new:
     gridminor.linestyle:
     gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
     # Inset colorbar
+    colorbar.frameon:     True
+    colorbar.framealpha:  0.8
     colorbar.extendinset: 0.08
     colorbar.extend:      0.15
     colorbar.length:      0.6
