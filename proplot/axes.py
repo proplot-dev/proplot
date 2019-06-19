@@ -657,18 +657,16 @@ class BaseAxes(maxes.Axes):
             bounds = (1-xpad-length, ypad+xspace, length, width)
         else:
             raise ValueError(f'Invalid location {loc}.')
-        # Test
-        bbox = mtransforms.Bbox.from_bounds(*bounds)
-        bb = mtransforms.TransformedBbox(bbox, self.transAxes)
-        tr = self.figure.transFigure.inverted()
-        bb = mtransforms.TransformedBbox(bb, tr)
-        # Axes
+        # Make axes
         locator = self._make_inset_locator(bounds, self.transAxes)
-        bb = locator(None, None)
-        ax = maxes.Axes(self.figure, bb.bounds, zorder=5)
+        bbox = locator(None, None)
+        ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
+        # Make colorbar
+        # WARNING: Inset colorbars are tiny! So use smart default locator
         kwargs.update({'ticklocation':'bottom', 'extendsize':extend, 'label':label})
+        kwargs.setdefault('locator', ('maxn', 4))
         return wrappers.colorbar_wrapper(ax, *args, **kwargs)
 
     def cmapline(self, *args, values=None,
@@ -695,9 +693,9 @@ class BaseAxes(maxes.Axes):
             between line joints to which you want to interpolate.
 
         """
+        # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates. Cannot
         # draw multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
-        # First error check
         if values is None:
             raise ValueError('Requires a "values" keyword arg.')
         if len(args) not in (1,2):
@@ -1684,13 +1682,13 @@ class PanelAxes(XYAxes):
                 subspec = gridspec[1]
         # Get properties
         ax = fig.add_subplot(subspec, projection=None)
-        if side in ['bottom','top']:
+        if side in ('bottom','top'):
             outside, inside = 'bottom', 'top'
             if side=='top':
                 outside, inside = inside, outside
             ticklocation = outside
             orientation  = 'horizontal'
-        elif side in ['left','right']:
+        elif side in ('left','right'):
             outside, inside = 'left', 'right'
             if side=='right':
                 outside, inside = inside, outside
