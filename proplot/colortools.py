@@ -1416,6 +1416,7 @@ def Cycle(*args, samples=None, name=None, save=False,
             filename = os.path.join(_data_user_cycles, basename)
             with open(filename, 'w') as f:
                 f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
+            print(f'Saved color cycle to "{basename}".')
         # Add to property dict
         nprops = max(nprops, len(colors))
         props['color'] = colors
