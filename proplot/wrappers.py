@@ -1904,17 +1904,11 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         kwargs['frameon'] = frameon
     kwargs['prop'] = {'family': rc['fontname']} # 'prop' can be a FontProperties object or a dict for the kwargs
     # Legend entry for colormap object
+    if hasattr(handles, 'get_cmap'):
+        handles = [handles]
     handles = handles or []
-    handles = [*handles] # ensure is mutable
-    for i,handle in enumerate(handles):
-        if hasattr(handle, 'get_facecolor') or not hasattr(handle, 'get_cmap'): # latter is for scatter (TODO: add cmap_wrapper for scatter?)
-            continue
-        warnings.warn(f'Getting legend entry from colormap for handle {handle}.')
-        cmap = handle.get_cmap()
-        size = np.mean(handle.get_sizes())
-        handles[i] = self.scatter([0], [0],
-            markersize=size, color=[cmap(0.5)], label=handle.get_label()
-            )
+    if any(not hasattr(handle, 'get_facecolor') and hasattr(handle, 'get_cmap') for handle in handles) and len(handles)>1:
+        raise ValueError(f'Handles must be objects with get_facecolor attributes or a single mappable object from which we can draw colors.')
 
     # Detect if user wants to specify rows manually
     # Gives huge latitude for user input:
@@ -1989,7 +1983,7 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
             warnings.warn(f'Creating unaligned legend. Overriding user input legend properties "' + '", "'.join(prop for prop in overridden) + '".')
         # Determine space we want sub-legend to occupy, as fraction of height
         # Don't normally save "height" and "width" of axes so keep here
-        fontsize = kwargs.get('fontsize', None)     or rc['legend.fontsize']
+        fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
         spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1/len(handles) # split up axes
         interval = (((1 + spacing)*fontsize)/72) / \
@@ -2000,6 +1994,7 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         # *x*-direction (notice the *x*-coordinate range 0-1). Matplotlib will
         # automatically move left-to-right if you request this.
         legs = []
+        ymin, ymax = None, None
         if order=='F':
             raise NotImplementedError(f'When align=False, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
         for i,ihandles in enumerate(handles):
@@ -2007,6 +2002,7 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
                 kwargs.pop('title', None)
             if i>=1 and title is not None:
                 i += 1 # extra space!
+            # Legend position
             if 'upper' in loc:
                 y1 = 1 - (i+1)*interval
                 y2 = 1 - i*interval
@@ -2016,6 +2012,9 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
             else: # center
                 y1 = 0.5 + interval*len(handles)/2 - (i+1)*interval
                 y2 = 0.5 + interval*len(handles)/2 - i*interval
+            ymin = min(y1, _default(ymin, y1))
+            ymax = max(y2, _default(ymax, y2))
+            # Draw legend
             ilabels = [handle.get_label() for handle in ihandles]
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
             leg = mlegend.Legend(parent=self, handles=ihandles, labels=ilabels,

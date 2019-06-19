@@ -1304,8 +1304,8 @@ class Figure(mfigure.Figure):
 #-------------------------------------------------------------------------------
 # Helper functions
 def _panels_kwargs(panels, colorbars, legends,
-        panels_kw, colorbars_kw=None, legends_kw=None,
-        figure=False, ncols=None, nrows=None):
+    panels_kw, colorbars_kw=None, legends_kw=None,
+    figure=False, ncols=None, nrows=None):
     """Returns standardized keyword args for axes and figure panels."""
     # Get which panels
     kwout = {}
@@ -1313,7 +1313,7 @@ def _panels_kwargs(panels, colorbars, legends,
     panels = translate.get(panels, panels)
     legends = translate.get(legends, legends)
     colorbars = translate.get(colorbars, colorbars)
-    allpanels = panels + legends + colorbars
+    allpanels = panels + colorbars + legends
     allsides = 'lrb' if figure else 'lrbt'
     if len({*allpanels}) != len(allpanels):
         raise ValueError('You requested the same side for a panel, colorbar, and/or legend.')
@@ -1400,7 +1400,7 @@ def _panels_kwargs(panels, colorbars, legends,
             kwout[side + 'span'] = nums
     else:
         # Panel visibility, toggling
-        kwout['which'] = panels + colorbars
+        kwout['which'] = allpanels
         for side in allpanels:
             kwout[side + 'visible'] = _get(side, 'visible', True)
         # Space between panels and parent subplot
