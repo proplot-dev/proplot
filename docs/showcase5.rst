@@ -542,7 +542,7 @@ color cycle, use ``color=(cmapname, position)`` or
 ``color=(cyclename, index)`` with any command that accepts the ``color``
 keyword! The ``position`` should be between 0 and 1, while the ``index``
 is the index on the list of colors in the cycle. This feature is powered
-by the `~proplot.colortools.ColorDictSpecial` class.
+by the `~proplot.colortools.ColorCacheDict` class.
 
 .. code:: ipython3
 

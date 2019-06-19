@@ -589,14 +589,25 @@ def _get_channel(color, channel, space='hsl'):
             color = color[:match.start()]
     return offset + to_xyz(to_rgb(color, 'rgb'), space)[channel]
 
-def shade(color, shade=0.5):
-    """Changes the "shade" of a color by scaling its luminance channel by `shade`."""
+def shade(color, scale=0.5):
+    """Changes the "shade" of a color by scaling its luminance channel by `scale`."""
     try:
         color = mcolors.to_rgb(color) # ensure is valid color
     except Exception:
         raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
-    color[2] = max([0, min([color[2]*shade, 100])]) # multiply luminance by this value
+    color[2] = max([0, min([color[2]*scale, 100])]) # multiply luminance by this value
+    color = [*colormath.hsl_to_rgb(*color)]
+    return tuple(color)
+
+def saturate(color, scale=0.5):
+    """Changes the saturation of a color by scaling its saturation channel by `scale`."""
+    try:
+        color = mcolors.to_rgb(color) # ensure is valid color
+    except Exception:
+        raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
+    color = [*colormath.rgb_to_hsl(*color)]
+    color[1] = max([0, min([color[1]*scale, 100])]) # multiply luminance by this value
     color = [*colormath.hsl_to_rgb(*color)]
     return tuple(color)
 
@@ -1294,6 +1305,9 @@ def Cycle(*args, samples=None, name=None, save=False,
     """
     Calls `Colormap` and returns a `~cycler.cycler` object that cycles through
     the ``'color'`` property by selecting colors from the colormap object.
+    Note that all "cycle names" (e.g. ``'colorblind'``, ``'538'``) are stored
+    and registered as `~matplotlib.colors.ListedColormap` colormaps, and are
+    therefore accessible from the `Colormap` command!
 
     1. If `Colormap` returns a `~matplotlib.colors.ListedColormap`, its
        ``colors`` attribute is used for the cycle.
