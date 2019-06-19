@@ -6,7 +6,7 @@ Axis locators, formatters, and scales
 .. automodsumm:: proplot.axistools
    :toctree: api
    :classes-only:
-   :skip: Number, Fraction, FunctionType
+   :skip: Number, Fraction
 
 **Functions**
 

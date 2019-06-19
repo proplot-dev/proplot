@@ -235,9 +235,9 @@ def journals(journal):
     Feel free to submit a pull request if you'd like to add additional
     standards.
 
-    .. [1] `PNAS recommendations <http://www.pnas.org/page/authors/submission>`_
-    .. [2] `AMS recommendations <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`_
-    .. [3] `AGU recommendations <https://publications.agu.org/author-resource-center/figures-faq/>`_
+    .. [1] `PNAS recommendations <http://www.pnas.org/page/authors/submission>`__
+    .. [2] `AMS recommendations <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    .. [3] `AGU recommendations <https://publications.agu.org/author-resource-center/figures-faq/>`__
     """
     table = {
         'pnas1': '8.7cm', # if 1 number specified, this is a tuple

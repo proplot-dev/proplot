@@ -51,8 +51,8 @@ _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
     'hexbin', 'matshow', 'imshow', 'spy', 'hist2d')
 _crs_methods = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks',) # adds crs=PlateCarree()
-_latlon_methods = ('plot', 'scatter') # adds latlon=True
-_transform_methods = ('plot', 'scatter', 'tripcolor', 'tricontour', 'tricontourf',) # adds transform=PlateCarree()
+_latlon_methods = ('plot', 'scatter', *_edges_methods, *_centers_methods) # adds latlon=True
+_transform_methods = ('plot', 'scatter', *_edges_methods, *_centers_methods, 'tripcolor', 'tricontour', 'tricontourf',) # adds transform=PlateCarree()
 
 # Disabled methods; keys are error messages
 # TODO: rigorous support for violin plots, bar, barh, streamline and quiver
@@ -567,12 +567,10 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
     box, bar : bool, optional
         Toggles thick and thin error bars when either of `means` or `medians`
         is ``True``.
-    boxrange : (float, float), optional
-        Percentile range for drawing thick central error bars. Ignored if `medians`
-        or `means` are both ``False``.
-    barrange : (float, float), optional
-        Percentile range for drawing thin error bars with whiskers. Ignored if `medians`
-        or `means` are both ``False``.
+    boxrange, barrange : (float, float), optional
+        Percentile ranges for drawing thick and thin central error bars.
+        The defaults are ``(25, 75)`` and ``(5, 95)``, respectively.
+        Ignored if `medians` and `means` are both ``False``.
     boxcolor, barcolor : None or float, optional
         Colors for the thick and thin error bars.
     boxlw, barlw : None or float, optional
@@ -761,7 +759,7 @@ def violinplot_wrapper(self, func, *args,
         Alternative to the native `vert` keyword arg. Controls orientation.
     boxrange, barrange : (float, float), optional
         Percentile ranges for the thick and thin central bars. The defaults
-        are ``(25, 75)`` and ``(2.5, 97.5)``, respectively.
+        are ``(25, 75)`` and ``(5, 95)``, respectively.
     showboxes, showbars, showmedians, showmeans : bool, optional
         Toggles showing the central thick vertical bar, thin vertical bar,
         median position marker, mean position marker, and the minimum maximum
@@ -867,7 +865,7 @@ def text_wrapper(self, func, x, y, text,
     border : bool, optional
         Whether to draw border around text.
     border_kw : dict-like, optional
-        Passed to `~matplotlib.path_effects.Stroke` if drawing a border.
+        Passed to `~matplotlib.patheffects.Stroke` if drawing a border.
     invert : bool, optional
         Ignored if `border` is ``False``. Whether to draw black text
         with a white border (``False``), or white text on a black
@@ -968,39 +966,37 @@ def _m_norecurse(self, func):
 @_expand_methods_list
 def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
-    Wraps plotting functions for `BasemapAxes` (`_latlon_methods`).
+    Wraps plotting functions for `~proplot.axes.BasemapAxes` (`_latlon_methods`).
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
-    ``latlon=True`` if your data coordinates are longitude and latitude,
-    instead of map projection coordinates. Now, ``latlon=True`` is always
-    used.
+    ``latlon=True`` if your data coordinates are longitude and latitude
+    instead of map projection units. Now, ``latlon=True`` is the default.
     """
     return func(*args, latlon=latlon, **kwargs)
 
 @_expand_methods_list
 def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
     """
-    Wraps plotting functions for `CartopyAxes` (`_transform_methods`).
+    Wraps plotting functions for `~proplot.axes.CartopyAxes` (`_transform_methods`).
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
-    longitude and latitude, instead of map projection coordinates.
-    Now, ``transform=cartopy.crs.PlateCarree()`` is the default behavior.
+    longitude and latitude instead of map projection units. Now,
+    ``transform=cartopy.crs.PlateCarree()`` is the default.
     """
     # Simple
     if isinstance(transform, type):
         transform = transform() # instantiate
     result = func(*args, transform=transform, **kwargs)
     # Re-enforce settings because some plot functions seem to reset the
-    # outlinepatch or backgroundpatch (???)
-    # TODO: Double check this
+    # outlinepatch or backgroundpatch (TODO: Double check this)
     self.format()
     return result
 
 @_expand_methods_list
 def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     """
-    Wraps axes functions for `CartopyAxes` (`_crs_methods`).
+    Wraps axes functions for `~proplot.axes.CartopyAxes` (`_crs_methods`).
 
     As in `cartopy_transform`, but sets ``crs=cartopy.crs.PlateCarree()``
     as the default.
@@ -1027,33 +1023,31 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     return result
 
 @_expand_methods_list
-def cartopy_gridfix(self, func, lon, lat, *Zs, transform=PlateCarree, globe=False, **kwargs):
+def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
     Wraps 2D plotting functions for `CartopyAxes` (`_centers_edges_methods`).
 
-    As in `cartopy_transform`, but adds the `globe` keyword arg
-    to optionally make data coverage *global*. Passing ``globe=True``
-    does the following:
+    Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
+    optionally make data coverage *global*. Passing ``globe=True`` does the
+    following:
 
-    1. Makes longitudinal coverage *circular* (i.e. the last
-       longitude coordinate equals the first longitude coordinate plus 360
-       degrees).
+    1. Makes longitudinal coverage *circular* (i.e. the last longitude coordinate
+       equals the first longitude coordinate plus 360 degrees).
     2. Interpolates data to the North and South poles.
 
-    Warning
-    -------
-    Cartopy contouring methods have issues with circularly wrapped data.
-    Triggers annoying ``TopologyException`` statements, which we suppress
-    with the IPython `~IPython.utils.io.capture_output` tool.
-    This is a workaround. See `this issue
-    <https://github.com/SciTools/cartopy/issues/946>`__.
+    If latitude and longitude arrays are 2D, `globe` is set to ``False``.
     """
     # Ensure monotonic lons or things get messed up
-    # Unlike basemap can be monotonic from any starting point
     # WARNING: In first geophysical data example, got persistent
     # changes to input data arrays without below line, resulting in non
     # monotonic coordinates and discovery of this error
+    # WARNING: Cartopy contouring methods have issues with circularly wrapped data.
+    # Triggers annoying ``TopologyException`` statements, which we suppress
+    # with the IPython `~IPython.utils.io.capture_output` tool. See `this issue
+    # <https://github.com/SciTools/cartopy/issues/946>`__.
     lon, lat = np.array(lon), np.array(lat) # no need to retain metadata on e.g. DataArray
+    if not isinstance(kwargs.get('transform', None), PlateCarree):
+        return func(lon, lat, *Zs, **kwargs)
     if lon.ndim==1 and not (lon<lon[0]).all(): # skip backwards data
         lonmin = lon[0]
         while True:
@@ -1081,36 +1075,29 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, transform=PlateCarree, globe=Fals
         Zss.append(Z)
 
     # Call function
-    # with io.capture_output() as captured:
-    if isinstance(transform, type):
-        transform = transform() # instantiate
-    result = func(lon, lat, *Zss, transform=transform, **kwargs)
-    # Re-enforce settings because some plot functions seem to reset the
-    # outlinepatch or backgroundpatch.
-    # TODO: Double check this
-    self.format()
-    return result
+    return func(lon, lat, *Zss, **kwargs)
 
 @_expand_methods_list
-def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, latlon=True, **kwargs):
+def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps 2D plotting functions for `BasemapAxes` (`_centers_edges_methods`).
+    Wraps 2D plotting functions for `~proplot.axes.BasemapAxes` (`_centers_edges_methods`).
 
-    As in `basemap_latlon`, but cycles longitudes to fit within the
-    map edges (i.e. if the projection central longitude is 90 degrees, will
-    permute data to span from -90 degrees to 270 degrees longitude).
+    Makes 1D longitude vectors monotonic and cycles them to fit within the map
+    edges (i.e. if the projection central longitude is 90 degrees, will permute
+    data to span from -90 degrees to 270 degrees longitude).
 
     Also adds the `globe` keyword arg to optionally make data coverage *global*.
     Passing ``globe=True`` does the following:
 
-    1. Makes longitudinal coverage *circular* (i.e. the last
-       longitude coordinate equals the first longitude coordinate plus 360
-       degrees).
+    1. Makes longitudinal coverage *circular* (i.e. the last longitude coordinate
+       equals the first longitude coordinate plus 360 degrees).
     2. Interpolates data to the North and South poles.
+
+    If latitude and longitude arrays are 2D, `globe` is set to ``False``.
     """
     # Bail out if map coordinates already provided
     lon, lat = np.array(lon), np.array(lat) # no need to retain metadata on e.g. DataArray
-    if not latlon:
+    if not kwargs.get('latlon', None):
         return func(lon, lat, *Zs, **kwargs)
     # Raise errors
     eps = 1e-3
@@ -1827,7 +1814,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 #------------------------------------------------------------------------------#
 # Legends and colorbars
 #------------------------------------------------------------------------------#
-def legend_wrapper(self, handles=None, ncol=None, ncols=None,
+def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
     center=None, order='C', loc=None, label=None, title=None,
     color=None, marker=None, lw=None, linewidth=None,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
@@ -1837,25 +1824,30 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
 
     Parameters
     ----------
-    self : `~matplotlib.axes.Axes`
-        The axes.
     handles : None or list of `~matplotlib.artist.Artist`, optional
-        List of artists instances -- for example, `~matplotlib.lines.Line2D`.
+        List of artists instances, or list of lists of artist instances (see
+        the `center` keyword). If ``None``, the artists are retrieved with
+        `~matplotlib.axes.Axes.get_legend_handles_labels`.
+    labels : None or list of str, optional
+        Matching list of string labels, or list of lists of string labels (see
+        the `center` keywod). If ``None``, the labels are retrieved by calling
+        `~matplotlib.artist.Artist.get_label` on each `~matplotlib.artist.Artist`
+        in `handles`.
     ncol, ncols : int, optional
         The number of columns. `ncols` is an alias, added
         for consistency with `~matplotlib.pyplot.subplots`.
+    order : {'C', 'F'}, optional
+        Whether legend handles are drawn in row-major (``'C'``) or column-major
+        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
+        ``'F'`` was the original matplotlib default; the default is now ``'C'``.
     center : None or bool, optional
-        Whether to center rows of legend handles. If ``True``, we actually
-        draw successive single-row legends stacked on top of each other,
-        and you cannot have a "legend box".
+        Whether to center each legend row individually. If ``True``, we
+        actually draw successive single-row legends stacked on top of each
+        other.
 
         If ``None``, we infer this setting from `handles`. Defaults to ``True``
         if `handles` is a list of lists; each sublist is used as a *row*
         in the legend. Otherwise, defaults to ``False``.
-    order : {'C', 'F'}, optional
-        Whether legend handles are drawn in column-major (``'C'``) or row-major
-        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
-        ``'F'`` was the original matplotlib default; the default is now ``'C'``.
     loc : None or str, optional
         The legend location. In addition to the verbose builtin matplotlib
         location names, the following aliases are valid.
@@ -1906,67 +1898,100 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
     if frameon is not None:
         kwargs['frameon'] = frameon
     kwargs['prop'] = {'family': rc['fontname']} # 'prop' can be a FontProperties object or a dict for the kwargs
-    # Legend entry for colormap object
-    if hasattr(handles, 'get_cmap'):
+
+    # Automatically get labels and handles
+    # Also accept non-list input
+    if handles is None:
+        if self._filled:
+            raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
+        else:
+            handles, labels_default = self.get_legend_handles_labels() # ignores artists with labels '_nolegend_'
+            if labels is None:
+                labels = labels_default
+            if not handles:
+                raise ValueError('No labeled artists found. To generate a legend without providing the artists explicitly, pass label="label" in your plotting commands.')
+    if not np.iterable(handles): # e.g. a mappable object
         handles = [handles]
-    handles = handles or []
+    if labels is not None and (not np.iterable(labels) or isinstance(labels, str)):
+        labels = [labels]
+
+    # Legend entry for colormap or scatterplot object
+    # TODO: Idea is we pass a scatter plot or contourf or whatever, and legend
+    # is generating by drawing patch rectangles or markers with different colors.
     if any(not hasattr(handle, 'get_facecolor') and hasattr(handle, 'get_cmap') for handle in handles) and len(handles)>1:
         raise ValueError(f'Handles must be objects with get_facecolor attributes or a single mappable object from which we can draw colors.')
 
-    # Detect if user wants to specify rows manually
-    # Gives huge latitude for user input:
-    # 1) User can specify nothing and align will be inferred (list of iterables
-    #    will always be False, i.e. we draw consecutive legends, and list of handles is always true)
-    # 2) User can specify align (needs list of handles for True, list of handles or list
-    #    of iterables for False and if the former, will turn into list of iterables)
-    if not handles and not self._filled:
-        handles = self.get_legend_handles_labels()[0] # ignores artists with labels '_nolegend_'
-        if not handles:
-            raise ValueError('No axes artists with labels were found.')
-    elif not handles:
-        raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
-    # Mange input
-    # list_of_lists = not isinstance(handles[0], martist.Artist)
-    list_of_lists = not hasattr(handles[0], 'get_label') # e.g. not including BarContainer
+    # Build pairs of handles and labels
+    # This allows alternative workflow where user specifies labels when
+    # creating the legend.
+    pairs = []
+    list_of_lists = (not hasattr(handles[0], 'get_label')) # e.g. not including BarContainer
+    if labels is None:
+        for handle in handles:
+            if list_of_lists:
+                ipairs = []
+                for ihandle in handle:
+                    ipairs.append((ihandle, ihandle.get_label()))
+                pairs.append(ipairs)
+            else:
+                pairs.append((handle, handle.get_label()))
+    else:
+        if len(labels)!=len(handles):
+            raise ValueError(f'Got {len(labels)} labels, but {len(handles)} handles.')
+        for label,handle in zip(labels,handles):
+            if list_of_lists:
+                ipairs = []
+                if not np.iterable(label) or isinstance(label, str):
+                    raise ValueError(f'Got list of lists of handles, but just list of labels.')
+                elif len(label)!=len(handle):
+                    raise ValueError(f'Got {len(label)} labels in sublist, but {len(handle)} handles.')
+                for ilabel,ihandle in zip(label,handle):
+                    ipairs.append((ihandle, ilabel))
+                pairs.append(ipairs)
+            else:
+                if not isinstance(label, str) and np.iterable(label):
+                    raise ValueError(f'Got list of lists of labels, but just list of handles.')
+                pairs.append((handle, label))
+
+    # Manage pairs in context of 'center' option
     if center is None: # automatically guess
         center = list_of_lists
+    elif center and list_of_lists and ncol is not None:
+        warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
     elif not center and list_of_lists: # standardize format based on input
-        handles = [handle for sublist in handles for handle in sublist]
         list_of_lists = False # no longer is list of lists
+        pairs = [pair for ipairs in pairs for pair in ipairs]
     elif center and not list_of_lists:
         list_of_lists = True
         ncol = _default(ncol, 3)
-        handles = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles))] # to list of iterables
-    elif center and list_of_lists and ncol is not None:
-        warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
-    # Remove empty lists; pops up in some examples, not sure how
-    handles = [sublist for sublist in handles if sublist]
+        pairs = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs))] # to list of iterables
+    if list_of_lists: # remove empty lists, pops up in some examples
+        pairs = [ipairs for ipairs in pairs if ipairs]
 
-    # Now draw legend, with two options
+    # Now draw legend(s)
+    legs = []
     width, height = self.figure.get_size_inches()
     width, height = width*abs(self._position.width), height*abs(self._position.height)
-    # Normal legend, just draw everything like normal and columns
-    # will be aligned; we re-order handles to be row-major, is only difference
+    # Individual classic legend
     if not center:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
+        # Example: If 5 columns, but final row length 3, columns 0-2 have
+        # N rows but 3-4 have N-1 rows.
         ncol = _default(ncol, 3)
         if order=='C':
-            split = [handles[i*ncol:(i+1)*ncol] for i in range(len(handles)//ncol+1)] # split into rows
-            fhandles = []
+            fpairs = []
+            split = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs)//ncol+1)] # split into rows
             nrowsmax, nfinalrow = len(split), len(split[-1]) # max possible row count, and columns in final row
-            # e.g. if 5 columns, but final row length 3, columns 0-2 have N rows but 3-4 have N-1 rows
             nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(ncol-nfinalrow)
             for col,nrow in enumerate(nrows): # iterate through cols
-                fhandles.extend(split[row][col] for row in range(nrow))
-            handles = fhandles
+                fpairs.extend(split[row][col] for row in range(nrow))
+            pairs = fpairs
         if loc is not None:
             kwargs['loc'] = _loc_translate.get(loc, loc)
-        # Apply manually
-        # leg = maxes.Axes.legend(self, ncol=ncol, handles=handles, **kwargs)
-        labels = [handle.get_label() for handle in handles]
-        leg = mlegend.Legend(handles=handles, labels=labels, parent=self, ncol=ncol, **kwargs)
-        legs = [leg]
+        # Make legend object
+        leg = mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
+        legs.append(leg)
     # Separate legend for each row. The label spacing/border spacing will be
     # exactly replicated, as if we were using the original legend command.
     else:
@@ -1989,18 +2014,16 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
         # replicate the spacing of standard aligned legends.
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
         spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
-        interval = 1/len(handles) # split up axes
+        interval = 1/len(pairs) # split up axes
         interval = (((1 + spacing*0.85)*fontsize)/72)/height
         # Iterate and draw
-        # NOTE: We confine possible bounding box (within which legend position
-        # is allowed to vary) in *y*-direction, but do not confine it in
-        # *x*-direction (notice the *x*-coordinate range 0-1). Matplotlib will
-        # automatically move left-to-right if you request this.
-        legs = []
+        # NOTE: We confine possible bounding box in *y*-direction, but do not
+        # confine it in *x*-direction. Matplotlib will automatically move
+        # left-to-right if you request this.
         ymin, ymax = None, None
         if order=='F':
             raise NotImplementedError(f'When center=True, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
-        for i,ihandles in enumerate(handles):
+        for i,ipairs in enumerate(pairs):
             if i==1:
                 kwargs.pop('title', None)
             if i>=1 and title is not None:
@@ -2010,19 +2033,17 @@ def legend_wrapper(self, handles=None, ncol=None, ncols=None,
                 y1 = 1 - (i+1)*interval
                 y2 = 1 - i*interval
             elif 'lower' in loc:
-                y1 = (len(handles) + i - 2)*interval
-                y2 = (len(handles) + i - 1)*interval
+                y1 = (len(pairs) + i - 2)*interval
+                y2 = (len(pairs) + i - 1)*interval
             else: # center
-                y1 = 0.5 + interval*len(handles)/2 - (i+1)*interval
-                y2 = 0.5 + interval*len(handles)/2 - i*interval
+                y1 = 0.5 + interval*len(pairs)/2 - (i+1)*interval
+                y2 = 0.5 + interval*len(pairs)/2 - i*interval
             ymin = min(y1, _default(ymin, y1))
             ymax = max(y2, _default(ymax, y2))
             # Draw legend
-            ilabels = [handle.get_label() for handle in ihandles]
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
-            leg = mlegend.Legend(parent=self, handles=ihandles, labels=ilabels,
-                loc=loc, ncol=len(ihandles), frameon=False,
-                bbox_transform=self.transAxes, bbox_to_anchor=bbox,
+            leg = mlegend.Legend(self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
+                bbox_transform=self.transAxes, bbox_to_anchor=bbox, frameon=False,
                 **kwargs) # _format_legend is overriding original legend Method
             legs.append(leg)
 
@@ -2122,8 +2143,9 @@ def colorbar_wrapper(self, mappable, values=None,
            `values` is not ``None``.
         3. A list of "plot handles". Basically, any object with a ``get_color``
            method, like `~matplotlib.lines.Line2D` instances. From this,
-           a colormap will be generated and used with the colorbar. Requires
-           `values` is not ``None``.
+           a colormap will be generated and used with the colorbar. If `values`
+           is ``None``, they will try to be inferred by converting the handle
+           labels returned by `~matplotlib.artist.Artist.get_label` to `float`.
 
     values : None or list of float, optional
         Ignored if `mappable` is a mappable object. Maps each color or plot

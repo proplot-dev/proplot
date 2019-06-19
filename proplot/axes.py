@@ -657,10 +657,10 @@ class BaseAxes(maxes.Axes):
         # Bounds are x0, y0, width, height in axes-relative coordinate to start
         if loc in ('upper right','ur'):
             bounds = (1-xpad-length, 1-ypad-width)
-            fbounds = (1-2*xpad-length, 1-2*ypad-width)
+            fbounds = (1-2*xpad-length, 1-2*ypad-width-xspace)
         elif loc in ('upper left','ul'):
             bounds = (xpad, 1-ypad-width)
-            fbounds = (0, 1-2*ypad-width)
+            fbounds = (0, 1-2*ypad-width-xspace)
         elif loc in ('lower left','ll'):
             bounds = (xpad, ypad+xspace)
             fbounds = (0, 0)
@@ -1914,7 +1914,6 @@ class CartopyAxes(MapAxes, GeoAxes):
     """
     name = 'cartopy'
     """The registered projection name."""
-    # Helper
     _n_bounds = 100 # number of points for drawing circle map boundary
     _proj_np = ('npstere',)
     _proj_sp = ('spstere',)

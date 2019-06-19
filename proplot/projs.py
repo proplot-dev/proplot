@@ -95,7 +95,8 @@ except ModuleNotFoundError:
 # mpath.Path([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]) # rectangle
 def Circle(N=100):
     """Returns a circle `~matplotlib.path.Path`. Used as the outline
-    for polar stereo, aeqd, and lambert conformal projections."""
+    for polar stereographic, azimuthal equidistant, and Lambert
+    conformal projections."""
     theta = np.linspace(0, 2*np.pi, N)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T

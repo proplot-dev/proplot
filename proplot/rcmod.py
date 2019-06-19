@@ -17,10 +17,10 @@ A special object named `~proplot.rcmod.rc`, belonging to the
 
 To change a setting, use any of the following:
 
-* ``rc.name = value``
-* ``rc['name'] = value``
-* ``rc.update(name1=value1, name2=value2)``
-* ``rc.update({'name1':value1, 'name2':value2})``
+* ``plot.rc.name = value``
+* ``plot.rc['name'] = value``
+* ``plot.rc.update(name1=value1, name2=value2)``
+* ``plot.rc.update({'name1':value1, 'name2':value2})``
 
 To temporarily change settings on a particular axes, use either of:
 
@@ -29,9 +29,8 @@ To temporarily change settings on a particular axes, use either of:
 
 In all of these examples, if the setting name ``name`` contains
 any dots, you can simply **omit the dots**. For example, to change the
-:ref:`rcParams_new` property ``title.pos``, use ``rc.titlepos = value``,
-``rc.update(titlepos=value)``, or
-``ax.format(titlepos=value)``.
+:ref:`rcParams_new` property ``title.pos``, use ``plot.rc.titlepos = value``,
+``plot.rc.update(titlepos=value)``, or ``ax.format(titlepos=value)``.
 
 #########
 rcGlobals
@@ -213,9 +212,9 @@ Key                       Description
 ``colorbar.xspace``       Extra space for *x* label of inset colorbars.
 ========================  =========================================================================================================================
 
-****
-Misc
-****
+**************
+Axis formatter
+**************
 Use the boolean ``axes.formatter.zerotrim`` setting to control whether trailing
 decimal zeros are trimmed on tick labels.
 
@@ -900,7 +899,7 @@ class rc_configurator(object):
         elif len(args)==1:
             prefix = ''
         else:
-            raise ValueError('Accepts 1-2 positional arguments only. Use rc.update(kw) to update a bunch of names, or rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
+            raise ValueError('Accepts 1-2 positional arguments only. Use plot.rc.update(kw) to update a bunch of names, or plot.rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
         for key,value in kw.items():
             self[prefix + key] = value
 
