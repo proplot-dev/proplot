@@ -347,7 +347,7 @@ keywords, see `~proplot.wrappers.cmap_wrapper`,
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
-    ax.plot(da, cycle=plot.shade('sky', 0.2), cycle_kw={'fade':90}, lw=3,
+    ax.plot(da, cycle=plot.shade('sky blue', 0.2), cycle_kw={'fade':90}, lw=3,
             colorbar='ll', colorbar_kw={'length':'3cm', 'frameon':False})
     # Plot Dataframe
     ax = axs[1]

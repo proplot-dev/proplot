@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-The axes subclasses and method wrappers central to this library.
-You should focus on the ``format`` and ``smart_update`` methods:
+This page documents the axes subclasses that can be returned by
+`~proplot.subplots.subplots` and their various method wrappers. You should
+start with the documentation on the following methods:
 
 * `BaseAxes.format`
-* `BaseAxes.smart_update`
 * `XYAxes.smart_update`
 * `MapAxes.smart_update`
+* `BaseAxes.smart_update`
 
-`BaseAxes.format` calls the ``smart_update`` methods in turn.
-This is your one-stop-shop for changing axes settings like
+`BaseAxes.format` calls the various ``smart_update`` methods in turn,
+and is your **one-stop-shop for changing axes settings** like
 *x* and *y* axis limits, axis labels, tick locations, tick labels
 grid lines, axis scales, titles, a-b-c labelling, adding
 geographic features, and much more.
@@ -158,9 +159,7 @@ class BaseAxes(maxes.Axes):
 
         See also
         --------
-        `~proplot.subplots.subplots`,
-        `XYAxes`, `CartopyAxes`, `BasemapAxes`,
-        `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`
+        `~proplot.subplots.subplots`, `XYAxes`, `MapAxes`
         """
         # Properties
         self.number = number # for abc numbering
@@ -243,7 +242,7 @@ class BaseAxes(maxes.Axes):
         # Disabled methods
         for message,attrs in wrappers._disabled_methods.items():
             if attr in attrs:
-                raise NotImplementedError(message.format(attr))
+                raise RuntimeError(message.format(attr))
         # Non-plotting overrides
         # All plotting overrides are implemented in individual subclasses
         if attr=='text':
@@ -399,7 +398,8 @@ class BaseAxes(maxes.Axes):
 
     def format(self, *, mode=2, rc_kw=None, **kwargs):
         """
-        Sets up temporary rc settings and calls `~BaseAxes.smart_update`.
+        Sets up temporary rc settings and calls `XYAxes.smart_update` or
+        `MapAxes.smart_update`.
 
         Parameters
         ----------
@@ -431,8 +431,8 @@ class BaseAxes(maxes.Axes):
 
         See also
         --------
-        `~proplot.rcmod`,
-        `BaseAxes.smart_update`, `XYAxes.smart_update`, `MapAxes.smart_update`
+        `~proplot.rcmod`, `BaseAxes.smart_update`, `XYAxes.smart_update`,
+        `MapAxes.smart_update`
         """
         # Figure out which kwargs are valid rc settings
         # WARNING: First part will fail horribly if mode is not zero!
@@ -464,7 +464,9 @@ class BaseAxes(maxes.Axes):
         top=True, # nopanel optionally puts title and abc label in main axes
         ):
         """
-        Function for formatting axes titles and labels.
+        Called by `XYAxes.smart_update` and `MapAxes.smart_update`,
+        formats the axes titles, a-b-c labelling, row and column labels,
+        and figure title.
 
         Parameters
         ----------
@@ -479,8 +481,8 @@ class BaseAxes(maxes.Axes):
             many labels.
         top : bool, optional
             Whether to try to put title and a-b-c label above the top
-            axes panel, if it exists (``True``), or to always put them on
-            the main subplot (``False``). Defaults to ``True``.
+            axes panel if it exists, or to always put them on the main subplot.
+            Defaults to ``True``, i.e. the former.
         rowlabels, colllabels : None or list of str, optional
             The subplot row and column labels. If list, length must match
             the number of subplot rows, columns.
@@ -492,11 +494,6 @@ class BaseAxes(maxes.Axes):
             This is more sophisticated than matplotlib's builtin "super title",
             which is just centered between the figure edges and offset from
             the top edge.
-
-        See also
-        --------
-        `~proplot.subplots.subplots`, `~proplot.rcmod`,
-        `XYAxes.smart_update`, `MapAxes.smart_update`
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -844,9 +841,8 @@ class XYAxes(BaseAxes):
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
         super().__init__(*args, **kwargs)
-        # Change the default formatter
-        # Mine trims trailing zeros, but numbers no longer aligned. Matter
-        # of taste really; will see if others like it.
+        # New default formatter. Mine trims trailing zeros, but numbers no
+        # longer aligned. Matter of taste really; will see if others like it.
         formatter = axistools.Formatter('default')
         self.xaxis.set_major_formatter(formatter)
         formatter = axistools.Formatter('default')
@@ -924,10 +920,11 @@ class XYAxes(BaseAxes):
         xlocator_kw={}, ylocator_kw={},
         xformatter_kw={}, yformatter_kw={},
         xminorlocator_kw={}, yminorlocator_kw={},
-        **kwargs): # formatter
+        **kwargs):
         """
-        Format the *x* and *y* axis labels, tick locations, tick labels,
-        axis scales, and more.
+        Called by `BaseAxes.format`, formats the *x* and *y* axis labels,
+        tick locations, tick labels, axis scales, spine settings, and more.
+        Also calls `BaseAxes.smart_update`.
 
         Parameters
         ----------
@@ -940,26 +937,12 @@ class XYAxes(BaseAxes):
             `~matplotlib.artist.Artist.update` method on the
             `~matplotlib.text.Text` instance. Options include ``'color'``,
             ``'size'``, and ``'weight'``.
-        xlim, ylim : None or length-2 list of float or None, optional
+        xlim, ylim : None or (float, float), optional
             The *x* and *y* axis data limits. Applied with
             `~matplotlib.axes.Axes.set_xlim` and `~matplotlib.axes.Axes.set_ylim`.
         xreverse, yreverse : bool, optional
-            Simply reverses the order of the `xlim` or `ylim` tuples if
-            they were provided.
-        xbounds, ybounds : None or length-2 list of float, optional
-            The *x* and *y* axis data bounds within which to draw the spines.
-            For example, this can be used to separate the *x*
-            and *y* axis spines, so they don't meet at the corner.
-        xtickrange, ytickrange : None or length-2 list of float, optional
-            The *x* and *y* axis data ranges within which major tick marks
-            are labelled. For example, the tick range ``[-1,1]`` with
-            axis range ``[-5,5]`` and a tick interval of 1 will only
-            label the ticks marks at -1, 0, and 1.
-        fixticks : bool, optional
-            Whether to always transform the tick locators to a
-            `~matplotlib.ticker.FixedLocator` instance. Defaults to ``False``.
-            If your axis ticks are doing weird things (for example, ticks
-            drawn outside of the axis spine), try setting this to ``True``.
+            Puts the *x* and *y* axis in reverse, i.e. going from positive to
+            negative numbers.
         xscale, yscale : None or scale spec, optional
             The *x* and *y* axis scales. Arguments are passed to and interpreted
             by `~proplot.axistools.Scale`. Examples include ``'linear'``
@@ -967,10 +950,10 @@ class XYAxes(BaseAxes):
         xscale_kw, yscale_kw : dict-like, optional
             The *x* and *y* axis scale settings. Passed to
             `~proplot.axistools.Scale`.
-        xloc, yloc
-            Aliases for `xspineloc`, `yspineloc`.
         xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
             The *x* and *y* axis spine locations.
+        xloc, yloc
+            Aliases for `xspineloc`, `yspineloc`.
         xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick marks.
         xtickminor, ytickminor : None or bool, optional
@@ -985,31 +968,47 @@ class XYAxes(BaseAxes):
         xticklabeldir, yticklabeldir : {'in', 'out'}
             Whether to place *x* and *y* axis tick label text inside
             or outside the axes.
-        xticks, yticks
-            Aliases for `xlocator`, `ylocator`.
         xlocator, ylocator : None or locator spec, optional
             The *x* and *y* axis tick mark positions. Passed to the
             `~proplot.axistools.Locator` constructor.
+        xticks, yticks
+            Aliases for `xlocator`, `ylocator`.
         xlocator_kw, ylocator_kw : dict-like, optional
             The *x* and *y* axis locator settings. Passed to
             `~proplot.axistools.Locator`.
-        xminorticks, yminorticks
-            Aliases for `xminorlocator`, `yminorlocator`.
         xminorlocator, yminorlocator
             As for `xlocator`, `ylocator`, but for the minor ticks.
+        xminorticks, yminorticks
+            Aliases for `xminorlocator`, `yminorlocator`.
         xminorlocator_kw, yminorlocator_kw
             As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
-        xticklabels, yticklabels
-            Aliases for `xformatter`, `yformatter`.
         xformatter, yformatter : None or format spec, optional
             The *x* and *y* axis tick label format. Passed to the
             `~proplot.axistools.Formatter` constructor.
+        xticklabels, yticklabels
+            Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
             The *x* and *y* axis formatter settings. Passed to
             `~proplot.axistools.Formatter`.
         xrotation, yrotation : None or float, optional
             The rotation for *x* and *y* axis tick labels. Defaults to ``0``
             for normal axes, ``45`` for time axes.
+        xtickrange, ytickrange : None or (float, float), optional
+            The *x* and *y* axis data ranges within which major tick marks
+            are labelled. For example, the tick range ``(-1,1)`` with
+            axis range ``(-5,5)`` and a tick interval of 1 will only
+            label the ticks marks at -1, 0, and 1.
+        xbounds, ybounds : None or (float, float), optional
+            The *x* and *y* axis data bounds within which to draw the spines.
+            For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
+            will prevent the spines from meeting at the origin.
+        fixticks : bool, optional
+            Whether to always transform the tick locators to a
+            `~matplotlib.ticker.FixedLocator` instance. Defaults to ``False``.
+            If your axis ticks are doing weird things (for example, ticks
+            drawn outside of the axis spine), try setting this to ``True``.
+        **kwargs
+            Passed to `BaseAxes.smart_update`.
 
         Note
         ----
@@ -1017,13 +1016,12 @@ class XYAxes(BaseAxes):
         `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
         `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
         `datetime.time`, or `datetime.datetime` array as the *x* or *y*-axis
-        coordinate, the axis ticks and tick labels will be formatted as dates
-        by default.
+        coordinate, the axis ticks and tick labels will be formatted as dates.
 
         See also
         --------
-        `BaseAxes.format`, `BaseAxes.smart_update`, `~proplot.axistools.Scale`,
-        `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`
+        `~proplot.axistools.Scale`, `~proplot.axistools.Locator`,
+        `~proplot.axistools.Formatter`
         """
         # Background patch basics
         self.patch.set_clip_on(False)
@@ -1505,14 +1503,9 @@ class XYAxes(BaseAxes):
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
-    def inset_zoom(self, *args, **kwargs):
-        """Alias for `~XYAxes.indicate_inset_zoom`."""
-        # Just an alias
-        return self.indicate_inset_zoom(*args, **kwargs)
-
     def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
-        """Custom inset zoom indicator that can be *refreshed* as the
-        parent axis limits change."""
+        """Inset zoom indicator that is *refreshed* when `xlim` or `ylim`
+        is passed to `BaseAxes.format`."""
         # Makes more sense to be defined on the inset axes, since parent
         # could have multiple insets
         parent = self._inset_parent
@@ -1523,7 +1516,7 @@ class XYAxes(BaseAxes):
             raise ValueError(f'{self} is not an inset axes.')
         xlim = self.get_xlim()
         ylim = self.get_ylim()
-        rect = [xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0]]
+        rect = (xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0])
         kwargs.update({'linewidth':linewidth, 'edgecolor':edgecolor, 'alpha':alpha})
         rectpatch, connects = parent.indicate_inset(rect, self, **kwargs)
         # Adopt properties from old one
@@ -1624,8 +1617,7 @@ class PanelAxes(XYAxes):
         See also
         --------
         `~proplot.subplots.subplots`,
-        `~proplot.subplots.Figure.add_subplot_and_panels`,
-        `XYAxes`, `BaseAxes`
+        `~proplot.subplots.Figure.add_subplot_and_panels`
         """
         # Misc props
         # WARNING: Need to set flush property before calling super init!
@@ -1642,12 +1634,12 @@ class PanelAxes(XYAxes):
 
     def legend(self, *args, fill=True, **kwargs):
         """
-        Use ``fill=True`` (the default) to "fill the panel" with a legend.
-        Use ``fill=False`` to add an inset legend with `matplotlib.axes.Axes.legend`.
-        If the former, a centered legend is drawn and the axes spines, ticks,
-        etc.  are made invisible.
+        "Fills the panel" with a legend by adding a centered legend and
+        rendering the axes spines and patch invisible. To draw a normal inset
+        legend, pass ``fill=False``.
 
-        See `~matplotlib.axes.Axes.legend` and `legend` for details.
+        See `~matplotlib.axes.Axes.legend` and `~proplot.wrappers.legend_wrapper`
+        for details.
         """
         # Regular old inset legend
         if not fill:
@@ -1678,12 +1670,12 @@ class PanelAxes(XYAxes):
 
     def colorbar(self, *args, fill=True, length=1, **kwargs):
         """
-        Use ``fill=True`` (the default) to fill the panel with a colorbar.
-        Use ``fill=False`` to add an inset colorbar with `BaseAxes.colorbar`.
-        If the former, `length` denotes the fractional extent of the panel
-        that is filled.
+        "Fills the panel" with a colorbar by calling `~matplotlib.figure.Figure.colorbar`
+        with ``cax=self``. To change the fractional extent of the colorbar that
+        is filled, pass ``length=x``. To draw a magic inset colorbar with
+        `BaseAxes.colorbar`, pass ``fill=False``.
 
-        See `~matplotlib.figure.Figure.colorbar` and `colorbar`
+        See `~matplotlib.figure.Figure.colorbar` and `~proplot.wrappers.colorbar_wrapper`
         for details.
         """
         # Inset 'legend-style' colorbar
@@ -1701,7 +1693,7 @@ class PanelAxes(XYAxes):
         side = self._side
         subspec = self.get_subplotspec()
         if side=='top': # this is ugly, and hard to implement with title, super title, and stuff
-            raise NotImplementedError('Colorbars in upper panels are not allowed.')
+            raise NotImplementedError('Filling top panels with colorbars is not allowed. Use a left, bottom, or right panel instead.')
         if length!=1:
             if side in ['bottom']:
                 gridspec = FlexibleGridSpecFromSubplotSpec(
@@ -1746,7 +1738,7 @@ class MapAxes(BaseAxes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `BaseAxes`, `CartopyAxes`, `BasemapAxes`
+        `~proplot.subplots.subplots`, `CartopyAxes`, `BasemapAxes`
         """
         super().__init__(*args, **kwargs)
         self._is_map = True # needed by wrappers, which can't import this file
@@ -1757,7 +1749,7 @@ class MapAxes(BaseAxes):
         `_map_disabled_methods`."""
         # See: https://stackoverflow.com/a/23126260/4970632
         if attr in wrappers._map_disabled_methods:
-            raise NotImplementedError('Invalid plotting function {} for map projection axes.'.format(attr))
+            raise RuntimeError('Invalid plotting function {} for map projection axes.'.format(attr))
         return super().__getattribute__(attr, *args)
 
     # Note this *actually* just returns some standardized arguments
@@ -1770,7 +1762,9 @@ class MapAxes(BaseAxes):
         **kwargs,
         ):
         """
-        Format the map projection.
+        Called by `BaseAxes.format`, formats the meridian and parallel
+        labels, longitude and latitude map limits, geographic features, and
+        more. Also calls `BaseAxes.smart_update`.
 
         Parameters
         ----------
@@ -1795,21 +1789,17 @@ class MapAxes(BaseAxes):
         latmax : None or float, optional
             Meridian gridlines are cut off poleward of this latitude. If
             ``None``, read from the configuration.
-        lonlim, latlim : None or length-2 list of float, optional
+        lonlim, latlim : None or (float, float), optional
             Longitude and latitude limits of projection, applied
             with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
         grid : None or bool, optional
             Whether to add gridlines.
-        lonlines, latlines, lonticks, latticks
-            Aliases for `lonlocator`, `latlocator`.
         lonlocator, latlocator : None or list of float, optional
             List of longitudes and latitudes for drawing gridlines.
+        lonlines, latlines, lonticks, latticks
+            Aliases for `lonlocator`, `latlocator`.
         **kwargs
             Passed to `BaseAxes.smart_update`.
-
-        See also
-        --------
-        `BaseAxes.format`, `BaseAxes.smart_update`, `~proplot.subplots.subplots`, `~proplot.rcmod`
         """
         # Parse alternative keyword args
         # NOTE: If labels keyword args were passed, automatically turn grid on
@@ -1868,23 +1858,20 @@ class MapAxes(BaseAxes):
         return grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs
 
 class PolarAxes(XYAxes, mproj.PolarAxes):
-    """Intermediate class, mixes `~matplotlib.projections.polar.PolarAxes`
-    with `MapAxes`."""
+    """Intermediate class, mixes `XYAxes` with `~matplotlib.projections.polar.PolarAxes`."""
     def __init__(self, *args, **kwargs):
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `BaseAxes`, `MapAxes`
-
-        Warning
-        -------
-        Polar axes have not been tested yet!
+        `~proplot.subplots.subplots`
         """
         super().__init__(*args, **kwargs)
 
     def smart_update(self, *args, ytickloc=None, **kwargs):
         """
-        Format the tick locations, tick labels, grid lines, and more.
+        Called by `BaseAxes.format`, formats the tick locations, tick labels,
+        grid lines, and more. Also calls `BaseAxes.smart_update`.
+
         The keyword args are idential to those in `XYAxes.smart_update`,
         except the "theta" and "radius" axis properties respectively
         correspond to ``x`` and ``y`` keyword arguments.
@@ -1938,7 +1925,7 @@ class CartopyAxes(MapAxes, GeoAxes):
 
         See also
         --------
-        `~proplot.proj`, `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
+        `~proplot.proj`, `~proplot.subplots.subplots`
         """
         # Dependencies
         import cartopy.crs as ccrs # verify package is available
@@ -2201,7 +2188,7 @@ class BasemapAxes(MapAxes):
 
         See also
         --------
-        `~proplot.proj`, `BaseAxes`, `MapAxes`, `~proplot.subplots.subplots`
+        `~proplot.proj`, `~proplot.subplots.subplots`
         """
         # Notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method called

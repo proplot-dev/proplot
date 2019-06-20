@@ -120,7 +120,7 @@ _loc_translate = {
 def _sphinx_name(name):
     """Gets sphinx name."""
     if name=='cmapline':
-        return f'`~BaseAxes.{name}`'
+        return f'`~proplot.axes.BaseAxes.{name}`'
     else:
         return f'`~matplotlib.axes.Axes.{name}`'
 
@@ -424,7 +424,7 @@ def check_edges(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------#
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.plot`, calls `~BaseAxes.cmapline`
+    Wraps `~matplotlib.axes.Axes.plot`, calls `~proplot.axes.BaseAxes.cmapline`
     if ``cmap`` is passed by the user.
 
     Parameters
@@ -432,7 +432,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     *args
         Passed to `~matplotlib.axes.Axes.plot`.
     cmap, values
-        Passed to `~BaseAxes.cmapline`.
+        Passed to `~proplot.axes.BaseAxes.cmapline`.
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
@@ -1025,7 +1025,7 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
 @_expand_methods_list
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps 2D plotting functions for `CartopyAxes` (`_centers_edges_methods`).
+    Wraps 2D plotting functions for `~proplot.axes.CartopyAxes` (`_centers_edges_methods`).
 
     Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
     optionally make data coverage *global*. Passing ``globe=True`` does the
@@ -1302,7 +1302,7 @@ def cycle_wrapper(self, func, *args,
 
     See also
     --------
-    `BaseAxes`, `~proplot.colortools.Cycle`
+    `~proplot.axes.BaseAxes`, `~proplot.colortools.Cycle`
 
     Note
     ----
@@ -1595,15 +1595,15 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     lw, linewidth, linewidths
         Aliases. Refers to `linewidths` for `~matplotlib.axes.Axes.contour`,
         `linewidth` for `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, and `linewidth` for `BaseAxes.cmapline`.
+        `~matplotlib.axes.Axes.pcolormesh`, and `linewidth` for `~proplot.axes.BaseAxes.cmapline`.
     ls, linestyle, linestyles
         Aliases. Refers to `linestyles` for `~matplotlib.axes.Axes.contour`,
         `linestyle` for `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, and `linestyle` for `BaseAxes.cmapline`.
+        `~matplotlib.axes.Axes.pcolormesh`, and `linestyle` for `~proplot.axes.BaseAxes.cmapline`.
     color, colors, edgecolor, edgecolors
         Aliases. Refers to `colors` for `~matplotlib.axes.Axes.contour`,
         `edgecolors` for `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, and `color` for `BaseAxes.cmapline`.
+        `~matplotlib.axes.Axes.pcolormesh`, and `color` for `~proplot.axes.BaseAxes.cmapline`.
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
@@ -1625,7 +1625,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
     See also
     --------
-    `BaseAxes`, `~proplot.colortools.Colormap`,
+    `~proplot.axes.BaseAxes`, `~proplot.colortools.Colormap`,
     `~proplot.colortools.Norm`, `~proplot.colortools.BinNorm`,
     `~matplotlib.colors.Colormap`, `~matplotlib.colors.Normalize`
     """
@@ -1820,7 +1820,9 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs):
     """
-    Function for drawing a legend, with some handy added features.
+    Wraps `~matplotlib.axes.Axes` `~matplotlib.axes.Axes.legend` and
+    `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`, adds some
+    handy features.
 
     Parameters
     ----------
@@ -1885,7 +1887,7 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
 
     See also
     --------
-    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
+    `~proplot.axes.BaseAxes.colorbar`, `~proplot.axes.PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
     """
     # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
@@ -2127,8 +2129,9 @@ def colorbar_wrapper(self, mappable, values=None,
     orientation='horizontal',
     **kwargs):
     """
-    Function for filling an axes with a colorbar, with some handy added
-    features.
+    Wraps `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` and
+    `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`, adds some
+    handy features.
 
     Parameters
     ----------
@@ -2218,16 +2221,13 @@ def colorbar_wrapper(self, mappable, values=None,
 
     See also
     --------
-    `BaseAxes.colorbar`, `PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
+    `~proplot.axes.BaseAxes.colorbar`, `~proplot.axes.PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
     `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, `~proplot.colortools.Norm`
-
-    Warning
-    -------
-    Colorbar axes must be of type `matplotlib.axes.Axes`,
-    not `~proplot.axes.BaseAxes`, because colorbar uses some internal methods
-    that are wrapped by `~proplot.axes.BaseAxes`.
     """
     # Developer notes
+    # * Colorbar axes must be of type `matplotlib.axes.Axes`,
+    #   not `~proplot.axes.BaseAxes`, because colorbar uses some internal methods
+    #   that are wrapped by `~proplot.axes.BaseAxes`.
     # * There is an insanely weird problem with colorbars when simultaneously
     #   passing levels and norm object to a mappable; fixed by passing
     #   vmin/vmax instead of levels.

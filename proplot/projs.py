@@ -111,7 +111,8 @@ def Proj(name, basemap=False, **kwargs):
     Parameters
     ----------
     name : str
-        The projection name.
+        The projection name. For a table of valid names, see the
+        `~proplot.projs` documentation.
     basemap : bool, optional
         Whether to use the basemap or cartopy package. Defaults to ``False``.
     **kwargs
@@ -132,7 +133,7 @@ def Proj(name, basemap=False, **kwargs):
 
     See also
     --------
-    `~proplot.proj`, `CartopyAxes`, `BasemapAxes`
+    `CartopyAxes`, `BasemapAxes`
     """
     # Basemap
     kwextra = {}
@@ -152,9 +153,9 @@ def Proj(name, basemap=False, **kwargs):
     else:
         import cartopy.crs as ccrs # verify package is available
         kwargs = {_crs_translate.get(key, key): value for key,value in kwargs.items()}
-        crs = crs_projs.get(name, None)
+        crs = cartopy_projs.get(name, None)
         if crs is None:
-            raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(crs_projs.keys())}.')
+            raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
         for arg in ('boundinglat', 'centrallat'):
             if arg in kwargs:
                 kwextra[arg] = kwargs.pop(arg)
@@ -277,11 +278,11 @@ _crs_translate = { # add to this
     'lat_min': 'min_latitude',
     'lat_max': 'max_latitude',
     }
-crs_projs = {}
+cartopy_projs = {}
 """Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes."""
 if ccrs:
     # Custom ones, these are always present
-    crs_projs = { # interpret string, create cartopy projection
+    cartopy_projs = { # interpret string, create cartopy projection
       'aitoff':  Aitoff,
       'hammer':  Hammer,
       'kav7':    KavrayskiyVII,
@@ -331,7 +332,7 @@ if ccrs:
         if _class is None:
             _unavail.append(_name)
             continue
-        crs_projs[_name] = _class
+        cartopy_projs[_name] = _class
     if _unavail:
         warnings.warn(f'Cartopy projection(s) {", ".join(_unavail)} are unavailable. Consider updating to the latest version of cartopy.')
 

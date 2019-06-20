@@ -149,33 +149,33 @@ def Locator(locator, *args, **kwargs):
         Passed to the `~matplotlib.ticker.Locator` class.
 
 
-    For the dictionary lookup, options are as follows:
+    For the `locator` dictionary lookup, options are as follows:
 
-    ===================================  ===========================================
-    Key                                  Class
-    ===================================  ===========================================
-    ``'auto'``                           `~matplotlib.ticker.AutoLocator`
-    ``'minor'``                          `~matplotlib.ticker.AutoMinorLocator`
-    ``'date'``                           `~matplotlib.dates.AutoDateLocator`
-    ``'none'``, ``'null'``               `~matplotlib.ticker.NullLocator`
-    ``'log'``                            `~matplotlib.ticker.LogLocator`
-    ``'maxn'``                           `~matplotlib.ticker.MaxNLocator`
-    ``'linear'``                         `~matplotlib.ticker.LinearLocator`
-    ``'log'``                            `~matplotlib.ticker.LogLocator`
-    ``'multiple'``                       `~matplotlib.ticker.MultipleLocator`
-    ``'fixed'``                          `~matplotlib.ticker.FixedLocator`
-    ``'index'``                          `~matplotlib.ticker.IndexLocator`
-    ``'symmetric'``                      `~matplotlib.ticker.SymmetricalLogLocator`
-    ``'logit'``                          `~matplotlib.ticker.LogitLocator`
-    ``'year'``                           `~matplotlib.dates.YearLocator`
-    ``'month'``                          `~matplotlib.dates.MonthLocator`
-    ``'weekday'``                        `~matplotlib.dates.WeekdayLocator`
-    ``'day'``                            `~matplotlib.dates.DayLocator`
-    ``'hour'``                           `~matplotlib.dates.HourLocator`
-    ``'minute'``                         `~matplotlib.dates.MinuteLocator`
-    ``'second'``                         `~matplotlib.dates.SecondLocator`
-    ``'microsecond'``                    `~matplotlib.dates.MicrosecondLocator`
-    ===================================  ===========================================
+    ======================  ===========================================
+    Key                     Class
+    ======================  ===========================================
+    ``'auto'``              `~matplotlib.ticker.AutoLocator`
+    ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`
+    ``'date'``              `~matplotlib.dates.AutoDateLocator`
+    ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`
+    ``'log'``               `~matplotlib.ticker.LogLocator`
+    ``'maxn'``              `~matplotlib.ticker.MaxNLocator`
+    ``'linear'``            `~matplotlib.ticker.LinearLocator`
+    ``'log'``               `~matplotlib.ticker.LogLocator`
+    ``'multiple'``          `~matplotlib.ticker.MultipleLocator`
+    ``'fixed'``             `~matplotlib.ticker.FixedLocator`
+    ``'index'``             `~matplotlib.ticker.IndexLocator`
+    ``'symmetric'``         `~matplotlib.ticker.SymmetricalLogLocator`
+    ``'logit'``             `~matplotlib.ticker.LogitLocator`
+    ``'year'``              `~matplotlib.dates.YearLocator`
+    ``'month'``             `~matplotlib.dates.MonthLocator`
+    ``'weekday'``           `~matplotlib.dates.WeekdayLocator`
+    ``'day'``               `~matplotlib.dates.DayLocator`
+    ``'hour'``              `~matplotlib.dates.HourLocator`
+    ``'minute'``            `~matplotlib.dates.MinuteLocator`
+    ``'second'``            `~matplotlib.dates.SecondLocator`
+    ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`
+    ======================  ===========================================
 
     Returns
     -------
@@ -247,34 +247,34 @@ def Formatter(formatter, *args, date=False, **kwargs):
         Passed to the `~matplotlib.ticker.Formatter` class.
 
 
-    For the dictionary lookup, options are as follows:
+    For the `formatter` dictionary lookup, options are as follows:
 
-    ===================================  ================================================================
-    Key                                  Class
-    ===================================  ================================================================
-    ``'auto'``                           `AutoFormatter`
-    ``'date'``                           `~matplotlib.dates.AutoDateFormatter`
-    ``'scalar'``                         `~matplotlib.ticker.ScalarFormatter`
-    ``'none'``, ``'null'``               `~matplotlib.ticker.NullFormatter`
-    ``'null'``                           `~matplotlib.ticker.NullFormatter`
-    ``'strmethod'``                      `~matplotlib.ticker.StrMethodFormatter`
-    ``'formatstr'``                      `~matplotlib.ticker.FormatStrFormatter`
-    ``'eng'``                            `~matplotlib.ticker.LogFormatterMathtext`
-    ``'log'``, ``'sci'``                 `~matplotlib.ticker.LogFormatterSciNotation`
-    ``'logit'``                          `~matplotlib.ticker.LogitFormatter`
-    ``'eng'``                            `~matplotlib.ticker.EngFormatter`
-    ``'percent'``                        `~matplotlib.ticker.PercentFormatter`
-    ``'index'``                          `~matplotlib.ticker.IndexFormatter`
-    ``'simple'``                         `SimpleFormatter`
-    ``'deg'``                            `SimpleFormatter`, degree symbol
-    ``'lat'``                            `SimpleFormatter`, cardinal "SN" indicator without degree symbol
-    ``'lon'``                            `SimpleFormatter`, cardinal "WE" indicator without degree symbol
-    ``'deglat'``                         `SimpleFormatter`, cardinal "SN" indicator with degree symbol
-    ``'deglon'``                         `SimpleFormatter`, cardinal "WE" indicator with degree symbol
-    ``'frac'``                           `FracFormatter`
-    ``'pi'``                             `FracFormatter`, symbol :math:`\pi` and value `numpy.pi`
-    ``'e'``                              `FracFormatter`, symbol *e* and value `numpy.e`
-    ===================================  ================================================================
+    ======================  ================================================================
+    Key                     Class
+    ======================  ================================================================
+    ``'auto'``              `AutoFormatter`
+    ``'date'``              `~matplotlib.dates.AutoDateFormatter`
+    ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`
+    ``'none'``, ``'null'``  `~matplotlib.ticker.NullFormatter`
+    ``'null'``              `~matplotlib.ticker.NullFormatter`
+    ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`
+    ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`
+    ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`
+    ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`
+    ``'logit'``             `~matplotlib.ticker.LogitFormatter`
+    ``'eng'``               `~matplotlib.ticker.EngFormatter`
+    ``'percent'``           `~matplotlib.ticker.PercentFormatter`
+    ``'index'``             `~matplotlib.ticker.IndexFormatter`
+    ``'simple'``            `SimpleFormatter`
+    ``'deg'``               `SimpleFormatter`, degree symbol
+    ``'lat'``               `SimpleFormatter`, cardinal "SN" indicator without degree symbol
+    ``'lon'``               `SimpleFormatter`, cardinal "WE" indicator without degree symbol
+    ``'deglat'``            `SimpleFormatter`, cardinal "SN" indicator with degree symbol
+    ``'deglon'``            `SimpleFormatter`, cardinal "WE" indicator with degree symbol
+    ``'frac'``              `FracFormatter`
+    ``'pi'``                `FracFormatter`, symbol :math:`\pi` and value `numpy.pi`
+    ``'e'``                 `FracFormatter`, symbol *e* and value `numpy.e`
+    ======================  ================================================================
 
     Returns
     -------
@@ -343,26 +343,26 @@ def Scale(scale, *args, **kwargs):
         Passed to the `~matplotlib.scale.ScaleBase` class.
 
 
-    For the dictionary lookup, options are as follows:
+    For the `scale` dictionary lookup, options are as follows:
 
-    ========================  =======================================  ====================================================
-    Key                       Class or Factory                         Description
-    ========================  =======================================  ====================================================
-    ``'linear'``              `~matplotlib.scale.LinearScale`          Linear
-    ``'log'``                 `~matplotlib.scale.LogScale`             Logarithmic
-    ``'symlog'``              `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond finite space around zero
-    ``'logit'``               `~matplotlib.scale.LogitScale`           Logistic
-    ``'inverse'``             `InverseScale`                           Inverse
-    ``'quadratic'``           `PowerScaleFactory` preset               Quadratic function
-    ``'cubic'``               `PowerScaleFactory` preset               Cubic function
-    ``'height'``              `ExpScaleFactory` preset                 Pressure (in hPa) linear in height
-    ``'pressure'``            `ExpScaleFactory` preset                 Height (in km) linear in pressure
-    ``'sine'``                `SineLatitudeScale`                      Sine function (in degrees)
-    ``'mercator'``            `MercatorLatitudeScale`                  Mercator latitude function (in degrees)
-    ``'power'``               `PowerScaleFactory`                      Arbitrary power function
-    ``'exp'``                 `ExpScaleFactory`                        Arbitrary exponential function
-    ``'cutoff'``              `CutoffScaleFactory`                     Arbitrary linear transformations
-    ========================  =======================================  ====================================================
+    ===============  =======================================  ====================================================
+    Key              Class or Factory                         Description
+    ===============  =======================================  ====================================================
+    ``'linear'``     `~matplotlib.scale.LinearScale`          Linear
+    ``'log'``        `~matplotlib.scale.LogScale`             Logarithmic
+    ``'symlog'``     `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond finite space around zero
+    ``'logit'``      `~matplotlib.scale.LogitScale`           Logistic
+    ``'inverse'``    `InverseScale`                           Inverse
+    ``'quadratic'``  `PowerScaleFactory` preset               Quadratic function
+    ``'cubic'``      `PowerScaleFactory` preset               Cubic function
+    ``'height'``     `ExpScaleFactory` preset                 Pressure (in hPa) linear in height
+    ``'pressure'``   `ExpScaleFactory` preset                 Height (in km) linear in pressure
+    ``'sine'``       `SineLatitudeScale`                      Sine function (in degrees)
+    ``'mercator'``   `MercatorLatitudeScale`                  Mercator latitude function (in degrees)
+    ``'power'``      `PowerScaleFactory`                      Arbitrary power function
+    ``'exp'``        `ExpScaleFactory`                        Arbitrary exponential function
+    ``'cutoff'``     `CutoffScaleFactory`                     Arbitrary linear transformations
+    ===============  =======================================  ====================================================
 
     Returns
     -------
@@ -858,9 +858,9 @@ def CutoffScaleFactory(scale, lower, upper=None):
 class MercatorLatitudeScale(mscale.ScaleBase):
     r"""
     Scales axis as with latitudes in the `Mercator projection
-    <http://en.wikipedia.org/wiki/Mercator_projection>`_. Inspired by
+    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Inspired by
     :cite:`barnes_rossby_2011`, and adapted from `this matplotlib example
-    <https://matplotlib.org/examples/api/custom_scale_example.html>`_.
+    <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
 
     The scale function is as follows.
 
@@ -936,6 +936,7 @@ class _InvertedMercatorLatitudeTransform(mtransforms.Transform):
 
 class SineLatitudeScale(mscale.ScaleBase):
     r"""
+    Scales axis to be linear in the *sine* of *x* in degrees.
     The scale function is as follows.
 
     .. math::
@@ -1007,13 +1008,13 @@ class _InvertedSineLatitudeTransform(mtransforms.Transform):
 #------------------------------------------------------------------------------#
 class InverseScale(mscale.ScaleBase):
     r"""
-    The scale function and inverse scale function are as follows.
+    Scales axis to be linear in the *inverse* of *x*. The scale
+    function and inverse scale function are as follows.
 
     .. math::
 
         y = x^{-1}
 
-    This scales axis coordinates to be linear in the *inverse* of *x*.
     """
     # Developer notes:
     # Unlike log-scale, we can't just warp the space between

@@ -23,7 +23,6 @@ XYAxes
       ~XYAxes.indicate_inset_zoom
       ~XYAxes.inset
       ~XYAxes.inset_axes
-      ~XYAxes.inset_zoom
       ~XYAxes.smart_update
       ~XYAxes.twinx
       ~XYAxes.twiny
@@ -42,7 +41,6 @@ XYAxes
    .. automethod:: indicate_inset_zoom
    .. automethod:: inset
    .. automethod:: inset_axes
-   .. automethod:: inset_zoom
    .. automethod:: smart_update
    .. automethod:: twinx
    .. automethod:: twiny

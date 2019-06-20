@@ -69,16 +69,19 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 .. image:: showcase/showcase_71_1.svg
 
 
-Axis ticks and scales
----------------------
+Axis tick locations
+-------------------
 
-Specifying tick locations is much easier and much less verbose with
-ProPlot. Pass a number to tick every ``N`` data values, look up a
-builtin matplotlib `~matplotlib.ticker` with a string key name, or
-pass a list of numbers to tick specific locations. I recommend using
-ProPlot’s `~proplot.utils.arange` function to generate lists of ticks
-– it’s like numpy’s `~numpy.arange`, but is **endpoint-inclusive**,
-which more often than not is what you’ll want in this context. See
+ProPlot lets you easily specify tick locations with
+`~proplot.axes.BaseAxes.format` (keywords ``xlocator``, ``ylocator``,
+``xminorlocator``, and ``yminorlocator``, or their aliases ``xticks``,
+``yticks``, ``xminorticks``, and ``yminorticks``). Pass a number to tick
+every ``N`` data values, lookup a builtin matplotlib
+`~matplotlib.ticker` with a string key name, or pass a list of numbers
+to tick specific locations. I recommend using ProPlot’s
+`~proplot.utils.arange` function to generate lists of ticks – it’s
+like numpy’s `~numpy.arange`, but is **endpoint-inclusive**, which is
+usually what you’ll want in this context. See
 `~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Locator`
 for details.
 
@@ -247,7 +250,7 @@ for details.
     locators = [np.pi/3, np.pi/3, *([x*np.pi for x in plot.arange(0, 4, 0.25) if not (1 < x <= 2)] for i in range(2))]
     for ax,scale,title,locator in zip(axs,scales,titles,locators):
         ax.pcolormesh(x, dy, data, cmap='grays', cmap_kw={'right': 0.8})
-        for y,color in zip((y1,y2), ('coral','sky')):
+        for y,color in zip((y1,y2), ('coral','sky blue')):
             ax.plot(x, y, lw=4, color=color)
         ax.format(xscale=('cutoff', *scale), title=title,
                   xlim=(0,4*np.pi), ylabel='wave amplitude', # note since 'spanning labels' turned on by default, only one label is drawn
@@ -269,7 +272,7 @@ for details.
     y = 10*x
     data = np.random.rand(len(y)-1, len(x)-1)
     # Power scales
-    colors = ('coral','sky')
+    colors = ('coral','sky blue')
     for ax,power,color in zip(axs[:2],(2,1/4),colors):
         ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
         ax.plot(x, y, lw=4, color=color)
@@ -285,7 +288,7 @@ for details.
     y = np.linspace(-85,85,n) # note sine just truncated values not in [-90,90], but Mercator transformation can reflect them
     y2 = np.linspace(-85,85,n) # for pcolor
     data = np.random.rand(len(x), len(y2))
-    for ax,scale,color in zip(axs[4:],('sine','mercator'),('coral','sky')):
+    for ax,scale,color in zip(axs[4:],('sine','mercator'),('coral','sky blue')):
         ax.plot(x, y, '-', color=color, lw=4)
         ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8}) # use 'right' to trim the colormap from 0-1 color range to 0-0.8 color range
         ax.format(title=scale.title() + ' y-axis', yscale=scale,
