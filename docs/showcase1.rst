@@ -4,12 +4,13 @@ Introduction
 Matplotlib APIs
 ---------------
 
-Matplotlib has two APIs – the “pyplot” API (which is MATLAB-like), and
-the “object-oriented” API (which is more “pythonic”). Contrary to the
-similar names, this package is not meant to be a pyplot replacement.
-ProPlot’s features are invoked with the “object-oriented” API thanks to
-subclasses of the `~matplotlib.axes.Axes` and
-`~matplotlib.figure.Figure` classes.
+Matplotlib has `two
+APIs <https://matplotlib.org/api/api_overview.html>`__ – the “pyplot”
+API (which is MATLAB-like), and the “object-oriented” API (which is more
+“pythonic”). Contrary to the similar names, this package is not meant to
+be a pyplot replacement. ProPlot’s features are invoked with the
+“object-oriented” API, thanks to subclasses of the
+`~matplotlib.axes.Axes` and `~matplotlib.figure.Figure` classes.
 
 .. code:: ipython3
 
@@ -53,8 +54,8 @@ The subplots command
 --------------------
 
 The `~proplot.subplots.subplots` command is your gateway to all of
-ProPlot’s features. Its usage is sort of like the pyplot
-`~matplotlib.pyplot.subplots` version, but it is packed with new
+ProPlot’s features. Its usage is similar to the pyplot
+`~matplotlib.pyplot.subplots` command, but it is packed with new
 features and generates a subclassed figure and specially subclassed
 axes.
 
@@ -82,8 +83,7 @@ are inches, and if string, the units are interpreted by
 `~proplot.utils.units` (see `~proplot.utils.units` documentation for
 a table). Note this means even `~matplotlib.gridspec.GridSpec`
 arguments like ``wspace`` and ``hspace`` accept physical units (see
-`~proplot.subplots.subplots` for details). I recognize that the rest
-of the world doesn’t use “inches”, so I thought this would be useful.
+`~proplot.subplots.subplots` for details).
 
 .. code:: ipython3
 
@@ -107,11 +107,11 @@ of the world doesn’t use “inches”, so I thought this would be useful.
 .. image:: showcase/showcase_8_2.svg
 
 
-Subplot labelling is another useful ProPlot feature. The label order is
-row-major by default; to change this, use the
+A-b-c subplot labeling is another useful ProPlot feature. The label
+order is row-major by default; to change this, use the
 `~proplot.subplots.subplots` ``order`` keyword arg. Change the label
 position with the ``abcpos`` `~proplot.rcmod` option, or the label
-style with the ``abcformat`` `~proplot.rcmod` option. Toggle labelling
+style with the ``abcformat`` `~proplot.rcmod` option. Toggle labeling
 with ``abc=True``. See :ref:`The format command` and
 :ref:`Rc settings control` for details.
 
@@ -119,7 +119,7 @@ with ``abc=True``. See :ref:`The format command` and
 
     import proplot as plot
     f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
-    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labelling')
+    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labeling')
     f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
     axs.format(abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
 
@@ -134,23 +134,6 @@ with ``abc=True``. See :ref:`The format command` and
 .. image:: showcase/showcase_10_1.png
    :width: 562px
    :height: 572px
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
-    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labelling')
-    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
-    axs.format(abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
-
-
-
-.. image:: showcase/showcase_11_0.svg
-
-
-
-.. image:: showcase/showcase_11_1.svg
 
 
 To set up a complex grid of subplots, use a 2D array of integers. You
@@ -174,7 +157,7 @@ numbering determines the order of a-b-c labels. See
 
 
 
-.. image:: showcase/showcase_13_1.svg
+.. image:: showcase/showcase_12_1.svg
 
 
 Automatic subplot spacing
@@ -197,7 +180,7 @@ examples are below.
 
 Sometimes, ``tight=True`` is not possible (when using the cartopy
 ``set_extent`` method or when using cartopy meridian and parallel
-labelling; a warning will be raised in these instances). Even when
+labeling; a warning will be raised in these instances). Even when
 ``tight=False``, ProPlot tries to make the default spacing reasonable.
 
 .. code:: ipython3
@@ -210,11 +193,11 @@ labelling; a warning will be raised in these instances). Even when
 
 
 
-.. image:: showcase/showcase_16_0.svg
+.. image:: showcase/showcase_15_0.svg
 
 
 
-.. image:: showcase/showcase_16_1.svg
+.. image:: showcase/showcase_15_1.svg
 
 
 .. code:: ipython3
@@ -228,7 +211,7 @@ labelling; a warning will be raised in these instances). Even when
 
 
 
-.. image:: showcase/showcase_17_0.svg
+.. image:: showcase/showcase_16_0.svg
 
 
 .. code:: ipython3
@@ -242,7 +225,7 @@ labelling; a warning will be raised in these instances). Even when
 
 
 
-.. image:: showcase/showcase_18_0.svg
+.. image:: showcase/showcase_17_0.svg
 
 
 The format command
@@ -272,7 +255,7 @@ this function are interpreted as follows:
 3. Finally, the remaining keyword args are passed to the
    `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.format_partial`
    method. This one controls “universal” settings – namely, titles,
-   “super titles”, row and column labels, and a-b-c subplot labelling.
+   “super titles”, row and column labels, and a-b-c subplot labeling.
 
 Now, instead of having to remember all of these verbose, one-liner
 matplotlib commands like ``ax.set_title`` and ``ax.xaxis.tick_params``,
@@ -299,7 +282,7 @@ axes **simultaneously** (as in the below example).
 
 
 
-.. image:: showcase/showcase_20_0.svg
+.. image:: showcase/showcase_19_0.svg
 
 
 Automatic formatting
@@ -356,7 +339,7 @@ keywords, see `~proplot.wrappers.cmap_wrapper`,
 
 
 
-.. image:: showcase/showcase_23_0.svg
+.. image:: showcase/showcase_22_0.svg
 
 
 .. code:: ipython3
@@ -392,7 +375,7 @@ keywords, see `~proplot.wrappers.cmap_wrapper`,
 
 
 
-.. image:: showcase/showcase_24_0.svg
+.. image:: showcase/showcase_23_0.svg
 
 
 Rc settings control
@@ -442,7 +425,7 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
 
 
 
-.. image:: showcase/showcase_26_1.svg
+.. image:: showcase/showcase_25_1.svg
 
 
 The `~proplot.rcmod.rc` object can also be used to change the default
@@ -481,6 +464,6 @@ professional than the default “DejaVu Sans”. See the
 
 
 
-.. image:: showcase/showcase_28_0.svg
+.. image:: showcase/showcase_27_0.svg
 
 

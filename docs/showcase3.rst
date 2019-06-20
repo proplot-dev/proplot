@@ -33,19 +33,19 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_72_0.svg
+.. image:: showcase/showcase_71_0.svg
 
 
 
-.. image:: showcase/showcase_72_1.svg
+.. image:: showcase/showcase_71_1.svg
 
 
 
-.. image:: showcase/showcase_72_2.svg
+.. image:: showcase/showcase_71_2.svg
 
 
 
-.. image:: showcase/showcase_72_3.svg
+.. image:: showcase/showcase_71_3.svg
 
 
 .. code:: ipython3
@@ -62,11 +62,11 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_73_0.svg
+.. image:: showcase/showcase_72_0.svg
 
 
 
-.. image:: showcase/showcase_73_1.svg
+.. image:: showcase/showcase_72_1.svg
 
 
 Axis tick locations
@@ -105,7 +105,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: showcase/showcase_76_0.svg
+.. image:: showcase/showcase_75_0.svg
 
 
 Axis tick labels
@@ -129,7 +129,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_79_0.png
+.. image:: showcase/showcase_78_0.png
    :width: 569px
    :height: 237px
 
@@ -161,17 +161,16 @@ See `~proplot.axes.XYAxes.format_partial` and
 
 
 
-.. image:: showcase/showcase_81_0.svg
+.. image:: showcase/showcase_80_0.svg
 
 
 Datetime axes
 -------------
 
-Labelling datetime axes is incredibly easy with ProPlot. Pass a
-time-unit string as the ``locator`` argument, and the axis will be
-ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
-``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
-formatting of
+Labeling datetime axes is incredibly easy with ProPlot. Pass a time-unit
+string as the ``locator`` argument, and the axis will be ticked at those
+units. Pass a ``(unit, interval)`` tuple to tick every ``interval``
+``unit``\ s. Use the ``formatter`` argument for `%-style formatting of
 datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
 Again, see `~proplot.axes.XYAxes.format_partial`,
 `~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
@@ -199,7 +198,7 @@ details.
 
 
 
-.. image:: showcase/showcase_84_0.svg
+.. image:: showcase/showcase_83_0.svg
 
 
 Axis scales
@@ -229,7 +228,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_87_0.svg
+.. image:: showcase/showcase_86_0.svg
 
 
 .. code:: ipython3
@@ -259,7 +258,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_88_0.svg
+.. image:: showcase/showcase_87_0.svg
 
 
 .. code:: ipython3
@@ -298,7 +297,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_89_0.svg
+.. image:: showcase/showcase_88_0.svg
 
 
 Alternative units
@@ -347,11 +346,11 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_92_0.svg
+.. image:: showcase/showcase_91_0.svg
 
 
 
-.. image:: showcase/showcase_92_1.svg
+.. image:: showcase/showcase_91_1.svg
 
 
 .. code:: ipython3
@@ -377,7 +376,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_93_0.svg
+.. image:: showcase/showcase_92_0.svg
 
 
 Polar projections
@@ -406,6 +405,6 @@ more on specifying the projection.
 
 
 
-.. image:: showcase/showcase_96_0.svg
+.. image:: showcase/showcase_95_0.svg
 
 

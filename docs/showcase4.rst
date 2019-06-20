@@ -16,7 +16,7 @@ Note that in 2020, active development for `~mpl_toolkits.basemap` will
 stop. Its users are encouraged to switch to `cartopy`, which is
 integrated more closely with the matplotlib API and has more room for
 growth. However for the time being, `~mpl_toolkits.basemap` has one
-major advantage: meridian and parallel labelling. With `cartopy`,
+major advantage: meridian and parallel labeling. With `cartopy`,
 gridline labels are only possible with equirectangular and Mercator
 projections. With `~mpl_toolkits.basemap`, labels are possible with
 all projections. Further, the `~matplotlib.axes.Axes.tight_layout`
@@ -57,7 +57,7 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: showcase/showcase_101_1.svg
+.. image:: showcase/showcase_100_1.svg
 
 
 Registered basemap projections
@@ -88,7 +88,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_104_0.svg
+.. image:: showcase/showcase_103_0.svg
 
 
 Geophysical data
@@ -141,11 +141,11 @@ These features are powered by the `~proplot.axes.cartopy_gridfix` and
 
 
 
-.. image:: showcase/showcase_107_1.svg
+.. image:: showcase/showcase_106_1.svg
 
 
 
-.. image:: showcase/showcase_107_2.svg
+.. image:: showcase/showcase_106_2.svg
 
 
 Projection formatting
@@ -183,7 +183,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_110_0.svg
+.. image:: showcase/showcase_109_0.svg
 
 
 .. code:: ipython3
@@ -200,7 +200,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_111_0.svg
+.. image:: showcase/showcase_110_0.svg
 
 
 Zooming into projections
@@ -230,6 +230,6 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_113_0.svg
+.. image:: showcase/showcase_112_0.svg
 
 

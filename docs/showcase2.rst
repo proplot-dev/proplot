@@ -48,7 +48,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: showcase/showcase_33_1.svg
+.. image:: showcase/showcase_32_1.svg
 
 
 `~proplot.wrappers.cycle_wrapper` is primarily meant to let you easily
@@ -74,7 +74,7 @@ axes with `~matplotlib.axes.Axes.set_prop_cycle`.
 
 
 
-.. image:: showcase/showcase_35_0.svg
+.. image:: showcase/showcase_34_0.svg
 
 
 Thanks to `~proplot.wrappers.scatter_wrapper` and
@@ -108,7 +108,7 @@ keywords, which is a bit less confusing.
 
 
 
-.. image:: showcase/showcase_37_0.svg
+.. image:: showcase/showcase_36_0.svg
 
 
 `~proplot.wrappers.bar_wrapper` and
@@ -141,7 +141,7 @@ representing percentile ranges.
 
 
 
-.. image:: showcase/showcase_39_0.svg
+.. image:: showcase/showcase_38_0.svg
 
 
 The `~matplotlib.axes.Axes.fill_between` and
@@ -173,7 +173,7 @@ function, including “stacking” successive columns of a 2D input array.
 
 
 
-.. image:: showcase/showcase_41_0.svg
+.. image:: showcase/showcase_40_0.svg
 
 
 `~matplotlib.axes.Axes.boxplot` and
@@ -182,7 +182,7 @@ function, including “stacking” successive columns of a 2D input array.
 `~proplot.wrappers.violinplot_wrapper`, and
 `~proplot.wrappers.cycle_wrapper`, making it much easier to plot
 distributions of data with aesthetically pleasing default settings and
-automatic axis labelling.
+automatic axis labeling.
 
 .. code:: ipython3
 
@@ -202,7 +202,7 @@ automatic axis labelling.
 
 
 
-.. image:: showcase/showcase_43_0.svg
+.. image:: showcase/showcase_42_0.svg
 
 
 2d plot wrappers
@@ -250,7 +250,7 @@ and `~matplotlib.axes.Axes.pcolormesh` are called. Use
 
 
 
-.. image:: showcase/showcase_46_1.svg
+.. image:: showcase/showcase_45_1.svg
 
 
 To change the colormap normalizer, just pass ``norm`` and optionally
@@ -275,7 +275,7 @@ matter their spacing.
 
 
 
-.. image:: showcase/showcase_48_0.svg
+.. image:: showcase/showcase_47_0.svg
 
 
 To add `~matplotlib.axes.Axes.clabel` labels to
@@ -302,7 +302,7 @@ of the underlying box color.
 
 
 
-.. image:: showcase/showcase_50_0.svg
+.. image:: showcase/showcase_49_0.svg
 
 
 Colorbars and legends
@@ -340,7 +340,7 @@ colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
 
 
 
-.. image:: showcase/showcase_53_0.svg
+.. image:: showcase/showcase_52_0.svg
 
 
 Generating legends is the same as with matplotlib. When you call
@@ -381,7 +381,7 @@ legend frame.
 
 
 
-.. image:: showcase/showcase_55_0.svg
+.. image:: showcase/showcase_54_0.svg
 
 
 A particularly useful `~proplot.wrappers.colorbar_wrapper` feature is
@@ -412,7 +412,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_57_1.svg
+.. image:: showcase/showcase_56_1.svg
 
 
 Axes panels
@@ -441,7 +441,7 @@ will stay correctly aligned no matter the combination of panels. See
 
 
 
-.. image:: showcase/showcase_60_0.svg
+.. image:: showcase/showcase_59_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -480,7 +480,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_62_1.svg
+.. image:: showcase/showcase_61_1.svg
 
 
 Figure panels
@@ -512,7 +512,7 @@ details.
 
 
 
-.. image:: showcase/showcase_65_1.svg
+.. image:: showcase/showcase_64_1.svg
 
 
 .. code:: ipython3
@@ -535,7 +535,7 @@ details.
 
 
 
-.. image:: showcase/showcase_66_0.svg
+.. image:: showcase/showcase_65_0.svg
 
 
 Stacked panels
@@ -577,6 +577,6 @@ details.
 
 
 
-.. image:: showcase/showcase_68_0.svg
+.. image:: showcase/showcase_67_0.svg
 
 
