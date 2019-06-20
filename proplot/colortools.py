@@ -1040,8 +1040,8 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
 # Generalized colormap/cycle constructors
 #------------------------------------------------------------------------------#
 def colors(*args, **kwargs):
-    """Returns the list of colors embedded in the `~cycler.cycler` object
-    returned by `Cycle`."""
+    """Identical to `Cycle`, but returns a list of colors instead of
+    a `~cycler.Cycler` object."""
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
@@ -1066,10 +1066,10 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         * If string and a registered *colormap or color cycle name*
           name, that `~matplotlib.colors.LinearSegmentedColormap` or
           `~matplotlib.colors.ListedColormap` is used.
+        * If list of color strings or RGB tuples, the list is used to
+          make a `~matplotlib.colors.ListedColormap` *color cycle*.
         * If string and a *color string*, a monochromatic colormap is
           generated with `monochrome_cmap`.
-        * If list of color strings or RGB tuples, the list is used to
-          make a `~matplotlib.colors.ListedColormap`.
         * If dict, the items are passed as keyword args to the
           `~matplotlib.colors.LinearSegmentedColormap` or
           `PerceptuallyUniformColormap` `~PerceptuallyUniformColormap.from_hsl`
@@ -1303,19 +1303,18 @@ def Cycle(*args, samples=None, name=None, save=False,
     markersize=None, markeredgewidth=None, markeredgecolor=None, markerfacecolor=None,
     **kwargs):
     """
-    Calls `Colormap` and returns a `~cycler.cycler` object that cycles through
-    the ``'color'`` property by selecting colors from the colormap object.
-    Note that all "cycle names" (e.g. ``'colorblind'``, ``'538'``) are stored
-    and registered as `~matplotlib.colors.ListedColormap` colormaps, and are
-    therefore accessible from the `Colormap` command!
+    Calls `Colormap` and returns a `~cycler.Cycler` that cycles through colors
+    from the colormap. Since all "cycle names" (e.g. ``'colorblind'``, ``'538'``)
+    are stored and registered as `~matplotlib.colors.ListedColormap` colormaps,
+    they are accessible from the `Colormap` command.
 
-    1. If `Colormap` returns a `~matplotlib.colors.ListedColormap`, its
-       ``colors`` attribute is used for the cycle.
-    2. If `Colormap` returns a `~matplotlib.colors.LinearSegmentedColormap`,
-       sample colors are drawn and used for the cycle.
+    1. If `Colormap` returns a `~matplotlib.colors.ListedColormap` (i.e. is a
+       color cycle), its ``colors`` attribute is used as the cycle.
+    2. If `Colormap` returns a `~matplotlib.colors.LinearSegmentedColormap` (i.e.
+       is a traditional colormap), sample colors are drawn and used for the cycle.
 
-    If you just want a list of colors instead of a `~cycler.cycler` object,
-    use the `colors` function. If you want a `~cycler.cycler` object that
+    If you just want a list of colors instead of a `~cycler.Cycler` object,
+    use the `colors` function. If you want a `~cycler.Cycler` object that
     does not cycle through colors (e.g. just `linestyle`), call `Cycle`
     without any positional arguments.
 
@@ -1323,7 +1322,7 @@ def Cycle(*args, samples=None, name=None, save=False,
     ----------
     *args : colormap-spec or cycle-spec, optional
         If empty (i.e. no positional arguments are passed), the
-        `~cycler.cycler` object will not cycle through colors. The default
+        `~cycler.Cycler` object will not cycle through colors. The default
         draw color will always be black.
 
         If non-empty, `args` are passed to `Colormap`, and the resulting colors
@@ -1339,14 +1338,6 @@ def Cycle(*args, samples=None, name=None, save=False,
         of sample coordinates used to draw colors from the map, or an integer
         number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``.
-    marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : None or list of specs, optional
-        Lists of `~matplotlib.lines.Line2D` properties that can optionally be
-        added to the `~cycler.cycler` object. If the lists have unequal length,
-        they will be filled to match the length of the longest list.
-        See `~matplotlib.axes.Axes.set_prop_cycle` for more info on property cyclers.
-        Also see the `line style reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
-        `marker reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
-        and the `custom dashes reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
     name : None or str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap` used to
         register the color cycle. Default name is ``'no_name'``.
@@ -1354,12 +1345,20 @@ def Cycle(*args, samples=None, name=None, save=False,
         Whether to save the color cycle in the folder ``~/.proplot``. The
         folder is created if it does not already exist. The cycle is saved
         as a list of hex strings to the file ``name.hex``.
+    marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : None or list of specs, optional
+        Lists of `~matplotlib.lines.Line2D` properties that can optionally be
+        added to the `~cycler.Cycler` object. If the lists have unequal length,
+        they will be filled to match the length of the longest list.
+        See `~matplotlib.axes.Axes.set_prop_cycle` for more info on property cyclers.
+        Also see the `line style reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
+        `marker reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
+        and the `custom dashes reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
     **kwargs
         Passed to `Colormap`.
 
     Returns
     -------
-    `~cycler.cycler`
+    `~cycler.Cycler`
         A cycler instance that can be passed to `~matplotlib.axes.Axes.set_prop_cycle`.
     """
     # Add properties
@@ -1740,20 +1739,17 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         Key name for the normalizer. The recognized normalizer key names
         are as follows:
 
-        ===============  =================================
-        Key              Class
-        ===============  =================================
-        ``'none'``       `~matplotlib.colors.NoNorm`
-        ``'null'``       `~matplotlib.colors.NoNorm`
-        ``'zero'``       `MidpointNorm`
-        ``'midpoint'``   `MidpointNorm`
-        ``'segments'``   `LinearSegmentedNorm`
-        ``'segmented'``  `LinearSegmentedNorm`
-        ``'log'``        `~matplotlib.colors.LogNorm`
-        ``'linear'``     `~matplotlib.colors.Normalize`
-        ``'power'``      `~matplotlib.colors.PowerNorm`
-        ``'symlog'``     `~matplotlib.colors.SymLogNorm`
-        ===============  =================================
+        ===============================  ===============================
+        Key(s)                           Class
+        ===============================  ===============================
+        ``'midpoint'``, ``'zero'``       `MidpointNorm`
+        ``'segments'``, ``'segmented'``  `LinearSegmentedNorm`
+        ``'linear'``                     `~matplotlib.colors.Normalize`
+        ``'log'``                        `~matplotlib.colors.LogNorm`
+        ``'power'``                      `~matplotlib.colors.PowerNorm`
+        ``'symlog'``                     `~matplotlib.colors.SymLogNorm`
+        ``'none'``, ``'null'``           `~matplotlib.colors.NoNorm`
+        ===============================  ===============================
 
     levels, values : array-like
         The level edges (`levels`) or centers (`values`) passed
@@ -1940,14 +1936,13 @@ class BinNorm(mcolors.BoundaryNorm):
 class LinearSegmentedNorm(mcolors.Normalize):
     """
     This is the default normalizer paired with `BinNorm` whenever `levels`
-    are non-linearly spaced.
+    are non-linearly spaced. The normalized value is linear with respect to
+    its **average index** in the `levels` vector, allowing uniform color transitions
+    across **arbitrarily spaced** monotonically increasing values.
 
-    It follows the example of the `~matplotlib.colors.LinearSegmentedColormap`
-    source code and performs efficient, vectorized linear interpolation
-    between the provided boundary levels. That is, the normalized value is
-    linear with respect to its average **index** in the `levels` vector. This
-    allows color transitions with uniform intensity across **arbitrarily
-    spaced**, monotonically increasing points.
+    It accomplishes this following the example of the `~matplotlib.colors.LinearSegmentedColormap`
+    source code, by performing efficient, vectorized linear interpolation
+    between the provided boundary levels.
 
     Can be used by passing ``norm='segments'`` to any command accepting
     ``cmap``. The default midpoint is zero.

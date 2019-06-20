@@ -16,10 +16,12 @@ BaseAxes
 
    .. autosummary::
 
+      ~BaseAxes.area
+      ~BaseAxes.areax
       ~BaseAxes.cmapline
       ~BaseAxes.colorbar
       ~BaseAxes.format
-      ~BaseAxes.smart_update
+      ~BaseAxes.format_partial
       ~BaseAxes.__getattribute__
 
    .. rubric:: Attributes Documentation
@@ -28,8 +30,10 @@ BaseAxes
 
    .. rubric:: Methods Documentation
 
+   .. automethod:: area
+   .. automethod:: areax
    .. automethod:: cmapline
    .. automethod:: colorbar
    .. automethod:: format
-   .. automethod:: smart_update
+   .. automethod:: format_partial
    .. automethod:: __getattribute__

@@ -5,11 +5,11 @@ This page documents the axes subclasses that can be returned by
 start with the documentation on the following methods:
 
 * `BaseAxes.format`
-* `XYAxes.smart_update`
-* `MapAxes.smart_update`
-* `BaseAxes.smart_update`
+* `XYAxes.format_partial`
+* `MapAxes.format_partial`
+* `BaseAxes.format_partial`
 
-`BaseAxes.format` calls the various ``smart_update`` methods in turn,
+`BaseAxes.format` calls the various ``format_partial`` methods in turn,
 and is your **one-stop-shop for changing axes settings** like
 *x* and *y* axis limits, axis labels, tick locations, tick labels
 grid lines, axis scales, titles, a-b-c labelling, adding
@@ -398,8 +398,8 @@ class BaseAxes(maxes.Axes):
 
     def format(self, *, mode=2, rc_kw=None, **kwargs):
         """
-        Sets up temporary rc settings and calls `XYAxes.smart_update` or
-        `MapAxes.smart_update`.
+        Sets up temporary rc settings and calls `XYAxes.format_partial` or
+        `MapAxes.format_partial`.
 
         Parameters
         ----------
@@ -410,8 +410,8 @@ class BaseAxes(maxes.Axes):
         **kwargs
             Any of three options:
 
-            * A keyword arg for `BaseAxes.smart_update`,
-              `XYAxes.smart_update`, or `MapAxes.smart_update`.
+            * A keyword arg for `BaseAxes.format_partial`,
+              `XYAxes.format_partial`, or `MapAxes.format_partial`.
             * A global "rc" keyword arg, like ``linewidth`` or ``color``.
             * A standard "rc" keyword arg **with the dots omitted**.
               For example, ``land.color`` becomes ``landcolor``.
@@ -431,8 +431,8 @@ class BaseAxes(maxes.Axes):
 
         See also
         --------
-        `~proplot.rcmod`, `BaseAxes.smart_update`, `XYAxes.smart_update`,
-        `MapAxes.smart_update`
+        `~proplot.rcmod`, `BaseAxes.format_partial`, `XYAxes.format_partial`,
+        `MapAxes.format_partial`
         """
         # Figure out which kwargs are valid rc settings
         # WARNING: First part will fail horribly if mode is not zero!
@@ -457,14 +457,14 @@ class BaseAxes(maxes.Axes):
                 kw.update({'xloc':'top', 'xlabelloc':'top', 'xticklabelloc':'top'})
         kw.update(kw_extra)
         with rc.context(rc_kw, mode=mode):
-            self.smart_update(**kw)
+            self.format_partial(**kw)
 
-    def smart_update(self, title=None, abc=None,
+    def format_partial(self, title=None, abc=None,
         figtitle=None, suptitle=None, collabels=None, rowlabels=None, # label rows and columns
         top=True, # nopanel optionally puts title and abc label in main axes
         ):
         """
-        Called by `XYAxes.smart_update` and `MapAxes.smart_update`,
+        Called by `XYAxes.format_partial` and `MapAxes.format_partial`,
         formats the axes titles, a-b-c labelling, row and column labels,
         and figure title.
 
@@ -703,29 +703,41 @@ class BaseAxes(maxes.Axes):
             self.add_artist(patch)
         return cbar
 
+    def area(self, *args, **kwargs):
+        """Alias for `~matplotlib.axes.Axes.fill_between`, which is wrapped by
+        `~proplot.wrappers.fill_between_wrapper`."""
+        return self.fill_between(*args, **kwargs)
+
+    def areax(self, *args, **kwargs):
+        """Alias for `~matplotlib.axes.Axes.fill_betweenx`, which is wrapped by
+        `~proplot.wrappers.fill_betweenx_wrapper`."""
+        return self.fill_betweenx(*args, **kwargs)
+
     def cmapline(self, *args, values=None,
             cmap=None, norm=None,
             interp=0, **kwargs):
         """
-        Creates a "colormap line", i.e. a line whose color changes as a function
-        of the coordinate `values`. This is actually a collection of lines,
-        added as a `~matplotlib.collections.LineCollection` instance. See `this
-        matplotlib example <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
-        This method is invoked if you call `~matplotlib.axes.Axes.plot` with
-        the ``cmap`` keyword arg.
+        Invoked by `~proplot.wrappers.plot_wrapper` when you pass the `cmap`
+        keyword argument to `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
+        i.e. a line whose color changes as a function of some parametric coordinate
+        `values`. This is actually a collection of lines, added as a
+        `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
+        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
 
         Parameters
         ----------
-        values : list of float
-            Values corresponding to points on the line.
+        *args : (y,) or (x,y)
+            The coordinates. If `x` is not provided, it will be inferred from `y`.
         cmap : None or colormap spec, optional
-            Colormap specifier, passed to `~proplot.colortools.Colormap`.
+            The colormap specifier, passed to `~proplot.colortools.Colormap`.
+        values : list of float
+            The parametric values used to map points on the line to colors
+            in the colormap.
         norm : None or `~matplotlib.colors.Normalize`, optional
-            The normalizer, used for mapping `values` to colormap colors.
+            The normalizer, passed to `~proplot.colortools.Norm`.
         interp : int, optional
             Number of values between each line joint and each *halfway* point
             between line joints to which you want to interpolate.
-
         """
         # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates. Cannot
@@ -847,7 +859,7 @@ class XYAxes(BaseAxes):
         self.xaxis.set_major_formatter(formatter)
         formatter = axistools.Formatter('default')
         self.yaxis.set_major_formatter(formatter)
-        # Reset this; otherwise matplotlib won't automatically change
+        # Reset this, otherwise matplotlib won't automatically change
         # formatter when it encounters certain types of data, like datetime.
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
@@ -889,9 +901,14 @@ class XYAxes(BaseAxes):
             obj = wrappers._parse_2d_(self, obj)
         elif attr in wrappers._1d_methods:
             obj = wrappers._parse_1d_(self, obj)
+        # Step 0) Special wrappers
+        if attr=='fill_between':
+            obj = wrappers._fill_between_wrapper(self, obj)
+        elif attr=='fill_betweenx':
+            obj = wrappers._fill_betweenx_wrapper(self, obj)
         return obj
 
-    def smart_update(self,
+    def format_partial(self,
         xloc=None,          yloc=None,          # aliases for 'where to put spine'
         xmargin=None,       ymargin=None,
         xcolor=None,        ycolor=None,        # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
@@ -924,7 +941,7 @@ class XYAxes(BaseAxes):
         """
         Called by `BaseAxes.format`, formats the *x* and *y* axis labels,
         tick locations, tick labels, axis scales, spine settings, and more.
-        Also calls `BaseAxes.smart_update`.
+        Also calls `BaseAxes.format_partial`.
 
         Parameters
         ----------
@@ -1008,7 +1025,7 @@ class XYAxes(BaseAxes):
             If your axis ticks are doing weird things (for example, ticks
             drawn outside of the axis spine), try setting this to ``True``.
         **kwargs
-            Passed to `BaseAxes.smart_update`.
+            Passed to `BaseAxes.format_partial`.
 
         Note
         ----
@@ -1336,7 +1353,7 @@ class XYAxes(BaseAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         if (xlim is not None or ylim is not None) and self._inset_parent:
             self.indicate_inset_zoom()
-        super().smart_update(**kwargs)
+        super().format_partial(**kwargs)
 
     def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
         """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
@@ -1732,7 +1749,7 @@ class PanelAxes(XYAxes):
 class MapAxes(BaseAxes):
     """Intermediate class, shared by `CartopyAxes` and `BasemapAxes`.
     Disables methods that are inappropriate for map projections and adds
-    `MapAxes.smart_update`, so that arguments passed to `~BaseAxes.format` are
+    `MapAxes.format_partial`, so that arguments passed to `~BaseAxes.format` are
     identical for `CartopyAxes` and `BasemapAxes`."""
     def __init__(self, *args, **kwargs): # just to disable docstring inheritence
         """
@@ -1753,9 +1770,9 @@ class MapAxes(BaseAxes):
         return super().__getattribute__(attr, *args)
 
     # Note this *actually* just returns some standardized arguments
-    # to the CartopyAxes.smart_update and BasemapAxes.smart_update methods; they
-    # both jump over this intermediate class and call BaseAxes.smart_update
-    def smart_update(self, labels=None, latlabels=None, lonlabels=None,
+    # to the CartopyAxes.format_partial and BasemapAxes.format_partial methods; they
+    # both jump over this intermediate class and call BaseAxes.format_partial
+    def format_partial(self, labels=None, latlabels=None, lonlabels=None,
         latmax=None, lonlim=None, latlim=None, grid=None,
         lonlocator=None, lonlines=None, lonticks=None,
         latlocator=None, latlines=None, latticks=None,
@@ -1764,7 +1781,7 @@ class MapAxes(BaseAxes):
         """
         Called by `BaseAxes.format`, formats the meridian and parallel
         labels, longitude and latitude map limits, geographic features, and
-        more. Also calls `BaseAxes.smart_update`.
+        more. Also calls `BaseAxes.format_partial`.
 
         Parameters
         ----------
@@ -1799,7 +1816,7 @@ class MapAxes(BaseAxes):
         lonlines, latlines, lonticks, latticks
             Aliases for `lonlocator`, `latlocator`.
         **kwargs
-            Passed to `BaseAxes.smart_update`.
+            Passed to `BaseAxes.format_partial`.
         """
         # Parse alternative keyword args
         # NOTE: If labels keyword args were passed, automatically turn grid on
@@ -1867,23 +1884,23 @@ class PolarAxes(XYAxes, mproj.PolarAxes):
         """
         super().__init__(*args, **kwargs)
 
-    def smart_update(self, *args, ytickloc=None, **kwargs):
+    def format_partial(self, *args, ytickloc=None, **kwargs):
         """
         Called by `BaseAxes.format`, formats the tick locations, tick labels,
-        grid lines, and more. Also calls `BaseAxes.smart_update`.
+        grid lines, and more. Also calls `BaseAxes.format_partial`.
 
-        The keyword args are idential to those in `XYAxes.smart_update`,
+        The keyword args are idential to those in `XYAxes.format_partial`,
         except the "theta" and "radius" axis properties respectively
         correspond to ``x`` and ``y`` keyword arguments.
 
         To change the azimuthal position of radius labels, use ``ytickloc``.
-        For everything else, see `XYAxes.smart_update`.
+        For everything else, see `XYAxes.format_partial`.
         """
         # Extra stuff
         if ytickloc is not None:
             self.set_rlabel_position(ytickloc)
         # Call parent
-        super().smart_update(*args, **kwargs)
+        super().format_partial(*args, **kwargs)
 
     name = 'propolar'
     """The registered projection name."""
@@ -1990,9 +2007,14 @@ class CartopyAxes(MapAxes, GeoAxes):
             obj = wrappers._parse_2d_(self, obj)
         elif attr in wrappers._1d_methods:
             obj = wrappers._parse_1d_(self, obj)
+        # Step 0) Special wrappers
+        if attr=='fill_between':
+            obj = wrappers._fill_between_wrapper(self, obj)
+        elif attr=='fill_betweenx':
+            obj = wrappers._fill_betweenx_wrapper(self, obj)
         return obj
 
-    def smart_update(self, grid=None, **kwargs):
+    def format_partial(self, grid=None, **kwargs):
         # Documentation inherited from MapAxes
         # Dependencies
         import cartopy.feature as cfeature
@@ -2000,7 +2022,7 @@ class CartopyAxes(MapAxes, GeoAxes):
 
         # Parse flexible input
         grid, _, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
-                super().smart_update(**kwargs)
+                super().format_partial(**kwargs)
 
         # Projection extent
         # NOTE: They may add this as part of set_xlim and set_ylim in the
@@ -2129,7 +2151,7 @@ class CartopyAxes(MapAxes, GeoAxes):
         self.outline_patch.update(kw)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
-        BaseAxes.smart_update(self, **kwargs)
+        BaseAxes.format_partial(self, **kwargs)
 
 def _ls_translate(obj, style):
     """Make basemap gridlines look like cartopy lines using the `dashes`
@@ -2253,15 +2275,20 @@ class BasemapAxes(MapAxes):
                 obj = wrappers._parse_2d_(self, obj)
             elif attr in wrappers._1d_methods:
                 obj = wrappers._parse_1d_(self, obj)
-            # Step 0) Recursion fix at top level
+            # Step 0) Special wrappers
+            if attr=='fill_between':
+                obj = wrappers._fill_between_wrapper(self, obj)
+            elif attr=='fill_betweenx':
+                obj = wrappers._fill_betweenx_wrapper(self, obj)
+            # Recursion fix at top level
             obj = wrappers._m_norecurse(self, obj)
         return obj
 
-    def smart_update(self, grid=None, **kwargs):
+    def format_partial(self, grid=None, **kwargs):
         # Documentation inherited from MapAxes
         # Parse flexible input
         grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
-                super().smart_update(**kwargs)
+                super().format_partial(**kwargs)
         if lonlim is not None or latlim is not None:
             warnings.warn('You cannot "zoom into" a basemap projection after creating it. Pass a proj_kw dictionary in your call to subplots, with any of the following basemap keywords: llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, llcrnrx, llcrnry, urcrnrx, urcrnry, width, or height.')
 
@@ -2371,7 +2398,7 @@ class BasemapAxes(MapAxes):
             setattr(self, f'_{name}', feat)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
-        BaseAxes.smart_update(self, **kwargs)
+        BaseAxes.format_partial(self, **kwargs)
 
 # Register the projections
 mproj.register_projection(BaseAxes)

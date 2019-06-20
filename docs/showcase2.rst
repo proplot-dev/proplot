@@ -55,7 +55,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 change the color cycle, but it can also change arbitrary properties in
 the property cycle. It is used below by passing a ``cycle_kw``
 dictionary to `~matplotlib.axes.Axes.plot`, enabling a single-color
-dash style cycler. You can also get a `~cycler.cycler` object directly
+dash style cycler. You can also get a `~cycler.Cycler` object directly
 by calling the `~proplot.colortools.Cycle` command, and apply it to
 axes with `~matplotlib.axes.Axes.set_prop_cycle`.
 
@@ -144,6 +144,38 @@ representing percentile ranges.
 .. image:: showcase/showcase_39_0.svg
 
 
+The `~matplotlib.axes.Axes.fill_between` and
+`~matplotlib.axes.Axes.fill_betweenx` methods are also wrapped with
+`~proplot.wrappers.fill_between_wrapper` and
+`~proplot.wrappers.fill_betweenx_wrapper`, and given the convenient
+aliases `~proplot.axes.BaseAxes.area` and
+`~proplot.axes.BaseAxes.areax`. The wrappers allow similar
+functionality to the `pandas` `~pandas.DataFrame.plot.area`
+function, including “stacking” successive columns of a 2D input array.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=2, share=0)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
+    data = np.random.rand(5,3).cumsum(axis=0)
+    ax = axs[0]
+    ax.areax(np.arange(5), data, data + np.random.rand(5)[:,None], stacked=False, alpha=0.5,
+            legend='uc', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
+            )
+    ax.format(title='Fill between columns')
+    ax = axs[1]
+    ax.area(data, stacked=True, alpha=0.8,
+            legend='ul', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
+            )
+    ax.format(title='Stack between columns')
+
+
+
+.. image:: showcase/showcase_41_0.svg
+
+
 `~matplotlib.axes.Axes.boxplot` and
 `~matplotlib.axes.Axes.violinplot` are now wrapped with
 `~proplot.wrappers.boxplot_wrapper`,
@@ -170,7 +202,7 @@ automatic axis labelling.
 
 
 
-.. image:: showcase/showcase_41_0.svg
+.. image:: showcase/showcase_43_0.svg
 
 
 2d plot wrappers
@@ -218,7 +250,7 @@ and `~matplotlib.axes.Axes.pcolormesh` are called. Use
 
 
 
-.. image:: showcase/showcase_44_1.svg
+.. image:: showcase/showcase_46_1.svg
 
 
 To change the colormap normalizer, just pass ``norm`` and optionally
@@ -243,7 +275,7 @@ matter their spacing.
 
 
 
-.. image:: showcase/showcase_46_0.svg
+.. image:: showcase/showcase_48_0.svg
 
 
 To add `~matplotlib.axes.Axes.clabel` labels to
@@ -270,7 +302,7 @@ of the underlying box color.
 
 
 
-.. image:: showcase/showcase_48_0.svg
+.. image:: showcase/showcase_50_0.svg
 
 
 Colorbars and legends
@@ -308,7 +340,7 @@ colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
 
 
 
-.. image:: showcase/showcase_51_0.svg
+.. image:: showcase/showcase_53_0.svg
 
 
 Generating legends is the same as with matplotlib. When you call
@@ -349,7 +381,7 @@ legend frame.
 
 
 
-.. image:: showcase/showcase_53_0.svg
+.. image:: showcase/showcase_55_0.svg
 
 
 A particularly useful `~proplot.wrappers.colorbar_wrapper` feature is
@@ -380,7 +412,7 @@ corresponding colors.
 
 
 
-.. image:: showcase/showcase_55_1.svg
+.. image:: showcase/showcase_57_1.svg
 
 
 Axes panels
@@ -409,7 +441,7 @@ will stay correctly aligned no matter the combination of panels. See
 
 
 
-.. image:: showcase/showcase_58_0.svg
+.. image:: showcase/showcase_60_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -448,7 +480,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: showcase/showcase_60_1.svg
+.. image:: showcase/showcase_62_1.svg
 
 
 Figure panels
@@ -480,7 +512,7 @@ details.
 
 
 
-.. image:: showcase/showcase_63_1.svg
+.. image:: showcase/showcase_65_1.svg
 
 
 .. code:: ipython3
@@ -503,7 +535,7 @@ details.
 
 
 
-.. image:: showcase/showcase_64_0.svg
+.. image:: showcase/showcase_66_0.svg
 
 
 Stacked panels
@@ -545,6 +577,6 @@ details.
 
 
 
-.. image:: showcase/showcase_66_0.svg
+.. image:: showcase/showcase_68_0.svg
 
 

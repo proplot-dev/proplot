@@ -20,10 +20,10 @@ XYAxes
       ~XYAxes.alty
       ~XYAxes.dualx
       ~XYAxes.dualy
+      ~XYAxes.format_partial
       ~XYAxes.indicate_inset_zoom
       ~XYAxes.inset
       ~XYAxes.inset_axes
-      ~XYAxes.smart_update
       ~XYAxes.twinx
       ~XYAxes.twiny
       ~XYAxes.__getattribute__
@@ -38,10 +38,10 @@ XYAxes
    .. automethod:: alty
    .. automethod:: dualx
    .. automethod:: dualy
+   .. automethod:: format_partial
    .. automethod:: indicate_inset_zoom
    .. automethod:: inset
    .. automethod:: inset_axes
-   .. automethod:: smart_update
    .. automethod:: twinx
    .. automethod:: twiny
    .. automethod:: __getattribute__

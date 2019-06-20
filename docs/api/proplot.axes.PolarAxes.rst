@@ -16,7 +16,7 @@ PolarAxes
 
    .. autosummary::
 
-      ~PolarAxes.smart_update
+      ~PolarAxes.format_partial
 
    .. rubric:: Attributes Documentation
 
@@ -24,4 +24,4 @@ PolarAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: smart_update
+   .. automethod:: format_partial

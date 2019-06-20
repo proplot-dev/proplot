@@ -16,7 +16,7 @@ CartopyAxes
 
    .. autosummary::
 
-      ~CartopyAxes.smart_update
+      ~CartopyAxes.format_partial
       ~CartopyAxes.__getattribute__
 
    .. rubric:: Attributes Documentation
@@ -25,5 +25,5 @@ CartopyAxes
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: smart_update
+   .. automethod:: format_partial
    .. automethod:: __getattribute__

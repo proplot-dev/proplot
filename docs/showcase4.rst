@@ -57,7 +57,7 @@ Hammer, Winkel Tripel, and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: showcase/showcase_99_1.svg
+.. image:: showcase/showcase_101_1.svg
 
 
 Registered basemap projections
@@ -88,7 +88,7 @@ specify them.
 
 
 
-.. image:: showcase/showcase_102_0.svg
+.. image:: showcase/showcase_104_0.svg
 
 
 Geophysical data
@@ -141,11 +141,11 @@ These features are powered by the `~proplot.axes.cartopy_gridfix` and
 
 
 
-.. image:: showcase/showcase_105_1.svg
+.. image:: showcase/showcase_107_1.svg
 
 
 
-.. image:: showcase/showcase_105_2.svg
+.. image:: showcase/showcase_107_2.svg
 
 
 Projection formatting
@@ -163,10 +163,10 @@ To add and stylize geographic features (e.g. coastlines, land, country
 borders, and state borders), just use the
 `~proplot.axes.BaseAxes.format` method as with ordinary Cartesian
 axes. This time, `~proplot.axes.BaseAxes.format` will call the special
-`~proplot.axes.MapAxes` `~proplot.axes.MapAxes.smart_update` method.
-See `~proplot.subplots.subplots`,
-`~proplot.axes.MapAxes.smart_update`, and `~proplot.projs.Proj` for
-details.
+`~proplot.axes.MapAxes` `~proplot.axes.MapAxes.format_partial`
+method. See `~proplot.subplots.subplots`,
+`~proplot.axes.MapAxes.format_partial`, and `~proplot.projs.Proj`
+for details.
 
 .. code:: ipython3
 
@@ -183,7 +183,7 @@ details.
 
 
 
-.. image:: showcase/showcase_108_0.svg
+.. image:: showcase/showcase_110_0.svg
 
 
 .. code:: ipython3
@@ -200,7 +200,7 @@ details.
 
 
 
-.. image:: showcase/showcase_109_0.svg
+.. image:: showcase/showcase_111_0.svg
 
 
 Zooming into projections
@@ -213,7 +213,8 @@ Zooming into projections is done much as before. For
 ``urcrnrx``, ``urcrnry``, ``width``, and/or ``height`` keyword args. For
 `cartopy` projections, you can use
 `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or alternatively pass
-``lonlim`` and/or ``latlim`` to `~proplot.axes.MapAxes.smart_update`.
+``lonlim`` and/or ``latlim`` to
+`~proplot.axes.MapAxes.format_partial`.
 
 .. code:: ipython3
 
@@ -229,6 +230,6 @@ Zooming into projections is done much as before. For
 
 
 
-.. image:: showcase/showcase_111_0.svg
+.. image:: showcase/showcase_113_0.svg
 
 

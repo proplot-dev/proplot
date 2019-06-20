@@ -263,14 +263,14 @@ this function are interpreted as follows:
    “rc” setting will be applied to the axes. If the name has “dots”,
    simply omit them. See the `~proplot.rcmod` documentation for
    details.
-2. Remaining keyword args are passed to the ``smart_update`` methods of
-   the top-level class – that is, the `~proplot.axes.XYAxes`
-   `~proplot.axes.XYAxes.smart_update` or `~proplot.axes.MapAxes`
-   `~proplot.axes.MapAxes.smart_update` methods. Use these to change
+2. Remaining keyword args are passed to the ``format_partial`` methods
+   of the top-level class – that is, the `~proplot.axes.XYAxes`
+   `~proplot.axes.XYAxes.format_partial` or `~proplot.axes.MapAxes`
+   `~proplot.axes.MapAxes.format_partial` methods. Use these to change
    settings specific to Cartesian axes or specific to map projections,
    like tick locations and toggling geographic features.
 3. Finally, the remaining keyword args are passed to the
-   `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.smart_update`
+   `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.format_partial`
    method. This one controls “universal” settings – namely, titles,
    “super titles”, row and column labels, and a-b-c subplot labelling.
 

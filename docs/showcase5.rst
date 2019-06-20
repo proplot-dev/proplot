@@ -83,7 +83,7 @@ See `~proplot.colortools.CmapDict` for more info.
 
 
 
-.. image:: showcase/showcase_116_1.svg
+.. image:: showcase/showcase_118_1.svg
 
 
 On-the-fly colormaps
@@ -131,7 +131,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: showcase/showcase_119_1.svg
+.. image:: showcase/showcase_121_1.svg
 
 
 To build monochromatic colormaps from arbitrary colors, just pass a
@@ -159,7 +159,7 @@ is just one map.
 
 
 
-.. image:: showcase/showcase_121_0.svg
+.. image:: showcase/showcase_123_0.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -181,7 +181,7 @@ values.
 
 
 
-.. image:: showcase/showcase_123_0.svg
+.. image:: showcase/showcase_125_0.svg
 
 
 To rotate a cyclic colormap, pass the ``shift`` argument to
@@ -204,7 +204,7 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: showcase/showcase_125_0.svg
+.. image:: showcase/showcase_127_0.svg
 
 
 Perceptually uniform colormaps
@@ -246,7 +246,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_128_0.svg
+.. image:: showcase/showcase_130_0.svg
 
 
 .. code:: ipython3
@@ -256,7 +256,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_129_0.svg
+.. image:: showcase/showcase_131_0.svg
 
 
 .. code:: ipython3
@@ -266,7 +266,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: showcase/showcase_130_0.svg
+.. image:: showcase/showcase_132_0.svg
 
 
 You can generate your own
@@ -304,7 +304,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: showcase/showcase_132_0.svg
+.. image:: showcase/showcase_134_0.svg
 
 
 It is also easy to change the “gamma” of a
@@ -332,7 +332,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: showcase/showcase_134_0.svg
+.. image:: showcase/showcase_136_0.svg
 
 
 To see how the colors in a colormap vary across different colorspaces,
@@ -352,11 +352,11 @@ non-linear in saturation.
 
 
 
-.. image:: showcase/showcase_136_1.svg
+.. image:: showcase/showcase_138_1.svg
 
 
 
-.. image:: showcase/showcase_136_2.svg
+.. image:: showcase/showcase_138_2.svg
 
 
 Adding online colormaps
@@ -393,7 +393,7 @@ colormaps and color cycles.
 
 
 
-.. image:: showcase/showcase_141_0.svg
+.. image:: showcase/showcase_143_0.svg
 
 
 On-the-fly color cycles
@@ -436,7 +436,7 @@ methods.
 
 
 
-.. image:: showcase/showcase_144_0.svg
+.. image:: showcase/showcase_146_0.svg
 
 
 Finally, *colormaps* (or combinations thereof) can be used as sources
@@ -468,7 +468,7 @@ the colormap before drawing colors from said map. See
 
 
 
-.. image:: showcase/showcase_146_0.svg
+.. image:: showcase/showcase_148_0.svg
 
 
 Adding online color cycles
@@ -521,7 +521,7 @@ selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_151_0.svg
+.. image:: showcase/showcase_153_0.svg
 
 
 .. code:: ipython3
@@ -531,7 +531,7 @@ selecting colors for scientific visualizations.
 
 
 
-.. image:: showcase/showcase_152_0.svg
+.. image:: showcase/showcase_154_0.svg
 
 
 Individual color sampling
@@ -570,4 +570,4 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: showcase/showcase_155_0.svg
+.. image:: showcase/showcase_157_0.svg

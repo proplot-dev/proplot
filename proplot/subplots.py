@@ -1303,10 +1303,8 @@ class Figure(mfigure.Figure):
         return ax
 
 #-------------------------------------------------------------------------------
-# Primary plotting function; must be used to create figure/axes if user wants
-# to use the other features
+# Primary plotting function, used to create figure/axes
 #-------------------------------------------------------------------------------
-# Helper functions
 def _panels_kwargs(panels, colorbars, legends,
     panels_kw, colorbars_kw=None, legends_kw=None,
     figure=False, ncols=None, nrows=None):
@@ -1429,14 +1427,12 @@ def _panels_kwargs(panels, colorbars, legends,
     return kwout
 
 def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes used for scaling things
-    # Subplots
-    # Empty args are filled with rc settings by main body of subplots()
+    # Args filled with rc settings by main body of subplots()
     wextra, hextra,
     width,  height, axwidth, axheight,
     hspace, wspace, hratios, wratios,
     left,   bottom, right,   top,
-    # Panels
-    # Empty args are filled with rc settings by _panels_kwargs
+    # Args filled with rc settings by _panels_kwargs
     bspan, bwidth, bspace, bsep, bflush, bshare,
     lspan, lwidth, lspace, lsep, lflush, lshare,
     rspan, rwidth, rspace, rsep, rflush, rshare,
@@ -1581,7 +1577,6 @@ def _axes_dict(naxs, value, kw=False, default=None):
         raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i) for i in sorted(kwargs.keys()))}.')
     return kwargs
 
-# Primary function
 def subplots(array=None, ncols=1, nrows=1,
         # Figure settings
         ref=1, # reference axes for fixing aspect ratio

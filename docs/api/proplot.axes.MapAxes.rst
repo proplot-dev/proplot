@@ -10,10 +10,10 @@ MapAxes
 
    .. autosummary::
 
-      ~MapAxes.smart_update
+      ~MapAxes.format_partial
       ~MapAxes.__getattribute__
 
    .. rubric:: Methods Documentation
 
-   .. automethod:: smart_update
+   .. automethod:: format_partial
    .. automethod:: __getattribute__

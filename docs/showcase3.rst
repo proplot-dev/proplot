@@ -33,19 +33,19 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_70_0.svg
+.. image:: showcase/showcase_72_0.svg
 
 
 
-.. image:: showcase/showcase_70_1.svg
+.. image:: showcase/showcase_72_1.svg
 
 
 
-.. image:: showcase/showcase_70_2.svg
+.. image:: showcase/showcase_72_2.svg
 
 
 
-.. image:: showcase/showcase_70_3.svg
+.. image:: showcase/showcase_72_3.svg
 
 
 .. code:: ipython3
@@ -62,11 +62,11 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_71_0.svg
+.. image:: showcase/showcase_73_0.svg
 
 
 
-.. image:: showcase/showcase_71_1.svg
+.. image:: showcase/showcase_73_1.svg
 
 
 Axis tick locations
@@ -82,8 +82,8 @@ to tick specific locations. I recommend using ProPlot’s
 `~proplot.utils.arange` function to generate lists of ticks – it’s
 like numpy’s `~numpy.arange`, but is **endpoint-inclusive**, which is
 usually what you’ll want in this context. See
-`~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Locator`
-for details.
+`~proplot.axes.XYAxes.format_partial` and
+`~proplot.axistools.Locator` for details.
 
 .. code:: ipython3
 
@@ -105,7 +105,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_74_0.svg
+.. image:: showcase/showcase_76_0.svg
 
 
 Axis tick labels
@@ -129,7 +129,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_77_0.png
+.. image:: showcase/showcase_79_0.png
    :width: 569px
    :height: 237px
 
@@ -141,7 +141,7 @@ The builtin matplotlib formatters can be referenced by string name, and
 several new formatters have been introduced – for example, you can now
 easily label your axes as fractions or as geographic coordinates. You
 can also just pass a list of strings or a ``%``-style format directive.
-See `~proplot.axes.XYAxes.smart_update` and
+See `~proplot.axes.XYAxes.format_partial` and
 `~proplot.axistools.Formatter` for details.
 
 .. code:: ipython3
@@ -161,7 +161,7 @@ See `~proplot.axes.XYAxes.smart_update` and
 
 
 
-.. image:: showcase/showcase_79_0.svg
+.. image:: showcase/showcase_81_0.svg
 
 
 Datetime axes
@@ -173,7 +173,7 @@ ticked at those units. Pass a ``(unit, interval)`` tuple to tick every
 ``interval`` ``unit``\ s. Use the ``formatter`` argument for `%-style
 formatting of
 datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
-Again, see `~proplot.axes.XYAxes.smart_update`,
+Again, see `~proplot.axes.XYAxes.format_partial`,
 `~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
 details.
 
@@ -199,7 +199,7 @@ details.
 
 
 
-.. image:: showcase/showcase_82_0.svg
+.. image:: showcase/showcase_84_0.svg
 
 
 Axis scales
@@ -214,7 +214,7 @@ scales the axis as the sine of the coordinate, resulting in an
 is perfect for labeling spectral coordinates (this is more useful with
 the `~proplot.axes.XYAxes.dualx` and `~proplot.axes.XYAxes.dualy`
 commands; see :ref:`Alternative units`). See
-`~proplot.axes.XYAxes.smart_update` and `~proplot.axistools.Scale`
+`~proplot.axes.XYAxes.format_partial` and `~proplot.axistools.Scale`
 for details.
 
 .. code:: ipython3
@@ -229,7 +229,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_85_0.svg
+.. image:: showcase/showcase_87_0.svg
 
 
 .. code:: ipython3
@@ -259,7 +259,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_86_0.svg
+.. image:: showcase/showcase_88_0.svg
 
 
 .. code:: ipython3
@@ -298,7 +298,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_87_0.svg
+.. image:: showcase/showcase_89_0.svg
 
 
 Alternative units
@@ -347,11 +347,11 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_90_0.svg
+.. image:: showcase/showcase_92_0.svg
 
 
 
-.. image:: showcase/showcase_90_1.svg
+.. image:: showcase/showcase_92_1.svg
 
 
 .. code:: ipython3
@@ -377,15 +377,15 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_91_0.svg
+.. image:: showcase/showcase_93_0.svg
 
 
 Polar projections
 -----------------
 
 Polar axes in ProPlot work just like Cartesian axes, except the
-`~proplot.axes.XYAxes` `~proplot.axes.XYAxes.smart_update` ``x`` and
-``y`` keyword args correspond to the “theta” and “radius” axes,
+`~proplot.axes.XYAxes` `~proplot.axes.XYAxes.format_partial` ``x``
+and ``y`` keyword args correspond to the “theta” and “radius” axes,
 respectively. To declare polar axes, use `~proplot.subplots.subplots`
 to set the global projection ``proj='polar'`` or an axes-specific
 projection ``proj={1:'polar'}``; see :ref:`Map projection axes` for
@@ -406,6 +406,6 @@ more on specifying the projection.
 
 
 
-.. image:: showcase/showcase_94_0.svg
+.. image:: showcase/showcase_96_0.svg
 
 
