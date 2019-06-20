@@ -154,7 +154,7 @@ def Locator(locator, *args, **kwargs):
         Passed to the `~matplotlib.ticker.Locator` class.
 
 
-    For the `locator` dictionary lookup, options are as follows:
+    For the `locator` dictionary lookup, options are as follows.
 
     ======================  ===========================================
     Key                     Class
@@ -230,7 +230,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     Parameters
     ----------
     formatter : None, function, list of str, or str
-        If str, there are 4 possibilities:
+        If string, there are 4 possibilities:
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
            using the C-notation ``string % number`` method. See `this page
@@ -244,7 +244,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
            formatted by calling ``string.format(x=number)``.
         4. In all other cases, a dictionary lookup is performed (see below table).
 
-        If list of str, labels major ticks with these strings. Returns a
+        If list of string, labels major ticks with these strings. Returns a
         `~matplotlib.ticker.FixedFormatter` instance.
 
         If function, function is used to output label string from numeric
@@ -256,7 +256,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
         Passed to the `~matplotlib.ticker.Formatter` class.
 
 
-    For the `formatter` dictionary lookup, options are as follows:
+    For the `formatter` dictionary lookup, options are as follows.
 
     ======================  ================================================================
     Key                     Class
@@ -338,23 +338,25 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
 def Scale(scale, *args, **kwargs):
     """
-    Returns the registered name for a `~matplotlib.scale.ScaleBase` class,
-    used to interpret the `xscale` and `yscale` arguments when passed to
+    Returns the name for a registered or "on-the-fly" generated
+    `~matplotlib.scale.ScaleBase` class, used to interpret the `xscale`,
+    `xscale_kw`, `yscale`, and `yscale_kw` arguments when passed to
     `~proplot.axes.XYAxes.format_partial`.
 
     Parameters
     ----------
     scale : str or (str, *args)
-        If str, a dictionary lookup is performed (see below table).
+        If string, a dictionary lookup is performed (see below table).
 
-        If tuple and the str corresponds to one of the "factory"
-        functions (see below table), the ``args`` are passed to the
-        factory function.
+        If tuple and the string corresponds to one of the "on-the-fly" generator
+        functions (see below table), the `args` are passed to the generator
+        function.
     **kwargs
-        Passed to the `~matplotlib.scale.ScaleBase` class.
+        Passed to the scale generator function. Ignored if `scale` is an
+        existing registered scale name.
 
 
-    For the `scale` dictionary lookup, options are as follows:
+    For the `scale` dictionary lookup, options are as follows.
 
     ===============  =======================================  ====================================================
     Key              Class or Factory                         Description
@@ -390,6 +392,8 @@ def Scale(scale, *args, **kwargs):
     if scale in scales:
         if args:
             warnings.warn(f'Scale constructor ignored positional arguments {args}.')
+        if kwargs:
+            warnings.warn(f'Scale constructor ignored keyword arguments {kwargs}.')
         return scale # already registered
     # Build an on-the-fly scale
     # NOTE: The factories register the scales in one go

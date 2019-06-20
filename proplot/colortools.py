@@ -1062,7 +1062,7 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         are merged.
 
         If the arg is a `~matplotlib.colors.Colormap`, nothing more is done.
-        Otherwise, the arg is interpreted as follows:
+        Otherwise, the arg is interpreted as follows.
 
         * If string and a registered *colormap or color cycle name*
           name, that `~matplotlib.colors.LinearSegmentedColormap` or
@@ -1744,7 +1744,7 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     ----------
     norm_in : str or `~matplotlib.colors.Normalize`
         Key name for the normalizer. The recognized normalizer key names
-        are as follows:
+        are as follows.
 
         ===============================  ===============================
         Key(s)                           Class
@@ -1812,7 +1812,7 @@ class BinNorm(mcolors.BoundaryNorm):
     values ranging from 0-1 into **discrete** levels.
 
     Consider input levels of ``[0, 3, 6, 9, 12, 15]``. The algorithm is
-    as follows:
+    as follows.
 
     1. `levels` are normalized according to the input normalizer `norm`.
        If it is ``None``, they are not changed. Possible normalizers include
