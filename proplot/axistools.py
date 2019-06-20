@@ -133,7 +133,12 @@ import matplotlib.transforms as mtransforms
 # The axis_date() method just sets the converter to the date one
 def Locator(locator, *args, **kwargs):
     """
-    Returns a `~matplotlib.ticker.Locator` instance.
+    Returns a `~matplotlib.ticker.Locator` instance, used to interpret the
+    `xlocator`, `xlocator_kw`, `ylocator`, `ylocator_kw`, `xminorlocator`,
+    `xminorlocator_kw`, `yminorlocator`, and `yminorlocator_kw` arguments when
+    passed to `~proplot.axes.XYAxes.format_partial`, and the `locator`, `locator_kw`
+    `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
+    methods wrapped by `~proplot.wrappers.colorbar_wrapper`.
 
     Parameters
     ----------
@@ -216,7 +221,11 @@ def Locator(locator, *args, **kwargs):
 
 def Formatter(formatter, *args, date=False, **kwargs):
     r"""
-    Returns a `~matplotlib.ticker.Formatter` instance.
+    Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
+    `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
+    when passed to `~proplot.axes.XYAxes.format_partial`, and the `formatter`
+    and `formatter_kw` arguments when passed to colorbar methods wrapped by
+    `~proplot.wrappers.colorbar_wrapper`.
 
     Parameters
     ----------
@@ -329,7 +338,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
 def Scale(scale, *args, **kwargs):
     """
-    Returns a `~matplotlib.scale.ScaleBase` instance.
+    Returns the registered name for a `~matplotlib.scale.ScaleBase` class,
+    used to interpret the `xscale` and `yscale` arguments when passed to
+    `~proplot.axes.XYAxes.format_partial`.
 
     Parameters
     ----------

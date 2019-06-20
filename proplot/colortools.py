@@ -1051,8 +1051,9 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         save=False, N=None,
         **kwargs):
     """
-    Convenience function for generating and merging colormaps
-    in a variety of ways. See also `~proplot.axes.wrapper_cmap`.
+    Function for generating and merging colormaps in a variety of ways,
+    used to interpret the `cmap` and `cmap_kw` arguments when passed to
+    any plotting method wrapped by `~proplot.wrappers.cmap_wrapper`.
 
     Parameters
     ----------
@@ -1080,7 +1081,7 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         The resulting colormap can then be invoked by passing ``cmap='name'``
         to plotting functions like `~matplotlib.axes.Axes.contourf`.
     cyclic : bool, optional
-        Whether the colormap is cyclic. Will cause `~proplot.axes.wrapper_cmap`
+        Whether the colormap is cyclic. Will cause `~proplot.wrappers.cmap_wrapper`
         to pass this flag to `BinNorm`. This will prevent having the same color
         on either end of the colormap.
     fade : None or float, optional
@@ -1303,10 +1304,14 @@ def Cycle(*args, samples=None, name=None, save=False,
     markersize=None, markeredgewidth=None, markeredgecolor=None, markerfacecolor=None,
     **kwargs):
     """
-    Calls `Colormap` and returns a `~cycler.Cycler` that cycles through colors
-    from the colormap. Since all "cycle names" (e.g. ``'colorblind'``, ``'538'``)
-    are stored and registered as `~matplotlib.colors.ListedColormap` colormaps,
-    they are accessible from the `Colormap` command.
+    Calls `Colormap` and returns a `~cycler.Cycler` that cycles through
+    colormap colors, used to interpret the `cycle` and `cycle_kw` arguments
+    when passed to any plotting method wrapped by `~proplot.wrappers.cycle_wrapper`.
+    Since all "cycle names" (e.g. ``'colorblind'``, ``'538'``) are stored and
+    registered as `~matplotlib.colors.ListedColormap` colormaps, they are
+    accessible from the `Colormap` command.
+
+    The cycle colors are selected as follows.
 
     1. If `Colormap` returns a `~matplotlib.colors.ListedColormap` (i.e. is a
        color cycle), its ``colors`` attribute is used as the cycle.
@@ -1731,7 +1736,9 @@ def monochrome_cmap(color, fade, reverse=False, space='hpl', name='monochrome', 
 #------------------------------------------------------------------------------
 def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     """
-    Returns an arbitrary `~matplotlib.colors.Normalize` instance.
+    Returns an arbitrary `~matplotlib.colors.Normalize` instance, used to
+    interpret the `norm` and `norm_kw` arguments when passed to any plotting
+    method wrapped by `~proplot.wrappers.cmap_wrapper`.
 
     Parameters
     ----------

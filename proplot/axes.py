@@ -228,15 +228,11 @@ class BaseAxes(maxes.Axes):
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):
-        """
-        Wraps methods when they are requested by the user. See
-        `~proplot.wrappers.text_wrapper`, and `~proplot.wrappers.legend_wrapper`
-        for more info. Disables redundant methods: `_disabled_methods`.
-
-        Enables the attribute aliases ``bpanel`` for ``bottompanel``,
-        ``tpanel`` for ``toppanel``, ``lpanel`` for ``leftpanel``, and
-        ``rpanel`` for ``rightpanel``.
-        """
+        """Applies the `~proplot.wrappers.text_wrapper` and
+        `~proplot.wrappers.legend_wrapper` wrappers, and disables the redundant
+        methods `_disabled_methods`. Also enables the attribute aliases
+        ``bpanel`` for ``bottompanel``, ``tpanel`` for ``toppanel``,
+        ``lpanel`` for ``leftpanel``, and ``rpanel`` for ``rightpanel``."""
         attr = _aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
         # Disabled methods
@@ -714,8 +710,8 @@ class BaseAxes(maxes.Axes):
         return self.fill_betweenx(*args, **kwargs)
 
     def cmapline(self, *args, values=None,
-            cmap=None, norm=None,
-            interp=0, **kwargs):
+        cmap=None, norm=None,
+        interp=0, **kwargs):
         """
         Invoked by `~proplot.wrappers.plot_wrapper` when you pass the `cmap`
         keyword argument to `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
@@ -733,7 +729,7 @@ class BaseAxes(maxes.Axes):
         values : list of float
             The parametric values used to map points on the line to colors
             in the colormap.
-        norm : None or `~matplotlib.colors.Normalize`, optional
+        norm : None or normalizer spec, optional
             The normalizer, passed to `~proplot.colortools.Norm`.
         interp : int, optional
             Number of values between each line joint and each *halfway* point
@@ -869,10 +865,13 @@ class XYAxes(BaseAxes):
         self._ytick_pad_error = (0,0)
 
     def __getattribute__(self, attr, *args):
-        """Wraps methods when they are requested by the user. See
-        `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-        `~proplot.wrappers.check_centers`, and `~proplot.wrappers.check_edges`
-        for more info."""
+        """Applies the `~proplot.wrappers.cmap_wrapper`,
+        `~proplot.wrappers.cycle_wrapper`, `~proplot.wrappers.check_centers`,
+        `~proplot.wrappers.check_edges`, `~proplot.wrappers.plot_wrapper`,
+        `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.bar_wrapper`,
+        `~proplot.wrappers.barh_wrapper`, `~proplot.wrappers.boxplot_wrapper`,
+        `~proplot.wrappers.violinplot_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
+        and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
         obj = super().__getattribute__(attr, *args)
         # Step 3) Color usage wrappers
         if attr in wrappers._cmap_methods: # must come first!
@@ -1762,8 +1761,8 @@ class MapAxes(BaseAxes):
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):
-        """Disables methods inappropriate for map projections:
-        `_map_disabled_methods`."""
+        """Disables the methods `_map_disabled_methods`, which are inappropriate
+        for map projections."""
         # See: https://stackoverflow.com/a/23126260/4970632
         if attr in wrappers._map_disabled_methods:
             raise RuntimeError('Invalid plotting function {} for map projection axes.'.format(attr))
@@ -1810,9 +1809,11 @@ class MapAxes(BaseAxes):
             Longitude and latitude limits of projection, applied
             with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
         grid : None or bool, optional
-            Whether to add gridlines.
-        lonlocator, latlocator : None or list of float, optional
-            List of longitudes and latitudes for drawing gridlines.
+            Whether to add meridian and parallel gridlines.
+        lonlocator, latlocator : None or int or list of float, optional
+            If integer, indicates the *number* of evenly spaced meridian and
+            parallel gridlines to draw. Otherwise, must be a list of floats
+            indicating specific meridian and parallel gridlines to draw.
         lonlines, latlines, lonticks, latticks
             Aliases for `lonlocator`, `latlocator`.
         **kwargs
@@ -1935,11 +1936,6 @@ class CartopyAxes(MapAxes, GeoAxes):
         *args, **kwargs
             Passed to `BaseAxes.__init__`.
 
-        Note
-        ----
-        The circle stuff for polar projection was developed from `this example
-        <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
-
         See also
         --------
         `~proplot.proj`, `~proplot.subplots.subplots`
@@ -1975,11 +1971,12 @@ class CartopyAxes(MapAxes, GeoAxes):
             self.set_boundary(projs.Circle(self._n_bounds), transform=self.transAxes)
 
     def __getattribute__(self, attr, *args):
-        """Wraps methods when they are requested by the user. See
-        `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-        `~proplot.wrappers.cartopy_transform`, `~proplot.wrappers.check_centers`,
-        `~proplot.wrappers.check_edges`, and `~proplot.wrappers.cartopy_gridfix`
-        for more info."""
+        """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
+        `~proplot.wrappers.check_centers`, `~proplot.wrappers.check_edges`,
+        `~proplot.wrappers.cartopy_gridfix`, `~proplot.wrappers.cartopy_transform`,
+        `~proplot.wrappers.cartopy_crs`, `~proplot.wrappers.plot_wrapper`,
+        `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
+        and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
         obj = super().__getattribute__(attr, *args)
         # Step 4) Color usage wrappers
         if attr in wrappers._cmap_methods:
@@ -2233,16 +2230,16 @@ class BasemapAxes(MapAxes):
         super().__init__(*args, **kwargs)
 
     def __getattribute__(self, attr, *args):
-        """
-        Wraps methods when they are requested by the user. See
-        `~proplot.wrappers.basemap_latlon`, `~proplot.wrappers.check_centers`,
-        `~proplot.wrappers.check_edges`, and `~proplot.wrappers.basemap_gridfix` for more info.
-
-        Wraps all plotting methods with ``_m_call`` and ``_m_norecurse``,
-        which (former) calls methods on the `~mpl_toolkits.basemap.Basemap`
-        instance and (latter) prevents recursion issues arising from internal
-        calls to axes methods by the `~mpl_toolkits.basemap.Basemap` instance.
-        """
+        """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
+        `~proplot.wrappers.check_centers`, `~proplot.wrappers.check_edges`,
+        `~proplot.wrappers.basemap_gridfix`, `~proplot.wrappers.basemap_latlon`,
+        `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
+        `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
+        wrappers. Also wraps all plotting methods with the hidden ``_m_call``
+        and ``_m_norecurse`` wrappers. Respectively, these call methods on
+        the `~mpl_toolkits.basemap.Basemap` instance and prevent recursion
+        issues arising from internal `~mpl_toolkits.basemap` calls to the
+        axes methods."""
         # WARNING: Never ever try to just make blanket methods on the Basemap
         # instance accessible from axes instance! Can of worms and had bunch of
         # weird errors! Just pick the ones you think user will want to use.

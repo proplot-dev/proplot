@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Introduces the generalized `~mpl_toolkits.basemap` `~mpl_toolkits.basemap.Basemap`
+Introduces the generalized `~mpl_toolkits.basemap.Basemap`
 and `cartopy.crs.Projection` projection instantiator "`Proj`".
 Also "registers" cartopy projections by their `PROJ.4 aliases
 <https://proj4.org/operations/projections/index.html>`_ like in
@@ -89,24 +89,25 @@ except ModuleNotFoundError:
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
 #     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 
-# Paths for cartopy projection boundaries
-# WARNING: Tempting to use classmethod mpath.Path.circle, but this ends up
-# failing and drawing weird polygon. Need manual approach.
-# mpath.Path([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]) # rectangle
 def Circle(N=100):
-    """Returns a circle `~matplotlib.path.Path`. Used as the outline
+    """Returns a circle `~matplotlib.path.Path` used as the outline
     for polar stereographic, azimuthal equidistant, and Lambert
-    conformal projections."""
+    conformal projections. This was developed from `this cartopy example
+    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
+    """
+    # WARNING: Tempting to use classmethod mpath.Path.circle, but this ends up
+    # failing and drawing weird polygon. Need manual approach.
+    # mpath.Path([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]) # rectangle
     theta = np.linspace(0, 2*np.pi, N)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
     return mpath.Path(verts * radius + center)
 
-# Constructor function
 def Proj(name, basemap=False, **kwargs):
     """
     Returns a `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-    instance.
+    instance, used to interpret the `proj` and `proj_kw` arguments when
+    passed to `~proplot.subplots.subplots`.
 
     Parameters
     ----------
@@ -124,19 +125,18 @@ def Proj(name, basemap=False, **kwargs):
     proj : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
         The projection instance.
     aspect : float
-        The aspect ratio.
-    kwextra : dict
-        Extra keyword args. These are still "projection" arguments but
-        need to be passed to the *axes* initializer instead of the
-        `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
-        initializers. So far only used by `~proplot.axes.CartopyAxes`.
+        The map projection aspect ratio.
+    axes_kw : dict
+        "Projection" arguments that must be passed to the *axes* initializer
+        instead of `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`.
+        So far only used with `~proplot.axes.CartopyAxes`.
 
     See also
     --------
     `CartopyAxes`, `BasemapAxes`
     """
     # Basemap
-    kwextra = {}
+    axes_kw = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         name = _basemap_cyl.get(name, name)
@@ -158,11 +158,11 @@ def Proj(name, basemap=False, **kwargs):
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
         for arg in ('boundinglat', 'centrallat'):
             if arg in kwargs:
-                kwextra[arg] = kwargs.pop(arg)
+                axes_kw[arg] = kwargs.pop(arg)
         proj = crs(**kwargs)
         aspect = (np.diff(proj.x_limits) / \
                   np.diff(proj.y_limits))[0]
-    return proj, aspect, kwextra
+    return proj, aspect, axes_kw
 
 # Simple projections
 # Inspired by source code for Mollweide implementation
