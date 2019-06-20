@@ -555,6 +555,10 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     stacked : bool, optional
         If `y2` is ``None``, this indicates whether to "stack" successive
         columns of the `y1` array.
+    where : ndarray, optional
+        Boolean ndarray of points you want to shade. Use this to e.g. shade
+        positive values one color and negative values another color.
+        See `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_between`.
     """
@@ -584,6 +588,10 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
     stacked : bool, optional
         If `x2` is ``None``, this indicates whether to "stack" successive
         columns of the `x1` array.
+    where : ndarray, optional
+        Boolean ndarray of points you want to shade. Use this to e.g. shade
+        positive values one color and negative values another color.
+        See `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_betweenx`.
     """

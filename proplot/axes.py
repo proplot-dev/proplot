@@ -939,9 +939,9 @@ class XYAxes(BaseAxes):
         xminorlocator_kw={}, yminorlocator_kw={},
         **kwargs):
         """
-        Called by `BaseAxes.format`, formats the *x* and *y* axis labels,
-        tick locations, tick labels, axis scales, spine settings, and more.
-        Also calls `BaseAxes.format_partial`.
+        Called by `BaseAxes.format`, calls `BaseAxes.format_partial` and
+        formats the *x* and *y* axis labels, tick locations, tick labels,
+        axis scales, spine settings, and more.
 
         Parameters
         ----------
@@ -1779,9 +1779,9 @@ class MapAxes(BaseAxes):
         **kwargs,
         ):
         """
-        Called by `BaseAxes.format`, formats the meridian and parallel
-        labels, longitude and latitude map limits, geographic features, and
-        more. Also calls `BaseAxes.format_partial`.
+        Called by `BaseAxes.format`, calls `BaseAxes.format_partial` and
+        formats the meridian and parallel labels, longitude and latitude map
+        limits, geographic features, and more.
 
         Parameters
         ----------
@@ -1886,8 +1886,8 @@ class PolarAxes(XYAxes, mproj.PolarAxes):
 
     def format_partial(self, *args, ytickloc=None, **kwargs):
         """
-        Called by `BaseAxes.format`, formats the tick locations, tick labels,
-        grid lines, and more. Also calls `BaseAxes.format_partial`.
+        Called by `BaseAxes.format`, calls `BaseAxes.format_partial` and
+        formats the tick locations, tick labels, grid lines, and more.
 
         The keyword args are idential to those in `XYAxes.format_partial`,
         except the "theta" and "radius" axis properties respectively
