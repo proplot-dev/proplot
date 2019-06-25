@@ -109,26 +109,21 @@ the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ t
 Despite all this, if there are any matplotlib developers out there that think
 some ProPlot features could be added to matplotlib directly, please contact me!
 
-What about seaborn?
--------------------
+What about other matplotlib wrappers?
+-------------------------------------
 
 There is already a great matplotlib wrapper called
-`seaborn <https://seaborn.pydata.org/>`__. What makes this project
+`seaborn <https://seaborn.pydata.org/>`__, and convenience plotting tools offered by `pandas <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__ and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__. What makes this project
 different?
 
-While parts of ProPlot were inspired by seaborn, the goals
-are largely different. Seaborn introduces new functions for
-generating useful visualizations quickly, and works best when used with ``pandas.DataFrame``
-objects. ProPlot incorporates similar automation when plotting
-``pandas.DataFrame`` or ``xarray.DataArray`` objects, but critically, it
-focuses on allowing the user to build highly customized plots and complex grids
-of subplots when necessary, and allows users to work painlessly with geographic data.
-Seaborn's features are accessible only from commands
-on the module itself, while ProPlot's features are built right into the matplotlib API, thanks
-to special subclasses of the native matplotlib ``Figure`` and ``Axes``
-classes. Notably, rather than using "palettes", ProPlot uses the native matplotlib ``LinearSegmentedColormap`` and ``ListedColormap`` for color control. This gives user a gentle learning curve, but also permits a number of powerful features well beyond the scope of seaborn.
+While parts of ProPlot were inspired by these wrappers, the goals
+are largely different. Seaborn, pandas, and xarray introduce new functions for
+generating useful visualizations *quickly*, and they require your data to be stored in special objects (``pandas.DataFrame`` and ``xarray.DataArray``) to be effective.
+ProPlot includes this automation as an option and gives you nice-looking plots out of the box -- but critically, it also permits the user to build
+*highly customized plots and complex grids of subplots*, and allows users to work painlessly with geographic data.
+While existing projects exist as separate toolset on top of matplotlib, ProPlot is built right into the matplotlib API, thanks to special subclasses of the native matplotlib ``Figure`` and ``Axes`` classes. This gives user a gentle learning curve, but also permits a number of powerful features well beyond the scope of seaborn.
 
-In summary, this project is intended as a companion or alternative to Seaborn, designed from the ground up to wrap the matplotlib API directly rather than relying on external functions.
+In summary, this project is intended to unify the convenience of seaborn, pandas, and xarray plotting with the power and customizability of the underlying matplotlib API.
 
 Contributions
 -------------
