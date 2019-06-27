@@ -14,41 +14,25 @@ be a pyplot replacement. ProPlot’s features are invoked with the
 
 .. code:: ipython3
 
+    # PyPlot API
     import matplotlib.pyplot as plt
     import numpy as np
     plt.figure(figsize=(5,3))
     plt.plot(np.random.rand(10,10), lw=3)
-    plt.title('PyPlot API (discouraged)')
+    plt.title('Title')
     plt.xlabel('x axis')
     plt.ylabel('y axis')
 
-
-
-
-
-
-
-.. image:: showcase/showcase_2_1.svg
-
-
 .. code:: ipython3
 
+    # Object-oriented API
     import matplotlib.pyplot as plt
     import numpy as np
     f, ax = plt.subplots(figsize=(5,3))
     ax.plot(np.random.rand(10,10), lw=3)
-    ax.set_title('Object-oriented API (recommended)')
+    ax.set_title('Title')
     ax.set_xlabel('x axis')
     ax.set_ylabel('y axis')
-
-
-
-
-
-
-
-.. image:: showcase/showcase_3_1.svg
-
 
 The subplots command
 --------------------
@@ -62,49 +46,31 @@ axes.
 .. code:: ipython3
 
     import proplot as plot
-    f, ax = plot.subplots(width=2)
+    f, ax = plot.subplots()
     ax.format(title='ProPlot API', xlabel='x axis', ylabel='y axis')
-    f, axs = plot.subplots(ncols=3, nrows=2, width=5)
-    axs.format(title='Axes', suptitle='ProPlot API', xlabel='x axis', ylabel='y axis')
 
 
 
 .. image:: showcase/showcase_6_0.svg
 
 
-
-.. image:: showcase/showcase_6_1.svg
-
-
-Most matplotlib sizing arguments assume the units “inches” or some
-“relative” unit size – e.g. relative to the axes width. With ProPlot,
-most sizing arguments are interpreted as follows: if numeric, the units
+Most matplotlib sizing arguments assume the units inches or some
+*relative* unit size – e.g. relative to the axes width. With ProPlot,
+all sizing arguments are interpreted the same way. If numeric, the units
 are inches, and if string, the units are interpreted by
-`~proplot.utils.units` (see `~proplot.utils.units` documentation for
-a table). Note this means even `~matplotlib.gridspec.GridSpec`
-arguments like ``wspace`` and ``hspace`` accept physical units (see
-`~proplot.subplots.subplots` for details).
+`~proplot.utils.units`. A table of acceptable units is found in the
+`~proplot.utils.units` documentation. See
+`~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
 
     import proplot as plot
-    f, axs1 = plot.subplots(ncols=2, axwidth=1, height='45mm')
-    f, axs2 = plot.subplots(width='5cm', aspect=(2,1))
-    f, axs3 = plot.subplots(height='150pt', aspect=0.5)
-    for axs in (axs1,axs2,axs3):
-        axs.format(suptitle='Title', xlabel='x axis', ylabel='y axis')
+    f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
+    axs.format(suptitle='Figure title', xlabel='x axis', ylabel='y axis')
 
 
 
 .. image:: showcase/showcase_8_0.svg
-
-
-
-.. image:: showcase/showcase_8_1.svg
-
-
-
-.. image:: showcase/showcase_8_2.svg
 
 
 A-b-c subplot labeling is another useful ProPlot feature. The label
@@ -234,40 +200,39 @@ The format command
 The `~proplot.subplots.subplots` method populates the
 `~proplot.subplots.Figure` object with either `~proplot.axes.XYAxes`
 (for cartesian axes) or `~proplot.axes.MapAxes` (for cartopy or
-basemap map projection axes). Both of these classes inherit from the
-base class `~proplot.axes.BaseAxes`.
+basemap projection axes) axes objects. Both of these classes inherit
+from the base class `~proplot.axes.BaseAxes`.
 
 The **most important** new method you need to know is
 `~proplot.axes.BaseAxes.format`. This is your one-stop-shop for
 changing axis labels, tick labels, titles, etc. Keyword args passed to
 this function are interpreted as follows:
 
-1. Any keyword arg matching the name of a ProPlot or native matplotlib
-   “rc” setting will be applied to the axes. If the name has “dots”,
-   simply omit them. See the `~proplot.rcmod` documentation for
-   details.
-2. Remaining keyword args are passed to the ``format_partial`` methods
-   of the top-level class – that is, the `~proplot.axes.XYAxes`
-   `~proplot.axes.XYAxes.format_partial` or `~proplot.axes.MapAxes`
-   `~proplot.axes.MapAxes.format_partial` methods. Use these to change
-   settings specific to Cartesian axes or specific to map projections,
-   like tick locations and toggling geographic features.
-3. Finally, the remaining keyword args are passed to the
-   `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.format_partial`
-   method. This one controls “universal” settings – namely, titles,
-   “super titles”, row and column labels, and a-b-c subplot labeling.
+1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
+   setting will be applied to the axes. If the name has “dots”, simply
+   omit them. See the `~proplot.rcmod` documentation for details.
+2. Remaining keyword args are passed to the `~proplot.axes.XYAxes` or
+   `~proplot.axes.MapAxes` ``format_partial`` methods. Use these to
+   change settings specific to Cartesian or map projection axes,
+   e.g. changing tick locations (the former) or toggling geographic
+   features (the latter).
+3. Remaining keyword args are passed to the `~proplot.axes.BaseAxes`
+   ``format_partial`` method. This one controls settings shared by
+   `~proplot.axes.XYAxes` and `~proplot.axes.MapAxes` axes – namely,
+   titles, “super titles”, row and column labels, and a-b-c subplot
+   labeling.
 
-Now, instead of having to remember all of these verbose, one-liner
-matplotlib commands like ``ax.set_title`` and ``ax.xaxis.tick_params``,
-or even having to directly use verbose classes like the matplotlib
-`~matplotlib.ticker` classes, `~proplot.axes.BaseAxes.format` lets
-you change everything all at once. This basically eliminates the need
-for boilerplate plotting code!
+Instead of needing all of these verbose, one-liner matplotlib commands
+like ``ax.set_title`` and ``ax.xaxis.tick_params``, or even using
+verbose abstract classes like the matplotlib `~matplotlib.ticker`
+classes, `~proplot.axes.BaseAxes.format` lets you change everything at
+once and adds several useful shorthands. This effectively eliminates the
+need for boilerplate plotting code.
 
-Also note the axes returned by `~proplot.subplots.subplots` function
-are in a special `~proplot.subplots.axes_list` list. This lets you
-call any method, including `~proplot.axes.BaseAxes.format`, on every
-axes **simultaneously** (as in the below example).
+The axes returned by `~proplot.subplots.subplots` are also contained
+in a special `~proplot.subplots.axes_list` list. This lets you call
+any method (e.g. `~proplot.axes.BaseAxes.format`) on every axes
+**simultaneously**. See the below example.
 
 .. code:: ipython3
 
@@ -288,15 +253,16 @@ axes **simultaneously** (as in the below example).
 Automatic formatting
 --------------------
 
-ProPlot also adds back some of the convenience you get with the
-`pandas` and `xarray` plotting commands. By default, when you plot a
-`~pandas.DataFrame` or `~xarray.DataArray`, the x-axis label, y-axis
-label, and title are updated from the metadata. To disable this
-behavior, pass ``autoformat=False`` to `~proplot.subplots.subplots`.
+With ProPlot, when you pass a `~pandas.DataFrame` or
+`~xarray.DataArray` to any plotting command, labels and colorbars can
+be generated automatically, and the x-axis label, y-axis label, legend
+label, colorbar label, and/or title are configured from the metadata.
+This restores some of the convenience you get with the builtin
+`pandas` and `xarray` plotting tools. To disable automatic
+labelling, pass ``autoformat=False`` to `~proplot.subplots.subplots`.
 
-The below examples showcase this feature for 1-dimensional and
-2-dimensional datasets. It also demonstrates automatic generation of
-colorbars and legends. For more on the ``colorbar`` and ``legend``
+The below examples showcase these features for 1-dimensional and
+2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keywords, see `~proplot.wrappers.cmap_wrapper`,
 `~proplot.wrappers.cycle_wrapper`, and :ref:`2d plot wrappers` and
 :ref:`1d plot wrappers` sections. For more on panels, see the

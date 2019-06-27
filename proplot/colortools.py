@@ -2171,12 +2171,12 @@ def _read_cmap_cycle_data(filename):
 
 def register_cmaps():
     """
-    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
-    folder. Maps are named according to their filenames -- for example,
+    Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
+    folder. Maps are registered according to their filenames -- for example,
     ``name.xyz`` will be registered as ``'name'``. Use `~proplot.demos.cmap_show`
     to generate a table of the registered colormaps
 
-    Valid file extensions are described in the below table.
+    Valid file formats are described in the below table.
 
     =====================  =============================================================================================================================================================================================================
     Extension              Description
@@ -2230,12 +2230,13 @@ def register_cmaps():
 
 def register_cycles():
     """
-    Registers colormaps packaged with ProPlot or saved to the ``~/.proplot/cycles``
-    folder. Cycles are named according to their filenames -- for example,
-    ``name.hex`` will be registered as ``'name'``. Use `~proplot.demos.cycle_show`
-    to generate a table of the registered cycles.
+    Adds color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
+    folder. Cycles are registered according to their filenames -- for example,
+    ``name.hex`` will be registered under the name ``'name'`` as a
+    `~matplotlib.colors.ListedColormap` map (see `Cycle` for details). Use
+    `~proplot.demos.cycle_show` to generate a table of the registered cycles.
 
-    For valid file extensions, see `register_cmaps`.
+    For valid file formats, see `register_cmaps`.
     """
     # Read cycles from directories
     icycles = {}

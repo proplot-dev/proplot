@@ -51,13 +51,15 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 .. image:: showcase/showcase_32_1.svg
 
 
-`~proplot.wrappers.cycle_wrapper` is primarily meant to let you easily
-change the color cycle, but it can also change arbitrary properties in
-the property cycle. It is used below by passing a ``cycle_kw``
-dictionary to `~matplotlib.axes.Axes.plot`, enabling a single-color
-dash style cycler. You can also get a `~cycler.Cycler` object directly
-by calling the `~proplot.colortools.Cycle` command, and apply it to
-axes with `~matplotlib.axes.Axes.set_prop_cycle`.
+`~proplot.wrappers.cycle_wrapper` can be used to change arbitrary
+properties in the property cycle – not just color. Below, a single-color
+dash style cycler is used by passing a ``cycle_kw`` dictionary to
+`~matplotlib.axes.Axes.plot`. To change the local property cycle, you
+can also pass the `~cycler.Cycler` returned by
+`~proplot.colortools.Cycle` to
+`~matplotlib.axes.Axes.set_prop_cycle`. To change it globally, set the
+relevant `~proplot.rcmod.rc` property with
+``plot.rc['axes.prop_cycle'] = cycle``.
 
 .. code:: ipython3
 
@@ -79,7 +81,7 @@ axes with `~matplotlib.axes.Axes.set_prop_cycle`.
 
 Thanks to `~proplot.wrappers.scatter_wrapper` and
 `~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
-now accepts 2D arrays like `~matplotlib.axes.Axes.plot`, and
+now accepts 2D arrays, just like `~matplotlib.axes.Axes.plot`. Also,
 successive calls to `~matplotlib.axes.Axes.scatter` can apply property
 cycle keys other than ``color`` – for example, ``marker`` and
 ``markersize``. `~matplotlib.axes.Axes.scatter` also now optionally
@@ -116,8 +118,8 @@ keywords, which is a bit less confusing.
 bar plots. You can now pass 2d arrays to `~matplotlib.axes.Axes.bar`
 or `~matplotlib.axes.Axes.barh`, and columns of data will be grouped
 or stacked together. You can also request that columns are interpreted
-as data ranges, and use bars to plot the medians with error bars
-representing percentile ranges.
+as data ranges, with the means or medians represented by bars and the
+spread represented by error bars.
 
 .. code:: ipython3
 
