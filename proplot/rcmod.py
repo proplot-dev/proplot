@@ -941,7 +941,7 @@ See the `~proplot.rcmod` documentation for details."""
 #       common.json gives option to hide incompatible plugs, and notebook.json contains all
 #       the new settings; just copy it over to current notebook to update
 #------------------------------------------------------------------------------#
-def nb_setup(backend='inline'):
+def nb_setup():
     """
     Optionally called on import, results in higher-quality iPython notebook
     inline figures. Also enables the useful `autoreload
@@ -965,29 +965,30 @@ def nb_setup(backend='inline'):
             ipython.magic("reload_ext autoreload") # reload instead of load, to avoid annoying message
         ipython.magic("autoreload " + str(_rcGlobals['autoreload'])) # turn on expensive autoreloading
 
-    # Autosaving
-    # Capture the annoying message + 2 line breaks
-    if _rcGlobals['autosave']:
-        with io.capture_output() as _:
-            ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
-
     # Initialize with default 'inline' settings
     # Reset rc object afterwards
-    ipython.magic("matplotlib " + backend) # change print_figure_kwargs to see edges
-    rc.reset()
-
-    # Retina probably more space efficient (high-res bitmap), but svg is prettiest
-    # and is only one preserving vector graphics
-    ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
-
-    # Control all settings with 'rc' object, *no* notebook-specific overrides
-    ipython.magic("config InlineBackend.rc = {}")
-
-    # Disable matplotlib tight layout, use proplot instead
-    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
-
-    # So don't have memory issues/have to keep re-closing them
-    ipython.magic("config InlineBackend.close_figures = True")
+    try:
+        # For notebooks
+        ipython.magic("matplotlib inline") # change print_figure_kwargs to see edges
+        rc.reset()
+    except Exception:
+        # For ipython sessions
+        ipython.magic("matplotlib qt") # change print_figure_kwargs to see edges
+        rc.reset()
+    else:
+        # Autosaving, capture the annoying message + 2 line breaks
+        if _rcGlobals['autosave']:
+            with io.capture_output() as _:
+                ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
+        # Retina probably more space efficient (high-res bitmap), but svg is prettiest
+        # and is only one preserving vector graphics
+        ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
+        # Control all settings with 'rc' object, *no* notebook-specific overrides
+        ipython.magic("config InlineBackend.rc = {}")
+        # Disable matplotlib tight layout, use proplot instead
+        ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
+        # So don't have memory issues/have to keep re-closing them
+        ipython.magic("config InlineBackend.close_figures = True")
 
 # Run nbsetup
 if _rcGlobals['nbsetup']:
