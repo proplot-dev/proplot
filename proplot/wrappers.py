@@ -234,7 +234,7 @@ def _parse_1d(self, func, *args, **kwargs):
         if isinstance(iy, ndarray):
             x = np.arange(iy.size)
         elif isinstance(iy, DataArray): # DataArray
-            x = iy.coords[iy.dims[1 if columns else 0]]
+            x = iy.coords[iy.dims[0]]
         elif isinstance(iy, Series): # Series
             x = iy.index
         else: # Index
@@ -284,26 +284,28 @@ def _parse_1d(self, func, *args, **kwargs):
         # Boxplot accepts a 'labels' argument but violinplot does not, so
         # we try to set the locators and formatters here.
         if name in ('boxplot','violinplot'):
-            label, labels = None, None
-            if isinstance(y, DataFrame):
+            label, ticks = None, None
+            if isinstance(y, ndarray):
+                pass
+            elif isinstance(y, DataFrame):
+                ticks = y.columns
                 label = _auto_label(y.columns)
-                labels = y.columns
             elif isinstance(y, DataArray) and y.ndim>1:
+                ticks = y.coords[y.dims[1]].values
                 label = _auto_label(y.coords[y.dims[1]])
-                labels = y.coords[y.dims[1]].values
             if label:
                 kw[xaxis + 'label'] = label
-            if labels is not None: # TODO: support for e.g. date axes?
-                labels = getattr(labels, 'values', labels)
-                labels = np.array(labels)
-                if labels.dtype=='object':
-                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(labels)
+            if ticks is not None: # TODO: support for e.g. date axes?
+                ticks = getattr(ticks, 'values', ticks)
+                ticks = np.array(ticks)
+                if ticks.dtype=='object':
+                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(ticks)
                     if name=='boxplot':
-                        kwargs['labels'] = labels # requires or get overwritten
+                        kwargs['labels'] = ticks # requires or get overwritten
                     else:
-                        kwargs['positions'] = np.arange(len(labels))
+                        kwargs['positions'] = np.arange(len(ticks))
                 else:
-                    kwargs['positions'] = np.arange(len(labels))
+                    kwargs['positions'] = np.arange(len(ticks))
             y = getattr(y, 'values', y)
             y = np.array(y)
         # Append standardized y
@@ -1515,12 +1517,12 @@ def cycle_wrapper(self, func, *args,
                 iyss = tuple(iy[:] if is1d else iy[:,i] for iy in iys)
             if label or isinstance(y, ndarray):
                 pass
-            elif isinstance(y, DataArray):
-                label = y.coords[y.dims[1]].values[i]
-                label_cl = _auto_label(y.coords[y.dims[1]]) # coordinate label
             elif isinstance(y, DataFrame):
                 label = y.columns[i]
                 label_cl = _auto_label(y.columns) # coordinate label
+            elif isinstance(y, DataArray) and y.ndim>1:
+                label = y.coords[y.dims[1]].values[i]
+                label_cl = _auto_label(y.coords[y.dims[1]]) # coordinate label
             else:
                 label = _auto_label(iyss[0]) # e.g. a pd.Series name
             kw['label'] = label
