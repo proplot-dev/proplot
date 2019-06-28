@@ -554,7 +554,7 @@ class BaseAxes(maxes.Axes):
             'fontname':  'fontname'
             }, cache=True)
         kw = tax._parse_title_args(**kw)
-        if title:
+        if title is not None:
             kw['text'] = title
         if kw:
             tax.title = _update_text(tax.title, **kw)
@@ -908,26 +908,25 @@ class XYAxes(BaseAxes):
         return obj
 
     def format_partial(self,
-        xloc=None,          yloc=None,          # aliases for 'where to put spine'
-        xmargin=None,       ymargin=None,
-        xcolor=None,        ycolor=None,        # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
-        xspineloc=None,     yspineloc=None,     # deals with spine options
-        xtickloc=None,      ytickloc=None,      # which spines to draw ticks on
-        fixticks=False, # whether to always transform locator to FixedLocator
-        xlabelloc=None,     ylabelloc=None,
+        xloc=None, yloc=None, # aliases for 'where to put spine'
+        xmargin=None, ymargin=None,
+        xcolor=None, ycolor=None, # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
+        xspineloc=None, yspineloc=None, # deals with spine options
+        xtickloc=None, ytickloc=None, fixticks=False, # whether to always transform locator to FixedLocator
+        xlabelloc=None, ylabelloc=None,
         xticklabelloc=None, yticklabelloc=None, # where to put tick labels
-        xtickdir=None,      ytickdir=None,      # which direction ('in', 'out', or 'inout')
-        xgrid=None,         ygrid=None,         # gridline toggle
-        xgridminor=None,    ygridminor=None,    # minor grids on/off (if ticks off, grid will always be off)
-        xtickminor=True,    ytickminor=True,    # minor ticks on/off
+        xtickdir=None, ytickdir=None, # which direction ('in', 'out', or 'inout')
+        xgrid=None, ygrid=None, # gridline toggle
+        xgridminor=None, ygridminor=None, # minor grids on/off (if ticks off, grid will always be off)
+        xtickminor=True, ytickminor=True, # minor ticks on/off
         xticklabeldir=None, yticklabeldir=None, # which direction to draw labels
-        xtickrange=None,    ytickrange=None,    # limit regions where we assign ticklabels to major-ticks
-        xreverse=False,     yreverse=False,     # special properties
-        xlabel=None,        ylabel=None,        # axis labels
-        xlim=None,          ylim=None,
-        xbounds=None,       ybounds=None,       # limit spine bounds?
-        xscale=None,        yscale=None,
-        xrotation=None,     yrotation=None,     # tick label rotation
+        xtickrange=None, ytickrange=None, # limit regions where we assign ticklabels to major-ticks
+        xreverse=False, yreverse=False, # special properties
+        xlabel=None, ylabel=None, # axis labels
+        xlim=None, ylim=None,
+        xbounds=None, ybounds=None, # limit spine bounds?
+        xscale=None, yscale=None,
+        xrotation=None, yrotation=None, # tick label rotation
         xformatter=None, yformatter=None, xticklabels=None, yticklabels=None,
         xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
         yticks=None, yminorticks=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
