@@ -472,7 +472,7 @@ class BaseAxes(maxes.Axes):
             Whether to apply "a-b-c" subplot labelling based on the
             `number` attribute.
 
-            If `number` is >26, labels will loop around to a, ..., z, aa,
+            If `number` is >26, the labels will loop around to a, ..., z, aa,
             ..., zz, aaa, ..., zzz, ... God help you if you ever need that
             many labels.
         top : bool, optional
@@ -507,26 +507,26 @@ class BaseAxes(maxes.Axes):
         suptitle = figtitle or suptitle
         if suptitle is not None:
             kw = rc.fill({
-                'fontsize': 'suptitle.fontsize',
-                'weight':   'suptitle.weight',
-                'color':    'suptitle.color',
-                'fontname': 'fontname'
+                'fontsize':   'suptitle.fontsize',
+                'weight':     'suptitle.weight',
+                'color':      'suptitle.color',
+                'fontfamily': 'fontname'
                 }, cache=False)
             fig._suptitle_setup(suptitle, **kw)
         if rowlabels is not None:
             kw = rc.fill({
-                'fontsize': 'rowlabel.fontsize',
-                'weight':   'rowlabel.weight',
-                'color':    'rowlabel.color',
-                'fontname': 'fontname'
+                'fontsize':   'rowlabel.fontsize',
+                'weight':     'rowlabel.weight',
+                'color':      'rowlabel.color',
+                'fontfamily': 'fontname'
                 }, cache=False)
             fig._rowlabels(rowlabels, **kw)
         if collabels is not None:
             kw = rc.fill({
-                'fontsize': 'collabel.fontsize',
-                'weight':   'collabel.weight',
-                'color':    'collabel.color',
-                'fontname': 'fontname'
+                'fontsize':   'collabel.fontsize',
+                'weight':     'collabel.weight',
+                'color':      'collabel.color',
+                'fontfamily': 'fontname'
                 }, cache=False)
             fig._collabels(collabels, **kw)
 
@@ -546,12 +546,12 @@ class BaseAxes(maxes.Axes):
         # it assigns text to a different hidden object. My version is just
         # more flexible, allows specifying arbitrary postiion.
         kw = rc.fill({
-            'pos':       'title.pos',
-            'border':    'title.border',
-            'linewidth': 'title.linewidth',
-            'fontsize':  'title.fontsize',
-            'weight':    'title.weight',
-            'fontname':  'fontname'
+            'pos':        'title.pos',
+            'border':     'title.border',
+            'linewidth':  'title.linewidth',
+            'fontsize':   'title.fontsize',
+            'weight':     'title.weight',
+            'fontfamily': 'fontname'
             }, cache=True)
         kw = tax._parse_title_args(**kw)
         if title is not None:
@@ -572,13 +572,13 @@ class BaseAxes(maxes.Axes):
             tax.abc.set_text(text)
         # Apply any changed or new settings
         kw = rc.fill({
-            'pos':       'abc.pos',
-            'border':    'abc.border',
-            'linewidth': 'abc.linewidth',
-            'fontsize':  'abc.fontsize',
-            'weight':    'abc.weight',
-            'color':     'abc.color',
-            'fontname':  'fontname'
+            'pos':        'abc.pos',
+            'border':     'abc.border',
+            'linewidth':  'abc.linewidth',
+            'fontsize':   'abc.fontsize',
+            'weight':     'abc.weight',
+            'color':      'abc.color',
+            'fontfamily': 'fontname'
             }, cache=True)
         kw = tax._parse_title_args(abc=True, **kw)
         if kw:
@@ -1047,7 +1047,7 @@ class XYAxes(BaseAxes):
         # TODO: Implement hatching for PolarAxes and map axes?
         hatch = rc['axes.hatch']
         if not self._hatch and hatch: # non-empty
-            self._hatch = self.fill_between([0,1], 0, 1, zorder=0, # put in back
+            self._hatch = super().fill_between([0,1], 0, 1, zorder=0, # put in back
                 linewidth=0, hatch=hatch, # linewidth affects only patch edge; hatch width controlled by hatch.linewidth
                 alpha=rc.get('hatch.alpha'), edgecolor=rc.get('hatch.color'),
                 facecolor='none', transform=self.transAxes)
@@ -1075,16 +1075,10 @@ class XYAxes(BaseAxes):
         xminorlocator = _default(xminorticks, xminorlocator) # default is AutoMinorLocator, no setting
         yminorlocator = _default(yminorticks, yminorlocator)
         # Grid defaults are more complicated
-        # NOTE: rcmod will always change *grid* and *grid.which* at the same time.
-        # TODO: Make xgridminor, ygridminor, xtickloc, ytickloc all global rc
-        # settings that modify xtick.left, axes.grid.axis, etc., instead of
-        # these keyword args. Results in duplicate behavior maybe.
         which = rc['axes.grid.which']
         grid = rc.get('axes.grid', cache=True)
-        axis = rc.get('axes.grid.axis', cache=False) # always need this property
+        axis = rc.get('axes.grid.axis') # always need this property
         if which is not None or grid is not None: # only if *one* was changed recently!
-            # But no matter what we need *both* to figure out proper xgrid, ygrid arguments
-            # NOTE: Should we try to make xgridminor, ygridminor part of thing?
             if grid is None:
                 grid = rc.get('axes.grid')
             elif which is None:
@@ -1095,7 +1089,7 @@ class XYAxes(BaseAxes):
             ygridminor = _default(ygridminor, grid and axis in ('y','both') and which in ('minor','both'))
 
         # Override for weird bug where title doesn't get automatically offset
-        # from ticklabels in certain circumstance; check out notebook
+        # from ticklabels in certain circumstance, check out notebook
         xlabelloc = _default(xlabelloc, xticklabelloc)
         ylabelloc = _default(ylabelloc, yticklabelloc)
         xtickloc = _default(xtickloc, xticklabelloc, _rcloc_to_stringloc('x', 'xtick'))
@@ -1132,10 +1126,10 @@ class XYAxes(BaseAxes):
             name = axis.axis_name
             if label is not None:
                 kw = rc.fill({
-                    'color':    'axes.edgecolor',
-                    'fontname': 'fontname',
-                    'fontsize': 'axes.labelsize',
-                    'weight':   'axes.labelweight'
+                    'color':      'axes.edgecolor',
+                    'fontsize':   'axes.labelsize',
+                    'weight':     'axes.labelweight',
+                    'fontfamily': 'fontname',
                     })
                 if axis.get_label_position() == 'top':
                     kw['va'] = 'bottom' # baseline was cramped if no ticklabels present
@@ -1294,7 +1288,7 @@ class XYAxes(BaseAxes):
             # Settings that can't be controlled by set_tick_params
             # Also set rotation here, otherwise get weird alignment
             # See discussion: https://stackoverflow.com/q/11264521/4970632
-            kw = rc.fill({'fontname': 'fontname', 'weight':'tick.labelweight'})
+            kw = rc.fill({'fontfamily':'fontname', 'weight':'tick.labelweight'})
             if rotation is not None:
                 kw.update({'rotation':rotation})
                 if name=='x':

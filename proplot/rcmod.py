@@ -955,7 +955,7 @@ def nb_setup():
     # Make sure we are in session
     ipython = get_ipython() # save session
     if ipython is None:
-        warnings.warn("ProPlot should generally be used within IPython.")
+        warnings.warn("ProPlot should be used within IPython.")
         return
 
     # Only do this if not already loaded -- otherwise will get *recursive* 

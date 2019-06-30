@@ -1,119 +1,122 @@
 #!/usr/bin/env python3
 """
+Registers new fonts and adds fonts requested by the user.
 Provides handy lists of available font names and adds a function
 for installing new fonts -- notably Helvetica Neue and Helvetica.
 
 By default, ProPlot *changes* the default font from DejaVu Sans or
 Bitstream Vera to one of the Helveticas (see the `~proplot.rcmod` documentation
-for details). Please run `install_fonts` to install these fonts after
+for details). Please run `register_fonts` to install these fonts after
 installing or updating ProPlot or matplotlib.
-
-Todo
-----
-Make temp file or something that indicates whether fonts have been installed,
-and call `install_fonts` automatically?
 """
-import os
-import re
-import shutil
-import glob
-import matplotlib.font_manager as mfonts
-from matplotlib import matplotlib_fname, get_cachedir
-# from subprocess import Popen, PIPE
-#------------------------------------------------------------------------------
-# List the current font names, original version; works on Linux but not Mac,
-# because can't find mac system fonts?
-#------------------------------------------------------------------------------#
-# List the system font names, smarter version
-# See: https://github.com/olgabot/sciencemeetproductivity.tumblr.com/blob/master/posts/2012/11/how-to-set-helvetica-as-the-default-sans-serif-font-in.md
-# Also see: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-# Also see: https://stackoverflow.com/questions/18821795/how-can-i-get-list-of-font-familyor-name-of-font-in-matplotlib
-_dir_data = re.sub('/matplotlibrc$', '', matplotlib_fname())
-
-fonts_mpl_files = sorted(glob.glob(f"{_dir_data}/fonts/ttf/*.[ot]tf"))
-"""Font filenames provided by matplotlib or ProPlot."""
-fonts_os_files  = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf')) # even with that fontext, will include otf! weird
-"""Font filenames provided by your operating system."""
-
-fonts_mpl = set()
-"""Registered font names provided by matplotlib or ProPlot."""
-fonts_os = set()
-"""Registered font names provided by your operating system."""
-for _file in fonts_os_files:
-    try:
-        fonts_os.add(mfonts.FontProperties(fname=_file).get_name())
-    except Exception as err:
-        pass # fails sometimes
-for _file in fonts_mpl_files:
-    try:
-        fonts_mpl.add(mfonts.FontProperties(fname=_file).get_name())
-    except Exception as err:
-        pass # fails sometimes
-fonts = {*fonts_os, *fonts_mpl}
-"""All registered font names."""
-
-# Missing fonts (this list is filled whenever user requests one)
-_missing_fonts = []
-
-#------------------------------------------------------------------------------#
-# Function that sets up any .ttf fonts contained in the <fonts> directory to
-# be detected by matplotlib, regardless of the OS.
-# See: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-# Best fonts for dyslexia: http://dyslexiahelp.umich.edu/sites/default/files/good_fonts_for_dyslexia_study.pdf
-#------------------------------------------------------------------------------#
-# ***Notes on getting ttf files on Mac****
-# /System/Library/Font *OR* /Library/Fonts
-# * The .otf files work in addition to .ttf files; you can verify this by
-#   looking at plot.fonts_files_os (results of findSystemFonts command) --
-#   the list will include a bunch of .otf files.
-# * Some system fonts are .dfont which are unreadable to matplotlib; use
-#   fondu (download with Homebrew) to break down.
-# * Sometimes fondu created .bdf files, not .ttf; use https://github.com/Tblue/mkttf
-#   Requires FontForge and PoTrace
-# * Install new fonts with: "brew cask install font-<name-of-font>" after using
-#   "brew tap caskroom/fonts" to initialize; these will appear in ~/Library/Fonts.
-# * For some conversion tools, run "pip install fonttools". Documentation
-#   is here: https://github.com/fonttools/fonttools
-#------------------------------------------------------------------------------#
-# ***Notes on default files packaged in font directory.
-# * Location will be something like: /lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf
+# See: https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac
+# Notes on getting ttf files on Mac
+# * Location in /System/Library/Font, /Library/Fonts, or ~/Library/Fonts
+# * To break down .dfont files, use fondu (homebrew download).
+#   To break down .ttc files, use dfontsplitter (https://peter.upfold.org.uk/projects/dfontsplitter)
+#   To break down .bdf files made by fondu, use mkttf (https://github.com/Tblue/mkttf; requires FontForge and PoTrace)
+# * The .otf files work in addition to .ttf files. You can verify this by
+#   looking at plot.fonts_files_os -- it includes .otf files.
+# * Install new fonts with "brew cask install font-<name-of-font>" after using
+#   "brew tap caskroom/fonts" to initialize; these appear in ~/Library/Fonts.
+# Notes on default files packaged in font directory:
+# * Location will be something like:
+#   /lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf
 # * 'STIX' fonts allow different LaTeX-like math modes e.g. blackboard bold
 #   and caligraphy; see: https://matplotlib.org/gallery/text_labels_and_annotations/stix_fonts_demo.html
 # * The 'cm'-prefix fonts seem to provide additional mathematical symbols
 #   like integrals, and italized math-mode fonts.
 # * We also have 'pdfcorefonts' in this directory, but I think since these
 #   are afm matplotlib cannot use them? Don't know.
-#------------------------------------------------------------------------------#
-def install_fonts():
-    """
-    Registers matplotlib fonts from ``.ttf`` files located in the 'fonts'
-    directory.  May require restarting iPython session. Note font cache will
-    be deleted in this process, which could cause delays.
-    """
-    # See: https://stackoverflow.com/a/2502883/4970632
-    # Just print strings because in notebooks will get printed
-    # to terminal; see: https://stackoverflow.com/q/38616077/4970632
-    # _font_script = f'{os.path.dirname(__file__)}/fontscript.sh'
-    # p = Popen(_font_script, stdout=PIPE, shell=False)
-    # out, err = p.communicate()
-    # print(out.decode('utf-8').strip()) # strip trailing newline
+# Helvetica notes: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+# Best fonts for dyslexia: http://dyslexiahelp.umich.edu/sites/default/files/good_fonts_for_dyslexia_study.pdf
+import os
+import re
+import shutil
+import glob
+import matplotlib.font_manager as mfonts
+from matplotlib import matplotlib_fname, get_cachedir
+_data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
+_data_user = os.path.join(os.path.expanduser('~'), '.proplot')
+_data_user_fonts = os.path.join(_data_user, 'fonts') # user fonts
+_data_matplotlib = re.sub('/matplotlibrc$', '', matplotlib_fname())
+_data_matplotlib_fonts = os.path.join(_data_matplotlib, 'fonts', 'ttf')
+if not os.path.isdir(_data_user):
+    os.mkdir(_data_user)
+if not os.path.isdir(_data_user_fonts):
+    os.mkdir(_data_user_fonts)
 
-    # New method, just do this in python
-    dir_source = f'{os.path.dirname(__file__)}/fonts' # should be in same place as scripts
-    dir_dest = f'{_dir_data}/fonts/ttf'
-    # print(f'Transfering .ttf and .otf files from {dir_source} to {dir_dest}.')
-    for file in glob.glob(f'{dir_source}/*.[ot]tf'):
-        if not os.path.exists(f'{dir_dest}/{os.path.basename(file)}'):
-            print(f'Adding font "{os.path.basename(file)}".')
-            shutil.copy(file, dir_dest)
+# Register fonts
+# https://github.com/olgabot/sciencemeetproductivity.tumblr.com/blob/master/posts/2012/11/how-to-set-helvetica-as-the-default-sans-serif-font-in.md
+# https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+# https://stackoverflow.com/questions/18821795/how-can-i-get-list-of-font-familyor-name-of-font-in-matplotlib
+def register_fonts():
+    """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
+    folder. Also deletes the font cache, which may cause delays.
+    Detects ``.ttf`` and ``.otf`` files -- see `this link
+    <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__.
+    for an guide on converting various other font file types to ``.ttf`` and
+    ``.otf`` for use with matplotlib."""
+    # Populate file and font lists
+    fonts[:] = []
+    for (ifiles,ifonts) in ((fonts_os_files,fonts_os), (fonts_mpl_files,fonts_mpl)):
+        ifonts[:] = []
+        if ifiles is fonts_os_files:
+            ifiles[:] = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf'))
+        else:
+            ifiles[:] = sorted(glob.glob(os.path.join(_data_matplotlib, 'fonts', 'ttf', '*.[ot]tf')))
+        for file in ifiles:
+            try:
+                font = mfonts.FontProperties(fname=file).get_name()
+            except Exception as err:
+                pass
+            else:
+                ifonts.append(font)
+        seen = {*()}
+        ifonts[:] = [font for font in ifonts if font not in seen and not seen.add(font)]
+        fonts.extend(ifonts)
+    fonts[:] = sorted(fonts)
 
-    # Delete cache
-    dir_cache = get_cachedir()
-    for file in glob.glob(f'{dir_cache}/*.cache') + glob.glob(f'{dir_cache}/font*'):
-        if not os.path.isdir(file): # don't dump the tex.cache folder... because dunno why
-            os.remove(file)
-            print(f'Deleted font cache {file}.')
+    # Transfer files to matplotlibrc
+    fonts_new = []
+    for filename in sorted(glob.glob(os.path.join(_data_fonts, '*'))) + \
+            sorted(glob.glob(os.path.join(_data_user_fonts, '*'))):
+        base = os.path.basename(filename)
+        if os.path.exists(os.path.join(_data_matplotlib_fonts, base)):
+            continue
+        shutil.copy(filename, _data_matplotlib_fonts)
+        fonts_new.append(base)
 
-    # Rebuild
-    mfonts._rebuild()
-    print('Fonts have been installed and font cache has been emptied. Please restart your iPython session.')
+    # Delete and rebuild cache
+    # TODO: Is rebuilding the cache sufficient?
+    if fonts_new:
+        print(f'Installed font(s): {", ".join(fonts_new)}.')
+        caches = []
+        dir_cache = get_cachedir()
+        for file in glob.glob(os.path.join(dir_cache, '*.cache')) + glob.glob(os.path.join(dir_cache, '*.json')):
+            if os.path.isdir(file): # important to dump even tex.cache, get weird errors with wrong font weight!
+                shutil.rmtree(file)
+            else:
+                os.remove(file)
+            caches.append(file)
+        if caches:
+            print(f'Deleted font cache(s): {", ".join(caches)}.')
+        mfonts._rebuild()
+
+# Font lists
+fonts_mpl_files = []
+"""Font filenames provided by matplotlib or ProPlot."""
+fonts_os_files = []
+"""Font filenames provided by your operating system."""
+fonts_mpl = []
+"""Registered font names provided by matplotlib or ProPlot."""
+fonts_os = []
+"""Registered font names provided by your operating system."""
+fonts = []
+"""All registered font names."""
+_missing_fonts = {*()}
+"""Missing fonts, filled whenever user requests a bad name."""
+
+# Register fonts
+register_fonts()
+

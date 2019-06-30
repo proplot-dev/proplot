@@ -542,6 +542,34 @@ def scatter_wrapper(self, func, *args,
         norm=norm, linewidths=lw, edgecolors=ec,
         **kwargs)
 
+def _fill_between_driver(xy, func, args, kwargs):
+    """Parse args and call function."""
+    # Usage
+    yx = 'y' if xy=='x' else 'x'
+    if xy in kwargs:
+        args = (kwargs.pop(xy), *args)
+    for yx in (yx + '1', yx + '2'):
+        if yx in kwargs:
+            args = (*args, kwargs.pop(yx))
+    if len(args) not in (1,2,3):
+        raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
+    # Negpos feature
+    negpos = kwargs.get('negpos', None)
+    if negpos:
+        if kwargs.get('where', None) is not None:
+            raise ValueError('You can use the "negpos" keyword or the "where" keyword, not both.')
+        if len(args)==3:
+            raise ValueError('Need only x and y values for the "negpos" keyword.')
+        zero = 0
+        if negpos not in (True,1):
+            zero = negpos
+        y = np.array(args[-1])
+        if y.ndim!=1:
+            raise ValueError(f'Must be 1-dimensional.')
+        where1 = np.where(np.array(y))
+    # Call function
+    return func(*args, **kwargs)
+
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.fill_between`, also accessible via the
@@ -557,23 +585,18 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     stacked : bool, optional
         If `y2` is ``None``, this indicates whether to "stack" successive
         columns of the `y1` array.
+    negpos : bool or float, optional
+        Whether to shade negative values one color and positive values another color.
+        Pass a float to use that position on the y-axis as the "zero point".
     where : ndarray, optional
-        Boolean ndarray of points you want to shade. Use this to e.g. shade
-        positive values one color and negative values another color.
-        See `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+        Boolean ndarray mask for points you want to shade. See
+        `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_between`.
     """
     # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
     # we can handle common keyword arg usage.
-    if 'x' in kwargs:
-        args = (kwargs.pop('x'), *args)
-    for y in ('y1','y2'):
-        if y in kwargs:
-            args = (*args, kwargs.pop(y))
-    if len(args) not in (1,2,3):
-        raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
-    return func(*args, **kwargs)
+    return _fill_between_driver('x', func, args, kwargs)
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
     """
@@ -590,23 +613,18 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
     stacked : bool, optional
         If `x2` is ``None``, this indicates whether to "stack" successive
         columns of the `x1` array.
+    negpos : bool or float, optional
+        Whether to shade negative values one color and positive values another color.
+        Pass a float to use that position on the y-axis as the "zero point".
     where : ndarray, optional
-        Boolean ndarray of points you want to shade. Use this to e.g. shade
-        positive values one color and negative values another color.
-        See `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+        Boolean ndarray mask for points you want to shade. See
+        `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_betweenx`.
     """
     # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
     # we can handle common keyword arg usage.
-    if 'y' in kwargs:
-        args = (kwargs.pop('y'), *args)
-    for x in ('x1','x2'):
-        if x in kwargs:
-            args = (*args, kwargs.pop(x))
-    if len(args) not in (1,2,3):
-        raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
-    return func(*args, **kwargs)
+    return _fill_between_driver('y', func, args, kwargs)
 
 def barh_wrapper(self, func, *args, **kwargs):
     """Wraps `~matplotlib.axes.Axes.barh`, usage is same as `bar_wrapper`."""
@@ -896,18 +914,21 @@ def violinplot_wrapper(self, func, *args,
         ('bodies',bodycolor,bodylw), # poly collection
         ('cboxes',boxcolor,boxlw), # line collections
         ('cbars',barcolor,barlw), # line collections
-        # ('cmeans',meancolor,meanlw),
-        # ('cmedians',mediancolor,medianlw),
+        ('cmeans',meancolor,meanlw),
+        ('cmedians',mediancolor,medianlw),
         ):
         if key not in obj: # possible if not rendered
             continue
         artists = obj[key]
+        # print(artists)
         ilw = _default(ilw, lw)
         icolor = _default(icolor, color)
         if not isinstance(artists, (list,tuple)): # only for bodies
             artists = [artists]
         for artist in artists:
             if key=='bodies':
+                if isinstance(artist, tuple):
+                    continue
                 artist.set_alpha(fillalpha)
                 if fillcolor is not None:
                     artist.set_facecolor(fillcolor)
@@ -925,12 +946,9 @@ def violinplot_wrapper(self, func, *args,
 #------------------------------------------------------------------------------#
 # Text wrapper
 #------------------------------------------------------------------------------#
-def text_wrapper(self, func, x, y, text,
-    transform='data',
-    border=False, border_kw={},
-    invert=False,
-    linewidth=2, lw=None,
-    **kwargs): # linewidth is for the border
+def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
+    border=False, border_kw={}, invert=False, lw=None, linewidth=2,
+    **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.text`, enables specifying `tranform` with
     a string name and adds feature for drawing borders around text.
@@ -941,32 +959,29 @@ def text_wrapper(self, func, x, y, text,
         The *x* and *y* coordinates for the text.
     text : str
         The text.
-    linewidth, lw : float, optional
-        Ignored if `border` is ``False``. The width of the text border.
-    border : bool, optional
-        Whether to draw border around text.
-    border_kw : dict-like, optional
-        Passed to `~matplotlib.patheffects.Stroke` if drawing a border.
-    invert : bool, optional
-        Ignored if `border` is ``False``. Whether to draw black text
-        with a white border (``False``), or white text on a black
-        border (``True``).
     transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
         The transform, or a string pointing to either of the
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
         or `~matplotlib.figure.Figure.transFigure` transforms. Default is
         ``'data'`` (unchanged).
+    fontname : None or str, optional
+        Alias for the ``fontfamily`` `~matplotlib.text.Text` property.
+    border : bool, optional
+        Whether to draw border around text.
+    border_kw : dict-like, optional
+        Passed to `~matplotlib.patheffects.Stroke` if drawing a border.
+    invert : bool, optional
+        Ignored if `border` is ``False``. Whether to draw black text with a
+        white border (``False``), or white text on a black border (``True``).
+    lw, linewidth : float, optional
+        Ignored if `border` is ``False``. The width of the text border.
 
     Other parameters
     ----------------
     **kwargs
         Passed to `~matplotlib.text.Text` instantiator.
     """
-    # Get default transform by string name
-    # Note basemap gridlining methods call text, so if you change the
-    # default transform, you will not be able to draw latitude and
-    # longitude labels! Leave it alone.
-    linewidth = lw or linewidth
+    # Default transform by string name
     if not transform:
         transform = self.transData
     elif isinstance(transform, mtransforms.Transform):
@@ -979,32 +994,32 @@ def text_wrapper(self, func, x, y, text,
         transform = self.transData
     else:
         raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
-    # Raise more helpful error message if font unavailable
-    name = kwargs.pop('fontname', rc.get('fontname')) # is actually font.sans-serif
-    if name not in fonttools.fonts:
-        suffix = ''
-        if name not in fonttools._missing_fonts:
-            suffix = f' Available fonts are: {", ".join(fonttools.fonts)}.'
-        warnings.warn(f'Font "{name}" unavailable, falling back to DejaVu Sans. Consider running proplot.install_fonts().' + suffix)
-        fonttools._missing_fonts.append(name)
-        name = 'DejaVu Sans'
-    # Call parent, with custom rc settings
-    # These seem to sometimes not get used by default
-    size   = kwargs.pop('fontsize', rc.get('font.size'))
-    color  = kwargs.pop('color', rc.get('text.color'))
-    weight = kwargs.pop('font', rc.get('font.weight'))
-    obj = func(x, y, text,
-        transform=transform, fontname=name,
-        fontsize=size, color=color, fontweight=weight, **kwargs)
-    # Optionally draw border around text
+    # Font name strings
+    if 'family' in kwargs: # builtin matplotlib alias
+        kwargs.setdefault('fontfamily', kwargs.pop('family'))
+    if fontname is not None:
+        kwargs.setdefault('fontfamily', fontname)
+    # Raise helpful error message if font unavailable
+    font = kwargs.get('fontfamily', None)
+    if font and font not in fonttools.fonts:
+        warnings.warn(f'Font "{font}" unavailable. Available fonts are {", ".join(fonttools.fonts)}.')
+        fonttools._missing_fonts.add(font)
+        kwargs.pop('fontfamily')
+    # Apply color default which is sometimes ignored?
+    kwargs.setdefault('color', rc.get('text.color'))
+    obj = func(x, y, text, transform=transform, **kwargs)
+    # Draw border around text
     if border:
-        facecolor, bgcolor = color, 'w'
+        linewidth = lw or linewidth
+        facecolor, bgcolor = rc.get('text.color'), 'w'
         if invert:
             facecolor, bgcolor = bgcolor, facecolor
         kwargs = {'linewidth':linewidth, 'foreground':bgcolor, 'joinstyle':'miter'}
         kwargs.update(border_kw)
-        obj.update({'color':facecolor, 'zorder':1e10, # have to update after-the-fact for path effects
-            'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]})
+        obj.update({
+            'color':facecolor, 'zorder':100,
+            'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
+            })
     return obj
 
 #------------------------------------------------------------------------------#
@@ -1431,19 +1446,19 @@ def cycle_wrapper(self, func, *args,
         # WARNING: Matplotlib saves itertools.cycle(cycler), not the original
         # cycler object, so we must build up the keys again.
         i = 0
-        cycle_orig = {}
-        prop_cycle = self._get_lines.prop_cycler
+        by_key = {}
+        cycle_orig = self._get_lines.prop_cycler
         for i in range(len(cycle)): # use the cycler object length as a guess
-            prop = next(prop_cycle)
+            prop = next(cycle_orig)
             for key,value in prop.items():
-                if key not in cycle_orig:
-                    cycle_orig[key] = {*()} # set
-                cycle_orig[key].add(value)
+                if key not in by_key:
+                    by_key[key] = {*()} # set
+                by_key[key].add(value)
         # Reset property cycler if it differs
-        reset = ({*cycle_orig} != {*cycle.by_key()}) # reset if keys are different
+        reset = ({*by_key} != {*cycle.by_key()}) # reset if keys are different
         if not reset: # test individual entries
             for key,value in cycle.by_key().items():
-                if cycle_orig[key] != {*value}:
+                if by_key[key] != {*value}:
                     reset = True
                     break
         if reset:
@@ -2026,9 +2041,13 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
             if list_of_lists:
                 ipairs = []
                 for ihandle in handle:
+                    if not hasattr(ihandle, 'get_label'):
+                        raise ValueError(f'Object {ihandle} must have a "get_label" attribute.')
                     ipairs.append((ihandle, ihandle.get_label()))
                 pairs.append(ipairs)
             else:
+                if not hasattr(handle, 'get_label'):
+                    raise ValueError(f'Object {handle} must have a "get_label" attribute.')
                 pairs.append((handle, handle.get_label()))
     else:
         if len(labels)!=len(handles):
@@ -2359,8 +2378,10 @@ def colorbar_wrapper(self, mappable, values=None,
         if not np.iterable(mappable):
             mappable = [None] # raises error below
         obj = mappable[0]
-        if np.iterable(obj): # e.g. BarContainer
-            obj = mappable[0]
+        try:
+            obj = obj[0] # e.g. for BarContainer, which is not numpy.iterable
+        except (TypeError,KeyError):
+            pass
         # Draw from handles
         if hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor'): # simplest approach
             colors = []
@@ -2386,7 +2407,7 @@ def colorbar_wrapper(self, mappable, values=None,
                 raise ValueError(f'To generate colorbars from lists of colors, pass the "values" keyword arg to colorbar().')
         # Invalid
         else:
-            raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, or list of colors.')
+            raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, or list of colors. Got {mappable}.')
     # Build new ad hoc mappable object from handles
     if cmap is not None:
         func = _cmap_wrapper(self, self.contourf)

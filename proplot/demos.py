@@ -17,9 +17,9 @@ _scales = {'rgb':(1,1,1), # for scaling channel values to 0-1 range
            'hpl':(360,100,100)}
 _names  = {'rgb':('red', 'green', 'blue'), # names for segmentdata LinearSegmentedColormap dicts
            'hcl':('hue', 'chroma', 'luminance'),
-           'hsl':('hue', 'saturation', 'luminance'),
+           'hsl':('hue', 'relative sat', 'luminance'),
            'hsv':('hue', 'saturation', 'value'),
-           'hpl':('hue', 'partial sat', 'luminance')}
+           'hpl':('hue', 'relative sat', 'luminance')}
 
 #------------------------------------------------------------------------------#
 # Demo of channel values and colorspaces
@@ -117,10 +117,10 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
         for i,label in enumerate(labels):
             y = lut[:-3,i]/scale[i]
             y = np.clip(y, 0, 5)
-            h = ax.plot(x, y, color=colors[i], lw=2, label=label)
+            h, = ax.plot(x, y, color=colors[i], lw=2, label=label)
             m = max(m, max(y))
             hs += [h]
-        f.bottompanel[j].legend([hs[:2], hs[-1:]])
+        f.bottompanel[j].legend([hs[:2], hs[-1:]], frame=False)
         ax.axhline(1, color='gray7', dashes=(1.5, 2.5), alpha=0.8, zorder=0, lw=2)
         ax.format(title=space.upper(), titlepos='oc', ylim=(0-0.1, m + 0.1))
     # Draw colorbar
@@ -306,7 +306,7 @@ def cycle_show():
         array = state.rand(20,len(cycle)) - 0.5
         array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
         for j,color in enumerate(cycle):
-            l = ax.plot(array[:,j], lw=5, ls='-', color=color)
+            l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
             l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
         title = f'{key}: {len(cycle)} colors'
         ax.set_title(title)
