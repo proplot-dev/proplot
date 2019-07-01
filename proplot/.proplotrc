@@ -88,12 +88,12 @@ rcParams:
     mathtext.default:        regular
 
 #----------------------
-# rcParams_new defaults
+# rcCustom defaults
 #----------------------
-rcParams_new:
+rcCustom:
     # Label settings
-    abc.pos:           il # inside the axes, to the left
-    title.pos:         oc # outside the axes, in the center
+    abc.loc:           l # outside the axes, to the left
+    title.loc:         c # outside the axes, in the center
     abc.format:        a
     abc.fontsize:      # filled by 'large'
     abc.color:         k
@@ -144,8 +144,8 @@ rcParams_new:
     geogrid.labels:    False
     geogrid.labelsize: # filled by 'small'
     geogrid.latmax:    80
-    geogrid.lonlines:  30
-    geogrid.latlines:  20
+    geogrid.lonstep:   30
+    geogrid.latstep:   20
     geogrid.alpha:     0.5
     geogrid.color:     k
     geogrid.linewidth: 1.0

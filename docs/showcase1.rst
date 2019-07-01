@@ -76,7 +76,7 @@ pixels. See `~proplot.subplots.subplots` for details.
 A-b-c subplot labeling is another useful ProPlot feature. The label
 order is row-major by default; to change this, use the
 `~proplot.subplots.subplots` ``order`` keyword arg. Change the label
-position with the ``abcpos`` `~proplot.rcmod` option, or the label
+position with the ``abcloc`` `~proplot.rcmod` option, or the label
 style with the ``abcformat`` `~proplot.rcmod` option. Toggle labeling
 with ``abc=True``. See :ref:`The format command` and
 :ref:`Rc settings control` for details.
@@ -85,21 +85,17 @@ with ``abc=True``. See :ref:`The format command` and
 
     import proplot as plot
     f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
-    axs.format(abc=True, abcpos='ol', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labeling')
+    axs.format(abc=True, abcloc='l', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labeling')
     f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
-    axs.format(abc=True, abcpos='ir', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
+    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
 
 
 
-.. image:: showcase/showcase_10_0.png
-   :width: 364px
-   :height: 393px
+.. image:: showcase/showcase_10_0.svg
 
 
 
-.. image:: showcase/showcase_10_1.png
-   :width: 562px
-   :height: 572px
+.. image:: showcase/showcase_10_1.svg
 
 
 To set up a complex grid of subplots, use a 2D array of integers. You
@@ -232,16 +228,17 @@ need for boilerplate plotting code.
 The axes returned by `~proplot.subplots.subplots` are also contained
 in a special `~proplot.subplots.axes_list` list. This lets you call
 any method (e.g. `~proplot.axes.BaseAxes.format`) on every axes
-**simultaneously**. See the below example.
+**simultaneously**. This is used in the below example.
 
 .. code:: ipython3
 
     import proplot as plot
     f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True, axwidth=1.5)
-    axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(0,10), xlocator=2,
-              ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'ccc', 'dd', 'e'),
-              title='Axes title', titlepos='co', suptitle='Super title',
-              abc=True, abcpos='il', abcformat='a.',
+    axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(1,10), xlocator=1, xscale='log',
+              ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'c', 'dd', 'e'),
+              title='Main title', titleloc='c', suptitle='Demo of the format command',
+              abc=True, abcloc='ul', abcformat='a.', xtickdir='inout',
+              urtitle='Title A', lltitle='Title B', lrtitle='Title C', # extra titles
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
               collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
 
@@ -413,15 +410,15 @@ info.
     plot.rc.small = plot.rc.large = size
     fonts = ['DejaVu Sans', 'Arial', 'Avenir', 'Franklin Gothic Book', 'Frutiger', 'Futura',
              'Gotham', 'Helvetica', 'Helvetica Neue', 'Geneva', 'Gill Sans',
-             'Lucida Grande', 'Noto Sans', 'Myriad Pro', 'Open Sans', 'Optima', 'Tahoma', 'Univers', 'Verdana']
+             'Lucida Grande', 'Noto Sans', 'Myriad Pro', 'Open Sans', 'Optima', 'Tahoma', 'Trebuchet MS', 'Univers', 'Verdana']
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz'
-    letters = 'quick brown fox jumps over the lazy dog QUICK BROWN FOX JUMPS OVER THE LAZY DOG'
+    letters = 'the quick brown fox jumps over a lazy dog THE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
     for weight in ('normal',):
         f, axs = plot.subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=7.5, axheight=3.5*size/72)
         axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
-        axs[0].format(title='Fonts demo', titlepos='ol', titleweight='bold')
+        axs[0].format(title='Fonts demo', titleloc='l', titleweight='bold')
         for i,ax in enumerate(axs):
             font = fonts[i]
             plot.rc.fontname = font
@@ -545,7 +542,7 @@ spread represented by error bars.
     import proplot as plot
     import numpy as np
     import pandas as pd
-    plot.rc['title.pos'] = 'ci'
+    plot.rc['title.loc'] = 'ci'
     plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
     f, axs = plot.subplots(nrows=3, aspect=2, axwidth=3, span=False, share=False)
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
@@ -620,10 +617,10 @@ automatic axis labeling.
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
     ax = axs[0]
     obj1 = ax.boxplot(data, lw=0.7, marker='x', fillcolor='gray5', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
-    ax.format(title='Box plots', titlepos='ci')
+    ax.format(title='Box plots', titleloc='uc')
     ax = axs[1]
     obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', showmeans=True)
-    ax.format(title='Violin plots', titlepos='ci')
+    ax.format(title='Violin plots', titleloc='uc')
     axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
 
 
@@ -654,9 +651,9 @@ behavior, use ``edgefix=False``.
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=5, width=8, wratios=(5,3,3,3,3), axcolorbars='b')
-    axs.format(suptitle='Colorbar color range demo')
+    axs.format(suptitle='Demo of colorbar color-range standardization')
     levels = plot.arange(0,360,45)
-    data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
+    data = (20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
     ax = axs[0]
     ax.contourf(data, levels=levels, cmap='phase', extend='neither', colorbar='b')
     ax.format(title='Cyclic map with separate ends')

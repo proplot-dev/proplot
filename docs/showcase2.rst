@@ -26,8 +26,8 @@ combination of panels. See `~proplot.subplots.subplots` and
                            axpanels={1:'t', 2:'l', 3:'b', 4:'r'},
                            tight=True, share=0, span=0, wratios=[1,2])
     axs.format(title='Title', suptitle='This is a super title', collabels=['Column 1','Column 2'],
-               titlepos='ci', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
-    axs.format(ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
+               abcloc='ul', titleloc='uc', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
+    axs.format(xlim=(0,1), ylim=(0,1), ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
 
 
 
@@ -91,7 +91,7 @@ details.
     import numpy as np
     f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, colorbar='br', bspan=[1,2,2])
     m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
-    axs.format(suptitle='Super title', abc=True, abcpos='ol', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
+    axs.format(suptitle='Super title', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
     f.bpanel[0].colorbar(m, label='label', ticks=0.5)
     f.bpanel[1].colorbar(m, label='label', ticks=0.2)
     f.rpanel.colorbar(m, label='label', ticks=0.1, length=0.7)
@@ -119,7 +119,7 @@ details.
         hs.extend(h[0])
     f.bpanel[0].colorbar(m[0], length=0.8, label='label')
     f.bpanel[1].legend(hs, ncols=5, label='label', frame=False)
-    axs.format(suptitle='Global colorbar and global legend', abc=True, abcpos='ol', abcformat='A')
+    axs.format(suptitle='Global colorbar and global legend', abc=True, abcloc='ul', abcformat='A')
     for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
         ax.format(xlabel='xlabel', title=title)
 

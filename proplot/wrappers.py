@@ -1313,10 +1313,10 @@ def cycle_wrapper(self, func, *args,
         `~proplot.subplots.subplots`)!
 
         Otherwise, an *inset* legend is drawn, and this sets the position.
-        The following position keys and position key aliases are valid:
+        The following locations and location aliases are valid:
 
         ==================  ==============================================
-        Position            Valid aliases
+        Location            Valid aliases
         ==================  ==============================================
         ``'best'``          ``0``, ``'b'``, ``'i'``, ``'inset'``, ``True``
         ``'upper right'``   ``1``, ``'ur'``
@@ -1902,11 +1902,11 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         if `handles` is a list of lists; each sublist is used as a *row*
         in the legend. Otherwise, defaults to ``False``.
     loc : None or str, optional
-        The legend location. In addition to the verbose builtin matplotlib
-        location names, the following aliases are valid.
+        The legend location. The following locations and location aliases are
+        valid.
 
         ==================  ==============================================
-        Position            Valid aliases
+        Location            Valid aliases
         ==================  ==============================================
         ``'best'``          ``0``, ``'b'``, ``'i'``, ``'inset'``, ``True``
         ``'upper right'``   ``1``, ``'ur'``

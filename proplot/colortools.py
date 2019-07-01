@@ -74,7 +74,7 @@ _color_names_shorthands = {
     'm': 'magenta', 'y': 'yellow', 'k': 'black', 'w': 'white'
     }
 _color_names_bad = re.compile('(' + '|'.join((
-    'shit', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger',
+    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger', 'bile', 'diarrhea',
     )) + ')') # filter these out, let's try to be professional here...
 _color_names_add = (
     'sky blue', 'eggshell', 'sea blue', 'coral', 'tomato red', 'brick red', 'crimson',
@@ -348,11 +348,10 @@ class ColorCacheDict(dict):
                 pass
             else:
                 if isinstance(cmap, mcolors.ListedColormap):
-                    rgb = tuple(cmap.colors[key[1]]) # draw color from the list of colors, using index
+                    rgb = cmap.colors[key[1]] # draw color from the list of colors, using index
                 else:
-                    rgb = tuple(cmap(key[1])) # interpolate color from colormap, using key in range 0-1
-                if len(rgb)==3:
-                    rgb = (*rgb, 1)
+                    rgb = cmap(key[1]) # interpolate color from colormap, using key in range 0-1
+                rgb = mcolors.to_rgba(rgb)
                 return rgb
         return super().__getitem__((key, alpha))
 class _ColorMappingOverride(mcolors._ColorMapping):

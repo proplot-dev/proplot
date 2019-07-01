@@ -488,29 +488,25 @@ file extensions.
 Registered color names
 ----------------------
 
-ProPlot also defines a lot of new color names. Use
-`~proplot.demos.color_show` to generate tables of these new colors, as
+ProPlot defines new color names from the `XKCD “color
+survey” <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__,
+official `Crayola crayon
+colors <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__,
+and from the `“Open color” <https://github.com/yeun/open-color>`__
+Github project. This was inspired by
+`seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
+Use `~proplot.demos.color_show` to generate tables of these colors, as
 shown below. Note that the native matplotlib `CSS4 named
 colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
-still registered, but I encourage using colors from the below table
-instead.
+still registered, but I encourage using colors from the tables instead.
 
-The colors in the first table are from the `XKCD “color
-survey” <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__
-(crowd-sourced naming of random HEX strings) and `Crayola crayon
-colors <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__
-(inspired by
-`seaborn <https://seaborn.pydata.org/generated/seaborn.crayon_palette.html>`__).
-To reduce this list to a more manageable size, colors must be
-*sufficiently “distinct”* in the HCL perceptually uniform colorspace
-before they are added to ProPlot. This makes it a bit easier to pick out
-colors from a table. Similar names were also cleaned up – for example,
-“reddish” and “reddy” were changed to “red”.
-
-The colors in the second table are from the `“Open
-color” <https://github.com/yeun/open-color>`__ Github project. This
-project was intended for web UI design, but it is also useful for
-selecting colors for scientific visualizations.
+To reduce the number of registered color names to a more manageable
+size, XKCD and Crayola colors must have *sufficiently distinct
+coordinates* in the HCL perceptually uniform colorspace before they are
+added to ProPlot. This makes it a bit easier to pick out colors from a
+table generated with `~proplot.demos.color_show`. Similar names were
+also cleaned up – for example, “reddish” and “reddy” are changed to
+“red”.
 
 .. code:: ipython3
 
@@ -549,13 +545,13 @@ by the `~proplot.colortools.ColorCacheDict` class.
     f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=3.5, axcolorbars='r', share=False)
     m = axs[0].pcolormesh(np.random.rand(10,10), cmap='thermal', levels=np.linspace(0, 1, 101))
     axs[0].rpanel.colorbar(m, label='colormap', locator=0.2)
-    axs[0].format(title='The "thermal" colormap')
+    axs[0].format(title='Thermal colormap')
     l = []
     for idx in plot.arange(0, 1, 0.1):
         h = axs[1].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('thermal', idx), label=f'idx {idx:.1f}')
         l.append(h)
     axs[1].rpanel.legend(l, ncols=1)
-    axs[1].format(title='Colors from the "thermal" colormap')
+    axs[1].format(title='Drawing from the Thermal colormap')
     l = []
     idxs = np.arange(7)
     np.random.shuffle(idxs)
@@ -563,8 +559,8 @@ by the `~proplot.colortools.ColorCacheDict` class.
         h = axs[2].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('ggplot', idx), label=f'idx {idx:.0f}')
         l.append(h)
     axs[2].rpanel.legend(l, ncols=1)
-    axs[2].format(title='Colors from the "ggplot" color cycle')
-    axs.format(xlocator='null', abc=True, abcpos='li', suptitle='Getting individual colors from colormaps and cycles')
+    axs[2].format(title='Drawing randomly from the ggplot color cycle')
+    axs.format(xlocator='null', abc=True, abcloc='ul', suptitle='Getting individual colors from colormaps and cycles')
 
 
 

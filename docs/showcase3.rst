@@ -52,13 +52,13 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
     import proplot as plot
     import numpy as np
-    plot.rc.cycle = 'Set4'
+    plot.rc.cycle = 'Set3'
     titles = ['With redundant labels', 'Without redundant labels']
     for mode in (0,1):
         f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
         for ax in axs:
             ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
-        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcpos='il')
+        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcloc='ul')
 
 
 
@@ -370,7 +370,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
     ax.dualx(xscale='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
               xlabel='period (days)',
-              title='Imgaginary response function', titlepos='oc',
+              title='Imgaginary response function',
               suptitle='Duplicate x-axes with wavenumber and period', 
               )
 
