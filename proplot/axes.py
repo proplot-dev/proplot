@@ -885,8 +885,6 @@ class XYAxes(BaseAxes):
             obj = wrappers._scatter_wrapper(self, obj)
         elif attr=='bar':
             obj = wrappers._bar_wrapper(self, obj)
-        elif attr=='barh': # skips cycle wrapper and calls bar method
-            obj = wrappers._barh_wrapper(self, obj)
         elif attr=='boxplot':
             obj = wrappers._boxplot_wrapper(self, obj)
         elif attr=='violinplot':
@@ -897,11 +895,13 @@ class XYAxes(BaseAxes):
             obj = wrappers._check_edges(self, obj)
         # Step 1) Parse input
         if attr in wrappers._2d_methods:
-            obj = wrappers._parse_2d_(self, obj)
+            obj = wrappers._autoformat_2d_(self, obj)
         elif attr in wrappers._1d_methods:
-            obj = wrappers._parse_1d_(self, obj)
+            obj = wrappers._autoformat_1d_(self, obj)
         # Step 0) Special wrappers
-        if attr=='fill_between':
+        if attr=='barh': # skips cycle wrapper and calls bar method
+            obj = wrappers._barh_wrapper(self, obj)
+        elif attr=='fill_between':
             obj = wrappers._fill_between_wrapper(self, obj)
         elif attr=='fill_betweenx':
             obj = wrappers._fill_betweenx_wrapper(self, obj)
@@ -1994,9 +1994,9 @@ class CartopyAxes(MapAxes, GeoAxes):
             obj = wrappers._cartopy_crs(self, obj)
         # Step 1) Parse args input
         if attr in wrappers._2d_methods:
-            obj = wrappers._parse_2d_(self, obj)
+            obj = wrappers._autoformat_2d_(self, obj)
         elif attr in wrappers._1d_methods:
-            obj = wrappers._parse_1d_(self, obj)
+            obj = wrappers._autoformat_1d_(self, obj)
         # Step 0) Special wrappers
         if attr=='fill_between':
             obj = wrappers._fill_between_wrapper(self, obj)
@@ -2262,9 +2262,9 @@ class BasemapAxes(MapAxes):
                 obj = wrappers._basemap_latlon(self, obj)
             # Step 1) Parse args input
             if attr in wrappers._2d_methods:
-                obj = wrappers._parse_2d_(self, obj)
+                obj = wrappers._autoformat_2d_(self, obj)
             elif attr in wrappers._1d_methods:
-                obj = wrappers._parse_1d_(self, obj)
+                obj = wrappers._autoformat_1d_(self, obj)
             # Step 0) Special wrappers
             if attr=='fill_between':
                 obj = wrappers._fill_between_wrapper(self, obj)

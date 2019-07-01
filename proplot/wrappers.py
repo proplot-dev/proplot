@@ -45,8 +45,8 @@ except ModuleNotFoundError:
 _edges_methods = ('pcolor', 'pcolormesh',)
 _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _2d_methods = (*_centers_methods, *_edges_methods)
-_1d_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie', 'fill_between', 'fill_betweenx', 'hexbin')
-_cycle_methods = ('plot', 'scatter', 'bar', 'barh', 'hist', 'boxplot', 'violinplot', 'pie', 'fill_between', 'fill_betweenx')
+_1d_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot', 'pie', 'fill_between', 'fill_betweenx', 'hexbin')
+_cycle_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot', 'pie', 'fill_between', 'fill_betweenx')
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
     'hexbin', 'matshow', 'imshow', 'spy', 'hist2d')
@@ -153,20 +153,35 @@ def _expand_methods_list(func):
 # Standardized inputs and automatic formatting
 # NOTE: These do not have to be used explicitly, they are called by wrappers
 #------------------------------------------------------------------------------#
+def _to_iloc(data):
+    """Get indexible attribute of array, so we can perform axis wise operations."""
+    return getattr(data, 'iloc', data)
+
+def _to_array(data):
+    """Convert to ndarray cleanly."""
+    data = getattr(data, 'values', data)
+    return np.array(data)
+
 def _array_std(data):
     """Converts list of lists to array."""
     if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
         data = np.array(data)
+    if not np.iterable(data):
+        data = np.atleast_1d(data)
     return data
 
-def _auto_label(data, units=True):
-    """Gets label from pandas or xarray objects."""
+def _auto_label(data, axis=None, units=True):
+    """Gets data and label for pandas or xarray objects or their coordinates."""
+    label = ''
     if isinstance(data, ndarray):
-        label = ''
+        if axis is not None and data.ndim>axis:
+            data = np.arange(data.shape[axis])
     # Xarray with common NetCDF attribute names
     elif isinstance(data, DataArray):
+        if axis is not None and data.ndim>axis:
+            data = data.coords[data.dims[axis]]
         label = getattr(data, 'name', '') or ''
-        for key in ('standard_name', 'long_name'):
+        for key in ('long_name', 'standard_name'):
             label = data.attrs.get(key, label)
         if units:
             units = data.attrs.get('units', '')
@@ -177,19 +192,22 @@ def _auto_label(data, units=True):
     # Pandas object with name attribute
     # if not label and isinstance(data, DataFrame) and data.columns.size==1:
     elif isinstance(data, (DataFrame, Series, Index)):
+        if axis==0 and isinstance(data, (DataFrame, Series)):
+            data = data.index
+        elif axis==1 and isinstance(data, DataFrame):
+            data = data.columns
+        elif axis is not None:
+            data = np.arange(len(data)) # e.g. for Index
         label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
-    else:
-        label = ''
-    return str(label).strip()
+    return data, str(label).strip()
 
-def _parse_1d(self, func, *args, **kwargs):
+def _autoformat_1d(self, func, *args, **kwargs):
     """Accepts 1d DataArray or Series, or
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
-    # WARNING: Bail if barh, because only want to parse data once
     name = func.__name__
-    if len(args)==0 or name=='barh':
+    if len(args)==0:
         return func(*args, **kwargs)
     elif len(args)==1:
         x = None
@@ -198,124 +216,69 @@ def _parse_1d(self, func, *args, **kwargs):
         x, y, *args = args # same
     else:
         raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
-    # Iterate through list of ys
-    if len(args)>=1 and name in ('fill_between','fill_betweenx'):
-        ys = (y, args[0])
-        args = args[1:]
+
+    # Iterate through list of ys that we assume are identical
+    # Standardize based on the first y input
+    if len(args)>=1 and 'fill_between' in name:
+        ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    # Sanitize y input
-    yss = []
-    for y in ys:
-        if not np.iterable(y):
-            y = np.atleast_1d(y)
-        else:
-            y = _array_std(y) # enforce array if list of lists
-        yss.append(y)
-    # Standardize based on first y input
-    # First draw a sample column
-    y = yss[0] # test the first y input
-    columns = (name in ('boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None))
-    if y.ndim==1:
-        is1d = True
-        iy = y
-    elif y.ndim==2:
-        is1d = False
-        iy = getattr(y, 'iloc', y)
-        if columns: # we take summary statistics along rows, so columns represent x axis
-            iy = iy[0,:]
-        else:
-            iy = iy[:,0]
-    else:
-        raise ValueError(f'y must be 1 or 2-dimensional, got shape {y.shape}.')
-    # Auto coords
-    # WARNING: Try to migrate this stuff to individual functions?
+    ys = [_array_std(y) for y in ys]
+
+    # Auto x coords
+    y = ys[0] # test the first y input
     if x is None:
-        if isinstance(iy, ndarray):
-            x = np.arange(iy.size)
-        elif isinstance(iy, DataArray): # DataArray
-            x = iy.coords[iy.dims[0]]
-        elif isinstance(iy, Series): # Series
-            x = iy.index
-        else: # Index
-            raise ValueError(f'x coordinates cannot be inferred from pandas.Index-type y coordinates.')
-    if not np.iterable(x):
-        x = np.atleast_1d(x)
-    else:
-        x = _array_std(x)
+        axis = 1 if (name in ('boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None)) else 0
+        x, _ = _auto_label(y, axis=axis)
+    x = _array_std(x)
     if x.ndim!=1:
         raise ValueError(f'x coordinates must be 1-dimensional, but got {x.ndim}.')
-    # Auto formatting, and potentially convert y to an ndarray
-    # NOTE: This works because all the commands that change y only accept one
-    # y input, not 2.
-    if self.figure._autoformat:
-        # Title
+
+    # Auto formatting
+    if self.figure._autoformat and not self._is_map:
+        xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal') else 'x'
+        yaxis = 'x' if xaxis=='y' else 'y'
+        # Ylabel
         kw = {}
-        label = _auto_label(y)
+        y, label = _auto_label(y)
         if label:
-            kw['title'] = label
+            axis = xaxis if name in ('hist',) else yaxis # for histogram, this indicates x coordinate
+            kw[axis + 'label'] = label
         # Xlabel
-        if not self._is_map:
-            xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal') else 'x'
-            label = _auto_label(x)
-            if label:
-                kw[xaxis + 'label'] = label
-            if name!='scatter' and len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
-                kw[xaxis + 'reverse'] = True
+        x, label = _auto_label(x)
+        if label and name not in ('hist',):
+            kw[xaxis + 'label'] = label
+        if name!='scatter' and len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
+            kw[xaxis + 'reverse'] = True
         # For bar plots, so we can offset by widths, need to convert to
         # array prematurely and apply the IndexFormatter
         if name in ('bar',):
-            x = getattr(x, 'values', x) # TODO: restore datetime support!
-            x = np.array(x)
+            x = _to_array(x)
             if x.dtype=='object':
                 kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
+                kw[xaxis + 'minorlocator'] = mticker.NullLocator()
                 x = np.arange(len(x))
-        # For histograms, y data is actually on the x axis, so pull metadata
-        if name in ('hist',):
-            label = None
-            if isinstance(y, (DataFrame, Series)):
-                label = _auto_label(y.index)
-            elif isinstance(y, DataArray):
-                label = _auto_label(y.coords[y.dims[0]])
-            if label:
-                kw[xaxis + 'label'] = label
-            y = getattr(y, 'values', y)
-            y = np.array(y)
         # Boxplot accepts a 'labels' argument but violinplot does not, so
-        # we try to set the locators and formatters here.
+        # we try to set the locators and formatters here. Note x is ignored later.
         if name in ('boxplot','violinplot'):
-            label, ticks = None, None
-            if isinstance(y, ndarray):
-                pass
-            elif isinstance(y, DataFrame):
-                ticks = y.columns
-                label = _auto_label(y.columns)
-            elif isinstance(y, DataArray) and y.ndim>1:
-                ticks = y.coords[y.dims[1]].values
-                label = _auto_label(y.coords[y.dims[1]])
+            x, label = _auto_label(y, axis=1)
+            ys[0] = _to_array(y) # store naked array
             if label:
                 kw[xaxis + 'label'] = label
-            if ticks is not None: # TODO: support for e.g. date axes?
-                ticks = getattr(ticks, 'values', ticks)
-                ticks = np.array(ticks)
-                if ticks.dtype=='object':
-                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(ticks)
+            if x is not None: # TODO: support for e.g. date axes?
+                x = _to_array(x)
+                if x.dtype=='object':
+                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
+                    kw[xaxis + 'minorlocator'] = mticker.NullLocator()
                     if name=='boxplot':
-                        kwargs['labels'] = ticks # requires or get overwritten
-                    else:
-                        kwargs['positions'] = np.arange(len(ticks))
-                else:
-                    kwargs['positions'] = np.arange(len(ticks))
-            y = getattr(y, 'values', y)
-            y = np.array(y)
-        # Append standardized y
-        yss[0] = y
-    # Apply
-    if kw:
-        self.format(**kw)
-    return func(x, *yss, *args, **kwargs)
+                        kwargs['labels'] = x # requires or get overwritten
+                if x.dtype!='object' or name=='violinplot':
+                    kwargs['positions'] = np.arange(len(x))
+        if kw:
+            self.format(**kw)
+    return func(x, *ys, *args, **kwargs)
 
-def _parse_2d(self, func, *args, order='C', **kwargs):
+def _autoformat_2d(self, func, *args, order='C', **kwargs):
     """Gets 2d data. Accepts ndarray and DataArray. Used by `check_centers`
     and `check_edges`, which are used for all 2d plot methods."""
     # Sanitize input
@@ -327,8 +290,8 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
     x, y = None, None
     if len(args)>2:
         x, y, *args = args
+
     # Ensure DataArray, DataFrame or ndarray
-    # NOTE: All of these have shape and ndim attributes
     # WARNING: Why is DataFrame always column major? Is this best behavior?
     Zs = []
     for Z in args:
@@ -338,10 +301,11 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
         Zs.append(Z)
     if not all(Zs[0].shape==Z.shape for Z in Zs):
         raise ValueError(f'Zs must be same shape, got shapes {[Z.shape for Z in Zs]}.')
+
     # Retrieve coordinates
     if x is None and y is None:
         Z = Zs[0]
-        if order=='C':
+        if order=='C': # TODO: check order stuff works
             idx, idy = 1, 0
         else:
             idx, idy = 0, 1
@@ -354,6 +318,7 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
         else: # DataFrame; never Series or Index because these are 1d
             x = Z.index
             y = Z.columns
+
     # Check coordinates
     x, y = _array_std(x), _array_std(y)
     if x.ndim != y.ndim:
@@ -361,19 +326,20 @@ def _parse_2d(self, func, *args, order='C', **kwargs):
     for name,array in zip(('x','y'), (x,y)):
         if array.ndim not in (1,2):
             raise ValueError(f'{name} coordinates are {array.ndim}-dimensional, but must be 1 or 2-dimensional.')
+
     # Auto formatting
     if self.figure._autoformat:
         kw = {}
-        # Labels
+        # Xlabel and Ylabel
         if not self._is_map:
-            for key,z in zip(('xlabel','ylabel'), (x,y)):
-                label = _auto_label(z)
+            for key,xy in zip(('xlabel','ylabel'), (x,y)):
+                _, label = _auto_label(xy)
                 if label:
                     kw[key] = label
-                if len(z)>1 and all(isinstance(z, Number) for z in z[:2]) and z[1]<z[0]:
+                if len(xy)>1 and all(isinstance(xy, Number) for xy in xy[:2]) and xy[1]<xy[0]:
                     kw[key[0] + 'reverse'] = True
         # Title
-        title = _auto_label(Zs[0], units=False)
+        _, title = _auto_label(Zs[0], units=False)
         if title:
             kw['title'] = title
         if kw:
@@ -542,33 +508,39 @@ def scatter_wrapper(self, func, *args,
         norm=norm, linewidths=lw, edgecolors=ec,
         **kwargs)
 
-def _fill_between_driver(xy, func, args, kwargs):
+def _fill_between_parse(func, *args, negcolor='blue', poscolor='red', negpos=False, **kwargs):
     """Parse args and call function."""
-    # Usage
-    yx = 'y' if xy=='x' else 'x'
+    # Allow common keyword usage
+    xy = 'y' if 'x' in func.__name__ else 'y'
+    yx = 'x' if xy=='y' else 'y'
     if xy in kwargs:
         args = (kwargs.pop(xy), *args)
     for yx in (yx + '1', yx + '2'):
         if yx in kwargs:
             args = (*args, kwargs.pop(yx))
-    if len(args) not in (1,2,3):
-        raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
-    # Negpos feature
-    negpos = kwargs.get('negpos', None)
-    if negpos:
-        if kwargs.get('where', None) is not None:
-            raise ValueError('You can use the "negpos" keyword or the "where" keyword, not both.')
-        if len(args)==3:
-            raise ValueError('Need only x and y values for the "negpos" keyword.')
-        zero = 0
-        if negpos not in (True,1):
-            zero = negpos
-        y = np.array(args[-1])
-        if y.ndim!=1:
-            raise ValueError(f'Must be 1-dimensional.')
-        where1 = np.where(np.array(y))
-    # Call function
-    return func(*args, **kwargs)
+    if len(args)==1:
+        args = (np.arange(len(args[0])), *args)
+    if len(args)==2:
+        args = (*args, 0) # default behavior
+    if len(args)!=3:
+        raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
+    if not negpos:
+        return func(*args, **kwargs)
+    # Get zero points
+    objs = []
+    kwargs.setdefault('interpolate', True)
+    y1, y2 = np.atleast_1d(args[-2]).squeeze(), np.atleast_1d(args[-1]).squeeze()
+    if y1.ndim>1 or y2.ndim>1:
+        raise ValueError(f'When "negpos" is True, y must be 1-dimensional.')
+    if kwargs.get('where', None) is not None:
+        raise ValueError('When "negpos" is True, you cannot set the "where" keyword.')
+    for i in range(2):
+        kw = {**kwargs}
+        kw.setdefault('color', negcolor if i==0 else poscolor)
+        where = (y2<y1) if i==0 else (y2>=y1)
+        obj = func(*args, where=where, **kw)
+        objs.append(obj)
+    return objs
 
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
@@ -585,9 +557,14 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     stacked : bool, optional
         If `y2` is ``None``, this indicates whether to "stack" successive
         columns of the `y1` array.
-    negpos : bool or float, optional
-        Whether to shade negative values one color and positive values another color.
-        Pass a float to use that position on the y-axis as the "zero point".
+    negpos : bool, optional
+        Whether to shade where `y2` is greater than `y1` with the color `poscolor`,
+        and where `y1` is greater than `y2` with the color `negcolor`. For
+        example, to shade positive values red and negtive blue, use
+        ``ax.fill_between(x, 0, y)``.
+    negcolor, poscolor : color-spec, optional
+        Colors to use for the negative and positive values. Ignored if `negpos`
+        is ``False``.
     where : ndarray, optional
         Boolean ndarray mask for points you want to shade. See
         `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
@@ -596,39 +573,14 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     """
     # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
     # we can handle common keyword arg usage.
-    return _fill_between_driver('x', func, args, kwargs)
+    return _fill_between_parse(func, *args, **kwargs)
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
-    """
-    Wraps `~matplotlib.axes.Axes.fill_betweenx`, also accessible via the
-    `~proplot.axes.BaseAxes.areax` alias.
-
-    Parameters
-    ----------
-    *args : (x1,), (y,x1), or (y,x1,x2)
-        The *y* and *x* coordinates. If `y` is not provided, it will be
-        inferred from `x1`. If `x1` and `x2` are provided, their shapes
-        must be identical, and we fill between respective columns of these
-        arrays.
-    stacked : bool, optional
-        If `x2` is ``None``, this indicates whether to "stack" successive
-        columns of the `x1` array.
-    negpos : bool or float, optional
-        Whether to shade negative values one color and positive values another color.
-        Pass a float to use that position on the y-axis as the "zero point".
-    where : ndarray, optional
-        Boolean ndarray mask for points you want to shade. See
-        `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
-    **kwargs
-        Passed to `~matplotlib.axes.Axes.fill_betweenx`.
-    """
-    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
-    # we can handle common keyword arg usage.
-    return _fill_between_driver('y', func, args, kwargs)
+    """Wraps `~matplotlib.axes.Axes.fill_betweenx`, usage is same as `fill_between_wrapper`."""
+    return _fill_between_parse(func, *args, **kwargs)
 
 def barh_wrapper(self, func, *args, **kwargs):
     """Wraps `~matplotlib.axes.Axes.barh`, usage is same as `bar_wrapper`."""
-    # See the bar_wrapper
     kwargs['orientation'] = 'horizontal'
     return self.bar(*args, **kwargs)
 
@@ -1408,19 +1360,18 @@ def cycle_wrapper(self, func, *args,
     `_get_lines` and `_get_patches_for_fill`.
     """
     # Test input
-    # NOTE: Requires _parse_1d wrapper before reaching this. Also note that
+    # NOTE: Requires _autoformat_1d wrapper before reaching this. Also note that
     # the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
     barh = (name=='bar' and kwargs.get('orientation', None)=='horizontal')
     x, y, *args = args
-    if len(args)>=1 and name in ('fill_between','fill_betweenx'):
+    if len(args)>=1 and 'fill_between' in name:
         ys = (y, args[0])
         args = args[1:]
     else:
         ys = (y,)
-    y = ys[0] # sample for testing
     is1d = (y.ndim==1)
 
     # Determine and temporarily set cycler
@@ -1484,84 +1435,76 @@ def cycle_wrapper(self, func, *args,
             if key in keys and prop is None:
                 apply.add(key)
 
-    # Special settings
-    labels = _default(values, labels, label, None)
-    stacked = kwargs.pop('stacked', False) # for 'bar', 'barh', 'area', 'areax' plots
-    if name in ('pie','boxplot','violinplot'):
-        ncols = 1
-        if labels is not None:
-            kwargs['labels'] = labels
-    else:
-        ncols = (1 if is1d else y.shape[1])
-        if isinstance(labels, str) or labels is None:
-            labels = [labels]*ncols
-    if name in ('bar',):
-        width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
-        key = 'height' if barh else 'width'
-        kwargs[key] = width if stacked else width/ncols
     # Plot susccessive columns
     # WARNING: Most methods that accept 2d arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data assumed!
     # This is fixed in parse_1d by converting to values.
-    label_cl = None # for colorbar or legend
     objs = []
-    iys = tuple(getattr(iy, 'iloc', iy) for iy in ys) # for indexing
+    ncols = 1
+    label_leg = None # for colorbar or legend
+    labels = _default(values, labels, label, None)
+    stacked = kwargs.pop('stacked', False) # for 'bar', 'barh', 'area', 'areax' plots
+    if name in ('pie','boxplot','violinplot'):
+        if labels is not None:
+            kwargs['labels'] = labels
+    else:
+        ncols = (1 if is1d else y.shape[1])
+        if labels is None or isinstance(labels, str):
+            labels = [labels]*ncols
+    if name in ('bar',):
+        width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
+        kwargs['height' if barh else 'width'] = width if stacked else width/ncols
     for i in range(ncols):
-        # Get x coordinates
+        # Prop cycle properties
         kw = {**kwargs} # copy
-        ix, iy = x, iys[0] # samples
+        if apply:
+            props = next(self._get_lines.prop_cycler)
+            for key in apply:
+                value = props[key]
+                if key in ('size','markersize'):
+                    key = 's'
+                elif key in ('linewidth','markeredgewidth'): # translate
+                    key = 'linewidths'
+                elif key=='markeredgecolor':
+                    key = 'edgecolors'
+                kw[key] = value
+        # Get x coordinates
+        ix, iy = x, ys[0] # samples
+        if name in ('pie',):
+            kw['labels'] = _default(labels, ix) # TODO: move to pie wrapper?
         if name in ('bar',): # adjust
             if not stacked:
                 ix = x + (i - ncols/2 + 0.5)*width/ncols
             elif stacked and not is1d:
                 key = 'x' if barh else 'bottom'
-                kw[key] = iy[:,:i].sum(axis=1) # sum of empty slice will be zero
+                # iy = _to_iloc(iy)[:,:i].sum(axis=1) # sum of empty slice will be zero
+                # kw[key] = iy
+                kw[key] = _to_iloc(iy)[:,:i].sum(axis=1) # sum of empty slice will be zero
         # Get y coordinates and labels
-        if name in ('boxplot','violinplot'): # these cannot have a 'label'
-            iyss = (iy[:],) if is1d else (iy[:,:],)
-        elif name in ('pie',):
-            kw['labels'] = _default(labels, ix) # TODO: move to pie wrapper?
-            iyss = (iy[:],)
+        if name in ('pie','boxplot','violinplot'):
+            iys = (iy,) # only ever have one y value, and cannot have legend labels
         else:
+            # The coordinates
+            if stacked and 'fill_between' in name:
+                iys = tuple(iy if is1d else _to_iloc(iy)[:,:j].sum(axis=1) for j in (i,i+1))
+            else:
+                iys = tuple(iy if is1d else _to_iloc(iy)[:,i] for iy in ys)
+            # Possible legend labels
             label = labels[i]
-            if name in ('fill_between','fill_betweenx') and stacked:
-                if len(ys)>1:
-                    raise ValueError(f'For stacked area plots, must have only 1 input y array, not 2.')
-                iyss = tuple(iy if is1d else iy[:,:j].sum(axis=1) for j in (i,i+1))
-            else:
-                iyss = tuple(iy[:] if is1d else iy[:,i] for iy in iys)
-            if label or isinstance(y, ndarray):
-                pass
-            elif isinstance(y, DataFrame):
-                label = y.columns[i]
-                label_cl = _auto_label(y.columns) # coordinate label
-            elif isinstance(y, DataArray) and y.ndim>1:
-                label = y.coords[y.dims[1]].values[i]
-                label_cl = _auto_label(y.coords[y.dims[1]]) # coordinate label
-            else:
-                label = _auto_label(iyss[0]) # e.g. a pd.Series name
-            kw['label'] = label
-        # Update properties
-        if apply:
-            props = next(self._get_lines.prop_cycler)
-            for key in apply:
-                value = props[key]
-                if key in ('linewidth', 'markeredgewidth'): # translate
-                    key = 'linewidths'
-                elif key in ('size','markersize'):
-                    key = 's'
-                elif key=='markeredgecolor':
-                    key = 'edgecolors'
-                kw[key] = value
-        # Call function with correct args
-        if barh: # special!
-            xy = ()
-            kw.update({'bottom':ix, 'width':iyss[0]})
+            values, label_leg = _auto_label(iy, axis=1) # _auto_label(iy) # e.g. a pd.Series name
+            if label_leg and label is None:
+                label = _to_array(values)[i]
+            if label is not None:
+                kw['label'] = label
+        # Call with correct args
+        xy = ()
+        if barh: # special, use kwargs only!
+            kw.update({'bottom':ix, 'width':iys[0]})
             kw.setdefault('x', kwargs.get('bottom', 0)) # must always be provided
         elif name in ('pie','hist','boxplot','violinplot'): # no x-coordinate
-            xy = (iyss[0],)
+            xy = (*iys,)
         else: # has x-coordinates, and maybe more than one y
-            xy = (ix,*iyss)
+            xy = (ix,*iys)
         obj = func(*xy, *args, **kw)
         if isinstance(obj, (list,tuple)) and len(obj)==1: # plot always returns list or tuple
             obj = obj[0]
@@ -1579,8 +1522,8 @@ def cycle_wrapper(self, func, *args,
         kw = {**colorbar_kw} # copy
         if loc!='fill':
             kw['loc'] = loc
-        if label_cl:
-            kw['label'] = label_cl
+        if label_leg:
+            kw['label'] = label_leg
         ax._auto_colorbar_kw[loc].update(kw)
     if legend:
         # Add handles
@@ -1593,16 +1536,16 @@ def cycle_wrapper(self, func, *args,
         kw = {**legend_kw}
         if loc!='fill':
             kw['loc'] = loc
-        if label_cl:
-            kw['label'] = label_cl
+        if label_leg:
+            kw['label'] = label_leg
         ax._auto_legend_kw[loc].update(kw)
 
     # Return
-    # WARNING: Make sure plot always returns tuple of objects, and bar
-    # always returns singleton unless we have bulk drawn bar plots! Other
-    # matplotlib methods call these internally!
+    # WARNING: Make sure plot always returns tuple of objects, and bar always
+    # returns singleton unless we have bulk drawn bar plots! Other matplotlib
+    # methods call these internally!
     if name in ('hist',):
-        objs = [obj[-1] for obj in objs] # just the patch objects
+        objs = tuple(obj[-1] for obj in objs) # just the patch objects
     if name=='plot':
         return (*objs,) # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
@@ -1909,7 +1852,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         ax, loc = _get_panel(self, colorbar)
         colorbar_kw = {**colorbar_kw} # make copy of mutable default object!
         if 'label' not in colorbar_kw and self.figure._autoformat:
-            label = _auto_label(args[-1]) # last one is data, we assume
+            _, label = _auto_label(args[-1]) # last one is data, we assume
             if label:
                 colorbar_kw['label'] = label
         if name in ('cmapline',) and values is not None:
@@ -2589,8 +2532,8 @@ def _simple_wrapper(driver):
     return decorator
 # Hidden wrappers
 # Also _m_call and _m_norecurse
-_parse_1d_ = _wrapper(_parse_1d)
-_parse_2d_ = _wrapper(_parse_2d)
+_autoformat_1d_ = _wrapper(_autoformat_1d)
+_autoformat_2d_ = _wrapper(_autoformat_2d)
 # Documented
 _check_centers         = _wrapper(check_centers)
 _check_edges           = _wrapper(check_edges)

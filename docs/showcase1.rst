@@ -264,9 +264,8 @@ labelling, pass ``autoformat=False`` to `~proplot.subplots.subplots`.
 The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keywords, see `~proplot.wrappers.cmap_wrapper`,
-`~proplot.wrappers.cycle_wrapper`, and
-:ref:`Plot command enhancements` sections. For more on panels, see the
-:ref:`Panels` section.
+`~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting enhancements`
+sections. For more on panels, see the :ref:`Panels` section.
 
 .. code:: ipython3
 
@@ -401,36 +400,40 @@ ProPlot adds all of the fonts below and makes Helvetica the default, as
 in MATLAB. Generally speaking, simple, clean sans-serif fonts are more
 appropriate for figures than serif fonts. You can also register your own
 fonts by adding ``.ttf`` and ``.otf`` files to the ``~/.proplot/fonts``
-directory, and change the default with the `~proplot.rcmod.rc` object
-or by modifying your ``~/.proplotrc``. See the `~proplot.fonttools`
-and `~proplot.rcmod` documentation for more info.
+directory and calling `~proplot.fonttools.register_fonts` (also called
+on import). To change the default font, use the `~proplot.rcmod.rc`
+object or by modifying your ``~/.proplotrc``. See the
+`~proplot.fonttools` and `~proplot.rcmod` documentation for more
+info.
 
 .. code:: ipython3
 
     import proplot as plot
-    # plot.register_fonts() # called on import
     size = 12
     plot.rc.small = plot.rc.large = size
-    fonts = ['DejaVu Sans', 'Arial', 'Avenir', 'Futura', 'Helvetica', 'Helvetica Neue', 'Geneva', 'Lucida Grande', 'Noto Sans', 'Monaco', 'Tahoma', 'Verdana']
-    math  = r'$\alpha\beta + \gamma\delta \times \epsilon\zeta \cdot \eta\theta - \Sigma\kappa\lambda\mu / \Pi\pi \geq \rho\sigma \leq \tau\psi \equiv \phi\omega$'
-    caps = 'QUICK BROWN FOX JUMPS OVER THE LAZY DOG!'
-    lower = 'quick brown fox jumps over the lazy dog?'
-    chars = '(0).{123},[456]*<789>-~@#%&'
+    fonts = ['DejaVu Sans', 'Arial', 'Avenir', 'Franklin Gothic Book', 'Frutiger', 'Futura',
+             'Gotham', 'Helvetica', 'Helvetica Neue', 'Geneva', 'Gill Sans',
+             'Lucida Grande', 'Noto Sans', 'Myriad Pro', 'Open Sans', 'Optima', 'Tahoma', 'Univers', 'Verdana']
+    math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
+    greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
+    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz'
+    letters = 'quick brown fox jumps over the lazy dog QUICK BROWN FOX JUMPS OVER THE LAZY DOG'
     for weight in ('normal',):
-        f, axs = plot.subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=7.5, axheight=3*size/72)
-        axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', suptitle='Fonts demo', alpha=0)
+        f, axs = plot.subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=7.5, axheight=3.5*size/72)
+        axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
+        axs[0].format(title='Fonts demo', titlepos='ol', titleweight='bold')
         for i,ax in enumerate(axs):
             font = fonts[i]
             plot.rc.fontname = font
-            ax.text(0.5, 0.5, f'{font}: {lower} {chars}\n{caps} {math}', weight=weight, ha='center', va='center')
+            ax.text(0, 0.5, f'{font}: {letters}\n{math} {greek}', weight=weight, ha='left', va='center')
 
 
 
 .. image:: showcase/showcase_28_0.svg
 
 
-Plot command enhancements
--------------------------
+Plotting enhancements
+---------------------
 
 Various matplotlib plotting commands have new features thanks to a set
 of wrapper functions (see the `~proplot.axes` documentation). The most
@@ -554,7 +557,7 @@ spread represented by error bars.
     obj = ax.barh(data.iloc[::-1,:], cycle='Grays', legend='ur', stacked=True)
     ax.format(title='Stacked')
     ax = axs[2]
-    obj = ax.barh(data.iloc[:,:], color='red orange', means=True)
+    obj = ax.barh(data, color='red orange', means=True)
     ax.format(title='Column statistics')
 
 
@@ -562,20 +565,21 @@ spread represented by error bars.
 .. image:: showcase/showcase_35_0.svg
 
 
-The `~matplotlib.axes.Axes.fill_between` and
-`~matplotlib.axes.Axes.fill_betweenx` methods are also wrapped with
+Make area plots with the convenient aliases
+`~proplot.axes.BaseAxes.area` and `~proplot.axes.BaseAxes.areax`.
+These point to the `~matplotlib.axes.Axes.fill_between` and
+`~matplotlib.axes.Axes.fill_betweenx` methods, which are wrapped with
 `~proplot.wrappers.fill_between_wrapper` and
-`~proplot.wrappers.fill_betweenx_wrapper`, and given the convenient
-aliases `~proplot.axes.BaseAxes.area` and
-`~proplot.axes.BaseAxes.areax`. The wrappers allow similar
-functionality to the `pandas` `~pandas.DataFrame.plot.area`
-function, including “stacking” successive columns of a 2D input array.
+`~proplot.wrappers.fill_betweenx_wrapper`. The wrappers enable
+“stacking” successive columns of a 2D input array like in `pandas`,
+and add a new “``negpos``” keyword for creating area plots with
+different colors where the area boundaries cross each other.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, share=0)
+    f, axs = plot.subplots(array=[[1,2],[3,3]], hratios=(1,0.8), span=False, share=0)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
     data = np.random.rand(5,3).cumsum(axis=0)
     ax = axs[0]
@@ -588,6 +592,10 @@ function, including “stacking” successive columns of a 2D input array.
             legend='ul', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
             )
     ax.format(title='Stack between columns')
+    ax = axs[2]
+    data = 5*(np.random.rand(20)-0.5)
+    ax.area(np.arange(len(data)), 0, data, negpos=True, negcolor='blue7', poscolor='red7')
+    ax.format(title='Negative and positive data', xlabel='xlabel', ylabel='ylabel')
 
 
 
@@ -611,10 +619,10 @@ automatic axis labeling.
     data = np.random.normal(size=(20,5)) + 2*(np.random.rand(20,5)-0.5)
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
     ax = axs[0]
-    obj1 = ax.boxplot(data, lw=0.7, marker='x', color='gray7', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
+    obj1 = ax.boxplot(data, lw=0.7, marker='x', fillcolor='gray5', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
     ax.format(title='Box plots', titlepos='ci')
     ax = axs[1]
-    obj2 = ax.violinplot(data, lw=0.7, fillcolor='C1', showmeans=True)
+    obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', showmeans=True)
     ax.format(title='Violin plots', titlepos='ci')
     axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
 
@@ -645,16 +653,16 @@ behavior, use ``edgefix=False``.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, axcolorbars='b')
+    f, axs = plot.subplots(ncols=5, width=8, wratios=(5,3,3,3,3), axcolorbars='b')
     axs.format(suptitle='Colorbar color range demo')
     levels = plot.arange(0,360,45)
     data = 20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1) % 360
     ax = axs[0]
     ax.contourf(data, levels=levels, cmap='phase', extend='neither', colorbar='b')
     ax.format(title='Cyclic map with separate ends')
-    for ax,extend in zip(axs[1:], ('min','max')):
-        ax.contourf(data, levels=levels, cmap='spectral', extend=extend, colorbar='b')
-        ax.format(title=f'Map with {extend} extension')
+    for ax,extend in zip(axs[1:], ('min','max','neither','both')):
+        ax.contourf(data, levels=levels, cmap='spectral', extend=extend, colorbar='b', colorbar_kw={'locator':90})
+        ax.format(title=f'Map with extend={extend}')
 
 
 
@@ -696,10 +704,11 @@ passed to the `~proplot.colortools.Norm` constructor.
     f, axs = plot.subplots(colorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
     data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
-    for i,norm in enumerate(('linear','segments')):
+    for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm (default)'))):
         m = axs[i].contourf(data, values=ticks, extend='both', cmap='blue2', norm=norm)
         f.bpanel[i].colorbar(m, label='clabel', locator=ticks, fixticks=False)
-    axs.format(suptitle='Unevenly spaced color levels', collabels=['Linear normalizer', 'LinearSegmentedNorm'])
+        axs[i].format(title=title)
+    axs.format(suptitle='Level normalizers demo')
 
 
 
@@ -720,13 +729,14 @@ of the underlying box color.
     import numpy as np
     f, axs = plot.subplots(ncols=2, span=False, share=False)
     data = np.random.rand(7,7)
+    axs.format(suptitle='Labels demo')
     ax = axs[0]
     m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels', titleweight='bold')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels')
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
     m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels', titleweight='bold')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels')
 
 
 

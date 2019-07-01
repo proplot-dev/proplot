@@ -197,7 +197,7 @@ _cmap_categories = {
     'Alt Diverging': [
         'coolwarm', 'bwr', 'seismic'
         ],
-    'Miscellaneous Orig': [
+    'Misc Orig': [
         'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
         'gnuplot', 'gnuplot2', 'CMRmap', 'brg', 'hsv', 'hot', 'rainbow',
         'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
@@ -283,9 +283,9 @@ _cmap_categories = {
     #     'Geography3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/mby/tn/mby.png.index.html
     #     ],
     }
-_cmap_categories_delete = [
-    'Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Miscellaneous Orig'
-    ] # ignore and *delete* from dictionary because they suck
+_cmap_categories_delete = (
+    'Alt Diverging', 'Alt Sequential', 'Alt Rainbow', 'Misc Orig'
+    ) # ignore and *delete* from dictionary because they suck
 _cmap_parts = {
     'piyg': (None, 2, None),
     'prgn': (None, 1, 2, None), # purple red green
@@ -390,49 +390,6 @@ class CmapDict(dict):
                 kwargs_filtered[key.lower()] = value
         super().__init__(kwargs_filtered)
 
-    def _sanitize_key(self, key):
-        """Sanitizes key name."""
-        # Try retrieving
-        if not isinstance(key, str):
-            raise ValueError(f'Invalid key {key}. Must be string.')
-        key = key.lower()
-        reverse = False
-        if key[-2:] == '_r':
-            key = key[:-2]
-            reverse = True
-        # Attempt to get 'mirror' key, maybe that's the one
-        # stored in colormap dict
-        if not super().__contains__(key):
-            key_mirror = key
-            for mirror in _cmap_mirrors:
-                try:
-                    idx = mirror.index(key)
-                    key_mirror = mirror[1 - idx]
-                except ValueError:
-                    continue
-            if super().__contains__(key_mirror):
-                reverse = (not reverse)
-                key = key_mirror
-        # Return 'sanitized' key. Not necessarily in dictionary! Error
-        # will be raised further down the line if so.
-        if reverse:
-            key = key + '_r'
-        return key
-
-    def _getitem(self, key):
-        """Get value, but skip key sanitization."""
-        reverse = False
-        if key[-2:] == '_r':
-            key = key[:-2]
-            reverse = True
-        value = super().__getitem__(key) # may raise keyerror
-        if reverse:
-            try:
-                value = value.reversed()
-            except AttributeError:
-                raise KeyError(f'Dictionary value in {key} must have reversed() method.')
-        return value
-
     def __getitem__(self, key):
         """Sanitizes key, then queries dictionary."""
         key = self._sanitize_key(key)
@@ -446,11 +403,52 @@ class CmapDict(dict):
 
     def __contains__(self, item):
         """The 'in' behavior."""
-        try:
+        try: # by default __contains__ uses object.__getitem__, ignores overrides
             self.__getitem__(item)
             return True
         except KeyError:
             return False
+
+    def _getitem(self, key):
+        """Get value, but skip key sanitization."""
+        reverse = False
+        if key[-2:] == '_r':
+            key, reverse = key[:-2], True
+        value = super().__getitem__(key) # may raise keyerror
+        if reverse:
+            try:
+                value = value.reversed()
+            except AttributeError:
+                raise KeyError(f'Dictionary value in {key} must have reversed() method.')
+        return value
+
+    def _sanitize_key(self, key):
+        """Sanitizes key name."""
+        # Try retrieving
+        if not isinstance(key, str):
+            raise ValueError(f'Invalid key {key}. Must be string.')
+        key = key.lower()
+        reverse = False
+        if key[-2:] == '_r':
+            key = key[:-2]
+            reverse = True
+        # Attempt to get 'mirror' key, maybe that's the one stored
+        if not super().__contains__(key):
+            key_mirror = key
+            for mirror in _cmap_mirrors:
+                try:
+                    idx = mirror.index(key)
+                    key_mirror = mirror[1 - idx]
+                except (ValueError,KeyError):
+                    continue
+            if super().__contains__(key_mirror):
+                reverse = (not reverse)
+                key = key_mirror
+        # Return 'sanitized' key. Not necessarily in dictionary! Error
+        # will be raised further down the line if so.
+        if reverse:
+            key = key + '_r'
+        return key
 
     def get(self, key, *args):
         """Case-insensitive version of `dict.get`."""

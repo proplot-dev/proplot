@@ -64,8 +64,6 @@ broken down into the following sections:
    interactive tool. There are so many of these maps because they are
    intended to be *merged* with one another – suitable for complex
    datasets with complex statistical distributions.
--  `Fabio Crameri’s <http://www.fabiocrameri.ch/colourmaps.php>`__
-   colormaps, a custom-made set published on his website.
 
 ProPlot removes some default matplotlib colormaps with erratic color
 transitions. Note that all colormap and color cycle names (see

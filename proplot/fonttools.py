@@ -15,10 +15,10 @@ installing or updating ProPlot or matplotlib.
 # * To break down .dfont files, use fondu (homebrew download).
 #   To break down .ttc files, use dfontsplitter (https://peter.upfold.org.uk/projects/dfontsplitter)
 #   To break down .bdf files made by fondu, use mkttf (https://github.com/Tblue/mkttf; requires FontForge and PoTrace)
+# * Install new fonts with "brew cask install font-<name-of-font>" after using
+#   "brew tap caskroom/fonts" to initialize; appear in ~/Library/Fonts; see https://github.com/Homebrew/homebrew-cask-fonts
 # * The .otf files work in addition to .ttf files. You can verify this by
 #   looking at plot.fonts_files_os -- it includes .otf files.
-# * Install new fonts with "brew cask install font-<name-of-font>" after using
-#   "brew tap caskroom/fonts" to initialize; these appear in ~/Library/Fonts.
 # Notes on default files packaged in font directory:
 # * Location will be something like:
 #   /lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf
@@ -28,10 +28,12 @@ installing or updating ProPlot or matplotlib.
 #   like integrals, and italized math-mode fonts.
 # * We also have 'pdfcorefonts' in this directory, but I think since these
 #   are afm matplotlib cannot use them? Don't know.
-# Helvetica notes: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-# Best fonts for dyslexia: http://dyslexiahelp.umich.edu/sites/default/files/good_fonts_for_dyslexia_study.pdf
+# Helvetica: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+# Classic fonts: https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406
+# Good for downloading fonts: https://www.cufonfonts.com
 import os
 import re
+import sys
 import shutil
 import glob
 import matplotlib.font_manager as mfonts
@@ -79,8 +81,8 @@ def register_fonts():
 
     # Transfer files to matplotlibrc
     fonts_new = []
-    for filename in sorted(glob.glob(os.path.join(_data_fonts, '*'))) + \
-            sorted(glob.glob(os.path.join(_data_user_fonts, '*'))):
+    for filename in sorted(glob.glob(os.path.join(_data_fonts, '*.[ot]tf'))) + \
+            sorted(glob.glob(os.path.join(_data_user_fonts, '*.[ot]tf'))):
         base = os.path.basename(filename)
         if os.path.exists(os.path.join(_data_matplotlib_fonts, base)):
             continue
