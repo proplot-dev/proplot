@@ -3,7 +3,7 @@
 
 .. class:: center
 
-|build-status| |docs| |coverage| |license|
+|build-status| |coverage| |license|
 
 An easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
 that can help you make beautiful, publication-quality graphics.
@@ -144,21 +144,22 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
     :alt: coverage
     :target: https://codecov.io/gh/lukelbd/proplot.org
 
-.. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
-    :alt: docs
-    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
-
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license
    :target: LICENSE.txt
 
 ..
-   |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
+.. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
+    :alt: docs
+    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+
+..
+.. |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
    :alt: contributions
    :target: https://github.com/lukelbd/issues
 
 ..
-   |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
+.. |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
    :alt: issues
    :target: https://github.com/lukelbd/issues
 
