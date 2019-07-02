@@ -83,7 +83,7 @@ Why not add to matplotlib directly?
 This project can be thought of as "matplotlib for power users."
 Many of its features represent an alternative to the existing matplotlib API -- and
 following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
-they should perhaps remain here as a side project. For example: the ``format`` and ``smart_update`` methods, which are meant to replace existing axes and axis methods.
+they should perhaps remain here as a side project. For example: the ``format`` and ``format_partial`` methods, which are meant to replace existing axes and axis methods.
 
 .. Some features could be relatively esoteric for the average user (for example,
    "perceptually uniform" colormaps), or could be seen as "convenience features" that perhaps do not belong with the core API for the sake of minimalism (for example, direct integration
