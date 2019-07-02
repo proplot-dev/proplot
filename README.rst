@@ -1,8 +1,6 @@
 .. image:: docs/_static/long.png
    :width: 1000px
 
-.. class:: center
-
 |build-status| |coverage| |license|
 
 An easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
