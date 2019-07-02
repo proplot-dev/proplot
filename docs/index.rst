@@ -7,7 +7,7 @@
 ProPlot
 =======
 
-An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
+An easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
 that can help you make beautiful, publication-quality graphics.
 The Github page is `here <https://github.com/lukelbd/proplot>`__.
 

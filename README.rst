@@ -9,7 +9,7 @@
 
 |build-status| |docs| |coverage| |license|
 
-An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
+An easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
 that can help you make beautiful, publication-quality graphics.
 
 Installation
@@ -36,7 +36,7 @@ to differentiate ProPlot from the usual "``plt``" abbreviation used for the ``py
 
 Documentation
 -------------
-The documentation is published `here <https://lukelbd.github.io/proplot>`_.
+The documentation is `published here <https://lukelbd.github.io/proplot>`_.
 
 Overview
 --------

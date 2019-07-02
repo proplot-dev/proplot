@@ -1223,19 +1223,21 @@ def Cycle(*args, samples=None, name=None, save=False,
     markersize=None, markeredgewidth=None, markeredgecolor=None, markerfacecolor=None,
     **kwargs):
     """
-    Calls `Colormap` and returns a `~cycler.Cycler` that cycles through
+    Calls `Colormap` and returns a `~cycler.Cycler` object that cycles through
     colormap colors, used to interpret the `cycle` and `cycle_kw` arguments
     when passed to any plotting method wrapped by `~proplot.wrappers.cycle_wrapper`.
-    Since all "cycle names" (e.g. ``'colorblind'``, ``'538'``) are stored and
-    registered as `~matplotlib.colors.ListedColormap` colormaps, they are
-    accessible from the `Colormap` command.
+
+    This function calls `Colormap` because all "cycle names" (e.g.
+    ``'colorblind'``, ``'538'``) are stored and *registered* as
+    `~matplotlib.colors.ListedColormap` colormaps, and can therefore be
+    returned by the `Colormap` command.
 
     The cycle colors are selected as follows.
 
-    1. If `Colormap` returns a `~matplotlib.colors.ListedColormap` (i.e. is a
+    1. If `Colormap` returns a `~matplotlib.colors.ListedColormap` (i.e. a
        color cycle), its ``colors`` attribute is used as the cycle.
     2. If `Colormap` returns a `~matplotlib.colors.LinearSegmentedColormap` (i.e.
-       is a traditional colormap), sample colors are drawn and used for the cycle.
+       a traditional colormap), sample colors are drawn and used for the cycle.
 
     If you just want a list of colors instead of a `~cycler.Cycler` object,
     use the `colors` function. If you want a `~cycler.Cycler` object that
