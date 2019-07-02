@@ -18,6 +18,5 @@ python:
   version: 3.6
   setup_py_install: true # necessary?
   install:
-    - requirements: docs/requirements.txt
     - method: pip
       path: sphinxcontrib-bibtex
