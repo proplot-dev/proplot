@@ -5,7 +5,9 @@
    matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
 
 .. image:: docs/_static/long.png
-   :width: 12in
+   :width: 15in
+
+.. class:: center
 
 |build-status| |docs| |coverage| |license|
 
