@@ -961,7 +961,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None,
         save=False, N=None,
         **kwargs):
     """
-    Function for generating and merging colormaps in a variety of ways,
+    Function for generating and merging colormaps in a variety of ways;
     used to interpret the `cmap` and `cmap_kw` arguments when passed to
     any plotting method wrapped by `~proplot.wrappers.cmap_wrapper`.
 
@@ -1223,21 +1223,21 @@ def Cycle(*args, samples=None, name=None, save=False,
     markersize=None, markeredgewidth=None, markeredgecolor=None, markerfacecolor=None,
     **kwargs):
     """
-    Calls `Colormap` and returns a `~cycler.Cycler` object that cycles through
-    colormap colors, used to interpret the `cycle` and `cycle_kw` arguments
-    when passed to any plotting method wrapped by `~proplot.wrappers.cycle_wrapper`.
+    Function for generating and merging `~cycler.Cycler` objects in a variety of ways;
+    used to interpret the `cycle` and `cycle_kw` arguments when passed to
+    any plotting method wrapped by `~proplot.wrappers.cycle_wrapper`.
 
-    This function calls `Colormap` because all "cycle names" (e.g.
-    ``'colorblind'``, ``'538'``) are stored and *registered* as
-    `~matplotlib.colors.ListedColormap` colormaps, and can therefore be
-    returned by the `Colormap` command.
+    This works by calling `Colormap` and returning a `~cycler.Cycler` object
+    that cycles through the resulting colors. Note that all "cycle names" (e.g.
+    ``'colorblind'``) are stored and *registered* as `~matplotlib.colors.ListedColormap`
+    objects.
 
-    The cycle colors are selected as follows.
+    The cycle colors are selected from the colormap as follows.
 
     1. If `Colormap` returns a `~matplotlib.colors.ListedColormap` (i.e. a
        color cycle), its ``colors`` attribute is used as the cycle.
     2. If `Colormap` returns a `~matplotlib.colors.LinearSegmentedColormap` (i.e.
-       a traditional colormap), sample colors are drawn and used for the cycle.
+       a colormap), sample colors are drawn and used for the cycle.
 
     If you just want a list of colors instead of a `~cycler.Cycler` object,
     use the `colors` function. If you want a `~cycler.Cycler` object that
