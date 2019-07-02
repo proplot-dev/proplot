@@ -1,6 +1,9 @@
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 # See https://docs.readthedocs.io/en/stable/config-file/index.html for valid config file names
+# TODO: Require nbsphinx for build? So far not needed.
+# TODO: Require ipython sphinx extensions, i.e. require pip install ipython
+# for the build? May be overkill.
 version: 2
 sphinx:
   builder: html
@@ -8,4 +11,6 @@ sphinx:
 python:
   version: 3.6
   setup_py_install: true
-
+  install:
+    - method: pip
+      path: sphinxcontrib-bibtex
