@@ -149,6 +149,11 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    :target: LICENSE.txt
 
 ..
+.. |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg
+   :alt: hits
+   :target: http://hits.dwyl.io/lukelbd/lukelbd/proplot
+
+..
 .. |pypi| image:: http://img.shields.io/pypi/v/proplot.svg?text=version
     :target: https://pypi.org/project/proplot/
     :alt: Latest release
