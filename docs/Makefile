@@ -4,8 +4,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = ProPlot
 SOURCEDIR     = .
-BUILDDIR      = ../../proplot-doc
-# BUILDDIR      = build
+BUILDDIR      = build
+# BUILDDIR      = ../../proplot-doc
 
 .PHONY: help clean Makefile
 
