@@ -1,0 +1,2 @@
+# Requirements for build
+sphinxcontrib-bibtex==0.4.2

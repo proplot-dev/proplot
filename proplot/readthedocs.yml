@@ -9,6 +9,7 @@ sphinx:
   builder: html
   configuration: docs/conf.py
 
+
 # Python config
 # TODO: Require nbsphinx for build? So far not needed.
 # TODO: Require ipython sphinx extensions, i.e. require pip install ipython
@@ -17,5 +18,6 @@ python:
   version: 3.6
   setup_py_install: true # necessary?
   install:
+    - requirements: docs/requirements.txt
     - method: pip
       path: sphinxcontrib-bibtex
