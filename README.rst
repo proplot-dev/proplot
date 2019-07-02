@@ -3,8 +3,8 @@
 
 |build-status| |coverage| |license|
 
-An easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
-that can help you make beautiful, publication-quality graphics.
+A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
+for making beautiful, publication-quality graphics.
 
 Installation
 ------------
