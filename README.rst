@@ -1,9 +1,3 @@
-.. Sphinx is used following this guide (less traditional approach):
-   https://daler.github.io/sphinxdoc-test/includeme.html
-.. Docstrings formatted according to:
-   numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
-   matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
-
 .. image:: docs/_static/long.png
    :width: 1000px
 
@@ -167,4 +161,10 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
    :alt: issues
    :target: https://github.com/lukelbd/issues
+
+.. Sphinx is used following this guide (less traditional approach):
+   https://daler.github.io/sphinxdoc-test/includeme.html
+.. Docstrings formatted according to:
+   numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
+   matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
 
