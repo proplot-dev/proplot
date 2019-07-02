@@ -40,7 +40,8 @@ __pycache__
 # Notebooks
 *.ipynb
 .ipynb_checkpoints
-# !showcase.ipynb
+!showcase.ipynb
+!logo.ipynb
 
 # OS generated files
 .DS_Store

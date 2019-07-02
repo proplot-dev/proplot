@@ -1,11 +1,13 @@
+.. Sphinx is used following this guide (less traditional approach):
+   https://daler.github.io/sphinxdoc-test/includeme.html
 .. Docstrings formatted according to:
    numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
    matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
-.. Sphinx is used following this guide (less traditional approach):
-   https://daler.github.io/sphinxdoc-test/includeme.html
 
-ProPlot
-=======
+.. image:: docs/_static/long.png
+   :width: 12in
+
+|build-status| |docs| |coverage| |license|
 
 An `object-oriented <https://matplotlib.org/api/api_overview.html>`__ `matplotlib <https://matplotlib.org/>`__ wrapper
 that can help you make beautiful, publication-quality graphics.
@@ -82,19 +84,13 @@ Here are some highlights of the remaining features:
 
 Why not add to matplotlib directly?
 -----------------------------------
-.. This project introduces new frameworks for
-.. working with figures, namely *static* figure scaffoldings, the
-.. wonky (but very useful) ``axes_list`` class,
-.. harmonized usage of physical units across the entire project
 This project can be thought of as "matplotlib for power users."
 Many of its features represent an alternative to the existing matplotlib API -- and
 following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
 they should perhaps remain here as a side project. For example: the ``format`` and ``smart_update`` methods, which are meant to replace existing axes and axis methods.
 
 .. Some features could be relatively esoteric for the average user (for example,
-   "perceptually uniform" colormaps), or
-   could be seen as "convenience features" that perhaps do not belong
-   with the core API for the sake of minimalism (for example, direct integration
+   "perceptually uniform" colormaps), or could be seen as "convenience features" that perhaps do not belong with the core API for the sake of minimalism (for example, direct integration
    with cartographic toolkits).
 
 There are also some philosophical differences and more direct conflicts.
@@ -130,7 +126,7 @@ Contributions
 This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request!
 
 Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig and helping me fix a lot of the initial bugs. If your field is
+guinea pig and helping me fix a lot of initial bugs. If your field is
 atmospheric science, check out his awesome
 `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
@@ -141,3 +137,32 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 
 .. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
+
+.. Links and badges
+
+.. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
+    :alt: build status
+    :target: https://travis-ci.org/lukelbd/proplot
+
+.. |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
+    :alt: coverage
+    :target: https://codecov.io/gh/lukelbd/proplot.org
+
+.. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
+    :alt: docs
+    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+
+.. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
+   :alt: license
+   :target: LICENSE.txt
+
+..
+   |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
+   :alt: contributions
+   :target: https://github.com/lukelbd/issues
+
+..
+   |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
+   :alt: issues
+   :target: https://github.com/lukelbd/issues
+

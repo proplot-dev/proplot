@@ -899,7 +899,7 @@ def violinplot_wrapper(self, func, *args,
 # Text wrapper
 #------------------------------------------------------------------------------#
 def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
-    border=False, border_kw={}, invert=False, lw=None, linewidth=2,
+    border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
     **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.text`, enables specifying `tranform` with
@@ -920,11 +920,11 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
         Alias for the ``fontfamily`` `~matplotlib.text.Text` property.
     border : bool, optional
         Whether to draw border around text.
-    border_kw : dict-like, optional
-        Passed to `~matplotlib.patheffects.Stroke` if drawing a border.
+    bordercolor : color-spec, optional
+        The color of the border. Defaults to ``'w'``.
     invert : bool, optional
-        Ignored if `border` is ``False``. Whether to draw black text with a
-        white border (``False``), or white text on a black border (``True``).
+        If ``False``, ``'color'`` is used for the text and ``bordercolor``
+        for the border. If ``True``, this is inverted.
     lw, linewidth : float, optional
         Ignored if `border` is ``False``. The width of the text border.
 
@@ -963,11 +963,10 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     # Draw border around text
     if border:
         linewidth = lw or linewidth
-        facecolor, bgcolor = rc.get('text.color'), 'w'
+        facecolor, bgcolor = kwargs['color'], bordercolor
         if invert:
             facecolor, bgcolor = bgcolor, facecolor
         kwargs = {'linewidth':linewidth, 'foreground':bgcolor, 'joinstyle':'miter'}
-        kwargs.update(border_kw)
         obj.update({
             'color':facecolor, 'zorder':100,
             'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]

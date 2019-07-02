@@ -80,17 +80,6 @@ Here are some highlights of the remaining features:
 
 To get started, check out the :ref:`Introduction`.
 
-.. Hopefully, you will find this API to be less verbose and
-.. more powerful than the builtin matplotlib API.
-.. This is just so top-level headers in the showcase.rst
-   file appear as *subsections* in the documentation to
-   a parent 'showcase' section.
-.. Below replaces traditional autodoc invocation with
-   .. automodule:: mods.set.tests
-      :members:
-      :show-inheritance:
-   Use 'sphinx-apidoc ../proplot -o .' to auto-generate modules.rst
-
 Contributions
 =============
 This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request!
@@ -108,6 +97,7 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
 
+.. _MIT: LICENSE.txt
 
 .. toctree::
    :hidden:
