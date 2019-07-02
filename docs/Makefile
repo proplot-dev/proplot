@@ -4,9 +4,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = ProPlot
 SOURCEDIR     = .
-BUILDDIR      = ../../proplot-doc
-PDFBUILDDIR   = /tmp
-PDF           = ../manual.pdf
+BUILDDIR      = build
+# BUILDDIR      = ../../proplot-doc
 
 .PHONY: help clean Makefile
 
@@ -26,11 +25,4 @@ clean:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-
-latexpdf:
-	@$(SPHINXBUILD) -M latex "$(SPHINXOPTS)" "$(PDFBUILDDIR)"/latex
-	@echo "Running LaTeX files through pdflatex..."
-	make -C "$(PDFBUILDDIR)"/latex all-pdf
-	cp "$(PDFBUILDDIR)"/latex/*.pdf $(PDF)
-	@echo "pdflatex finished; see $(PDF)"
 
