@@ -113,12 +113,10 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
     f, axs = plot.subplots(ncols=2, axwidth=2.5, colorbars='b', bottom=0.1)
     data = np.random.rand(100,100).cumsum(axis=1)
     # Make colormap, save as "test1.json"
-    # You could also use axs[0].contourf(data, cmap=('Green1_r',...,'Blue6'), cmap_kw={'name':'test1', 'save':True})
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
     m = axs[0].contourf(data, cmap=cmap, levels=100)
     f.bpanel[0].colorbar(m, locator='none')
     # Make colormap, save as "test2.json"
-    # You could also use axs[0].contourf(data, cmap=('Green1_r',...,'Blue6'), cmap_kw={'name':'test2', 'save':True, 'ratios':(1,3,5,10)})
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
     m = axs[1].contourf(data, cmap=cmap, levels=100)
     f.bpanel[1].colorbar(m, locator='none')
@@ -284,21 +282,16 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axcolorbars='b', axwidth=2.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, span=False, axcolorbars='b', axwidth=2.5, aspect=1.5)
     ax = axs[0]
-    m = ax.contourf(np.random.rand(10,10),
-                   cmap={'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100], 'space':'hcl'},
-                   levels=plot.arange(0.1,0.9,0.1), extend='both',
-                   )
-    ax.bpanel.colorbar(m, label='colormap')
-    ax.format(xlabel='x axis', ylabel='y axis', title='"Matter" look-alike',
-              suptitle='On-the-fly "PerceptuallyUniformColormap"')
+    cmap = plot.Colormap({'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100], 'space':'hcl'})
+    m = ax.contourf(np.random.rand(10,10), levels=plot.arange(0.1,0.9,0.1), extend='both', colorbar='b', cmap=cmap)
+    ax.format(xlabel='x axis', ylabel='y axis', title='Matter look-alike',
+              suptitle='On-the-fly PerceptuallyUniformColormap')
     ax = axs[1]
-    m = ax.contourf(np.random.rand(10,10),
-                   cmap={'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100], 'space':'hpl'},
-                   levels=plot.arange(0.1,0.9,0.05), extend='both')
-    ax.bpanel.colorbar(m, label='colormap', locator=0.1)
-    ax.format(xlabel='x axis', ylabel='y axis', title='"cubehelix" look-alike')
+    cmap = plot.Colormap({'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100], 'space':'hpl'})
+    m = ax.contourf(np.random.rand(10,10), levels=plot.arange(0.1,0.9,0.05), extend='both', colorbar='b', colorbar_kw={'locator':0.1}, cmap=cmap)
+    ax.format(xlabel='x axis', ylabel='y axis', title='cubehelix look-alike')
 
 
 
@@ -430,7 +423,7 @@ methods.
     for i in range(data.shape[1]):
         ax.plot(data[:,i], cycle='qual2', lw=lw)
     # Format
-    axs.format(xformatter=[], yformatter=[], suptitle='Local and global color cycles')
+    axs.format(xformatter=[], yformatter=[], suptitle='Local and global color cycles demo')
 
 
 
@@ -455,14 +448,15 @@ the colormap before drawing colors from said map. See
     data = (20*np.random.rand(10,21)-10).cumsum(axis=0)
     # Example 1
     ax = axs[0]
-    lines = ax.plot(data[:,:5], cycle=('purples', 5), cycle_kw={'left':0.2}, lw=5)
+    lines = ax.plot(data[:,:5], cycle='purples', cycle_kw={'left':0.3}, lw=5)
     f.bpanel[0].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
+    ax.format(title='Simple cycle')
     # Example 2
     ax = axs[1]
-    lines = ax.plot(data, cycle=('blues', 'reds', 'oranges', 21), cycle_kw={'left':[0.1]*3}, lw=5)
+    cycle = plot.Cycle('blues', 'reds', 'oranges', 21, left=[0.1]*3)
+    lines = ax.plot(data, cycle=cycle, lw=5)
     f.bpanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
-    # Format
-    axs.format(suptitle='Color cycles from colormaps')
+    ax.format(title='Complex cycle', suptitle='Color cycles from colormaps demo')
 
 
 

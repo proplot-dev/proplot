@@ -126,7 +126,7 @@ These features are powered by the `~proplot.axes.cartopy_gridfix` and
                                )
         for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
             m = None
-            cmap = ['sunset', 'sunrise'][basemap]
+            cmap = ('sunset', 'sunrise')[basemap]
             levels = [0, .3, .5, .7, .9, 1]
             levels = np.linspace(0,1,11)
             if pcolor:

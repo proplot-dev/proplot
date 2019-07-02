@@ -3,47 +3,27 @@
 .vimsession
 .*.sw[a-z]
 
-# Colormap subfolders
-tmp
-rejects
-weird
-colorbrewer
-
 # PyPi stuff
 build
 dist
 *.egg-info
 
-# Private files
-*.pdf
-*.png
-*.log
-*.tex
-*.dfont
-*.bdf
-empty*
-sample*
-notes*
-trash*
-
-# Ignore top-level init used on my machine to make package importable as long
-# as $HOME is in $PYTHONPATH (see: https://stackoverflow.com/a/3637678/4970632)
-# /__init__.py # need this for other servers
-install
+# Deleted
+trash
+garbage
 
 # Python extras
 *.pyc
 .*.pyc
-__trash__
 __pycache__
 
 # Notebooks
 *.ipynb
 .ipynb_checkpoints
-!showcase.ipynb
-!logo.ipynb
+# !showcase.ipynb
+# !logo.ipynb
 
-# OS generated files
+# OS files
 .DS_Store
 .DS_Store?
 ._*

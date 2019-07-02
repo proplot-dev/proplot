@@ -1383,15 +1383,11 @@ def cycle_wrapper(self, func, *args,
     # of times as the length of user input cycle. If the input cycle *is* in
     # fact the same, below does not reset the color position, cycles us to start!
     if cycle is not None or cycle_kw:
-        # Get the new group of colors
+        # Get the new cycler
         cycle_kw = {**cycle_kw} # copy
-        if isinstance(cycle, str) or isinstance(cycle, cycler.Cycler):
-            cycle = (cycle,)
-        elif cycle is None:
-            cycle = ()
         if not is1d and y.shape[1]>1: # default samples count
-            cycle_kw['samples'] = y.shape[1]
-        cycle = colortools.Cycle(*cycle, **cycle_kw)
+            cycle_kw.setdefault('samples', y.shape[1])
+        cycle = colortools.Cycle(cycle, **cycle_kw)
         # Get the original property cycle
         # WARNING: Matplotlib saves itertools.cycle(cycler), not the original
         # cycler object, so we must build up the keys again.
@@ -1708,12 +1704,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     if not re.match('contour$', name): # contour, tricontour, i.e. not a method where cmap is optional
         cmap = cmap or rc['image.cmap']
     if cmap is not None:
-        if isinstance(cmap, (str, dict, mcolors.Colormap)):
-            cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, N=None, **cmap_kw)
+        cmap = colortools.Colormap(cmap, N=None, **cmap_kw)
         cyclic = cmap._cyclic
         if cyclic and extend!='neither':
-            warnings.warn(f'Cyclic colormap selected. Overriding user input extend "{extend}".')
+            warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend="{extend}".')
             extend = 'neither'
         kwargs['cmap'] = cmap
     if 'contour' in name: # contour, contourf, tricontour, tricontourf
@@ -2462,7 +2456,6 @@ def colorbar_wrapper(self, mappable, values=None,
         majorvals = mappable.norm(majorvals) # use *child* normalizer
     minorvals = [tick for tick in minorvals if 0<=tick<=1]
     majorvals = [tick for tick in majorvals if 0<=tick<=1]
-    # Apply minor settings
     if orientation=='horizontal':
         axis = self.xaxis
     else:
@@ -2471,7 +2464,6 @@ def colorbar_wrapper(self, mappable, values=None,
         axis.set_ticks(majorvals, minor=False)
     axis.set_ticks(minorvals, minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
-    # The label
     if label is not None:
         axis.label.update({'text':label})
 

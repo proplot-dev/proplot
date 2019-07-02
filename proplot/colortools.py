@@ -514,12 +514,12 @@ def _get_channel(color, channel, space='hsl'):
             except ValueError:
                 raise ValueError(f'Invalid channel identifier "{color}".')
             color = color[:match.start()]
-    return offset + to_xyz(to_rgb(color, 'rgb'), space)[channel]
+    return offset + to_xyz(to_rgb(color), space)[channel]
 
 def shade(color, scale=0.5):
     """Changes the "shade" of a color by scaling its luminance channel by `scale`."""
     try:
-        color = mcolors.to_rgb(color) # ensure is valid color
+        color = to_rgb(color) # ensure is valid color
     except Exception:
         raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
@@ -530,7 +530,7 @@ def shade(color, scale=0.5):
 def saturate(color, scale=0.5):
     """Changes the saturation of a color by scaling its saturation channel by `scale`."""
     try:
-        color = mcolors.to_rgb(color) # ensure is valid color
+        color = to_rgb(color) # ensure is valid color
     except Exception:
         raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
@@ -554,6 +554,7 @@ def to_rgb(color, space='rgb'):
         color = color[:3] # trim alpha
         if any(c>1 for c in color):
             color = [c/255 for c in color] # scale to within 0-1
+        color = tuple(color)
     # Next the perceptually uniform versions
     elif space=='hsv':
         color = colormath.hsl_to_rgb(*color)
@@ -571,10 +572,7 @@ def to_xyz(color, space):
     """Translates from RGB space to colorspace `space`. Inverse of `to_rgb`."""
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit out-of-bounds RGB values to invert conversion
-    if isinstance(color, str):
-        color = mcolors.to_rgb(color) # convert string
-    else:
-        color = color[:3]
+    color = to_rgb(color)
     if space=='hsv':
         color = colormath.rgb_to_hsl(*color) # rgb_to_hsv would also work
     elif space=='hpl':
@@ -592,7 +590,7 @@ def to_xyz(color, space):
 #------------------------------------------------------------------------------#
 # Helper functions
 #------------------------------------------------------------------------------#
-def _transform_cycle(color):
+def _absolute_color(color):
     """Transforms colors C0, C1, etc. into their corresponding color strings.
     May be necessary trying to change the color cycler."""
     # Optional exit
@@ -609,7 +607,7 @@ def _transform_cycle(color):
             cycle = cycle['color']
         return cycle[int(color[-1])]
 
-def _clip_colors(colors, clip=True, gray=0.2, verbose=False):
+def _clip_colors(colors, clip=True, gray=0.2):
     """
     Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
     Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
@@ -625,8 +623,6 @@ def _clip_colors(colors, clip=True, gray=0.2, verbose=False):
     gray : float, optional
         The identical RGB channel values (gray color) to be used if `mask`
         is ``True``.
-    verbose : bool, optional
-        Whether to print message if colors are clipped.
     """
     # Clip colors
     colors = np.array(colors)
@@ -638,13 +634,13 @@ def _clip_colors(colors, clip=True, gray=0.2, verbose=False):
     else:
         colors[(under | over)] = gray
     # Message
-    if verbose:
-        message = 'Clipped' if clip else 'Invalid'
-        for i,name in enumerate('rgb'):
-            if under[:,i].any():
-                warnings.warn(f'{message} "{name}" channel (<0).')
-            if over[:,i].any():
-                warnings.warn(f'{message} "{name}" channel (>1).')
+    # NOTE: Never print warning because happens when using builtin maps
+    # message = 'Clipped' if clip else 'Invalid'
+    # for i,name in enumerate('rgb'):
+    #     if under[:,i].any():
+    #         warnings.warn(f'{message} "{name}" channel (<0).')
+    #     if over[:,i].any():
+    #         warnings.warn(f'{message} "{name}" channel (>1).')
     return colors
 
 def _slice_cmap(cmap, left=None, right=None, name=None, N=None):
@@ -959,7 +955,7 @@ def colors(*args, **kwargs):
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
-def Colormap(*args, name=None, cyclic=None, fade=None,
+def Colormap(*args, name=None, cyclic=None, listed=False, fade=None,
         shift=None, cut=None, left=None, right=None, reverse=False,
         ratios=1, gamma=None, gamma1=None, gamma2=None,
         save=False, N=None,
@@ -972,23 +968,25 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
     Parameters
     ----------
     *args : `~matplotlib.colors.Colormap`, str, list of str, or dict-like
-        Each arg generates a single colormap. If ``len(args)>1``, the colormaps
-        are merged.
+        Positional args that individually generate colormaps. If there is more
+        than one positional arg, the resulting colormaps are merged.
 
-        If the arg is a `~matplotlib.colors.Colormap`, nothing more is done.
-        Otherwise, the arg is interpreted as follows.
+        If a positional arg is a `~matplotlib.colors.Colormap`, nothing more
+        is done. Otherwise, the positional arg is interpreted as follows.
 
-        * If string and a registered *colormap or color cycle name*
+        * If string and a registered colormap or color cycle name
           name, that `~matplotlib.colors.LinearSegmentedColormap` or
           `~matplotlib.colors.ListedColormap` is used.
         * If list of color strings or RGB tuples, the list is used to
-          make a `~matplotlib.colors.ListedColormap` *color cycle*.
-        * If string and a *color string*, a monochromatic colormap is
+          make a `~matplotlib.colors.ListedColormap` color cycle (if `listed`
+          is ``True``) or `PerceptuallyUniformColormap` using the
+          `~PerceptuallyUniformColormap.from_list` method (if `listed` is
+          ``False``).
+        * If dictionary, a `PerceptuallyUniformColormap` is generated by
+          passing the dictionary as keyword args to the
+          `~PerceptuallyUniformColormap.from_hsl` static method.
+        * If string and a *color string*, a `PerceptuallyUniformColormap` is
           generated with `monochrome_cmap`.
-        * If dict, the items are passed as keyword args to the
-          `~matplotlib.colors.LinearSegmentedColormap` or
-          `PerceptuallyUniformColormap` `~PerceptuallyUniformColormap.from_hsl`
-          static method, depending on the keys.
 
     name : None or str, optional
         Name of the resulting colormap. Default name is ``'no_name'``.
@@ -998,9 +996,16 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         Whether the colormap is cyclic. Will cause `~proplot.wrappers.cmap_wrapper`
         to pass this flag to `BinNorm`. This will prevent having the same color
         on either end of the colormap.
+    listed : bool, optional
+        Whether to pass lists of colors to `~matplotlib.colors.ListedColormap`
+        or `PerceptuallyUniformColormap.from_list`. Defaults to ``True`` when
+        calling `Colormap` directly, and ``False`` when `Colormap` is called
+        by `Cycle`.
     fade : None or float, optional
         The maximum luminosity, between 0 and 100, used when generating
-        `monochrome_cmap` colormaps. The default is ``100``.
+        `monochrome_cmap` colormaps. Defaults to ``100`` when calling
+        `Colormap` directly, and ``90`` when `Colormap` is called by `Cycle`.
+        This prevents having pure white in the color cycle.
     shift : None, or float or list of float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, optionally
         rotate the colors by `shift` degrees out of 360 degrees. This is
@@ -1120,21 +1125,21 @@ def Colormap(*args, name=None, cyclic=None, fade=None,
         # Build colormap on-the-fly
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            if {*cmap.keys()} <= {'red','green','blue','alpha'}:
-                cmap = mcolors.LinearSegmentedColormap(name, cmap, N=N_, **kwargs)
-            elif {*cmap.keys()} <= {'hue','saturation','luminance','alpha','space','ratios','reverse'}:
+            if {*cmap.keys()} <= {'hue','saturation','luminance','alpha','space','ratios','reverse'}:
                 cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **cmap, **kwargs)
             else:
                 raise ValueError(f'Invalid cmap input "{cmap}".')
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
             # List of color tuples or color strings, i.e. iterable of iterables
-            # Transform C0, C1, etc. to their actual names first
-            cmap = [_transform_cycle(color) for color in cmap]
-            cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
+            cmap = [to_rgb(_absolute_color(color)) for color in cmap] # transform C0, C1, etc. to actual names
+            if listed:
+                cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
+            else:
+                cmap = PerceptuallyUniformColormap.from_list(name, cmap, **kwargs)
         elif isinstance(cmap, str) or (np.iterable(cmap) and len(cmap) in (3,4)):
             # Monochrome colormap based from input color (i.e. single hue)
             # TODO: What if colormap names conflict with color names!
-            color = to_rgb(_transform_cycle(cmap)) # to ensure is hex code/registered color
+            color = to_rgb(_absolute_color(cmap)) # to ensure is hex code/registered color
             fade = _default(fade, 100)
             cmap = monochrome_cmap(color, fade, name=name, N=N_, **kwargs)
         else:
@@ -1240,16 +1245,18 @@ def Cycle(*args, samples=None, name=None, save=False,
     Parameters
     ----------
     *args : colormap-spec or cycle-spec, optional
-        If empty (i.e. no positional arguments are passed), the
-        `~cycler.Cycler` object will not cycle through colors. The default
-        draw color will always be black.
+        If no positional args are passed, the `~cycler.Cycler` object will
+        not cycle through colors. The default draw color will always be black.
 
-        If non-empty, `args` are passed to `Colormap`, and the resulting colors
-        are used for the color cycler. If the last value of `args` is numeric,
-        it is used for the `samples` keyword argument. For example, use
-        ``Cycle('538', 4)`` to get the first 4 colors of the ``'538'`` cycle,
-        or ``Cycle('Reds', 5)`` to divide the ``'Reds'`` colormap into five
-        evenly spaced colors.
+        If the positional args are all `~cycler.Cycler` objects, they are
+        merged and returned. Nothing is done if just one object was passed.
+
+        Otherwise, positional args are passed to `Colormap`, and the
+        resulting colors are used for the color cycler. If the last value of
+        `args` is numeric, it is used for the `samples` keyword argument. For
+        example, use ``Cycle('538', 4)`` to get the first 4 colors of the
+        ``'538'`` cycle, or ``Cycle('Reds', 5)`` to divide the ``'Reds'``
+        colormap into five evenly spaced colors.
     samples : float or list of float, optional
         If `Colormap` returns a `~matplotlib.colors.ListedColormap`, this should be
         the number of colors to select from the list. If `Colormap` returns
@@ -1315,14 +1322,11 @@ def Cycle(*args, samples=None, name=None, save=False,
                     props[key].extend([*value])
             return cycler.cycler(**props)
     else:
-        # Interpret input
-        if all(isinstance(arg, Number) for arg in args) and len(args) in (3,4):
-            args = (args,) # when passing cycle=color, wrapper unfurls the RGB tuple, so try to detect that
-        elif isinstance(args[-1], Number):
-            args, samples = args[:-1], args[-1] # means we want to sample existing colormaps or cycles
-        if samples is None and len(args)>1:
-            args = (args,) # usually means args is a list of colors we want to use as a color cycle
         # Construct and register ListedColormap
+        if args and isinstance(args[-1], Number):
+            args, samples = args[:-1], args[-1] # means we want to sample existing colormaps or cycles
+        kwargs.setdefault('fade', 90)
+        kwargs.setdefault('listed', True)
         cmap = Colormap(*args, **kwargs) # the cmap object itself
         if isinstance(cmap, mcolors.ListedColormap):
             N = samples
@@ -1380,7 +1384,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                value for that color is looked up.
 
             See `~matplotlib.colors.LinearSegmentedColormap` for details.
-        space : {'hsl', 'hcl', 'hpl'}, optional
+        space : {'hcl', 'hsl', 'hpl'}, optional
             The hue, saturation, luminance-style colorspace to use for
             interpreting the channels. See `this page
             <http://www.hsluv.org/comparison/>`_ for a description.
@@ -1416,11 +1420,6 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
         """
         # Attributes
-        # NOTE: Don't allow power scaling for hue because that would be weird.
-        # Idea is want to allow skewing so dark/saturated colors are
-        # more isolated/have greater intensity.
-        # NOTE: We add gammas to the segmentdata dictionary so it can be
-        # pickled into .npy file
         space = _get_space(space)
         if 'gamma' in kwargs:
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
@@ -1438,9 +1437,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
         for key,array in segmentdata.items():
             # Allow specification of channels using registered string color names
-            if 'gamma' in key:
-                continue
-            if callable(array):
+            if 'gamma' in key or callable(array):
                 continue
             for i,xyy in enumerate(array):
                 xyy = list(xyy) # make copy!
@@ -1448,30 +1445,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                     xyy[j+1] = _get_channel(y, key, space)
                 segmentdata[key][i] = xyy
         # Initialize
-        # NOTE: Our gamma1 and gamma2 scaling is just fancy per-channel
-        # gamma scaling, so disable the standard version.
+        # NOTE: Disable the standard gamma scaling, we control it specially.
         super().__init__(name, segmentdata, gamma=1.0, **kwargs)
-
-    def reversed(self, name=None):
-        """Returns reversed colormap."""
-        if name is None:
-            name = self.name + '_r'
-        def factory(dat):
-            def func_r(x):
-                return dat(1.0 - x)
-            return func_r
-        data_r = {}
-        for key,xyy in self._segmentdata.items():
-            if key in ('gamma1', 'gamma2', 'space'):
-                if 'gamma' in key: # optional per-segment gamma
-                    xyy = np.atleast_1d(xyy)[::-1]
-                data_r[key] = xyy
-                continue
-            elif callable(xyy):
-                data_r[key] = factory(xyy)
-            else:
-                data_r[key] = [[1.0 - x, y1, y0] for x, y0, y1 in reversed(xyy)]
-        return PerceptuallyUniformColormap(name, data_r, space=self._space)
 
     def _init(self):
         """As with `~matplotlib.colors.LinearSegmentedColormap`, but converts
@@ -1499,6 +1474,27 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     def _resample(self, N):
         """Returns a new colormap with *N* entries."""
         return PerceptuallyUniformColormap(self.name, self._segmentdata, self._space, self._clip, N=N)
+
+    def reversed(self, name=None):
+        """Returns reversed colormap."""
+        if name is None:
+            name = self.name + '_r'
+        def factory(dat):
+            def func_r(x):
+                return dat(1.0 - x)
+            return func_r
+        data_r = {}
+        for key,xyy in self._segmentdata.items():
+            if key in ('gamma1', 'gamma2', 'space'):
+                if 'gamma' in key: # optional per-segment gamma
+                    xyy = np.atleast_1d(xyy)[::-1]
+                data_r[key] = xyy
+                continue
+            elif callable(xyy):
+                data_r[key] = factory(xyy)
+            else:
+                data_r[key] = [[1.0 - x, y1, y0] for x, y0, y1 in reversed(xyy)]
+        return PerceptuallyUniformColormap(name, data_r, space=self._space)
 
     @staticmethod
     def from_hsl(name, hue=0, saturation=100, luminance=[100, 20], alpha=None, ratios=None, reverse=False, **kwargs):
@@ -1545,28 +1541,19 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         alpha = _default(alpha, 1.0)
         for key,channel in zip(('hue','saturation','luminance','alpha'), (hue,saturation,luminance,alpha)):
             cdict[key] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
-        cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
-        return cmap
+        return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
     @staticmethod
     def from_list(name, colors, ratios=None, reverse=False, **kwargs):
         """
-        Makes a `PerceptuallyUniformColormap` from a list of (hue, saturation,
-        luminance) tuples.
+        Makes a `PerceptuallyUniformColormap` from a list of RGB colors.
 
         Parameters
         ----------
         name : str
             The colormap name.
-        colors : list of length-3 tuples
-            List containing HCL color tuples. The tuples can contain any
-            of the following channel value specifiers:
-
-            1. Numbers, within the range 0-360 for hue and 0-100 for
-               saturation and luminance.
-            2. Color string names or hex tags, in which case the channel
-               value for that color is looked up.
-
+        colors : list of color-spec
+            The list of RGB colors, HEX strings, or registered color names.
         ratios : None or list of float, optional
             Length ``len(colors)-1`` list of scales for *x*-coordinate
             transitions between colors. Bigger numbers indicate a slower
@@ -1574,23 +1561,25 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         reverse : bool, optional
             Whether to reverse the result.
         """
-        # Dictionary
+        # Translate colors
+        # TODO: Allow alpha
         cdict = {}
+        space = kwargs.get('space', 'hsl') # use the builtin default
+        colors = [to_xyz(color, space) for color in colors]
         channels = [*zip(*colors)]
         if len(channels) not in (3,4):
             raise ValueError(f'Bad color list: {colors}')
-        cnames = ['hue', 'saturation', 'luminance']
+        keys = ['hue', 'saturation', 'luminance']
         if len(channels)==4:
-            cnames += ['alpha']
+            keys += ['alpha']
         else:
-            cdict['alpha'] = 1.0 # dummy function that always returns 1.0
+            cdict['alpha'] = lambda x: 1.0 # dummy function that always returns 1.0
         # Build data arrays
-        for cname,channel in zip(cnames,channels):
-            cdict[cname] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
-        cmap = PerceptuallyUniformColormap(name, cdict, **kwargs)
-        return cmap
+        for key,channel in zip(keys,channels):
+            cdict[key] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
+        return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
-def monochrome_cmap(color, fade, reverse=False, space='hpl', name='monochrome', **kwargs):
+def monochrome_cmap(color, fade, reverse=False, space='hcl', name='monochrome', **kwargs):
     """
     Makes a monochromatic "sequential" colormap that blends from near-white
     to the input color.
@@ -1603,7 +1592,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hpl', name='monochrome', 
         The luminance channel strength, or color from which to take the luminance channel.
     reverse : bool, optional
         Whether to reverse the colormap.
-    space : {'hsl', 'hcl', 'hpl'}, optional
+    space : {'hcl', 'hsl', 'hpl'}, optional
         Colorspace in which the luminance is varied.
     name : str, optional
         Colormap name. Default is ``'monochrome'``.
@@ -2048,7 +2037,7 @@ def _read_cmap_cycle_data(filename):
             return empty
         # Convert to array
         x = np.linspace(0, 1, len(data))
-        data = [mcolors.to_rgb(color) for color in data]
+        data = [to_rgb(color) for color in data]
     else:
         warnings.warn(f'Colormap/cycle file "{filename}" has unknown extension.')
         return empty
