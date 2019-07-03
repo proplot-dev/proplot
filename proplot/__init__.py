@@ -4,8 +4,10 @@
 # Files are segretated by function, so we don't end up with
 # giant 5,000-line single file
 #------------------------------------------------------------------------------#
-# First set up notebook
+# Constants
 name = 'ProPlot'
+__version__ = '1.0'
+
 # Monkey patch warnings format
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
@@ -26,7 +28,8 @@ def _warning_proplot(message, category, filename, lineno, line=None):
     return string
 if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
-# Then import stuff
+
+# Import stuff
 # WARNING: Must import colortools and register names first, since rcmod will
 # try to look up e.g. 'sunset' in the colormap dictionary!
 from .utils import *      # misc stuff

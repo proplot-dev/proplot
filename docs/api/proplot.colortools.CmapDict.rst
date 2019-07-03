@@ -12,6 +12,7 @@ CmapDict
 
       ~CmapDict.get
       ~CmapDict.pop
+      ~CmapDict.update
       ~CmapDict.__getitem__
       ~CmapDict.__setitem__
 
@@ -19,5 +20,6 @@ CmapDict
 
    .. automethod:: get
    .. automethod:: pop
+   .. automethod:: update
    .. automethod:: __getitem__
    .. automethod:: __setitem__

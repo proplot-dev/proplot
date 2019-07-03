@@ -17,7 +17,6 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('sphinxext')) # not needed for local make html but needed for readthedocs make!
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
@@ -42,6 +41,7 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    # 'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
@@ -53,13 +53,11 @@ extensions = [
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.autosummary',
-    # 'sphinx.ext.ifconfig',
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    'sphinxext.automodapi', # see: https://sphinx-automodapi.readthedocs.io/en/latest/
-    # 'nbsphinx',
+    'sphinxcontrib.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
+    # 'sphinxext.custom_roles', # copied directly from matplotlib
     # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
     # 'IPython.sphinxext.ipython_console_highlighting',
-    # 'sphinxext.custom_roles', # copied directly from matplotlib
     # 'matplotlib.sphinxext.only_directives', # deprecated; see: https://github.com/statsmodels/statsmodels/issues/5291
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
     ]
@@ -73,7 +71,6 @@ autosummary_generate = True
 # Normally have to *enumerate* function names manually. This will document
 # them automatically. Just be careful, if you use from x import *, to exclude
 # them in the automodapi:: directive
-# Also modify so 
 automodapi_toctreedirnm = 'api' # create much better URL for the page
 automodsumm_inherited_members = False
 automodsumm_inherited_members = False
@@ -146,8 +143,7 @@ language = None
 # This pattern also affects html_static_path and html_extra_path .
 # WARNING: Must add 'include' files or will get duplicate label warnings.
 # WARNING: Must add files containing showcase examples
-exclude_patterns = ['_build', '_templates', '_themes', 'sphinxext',
-                    'originals', 'showcase', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_templates', '_themes', 'showcase', 'sphinxext', 'automodapi', 'trash', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'

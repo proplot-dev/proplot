@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 """
-A few simple tools.
-
-* `units` is used everywhere throughout ProPlot. It allows you to specify
-  arbitrary sizes with arbitrary units, instead of just inches.
-* `journals` is used by `~proplot.subplots.subplots`, and returns
-  the figure dimension standards for several academic journals.
-* `arange` and `edges` are both often useful in the context of making plots
-  -- for example, when creating a list of contours or tick mark positions.
+Simple tools used in various places across this package.
 """
 import re
 import time
@@ -72,7 +65,8 @@ def _counter(func):
 # Accessible for user
 #------------------------------------------------------------------------------#
 def arange(min_, *args):
-    """Identical to `numpy.arange`, except with **inclusive endpoints**."""
+    """Identical to `numpy.arange`, but with inclusive endpoints. For
+    example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])``."""
     # Optional arguments just like np.arange
     if len(args)==0:
         max_ = min_
@@ -100,7 +94,9 @@ def arange(min_, *args):
     return np.arange(min_, max_, step)
 
 def edges(values, axis=-1):
-    """Gets approximate edge values along arbitrary axis."""
+    """Returns approximate edge values along the axis `axis`. This can be used
+    e.g. when you have grid centers and need to calculate grid edges for a
+    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh` plot."""
     # First permute
     values = np.array(values)
     values = np.swapaxes(values, axis, -1)
@@ -139,24 +135,24 @@ def units(value):
         If string, we look for the format ``'123.456unit'``, where the
         number is the value and ``'unit'`` is one of the following:
 
-        ==============  ===================================================================
-        Key             Description
-        ==============  ===================================================================
-        ``m``           Meters
-        ``cm``          Centimeters
-        ``mm``          Millimeters
-        ``ft``          Feet
-        ``in``          Inches
-        ``pt``          Points (1/72 inches)
-        ``px``          Pixels on screen, uses dpi of ``rc['figure.dpi']``
-        ``pp``          Pixels once printed, uses dpi of ``rc['savefig.dpi']``
-        ``em``          Em-square for font size ``rc['font.size']``
-        ``ex``          Ex-square for font size ``rc['font.size']``
-        ``Em``          Em-square for font size ``rc['axes.titlesize']``
-        ``Ex``          Ex-square for font size ``rc['axes.titlesize']``
-        ==============  ===================================================================
+        ======  ===================================================================
+        Key     Description
+        ======  ===================================================================
+        ``m``   Meters
+        ``cm``  Centimeters
+        ``mm``  Millimeters
+        ``ft``  Feet
+        ``in``  Inches
+        ``pt``  Points (1/72 inches)
+        ``px``  Pixels on screen, uses dpi of ``rc['figure.dpi']``
+        ``pp``  Pixels once printed, uses dpi of ``rc['savefig.dpi']``
+        ``em``  Em-square for ``rc['font.size']``
+        ``ex``  Ex-square for ``rc['font.size']``
+        ``Em``  Em-square for ``rc['axes.titlesize']``
+        ``Ex``  Ex-square for ``rc['axes.titlesize']``
+        ======  ===================================================================
 
-        Lists of size "units" are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
+        Lists of sizes are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
     """
     # Loop through arbitrary list, or return None if input was None (this
     # is the exception).
@@ -207,12 +203,10 @@ def units(value):
 
 def journals(journal):
     """
-    Returns `width` and `height` matching academic journal figure
-    size standards. If height is not specified by standard, `height` takes
-    the value ``None``.
-
-    This function is used when `~proplot.subplots.subplots` is called with
-    the `journal` keyword argument.
+    Used by `~proplot.subplots.subplots` with the ``journal`` keyword argument,
+    returns `width` and `height` matching academic journal figure size standards.
+    If height is not specified by the standard, `height` takes the value
+    ``None`` and is allowed to vary.
 
     The options for `journal` are as follows:
 

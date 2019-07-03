@@ -1,5 +1,7 @@
 # .readthedocs.yml
 # Read the Docs configuration file
+# WARNING: Tried to make this work with local modules but got many errors,
+# could not do normal make html. Decided to use external sphinxext module.
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 # See https://docs.readthedocs.io/en/stable/config-file/index.html for valid config file names
 version: 2
@@ -9,15 +11,15 @@ sphinx:
   builder: html
   configuration: docs/conf.py
 
-
 # Python config
-# TODO: Require nbsphinx for build?
-# TODO: Why does -method: pip, path: path fail? Why need requirements.txt?
-# TODO: Require ipython sphinx extensions, i.e. require pip install ipython
-# for the build? May be overkill.
+# TODO: Can replace below with:
+# - requirements: docs/requirements.txt
 python:
   version: 3.6
   setup_py_install: true # necessary?
   install:
     - method: pip
       path: sphinxcontrib-bibtex
+  install:
+    - method: pip
+      path: sphinxcontrib-automodapi

@@ -1,6 +1,0 @@
-.. currentmodule:: sphinx_automodapi.tests.example_module.abstract_classes
-
-.. autosummary::
-    :toctree: api
-
-    SequenceSubclass

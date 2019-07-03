@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 """
-Registers new fonts and adds fonts requested by the user.
-Provides handy lists of available font names and adds a function
-for installing new fonts -- notably Helvetica Neue and Helvetica.
-
-By default, ProPlot *changes* the default font from DejaVu Sans or
-Bitstream Vera to one of the Helveticas (see the `~proplot.rcmod` documentation
-for details). Please run `register_fonts` to install these fonts after
-installing or updating ProPlot or matplotlib.
+Calls `register_fonts` on import, which adds ProPlot fonts and font files
+provided by the user. Provides handy lists of available font names. Makes
+Helvetica or Helvetica Neue the default font.
 """
 # See: https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac
 # Notes on getting ttf files on Mac
@@ -56,8 +51,8 @@ def register_fonts():
     """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
     folder. Also deletes the font cache, which may cause delays.
     Detects ``.ttf`` and ``.otf`` files -- see `this link
-    <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__.
-    for an guide on converting various other font file types to ``.ttf`` and
+    <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
+    for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""
     # Populate file and font lists
     fonts[:] = []
