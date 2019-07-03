@@ -14,13 +14,13 @@ sphinx:
 # Python config
 # TODO: Can replace below with:
 # - requirements: docs/requirements.txt
+# setup_py_install: true # necessary?
 python:
   version: 3.6
-  setup_py_install: true # necessary?
-  # install:
-  #   - requirements: docs/requirements.txt
   install:
     - method: pip
       path: sphinxcontrib-bibtex
     - method: pip
       path: sphinxcontrib-automodapi
+  # install:
+  #   - requirements: docs/requirements.txt

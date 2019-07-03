@@ -1,0 +1,3 @@
+# Install shinx extensions
+sphinxcontrib-bibtex==0.4.2
+sphinxcontrib-automodapi==0.1
