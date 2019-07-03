@@ -174,8 +174,10 @@ import matplotlib.cm as mcm
 import numpy as np
 import matplotlib as mpl
 import warnings
-from IPython import get_ipython
-from IPython.utils import io
+try:
+    from IPython import get_ipython, utils
+except ModuleNotFoundError:
+    get_ipython = lambda : None
 from .utils import ic, units, _timer, _counter
 _rcParams = mpl.rcParams
 _rcGlobals = {}
@@ -919,7 +921,7 @@ def nb_setup():
     else:
         # Autosaving, capture the annoying message + 2 line breaks
         if _rcGlobals['autosave']:
-            with io.capture_output() as _:
+            with utils.io.capture_output() as _:
                 ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
         # Retina probably more space efficient (high-res bitmap), but svg is prettiest
         # and is only one preserving vector graphics

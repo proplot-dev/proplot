@@ -4,5 +4,6 @@
 sphinxcontrib-bibtex==0.4.2
 sphinxcontrib-automodapi==0.1
 matplotlib==3.0
+ipython==7.0.0
 numpy==1.14
 lxml==4.0.0
