@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Calls `register_fonts` on import, which adds ProPlot fonts and font files
-provided by the user. Provides handy lists of available font names. Makes
-Helvetica or Helvetica Neue the default font.
+Registers new fonts with `register_fonts`. Provides handy lists of available
+font names. Makes Helvetica or Helvetica Neue the default font.
 """
 # See: https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac
 # Notes on getting ttf files on Mac
