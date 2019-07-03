@@ -11,7 +11,8 @@ sphinx:
 
 
 # Python config
-# TODO: Require nbsphinx for build? So far not needed.
+# TODO: Require nbsphinx for build?
+# TODO: Why does -method: pip, path: path fail? Why need requirements.txt?
 # TODO: Require ipython sphinx extensions, i.e. require pip install ipython
 # for the build? May be overkill.
 python:

@@ -230,20 +230,21 @@ def cmap_show(N=129):
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
     categories = {cat:names for cat,names in tools._cmap_categories.items()
-                        if cat not in tools._cmap_categories_delete}
+                if cat not in tools._cmap_categories_delete}
     categories_reg = {cat:[name for name in names if name.lower() in cmaps_reg]
-                        for cat,names in categories.items()}
-    cmaps_reg_known   = [name.lower() for cat,names in categories.items() for name in names
-                        if name.lower() in cmaps_reg]
-    cmaps_delete  = [name.lower() for cat,names in tools._cmap_categories.items() for name in names
-                        if cat in tools._cmap_categories_delete]
-    cmaps_unknown  = [name for name in cmaps_reg
-                        if name not in cmaps_reg_known and name not in cmaps_delete]
+                    for cat,names in categories.items()}
+    cmaps_reg_known = [name.lower() for cat,names in categories.items() for name in names
+                    if name.lower() in cmaps_reg]
+    cmaps_delete = [name.lower() for cat,names in tools._cmap_categories.items() for name in names
+                    if cat in tools._cmap_categories_delete]
+    cmaps_unknown = [name for name in cmaps_reg
+                    if name not in cmaps_reg_known and name not in cmaps_delete]
     categories_reg['User'] = cmaps_unknown
     if cmaps_unknown:
         print(f'User colormaps: {", ".join(cmaps_unknown)}')
     if cmaps_delete:
         print(f'Deleted colormaps: {", ".join(cmaps_delete)}')
+
     # For bugfixing
     # cmaps_missing = [name.lower() for cat,names in categories.items() for name in names
     #                     if name.lower() not in cmaps_reg]

@@ -120,18 +120,34 @@ _cmap_categories = {
     # Your custom registered maps; this is a placeholder
     'User': [
         ],
-    # Builtin
-    'Matplotlib Originals': [
-        'viridis', 'plasma', 'inferno', 'magma', 'twilight',
-        ],
     # Assorted origin, but these belong together
     'Grayscale': [
         'Grays', 'Mono', 'GrayCycle',
         ],
-    # CET isoluminant maps and Phase cmOcean isoluminant map
-    # See: https://peterkovesi.com/projects/colourmaps/
-    'Isoluminant': [
-        'Iso1', 'Iso2', 'Iso3', 'Phase',
+    # Builtin
+    'Matplotlib Originals': [
+        'viridis', 'plasma', 'inferno', 'magma', 'twilight',
+        ],
+    # seaborn
+    'Seaborn Originals': [
+        'Rocket', 'Mako', 'IceFire', 'Vlag',
+        ],
+    # PerceptuallyUniformColormap
+    'ProPlot Sequential': [
+        'Fire',
+        'Stellar',
+        'Boreal',
+        'Marine',
+        'Dusk',
+        'Glacial',
+        'Sunrise', 'Sunset',
+        ],
+    'ProPlot Diverging': [
+        'NegPos', 'Div', 'DryWet', 'Moisture',
+        ],
+    # Nice diverging maps
+    'Misc Diverging': [
+        'ColdHot', 'bwr',
         ],
     # ColorBrewer
     'ColorBrewer2.0 Sequential': [
@@ -143,27 +159,11 @@ _cmap_categories = {
         'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
         'RdBu', 'RdYlBu', 'RdYlGn',
         ],
-    # PerceptuallyUniformColormap
-    'ProPlot Sequential': [
-        'Marine',
-        'Boreal',
-        'Glacial',
-        'Dusk',
-        'Sunrise', 'Sunset', 'Fire',
-        'Stellar'
-        ],
-    'ProPlot Diverging': [
-        'NegPos1', 'NegPos2', 'DryWet1', 'DryWet2',
-        ],
-    # Nice diverging maps
-    'Misc Diverging': [
-        'ColdHot', 'CoolWarm', 'bwr', 'BuPi',
-        ],
     # cmOcean
     'cmOcean Sequential': [
         'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
-        'Amp',
+        'Amp', 'Phase',
         ],
     'cmOcean Diverging': [
         'Balance', 'Curl', 'Delta'
@@ -338,10 +338,10 @@ class ColorCacheDict(dict):
         a ``color`` keyword arg.
         """
         # Pull out alpha
-        if np.iterable(key) and len(key)==2 and not isinstance(key, str):
+        if not isinstance(key, str) and np.iterable(key) and len(key)==2:
             key, alpha = key
         # Draw color from cmap
-        if np.iterable(key) and len(key)==2 and isinstance(key[1], Number) and isinstance(key[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
+        if not isinstance(key, str) and np.iterable(key) and len(key)==2 and isinstance(key[1], Number) and isinstance(key[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
             try:
                 cmap = mcm.cmap_d[key[0]]
             except (TypeError, KeyError):
@@ -354,11 +354,13 @@ class ColorCacheDict(dict):
                 rgb = mcolors.to_rgba(rgb)
                 return rgb
         return super().__getitem__((key, alpha))
+
 class _ColorMappingOverride(mcolors._ColorMapping):
     def __init__(self, mapping):
         """Wraps the cache."""
         super().__init__(mapping)
         self.cache = ColorCacheDict({})
+
 # Apply subclass
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     mcolors._colors_full_map = _ColorMappingOverride(mcolors._colors_full_map)
@@ -385,35 +387,42 @@ class CmapDict(dict):
         for key,value in kwargs.items():
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
-            if key[-2:] != '_r': # don't need to store these!
-                kwargs_filtered[key.lower()] = value
-        super().__init__(kwargs_filtered)
+            if key[-2:] == '_r': # do not need to store these!
+                continue
+            self[key] = value
 
     def __getitem__(self, key):
-        """Sanitizes key, then queries dictionary."""
-        key = self._sanitize_key(key)
+        """Sanitizes key name then queries the dictionary."""
+        key = self._sanitize_key(key, mirror=True)
         return self._getitem(key)
 
     def __setitem__(self, key, item):
-        """Assigns lowercase."""
+        """Sanitizes key name then assigns to the dictionary."""
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key}. Must be string.')
-        return super().__setitem__(key.lower(), item)
+        key = self._sanitize_key(key, mirror=False)
+        return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """The 'in' behavior."""
-        try: # by default __contains__ uses object.__getitem__, ignores overrides
+        """Use sanitized key name for `'in'`."""
+        try: # by default __contains__ uses object.__getitem__ and ignores overrides
             self.__getitem__(item)
             return True
         except KeyError:
             return False
 
-    def _getitem(self, key):
-        """Get value, but skip key sanitization."""
+    def _getitem(self, key, *args):
+        """Gets value but skips key sanitization."""
         reverse = False
         if key[-2:] == '_r':
             key, reverse = key[:-2], True
-        value = super().__getitem__(key) # may raise keyerror
+        try:
+            value = super().__getitem__(key) # may raise keyerror
+        except KeyError as err:
+            if len(args)==1:
+                return args[0]
+            else:
+                raise err
         if reverse:
             try:
                 value = value.reversed()
@@ -421,9 +430,8 @@ class CmapDict(dict):
                 raise KeyError(f'Dictionary value in {key} must have reversed() method.')
         return value
 
-    def _sanitize_key(self, key):
+    def _sanitize_key(self, key, mirror=True):
         """Sanitizes key name."""
-        # Try retrieving
         if not isinstance(key, str):
             raise ValueError(f'Invalid key {key}. Must be string.')
         key = key.lower()
@@ -431,8 +439,7 @@ class CmapDict(dict):
         if key[-2:] == '_r':
             key = key[:-2]
             reverse = True
-        # Attempt to get 'mirror' key, maybe that's the one stored
-        if not super().__contains__(key):
+        if mirror and not super().__contains__(key): # search for mirrored key
             key_mirror = key
             for mirror in _cmap_mirrors:
                 try:
@@ -443,40 +450,28 @@ class CmapDict(dict):
             if super().__contains__(key_mirror):
                 reverse = (not reverse)
                 key = key_mirror
-        # Return 'sanitized' key. Not necessarily in dictionary! Error
-        # will be raised further down the line if so.
         if reverse:
             key = key + '_r'
         return key
 
     def get(self, key, *args):
-        """Case-insensitive version of `dict.get`."""
-        if len(args)>1:
-            raise ValueError(f'Accepts only 1-2 arguments (got {len(args)+1}).')
-        try:
-            if not isinstance(key, str):
-                raise KeyError(f'Invalid key {key}. Must be string.')
-            return self.__getitem__(key.lower())
-        except KeyError as key_error:
-            if args:
-                return args[0]
-            else:
-                raise key_error
+        """Retrieves sanitized key name."""
+        key = self._sanitize_key(key, mirror=True)
+        return super().get(key, *args)
 
     def pop(self, key, *args):
-        """Case-insensitive version of `dict.pop`."""
-        if len(args)>1:
-            raise ValueError(f'Accepts only 1-2 arguments (got {len(args)+1}).')
-        try:
-            key = self._sanitize_key(key)
-            value = self._getitem(key) # could raise error
-            del self[key]
-        except KeyError as key_error:
-            if args:
-                return args[0]
-            else:
-                raise key_error
-        return value
+        """Pops sanitized key name."""
+        key = self._sanitize_key(key, mirror=True)
+        return super().pop(key, *args)
+
+    def update(self, *args, **kwargs):
+        """Replicates dictionary update with sanitized key names."""
+        if len(args)==1:
+            kwargs.update(args[0])
+        elif len(args)>1:
+            raise TypeError(f'update() expected at most 1 arguments, got {len(args)}.')
+        for key,value in kwargs.items():
+            self[key] = value
 
 # Apply subclass
 if not isinstance(mcm.cmap_d, CmapDict):
@@ -2094,19 +2089,18 @@ def register_cmaps():
     # LinearSegmented -- don't know why matplotlib stores these as
     # discrete maps by default, dumb.
     for name in _cmap_categories['Matplotlib Originals']: # initialize as empty lists
-        cmap = mcm.cmap_d.get(name, None)
+        cmap = mcm.cmap_d._getitem(name, None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
 
-    # Reverse some included colormaps, so colors
-    # go from 'cold' to 'hot'
+    # Reverse some included colormaps, so colors go from 'cold' to 'hot'
     for name in ('Spectral',):
         mcm.cmap_d[name] = mcm.cmap_d[name].reversed()
 
     # Delete ugly cmaps (strong-arm user into using the better ones)
-    greys = mcm.cmap_d.get('Greys', None)
-    if greys is not None:
-        mcm.cmap_d['Grays'] = greys
+    cmap = mcm.cmap_d.pop('Greys', None)
+    if cmap is not None:
+        mcm.cmap_d['Grays'] = cmap
     for category in _cmap_categories_delete:
         for name in _cmap_categories:
             mcm.cmap_d.pop(name, None)
@@ -2142,11 +2136,9 @@ def register_cycles():
         mcm.cmap_d[name] = cmap
         cycles.append(name)
 
-    # Remove redundant or ugly ones, plus ones that are just merged existing maps
+    # Remove gross ones, change the names of some others
     for name in ('tab10', 'tab20', 'tab20b', 'tab20c', 'Paired', 'Pastel1', 'Pastel2', 'Dark2'):
         mcm.cmap_d.pop(name, None)
-
-    # *Change* the name of some more useful ones
     for (name1,name2) in [('Accent','Set1')]:
         cycle = mcm.cmap_d.pop(name1, None)
         if cycle:

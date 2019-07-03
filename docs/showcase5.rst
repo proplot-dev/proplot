@@ -49,16 +49,16 @@ broken down into the following sections:
    folder. A great way to save colormaps to this folder is using the
    `~proplot.colortools.Colormap` constructor function. See
    :ref:`On-the-fly colormaps` for details.
--  Original matplotlib maps, created by the matplotlib team.
--  New ProPlot maps belonging to the
+-  Original matplotlib and seaborn colormaps.
+-  ProPlot maps belonging to the
    `~proplot.colortools.PerceptuallyUniformColormap` class. See the
    :ref:`Perceptually uniform colormaps` section.
--  `ColorBrewer <http://colorbrewer2.org/>`__ colormaps. These are
-   included with matplotlib by default.
--  Miscellaneous colormaps from various sources.
+-  `ColorBrewer <http://colorbrewer2.org/>`__ maps, included with
+   matplotlib by default.
 -  `cmOcean <https://matplotlib.org/cmocean/>`__ colormaps, originally
    intended for oceanographic visualizations but useful for all
    scientific fields.
+-  Miscellaneous diverging colormaps.
 -  Maps from the
    `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ online
    interactive tool. There are so many of these maps because they are
@@ -66,11 +66,10 @@ broken down into the following sections:
    datasets with complex statistical distributions.
 
 ProPlot removes some default matplotlib colormaps with erratic color
-transitions. Note that all colormap and color cycle names (see
-:ref:`Registered color cycles` for more info) are now
-*case-insensitive* (e.g. ``'Viridis'``, ``'viridis'``, and ``'ViRiDiS'``
-are equivalent). You can also select reversed diverging colormaps by
-their “reversed” names (e.g. ``'BuRd'`` is equivalent to ``'RdBu_r'``).
+transitions. Note that colormap and color cycle identification is now
+flexible: names are *case-insensitive* (e.g. ``'Viridis'``,
+``'viridis'``, and ``'ViRiDiS'`` are equivalent) and can be specified in
+their “reversed” form (e.g. ``'BuRd'`` is equivalent to ``'RdBu_r'``).
 See `~proplot.colortools.CmapDict` for more info.
 
 .. code:: ipython3

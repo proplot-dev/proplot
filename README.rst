@@ -1,7 +1,7 @@
 .. image:: docs/_static/long.png
    :width: 1000px
 
-|build-status| |coverage| |license|
+|build-status| |coverage| |license| |pr-welcome|
 
 A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
 for making beautiful, publication-quality graphics.
@@ -138,6 +138,10 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license
    :target: LICENSE.txt
+
+.. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
+   :alt: PR welcome
+   :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
 
 ..
 .. |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg
