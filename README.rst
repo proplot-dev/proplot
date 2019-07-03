@@ -1,7 +1,7 @@
 .. image:: docs/_static/long.png
    :width: 1000px
 
-|build-status| |coverage| |license| |pr-welcome|
+|build-status| |coverage| |docs| |license| |pr-welcome|
 
 A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
 for making beautiful, publication-quality graphics.
@@ -139,6 +139,10 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    :alt: license
    :target: LICENSE.txt
 
+.. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
+    :alt: docs
+    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+
 .. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
    :alt: PR welcome
    :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
@@ -152,10 +156,6 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. |pypi| image:: http://img.shields.io/pypi/v/proplot.svg?text=version
     :target: https://pypi.org/project/proplot/
     :alt: Latest release
-..
-.. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
-    :alt: docs
-    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
 
 ..
 .. |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
