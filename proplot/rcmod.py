@@ -177,7 +177,7 @@ import warnings
 try:
     from IPython import get_ipython, utils
 except ModuleNotFoundError:
-    get_ipython = lambda : None
+    get_ipython = lambda: None
 from .utils import ic, units, _timer, _counter
 _rcParams = mpl.rcParams
 _rcGlobals = {}

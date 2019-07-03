@@ -725,22 +725,20 @@ class Figure(mfigure.Figure):
                     ispace = max([0, iratios[idx] - min(space) + pad])
                 iratios[idx] = ispace
 
-    def smart_tight_layout(self, renderer):
+    def smart_tight_layout(self, renderer=None):
         """
-        This is called automatically when `~Figure.draw` or
-        `~Figure.savefig` are called, unless the user set `tight` to
-        ``False`` in their original call to `subplots`.
-
-        Conforms figure edges to tight bounding box around content, without
-        screwing up subplot aspect ratios, empty spaces, panel sizes, and such.
-        Also fixes inner spaces, so that e.g. axis tick labels and axis labels
-        do not overlap with other axes (which was even harder to do and is
-        insanely awesome).
+        Conforms figure edges to tight bounding box around content without
+        messing up subplot aspect ratios and panel widths, and adjusts inner
+        spaces so that content from individual subplots (e.g.  axis tick
+        labels) does not overlap. This is called automatically when
+        `~Figure.draw` or `~Figure.save` are called, unless ``tight=False``
+        was passed to `~proplot.subplots.subplots`.
 
         Parameters
         ----------
-        renderer : `~matplotlib.backend_bases.RendererBase`
-            The backend renderer.
+        renderer : None or `~matplotlib.backend_bases.RendererBase`
+            The backend renderer. If ``None``, it is retrieved with
+            `~matplotlib.figure.Figure.canvas.get_renderer`.
         """
         #----------------------------------------------------------------------#
         # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
