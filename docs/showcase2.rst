@@ -1,22 +1,22 @@
-Panel axes
-==========
+Panels
+======
 
-It is common to need “panels” for plotting statistics across some axis
-of a subplot or a secondary 1-dimensional dataset. It is also common to
-need colorbars and legends outside of subplots, or even on the side of
-the figure as a reference for multiple subplots. Setting these things up
-can be incredibly time-consuming with the default matplotlib API.
-ProPlot introduces the concept of “panels” to make it easier.
+It is common to need “panels” for plotting secondary 1-dimensional
+datasets or summary statistics. It is also common to need colorbars or
+legends along the edges of axes or the figure. Setting these up can be
+incredibly time-consuming with the default matplotlib API. To make this
+easier, ProPlot introduces the “panels” construct, powered by the
+`~proplot.axes.PanelAxes` class.
 
-Subplot panels
---------------
+Axes panels
+-----------
 
 To add arbitrary combinations of panels to the left, bottom, right, or
-top sides of subplots with the `~proplot.subplots.subplots`
-``axpanels`` keyword arg. To modify panel properties, simply pass a
-dictionary to ``axpanels_kw``. The subplots will stay correctly aligned
-no matter the combination of panels. See `~proplot.subplots.subplots`
-and `~proplot.subplots.Figure.add_subplot_and_panels` for details.
+top sides of axes with the `~proplot.subplots.subplots` ``axpanels``
+keyword arg. To modify panel properties, simply pass a dictionary to
+``axpanels_kw``. The subplots will stay correctly aligned no matter the
+combination of panels. See `~proplot.subplots.subplots` and
+`~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
 
@@ -170,15 +170,8 @@ details.
 .. image:: showcase/showcase_59_0.svg
 
 
-Colorbars and legends
----------------------
-
-ProPlot adds several new features to the
-`~matplotlib.axes.Axes.legend` and
-`~matplotlib.figure.Figure.colorbar` commands, respectively powered by
-the `~proplot.wrappers.legend_wrapper` and
-`~proplot.wrappers.colorbar_wrapper` wrappers (see documentation for
-details).
+Colorbars
+---------
 
 To generate colorbars, simply use the ``colorbar`` methods on the
 `~proplot.axes.BaseAxes` and `~proplot.axes.PanelAxes` classes. When
@@ -186,9 +179,9 @@ you call `~proplot.axes.BaseAxes.colorbar` on a
 `~proplot.axes.BaseAxes`, an **inset** colorbar is generated. When you
 call `~proplot.axes.PanelAxes.colorbar` on a
 `~proplot.axes.PanelAxes`, the axes is **filled** with a colorbar (see
-:ref:`Subplot panels` and :ref:`Figure panels`). You can also
-generate colorbars by passing the ``colorbar`` keyword arg to methods
-wrapped by `~proplot.colortools.cmap_wrapper` or
+:ref:`Axes panels` and :ref:`Figure panels`). You can also generate
+colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
+`~proplot.colortools.cmap_wrapper` and
 `~proplot.colortools.cycle_wrapper`.
 
 .. code:: ipython3
@@ -208,13 +201,44 @@ wrapped by `~proplot.colortools.cmap_wrapper` or
 .. image:: showcase/showcase_62_0.svg
 
 
-Generating legends is the same as with matplotlib. When you call
-`~proplot.axes.PanelAxes.legend` on a `~proplot.axes.PanelAxes`, the
-axes is **filled** with a legend (see :ref:`Subplot panels` and
-:ref:`Figure panels`). That is, a centered legend is drawn and the
-axes spines are made invisible. You can also generate legends by passing
-the ``legends`` keyword arg to methods wrapped by
-`~proplot.colortools.cycle_wrapper`.
+ProPlot adds several new features to the
+`~matplotlib.figure.Figure.colorbar` command, powered by the
+`~proplot.wrappers.colorbar_wrapper` wrapper. A particular handy
+feature is the ability to draw colorbars from lists of colors or lists
+of artists, instead of just “mappable” objects (e.g. the return value of
+`~matplotlib.axes.Axes.contourf`). A colormap is constructed
+on-the-fly from the corresponding colors, as shown below.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.rc.cycle = 'qual2'
+    f, ax = plot.subplots(colorbar='b', axwidth=3, aspect=1.5)
+    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
+    ax.format(suptitle='ProPlot line object colorbar', xlabel='x axis', ylabel='y axis')
+    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)), label='numeric values', tickloc='bottom')
+
+
+
+
+
+
+
+.. image:: showcase/showcase_64_1.svg
+
+
+Legends
+-------
+
+ProPlot also adds new features to the `~matplotlib.axes.Axes.legend`
+command, powered by the `~proplot.wrappers.legend_wrapper` wrapper.
+When you call `~proplot.axes.PanelAxes.legend` on a
+`~proplot.axes.PanelAxes`, the axes is **filled** with a legend (see
+:ref:`Axes panels` and :ref:`Figure panels`). That is, a centered
+legend is drawn and the axes spines are made invisible. You can also
+generate legends by passing the ``legends`` keyword arg to methods
+wrapped by `~proplot.colortools.cycle_wrapper`.
 
 Legend entries are now sorted in row-major order by default; you can
 switch back to column-major by passing ``order='F'`` to
@@ -246,37 +270,6 @@ legend frame.
 
 
 
-.. image:: showcase/showcase_64_0.svg
-
-
-A particularly useful `~proplot.wrappers.colorbar_wrapper` feature is
-that it does not require a “mappable” object (i.e. the output of
-`~matplotlib.axes.Axes.contourf` or similar). It will also accept any
-list of objects with ``get_color`` methods (for example, the “handles”
-returned by `~matplotlib.axes.Axes.plot`), or a list of color
-strings/RGB tuples! A colormap is constructed on-the-fly from the
-corresponding colors.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.rc.cycle = 'qual2'
-    f, ax = plot.subplots(colorbar='b', axwidth=3, aspect=1.5)
-    # plot.rc['axes.labelweight'] = 'bold'
-    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
-    ax.format(suptitle='ProPlot line object colorbar', xlabel='x axis', ylabel='y axis')
-    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)),
-                      label='numeric values',
-                      tickloc='bottom', # because why not?
-                     )
-
-
-
-
-
-
-
-.. image:: showcase/showcase_66_1.svg
+.. image:: showcase/showcase_67_0.svg
 
 
