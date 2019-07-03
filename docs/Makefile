@@ -2,7 +2,7 @@
 # You can set these variables from the command line.
 # WARNING: Sphinx 2.0 fails with numpydoc style strings so far!
 # See issue: https://github.com/readthedocs/sphinx_rtd_theme/issues/750
-# BUILDDIR    = ../../proplot-doc
+# BUILDDIR    = ../../proplot-doc # from gh-pages workflow
 SPHINXOPTS  =
 SPHINXBUILD = sphinx-build
 SPHINXPROJ  = ProPlot

@@ -30,7 +30,7 @@ to differentiate ProPlot from the usual "``plt``" abbreviation used for the ``py
 
 Documentation
 -------------
-The documentation is `published here <https://lukelbd.github.io/proplot>`_.
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`_.
 
 Overview
 --------
