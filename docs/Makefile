@@ -2,12 +2,12 @@
 # You can set these variables from the command line.
 # WARNING: Sphinx 2.0 fails with numpydoc style strings so far!
 # See issue: https://github.com/readthedocs/sphinx_rtd_theme/issues/750
+# BUILDDIR    = ../../proplot-doc
 SPHINXOPTS  =
 SPHINXBUILD = sphinx-build
 SPHINXPROJ  = ProPlot
 SOURCEDIR   = .
 BUILDDIR    = build
-# BUILDDIR    = ../../proplot-doc
 
 .PHONY: help clean Makefile
 

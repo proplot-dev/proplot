@@ -1,3 +1,7 @@
 # Install shinx extensions
+# NOTE: The automodapi module imports module, so the website 'build' process
+# has same requirements as module itself!
 sphinxcontrib-bibtex==0.4.2
 sphinxcontrib-automodapi==0.1
+matplotlib==3.0
+numpy==1.14
