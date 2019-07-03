@@ -7,9 +7,7 @@
 ProPlot
 =======
 
-An easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
-that can help you make beautiful, publication-quality graphics.
-The Github page is `here <https://github.com/lukelbd/proplot>`__.
+A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper that can help you make beautiful, publication-quality graphics. The Github page is `here <https://github.com/lukelbd/proplot>`__.
 
 Installation
 ============
