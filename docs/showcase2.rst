@@ -1,5 +1,5 @@
-Panels
-======
+Panel axes
+==========
 
 It is common to need “panels” for plotting statistics across some axis
 of a subplot or a secondary 1-dimensional dataset. It is also common to
@@ -8,15 +8,15 @@ the figure as a reference for multiple subplots. Setting these things up
 can be incredibly time-consuming with the default matplotlib API.
 ProPlot introduces the concept of “panels” to make it easier.
 
-Axes panels
------------
+Subplot panels
+--------------
 
 To add arbitrary combinations of panels to the left, bottom, right, or
-top sides of axes with the `~proplot.subplots.subplots` ``axpanels``
-keyword arg. To modify panel properties, simply pass a dictionary to
-``axpanels_kw``. The subplots will stay correctly aligned no matter the
-combination of panels. See `~proplot.subplots.subplots` and
-`~proplot.subplots.Figure.add_subplot_and_panels` for details.
+top sides of subplots with the `~proplot.subplots.subplots`
+``axpanels`` keyword arg. To modify panel properties, simply pass a
+dictionary to ``axpanels_kw``. The subplots will stay correctly aligned
+no matter the combination of panels. See `~proplot.subplots.subplots`
+and `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
 
@@ -186,9 +186,9 @@ you call `~proplot.axes.BaseAxes.colorbar` on a
 `~proplot.axes.BaseAxes`, an **inset** colorbar is generated. When you
 call `~proplot.axes.PanelAxes.colorbar` on a
 `~proplot.axes.PanelAxes`, the axes is **filled** with a colorbar (see
-:ref:`Axes panels` and :ref:`Figure panels`). You can also generate
-colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
-`~proplot.colortools.cmap_wrapper` or
+:ref:`Subplot panels` and :ref:`Figure panels`). You can also
+generate colorbars by passing the ``colorbar`` keyword arg to methods
+wrapped by `~proplot.colortools.cmap_wrapper` or
 `~proplot.colortools.cycle_wrapper`.
 
 .. code:: ipython3
@@ -210,7 +210,7 @@ colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
 
 Generating legends is the same as with matplotlib. When you call
 `~proplot.axes.PanelAxes.legend` on a `~proplot.axes.PanelAxes`, the
-axes is **filled** with a legend (see :ref:`Axes panels` and
+axes is **filled** with a legend (see :ref:`Subplot panels` and
 :ref:`Figure panels`). That is, a centered legend is drawn and the
 axes spines are made invisible. You can also generate legends by passing
 the ``legends`` keyword arg to methods wrapped by

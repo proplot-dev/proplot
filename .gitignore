@@ -18,10 +18,10 @@ garbage
 __pycache__
 
 # Notebooks
+# NOTE: For now ignore, contributors just need RST files to build docs and
+# have personal control over quickstart.
 *.ipynb
 .ipynb_checkpoints
-# !showcase.ipynb
-# !logo.ipynb
 
 # OS files
 .DS_Store

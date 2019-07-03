@@ -130,8 +130,8 @@ between subplots so that elements don’t overlap, and just the right
 amount of space around the figure edge so that labels and whatnot are
 not cut off. Furthermore, despite all of the complex adjustments this
 requires, the original subplot aspect ratios are **always preserved**.
-Even when axes panels are present, the main subplot aspect ratios will
-stay fixed (see below for more on panels).
+Even when subplot panels are present, the main subplot aspect ratios
+will stay fixed (see below for more on panels).
 
 You can disable this feature by passing ``tight=False`` to
 `~proplot.subplots.subplots`, but it is unbelievably useful. It works
@@ -262,7 +262,7 @@ The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keywords, see `~proplot.wrappers.cmap_wrapper`,
 `~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting enhancements`
-sections. For more on panels, see the :ref:`Panels` section.
+sections. For more on panels, see the :ref:`Panel axes` section.
 
 .. code:: ipython3
 
@@ -324,7 +324,7 @@ sections. For more on panels, see the :ref:`Panels` section.
     df.index.name = 'index'
     df.columns.name = 'time (days)'
     # Figure
-    # We must make room for the axes panels during subplots call!
+    # We must make room for the subplot panels during subplots call!
     f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=1.8, share=False, span=False)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
