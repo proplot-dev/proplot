@@ -20,7 +20,7 @@ setup(
         },
     packages = ['proplot'], # reserve name
     package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*', '.proplotrc']},
-    install_requires = ['matplotlib>=2.2', 'numpy>=1.11'],
+    install_requires = ['matplotlib>=2.2', 'numpy>=1.11', 'lxml>=4.0.0'],
     license = open('LICENSE.txt').read(),
     description = 'Matplotlib wrapper for making beautiful, publication-quality graphics.',
     long_description = open('README.rst').read(),
