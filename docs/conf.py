@@ -17,6 +17,7 @@
 
 import os
 import sys
+sys.path.insert(0, os.path.abspath('sphinxext')) # not needed for local make html but needed for readthedocs make!
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
@@ -41,7 +42,6 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'sphinx.ext.ifconfig',
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
@@ -53,6 +53,7 @@ extensions = [
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.autosummary',
+    # 'sphinx.ext.ifconfig',
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     'sphinxext.automodapi', # see: https://sphinx-automodapi.readthedocs.io/en/latest/
     # 'nbsphinx',
