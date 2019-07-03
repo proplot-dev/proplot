@@ -54,7 +54,8 @@ extensions = [
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.autosummary',
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    'sphinxcontrib.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
+    'sphinxext.audomodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
+    # 'sphinxcontrib.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     # 'sphinxext.custom_roles', # copied directly from matplotlib
     # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
     # 'IPython.sphinxext.ipython_console_highlighting',

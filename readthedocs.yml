@@ -18,9 +18,9 @@ sphinx:
 python:
   version: 3.6
   install:
-    - method: pip
-      path: sphinxcontrib-bibtex
-    - method: pip
-      path: sphinxcontrib-automodapi
+    - requirements: docs/requirements.txt
   # install:
-  #   - requirements: docs/requirements.txt
+  #   - method: pip
+  #     path: sphinxcontrib-bibtex
+  #   - method: pip
+  #     path: sphinxcontrib-automodapi
