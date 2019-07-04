@@ -147,10 +147,6 @@ Key                                                 Description
 ``innerborders.color``, ``innerborders.linewidth``  Line color and linewidth for internal border lines.
 ==================================================  ==================================================================
 
-'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
-'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
-
-
 The ``subplot`` category has settings that control the default figure
 layout. As with all sizing arguments, if specified as a number, the units
 are inches. If string, the units are interpreted by `~proplot.utils.units`.
