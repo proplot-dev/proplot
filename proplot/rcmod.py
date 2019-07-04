@@ -10,7 +10,8 @@ following three categories.
 2. ProPlot :ref:`rcCustom` settings. These also have the format ``x.y`` (see below).
 3. ProPlot :ref:`rcGlobals` settings. These have no dots (see below). They are **simple,
    short** names used to change multiple matplotlib and ProPlot settings at once,
-   as shorthands for settings with longer names, or for special options.
+   as shorthands for settings with longer names, or for special options. For example,
+   ``ticklen`` changes the tick length for the *x* and *y* axes in one go.
 
 You can change settings with the `~proplot.rcmod.rc` object as follows.
 
@@ -47,28 +48,32 @@ rcGlobals
 ==================  ==================================================================================================================================================================
 Key                 Description
 ==================  ==================================================================================================================================================================
-``tight``           Whether to auto-adjust figure bounds and subplot spacings.
-``nbsetup``         Whether to run `~nb_setup` on import.
+``nbsetup``         Whether to run `nb_setup` on import.
 ``autosave``        If non-empty and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
 ``autoreload``      If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
+``tight``           Whether to auto-adjust figure bounds and subplot spacings.
+``fontname``        Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
+``cmap``            The default colormap.
+``lut``             The number of colors to put in the colormap lookup table.
 ``cycle``           The default color cycle name, used e.g. for lines.
 ``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-``cmap``            The default colormap.
-``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
-``lut``             The number of colors to put in the colormap lookup table.
 ``color``           The color of axis spines, tick marks, tick labels, and labels.
-``margin``          The margin of space around subplot `~matplotlib.artist.Artist` instances, if ``xlim`` and ``ylim`` are unset.
-``facecolor``       The axes background color.
-``hatch``           The background hatching string pattern. If ``None``, no hatching. See `this demo <https://matplotlib.org/gallery/shapes_and_collections/hatch_demo.html>`__.
+``alpha``           The opacity of the background axes patch.
+``facecolor``       The color of the background axes patch.
 ``small``           Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
 ``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
-``fontname``        Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
 ``linewidth``       Thickness of axes spines and major tick lines.
-``gridratio``       Ratio of minor to major gridline thickness.
-``ticklen``         Length of major ticks.
-``tickdir``         Major and minor tick direction; one of ``out``, ``in``, or ``inout``.
-``tickratio``       Ratio of minor to major tick line thickness.
-``ticklenratio``    Ratio of minor to major tick lengths.
+``margin``          The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
+``ticklen``         Length of major ticks in points.
+``tickdir``         Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
+``tickpad``         Padding between ticks and tick labels in points.
+``grid``            Boolean, toggles major grid lines on and off.
+``gridminor``       Boolean, toggles minor grid lines on and off.
+``tickratio``       Ratio of minor tickline width to major tickline width.
+``gridratio``       Ratio of minor gridline width to major gridline width.
+``ticklenratio``    Ratio of minor tickline length to major tickline length.
+``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``geogrid``         Boolean, toggles meridian and parallel gridlines on and off.
 ==================  ==================================================================================================================================================================
 
 #############
@@ -196,32 +201,36 @@ if not os.path.exists(_default_rc):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 _rcGlobals_children = {
-    # Most important ones, expect these to be used a lot
-    'tight':      [],
-    'nbsetup':    [],
-    'autosave':   [],
-    'autoreload': [],
-    'reso':       [],
-    'cycle':      [],
-    'rgbcycle':   [],
-    'cmap':       [],
-    'lut':        ['image.lut'],
-    'facecolor':  ['axes.facecolor'],
-    'alpha':      ['axes.alpha'], # this is a custom setting
-    'hatch':      ['axes.hatch'],
-    'grid':       ['axes.grid'],
-    'geogrid':    ['axes.geogrid'],
-    'gridminor':  ['axes.gridminor'],
-    'color':      ['axes.labelcolor', 'axes.edgecolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'margin':     ['axes.xmargin', 'axes.ymargin'],
-    'fontname':   ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
-    'small':      ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
-    'large':      ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
-    'linewidth':  ['axes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
-    'ticklen' :   ['xtick.major.size', 'ytick.major.size'],
-    'tickdir':    ['xtick.direction',  'ytick.direction'],
-    'tickpad':    ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
+    # Notebooks
+    'nbsetup':      [],
+    'autosave':     [],
+    'autoreload':   [],
+    # Subplots
+    'tight':        [],
+    # Style
+    'fontname':     ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
+    'cmap':         [],
+    'lut':          ['image.lut'],
+    'cycle':        [],
+    'rgbcycle':     [],
+    'color':        ['axes.labelcolor', 'axes.edgecolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'alpha':        ['axes.alpha'], # this is a custom setting
+    'facecolor':    ['axes.facecolor'],
+    'small':        ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
+    'large':        ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
+    'linewidth':    ['axes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
+    'margin':       ['axes.xmargin', 'axes.ymargin'],
+    'grid':         ['axes.grid'],
+    'gridminor':    ['axes.gridminor'],
+    'ticklen' :     ['xtick.major.size', 'ytick.major.size'],
+    'tickdir':      ['xtick.direction',  'ytick.direction'],
+    'tickpad':      ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
+    'tickratio':    [],
+    'ticklenratio': [],
+    'gridratio':    [],
     # Geography
+    'reso':         [],
+    'geogrid':      ['axes.geogrid'],
     'land':         [],
     'ocean':        [],
     'lakes':        [],
@@ -229,10 +238,6 @@ _rcGlobals_children = {
     'borders':      [],
     'innerborders': [],
     'rivers':       [],
-    # Ratios
-    'ticklenratio': [],
-    'tickratio': [],
-    'gridratio': [],
     }
 
 # Names of the new settings
@@ -240,7 +245,7 @@ _rc_names_global = {*_rcGlobals_children.keys()}
 _rc_names_old = {*_rcParams.keys()}
 _rc_names_new = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
-    'axes.gridminor', 'axes.geogrid', 'axes.hatch', 'axes.alpha', 'hatch.alpha',
+    'axes.gridminor', 'axes.geogrid', 'axes.alpha',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
     'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
     'abc.fontsize', 'abc.weight', 'abc.color', 'abc.loc', 'abc.format', 'abc.border', 'abc.linewidth',

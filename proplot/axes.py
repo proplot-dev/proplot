@@ -156,7 +156,6 @@ class BaseAxes(maxes.Axes):
         """
         # Properties
         self.number = number # for abc numbering
-        self._hatch = None # background hatching
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
         self._yrange = None # geometry, filled later
@@ -943,6 +942,7 @@ class XYAxes(BaseAxes):
         xlocator_kw={}, ylocator_kw={},
         xformatter_kw={}, yformatter_kw={},
         xminorlocator_kw={}, yminorlocator_kw={},
+        patch_kw={},
         **kwargs):
         """
         Called by `BaseAxes.format`, calls `BaseAxes.format_partial` and
@@ -1030,6 +1030,10 @@ class XYAxes(BaseAxes):
             `~matplotlib.ticker.FixedLocator` instance. Defaults to ``False``.
             If your axis ticks are doing weird things (for example, ticks
             drawn outside of the axis spine), try setting this to ``True``.
+        patch_kw : dict-like, optional
+            Keyword arguments used to update the background patch object. You
+            can use this, for example, to set background hatching with
+            ``patch_kw={'hatch':'xxx'}``.
         **kwargs
             Passed to `BaseAxes.format_partial`.
 
@@ -1049,23 +1053,9 @@ class XYAxes(BaseAxes):
         # Background patch basics
         self.patch.set_clip_on(False)
         self.patch.set_zorder(-1)
-        self.patch.update(rc.fill({'facecolor': 'axes.facecolor', 'alpha': 'axes.alpha'}))
-
-        # Background hatching (useful where we want to highlight invalid data)
-        # TODO: Implement hatching for PolarAxes and map axes?
-        hatch = rc['axes.hatch']
-        if not self._hatch and hatch: # non-empty
-            self._hatch = super().fill_between([0,1], 0, 1, zorder=0, # put in back
-                linewidth=0, hatch=hatch, # linewidth affects only patch edge; hatch width controlled by hatch.linewidth
-                alpha=rc.get('hatch.alpha'), edgecolor=rc.get('hatch.color'),
-                facecolor='none', transform=self.transAxes)
-        if self._hatch:
-            kw = rc.fill({
-                'alpha':     'hatch.alpha',
-                'edgecolor': 'hatch.color',
-                })
-            self._hatch.update(kw)
-            self._hatch.set_hatch(hatch)
+        kw_face = rc.fill({'facecolor': 'axes.facecolor', 'alpha': 'axes.alpha'})
+        kw_face.update(patch_kw)
+        self.patch.update(kw_face)
 
         # Flexible keyword args, declare defaults
         xmargin       = _default(xmargin, rc['axes.xmargin'])
@@ -1817,6 +1807,10 @@ class MapAxes(BaseAxes):
             indicating specific meridian and parallel gridlines to draw.
         lonlines, latlines, lonticks, latticks
             Aliases for `lonlocator`, `latlocator`.
+        patch_kw : dict-like, optional
+            Keyword arguments used to update the background patch object. You
+            can use this, for example, to set background hatching with
+            ``patch_kw={'hatch':'xxx'}``.
         **kwargs
             Passed to `BaseAxes.format_partial`.
         """
@@ -2012,12 +2006,10 @@ class CartopyAxes(MapAxes, GeoAxes):
             obj = wrappers._fill_betweenx_wrapper(self, obj)
         return obj
 
-    def format_partial(self, grid=None, **kwargs):
+    def format_partial(self, patch_kw={}, **kwargs):
         # Documentation inherited from MapAxes
-        # Dependencies
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
-
         # Parse flexible input
         grid, _, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
                 super().format_partial(**kwargs)
@@ -2138,15 +2130,16 @@ class CartopyAxes(MapAxes, GeoAxes):
             setattr(self, f'_{name}', feat)
 
         # Update patch
-        kw = rc.fill({
+        kw_face = rc.fill({
             'facecolor': 'axes.facecolor'
             }, cache=False)
-        self.background_patch.update(kw)
-        kw = rc.fill({
+        kw_face.update(patch_kw)
+        self.background_patch.update(kw_face)
+        kw_edge = rc.fill({
             'edgecolor': 'axes.edgecolor',
             'linewidth': 'axes.linewidth'
             }, cache=False)
-        self.outline_patch.update(kw)
+        self.outline_patch.update(kw_edge)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
         BaseAxes.format_partial(self, **kwargs)
@@ -2210,7 +2203,7 @@ class BasemapAxes(MapAxes):
         --------
         `~proplot.proj`, `~proplot.subplots.subplots`
         """
-        # Notes
+        # Map boundary notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method called
         #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
         #   "limb2" automatically: one for fill and the other for the edges
@@ -2282,9 +2275,8 @@ class BasemapAxes(MapAxes):
             obj = wrappers._m_norecurse(self, obj)
         return obj
 
-    def format_partial(self, grid=None, **kwargs):
+    def format_partial(self, patch_kw={}, **kwargs):
         # Documentation inherited from MapAxes
-        # Parse flexible input
         grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
                 super().format_partial(**kwargs)
         if lonlim is not None or latlim is not None:
@@ -2300,6 +2292,7 @@ class BasemapAxes(MapAxes):
         kw_face = rc.fill({
             'facecolor': 'axes.facecolor'
             }, cache=False)
+        kw_face.update(patch_kw)
         kw_edge = rc.fill({
             'linewidth': 'axes.linewidth',
             'edgecolor': 'axes.edgecolor'

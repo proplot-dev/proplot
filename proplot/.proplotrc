@@ -7,29 +7,31 @@ rcGlobals:
     autosave:   30
     autoreload: 2
     # Subplots
-    tight:      True
-    # Important settings
-    fontname:  # if empty, default is 'Helvetica Neue' for Mac, 'Helvetica' for Linux
-    cycle:     colorblind
-    rgbcycle:  False 
-    cmap:      sunset
-    reso:      lo 
-    lut:       256
-    color:     k
-    margin:    0.0
-    grid:      True
-    geogrid:   True
-    gridminor: False
-    hatch:     # background hatching; if empty, no hatching
-    facecolor: w
-    alpha:     1 # background patch alpha
-    small:     8
-    large:     9
-    linewidth: 0.6
-    ticklen:   4.0
-    tickpad:   2.0
-    tickdir:   out
+    tight:  True
+    # Style
+    fontname:     # if empty, default is Helvetica
+    cmap:         sunset
+    lut:          256
+    cycle:        colorblind
+    rgbcycle:     False
+    color:        k
+    alpha:        1
+    facecolor:    w
+    small:        8
+    large:        9
+    linewidth:    0.6
+    margin:       0.0
+    grid:         True
+    gridminor:    False
+    ticklen:      4.0
+    tickdir:      out
+    tickpad:      2.0
+    tickratio:    0.8
+    ticklenratio: 0.5
+    gridratio:    0.5
     # Geography
+    reso:         lo
+    geogrid:      True
     land:         False
     ocean:        False
     coast:        False # coastline
@@ -37,10 +39,6 @@ rcGlobals:
     lakes:        False
     borders:      False # country borders
     innerborders: False # state, province borders
-    # Ratios
-    gridratio:    0.5 # minor/major grid line widths
-    tickratio:    0.8 # minor/major tick width
-    ticklenratio: 0.5 # minor/major tick size
 
 #---------------------------------------------------
 # rcParams defaults
@@ -91,7 +89,7 @@ rcParams:
 # rcCustom defaults
 #----------------------
 rcCustom:
-    # Label settings
+    # Extra label settings
     abc.loc:           l # outside the axes, to the left
     title.loc:         c # outside the axes, in the center
     abc.format:        a
@@ -117,20 +115,13 @@ rcCustom:
     tick.labelsize:    # filled by 'small'
     tick.labelcolor:   # filled by 'color'
     tick.labelweight:  normal
-    # Axis settings
-    axes.hatch: # filled by 'hatch'
+    # Extra axes settings
     axes.alpha: # if empty, depends on 'savefig.transparent' setting
-    hatch.alpha: 1
     axes.formatter.zerotrim: True
     axes.formatter.timerotation: 30
     axes.gridminor: True
     axes.geogrid: True
-    # Grid lines for minor ticks
-    gridminor.alpha: # if empty, inherited from "grid"
-    gridminor.color:
-    gridminor.linestyle:
-    gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
-    # Inset colorbar
+    # Colorbar settings
     colorbar.frameon:     True
     colorbar.framealpha:  0.8
     colorbar.extendinset: 0.08
@@ -140,9 +131,14 @@ rcCustom:
     colorbar.loc:         'lower right'
     colorbar.axespad:     0.5em
     colorbar.xspace:      0.3
+    # Minor tick gridlines
+    gridminor.alpha: # if empty, inherited from "grid"
+    gridminor.color: # if empty, inherited from "grid"
+    gridminor.linestyle: # if empty, inherited from "grid"
+    gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
     # Parallels and meridians
     geogrid.labels:    False
-    geogrid.labelsize: # filled by 'small'
+    geogrid.labelsize: # filled by "small"
     geogrid.latmax:    80
     geogrid.lonstep:   30
     geogrid.latstep:   20
@@ -150,7 +146,7 @@ rcCustom:
     geogrid.color:     k
     geogrid.linewidth: 1.0
     geogrid.linestyle: ':'
-    # Geographic features
+    # Geographic content
     land.color:             k
     ocean.color:            w
     lakes.color:            w
@@ -162,18 +158,16 @@ rcCustom:
     innerborders.linewidth: 0.6
     rivers.color:           k
     rivers.linewidth:       0.6
-    # Subplot element sizes
+    # Subplot property sizes
     subplot.axwidth:    2
     subplot.panelwidth: 0.45
     subplot.cbarwidth:  0.17
     subplot.legwidth:   0.25
-    # Tight layout padding
-    # These only affect the figure when tight=True
+    # Tight layout padding, affect the figure when tight=True
     subplot.panelpad:   0.05
     subplot.borderpad:  0.10
     subplot.subplotpad: 0.10
-    # Spaces
-    # These only affect the figure when tight=False
+    # Spaces, affect the figure when tight=False
     subplot.titlespace: 0.2
     subplot.innerspace: 0.1
     subplot.ylabspace:  0.6
