@@ -23,6 +23,7 @@ The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://
 
 Importing
 =========
+
 I recommend importing ProPlot with
 
 .. code-block:: python
@@ -77,23 +78,6 @@ Here are some highlights of the remaining features:
    Customize geographic gridlines and gridline labels.
 
 To get started, check out the :ref:`Introduction`.
-
-Contributions
-=============
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request!
-
-Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig and helping me fix a lot of the initial bugs. If your field is
-atmospheric science, check out his awesome
-`decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
-
-Donations
-=========
-
-At well over 10,000 lines of code, this package took a huge amount of time to write and document. If ProPlot has been useful for you, consider sending me a small donation.
-
-.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
-   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
 
 .. _MIT: LICENSE.txt
 
