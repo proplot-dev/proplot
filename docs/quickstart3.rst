@@ -33,19 +33,19 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_71_0.svg
+.. image:: quickstart/quickstart_71_0.svg
 
 
 
-.. image:: showcase/showcase_71_1.svg
+.. image:: quickstart/quickstart_71_1.svg
 
 
 
-.. image:: showcase/showcase_71_2.svg
+.. image:: quickstart/quickstart_71_2.svg
 
 
 
-.. image:: showcase/showcase_71_3.svg
+.. image:: quickstart/quickstart_71_3.svg
 
 
 .. code:: ipython3
@@ -62,11 +62,11 @@ the axis limits the same. ProPlot introduces **4 axis-sharing
 
 
 
-.. image:: showcase/showcase_72_0.svg
+.. image:: quickstart/quickstart_72_0.svg
 
 
 
-.. image:: showcase/showcase_72_1.svg
+.. image:: quickstart/quickstart_72_1.svg
 
 
 Axis tick locations
@@ -105,7 +105,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: showcase/showcase_75_0.svg
+.. image:: quickstart/quickstart_75_0.svg
 
 
 Axis tick labels
@@ -129,7 +129,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: showcase/showcase_78_0.png
+.. image:: quickstart/quickstart_78_0.png
    :width: 569px
    :height: 237px
 
@@ -161,7 +161,7 @@ See `~proplot.axes.XYAxes.format_partial` and
 
 
 
-.. image:: showcase/showcase_80_0.svg
+.. image:: quickstart/quickstart_80_0.svg
 
 
 Datetime axes
@@ -198,7 +198,7 @@ details.
 
 
 
-.. image:: showcase/showcase_83_0.svg
+.. image:: quickstart/quickstart_83_0.svg
 
 
 Axis scales
@@ -228,7 +228,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_86_0.svg
+.. image:: quickstart/quickstart_86_0.svg
 
 
 .. code:: ipython3
@@ -258,7 +258,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_87_0.svg
+.. image:: quickstart/quickstart_87_0.svg
 
 
 .. code:: ipython3
@@ -297,7 +297,7 @@ for details.
 
 
 
-.. image:: showcase/showcase_88_0.svg
+.. image:: quickstart/quickstart_88_0.svg
 
 
 Alternative units
@@ -346,11 +346,11 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_91_0.svg
+.. image:: quickstart/quickstart_91_0.svg
 
 
 
-.. image:: showcase/showcase_91_1.svg
+.. image:: quickstart/quickstart_91_1.svg
 
 
 .. code:: ipython3
@@ -376,7 +376,7 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: showcase/showcase_92_0.svg
+.. image:: quickstart/quickstart_92_0.svg
 
 
 Polar projections
@@ -405,6 +405,6 @@ more on specifying the projection.
 
 
 
-.. image:: showcase/showcase_95_0.svg
+.. image:: quickstart/quickstart_95_0.svg
 
 

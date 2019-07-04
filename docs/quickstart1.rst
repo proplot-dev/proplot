@@ -51,7 +51,7 @@ axes.
 
 
 
-.. image:: showcase/showcase_6_0.svg
+.. image:: quickstart/quickstart_6_0.svg
 
 
 Most matplotlib sizing arguments assume the units inches or some
@@ -70,7 +70,7 @@ pixels. See `~proplot.subplots.subplots` for details.
 
 
 
-.. image:: showcase/showcase_8_0.svg
+.. image:: quickstart/quickstart_8_0.svg
 
 
 A-b-c subplot labeling is another useful ProPlot feature. The label
@@ -91,11 +91,11 @@ with ``abc=True``. See :ref:`The format command` and
 
 
 
-.. image:: showcase/showcase_10_0.svg
+.. image:: quickstart/quickstart_10_0.svg
 
 
 
-.. image:: showcase/showcase_10_1.svg
+.. image:: quickstart/quickstart_10_1.svg
 
 
 To set up a complex grid of subplots, use a 2D array of integers. You
@@ -119,7 +119,7 @@ numbering determines the order of a-b-c labels. See
 
 
 
-.. image:: showcase/showcase_12_1.svg
+.. image:: quickstart/quickstart_12_1.svg
 
 
 Automatic subplot spacing
@@ -155,11 +155,11 @@ labeling; a warning will be raised in these instances). Even when
 
 
 
-.. image:: showcase/showcase_15_0.svg
+.. image:: quickstart/quickstart_15_0.svg
 
 
 
-.. image:: showcase/showcase_15_1.svg
+.. image:: quickstart/quickstart_15_1.svg
 
 
 .. code:: ipython3
@@ -173,7 +173,7 @@ labeling; a warning will be raised in these instances). Even when
 
 
 
-.. image:: showcase/showcase_16_0.svg
+.. image:: quickstart/quickstart_16_0.svg
 
 
 .. code:: ipython3
@@ -187,7 +187,7 @@ labeling; a warning will be raised in these instances). Even when
 
 
 
-.. image:: showcase/showcase_17_0.svg
+.. image:: quickstart/quickstart_17_0.svg
 
 
 The format command
@@ -244,7 +244,7 @@ any method (e.g. `~proplot.axes.BaseAxes.format`) on every axes
 
 
 
-.. image:: showcase/showcase_19_0.svg
+.. image:: quickstart/quickstart_19_0.svg
 
 
 Automatic formatting
@@ -301,7 +301,7 @@ sections. For more on panels, see the :ref:`Panels` section.
 
 
 
-.. image:: showcase/showcase_22_0.svg
+.. image:: quickstart/quickstart_22_0.svg
 
 
 .. code:: ipython3
@@ -337,7 +337,7 @@ sections. For more on panels, see the :ref:`Panels` section.
 
 
 
-.. image:: showcase/showcase_23_0.svg
+.. image:: quickstart/quickstart_23_0.svg
 
 
 Rc settings control
@@ -386,7 +386,7 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
 
 
 
-.. image:: showcase/showcase_25_1.svg
+.. image:: quickstart/quickstart_25_1.svg
 
 
 Font control
@@ -426,7 +426,7 @@ info.
 
 
 
-.. image:: showcase/showcase_28_0.svg
+.. image:: quickstart/quickstart_28_0.svg
 
 
 Plotting enhancements
@@ -476,14 +476,14 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: showcase/showcase_31_1.svg
+.. image:: quickstart/quickstart_31_1.svg
 
 
 `~proplot.wrappers.cycle_wrapper` can be used to change arbitrary
 properties in the property cycle – not just color. Below, a single-color
 dash style cycler is used by passing a ``cycle_kw`` dictionary to
 `~matplotlib.axes.Axes.plot`. To change the local property cycle, you
-can also pass the ``~cycler.Cycler`` returned by
+can also pass the `~cycler.Cycler` returned by
 `~proplot.colortools.Cycle` to
 `~matplotlib.axes.Axes.set_prop_cycle`. To change it globally, set the
 relevant `~proplot.rcmod.rc` property with
@@ -526,7 +526,7 @@ keywords, which is a bit less confusing.
 
 
 
-.. image:: showcase/showcase_33_0.svg
+.. image:: quickstart/quickstart_33_0.svg
 
 
 `~proplot.wrappers.bar_wrapper` and
@@ -559,7 +559,7 @@ spread represented by error bars.
 
 
 
-.. image:: showcase/showcase_35_0.svg
+.. image:: quickstart/quickstart_35_0.svg
 
 
 Make area plots with the convenient aliases
@@ -596,7 +596,7 @@ different colors where the area boundaries cross each other.
 
 
 
-.. image:: showcase/showcase_37_0.svg
+.. image:: quickstart/quickstart_37_0.svg
 
 
 `~matplotlib.axes.Axes.boxplot` and
@@ -625,7 +625,7 @@ automatic axis labeling.
 
 
 
-.. image:: showcase/showcase_39_0.svg
+.. image:: quickstart/quickstart_39_0.svg
 
 
 `~proplot.wrappers.cmap_wrapper` assigns the
@@ -663,7 +663,7 @@ behavior, use ``edgefix=False``.
 
 
 
-.. image:: showcase/showcase_41_0.svg
+.. image:: quickstart/quickstart_41_0.svg
 
 
 .. code:: ipython3
@@ -683,7 +683,7 @@ behavior, use ``edgefix=False``.
 
 
 
-.. image:: showcase/showcase_42_0.svg
+.. image:: quickstart/quickstart_42_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -709,7 +709,7 @@ passed to the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: showcase/showcase_44_0.svg
+.. image:: quickstart/quickstart_44_0.svg
 
 
 To add `~matplotlib.axes.Axes.clabel` labels to
@@ -737,6 +737,6 @@ of the underlying box color.
 
 
 
-.. image:: showcase/showcase_46_0.svg
+.. image:: quickstart/quickstart_46_0.svg
 
 
