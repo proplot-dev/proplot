@@ -1,10 +1,9 @@
 .. image:: docs/_static/long.png
    :width: 1000px
 
-|build-status| |coverage| |docs| |license| |pr-welcome|
+|build-status| |coverage| |docs| |license| |pr-welcome| |donations|
 
-A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper
-for making beautiful, publication-quality graphics.
+A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
 Installation
 ------------
@@ -20,17 +19,21 @@ The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://
 
 Importing
 ---------
-I recommend importing with
+I recommend importing ProPlot with
 
 .. code-block:: python
 
    import proplot as plot
 
-to differentiate ProPlot from the usual "``plt``" abbreviation used for the ``pyplot`` module.
+This differentiates ProPlot from the usual "``plt``" abbreviation used for the ``pyplot`` module.
 
 Documentation
 -------------
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`_.
+
+Donations
+---------
+At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the "donate" badge and sending me a small donation.
 
 Overview
 --------
@@ -76,6 +79,9 @@ Here are some highlights of the remaining features:
 *  Add geographic features with the ``format`` command.
    Customize geographic gridlines and gridline labels.
 
+You can thank `bradyrx <https://github.com/bradyrx>`__ for getting this project in working order and helping me fix a lot of the initial bugs. If your field is atmospheric science, check out his awesome
+`decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
+
 Why not add to matplotlib directly?
 -----------------------------------
 This project can be thought of as "matplotlib for power users."
@@ -108,23 +114,6 @@ While parts of ProPlot were inspired by these projects, the goals are largely di
 
 In summary, this project is intended to unify the convenience of seaborn, pandas, and xarray plotting with the power and customizability of the underlying matplotlib API.
 
-Contributions
--------------
-This entire package has so far been written by just `me <https://github.com/lukelbd>`__ -- but I have a day job as a graduate student. If you have any ideas for new features or come across any bugs, I'd love to receive a pull request!
-
-Shout out to `bradyrx <https://github.com/bradyrx>`__ for being the
-guinea pig and helping me fix a lot of initial bugs. If your field is
-atmospheric science, check out his awesome
-`decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
-
-Donations
----------
-
-At well over 10,000 lines of code, this package took a huge amount of time to write and document. If ProPlot has been useful for you, consider sending me a small donation.
-
-.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif
-   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
-
 .. Links and badges
 
 .. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
@@ -146,6 +135,10 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
    :alt: PR welcome
    :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
+
+.. |donations| image:: https://img.shields.io/badge/Donate-PayPal-green.svg
+   :alt: PayPal donations
+   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
 
 ..
 .. |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg

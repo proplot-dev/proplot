@@ -23,13 +23,13 @@ The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://
 
 Importing
 =========
-I recommend importing with
+I recommend importing ProPlot with
 
 .. code-block:: python
 
    import proplot as plot
 
-to differentiate ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module.
+This differentiates ProPlot from the usual "``plt``" abbreviation used for the `~matplotlib.pyplot` module.
 
 Overview
 ========
