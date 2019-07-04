@@ -74,6 +74,13 @@ Key                 Description
 ``ticklenratio``    Ratio of minor tickline length to major tickline length.
 ``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
 ``geogrid``         Boolean, toggles meridian and parallel gridlines on and off.
+``land``            Boolean, toggles land patches on and off.
+``ocean``           Boolean, toggles ocean patches on and off.
+``lakes``           Boolean, toggles lake patches on and off.
+``coast``           Boolean, toggles coastline lines on and off.
+``borders``         Boolean, toggles country border lines on and off.
+``innerborders``    Boolean, toggles internal border lines on and off, e.g. for states and provinces.
+``rivers``          Boolean, toggles river lines on and off.
 ==================  ==================================================================================================================================================================
 
 #############
