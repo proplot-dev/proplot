@@ -1,5 +1,5 @@
-Font tools
-----------
+Fonts
+-----
 
 **Variables**
 

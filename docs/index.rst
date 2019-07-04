@@ -102,9 +102,9 @@ To get started, check out the :ref:`Introduction`.
    axistools
    colortools
    demos
+   fonttools
    projs
    rcmod
-   fonttools
    utils
 
 
