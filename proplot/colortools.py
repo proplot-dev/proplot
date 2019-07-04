@@ -4,6 +4,8 @@ Registers colormaps, color cycles, and color string names with `register_cmaps`,
 `register_cycles`, and `register_colors`. Defines the `Colormap` and `Cycle`
 tools for creating new colormaps and color cycles. Defines helpful new
 `~matplotlib.colors.Normalize` and `~matplotlib.colors.Colormap` classes.
+Adds tools for visualizing colorspaces, colormaps, color names, and color
+cycles.
 
 See the :ref:`Color usage` section of "Getting Started" for details.
 """
@@ -96,7 +98,7 @@ _color_names_translate = [(re.compile(regex), sub) for regex,sub in (
     ('lightblue', 'light blue')
     )] # prevent registering similar-sounding names
 
-# Color math
+# Color math and color spaces
 _color_space_aliases = {
     'rgb':   'rgb',
     'hsv':   'hsv',
@@ -107,13 +109,27 @@ _color_space_aliases = {
     'hcl':   'hcl',
     'lch':   'hcl',
     }
-_color_channel_idxs = {
-    'h': 0, 'hue': 0,
-    's': 1, 'saturation': 1,
-    'c': 1, 'chroma': 1,
-    'l': 2, 'luminance': 2,
-    'a': 3, 'alpha': 3,
+_color_space_channel_idxs = {
+    'hue': 0,
+    'chroma': 1,
+    'saturation': 1,
+    'luminance': 2,
+    'alpha': 3,
     }
+_color_space_channel_scales = {
+    'rgb': (1,1,1),
+    'hcl': (360,100,100),
+    'hsl': (360,100,100),
+    'hpl': (360,100,100)
+    }
+_color_space_channel_names  = {
+    'rgb': ('red', 'green', 'blue'),
+    'hsv': ('hue', 'saturation', 'value'),
+    'hcl': ('hue', 'saturation', 'luminance'),
+    'hsl': ('hue', 'relative sat', 'luminance'),
+    'hpl': ('hue', 'relative sat', 'luminance')
+    }
+
 
 # Colormap stuff
 _cmap_categories = {
@@ -493,9 +509,11 @@ def _get_channel(color, channel, space='hsl'):
     with the format ``'color+x'`` or ``'color-x'``, where `x` specifies
     the offset from the channel value."""
     # Interpret channel
-    channel = _color_channel_idxs.get(channel, channel)
     if callable(color) or isinstance(color, Number):
         return color
+    channel = _color_space_channel_idxs.get(channel, None)
+    if channel is None:
+        raise ValueError(f'Unknown channel {channel}.')
     if channel not in (0,1,2):
         raise ValueError('Channel must be in [0,1,2].')
     # Interpret string or RGB tuple
@@ -1416,22 +1434,23 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                 luminance  = [[0, 100, 100], [1, 20, 20]])
 
         """
-        # Attributes
+        # Checks
         space = _get_space(space)
+        self._space = space
+        self._clip  = clip
         if 'gamma' in kwargs:
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
+        keys = {*segmentdata.keys()}
+        target = {'hue', 'saturation', 'luminance', 'gamma1', 'gamma2'}
+        if keys != target and keys != {*target, 'alpha'}:
+            raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
+        # Gamma scaling
         gamma1 = _default(gamma, gamma1)
         gamma2 = _default(gamma, gamma2)
         segmentdata['gamma1'] = _default(gamma1, segmentdata.get('gamma1', None), 1.0)
         segmentdata['gamma2'] = _default(gamma2, segmentdata.get('gamma2', None), 1.0)
-        self._space = space
-        self._clip  = clip
         # First sanitize the segmentdata by converting color strings to their
         # corresponding channel values
-        keys   = {*segmentdata.keys()}
-        target = {'hue', 'saturation', 'luminance', 'gamma1', 'gamma2'}
-        if keys != target and keys != {*target, 'alpha'}:
-            raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
         for key,array in segmentdata.items():
             # Allow specification of channels using registered string color names
             if 'gamma' in key or callable(array):
@@ -2054,8 +2073,8 @@ def register_cmaps():
     """
     Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
     folder. Maps are registered according to their filenames -- for example,
-    ``name.xyz`` will be registered as ``'name'``. Use `~proplot.demos.cmap_show`
-    to generate a table of the registered colormaps
+    ``name.xyz`` will be registered as ``'name'``. Use `cmap_show` to generate
+    a table of the registered colormaps
 
     Valid file formats are described in the below table.
 
@@ -2115,7 +2134,7 @@ def register_cycles():
     folder. Cycles are registered according to their filenames -- for example,
     ``name.hex`` will be registered under the name ``'name'`` as a
     `~matplotlib.colors.ListedColormap` map (see `Cycle` for details). Use
-    `~proplot.demos.cycle_show` to generate a table of the registered cycles.
+    `cycle_show` to generate a table of the registered cycles.
 
     For valid file formats, see `register_cmaps`.
     """
@@ -2132,7 +2151,7 @@ def register_cycles():
         icycles[name] = data
     for name,colors in {**_cycles_preset, **icycles}.items():
         cmap = mcolors.ListedColormap(colors, name=name)
-        cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors] # sanitize
+        cmap.colors = [to_rgb(color) for color in cmap.colors] # sanitize
         mcm.cmap_d[name] = cmap
         cycles.append(name)
 
@@ -2149,8 +2168,8 @@ def register_colors(nmax=np.inf):
     """
     Reads full database of crowd-sourced XKCD color names and official
     Crayola color names, then filters them to be sufficiently "perceptually
-    distinct" in the HCL colorspace. Use `~proplot.demos.color_show` to
-    generate a table of the resulting filtered colors.
+    distinct" in the HCL colorspace. Use `color_show` to generate a table of
+    the resulting filtered colors.
     """
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
@@ -2231,7 +2250,7 @@ register_cycles()
 cmaps[:] = sorted(cmaps)
 cycles[:] = sorted(cycles)
 
-# Finally our dictionary of normalizers; BinNorm is inaccessible for users
+# Dictionary of normalizers; note BinNorm is inaccessible for users
 normalizers = {
     'none':       mcolors.NoNorm,
     'null':       mcolors.NoNorm,
@@ -2245,4 +2264,298 @@ normalizers = {
     'symlog':     mcolors.SymLogNorm,
     }
 """Dictionary of possible normalizers. See `Norm` for a table."""
+
+#------------------------------------------------------------------------------#
+# Demos
+#------------------------------------------------------------------------------#
+from . import subplots # delay importing, because subplots import rcmod, which may look for a newly registered colormap to apply as the default
+def cmap_breakdown(cmap, N=100, space='hcl'):
+    """Shows how an arbitrary colormap varies in the HCL, HSLuv, and HPLuv
+    colorspaces."""
+    # Figure
+    f, axs = subplots.subplots(ncols=4, legends='b', colorbar='r',
+                    span=False, sharey=1, subplotpad=0.05,
+                    axwidth=1.3, aspect=1, tight=True)
+    x = np.linspace(0, 1, N)
+    cmap = Colormap(cmap, N=N) # arbitrary cmap argument
+    cmap._init()
+    name = cmap.name
+    for j,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl','rgb'))):
+        # Get RGB table, unclipped
+        hs = []
+        if hasattr(cmap, 'space'):
+            lut = cmap._lut_hsl[:,:3].copy()
+            for i in range(len(lut)):
+                lut[i,:] = to_rgb(lut[i,:], cmap.space)
+        else:
+            lut = cmap._lut[:,:3].copy()
+        # Convert RGB to space
+        for i in range(len(lut)):
+            lut[i,:] = to_xyz(lut[i,:], space=space)
+        scale  = _color_space_channel_scales[space]
+        labels = _color_space_channel_names[space]
+        # Draw line, add legend
+        colors = ('C1', 'C2', 'C0') # corresponds with RGB roughly
+        m = 0
+        for i,label in enumerate(labels):
+            y = lut[:-3,i]/scale[i]
+            y = np.clip(y, 0, 5)
+            h, = ax.plot(x, y, color=colors[i], lw=2, label=label)
+            m = max(m, max(y))
+            hs += [h]
+        f.bottompanel[j].legend([hs[:2], hs[-1:]], frame=False)
+        ax.axhline(1, color='gray7', dashes=(1.5, 2.5), alpha=0.8, zorder=0, lw=2)
+        ax.format(title=space.upper(), titleloc='c', ylim=(0-0.1, m + 0.1))
+    # Draw colorbar
+    with np.errstate(all='ignore'):
+        m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=cmap)
+    f.rightpanel.colorbar(m, locator='none', formatter='none', label=f'{name} colors')
+    axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
+              xlabel='position', ylabel='scaled channel value')
+
+def colorspace_breakdown(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
+    """Generates hue-saturation, hue-luminance, and luminance-saturation
+    cross-sections for the HCL, HSLuv, and HPLuv colorspaces. The type of
+    cross-section is determined by which of the `luminance`, `saturation`, and
+    `hue` channels are fixed."""
+    # Get colorspace properties
+    hues = np.linspace(0, 360, 361)
+    sats = np.linspace(0, 120, 120) # use 120 instead of 121, prevents annoying rough edge on HSL plot
+    lums = np.linspace(0, 99.99, 101)
+    if luminance is None and saturation is None and hue is None:
+        luminance = 50
+    if luminance is not None:
+        hsl = np.concatenate((
+            np.repeat(hues[:,None], len(sats), axis=1)[...,None],
+            np.repeat(sats[None,:], len(hues), axis=0)[...,None],
+            np.ones((len(hues), len(sats)))[...,None]*luminance,
+            ), axis=2)
+        suptitle = f'Hue-saturation cross-section for luminance {luminance}'
+        xlabel, ylabel = 'hue', 'saturation'
+        xloc, yloc = 60, 20
+    elif saturation is not None:
+        hsl = np.concatenate((
+            np.repeat(hues[:,None], len(lums), axis=1)[...,None],
+            np.ones((len(hues), len(lums)))[...,None]*saturation,
+            np.repeat(lums[None,:], len(hues), axis=0)[...,None],
+            ), axis=2)
+        suptitle = f'Hue-luminance cross-section for saturation {saturation}'
+        xlabel, ylabel = 'hue', 'luminance'
+        xloc, yloc = 60, 20
+    elif hue is not None:
+        hsl = np.concatenate((
+            np.ones((len(lums), len(sats)))[...,None]*hue,
+            np.repeat(sats[None,:], len(lums), axis=0)[...,None],
+            np.repeat(lums[:,None], len(sats), axis=1)[...,None],
+            ), axis=2)
+        suptitle = 'Luminance-saturation cross-section'
+        xlabel, ylabel = 'luminance', 'saturation'
+        xloc, yloc = 20, 20
+
+    # Make figure, with black indicating invalid values
+    # Note we invert the x-y ordering for imshow
+    rcParams['axes.facecolor'] = 'k'
+    f, axs = subplots.subplots(ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
+        right=0, aspect=1, tight=True, subplotpad=0.05)
+    for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
+        rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
+        for j in range(hsl.shape[0]):
+            for k in range(hsl.shape[1]):
+                rgb_jk = to_rgb(hsl[j,k,:].flat, space)
+                if not all(0 <= c <= 1 for c in rgb_jk):
+                    rgba[k,j,3] = 0 # black cell
+                else:
+                    rgba[k,j,:3] = rgb_jk
+        ax.imshow(rgba, origin='lower', aspect='auto')
+        ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
+                  grid=False, xtickminor=False, ytickminor=False,
+                  xlocator=xloc, ylocator=yloc,
+                  title=space.upper(), titleweight='bold')
+    return f
+
+def color_show(opencolors=False, ncols=4, nbreak=17, minsat=0.2):
+    """Visualizes the named colors registered with `register_colors`. Adapted
+    from `this example <https://matplotlib.org/examples/color/named_colors.html>`_."""
+    # Get colors explicitly defined in _colors_full_map, or the default
+    # components of that map
+    figs = []
+    scale = (360, 100, 100)
+    if opencolors:
+        group = ['opencolors']
+    else:
+        group = [name for name in colors_filtered if name not in ('css','opencolors')]
+    color_dict = {}
+    for name in group:
+        color_dict.update(colors_filtered[name]) # add category dictionary
+
+    # Group colors together by discrete range of hue, then sort by value
+    # For opencolors this is not necessary
+    if opencolors:
+        wscale = 0.5
+        swatch = 1.5
+        names = ['red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'gray']
+        nrows, ncols = 10, len(names) # rows and columns
+        plot_names = [[name + str(i) for i in range(nrows)] for name in names]
+        nrows = nrows*2
+        ncols = (ncols+1)//2
+        plot_names = np.array(plot_names, order='C')
+        plot_names.resize((ncols, nrows))
+        plot_names = plot_names.tolist()
+    # Get colors in perceptally uniform space, then group based on hue thresholds
+    else:
+        # Transform to HCL space
+        wscale = 1
+        swatch = 1
+        colors_hcl = {
+            key: [c/s for c,s in zip(to_xyz(value, _color_filter_space), scale)]
+            for key,value in color_dict.items()
+            }
+        # Separate into columns and roughly sort by brightness in these columns
+        breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
+        plot_names = [] # initialize
+        sat_test = (lambda x: x<minsat) # test saturation for 'grays'
+        for n in range(len(breakpoints)):
+            # 'Grays' column
+            if n==0:
+                hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if sat_test(hcl[1])]
+            # Column for nth color
+            else:
+                b1, b2 = breakpoints[n-1], breakpoints[n]
+                hue_test   = ((lambda x: b1<=x<=b2) if b2 is breakpoints[-1]
+                                else (lambda x: b1<=x<b2))
+                hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if
+                        hue_test(hcl[0]) and not sat_test(hcl[1])] # grays have separate category
+            # Get indices to build sorted list, then append sorted list
+            sorted_index = np.argsort([pair[1][2] for pair in hue_colors])
+            plot_names.append([hue_colors[i][0] for i in sorted_index])
+        # Concatenate those columns so get nice rectangle
+        names = [i for sublist in plot_names for i in sublist]
+        plot_names = [[]]
+        nrows = len(names)//ncols+1
+        for i,name in enumerate(names):
+            if ((i + 1) % nrows)==0:
+                plot_names.append([]) # add new empty list
+            plot_names[-1].append(name)
+
+    # Create plot by iterating over columns 
+    # Easy peasy. And put 40 colors in a column
+    fig, ax = subplots.subplots(width=8*wscale*(ncols/4), height=5*(nrows/40),
+        left=0, right=0, top=0, bottom=0, tight=False)
+    X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
+    hsep, wsep = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
+    for col,huelist in enumerate(plot_names):
+        for row,name in enumerate(huelist): # list of colors in hue category
+            if not name: # empty slot
+                continue
+            y = Y - hsep*(row + 1)
+            y_line = y + hsep*0.1
+            xi_line = wsep*(col + 0.05)
+            xf_line = wsep*(col + 0.25*swatch)
+            xi_text = wsep*(col + 0.25*swatch + 0.03*swatch)
+            ax.text(xi_text, y, re.sub('^xkcd:', '', name),
+                    fontsize=hsep*0.8, ha='left', va='center')
+            ax.hlines(y_line, xi_line, xf_line, color=color_dict[name], lw=hsep*0.6)
+    ax.format(xlim=(0,X), ylim=(0,Y))
+    ax.set_axis_off()
+    return fig
+
+def cmap_show(N=129):
+    """Visualizes the colormaps registered with `register_cmaps`. Adapted from
+    `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
+    # Have colormaps separated into categories
+    cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
+            and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
+
+    # Detect unknown/manually created colormaps, and filter out
+    # colormaps belonging to certain section
+    categories = {cat:names for cat,names in _cmap_categories.items()
+                if cat not in _cmap_categories_delete}
+    categories_reg = {cat:[name for name in names if name.lower() in cmaps_reg]
+                    for cat,names in categories.items()}
+    cmaps_reg_known = [name.lower() for cat,names in categories.items() for name in names
+                    if name.lower() in cmaps_reg]
+    cmaps_delete = [name.lower() for cat,names in _cmap_categories.items() for name in names
+                    if cat in _cmap_categories_delete]
+    cmaps_unknown = [name for name in cmaps_reg
+                    if name not in cmaps_reg_known and name not in cmaps_delete]
+    categories_reg['User'] = cmaps_unknown
+    if cmaps_unknown:
+        print(f'User colormaps: {", ".join(cmaps_unknown)}')
+    if cmaps_delete:
+        print(f'Deleted colormaps: {", ".join(cmaps_delete)}')
+
+    # For bugfixing
+    # cmaps_missing = [name.lower() for cat,names in categories.items() for name in names
+    #                     if name.lower() not in cmaps_reg]
+    # if cmaps_missing:
+    #     print(f'Missing colormaps: {", ".join(cmaps_missing)}')
+
+    # Array for producing visualization with imshow
+    a = np.linspace(0, 1, 257).reshape(1,-1)
+    a = np.vstack((a,a))
+    # Figure
+    extra = 1 # number of axes-widths to allocate for titles
+    nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
+    fig, axs = subplots.subplots(
+            nrows=nmaps, axwidth=4.0, axheight=0.2,
+            span=False, share=False, hspace=0.03,
+            tightsubplot=False,
+            )
+    iax = -1
+    ntitles, nplots = 0, 0 # for deciding which axes to plot in
+    for cat,names in categories_reg.items():
+        # Space for title
+        if not names:
+            continue
+        ntitles += extra # two axes-widths
+        for imap,name in enumerate(names):
+            # Draw coorbar
+            iax += 1
+            if imap + ntitles + nplots > nmaps:
+                ax.set_visible(False)
+                break
+            ax = axs[iax]
+            if imap==0:
+                iax += 1
+                ax.set_visible(False)
+                ax = axs[iax]
+            if name not in mcm.cmap_d or name.lower() not in cmaps_reg: # i.e. the expected builtin colormap is missing
+                ax.set_visible(False) # empty space
+                continue
+            ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
+            ax.format(ylabel=name, ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
+                      xticks='none',  yticks='none', # no ticks
+                      xloc='neither', yloc='neither', # no spines
+                      title=(cat if imap==0 else None))
+        # Space for plots
+        nplots += len(names)
+    return fig
+
+def cycle_show():
+    """Visualizes the color cycles registered with `register_cycles`."""
+    # Get the list of cycles
+    _cycles = {key:mcm.cmap_d[key].colors for key in cycles}
+    _cycles = {key:_cycles[key] for key in sorted(_cycles.keys())}
+    nrows = len(_cycles)//3 + len(_cycles)%3
+    # Create plot
+    state = np.random.RandomState(528)
+    fig, axs = subplots.subplots(axwidth=1.5, sharey=False, sharex=False, subplotpad=0.05,
+                        aspect=1, ncols=3, nrows=nrows)
+    for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
+        key = key.lower()
+        array = state.rand(20,len(cycle)) - 0.5
+        array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
+        for j,color in enumerate(cycle):
+            l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
+            l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
+        title = f'{key}: {len(cycle)} colors'
+        ax.set_title(title)
+        ax.grid(True)
+        for axis in 'xy':
+            ax.tick_params(axis=axis,
+                    which='both', labelbottom=False, labelleft=False,
+                    bottom=False, top=False, left=False, right=False)
+    axs[i+1:].set_visible(False)
+    return fig
+
 

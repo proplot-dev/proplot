@@ -101,7 +101,6 @@ To get started, check out the :ref:`Introduction`.
    axes
    axistools
    colortools
-   demos
    fonttools
    projs
    rcmod

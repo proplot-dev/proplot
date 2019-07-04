@@ -685,7 +685,7 @@ L -4 0
      </g>
     </g>
     <g id="text_14">
-     <!-- chroma -->
+     <!-- saturation -->
      <defs>
       <path d="M 6.40625 71.40625 
 L 6.40625 0 
@@ -1070,7 +1070,7 @@ iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAABHNCSVQICAgIfAhkiAAAHqZJREFUeJzt
      </g>
     </g>
     <g id="text_30">
-     <!-- chroma -->
+     <!-- saturation -->
      <g transform="translate(196.318379 114.459375)rotate(-90)scale(0.08 -0.08)">
       <use xlink:href="#HelveticaNeue-99"/>
       <use x="53.699997" xlink:href="#HelveticaNeue-104"/>
@@ -1372,7 +1372,7 @@ iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAABHNCSVQICAgIfAhkiAAAGY5JREFUeJzt
      </g>
     </g>
     <g id="text_46">
-     <!-- chroma -->
+     <!-- saturation -->
      <g transform="translate(379.655507 114.459375)rotate(-90)scale(0.08 -0.08)">
       <use xlink:href="#HelveticaNeue-99"/>
       <use x="53.699997" xlink:href="#HelveticaNeue-104"/>
@@ -1450,7 +1450,7 @@ z
    </g>
   </g>
   <g id="text_49">
-   <!-- Luminance-chroma cross-section -->
+   <!-- Luminance-saturation cross-section -->
    <defs>
     <path d="M 53.90625 0 
 L 53.90625 51.703125 

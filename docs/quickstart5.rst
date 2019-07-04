@@ -41,9 +41,10 @@ Registered colormaps
 On import, ProPlot registers a few sample
 `~proplot.colortools.PerceptuallyUniformColormap` colormaps (see
 :ref:`Perceptually uniform colormaps`) plus a ton of other colormaps
-from other online data viz projects. Use `~proplot.demos.cmap_show` to
-generate a table of registered maps, as shown below. The figure is
-broken down into the following sections:
+from other online data viz projects. Use
+`~proplot.colortools.cmap_show` to generate a table of registered
+maps, as shown below. The figure is broken down into the following
+sections:
 
 -  “User” colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
    folder. A great way to save colormaps to this folder is using the
@@ -212,25 +213,25 @@ values in any of three possible “perceptually uniform”, HSV-like
 colorspaces. These colorspaces can be described as follows:
 
 -  **HCL**: A purely perceptually uniform colorspace, where colors are
-   broken down into “hue” (color, range 0-360), “chroma” (colorfulness,
+   broken down into “hue” (color, range 0-360), “chroma” (saturation,
    range 0-100), and “luminance” (brightness, range 0-100).
--  **HPLuv**: As with HCL, but 100 chroma is scaled to be the *minimum
-   maximum chroma* across all hues for a given luminance, and is hence
-   more appropriate for multi-hue colormaps.
--  **HSLuv**: As with HCL, but 100 chroma is scaled to be the *maximum
-   possible chroma* for a given hue and luminance. This is more
-   appropriate for single-hue colormaps, because crossing hues in this
-   space make it more likely that bands of higher absolute chroma are
-   crossed.
+-  **HPLuv**: As with HCL, but 100 saturation is scaled to be the
+   *minimum maximum saturation* across all hues for a given luminance,
+   and is hence more appropriate for multi-hue colormaps.
+-  **HSLuv**: As with HCL, but 100 saturation is scaled to be the
+   *maximum possible saturation* for a given hue and luminance. This is
+   more appropriate for single-hue colormaps, because crossing hues in
+   this space make it more likely that bands of higher absolute
+   saturation are crossed.
 
 The HCL space is the only “purely” perceptually uniform colorspace. But
 during a linear transition between two values, we may cross over
 “impossible” colors (i.e. colors with RGB channels >1). The HSLuv and
 HPLuv colorspaces were developed to resolve this issue by (respectively)
-scaling and clipping high-chroma colors across different hues and
+scaling and clipping high-saturation colors across different hues and
 luminances.
 
-Use `~proplot.demos.colorspace_breakdown` to plot arbitrary
+Use `~proplot.colortools.colorspace_breakdown` to plot arbitrary
 cross-sections of these colorspaces. Also see `this
 page <http://www.hsluv.org/comparison/>`__.
 
@@ -247,7 +248,7 @@ page <http://www.hsluv.org/comparison/>`__.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.colorspace_breakdown(chroma=60)
+    f = plot.colorspace_breakdown(saturation=60)
 
 
 
@@ -326,8 +327,8 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 To see how the colors in a colormap vary across different colorspaces,
-use the `~proplot.demos.cmap_breakdown` function. This is done below
-for the builtin “viridis” colormap and the “Fire”
+use the `~proplot.colortools.cmap_breakdown` function. This is done
+below for the builtin “viridis” colormap and the “Fire”
 `~proplot.colortools.PerceptuallyUniformColormap`. We see that
 transitions for “Fire” are linear in HSL space, while transitions for
 “virids” are linear in hue and luminance for all colorspaces, but
@@ -369,7 +370,7 @@ valid file extensions.
 Registered color cycles
 -----------------------
 
-Use `~proplot.demos.cycle_show` to generate a table of the color
+Use `~proplot.colortools.cycle_show` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
 `~proplot.colortools.Cycle` constructor function. See the
@@ -488,8 +489,8 @@ colors <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__,
 and from the `“Open color” <https://github.com/yeun/open-color>`__
 Github project. This was inspired by
 `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-Use `~proplot.demos.color_show` to generate tables of these colors, as
-shown below. Note that the native matplotlib `CSS4 named
+Use `~proplot.colortools.color_show` to generate tables of these
+colors, as shown below. Note that the native matplotlib `CSS4 named
 colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
 still registered, but I encourage using colors from the tables instead.
 
@@ -497,8 +498,8 @@ To reduce the number of registered color names to a more manageable
 size, XKCD and Crayola colors must have *sufficiently distinct
 coordinates* in the HCL perceptually uniform colorspace before they are
 added to ProPlot. This makes it a bit easier to pick out colors from a
-table generated with `~proplot.demos.color_show`. Similar names were
-also cleaned up – for example, “reddish” and “reddy” are changed to
+table generated with `~proplot.colortools.color_show`. Similar names
+were also cleaned up – for example, “reddish” and “reddy” are changed to
 “red”.
 
 .. code:: ipython3

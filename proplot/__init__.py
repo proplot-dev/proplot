@@ -31,7 +31,8 @@ if warnings.formatwarning is not _warning_proplot:
 
 # Import stuff
 # WARNING: Must import colortools and register names first, since rcmod will
-# try to look up e.g. 'sunset' in the colormap dictionary!
+# try to look up e.g. 'sunset' in the colormap dictionary! Also must import
+# subplots within demo functions.
 from .utils import *      # misc stuff
 from .colortools import * # color tools
 from .rcmod import *      # custom configuration implementation
@@ -42,4 +43,3 @@ from .subplots import *
 from .fonttools import *  # fonts
 from .axistools import *  # locators, normalizers, and formatters
 from .projs import *      # projections and whatnot
-from .demos import *      # demonstrations
