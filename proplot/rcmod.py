@@ -113,9 +113,10 @@ Key                                     Description
        Many fonts only have ``normal`` or ``bold``. If you request an
        unavailable weight, matplotlib picks the closest availble weight.
 
-For minor gridline and meridian, parallel gridline settings, use the
-``gridminor`` and ``geogrid`` categories. If a ``gridminor`` property is empty,
-the corresponding builtin ``grid`` property is used.
+For minor gridlines, use the ``gridminor`` category. For meridian and parallel
+gridlines on `~proplot.axes.MapAxes`, use the ``geogrid`` category``.
+If a property is empty, the corresponding property from the buildin ``grid``
+category is used.
 
 ==============================================  ==================================================================
 Key                                             Description
@@ -124,12 +125,31 @@ Key                                             Description
 ``gridminor.linestyle``, ``geogrid.linestyle``  The line style.
 ``gridminor.alpha``, ``geogrid.alpha``          The line transparency.
 ``gridminor.color``, ``geogrid.color``          The line color.
-``geogrid.labels``                              Boolean, indicates whether to label the parallels and meridians.
-``geogrid.latmax``                              Meridian gridlines are cut off poleward of this latitude.
-``geogrid.lonstep``                             Interval for meridian gridlines, in degrees.
-``geogrid.latstep``                             Interval for parallel gridlines, in degrees.
-``geogrid.labelsize``                           Font size for latitide and longitude labels.
 ==============================================  ==================================================================
+
+The below properties are particular to `~proplot.axes.MapAxes`. The properties
+for geographic elements like ``land`` are used when the corresponding
+:ref:`rcGlobals` geographic feature is toggled on.
+
+==================================================  ==================================================================
+Key                                                 Description
+==================================================  ==================================================================
+``geogrid.labels``                                  Boolean, indicates whether to label the parallels and meridians.
+``geogrid.latmax``                                  Meridian gridlines are cut off poleward of this latitude.
+``geogrid.lonstep``                                 Interval for meridian gridlines, in degrees.
+``geogrid.latstep``                                 Interval for parallel gridlines, in degrees.
+``geogrid.labelsize``                               Font size for latitide and longitude labels.
+``land.color``                                      Face color for continents and island patches.
+``ocean.color``                                     Face color for ocean patches.
+``lakes.color``                                     Face color for lake patches.
+``rivers.color``, ``rivers.linewidth``              Line color and linewidth for river lines.
+``borders.color``, ``borders.linewidth``            Line color and linewidth for country border lines.
+``innerborders.color``, ``innerborders.linewidth``  Line color and linewidth for internal border lines.
+==================================================  ==================================================================
+
+'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
+'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
+
 
 The ``subplot`` category has settings that control the default figure
 layout. As with all sizing arguments, if specified as a number, the units
