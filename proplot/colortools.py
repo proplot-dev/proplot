@@ -2072,9 +2072,9 @@ def _read_cmap_cycle_data(filename):
 def register_cmaps():
     """
     Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
-    folder. Maps are registered according to their filenames -- for example,
-    ``name.xyz`` will be registered as ``'name'``. Use `cmap_show` to generate
-    a table of the registered colormaps
+    folder. This is called on import. Maps are registered according to their
+    filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
+    Use `cmap_show` to generate a table of the registered colormaps
 
     Valid file formats are described in the below table.
 
@@ -2131,10 +2131,10 @@ def register_cmaps():
 def register_cycles():
     """
     Adds color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
-    folder. Cycles are registered according to their filenames -- for example,
-    ``name.hex`` will be registered under the name ``'name'`` as a
-    `~matplotlib.colors.ListedColormap` map (see `Cycle` for details). Use
-    `cycle_show` to generate a table of the registered cycles.
+    folder. This is called on import. Cycles are registered according to their
+    filenames -- for example, ``name.hex`` will be registered under the name
+    ``'name'`` as a `~matplotlib.colors.ListedColormap` map (see `Cycle` for
+    details). Use `cycle_show` to generate a table of the registered cycles.
 
     For valid file formats, see `register_cmaps`.
     """
@@ -2168,8 +2168,8 @@ def register_colors(nmax=np.inf):
     """
     Reads full database of crowd-sourced XKCD color names and official
     Crayola color names, then filters them to be sufficiently "perceptually
-    distinct" in the HCL colorspace. Use `color_show` to generate a table of
-    the resulting filtered colors.
+    distinct" in the HCL colorspace. This is called on import. Use `color_show`
+    to generate a table of the resulting filtered colors.
     """
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
@@ -2374,8 +2374,8 @@ def colorspace_breakdown(luminance=None, saturation=None, hue=None, N=100, space
     return f
 
 def color_show(opencolors=False, ncols=4, nbreak=17, minsat=0.2):
-    """Visualizes the named colors registered with `register_colors`. Adapted
-    from `this example <https://matplotlib.org/examples/color/named_colors.html>`_."""
+    """Visualizes the registered color names. Adapted from `this example
+    <https://matplotlib.org/examples/color/named_colors.html>`_."""
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map
     figs = []
@@ -2460,8 +2460,8 @@ def color_show(opencolors=False, ncols=4, nbreak=17, minsat=0.2):
     return fig
 
 def cmap_show(N=129):
-    """Visualizes the colormaps registered with `register_cmaps`. Adapted from
-    `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
+    """Visualizes the registered colormaps. Adapted from `this example
+    <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
     cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
             and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
@@ -2532,7 +2532,7 @@ def cmap_show(N=129):
     return fig
 
 def cycle_show():
-    """Visualizes the color cycles registered with `register_cycles`."""
+    """Visualizes the registered color cycles."""
     # Get the list of cycles
     _cycles = {key:mcm.cmap_d[key].colors for key in cycles}
     _cycles = {key:_cycles[key] for key in sorted(_cycles.keys())}
