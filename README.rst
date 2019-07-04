@@ -138,7 +138,7 @@ In summary, this project is intended to unify the convenience of seaborn, pandas
 
 .. |donations| image:: https://img.shields.io/badge/Donate-PayPal-green.svg
    :alt: PayPal donations
-   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5SP6S8RZCYMQA&source=url
+   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url
 
 ..
 .. |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg
