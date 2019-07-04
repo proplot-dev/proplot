@@ -26,7 +26,7 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 from . import utils, colormath
-from .utils import _default, _counter, _timer, ic
+from .utils import _default, _counter, _timer
 rcParams = mpl.rcParams
 
 # Data diretories
