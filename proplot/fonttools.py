@@ -25,18 +25,25 @@ font names. Makes Helvetica or Helvetica Neue the default font.
 # Helvetica: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
 # Classic fonts: https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406
 # Good for downloading fonts: https://www.cufonfonts.com
+# WARNING: Beware of unrecognized font variant 'Thin'! Matplotlib gets random
+# unsorted list of font files when rebuilding the manager via os.walk(),
+# which means if an unrecognized variant is added before the normal one,
+# matplotlib uses that font! Found out by printing mfonts.fontManager.ttflist
+# and noticing the 'Thin' files registered as 'normal' for all properties. See
+# https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc.
+# print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
+# print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
 import os
 import re
 import sys
 import shutil
 import glob
 import matplotlib.font_manager as mfonts
-from matplotlib import matplotlib_fname, get_cachedir
+from matplotlib import get_cachedir, get_data_path
 _data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_user_fonts = os.path.join(_data_user, 'fonts') # user fonts
-_data_matplotlib = re.sub('/matplotlibrc$', '', matplotlib_fname())
-_data_matplotlib_fonts = os.path.join(_data_matplotlib, 'fonts', 'ttf')
+_data_matplotlib_fonts = os.path.join(get_data_path(), 'fonts', 'ttf')
 if not os.path.isdir(_data_user):
     os.mkdir(_data_user)
 if not os.path.isdir(_data_user_fonts):
@@ -60,7 +67,7 @@ def register_fonts():
         if ifiles is fonts_os_files:
             ifiles[:] = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf'))
         else:
-            ifiles[:] = sorted(glob.glob(os.path.join(_data_matplotlib, 'fonts', 'ttf', '*.[ot]tf')))
+            ifiles[:] = sorted(glob.glob(os.path.join(_data_matplotlib_fonts, '*.[ot]tf')))
         for file in ifiles:
             try:
                 font = mfonts.FontProperties(fname=file).get_name()
@@ -73,7 +80,7 @@ def register_fonts():
         fonts.extend(ifonts)
     fonts[:] = sorted(fonts)
 
-    # Transfer files to matplotlibrc
+    # Transfer files to mpl-data
     fonts_new = []
     for filename in sorted(glob.glob(os.path.join(_data_fonts, '*.[ot]tf'))) + \
             sorted(glob.glob(os.path.join(_data_user_fonts, '*.[ot]tf'))):
@@ -83,20 +90,9 @@ def register_fonts():
         shutil.copy(filename, _data_matplotlib_fonts)
         fonts_new.append(base)
 
-    # Delete and rebuild cache
-    # TODO: Is rebuilding the cache sufficient?
+    # Rebuild cache
     if fonts_new:
         print(f'Installed font(s): {", ".join(fonts_new)}.')
-        caches = []
-        dir_cache = get_cachedir()
-        for file in glob.glob(os.path.join(dir_cache, '*.cache')) + glob.glob(os.path.join(dir_cache, '*.json')):
-            if os.path.isdir(file): # important to dump even tex.cache, get weird errors with wrong font weight!
-                shutil.rmtree(file)
-            else:
-                os.remove(file)
-            caches.append(file)
-        if caches:
-            print(f'Deleted font cache(s): {", ".join(caches)}.')
         mfonts._rebuild()
 
 # Font lists
@@ -116,3 +112,27 @@ _missing_fonts = {*()}
 # Register fonts
 register_fonts()
 
+#------------------------------------------------------------------------------#
+# Fonts demo
+#------------------------------------------------------------------------------#
+def show_fonts(size=12):
+    """Display nicely-formatted table of the fonts available in the matplotlib
+    mpl-data folder."""
+    from . import subplots
+    fonts = ['DejaVu Sans', 'Arial', 'Avenir', 'Franklin Gothic Book', 'Frutiger', 'Futura',
+            'Gotham', 'Helvetica', 'Helvetica Neue', 'Geneva', 'Gill Sans',
+            'Lucida Grande', 'Noto Sans', 'Myriad Pro', 'Open Sans', 'Optima', 'Tahoma', 'Trebuchet MS', 'Univers', 'Verdana']
+    math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
+    greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
+    letters = 'the quick brown fox jumps over a lazy dog\nTHE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
+    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz'
+    for weight in ('normal',):
+        f, axs = subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=4.5, axheight=5.5*size/72)
+        axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
+        axs[0].format(title='Fonts demo', titlefontsize=size, titleloc='l', titleweight='bold')
+        for i,ax in enumerate(axs):
+            font = fonts[i]
+            plot.rc.fontname = font
+            ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}',
+                    fontsize=size, weight=weight, ha='left', va='center')
+    return f

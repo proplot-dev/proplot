@@ -91,6 +91,7 @@ To get started, check out the :ref:`Introduction`.
    quickstart3
    quickstart4
    quickstart5
+   quickstart6
 
 .. toctree::
    :hidden:

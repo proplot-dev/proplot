@@ -14,6 +14,7 @@ Axes and wrappers
 .. automodsumm:: proplot.wrappers
    :toctree: api
    :functions-only:
+   :skip: ic
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

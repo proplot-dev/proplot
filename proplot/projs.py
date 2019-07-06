@@ -93,8 +93,7 @@ def Circle(N=100):
     """Returns a circle `~matplotlib.path.Path` used as the outline
     for polar stereographic, azimuthal equidistant, and Lambert
     conformal projections. This was developed from `this cartopy example
-    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_.
-    """
+    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_."""
     # WARNING: Tempting to use classmethod mpath.Path.circle, but this ends up
     # failing and drawing weird polygon. Need manual approach.
     # mpath.Path([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]) # rectangle

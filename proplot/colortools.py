@@ -2074,7 +2074,7 @@ def register_cmaps():
     Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
     folder. This is called on import. Maps are registered according to their
     filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
-    Use `cmap_show` to generate a table of the registered colormaps
+    Use `show_cmaps` to generate a table of the registered colormaps
 
     Valid file formats are described in the below table.
 
@@ -2134,7 +2134,7 @@ def register_cycles():
     folder. This is called on import. Cycles are registered according to their
     filenames -- for example, ``name.hex`` will be registered under the name
     ``'name'`` as a `~matplotlib.colors.ListedColormap` map (see `Cycle` for
-    details). Use `cycle_show` to generate a table of the registered cycles.
+    details). Use `show_cycles` to generate a table of the registered cycles.
 
     For valid file formats, see `register_cmaps`.
     """
@@ -2168,7 +2168,7 @@ def register_colors(nmax=np.inf):
     """
     Reads full database of crowd-sourced XKCD color names and official
     Crayola color names, then filters them to be sufficiently "perceptually
-    distinct" in the HCL colorspace. This is called on import. Use `color_show`
+    distinct" in the HCL colorspace. This is called on import. Use `show_colors`
     to generate a table of the resulting filtered colors.
     """
     # Reset native colors dictionary and add some default groups
@@ -2268,12 +2268,12 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Demos
 #------------------------------------------------------------------------------#
-from . import subplots # delay importing, because subplots import rcmod, which may look for a newly registered colormap to apply as the default
-def cmap_breakdown(cmap, N=100, space='hcl'):
+def breakdown_cmap(cmap, N=100, space='hcl'):
     """Shows how an arbitrary colormap varies in the HCL, HSLuv, and HPLuv
     colorspaces."""
     # Figure
-    f, axs = subplots.subplots(ncols=4, legends='b', colorbar='r',
+    from . import subplots
+    f, axs = subplots(ncols=4, legends='b', colorbar='r',
                     span=False, sharey=1, subplotpad=0.05,
                     axwidth=1.3, aspect=1, tight=True)
     x = np.linspace(0, 1, N)
@@ -2313,12 +2313,13 @@ def cmap_breakdown(cmap, N=100, space='hcl'):
     axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
               xlabel='position', ylabel='scaled channel value')
 
-def colorspace_breakdown(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
+def breakdown_colorspace(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
     """Generates hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSLuv, and HPLuv colorspaces. The type of
     cross-section is determined by which of the `luminance`, `saturation`, and
     `hue` channels are fixed."""
     # Get colorspace properties
+    from . import subplots
     hues = np.linspace(0, 360, 361)
     sats = np.linspace(0, 120, 120) # use 120 instead of 121, prevents annoying rough edge on HSL plot
     lums = np.linspace(0, 99.99, 101)
@@ -2355,7 +2356,7 @@ def colorspace_breakdown(luminance=None, saturation=None, hue=None, N=100, space
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
     rcParams['axes.facecolor'] = 'k'
-    f, axs = subplots.subplots(ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
+    f, axs = subplots(ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
         right=0, aspect=1, tight=True, subplotpad=0.05)
     for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
@@ -2373,96 +2374,103 @@ def colorspace_breakdown(luminance=None, saturation=None, hue=None, N=100, space
                   title=space.upper(), titleweight='bold')
     return f
 
-def color_show(opencolors=False, ncols=4, nbreak=17, minsat=0.2):
+def show_colors(opencolors=False, nbreak=17, minsat=0.2):
     """Visualizes the registered color names. Adapted from `this example
     <https://matplotlib.org/examples/color/named_colors.html>`_."""
     # Get colors explicitly defined in _colors_full_map, or the default
     # components of that map
     figs = []
-    scale = (360, 100, 100)
-    if opencolors:
-        group = ['opencolors']
-    else:
-        group = [name for name in colors_filtered if name not in ('css','opencolors')]
-    color_dict = {}
-    for name in group:
-        color_dict.update(colors_filtered[name]) # add category dictionary
+    from . import subplots
+    for opencolors in (True,False):
+        scale = (360, 100, 100)
+        if opencolors:
+            group = ['opencolors']
+        else:
+            group = [name for name in colors_filtered if name not in ('css','opencolors')]
+        color_dict = {}
+        for name in group:
+            color_dict.update(colors_filtered[name]) # add category dictionary
 
-    # Group colors together by discrete range of hue, then sort by value
-    # For opencolors this is not necessary
-    if opencolors:
-        wscale = 0.5
-        swatch = 1.5
-        names = ['red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'gray']
-        nrows, ncols = 10, len(names) # rows and columns
-        plot_names = [[name + str(i) for i in range(nrows)] for name in names]
-        nrows = nrows*2
-        ncols = (ncols+1)//2
-        plot_names = np.array(plot_names, order='C')
-        plot_names.resize((ncols, nrows))
-        plot_names = plot_names.tolist()
-    # Get colors in perceptally uniform space, then group based on hue thresholds
-    else:
-        # Transform to HCL space
-        wscale = 1
-        swatch = 1
-        colors_hcl = {
-            key: [c/s for c,s in zip(to_xyz(value, _color_filter_space), scale)]
-            for key,value in color_dict.items()
-            }
-        # Separate into columns and roughly sort by brightness in these columns
-        breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
-        plot_names = [] # initialize
-        sat_test = (lambda x: x<minsat) # test saturation for 'grays'
-        for n in range(len(breakpoints)):
-            # 'Grays' column
-            if n==0:
-                hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if sat_test(hcl[1])]
-            # Column for nth color
-            else:
-                b1, b2 = breakpoints[n-1], breakpoints[n]
-                hue_test   = ((lambda x: b1<=x<=b2) if b2 is breakpoints[-1]
-                                else (lambda x: b1<=x<b2))
-                hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if
-                        hue_test(hcl[0]) and not sat_test(hcl[1])] # grays have separate category
-            # Get indices to build sorted list, then append sorted list
-            sorted_index = np.argsort([pair[1][2] for pair in hue_colors])
-            plot_names.append([hue_colors[i][0] for i in sorted_index])
-        # Concatenate those columns so get nice rectangle
-        names = [i for sublist in plot_names for i in sublist]
-        plot_names = [[]]
-        nrows = len(names)//ncols+1
-        for i,name in enumerate(names):
-            if ((i + 1) % nrows)==0:
-                plot_names.append([]) # add new empty list
-            plot_names[-1].append(name)
+        # Group colors together by discrete range of hue, then sort by value
+        # For opencolors this is not necessary
+        if opencolors:
+            wscale = 0.5
+            swatch = 1.5
+            names = ['red', 'pink', 'grape', 'violet', 'indigo', 'blue', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'gray']
+            nrows, ncols = 10, len(names) # rows and columns
+            plot_names = [[name + str(i) for i in range(nrows)] for name in names]
+            nrows = nrows*2
+            ncols = (ncols+1)//2
+            plot_names = np.array(plot_names, order='C')
+            plot_names.resize((ncols, nrows))
+            plot_names = plot_names.tolist()
+        # Get colors in perceptally uniform space, then group based on hue thresholds
+        else:
+            # Transform to HCL space
+            ncols = 4
+            wscale = 1
+            swatch = 1
+            colors_hcl = {
+                key: [c/s for c,s in zip(to_xyz(value, _color_filter_space), scale)]
+                for key,value in color_dict.items()
+                }
+            # Separate into columns and roughly sort by brightness in these columns
+            breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
+            plot_names = [] # initialize
+            sat_test = (lambda x: x<minsat) # test saturation for 'grays'
+            for n in range(len(breakpoints)):
+                # 'Grays' column
+                if n==0:
+                    hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if sat_test(hcl[1])]
+                # Column for nth color
+                else:
+                    b1, b2 = breakpoints[n-1], breakpoints[n]
+                    hue_test   = ((lambda x: b1<=x<=b2) if b2 is breakpoints[-1]
+                                    else (lambda x: b1<=x<b2))
+                    hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if
+                            hue_test(hcl[0]) and not sat_test(hcl[1])] # grays have separate category
+                # Get indices to build sorted list, then append sorted list
+                sorted_index = np.argsort([pair[1][2] for pair in hue_colors])
+                plot_names.append([hue_colors[i][0] for i in sorted_index])
+            # Concatenate those columns so get nice rectangle
+            names = [i for sublist in plot_names for i in sublist]
+            plot_names = [[]]
+            nrows = len(names)//ncols+1
+            for i,name in enumerate(names):
+                if ((i + 1) % nrows)==0:
+                    plot_names.append([]) # add new empty list
+                plot_names[-1].append(name)
 
-    # Create plot by iterating over columns 
-    # Easy peasy. And put 40 colors in a column
-    fig, ax = subplots.subplots(width=8*wscale*(ncols/4), height=5*(nrows/40),
-        left=0, right=0, top=0, bottom=0, tight=False)
-    X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
-    hsep, wsep = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
-    for col,huelist in enumerate(plot_names):
-        for row,name in enumerate(huelist): # list of colors in hue category
-            if not name: # empty slot
-                continue
-            y = Y - hsep*(row + 1)
-            y_line = y + hsep*0.1
-            xi_line = wsep*(col + 0.05)
-            xf_line = wsep*(col + 0.25*swatch)
-            xi_text = wsep*(col + 0.25*swatch + 0.03*swatch)
-            ax.text(xi_text, y, re.sub('^xkcd:', '', name),
-                    fontsize=hsep*0.8, ha='left', va='center')
-            ax.hlines(y_line, xi_line, xf_line, color=color_dict[name], lw=hsep*0.6)
-    ax.format(xlim=(0,X), ylim=(0,Y))
-    ax.set_axis_off()
-    return fig
+        # Create plot by iterating over columns 
+        # Easy peasy. And put 40 colors in a column
+        fig, ax = subplots(
+            width=8*wscale*(ncols/4), height=5*(nrows/40),
+            left=0, right=0, top=0, bottom=0, tight=False)
+        X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
+        hsep, wsep = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
+        for col,huelist in enumerate(plot_names):
+            for row,name in enumerate(huelist): # list of colors in hue category
+                if not name: # empty slot
+                    continue
+                y = Y - hsep*(row + 1)
+                y_line = y + hsep*0.1
+                xi_line = wsep*(col + 0.05)
+                xf_line = wsep*(col + 0.25*swatch)
+                xi_text = wsep*(col + 0.25*swatch + 0.03*swatch)
+                ax.text(xi_text, y, re.sub('^xkcd:', '', name),
+                        fontsize=hsep*0.8, ha='left', va='center')
+                ax.hlines(y_line, xi_line, xf_line, color=color_dict[name], lw=hsep*0.6)
+        # Apply formatting
+        ax.format(xlim=(0,X), ylim=(0,Y))
+        ax.set_axis_off()
+        figs.append(fig)
+    return figs
 
-def cmap_show(N=129):
+def show_cmaps(N=129):
     """Visualizes the registered colormaps. Adapted from `this example
     <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
+    from . import subplots
     cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
             and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
 
@@ -2496,7 +2504,7 @@ def cmap_show(N=129):
     # Figure
     extra = 1 # number of axes-widths to allocate for titles
     nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
-    fig, axs = subplots.subplots(
+    fig, axs = subplots(
             nrows=nmaps, axwidth=4.0, axheight=0.2,
             span=False, share=False, hspace=0.03,
             tightsubplot=False,
@@ -2531,15 +2539,16 @@ def cmap_show(N=129):
         nplots += len(names)
     return fig
 
-def cycle_show():
+def show_cycles():
     """Visualizes the registered color cycles."""
+    from . import subplots
     # Get the list of cycles
     _cycles = {key:mcm.cmap_d[key].colors for key in cycles}
     _cycles = {key:_cycles[key] for key in sorted(_cycles.keys())}
     nrows = len(_cycles)//3 + len(_cycles)%3
     # Create plot
     state = np.random.RandomState(528)
-    fig, axs = subplots.subplots(axwidth=1.5, sharey=False, sharex=False, subplotpad=0.05,
+    fig, axs = subplots(axwidth=1.5, sharey=False, sharex=False, subplotpad=0.05,
                         aspect=1, ncols=3, nrows=nrows)
     for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
         key = key.lower()
