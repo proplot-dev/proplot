@@ -170,9 +170,9 @@ declaring the projection by passing ``proj_kw`` to
 For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
 dictionary containing the ``'boundinglat'`` key to ``proj_kw``. For
 `cartopy` projections, a circular boundary is drawn around zoomed-in
-polar projections, just like in `~mpl_toolkits.basemap`; this is
-accomplished as in `this cartopy
-example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__.
+polar projections, just like in `~mpl_toolkits.basemap` (implemented
+following `this
+example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__).
 Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
 ``'nplaea'``, and ``'splaea'`` `cartopy` projections to the existing
 ``'npstere'`` and ``'spstere'`` projections, just like in

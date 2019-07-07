@@ -33,6 +33,8 @@ font names. Makes Helvetica or Helvetica Neue the default font.
 # https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc.
 # print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
 # print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
+# NOTE: Good idea to check out the list whenever adding new ttf files! For
+# example, realized could dump all of the Gotham-Name.ttf files instead of GothamName files.
 import os
 import re
 import sys
@@ -119,9 +121,10 @@ def show_fonts(size=12):
     """Display nicely-formatted table of the fonts available in the matplotlib
     mpl-data folder."""
     from . import subplots
-    fonts = ['DejaVu Sans', 'Arial', 'Avenir', 'Franklin Gothic Book', 'Frutiger', 'Futura',
-            'Gotham', 'Helvetica', 'Helvetica Neue', 'Geneva', 'Gill Sans',
-            'Lucida Grande', 'Noto Sans', 'Myriad Pro', 'Open Sans', 'Optima', 'Tahoma', 'Trebuchet MS', 'Univers', 'Verdana']
+    ignore = ('Neue','Display','Mono','Serif','Medium','STIX','DejaVu','Bitstream')
+    fonts = [font for font in fonts_mpl if font[:2]!='cm' and font[:1]!='.' and
+             not any(key in font for key in ignore)]
+    fonts = [('DejaVu Sans' if 'DejaVu Sans' in fonts_mpl else 'Bitstream Vera'), *fonts]
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     letters = 'the quick brown fox jumps over a lazy dog\nTHE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
@@ -132,7 +135,6 @@ def show_fonts(size=12):
         axs[0].format(title='Fonts demo', titlefontsize=size, titleloc='l', titleweight='bold')
         for i,ax in enumerate(axs):
             font = fonts[i]
-            plot.rc.fontname = font
-            ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}',
+            ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}', fontfamily=font,
                     fontsize=size, weight=weight, ha='left', va='center')
     return f

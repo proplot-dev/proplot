@@ -456,37 +456,25 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
 Font control
 ------------
 
-Deja Vu Sans is the default matplotlib font, but it’s not very
-appealing. ProPlot adds all of the fonts below and makes Helvetica the
-default, as in MATLAB. Generally speaking, simple, clean sans-serif
-fonts are more appropriate for figures than serif fonts. You can also
-register your own fonts by adding ``.ttf`` and ``.otf`` files to the
-``~/.proplot/fonts`` directory and calling
-`~proplot.fonttools.register_fonts` (also called on import). To change
-the default font, use the `~proplot.rcmod.rc` object or by modifying
-your ``~/.proplotrc``. See the `~proplot.fonttools` and
+DejaVu Sans is the default matplotlib font, but it’s not exactly the
+best of the best and it can be tricky to change when using multiple
+workstations with different fonts installed. ProPlot adds a bunch of
+sans-serif fonts, introudces a `~proplot.fonttools.show_fonts` command
+to display them (see below), and makes Helvetica the default, as in
+MATLAB.Generally speaking, simple, clean sans-serif fonts are more
+appropriate for figures than serif fonts.
+
+You can register your own fonts by adding ``.ttf`` and ``.otf`` files to
+the ``~/.proplot/fonts`` directory and calling
+`~proplot.fonttools.register_fonts` (which is also called on import).
+To change the default font, use the `~proplot.rcmod.rc` object or by
+modifying your ``~/.proplotrc``. See the `~proplot.fonttools` and
 `~proplot.rcmod` documentation for more info.
 
 .. code:: ipython3
 
     import proplot as plot
-    size = 12
-    plot.rc.small = plot.rc.large = size
-    fonts = ['DejaVu Sans', 'Arial', 'Avenir', 'Franklin Gothic Book', 'Frutiger', 'Futura',
-             'Gotham', 'Helvetica', 'Helvetica Neue', 'Geneva', 'Gill Sans',
-             'Lucida Grande', 'Noto Sans', 'Myriad Pro', 'Open Sans', 'Optima', 'Tahoma', 'Trebuchet MS', 'Univers', 'Verdana']
-    math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
-    greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
-    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz'
-    letters = 'the quick brown fox jumps over a lazy dog\nTHE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
-    for weight in ('normal',):
-        f, axs = plot.subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=4.5, axheight=5.5*size/72)
-        axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
-        axs[0].format(title='Fonts demo', titleloc='l', titleweight='bold')
-        for i,ax in enumerate(axs):
-            font = fonts[i]
-            plot.rc.fontname = font
-            ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}', weight=weight, ha='left', va='center')
+    f = plot.show_fonts()
 
 
 
