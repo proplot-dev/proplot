@@ -461,7 +461,7 @@ best of the best and it can be tricky to change when using multiple
 workstations with different fonts installed. ProPlot adds a bunch of
 sans-serif fonts, introudces a `~proplot.fonttools.show_fonts` command
 to display them (see below), and makes Helvetica the default, as in
-MATLAB.Generally speaking, simple, clean sans-serif fonts are more
+MATLAB. Generally speaking, simple, clean sans-serif fonts are more
 appropriate for figures than serif fonts.
 
 You can register your own fonts by adding ``.ttf`` and ``.otf`` files to
