@@ -127,6 +127,37 @@ Key                                             Description
 ``gridminor.color``, ``geogrid.color``          The line color.
 ==============================================  ==================================================================
 
+There are two new additions to pre-existing ``image`` category, described
+in the table below.
+
+=================  =========================================================================================================================================================================================================================================================
+Key                Description
+=================  =========================================================================================================================================================================================================================================================
+``image.levels``   Default number of levels for ``pcolormesh`` and ``contourf`` plots.
+``image.edgefix``  Whether to fix the the `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__ and `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__ issues. This slows down figure rendering a bit.
+=================  =========================================================================================================================================================================================================================================================
+
+The ``colorbar`` category has settings that control the default colorbar
+layout. It is analogous to the builtin ``legend`` category, but configures
+both *inset* and *panel* colorbars (see the `~proplot.axes.BaseAxes`
+`~proplot.axes.BaseAxes.colorbar` and `~proplot.axes.PanelAxes`
+`~proplot.axes.PanelAxes.colorbar` methods for details).
+
+========================  =========================================================================================================================
+Key                       Description
+========================  =========================================================================================================================
+``colorbar.grid``         Boolean, indicates whether to draw "gridlines" between each level of the colorbar.
+``colorbar.frameon``      Boolean, indicates whether to draw a frame behind inset colorbars.
+``colorbar.framealpha``   The opacity of colorbar frame.
+``colorbar.loc``          Default inset colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
+``colorbar.length``       Default length of inset colorbars.
+``colorbar.width``        Default width of inset colorbars.
+``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
+``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
+``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
+``colorbar.xspace``       Extra space for *x* label of inset colorbars.
+========================  =========================================================================================================================
+
 The below properties are particular to `~proplot.axes.MapAxes`. The properties
 for geographic elements like ``land`` are used when the corresponding
 :ref:`rcGlobals` geographic feature is toggled on.
@@ -168,26 +199,6 @@ Key                      Description
 ``subplot.innerspace``   Purely empty space between subplots.
 ``subplot.panelspace``   Purely empty space between main axes and side panels.
 =======================  ==================================================================
-
-The ``colorbar`` category has settings that control the default colorbar
-layout. It is analogous to the builtin ``legend`` category, but configures
-both *inset* and *panel* colorbars (see the `~proplot.axes.BaseAxes`
-`~proplot.axes.BaseAxes.colorbar` and `~proplot.axes.PanelAxes`
-`~proplot.axes.PanelAxes.colorbar` methods for details).
-
-========================  =========================================================================================================================
-Key                       Description
-========================  =========================================================================================================================
-``colorbar.frameon``      Boolean, indicates whether to draw a frame behind inset colorbars.
-``colorbar.framealpha``   The opacity of colorbar frame.
-``colorbar.loc``          Default inset colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
-``colorbar.length``       Default length of inset colorbars.
-``colorbar.width``        Default width of inset colorbars.
-``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
-``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
-``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
-``colorbar.xspace``       Extra space for *x* label of inset colorbars.
-========================  =========================================================================================================================
 """
 # First import stuff
 # WARNING: Must import pyplot here, because otherwise 'style' attribute
@@ -270,6 +281,7 @@ _rc_names_global = {*_rcGlobals_children.keys()}
 _rc_names_custom = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
+    'image.levels', 'image.edgefix',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
     'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
     'abc.fontsize', 'abc.weight', 'abc.color', 'abc.loc', 'abc.format', 'abc.border', 'abc.linewidth',
@@ -284,7 +296,7 @@ _rc_names_custom = {
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
     'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',
     'subplot.axwidth', 'subplot.panelwidth', 'subplot.panelspace',
-    'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
+    'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, compare landcolor='b' to

@@ -1984,9 +1984,6 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
         `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
         and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
         obj = super().__getattribute__(attr, *args)
-        # if attr in ('pcolormesh',):
-        #     @functools.wraps(obj)
-        #     def wrapper()
         if callable(obj):
             # Step 4) Color usage wrappers
             if attr in wrappers._cmap_methods:

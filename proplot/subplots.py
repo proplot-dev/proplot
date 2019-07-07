@@ -1121,7 +1121,7 @@ class Figure(mfigure.Figure):
         # Render
         return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
-    def add_subplot_and_panels(self, subspec, which=None, *,
+    def add_subplot_and_panels(self, subspec, which=None, ax_kw={}, *,
             hspace, wspace,
             bwidth, bvisible, bflush, bshare, bsep,
             twidth, tvisible, tflush, tshare, tsep,
@@ -1230,10 +1230,9 @@ class Figure(mfigure.Figure):
         # Draw main axes
         r, = np.where('c'==rows)
         c, = np.where('c'==cols)
-        ax = self.add_subplot(gs[r[0],c[0]], **kwargs)
+        ax = self.add_subplot(gs[r[0],c[0]], **ax_kw)
         ax._panels_main_gridspec = gs
         # Draw panels
-        kwargs = {key:value for key,value in kwargs.items() if key not in ('number', 'projection')}
         for side,width,sep,flush,share,visible, in zip('lrbt',
                 (lwidth, rwidth, bwidth, twidth),
                 (lsep, rsep, bsep, tsep),
@@ -1268,7 +1267,7 @@ class Figure(mfigure.Figure):
             for i in range(stack):
                 pax = self.add_subplot(igs[i], side=name,
                     share=(visible and share), flush=flush, visible=visible,
-                    parent=ax, projection='panel', **kwargs)
+                    parent=ax, projection='panel')
                 pax._panels_main_gridspec = gs
                 pax._panels_stack_gridspec = igs
                 paxs += [pax]
@@ -2104,7 +2103,7 @@ def subplots(array=None, ncols=1, nrows=1,
         ax_kw = axes_kw[num]
         if axpanels_kw[num]['which']: # non-empty
             axs[idx] = fig.add_subplot_and_panels(gs[slice(*yrange[idx,:]), slice(*xrange[idx,:])],
-                    number=num, spanx=spanx, spany=spany, **ax_kw, **axpanels_kw[num])
+                    number=num, spanx=spanx, spany=spany, ax_kw=ax_kw, **axpanels_kw[num])
         else:
             axs[idx] = fig.add_subplot(gs[slice(*yrange[idx,:]), slice(*xrange[idx,:])],
                     number=num, spanx=spanx, spany=spany, **ax_kw) # main axes can be a cartopy projection

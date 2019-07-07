@@ -118,7 +118,11 @@ axes.formatter.zerotrim: True
 axes.formatter.timerotation: 30
 axes.gridminor: True
 axes.geogrid: True
+# Extra image settings
+image.edgefix: True
+image.levels: 11
 # Colorbar settings
+colorbar.grid:        False
 colorbar.frameon:     True
 colorbar.framealpha:  0.8
 colorbar.extendinset: 0.08

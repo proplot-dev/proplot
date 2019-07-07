@@ -1556,7 +1556,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     norm=None, norm_kw={},
     extend='neither',
     values=None, levels=None, zero=False, vmin=None, vmax=None, # override levels to be *centered* on zero
-    edgefix=True, labels=False, labels_kw={}, precision=2,
+    edgefix=None, labels=False, labels_kw={}, precision=2,
     colorbar=False, colorbar_kw={},
     lw=None, linewidth=None, linewidths=None,
     ls=None, linestyle=None, linestyles=None,
@@ -1588,7 +1588,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     levels : None or int or list of float, optional
         If list of float, level *edges*. If integer, the number of level
         edges, and boundaries are chosen by matplotlib based on the data
-        range. Defaults to 11.
+        range. Default is ``rc['image.levels']``.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
@@ -1601,13 +1601,13 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         Ignored if `values` or `levels` are lists.
         If colormap levels were automatically selected by matplotlib, toggle
         this to modify the levels to be **symmetric about zero**.
-    edgefix : bool, optional
+    edgefix : None or bool, optional
         Whether to fix the the `white-lines-between-filled-contours
         <https://stackoverflow.com/q/8263769/4970632>`__
         and `white-lines-between-pcolor-rectangles
         <https://stackoverflow.com/q/27092991/4970632>`__
-        issues. Note this will slow down the figure rendering by a bit.
-        Defaults to ``True``.
+        issues. This slows down figure rendering by a bit. Default is
+        ``rc['image.edgefix']``.
     labels : bool, optional
         For `~matplotlib.axes.Axes.contour`, whether to add contour labels
         with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
@@ -1695,7 +1695,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     # TODO: Add similar support for quiver, and automatic quiver keys
     cyclic = False
     colors = _default(color, colors, edgecolor, edgecolors)
-    levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
+    levels = _default(levels, rc['image.levels']) # e.g. pcolormesh can auto-determine levels if you input a number
     if vmin is not None and vmax is not None and not np.iterable(levels):
         levels = np.linspace(vmin, vmax, levels)
     linewidths = _default(lw, linewidth, linewidths)
@@ -1837,6 +1837,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
             raise RuntimeError(f'Not possible to add labels to {name} plot.')
 
     # Fix white lines between filled contours/mesh, allow user to override!
+    edgefix = _default(edgefix, rc['image.edgefix'])
     if edgefix:
         color = 'face'
         linewidth = 0.4 # seems to be lowest threshold where white lines disappear
@@ -2219,8 +2220,8 @@ def colorbar_wrapper(self, mappable, values=None,
         mappable object. If the attribute is unavailable, we use ``'neither'``.
     extendsize : None or float or str, optional
         The length of the colorbar "extensions" in *physical units*.
-        If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        If float, units are inches. If string, units are interpreted
+        by `~proplot.utils.units`. Default is ``rc['colorbar.extend']``.
 
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
@@ -2230,9 +2231,9 @@ def colorbar_wrapper(self, mappable, values=None,
     label, title : None or str, optional
         The colorbar label. The `title` keyword is also accepted for
         consistency with `legend_wrapper`.
-    grid : bool, optional
-        Whether to draw "gridlines" (i.e. separators) between each level
-        across the colorbar. Default is ``False``.
+    grid : None or bool, optional
+        Whether to draw "gridlines" between each level of the colorbar.
+        Default is ``rc['colorbar.grid']``.
     tickminor : bool, optional
         Whether to put minor ticks on the colorbar. Default is ``False``.
     locator : None or locator spec, optional
@@ -2307,6 +2308,7 @@ def colorbar_wrapper(self, mappable, values=None,
             extend = mappable.extend or 'neither'
         else:
             extend = 'neither'
+    grid = _default(grid, rc['colorbar.grid'])
     kwdefault = {'cax':self, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
                  'spacing':'uniform', 'extend':extend, 'drawedges':grid} # this is default case unless mappable has special props
     kwdefault.update(kwargs)
@@ -2448,7 +2450,7 @@ def colorbar_wrapper(self, mappable, values=None,
                    'extendfrac':extendsize})
     # Draw the colorbar
     cb = self.figure.colorbar(mappable, **kwargs)
-    # Make edges/dividers consistent with axis edges
+    # Make edges/dividers style consistent with gridline style
     if cb.dividers is not None:
         cb.dividers.update(rc['grid'])
 
