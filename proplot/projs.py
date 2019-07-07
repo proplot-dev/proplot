@@ -21,7 +21,8 @@ Table of projections
 The following is a table of registered projections, their full names (with a
 link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
 if it exists), and whether they are available in the cartopy and basemap packages.
-Note both basemap and cartopy use `PROJ.4` as their backends.
+Note both basemap and cartopy use `PROJ.4` as their backends. The ``(added)``
+parenthetical indicates a cartopy projection that has been added by ProPlot.
 
 ====================================  ===========================================================================================  =========  =======
 Key                                   Name                                                                                         Cartopy    Basemap
@@ -54,8 +55,8 @@ Key                                   Name                                      
 ``'merc'``                            `Mercator <https://proj4.org/operations/projections/merc.html>`_                             ✓          ✓
 ``'mill'``                            `Miller Cylindrical <https://proj4.org/operations/projections/mill.html>`_                   ✓          ✓
 ``'moll'``                            `Mollweide <https://proj4.org/operations/projections/moll.html>`_                            ✓          ✓
-``'npaeqd'``                          North-Polar Azimuthal Equidistant                                                            ✗          ✓
-``'nplaea'``                          North-Polar Lambert Azimuthal                                                                ✗          ✓
+``'npaeqd'``                          North-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
+``'nplaea'``                          North-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
 ``'npstere'``                         North-Polar Stereographic                                                                    ✓          ✓
 ``'nsper'``                           `Near-Sided Perspective <https://proj4.org/operations/projections/nsper.html>`_              ✓          ✓
 ``'osni'``                            OSNI (Ireland)                                                                               ✓          ✗
@@ -65,8 +66,8 @@ Key                                   Name                                      
 ``'poly'``                            `Polyconic <https://proj4.org/operations/projections/poly.html>`_                            ✗          ✓
 ``'rotpole'``                         Rotated Pole                                                                                 ✓          ✓
 ``'sinu'``                            `Sinusoidal <https://proj4.org/operations/projections/sinu.html>`_                           ✓          ✓
-``'spaeqd'``                          South-Polar Azimuthal Equidistant                                                            ✗          ✓
-``'splaea'``                          South-Polar Lambert Azimuthal                                                                ✗          ✓
+``'spaeqd'``                          South-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
+``'splaea'``                          South-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
 ``'spstere'``                         South-Polar Stereographic                                                                    ✓          ✓
 ``'stere'``                           `Stereographic <https://proj4.org/operations/projections/stere.html>`_                       ✓          ✓
 ``'tmerc'``                           `Transverse Mercator <https://proj4.org/operations/projections/tmerc.html>`_                 ✓          ✓
@@ -81,10 +82,14 @@ import warnings
 from .rcmod import rc
 try:
     import cartopy.crs as ccrs
-    from cartopy.crs import _WarpedRectangularProjection
+    from cartopy.crs import _WarpedRectangularProjection, \
+        LambertAzimuthalEqualArea, AzimuthalEquidistant
 except ModuleNotFoundError:
     ccrs = None
     _WarpedRectangularProjection = object
+    LambertAzimuthalEqualArea = object
+    AzimuthalEquidistant = object
+
 # from packaging import version
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
 #     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
@@ -155,7 +160,7 @@ def Proj(name, basemap=False, **kwargs):
         crs = cartopy_projs.get(name, None)
         if crs is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
-        for arg in ('boundinglat', 'centrallat'):
+        for arg in ('boundinglat', 'centerlat'):
             if arg in kwargs:
                 axes_kw[arg] = kwargs.pop(arg)
         proj = crs(**kwargs)
@@ -163,7 +168,7 @@ def Proj(name, basemap=False, **kwargs):
                   np.diff(proj.y_limits))[0]
     return proj, aspect, axes_kw
 
-# Simple projections
+# Various pseudo-rectangular projections
 # Inspired by source code for Mollweide implementation
 class Hammer(_WarpedRectangularProjection):
     """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
@@ -229,6 +234,31 @@ class WinkelTripel(_WarpedRectangularProjection):
         """Projection resolution."""
         return 1e4
 
+# Extra polar projections matching basemap's options
+class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
+    """Analogous to `~cartopy.crs.NorthPolarStereo`."""
+    def __init__(self, central_longitude=0.0, globe=None):
+        super().__init__(central_latitude=90,
+                central_longitude=central_longitude, globe=globe)
+
+class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
+    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    def __init__(self, central_longitude=0.0, globe=None):
+        super().__init__(central_latitude=-90,
+                central_longitude=central_longitude, globe=globe)
+
+class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
+    """Analogous to `~cartopy.crs.NorthPolarStereo`."""
+    def __init__(self, central_longitude=0.0, globe=None):
+        super().__init__(central_latitude=90,
+                central_longitude=central_longitude, globe=globe)
+
+class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
+    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    def __init__(self, central_longitude=0.0, globe=None):
+        super().__init__(central_latitude=-90,
+                central_longitude=central_longitude, globe=globe)
+
 # Basemap stuff
 _basemap_circles = (
     'npstere', 'spstere', 'nplaea',
@@ -282,10 +312,14 @@ cartopy_projs = {}
 if ccrs:
     # Custom ones, these are always present
     cartopy_projs = { # interpret string, create cartopy projection
-      'aitoff':  Aitoff,
-      'hammer':  Hammer,
-      'kav7':    KavrayskiyVII,
-      'wintri':  WinkelTripel,
+      'aitoff': Aitoff,
+      'hammer': Hammer,
+      'kav7':   KavrayskiyVII,
+      'wintri': WinkelTripel,
+      'npaeqd': NorthPolarAzimuthalEquidistant,
+      'spaeqd': SouthPolarAzimuthalEquidistant,
+      'nplaea': NorthPolarLambertAzimuthalEqualArea,
+      'splaea': SouthPolarLambertAzimuthalEqualArea,
     }
     # Builtin ones. Some of these are unavailable in older versions, so
     # we just print warning in that case.
@@ -334,6 +368,4 @@ if ccrs:
         cartopy_projs[_name] = _class
     if _unavail:
         warnings.warn(f'Cartopy projection(s) {", ".join(_unavail)} are unavailable. Consider updating to the latest version of cartopy.')
-
-
 

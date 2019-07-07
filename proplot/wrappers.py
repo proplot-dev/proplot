@@ -383,7 +383,6 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
     """Wraps 2D plotting functions that take graticule *edges* (`_edges_methods`),
     calculates edges if coordinate *centers* were provided."""
     # Checks that sizes match up, checks whether graticule was input
-    # return func(*args, **kwargs)
     x, y, *Zs = args
     xlen, ylen = x.shape[-1], y.shape[0]
     for Z in Zs:
@@ -985,46 +984,34 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
 # Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
 # this will cause basemap's self.m.pcolormesh etc. to use *custom* version and
 # cause suite of weird errors. Prevent this recursion with the below decorator.
-def _m_call(self, func):
+def _general_norecurse(self, func):
+    """Decorator to prevent recursion in certain method overrides.
+    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        name = getattr(func, '__name__')
+        if self._hasrecurred:
+            # Return the *original* version of the matplotlib method (i.e.
+            # the one we have not wrapped by overriding the __getattribute__
+            # method). We reach this block e.g. when pcolormesh calls pcolor
+            # or when basemap.Basemap tries to call something.
+            self._hasrecurred = False
+            result = object.__getattribute__(self, name)(*args, **kwargs)
+        else:
+            # Return the version we have wrapped
+            self._hasrecurred = True
+            result = func(*args, **kwargs)
+        self._hasrecurred = False # cleanup, in case recursion never occurred
+        return result
+    return wrapper
+
+def _basemap_call(self, func):
     """Docorator that calls the basemap version of the function of the same name."""
     name = func.__name__
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return self.m.__getattribute__(name)(ax=self, *args, **kwargs)
     return wrapper
-
-def _m_norecurse(self, func):
-    """Decorator to prevent recursion in Basemap method overrides.
-    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        name = getattr(func, '__name__')
-        if self._recurred:
-            # Return the *original* version of the matplotlib method (i.e.
-            # the one we have not wrapped by overriding the __getattribute__
-            # method). We reach this block when basemap.Basemap tries to
-            # call the original method internally.
-            self._recurred = False
-            result = object.__getattribute__(self, name)(*args, **kwargs)
-        else:
-            # Return the version we have wrapped, which itself will call the
-            # basemap.Basemap method thanks to the _m_call wrapper.
-            self._recurred = True
-            result = func(*args, **kwargs)
-        self._recurred = False # cleanup, in case recursion never occurred
-        return result
-    return wrapper
-
-@_expand_methods_list
-def basemap_latlon(self, func, *args, latlon=True, **kwargs):
-    """
-    Wraps plotting functions for `~proplot.axes.BasemapAxes` (`_latlon_methods`).
-
-    With the default `~mpl_toolkits.basemap` API, you need to pass
-    ``latlon=True`` if your data coordinates are longitude and latitude
-    instead of map projection units. Now, ``latlon=True`` is the default.
-    """
-    return func(*args, latlon=latlon, **kwargs)
 
 @_expand_methods_list
 def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
@@ -1073,6 +1060,17 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
         self.outline_patch._path = clipped_path
         self.background_patch._path = clipped_path
     return result
+
+@_expand_methods_list
+def basemap_latlon(self, func, *args, latlon=True, **kwargs):
+    """
+    Wraps plotting functions for `~proplot.axes.BasemapAxes` (`_latlon_methods`).
+
+    With the default `~mpl_toolkits.basemap` API, you need to pass
+    ``latlon=True`` if your data coordinates are longitude and latitude
+    instead of map projection units. Now, ``latlon=True`` is the default.
+    """
+    return func(*args, latlon=latlon, **kwargs)
 
 @_expand_methods_list
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
@@ -2534,7 +2532,7 @@ def _simple_wrapper(driver):
         return wrapper
     return decorator
 # Hidden wrappers
-# Also _m_call and _m_norecurse
+# Also _basemap_call and _general_norecurse
 _autoformat_1d_ = _wrapper(_autoformat_1d)
 _autoformat_2d_ = _wrapper(_autoformat_2d)
 # Documented

@@ -47,7 +47,7 @@ behavior, use ``edgefix=False``.
 
 
 
-.. image:: quickstart/quickstart_145_0.svg
+.. image:: quickstart/quickstart_147_0.svg
 
 
 Levels and labels
@@ -70,7 +70,7 @@ Levels and labels
 
 
 
-.. image:: quickstart/quickstart_147_0.svg
+.. image:: quickstart/quickstart_149_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -96,7 +96,7 @@ passed to the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: quickstart/quickstart_149_0.svg
+.. image:: quickstart/quickstart_151_0.svg
 
 
 To add `~matplotlib.axes.Axes.clabel` labels to
@@ -124,7 +124,7 @@ of the underlying box color.
 
 
 
-.. image:: quickstart/quickstart_151_0.svg
+.. image:: quickstart/quickstart_153_0.svg
 
 
 Parametric plots
@@ -165,7 +165,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: quickstart/quickstart_154_1.svg
+.. image:: quickstart/quickstart_156_1.svg
 
 
 Bars, boxplots, and violins
@@ -201,7 +201,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_157_0.svg
+.. image:: quickstart/quickstart_159_0.svg
 
 
 `~matplotlib.axes.Axes.boxplot` and
@@ -230,7 +230,7 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_159_0.svg
+.. image:: quickstart/quickstart_161_0.svg
 
 
 Area plots
@@ -270,7 +270,7 @@ different colors where the area boundaries cross each other.
 
 
 
-.. image:: quickstart/quickstart_162_0.svg
+.. image:: quickstart/quickstart_164_0.svg
 
 
 Scatter plots
@@ -309,7 +309,7 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_165_0.svg
+.. image:: quickstart/quickstart_167_0.svg
 
 
 Bars plots
@@ -345,7 +345,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_168_0.svg
+.. image:: quickstart/quickstart_170_0.svg
 
 
 Box plots and violins
@@ -377,4 +377,4 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_171_0.svg
+.. image:: quickstart/quickstart_173_0.svg

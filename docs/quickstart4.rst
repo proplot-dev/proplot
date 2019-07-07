@@ -114,7 +114,7 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
     ax.pcolormesh(np.linspace(-180,180,N+1), np.linspace(-90,90,N+1), np.random.rand(N,N),
                   globe=False, cmap='grays', cmap_kw={'left':0.2, 'right':0.8})
     ax.format(land=True, landcolor='w', suptitle='Projection axes formatting demo',
-               borderscolor='w', coastcolor='k', innerborderscolor='k', # these are rc settings, without dots
+               coastcolor='k', borderscolor='gray8', innerborderscolor='gray6', # these are rc settings, without dots
                geogridlinewidth=1.5, geogridcolor='red', geogridalpha=0.8, # these are rc settings, without dots
                coast=True, innerborders=True, borders=True, labels=False) # these are "global" rc settings (setting names that dont' have dots)
 
@@ -127,15 +127,11 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, nrows=2,
-                           proj={(1,2):'ortho', (3,4):'npstere'},
-                           basemap={(1,3):False, (2,4):True},
-                           proj_kw={(1,2):{'lon_0':-60, 'lat_0':0}, (3,4):{'lon_0':-60, 'boundinglat':40}})
-    axs.format(rowlabels=['proj="ortho"', 'proj="spstere"'], suptitle='Projection axes formatting demo')
-    axs[0].format(title='Cartopy', titleweight='bold')
-    axs[1].format(title='Basemap', titleweight='bold')
-    axs[0::2].format(reso='med', land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
-    axs[1::2].format(land=True, coast=True, landcolor='desert sand', facecolor='pacific blue', titleweight='bold', linewidth=2, labels=False)
+    f, axs = plot.subplots(ncols=2, proj={1:'ortho', 2:'geos'}, basemap={1:False, 2:True}, proj_kw={'lon_0':-60, 'lat_0':0})
+    axs[0].format(title='Cartopy')
+    axs[1].format(title='Basemap')
+    axs.format(reso='med', land=True, coast=True, landcolor='desert sand', suptitle='Projection axes formatting demo',
+               facecolor='pacific blue', linewidth=2, labels=False)
 
 
 
@@ -160,7 +156,7 @@ declaring the projection by passing ``proj_kw`` to
     import proplot as plot
     f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=3.3, basemap={1:False, 2:True},
                proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-20, 'urcrnrlon':180, 'urcrnrlat':80}})
-    axs[0].format(lonlim=(-20,180), latlim=(-20,50), title='Cartopy')
+    axs[0].format(lonlim=(-20,180), latlim=(-10,50), title='Cartopy')
     axs[1].format(title='Basemap')
     axs.format(land=True, landcolor='blue green', linewidth=2, grid=True,
                coast=True, coastcolor='forest green', coastlinewidth=1,
@@ -169,6 +165,31 @@ declaring the projection by passing ``proj_kw`` to
 
 
 .. image:: quickstart/quickstart_89_0.svg
+
+
+For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
+dictionary containing the ``'boundinglat'`` key to ``proj_kw``. For
+`cartopy` projections, a circular boundary is drawn around zoomed-in
+polar projections, just like in `~mpl_toolkits.basemap`; this is
+accomplished as in `this cartopy
+example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__.
+Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
+``'nplaea'``, and ``'splaea'`` `cartopy` projections to the existing
+``'npstere'`` and ``'spstere'`` projections, just like in
+`~mpl_toolkits.basemap`.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(ncols=2, basemap={1:False,2:True}, axwidth=2, proj={1:'splaea', 2:'npaeqd'},
+                          proj_kw={1:{'boundinglat': -30, 'lon_0': 120}, 2:{'boundinglat':60}})
+    axs.format(land=True, facecolor='pale blue', landcolor='navy blue', suptitle='Zooming into polar projections')
+    axs[0].format(title='Cartopy')
+    axs[1].format(title='Basemap')
+
+
+
+.. image:: quickstart/quickstart_91_0.svg
 
 
 Registered cartopy projections
@@ -199,7 +220,7 @@ and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: quickstart/quickstart_92_1.svg
+.. image:: quickstart/quickstart_94_1.svg
 
 
 Registered basemap projections
@@ -230,6 +251,6 @@ if you fail to specify them.
 
 
 
-.. image:: quickstart/quickstart_95_0.svg
+.. image:: quickstart/quickstart_97_0.svg
 
 

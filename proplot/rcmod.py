@@ -265,9 +265,9 @@ _rcGlobals_children = {
     }
 
 # Names of the new settings
+_rc_names = {*_rcParams.keys()}
 _rc_names_global = {*_rcGlobals_children.keys()}
-_rc_names_old = {*_rcParams.keys()}
-_rc_names_new = {
+_rc_names_custom = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
@@ -293,13 +293,13 @@ _rc_names_new = {
 # only looked up if user *manually* passes something to BaseAxes.format.
 _rc_names_nodots = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
-    (_rc_names_new, _rc_names_old, _rc_names_global)
+    (_rc_names_custom, _rc_names, _rc_names_global)
     for name in names
     }
 # Categories for returning dict of subcategory properties
 _rc_categories = {
-    *(re.sub('\.[^.]*$', '', name) for names in (_rc_names_new, _rc_names_old) for name in names),
-    *(re.sub('\..*$', '', name) for names in (_rc_names_new, _rc_names_old) for name in names)
+    *(re.sub('\.[^.]*$', '', name) for names in (_rc_names_custom, _rc_names) for name in names),
+    *(re.sub('\..*$', '', name) for names in (_rc_names_custom, _rc_names) for name in names)
     }
 
 #-------------------------------------------------------------------------------
@@ -364,40 +364,31 @@ class rc_configurator(object):
                 except yaml.YAMLError as err:
                     print('Error: Invalid .proplotrc file.')
                     raise err
-            # Test
+            # Add keys to dictionaries
             keys = {*data.keys()}
+            gkeys, ckeys = {*()}, {*()}
+            for key,value in data.items():
+                if key in _rc_names_global:
+                    _rcGlobals[key] = value
+                    if i==0:
+                        gkeys.add(key)
+                elif key in _rc_names_custom:
+                    _rcCustom[key] = value
+                    if i==0:
+                        ckeys.add(key)
+                else:
+                    try:
+                        _rcParams[key] = value
+                    except KeyError:
+                        raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key "{key}".')
+            # Make sure we did not miss anything
             if i==0:
-                # Check file
-                if keys != {'rcGlobals', 'rcParams', 'rcCustom'}:
-                    raise RuntimeError(f'Default .proplotrc file has unexpected sections.')
-                # Check contents of each sub dictionary
-                _dict = data['rcGlobals']
-                if {*_dict.keys()} != _rc_names_global:
-                    print({*_dict.keys()} - _rc_names_global)
-                    print(_rc_names_global - {*_dict.keys()})
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid rcGlobals keys.')
-                _rcGlobals.update(_dict)
-                _dict = data['rcCustom']
-                if {*_dict} != _rc_names_new:
-                    print({*_dict.keys()} - _rc_names_new)
-                    print(_rc_names_new - {*_dict.keys()})
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid rcCustom keys.')
-                _rcCustom.update(_dict)
-            else:
-                # Check file
-                if keys > {'rcGlobals', 'rcParams', 'rcCustom'}:
-                    raise RuntimeError(f'User .proplotrc file has unexpected sections.')
-                # Check contents of each sub dictionary
-                _dict = data.get('rcGlobals', {})
-                if {*_dict.keys()} > _rc_names_global:
-                    raise RuntimeError(f'User .proplotrc file has invalid rcGlobals keys.')
-                _rcGlobals.update(_dict)
-                _dict = data.get('rcCustom', {})
-                if {*_dict.keys()} > _rc_names_global:
-                    raise RuntimeError(f'User .proplotrc file has invalid rcCustom keys.')
-                _rcCustom.update(_dict)
+                if gkeys!=_rc_names_global:
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid global keys {_rc_names_global - gkeys}.')
+                if ckeys!=_rc_names_custom:
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {_rc_names_custom - ckeys}.')
 
-            # Update (this one already checks against invalid keys)
+            # Update (rcParams checks against invalid keys by default)
             for key,value in data.get('rcParams', {}).items():
                 _rcParams[key] = value
 
@@ -570,11 +561,11 @@ class rc_configurator(object):
             _rcCustom.update(rc_new)
 
         # Directly modify single parameter
-        elif key in _rc_names_new:
+        elif key in _rc_names_custom:
             if restore:
                 cache_restore[key] = _rcCustom[key]
             _rcCustom[key] = value
-        elif key in _rc_names_old:
+        elif key in _rc_names:
             if restore:
                 cache_restore[key] = _rcParams[key]
             _rcParams[key] = value # rcParams dict has key validation

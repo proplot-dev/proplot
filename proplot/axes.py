@@ -881,38 +881,39 @@ class CartesianAxes(BaseAxes):
         `~proplot.wrappers.violinplot_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
         and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
         obj = super().__getattribute__(attr, *args)
-        # Step 3) Color usage wrappers
-        if attr in wrappers._cmap_methods: # must come first!
-            obj = wrappers._cmap_wrapper(self, obj)
-        elif attr in wrappers._cycle_methods:
-            obj = wrappers._cycle_wrapper(self, obj)
-        # Step 2) Wrappers specific to plot methods
-        if attr=='plot':
-            obj = wrappers._plot_wrapper(self, obj)
-        elif attr=='scatter':
-            obj = wrappers._scatter_wrapper(self, obj)
-        elif attr=='bar':
-            obj = wrappers._bar_wrapper(self, obj)
-        elif attr=='boxplot':
-            obj = wrappers._boxplot_wrapper(self, obj)
-        elif attr=='violinplot':
-            obj = wrappers._violinplot_wrapper(self, obj)
-        elif attr in wrappers._centers_methods:
-            obj = wrappers._enforce_centers(self, obj)
-        elif attr in wrappers._edges_methods:
-            obj = wrappers._enforce_edges(self, obj)
-        # Step 1) Parse input
-        if attr in wrappers._2d_methods:
-            obj = wrappers._autoformat_2d_(self, obj)
-        elif attr in wrappers._1d_methods:
-            obj = wrappers._autoformat_1d_(self, obj)
-        # Step 0) Special wrappers
-        if attr=='barh': # skips cycle wrapper and calls bar method
-            obj = wrappers._barh_wrapper(self, obj)
-        elif attr=='fill_between':
-            obj = wrappers._fill_between_wrapper(self, obj)
-        elif attr=='fill_betweenx':
-            obj = wrappers._fill_betweenx_wrapper(self, obj)
+        if callable(obj):
+            # Step 3) Color usage wrappers
+            if attr in wrappers._cmap_methods: # must come first!
+                obj = wrappers._cmap_wrapper(self, obj)
+            elif attr in wrappers._cycle_methods:
+                obj = wrappers._cycle_wrapper(self, obj)
+            # Step 2) Wrappers specific to plot methods
+            if attr=='plot':
+                obj = wrappers._plot_wrapper(self, obj)
+            elif attr=='scatter':
+                obj = wrappers._scatter_wrapper(self, obj)
+            elif attr=='bar':
+                obj = wrappers._bar_wrapper(self, obj)
+            elif attr=='boxplot':
+                obj = wrappers._boxplot_wrapper(self, obj)
+            elif attr=='violinplot':
+                obj = wrappers._violinplot_wrapper(self, obj)
+            elif attr in wrappers._centers_methods:
+                obj = wrappers._enforce_centers(self, obj)
+            elif attr in wrappers._edges_methods:
+                obj = wrappers._enforce_edges(self, obj)
+            # Step 1) Parse input
+            if attr in wrappers._2d_methods:
+                obj = wrappers._autoformat_2d_(self, obj)
+            elif attr in wrappers._1d_methods:
+                obj = wrappers._autoformat_1d_(self, obj)
+            # Step 0) Special wrappers
+            if attr=='barh': # skips cycle wrapper and calls bar method
+                obj = wrappers._barh_wrapper(self, obj)
+            elif attr=='fill_between':
+                obj = wrappers._fill_between_wrapper(self, obj)
+            elif attr=='fill_betweenx':
+                obj = wrappers._fill_betweenx_wrapper(self, obj)
         return obj
 
     def format_partial(self,
@@ -1909,6 +1910,7 @@ class PolarAxes(CartesianAxes, mproj.PolarAxes):
 # Cartopy takes advantage of documented feature where any class with method
 # named _as_mpl_axes can be passed as 'projection' object.
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
+# class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
 class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
     """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
     projections. Initializes the `cartopy.crs.Projection` instance. Also
@@ -1918,9 +1920,7 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
     name = 'cartopy'
     """The registered projection name."""
     _n_bounds = 100 # number of points for drawing circle map boundary
-    _proj_np = ('npstere',)
-    _proj_sp = ('spstere',)
-    _proj_circles = ('laea', 'aeqd', 'stere', 'npstere', 'spstere')
+    _proj_circles = ('laea', 'aeqd', 'stere') # WARNING: SouthPolarStereo still has name 'stere'
     def __init__(self, *args, map_projection=None, centerlat=90, boundinglat=0, **kwargs):
         """
         Parameters
@@ -1941,16 +1941,24 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
         # Dependencies
         import cartopy.crs as ccrs # verify package is available
 
-        # Do the GeoAxes initialization steps manually (there are very few)
+        # GeoAxes initialization steps are run manually
         # If _hold is set False or None, cartopy will call cla() on axes before
         # plotting stuff, which will wipe out row and column labels even though
         # they appear to stick around; maybe the artist persists but is no longer
         # associated with the axes. Does not matter whether attribute is hidden.
-        # self._hold = None
+        # self._hold = None # do not do this
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyProjectionAxes with map_projection=<cartopy.crs.Projection>.')
+        self._hasrecurred = False # use this so we can override plotting methods
         self._cartopy_gl = None # gridliner
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
+
+        # Add hidden properties
+        self._gridliners = []
+        self.img_factories = []
+        self._done_img_factory = False
+        self.outline_patch = None
+        self.background_patch = None
 
         # Call BaseAxes
         super().__init__(*args, map_projection=map_projection, **kwargs)
@@ -1959,9 +1967,9 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
         if name not in self._proj_circles:
             self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
         else:
-            if name in self._proj_np:
+            if isinstance(map_projection, (ccrs.NorthPolarStereo, projs.NorthPolarAzimuthalEquidistant, projs.NorthPolarLambertAzimuthalEqualArea)):
                 centerlat = 90
-            elif name in self._proj_sp:
+            elif isinstance(map_projection, (ccrs.SouthPolarStereo, projs.SouthPolarAzimuthalEquidistant, projs.SouthPolarLambertAzimuthalEqualArea)):
                 centerlat = -90
             eps = 1e-3 # had bug with full -180, 180 range when lon_0 was not 0
             center = self.projection.proj4_params['lon_0']
@@ -1976,37 +1984,41 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
         `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
         and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
         obj = super().__getattribute__(attr, *args)
-        # Step 4) Color usage wrappers
-        if attr in wrappers._cmap_methods:
-            obj = wrappers._cmap_wrapper(self, obj)
-        elif attr in wrappers._cycle_methods:
-            obj = wrappers._cycle_wrapper(self, obj)
-        # Step 3) Individual plot method wrappers
-        if attr=='plot':
-            obj = wrappers._plot_wrapper(self, obj)
-        elif attr=='scatter':
-            obj = wrappers._scatter_wrapper(self, obj)
-        elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
-            obj = wrappers._cartopy_gridfix(self, obj)
-            if attr in wrappers._edges_methods:
-                obj = wrappers._enforce_edges(self, obj)
-            else:
-                obj = wrappers._enforce_centers(self, obj)
-        # Step 2) Better default keywords
-        if attr in wrappers._transform_methods:
-            obj = wrappers._cartopy_transform(self, obj)
-        elif attr in wrappers._crs_methods:
-            obj = wrappers._cartopy_crs(self, obj)
-        # Step 1) Parse args input
-        if attr in wrappers._2d_methods:
-            obj = wrappers._autoformat_2d_(self, obj)
-        elif attr in wrappers._1d_methods:
-            obj = wrappers._autoformat_1d_(self, obj)
-        # Step 0) Special wrappers
-        if attr=='fill_between':
-            obj = wrappers._fill_between_wrapper(self, obj)
-        elif attr=='fill_betweenx':
-            obj = wrappers._fill_betweenx_wrapper(self, obj)
+        # if attr in ('pcolormesh',):
+        #     @functools.wraps(obj)
+        #     def wrapper()
+        if callable(obj):
+            # Step 4) Color usage wrappers
+            if attr in wrappers._cmap_methods:
+                obj = wrappers._cmap_wrapper(self, obj)
+            elif attr in wrappers._cycle_methods:
+                obj = wrappers._cycle_wrapper(self, obj)
+            # Step 3) Individual plot method wrappers
+            if attr=='plot':
+                obj = wrappers._plot_wrapper(self, obj)
+            elif attr=='scatter':
+                obj = wrappers._scatter_wrapper(self, obj)
+            elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
+                obj = wrappers._cartopy_gridfix(self, obj)
+                if attr in wrappers._edges_methods:
+                    obj = wrappers._enforce_edges(self, obj)
+                else:
+                    obj = wrappers._enforce_centers(self, obj)
+            # Step 2) Better default keywords
+            if attr in wrappers._transform_methods:
+                obj = wrappers._cartopy_transform(self, obj)
+            elif attr in wrappers._crs_methods:
+                obj = wrappers._cartopy_crs(self, obj)
+            # Step 1) Parse args input
+            if attr in wrappers._2d_methods:
+                obj = wrappers._autoformat_2d_(self, obj)
+            elif attr in wrappers._1d_methods:
+                obj = wrappers._autoformat_1d_(self, obj)
+            # Step 0) Special wrappers
+            if attr=='fill_between':
+                obj = wrappers._fill_between_wrapper(self, obj)
+            elif attr=='fill_betweenx':
+                obj = wrappers._fill_betweenx_wrapper(self, obj)
         return obj
 
     def format_partial(self, patch_kw={}, **kwargs):
@@ -2129,19 +2141,21 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
                 kw['facecolor'] = 'none'
             else:
                 kw['linewidth'] = 0
+            if name in ('ocean',):
+                kw['zorder'] = 0.5 # below everything!
             self.add_feature(feat, **kw)
             setattr(self, f'_{name}', feat)
 
         # Update patch
         kw_face = rc.fill({
             'facecolor': 'axes.facecolor'
-            }, cache=False)
+            })
         kw_face.update(patch_kw)
         self.background_patch.update(kw_face)
         kw_edge = rc.fill({
             'edgecolor': 'axes.edgecolor',
             'linewidth': 'axes.linewidth'
-            }, cache=False)
+            })
         self.outline_patch.update(kw_edge)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
@@ -2195,8 +2209,8 @@ class BasemapProjectionAxes(ProjectionAxes):
             raise ValueError('You must initialize BasemapProjectionAxes with map_projection=(basemap.Basemap instance).')
         self.m = map_projection
         self.boundary = None
+        self._hasrecurred = False # use this so we can override plotting methods
         self._mapboundarydrawn = None
-        self._recurred = False # use this so we can override plotting methods
         self._parallels = None
         self._meridians = None
         super().__init__(*args, **kwargs)
@@ -2207,8 +2221,8 @@ class BasemapProjectionAxes(ProjectionAxes):
         `~proplot.wrappers.basemap_gridfix`, `~proplot.wrappers.basemap_latlon`,
         `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
         `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
-        wrappers. Also wraps all plotting methods with the hidden ``_m_call``
-        and ``_m_norecurse`` wrappers. Respectively, these call methods on
+        wrappers. Also wraps all plotting methods with the hidden ``_basemap_call``
+        and ``_general_norecurse`` wrappers. Respectively, these call methods on
         the `~mpl_toolkits.basemap.Basemap` instance and prevent recursion
         issues arising from internal `~mpl_toolkits.basemap` calls to the
         axes methods."""
@@ -2219,7 +2233,7 @@ class BasemapProjectionAxes(ProjectionAxes):
         if attr in wrappers._latlon_methods or attr in wrappers._edges_methods \
                 or attr in wrappers._centers_methods:
             # Step 5) Call identically named Basemap object method
-            obj = wrappers._m_call(self, obj)
+            obj = wrappers._basemap_call(self, obj)
             # Step 4) Color usage wrappers
             if attr in wrappers._cmap_methods:
                 obj = wrappers._cmap_wrapper(self, obj)
@@ -2250,7 +2264,7 @@ class BasemapProjectionAxes(ProjectionAxes):
             elif attr=='fill_betweenx':
                 obj = wrappers._fill_betweenx_wrapper(self, obj)
             # Recursion fix at top level
-            obj = wrappers._m_norecurse(self, obj)
+            obj = wrappers._general_norecurse(self, obj)
         return obj
 
     def format_partial(self, patch_kw={}, **kwargs):
@@ -2269,12 +2283,12 @@ class BasemapProjectionAxes(ProjectionAxes):
         #   axes plots can have transparent background
         kw_face = rc.fill({
             'facecolor': 'axes.facecolor'
-            }, cache=False)
+            })
         kw_face.update(patch_kw)
         kw_edge = rc.fill({
             'linewidth': 'axes.linewidth',
             'edgecolor': 'axes.edgecolor'
-            }, cache=False)
+            })
         self.axesPatch = self.patch # bugfix or something
         if self.m.projection in self._proj_non_rectangular:
             self.patch.set_alpha(0) # make patch invisible

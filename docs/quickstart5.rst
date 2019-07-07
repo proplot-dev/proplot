@@ -81,7 +81,7 @@ See `~proplot.colortools.CmapDict` for more info.
 
 
 
-.. image:: quickstart/quickstart_100_1.svg
+.. image:: quickstart/quickstart_102_1.svg
 
 
 On-the-fly colormaps
@@ -127,7 +127,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: quickstart/quickstart_103_1.svg
+.. image:: quickstart/quickstart_105_1.svg
 
 
 To build monochromatic colormaps from arbitrary colors, just pass a
@@ -155,7 +155,7 @@ is just one map.
 
 
 
-.. image:: quickstart/quickstart_105_0.svg
+.. image:: quickstart/quickstart_107_0.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -177,7 +177,7 @@ values.
 
 
 
-.. image:: quickstart/quickstart_107_0.svg
+.. image:: quickstart/quickstart_109_0.svg
 
 
 To rotate a cyclic colormap, pass the ``shift`` argument to
@@ -200,7 +200,7 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: quickstart/quickstart_109_0.svg
+.. image:: quickstart/quickstart_111_0.svg
 
 
 Perceptually uniform colormaps
@@ -242,7 +242,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_112_0.svg
+.. image:: quickstart/quickstart_114_0.svg
 
 
 .. code:: ipython3
@@ -252,7 +252,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_113_0.svg
+.. image:: quickstart/quickstart_115_0.svg
 
 
 .. code:: ipython3
@@ -262,7 +262,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_114_0.svg
+.. image:: quickstart/quickstart_116_0.svg
 
 
 You can generate your own
@@ -295,7 +295,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: quickstart/quickstart_116_0.svg
+.. image:: quickstart/quickstart_118_0.svg
 
 
 It is also easy to change the “gamma” of a
@@ -323,7 +323,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: quickstart/quickstart_118_0.svg
+.. image:: quickstart/quickstart_120_0.svg
 
 
 To see how the colors in a colormap vary across different colorspaces,
@@ -343,11 +343,11 @@ non-linear in saturation.
 
 
 
-.. image:: quickstart/quickstart_120_1.svg
+.. image:: quickstart/quickstart_122_1.svg
 
 
 
-.. image:: quickstart/quickstart_120_2.svg
+.. image:: quickstart/quickstart_122_2.svg
 
 
 Adding online colormaps
@@ -384,7 +384,7 @@ colormaps and color cycles.
 
 
 
-.. image:: quickstart/quickstart_125_1.svg
+.. image:: quickstart/quickstart_127_1.svg
 
 
 On-the-fly color cycles
@@ -427,7 +427,7 @@ methods.
 
 
 
-.. image:: quickstart/quickstart_128_0.svg
+.. image:: quickstart/quickstart_130_0.svg
 
 
 Finally, *colormaps* (or combinations thereof) can be used as sources
@@ -460,7 +460,7 @@ the colormap before drawing colors from said map. See
 
 
 
-.. image:: quickstart/quickstart_130_0.svg
+.. image:: quickstart/quickstart_132_0.svg
 
 
 `~proplot.wrappers.cycle_wrapper` can also be used to change
@@ -483,7 +483,7 @@ to the axes locally. To apply it globally, simply use
 
 
 
-.. image:: quickstart/quickstart_132_0.svg
+.. image:: quickstart/quickstart_134_0.svg
 
 
 Adding online color cycles
@@ -532,11 +532,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: quickstart/quickstart_137_0.svg
+.. image:: quickstart/quickstart_139_0.svg
 
 
 
-.. image:: quickstart/quickstart_137_1.svg
+.. image:: quickstart/quickstart_139_1.svg
 
 
 Individual color sampling
@@ -575,6 +575,6 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: quickstart/quickstart_140_0.svg
+.. image:: quickstart/quickstart_142_0.svg
 
 
