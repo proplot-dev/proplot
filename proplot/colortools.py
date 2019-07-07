@@ -1441,14 +1441,14 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         if 'gamma' in kwargs:
             raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
         keys = {*segmentdata.keys()}
-        target = {'hue', 'saturation', 'luminance', 'gamma1', 'gamma2'}
-        if keys != target and keys != {*target, 'alpha'}:
+        target = {'hue', 'saturation', 'luminance', 'gamma1', 'gamma2', 'alpha'}
+        if not keys <= target:
             raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
         # Gamma scaling
-        gamma1 = _default(gamma, gamma1)
-        gamma2 = _default(gamma, gamma2)
-        segmentdata['gamma1'] = _default(gamma1, segmentdata.get('gamma1', None), 1.0)
-        segmentdata['gamma2'] = _default(gamma2, segmentdata.get('gamma2', None), 1.0)
+        if 'gamma1' not in segmentdata:
+            segmentdata['gamma1'] = _default(gamma, gamma1, 1.0)
+        if 'gamma2' not in segmentdata:
+            segmentdata['gamma2'] = _default(gamma, gamma2, 1.0)
         # First sanitize the segmentdata by converting color strings to their
         # corresponding channel values
         for key,array in segmentdata.items():
@@ -2312,7 +2312,7 @@ def breakdown_cmap(cmap, N=100, space='hcl'):
     axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
               xlabel='position', ylabel='scaled channel value')
 
-def breakdown_colorspace(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
+def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
     """Generates hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSLuv, and HPLuv colorspaces. The type of
     cross-section is determined by which of the `luminance`, `saturation`, and
@@ -2354,7 +2354,6 @@ def breakdown_colorspace(luminance=None, saturation=None, hue=None, N=100, space
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    rcParams['axes.facecolor'] = 'k'
     f, axs = subplots(ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
         right=0, aspect=1, tight=True, subplotpad=0.05)
     for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
@@ -2369,7 +2368,7 @@ def breakdown_colorspace(luminance=None, saturation=None, hue=None, N=100, space
         ax.imshow(rgba, origin='lower', aspect='auto')
         ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
                   grid=False, xtickminor=False, ytickminor=False,
-                  xlocator=xloc, ylocator=yloc,
+                  xlocator=xloc, ylocator=yloc, facecolor='k',
                   title=space.upper(), titleweight='bold')
     return f
 

@@ -231,14 +231,14 @@ HPLuv colorspaces were developed to resolve this issue by (respectively)
 scaling and clipping high-saturation colors across different hues and
 luminances.
 
-Use `~proplot.colortools.colorspace_breakdown` to plot arbitrary
+Use `~proplot.colortools.show_colorspaces` to plot arbitrary
 cross-sections of these colorspaces. Also see `this
 page <http://www.hsluv.org/comparison/>`__.
 
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.colorspace_breakdown(luminance=50)
+    f = plot.show_colorspaces(luminance=50)
 
 
 
@@ -248,7 +248,7 @@ page <http://www.hsluv.org/comparison/>`__.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.colorspace_breakdown(saturation=60)
+    f = plot.show_colorspaces(saturation=60)
 
 
 
@@ -258,7 +258,7 @@ page <http://www.hsluv.org/comparison/>`__.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.colorspace_breakdown(hue=0)
+    f = plot.show_colorspaces(hue=0)
 
 
 
@@ -287,7 +287,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
     cmap = plot.Colormap({'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100], 'space':'hcl'})
     m = ax.contourf(np.random.rand(10,10), levels=plot.arange(0.1,0.9,0.1), extend='both', colorbar='b', cmap=cmap)
     ax.format(xlabel='x axis', ylabel='y axis', title='Matter look-alike',
-              suptitle='On-the-fly PerceptuallyUniformColormap')
+              suptitle='Building your own PerceptuallyUniformColormaps')
     ax = axs[1]
     cmap = plot.Colormap({'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100], 'space':'hpl'})
     m = ax.contourf(np.random.rand(10,10), levels=plot.arange(0.1,0.9,0.05), extend='both', colorbar='b', colorbar_kw={'locator':0.1}, cmap=cmap)
@@ -318,7 +318,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
             ax = axs[i]
             m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
             ax.rpanel.colorbar(m1, locator='none')
-            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Varying the "PerceptuallyUniformColormap" gamma')
+            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Modifying existing PerceptuallyUniformColormaps')
             i += 1
 
 
@@ -337,8 +337,8 @@ non-linear in saturation.
 .. code:: ipython3
 
     import proplot as plot
-    plot.cmap_breakdown('fire')
-    plot.cmap_breakdown('viridis')
+    plot.breakdown_cmap('fire')
+    plot.breakdown_cmap('viridis')
 
 
 
