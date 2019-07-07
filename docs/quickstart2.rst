@@ -31,7 +31,7 @@ combination of panels. See `~proplot.subplots.subplots` and
 
 
 
-.. image:: quickstart/quickstart_51_0.svg
+.. image:: quickstart/quickstart_37_0.svg
 
 
 If you want “colorbar” panels, the simplest option is to use the
@@ -70,7 +70,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 
 
 
-.. image:: quickstart/quickstart_53_1.svg
+.. image:: quickstart/quickstart_39_1.svg
 
 
 Figure panels
@@ -102,7 +102,7 @@ details.
 
 
 
-.. image:: quickstart/quickstart_56_1.svg
+.. image:: quickstart/quickstart_42_1.svg
 
 
 .. code:: ipython3
@@ -125,7 +125,7 @@ details.
 
 
 
-.. image:: quickstart/quickstart_57_0.svg
+.. image:: quickstart/quickstart_43_0.svg
 
 
 Stacked panels
@@ -167,11 +167,11 @@ details.
 
 
 
-.. image:: quickstart/quickstart_59_0.svg
+.. image:: quickstart/quickstart_45_0.svg
 
 
-Colorbars
----------
+Colorbars and insets
+--------------------
 
 To generate colorbars, simply use the ``colorbar`` methods on the
 `~proplot.axes.BaseAxes` and `~proplot.axes.PanelAxes` classes. When
@@ -198,7 +198,7 @@ colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
 
 
 
-.. image:: quickstart/quickstart_62_0.svg
+.. image:: quickstart/quickstart_48_0.svg
 
 
 ProPlot adds several new features to the
@@ -225,11 +225,11 @@ on-the-fly from the corresponding colors, as shown below.
 
 
 
-.. image:: quickstart/quickstart_64_1.svg
+.. image:: quickstart/quickstart_50_1.svg
 
 
-Legends
--------
+Legends and panels
+------------------
 
 ProPlot also adds new features to the `~matplotlib.axes.Axes.legend`
 command, powered by the `~proplot.wrappers.legend_wrapper` wrapper.
@@ -270,6 +270,6 @@ legend frame.
 
 
 
-.. image:: quickstart/quickstart_67_0.svg
+.. image:: quickstart/quickstart_53_0.svg
 
 

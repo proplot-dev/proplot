@@ -259,32 +259,32 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
     For the `formatter` dictionary lookup, options are as follows.
 
-    ======================  ================================================================
-    Key                     Class
-    ======================  ================================================================
-    ``'auto'``              `AutoFormatter`
-    ``'date'``              `~matplotlib.dates.AutoDateFormatter`
-    ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`
-    ``'none'``, ``'null'``  `~matplotlib.ticker.NullFormatter`
-    ``'null'``              `~matplotlib.ticker.NullFormatter`
-    ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`
-    ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`
-    ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`
-    ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`
-    ``'logit'``             `~matplotlib.ticker.LogitFormatter`
-    ``'eng'``               `~matplotlib.ticker.EngFormatter`
-    ``'percent'``           `~matplotlib.ticker.PercentFormatter`
-    ``'index'``             `~matplotlib.ticker.IndexFormatter`
-    ``'simple'``            `SimpleFormatter`
-    ``'deg'``               `SimpleFormatter`, degree symbol
-    ``'lat'``               `SimpleFormatter`, cardinal "SN" indicator without degree symbol
-    ``'lon'``               `SimpleFormatter`, cardinal "WE" indicator without degree symbol
-    ``'deglat'``            `SimpleFormatter`, cardinal "SN" indicator with degree symbol
-    ``'deglon'``            `SimpleFormatter`, cardinal "WE" indicator with degree symbol
-    ``'frac'``              `FracFormatter`
-    ``'pi'``                `FracFormatter`, symbol :math:`\pi` and value `numpy.pi`
-    ``'e'``                 `FracFormatter`, symbol *e* and value `numpy.e`
-    ======================  ================================================================
+    =========================  ================================================================
+    Key                        Class
+    =========================  ================================================================
+    ``'auto'``, ``'default'``  `AutoFormatter`
+    ``'date'``                 `~matplotlib.dates.AutoDateFormatter`
+    ``'scalar'``               `~matplotlib.ticker.ScalarFormatter`
+    ``'none'``, ``'null'``     `~matplotlib.ticker.NullFormatter`
+    ``'null'``                 `~matplotlib.ticker.NullFormatter`
+    ``'strmethod'``            `~matplotlib.ticker.StrMethodFormatter`
+    ``'formatstr'``            `~matplotlib.ticker.FormatStrFormatter`
+    ``'math'``                 `~matplotlib.ticker.LogFormatterMathtext`
+    ``'log'``, ``'sci'``       `~matplotlib.ticker.LogFormatterSciNotation`
+    ``'logit'``                `~matplotlib.ticker.LogitFormatter`
+    ``'eng'``                  `~matplotlib.ticker.EngFormatter`
+    ``'percent'``              `~matplotlib.ticker.PercentFormatter`
+    ``'index'``                `~matplotlib.ticker.IndexFormatter`
+    ``'simple'``               `SimpleFormatter`
+    ``'deg'``                  `SimpleFormatter`, degree symbol
+    ``'lat'``                  `SimpleFormatter`, cardinal "SN" indicator without degree symbol
+    ``'lon'``                  `SimpleFormatter`, cardinal "WE" indicator without degree symbol
+    ``'deglat'``               `SimpleFormatter`, cardinal "SN" indicator with degree symbol
+    ``'deglon'``               `SimpleFormatter`, cardinal "WE" indicator with degree symbol
+    ``'frac'``                 `FracFormatter`
+    ``'pi'``                   `FracFormatter`, symbol :math:`\pi` and value `numpy.pi`
+    ``'e'``                    `FracFormatter`, symbol *e* and value `numpy.e`
+    =========================  ================================================================
 
     Returns
     -------

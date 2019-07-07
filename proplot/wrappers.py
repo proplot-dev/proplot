@@ -279,8 +279,8 @@ def _autoformat_1d(self, func, *args, **kwargs):
     return func(x, *ys, *args, **kwargs)
 
 def _autoformat_2d(self, func, *args, order='C', **kwargs):
-    """Gets 2d data. Accepts ndarray and DataArray. Used by `check_centers`
-    and `check_edges`, which are used for all 2d plot methods."""
+    """Gets 2d data. Accepts ndarray and DataArray. Used by `enforce_centers`
+    and `enforce_edges`, which are used for all 2d plot methods."""
     # Sanitize input
     name = func.__name__
     if len(args)==0:
@@ -350,7 +350,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
 # 2D plot wrappers
 #------------------------------------------------------------------------------
 @_expand_methods_list
-def check_centers(self, func, *args, order='C', **kwargs):
+def enforce_centers(self, func, *args, order='C', **kwargs):
     """Wraps 2D plotting functions that take coordinate *centers* (`_centers_methods`),
     calculates centers if graticule *edges* were provided."""
     # Checks whether sizes match up, checks whether graticule was input
@@ -360,8 +360,9 @@ def check_centers(self, func, *args, order='C', **kwargs):
         if Z.ndim!=2:
             raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
         elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
-            x = (x[1:] + x[:-1])/2
-            y = (y[1:] + y[:-1])/2 # get centers, given edges
+            pass
+            # x = (x[1:] + x[:-1])/2
+            # y = (y[1:] + y[:-1])/2 # get centers, given edges
         elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
             raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
@@ -375,7 +376,7 @@ def check_centers(self, func, *args, order='C', **kwargs):
     return result
 
 @_expand_methods_list
-def check_edges(self, func, *args, order='C', **kwargs):
+def enforce_edges(self, func, *args, order='C', **kwargs):
     """Wraps 2D plotting functions that take graticule *edges* (`_edges_methods`),
     calculates edges if coordinate *centers* were provided."""
     # Checks that sizes match up, checks whether graticule was input
@@ -872,7 +873,6 @@ def violinplot_wrapper(self, func, *args,
         if key not in obj: # possible if not rendered
             continue
         artists = obj[key]
-        # print(artists)
         ilw = _default(ilw, lw)
         icolor = _default(icolor, color)
         if not isinstance(artists, (list,tuple)): # only for bodies
@@ -1064,9 +1064,9 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     # NOTE: May still get weird positioning because ProPlot assumes aspect
     # ratio from the full size projection, not the zoomed in version
     if name=='set_extent':
-        clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim) 
-        self.outline_patch._path = clipped_path 
-        self.background_patch._path = clipped_path 
+        clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
+        self.outline_patch._path = clipped_path
+        self.background_patch._path = clipped_path
     return result
 
 @_expand_methods_list
@@ -1202,7 +1202,6 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
         if globe:
             # 4. Fix holes over poles by interpolating there (equivalent to
             # simple mean of highest/lowest latitude points)
-            # if self.m.projection[:4] != 'merc': # did not fix the problem where Mercator goes way too far
             Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
             Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
             lat = np.concatenate(([-90], lat, [90]))
@@ -1243,6 +1242,7 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     # Convert to projection coordinates and call function
     lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
     x, y = self.m(*np.meshgrid(lon, lat))
+    kwargs['latlon'] = False
     return func(x, y, *Zss, **kwargs)
 
 #------------------------------------------------------------------------------#
@@ -1662,12 +1662,11 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     cut off the most intense colors (reserved for coloring "out of bounds"
     data), even though they are not being used.
 
-    This could also be done by limiting the number of colors in the
-    colormap lookup table by selecting a smaller ``N`` (see
-    `~matplotlib.colors.LinearSegmentedColormap`) -- but I prefer the approach
-    of always building colormaps with hi-res lookup tables, and leaving the
-    job of normalizing data values to colormap locations to the
-    `~matplotlib.colors.Normalize` object.
+    This could also be done by limiting the number of colors in the colormap lookup
+    table by selecting a smaller ``N`` (see `~matplotlib.colors.LinearSegmentedColormap`).
+    But I prefer the approach of always building colormaps with hi-res lookup
+    tables, and leaving the job of normalizing data values to colormap locations
+    to the `~matplotlib.colors.Normalize` object.
 
     See also
     --------
@@ -1684,16 +1683,13 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         if name in ('cmapline',):
             kwargs['values'] = values
             levels = utils.edges(values) # special case, used by colorbar factory
+        elif norm is None or isinstance(norm, str) and 'segment' in norm:
+            levels = utils.edges(values) # special case, used by colorbar factory
         else:
-            if norm is None or isinstance(norm, str) and 'segment' in norm:
-                levels = utils.edges(values) # special case, used by colorbar factory
-            else:
-                norm_tmp = colortools.Norm(norm, **norm_kw)
-                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+            norm_tmp = colortools.Norm(norm, **norm_kw)
+            levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
     # Input colormap and other args
     # TODO: Add similar support for quiver, and automatic quiver keys
-    # TODO: Make sure matshow, imshow, work! And just like aspect ratios can
-    # change for cartopy plots, allow aspect ratio to change for these
     cyclic = False
     colors = _default(color, colors, edgecolor, edgecolors)
     levels = _default(levels, 11) # e.g. pcolormesh can auto-determine levels if you input a number
@@ -1712,9 +1708,16 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         kwargs['cmap'] = cmap
     if 'contour' in name: # contour, contourf, tricontour, tricontourf
         kwargs.update({'levels': levels, 'extend': extend})
-    elif name in ('imshow', 'matshow', 'spy', 'hist2d'): # aspect ratio fix
-        kwargs['aspect'] = 'auto'
-    # Disable fix=True for certain keyword combinations, e.g. if user wants
+
+    # Aspect ratio handling
+    # NOTE: For some bizarre reason, in first pass to draw, aspect ratio calculated
+    # from bbox will be inverted after using set_aspect and apply_aspect. Need
+    # to store custom attribute.
+    aspect = kwargs.get('aspect', rc['image.aspect'])
+    if name in ('imshow', 'matshow', 'spy', 'hist2d') and aspect=='equal': # aspect ratio fix
+        self._aspect_equal = args[-1].shape[1] / args[-1].shape[0]
+
+    # Disable edgefix=True for certain keyword combinations, e.g. if user wants
     # white lines around their pcolor mesh.
     # TODO: Allow calling contourf with linewidth?
     for regex,names in _cmap_options.items():
@@ -1746,6 +1749,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
             # Some tools automatically generate levels, like contourf.
             # Others will just automatically impose clims, like pcolor.
             levels = getattr(obj, 'levels', np.linspace(*obj.get_clim(), levels))
+            if all(levels==levels[0]):
+                warnings.warn('Failed to infer colormap levels. Something is probably wrong.')
+                levels[1:] = levels[0] + 1
+            # Default linear normalizer
             if not zero:
                 norm = _default(norm, 'linear') # matplotlib will have chosen *linearly* spaced levels, this helps us reduce BinNorm time
             # Get centered levels (when contourf has already rendered contours,
@@ -2526,8 +2533,8 @@ def _simple_wrapper(driver):
 _autoformat_1d_ = _wrapper(_autoformat_1d)
 _autoformat_2d_ = _wrapper(_autoformat_2d)
 # Documented
-_check_centers         = _wrapper(check_centers)
-_check_edges           = _wrapper(check_edges)
+_enforce_centers       = _wrapper(enforce_centers)
+_enforce_edges         = _wrapper(enforce_edges)
 _basemap_gridfix       = _wrapper(basemap_gridfix)
 _basemap_latlon        = _wrapper(basemap_latlon)
 _cartopy_gridfix       = _wrapper(cartopy_gridfix)

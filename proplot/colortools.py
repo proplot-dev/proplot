@@ -79,7 +79,7 @@ _color_names_bad = re.compile('(' + '|'.join((
     'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger', 'bile', 'diarrhea',
     )) + ')') # filter these out, let's try to be professional here...
 _color_names_add = (
-    'sky blue', 'eggshell', 'sea blue', 'coral', 'tomato red', 'brick red', 'crimson',
+    'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua', 'tomato red', 'brick red', 'crimson',
     'red orange', 'yellow orange', 'yellow green', 'blue green',
     'blue violet', 'red violet',
     ) # common names that should always be included
@@ -1634,7 +1634,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hcl', name='monochrome', 
 #------------------------------------------------------------------------------#
 # Return arbitrary normalizer
 #------------------------------------------------------------------------------
-def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
+def Norm(norm, levels=None, values=None, **kwargs):
     """
     Returns an arbitrary `~matplotlib.colors.Normalize` instance, used to
     interpret the `norm` and `norm_kw` arguments when passed to any plotting
@@ -1642,7 +1642,7 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
 
     Parameters
     ----------
-    norm_in : str or `~matplotlib.colors.Normalize`
+    norm : str or `~matplotlib.colors.Normalize`
         Key name for the normalizer. The recognized normalizer key names
         are as follows.
 
@@ -1651,19 +1651,19 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         ===============================  ===============================
         ``'midpoint'``, ``'zero'``       `MidpointNorm`
         ``'segments'``, ``'segmented'``  `LinearSegmentedNorm`
+        ``'none'``, ``'null'``           `~matplotlib.colors.NoNorm`
         ``'linear'``                     `~matplotlib.colors.Normalize`
         ``'log'``                        `~matplotlib.colors.LogNorm`
         ``'power'``                      `~matplotlib.colors.PowerNorm`
         ``'symlog'``                     `~matplotlib.colors.SymLogNorm`
-        ``'none'``, ``'null'``           `~matplotlib.colors.NoNorm`
         ===============================  ===============================
 
-    levels, values : array-like
-        The level edges (`levels`) or centers (`values`) passed
-        to `LinearSegmentedNorm`.
-    norm : None or normalizer spec, optional
-        The normalizer for *pre-processing*. Used only for
-        the `LinearSegmentedNorm` normalizer.
+    levels : None or array-like, optional
+        Level *edges*, passed to `LinearSegmentedNorm` or used to determine
+        the `vmin` and `vmax` arguments for `MidpointNorm`.
+    values : None or array-like, optional
+        Level *centers*, from which the `levels` argument is inferred using
+        `~proplot.utils.edges`.
     **kwargs
         Passed to the `~matplotlib.colors.Normalize` initializer.
         See `this tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
@@ -1674,7 +1674,6 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
     `~matplotlib.colors.Normalize`
         A `~matplotlib.colors.Normalize` instance.
     """
-    norm, norm_preprocess = norm_in, norm
     if isinstance(norm, mcolors.Normalize):
         return norm
     if levels is None and values is not None:
@@ -1692,7 +1691,7 @@ def Norm(norm_in, levels=None, values=None, norm=None, **kwargs):
         elif norm_out is LinearSegmentedNorm:
             if not np.iterable(levels):
                 raise ValueError(f'Need levels for normalizer "{norm}". Received levels={levels}.')
-            kwargs.update({'levels':levels, 'norm':norm_preprocess})
+            kwargs.update({'levels':levels})
         norm_out = norm_out(**kwargs) # initialize
     else:
         raise ValueError(f'Unknown norm "{norm_out}".')
@@ -1851,16 +1850,16 @@ class LinearSegmentedNorm(mcolors.Normalize):
     source code, by performing efficient, vectorized linear interpolation
     between the provided boundary levels.
 
-    Can be used by passing ``norm='segments'`` to any command accepting
-    ``cmap``. The default midpoint is zero.
+    Can be used by passing ``norm='segmented'`` or ``norm='segments'`` to any
+    command accepting ``cmap``. The default midpoint is zero.
     """
-    def __init__(self, levels, clip=False, **kwargs):
+    def __init__(self, levels, **kwargs):
         """
         Parameters
         ----------
         levels : list of float
             The discrete data levels.
-        **kwargs, clip
+        **kwargs
             Passed to `~matplotlib.colors.Normalize`.
         """
         # Save levels
@@ -1869,7 +1868,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
             raise ValueError('Need at least two levels.')
         elif ((levels[1:]-levels[:-1])<=0).any():
             raise ValueError(f'Levels {levels} passed to LinearSegmentedNorm must be monotonically increasing.')
-        super().__init__(np.nanmin(levels), np.nanmax(levels), clip) # second level superclass
+        super().__init__(np.nanmin(levels), np.nanmax(levels), **kwargs) # second level superclass
         self._x = levels
         self._y = np.linspace(0, 1, len(levels))
 

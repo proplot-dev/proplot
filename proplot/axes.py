@@ -5,8 +5,8 @@ This page documents the axes subclasses that can be returned by
 start with the documentation on the following methods:
 
 * `BaseAxes.format`
-* `XYAxes.format_partial`
-* `MapAxes.format_partial`
+* `CartesianAxes.format_partial`
+* `ProjectionAxes.format_partial`
 * `BaseAxes.format_partial`
 
 `BaseAxes.format` calls the various ``format_partial`` methods in turn,
@@ -152,7 +152,7 @@ class BaseAxes(maxes.Axes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `XYAxes`, `MapAxes`
+        `~proplot.subplots.subplots`, `CartesianAxes`, `ProjectionAxes`
         """
         # Properties
         self.number = number # for abc numbering
@@ -162,11 +162,12 @@ class BaseAxes(maxes.Axes):
         self._xrange = None
         self._nrows = None
         self._ncols = None
-        # Ugly but necessary
+        # Misc necessary
         self._xrotated = False # whether manual rotation was applied
         self._yrotated = False # change default tick label rotation when datetime labels present, if user did not override
         self._titles_dict = {} # dictionar of title text objects and their locations
         self._gridliner_on = False # whether cartopy gridliners are enabled
+        self._aspect_equal = None # for imshow and stuff
         self._is_map = False # needed by wrappers, which can't import this file
         # Children and related properties
         self.bottompanel = EmptyPanel()
@@ -285,7 +286,7 @@ class BaseAxes(maxes.Axes):
         this one will draw its properties."""
         if sharex is None or sharex is self:
             return
-        if isinstance(self, MapAxes) or isinstance(sharex, MapAxes):
+        if isinstance(self, ProjectionAxes) or isinstance(sharex, ProjectionAxes):
             return
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
@@ -311,7 +312,7 @@ class BaseAxes(maxes.Axes):
         this one will draw its properties."""
         if sharey is None or sharey is self:
             return
-        if isinstance(self, MapAxes) or isinstance(sharey, MapAxes):
+        if isinstance(self, ProjectionAxes) or isinstance(sharey, ProjectionAxes):
             return
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
@@ -387,8 +388,8 @@ class BaseAxes(maxes.Axes):
 
     def format(self, *, mode=2, rc_kw=None, **kwargs):
         """
-        Sets up temporary rc settings and calls `XYAxes.format_partial` or
-        `MapAxes.format_partial`.
+        Sets up temporary rc settings and calls `CartesianAxes.format_partial`
+        or `ProjectionAxes.format_partial`.
 
         Parameters
         ----------
@@ -400,7 +401,7 @@ class BaseAxes(maxes.Axes):
             Any of three options:
 
             * A keyword arg for `BaseAxes.format_partial`,
-              `XYAxes.format_partial`, or `MapAxes.format_partial`.
+              `CartesianAxes.format_partial`, or `ProjectionAxes.format_partial`.
             * A global "rc" keyword arg, like ``linewidth`` or ``color``.
             * A standard "rc" keyword arg **with the dots omitted**.
               For example, ``land.color`` becomes ``landcolor``.
@@ -420,8 +421,8 @@ class BaseAxes(maxes.Axes):
 
         See also
         --------
-        `~proplot.rcmod`, `BaseAxes.format_partial`, `XYAxes.format_partial`,
-        `MapAxes.format_partial`
+        `~proplot.rcmod`, `BaseAxes.format_partial`, `CartesianAxes.format_partial`,
+        `ProjectionAxes.format_partial`
         """
         # Figure out which kwargs are valid rc settings
         # WARNING: First part will fail horribly if mode is not zero!
@@ -453,9 +454,9 @@ class BaseAxes(maxes.Axes):
         top=True, **kwargs, # nopanel optionally puts title and abc label in main axes
         ):
         """
-        Called by `XYAxes.format_partial` and `MapAxes.format_partial`, formats
-        the axes titles, a-b-c labelling, row and column labels, and figure
-        title.
+        Called by `CartesianAxes.format_partial` and `ProjectionAxes.format_partial`,
+        formats the axes titles, a-b-c labelling, row and column labels, and
+        figure title.
 
         Parameters
         ----------
@@ -842,7 +843,7 @@ def _rcloc_to_stringloc(xy, string): # figures out string location
     else:
         raise ValueError(f'"xy" must equal "x" or "y".')
 
-class XYAxes(BaseAxes):
+class CartesianAxes(BaseAxes):
     """
     Axes subclass for ordinary Cartesian axes. Adds several new methods and
     overrides existing ones.
@@ -851,7 +852,7 @@ class XYAxes(BaseAxes):
     --------
     `~proplot.subplots.subplots`, `BaseAxes`, `PanelAxes`
     """
-    name = 'xy'
+    name = 'cartesian'
     """The registered projection name."""
     def __init__(self, *args, **kwargs):
         # Create simple x by y subplot.
@@ -873,8 +874,8 @@ class XYAxes(BaseAxes):
 
     def __getattribute__(self, attr, *args):
         """Applies the `~proplot.wrappers.cmap_wrapper`,
-        `~proplot.wrappers.cycle_wrapper`, `~proplot.wrappers.check_centers`,
-        `~proplot.wrappers.check_edges`, `~proplot.wrappers.plot_wrapper`,
+        `~proplot.wrappers.cycle_wrapper`, `~proplot.wrappers.enforce_centers`,
+        `~proplot.wrappers.enforce_edges`, `~proplot.wrappers.plot_wrapper`,
         `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.bar_wrapper`,
         `~proplot.wrappers.barh_wrapper`, `~proplot.wrappers.boxplot_wrapper`,
         `~proplot.wrappers.violinplot_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
@@ -897,9 +898,9 @@ class XYAxes(BaseAxes):
         elif attr=='violinplot':
             obj = wrappers._violinplot_wrapper(self, obj)
         elif attr in wrappers._centers_methods:
-            obj = wrappers._check_centers(self, obj)
+            obj = wrappers._enforce_centers(self, obj)
         elif attr in wrappers._edges_methods:
-            obj = wrappers._check_edges(self, obj)
+            obj = wrappers._enforce_edges(self, obj)
         # Step 1) Parse input
         if attr in wrappers._2d_methods:
             obj = wrappers._autoformat_2d_(self, obj)
@@ -1122,6 +1123,7 @@ class XYAxes(BaseAxes):
             # Redirect user request to the correct *shared* axes, then
             # to the correct *spanning* axis label.
             name = axis.axis_name
+            xyname = 'x' if axis is self.xaxis else 'y'
             if label is not None:
                 kw = rc.fill({
                     'color':      'axes.edgecolor',
@@ -1145,9 +1147,9 @@ class XYAxes(BaseAxes):
                     scale = scale.name
                 if scale in ('log','inverse') and formatter is None:
                     formatter = 'simple' # WARNING: matplotlib ScalarFormatter fails with logarithmic axes, trims trailing decimals, need my formatter
-                getattr(self, f'set_{name}scale')(axistools.Scale(scale, **scale_kw))
+                getattr(self, f'set_{xyname}scale')(axistools.Scale(scale, **scale_kw))
             if lim is not None:
-                getattr(self, f'set_{name}lim')(lim)
+                getattr(self, f'set_{xyname}lim')(lim)
             if reverse:
                 # axis.set_inverted(True) # 3.1+, the below is from source code
                 lo, hi = axis.get_view_interval()
@@ -1319,6 +1321,7 @@ class XYAxes(BaseAxes):
                     if formatter not in (None,'auto'):
                         warnings.warn('The tickrange feature requires proplot.AutoFormatter formatter. Overriding input formatter.')
                     formatter = 'auto'
+                    formatter_kw = {**formatter_kw} # make a copy
                     formatter_kw.setdefault('tickrange', tickrange)
                 # Set the formatter
                 formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
@@ -1346,7 +1349,8 @@ class XYAxes(BaseAxes):
         super().format_partial(**kwargs)
 
     def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
-        """As with `~XYAxes.dualy`, but for the *x*-axis. See `~XYAxes.dualy`."""
+        """As with `~CartesianAxes.dualy`, but for the *x*-axis.
+        See `~CartesianAxes.dualy`."""
         parent = self.get_xscale()
         if parent!='linear':
             warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
@@ -1412,13 +1416,13 @@ class XYAxes(BaseAxes):
         self._dualy_scale = (offset, scale)
 
     def altx(self, *args, **kwargs):
-        """Alias (and more intuitive name) for `~XYAxes.twiny`.
+        """Alias (and more intuitive name) for `~CartesianAxes.twiny`.
         The matplotlib `~matplotlib.axes.Axes.twiny` function
         actually generates two *x*-axes with a shared ("twin") *y*-axis."""
         return self.twiny(*args, **kwargs)
 
     def alty(self, *args, **kwargs):
-        """Alias (and more intuitive name) for `~XYAxes.twinx`.
+        """Alias (and more intuitive name) for `~CartesianAxes.twinx`.
         The matplotlib `~matplotlib.axes.Axes.twinx` function
         actually generates two *y*-axes with a shared ("twin") *x*-axis."""
         return self.twinx(*args, **kwargs)
@@ -1426,7 +1430,7 @@ class XYAxes(BaseAxes):
     def twinx(self):
         """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` and intelligently handles
         axis ticks, gridlines, axis tick labels, axis labels, and axis sharing.
-        Returns an `XYAxes` instance."""
+        Returns an `CartesianAxes` instance."""
         # Note: Cannot wrap twinx() because then the axes created will be
         # instantiated from the parent class, which doesn't have format method.
         # Instead, use hidden method _make_twin_axes.
@@ -1457,8 +1461,8 @@ class XYAxes(BaseAxes):
     def twiny(self):
         """Mimics matplotlib's `~matplotlib.axes.Axes.twiny` and intelligently handles
         axis ticks, gridlines, axis tick labels, axis labels, and axis sharing.
-        Returns an `XYAxes` instance."""
-        # Note: Cannot wrap twiny() because we want to use our own XYAxes,
+        Returns an `CartesianAxes` instance."""
+        # Note: Cannot wrap twiny() because we want to use our own CartesianAxes,
         # not the matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
         if self._altx_child:
@@ -1485,11 +1489,11 @@ class XYAxes(BaseAxes):
         return ax
 
     def inset(self, *args, **kwargs):
-        """Alias for `~XYAxes.inset_axes`."""
+        """Alias for `~CartesianAxes.inset_axes`."""
         return self.inset_axes(*args, **kwargs)
 
     def inset_axes(self, bounds, *, transform=None, zorder=5, zoom=True, zoom_kw={}, **kwargs):
-        """Draws an inset `XYAxes` axes. Otherwise, this is a carbon copy
+        """Draws an inset `CartesianAxes` axes. Otherwise, this is a carbon copy
         of the `~matplotlib.axes.Axes.inset_axes` method."""
         # Carbon copy, but use my custom axes
         # Defaults
@@ -1591,8 +1595,8 @@ class EmptyPanel(object):
         """Raises RuntimeError."""
         raise RuntimeError('Panel does not exist.')
 
-class PanelAxes(XYAxes):
-    """`~proplot.axes.XYAxes` subclass, adds `~PanelAxes.legend` and
+class PanelAxes(CartesianAxes):
+    """`~proplot.axes.CartesianAxes` subclass, adds `~PanelAxes.legend` and
     `~PanelAxes.colorbar` methods that "fill" the entire axes."""
     # Notes:
     # See `this post <https://stackoverflow.com/a/52121237/4970632>`_
@@ -1619,7 +1623,7 @@ class PanelAxes(XYAxes):
             The "parent" of the panel. Not relevant for "outer panel"
             axes.
         *args, **kwargs
-            Passed to the `XYAxes` initializer.
+            Passed to the `CartesianAxes` initializer.
 
         See also
         --------
@@ -1736,16 +1740,17 @@ class PanelAxes(XYAxes):
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         return wrappers.colorbar_wrapper(ax, *args, **kwargs)
 
-class MapAxes(BaseAxes):
-    """Intermediate class, shared by `CartopyAxes` and `BasemapAxes`.
-    Disables methods that are inappropriate for map projections and adds
-    `MapAxes.format_partial`, so that arguments passed to `~BaseAxes.format` are
-    identical for `CartopyAxes` and `BasemapAxes`."""
+class ProjectionAxes(BaseAxes):
+    """Intermediate class, shared by `CartopyProjectionAxes` and
+    `BasemapProjectionAxes`. Disables methods that are inappropriate for map
+    projections and adds `ProjectionAxes.format_partial`, so that arguments
+    passed to `~BaseAxes.format` are identical for `CartopyProjectionAxes`
+    and `BasemapProjectionAxes`."""
     def __init__(self, *args, **kwargs): # just to disable docstring inheritence
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `CartopyAxes`, `BasemapAxes`
+        `~proplot.subplots.subplots`, `CartopyProjectionAxes`, `BasemapProjectionAxes`
         """
         super().__init__(*args, **kwargs)
         self._is_map = True # needed by wrappers, which can't import this file
@@ -1760,7 +1765,7 @@ class MapAxes(BaseAxes):
         return super().__getattribute__(attr, *args)
 
     # Note this *actually* just returns some standardized arguments
-    # to the CartopyAxes.format_partial and BasemapAxes.format_partial methods; they
+    # to the CartopyProjectionAxes.format_partial and BasemapProjectionAxes.format_partial methods; they
     # both jump over this intermediate class and call BaseAxes.format_partial
     def format_partial(self, labels=None, latlabels=None, lonlabels=None,
         latmax=None, lonlim=None, latlim=None, grid=None,
@@ -1825,10 +1830,10 @@ class MapAxes(BaseAxes):
 
         # Interptet latitude
         latmax = _default(latmax, rc.get('geogrid.latmax'))
-        if isinstance(self, CartopyAxes):
+        if isinstance(self, CartopyProjectionAxes):
             lon_0 = self.projection.proj4_params.get('lon_0', 0)
         else:
-            lon_0 = self.m.lonmin
+            lon_0 = self.m.lonmin + 180 # central longitude
         if lonlocator is not None:
             if not np.iterable(lonlocator):
                 lonlocator = utils.arange(lon_0 - 180, lon_0 + 180, lonlocator)
@@ -1870,8 +1875,11 @@ class MapAxes(BaseAxes):
         lonlabels, latlabels = ilabels
         return grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs
 
-class PolarAxes(XYAxes, mproj.PolarAxes):
-    """Intermediate class, mixes `XYAxes` with `~matplotlib.projections.polar.PolarAxes`."""
+class PolarAxes(CartesianAxes, mproj.PolarAxes):
+    """Intermediate class, mixes `CartesianAxes` with
+    `~matplotlib.projections.polar.PolarAxes`."""
+    name = 'polar2'
+    """The registered projection name."""
     def __init__(self, *args, **kwargs):
         """
         See also
@@ -1885,12 +1893,12 @@ class PolarAxes(XYAxes, mproj.PolarAxes):
         Called by `BaseAxes.format`, calls `BaseAxes.format_partial` and
         formats the tick locations, tick labels, grid lines, and more.
 
-        The keyword args are idential to those in `XYAxes.format_partial`,
+        The keyword args are idential to those in `CartesianAxes.format_partial`,
         except the "theta" and "radius" axis properties respectively
         correspond to ``x`` and ``y`` keyword arguments.
 
         To change the azimuthal position of radius labels, use ``ytickloc``.
-        For everything else, see `XYAxes.format_partial`.
+        For everything else, see `CartesianAxes.format_partial`.
         """
         # Extra stuff
         if ytickloc is not None:
@@ -1898,20 +1906,15 @@ class PolarAxes(XYAxes, mproj.PolarAxes):
         # Call parent
         super().format_partial(*args, **kwargs)
 
-    name = 'propolar'
-    """The registered projection name."""
-
 # Cartopy takes advantage of documented feature where any class with method
 # named _as_mpl_axes can be passed as 'projection' object.
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
-class CartopyAxes(MapAxes, GeoAxes):
-    """
-    Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
+class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
+    """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
     projections. Initializes the `cartopy.crs.Projection` instance. Also
     allows for *partial* coverage of azimuthal projections by zooming into
     the full projection, then drawing a circle boundary around some latitude
-    away from the center (this is surprisingly difficult to do).
-    """
+    away from the center (this is surprisingly difficult to do)."""
     name = 'cartopy'
     """The registered projection name."""
     _n_bounds = 100 # number of points for drawing circle map boundary
@@ -1945,7 +1948,7 @@ class CartopyAxes(MapAxes, GeoAxes):
         # associated with the axes. Does not matter whether attribute is hidden.
         # self._hold = None
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection>.')
+            raise ValueError('You must initialize CartopyProjectionAxes with map_projection=<cartopy.crs.Projection>.')
         self._cartopy_gl = None # gridliner
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
 
@@ -1967,7 +1970,7 @@ class CartopyAxes(MapAxes, GeoAxes):
 
     def __getattribute__(self, attr, *args):
         """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-        `~proplot.wrappers.check_centers`, `~proplot.wrappers.check_edges`,
+        `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
         `~proplot.wrappers.cartopy_gridfix`, `~proplot.wrappers.cartopy_transform`,
         `~proplot.wrappers.cartopy_crs`, `~proplot.wrappers.plot_wrapper`,
         `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
@@ -1986,9 +1989,9 @@ class CartopyAxes(MapAxes, GeoAxes):
         elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
             obj = wrappers._cartopy_gridfix(self, obj)
             if attr in wrappers._edges_methods:
-                obj = wrappers._check_edges(self, obj)
+                obj = wrappers._enforce_edges(self, obj)
             else:
-                obj = wrappers._check_centers(self, obj)
+                obj = wrappers._enforce_centers(self, obj)
         # Step 2) Better default keywords
         if attr in wrappers._transform_methods:
             obj = wrappers._cartopy_transform(self, obj)
@@ -2007,7 +2010,7 @@ class CartopyAxes(MapAxes, GeoAxes):
         return obj
 
     def format_partial(self, patch_kw={}, **kwargs):
-        # Documentation inherited from MapAxes
+        # Documentation inherited from ProjectionAxes
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
         # Parse flexible input
@@ -2144,37 +2147,12 @@ class CartopyAxes(MapAxes, GeoAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         BaseAxes.format_partial(self, **kwargs)
 
-def _ls_translate(obj, style):
-    """Make basemap gridlines look like cartopy lines using the `dashes`
-    tuple."""
-    # Notes:
-    # * For some reason basemap gridlines look different from cartopy ones.
-    #   Have absolutely **no idea** why. Cartopy seems to do something weird because
-    #   there is no ``_dashSeq`` attribute on the lines, and the line styles
-    #   are always "officially" ``'-'``, even though they are dashed.
-    # * Dots actually look better for cartopy so we mimick them. After testing,
-    #   below works *really* well... maybe it is hardcoded in cartopy somewhere?
-    # See `this reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`_.
-    dashes = [None, None]
-    if style==':':
-        dashes[0] = 0.05
-        dashes[1] = 2.5
-    elif style=='--':
-        dashes[0] = 2.5
-        dashes[1] = 2.5
-    elif style!='-':
-        raise ValueError(f'Invalid line style {style}.')
-    return dashes
-
-class BasemapAxes(MapAxes):
-    """
-    Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
+class BasemapProjectionAxes(ProjectionAxes):
+    """Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
     projections. The `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `m` attribute, but this is all abstracted away -- you can use
     `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
-    `~matplotlib.axes.Axes.contour` with
-    your raw longitude-latitude data.
-    """
+    `~matplotlib.axes.Axes.contour` with your raw longitude-latitude data."""
     name = 'basemap'
     """The registered projection name."""
     # Note non-rectangular projections; for rectnagular ones, axes spines are
@@ -2214,7 +2192,7 @@ class BasemapAxes(MapAxes):
         #   both the edges and the fill; so calling it again will replace *both*
         import mpl_toolkits.basemap as mbasemap # verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError('You must initialize BasemapAxes with map_projection=(basemap.Basemap instance).')
+            raise ValueError('You must initialize BasemapProjectionAxes with map_projection=(basemap.Basemap instance).')
         self.m = map_projection
         self.boundary = None
         self._mapboundarydrawn = None
@@ -2225,7 +2203,7 @@ class BasemapAxes(MapAxes):
 
     def __getattribute__(self, attr, *args):
         """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-        `~proplot.wrappers.check_centers`, `~proplot.wrappers.check_edges`,
+        `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
         `~proplot.wrappers.basemap_gridfix`, `~proplot.wrappers.basemap_latlon`,
         `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
         `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
@@ -2255,9 +2233,9 @@ class BasemapAxes(MapAxes):
             elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
                 obj = wrappers._basemap_gridfix(self, obj)
                 if attr in wrappers._edges_methods:
-                    obj = wrappers._check_edges(self, obj)
+                    obj = wrappers._enforce_edges(self, obj)
                 else:
-                    obj = wrappers._check_centers(self, obj)
+                    obj = wrappers._enforce_centers(self, obj)
             # Step 2) Better default keywords
             if attr in wrappers._latlon_methods:
                 obj = wrappers._basemap_latlon(self, obj)
@@ -2276,7 +2254,7 @@ class BasemapAxes(MapAxes):
         return obj
 
     def format_partial(self, patch_kw={}, **kwargs):
-        # Documentation inherited from MapAxes
+        # Documentation inherited from ProjectionAxes
         grid, latmax, lonlim, latlim, lonlocator, latlocator, labels, lonlabels, latlabels, kwargs = \
                 super().format_partial(**kwargs)
         if lonlim is not None or latlim is not None:
@@ -2346,7 +2324,6 @@ class BasemapAxes(MapAxes):
                         obj.update(tkw)
                     else:
                         obj.update(lkw)
-                        obj.set_dashes(_ls_translate(obj, lkw['linestyle']))
             self._parallels = p
 
             # Longitudes
@@ -2367,7 +2344,6 @@ class BasemapAxes(MapAxes):
                         obj.update(tkw)
                     else:
                         obj.update(lkw)
-                        obj.set_dashes(_ls_translate(obj, lkw['linestyle']))
             self._meridians = p
 
         # Geography
@@ -2393,9 +2369,9 @@ class BasemapAxes(MapAxes):
 
 # Register the projections
 mproj.register_projection(BaseAxes)
-mproj.register_projection(XYAxes)
 mproj.register_projection(PanelAxes)
 mproj.register_projection(PolarAxes)
-mproj.register_projection(BasemapAxes)
-mproj.register_projection(CartopyAxes)
+mproj.register_projection(CartesianAxes)
+mproj.register_projection(BasemapProjectionAxes)
+mproj.register_projection(CartopyProjectionAxes)
 

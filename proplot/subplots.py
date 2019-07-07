@@ -146,7 +146,7 @@ def _intervalx_errfix(ax):
     """Given an axes and a bounding box, pads the intervalx according to the
     matplotlib "tight layout" error associated with invisible y ticks."""
     bbox = ax._tight_bbox
-    if not isinstance(ax, axes.XYAxes):
+    if not isinstance(ax, axes.CartesianAxes):
         return (bbox.xmin, bbox.xmax)
     xerr = ax._ytick_pad_error # error in x-direction, due to y ticks
     return (bbox.xmin + xerr[0], bbox.xmax - sum(xerr))
@@ -155,7 +155,7 @@ def _intervaly_errfix(ax):
     """Given an axes and a bounding box, pads the intervaly according to the
     matplotlib "tight layout" error associated with invisible x ticks."""
     bbox = ax._tight_bbox
-    if not isinstance(ax, axes.XYAxes):
+    if not isinstance(ax, axes.CartesianAxes):
         return (bbox.ymin, bbox.ymax)
     yerr = ax._xtick_pad_error # error in y-direction, due to x ticks
     return (bbox.ymin + yerr[0], bbox.ymax - sum(yerr))
@@ -256,10 +256,11 @@ class Figure(mfigure.Figure):
         self._subplot_wflush = _default(flush, wflush)
         self._subplot_hflush = _default(flush, hflush)
         # Gridspec information, filled in by subplots()
-        self._subplots_kw = None # extra special settings
-        self._main_gridspec = None # gridspec encompassing drawing area
+        self._ref_num = 1
         self._main_axes = []  # list of 'main' axes (i.e. not insets or panels)
         self._spanning_axes = [] # add axis instances to this, and label position will be updated
+        self._subplots_kw = None # extra special settings
+        self._main_gridspec = None # gridspec encompassing drawing area
         # Figure-wide settings
         self._autoformat = autoformat
         # Panels, initiate as empty
@@ -278,45 +279,6 @@ class Figure(mfigure.Figure):
         ``rpanel`` for ``rightpanel``."""
         attr = _aliases.get(attr, attr)
         return super().__getattribute__(attr, *args)
-
-    def _twin_axes_lock(self):
-        """Lock shared axis limits to these axis limits. Used for secondary
-        axis with alternate data scale."""
-        # Helper func
-        # Note negative heights should not break anything!
-        def check(lim, scale):
-            if re.match('^log', scale) and any(np.array(lim)<=0):
-                raise ValueError('Axis limits go negative, and "alternate units" axis uses log scale.')
-            elif re.match('^inverse', scale) and any(np.array(lim)<=0):
-                raise ValueError('Axis limits cross zero, and "alternate units" axis uses inverse scale.')
-        for ax in self._main_axes:
-            # Match units for x-axis
-            if ax._dualx_scale:
-                # Get stuff
-                # transform = mscale.scale_factory(twin.get_xscale(), twin.xaxis).get_transform()
-                twin = ax._altx_child
-                offset, scale = ax._dualx_scale
-                transform = twin.xaxis._scale.get_transform() # private API
-                xlim_orig = ax.get_xlim()
-                # Check, and set
-                check(xlim_orig, twin.get_xscale())
-                xlim = transform.inverted().transform(np.array(xlim_orig))
-                if np.sign(np.diff(xlim_orig)) != np.sign(np.diff(xlim)): # the transform flipped it, so when we try to set limits, will get flipped again!
-                    xlim = xlim[::-1]
-                twin.set_xlim(offset + scale*xlim)
-            # Match units for y-axis
-            if ax._dualy_scale:
-                # Get stuff
-                # transform = mscale.scale_factory(twin.get_yscale(), ax.yaxis).get_transform()
-                twin = ax._alty_child
-                offset, scale = ax._dualy_scale
-                transform = twin.yaxis._scale.get_transform() # private API
-                ylim_orig = ax.get_ylim()
-                check(ylim_orig, twin.get_yscale())
-                ylim = transform.inverted().transform(np.array(ylim_orig))
-                if np.sign(np.diff(ylim_orig)) != np.sign(np.diff(ylim)): # dunno why needed
-                    ylim = ylim[::-1]
-                twin.set_ylim(offset + scale*ylim) # extra bit comes after the forward transformation
 
     def _suptitle_setup(self, title, **kwargs):
         """Assign figure "super title"."""
@@ -366,6 +328,28 @@ class Figure(mfigure.Figure):
                     continue
                 bbox = (ax._colorbar_child or ax).get_tightbbox(renderer)
                 ax._tight_bbox = bbox
+
+    def _post_aspect_fix(self):
+        """Adjust average aspect ratio used for gridspec calculations."""
+        # This covers very common use case will be grid of subplots identically
+        # zoomed into cartopy projections or grid of imshow images with fixed
+        # square pixels.
+        ax = self._main_axes[self._ref_num-1]
+        aspect = None
+        subplots_kw = self._subplots_kw
+        if isinstance(ax, axes.CartesianAxes):
+            aspect = ax._aspect_equal
+            ax._aspect_equal = None
+        elif isinstance(ax, axes.CartopyProjectionAxes):
+            bbox = ax.background_patch._path.get_extents()
+            aspect = abs(bbox.width)/abs(bbox.height)
+            if aspect==subplots_kw['aspect']:
+                aspect = None
+        if aspect is not None:
+            subplots_kw['aspect'] = aspect
+            figsize, gridspec_kw, _ = _subplots_kwargs(**subplots_kw)
+            self._main_gridspec.update(**gridspec_kw)
+            self.set_size_inches(figsize)
 
     def _axis_label_update(self, axis, span=False, **kwargs):
         """Get axis label for axes with axis sharing or spanning enabled.
@@ -430,36 +414,54 @@ class Figure(mfigure.Figure):
                 position = (1, y0 + height/2)
             saxis.label.update({'position':position, 'transform':transform})
 
-    def _misc_post(self):
-        """Does various post-processing steps involving plotted content."""
-        if not self._smart_tight_init:
-            return
-        for ax in self._main_axes:
-            for ax in (ax, *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel):
-                if not ax:
+    def _post_process_misc(self):
+        """Does various post-processing steps required due to user actions
+        after the figure was created."""
+        # Apply various post processing on per-axes basis
+        for ax in (iax for ax in self._main_axes for iax in (ax,
+            *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel)):
+            if not ax:
+                continue
+            elif not ax.get_visible():
+                continue
+            # Lock dual axes limits
+            for xy in 'xy':
+                scale = getattr(ax, f'_dual{xy}_scale')
+                if not scale:
                     continue
-                elif not ax.get_visible():
-                    continue
-                # Axis rotation, if user drew anything that triggered datetime x-axis
-                # WARNING: Do not just use set_tick_params rotation because will mess up
-                # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
-                # See discussion: https://stackoverflow.com/q/11264521/4970632
-                if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
-                    # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
-                    rotation = rc['axes.formatter.timerotation']
-                    ha = 'right' if rotation>0 else 'left'
-                    for label in ax.xaxis.get_ticklabels():
-                        label.set_rotation(rotation)
-                        label.set_horizontalalignment(ha)
-                # Automatic labels and colorbars for plot
-                # NOTE: The legend wrapper supports multiple legends in one axes
-                # by adding legend artists manually.
-                for loc,handles in ax._auto_colorbar.items():
-                    ax.colorbar(handles, **ax._auto_colorbar_kw[loc])
-                for loc,handles in ax._auto_legend.items():
-                    ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
+                xyscale = getattr(ax, f'get_{xy}scale')()
+                olim = getattr(ax, f'get_{xy}lim')()
+                twin = getattr(ax, f'_alt{xy}_child')
+                transform = getattr(twin, f'{xy}axis')._scale.get_transform()
+                if re.match('^log', xyscale) and any(np.array(olim)<=0):
+                    raise ValueError('Axis limits go negative, and "alternate units" axis uses log scale.')
+                elif re.match('^inverse', xyscale) and any(np.array(olim)<=0):
+                    raise ValueError('Axis limits cross zero, and "alternate units" axis uses inverse scale.')
+                # Apply new axis lim
+                lim = transform.inverted().transform(np.array(olim))
+                if np.sign(np.diff(olim)) != np.sign(np.diff(lim)): # the transform flipped it, so when we try to set limits, will get flipped again!
+                    lim = lim[::-1]
+                getattr(twin, f'set_{xy}lim')(scale[0] + scale[1]*lim)
+            # Axis rotation, if user drew anything that triggered datetime x-axis
+            # WARNING: Do not just use set_tick_params rotation because will mess up
+            # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
+            # See discussion: https://stackoverflow.com/q/11264521/4970632
+            if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
+                # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
+                rotation = rc['axes.formatter.timerotation']
+                ha = 'right' if rotation>0 else 'left'
+                for label in ax.xaxis.get_ticklabels():
+                    label.set_rotation(rotation)
+                    label.set_horizontalalignment(ha)
+            # Automatic labels and colorbars for plot
+            # NOTE: The legend wrapper supports multiple legends in one axes
+            # by adding legend artists manually.
+            for loc,handles in ax._auto_colorbar.items():
+                ax.colorbar(handles, **ax._auto_colorbar_kw[loc])
+            for loc,handles in ax._auto_legend.items():
+                ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
 
-    def _text_align(self, renderer):
+    def _post_text_align(self, renderer):
         """Adjusts position of row titles and figure super title."""
         # Adjust row labels as axis tick labels are generated and y-axis
         # labels is generated.
@@ -575,22 +577,21 @@ class Figure(mfigure.Figure):
                 y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
                 suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
 
-    def _auto_adjust(self, renderer=None):
+    def _post_process(self, renderer=None):
         """Performs various post-procesing tasks."""
         # Get renderer
         if renderer is None:
             renderer = self.canvas.get_renderer()
-        # Post-plotting defaults
-        self._misc_post()
-        # Lock twin axes
-        self._twin_axes_lock()
-        # Spanning labels
-        for axis in self._spanning_axes:
-            self._axis_label_update(axis, span=False)
-        # Row, column, figure labels
+        # Post-plotting stuff
+        if self._smart_tight_init:
+            self._post_aspect_fix()
+            self._post_process_misc()
+        # Row, column, figure, spanning labels
         # WARNING: draw() is called *more than once* and title positions are
         # appropriately offset only during the *later* calls! Must run each time.
-        self._text_align(renderer) # just applies the spacing
+        for axis in self._spanning_axes: # turn spanning off so rowlabels adjust properly
+            self._axis_label_update(axis, span=False)
+        self._post_text_align(renderer) # just applies the spacing
         # Tight layout
         # WARNING: For now just call this once, get bugs if call it every
         # time draw() is called, but also means bbox accounting for titles
@@ -601,11 +602,10 @@ class Figure(mfigure.Figure):
             warnings.warn('Tight subplots do not work with cartopy gridline labels or after zooming into a projection. Use tight=False in your call to subplots().')
         else:
             self.smart_tight_layout(renderer)
+        for axis in self._spanning_axes: # turn spanning back on
+            self._axis_label_update(axis, span=True)
         # Set flag
         self._smart_tight_init = False
-        # Set up spanning labels
-        for axis in self._spanning_axes:
-            self._axis_label_update(axis, span=True)
 
     def _panel_tight_layout(self, side, paxs, renderer, figure=False):
         """From list of panels and the axes coordinates spanned by the
@@ -691,7 +691,6 @@ class Figure(mfigure.Figure):
                     else:
                         idx_stack = (-1 if side in 'br' else 0)
                         iratios[idx_stack] = sum(ipratios)
-        # Bail
         if figure:
             return sep # should be same for each "panel"!
 
@@ -741,22 +740,6 @@ class Figure(mfigure.Figure):
             `~matplotlib.figure.Figure.canvas.get_renderer`.
         """
         #----------------------------------------------------------------------#
-        # Adjust aspect ratio for cartopy axes. Note that you cannot 'zoom into'
-        # basemap axes so its aspect ratio will not have changed.
-        #----------------------------------------------------------------------#
-        # If ratio changes, you have to run smart tight layout twice, or get
-        # incorrect spacing along the dimension contracted by the change.
-        ax = self._main_axes[self._ref_num-1]
-        subplots_kw = self._subplots_kw
-        aspect_changed = False
-        if isinstance(ax, axes.CartopyAxes):
-            bbox = ax.background_patch._path.get_extents()
-            aspect = abs(bbox.width)/abs(bbox.height)
-            if aspect!=subplots_kw['aspect']:
-                aspect_changed = True
-                subplots_kw['aspect'] = aspect
-
-        #----------------------------------------------------------------------#
         # Tick fudge factor
         #----------------------------------------------------------------------#
         # NOTE: Matplotlib majorTicks, minorTicks attributes contain *un-updated*
@@ -771,7 +754,7 @@ class Figure(mfigure.Figure):
         # for ax in self._main_axes:
         #     iaxs = [ax, ax.leftpanel, ax.rightpanel, ax.bottompanel, ax.toppanel]
         #     for iax in iaxs:
-        #         if not isinstance(iax, axes.XYAxes) or not iax.visible():
+        #         if not isinstance(iax, axes.CartesianAxes) or not iax.visible():
         #             continue
         #         # Store error in *points*, because we use it to adjust bounding
         #         # box span, whose default units are in dots.
@@ -801,9 +784,30 @@ class Figure(mfigure.Figure):
         #         #            pad*ticks[0].tick2On*(side != 'right'))
         #         # iax._ytick_pad_error += np.array(pad)*self.dpi/72 # is left, right tuple
 
+        # Adjust average aspect ratio used for gridspec calculations
+        # Very common use case will be grid of subplots identically zoomed into
+        # cartopy projections or grid of imshow images with fixed square pixels.
+        # ax = self._main_axes[self._ref_num-1]
+        # aspect = None
+        # subplots_kw = self._subplots_kw
+        # if isinstance(ax, axes.CartesianAxes):
+        #     aspect = ax._aspect_equal
+        #     ax._aspect_equal = None
+        # elif isinstance(ax, axes.CartopyProjectionAxes):
+        #     bbox = ax.background_patch._path.get_extents()
+        #     aspect = abs(bbox.width)/abs(bbox.height)
+        #     if aspect==subplots_kw['aspect']:
+        #         aspect = None
+        # if aspect is not None:
+        #     subplots_kw['aspect'] = aspect
+        #     figsize, gridspec_kw, _ = _subplots_kwargs(**subplots_kw)
+        #     self._main_gridspec.update(**gridspec_kw)
+        #     self.set_size_inches(figsize)
+
         #----------------------------------------------------------------------#
         # Put tight box *around* figure
         #----------------------------------------------------------------------#
+        subplots_kw = self._subplots_kw
         if self._smart_tight_outer:
             # Get old un-updated bounding box
             pad = self._smart_borderpad
@@ -1070,16 +1074,12 @@ class Figure(mfigure.Figure):
             height_new = abs(ax._position.height)*height
             ax.width, ax.height = width_new, height_new
 
-        # Redo in case of zoomed in cartopy axes
-        if aspect_changed:
-            self.smart_tight_layout(renderer)
-
     def draw(self, renderer, *args, **kwargs):
         """Fixes row and "super" title positions and automatically adjusts the
         main gridspec, then calls the parent `~matplotlib.figure.Figure.draw`
         method."""
         # Prepare for rendering
-        self._auto_adjust(renderer)
+        self._post_process(renderer)
         # Render
         out = super().draw(renderer, *args, **kwargs)
         return out
@@ -1117,7 +1117,7 @@ class Figure(mfigure.Figure):
             kwargs['facecolor'] = color
             kwargs['transparent'] = False
         # Prepare for rendering
-        self._auto_adjust()
+        self._post_process()
         # Render
         return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
@@ -1707,28 +1707,28 @@ def subplots(array=None, ncols=1, nrows=1,
         your figure will have **1** *y*-axis label instead of 9.
 
     proj : str or dict-like, optional
-        The map projection name.
+        The map projection name. If string, applies to all subplots. If
+        dictionary, values apply to specific subplots, as with `axpanels`.
+        If an axes projection is not specified in the dictionary, that axes
+        will be Cartesian.
 
-        If string, applies to all subplots. If dictionary, can be
-        specific to each subplot, as with `axpanels`.
-
-        For example, consider a figure with 4 columns and 1 row.
-        With ``projection={1:'mercator', (2,3):'hammer'}``,
-        the leftmost subplot is a Mercator projection, the middle 2 are Hammer
-        projections, and the rightmost is a normal x/y axes.
+        For example, with ``plot.subplots(ncols=4, proj={1:'mercator', (2,3):'hammer'})``,
+        the leftmost subplot is a Mercator projection, the middle 2 are
+        Hammer projections, and the rightmost is a normal Cartesian axes.
     proj_kw : dict-like, optional
         Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
         cartopy `~cartopy.crs.Projection` class on instantiation.
+        If dictionary of properties, applies globally. If **dictionary of
+        dictionaries** of properties, applies to specific subplots, as with `axpanels`.
 
-        As with `axpanels_kw`, can be dict of properties (applies globally),
-        or **dict of dicts** of properties (applies to specific axes, as
-        with `axpanels`).
+        For example, with ``plot.subplots(ncols=2, proj='cyl', proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}})``,
+        the left subplot is a Plate Carrée projection centered on the prime meridian,
+        and the right subplot is centered on the international dateline.
     basemap : bool or dict-like, optional
         Whether to use `~mpl_toolkits.basemap.Basemap` or
         `~cartopy.crs.Projection` for map projections. Defaults to ``False``.
-
-        If boolean, applies to all subplots. If dictionary, can be
-        specific to each subplot, as with `axpanels`.
+        If boolean, applies to all subplots. If dictionary, values apply to
+        specific subplots, as with `axpanels`.
 
     panel : str, optional
         Specify which sides of the figure should have a "panel".
@@ -1750,21 +1750,20 @@ def subplots(array=None, ncols=1, nrows=1,
         "filled" with a colorbar or legend with e.g.
         ``fig.bottompanel.colorbar()`` or ``fig.bottompanel.legend()``.
     lspan, rspan, bspan : bool or list of int, optional
-        Define how figure panels span rows and columns of subplots.
+        Defines how figure panels span rows and columns of subplots.
         Argument is interpreted as follows:
 
-        * If ``True``, this is default behavior for `panel` keyword arg. Draws
-          single panel spanning **all** columns/rows of subplots.
-        * If ``False``, this is default behavior for `panels` keyword arg. Draws
-          separate panels **for each** column/row of subplots.
+        * If ``True``, this is the default behavior for the `panel` keyword arg.
+          Draws single panel spanning **all** columns or rows of subplots.
+        * If ``False``, this is the default behavior for the `panels` keyword arg.
+          Draws separate panels **for each** column or row of subplots.
         * If list of int, you can specify panels that span **contiguous**
-          columns/rows of subplots. Usage is similar to the ``array`` argument.
+          columns or rows of subplots. Usage is similar to the `array` keyword arg.
 
-          For example, for a figure with 3 columns, ``bspan=[1, 2, 2]``
-          draws a panel on the bottom of the first column and spanning the
-          bottom of the right 2 columns, and ``bspan=[0, 2, 2]``
-          only draws a panel underneath the right 2 columns (as with
-          `array`, the ``0`` indicates an empty space).
+        For example, ``plot.suplots(ncols=3, bspan=[1, 2, 2])`` draws a panel
+        on the bottom of the first column and spanning the bottom of the right
+        2 columns, and ``bspan=[0, 2, 2]`` only draws a panel underneath the
+        right 2 columns. As with `array`, a ``0`` indicates an empty space.
     lspace, rspace, bspace : float, optional
         Space between the "inner" edges of the left, right, and bottom
         panels and the edge of the main subplot grid. If float, units are
@@ -1787,15 +1786,15 @@ def subplots(array=None, ncols=1, nrows=1,
         are acceptable, because it is hard to remember otherwise.
         The argument is interpreted as follows:
 
-            * If string, panels are drawn on the same side for all subplots.
-              String should contain any of the characters ``'l'`` (left panel),
-              ``'r'`` (right panel), ``'t'`` (top panel), or ``'b'`` (bottom panel).
-              For example, ``'rt'`` will draw a right and top panel.
-            * If dict-like, panels can be drawn on different sides for
-              different subplots. For example, for a 4-subplot figure,
-              ``axpanels={1:'r', (2,3):'l'}`` indicates that we want to
-              draw a panel on the right side of subplot number 1, on the left
-              side of subplots 2 and 3, and **no panel** on subplot 4.
+        * If string, panels are drawn on the same side for all subplots.
+          String should contain any of the characters ``'l'`` (left panel),
+          ``'r'`` (right panel), ``'t'`` (top panel), or ``'b'`` (bottom panel).
+          For example, ``'rt'`` will draw a right and top panel.
+        * If dict-like, panels can be drawn on different sides for
+          different subplots. For example, for a 4-subplot figure,
+          ``axpanels={1:'r', (2,3):'l'}`` indicates that we want to
+          draw a panel on the right side of subplot number 1, on the left
+          side of subplots 2 and 3, and **no panel** on subplot 4.
 
         Panels are stored on the ``leftpanel``, ``rightpanel``,
         ``bottompanel`` and ``toppanel`` attributes on the axes instance.
@@ -1808,8 +1807,8 @@ def subplots(array=None, ncols=1, nrows=1,
         ``ax.rightpanel.colorbar()`` or ``ax.rightpanel.legend()``.
     axpanel_kw, axpanels_kw : dict-like, optional
         Keyword args passed to `~Figure.add_subplot_and_panels`.
-        Can be dict of properties (applies globally), or **dict of dicts** of
-        properties (applies to specific axes, as with `axpanels`).
+        If dictionary of properties, applies globally. If **dictionary of
+        dictionary** of properties, applies to specific subplots, as with `axpanels`.
 
         For example, consider a 2-subplot figure with ``axpanels='l'``.
         With ``{'lwidth':1}``, both left panels will be 1 inch wide.
@@ -2008,16 +2007,16 @@ def subplots(array=None, ncols=1, nrows=1,
     # NOTE: Cannot have mutable dict as default arg, because it changes the
     # "default" if user calls function more than once! Swap dicts for None.
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    proj    = _axes_dict(naxs, _default(proj, 'xy'), kw=False, default='xy')
+    proj    = _axes_dict(naxs, _default(proj, 'cartesian'), kw=False, default='cartesian')
     proj_kw = _axes_dict(naxs, _default(proj_kw, {}), kw=True)
     axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
     for num,name in proj.items():
-        # The default, my XYAxes projection
-        if name=='xy':
-            axes_kw[num]['projection'] = 'xy'
+        # The default, my CartesianAxes projection
+        if name=='cartesian':
+            axes_kw[num]['projection'] = 'cartesian'
         # Builtin matplotlib polar axes, just use my overridden version
         elif name=='polar':
-            axes_kw[num]['projection'] = 'propolar'
+            axes_kw[num]['projection'] = 'polar2'
             if num==ref:
                 aspect = 1
         # Custom Basemap and Cartopy axes

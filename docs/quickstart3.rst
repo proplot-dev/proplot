@@ -4,70 +4,7 @@ Cartesian axes
 The previous sections discussed features relevant to all figures
 generated with ProPlot, or with axes regardless of whether or not they
 contain map projections. This section discusses a few features specific
-to Cartesian axes, powered by the `~proplot.axes.XYAxes` class.
-
-Label sharing and spanning
---------------------------
-
-Matplotlib has an “axis sharing” feature – but all this can do is hold
-the axis limits the same. ProPlot introduces **4 axis-sharing
-“levels”**, as demonstrated below. It also introduces a new
-**axis-spanning label** feature, as seen below. See
-`~proplot.subplots.subplots` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    N = 50
-    M = 40
-    colors = plot.colors('grays_r', M, 90, left=0.1, right=0.8)
-    for share in (0,1,2,3):
-        f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
-        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
-        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
-            array = gen(scale)
-            for l in range(array.shape[1]):
-                ax.plot(array[:,l], color=colors[l])
-            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
-
-
-
-.. image:: quickstart/quickstart_71_0.svg
-
-
-
-.. image:: quickstart/quickstart_71_1.svg
-
-
-
-.. image:: quickstart/quickstart_71_2.svg
-
-
-
-.. image:: quickstart/quickstart_71_3.svg
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.rc.cycle = 'Set3'
-    titles = ['With redundant labels', 'Without redundant labels']
-    for mode in (0,1):
-        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
-        for ax in axs:
-            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
-        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcloc='ul')
-
-
-
-.. image:: quickstart/quickstart_72_0.svg
-
-
-
-.. image:: quickstart/quickstart_72_1.svg
-
+to Cartesian axes, powered by the `~proplot.axes.CartesianAxes` class.
 
 Axis tick locations
 -------------------
@@ -82,7 +19,7 @@ to tick specific locations. I recommend using ProPlot’s
 `~proplot.utils.arange` function to generate lists of ticks – it’s
 like numpy’s `~numpy.arange`, but is **endpoint-inclusive**, which is
 usually what you’ll want in this context. See
-`~proplot.axes.XYAxes.format_partial` and
+`~proplot.axes.CartesianAxes.format_partial` and
 `~proplot.axistools.Locator` for details.
 
 .. code:: ipython3
@@ -105,7 +42,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: quickstart/quickstart_75_0.svg
+.. image:: quickstart/quickstart_57_0.svg
 
 
 Axis tick labels
@@ -120,6 +57,7 @@ some data range*, as demonstrated below. See
 .. code:: ipython3
 
     import proplot as plot
+    plot.rc.reset()
     locator = [0, 0.25, 0.5, 0.75, 1]
     plot.rc.linewidth = 2
     plot.rc.small = plot.rc.large = 12
@@ -129,9 +67,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: quickstart/quickstart_78_0.png
-   :width: 569px
-   :height: 237px
+.. image:: quickstart/quickstart_60_0.svg
 
 
 ProPlot also lets you easily change the axis formatter with
@@ -141,7 +77,7 @@ The builtin matplotlib formatters can be referenced by string name, and
 several new formatters have been introduced – for example, you can now
 easily label your axes as fractions or as geographic coordinates. You
 can also just pass a list of strings or a ``%``-style format directive.
-See `~proplot.axes.XYAxes.format_partial` and
+See `~proplot.axes.CartesianAxes.format_partial` and
 `~proplot.axistools.Formatter` for details.
 
 .. code:: ipython3
@@ -161,44 +97,7 @@ See `~proplot.axes.XYAxes.format_partial` and
 
 
 
-.. image:: quickstart/quickstart_80_0.svg
-
-
-Datetime axes
--------------
-
-Labeling datetime axes is incredibly easy with ProPlot. Pass a time-unit
-string as the ``locator`` argument, and the axis will be ticked at those
-units. Pass a ``(unit, interval)`` tuple to tick every ``interval``
-``unit``\ s. Use the ``formatter`` argument for `%-style formatting of
-datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
-Again, see `~proplot.axes.XYAxes.format_partial`,
-`~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
-details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=0.7,
-                   figurefacecolor='w', facecolor=plot.shade('C0', 2.7), abcformat='BBBa')
-    f, axs = plot.subplots(nrows=5, axwidth=6, aspect=(8,1), share=0, span=0, hspace=0.3)
-    axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02')),
-                  xrotation=0) # default date locator enabled if you plot datetime data or set datetime limits
-    axs[1].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')), xrotation=0,
-                  xlocator=('year', 10), xformatter='\'%y') # minor ticks every month
-    axs[2].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')), xrotation=0,
-                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S') # minor ticks every 10 minutes, major every 2
-    axs[3].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
-                  xlocator='year', xminorlocator='month', xformatter='%b %Y') # minor ticks every month
-    axs[4].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
-                  xgridminor=True, xgrid=False,
-                  xlocator='month', xminorlocator='weekday', xformatter='%B') # minor ticks every Monday, major every month
-    axs.format(ylocator='null', suptitle='Datetime axis tick labels with ProPlot')
-
-
-
-.. image:: quickstart/quickstart_83_0.svg
+.. image:: quickstart/quickstart_62_0.svg
 
 
 Axis scales
@@ -211,24 +110,26 @@ The ``'cutoff'`` scale is great when you have weirdly distributed data
 scales the axis as the sine of the coordinate, resulting in an
 “area-weighted” spherical latitude coordinate. The ``'inverse'`` scale
 is perfect for labeling spectral coordinates (this is more useful with
-the `~proplot.axes.XYAxes.dualx` and `~proplot.axes.XYAxes.dualy`
-commands; see :ref:`Alternative units`). See
-`~proplot.axes.XYAxes.format_partial` and `~proplot.axistools.Scale`
-for details.
+the `~proplot.axes.CartesianAxes.dualx` and
+`~proplot.axes.CartesianAxes.dualy` commands; see
+:ref:`Alternative units`). See
+`~proplot.axes.CartesianAxes.format_partial` and
+`~proplot.axistools.Scale` for details.
 
 .. code:: ipython3
 
     import proplot as plot
+    plot.rc.reset()
     f, axs = plot.subplots(ncols=2, axwidth=1.8, share=0, span=False)
     ax = axs[0]
     ax.format(xlim=(0,1), ylim=(1e-3, 1e3), xscale='linear', yscale='log',
-              ylabel='log scale', xlabel='linear scale', suptitle='Changing the axis scale')
+              ylabel='log scale', xlabel='linear scale', suptitle='Changing the axis scale with ProPlot')
     ax = axs[1]
     ax.format(xlim=(0,1), ylim=(-1e3, 1e3), yscale='symlog', xlabel='linear', ylabel='symlog scale')
 
 
 
-.. image:: quickstart/quickstart_86_0.svg
+.. image:: quickstart/quickstart_65_0.svg
 
 
 .. code:: ipython3
@@ -254,19 +155,20 @@ for details.
         ax.format(xscale=('cutoff', *scale), title=title,
                   xlim=(0,4*np.pi), ylabel='wave amplitude', # note since 'spanning labels' turned on by default, only one label is drawn
                   xformatter='pi', xlocator=locator,
-                  xtickminor=False, xgrid=True, ygrid=False, suptitle='Cutoff scales showcase')
+                  xtickminor=False, xgrid=True, ygrid=False, suptitle='Demo of cutoff scales')
 
 
 
-.. image:: quickstart/quickstart_87_0.svg
+.. image:: quickstart/quickstart_66_0.svg
 
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
+    plot.rc.reset()
     f, axs = plot.subplots(nrows=3, ncols=2, axwidth=1.5, span=False, share=0)
-    axs.format(rowlabels=['Power\nscales', 'Exp\nscales', 'Geographic\nscales'], suptitle='Esoteric scales showcase')
+    axs.format(rowlabels=['Power\nscales', 'Exponential\nscales', 'Geographic\nscales'], suptitle='Demo of esoteric axis scales')
     x = np.linspace(0,1,50)
     y = 10*x
     data = np.random.rand(len(y)-1, len(x)-1)
@@ -280,7 +182,7 @@ for details.
     for ax,a,c,color in zip(axs[2:4],(np.e,2),(0.5,-1),colors):
         ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
         ax.plot(x, y, lw=4, color=color)
-        ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${a}^{{{c}x}}$')
+        ax.format(ylim=(0.1,10), yscale=('exp',a,c), title=f'${(a,"e")[a==np.e]}^{{{c}x}}$')
     # Geographic scales
     n = 20
     x = np.linspace(-180,180,n)
@@ -297,21 +199,56 @@ for details.
 
 
 
-.. image:: quickstart/quickstart_88_0.svg
+.. image:: quickstart/quickstart_67_0.svg
 
 
-Alternative units
------------------
+Time axis formatting
+--------------------
 
-The new `~proplot.axes.XYAxes.dualx` and
-`~proplot.axes.XYAxes.dualy` methods build duplicate *x* and *y* axes
-meant to represent *alternate units* in the same coordinate range as the
-“parent” axis.
+Labeling datetime axes is incredibly easy with ProPlot. Pass a time-unit
+string as the ``locator`` argument, and the axis will be ticked at those
+units. Pass a ``(unit, interval)`` tuple to tick every ``interval``
+``unit``\ s. Use the ``formatter`` argument for `%-style formatting of
+datetime <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__.
+Again, see `~proplot.axes.CartesianAxes.format_partial`,
+`~proplot.axistools.Locator`, and `~proplot.axistools.Formatter` for
+details.
 
-For simple transformations, just use the ``offset`` and ``scale``
-keyword args. For more complex transformations, pass the name of any
-registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
-(see below).
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=0.7,
+                   figurefacecolor='w', facecolor=plot.shade('C0', 2.7), abcformat='BBBa')
+    f, axs = plot.subplots(nrows=5, axwidth=6, aspect=(8,1), share=0, span=0, hspace=0.3)
+    axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02')),
+                  xrotation=0) # default date locator enabled if you plot datetime data or set datetime limits
+    axs[1].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')), xrotation=0,
+                  xlocator=('year', 10), xformatter='\'%y') # minor ticks every month
+    axs[2].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')), xrotation=0,
+                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S') # minor ticks every 10 minutes, major every 2
+    axs[3].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
+                  xlocator='year', xminorlocator='month', xformatter='%b %Y') # minor ticks every month
+    axs[4].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
+                  xgridminor=True, xgrid=False,
+                  xlocator='month', xminorlocator='weekday', xformatter='%B') # minor ticks every Monday, major every month
+    axs.format(ylocator='null', suptitle='Tick locators and formatters with time axes in ProPlot')
+
+
+
+.. image:: quickstart/quickstart_70_0.svg
+
+
+Dual unit axes
+--------------
+
+The new `~proplot.axes.CartesianAxes.dualx` and
+`~proplot.axes.CartesianAxes.dualy` methods build duplicate *x* and
+*y* axes meant to represent *alternate units* in the same coordinate
+range as the “parent” axis. For simple transformations, just use the
+``offset`` and ``scale`` keyword args. For more complex transformations,
+pass the name of any registered “axis scale” to the ``xscale`` or
+``yscale`` keyword args (see below).
 
 .. code:: ipython3
 
@@ -346,11 +283,11 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: quickstart/quickstart_91_0.svg
+.. image:: quickstart/quickstart_73_0.svg
 
 
 
-.. image:: quickstart/quickstart_91_1.svg
+.. image:: quickstart/quickstart_73_1.svg
 
 
 .. code:: ipython3
@@ -358,13 +295,14 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
     # Plot the response function for an imaginary 5-day lowpass filter
     import proplot as plot
     import numpy as np
+    plot.rc.reset()
     plot.rc['axes.ymargin'] = 0
     cutoff = 0.3
     x = np.linspace(0.01,0.5,1000) # in wavenumber days
     response = (np.tanh(-((x - cutoff)/0.03)) + 1)/2 # imgarinary response function
     f, ax = plot.subplots(aspect=(3,1), width=6)#, tight=False, top=2)
     ax.fill_between(x, 0, response, facecolor='none', edgecolor='gray8', lw=1, clip_on=True)
-    red = plot.shade('red', 0.5)
+    red = plot.saturate(plot.shade('red', 0.7), 3)
     ax.axvline(cutoff, lw=2, ls='-', color=red)
     ax.fill_between([0.27, 0.33], 0, 1, color=red, alpha=0.3)
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
@@ -376,35 +314,35 @@ registered “axis scale” to the ``xscale`` or ``yscale`` keyword args
 
 
 
-.. image:: quickstart/quickstart_92_0.svg
+.. image:: quickstart/quickstart_74_0.svg
 
 
-Polar projections
------------------
+Polar axes
+----------
 
 Polar axes in ProPlot work just like Cartesian axes, except the
-`~proplot.axes.XYAxes` `~proplot.axes.XYAxes.format_partial` ``x``
-and ``y`` keyword args correspond to the “theta” and “radius” axes,
-respectively. To declare polar axes, use `~proplot.subplots.subplots`
-to set the global projection ``proj='polar'`` or an axes-specific
-projection ``proj={1:'polar'}``; see :ref:`Map projection axes` for
-more on specifying the projection.
+`~proplot.axes.CartesianAxes.format_partial` ``x`` and ``y`` keyword
+args correspond to the “theta” and “radius” axes, respectively. To
+declare polar axes, pass ``proj='polar'`` or something like
+``proj={1:'polar'}`` to `~proplot.subplots.subplots`. See
+:ref:`Map projection axes` for more on specifying subplot projections.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    # Figure
     f, axs = plot.subplots(proj='polar', ncols=2)
-    axs.format(suptitle='Polar axes demo', collabels=['Line 1', 'Line 2'])
-    # Plot and format
+    axs.format(suptitle='Polar axes demo', collabels=['With labels', 'Without labels'], collabelweight='normal')
     N = 20
-    axs.plot(np.linspace(0, 2*np.pi, N), np.random.rand(N,5).cumsum(axis=0), cycle='ggplot', lw=3)
-    axs.format(linewidth=1.2, ticklabelsize=9, ticklabelweight='bold',
-               xformatter='pi', ylocator=2, ytickloc=45)
+    x = np.linspace(0, 2*np.pi, N)
+    y = np.random.rand(N,5).cumsum(axis=0) + 5*np.random.rand(N,5)
+    axs.plot(x, y, cycle='contrast', lw=3)
+    axs.format(linewidth=0.8, ticklabelsize=9, ticklabelweight='bold', ylocator=5, ytickloc=45, ylim=(0,19))
+    axs[0].format(xformatter='pi')
+    axs[1].format(xformatter='none', yformatter='none')
 
 
 
-.. image:: quickstart/quickstart_95_0.svg
+.. image:: quickstart/quickstart_77_0.svg
 
 

@@ -42,7 +42,7 @@ On import, ProPlot registers a few sample
 `~proplot.colortools.PerceptuallyUniformColormap` colormaps (see
 :ref:`Perceptually uniform colormaps`) plus a ton of other colormaps
 from other online data viz projects. Use
-`~proplot.colortools.cmap_show` to generate a table of registered
+`~proplot.colortools.show_cmaps` to generate a table of registered
 maps, as shown below. The figure is broken down into the following
 sections:
 
@@ -76,12 +76,12 @@ See `~proplot.colortools.CmapDict` for more info.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.cmap_show(31)
+    f = plot.show_cmaps(31)
 
 
 
 
-.. image:: quickstart/quickstart_117_1.svg
+.. image:: quickstart/quickstart_100_1.svg
 
 
 On-the-fly colormaps
@@ -127,7 +127,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: quickstart/quickstart_120_1.svg
+.. image:: quickstart/quickstart_103_1.svg
 
 
 To build monochromatic colormaps from arbitrary colors, just pass a
@@ -155,7 +155,7 @@ is just one map.
 
 
 
-.. image:: quickstart/quickstart_122_0.svg
+.. image:: quickstart/quickstart_105_0.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -177,7 +177,7 @@ values.
 
 
 
-.. image:: quickstart/quickstart_124_0.svg
+.. image:: quickstart/quickstart_107_0.svg
 
 
 To rotate a cyclic colormap, pass the ``shift`` argument to
@@ -200,7 +200,7 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: quickstart/quickstart_126_0.svg
+.. image:: quickstart/quickstart_109_0.svg
 
 
 Perceptually uniform colormaps
@@ -242,7 +242,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_129_0.svg
+.. image:: quickstart/quickstart_112_0.svg
 
 
 .. code:: ipython3
@@ -252,7 +252,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_130_0.svg
+.. image:: quickstart/quickstart_113_0.svg
 
 
 .. code:: ipython3
@@ -262,7 +262,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_131_0.svg
+.. image:: quickstart/quickstart_114_0.svg
 
 
 You can generate your own
@@ -295,7 +295,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: quickstart/quickstart_133_0.svg
+.. image:: quickstart/quickstart_116_0.svg
 
 
 It is also easy to change the “gamma” of a
@@ -323,7 +323,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: quickstart/quickstart_135_0.svg
+.. image:: quickstart/quickstart_118_0.svg
 
 
 To see how the colors in a colormap vary across different colorspaces,
@@ -343,11 +343,11 @@ non-linear in saturation.
 
 
 
-.. image:: quickstart/quickstart_137_1.svg
+.. image:: quickstart/quickstart_120_1.svg
 
 
 
-.. image:: quickstart/quickstart_137_2.svg
+.. image:: quickstart/quickstart_120_2.svg
 
 
 Adding online colormaps
@@ -370,7 +370,7 @@ valid file extensions.
 Registered color cycles
 -----------------------
 
-Use `~proplot.colortools.cycle_show` to generate a table of the color
+Use `~proplot.colortools.show_cycles` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
 `~proplot.colortools.Cycle` constructor function. See the
@@ -380,11 +380,11 @@ colormaps and color cycles.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.cycle_show()
+    f = plot.show_cycles()
 
 
 
-.. image:: quickstart/quickstart_142_1.svg
+.. image:: quickstart/quickstart_125_1.svg
 
 
 On-the-fly color cycles
@@ -427,7 +427,7 @@ methods.
 
 
 
-.. image:: quickstart/quickstart_145_0.svg
+.. image:: quickstart/quickstart_128_0.svg
 
 
 Finally, *colormaps* (or combinations thereof) can be used as sources
@@ -460,7 +460,30 @@ the colormap before drawing colors from said map. See
 
 
 
-.. image:: quickstart/quickstart_147_0.svg
+.. image:: quickstart/quickstart_130_0.svg
+
+
+`~proplot.wrappers.cycle_wrapper` can also be used to change
+properties other than color. Below, a single-color dash style cycler is
+generated using the `~proplot.colortools.Cycle` function and applied
+to the axes locally. To apply it globally, simply use
+``plot.rc['axes.prop_cycle'] = cycle``.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    f, ax = plot.subplots(axwidth=3, aspect=2)
+    data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
+    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d'], name='label'))
+    ax.format(suptitle='Plot without color cycle')
+    cycle = plot.Cycle(dashes=[(1,0.5),(1,1.5),(3,1.5),(5,3)])
+    obj = ax.plot(data, lw=2, cycle=cycle, legend='ul', legend_kw={'ncols':2, 'handlelength':3})
+
+
+
+.. image:: quickstart/quickstart_132_0.svg
 
 
 Adding online color cycles
@@ -489,7 +512,7 @@ colors <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__,
 and from the `“Open color” <https://github.com/yeun/open-color>`__
 Github project. This was inspired by
 `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-Use `~proplot.colortools.color_show` to generate tables of these
+Use `~proplot.colortools.show_colors` to generate tables of these
 colors, as shown below. Note that the native matplotlib `CSS4 named
 colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
 still registered, but I encourage using colors from the tables instead.
@@ -498,28 +521,22 @@ To reduce the number of registered color names to a more manageable
 size, XKCD and Crayola colors must have *sufficiently distinct
 coordinates* in the HCL perceptually uniform colorspace before they are
 added to ProPlot. This makes it a bit easier to pick out colors from a
-table generated with `~proplot.colortools.color_show`. Similar names
+table generated with `~proplot.colortools.show_colors`. Similar names
 were also cleaned up – for example, “reddish” and “reddy” are changed to
 “red”.
 
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.color_show()
+    f = plot.show_colors()
 
 
 
-.. image:: quickstart/quickstart_152_0.svg
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    f = plot.color_show(True)
+.. image:: quickstart/quickstart_137_0.svg
 
 
 
-.. image:: quickstart/quickstart_153_0.svg
+.. image:: quickstart/quickstart_137_1.svg
 
 
 Individual color sampling
@@ -558,4 +575,6 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: quickstart/quickstart_156_0.svg
+.. image:: quickstart/quickstart_140_0.svg
+
+
