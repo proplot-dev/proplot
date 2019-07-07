@@ -301,7 +301,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 It is also easy to change the “gamma” of a
 `~proplot.colortools.PerceptuallyUniformColormap` uniform colormap
 on-the-fly. The “gamma” controls how the luminance and saturation
-channels vary across the two ends of the colormap. A gamma larger than
+channels vary between segments of the colormap. A gamma larger than
 ``1`` emphasizes high luminance, low saturation colors, and a gamma
 smaller than ``1`` emphasizes low luminance, high saturation colors. See
 `~proplot.colortools.PerceptuallyUniformColormap` for details.

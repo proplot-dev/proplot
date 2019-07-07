@@ -360,9 +360,12 @@ def enforce_centers(self, func, *args, order='C', **kwargs):
         if Z.ndim!=2:
             raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
         elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
-            pass
-            # x = (x[1:] + x[:-1])/2
-            # y = (y[1:] + y[:-1])/2 # get centers, given edges
+            # Get centers given edges
+            # NOTE: Do not print warning message because this use case is super
+            # common, will just be annoying for user.
+            if x.ndim==1 and y.ndim==1:
+                x = (x[1:] + x[:-1])/2
+                y = (y[1:] + y[:-1])/2
         elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
             raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
@@ -389,6 +392,8 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
         elif Z.shape[1]==xlen and Z.shape[0]==ylen:
             # If 2D, don't raise error, but don't fix either, because
             # matplotlib pcolor accepts grid center inputs.
+            # NOTE: Do not print warning message because this use case is super
+            # common, will just be annoying for user.
             if x.ndim==1 and y.ndim==1:
                 x, y = utils.edges(x), utils.edges(y)
         elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
