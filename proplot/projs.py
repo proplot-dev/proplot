@@ -81,14 +81,14 @@ import matplotlib.path as mpath
 import warnings
 from .rcmod import rc
 try:
-    import cartopy.crs as ccrs
     from cartopy.crs import _WarpedRectangularProjection, \
         LambertAzimuthalEqualArea, AzimuthalEquidistant
+    _cartopy_installed = True
 except ModuleNotFoundError:
-    ccrs = None
     _WarpedRectangularProjection = object
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
+    _cartopy_installed = False
 
 # from packaging import version
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
@@ -309,8 +309,9 @@ _crs_translate = { # add to this
     }
 cartopy_projs = {}
 """Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes."""
-if ccrs:
+if _cartopy_installed:
     # Custom ones, these are always present
+    import cartopy.crs as ccrs # verify package is available
     cartopy_projs = { # interpret string, create cartopy projection
       'aitoff': Aitoff,
       'hammer': Hammer,
