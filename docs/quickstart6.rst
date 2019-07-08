@@ -9,8 +9,8 @@ interesting of these are `~proplot.wrappers.cmap_wrapper` and
 (follow links for details). Here we document *other* features enabled by
 the plotting wrappers, starting with `~matplotlib.axes.Axes.plot`.
 
-Contourf and pcolor
--------------------
+Colormap normalizers
+--------------------
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
@@ -50,9 +50,6 @@ behavior, use ``edgefix=False``.
 .. image:: quickstart/quickstart_147_0.svg
 
 
-Levels and labels
------------------
-
 .. code:: ipython3
 
     import proplot as plot
@@ -70,7 +67,7 @@ Levels and labels
 
 
 
-.. image:: quickstart/quickstart_149_0.svg
+.. image:: quickstart/quickstart_148_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -90,14 +87,42 @@ passed to the `~proplot.colortools.Norm` constructor.
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
     for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm (default)'))):
         m = axs[i].contourf(data, values=ticks, extend='both', cmap='blue2', norm=norm)
-        f.bpanel[i].colorbar(m, label='clabel', locator=ticks, fixticks=False)
+        f.bpanel[i].colorbar(m, locator=ticks, fixticks=False)
         axs[i].format(title=title)
     axs.format(suptitle='Level normalizers demo')
 
 
 
-.. image:: quickstart/quickstart_151_0.svg
+.. image:: quickstart/quickstart_150_0.svg
 
+
+Finally, there is a new `~proplot.colortools.MidpointNorm` class that
+warps your colormap so that its midpoint lies on some central data
+value, no matter the minimum and maximum colormap colors. Any normalizer
+can be manually selected by passing the ``norm`` and ``norm_kw`` keyword
+args to any command wrapped by `~proplot.wrappers.cmap_wrapper`.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    data1 = (np.random.rand(20,20) - 0.43).cumsum(axis=0)
+    data2 = (np.random.rand(20,20) - 0.57).cumsum(axis=0)
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5, axcolorbars='b')
+    cmap = 'NegPos'
+    axs.format(suptitle='Midpoint normalizer demo')
+    axs[0].contourf(data1, norm='midpoint', cmap=cmap, colorbar='b')
+    axs[0].format(title='Skewed positive data')
+    axs[1].contourf(data2, norm='midpoint', cmap=cmap, colorbar='b')
+    axs[1].format(title='Skewed negative data')
+
+
+
+.. image:: quickstart/quickstart_152_0.svg
+
+
+Contourf and pcolor labels
+--------------------------
 
 To add `~matplotlib.axes.Axes.clabel` labels to
 `~matplotlib.axes.Axes.contour` plots or add grid box labels to
@@ -124,7 +149,7 @@ of the underlying box color.
 
 
 
-.. image:: quickstart/quickstart_153_0.svg
+.. image:: quickstart/quickstart_155_0.svg
 
 
 Parametric plots
@@ -165,7 +190,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: quickstart/quickstart_156_1.svg
+.. image:: quickstart/quickstart_158_1.svg
 
 
 Bars, boxplots, and violins
@@ -201,7 +226,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_159_0.svg
+.. image:: quickstart/quickstart_161_0.svg
 
 
 `~matplotlib.axes.Axes.boxplot` and
@@ -230,7 +255,7 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_161_0.svg
+.. image:: quickstart/quickstart_163_0.svg
 
 
 Area plots
@@ -270,7 +295,7 @@ different colors where the area boundaries cross each other.
 
 
 
-.. image:: quickstart/quickstart_164_0.svg
+.. image:: quickstart/quickstart_166_0.svg
 
 
 Scatter plots
@@ -309,7 +334,7 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_167_0.svg
+.. image:: quickstart/quickstart_169_0.svg
 
 
 Bars plots
@@ -345,7 +370,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_170_0.svg
+.. image:: quickstart/quickstart_172_0.svg
 
 
 Box plots and violins
@@ -377,4 +402,4 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_173_0.svg
+.. image:: quickstart/quickstart_175_0.svg
