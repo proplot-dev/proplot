@@ -1918,7 +1918,7 @@ class PolarAxes(CartesianAxes, mproj.PolarAxes):
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
 # class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
 class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
-    """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
+    """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
     projections. Initializes the `cartopy.crs.Projection` instance. Also
     allows for *partial* coverage of azimuthal projections by zooming into
     the full projection, then drawing a circle boundary around some latitude
@@ -2163,8 +2163,8 @@ class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
         BaseAxes.format_partial(self, **kwargs)
 
 class ProjectionAxesBasemap(ProjectionAxes):
-    """Axes subclass for plotting `basemap <https://matplotlib.org/basemap/>`_
-    projections. The `~mpl_toolkits.basemap.Basemap` projection instance is added as
+    """Axes subclass for plotting `~mpl_toolkits.basemap` projections. The
+    `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `m` attribute, but this is all abstracted away -- you can use
     `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
     `~matplotlib.axes.Axes.contour` with your raw longitude-latitude data."""
