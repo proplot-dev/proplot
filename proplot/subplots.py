@@ -358,7 +358,7 @@ class Figure(mfigure.Figure):
         if isinstance(ax, axes.CartesianAxes):
             aspect = ax._aspect_equal
             ax._aspect_equal = None
-        elif isinstance(ax, axes.CartopyProjectionAxes):
+        elif isinstance(ax, axes.ProjectionAxesCartopy):
             bbox = ax.background_patch._path.get_extents()
             aspect = abs(bbox.width)/abs(bbox.height)
             if aspect==subplots_kw['aspect']:
@@ -811,7 +811,7 @@ class Figure(mfigure.Figure):
         # if isinstance(ax, axes.CartesianAxes):
         #     aspect = ax._aspect_equal
         #     ax._aspect_equal = None
-        # elif isinstance(ax, axes.CartopyProjectionAxes):
+        # elif isinstance(ax, axes.ProjectionAxesCartopy):
         #     bbox = ax.background_patch._path.get_extents()
         #     aspect = abs(bbox.width)/abs(bbox.height)
         #     if aspect==subplots_kw['aspect']:

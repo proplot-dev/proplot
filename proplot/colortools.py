@@ -79,7 +79,7 @@ _color_names_bad = re.compile('(' + '|'.join((
     'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger', 'bile', 'diarrhea',
     )) + ')') # filter these out, let's try to be professional here...
 _color_names_add = (
-    'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua', 'tomato red', 'brick red', 'crimson',
+    'charcoal', 'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua', 'tomato red', 'brick red', 'crimson',
     'red orange', 'yellow orange', 'yellow green', 'blue green',
     'blue violet', 'red violet',
     ) # common names that should always be included
@@ -353,23 +353,23 @@ class ColorCacheDict(dict):
         These examples work with any matplotlib command that accepts
         a ``color`` keyword arg.
         """
-        # Pull out alpha
-        if not isinstance(key, str) and np.iterable(key) and len(key)==2:
-            key, alpha = key
-        # Draw color from cmap
-        if not isinstance(key, str) and np.iterable(key) and len(key)==2 and isinstance(key[1], Number) and isinstance(key[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
+        # Pull out alpha and draw color from cmap
+        rgb, alpha = key
+        if 'a' in key or 'asd' in key:
+            print(key)
+        if not isinstance(rgb, str) and np.iterable(rgb) and len(rgb)==2 and isinstance(rgb[1], Number) and isinstance(rgb[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
             try:
-                cmap = mcm.cmap_d[key[0]]
+                cmap = mcm.cmap_d[rgb[0]]
             except (TypeError, KeyError):
                 pass
             else:
                 if isinstance(cmap, mcolors.ListedColormap):
-                    rgb = cmap.colors[key[1]] # draw color from the list of colors, using index
+                    rgb = cmap.colors[rgb[1]] # draw color from the list of colors, using index
                 else:
-                    rgb = cmap(key[1]) # interpolate color from colormap, using key in range 0-1
-                rgb = mcolors.to_rgba(rgb)
-                return rgb
-        return super().__getitem__((key, alpha))
+                    rgb = cmap(rgb[1]) # interpolate color from colormap, using key in range 0-1
+                rgba = mcolors.to_rgba(rgb, alpha)
+                return rgba
+        return super().__getitem__((rgb, alpha))
 
 class _ColorMappingOverride(mcolors._ColorMapping):
     def __init__(self, mapping):

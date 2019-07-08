@@ -41,61 +41,18 @@ The `~proplot.subplots.subplots` command is your gateway to all of
 ProPlot’s features. Its usage is similar to the pyplot
 `~matplotlib.pyplot.subplots` command, but it is packed with new
 features and generates a subclassed figure and specially subclassed
-axes.
+axes. This section documents the most basic
+`~proplot.subplots.subplots` features.
 
 .. code:: ipython3
 
     import proplot as plot
-    f, ax = plot.subplots()
-    ax.format(title='ProPlot API', xlabel='x axis', ylabel='y axis')
+    f, axs = plot.subplots(ncols=2)
+    axs.format(title='ProPlot API', xlabel='x axis', ylabel='y axis')
 
 
 
 .. image:: quickstart/quickstart_6_0.svg
-
-
-Most matplotlib sizing arguments assume the units inches or some
-*relative* unit size – e.g. relative to the axes width. With ProPlot,
-all sizing arguments are interpreted the same way. If numeric, the units
-are inches, and if string, the units are interpreted by
-`~proplot.utils.units`. A table of acceptable units is found in the
-`~proplot.utils.units` documentation – they include cm, mm, and
-pixels. See `~proplot.subplots.subplots` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
-    axs.format(suptitle='Figure title', xlabel='x axis', ylabel='y axis')
-
-
-
-.. image:: quickstart/quickstart_8_0.svg
-
-
-A-b-c subplot labeling is another useful ProPlot feature. The label
-order is row-major by default; to change this, use the
-`~proplot.subplots.subplots` ``order`` keyword arg. Change the label
-position with the ``abcloc`` `~proplot.rcmod` option, or the label
-style with the ``abcformat`` `~proplot.rcmod` option. Toggle labeling
-with ``abc=True``. See :ref:`The format command` and
-:ref:`Rc settings control` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
-    axs.format(abc=True, abcloc='l', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labeling')
-    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
-    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
-
-
-
-.. image:: quickstart/quickstart_10_0.svg
-
-
-
-.. image:: quickstart/quickstart_10_1.svg
 
 
 To set up a complex grid of subplots, use a 2D array of integers. You
@@ -119,7 +76,51 @@ numbering determines the order of a-b-c labels. See
 
 
 
-.. image:: quickstart/quickstart_12_1.svg
+.. image:: quickstart/quickstart_8_1.svg
+
+
+A-b-c subplot labeling is easily accomplished with ProPlot. The label
+order is row-major by default; to change this, use the
+`~proplot.subplots.subplots` ``order`` keyword arg. The label position
+canb e changed with the ``abc.loc`` `~proplot.rcmod` option, and the
+label style can be changed with the ``abc.format`` `~proplot.rcmod`
+option. See :ref:`The format command` and :ref:`Rc settings control`
+for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(nrows=2, ncols=2, order='F', axwidth=1.5)
+    axs.format(abc=True, abcloc='l', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labeling')
+    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
+    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
+
+
+
+.. image:: quickstart/quickstart_10_0.svg
+
+
+
+.. image:: quickstart/quickstart_10_1.svg
+
+
+Most matplotlib sizing arguments assume the units inches or some
+*relative* unit size – e.g. relative to the axes width. With ProPlot,
+all sizing arguments are interpreted the same way. If numeric, the units
+are inches, and if string, the units are interpreted by
+`~proplot.utils.units`. A table of acceptable units is found in the
+`~proplot.utils.units` documentation – they include cm, mm, and
+pixels. See `~proplot.subplots.subplots` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
+    axs.format(suptitle='Sizing with arbitrary units', xlabel='x axis', ylabel='y axis')
+
+
+
+.. image:: quickstart/quickstart_12_0.svg
 
 
 Automatic subplot spacing
@@ -128,22 +129,25 @@ Automatic subplot spacing
 With ProPlot, you will always get just the right amount of spacing
 between subplots so that elements don’t overlap, and just the right
 amount of space around the figure edge so that labels and whatnot are
-not cut off. Furthermore, despite all of the complex adjustments this
-requires, the original subplot aspect ratios are **always preserved**.
-Even when axes panels are present, the main subplot aspect ratios will
-stay fixed (see below for more on panels).
+not cut off. Furthermore, if you didn’t specify both the figure width
+and height, the original subplot aspect ratios are **preserved**. And
+when axes panels are present, the panel widths are held fixed in the
+scaling. See :ref:`Panels, colorbars, and legends` for more on panels.
+You can disable automatic spacing by passing ``tight=False`` to
+`~proplot.subplots.subplots`.
 
-You can disable this feature by passing ``tight=False`` to
-`~proplot.subplots.subplots`, but it is unbelievably useful. It works
-by scaling either the figure width or height dimension (whichever one
-you didn’t specify) such that the subplot aspect ratios will not change,
-and by taking advantage of ProPlot’s subplot layout restrictions. Some
-examples are below.
-
-Sometimes, ``tight=True`` is not possible (when using the cartopy
-``set_extent`` method or when using cartopy meridian and parallel
-labeling; a warning will be raised in these instances). Even when
-``tight=False``, ProPlot tries to make the default spacing reasonable.
+Aspect ratio conservation is useful for ordinary Cartesian plots where
+an aspect ratio of ``1`` is often desirable, and critical for grids of
+map projections or `~matplotlib.axes.Axes.imshow` plots that require
+fixed aspect ratios. It works by **scaling** either the figure width or
+height dimension to accommodate the required subplot dimensions. And
+automatic inter-subplot spacing keeps you from having to fiddle with the
+``wspace`` and ``hspace`` `~matplotlib.gridspec.GridSpec` keyword args
+depending on tick label size, whether axis labels are present, etc. It
+works by using the special `~proplot.gridspec.FlexibleGridSpec` class,
+which permits **variable** ``wspace`` and ``hspace`` spacing between
+different rows and columns of subplots, where the builtin
+`~matplotlib.gridspec.GridSpec` class requires equivalent spacing).
 
 .. code:: ipython3
 
@@ -193,11 +197,14 @@ labeling; a warning will be raised in these instances). Even when
 Axis sharing and spanning
 -------------------------
 
-Matplotlib has an “axis sharing” feature – but all this can do is hold
-the axis limits the same. ProPlot introduces **4 axis-sharing “levels”**
-and a new **axis-spanning label** feature, as shown below. This helps
-condense redundant information for figures with lots of subplots. See
-`~proplot.subplots.subplots` for details.
+Matplotlib has an “axis sharing” feature that holds axis limits the same
+for axes within a grid of subplots. But this has no effect and the axis
+labels and tick labels; unless some considerable effort is taken, your
+figures can end up with lots of redundant labels. To help you eliminate
+these redundancies, ProPlot introduces **4 axis-sharing options** and a
+new **spanning label option**, controlled by the ``share``, ``sharex``,
+``sharey``, ``span``, ``spanx``, and ``spany`` keywords. See
+`~proplot.subplots.sublots` and the below example for details.
 
 .. code:: ipython3
 

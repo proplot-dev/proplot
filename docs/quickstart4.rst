@@ -29,8 +29,8 @@ method does not currently detect `cartopy` gridline labels – so when
 labels are present, the :ref:`Automatic subplot spacing` feature must
 be automatically disabled.
 
-Plotting in projections
------------------------
+Plotting geophysical data
+-------------------------
 
 The below demonstrates how to plot geophysical data with ProPlot. For
 `cartopy` projections, you no longer need to pass
@@ -68,10 +68,10 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
             levels = np.linspace(0,1,11)
             if pcolor:
                 m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-                # ax.scatter(np.random.rand(50)*180, 180*np.random.rand(50), color='charcoal')
+                ax.scatter((np.random.rand(50)-0.5)*360, 180*(np.random.rand(50)-0.5), color='charcoal', marker='x')
             if not pcolor:
                 m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-                # ax.scatter(np.random.rand(50)*180, 180*np.random.rand(50), color='charcoal')
+                ax.scatter((np.random.rand(50)-0.5)*360, 180*(np.random.rand(50)-0.5), color='charcoal', marker='x')
             ax.format(suptitle=f'Hammer projection with globe={globe}', collabels=['Cartopy', 'Basemap'], labels=True)
             if p<2:
                 c = f.bpanel[p].colorbar(m, label='values', tickminor=False)
