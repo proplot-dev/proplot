@@ -1,5 +1,5 @@
-Axes and wrappers
------------------
+Axes and axes commands
+----------------------
 .. Also contains gridspec and wrapper docs
 
 **Classes**
