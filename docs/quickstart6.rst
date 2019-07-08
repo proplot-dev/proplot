@@ -237,8 +237,8 @@ and positive area underneath a line, as shown below.
 .. image:: quickstart/quickstart_161_0.svg
 
 
-Bars plots
-----------
+Bar plots
+---------
 
 `~proplot.wrappers.bar_wrapper` and
 `~proplot.wrappers.cycle_wrapper` make it easier to generate useful
