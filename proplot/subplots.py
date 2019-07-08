@@ -74,7 +74,7 @@ class axes_list(list):
     of objects all at once. For example, ``axs.format(xticks=5)`` sets the tick
     locations for all axes."""
     def __init__(self, list_, n=1, order='C'):
-        """Adds special attributes that support 2d grids of axes."""
+        # Add special attributes that support 2d grids of axes
         self._n = n # means ncols or nrows, depending on order
         self._order = order
         return super().__init__(list_)
