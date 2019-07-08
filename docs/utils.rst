@@ -1,6 +1,14 @@
 Misc utilities
 --------------
 
+**Classes**
+
+.. automodsumm:: proplot.gridspec
+   :classes-only:
+   :toctree: api
+
+**Functions**
+
 .. automodsumm:: proplot.utils
    :functions-only:
    :toctree: api
