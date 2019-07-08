@@ -202,10 +202,13 @@ Make area plots with the convenient aliases
 These point to the `~matplotlib.axes.Axes.fill_between` and
 `~matplotlib.axes.Axes.fill_betweenx` methods, which are wrapped with
 `~proplot.wrappers.fill_between_wrapper` and
-`~proplot.wrappers.fill_betweenx_wrapper`. The wrappers enable
-“stacking” successive columns of a 2D input array like in `pandas`,
-and add a new “``negpos``” keyword for creating area plots with
-different colors where the area boundaries cross each other.
+`~proplot.wrappers.fill_betweenx_wrapper`.
+
+The wrappers enable “stacking” successive columns of a 2D input array
+like in `pandas`. They also add a new “``negpos``” keyword for
+creating area plots that change color when the fill boundaries cross
+each other. The most common use case for this is highlighting negative
+and positive area underneath a line, as shown below.
 
 .. code:: ipython3
 
@@ -232,45 +235,6 @@ different colors where the area boundaries cross each other.
 
 
 .. image:: quickstart/quickstart_161_0.svg
-
-
-Scatter plots
--------------
-
-Thanks to `~proplot.wrappers.scatter_wrapper` and
-`~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
-now accepts 2D arrays, just like `~matplotlib.axes.Axes.plot`, and
-successive calls to `~matplotlib.axes.Axes.scatter` can apply property
-cycle keys other than ``color`` – for example, ``marker`` and
-``markersize``. `~matplotlib.axes.Axes.scatter` also now optionally
-accepts keywords that look like the `~matplotlib.axes.Axes.plot`
-keywords, which is a bit less confusing. You can also pass colormaps to
-`~matplotlib.axes.Axes.scatter` just as with matplotlib.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    import pandas as pd
-    f, axs = plot.subplots(ncols=2, share=1)
-    x = (np.random.rand(20)-0).cumsum()
-    data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
-    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d'], name='label'))
-    # Scatter demo
-    ax = axs[0]
-    ax.format(title='New prop cycle properties', suptitle='Scatter plot demo')
-    obj = ax.scatter(x, data, legend='ul', cycle='538', legend_kw={'ncols':2},
-                    cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
-    ax = axs[1]
-    ax.format(title='With colormap and colorbar')
-    data = (np.random.rand(2,100)-0.5)
-    obj = ax.scatter(*data, color=data.sum(axis=0), size=10*(data.sum(axis=0)+1),
-                     marker='*', cmap='fire', colorbar='ll', colorbar_kw={'locator':0.5, 'label':'label'})
-    axs.format(xlabel='xlabel', ylabel='ylabel')
-
-
-
-.. image:: quickstart/quickstart_164_0.svg
 
 
 Bars plots
@@ -306,7 +270,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_167_0.svg
+.. image:: quickstart/quickstart_164_0.svg
 
 
 Box plots and violins
@@ -335,6 +299,45 @@ automatic axis labeling.
     obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', showmeans=True)
     ax.format(title='Violin plots', titleloc='uc')
     axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
+
+
+
+.. image:: quickstart/quickstart_167_0.svg
+
+
+Scatter plots
+-------------
+
+Thanks to `~proplot.wrappers.scatter_wrapper` and
+`~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
+now accepts 2D arrays, just like `~matplotlib.axes.Axes.plot`, and
+successive calls to `~matplotlib.axes.Axes.scatter` can apply property
+cycle keys other than ``color`` – for example, ``marker`` and
+``markersize``. `~matplotlib.axes.Axes.scatter` also now optionally
+accepts keywords that look like the `~matplotlib.axes.Axes.plot`
+keywords, which is a bit less confusing. You can also pass colormaps to
+`~matplotlib.axes.Axes.scatter` just as with matplotlib.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    f, axs = plot.subplots(ncols=2, share=1)
+    x = (np.random.rand(20)-0).cumsum()
+    data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
+    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d'], name='label'))
+    # Scatter demo
+    ax = axs[0]
+    ax.format(title='New prop cycle properties', suptitle='Scatter plot demo')
+    obj = ax.scatter(x, data, legend='ul', cycle='538', legend_kw={'ncols':2},
+                    cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
+    ax = axs[1]
+    ax.format(title='With colormap and colorbar')
+    data = (np.random.rand(2,100)-0.5)
+    obj = ax.scatter(*data, color=data.sum(axis=0), size=10*(data.sum(axis=0)+1),
+                     marker='*', cmap='fire', colorbar='ll', colorbar_kw={'locator':0.5, 'label':'label'})
+    axs.format(xlabel='xlabel', ylabel='ylabel')
 
 
 
