@@ -423,6 +423,7 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
     import proplot as plot
     import numpy as np
     # A bunch od different ways to update settings
+    plot.rc.reset()
     plot.rc.cycle = 'colorblind'
     plot.rc.linewidth = 1.5
     plot.rc.update({'fontname': 'DejaVu Sans'})
@@ -432,14 +433,15 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
     f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=0, sharey=2)
     N, M = 100, 6
     values = np.arange(1,M+1)
+    cycle = plot.Cycle('C0', 'C1', M, fade=80)
     for i,ax in enumerate(axs):
         data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
-        lines = ax.plot(data, linewidth=3, cycle=('C0','C1',data.shape[1]), cycle_kw={'fade':80}) # see "Changing the color cycle" for details
-    axs.format(ytickloc='both', ycolor='blue7',
-               hatch='xxx', hatchcolor='w',
+        lines = ax.plot(data, linewidth=3, cycle=cycle) # see "Changing the color cycle" for details
+    axs.format(ytickloc='both', ycolor='blue7', 
                xlabel='x label', ylabel='y label',
                yticklabelloc='both',
-               suptitle='Applying new rc settings')
+               suptitle='Applying new rc settings',
+               patch_kw={'hatch':'xxx', 'edgecolor':'w'})
     ay = axs[-1].twinx()
     ay.format(ycolor='r', ylabel='secondary axis')
     ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=3)
@@ -453,8 +455,8 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
 .. image:: quickstart/quickstart_29_1.svg
 
 
-Font control
-------------
+Font selection
+--------------
 
 DejaVu Sans is the default matplotlib font, but it’s not exactly the
 best of the best and it can be tricky to change when using multiple

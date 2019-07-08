@@ -6,7 +6,8 @@ nbsetup:    True
 autosave:   30
 autoreload: 2
 # Subplots
-tight:  True
+abc:   False
+tight: True
 # Style
 fontname:     # if empty, default is Helvetica
 cmap:         sunset
@@ -148,6 +149,9 @@ geogrid.color:     k
 geogrid.linewidth: 1.0
 geogrid.linestyle: ':'
 # Geographic content
+map.linewidth: # filled by "linewidth"
+map.facecolor: # filled by "facecolor"
+map.edgecolor: # filled by "color"
 land.color:             k
 ocean.color:            w
 lakes.color:            w

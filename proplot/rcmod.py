@@ -51,7 +51,8 @@ Key                 Description
 ``nbsetup``         Whether to run `nb_setup` on import.
 ``autosave``        If non-empty and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
 ``autoreload``      If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
-``tight``           Whether to auto-adjust figure bounds and subplot spacings.
+``abc``             Boolean, indicates whether to draw a-b-c labels by default.
+``tight``           Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
 ``fontname``        Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
 ``cmap``            The default colormap.
 ``lut``             The number of colors to put in the colormap lookup table.
@@ -118,14 +119,32 @@ gridlines on `~proplot.axes.MapAxes`, use the ``geogrid`` category``.
 If a property is empty, the corresponding property from the buildin ``grid``
 category is used.
 
-==============================================  ==================================================================
+==============================================  ===============================================================================
 Key                                             Description
-==============================================  ==================================================================
+==============================================  ===============================================================================
 ``gridminor.linewidth``, ``geogrid.linewidth``  The line width.
 ``gridminor.linestyle``, ``geogrid.linestyle``  The line style.
 ``gridminor.alpha``, ``geogrid.alpha``          The line transparency.
 ``gridminor.color``, ``geogrid.color``          The line color.
-==============================================  ==================================================================
+``geogrid.labels``                              Boolean, indicates whether to label the parallels and meridians.
+``geogrid.labelsize``                           Font size for latitide and longitude labels. Inherits from ``small``.
+``geogrid.lonstep``, ``geogrid.latstep``        Interval for meridian and parallel gridlines, in degrees.
+``geogrid.latmax``                              Absolute latitude in degrees, poleward of which meridian gridlines are cut off.
+==============================================  ===============================================================================
+
+The below properties are particular to `~proplot.axes.MapAxes`. The properties
+for geographic elements like ``land`` are used when the corresponding
+:ref:`rcGlobals` geographic feature is toggled on.
+
+=======================================================  =============================================================================
+Key                                                      Description
+=======================================================  =============================================================================
+``map.facecolor``, ``map.edgecolor``, ``map.linewidth``  Face color, edge color, and edge width for the map outline patch.
+``land.color``, ``ocean.color``, ``lakes.color``         Face color for land, ocean, and lake patches.
+``rivers.color``, ``rivers.linewidth``                   Line color and linewidth for river lines.
+``borders.color``, ``borders.linewidth``                 Line color and linewidth for country border lines.
+``innerborders.color``, ``innerborders.linewidth``       Line color and linewidth for internal border lines.
+=======================================================  =============================================================================
 
 There are two new additions to pre-existing ``image`` category, described
 in the table below.
@@ -157,26 +176,6 @@ Key                       Description
 ``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
 ``colorbar.xspace``       Extra space for *x* label of inset colorbars.
 ========================  =========================================================================================================================
-
-The below properties are particular to `~proplot.axes.MapAxes`. The properties
-for geographic elements like ``land`` are used when the corresponding
-:ref:`rcGlobals` geographic feature is toggled on.
-
-==================================================  ==================================================================
-Key                                                 Description
-==================================================  ==================================================================
-``geogrid.labels``                                  Boolean, indicates whether to label the parallels and meridians.
-``geogrid.latmax``                                  Meridian gridlines are cut off poleward of this latitude.
-``geogrid.lonstep``                                 Interval for meridian gridlines, in degrees.
-``geogrid.latstep``                                 Interval for parallel gridlines, in degrees.
-``geogrid.labelsize``                               Font size for latitide and longitude labels.
-``land.color``                                      Face color for continents and island patches.
-``ocean.color``                                     Face color for ocean patches.
-``lakes.color``                                     Face color for lake patches.
-``rivers.color``, ``rivers.linewidth``              Line color and linewidth for river lines.
-``borders.color``, ``borders.linewidth``            Line color and linewidth for country border lines.
-``innerborders.color``, ``innerborders.linewidth``  Line color and linewidth for internal border lines.
-==================================================  ==================================================================
 
 The ``subplot`` category has settings that control the default figure
 layout. As with all sizing arguments, if specified as a number, the units
@@ -242,18 +241,19 @@ _rcGlobals_children = {
     'autoreload':   [],
     # Subplots
     'tight':        [],
+    'abc':          [],
     # Style
     'fontname':     ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
     'cmap':         [],
     'lut':          ['image.lut'],
     'cycle':        [],
     'rgbcycle':     [],
-    'color':        ['axes.labelcolor', 'axes.edgecolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'alpha':        ['axes.alpha'], # this is a custom setting
-    'facecolor':    ['axes.facecolor'],
+    'color':        ['axes.edgecolor', 'map.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'facecolor':    ['axes.facecolor', 'map.facecolor'],
     'small':        ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
     'large':        ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
-    'linewidth':    ['axes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
+    'linewidth':    ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
     'margin':       ['axes.xmargin', 'axes.ymargin'],
     'grid':         ['axes.grid'],
     'gridminor':    ['axes.gridminor'],
@@ -282,6 +282,7 @@ _rc_names_custom = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
     'image.levels', 'image.edgefix',
+    'map.linewidth', 'map.facecolor', 'map.edgecolor',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
     'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
     'abc.fontsize', 'abc.weight', 'abc.color', 'abc.loc', 'abc.format', 'abc.border', 'abc.linewidth',
@@ -322,36 +323,8 @@ def rc_defaults():
     """Resets all settings to the matplotlib defaults."""
     mpl.style.use('default') # mpl.style function does not change the backend
 
-class _locked(dict):
-    """Locked dictionary."""
-    __getattr__ = dict.get
-    def __repr__(self):
-        """Wrap notebook pretty print."""
-        string = ''
-        prefix = '{'
-        if len(self)<=5:
-            suffix = ', '
-        else:
-            suffix = ',\n '
-        for key,value in self.items():
-            string += (prefix + repr(key) + ': ' + repr(value))
-            prefix = suffix
-        return '<_locked {' + string + '}>'
-    def __setattr__(self, attr, value):
-        """Locked."""
-        raise NotImplementedError
-    def __setitem__(self, attr, value):
-        """Locked."""
-        raise NotImplementedError
-    def __delattr__(self, attr, value):
-        """Locked."""
-        raise NotImplementedError
-    def __delitem__(self, attr, value):
-        """Locked."""
-        raise NotImplementedError
-
 class rc_configurator(object):
-    _public_api = ('reset', 'context', 'get', 'update', 'fill') # getattr and setattr will not look for these items on underlying dictionary
+    _public_api = ('get', 'fill', 'category', 'reset', 'context', 'update') # getattr and setattr will not look for these items on underlying dictionary
     # @_counter # about 0.05s
     def __init__(self):
         """Magical abstract class for managing matplotlib `rcParams
@@ -424,7 +397,6 @@ class rc_configurator(object):
 
         # Caching stuff
         self._init = True
-        self._no_dict = False # whether to prevent returning dictionary of category values
         self._getitem_mode = 0
         self._setitem_cache = False
         self._cache = {}
@@ -434,8 +406,8 @@ class rc_configurator(object):
 
     def __getitem__(self, key):
         """Retrieves property. If we are in a `~rc_configurator.context`
-        block, will return ``None`` if property is not cached (i.e.
-        property was changed by user)."""
+        block, may return ``None`` if the property is not cached, i.e. if the
+        property was not changed by user."""
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
@@ -453,27 +425,11 @@ class rc_configurator(object):
         if mode==0:
             kws = (self._cache, _rcGlobals, _rcCustom, _rcParams)
         elif mode==1:
-            kws = (self._cache, _rcGlobals, _rcCustom)
+            kws = (self._cache, _rcGlobals, _rcCustom) # custom only!
         elif mode==2:
-            kws = (self._cache, _rcGlobals)
+            kws = (self._cache,) # changed only!
         else:
-            raise KeyError(f'Invalid _getitem_mode {mode}.')
-
-        # If it is available, return the values corresponding to names in
-        # user dictionary; e.g. {'color':'axes.facecolor'} becomes {'color':'w'}
-        # Just use this to see what is available
-        # NOTE: If have global property name that matches a category name (e.g.
-        # 'land' and 'land.color'), use get() to temporarily change mode to
-        # prevent looking for categories.
-        if not self._no_dict and key in _rc_categories:
-            params = {}
-            for kw in kws:
-                for category,value in kw.items():
-                    if re.search(f'^{key}\.', category):
-                        subcategory = re.sub(f'^{key}\.', '', category)
-                        if subcategory and '.' not in subcategory:
-                            params[subcategory] = value
-            return _locked(params)
+            raise KeyError(f'Invalid caching mode {mode}.')
 
         # Get individual property. Will successively index a few different dicts
         # Try to return the value
@@ -669,8 +625,8 @@ class rc_configurator(object):
     def _get_globals(self, key=None, value=None):
         """Returns dictionaries for updating "child" properties in
         `rcParams` and `rcCustom` with global property."""
-        kw = {}
-        kw_new = {}
+        kw = {} # builtin properties that global setting applies to
+        kw_custom = {} # custom properties that global setting applies to
         if key is not None and value is not None:
             items = [(key,value)]
         else:
@@ -684,8 +640,6 @@ class rc_configurator(object):
                 else:
                     ticklen = value
                     ratio = _rcGlobals['ticklenratio']
-                kw['xtick.major.size'] = ticklen
-                kw['ytick.major.size'] = ticklen
                 kw['xtick.minor.size'] = ticklen*ratio
                 kw['ytick.minor.size'] = ticklen*ratio
             # Spine width/major-minor tick width ratio
@@ -696,10 +650,6 @@ class rc_configurator(object):
                 else:
                     tickwidth = _rcGlobals['linewidth']
                     ratio = value
-                kw['axes.linewidth'] = tickwidth
-                kw['hatch.linewidth'] = tickwidth
-                kw['xtick.major.width'] = tickwidth
-                kw['ytick.major.width'] = tickwidth
                 kw['xtick.minor.width'] = tickwidth*ratio
                 kw['ytick.minor.width'] = tickwidth*ratio
             # Grid line
@@ -711,16 +661,15 @@ class rc_configurator(object):
                 else:
                     gridwidth = value
                     ratio = _rcGlobals['gridratio']
-                kw['grid.linewidth'] = gridwidth
-                kw_new['gridminor.linewidth'] = gridwidth*ratio
+                kw_custom['gridminor.linewidth'] = gridwidth*ratio
             # Now update linked settings
-            else:
+            if key not in ('gridratio','tickratio','ticklenratio'):
                 for name in _rcGlobals_children[key]:
                     if name in _rcCustom:
-                        kw_new[name] = value
+                        kw_custom[name] = value
                     else:
                         kw[name] = value
-        return kw, kw_new
+        return kw, kw_custom
 
     # Internally used, but public methods.
     def context(self, *args, mode=0, **kwargs):
@@ -758,20 +707,11 @@ class rc_configurator(object):
         self._getitem_mode = mode
         return self
 
-    def _get(self, key):
-        """Powers `get` and `fill` methods."""
-        try:
-            item = self[key]
-        except KeyError as err:
-            self._no_dict = False
-            self._getitem_mode = orig
-            raise err
-        return item
-
-    def get(self, key, cache=False, nodict=True):
-        """Getter with some special options. This is for internal use by
-        `~proplot.axes.BaseAxes` and its subclasses. Defaults to looking
-        for **all** properties (i.e. not just the cached ones).
+    def get(self, key, cache=False):
+        """
+        Return a setting, with an option to ignore the caching mode if you
+        really really need it. This is used internally by `~proplot.axes.BaseAxes`
+        and its subclasses.
 
         Parameters
         ----------
@@ -780,18 +720,11 @@ class rc_configurator(object):
         cache : bool, optional
             Whether to look for all properties or just cached (i.e.
             recently changed) properties.
-        nodict : bool, optional
-            Whether to disable the `~rc_configurator.__getitem__` feature
-            that returns a **dictionary** of properties belonging to
-            some category. This can be helpful when a category and a "global"
-            setting have the same name, like "land".
         """
-        self._no_dict = nodict
         if not cache:
             orig = self._getitem_mode
             self._getitem_mode = 0
-        item = self._get(key)
-        self._no_dict = False
+        item = self[key]
         if not cache:
             self._getitem_mode = orig
         return item
@@ -832,40 +765,84 @@ class rc_configurator(object):
         dictionary lookups. Without caching, runtime increases by 1s even
         for relatively simple plots.
         """
-        props_out = {}
-        self._no_dict = nodict
+        # Setup caching
         if not cache:
-            orig = self._getitem_mode
-            self._getitem_mode = 0
+            orig, self._getitem_mode = self._getitem_mode, 0
+
+        # Run get
+        props_out = {}
         for key,value in props.items():
-            item = self._get(value)
+            item = self[value]
             if item is not None:
                 props_out[key] = item
-        self._no_dict = False
+
+        # Return
         if not cache:
             self._getitem_mode = orig
         return props_out
 
-    def reset(self):
-        """Restores settings to the default."""
-        return self.__init__()
-
-    def update(self, *args, **kwargs):
+    def category(self, cat, cache=True):
         """
-        Bulk updates global settings. Usage is just like with python `dict`
-        objects.
+        Returns dictionary properties belonging to the indicated category.
+        Respects caching (see ~`rc_configurator.__getitem__`).
 
         Parameters
         ----------
-        category : str, optional
-            Category of rc settings to update, passed as the first positional arg.
-            If used, all keys are prefixed with the string ``category + '.'``.
-        kw : dict-like, optional
-            Dictionary of new rc settings, passed as the last positional arg.
-        kwargs
-            Dictionary of new rc settings, passed as keyword args.
+        cat : str, optional
+            Category of rc settings to retrieve
+        cache : bool, optional
+            Whether to look for all properties or just cached (i.e.
+            recently changed) properties.
+
+        Returns
+        -------
+        params : dict
+            Dictionary of rc settings the string ``cat + '.'``.
         """
-        if len(args)==0:
+        # Check
+        if cat not in _rc_categories:
+            raise ValueError(f'RC category {cat} does not exist. Valid categories are {", ".join(_rc_categories)}.')
+        if not cache:
+            mode = 0
+        else:
+            mode = self._getitem_mode
+
+        # Allow for special time-saving modes where we *ignore _rcParams*
+        # or even *ignore _rcCustom*.
+        if mode==0:
+            kws = (self._cache, _rcGlobals, _rcCustom, _rcParams)
+        elif mode==1:
+            kws = (self._cache, _rcGlobals, _rcCustom)
+        elif mode==2:
+            kws = (self._cache, _rcGlobals)
+        else:
+            raise KeyError(f'Invalid caching mode {mode}.')
+
+        # Return params dictionary
+        params = {}
+        for kw in kws:
+            for category,value in kw.items():
+                if re.search(f'^{cat}\.', category):
+                    subcategory = re.sub(f'^{cat}\.', '', category)
+                    if subcategory and '.' not in subcategory:
+                        params[subcategory] = value
+        return params
+
+    def update(self, *args, **kwargs):
+        """
+        Bulk updates global settings, usage is similar to python `dict` objects.
+
+        Parameters
+        ----------
+        *args
+            Up to 2 positional args. The last argument is a dictionary of new rc
+            settings. If 2 arguments are passed, the first argument indicates
+            the rc setting category, and all rc setting keys are prefixed with
+            the string ``category + '.'``.
+        **kwargs
+            New rc settings passed as keyword args.
+        """
+        if not args:
             args = [{}]
         kw = args[-1]
         kw.update(kwargs)
@@ -877,6 +854,10 @@ class rc_configurator(object):
             raise ValueError('Accepts 1-2 positional arguments only. Use plot.rc.update(kw) to update a bunch of names, or plot.rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
         for key,value in kw.items():
             self[prefix + key] = value
+
+    def reset(self):
+        """Restores settings to the default."""
+        return self.__init__()
 
 # Rc object
 rc = rc_configurator()

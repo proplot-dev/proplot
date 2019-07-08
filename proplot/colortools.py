@@ -565,8 +565,12 @@ def to_rgb(color, space='rgb'):
             raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
     elif space=='rgb':
         color = color[:3] # trim alpha
-        if any(c>1 for c in color):
-            color = [c/255 for c in color] # scale to within 0-1
+        try:
+            if any(c>1 for c in color):
+                color = [c/255 for c in color] # scale to within 0-1
+        except Exception as err:
+            print(color)
+            raise err
         color = tuple(color)
     # Next the perceptually uniform versions
     elif space=='hsv':

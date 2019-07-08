@@ -340,7 +340,7 @@ class BaseAxes(maxes.Axes):
             'fontsize':   f'{prefix}.fontsize',
             'weight':     f'{prefix}.weight',
             'color':      f'{prefix}.color',
-            'fontfamily': 'fontname'
+            'fontfamily': 'font.family'
             })
         if loc is None:
             loc = rc[f'{prefix}.loc']
@@ -449,14 +449,20 @@ class BaseAxes(maxes.Axes):
         with rc.context(rc_kw, mode=mode):
             self.format_partial(**kw)
 
-    def format_partial(self, title=None, abc=None,
+    def format_partial(self, title=None, top=True,
         figtitle=None, suptitle=None, collabels=None, rowlabels=None, # label rows and columns
-        top=True, **kwargs, # nopanel optionally puts title and abc label in main axes
+        **kwargs, # nopanel optionally puts title and abc label in main axes
         ):
         """
         Called by `CartesianAxes.format_partial` and `ProjectionAxes.format_partial`,
         formats the axes titles, a-b-c labelling, row and column labels, and
         figure title.
+
+        Note that the `abc`, `abcformat`, `abcloc`, and `titleloc` keyword
+        arguments are actually rc configuration settings that are temporarily
+        changed by the call to `~BaseAxes.format`. They are documented here
+        because it is extremely common to change them, but they are also
+        documented in the `~proplot.rcmod` documention`.
 
         Parameters
         ----------
@@ -470,10 +476,34 @@ class BaseAxes(maxes.Axes):
             Whether to apply "a-b-c" subplot labelling based on the
             ``number`` attribute. If ``number`` is >26, the labels will loop
             around to a, ..., z, aa, ..., zz, aaa, ..., zzz, ... God help you
-            if you ever need that many labels.
+            if you ever need that many labels. Defaults to ``rc['abc']``.
+        abcformat : str, optional
+            It is a string containing the character ``a`` or ``A``, specifying
+            the format of a-b-c labels.  ``'a'`` is the default, but e.g.
+            ``'a.'``, ``'a)'``, or ``'A'`` might be desirable. Defaults to
+            ``rc['abc.format']``.
+        abcloc, titleloc : str, optional
+            They are strings indicating the location for the a-b-c label and
+            main title. The following locations are valid.
+
+            * ``'center'`` or ``'c'``, the default
+            * ``'left'`` or ``'l'``, above top spine
+            * ``'right'`` or ``'r'``, above top spine
+            * ``'lower center``' or ``'lc'``, inside axes
+            * ``'upper center'`` or ``'uc'``, inside axes
+            * ``'upper right'`` or ``'ur'``, inside axes
+            * ``'upper left'`` or ``'ul'``, inside axes
+            * ``'lower left'`` or ``'ll'``, inside axes
+            * ``'lower right'`` or ``'lr'``, inside axes
+
+            Defaults to ``rc['abc.loc']`` and ``rc['title.loc']``.
+        abcborder, titleborder : bool, optional
+            These are the ``rc['abc.border']`` and ``rc['title.border']``
+            settings. They indicate whether to draw a border around the
+            labels, which can help make them visible when inside an axes.
         top : bool, optional
             Whether to try to put title and a-b-c label above the top
-            axes panel if it exists, or to always put them on the main subplot.
+            axes panel (if it exists), or to always put them on the main subplot.
             Defaults to ``True``, i.e. the former.
         rowlabels, colllabels : None or list of str, optional
             The subplot row and column labels. If list, length must match
@@ -486,30 +516,6 @@ class BaseAxes(maxes.Axes):
             This is more sophisticated than matplotlib's builtin "super title",
             which is just centered between the figure edges and offset from
             the top edge.
-        abcformat : str, optional
-            This is the ``rc['abc.format']`` setting. A string containing the
-            character ``a`` or ``A``, specifying the format of a-b-c labels.
-            ``'a'`` is the default, but e.g.  ``'a.'``, ``'a)'``, or ``'A'``
-            might be desirable.
-        abcloc, titleloc : str, optional
-            These are the ``rc['abc.loc']`` and ``rc['title.loc']`` settings.
-            A string indicating the location for the a-b-c label or title.
-            The following locations are valid.
-
-            * ``'center'`` or ``'c'``, the default
-            * ``'left'`` or ``'l'``, above top spine
-            * ``'right'`` or ``'r'``, above top spine
-            * ``'lower center``' or ``'lc'``, inside axes
-            * ``'upper center'`` or ``'uc'``, inside axes
-            * ``'upper right'`` or ``'ur'``, inside axes
-            * ``'upper left'`` or ``'ul'``, inside axes
-            * ``'lower left'`` or ``'ll'``, inside axes
-            * ``'lower right'`` or ``'lr'``, inside axes
-
-        abcborder, titleborder : bool, optional
-            These are the ``rc['abc.border']`` and ``rc['title.border']``
-            settings.  They indicate whether to draw a border around the
-            labels, which can help make them visible when inside an axes.
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -530,7 +536,7 @@ class BaseAxes(maxes.Axes):
                 'fontsize':   'suptitle.fontsize',
                 'weight':     'suptitle.weight',
                 'color':      'suptitle.color',
-                'fontfamily': 'fontname'
+                'fontfamily': 'font.family'
                 }, cache=False)
             fig._suptitle_setup(suptitle, **kw)
         if rowlabels is not None:
@@ -538,7 +544,7 @@ class BaseAxes(maxes.Axes):
                 'fontsize':   'rowlabel.fontsize',
                 'weight':     'rowlabel.weight',
                 'color':      'rowlabel.color',
-                'fontfamily': 'fontname'
+                'fontfamily': 'font.family'
                 }, cache=False)
             fig._rowlabels(rowlabels, **kw)
         if collabels is not None:
@@ -546,7 +552,7 @@ class BaseAxes(maxes.Axes):
                 'fontsize':   'collabel.fontsize',
                 'weight':     'collabel.weight',
                 'color':      'collabel.color',
-                'fontfamily': 'fontname'
+                'fontfamily': 'font.family'
                 }, cache=False)
             fig._collabels(collabels, **kw)
 
@@ -580,6 +586,7 @@ class BaseAxes(maxes.Axes):
 
         # Initial text setup
         # Will only occur if user requests change, or on initial run
+        abc = rc['abc']
         abcformat = rc['abc.format']
         if abcformat and self.number is not None:
             if 'a' not in abcformat and 'A' not in abcformat:
@@ -593,7 +600,7 @@ class BaseAxes(maxes.Axes):
         kw = tax._title_kwargs(abc=True)
         if kw:
             tax.abc = _redraw_text(tax.abc, **kw)
-        if abc is not None or rc._getitem_mode==1: # set invisible initially
+        if abc is not None: # set invisible initially
             tax.abc.set_visible(bool(abc))
 
     def colorbar(self, *args, loc=None, pad=None,
@@ -648,17 +655,17 @@ class BaseAxes(maxes.Axes):
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
         # Default props
-        loc = _default(loc, rc.get('colorbar.loc'))
-        extend = units(_default(extendsize, rc.get('colorbar.extendinset')))
-        length = units(_default(length, rc.get('colorbar.length')))/self.width
-        width = units(_default(width, rc.get('colorbar.width')))/self.height
-        pad = units(_default(pad, rc.get('colorbar.axespad')))
+        loc = _default(loc, rc['colorbar.loc'])
+        extend = units(_default(extendsize, rc['colorbar.extendinset']))
+        length = units(_default(length, rc['colorbar.length']))/self.width
+        width = units(_default(width, rc['colorbar.width']))/self.height
+        pad = units(_default(pad, rc['colorbar.axespad']))
         xpad = pad/self.width
         ypad = pad/self.height
         # Space for labels
-        xspace = units(_default(xspace, rc.get('colorbar.xspace'))) # for x label
+        xspace = units(_default(xspace, rc['colorbar.xspace'])) # for x label
         if not label:
-            xspace -= 1.2*rc.get('font.size')/72
+            xspace -= 1.2*rc['font.size']/72
         xspace /= self.height
         # Get location in axes-relative coordinates
         # Bounds are x0, y0, width, height in axes-relative coordinate to start
@@ -692,17 +699,17 @@ class BaseAxes(maxes.Axes):
         # Make frame
         # NOTE: We do not allow shadow effects or fancy edges effect.
         # Also keep zorder same as with legend.
-        frameon = _default(frame, frameon, rc.get('colorbar.frameon'))
+        frameon = _default(frame, frameon, rc['colorbar.frameon'])
         if frameon:
             # Make object
             xmin, ymin, width, height = fbounds
             patch = mpatches.Rectangle((xmin,ymin), width, height,
                     snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
             # Properties
-            alpha = _default(alpha, rc.get('colorbar.framealpha'))
-            linewidth = _default(linewidth, rc.get('axes.linewidth'))
-            edgecolor = _default(edgecolor, rc.get('axes.edgecolor'))
-            facecolor = _default(facecolor, rc.get('axes.facecolor'))
+            alpha = _default(alpha, rc['colorbar.framealpha'])
+            linewidth = _default(linewidth, rc['axes.linewidth'])
+            edgecolor = _default(edgecolor, rc['axes.edgecolor'])
+            facecolor = _default(facecolor, rc['axes.facecolor'])
             patch.update({'alpha':alpha, 'linewidth':linewidth, 'edgecolor':edgecolor, 'facecolor':facecolor})
             self.add_artist(patch)
         return cbar
@@ -1075,9 +1082,8 @@ class CartesianAxes(BaseAxes):
         xminorlocator = _default(xminorticks, xminorlocator) # default is AutoMinorLocator, no setting
         yminorlocator = _default(yminorticks, yminorlocator)
         # Grid defaults are more complicated
-        which = rc['axes.grid.which']
-        grid = rc.get('axes.grid', cache=True)
         axis = rc.get('axes.grid.axis') # always need this property
+        grid, which = rc['axes.grid'], rc['axes.grid.which']
         if which is not None or grid is not None: # only if *one* was changed recently!
             if grid is None:
                 grid = rc.get('axes.grid')
@@ -1130,7 +1136,7 @@ class CartesianAxes(BaseAxes):
                     'color':      'axes.edgecolor',
                     'fontsize':   'axes.labelsize',
                     'weight':     'axes.labelweight',
-                    'fontfamily': 'fontname',
+                    'fontfamily': 'font.family',
                     })
                 if axis.get_label_position() == 'top':
                     kw['va'] = 'bottom' # baseline was cramped if no ticklabels present
@@ -1202,11 +1208,11 @@ class CartesianAxes(BaseAxes):
 
             # Rc settings, grid settings, major and minor settings
             # Override is just a "new default", but user can override this
-            dict_ = lambda prefix: {
-                'grid_color':     prefix + '.color',
-                'grid_alpha':     prefix + '.alpha',
-                'grid_linewidth': prefix + '.linewidth',
-                'grid_linestyle': prefix + '.linestyle',
+            grid_dict = lambda grid: {
+                'grid_color':     grid + '.color',
+                'grid_alpha':     grid + '.alpha',
+                'grid_linewidth': grid + '.linewidth',
+                'grid_linestyle': grid + '.linestyle',
                 }
             override = getattr(self, 'grid_override', None)
             grid = _default(grid, override)
@@ -1217,13 +1223,13 @@ class CartesianAxes(BaseAxes):
                     axis.grid(igrid, which=which) # toggle with special global props
                 # Grid and tick style
                 if which=='major':
-                    kw_grid = rc.fill(dict_('grid'))
+                    kw_grid = rc.fill(grid_dict('grid'))
                 else:
                     kw_major = kw_grid
-                    kw_grid = rc.fill(dict_('gridminor'))
+                    kw_grid = rc.fill(grid_dict('gridminor'))
                     kw_grid.update({key:value for key,value in kw_major.items() if key not in kw_grid})
                 # Changed rc settings
-                kw = _default(rc[name + 'tick.' + which], {})
+                kw = _default(rc.category(name + 'tick.' + which), {})
                 kw.pop('visible', None) # invalid setting
                 axis.set_tick_params(which=which, **kw_grid, **kw)
 
@@ -1289,7 +1295,7 @@ class CartesianAxes(BaseAxes):
             # Settings that can't be controlled by set_tick_params
             # Also set rotation here, otherwise get weird alignment
             # See discussion: https://stackoverflow.com/q/11264521/4970632
-            kw = rc.fill({'fontfamily':'fontname', 'weight':'tick.labelweight'})
+            kw = rc.fill({'fontfamily':'font.family', 'weight':'tick.labelweight'})
             if rotation is not None:
                 kw.update({'rotation':rotation})
                 if name=='x':
@@ -1666,7 +1672,7 @@ class PanelAxes(CartesianAxes):
         # Allocate invisible axes for drawing legend; by default try to
         # make handles and stuff flush against the axes edge
         kwdefault = {'borderaxespad': 0}
-        if not kwargs.get('frameon', rc.get('legend.frameon')):
+        if not kwargs.get('frameon', rc['legend.frameon']):
             kwdefault['borderpad'] = 0
         kwdefault.update(kwargs)
         kwargs = kwdefault
@@ -1821,13 +1827,13 @@ class ProjectionAxes(BaseAxes):
             Passed to `BaseAxes.format_partial`.
         """
         # Parse alternative keyword args
+        # TODO: For now, cannot update existing gridline properties, can only
+        # redraw them. So, always get uncached properties
         # NOTE: If labels keyword args were passed, automatically turn grid on
         grid = _default(grid, rc.get('geogrid'))
         labels = _default(labels, rc.get('geogrid.labels')) or bool(lonlabels or latlabels)
-        lonlocator = _default(lonlines, lonticks, lonlocator)
-        latlocator = _default(latlines, latticks, latlocator)
-        latlocator = _default(latlocator, rc.get('geogrid.latstep')) # gridlines by default
-        lonlocator = _default(lonlocator, rc.get('geogrid.lonstep'))
+        lonlocator = _default(lonlines, lonticks, lonlocator, rc.get('geogrid.lonstep'))
+        latlocator = _default(latlines, latticks, latlocator, rc.get('geogrid.latstep'))
 
         # Interptet latitude
         latmax = _default(latmax, rc.get('geogrid.latmax'))
@@ -2050,30 +2056,29 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
             self.set_extent([*lonlim, *latlim], ccrs.PlateCarree())
 
         # Draw gridlines
-        # Make old one invisible
-        if self._cartopy_gl is not None:
-            gl = self._cartopy_gl
-            gl.xlines         = False
-            gl.xlabels_top    = False
-            gl.xlabels_bottom = False
-            gl.ylines         = False
-            gl.ylabels_left   = False
-            gl.ylabels_right  = False
-        # Make new gridliner
         # WARNING: For some reason very weird side effects happen if you try
         # to call gridlines twice on same axes. So impossible to do 'major'
         # and 'minor' gridlines.
         if grid:
+            # Make old one invisible
             kw = rc.fill({
                 'alpha':     'geogrid.alpha',
                 'color':     'geogrid.color',
                 'linewidth': 'geogrid.linewidth',
                 'linestyle': 'geogrid.linestyle',
                 }, cache=False)
+            if self._cartopy_gl is not None:
+                gl = self._cartopy_gl
+                gl.xlines         = False
+                gl.xlabels_top    = False
+                gl.xlabels_bottom = False
+                gl.ylines         = False
+                gl.ylabels_left   = False
+                gl.ylabels_right  = False
+            # Draw new ones
             labels = labels and isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree))
             gl = self.gridlines(draw_labels=labels, zorder=100, **kw)
             self._cartopy_gl = gl
-
             # Grid locations
             eps = 1e-3
             if latlocator[0]==-90:
@@ -2082,7 +2087,6 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
                 latlocator[-1] -= eps
             gl.ylocator = mticker.FixedLocator(latlocator)
             gl.xlocator = mticker.FixedLocator(lonlocator)
-
             # Grid labels
             if labels:
                 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -2105,7 +2109,7 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
         # NOTE: The e.g. cfeature.COASTLINE features are just for convenience,
         # hi res versions. Use cfeature.COASTLINE.name to see how it can be looked
         # up with NaturalEarthFeature.
-        reso = rc.reso
+        reso = rc.get('reso')
         if reso not in ('lo','med','hi'):
             raise ValueError(f'Invalid resolution {reso}.')
         reso = {
@@ -2132,7 +2136,7 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
             # Customize
             # For 'lines', need to specify edgecolor and facecolor individually
             # See: https://github.com/SciTools/cartopy/issues/803
-            kw = {**rc.get(name, nodict=False)}
+            kw = rc.category(name, cache=False)
             if name in ('coast', 'rivers', 'borders', 'innerborders'):
                 kw['edgecolor'] = kw.pop('color')
                 kw['facecolor'] = 'none'
@@ -2145,13 +2149,13 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
 
         # Update patch
         kw_face = rc.fill({
-            'facecolor': 'axes.facecolor'
+            'facecolor': 'map.facecolor'
             })
         kw_face.update(patch_kw)
         self.background_patch.update(kw_face)
         kw_edge = rc.fill({
-            'edgecolor': 'axes.edgecolor',
-            'linewidth': 'axes.linewidth'
+            'edgecolor': 'map.edgecolor',
+            'linewidth': 'map.linewidth'
             })
         self.outline_patch.update(kw_edge)
 
@@ -2279,12 +2283,12 @@ class BasemapProjectionAxes(ProjectionAxes):
         # * For now will enforce that map plots *always* have background whereas
         #   axes plots can have transparent background
         kw_face = rc.fill({
-            'facecolor': 'axes.facecolor'
+            'facecolor': 'map.facecolor'
             })
         kw_face.update(patch_kw)
         kw_edge = rc.fill({
-            'linewidth': 'axes.linewidth',
-            'edgecolor': 'axes.edgecolor'
+            'linewidth': 'map.linewidth',
+            'edgecolor': 'map.edgecolor'
             })
         self.axesPatch = self.patch # bugfix or something
         if self.m.projection in self._proj_non_rectangular:
@@ -2372,7 +2376,8 @@ class BasemapProjectionAxes(ProjectionAxes):
                 continue
             if getattr(self, f'_{name}', None): # already drawn
                 continue
-            feat = getattr(self.m, method)(ax=self, **rc.get(name, nodict=False))
+            kw = rc.category(name, cache=False)
+            feat = getattr(self.m, method)(ax=self)
             setattr(self, f'_{name}', feat)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling

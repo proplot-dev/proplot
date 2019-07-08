@@ -204,16 +204,17 @@ class Figure(mfigure.Figure):
             autoformat=True,
             **kwargs):
         """
-        The `~matplotlib.figure.Figure` instance returned by `subplots`.
+        The `~matplotlib.figure.Figure` instance returned by `subplots`. At
+        draw-time, this class conveniently adjusts subplot positioning and the
+        outer figure bounding box to accomodate text and plotted content,
+        without messing up subplot aspect ratios and panel widths. See
+        `~Figure.smart_tight_layout` for details.
 
         Parameters
         ----------
         tight : None or bool, optional
-            If not ``None``, overrides `tightborder`, `tightsubplot`, and
-            `tightpanel`. Defaults to ``True``. These settings
-            conveniently adjust subplot positioning and figure bounding box
-            framing, without messing up subplot aspect ratios and panel widths.
-            See `~Figure.smart_tight_layout` for details.
+            Default setting for `tightborder`, `tightsubplot`, and `tightpanel`
+            keyword args. Defaults to ``rc['tight']``.
         tightborder : None or bool, optional
             Whether to draw a tight bounding box around the whole figure.
             If ``None``, takes the value of `tight`.
@@ -223,11 +224,18 @@ class Figure(mfigure.Figure):
         tightpanel : None or bool, optional
             Whether to automatically space between subplots and their panels
             to prevent overlap. If ``None``, takes the value of `tight`.
-        borderpad, subplotpad, panelpad : None, float, or str, optional
+        borderpad : None, float, or str, optional
             Margin size for tight bounding box surrounding the edge of the
-            figure, between subplots in the figure, and between panels and
-            their parent subplots, respectively. If float, units are inches. If
-            string, units are interpreted by `~proplot.utils.units`.
+            figure. Defaults to ``rc['subplot.borderpad']``. If float, units are inches.
+            If string, units are interpreted by `~proplot.utils.units`.
+        subplotpad : None, float, or str, optional
+            Margin size between content from adjacent subplots. Defaults to
+            ``rc['subplot.subplotpad']``. If float, units are inches.
+            If string, units are interpreted by `~proplot.utils.units`.
+        panelpad : None, float, or str, optional
+            Margin size between content from subplots and their child panels.
+            Defaults to ``rc['subplot.subplotpad']``. If float, units are inches.
+            If string, units are interpreted by `~proplot.utils.units`.
         flush, wflush, hflush : None or bool, optional
             Whether subplots should be "flush" against each other in the
             horizontal (`wflush`), vertical (`hflush`), or both (`flush`)
@@ -1319,7 +1327,7 @@ def _panels_kwargs(panels, colorbars, legends,
     # Fill non-panels with empty args, copy over extra args to potentially
     # raise errors down the line.
     # NOTE: This is done to require keyword-only arguments to _subplots_kwargs
-    # and add_subplot_and_panels, so we don't have to duplicate the rc[] stuff.
+    # and add_subplot_and_panels, so we don't have to duplicate the rc stuff.
     if figure:
         names = ('width', 'sep', 'flush', 'share', 'space', 'span')
     else:

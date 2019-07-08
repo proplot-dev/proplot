@@ -117,14 +117,16 @@ register_fonts()
 #------------------------------------------------------------------------------#
 # Fonts demo
 #------------------------------------------------------------------------------#
-def show_fonts(size=12):
+def show_fonts(fonts=None, size=12):
     """Display nicely-formatted table of the fonts available in the matplotlib
-    mpl-data folder."""
+    mpl-data folder. To display a list of fonts, pass it as `fonts`. To change
+    the fontsize in the figure, use `size`."""
     from . import subplots
     ignore = ('Neue','Display','Mono','Serif','Medium','STIX','DejaVu','Bitstream')
-    fonts = [font for font in fonts_mpl if font[:2]!='cm' and font[:1]!='.' and
-             not any(key in font for key in ignore)]
-    fonts = [('DejaVu Sans' if 'DejaVu Sans' in fonts_mpl else 'Bitstream Vera'), *fonts]
+    if fonts is None:
+        fonts = [font for font in fonts_mpl if font[:2]!='cm' and font[:1]!='.' and
+                not any(key in font for key in ignore)]
+        fonts = [('DejaVu Sans' if 'DejaVu Sans' in fonts_mpl else 'Bitstream Vera'), *fonts]
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     letters = 'the quick brown fox jumps over a lazy dog\nTHE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
