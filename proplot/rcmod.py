@@ -97,16 +97,14 @@ Key(s)                                                          Description
 ==============================================================  ================================================================================================================================================================================================
 ``abc.format``                                                  a-b-c label format (for options, see `~proplot.axes.BaseAxes.format_partial`).
 ``abc.loc``, ``title.loc``                                      a-b-c label or title position (for options, see `~proplot.axes.BaseAxes.format_partial`).
-``abc.border``, ``title.border``                                Boolean, indicates whether to draw labels inside the axes with a white border.
-``abc.linewidth``, ``title.linewidth``                          Width of the (optional) white border.
-``abc.color``, ``abc.fontsize``, ``abc.weight``                 Color, font size, and font weight for a-b-c labels.
-``title.color``, ``title.fontsize``, ``title.weight``           Color, font size, and font weight for subplot titles.
-``rowlabel.color``, ``rowlabel.fontsize``, ``rowlabel.weight``  Color, font size, and font weight for subplot titles.
-``collabel.color``, ``collabel.fontsize``, ``collabel.weight``  Color, font size, and font weight for subplot titles.
-``suptitle.color``, ``suptitle.fontsize``, ``suptitle.weight``  Color, font size, and font weight for subplot titles.
-``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``   Color, font size, and font weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
-``tick.labelcolor``                                             Color of axis tick labels, mirrors ``axes.labelcolor``.
-``tick.labelsize``                                              Font size of axis tick labels, mirrors ``axes.labelsize``.
+``abc.border``, ``title.border``                                Boolean, indicates whether to draw a white border around a-b-c labels or titles located inside an axes.
+``abc.linewidth``, ``title.linewidth``                          Width of the white border around a-b-c labels or titles.
+``abc.color``, ``abc.fontsize``, ``abc.weight``                 Font color, size, and weight for a-b-c labels.
+``title.color``, ``title.fontsize``, ``title.weight``           Font color, size, and weight for subplot titles.
+``rowlabel.color``, ``rowlabel.fontsize``, ``rowlabel.weight``  Font color, size, and weight for row labels.
+``collabel.color``, ``collabel.fontsize``, ``collabel.weight``  Font color, size, and weight for column labels.
+``suptitle.color``, ``suptitle.fontsize``, ``suptitle.weight``  Font color, size, and weight for the figure title.
+``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``   Font color, size, and weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
 ``axes.formatter.zerotrim``                                     Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
 ``axes.formatter.timerotation``                                 Float, indicates the default *x* axis tick label rotation for datetime tick labels.
 ==============================================================  ================================================================================================================================================================================================
