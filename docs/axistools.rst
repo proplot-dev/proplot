@@ -19,7 +19,7 @@ Axis locators, formatters, and scales
 .. automodsumm:: proplot.axistools
    :toctree: api
    :variables-only:
-   :skip: ic, rc
+   :skip: rc
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

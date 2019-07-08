@@ -19,7 +19,7 @@ Colormaps, cycles, and colors
 .. automodsumm:: proplot.colortools
    :variables-only:
    :toctree: api
-   :skip: ic, rcParams
+   :skip: rcParams
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

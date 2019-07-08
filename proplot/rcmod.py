@@ -217,7 +217,7 @@ try:
     get_ipython = IPython.get_ipython
 except ModuleNotFoundError:
     get_ipython = lambda: None
-from .utils import ic, units, _timer, _counter
+from .utils import units, _timer, _counter
 _rcParams = mpl.rcParams
 _rcGlobals = {}
 _rcCustom = {}

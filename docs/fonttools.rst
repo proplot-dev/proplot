@@ -12,7 +12,7 @@ Fonts
 .. automodsumm:: proplot.fonttools
    :functions-only:
    :toctree: api
-   :skip: matplotlib_fname, get_cachedir
+   :skip: get_data_path, get_cachedir
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

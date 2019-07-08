@@ -109,7 +109,7 @@ This was pretty tricky, and involved overriding various
 # `__init__` and `__call__` methods.
 #------------------------------------------------------------------------------#
 import re
-from .utils import ic, _default
+from .utils import _default
 from .rcmod import rc
 from numbers import Number
 from fractions import Fraction
