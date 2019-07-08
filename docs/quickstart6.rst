@@ -218,18 +218,18 @@ and positive area underneath a line, as shown below.
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
     data = np.random.rand(5,3).cumsum(axis=0)
     ax = axs[0]
-    ax.areax(np.arange(5), data, data + np.random.rand(5)[:,None], stacked=False, alpha=0.5,
+    ax.areax(np.arange(5), data, data + np.random.rand(5)[:,None], alpha=0.5,
             legend='uc', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
             )
     ax.format(title='Fill between columns')
     ax = axs[1]
-    ax.area(data, stacked=True, alpha=0.8,
+    ax.area(np.arange(5), data, stacked=True, alpha=0.8,
             legend='ul', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
             )
     ax.format(title='Stack between columns')
     ax = axs[2]
     data = 5*(np.random.rand(20)-0.5)
-    ax.area(np.arange(len(data)), 0, data, negpos=True, negcolor='blue7', poscolor='red7')
+    ax.area(data, negpos=True, negcolor='blue7', poscolor='red7')
     ax.format(title='Negative and positive data', xlabel='xlabel', ylabel='ylabel')
 
 

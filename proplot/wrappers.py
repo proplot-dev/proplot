@@ -526,11 +526,15 @@ def _fill_between_parse(func, *args, negcolor='blue', poscolor='red', negpos=Fal
     if len(args)==1:
         args = (np.arange(len(args[0])), *args)
     if len(args)==2:
-        args = (*args, 0) # default behavior
+        if kwargs.get('stacked', False):
+            args = (*args, 0)
+        else:
+            args = (args[0], 0, args[1]) # default behavior
     if len(args)!=3:
         raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
     if not negpos:
-        return func(*args, **kwargs)
+        obj = func(*args, **kwargs)
+        return obj
     # Get zero points
     objs = []
     kwargs.setdefault('interpolate', True)
@@ -545,7 +549,7 @@ def _fill_between_parse(func, *args, negcolor='blue', poscolor='red', negpos=Fal
         where = (y2<y1) if i==0 else (y2>=y1)
         obj = func(*args, where=where, **kw)
         objs.append(obj)
-    return objs
+    return (*objs,)
 
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
