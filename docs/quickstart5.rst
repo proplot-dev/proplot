@@ -373,8 +373,8 @@ Registered color cycles
 Use `~proplot.colortools.show_cycles` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
-`~proplot.colortools.Cycle` constructor function. See the
-:ref:`Color usage` introduction for more on the differences between
+`~proplot.colortools.Cycle` constructor function. See
+:ref:`Color usage features` for more on the differences between
 colormaps and color cycles.
 
 .. code:: ipython3
