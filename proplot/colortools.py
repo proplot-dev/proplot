@@ -7,7 +7,7 @@ tools for creating new colormaps and color cycles. Defines helpful new
 Adds tools for visualizing colorspaces, colormaps, color names, and color
 cycles.
 
-See the :ref:`Color usage` section of "Getting Started" for details.
+See the :ref:`Color usage tools` section of "Getting Started" for details.
 """
 # Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
 # register functions, turns out worst is colormap one at 0.1 seconds. Just happens
