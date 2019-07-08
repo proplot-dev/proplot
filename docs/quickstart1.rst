@@ -48,7 +48,7 @@ axes. This section documents the most basic
 
     import proplot as plot
     f, axs = plot.subplots(ncols=2)
-    axs.format(title='ProPlot API', xlabel='x axis', ylabel='y axis')
+    axs.format(suptitle='ProPlot API', xlabel='x axis', ylabel='y axis')
 
 
 
