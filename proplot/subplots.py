@@ -10,7 +10,7 @@ It returns a `Figure` instance and an `axes_list` list of
    <h1>Developer notes</h1>
 
 Instead of separating various ProPlot features into their own functions --
-for example, ``ax.panel('right')`` or ``ax.set_projection('proj') --
+for example, ``ax.panel('right')`` or ``ax.set_projection('proj')`` --
 ProPlot stuffs them right into the `subplots` function. The reason for this
 approach?
 
