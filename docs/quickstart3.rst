@@ -112,7 +112,7 @@ scales the axis as the sine of the coordinate, resulting in an
 is perfect for labeling spectral coordinates (this is more useful with
 the `~proplot.axes.CartesianAxes.dualx` and
 `~proplot.axes.CartesianAxes.dualy` commands; see
-:ref:`Alternative units`). See
+:ref:`Dual unit axes`). See
 `~proplot.axes.CartesianAxes.format_partial` and
 `~proplot.axistools.Scale` for details.
 

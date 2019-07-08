@@ -18,7 +18,7 @@ import numpy as np
 # Local modules, projection sand formatters and stuff
 # Note we want gridspec classes documented in this section!
 from .rcmod import rc
-from .utils import _default, _timer, _counter, units, journals, ic
+from .utils import _default, _timer, _counter, units, journals
 from . import axistools, gridspec, projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 # Special
