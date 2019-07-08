@@ -2362,6 +2362,7 @@ class ProjectionAxesBasemap(ProjectionAxes):
             self._meridians = p
 
         # Geography
+        # TODO: Allow setting the zorder.
         # NOTE: Also notable are drawcounties, blumarble, drawlsmask,
         # shadedrelief, and etopo methods.
         features = {
