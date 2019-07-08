@@ -5,12 +5,22 @@ The `subplots` function is all you'll need to directly use here.
 It returns a `Figure` instance and an `axes_list` list of
 `~proplot.axes.BaseAxes` axes.
 
-Note that instead of separating various features into their own functions
-(e.g.  a `generate_panel` function), we stuff most of them right into
-the `subplots` function. The reason for this approach? We want to build a
-**static "scaffolding"** before plotting anything, so that ProPlot can exert
-a ton of control over the layout and make it look "nice" without any
-manual tweaking on your part. See `~Figure.smart_tight_layout` for details.
+.. raw:: html
+
+   <h1>Developer notes</h1>
+
+Instead of separating various ProPlot features into their own functions --
+for example, ``ax.panel('right')`` or ``ax.set_projection('proj') --
+ProPlot stuffs them right into the `subplots` function. The reason for this
+approach?
+
+ProPlot builds a static "scaffolding" of subplots before anything is plotted,
+so that we can exert a ton of control over the layout and make things
+look "nice" without any manual tweaking on the part of the user. This includes
+aligning axes panels in the subplot grid, accounting for map projection aspect
+ratios, and controlling the amount of whitespace between subplot content, panel
+content, and the figure border. See `subplots` and `~Figure.smart_tight_layout`
+for details.
 """
 import os
 import re
