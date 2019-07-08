@@ -1796,13 +1796,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
             extend = 'both'
         norm_preprocess = colortools.Norm(norm, levels=levels, clip=False, **norm_kw)
         norm_main = colortools.BinNorm(norm=norm_preprocess, levels=levels, step=step, extend=extend)
-        # print('norm', name, norm_main)
-        obj.norm = colortools.Norm('linear', vmin=min(levels), vmax=max(levels))
-        # obj.norm = norm_main
-        # if name!='pcolor':
-        #     obj.norm = norm_main
-        #     print('yes')
-        #     # obj.set_norm(norm_main)
+        obj.set_norm(norm_main)
 
     # Set labels
     if labels:
