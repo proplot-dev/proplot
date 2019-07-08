@@ -411,12 +411,14 @@ A special object named `~proplot.rcmod.rc`, belonging to the
 `~proplot.rcmod.rc_configurator` class, is created whenever you import
 ProPlot. This object gives you advanced control over the look of your
 plots. **Use** `~proplot.rcmod.rc` **as your one-stop shop for
-changing global settings**.
+changing global settings**. If you’re curious, it is a common `UNIX
+convention <https://stackoverflow.com/a/37728339/4970632>`__ to use the
+abbreviation ``rc`` for global settings.
 
 To modify a setting for just one subplot, pass it to the
 `~proplot.axes.BaseAxes.format` command. To reset everything to the
 default state, use `~proplot.rcmod.rc_configurator.reset`. See the
-`~proplot.rcmod` documentation for more information.
+`~proplot.rcmod` documentation for more info.
 
 .. code:: ipython3
 
