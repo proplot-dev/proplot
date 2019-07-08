@@ -1,5 +1,5 @@
-Plotting enhancements
-=====================
+Plot command enhancements
+=========================
 
 Various matplotlib plotting commands have new features thanks to a set
 of wrapper functions (see the `~proplot.axes` documentation). The most
@@ -99,9 +99,11 @@ passed to the `~proplot.colortools.Norm` constructor.
 
 Finally, there is a new `~proplot.colortools.MidpointNorm` class that
 warps your colormap so that its midpoint lies on some central data
-value, no matter the minimum and maximum colormap colors. Any normalizer
-can be manually selected by passing the ``norm`` and ``norm_kw`` keyword
-args to any command wrapped by `~proplot.wrappers.cmap_wrapper`.
+value, no matter the minimum and maximum colormap colors. Again, to use
+an arbitrary colormap normalizer, just pass ``norm`` and optionally
+``norm_kw`` to a command wrapped by `~proplot.wrappers.cmap_wrapper`.
+These arguments are passed to the `~proplot.colortools.Norm`
+constructor.
 
 .. code:: ipython3
 
