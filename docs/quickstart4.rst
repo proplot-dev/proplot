@@ -36,10 +36,9 @@ The below demonstrates how to plot geophysical data with ProPlot. For
 ``transform=crs.PlateCarree()`` to the plotting method (as I found
 myself doing 99% of the time); ProPlot makes this the default. And
 `~mpl_toolkits.basemap` usage is considerably simplified with ProPlot
-– you can simply call the axes method (e.g.
-`~matplotlib.axes.Axes.contourf`) instead of calling the method on the
-`~mpl_toolkits.basemap.Basemap` instance, and you no longer need to
-pass ``lonlat=True`` to the plotting command; ProPlot makes this the
+– you can simply call the axes method instead of calling the method on
+the `~mpl_toolkits.basemap.Basemap` instance, and you no longer need
+to pass ``latlon=True`` to the plotting command; ProPlot makes this the
 default. For both `~mpl_toolkits.basemap` and `cartopy` projections,
 you can also pass ``globe=True`` to 2d plotting commands to ensure
 global data coverage.
@@ -47,7 +46,7 @@ global data coverage.
 These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 `~proplot.wrappers.cartopy_transform`,
 `~proplot.wrappers.basemap_gridfix`, and
-`~proplot.wrappers.cartopy_lonlat` wrappers.
+`~proplot.wrappers.cartopy_latlon` wrappers.
 
 .. code:: ipython3
 
