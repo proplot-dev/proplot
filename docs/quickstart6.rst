@@ -109,7 +109,7 @@ args to any command wrapped by `~proplot.wrappers.cmap_wrapper`.
     data1 = (np.random.rand(20,20) - 0.43).cumsum(axis=0)
     data2 = (np.random.rand(20,20) - 0.57).cumsum(axis=0)
     f, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5, axcolorbars='b')
-    cmap = 'NegPos'
+    cmap = plot.Colormap('Vlag', cut=0.1)
     axs.format(suptitle='Midpoint normalizer demo')
     axs[0].contourf(data1, norm='midpoint', cmap=cmap, colorbar='b')
     axs[0].format(title='Skewed positive data')
