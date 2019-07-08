@@ -1,5 +1,5 @@
-RC configuration
-================
+Global settings
+===============
 
 .. automodsumm:: proplot.rcmod
    :toctree: api

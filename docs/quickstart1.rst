@@ -412,8 +412,8 @@ keywords, see `~proplot.wrappers.cmap_wrapper`,
 .. image:: quickstart/quickstart_27_0.svg
 
 
-Rc settings control
--------------------
+Global settings control
+-----------------------
 
 A special object named `~proplot.rcmod.rc`, belonging to the
 `~proplot.rcmod.rc_configurator` class, is created whenever you import
