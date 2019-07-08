@@ -9,10 +9,11 @@ don’t care about cartographic projections, you don’t need to have
 To specify the projection, supply `~proplot.subplots.subplots` with
 the ``proj`` keyword arg. To specify the projection properties, use the
 ``proj_kw`` keyword arg (see below). To toggle `~mpl_toolkits.basemap`
-for arbitrary subplots, use the `basemap` keyword arg. See
+for arbitrary subplots, use the ``basemap`` keyword arg. See
 `~proplot.subplots.subplots` for details. See the `~proplot.projs`
-documentation for a table of projection names, short names, and links to
-the `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
+documentation for a table of full projection names, short projection
+names, and links to the
+`PROJ.4 <https://proj4.org/operations/projections/index.html>`__
 documentation (both `cartopy` and `~mpl_toolkits.basemap` are
 internally powered by `PROJ.4 <https://proj4.org>`__).
 
