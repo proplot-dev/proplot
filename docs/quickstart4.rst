@@ -29,8 +29,8 @@ method does not currently detect `cartopy` gridline labels – so when
 labels are present, the :ref:`Automatic subplot spacing` feature must
 be automatically disabled.
 
-Plotting in projection axes
----------------------------
+Plotting in projections
+-----------------------
 
 The below demonstrates how to plot geophysical data with ProPlot. For
 `cartopy` projections, you no longer need to pass
@@ -85,8 +85,8 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 .. image:: quickstart/quickstart_82_2.svg
 
 
-Formatting projection axes
---------------------------
+Formatting projections
+----------------------
 
 To pass keywords to `~mpl_toolkits.basemap.Basemap` and
 `cartopy.crs.Projection` classes on instantiation, pass a ``proj_kw``
