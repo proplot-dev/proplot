@@ -1,5 +1,5 @@
-Map projections
-------------------------
+Projections
+-----------
 
 **Variables**
 
