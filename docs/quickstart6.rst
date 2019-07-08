@@ -20,8 +20,9 @@ situations – that is, `~matplotlib.axes.Axes.pcolor` and
 arg, just like `~matplotlib.axes.Axes.contourf`.
 `~proplot.colortools.BinNorm` also ensures the colorbar colors span
 the entire colormap range, and that “cyclic” colorbar colors are
-distinct on each end. `~proplot.wrappers.cmap_wrapper` also fixes the
-well-documented
+distinct on each end.
+
+`~proplot.wrappers.cmap_wrapper` also fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
 and
 `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
@@ -193,71 +194,6 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 .. image:: quickstart/quickstart_158_1.svg
 
 
-Bars, boxplots, and violins
----------------------------
-
-`~proplot.wrappers.bar_wrapper` and
-`~proplot.wrappers.cycle_wrapper` make it easier to generate useful
-bar plots. You can now pass 2d arrays to `~matplotlib.axes.Axes.bar`
-or `~matplotlib.axes.Axes.barh`, and columns of data will be grouped
-or stacked together. You can also request that columns are interpreted
-as data ranges, with the means or medians represented by bars and the
-spread represented by error bars.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    import pandas as pd
-    plot.rc['title.loc'] = 'ci'
-    plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
-    f, axs = plot.subplots(nrows=3, aspect=2, axwidth=3, span=False, share=False)
-    data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
-    data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
-    ax = axs[0]
-    obj = ax.bar(data, cycle='Reds', cycle_kw={'left':0.2}, colorbar='ul', colorbar_kw={'frameon':False})
-    ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side', suptitle='Bar plot wrapper demo')
-    ax = axs[1]
-    obj = ax.barh(data.iloc[::-1,:], cycle='Grays', legend='ur', stacked=True)
-    ax.format(title='Stacked')
-    ax = axs[2]
-    obj = ax.barh(data, color='red orange', means=True)
-    ax.format(title='Column statistics')
-
-
-
-.. image:: quickstart/quickstart_161_0.svg
-
-
-`~matplotlib.axes.Axes.boxplot` and
-`~matplotlib.axes.Axes.violinplot` are now wrapped with
-`~proplot.wrappers.boxplot_wrapper`,
-`~proplot.wrappers.violinplot_wrapper`, and
-`~proplot.wrappers.cycle_wrapper`, making it much easier to plot
-distributions of data with aesthetically pleasing default settings and
-automatic axis labeling.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    import pandas as pd
-    f, axs = plot.subplots(ncols=2)
-    data = np.random.normal(size=(20,5)) + 2*(np.random.rand(20,5)-0.5)
-    data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
-    ax = axs[0]
-    obj1 = ax.boxplot(data, lw=0.7, marker='x', fillcolor='gray5', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
-    ax.format(title='Box plots', titleloc='uc')
-    ax = axs[1]
-    obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', showmeans=True)
-    ax.format(title='Violin plots', titleloc='uc')
-    axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
-
-
-
-.. image:: quickstart/quickstart_163_0.svg
-
-
 Area plots
 ----------
 
@@ -295,7 +231,7 @@ different colors where the area boundaries cross each other.
 
 
 
-.. image:: quickstart/quickstart_166_0.svg
+.. image:: quickstart/quickstart_161_0.svg
 
 
 Scatter plots
@@ -334,7 +270,7 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_169_0.svg
+.. image:: quickstart/quickstart_164_0.svg
 
 
 Bars plots
@@ -370,7 +306,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_172_0.svg
+.. image:: quickstart/quickstart_167_0.svg
 
 
 Box plots and violins
@@ -402,4 +338,4 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_175_0.svg
+.. image:: quickstart/quickstart_170_0.svg
