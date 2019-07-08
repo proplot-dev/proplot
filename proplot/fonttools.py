@@ -118,9 +118,8 @@ register_fonts()
 # Fonts demo
 #------------------------------------------------------------------------------#
 def show_fonts(fonts=None, size=12):
-    """Display nicely-formatted table of the fonts available in the matplotlib
-    mpl-data folder. To display a list of fonts, pass it as `fonts`. To change
-    the fontsize in the figure, use `size`."""
+    """Displays table of the fonts installed by ProPlot or in the user-supplied
+    `fonts` list. Use `size` to change the fontsize for fonts shown in the figure."""
     from . import subplots
     ignore = ('Neue','Display','Mono','Serif','Medium','STIX','DejaVu','Bitstream')
     if fonts is None:
