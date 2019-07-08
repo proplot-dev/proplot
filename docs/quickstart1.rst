@@ -258,7 +258,7 @@ The format command
 
 The `~proplot.subplots.subplots` method populates the
 `~proplot.subplots.Figure` object with either
-`~proplot.axes.CartesianAxes` (for cartesian axes) or
+`~proplot.axes.CartesianAxes` (for Cartesian axes) or
 `~proplot.axes.ProjectionAxes` (for cartopy or basemap projection
 axes) axes objects. Both of these classes inherit from the base class
 `~proplot.axes.BaseAxes`.

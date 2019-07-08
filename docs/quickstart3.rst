@@ -1,5 +1,5 @@
-Cartesian axes
-==============
+Cartesian axes features
+=======================
 
 The previous sections discussed features relevant to all figures
 generated with ProPlot, or with axes regardless of whether or not they
