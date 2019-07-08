@@ -1,5 +1,5 @@
-Panels
-======
+Panels, colorbars, and legends
+==============================
 
 It is common to need “panels” for plotting secondary 1-dimensional
 datasets or summary statistics. It is also common to need colorbars or
@@ -170,8 +170,8 @@ details.
 .. image:: quickstart/quickstart_45_0.svg
 
 
-Colorbars and insets
---------------------
+Panel and inset colorbars
+-------------------------
 
 To generate colorbars, simply use the ``colorbar`` methods on the
 `~proplot.axes.BaseAxes` and `~proplot.axes.PanelAxes` classes. When
@@ -228,8 +228,8 @@ on-the-fly from the corresponding colors, as shown below.
 .. image:: quickstart/quickstart_50_1.svg
 
 
-Legends and panels
-------------------
+Panel and inset legends
+-----------------------
 
 ProPlot also adds new features to the `~matplotlib.axes.Axes.legend`
 command, powered by the `~proplot.wrappers.legend_wrapper` wrapper.

@@ -326,7 +326,8 @@ The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keywords, see `~proplot.wrappers.cmap_wrapper`,
 `~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting enhancements`
-sections. For more on panels, see the :ref:`Panels` section.
+sections. For more on panels, see the
+:ref:`Panels, colorbars, and legends` section.
 
 .. code:: ipython3
 
