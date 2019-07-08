@@ -1611,8 +1611,8 @@ def subplots(array=None, ncols=1, nrows=1,
         autoformat=True, # arguments for figure instantiation
         **kwargs):
     """
-    Analagous to `matplotlib.pyplot.subplots`. Create a figure with a single
-    axes or arbitrary grids of axes (any of which can be map projections),
+    Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
+    axes or arbitrary grids of axes, any of which can be map projections,
     and optional "panels" along axes or figure edges.
 
     The parameters are sorted into the following rough sections: subplot grid
@@ -1626,7 +1626,7 @@ def subplots(array=None, ncols=1, nrows=1,
         Use these arguments for simpler subplot grids.
     order : {'C', 'F'}, optional
         Whether subplots are numbered in column-major (``'C'``) or row-major
-        (``'F'``) order. Analagous to `numpy.array` ordering. This controls
+        (``'F'``) order. Analogous to `numpy.array` ordering. This controls
         the order axes appear in the `axs` list, and the order of a-b-c
         labelling when using `~proplot.axes.BaseAxes.format` with ``abc=True``.
     array : None or array-like of int, optional
