@@ -170,8 +170,8 @@ details.
 .. image:: quickstart/quickstart_45_0.svg
 
 
-Panel and inset colorbars
--------------------------
+Colorbars
+---------
 
 To generate colorbars, simply use the ``colorbar`` methods on the
 `~proplot.axes.BaseAxes` and `~proplot.axes.PanelAxes` classes. When
@@ -228,8 +228,8 @@ on-the-fly from the corresponding colors, as shown below.
 .. image:: quickstart/quickstart_50_1.svg
 
 
-Panel and inset legends
------------------------
+Legends
+-------
 
 ProPlot also adds new features to the `~matplotlib.axes.Axes.legend`
 command, powered by the `~proplot.wrappers.legend_wrapper` wrapper.
