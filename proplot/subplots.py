@@ -120,10 +120,9 @@ class axes_list(list):
     def __getattr__(self, attr):
         """If the attribute is **callable**, returns a dummy function that
         loops through each identically named method, calls them in succession,
-        and returns a tuple of the results; if the attribute is **not callable**,
+        and returns a tuple of the results. If the attribute is **not callable**,
         returns an `axes_list` of identically named attributes for every object
-        in the list. The behavior is determined by the attribute property for
-        the first item in the `axes_list`."""
+        in the list."""
         attrs = *(getattr(ax, attr, None) for ax in self), # magical tuple expansion
         # Not found
         if None in attrs:
