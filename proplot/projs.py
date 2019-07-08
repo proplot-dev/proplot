@@ -6,14 +6,11 @@ Also "registers" cartopy projections by their `PROJ.4 aliases
 <https://proj4.org/operations/projections/index.html>`_ like in
 `~mpl_toolkits.basemap`.
 
-.. I'm not sure why the architects of matplotlib and related
-   libraries choose to "register" certain libraries of closely-related
-   classes (e.g. axis scales, projections), but not others.
-
 Also adds pseudocylindrical `cartopy projections
 <https://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_
-that are currently unavailable: Hammer, Aitoff, Kavrayskiy VII,
-and Winkel tripel.
+that are currently unavailable (Hammer, Aitoff, Kavrayskiy VII,
+and Winkel tripel), along with polar versions of the Azimuthal Equidistant and
+Lambert Azimuthal Equal Area projections, just like in `~mpl_toolkits.basemap`.
 
 ####################
 Table of projections
