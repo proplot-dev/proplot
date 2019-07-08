@@ -123,8 +123,8 @@ Key                                             Description
 ``gridminor.color``, ``geogrid.color``          The line color.
 ``geogrid.labels``                              Boolean, indicates whether to label the parallels and meridians.
 ``geogrid.labelsize``                           Font size for latitide and longitude labels. Inherits from ``small``.
-``geogrid.lonstep``, ``geogrid.latstep``        Interval for meridian and parallel gridlines, in degrees.
 ``geogrid.latmax``                              Absolute latitude in degrees, poleward of which meridian gridlines are cut off.
+``geogrid.lonstep``, ``geogrid.latstep``        Interval for meridian and parallel gridlines, in degrees.
 ==============================================  ===============================================================================
 
 The below properties are particular to `~proplot.axes.MapAxes`. The properties

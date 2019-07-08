@@ -68,11 +68,13 @@ def show():
 # WARNING: Cannot wrap tuple because can only add attributes in init, and
 # if add them in class they become global.
 class axes_list(list):
-    """Magical class that iterates through items and calls respective
-    method (or retrieves respective attribute) on each one. For example,
-    ``axs.format(color='r')`` colors all axis spines red."""
+    """List subclass used as a container for the list of axes returned by
+    `subplots`. This overhauls the `~axes_list.__getattr__` and
+    `~axes_list.__getitem__` methods, allowing you to do stuff to an `axes_list`
+    of objects all at once. For example, ``axs.format(xticks=5)`` sets the tick
+    locations for all axes."""
     def __init__(self, list_, n=1, order='C'):
-        """Adds special attributes."""
+        """Adds special attributes that support 2d grids of axes."""
         self._n = n # means ncols or nrows, depending on order
         self._order = order
         return super().__init__(list_)
@@ -82,18 +84,19 @@ class axes_list(list):
         return 'axes_list(' + super().__repr__() + ')'
 
     def __setitem__(self, key):
-        """Pseudo immutability; raises error."""
+        """Pseudo immutability, raises error."""
         raise RuntimeError('axes_list is immutable.')
 
     def __setattr__(self, key, value):
-        """Pseudo immutability; raises error."""
+        """Pseudo immutability, raises error."""
         if key in ('_n','_order'):
             object.__setattr__(self, key, value)
         else:
             raise RuntimeError('axes_list is immutable.')
 
     def __getitem__(self, key):
-        """Returns an `axes_list` version of the slice, or just the axes."""
+        """When an integer is passed, the item is returned, and when a slice
+        is passed, an `axes_list` of objects is returned."""
         # Allow 2D specification
         # For weirder keys, raise error down the line
         # NOTE: When order=='F', panels were unfurled columnwise, so number
@@ -114,12 +117,13 @@ class axes_list(list):
             axs = axes_list(axs)
         return axs
 
-    # This is only called when __getattribute__ fails, so builtin
-    # methods and hidden stuff like _n work fine
     def __getattr__(self, attr):
-        """Stealthily returns dummy function that actually loops through each
-        axes method and calls them in succession. If attribute(s) are not
-        callable, instead returns a tuple of the attributes."""
+        """If the attribute is **callable**, returns a dummy function that
+        loops through each identically named method, calls them in succession,
+        and returns a tuple of the results; if the attribute is **not callable**,
+        returns an `axes_list` of identically named attributes for every object
+        in the list. The behavior is determined by the attribute property for
+        the first item in the `axes_list`."""
         attrs = *(getattr(ax, attr, None) for ax in self), # magical tuple expansion
         # Not found
         if None in attrs:
