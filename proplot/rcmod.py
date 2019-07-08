@@ -92,30 +92,27 @@ categories. For axis tick label settings, use the ``tick`` category.
 For figure title, row label, and column label settings, use the new
 ``suptitle``, ``rowlabel``, and ``collabel`` categories.
 
-======================================  =================================================================================================
-Key                                     Description
-======================================  =================================================================================================
-``abc.format``                          a-b-c label format (for options, see `~proplot.axes.BaseAxes.format_partial`).
-``abc.loc``, ``title.loc``              a-b-c label or title position (for options, see `~proplot.axes.BaseAxes.format_partial`).
-``abc.border``, ``title.border``        Boolean, indicates whether to draw labels inside the axes with a white border.
-``abc.linewidth``, ``title.linewidth``  Width of the (optional) white border.
-``xxxx.color``                          The font color, valid for ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``.
-``xxxx.fontsize``                       The font size, valid for ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``.
-``xxxx.weight``                         The font weight [1]_, valid for ``abc``, ``title``, ``rowlabel``, ``collabel``, and ``suptitle``.
-``tick.labelweight``                    Weight [1]_ of axis tick labels, mirrors ``axes.labelweight``.
-``tick.labelcolor``                     Color of axis tick labels, mirrors ``axes.labelcolor``.
-``tick.labelsize``                      Font size of axis tick labels, mirrors ``axes.labelsize``.
-``axes.formatter.zerotrim``             Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
-``axes.formatter.timerotation``         Float, indicates the default *x* axis tick label rotation for datetime tick labels.
-======================================  =================================================================================================
-
-.. [1] Valid font weights are ``'ultralight'``, ``'light'``, ``'normal'``,
-       ``'medium'``, ``'demi'``, ``'bold'``, ``'very bold'``, or ``'black'``.
-       Many fonts only have ``normal`` or ``bold``. If you request an
-       unavailable weight, matplotlib picks the closest availble weight.
+==============================================================  ================================================================================================================================================================================================
+Key(s)                                                          Description
+==============================================================  ================================================================================================================================================================================================
+``abc.format``                                                  a-b-c label format (for options, see `~proplot.axes.BaseAxes.format_partial`).
+``abc.loc``, ``title.loc``                                      a-b-c label or title position (for options, see `~proplot.axes.BaseAxes.format_partial`).
+``abc.border``, ``title.border``                                Boolean, indicates whether to draw labels inside the axes with a white border.
+``abc.linewidth``, ``title.linewidth``                          Width of the (optional) white border.
+``abc.color``, ``abc.fontsize``, ``abc.weight``                 Color, font size, and font weight for a-b-c labels.
+``title.color``, ``title.fontsize``, ``title.weight``           Color, font size, and font weight for subplot titles.
+``rowlabel.color``, ``rowlabel.fontsize``, ``rowlabel.weight``  Color, font size, and font weight for subplot titles.
+``collabel.color``, ``collabel.fontsize``, ``collabel.weight``  Color, font size, and font weight for subplot titles.
+``suptitle.color``, ``suptitle.fontsize``, ``suptitle.weight``  Color, font size, and font weight for subplot titles.
+``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``   Color, font size, and font weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
+``tick.labelcolor``                                             Color of axis tick labels, mirrors ``axes.labelcolor``.
+``tick.labelsize``                                              Font size of axis tick labels, mirrors ``axes.labelsize``.
+``axes.formatter.zerotrim``                                     Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
+``axes.formatter.timerotation``                                 Float, indicates the default *x* axis tick label rotation for datetime tick labels.
+==============================================================  ================================================================================================================================================================================================
 
 For minor gridlines, use the ``gridminor`` category. For meridian and parallel
-gridlines on `~proplot.axes.MapAxes`, use the ``geogrid`` category``.
+gridlines on `~proplot.axes.MapAxes`, use the ``geogrid`` category.
 If a property is empty, the corresponding property from the buildin ``grid``
 category is used.
 

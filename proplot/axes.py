@@ -461,8 +461,8 @@ class BaseAxes(maxes.Axes):
         Note that the `abc`, `abcformat`, `abcloc`, and `titleloc` keyword
         arguments are actually rc configuration settings that are temporarily
         changed by the call to `~BaseAxes.format`. They are documented here
-        because it is extremely common to change them, but they are also
-        documented in the `~proplot.rcmod` documention`.
+        because it is extremely common to change them with `~BaseAxes.format`.
+        They also appear in the tables in the `~proplot.rcmod` documention.
 
         Parameters
         ----------
@@ -486,9 +486,9 @@ class BaseAxes(maxes.Axes):
             They are strings indicating the location for the a-b-c label and
             main title. The following locations are valid.
 
-            * ``'center'`` or ``'c'``, the default
-            * ``'left'`` or ``'l'``, above top spine
-            * ``'right'`` or ``'r'``, above top spine
+            * ``'center'`` or ``'c'``
+            * ``'left'`` or ``'l'``
+            * ``'right'`` or ``'r'``
             * ``'lower center``' or ``'lc'``, inside axes
             * ``'upper center'`` or ``'uc'``, inside axes
             * ``'upper right'`` or ``'ur'``, inside axes
@@ -500,10 +500,11 @@ class BaseAxes(maxes.Axes):
         abcborder, titleborder : bool, optional
             These are the ``rc['abc.border']`` and ``rc['title.border']``
             settings. They indicate whether to draw a border around the
-            labels, which can help make them visible when inside an axes.
+            labels, which can help them stand out on top of artists plotted
+            inside the axes.
         top : bool, optional
-            Whether to try to put title and a-b-c label above the top
-            axes panel (if it exists), or to always put them on the main subplot.
+            Whether to try to put title and a-b-c label above the top subplot
+            panel (if it exists), or to always put them on the main subplot.
             Defaults to ``True``, i.e. the former.
         rowlabels, colllabels : None or list of str, optional
             The subplot row and column labels. If list, length must match
@@ -574,6 +575,10 @@ class BaseAxes(maxes.Axes):
             kw['text'] = title
         if kw:
             tax.title = _redraw_text(tax.title, **kw)
+            titles_dict = {}
+            for key,title in tax._titles_dict.items():
+                titles_dict[key] = _redraw_text(title, **kw)
+            tax._titles_dict = titles_dict
 
         # Alternate titles
         for key,title in kwargs.items():

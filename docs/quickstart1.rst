@@ -307,7 +307,8 @@ any method (e.g. `~proplot.axes.BaseAxes.format`) on every axes
     f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True, axwidth=1.5)
     axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(1,10), xlocator=1, xscale='log',
               ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'c', 'dd', 'e'),
-              title='Main title', titleloc='c', suptitle='Demo of the format command',
+              title='Main', ltitle='Left', rtitle='Right', # different titles
+              titleloc='c', suptitle='Demo of the format command',
               abc=True, abcloc='ul', abcformat='a.', xtickdir='inout',
               urtitle='Title A', lltitle='Title B', lrtitle='Title C', # extra titles
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
