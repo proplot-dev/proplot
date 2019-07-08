@@ -1,10 +1,10 @@
 # Install shinx extensions
 # NOTE: The automodapi module imports module, so the website 'build' process
 # has same requirements as module itself! The version choices are somewhat random.
+# cartopy==0.17.0
+# basemap==1.2.0
 sphinxcontrib-bibtex==0.4.2
 sphinxcontrib-automodapi==0.1
-cartopy==0.17.0
-basemap==1.2.0
 matplotlib==3.0
 ipython==7.0.0
 numpy==1.14
