@@ -20,6 +20,8 @@ help:
 clean:
 	rm -f api/*
 	rm -f _autosummary/*
+	rm -rf build/* &>/dev/null
+	rm -rf _build/* &>/dev/null
 	rm -rf "$(BUILDDIR)"/html/*
 	rm -rf "$(BUILDDIR)"/doctrees/*
 
