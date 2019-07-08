@@ -79,10 +79,10 @@ numbering determines the order of a-b-c labels. See
 .. image:: quickstart/quickstart_8_1.svg
 
 
-A-b-c subplot labeling is easily accomplished with ProPlot. The label
-order is row-major by default; to change this, use the
+A-b-c subplot labeling is easily accomplished with ProPlot. For simple
+grids, the label order is row-major by default and controlled by the
 `~proplot.subplots.subplots` ``order`` keyword arg. The label position
-canb e changed with the ``abc.loc`` `~proplot.rcmod` option, and the
+can be changed with the ``abc.loc`` `~proplot.rcmod` option, and the
 label style can be changed with the ``abc.format`` `~proplot.rcmod`
 option. See :ref:`The format command` and :ref:`Rc settings control`
 for details.
