@@ -1244,7 +1244,9 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 
     # Convert to projection coordinates and call function
     lat[lat>90], lat[lat<-90] = 90, -90 # otherwise, weird stuff happens
-    x, y = self.m(*np.meshgrid(lon, lat))
+    if lon.ndim==1 and lat.ndim==1:
+        lon, lat = np.meshgrid(lon, lat)
+    x, y = self.m(lon, lat)
     kwargs['latlon'] = False
     return func(x, y, *Zss, **kwargs)
 

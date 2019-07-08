@@ -1201,16 +1201,6 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None,
     if not cmap._isinit:
         cmap._init()
 
-    # Perform crude resampling of data, i.e. just generate a low-resolution
-    # lookup table instead.
-    # NOTE: This approach is no longer favored; instead we generate hi-res
-    # lookup table and use BinNorm to discretize colors, much more flexible.
-    # if isinstance(cmap, mcolors.LinearSegmentedColormap) and N is not None:
-    #     offset = {'neither':-1, 'max':0, 'min':0, 'both':1}
-    #     if extend not in offset:
-    #         raise ValueError(f'Unknown extend option {extend}.')
-    #     cmap = cmap._resample(N - offset[extend]) # see mcm.get_cmap source
-
     # Register the colormap
     mcm.cmap_d[name] = cmap
     # Optionally save colormap to disk
@@ -1829,16 +1819,17 @@ class BinNorm(mcolors.BoundaryNorm):
         """Normalizes data values to the range 0-1."""
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
-        clip = self._norm_clip
-        if clip:
-            xq = np.clip(xq, *clip)
+        norm_clip = self._norm_clip
+        if norm_clip:
+            xq = np.clip(xq, *norm_clip)
         xq = self._norm(np.atleast_1d(xq))
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
-        return ma.masked_array(yq, np.isnan(xq))
+        mask = ma.getmaskarray(xq)
+        return ma.array(yq, mask=mask)
 
     def inverse(self, yq):
         """Raises error -- inversion after discretization is impossible."""
-        raise RuntimeError('BinNorm is not invertible.')
+        raise ValueError('BinNorm is not invertible.')
 
 #------------------------------------------------------------------------------#
 # Normalizers intended to *pre-scale* levels passed to BinNorm
@@ -1894,7 +1885,8 @@ class LinearSegmentedNorm(mcolors.Normalize):
         ind[ind==len(x)] = len(x) - 1 # actually want to go to left of that
         distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
         yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
-        return ma.masked_array(yq, np.isnan(xq))
+        mask = ma.getmaskarray(xq)
+        return ma.array(yq, mask=mask)
 
     def inverse(self, yq):
         """Inverse operation of `~LinearSegmentedNorm.__call__`."""
@@ -1906,7 +1898,8 @@ class LinearSegmentedNorm(mcolors.Normalize):
         ind[ind==len(y)] = len(y) - 1
         distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
         xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
-        return ma.masked_array(xq, np.isnan(yq))
+        mask = ma.getmaskarray(yq)
+        return ma.array(xq, mask=mask)
 
 class MidpointNorm(mcolors.Normalize):
     """
@@ -1954,7 +1947,8 @@ class MidpointNorm(mcolors.Normalize):
         ind[ind==len(x)] = len(x) - 1 # in this case, will get normed value >0
         distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
         yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
-        return ma.masked_array(yq, np.isnan(xq))
+        mask = ma.getmaskarray(xq)
+        return ma.array(yq, mask=mask)
 
     def inverse(self, yq, clip=None):
         """Inverse operation of `~MidpointNorm.__call__`."""
@@ -1970,7 +1964,8 @@ class MidpointNorm(mcolors.Normalize):
         ind[ind==len(y)] = len(y) - 1
         distance = (yq - y[ind - 1])/(y[ind] - y[ind - 1])
         xq = distance*(x[ind] - x[ind - 1]) + x[ind - 1]
-        return ma.masked_array(xq, np.isnan(yq))
+        mask = ma.getmaskarray(yq)
+        return ma.array(xq, mask=mask)
 
 def _read_cmap_cycle_data(filename):
     """
