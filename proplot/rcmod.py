@@ -205,6 +205,8 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 import warnings
+# Import pyplot because it adds 'style' function to matplotlib
+import matplotlib.pyplot as plt
 try:
     import IPython
     get_ipython = IPython.get_ipython
