@@ -1,6 +1,5 @@
-Axes and axes commands
-----------------------
-.. Also contains gridspec and wrapper docs
+Axes and plot command wrappers
+------------------------------
 
 **Classes**
 

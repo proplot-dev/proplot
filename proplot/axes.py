@@ -1996,22 +1996,23 @@ class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
         and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
-            # Step 4) Color usage wrappers
+            # Step 5) Color usage wrappers
             if attr in wrappers._cmap_methods:
                 obj = wrappers._cmap_wrapper(self, obj)
             elif attr in wrappers._cycle_methods:
                 obj = wrappers._cycle_wrapper(self, obj)
+            # Step 4) Fix coordinate grid
+            if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
+                obj = wrappers._cartopy_gridfix(self, obj)
             # Step 3) Individual plot method wrappers
             if attr=='plot':
                 obj = wrappers._plot_wrapper(self, obj)
             elif attr=='scatter':
                 obj = wrappers._scatter_wrapper(self, obj)
-            elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
-                obj = wrappers._cartopy_gridfix(self, obj)
-                if attr in wrappers._edges_methods:
-                    obj = wrappers._enforce_edges(self, obj)
-                else:
-                    obj = wrappers._enforce_centers(self, obj)
+            elif attr in wrappers._edges_methods:
+                obj = wrappers._enforce_edges(self, obj)
+            elif attr in wrappers._centers_methods:
+                obj = wrappers._enforce_centers(self, obj)
             # Step 2) Better default keywords
             if attr in wrappers._transform_methods:
                 obj = wrappers._cartopy_transform(self, obj)
@@ -2238,24 +2239,25 @@ class ProjectionAxesBasemap(ProjectionAxes):
         obj = super().__getattribute__(attr, *args)
         if attr in wrappers._latlon_methods or attr in wrappers._edges_methods \
                 or attr in wrappers._centers_methods:
-            # Step 5) Call identically named Basemap object method
+            # Step 6) Call identically named Basemap object method
             obj = wrappers._basemap_call(self, obj)
-            # Step 4) Color usage wrappers
+            # Step 5) Color usage wrappers
             if attr in wrappers._cmap_methods:
                 obj = wrappers._cmap_wrapper(self, obj)
             elif attr in wrappers._cycle_methods:
                 obj = wrappers._cycle_wrapper(self, obj)
+            # Step 4) Fix coordinate grid
+            if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
+                obj = wrappers._basemap_gridfix(self, obj)
             # Step 3) Individual plot method wrappers
             if attr=='plot':
                 obj = wrappers._plot_wrapper(self, obj)
             elif attr=='scatter':
                 obj = wrappers._scatter_wrapper(self, obj)
-            elif attr in wrappers._edges_methods or attr in wrappers._centers_methods:
-                obj = wrappers._basemap_gridfix(self, obj)
-                if attr in wrappers._edges_methods:
-                    obj = wrappers._enforce_edges(self, obj)
-                else:
-                    obj = wrappers._enforce_centers(self, obj)
+            elif attr in wrappers._edges_methods:
+                obj = wrappers._enforce_edges(self, obj)
+            elif attr in wrappers._centers_methods:
+                obj = wrappers._enforce_centers(self, obj)
             # Step 2) Better default keywords
             if attr in wrappers._latlon_methods:
                 obj = wrappers._basemap_latlon(self, obj)

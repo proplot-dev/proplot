@@ -4,6 +4,7 @@ Imported by axes.py, wrappers for various plotting functions.
 """
 import re
 import numpy as np
+import numpy.ma as ma
 import warnings
 import functools
 from . import utils, colortools, fonttools, axistools
@@ -1076,6 +1077,43 @@ def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
     return func(*args, latlon=latlon, **kwargs)
 
+def _gridfix_poles(lat, Z):
+    """Adds data points on the poles as the average of highest latitude data."""
+    # Get means
+    with np.errstate(all='ignore'):
+        p1 = Z[0,:].mean() # pole 1, make sure is not 0D DataArray!
+        p2 = Z[-1,:].mean() # pole 2
+    if hasattr(p1, 'item'):
+        p1 = np.asscalar(p1) # happens with DataArrays
+    if hasattr(p2, 'item'):
+        p2 = np.asscalar(p2)
+    # Concatenate
+    ps = (-90,90) if (lat[0]<lat[-1]) else (90,-90)
+    Z1 = np.repeat(p1, Z.shape[1])[None,:]
+    Z2 = np.repeat(p2, Z.shape[1])[None,:]
+    lat = ma.concatenate((ps[:1], lat, ps[1:]))
+    Z = ma.concatenate((Z1, Z, Z2), axis=0)
+    return lat, Z
+
+def _gridfix_coordinates(lon, lat):
+    """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
+    contents can be modified. Ignores 2d coordinate arrays."""
+    # Sanitization and bail if 2d
+    if lon.ndim==1:
+        lon = np.array(lon)
+    if lat.ndim==1:
+        lat = np.array(lat)
+    if lon.ndim!=1 or all(lon<lon[0]): # skip monotonic backwards data
+        return lon, lat
+    # Enforce monotonic longitudes
+    lon1 = lon[0]
+    while True:
+        filter_ = (lon<lon1)
+        if filter_.sum()==0:
+            break
+        lon[filter_] += 360
+    return lon, lat
+
 @_expand_methods_list
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
@@ -1091,40 +1129,24 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 
     If latitude and longitude arrays are 2D, `globe` is set to ``False``.
     """
-    # Ensure monotonic lons or things get messed up
-    # WARNING: In first geophysical data example, got persistent
-    # changes to input data arrays without below line, resulting in non
-    # monotonic coordinates and discovery of this error
-    # WARNING: Cartopy contouring methods have issues with circularly wrapped data.
-    # Triggers annoying ``TopologyException`` statements, which we suppress
-    # with the IPython `~IPython.utils.io.capture_output` tool. See `this issue
-    # <https://github.com/SciTools/cartopy/issues/946>`__.
-    lon, lat = np.array(lon), np.array(lat) # no need to retain metadata on e.g. DataArray
+    # Bail if using map coordinates
     if not isinstance(kwargs.get('transform', None), PlateCarree):
         return func(lon, lat, *Zs, **kwargs)
-    if lon.ndim==1 and not (lon<lon[0]).all(): # skip backwards data
-        lonmin = lon[0]
-        while True:
-            filter_ = (lon<lonmin)
-            if filter_.sum()==0:
-                break
-            lon[filter_] += 360
-    # Below only works for vector data
+    # Fix grid
     Zss = []
+    lon, lat = _gridfix_coordinates(lon, lat)
     for Z in Zs:
         if not globe or lon.ndim!=1 or lat.ndim!=1:
             Zss.append(Z)
             continue
         # 1) Fix holes over poles by *interpolating* there (equivalent to
         # simple mean of highest/lowest latitude points)
-        Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-        Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-        lat = np.concatenate(([-90], lat, [90]))
-        Z = np.concatenate((Z_south, Z, Z_north), axis=0)
-        # 2) Fix seams at map boundary; by ensuring circular coverage
+        lat, Z = _gridfix_poles(lat, Z)
+        # 2) Fix seams at map boundary by ensuring circular coverage. Unlike
+        # basemap, cartopy can plot objects across map edges.
         if (lon[0] % 360) != ((lon[-1] + 360) % 360):
-            lon = np.array((*lon, lon[0] + 360)) # make longitudes circular
-            Z = np.concatenate((Z, Z[:,:1]), axis=1) # make data circular
+            lon = ma.concatenate((lon, [lon[0] + 360])) # make longitudes circular
+            Z = ma.concatenate((Z, Z[:,:1]), axis=1) # make data circular
         # Append
         Zss.append(Z)
 
@@ -1149,92 +1171,70 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 
     If latitude and longitude arrays are 2D, `globe` is set to ``False``.
     """
-    # Bail out if map coordinates already provided
-    lon, lat = np.array(lon), np.array(lat) # no need to retain metadata on e.g. DataArray
+    # Bail if using map coordinates
     if not kwargs.get('latlon', None):
         return func(lon, lat, *Zs, **kwargs)
-    # Raise errors
-    eps = 1e-3
-    lonmin, lonmax = self.m.lonmin, self.m.lonmax
-    if lon.max() > lon.min() + 360 + eps:
-        raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Can only span 360 degrees at most.')
-    if lon.min() < -360 or lon.max() > 360:
-        raise ValueError(f'Longitudes span {lon.min()} to {lon.max()}. Must fall in range [-360, 360].')
-    # Establish 360-degree range
-    lon -= 720
-    while True:
-        filter_ = (lon<lonmin)
-        if filter_.sum()==0:
-            break
-        lon[filter_] += 360
-    # Below only works with vectors
+    # Fix grid
     Zss = []
+    lon, lat = _gridfix_coordinates(lon, lat)
+    lon1, lon2 = self.m.lonmin, self.m.lonmax
     for Z in Zs:
         if lon.ndim!=1 or lat.ndim!=1:
             Zss.append(Z)
             continue
-        # 1. Roll, accounting for whether ends are identical
-        # If go from 0,1,...,359,0 (i.e. the borders), returns id of first zero
-        roll = -np.argmin(lon) # always returns *first* value
+        # 1) Roll, accounting for whether ends are identical
+        roll = -np.argmin(lon) # returns idx of *first* occurrence of minimum
         if lon[0]==lon[-1]:
             lon = np.roll(lon[:-1], roll)
-            lon = np.append(lon, lon[0]+360)
+            lon = ma.append(lon, lon[0]+360)
         else:
             lon = np.roll(lon, roll)
         Z = np.roll(Z, roll, axis=1)
-        # 2. Roll in same direction some more, if some points on right-edge
+        # 2) Roll in same direction some more, if some points on right-edge
         # extend more than 360 above the minimum longitude; *they* should be the
         # ones on west/left-hand-side of map
-        lonroll = np.where(lon>lonmin+360)[0] # tuple of ids
-        if lonroll: # non-empty
-            roll = lon.size-min(lonroll) # e.g. if 10 lons, lonmax id is 9, we want to roll once
-            lon = np.roll(lon, roll) # need to roll foreward
-            Z = np.roll(Z, roll, axis=1) # roll again
-            lon[:roll] -= 360 # retains monotonicity
-        # 3. Set NaN where data not in range lonmin, lonmax
+        lonroll = np.where(lon>lon1+360)[0] # tuple of ids
+        if lonroll.size: # non-empty
+            roll = lon.size - lonroll.min() # e.g. if 10 lons, lon2 id is 9, we want to roll once
+            lon = np.roll(lon, roll)
+            Z = np.roll(Z, roll, axis=1)
+            lon[:roll] -= 360 # make monotonic
+        # 3) Set NaN where data not in range lonmin, lon2
         # This needs to be done for some regional smaller projections or otherwise
         # might get weird side-effects due to having valid data way outside of the
         # map boundaries -- e.g. strange polygons inside an NaN region
         Z = Z.copy()
         if lon.size-1==Z.shape[1]: # test western/eastern grid cell edges
-            # remove data where east boundary is east of min longitude or west
-            # boundary is west of max longitude
-            Z[:,(lon[1:]<lonmin) | (lon[:-1]>lonmax)] = np.nan
-        elif lon.size==Z.shape[1]: # test the centers
-            # this just tests centers and pads by one for safety
-            # remember that a *slice* with no valid range just returns empty array
-            where = np.where((lon<lonmin) | (lon>lonmax))[0]
+            Z[:,(lon[1:]<lon1) | (lon[:-1]>lon2)] = np.nan
+        elif lon.size==Z.shape[1]: # test the centers and pad by one for safety
+            where = np.where((lon<lon1) | (lon>lon2))[0]
             Z[:,where[1:-1]] = np.nan
         # Global coverage
         if globe:
-            # 4. Fix holes over poles by interpolating there (equivalent to
+            # 4) Fix holes over poles by interpolating there (equivalent to
             # simple mean of highest/lowest latitude points)
-            Z_south = np.repeat(Z[0,:].mean(),  Z.shape[1])[None,:]
-            Z_north = np.repeat(Z[-1,:].mean(), Z.shape[1])[None,:]
-            lat = np.concatenate(([-90], lat, [90]))
-            Z = np.concatenate((Z_south, Z, Z_north), axis=0)
-            # 5. Fix seams at map boundary; 3 scenarios here:
-            # a. Have edges (e.g. for pcolor), and they fit perfectly against basemap seams.
-            # This does not augment size
-            if lon[0]==lonmin and lon.size-1==Z.shape[1]: # borders fit perfectly
+            lat, Z = _gridfix_poles(lat, Z)
+            # 5) Fix seams at map boundary; 3 scenarios here:
+            # (a) Have edges (e.g. for pcolor), and they fit perfectly against
+            # basemap seams. Does not augment size.
+            if lon[0]==lon1 and lon.size-1==Z.shape[1]: # borders fit perfectly
                 pass # do nothing
-            # b. Have edges (e.g. for pcolor), and the projection edge is in-between grid cell boundaries.
-            # This augments size by 1.
+            # (b) Have edges (e.g. for pcolor), and the projection edge is
+            # in-between grid cell boundaries. Augments size by 1.
             elif lon.size-1==Z.shape[1]: # no interpolation necessary; just make a new grid cell
-                lon = np.append(lonmin, lon) # append way easier than concatenate
-                lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
-                Z = np.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
-            # c. Have centers (e.g. for contourf), and we need to interpolate to the
-            # left/right edges of the map boundary.
-            # This augments size by 2.
-            elif lon.size==Z.shape[1]: # linearly interpolate to the edges
+                lon = ma.append(lon1, lon)
+                lon[-1] = lon1 + 360 # we've added a new tiny cell to the end
+                Z = ma.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
+            # (c) Have centers (e.g. for contourf), and we need to interpolate to the
+            # left/right edges of the map boundary. Augments size by 2.
+            elif lon.size==Z.shape[1]:
                 x = np.array([lon[-1], lon[0]+360]) # x
                 if x[0] != x[1]:
-                    y = np.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-                    xq = lonmin+360
-                    yq = (y[:,:1]*(x[1]-xq) + y[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
-                    Z = np.concatenate((yq, Z, yq), axis=1)
-                    lon = np.append(np.append(lonmin, lon), lonmin+360)
+                    Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                    xq = lon1+360
+                    Zq = (Zq[:,:1]*(x[1]-xq) + Zq[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
+                    Z = ma.concatenate((Zq, Z, Zq), axis=1)
+                    lon = ma.append(ma.append(lon1, lon), lon1+360)
             else:
                 raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
         # Add

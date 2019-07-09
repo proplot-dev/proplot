@@ -1,5 +1,5 @@
-Plot command enhancements
-=========================
+Plot command wrappers
+=====================
 
 Various matplotlib plotting commands have new features thanks to a set
 of wrapper functions (see the `~proplot.axes` documentation). The most
