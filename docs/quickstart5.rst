@@ -81,7 +81,7 @@ See `~proplot.colortools.CmapDict` for more info.
 
 
 
-.. image:: quickstart/quickstart_102_1.svg
+.. image:: quickstart/quickstart_101_1.svg
 
 
 On-the-fly colormaps
@@ -127,7 +127,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: quickstart/quickstart_105_1.svg
+.. image:: quickstart/quickstart_104_1.svg
 
 
 To build monochromatic colormaps from arbitrary colors, just pass a
@@ -155,7 +155,7 @@ is just one map.
 
 
 
-.. image:: quickstart/quickstart_107_0.svg
+.. image:: quickstart/quickstart_106_0.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -170,14 +170,14 @@ values.
     f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
     data = np.random.rand(50,50).cumsum(axis=0) - 50
     for ax,cut in zip(axs,(0, 0.1, 0.2)):
-        m = ax.contourf(data, cmap='NegPos2', cmap_kw={'cut':cut}, levels=13)
+        m = ax.contourf(data, cmap='Div', cmap_kw={'cut':cut}, levels=13)
         ax.format(xlabel='x axis', ylabel='y axis', title=f'cut = {cut}',
                   suptitle='Cutting out the central colors from a diverging colormap')
         ax.bpanel.colorbar(m, locator='null')
 
 
 
-.. image:: quickstart/quickstart_109_0.svg
+.. image:: quickstart/quickstart_108_0.svg
 
 
 To rotate a cyclic colormap, pass the ``shift`` argument to
@@ -200,7 +200,7 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: quickstart/quickstart_111_0.svg
+.. image:: quickstart/quickstart_110_0.svg
 
 
 Perceptually uniform colormaps
@@ -242,7 +242,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_114_0.svg
+.. image:: quickstart/quickstart_113_0.svg
 
 
 .. code:: ipython3
@@ -252,7 +252,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_115_0.svg
+.. image:: quickstart/quickstart_114_0.svg
 
 
 .. code:: ipython3
@@ -262,7 +262,7 @@ page <http://www.hsluv.org/comparison/>`__.
 
 
 
-.. image:: quickstart/quickstart_116_0.svg
+.. image:: quickstart/quickstart_115_0.svg
 
 
 You can generate your own
@@ -295,7 +295,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: quickstart/quickstart_118_0.svg
+.. image:: quickstart/quickstart_117_0.svg
 
 
 It is also easy to change the “gamma” of a
@@ -323,7 +323,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: quickstart/quickstart_120_0.svg
+.. image:: quickstart/quickstart_119_0.svg
 
 
 To see how the colors in a colormap vary across different colorspaces,
@@ -343,11 +343,11 @@ non-linear in saturation.
 
 
 
-.. image:: quickstart/quickstart_122_1.svg
+.. image:: quickstart/quickstart_121_1.svg
 
 
 
-.. image:: quickstart/quickstart_122_2.svg
+.. image:: quickstart/quickstart_121_2.svg
 
 
 Adding online colormaps
@@ -384,7 +384,7 @@ and color cycles.
 
 
 
-.. image:: quickstart/quickstart_127_1.svg
+.. image:: quickstart/quickstart_126_1.svg
 
 
 On-the-fly color cycles
@@ -427,7 +427,7 @@ methods.
 
 
 
-.. image:: quickstart/quickstart_130_0.svg
+.. image:: quickstart/quickstart_129_0.svg
 
 
 Finally, *colormaps* (or combinations thereof) can be used as sources
@@ -460,7 +460,7 @@ the colormap before drawing colors from said map. See
 
 
 
-.. image:: quickstart/quickstart_132_0.svg
+.. image:: quickstart/quickstart_131_0.svg
 
 
 `~proplot.wrappers.cycle_wrapper` can also be used to change
@@ -478,12 +478,12 @@ to the axes locally. To apply it globally, simply use
     data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d'], name='label'))
     ax.format(suptitle='Plot without color cycle')
-    cycle = plot.Cycle(dashes=[(1,0.5),(1,1.5),(3,1.5),(5,3)])
-    obj = ax.plot(data, lw=2, cycle=cycle, legend='ul', legend_kw={'ncols':2, 'handlelength':3})
+    cycle = plot.Cycle(dashes=[(1,0.5),(1,1.5),(3,0.5),(3,1.5)])
+    obj = ax.plot(data, lw=3, cycle=cycle, legend='ul', legend_kw={'ncols':2, 'handlelength':3})
 
 
 
-.. image:: quickstart/quickstart_134_0.svg
+.. image:: quickstart/quickstart_133_0.svg
 
 
 Adding online color cycles
@@ -532,11 +532,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: quickstart/quickstart_139_0.svg
+.. image:: quickstart/quickstart_138_0.svg
 
 
 
-.. image:: quickstart/quickstart_139_1.svg
+.. image:: quickstart/quickstart_138_1.svg
 
 
 Individual color sampling
@@ -575,6 +575,6 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: quickstart/quickstart_142_0.svg
+.. image:: quickstart/quickstart_141_0.svg
 
 

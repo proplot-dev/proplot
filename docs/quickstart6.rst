@@ -48,7 +48,7 @@ behavior, use ``edgefix=False``.
 
 
 
-.. image:: quickstart/quickstart_147_0.svg
+.. image:: quickstart/quickstart_146_0.svg
 
 
 .. code:: ipython3
@@ -68,7 +68,7 @@ behavior, use ``edgefix=False``.
 
 
 
-.. image:: quickstart/quickstart_148_0.svg
+.. image:: quickstart/quickstart_147_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -94,7 +94,7 @@ passed to the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: quickstart/quickstart_150_0.svg
+.. image:: quickstart/quickstart_149_0.svg
 
 
 Finally, there is a new `~proplot.colortools.MidpointNorm` class that
@@ -121,7 +121,7 @@ constructor.
 
 
 
-.. image:: quickstart/quickstart_152_0.svg
+.. image:: quickstart/quickstart_151_0.svg
 
 
 Contourf and pcolor labels
@@ -152,7 +152,7 @@ of the underlying box color.
 
 
 
-.. image:: quickstart/quickstart_155_0.svg
+.. image:: quickstart/quickstart_154_0.svg
 
 
 Parametric plots
@@ -193,7 +193,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: quickstart/quickstart_158_1.svg
+.. image:: quickstart/quickstart_157_1.svg
 
 
 Area plots
@@ -236,7 +236,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: quickstart/quickstart_161_0.svg
+.. image:: quickstart/quickstart_160_0.svg
 
 
 Bar plots
@@ -272,7 +272,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_164_0.svg
+.. image:: quickstart/quickstart_163_0.svg
 
 
 Box plots and violins
@@ -304,7 +304,7 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_167_0.svg
+.. image:: quickstart/quickstart_166_0.svg
 
 
 Scatter plots
@@ -343,4 +343,4 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_170_0.svg
+.. image:: quickstart/quickstart_169_0.svg

@@ -365,11 +365,14 @@ keywords, see `~proplot.wrappers.cmap_wrapper`,
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
-    ax.plot(da, cycle=plot.shade('sky blue', 0.2), cycle_kw={'fade':90}, lw=3,
+    color = plot.shade('sky blue', 0.3)
+    cycle_kw = {'fade':90, 'space':'hcl'}
+    ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3,
             colorbar='ll', colorbar_kw={'length':'2cm', 'frameon':True})
     # Plot Dataframe
     ax = axs[1]
-    ax.plot(df, cycle=plot.shade('dark green', 0.15), cycle_kw={'fade':90}, legend='uc', legend_kw={'frameon':True}, lw=3)
+    color = plot.shade('jade', 0.7)
+    ax.plot(df, cycle=color, cycle_kw=cycle_kw, legend='uc', legend_kw={'frameon':True}, lw=3)
     ax.format(xrotation=45)
 
 
@@ -402,10 +405,10 @@ keywords, see `~proplot.wrappers.cmap_wrapper`,
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
     ax = axs[1]
-    ax.contourf(da, cmap='Tempo', cmap_kw={'left':0.05}, colorbar='l')
+    ax.contourf(da, cmap='Greens', cmap_kw={'left':0.05}, colorbar='l')
     # Plot DataFrame
     ax = axs[0]
-    ax.contourf(df, cmap='Ice_r', colorbar='r')
+    ax.contourf(df, cmap='Blues', colorbar='r')
     ax.format(xtickminor=False)
 
 
@@ -466,9 +469,6 @@ default state, use `~proplot.rcmod.rc_configurator.reset`. See the
 .. image:: quickstart/quickstart_29_1.svg
 
 
-Font selection
---------------
-
 DejaVu Sans is the default matplotlib font, but it’s not exactly the
 best of the best and it can be tricky to change when using multiple
 workstations with different fonts installed. ProPlot adds a bunch of
@@ -491,6 +491,6 @@ modifying your ``~/.proplotrc``. See the `~proplot.fonttools` and
 
 
 
-.. image:: quickstart/quickstart_32_0.svg
+.. image:: quickstart/quickstart_31_0.svg
 
 

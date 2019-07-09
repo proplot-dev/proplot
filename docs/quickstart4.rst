@@ -78,11 +78,11 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 
 
 
-.. image:: quickstart/quickstart_82_1.svg
+.. image:: quickstart/quickstart_81_1.svg
 
 
 
-.. image:: quickstart/quickstart_82_2.svg
+.. image:: quickstart/quickstart_81_2.svg
 
 
 Formatting projections
@@ -121,7 +121,7 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 
 
 
-.. image:: quickstart/quickstart_85_0.svg
+.. image:: quickstart/quickstart_84_0.svg
 
 
 .. code:: ipython3
@@ -136,7 +136,7 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 
 
 
-.. image:: quickstart/quickstart_86_0.svg
+.. image:: quickstart/quickstart_85_0.svg
 
 
 Zooming into projections
@@ -165,7 +165,7 @@ declaring the projection by passing ``proj_kw`` to
 
 
 
-.. image:: quickstart/quickstart_89_0.svg
+.. image:: quickstart/quickstart_88_0.svg
 
 
 For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
@@ -190,7 +190,7 @@ Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
 
 
 
-.. image:: quickstart/quickstart_91_0.svg
+.. image:: quickstart/quickstart_90_0.svg
 
 
 Registered cartopy projections
@@ -221,7 +221,7 @@ and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: quickstart/quickstart_94_1.svg
+.. image:: quickstart/quickstart_93_1.svg
 
 
 Registered basemap projections
@@ -252,6 +252,6 @@ if you fail to specify them.
 
 
 
-.. image:: quickstart/quickstart_97_0.svg
+.. image:: quickstart/quickstart_96_0.svg
 
 

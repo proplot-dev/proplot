@@ -355,8 +355,6 @@ class ColorCacheDict(dict):
         """
         # Pull out alpha and draw color from cmap
         rgb, alpha = key
-        if 'a' in key or 'asd' in key:
-            print(key)
         if not isinstance(rgb, str) and np.iterable(rgb) and len(rgb)==2 and isinstance(rgb[1], Number) and isinstance(rgb[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
             try:
                 cmap = mcm.cmap_d[rgb[0]]
@@ -536,7 +534,7 @@ def shade(color, scale=0.5):
     except Exception:
         raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
-    color[2] = max([0, min([color[2]*scale, 100])]) # multiply luminance by this value
+    color[2] = max(0, min(color[2]*scale, 100)) # multiply luminance by this value
     color = [*colormath.hsl_to_rgb(*color)]
     return tuple(color)
 
@@ -547,7 +545,7 @@ def saturate(color, scale=0.5):
     except Exception:
         raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
-    color[1] = max([0, min([color[1]*scale, 100])]) # multiply luminance by this value
+    color[1] = max(0, min(color[1]*scale, 100)) # multiply luminance by this value
     color = [*colormath.hsl_to_rgb(*color)]
     return tuple(color)
 
@@ -1589,7 +1587,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             cdict[key] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
-def monochrome_cmap(color, fade, reverse=False, space='hcl', name='monochrome', **kwargs):
+def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', **kwargs):
     """
     Makes a monochromatic "sequential" colormap that blends from near-white
     to the input color.
@@ -1599,7 +1597,9 @@ def monochrome_cmap(color, fade, reverse=False, space='hcl', name='monochrome', 
     color : str or (R,G,B) tuple
         Color RGB tuple, hex string, or named color string.
     fade : float or str or (R,G,B) tuple
-        The luminance channel strength, or color from which to take the luminance channel.
+        The luminance channel strength, or color from which to take the final
+        luminance and saturation. If the former is provided, the saturation
+        will be held constant throughout the colormap.
     reverse : bool, optional
         Whether to reverse the colormap.
     space : {'hcl', 'hsl', 'hpl'}, optional
@@ -1618,7 +1618,6 @@ def monochrome_cmap(color, fade, reverse=False, space='hcl', name='monochrome', 
     h, s, l = to_xyz(to_rgb(color), space)
     if isinstance(fade, Number): # allow just specifying the luminance channel
         fs, fl = s, fade # fade to *same* saturation by default
-        fs = s/2
     else:
         _, fs, fl = to_xyz(to_rgb(fade), space)
     index = slice(None,None,-1) if reverse else slice(None)
