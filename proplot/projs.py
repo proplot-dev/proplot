@@ -76,7 +76,6 @@ Key                                   Name                                      
 import numpy as np
 import matplotlib.path as mpath
 import warnings
-from .rcmod import rc
 try:
     from cartopy.crs import _WarpedRectangularProjection, \
         LambertAzimuthalEqualArea, AzimuthalEquidistant
@@ -86,7 +85,6 @@ except ModuleNotFoundError:
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
     _cartopy_installed = False
-
 # from packaging import version
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
 #     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method

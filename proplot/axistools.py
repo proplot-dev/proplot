@@ -117,7 +117,6 @@ import warnings
 import numpy as np
 import numpy.ma as ma
 import matplotlib.dates as mdates
-import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
 import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
@@ -1094,7 +1093,6 @@ locators = {
     'log':         mticker.LogLocator,
     'maxn':        mticker.MaxNLocator,
     'linear':      mticker.LinearLocator,
-    'log':         mticker.LogLocator,
     'multiple':    mticker.MultipleLocator,
     'fixed':       mticker.FixedLocator,
     'index':       mticker.IndexLocator,

@@ -201,10 +201,8 @@ import re
 import os
 import yaml
 import cycler
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-import numpy as np
 import matplotlib as mpl
 import warnings
 try:
@@ -212,7 +210,7 @@ try:
     get_ipython = IPython.get_ipython
 except ModuleNotFoundError:
     get_ipython = lambda: None
-from .utils import units, _timer, _counter
+from .utils import _timer, _counter
 _rcParams = mpl.rcParams
 _rcGlobals = {}
 _rcCustom = {}
@@ -345,7 +343,6 @@ class rc_configurator(object):
                     print('Error: Invalid .proplotrc file.')
                     raise err
             # Add keys to dictionaries
-            keys = {*data.keys()}
             gkeys, ckeys = {*()}, {*()}
             for key,value in data.items():
                 if key in _rc_names_global:
@@ -586,7 +583,6 @@ class rc_configurator(object):
 
     def __str__(self):
         """Short string representation."""
-        length = 1 + max(len(key) for key in _rcGlobals.keys())
         string = ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
         return string
 
@@ -929,7 +925,7 @@ def nb_setup():
     else:
         # Autosaving, capture the annoying message + 2 line breaks
         if _rcGlobals['autosave']:
-            with IPython.utils.io.capture_output() as _:
+            with IPython.utils.io.capture_output():
                 ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
         # Retina probably more space efficient (high-res bitmap), but svg is prettiest
         # and is only one preserving vector graphics

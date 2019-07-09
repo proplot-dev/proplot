@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Imported by axes.py, wrappers for various plotting functions.
+Imported by `~proplot.axes`, declares wrappers for various plotting functions.
 """
 import re
 import numpy as np
@@ -9,13 +9,13 @@ import warnings
 import functools
 from . import utils, colortools, fonttools, axistools
 from .utils import _default
-import cycler
-import matplotlib.axes as maxes
+# import cycler
+# import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import matplotlib.patheffects as mpatheffects
-import matplotlib.collections as mcollections
+# import matplotlib.collections as mcollections
 import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
@@ -101,7 +101,6 @@ _loc_translate = {
     # Simple
     'i':'best', # for inset
     'b':'best',
-    True:'best', # i.e. "just turn this thing on"
     'inset':'best',
     'ur':'upper right',
     'ul':'upper left',
@@ -113,7 +112,6 @@ _loc_translate = {
     'uc':'upper center',
     'lc':'lower center',
     }
-
 
 #------------------------------------------------------------------------------#
 # For documentation
@@ -1176,7 +1174,7 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
         return func(lon, lat, *Zs, **kwargs)
     # Fix grid
     lon, lat = _gridfix_coordinates(lon, lat)
-    lon1, lon2 = self.m.lonmin, self.m.lonmax
+    lonmin, lonmax = self.m.lonmin, self.m.lonmax
     if lon.ndim!=1 or lat.ndim!=1:
         Zss = Zs
     else:
@@ -1193,21 +1191,21 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
             # 2) Roll in same direction some more, if some points on right-edge
             # extend more than 360 above the minimum longitude; *they* should be the
             # ones on west/left-hand-side of map
-            lonroll = np.where(lon>lon1 + 360)[0] # tuple of ids
+            lonroll = np.where(lon>lonmin + 360)[0] # tuple of ids
             if lonroll.size: # non-empty
-                roll = lon.size - lonroll.min() # e.g. if 10 lons, lon2 id is 9, we want to roll once
+                roll = lon.size - lonroll.min() # e.g. if 10 lons, lonmax id is 9, we want to roll once
                 lon = np.roll(lon, roll)
                 Z = np.roll(Z, roll, axis=1)
                 lon[:roll] -= 360 # make monotonic
-            # 3) Set NaN where data not in range lonmin, lon2
+            # 3) Set NaN where data not in range lonmin, lonmax
             # This needs to be done for some regional smaller projections or otherwise
             # might get weird side-effects due to having valid data way outside of the
             # map boundaries -- e.g. strange polygons inside an NaN region
             Z = Z.copy()
             if lon.size-1==Z.shape[1]: # test western/eastern grid cell edges
-                Z[:,(lon[1:]<lon1) | (lon[:-1]>lon2)] = np.nan
+                Z[:,(lon[1:]<lonmin) | (lon[:-1]>lonmax)] = np.nan
             elif lon.size==Z.shape[1]: # test the centers and pad by one for safety
-                where = np.where((lon<lon1) | (lon>lon2))[0]
+                where = np.where((lon<lonmin) | (lon>lonmax))[0]
                 Z[:,where[1:-1]] = np.nan
             # Global coverage
             if not globe:
@@ -1219,13 +1217,13 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
             # 5) Fix seams at map boundary; 3 scenarios here:
             # (a) Have edges (e.g. for pcolor), and they fit perfectly against
             # basemap seams. Does not augment size.
-            if lon[0]==lon1 and lon.size-1==Z.shape[1]: # borders fit perfectly
+            if lon[0]==lonmin and lon.size-1==Z.shape[1]: # borders fit perfectly
                 pass # do nothing
             # (b) Have edges (e.g. for pcolor), and the projection edge is
             # in-between grid cell boundaries. Augments size by 1.
             elif lon.size-1==Z.shape[1]: # no interpolation necessary; just make a new grid cell
-                lon = ma.append(lon1, lon)
-                lon[-1] = lon1 + 360 # we've added a new tiny cell to the end
+                lon = ma.append(lonmin, lon)
+                lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
                 Z = ma.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
             # (c) Have centers (e.g. for contourf), and we need to interpolate to the
             # left/right edges of the map boundary. Augments size by 2.
@@ -1233,10 +1231,10 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
                 x = np.array([lon[-1], lon[0] + 360]) # x
                 if x[0] != x[1]:
                     Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-                    xq = lon1 + 360
+                    xq = lonmin + 360
                     Zq = (Zq[:,:1]*(x[1]-xq) + Zq[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
                     Z = ma.concatenate((Zq, Z, Zq), axis=1)
-                    lon = ma.append(ma.append(lon1, lon), lon1 + 360)
+                    lon = ma.append(ma.append(lonmin, lon), lonmin + 360)
             else:
                 raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
             # Add
@@ -1259,11 +1257,11 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
 def _get_panel(self, loc):
-    """Used to interpret colorbar=x and legend=x keyword args.
-    And get inset location."""
+    """Used to interpret colorbar=x and legend=x keyword args, and get inset
+    location. To pick a specific panel, use e.g. ``('left', 1)``."""
     # Panel index
     if np.iterable(loc) and not isinstance(loc, str) and len(loc)==2:
-        idx, loc = loc
+        loc, idx = loc
     else:
         idx = 0
     # Try getting the panel
@@ -1282,7 +1280,10 @@ def _get_panel(self, loc):
     else:
         # Translate to a location
         ax = self
-        loc = _loc_translate.get(loc, loc)
+        if loc is True:
+            loc = 'best'
+        else:
+            loc = _loc_translate.get(loc, loc)
     return ax, loc
 
 @_expand_methods_list
@@ -2178,7 +2179,7 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
             # TODO: This does not work, figure out
             if kwargs.get('shadow', rc['legend.shadow']):
                 shadow = mpatches.Shadow(patch, 20, -20)
-                self.add_artist(patch)
+                self.add_artist(shadow)
             # Add patch to list
             legs = (patch, *legs)
     # Return legend(s)

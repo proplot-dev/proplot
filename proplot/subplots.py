@@ -29,16 +29,15 @@ import numpy as np
 # Note we want gridspec classes documented in this section!
 from .rcmod import rc
 from .utils import _default, _timer, _counter, units, journals
-from . import axistools, gridspec, projs, axes
+from . import projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 # Special
+from numbers import Number
 import functools
 import warnings
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib.scale as mscale
 import matplotlib.figure as mfigure
-import matplotlib.legend as mlegend
 import matplotlib.transforms as mtransforms
 # Aliases for panel names
 _aliases = {
@@ -736,7 +735,6 @@ class Figure(mfigure.Figure):
         if not space:
             warnings.warn('All panels in this row or column are invisible. That is really weird.')
         else:
-            orig = [sum(iratios) for iratios in ratios]
             for pax,iratios in zip(paxs_adj,ratios):
                 idx = (-2 if side in 'br' else 1)
                 if pax._flush: # assume user means, always want panels touching, in spite of ticks, etc.
@@ -1203,7 +1201,7 @@ class Figure(mfigure.Figure):
         # Which panels
         which = _default(which, 'r')
         if re.sub('[lrbt]', '', which): # i.e. other characters are present
-            raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{whichpanels}".')
+            raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{which}".')
 
         # Fix wspace/hspace in inches, using the Bbox from get_postition
         # on the subspec object to determine physical width of axes to be created
@@ -1239,7 +1237,6 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Top and/or bottom panel widths too large for available space {height}in.')
 
         # Make subplotspec
-        panels = {}
         nrows = 1 + len(re.sub('[^bt]', '', which))
         ncols = 1 + len(re.sub('[^lr]', '', which))
         rows = np.array([w for w in ('t', 'c', 'b') if w in ('c', *which)])
@@ -1360,7 +1357,6 @@ def _panels_kwargs(panels, colorbars, legends,
                 kwout[key] = value
     # Helper function
     def _get(side, name, defaults):
-        value = None
         if not isinstance(defaults, tuple):
             defaults = 3*(defaults,)
         for check,kwargs,default in zip((panels, colorbars, legends), (panels_kw, colorbars_kw, legends_kw), defaults):
@@ -1504,7 +1500,6 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
             auto_height = True
         if axwidth is not None and axheight is not None:
             auto_width = auto_height = False
-        figsize = (width, height) # again
 
     # Automatically scale fig dimensions
     # TODO: Fails for complex grids?

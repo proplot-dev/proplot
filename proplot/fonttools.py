@@ -36,12 +36,10 @@ font names. Makes Helvetica or Helvetica Neue the default font.
 # NOTE: Good idea to check out the list whenever adding new ttf files! For
 # example, realized could dump all of the Gotham-Name.ttf files instead of GothamName files.
 import os
-import re
-import sys
 import shutil
 import glob
 import matplotlib.font_manager as mfonts
-from matplotlib import get_cachedir, get_data_path
+from matplotlib import get_data_path
 _data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_user_fonts = os.path.join(_data_user, 'fonts') # user fonts
@@ -73,7 +71,7 @@ def register_fonts():
         for file in ifiles:
             try:
                 font = mfonts.FontProperties(fname=file).get_name()
-            except Exception as err:
+            except Exception:
                 pass
             else:
                 ifonts.append(font)

@@ -3,9 +3,7 @@
 `~proplot.subplots.subplots` for more info."""
 import numpy as np
 import matplotlib.gridspec as mgridspec
-import re
-from .rcmod import rc
-from .utils import _default, units, ic
+from .utils import _default
 
 # Helper function
 def _adjust(n):

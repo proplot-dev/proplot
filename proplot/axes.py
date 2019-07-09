@@ -2386,6 +2386,7 @@ class ProjectionAxesBasemap(ProjectionAxes):
                 continue
             kw = rc.category(name, cache=False)
             feat = getattr(self.m, method)(ax=self)
+            feat.update(kw)
             setattr(self, f'_{name}', feat)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling
