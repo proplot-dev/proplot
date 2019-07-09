@@ -847,7 +847,7 @@ class rc_configurator(object):
 
 # Rc object
 rc = rc_configurator()
-"""Instance of `rc_configurator`. This is used to change rc settings.
+"""Instance of `rc_configurator`. This is used to change global settings.
 See the `~proplot.rcmod` documentation for details."""
 
 #------------------------------------------------------------------------------#
