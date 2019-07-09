@@ -619,7 +619,7 @@ class Figure(mfigure.Figure):
         if not self._smart_tight_init or not (self._smart_tight_outer or self._smart_tight_subplot or self._smart_tight_panel):
             pass
         elif any(ax._gridliner_on for ax in self._main_axes):
-            warnings.warn('Tight subplots do not work with cartopy gridline labels or after zooming into a projection. Use tight=False in your call to subplots().')
+            warnings.warn('Tight subplots do not work with cartopy gridline labels. Use tight=False in your call to subplots().')
         else:
             self.smart_tight_layout(renderer)
         for axis in self._spanning_axes: # turn spanning back on

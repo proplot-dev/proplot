@@ -195,17 +195,16 @@ Key                      Description
 =======================  ==================================================================
 """
 # First import stuff
-# WARNING: Must import pyplot here, because otherwise 'style' attribute
-# is not added to matplotlib top-level module!
 import re
 import os
+import sys
 import yaml
 import cycler
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 import warnings
-# Import pyplot because it adds 'style' function to matplotlib
+# Import pyplot because it adds 'style' function to matplotlib top-level module
 import matplotlib.pyplot as plt
 try:
     import IPython
@@ -219,8 +218,7 @@ _rcCustom = {}
 
 # Get default font
 # WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
-# failed to render/printed nonsense, but Helvetica fine
-import sys
+# failed to render/printed nonsense, but Helvetica was fine.
 _user_rc = os.path.join(os.path.expanduser("~"), '.proplotrc')
 _default_rc = os.path.join(os.path.dirname(__file__), '.proplotrc') # or parent, but that makes pip install distribution hard
 _default_font = 'Helvetica' if sys.platform=='linux' else 'Helvetica Neue' # says 'darwin' on mac
@@ -295,10 +293,7 @@ _rc_names_custom = {
     'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
-# way less verbose. For example, compare landcolor='b' to
-# rc_kw={'land.color':'b'}.
-# Not used by getitem, because that would be way way too many lookups; is
-# only looked up if user *manually* passes something to BaseAxes.format.
+# way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
 _rc_names_nodots = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
     (_rc_names_custom, _rc_names, _rc_names_global)
@@ -392,11 +387,10 @@ class rc_configurator(object):
         # Caching stuff
         self._init = True
         self._getitem_mode = 0
-        self._setitem_cache = False
+        self._context = {}
         self._cache = {}
+        self._cache_orig = {}
         self._cache_restore = {}
-        self._context_kwargs = {}
-        self._context_cache_backup = {}
 
     def __getitem__(self, key):
         """Retrieves property. If we are in a `~rc_configurator.context`
@@ -408,8 +402,7 @@ class rc_configurator(object):
             return {**_rcParams, **_rcCustom}
 
         # Standardize
-        # NOTE: If key is invalid, and caching disabled, will get error
-        # down the line. Caching should only be enabled for internal use.
+        # NOTE: If key is invalid, raise error down the line.
         if '.' not in key and key not in _rcGlobals:
             key = _rc_names_nodots.get(key, key)
 
@@ -441,99 +434,107 @@ class rc_configurator(object):
     def __setitem__(self, key, value):
         """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcCustom`, and :ref:`rcGlobals` settings."""
-        # Standardize name
-        # Save changed properties?
+        # Check whether we are in context block
         cache = self._cache
-        cache[key] = value
-        restore = self._setitem_cache
-        if restore:
-            cache_restore = self._cache_restore
+        context = bool(self._context) # test if context dict is non-empty
+        if context:
+            restore = self._cache_restore
 
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
         if '.' not in key and key not in _rcGlobals:
             key = _rc_names_nodots.get(key, key)
 
-        # First the special cycler and colormaps
-        # NOTE: We don't need to cache these because props aren't looked up
-        # by format function; plot methods will read global properties
-        if key=='rgbcolors':
+        # If rgbcycle is changed, change it, and re-apply the cycler
+        if key=='rgbcycle':
+            cache[key] = value # add
             _rcGlobals[key] = value
-            key = 'cycle'
-            value = _rcGlobals[key]
+            key, value = 'cycle', _rcGlobals['cycle']
+
+        # First the special cycler and colormaps
         if key=='cycle':
-            if restore:
-                cache_restore[key] = _rcGlobals[key]
-                cache_restore['patch.facecolor'] = _rcParams['patch.facecolor']
-                cache_restore['axes.prop_cycle'] = _rcParams['axes.prop_cycle']
+            cache[key] = value # add
+            if context:
+                restore[key] = _rcGlobals[key]
+                restore['axes.prop_cycle'] = _rcParams['axes.prop_cycle']
+                restore['patch.facecolor'] = _rcParams['patch.facecolor']
             self._set_cycler(value)
         elif key=='cmap':
-            if restore:
-                cache_restore[key] = _rcGlobals[key]
-                cache_restore['image.cmap'] = _rcParams['image.cmap']
+            cache[key] = value # add
+            if context:
+                restore[key] = _rcGlobals[key]
+                restore['image.cmap'] = _rcParams['image.cmap']
             self._set_cmap(value)
 
-        # Grid properties, not sure why it has to be this complicated
+        # Gridline toggling, complicated because of the clunky way this is
+        # implemented in matplotlib. There should be a gridminor setting!
         elif key in ('grid', 'gridminor'):
-            value_orig = _rcParams['axes.grid']
-            which_orig = _rcParams['axes.grid.which']
-            if restore:
-                cache_restore[key] = _rcGlobals[key]
-                cache_restore['axes.grid'] = value_orig
-                cache_restore['axes.grid.which'] = which_orig
+            cache[key] = value # add
+            ovalue = _rcParams['axes.grid']
+            owhich = _rcParams['axes.grid.which']
+            if context:
+                restore[key] = _rcGlobals[key]
+                restore['axes.grid'] = ovalue
+                restore['axes.grid.which'] = owhich
+            # Instruction is to turn off gridlines
             if not value:
-                # Turn off gridlines for just major or minor ticks
-                if not value_orig or (which_orig=='major' and key=='grid') or (which_orig=='minor' and key=='gridminor'):
+                # Gridlines are already off, or they are on for the particular
+                # ones that we want to turn off. Instruct to turn both off.
+                if not ovalue or (key=='grid' and owhich=='major') or (key=='gridminor' and owhich=='minor'):
                     which = 'both' # disable both sides
-                # Some gridlines were already on! Does this new setting disable
-                # everything, or just one of them?
-                elif which_orig=='both': # and value_orig is True, as we already tested
+                # Gridlines are currently on for major and minor ticks, so we instruct
+                # to turn on gridlines for the one we *don't* want off
+                elif owhich=='both': # and ovalue is True, as we already tested
                     value = True
                     which = 'major' if key=='gridminor' else 'minor' # if gridminor=False, enable major, and vice versa
-                # Do nothing; e.g. if original was which=minor, user input grid=False,
-                # nothing should happen.
+                # Gridlines are on for the ones that we *didn't* instruct to turn
+                # off, and off for the ones we do want to turn off. This just
+                # re-asserts the ones that are already on.
                 else:
                     value = True
-                    which = which_orig
+                    which = owhich
+            # Instruction is to turn on gridlines
             else:
-                # Turn on gridlines for major and minor, if was just one before
-                if which_orig=='both' or (key=='grid' and which_orig=='minor') or (key=='gridminor' and which_orig=='major'):
+                # Gridlines are already both on, or they are off only for the ones
+                # that we want to turn on. Turn on gridlines for both.
+                if owhich=='both' or (key=='grid' and owhich=='minor') or (key=='gridminor' and owhich=='major'):
                     which = 'both'
-                # Do nothing; e.g. if original was which=major, user input was grid=True
+                # Gridlines are off for both, or off for the ones that we
+                # don't want to turn on. We can just turn on these ones.
                 else:
-                    value = True
-                    which = which_orig
+                    pass
             cache.update({'axes.grid':value, 'axes.grid.which':which})
             _rcParams.update({'axes.grid':value, 'axes.grid.which':which})
 
-        # Global settings
+        # Ordinary settings
         elif key in _rcGlobals:
-            # Update globals
-            if restore:
-                cache_restore[key] = _rcGlobals[key]
+            # Update global setting
+            cache[key] = value # add
+            if context:
+                restore[key] = _rcGlobals[key]
             _rcGlobals[key] = value
-            # Update children
+            # Update children of setting
             rc, rc_new = self._get_globals(key, value)
             cache.update(rc)
             cache.update(rc_new)
-            if restore:
-                cache_restore.update({key:_rcParams[key] for key in rc})
-                cache_restore.update({key:_rcCustom[key] for key in rc_new})
+            if context:
+                restore.update({key:_rcParams[key] for key in rc})
+                restore.update({key:_rcCustom[key] for key in rc_new})
             _rcParams.update(rc)
             _rcCustom.update(rc_new)
-
-        # Directly modify single parameter
         elif key in _rc_names_custom:
-            if restore:
-                cache_restore[key] = _rcCustom[key]
+            cache[key] = value # add
+            if context:
+                restore[key] = _rcCustom[key]
             _rcCustom[key] = value
         elif key in _rc_names:
-            if restore:
-                cache_restore[key] = _rcParams[key]
+            cache[key] = value # add
+            if context:
+                restore[key] = _rcParams[key]
             _rcParams[key] = value # rcParams dict has key validation
         else:
             raise KeyError(f'Invalid key "{key}".')
-        self._init = False # no longer in initial state
+        self._init = False # setitem was successful, we are no longer in initial state
 
     def __getattribute__(self, attr):
         """Alias to getitem."""
@@ -552,21 +553,19 @@ class rc_configurator(object):
 
     def __enter__(self):
         """Apply temporary user global settings."""
-        self._setitem_cache = True # cache the originals when they are changed?
-        self._context_cache_backup = rc._cache.copy()
-        for key,value in self._context_kwargs.items():
+        self._cache_orig = rc._cache.copy()
+        for key,value in self._context.items():
             self[key] = value # applies globally linked and individual settings
 
     def __exit__(self, _type, _value, _traceback):
         """Restore configurator cache to initial state."""
+        self._context = {}
         self._getitem_mode = 0
-        self._setitem_cache = False
         for key,value in self._cache_restore.items():
             self[key] = value
-        self._cache = self._context_cache_backup
+        self._cache = self._cache_orig
         self._cache_restore = {}
-        self._context_kwargs = {}
-        self._context_cache_backup = {}
+        self._cache_orig = {}
 
     def __delitem__(self, *args):
         """Disable."""
@@ -609,9 +608,6 @@ class rc_configurator(object):
                 mcolors.ColorConverter.colors[code] = rgb
                 mcolors.ColorConverter.cache[code]  = rgb
         # Pass to cycle constructor
-        # WARNING: Used to apply to every axes: list(map(plt.figure, plt.get_fignums()))
-        # This was dumb because should not be expected in general that properties
-        # apply to figures that already exist, right?
         _rcParams['patch.facecolor'] = colors[0]
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
 
@@ -696,7 +692,7 @@ class rc_configurator(object):
             if not isinstance(arg, dict):
                 raise ValueError('Non-dictionary argument.')
             kwargs.update(arg)
-        self._context_kwargs = kwargs # could be empty
+        self._context = kwargs # could be empty
         self._getitem_mode = mode
         return self
 
@@ -758,18 +754,14 @@ class rc_configurator(object):
         dictionary lookups. Without caching, runtime increases by 1s even
         for relatively simple plots.
         """
-        # Setup caching
         if not cache:
-            orig, self._getitem_mode = self._getitem_mode, 0
-
-        # Run get
+            orig = self._getitem_mode
+            self._getitem_mode = 0
         props_out = {}
         for key,value in props.items():
             item = self[value]
             if item is not None:
                 props_out[key] = item
-
-        # Return
         if not cache:
             self._getitem_mode = orig
         return props_out
@@ -850,7 +842,8 @@ class rc_configurator(object):
 
     def reset(self):
         """Restores settings to the default."""
-        return self.__init__()
+        if not self._init: # save resources if rc is unchanged!
+            return self.__init__()
 
 # Rc object
 rc = rc_configurator()
