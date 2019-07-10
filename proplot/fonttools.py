@@ -39,6 +39,7 @@ import os
 import shutil
 import glob
 import matplotlib.font_manager as mfonts
+from .utils import _check_data
 from matplotlib import get_data_path
 _data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
@@ -71,10 +72,11 @@ def register_fonts():
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""
     # Populate file and font lists
+    _check_data()
     fonts[:] = []
-    for (ifiles,ifonts) in ((fonts_os_files,fonts_os), (fonts_mpl_files,fonts_mpl)):
+    for i,(ifiles,ifonts) in enumerate(((fonts_os_files,fonts_os), (fonts_mpl_files,fonts_mpl))):
         ifonts[:] = []
-        if ifiles is fonts_os_files:
+        if i==0:
             ifiles[:] = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf'))
         else:
             ifiles[:] = sorted(glob.glob(os.path.join(_data_matplotlib_fonts, '*.[ot]tf')))

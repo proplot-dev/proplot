@@ -12,6 +12,7 @@ __version__ = '1.0'
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
 # For default warning source code see: https://github.com/python/cpython/blob/master/Lib/warnings.py
+# WARNING: Message must end with newline or will not be shown in ipython sessions
 import warnings
 def _warning_proplot(message, category, filename, lineno, line=None):
     if 'proplot' in filename:
@@ -25,7 +26,7 @@ def _warning_proplot(message, category, filename, lineno, line=None):
                 string = f'{string}\n{line}'
             except Exception:
                 pass
-    return string
+    return string + '\n'
 if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
 
@@ -43,3 +44,4 @@ from .wrappers import *   # wrappers
 from .subplots import *
 from .axistools import *  # locators, normalizers, and formatters
 from .projs import *      # projections and whatnot
+

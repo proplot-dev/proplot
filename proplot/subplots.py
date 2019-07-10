@@ -28,7 +28,7 @@ import numpy as np
 # Local modules, projection sand formatters and stuff
 # Note we want gridspec classes documented in this section!
 from .rcmod import rc
-from .utils import _default, _timer, _counter, units, journals
+from .utils import _default, units, journals
 from . import projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 # Special
@@ -82,16 +82,16 @@ class axes_list(list):
         """Wraps the string representation."""
         return 'axes_list(' + super().__repr__() + ')'
 
-    def __setitem__(self, key):
+    def __setitem__(self, key, value):
         """Pseudo immutability, raises error."""
-        raise RuntimeError('axes_list is immutable.')
+        raise LookupError('axes_list is immutable.')
 
     def __setattr__(self, key, value):
         """Pseudo immutability, raises error."""
         if key in ('_n','_order'):
             object.__setattr__(self, key, value)
         else:
-            raise RuntimeError('axes_list is immutable.')
+            raise AttributeError('axes_list is immutable.')
 
     def __getitem__(self, key):
         """When an integer is passed, the item is returned, and when a slice
@@ -391,7 +391,6 @@ class Figure(mfigure.Figure):
         # Get the 'edge' we want to share (bottom row, or leftmost column)
         # Identify the *main* axes spanning this edge, and if those axes have
         # a panel and are shared with it, point to the panel label
-        idx = (name=='x')
         if name=='x':
             axs = [ax for ax in self._main_axes if ax._yrange[1]==base._yrange[1]]
         else:
@@ -1853,22 +1852,11 @@ def subplots(array=None, ncols=1, nrows=1,
     `~proplot.axes.BaseAxes`, `~proplot.axes.BaseAxes.format`
     """
     #--------------------------------------------------------------------------#
-    # Create blank figure
-    # Will adjust dimensions and stuff later
-    #--------------------------------------------------------------------------#
     # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
     # axes sharing mode where we *disable ticklabels and labels*, but *do not
     # use the builtin sharex/sharey API*, suitable for complex map projections.
     # For spanning axes labels, right now only detect **x labels on bottom**
     # and **ylabels on top**. Generalize for all subplot edges.
-    #--------------------------------------------------------------------------#
-    fig = plt.figure(FigureClass=Figure, tight=tight,
-        tightborder=tightborder, tightsubplot=tightsubplot, tightpanel=tightpanel,
-        borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
-        flush=flush, wflush=wflush, hflush=hflush,
-        autoformat=autoformat,
-        )
-
     #--------------------------------------------------------------------------#
     # Array setup
     #--------------------------------------------------------------------------#
@@ -1884,7 +1872,11 @@ def subplots(array=None, ncols=1, nrows=1,
             raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
         array = array[None,:] if order=='C' else array[:,None] # interpret as single row or column
     # Empty rows/columns feature
-    array[array==None] = 0 # use zero for placeholder; otherwise have issues
+    array[array==None] = 0 # use zero for placeholder, otherwise have issues
+    try:
+        array = array.astype(int)
+    except (TypeError,ValueError):
+        raise ValueError(f'Invalid subplot array {array}. Must be array of integers from 1 to naxs, with 0 representing empty spaces.')
     if emptycols:
         emptycols = np.atleast_1d(emptycols)
         for col in emptycols.flat:
@@ -1897,7 +1889,7 @@ def subplots(array=None, ncols=1, nrows=1,
     nums = np.unique(array[array!=0])
     naxs = len(nums)
     if {*nums.flat} != {*range(1, naxs+1)}:
-        raise ValueError('Axes numbers must span integers 1 to naxs (i.e. cannot skip over numbers).')
+        raise ValueError('Invalid subplot array {array}. Numbers must span integers 1 to naxs (i.e. cannot skip over numbers), with 0 representing empty spaces.')
     nrows = array.shape[0]
     ncols = array.shape[1]
 
@@ -2105,7 +2097,16 @@ def subplots(array=None, ncols=1, nrows=1,
             **kwargs)
     # Apply settings and add attributes
     gs = FlexibleGridSpec(**gridspec_kw)
-    fig.set_size_inches(figsize)
+
+    #--------------------------------------------------------------------------#
+    # Create blank figure
+    #--------------------------------------------------------------------------#
+    fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize,
+        tightborder=tightborder, tightsubplot=tightsubplot, tightpanel=tightpanel,
+        borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
+        flush=flush, wflush=wflush, hflush=hflush,
+        autoformat=autoformat,
+        )
     fig._main_gridspec = gs
     fig._subplots_kw = subplots_kw
 

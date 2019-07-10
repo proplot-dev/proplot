@@ -3,6 +3,7 @@
 #------------------------
 # Notebooks
 nbsetup:    True
+backend:    inline # could also be notebook, but ProPlot discourages interactive figure resizing
 autosave:   30
 autoreload: 2
 # Subplots

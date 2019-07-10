@@ -1584,7 +1584,7 @@ class EmptyPanel(object):
         attribute is specifically EmptyPanel."""
         return False # it's empty, so this is 'falsey'
 
-    def __len__(self, key):
+    def __len__(self):
         """Returns 1. This allows us to treat `EmptyPanel` like an
         `~proplot.subplots.axes_list` of stacked panels."""
         return 1
@@ -1598,8 +1598,8 @@ class EmptyPanel(object):
         return self
 
     def __getattr__(self, attr, *args):
-        """Raises RuntimeError."""
-        raise RuntimeError('Panel does not exist.')
+        """Raises AttributeError."""
+        raise AttributeError('Panel does not exist.')
 
 class PanelAxes(CartesianAxes):
     """`~proplot.axes.CartesianAxes` subclass, adds `~PanelAxes.legend` and

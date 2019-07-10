@@ -34,9 +34,8 @@ except ModuleNotFoundError:
 # Cartopy
 try:
     from cartopy.crs import PlateCarree
-    from cartopy.mpl.geoaxes import GeoAxes
 except ModuleNotFoundError:
-    PlateCarree, GeoAxes = object, object
+    PlateCarree = object
 
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
@@ -1762,7 +1761,6 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
     # Get default levels
     # TODO: Add kernel density plot to hexbin!
-    locator = None
     if name not in ('hexbin',):
         levels = _default(levels, rc['image.levels']) # e.g. pcolormesh can auto-determine levels if you input a number
     if isinstance(levels, Number):

@@ -172,7 +172,6 @@ class Hammer(_WarpedRectangularProjection):
     name = 'hammer'
     """Registered projection name."""
     def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
-        proj4_params = [('proj', 'hammer'), ('lon_0', central_longitude)]
         proj4_params = {'proj':'hammer', 'lon_0':central_longitude}
         super().__init__(proj4_params, central_longitude, globe=globe)
     @property
@@ -187,7 +186,6 @@ class Aitoff(_WarpedRectangularProjection):
     name = 'aitoff'
     """Registered projection name."""
     def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
-        proj4_params = [('proj', 'aitoff'), ('lon_0', central_longitude)]
         proj4_params = {'proj':'aitoff', 'lon_0':central_longitude}
         super().__init__(proj4_params, central_longitude, globe=globe)
     @property
@@ -202,11 +200,8 @@ class KavrayskiyVII(_WarpedRectangularProjection):
     name = 'kavrayskiyVII'
     """Registered projection name."""
     def __init__(self, central_longitude=0, globe=None):
-        proj4_params = [('proj', 'kav7'), ('lon_0', central_longitude)]
-        super(KavrayskiyVII, self).__init__(
-            proj4_params,
-            central_longitude,
-            globe=globe)
+        proj4_params = {'proj':'kav7', 'lon_0':central_longitude}
+        super().__init__(proj4_params, central_longitude, globe=globe)
     @property
     def threshold(self):
         """Projection resolution."""
@@ -219,11 +214,8 @@ class WinkelTripel(_WarpedRectangularProjection):
     name = 'winkeltripel'
     """Registered projection name."""
     def __init__(self, central_longitude=0, globe=None):
-        proj4_params = [('proj', 'wintri'), ('lon_0', central_longitude)]
-        super(WinkelTripel, self).__init__(
-            proj4_params,
-            central_longitude,
-            globe=globe)
+        proj4_params = {'proj':'wintri', 'lon_0':central_longitude}
+        super(WinkelTripel, self).__init__(proj4_params, central_longitude, globe=globe)
     @property
     def threshold(self):
         """Projection resolution."""

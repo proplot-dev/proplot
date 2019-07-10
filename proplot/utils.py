@@ -2,11 +2,15 @@
 """
 Simple tools used in various places across this package.
 """
+import os
 import re
 import time
+import glob
 import numpy as np
+import warnings
 import functools
 import matplotlib as mpl
+import matplotlib.font_manager as mfonts
 from numbers import Number
 rcParams = mpl.rcParams
 try:
@@ -14,8 +18,23 @@ try:
 except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 
+#------------------------------------------------------------------------------#
+# Important private helper funcs
+#------------------------------------------------------------------------------#
+_data_user_paths = {*()}
+_data_allowed_paths = {'cmaps', 'cycles', 'fonts'}
+def _check_data():
+    """Check data folder, run this inside every register function."""
+    global _data_user_paths
+    data_user = os.path.join(os.path.expanduser('~'), '.proplot')
+    data_user_paths = {os.path.basename(path) for path in glob.glob(os.path.join(data_user, '*'))}
+    if data_user_paths!=_data_user_paths and data_user_paths>=_data_allowed_paths:
+        _data_user_paths = data_user_paths
+        warnings.warn(f'Found extra files {", ".join(data_user_paths - _data_allowed_paths)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
+
 def _default(*args):
-    """Find first value not None. Usually used for setting default rc settings."""
+    """Return the first non-``None`` value, used with keyword arg aliases and
+    for setting default values."""
     for arg in args:
         if arg is not None:
             return arg
@@ -164,9 +183,16 @@ def units(value):
     else:
         singleton = False
         values = value
-    # Possible units
-    # RC settings must be looked up every time
-    _unit_dict = {
+
+    # Font unit scales
+    small = rcParams['font.size'] # must be absolute
+    large = rcParams['axes.titlesize']
+    if isinstance(large, str):
+        scale = mfonts.font_scalings.get(large, 1) # error will be raised somewhere else if string name is invalid!
+        large = small*scale
+
+    # Dict of possible units
+    unit_dict = {
         # Physical units
         'in': 1.0, # already in inches
         'm':  39.37,
@@ -174,15 +200,19 @@ def units(value):
         'cm': 0.3937,
         'mm': 0.03937,
         'pt': 1/72.0,
-        # Display units
-        'px': 1/rcParams['figure.dpi'], # on screen
-        'pp': 1/rcParams['savefig.dpi'], # once 'printed', i.e. saved
-        # Font size
-        'em': rcParams['font.size']/72.0,
-        'ex': 0.5*rcParams['font.size']/72.0, # more or less; see URL
-        'Em': rcParams['axes.titlesize']/72.0, # for large text
-        'Ex': 0.5*rcParams['axes.titlesize']/72.0,
+        # Font units
+        'em': small/72.0,
+        'ex': 0.5*small/72.0, # more or less; see URL
+        'Em': large/72.0, # for large text
+        'Ex': 0.5*large/72.0,
         }
+    # Display units
+    # WARNING: In ipython shell these take the value 'figure'
+    if not isinstance(rcParams['figure.dpi'], str):
+        unit_dict['px'] = 1/rcParams['figure.dpi'], # on screen
+    if not isinstance(rcParams['savefig.dpi'], str):
+        unit_dict['pp'] = 1/rcParams['savefig.dpi'], # once 'printed', i.e. saved
+
     # Iterate
     result = []
     for value in values:
@@ -194,9 +224,9 @@ def units(value):
         regex = re.match('^([0-9.]*)(.*)$', value)
         num, unit = regex.groups()
         try:
-            result.append(float(num)*_unit_dict[unit])
+            result.append(float(num)*unit_dict[unit])
         except (KeyError, ValueError):
-            raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(_unit_dict.keys())}.')
+            raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(unit_dict.keys())}.')
     if singleton:
         result = result[0]
     return result

@@ -48,7 +48,8 @@ rcGlobals
 ==================  ==================================================================================================================================================================
 Key                 Description
 ==================  ==================================================================================================================================================================
-``nbsetup``         Whether to run `nb_setup` on import.
+``nbsetup``         Whether to run `setup` on import.
+``backend``         The matplotlib backend, passed to `%matplotlib <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__.
 ``autosave``        If non-empty and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
 ``autoreload``      If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
 ``abc``             Boolean, indicates whether to draw a-b-c labels by default.
@@ -204,6 +205,7 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 import warnings
+# from .utils import _default
 # Import pyplot because it adds 'style' function to matplotlib top-level module
 import matplotlib.pyplot as plt
 try:
@@ -211,7 +213,6 @@ try:
     get_ipython = IPython.get_ipython
 except ModuleNotFoundError:
     get_ipython = lambda: None
-from .utils import _timer, _counter
 _rcParams = mpl.rcParams
 _rcGlobals = {}
 _rcCustom = {}
@@ -230,6 +231,7 @@ if not os.path.exists(_default_rc):
 _rcGlobals_children = {
     # Notebooks
     'nbsetup':      [],
+    'backend':      [],
     'autosave':     [],
     'autoreload':   [],
     # Subplots
@@ -867,19 +869,18 @@ See the `~proplot.rcmod` documentation for details."""
 #------------------------------------------------------------------------------#
 def nb_setup():
     """
-    Optionally called on import, results in higher-quality iPython notebook
-    inline figures. Also enables the useful `autoreload
-    <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
-    and autosave extensions. The latter automatically saves your notebook
-    every `autosave` seconds.
+    Sets up your iPython workspace, called on import if ``rc['nbsetup']`` is
+    ``True`` (the default). For all iPython sessions, passes ``rc['autoreload']``
+    to the useful `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    extension. For iPython *notebook* sessions, results in higher-quality inline figures
+    and passes ``rc['autosave']`` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    extension.
 
-    To disable running this on import, use ``nbsetup: False`` in your
-    ``.proplotrc`` file. See the `~proplot.rcmod` documentation for details.
+    See the `~proplot.rcmod` documentation for details.
     """
     # Make sure we are in session
     ipython = get_ipython() # save session
     if ipython is None:
-        warnings.warn("ProPlot should be used within IPython.")
         return
 
     # Only do this if not already loaded -- otherwise will get *recursive* 
@@ -897,22 +898,22 @@ def nb_setup():
         rc.reset()
     except Exception:
         # For ipython sessions
-        ipython.magic("matplotlib qt") # change print_figure_kwargs to see edges
+        ipython.magic("matplotlib qt")
         rc.reset()
     else:
         # Autosaving, capture the annoying message + 2 line breaks
         if _rcGlobals['autosave']:
             with IPython.utils.io.capture_output():
                 ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
-        # Retina probably more space efficient (high-res bitmap), but svg is prettiest
-        # and is only one preserving vector graphics
+        # Retina probably more space efficient (high-res bitmap), but svg is
+        # prettiest and is only one preserving vector graphics
         ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
         # Control all settings with 'rc' object, *no* notebook-specific overrides
         ipython.magic("config InlineBackend.rc = {}")
-        # Disable matplotlib tight layout, use proplot instead
-        ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
         # So don't have memory issues/have to keep re-closing them
         ipython.magic("config InlineBackend.close_figures = True")
+        # Disable matplotlib tight layout, use proplot instead
+        ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
 # Run nbsetup
 if _rcGlobals['nbsetup']:

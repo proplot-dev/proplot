@@ -26,7 +26,7 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 from . import utils, colormath
-from .utils import _default, _counter, _timer
+from .utils import _default, _check_data
 rcParams = mpl.rcParams
 
 # Data diretories
@@ -402,7 +402,6 @@ class CmapDict(dict):
            For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
            ``'BuYlRd'`` and ``'RdYlBu_r'``.
         """
-        kwargs_filtered = {}
         for key,value in kwargs.items():
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
@@ -805,7 +804,6 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
             def data(ix, funcs=funcs):
                 ix = np.atleast_1d(ix)
                 kx = np.empty(ix.shape)
-                nfuncs = len(funcs)
                 for j,jx in enumerate(ix.flat):
                     idx = max(np.searchsorted(x0, jx)-1, 0)
                     kx.flat[j] = funcs[idx]((jx - x0[idx])/xw[idx])
@@ -1158,7 +1156,13 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None,
         elif isinstance(cmap, str) or (np.iterable(cmap) and len(cmap) in (3,4)):
             # Monochrome colormap based from input color (i.e. single hue)
             # TODO: What if colormap names conflict with color names!
-            color = to_rgb(_absolute_color(cmap)) # to ensure is hex code/registered color
+            try:
+                color = to_rgb(_absolute_color(cmap)) # to ensure is hex code/registered color
+            except ValueError:
+                if isinstance(cmap, str):
+                    raise ValueError(f'Invalid colormap "{cmap}". Registered cmaps are: {", ".join(mcm.cmap_d)}.')
+                else:
+                    raise ValueError(f'Invalid color "{cmap}".')
             fade = _default(fade, 100)
             cmap = monochrome_cmap(color, fade, name=name, N=N_, **kwargs)
         else:
@@ -1616,17 +1620,18 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     **kwargs
         Passed to `PerceptuallyUniformColormap.from_hsl` static method.
     """
-    # Get colorspace
-    # NOTE: If you use HSL space, will get very saturated colors in the middle
-    # of the map (around 50% luminance); otherwise chroma won't change
+    # Get colorspace and channel values
     h, s, l = to_xyz(to_rgb(color), space)
-    if isinstance(fade, Number): # allow just specifying the luminance channel
+    if isinstance(fade, Number):
         fs, fl = s, fade # fade to *same* saturation by default
     else:
-        _, fs, fl = to_xyz(to_rgb(fade), space)
-    index = slice(None,None,-1) if reverse else slice(None)
-    return PerceptuallyUniformColormap.from_hsl(name, h,
-            [fs,s][index], [fl,l][index], space=space, **kwargs)
+        _, fs, fl = to_xyz(to_rgb(fade), space) # fade to this saturation and this luminance
+    # Build colormap
+    if reverse:
+        s, l = (s,fs), (l,fl) # from color to faded
+    else:
+        s, l = (fs,s), (fl,l) # from faded to color
+    return PerceptuallyUniformColormap.from_hsl(name, h, s, l, space=space, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Return arbitrary normalizer
@@ -2090,6 +2095,7 @@ def register_cmaps():
     =====================  =============================================================================================================================================================================================================
     """
     # Read colormaps from directories
+    _check_data()
     N = rcParams['image.lut'] # query this when register function is called
     cmaps[:] = []
     for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
@@ -2122,7 +2128,7 @@ def register_cmaps():
     if cmap is not None:
         mcm.cmap_d['Grays'] = cmap
     for category in _cmap_categories_delete:
-        for name in _cmap_categories:
+        for name in _cmap_categories[category]:
             mcm.cmap_d.pop(name, None)
 
     # Add shifted versions of cyclic colormaps, and prevent same colors on ends
@@ -2140,6 +2146,7 @@ def register_cycles():
     For valid file formats, see `register_cmaps`.
     """
     # Read cycles from directories
+    _check_data()
     icycles = {}
     for filename in sorted(glob.glob(os.path.join(_data_cycles, '*'))) + \
             sorted(glob.glob(os.path.join(_data_user_cycles, '*'))):
@@ -2222,8 +2229,7 @@ def register_colors(nmax=np.inf):
     deleted = 0
     hcls = hcls/np.array(scale)
     hcls = np.round(hcls/_color_filter_threshold).astype(np.int64)
-    _, idxs, counts = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
-    counts = counts.sum()
+    _, idxs, _ = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
     for idx,(category,name) in enumerate(pairs):
         if name not in _color_names_add and idx not in idxs:
             deleted += 1
@@ -2496,9 +2502,9 @@ def show_cmaps(N=129):
     a = np.vstack((a,a))
     # Figure
     extra = 1 # number of axes-widths to allocate for titles
-    nmaps = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
+    naxs = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
     fig, axs = subplots(
-            nrows=nmaps, axwidth=4.0, axheight=0.2,
+            nrows=naxs, axwidth=4.0, axheight=0.2,
             span=False, share=False, hspace=0.03,
             tightsubplot=False,
             )
@@ -2510,13 +2516,12 @@ def show_cmaps(N=129):
             continue
         ntitles += extra # two axes-widths
         for imap,name in enumerate(names):
-            # Draw coorbar
+            # Draw colorbar
             iax += 1
-            if imap + ntitles + nplots > nmaps:
-                ax.set_visible(False)
+            if imap + ntitles + nplots > naxs:
                 break
             ax = axs[iax]
-            if imap==0:
+            if imap==0: # allocate this axes for title
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]

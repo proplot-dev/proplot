@@ -2,33 +2,41 @@
 """
 File containing tools for converting between colorspaces and various
 other color manipulations.
+
 Already provided by matplotlib:
-  to_rgb (converts hex-strings, name, rgba to an rgb tuple)
-  rgb_to_hsv
-  hsv_to_rgb
+
+* `~matplotlib.colors.to_rgb` (converts hex-strings, name, rgba to an rgb tuple)
+* `~matplotlib.colors.rgb_to_hsv`
+* `~matplotlib.colors.hsv_to_rgb`
+
 New utilities:
-  rgb_to_hsl   (should be same as rgb_to_hsv)
-  hsl_to_rgb   (should be same as hsv_to_rgb)
-  hcl_to_rgb   (hcl)
-  rgb_to_hcl
-  hsluv_to_rgb (hcl scaled by max chroma)
-  rgb_to_hsluv
-  hpluv_to_rgb (hcl cut-off at min of max chromas, so pastel colors only)
-  rgb_to_hpluv
+
+* `rgb_to_hsl` (should be same as `rgb_to_hsv`)
+* `hsl_to_rgb` (should be same as `hsv_to_rgb`)
+* `hcl_to_rgb`
+* `rgb_to_hcl`
+* `hsluv_to_rgb`
+* `rgb_to_hsluv`
+* `hpluv_to_rgb`
+* `rgb_to_hpluv`
+
 Adapted from:
-    https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py
-    https://github.com/hsluv/hsluv-python/blob/master/hsluv.py
+
+* https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py
+* https://github.com/hsluv/hsluv-python/blob/master/hsluv.py
+
 For info on colorspaces see:
-    https://en.wikipedia.org/wiki/CIELUV
-    https://en.wikipedia.org/wiki/CIE_1931_color_space
-    https://en.wikipedia.org/wiki/HCL_color_space
-    http://www.hsluv.org/implementations/
+
+* https://en.wikipedia.org/wiki/CIELUV
+* https://en.wikipedia.org/wiki/CIE_1931_color_space
+* https://en.wikipedia.org/wiki/HCL_color_space
+* http://www.hsluv.org/implementations/
 """
 # Imports (below functions are just meant to be used by user)
 # See: https://stackoverflow.com/a/2353265/4970632
 # The HLS is actually HCL
 import math
-from colorsys import hls_to_rgb, rgb_to_hls, hsv_to_rgb, rgb_to_hsv
+from colorsys import hls_to_rgb, rgb_to_hls
 # Coefficients or something
 m = [
     [3.2406, -1.5372, -0.4986],
