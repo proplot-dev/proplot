@@ -9,13 +9,10 @@ import warnings
 import functools
 from . import utils, colortools, fonttools, axistools
 from .utils import _default
-# import cycler
-# import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import matplotlib.patheffects as mpatheffects
-# import matplotlib.collections as mcollections
 import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist

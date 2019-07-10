@@ -425,27 +425,21 @@ class BaseAxes(maxes.Axes):
         `ProjectionAxes.format_partial`
         """
         # Figure out which kwargs are valid rc settings
-        # WARNING: First part will fail horribly if mode is not zero!
-        # WARNING: If declare {} as kwarg, can get filled by user, so default
-        # changes! Need to make default None.
+        kw = {} # for format
         rc_kw = rc_kw or {}
-        kw_extra = {}
         for key,value in kwargs.items():
             key_fixed = _rc_names_nodots.get(key, None)
             if key_fixed is None:
-                kw_extra[key] = value
+                kw[key] = value
             else:
                 rc_kw[key_fixed] = value
         rc._getitem_mode = 0 # might still be non-zero if had error
-        # Apply custom settings, potentially
-        # TODO: Put this somewhere else?
-        kw = {}
-        if isinstance(self, PanelAxes) and self._flush:
-            if self._side=='right':
-                kw.update({'yloc':'right', 'ylabelloc':'right', 'yticklabelloc':'right'})
-            elif self._side=='top':
-                kw.update({'xloc':'top', 'xlabelloc':'top', 'xticklabelloc':'top'})
-        kw.update(kw_extra)
+        # Apply special defaults on first format call for flush panel axes
+        if mode==1 and isinstance(self, PanelAxes) and self._flush:
+            axis = ('y' if self._side in ('right','left') else 'x')
+            for key in ('labelloc','ticklabelloc'):
+                kw.setdefault(axis + key, self._side) # e.g. xlabelloc and xticklabelloc set to bottom for flush bottom panels
+        # Call format in context of custom settings
         with rc.context(rc_kw, mode=mode):
             self.format_partial(**kw)
 

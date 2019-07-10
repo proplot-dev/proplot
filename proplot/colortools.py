@@ -376,8 +376,13 @@ class _ColorMappingOverride(mcolors._ColorMapping):
         self.cache = ColorCacheDict({})
 
 # Apply subclass
+# Modify colorConverter and use that everywhere in ProPlot, so only have to
+# reference private API in these three lines.
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
-    mcolors._colors_full_map = _ColorMappingOverride(mcolors._colors_full_map)
+    colors = _ColorMappingOverride(mcolors._colors_full_map)
+    mcolors._colors_full_map = colors
+    mcolors.colorConverter.cache = colors.cache # re-instantiate
+    mcolors.colorConverter.colors = colors # re-instantiate
 
 # Flexible colormap identification
 class CmapDict(dict):
@@ -532,7 +537,7 @@ def shade(color, scale=0.5):
     try:
         color = to_rgb(color) # ensure is valid color
     except Exception:
-        raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
+        raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors.colorConverter.colors.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
     color[2] = max(0, min(color[2]*scale, 100)) # multiply luminance by this value
     color = [*colormath.hsl_to_rgb(*color)]
@@ -543,7 +548,7 @@ def saturate(color, scale=0.5):
     try:
         color = to_rgb(color) # ensure is valid color
     except Exception:
-        raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
+        raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors.colorConverter.colors.keys())}.')
     color = [*colormath.rgb_to_hsl(*color)]
     color[1] = max(0, min(color[1]*scale, 100)) # multiply luminance by this value
     color = [*colormath.hsl_to_rgb(*color)]
@@ -560,14 +565,13 @@ def to_rgb(color, space='rgb'):
         try:
             color = mcolors.to_rgb(color) # ensure is valid color
         except Exception:
-            raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors._colors_full_map.keys())}.')
+            raise ValueError(f'Invalid RGBA argument {color}. Registered colors are: {", ".join(mcolors.colorConverter.colors.keys())}.')
     elif space=='rgb':
         color = color[:3] # trim alpha
         try:
             if any(c>1 for c in color):
                 color = [c/255 for c in color] # scale to within 0-1
         except Exception as err:
-            print(color)
             raise err
         color = tuple(color)
     # Next the perceptually uniform versions
@@ -2174,8 +2178,8 @@ def register_colors(nmax=np.inf):
     scale = (360, 100, 100)
     base = {**mcolors.BASE_COLORS} # make copy
     base.update({_color_names_shorthands[key]:value for key,value in base.items()}) # full names
-    mcolors._colors_full_map.clear() # clean out!
-    mcolors._colors_full_map.cache.clear() # clean out!
+    mcolors.colorConverter.colors.clear() # clean out!
+    mcolors.colorConverter.cache.clear() # clean out!
     for name,dict_ in (('base',base), ('css',mcolors.CSS4_COLORS)):
         colors_filtered.update({name:dict_})
 
@@ -2215,7 +2219,6 @@ def register_colors(nmax=np.inf):
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
-    # print(f'Started with {len(pairs)} colors, removed {deleted} insufficiently distinct colors.')
     deleted = 0
     hcls = hcls/np.array(scale)
     hcls = np.round(hcls/_color_filter_threshold).astype(np.int64)
@@ -2228,7 +2231,7 @@ def register_colors(nmax=np.inf):
             colors_filtered[category][name] = _colors_unfiltered[category][name]
     # Add to colors mapping
     for _,kw in colors_filtered.items():
-        mcolors._colors_full_map.update(kw)
+        mcolors.colorConverter.colors.update(kw)
 
 # Color lists
 cmaps = [] # track *downloaded* colormaps, user can then check this list
@@ -2373,7 +2376,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
 def show_colors(opencolors=False, nbreak=17, minsat=0.2):
     """Visualizes the registered color names. Adapted from `this example
     <https://matplotlib.org/examples/color/named_colors.html>`_."""
-    # Get colors explicitly defined in _colors_full_map, or the default
+    # Get colors explicitly defined in colorConverter, or the default
     # components of that map
     figs = []
     from . import subplots
@@ -2487,12 +2490,6 @@ def show_cmaps(N=129):
         print(f'User colormaps: {", ".join(cmaps_unknown)}')
     if cmaps_delete:
         print(f'Deleted colormaps: {", ".join(cmaps_delete)}')
-
-    # For bugfixing
-    # cmaps_missing = [name.lower() for cat,names in categories.items() for name in names
-    #                     if name.lower() not in cmaps_reg]
-    # if cmaps_missing:
-    #     print(f'Missing colormaps: {", ".join(cmaps_missing)}')
 
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)

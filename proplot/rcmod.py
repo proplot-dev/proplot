@@ -237,7 +237,7 @@ _rcGlobals_children = {
     'abc':          [],
     # Style
     'fontname':     ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
-    'cmap':         [],
+    'cmap':         ['image.cmap'],
     'lut':          ['image.lut'],
     'cycle':        [],
     'rgbcycle':     [],
@@ -367,15 +367,9 @@ class rc_configurator(object):
                 _rcParams[key] = value
 
         # Set default fontname and cycler
-        # These ones are special. I had issues with Helvetica Neue
-        # on UNIX, and Helvetica looked better; but not on macOS.
+        self._set_cycler(_rcGlobals['cycle'])
         if _rcGlobals.get('fontname', None) is None:
             _rcGlobals['fontname'] = _default_font
-
-        # Set the default cycler and colormap (they must
-        # be passed through constructor)
-        self._set_cmap(_rcGlobals['cmap'])
-        self._set_cycler(_rcGlobals['cycle'])
 
         # Apply *global settings* to children settings
         rc, rc_new = self._get_globals()
@@ -445,13 +439,12 @@ class rc_configurator(object):
         if '.' not in key and key not in _rcGlobals:
             key = _rc_names_nodots.get(key, key)
 
+        # Set the default cycler, is a bit complex
         # If rgbcycle is changed, change it, and re-apply the cycler
         if key=='rgbcycle':
             cache[key] = value # add
             _rcGlobals[key] = value
             key, value = 'cycle', _rcGlobals['cycle']
-
-        # First the special cycler and colormaps
         if key=='cycle':
             cache[key] = value # add
             if context:
@@ -459,12 +452,6 @@ class rc_configurator(object):
                 restore['axes.prop_cycle'] = _rcParams['axes.prop_cycle']
                 restore['patch.facecolor'] = _rcParams['patch.facecolor']
             self._set_cycler(value)
-        elif key=='cmap':
-            cache[key] = value # add
-            if context:
-                restore[key] = _rcGlobals[key]
-                restore['image.cmap'] = _rcParams['image.cmap']
-            self._set_cmap(value)
 
         # Gridline toggling, complicated because of the clunky way this is
         # implemented in matplotlib. There should be a gridminor setting!
@@ -587,26 +574,21 @@ class rc_configurator(object):
         string = ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
         return string
 
-    def _set_cmap(self, name):
-        """Sets the default colormap."""
-        # Draw from dictionary
-        cmap = mcm.cmap_d[name] # colortools.Colormap(*value)
-        _rcParams['image.cmap'] = cmap.name
-
     def _set_cycler(self, name):
         """Sets the default color cycler."""
         # Draw from dictionary
-        colors = mcm.cmap_d[name].colors # colortools.Cycle(*value)
-        # Apply new color name definitions
-        if _rcGlobals['rgbcycle']:
-            if name.lower()=='colorblind': # apply
-                regcolors = colors + [(0.1, 0.1, 0.1)]
-            else: # reset
-                regcolors = [(0.0, 0.0, 1.0), (0.0, .50, 0.0), (1.0, 0.0, 0.0), (.75, .75, 0.0), (.75, .75, 0.0), (0.0, .75, .75), (0.0, 0.0, 0.0)]
-            for code,color in zip('brgmyck', regcolors):
-                rgb = mcolors.colorConverter.to_rgb(color)
-                mcolors.ColorConverter.colors[code] = rgb
-                mcolors.ColorConverter.cache[code]  = rgb
+        colors = mcm.cmap_d[name].colors
+        # Apply color name definitions
+        if _rcGlobals['rgbcycle'] and name.lower()=='colorblind':
+            regcolors = colors + [(0.1, 0.1, 0.1)]
+        elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
+            regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
+        else:
+            regcolors = [] # no reset necessary
+        for code,color in zip('brgmyck', regcolors):
+            rgb = mcolors.to_rgb(color)
+            mcolors.colorConverter.colors[code] = rgb
+            mcolors.colorConverter.cache[code]  = rgb
         # Pass to cycle constructor
         _rcParams['patch.facecolor'] = colors[0]
         _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
