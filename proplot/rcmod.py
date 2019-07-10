@@ -429,6 +429,7 @@ class rc_configurator(object):
         """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcCustom`, and :ref:`rcGlobals` settings."""
         # Check whether we are in context block
+        # NOTE: Do not add key to cache until we are sure it is a valid key
         cache = self._cache
         context = bool(self._context) # test if context dict is non-empty
         if context:
@@ -439,14 +440,14 @@ class rc_configurator(object):
         if '.' not in key and key not in _rcGlobals:
             key = _rc_names_nodots.get(key, key)
 
-        # Set the default cycler, is a bit complex
+        # Set the default cycler
         # If rgbcycle is changed, change it, and re-apply the cycler
         if key=='rgbcycle':
-            cache[key] = value # add
+            cache[key] = value
             _rcGlobals[key] = value
             key, value = 'cycle', _rcGlobals['cycle']
         if key=='cycle':
-            cache[key] = value # add
+            cache[key] = value
             if context:
                 restore[key] = _rcGlobals[key]
                 restore['axes.prop_cycle'] = _rcParams['axes.prop_cycle']
@@ -456,7 +457,7 @@ class rc_configurator(object):
         # Gridline toggling, complicated because of the clunky way this is
         # implemented in matplotlib. There should be a gridminor setting!
         elif key in ('grid', 'gridminor'):
-            cache[key] = value # add
+            cache[key] = value
             ovalue = _rcParams['axes.grid']
             owhich = _rcParams['axes.grid.which']
             if context:
@@ -496,7 +497,7 @@ class rc_configurator(object):
         # Ordinary settings
         elif key in _rcGlobals:
             # Update global setting
-            cache[key] = value # add
+            cache[key] = value
             if context:
                 restore[key] = _rcGlobals[key]
             _rcGlobals[key] = value
@@ -510,12 +511,12 @@ class rc_configurator(object):
             _rcParams.update(rc)
             _rcCustom.update(rc_new)
         elif key in _rc_names_custom:
-            cache[key] = value # add
+            cache[key] = value
             if context:
                 restore[key] = _rcCustom[key]
             _rcCustom[key] = value
         elif key in _rc_names:
-            cache[key] = value # add
+            cache[key] = value
             if context:
                 restore[key] = _rcParams[key]
             _rcParams[key] = value # rcParams dict has key validation
@@ -524,19 +525,18 @@ class rc_configurator(object):
         self._init = False # setitem was successful, we are no longer in initial state
 
     def __getattribute__(self, attr):
-        """Alias to getitem."""
-        # No recursion since second comparison won't be evaluated if first comparison evaluates True
+        """Invokes `~rc_configurator.__getitem__`."""
         if attr[:1]=='_' or attr in self._public_api:
             return object.__getattribute__(self, attr)
         else:
-            return self.__getitem__(attr)
+            return self[attr]
 
     def __setattr__(self, attr, value):
-        """Alias to setitem."""
-        if attr[:1]=='_' or attr in self._public_api:
+        """Invoked `~rc_configurator.__setitem__`."""
+        if attr[:1]=='_':
             object.__setattr__(self, attr, value)
         else:
-            self.__setitem__(attr, value)
+            self[attr] = value
 
     def __enter__(self):
         """Apply temporary user global settings."""
