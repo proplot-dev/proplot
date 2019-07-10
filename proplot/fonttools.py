@@ -41,6 +41,9 @@ import glob
 import matplotlib.font_manager as mfonts
 from .utils import _check_data
 from matplotlib import get_data_path
+__all__ = ['clean_fonts', 'register_fonts', 'show_fonts']
+
+# Data
 _data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_user_fonts = os.path.join(_data_user, 'fonts') # user fonts

@@ -73,9 +73,18 @@ Key                                   Name                                      
 ``'wintri'``                          `Winkel tripel <https://proj4.org/operations/projections/wintri.html>`_                      ✓ (added)  ✗
 ====================================  ===========================================================================================  =========  =======
 """
+# from packaging import version
+# if version.parse(cartopy.__version__) < version.parse("0.13"):
+#     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 import numpy as np
 import matplotlib.path as mpath
 import warnings
+__all__ = [
+    'Aitoff', 'Hammer', 'KavrayskiyVII', 'WinkelTripel', 'Proj', 'Circle',
+    'NorthPolarAzimuthalEquidistant', 'NorthPolarLambertAzimuthalEqualArea',
+    'SouthPolarAzimuthalEquidistant', 'SouthPolarLambertAzimuthalEqualArea',
+    'basemap_rc', 'cartopy_projs', 'cartopy_projs',
+    ]
 try:
     from cartopy.crs import _WarpedRectangularProjection, \
         LambertAzimuthalEqualArea, AzimuthalEquidistant
@@ -85,9 +94,6 @@ except ModuleNotFoundError:
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
     _cartopy_installed = False
-# from packaging import version
-# if version.parse(cartopy.__version__) < version.parse("0.13"):
-#     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 
 def Circle(N=100):
     """Returns a circle `~matplotlib.path.Path` used as the outline

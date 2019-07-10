@@ -19,6 +19,15 @@ import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 from numbers import Number
 from .rcmod import rc
+__all__ = [
+    'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper', 'violinplot_wrapper',
+    'basemap_gridfix', 'basemap_latlon',
+    'cartopy_crs', 'cartopy_gridfix', 'cartopy_transform',
+    'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
+    'enforce_centers', 'enforce_edges',
+    'fill_between_wrapper', 'fill_betweenx_wrapper',
+    'legend_wrapper', 'plot_wrapper', 'scatter_wrapper', 'text_wrapper',
+    ]
 
 # Xarray and pandas integration
 ndarray = np.ndarray

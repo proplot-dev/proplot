@@ -28,6 +28,15 @@ import matplotlib as mpl
 from . import utils, colormath
 from .utils import _default, _check_data
 rcParams = mpl.rcParams
+__all__ = [
+    'CmapDict', 'ColorCacheDict', 'Colormap', 'Cycle', 'Norm',
+    'BinNorm', 'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
+    'breakdown_cmap', 'colors', 'make_mapping_array', 'monochrome_cmap',
+    'register_cmaps', 'register_colors', 'register_cycles',
+    'saturate', 'shade', 'show_cmaps',
+    'show_colors', 'show_colorspaces', 'show_cycles',
+    'to_rgb', 'to_xyz',
+    ]
 
 # Data diretories
 _delim = re.compile('[,\s]+')

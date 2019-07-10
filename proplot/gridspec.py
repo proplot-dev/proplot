@@ -4,6 +4,11 @@
 import numpy as np
 import matplotlib.gridspec as mgridspec
 from .utils import _default
+__all__ = [
+    'FlexibleGridSpec',
+    'FlexibleGridSpecBase',
+    'FlexibleGridSpecFromSubplotSpec',
+    ]
 
 # Helper function
 def _adjust(n):

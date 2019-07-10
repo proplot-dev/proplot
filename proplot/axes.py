@@ -44,11 +44,6 @@ once the class is declared. But this was not found to significantly affect
 performance. And anyway, `Premature Optimization is the Root of All Evil
 <http://wiki.c2.com/?PrematureOptimization>`__.
 """
-# Note that even if not in IPython notebook, io capture output still works
-# functools.wraps preserves __name__ metadata; see comment:
-# https://stackoverflow.com/a/739665/4970632
-# import os
-# import re
 import numpy as np
 import warnings
 from numbers import Number
@@ -62,12 +57,16 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-
-# Local modules, projection sand formatters and stuff
 from .rcmod import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
 from .utils import _default, units
 from .gridspec import FlexibleGridSpecFromSubplotSpec
+__all__ = [
+    'BaseAxes', 'CartesianAxes',
+    'EmptyPanel', 'PanelAxes',
+    'PolarAxes', 'ProjectionAxes',
+    'ProjectionAxesBasemap', 'ProjectionAxesCartopy',
+    ]
 
 # Aliases for panel names
 _aliases = {

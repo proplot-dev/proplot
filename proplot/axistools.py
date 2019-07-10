@@ -120,6 +120,13 @@ import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
+__all__ = [
+    'Formatter', 'Locator', 'Scale',
+    'AutoFormatter', 'SimpleFormatter', 'FracFormatter',
+    'InverseScale', 'MercatorLatitudeScale', 'SineLatitudeScale',
+    'CutoffScaleFactory', 'ExpScaleFactory', 'InvertedScaleFactory', 'PowerScaleFactory',
+    'formatters', 'locators', 'scales',
+    ]
 
 #------------------------------------------------------------------------------#
 # Helper functions for instantiating arbitrary Locator and Formatter classes

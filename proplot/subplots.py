@@ -25,13 +25,6 @@ for details.
 import os
 import re
 import numpy as np
-# Local modules, projection sand formatters and stuff
-# Note we want gridspec classes documented in this section!
-from .rcmod import rc
-from .utils import _default, units, journals
-from . import projs, axes
-from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
-# Special
 from numbers import Number
 import functools
 import warnings
@@ -39,8 +32,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
-# Aliases for panel names
-_aliases = {
+from .rcmod import rc
+from .utils import _default, units, journals
+from . import projs, axes
+from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
+__all__ = ['axes_list', 'close', 'show', 'subplots', 'Figure']
+_aliases = { # for panel names
     'bpanel': 'bottompanel',
     'rpanel': 'rightpanel',
     'lpanel': 'leftpanel'

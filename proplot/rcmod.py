@@ -195,7 +195,7 @@ Key                      Description
 ``subplot.panelspace``   Purely empty space between main axes and side panels.
 =======================  ==================================================================
 """
-# First import stuff
+# TODO: Add 'style' setting that overrides .proplotrc
 import re
 import os
 import sys
@@ -205,14 +205,14 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 import warnings
-# from .utils import _default
-# Import pyplot because it adds 'style' function to matplotlib top-level module
-import matplotlib.pyplot as plt
 try:
     import IPython
     get_ipython = IPython.get_ipython
 except ModuleNotFoundError:
     get_ipython = lambda: None
+__all__ = ['rc', 'rc_configurator', 'nb_setup']
+
+# Initialize
 _rcParams = mpl.rcParams
 _rcGlobals = {}
 _rcCustom = {}
@@ -311,10 +311,6 @@ _rc_categories = {
 # Contextual settings management
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 #-------------------------------------------------------------------------------
-def rc_defaults():
-    """Resets all settings to the matplotlib defaults."""
-    mpl.style.use('default') # mpl.style function does not change the backend
-
 class rc_configurator(object):
     _public_api = ('get', 'fill', 'category', 'reset', 'context', 'update') # getattr and setattr will not look for these items on underlying dictionary
     # @_counter # about 0.05s
@@ -323,11 +319,10 @@ class rc_configurator(object):
         <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
         :ref:`rcCustom` settings, and :ref:`rcGlobals` "global" settings.
         See the `~proplot.rcmod` documentation for details."""
-        # First initialize matplotlib
-        # Note rcdefaults() changes the backend! Inline plotting will fail for
-        # rest of notebook session if you call rcdefaults before drawing a figure!
-        # After first figure made, backend property is 'sticky', never changes!
+        # Import pyplot because it adds 'style' function to matplotlib top-level module
+        # Note that after first figure made, backend property is 'sticky', never changes!
         # See: https://stackoverflow.com/a/48322150/4970632
+        import matplotlib.pyplot
         mpl.style.use('default') # mpl.style function does not change the backend
 
         # Load the defaults from file
