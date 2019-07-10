@@ -49,10 +49,20 @@ if not os.path.isdir(_data_user):
 if not os.path.isdir(_data_user_fonts):
     os.mkdir(_data_user_fonts)
 
-# Register fonts
-# https://github.com/olgabot/sciencemeetproductivity.tumblr.com/blob/master/posts/2012/11/how-to-set-helvetica-as-the-default-sans-serif-font-in.md
-# https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-# https://stackoverflow.com/questions/18821795/how-can-i-get-list-of-font-familyor-name-of-font-in-matplotlib
+def clean_fonts():
+    """Remove fonts from ``mpl-data`` that were added by ProPlot."""
+    # Remove fonts
+    fonts = {os.path.basename(font) for font in glob.glob(os.path.join(_data_fonts, '*'))}
+    fonts_mpl = sorted(glob.glob(os.path.join(_data_matplotlib_fonts, '*.[ot]tf')))
+    rm = []
+    for font_mpl in fonts_mpl:
+        if os.path.basename(font_mpl) in fonts:
+            rm.append(font_mpl)
+            os.remove(font_mpl)
+    print(f'Removed fonts {", ".join(os.path.basename(font) for font in rm)}.')
+    # Rebuild cache
+    mfonts._rebuild()
+
 def register_fonts():
     """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
     folder. Also deletes the font cache, which may cause delays.

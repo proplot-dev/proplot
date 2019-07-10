@@ -1000,8 +1000,8 @@ class CartesianAxes(BaseAxes):
             Whether to place *x* and *y* axis tick label text inside
             or outside the axes.
         xlocator, ylocator : None or locator spec, optional
-            The *x* and *y* axis tick mark positions. Passed to the
-            `~proplot.axistools.Locator` constructor.
+            Used to determine the *x* and *y* axis tick mark positions. Passed
+            to the `~proplot.axistools.Locator` constructor.
         xticks, yticks
             Aliases for `xlocator`, `ylocator`.
         xlocator_kw, ylocator_kw : dict-like, optional
@@ -1014,8 +1014,8 @@ class CartesianAxes(BaseAxes):
         xminorlocator_kw, yminorlocator_kw
             As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
         xformatter, yformatter : None or format spec, optional
-            The *x* and *y* axis tick label format. Passed to the
-            `~proplot.axistools.Formatter` constructor.
+            Used to determine the *x* and *y* axis tick label string format.
+            Passed to the `~proplot.axistools.Formatter` constructor.
         xticklabels, yticklabels
             Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
