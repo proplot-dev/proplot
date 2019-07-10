@@ -61,7 +61,7 @@ Here are some highlights of the remaining features:
    rows instead of aligned columns.
 *  Helpful ``Locator``, ``Formatter``, ``Scale``, ``Proj``, ``Norm``, ``Colormap``,
    and ``Cycle`` constructor functions, integrated with the ``format`` command,
-   ``subplot`` command, and plotting commands. More power and less boilerplate code.
+   ``subplots`` command, and plotting commands. More power and less boilerplate code.
 *  Automatic axes, colorbar, and legend formatting when
    `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` objects are passed
    to a plotting command, just like their respective ``plot`` methods.
