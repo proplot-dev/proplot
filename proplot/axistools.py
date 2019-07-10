@@ -2,7 +2,7 @@
 """
 Defines various axis scales, locators, and formatters. Also "registers"
 the locator and formatter names, so that they can be called selected with
-the `~proplot.axes.XYAxes.format` method.
+the `~proplot.axes.CartesianAxes.format` method.
 
 This was pretty tricky, and involved overriding various
 `~matplotlib.scale.ScaleBase`, `~matplotlib.transforms.Transform`,
@@ -136,7 +136,7 @@ def Locator(locator, *args, **kwargs):
     Returns a `~matplotlib.ticker.Locator` instance, used to interpret the
     `xlocator`, `xlocator_kw`, `ylocator`, `ylocator_kw`, `xminorlocator`,
     `xminorlocator_kw`, `yminorlocator`, and `yminorlocator_kw` arguments when
-    passed to `~proplot.axes.XYAxes.format_partial`, and the `locator`, `locator_kw`
+    passed to `~proplot.axes.CartesianAxes.format_partial`, and the `locator`, `locator_kw`
     `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
     methods wrapped by `~proplot.wrappers.colorbar_wrapper`.
 
@@ -223,7 +223,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     r"""
     Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
     `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
-    when passed to `~proplot.axes.XYAxes.format_partial`, and the `formatter`
+    when passed to `~proplot.axes.CartesianAxes.format_partial`, and the `formatter`
     and `formatter_kw` arguments when passed to colorbar methods wrapped by
     `~proplot.wrappers.colorbar_wrapper`.
 
@@ -341,7 +341,7 @@ def Scale(scale, *args, **kwargs):
     Returns the name for a registered or "on-the-fly" generated
     `~matplotlib.scale.ScaleBase` class, used to interpret the `xscale`,
     `xscale_kw`, `yscale`, and `yscale_kw` arguments when passed to
-    `~proplot.axes.XYAxes.format_partial`.
+    `~proplot.axes.CartesianAxes.format_partial`.
 
     Parameters
     ----------
