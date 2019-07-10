@@ -682,8 +682,8 @@ class BaseAxes(maxes.Axes):
             fbounds = (1-2*xpad-length, 0)
         else:
             raise ValueError(f'Invalid location {loc}.')
-        bounds = (*bounds, length, width)
-        fbounds = (*fbounds, 2*xpad+length, 2*ypad+width+xspace)
+        bounds = (bounds[0], bounds[1], length, width)
+        fbounds = (fbounds[0], fbounds[1], 2*xpad+length, 2*ypad+width+xspace)
         # Make axes
         locator = self._make_inset_locator(bounds, self.transAxes)
         bbox = locator(None, None)
