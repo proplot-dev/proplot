@@ -172,7 +172,7 @@ _cmap_categories = {
         ],
     # Nice diverging maps
     'Misc Diverging': [
-        'ColdHot', 'bwr',
+        'ColdHot', 'CoolWarm', 'BR',
         ],
     # ColorBrewer
     'ColorBrewer2.0 Sequential': [
@@ -191,7 +191,7 @@ _cmap_categories = {
         'Amp', 'Phase',
         ],
     'cmOcean Diverging': [
-        'Balance', 'Curl', 'Delta'
+        'Balance', 'Delta', 'Curl',
         ],
     # SciVisColor
     'SciVisColor Blues': [
@@ -220,7 +220,7 @@ _cmap_categories = {
         'multi', 'cividis'
         ],
     'Alt Diverging': [
-        'coolwarm', 'bwr', 'seismic'
+        'seismic',
         ],
     'Misc Orig': [
         'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
