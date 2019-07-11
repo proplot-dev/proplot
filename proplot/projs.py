@@ -361,5 +361,5 @@ if _cartopy_installed:
             continue
         cartopy_projs[_name] = _class
     if _unavail:
-        warnings.warn(f'Cartopy projection(s) {", ".join(_unavail)} are unavailable. Consider updating to the latest version of cartopy.')
+        warnings.warn(f'Cartopy projection(s) {", ".join(_unavail)} are unavailable. Consider updating to cartopy>=0.17.0.')
 

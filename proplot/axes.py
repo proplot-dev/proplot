@@ -57,7 +57,7 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-from .rcmod import rc, _rc_names_nodots
+from .rctools import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
 from .utils import _default, units
 from .gridspec import FlexibleGridSpecFromSubplotSpec
@@ -395,7 +395,7 @@ class BaseAxes(maxes.Axes):
         rc_kw : None or dict, optional
             A dictionary containing "rc" configuration settings that will
             be applied to this axes. Temporarily updates the
-            `~proplot.rcmod.rc` object. See `~proplot.rcmod` for details.
+            `~proplot.rctools.rc` object. See `~proplot.rctools` for details.
         **kwargs
             Any of three options:
 
@@ -405,7 +405,7 @@ class BaseAxes(maxes.Axes):
             * A standard "rc" keyword arg **with the dots omitted**.
               For example, ``land.color`` becomes ``landcolor``.
 
-            The latter two options update the `~proplot.rcmod.rc`
+            The latter two options update the `~proplot.rctools.rc`
             object, just like `rc_kw`.
 
         Other parameters
@@ -413,14 +413,14 @@ class BaseAxes(maxes.Axes):
         mode : int, optional
             The "getitem mode". This is used under-the-hood -- you shouldn't
             have to use it directly. Determines whether queries to the
-            `~proplot.rcmod.rc` object will ignore `rcParams <https://matplotlib.org/users/customizing.html>`__.
+            `~proplot.rctools.rc` object will ignore `rcParams <https://matplotlib.org/users/customizing.html>`__.
             This can help prevent a massive number of unnecessary lookups
             when the settings haven't been changed by the user.
-            See `~proplot.rcmod.rc_configurator` for details.
+            See `~proplot.rctools.rc_configurator` for details.
 
         See also
         --------
-        `~proplot.rcmod`, `BaseAxes.format_partial`, `CartesianAxes.format_partial`,
+        `~proplot.rctools`, `BaseAxes.format_partial`, `CartesianAxes.format_partial`,
         `ProjectionAxes.format_partial`
         """
         # Figure out which kwargs are valid rc settings
@@ -455,7 +455,7 @@ class BaseAxes(maxes.Axes):
         arguments are actually rc configuration settings that are temporarily
         changed by the call to `~BaseAxes.format`. They are documented here
         because it is extremely common to change them with `~BaseAxes.format`.
-        They also appear in the tables in the `~proplot.rcmod` documention.
+        They also appear in the tables in the `~proplot.rctools` documention.
 
         Parameters
         ----------

@@ -1,7 +1,7 @@
 Global settings
 ===============
 
-.. automodsumm:: proplot.rcmod
+.. automodsumm:: proplot.rctools
    :toctree: api
    :skip: units, get_ipython
 
@@ -10,7 +10,7 @@ Global settings
 
    <h1>Summary</h1>
 
-.. automodule:: proplot.rcmod
+.. automodule:: proplot.rctools
 
 
 .proplotrc file

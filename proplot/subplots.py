@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
-from .rcmod import rc
+from .rctools import rc
 from .utils import _default, units, journals
 from . import projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec

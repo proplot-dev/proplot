@@ -18,7 +18,7 @@ import matplotlib.colors as mcolors
 import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 from numbers import Number
-from .rcmod import rc
+from .rctools import rc
 __all__ = [
     'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper', 'violinplot_wrapper',
     'basemap_gridfix', 'basemap_latlon',

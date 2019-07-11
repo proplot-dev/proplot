@@ -82,10 +82,10 @@ numbering determines the order of a-b-c labels. See
 A-b-c subplot labeling is easily accomplished with ProPlot. For simple
 grids, the label order is row-major by default and controlled by the
 `~proplot.subplots.subplots` ``order`` keyword arg. The label position
-can be changed with the ``abc.loc`` `~proplot.rcmod` option, and the
-label style can be changed with the ``abc.format`` `~proplot.rcmod`
-option. See :ref:`The format command` and :ref:`Rc settings control`
-for details.
+can be changed with the ``abc.loc`` `~proplot.rctools.rc` option, and
+the label style can be changed with the ``abc.format``
+`~proplot.rctools.rc` option. See :ref:`The format command` and
+:ref:`Rc settings control` for details.
 
 .. code:: ipython3
 
@@ -277,7 +277,7 @@ this function are interpreted as follows:
 
 1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
    setting will be applied to the axes. If the name has “dots”, simply
-   omit them. See the `~proplot.rcmod` documentation for details.
+   omit them. See the `~proplot.rctools` documentation for details.
 2. Remaining keyword args are passed to the
    `~proplot.axes.CartesianAxes` or `~proplot.axes.ProjectionAxes`
    ``format_partial`` methods. Use these to change settings specific to
@@ -419,18 +419,18 @@ section.
 Global settings control
 -----------------------
 
-A special object named `~proplot.rcmod.rc`, belonging to the
-`~proplot.rcmod.rc_configurator` class, is created whenever you import
-ProPlot. This object gives you advanced control over the look of your
-plots. **Use** `~proplot.rcmod.rc` **as your one-stop shop for
+A special object named `~proplot.rctools.rc`, belonging to the
+`~proplot.rctools.rc_configurator` class, is created whenever you
+import ProPlot. This object gives you advanced control over the look of
+your plots. **Use** `~proplot.rctools.rc` **as your one-stop shop for
 changing global settings**. If you’re curious, it is a common `UNIX
 convention <https://stackoverflow.com/a/37728339/4970632>`__ to use the
 abbreviation ``rc`` for global settings.
 
 To modify a setting for just one subplot, pass it to the
 `~proplot.axes.BaseAxes.format` command. To reset everything to the
-default state, use `~proplot.rcmod.rc_configurator.reset`. See the
-`~proplot.rcmod` documentation for more info.
+default state, use `~proplot.rctools.rc_configurator.reset`. See the
+`~proplot.rctools` documentation for more info.
 
 .. code:: ipython3
 
@@ -480,9 +480,9 @@ appropriate for figures than serif fonts.
 You can register your own fonts by adding ``.ttf`` and ``.otf`` files to
 the ``~/.proplot/fonts`` directory and calling
 `~proplot.fonttools.register_fonts` (which is also called on import).
-To change the default font, use the `~proplot.rcmod.rc` object or by
+To change the default font, use the `~proplot.rctools.rc` object or by
 modifying your ``~/.proplotrc``. See the `~proplot.fonttools` and
-`~proplot.rcmod` documentation for more info.
+`~proplot.rctools` documentation for more info.
 
 .. code:: ipython3
 

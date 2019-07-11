@@ -39,7 +39,7 @@ If you want “colorbar” panels, the simplest option is to use the
 and ``axpanels_kw``. This makes the width of the panels more appropriate
 for filling with a colorbar. Similarly, you can also use the
 ``axlegend`` and ``axlegend_kw`` args. You can modify these default
-spacings with a custom ``.proplotrc`` file (see the `~proplot.rcmod`
+spacings with a custom ``.proplotrc`` file (see the `~proplot.rctools`
 documentation).
 
 If you want panels “flush” against the subplot, simply use the ``flush``

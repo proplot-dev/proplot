@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-A special object named `~proplot.rcmod.rc`, belonging to the
-`~proplot.rcmod.rc_configurator` class, is created on import.
+A special object named `~proplot.rctools.rc`, belonging to the
+`~proplot.rctools.rc_configurator` class, is created on import.
 This is your **one-stop shop for changing global settings** belonging to any of the
 following three categories.
 
@@ -14,7 +14,7 @@ following three categories.
    as shorthands for settings with longer names, or for special options. For example,
    ``ticklen`` changes the tick length for the *x* and *y* axes in one go.
 
-You can change settings with the `~proplot.rcmod.rc` object as follows.
+You can change settings with the `~proplot.rctools.rc` object as follows.
 
 * ``plot.rc.name = value``
 * ``plot.rc['name'] = value``
@@ -386,7 +386,7 @@ class rc_configurator(object):
         """Magical abstract class for managing matplotlib `rcParams
         <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
         :ref:`rcExtraParams` settings, and :ref:`rcGlobals` "global" settings.
-        See the `~proplot.rcmod` documentation for details."""
+        See the `~proplot.rctools` documentation for details."""
         # Set the default style. Note that after first figure made, backend
         # is 'sticky', never changes! See: https://stackoverflow.com/a/48322150/4970632
         # TODO: Flexible styles, and register proplot as a style!
@@ -826,7 +826,7 @@ class rc_configurator(object):
 # Rc object
 rc = rc_configurator()
 """Instance of `rc_configurator`. This is used to change global settings.
-See the `~proplot.rcmod` documentation for details."""
+See the `~proplot.rctools` documentation for details."""
 
 #------------------------------------------------------------------------------#
 # Ipython notebook behavior
@@ -870,7 +870,7 @@ def nb_setup():
     and passes ``rc['autosave']`` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     extension.
 
-    See the `~proplot.rcmod` documentation for details.
+    See the `~proplot.rctools` documentation for details.
     """
     # Make sure we are in session
     ipython = get_ipython() # save session

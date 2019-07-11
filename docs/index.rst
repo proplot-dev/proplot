@@ -106,7 +106,7 @@ To get started, check out the :ref:`Introduction`.
    colortools
    fonttools
    projs
-   rcmod
+   rctools
    utils
 
 

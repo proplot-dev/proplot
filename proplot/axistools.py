@@ -110,7 +110,7 @@ This was pretty tricky, and involved overriding various
 #------------------------------------------------------------------------------#
 import re
 from .utils import _default
-from .rcmod import rc
+from .rctools import rc
 from numbers import Number
 from fractions import Fraction
 import warnings

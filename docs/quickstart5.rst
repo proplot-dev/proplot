@@ -395,7 +395,7 @@ plotting commands like `~matplotlib.axes.Axes.plot` or
 `~matplotlib.axes.Axes.scatter` (e.g. ``ax.plot(..., cycle='538')`` –
 see `~proplot.wrappers.cycle_wrapper`), or by changing the global
 default cycle (e.g. ``plot.rc.cycle = '538'`` – see the
-`~proplot.rcmod` documentation). In both cases, the arguments are
+`~proplot.rctools` documentation). In both cases, the arguments are
 passed to the `~proplot.colortools.Cycle` constructor.
 `~proplot.colortools.Cycle` keyword arguments can be specified by
 passing ``cycle_kw`` to a plotting command. If you want to save your own
