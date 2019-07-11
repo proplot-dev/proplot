@@ -220,7 +220,7 @@ _cmap_categories = {
         'multi', 'cividis'
         ],
     'Alt Diverging': [
-        'seismic',
+        'seismic', 'bwr',
         ],
     'Misc Orig': [
         'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
@@ -320,7 +320,7 @@ _cmap_parts = {
     'rdbu': (None, 2, None),
     'rdylbu': (None, 2, 4, None),
     'rdylgn': (None, 2, 4, None),
-    'bwr': (None, 1, 2, None),
+    'br': (None, 1, None),
     'coldhot': (None, 4, None),
     'negpos': (None, 3, None),
     'drywet': (None, 3, None),
@@ -2480,9 +2480,9 @@ def show_colors(opencolors=False, nbreak=17, minsat=0.2):
         figs.append(fig)
     return figs
 
-def show_cmaps(N=129):
-    """Visualizes the registered colormaps. Adapted from `this example
-    <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
+def show_cmaps(imaps=None, N=129):
+    """Visualizes the registered colormaps, or the list of input colormaps `imaps`.
+    Adapted from `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
     from . import subplots
     cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
@@ -2490,21 +2490,13 @@ def show_cmaps(N=129):
 
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
-    categories = {cat:names for cat,names in _cmap_categories.items()
-                if cat not in _cmap_categories_delete}
-    categories_reg = {cat:[name for name in names if name.lower() in cmaps_reg]
-                    for cat,names in categories.items()}
-    cmaps_reg_known = [name.lower() for cat,names in categories.items() for name in names
-                    if name.lower() in cmaps_reg]
-    cmaps_delete = [name.lower() for cat,names in _cmap_categories.items() for name in names
-                    if cat in _cmap_categories_delete]
-    cmaps_unknown = [name for name in cmaps_reg
-                    if name not in cmaps_reg_known and name not in cmaps_delete]
-    categories_reg['User'] = cmaps_unknown
-    if cmaps_unknown:
-        print(f'User colormaps: {", ".join(cmaps_unknown)}')
-    if cmaps_delete:
-        print(f'Deleted colormaps: {", ".join(cmaps_delete)}')
+    categories = {cat:names for cat,names in _cmap_categories.items() if cat not in _cmap_categories_delete}
+    categories_reg = {cat:[name for name in names if name.lower() in cmaps_reg] for cat,names in categories.items()}
+    cmaps_reg_known = [name.lower() for cat,names in categories.items() for name in names if name.lower() in cmaps_reg]
+    cmaps_user = [name for name in cmaps_reg if name not in cmaps_reg_known]
+    categories_reg['User'] = cmaps_user
+    if cmaps_user:
+        print(f'User colormaps: {", ".join(cmaps_user)}')
 
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
@@ -2546,7 +2538,7 @@ def show_cmaps(N=129):
         nplots += len(names)
     return fig
 
-def show_cycles():
+def show_cycles(cycles=None):
     """Visualizes the registered color cycles."""
     from . import subplots
     # Get the list of cycles
