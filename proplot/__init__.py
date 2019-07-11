@@ -39,9 +39,9 @@ from .fonttools import *  # fonts
 from .colortools import * # color tools
 from .rctools import *    # custom configuration implementation
 from .axes import *       # everything, axes definitions
-from .gridspec import *   # gridspec objects
 from .wrappers import *   # wrappers
-from .subplots import *
 from .axistools import *  # locators, normalizers, and formatters
+from .subplots import *
+from .gridspec import *   # gridspec objects
 from .projs import *      # projections and whatnot
 
