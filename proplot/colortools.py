@@ -2283,14 +2283,13 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Demos
 #------------------------------------------------------------------------------#
-def breakdown_cmap(cmap, N=100, space='hcl'):
+def breakdown_cmap(cmap, N=100, space='hcl', axwidth=1.5, cbarwidth=0.4):
     """Shows how an arbitrary colormap varies in the HCL, HSLuv, and HPLuv
     colorspaces."""
     # Figure
     from . import subplots
-    f, axs = subplots(ncols=4, legends='b', colorbar='r',
-                    span=False, sharey=1, subplotpad=0.05,
-                    axwidth=1.3, aspect=1, tight=True)
+    f, axs = subplots(ncols=4, aspect=1, axwidth=axwidth, span=0, sharey=1,
+        legends='b', colorbar='r', subplotpad=0.05, rwidth=cbarwidth)
     x = np.linspace(0, 1, N)
     cmap = Colormap(cmap, N=N) # arbitrary cmap argument
     cmap._init()
@@ -2319,6 +2318,7 @@ def breakdown_cmap(cmap, N=100, space='hcl'):
             m = max(m, max(y))
             hs += [h]
         f.bottompanel[j].legend([hs[:2], hs[-1:]], frame=False)
+        # ax.legend([hs[:2], hs[-1:]], frame=True)
         ax.axhline(1, color='gray7', dashes=(1.5, 2.5), alpha=0.8, zorder=0, lw=2)
         ax.format(title=space.upper(), titleloc='c', ylim=(0-0.1, m + 0.1))
     # Draw colorbar
@@ -2480,7 +2480,7 @@ def show_colors(opencolors=False, nbreak=17, minsat=0.2):
         figs.append(fig)
     return figs
 
-def show_cmaps(imaps=None, N=256):
+def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
     """Visualizes all registered colormaps, or the list of colormap names `imaps`
     if it is provided. Adapted from `this example
     <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
@@ -2504,8 +2504,7 @@ def show_cmaps(imaps=None, N=256):
     a = np.vstack((a,a))
     # Figure
     naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
-    fig, axs = subplots(
-            nrows=naxs, axwidth=4.0, axheight=0.2,
+    fig, axs = subplots(nrows=naxs, axwidth=cbarlength, axheight=cbarwidth,
             span=False, share=False, hspace=0.03,
             tightsubplot=False,
             )
@@ -2538,7 +2537,7 @@ def show_cmaps(imaps=None, N=256):
         nplots += len(names)
     return fig
 
-def show_cycles(icycles=None):
+def show_cycles(icycles=None, axwidth=1.5):
     """Visualizes all registered color cycles, or the list of colormap names
     `icycles` if it is provided."""
     from . import subplots
@@ -2549,8 +2548,8 @@ def show_cycles(icycles=None):
     nrows = len(icycles)//3 + len(icycles)%3
     # Create plot
     state = np.random.RandomState(528)
-    fig, axs = subplots(axwidth=1.5, sharey=False, sharex=False, subplotpad=0.05,
-                        aspect=1, ncols=3, nrows=nrows)
+    fig, axs = subplots(ncols=3, nrows=nrows, aspect=1, axwidth=axwidth,
+        sharey=False, sharex=False, subplotpad=0.05)
     for i,(ax,(key,cycle)) in enumerate(zip(axs, icycles.items())):
         key = key.lower()
         array = state.rand(20,len(cycle)) - 0.5

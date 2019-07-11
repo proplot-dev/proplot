@@ -2102,7 +2102,8 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         if overridden:
             warnings.warn(f'For centered-row legends, must override user input properties "' + '", "'.join(prop for prop in overridden) + '".')
         # Default location
-        loc = _loc_translate.get(_default(loc, 'upper center'), loc)
+        loc = _default(loc, 'upper center')
+        loc = _loc_translate.get(loc, loc)
         if loc=='best':
             warnings.warn('For centered-row legends, cannot use "best" location. Defaulting to "upper center".')
             loc = 'upper center'
