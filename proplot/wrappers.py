@@ -967,7 +967,6 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     font = kwargs.get('fontfamily', None)
     if font and font not in fonttools.fonts:
         warnings.warn(f'Font "{font}" unavailable. Available fonts are {", ".join(fonttools.fonts)}.')
-        fonttools._missing_fonts.add(font)
         kwargs.pop('fontfamily')
     # Apply color default which is sometimes ignored?
     kwargs.setdefault('color', rc.get('text.color'))

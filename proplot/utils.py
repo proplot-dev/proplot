@@ -29,7 +29,7 @@ def _check_data():
     global _data_user_paths
     data_user = os.path.join(os.path.expanduser('~'), '.proplot')
     data_user_paths = {os.path.basename(path) for path in glob.glob(os.path.join(data_user, '*'))}
-    if data_user_paths!=_data_user_paths and data_user_paths>=_data_allowed_paths:
+    if data_user_paths!=_data_user_paths and data_user_paths>_data_allowed_paths:
         _data_user_paths = data_user_paths
         warnings.warn(f'Found extra files {", ".join(data_user_paths - _data_allowed_paths)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
 

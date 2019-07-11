@@ -7,7 +7,8 @@ following three categories.
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
    settings. These have the format ``x.y`` or ``x.y.z``.
-2. ProPlot :ref:`rcCustom` settings. These also have the format ``x.y`` (see below).
+2. ProPlot :ref:`rcExtraParams` settings. These also have the format ``x.y``
+   (see below).
 3. ProPlot :ref:`rcGlobals` settings. These have no dots (see below). They are **simple,
    short** names used to change multiple matplotlib and ProPlot settings at once,
    as shorthands for settings with longer names, or for special options. For example,
@@ -27,7 +28,7 @@ To temporarily change settings on a particular axes, use either of the following
 
 In all of these examples, if the setting name ``name`` contains
 any dots, you can simply **omit the dots**. For example, to change the
-:ref:`rcCustom` property ``title.loc``, use ``plot.rc.titleloc = value``,
+:ref:`rcExtraParams` property ``title.loc``, use ``plot.rc.titleloc = value``,
 ``plot.rc.update(titleloc=value)``, or ``ax.format(titleloc=value)``.
 
 ..
@@ -86,7 +87,7 @@ Key                 Description
 ==================  ==================================================================================================================================================================
 
 #############
-rcCustom
+rcExtraParams
 #############
 For a-b-c labels and axes title settings, use the ``abc`` and ``title``
 categories. For axis tick label settings, use the ``tick`` category.
@@ -214,7 +215,7 @@ __all__ = ['rc', 'rc_configurator', 'nb_setup']
 # Initialize
 from matplotlib import rcParams as _rcParams
 _rcGlobals = {}
-_rcCustom = {}
+_rcExtraParams = {}
 
 # Get default font
 # WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
@@ -331,7 +332,7 @@ def _set_cycler(name):
 
 def _get_globals(key=None, value=None):
     """Returns dictionaries for updating "child" properties in
-    `rcParams` and `rcCustom` with global property."""
+    `rcParams` and `rcExtraParams` with global property."""
     kw = {} # builtin properties that global setting applies to
     kw_custom = {} # custom properties that global setting applies to
     if key is not None and value is not None:
@@ -372,7 +373,7 @@ def _get_globals(key=None, value=None):
         # Now update linked settings
         if key not in ('gridratio','tickratio','ticklenratio'):
             for name in _rcGlobals_children[key]:
-                if name in _rcCustom:
+                if name in _rcExtraParams:
                     kw_custom[name] = value
                 else:
                     kw[name] = value
@@ -384,7 +385,7 @@ class rc_configurator(object):
     def __init__(self):
         """Magical abstract class for managing matplotlib `rcParams
         <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
-        :ref:`rcCustom` settings, and :ref:`rcGlobals` "global" settings.
+        :ref:`rcExtraParams` settings, and :ref:`rcGlobals` "global" settings.
         See the `~proplot.rcmod` documentation for details."""
         # Set the default style. Note that after first figure made, backend
         # is 'sticky', never changes! See: https://stackoverflow.com/a/48322150/4970632
@@ -410,7 +411,7 @@ class rc_configurator(object):
                     if i==0:
                         gkeys.add(key)
                 elif key in _rc_names_custom:
-                    _rcCustom[key] = value
+                    _rcExtraParams[key] = value
                     if i==0:
                         ckeys.add(key)
                 else:
@@ -439,7 +440,7 @@ class rc_configurator(object):
         for key,value in rc.items():
             _rcParams[key] = value
         for key,value in rc_new.items():
-            _rcCustom[key] = value
+            _rcExtraParams[key] = value
 
         # Caching stuff
         self._init = True
@@ -456,7 +457,7 @@ class rc_configurator(object):
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
-            return {**_rcParams, **_rcCustom}
+            return {**_rcParams, **_rcExtraParams}
 
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
@@ -464,12 +465,12 @@ class rc_configurator(object):
             key = _rc_names_nodots.get(key, key)
 
         # Allow for special time-saving modes where we *ignore _rcParams*
-        # or even *ignore _rcCustom*.
+        # or even *ignore _rcExtraParams*.
         mode = self._getitem_mode
         if mode==0:
-            kws = (self._cache, _rcGlobals, _rcCustom, _rcParams)
+            kws = (self._cache, _rcGlobals, _rcExtraParams, _rcParams)
         elif mode==1:
-            kws = (self._cache, _rcGlobals, _rcCustom) # custom only!
+            kws = (self._cache, _rcGlobals, _rcExtraParams) # custom only!
         elif mode==2:
             kws = (self._cache,) # changed only!
         else:
@@ -490,7 +491,7 @@ class rc_configurator(object):
 
     def __setitem__(self, key, value):
         """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcCustom`, and :ref:`rcGlobals` settings."""
+        :ref:`rcExtraParams`, and :ref:`rcGlobals` settings."""
         # Check whether we are in context block
         # NOTE: Do not add key to cache until we are sure it is a valid key
         cache = self._cache
@@ -570,14 +571,14 @@ class rc_configurator(object):
             cache.update(rc_new)
             if context:
                 restore.update({key:_rcParams[key] for key in rc})
-                restore.update({key:_rcCustom[key] for key in rc_new})
+                restore.update({key:_rcExtraParams[key] for key in rc_new})
             _rcParams.update(rc)
-            _rcCustom.update(rc_new)
+            _rcExtraParams.update(rc_new)
         elif key in _rc_names_custom:
             cache[key] = value
             if context:
-                restore[key] = _rcCustom[key]
-            _rcCustom[key] = value
+                restore[key] = _rcExtraParams[key]
+            _rcExtraParams[key] = value
         elif key in _rc_names:
             cache[key] = value
             if context:
@@ -652,7 +653,7 @@ class rc_configurator(object):
            during the `~proplot.axes.BaseAxes.__init__` calls to
            `~proplot.axes.BaseAxes.format`.
         2. `~rc_configurator.__getitem__` ignores `rcParams <https://matplotlib.org/users/customizing.html>`__
-           and :ref:`rcCustom` keys. It only reads from cache, i.e. settings that
+           and :ref:`rcExtraParams` keys. It only reads from cache, i.e. settings that
            user has manually changed. This is used during user calls to
            `~proplot.axes.BaseAxes.format`.
 
@@ -770,11 +771,11 @@ class rc_configurator(object):
             mode = self._getitem_mode
 
         # Allow for special time-saving modes where we *ignore _rcParams*
-        # or even *ignore _rcCustom*.
+        # or even *ignore _rcExtraParams*.
         if mode==0:
-            kws = (self._cache, _rcGlobals, _rcCustom, _rcParams)
+            kws = (self._cache, _rcGlobals, _rcExtraParams, _rcParams)
         elif mode==1:
-            kws = (self._cache, _rcGlobals, _rcCustom)
+            kws = (self._cache, _rcGlobals, _rcExtraParams)
         elif mode==2:
             kws = (self._cache, _rcGlobals)
         else:

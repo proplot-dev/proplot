@@ -85,9 +85,9 @@ mathtext.bf:             'sans:bold'
 mathtext.it:             'sans:it'
 mathtext.default:        regular
 
-#----------------------
-# rcCustom defaults
-#----------------------
+#-----------------------
+# rcExtraParams defaults
+#-----------------------
 # Extra label settings
 abc.loc:           l # outside the axes, to the left
 title.loc:         c # outside the axes, in the center

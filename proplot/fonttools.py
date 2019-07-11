@@ -23,49 +23,30 @@ font names. Makes Helvetica or Helvetica Neue the default font.
 # * We also have 'pdfcorefonts' in this directory, but I think since these
 #   are afm matplotlib cannot use them? Don't know.
 # Helvetica: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+# Valid styles: https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc.
 # Classic fonts: https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406
 # Good for downloading fonts: https://www.cufonfonts.com
-# WARNING: Beware of unrecognized font variant 'Thin'! Matplotlib gets random
-# unsorted list of font files when rebuilding the manager via os.walk(),
-# which means if an unrecognized variant is added before the normal one,
-# matplotlib uses that font! Found out by printing mfonts.fontManager.ttflist
-# and noticing the 'Thin' files registered as 'normal' for all properties. See
-# https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc.
+# WARNING: Check out ttflist whenever adding new ttf files! For example, realized
+# could dump all of the Gotham-Name.ttf files instead of GothamName files, and
+# got Helvetica bug due to unrecognized 'thin' font style overwriting normal one.
 # print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
 # print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
-# NOTE: Good idea to check out the list whenever adding new ttf files! For
-# example, realized could dump all of the Gotham-Name.ttf files instead of GothamName files.
 import os
 import shutil
 import glob
 import matplotlib.font_manager as mfonts
 from .utils import _check_data
 from matplotlib import get_data_path
-__all__ = ['clean_fonts', 'register_fonts', 'show_fonts']
+__all__ = ['clean_fonts', 'register_fonts', 'show_fonts', 'fonts', 'fonts_system', 'fonts_proplot']
 
 # Data
-_data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
 _data_user = os.path.join(os.path.expanduser('~'), '.proplot')
 _data_user_fonts = os.path.join(_data_user, 'fonts') # user fonts
-_data_matplotlib_fonts = os.path.join(get_data_path(), 'fonts', 'ttf')
+_data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
 if not os.path.isdir(_data_user):
     os.mkdir(_data_user)
 if not os.path.isdir(_data_user_fonts):
     os.mkdir(_data_user_fonts)
-
-def clean_fonts():
-    """Remove fonts from ``mpl-data`` that were added by ProPlot."""
-    # Remove fonts
-    fonts = {os.path.basename(font) for font in glob.glob(os.path.join(_data_fonts, '*'))}
-    fonts_mpl = sorted(glob.glob(os.path.join(_data_matplotlib_fonts, '*.[ot]tf')))
-    rm = []
-    for font_mpl in fonts_mpl:
-        if os.path.basename(font_mpl) in fonts:
-            rm.append(font_mpl)
-            os.remove(font_mpl)
-    print(f'Removed fonts {", ".join(os.path.basename(font) for font in rm)}.')
-    # Rebuild cache
-    mfonts._rebuild()
 
 def register_fonts():
     """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
@@ -74,55 +55,40 @@ def register_fonts():
     <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""
-    # Populate file and font lists
+    # Add proplot path to TTFLIST and rebuild cache
     _check_data()
-    fonts[:] = []
-    for i,(ifiles,ifonts) in enumerate(((fonts_os_files,fonts_os), (fonts_mpl_files,fonts_mpl))):
-        ifonts[:] = []
-        if i==0:
-            ifiles[:] = sorted(mfonts.findSystemFonts(fontpaths=None, fontext='ttf'))
-        else:
-            ifiles[:] = sorted(glob.glob(os.path.join(_data_matplotlib_fonts, '*.[ot]tf')))
-        for file in ifiles:
-            try:
-                font = mfonts.FontProperties(fname=file).get_name()
-            except Exception:
-                pass
-            else:
-                ifonts.append(font)
-        seen = {*()}
-        ifonts[:] = [font for font in ifonts if font not in seen and not seen.add(font)]
-        fonts.extend(ifonts)
-    fonts[:] = sorted(fonts)
+    paths = _data_fonts + ':' + _data_user_fonts
+    if 'TTFPATH' not in os.environ:
+        os.environ['TTFPATH'] = paths
+    elif 'proplot' not in os.environ['TTFPATH']:
+        os.environ['TTFPATH'] += (':' + paths)
+    mfonts._rebuild()
+    # Populate font lists
+    fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if 'proplot' not in font.fname})
+    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if 'proplot' in font.fname})
+    fonts[:] = sorted((*fonts_system, *fonts_proplot))
 
-    # Transfer files to mpl-data
-    fonts_new = []
-    for filename in sorted(glob.glob(os.path.join(_data_fonts, '*.[ot]tf'))) + \
-            sorted(glob.glob(os.path.join(_data_user_fonts, '*.[ot]tf'))):
-        base = os.path.basename(filename)
-        if os.path.exists(os.path.join(_data_matplotlib_fonts, base)):
-            continue
-        shutil.copy(filename, _data_matplotlib_fonts)
-        fonts_new.append(base)
-
-    # Rebuild cache
-    if fonts_new:
-        print(f'Installed font(s): {", ".join(fonts_new)}.')
-        mfonts._rebuild()
+def clean_fonts():
+    """Remove fonts from ``mpl-data`` that were added by ProPlot."""
+    # TODO: Delete this when enough time has passed, no longer copy stuff to mpl-data
+    rm = []
+    data_matplotlib_fonts = os.path.join(get_data_path(), 'fonts', 'ttf')
+    fonts = {os.path.basename(font) for font in glob.glob(os.path.join(_data_fonts, '*'))}
+    fonts_mpl = sorted(glob.glob(os.path.join(data_matplotlib_fonts, '*.[ot]tf')))
+    for font_mpl in fonts_mpl:
+        if os.path.basename(font_mpl) in fonts:
+            rm.append(font_mpl)
+            os.remove(font_mpl)
+    print(f'Removed fonts {", ".join(os.path.basename(font) for font in rm)}.')
+    mfonts._rebuild()
 
 # Font lists
-fonts_mpl_files = []
-"""Font filenames provided by matplotlib or ProPlot."""
-fonts_os_files = []
-"""Font filenames provided by your operating system."""
-fonts_mpl = []
-"""Registered font names provided by matplotlib or ProPlot."""
-fonts_os = []
-"""Registered font names provided by your operating system."""
+fonts_proplot = []
+"""Names of fonts added by ProPlot."""
+fonts_system = []
+"""Names of fonts provided by matplotlib or your operating system."""
 fonts = []
 """All registered font names."""
-_missing_fonts = {*()}
-"""Missing fonts, filled whenever user requests a bad name."""
 
 # Register fonts
 register_fonts()
@@ -133,16 +99,12 @@ register_fonts()
 def show_fonts(fonts=None, size=12):
     """Displays table of the fonts installed by ProPlot or in the user-supplied
     `fonts` list. Use `size` to change the fontsize for fonts shown in the figure."""
+    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz'
     from . import subplots
-    ignore = ('Neue','Display','Mono','Serif','Medium','STIX','DejaVu','Bitstream')
-    if fonts is None:
-        fonts = [font for font in fonts_mpl if font[:2]!='cm' and font[:1]!='.' and
-                not any(key in font for key in ignore)]
-        fonts = [('DejaVu Sans' if 'DejaVu Sans' in fonts_mpl else 'Bitstream Vera'), *fonts]
+    fonts = ('DejaVu Sans', *fonts_proplot)
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     letters = 'the quick brown fox jumps over a lazy dog\nTHE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
-    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz'
     for weight in ('normal',):
         f, axs = subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=4.5, axheight=5.5*size/72)
         axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
