@@ -289,7 +289,7 @@ class BaseAxes(maxes.Axes):
             return
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
-        # Account for side panels 
+        # Account for side panels
         self._share_short_axis(sharex, 'left',   level)
         self._share_short_axis(sharex, 'right',  level)
         self._share_long_axis(sharex,  'bottom', level)
@@ -1235,7 +1235,7 @@ class CartesianAxes(BaseAxes):
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid
             #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
             #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
-            # * Can specify whether the left/right/bottom/top spines get ticks; sides will be 
+            # * Can specify whether the left/right/bottom/top spines get ticks; sides will be
             #   group of left/right or top/bottom
             # * Includes option to draw spines but not draw ticks on that spine, e.g.
             #   on the left/right edges

@@ -1365,13 +1365,13 @@ def cycle_wrapper(self, func, *args,
 
     See also
     --------
-    `~proplot.axes.BaseAxes`, `~proplot.colortools.Cycle`
+    `~proplot.colortools.Cycle`
 
     Note
     ----
-    See the `matplotlib source 
+    See the `matplotlib source
     <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
-    The `set_prop_cycle` command modifies underlying 
+    The `set_prop_cycle` command modifies underlying
     `_get_lines` and `_get_patches_for_fill`.
     """
     # Test input
@@ -1696,9 +1696,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
     See also
     --------
-    `~proplot.axes.BaseAxes`, `~proplot.colortools.Colormap`,
-    `~proplot.colortools.Norm`, `~proplot.colortools.BinNorm`,
-    `~matplotlib.colors.Colormap`, `~matplotlib.colors.Normalize`
+    `~proplot.colortools.Colormap`, `~proplot.colortools.Norm`, `~proplot.colortools.BinNorm`,
     """
     name = func.__name__
     if not args:
@@ -1981,7 +1979,7 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
 
     See also
     --------
-    `~proplot.axes.BaseAxes.colorbar`, `~proplot.axes.PanelAxes.colorbar`, `~matplotlib.axes.Axes.legend`
+    `~proplot.axes.PanelAxes.legend`
     """
     # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
@@ -2323,8 +2321,7 @@ def colorbar_wrapper(self, mappable, values=None,
 
     See also
     --------
-    `~proplot.axes.BaseAxes.colorbar`, `~proplot.axes.PanelAxes.colorbar`, `~matplotlib.figure.Figure.colorbar`,
-    `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, `~proplot.colortools.Norm`
+    `~proplot.axes.BaseAxes.colorbar`, `~proplot.axes.PanelAxes.colorbar`
     """
     # Developer notes
     # * Colorbar axes must be of type `matplotlib.axes.Axes`,
@@ -2459,7 +2456,7 @@ def colorbar_wrapper(self, mappable, values=None,
 
     # Fix the norm object; get weird error without this block
     # * The error is triggered when a *major* tick sits exactly on vmin, but
-    #   the actual error is due to processing of *minor* ticks, even if the 
+    #   the actual error is due to processing of *minor* ticks, even if the
     #   minor locator was set to NullLocator; very weird. Happens when we call
     #   get_ticklabels(which='both') below. Can be prevented by just calling
     #   which='major'. Minor ticklabels are never drawn anyway.

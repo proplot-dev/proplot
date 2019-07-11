@@ -388,10 +388,10 @@ class _ColorMappingOverride(mcolors._ColorMapping):
 # Modify colorConverter and use that everywhere in ProPlot, so only have to
 # reference private API in these three lines.
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
-    colors = _ColorMappingOverride(mcolors._colors_full_map)
-    mcolors._colors_full_map = colors
-    mcolors.colorConverter.cache = colors.cache # re-instantiate
-    mcolors.colorConverter.colors = colors # re-instantiate
+    _map = _ColorMappingOverride(mcolors._colors_full_map)
+    mcolors._colors_full_map = _map
+    mcolors.colorConverter.cache = _map.cache # re-instantiate
+    mcolors.colorConverter.colors = _map # re-instantiate
 
 # Flexible colormap identification
 class CmapDict(dict):
@@ -951,7 +951,7 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
     # over which segment applies (i.e. where to apply the gamma), the relevant
     # 'segment' is to the *left* of index returned by searchsorted
     _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
-    for i,(ui,ci) in enumerate(zip(uind,cind)): # i will range from 0 to N-2
+    for ui,ci in zip(uind,cind): # length should be N-1
         gamma = gammas[ind[ui]-1] # the relevant segment is to *left* of this number
         if gamma==1:
             continue
@@ -1522,7 +1522,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         return PerceptuallyUniformColormap(name, data_r, space=self._space)
 
     @staticmethod
-    def from_hsl(name, hue=0, saturation=100, luminance=[100, 20], alpha=None, ratios=None, reverse=False, **kwargs):
+    def from_hsl(name, hue=0, saturation=100, luminance=(100, 20), alpha=None, ratios=None, reverse=False, **kwargs):
         """
         Makes a `~PerceptuallyUniformColormap` by specifying the hue, saturation,
         and luminance transitions individually.
@@ -2159,7 +2159,7 @@ def register_cycles():
     icycles = {}
     for filename in sorted(glob.glob(os.path.join(_data_cycles, '*'))) + \
             sorted(glob.glob(os.path.join(_data_user_cycles, '*'))):
-        name, x, data = _read_cmap_cycle_data(filename)
+        name, _, data = _read_cmap_cycle_data(filename)
         if name is None:
             continue
         if isinstance(data, mcolors.LinearSegmentedColormap):
@@ -2372,7 +2372,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
     # Note we invert the x-y ordering for imshow
     f, axs = subplots(ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
         right=0, aspect=1, tight=True, subplotpad=0.05)
-    for i,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl'))):
+    for ax,space in zip(axs,('hcl','hsl','hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
         for j in range(hsl.shape[0]):
             for k in range(hsl.shape[1]):

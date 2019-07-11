@@ -79,7 +79,7 @@ class FlexibleGridSpecBase(object):
         self._nrows = nrows*2-1
         self._ncols = ncols*2-1
         wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
-        return super().__init__(self._nrows, self._ncols,
+        super().__init__(self._nrows, self._ncols,
                 hspace=0, wspace=0, # we implement these as invisible rows/columns
                 width_ratios=wratios,
                 height_ratios=hratios,

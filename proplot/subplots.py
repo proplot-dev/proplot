@@ -73,7 +73,7 @@ class axes_list(list):
         # Add special attributes that support 2d grids of axes
         self._n = n # means ncols or nrows, depending on order
         self._order = order
-        return super().__init__(list_)
+        super().__init__(list_)
 
     def __repr__(self):
         """Wraps the string representation."""
@@ -379,7 +379,7 @@ class Figure(mfigure.Figure):
         if name not in 'xy': # i.e. theta or radius
             return
         base = axis.axes
-        for i in range(2): # try 2 levels down, should be sufficient
+        for _ in range(2): # try 2 levels down, should be sufficient
             base = getattr(base, '_share' + name, None) or base
         if not getattr(base, '_span'  + name):
             axis = getattr(base, name + 'axis')
@@ -2195,7 +2195,7 @@ def subplots(array=None, ncols=1, nrows=1,
             axs[idx]._sharey_setup(sharey_ax, sharey)
     for ax in axs: # check axes don't belong to multiple groups, should be impossible unless my code is completely wrong...
         for name,groups in zip(('sharex', 'sharey'), (xgroups, ygroups)):
-            if sum(ax in group for group in xgroups)>1:
+            if sum(ax in group for group in groups)>1:
                 raise ValueError(f'Something went wrong; axis {idx:d} belongs to multiple {name} groups.')
 
     # Return results

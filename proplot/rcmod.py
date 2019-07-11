@@ -203,8 +203,7 @@ import yaml
 import cycler
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-import matplotlib as mpl
-import warnings
+import matplotlib.pyplot as plt
 try:
     import IPython
     get_ipython = IPython.get_ipython
@@ -213,7 +212,7 @@ except ModuleNotFoundError:
 __all__ = ['rc', 'rc_configurator', 'nb_setup']
 
 # Initialize
-_rcParams = mpl.rcParams
+from matplotlib import rcParams as _rcParams
 _rcGlobals = {}
 _rcCustom = {}
 
@@ -311,6 +310,74 @@ _rc_categories = {
 # Contextual settings management
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 #-------------------------------------------------------------------------------
+def _set_cycler(name):
+    """Sets the default color cycler."""
+    # Draw from dictionary
+    colors = mcm.cmap_d[name].colors
+    # Apply color name definitions
+    if _rcGlobals['rgbcycle'] and name.lower()=='colorblind':
+        regcolors = colors + [(0.1, 0.1, 0.1)]
+    elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
+        regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
+    else:
+        regcolors = [] # no reset necessary
+    for code,color in zip('brgmyck', regcolors):
+        rgb = mcolors.to_rgb(color)
+        mcolors.colorConverter.colors[code] = rgb
+        mcolors.colorConverter.cache[code]  = rgb
+    # Pass to cycle constructor
+    _rcParams['patch.facecolor'] = colors[0]
+    _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
+
+def _get_globals(key=None, value=None):
+    """Returns dictionaries for updating "child" properties in
+    `rcParams` and `rcCustom` with global property."""
+    kw = {} # builtin properties that global setting applies to
+    kw_custom = {} # custom properties that global setting applies to
+    if key is not None and value is not None:
+        items = [(key,value)]
+    else:
+        items = _rcGlobals.items()
+    for key,value in items:
+        # Tick length/major-minor tick length ratio
+        if key in ('ticklen', 'ticklenratio'):
+            if key=='ticklenratio':
+                ticklen = _rcGlobals['ticklen']
+                ratio = value
+            else:
+                ticklen = value
+                ratio = _rcGlobals['ticklenratio']
+            kw['xtick.minor.size'] = ticklen*ratio
+            kw['ytick.minor.size'] = ticklen*ratio
+        # Spine width/major-minor tick width ratio
+        elif key in ('linewidth', 'tickratio'):
+            if key=='linewidth':
+                tickwidth = value
+                ratio = _rcGlobals['tickratio']
+            else:
+                tickwidth = _rcGlobals['linewidth']
+                ratio = value
+            kw['xtick.minor.width'] = tickwidth*ratio
+            kw['ytick.minor.width'] = tickwidth*ratio
+        # Grid line
+        # NOTE: Changing minor width does not affect major width
+        elif key in ('grid.linewidth', 'gridratio'):
+            if key=='gridratio':
+                gridwidth = _rcParams['grid.linewidth']
+                ratio = value
+            else:
+                gridwidth = value
+                ratio = _rcGlobals['gridratio']
+            kw_custom['gridminor.linewidth'] = gridwidth*ratio
+        # Now update linked settings
+        if key not in ('gridratio','tickratio','ticklenratio'):
+            for name in _rcGlobals_children[key]:
+                if name in _rcCustom:
+                    kw_custom[name] = value
+                else:
+                    kw[name] = value
+    return kw, kw_custom
+
 class rc_configurator(object):
     _public_api = ('get', 'fill', 'category', 'reset', 'context', 'update') # getattr and setattr will not look for these items on underlying dictionary
     # @_counter # about 0.05s
@@ -319,11 +386,10 @@ class rc_configurator(object):
         <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
         :ref:`rcCustom` settings, and :ref:`rcGlobals` "global" settings.
         See the `~proplot.rcmod` documentation for details."""
-        # Import pyplot because it adds 'style' function to matplotlib top-level module
-        # Note that after first figure made, backend property is 'sticky', never changes!
-        # See: https://stackoverflow.com/a/48322150/4970632
-        import matplotlib.pyplot
-        mpl.style.use('default') # mpl.style function does not change the backend
+        # Set the default style. Note that after first figure made, backend
+        # is 'sticky', never changes! See: https://stackoverflow.com/a/48322150/4970632
+        # TODO: Flexible styles, and register proplot as a style!
+        plt.style.use('default')
 
         # Load the defaults from file
         for i,file in enumerate((_default_rc, _user_rc)):
@@ -364,12 +430,12 @@ class rc_configurator(object):
                 _rcParams[key] = value
 
         # Set default fontname and cycler
-        self._set_cycler(_rcGlobals['cycle'])
+        _set_cycler(_rcGlobals['cycle'])
         if _rcGlobals.get('fontname', None) is None:
             _rcGlobals['fontname'] = _default_font
 
         # Apply *global settings* to children settings
-        rc, rc_new = self._get_globals()
+        rc, rc_new = _get_globals()
         for key,value in rc.items():
             _rcParams[key] = value
         for key,value in rc_new.items():
@@ -449,7 +515,7 @@ class rc_configurator(object):
                 restore[key] = _rcGlobals[key]
                 restore['axes.prop_cycle'] = _rcParams['axes.prop_cycle']
                 restore['patch.facecolor'] = _rcParams['patch.facecolor']
-            self._set_cycler(value)
+            _set_cycler(value)
 
         # Gridline toggling, complicated because of the clunky way this is
         # implemented in matplotlib. There should be a gridminor setting!
@@ -499,7 +565,7 @@ class rc_configurator(object):
                 restore[key] = _rcGlobals[key]
             _rcGlobals[key] = value
             # Update children of setting
-            rc, rc_new = self._get_globals(key, value)
+            rc, rc_new = _get_globals(key, value)
             cache.update(rc)
             cache.update(rc_new)
             if context:
@@ -570,74 +636,6 @@ class rc_configurator(object):
         """Short string representation."""
         string = ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
         return string
-
-    def _set_cycler(self, name):
-        """Sets the default color cycler."""
-        # Draw from dictionary
-        colors = mcm.cmap_d[name].colors
-        # Apply color name definitions
-        if _rcGlobals['rgbcycle'] and name.lower()=='colorblind':
-            regcolors = colors + [(0.1, 0.1, 0.1)]
-        elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
-            regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
-        else:
-            regcolors = [] # no reset necessary
-        for code,color in zip('brgmyck', regcolors):
-            rgb = mcolors.to_rgb(color)
-            mcolors.colorConverter.colors[code] = rgb
-            mcolors.colorConverter.cache[code]  = rgb
-        # Pass to cycle constructor
-        _rcParams['patch.facecolor'] = colors[0]
-        _rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-
-    def _get_globals(self, key=None, value=None):
-        """Returns dictionaries for updating "child" properties in
-        `rcParams` and `rcCustom` with global property."""
-        kw = {} # builtin properties that global setting applies to
-        kw_custom = {} # custom properties that global setting applies to
-        if key is not None and value is not None:
-            items = [(key,value)]
-        else:
-            items = _rcGlobals.items()
-        for key,value in items:
-            # Tick length/major-minor tick length ratio
-            if key in ('ticklen', 'ticklenratio'):
-                if key=='ticklenratio':
-                    ticklen = _rcGlobals['ticklen']
-                    ratio = value
-                else:
-                    ticklen = value
-                    ratio = _rcGlobals['ticklenratio']
-                kw['xtick.minor.size'] = ticklen*ratio
-                kw['ytick.minor.size'] = ticklen*ratio
-            # Spine width/major-minor tick width ratio
-            elif key in ('linewidth', 'tickratio'):
-                if key=='linewidth':
-                    tickwidth = value
-                    ratio = _rcGlobals['tickratio']
-                else:
-                    tickwidth = _rcGlobals['linewidth']
-                    ratio = value
-                kw['xtick.minor.width'] = tickwidth*ratio
-                kw['ytick.minor.width'] = tickwidth*ratio
-            # Grid line
-            # NOTE: Changing minor width does not affect major width
-            elif key in ('grid.linewidth', 'gridratio'):
-                if key=='gridratio':
-                    gridwidth = _rcParams['grid.linewidth']
-                    ratio = value
-                else:
-                    gridwidth = value
-                    ratio = _rcGlobals['gridratio']
-                kw_custom['gridminor.linewidth'] = gridwidth*ratio
-            # Now update linked settings
-            if key not in ('gridratio','tickratio','ticklenratio'):
-                for name in _rcGlobals_children[key]:
-                    if name in _rcCustom:
-                        kw_custom[name] = value
-                    else:
-                        kw[name] = value
-        return kw, kw_custom
 
     # Internally used, but public methods.
     def context(self, *args, mode=0, **kwargs):
@@ -878,7 +876,7 @@ def nb_setup():
     if ipython is None:
         return
 
-    # Only do this if not already loaded -- otherwise will get *recursive* 
+    # Only do this if not already loaded -- otherwise will get *recursive*
     # reloading, even with unload_ext command!
     if _rcGlobals['autoreload']:
         if 'autoreload' not in ipython.magics_manager.magics['line']:

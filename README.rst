@@ -1,7 +1,7 @@
 .. image:: docs/_static/long.png
    :width: 1000px
 
-|build-status| |coverage| |docs| |license| |pr-welcome| |donations|
+|build-status| |coverage| |quality| |docs| |license| |pr-welcome| |donations|
 
 A powerful, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
@@ -122,6 +122,10 @@ In summary, this project is intended to unify the convenience of seaborn, pandas
 .. |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
     :alt: coverage
     :target: https://codecov.io/gh/lukelbd/proplot.org
+
+.. |quality| image:: https://api.codacy.com/project/badge/Grade/931d7467c69c40fbb1e97a11d092f9cd
+   :alt: quality
+   :target: https://www.codacy.com/app/lukelbd/proplot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lukelbd/proplot&amp;utm_campaign=Badge_Grade
 
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license

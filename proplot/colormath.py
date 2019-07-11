@@ -61,25 +61,6 @@ lab_e = 0.008856
 lab_k = 903.3
 
 #------------------------------------------------------------------------------#
-# Previous custom function implemented directly from wikipedia page
-#------------------------------------------------------------------------------#
-# def rgb_to_hcl(c, gamma=3, normalize=False): # gamma is default
-#     """
-#     Convert color to HCL space.
-#     Copied from wiki page, but the below conversions more accurate.
-#     """
-#     rgb = mcolors.to_rgb(c) # convert colorish object (e.g. name, hex-code, rgba) to rgb
-#     alpha = (min(rgb)/max(rgb))/100 # intermediary
-#     q = np.exp(alpha*gamma) # intermediary
-#     r, g, b = rgb # expand out, easier
-#     h = np.arctan2(g-b, r-g)
-#     h = 2*np.pi+h if h<0 else h # make positive
-#     h = h*180/np.pi if not normalize else h/(2*np.pi) # normalize to 0-1 possibly
-#     c = q*(abs(r-g) + abs(g-b) + abs(b-r))/3
-#     l = (q*max(rgb) + (1-q)*min(rgb))/2
-#     return (h,c,l)
-
-#------------------------------------------------------------------------------#
 # Public API
 #------------------------------------------------------------------------------#
 # Basic conversion
@@ -92,8 +73,8 @@ def hsluv_to_hex(h, s, l):
 def rgb_to_hsluv(r, g, b):
     return lchuv_to_hsluv(rgb_to_lchuv(r, g, b))
 
-def hex_to_hsluv(hex):
-    return rgb_to_hsluv(*hex_to_rgb(hex))
+def hex_to_hsluv(color):
+    return rgb_to_hsluv(*hex_to_rgb(color))
 
 def hpluv_to_rgb(h, s, l):
     return lchuv_to_rgb(*hpluv_to_lchuv([h, s, l]))
@@ -104,8 +85,8 @@ def hpluv_to_hex(h, s, l):
 def rgb_to_hpluv(r, g, b):
     return lchuv_to_hpluv(rgb_to_lchuv(r, g, b))
 
-def hex_to_hpluv(hex):
-    return rgb_to_hpluv(*hex_to_rgb(hex))
+def hex_to_hpluv(color):
+    return rgb_to_hpluv(*hex_to_rgb(color))
 
 def lchuv_to_rgb(l, c, h):
     return CIExyz_to_rgb(CIEluv_to_CIExyz(lchuv_to_CIEluv([l, c, h])))
@@ -154,12 +135,12 @@ def rgb_to_hex(triple):
     [r, g, b] = triple
     return '#%02x%02x%02x' % tuple(rgb_prepare([r, g, b]))
 
-def hex_to_rgb(hex):
-    if hex.startswith('#'):
-        hex = hex[1:]
-    r = int(hex[0:2], 16) / 255.0
-    g = int(hex[2:4], 16) / 255.0
-    b = int(hex[4:6], 16) / 255.0
+def hex_to_rgb(color):
+    if color.startswith('#'):
+        color = color[1:]
+    r = int(color[0:2], 16) / 255.0
+    g = int(color[2:4], 16) / 255.0
+    b = int(color[4:6], 16) / 255.0
     return [r, g, b]
 
 #------------------------------------------------------------------------------#
