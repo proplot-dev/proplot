@@ -901,7 +901,7 @@ def nb_setup():
                 ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
         # Retina probably more space efficient (high-res bitmap), but svg is
         # prettiest and is only one preserving vector graphics
-        ipython.magic("config InlineBackend.figure_formats = ['retina','svg']")
+        ipython.magic("config InlineBackend.figure_formats = ['retina']")
         # Control all settings with 'rc' object, *no* notebook-specific overrides
         ipython.magic("config InlineBackend.rc = {}")
         # So don't have memory issues/have to keep re-closing them

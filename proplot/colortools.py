@@ -2480,30 +2480,30 @@ def show_colors(opencolors=False, nbreak=17, minsat=0.2):
         figs.append(fig)
     return figs
 
-def show_cmaps(imaps=None, N=129):
-    """Visualizes the registered colormaps, or the list of input colormaps `imaps`.
-    Adapted from `this example <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
+def show_cmaps(imaps=None, N=256):
+    """Visualizes all registered colormaps, or the list of colormap names `imaps`
+    if it is provided. Adapted from `this example
+    <http://matplotlib.org/examples/color/colormaps_reference.html>`_."""
     # Have colormaps separated into categories
     from . import subplots
-    cmaps_reg = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
-            and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
+    if imaps is None:
+        imaps = [name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
+                and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)]
 
     # Detect unknown/manually created colormaps, and filter out
     # colormaps belonging to certain section
-    categories = {cat:names for cat,names in _cmap_categories.items() if cat not in _cmap_categories_delete}
-    categories_reg = {cat:[name for name in names if name.lower() in cmaps_reg] for cat,names in categories.items()}
-    cmaps_reg_known = [name.lower() for cat,names in categories.items() for name in names if name.lower() in cmaps_reg]
-    cmaps_user = [name for name in cmaps_reg if name not in cmaps_reg_known]
-    categories_reg['User'] = cmaps_user
-    if cmaps_user:
-        print(f'User colormaps: {", ".join(cmaps_user)}')
+    cats = {cat:names for cat,names in _cmap_categories.items() if cat not in _cmap_categories_delete}
+    cats_plot = {cat:[name for name in names if name.lower() in imaps] for cat,names in cats.items()}
+    imaps_known = [name.lower() for cat,names in cats.items() for name in names if name.lower() in imaps]
+    imaps_user = [name for name in imaps if name not in imaps_known]
+    cats_plot['User'] = imaps_user
+    cats_plot = {cat:maps for cat,maps in cats_plot.items() if maps}
 
     # Array for producing visualization with imshow
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
     # Figure
-    extra = 1 # number of axes-widths to allocate for titles
-    naxs = len(cmaps_reg_known) + len(cmaps_unknown) + len(categories_reg)*extra
+    naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
     fig, axs = subplots(
             nrows=naxs, axwidth=4.0, axheight=0.2,
             span=False, share=False, hspace=0.03,
@@ -2511,11 +2511,11 @@ def show_cmaps(imaps=None, N=129):
             )
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
-    for cat,names in categories_reg.items():
+    for cat,names in cats_plot.items():
         # Space for title
         if not names:
             continue
-        ntitles += extra # two axes-widths
+        ntitles += 1
         for imap,name in enumerate(names):
             # Draw colorbar
             iax += 1
@@ -2526,7 +2526,7 @@ def show_cmaps(imaps=None, N=129):
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            if name not in mcm.cmap_d or name.lower() not in cmaps_reg: # i.e. the expected builtin colormap is missing
+            if name not in mcm.cmap_d or name.lower() not in imaps: # i.e. the expected builtin colormap is missing
                 ax.set_visible(False) # empty space
                 continue
             ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
@@ -2538,18 +2538,20 @@ def show_cmaps(imaps=None, N=129):
         nplots += len(names)
     return fig
 
-def show_cycles(cycles=None):
-    """Visualizes the registered color cycles."""
+def show_cycles(icycles=None):
+    """Visualizes all registered color cycles, or the list of colormap names
+    `icycles` if it is provided."""
     from . import subplots
     # Get the list of cycles
-    _cycles = {key:mcm.cmap_d[key].colors for key in cycles}
-    _cycles = {key:_cycles[key] for key in sorted(_cycles.keys())}
-    nrows = len(_cycles)//3 + len(_cycles)%3
+    if icycles is None:
+        icycles = {key:mcm.cmap_d[key].colors for key in cycles} # use global cycles variable
+    icycles = {key:icycles[key] for key in sorted(icycles.keys())}
+    nrows = len(icycles)//3 + len(icycles)%3
     # Create plot
     state = np.random.RandomState(528)
     fig, axs = subplots(axwidth=1.5, sharey=False, sharex=False, subplotpad=0.05,
                         aspect=1, ncols=3, nrows=nrows)
-    for i,(ax,(key,cycle)) in enumerate(zip(axs, _cycles.items())):
+    for i,(ax,(key,cycle)) in enumerate(zip(axs, icycles.items())):
         key = key.lower()
         array = state.rand(20,len(cycle)) - 0.5
         array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
