@@ -1,13 +1,16 @@
 Plot command wrappers
 =====================
 
-Various matplotlib plotting commands have new features thanks to a set
-of wrapper functions (see the `~proplot.axes` documentation). The most
-interesting of these are `~proplot.wrappers.cmap_wrapper` and
-`~proplot.wrappers.cycle_wrapper`, which allow constructing
-:ref:`On-the-fly colormaps` and :ref:`On-the-fly color cycles`
-(follow links for details). Here we document *other* features enabled by
-the plotting wrappers, starting with `~matplotlib.axes.Axes.plot`.
+New features have been added to various matplotlib plotting commands
+thanks to a set of wrapper functions (see the `~proplot.axes`
+documentation). These features are a strict *superset* of the existing
+matplotlib API – if you want, you can use plotting commands exactly as
+you always have. This section documents the variety of wrapper
+functions. You should also see the :ref:`On-the-fly colormaps` and
+:ref:`On-the-fly color cycles` sections, which explain how
+`~proplot.wrappers.cmap_wrapper` and
+`~proplot.wrappers.cycle_wrapper` can be used to apply new colormaps
+and property cyclers to plots on-the-fly.
 
 Colormap normalizers
 --------------------
