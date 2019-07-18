@@ -725,7 +725,7 @@ class rc_configurator(object):
 
     def fill(self, props, cache=True):
         """
-        Fills a dictionary with `rc` settings, used internally to build
+        Returns a dictionary filled with `rc` settings, used internally to build
         dictionaries for updating `~matplotlib.artist.Artist` instances.
 
         Parameters
@@ -740,24 +740,6 @@ class rc_configurator(object):
             set to ``0`` (see `~rc_configurator.context`). Otherwise, if an `rc`
             lookup returns ``None``, the setting is omitted from the output
             dictionary.
-
-        Returns
-        -------
-        dict
-            Dictionary filled with `rc` settings.
-
-        Note
-        ----
-        `~rc_configurator.fill` is used to build dictionaries for updating
-        `~matplotlib.artist.Artist` instances. Of course, the artist property
-        won't need updating unless an rc setting has changed since it was
-        instantiated.
-
-        With this in mind, `~rc_configurator.__getitem__` returns ``None``
-        when a setting has not been changed (changed settings are cached
-        in a separate dictionary). This prevents hundreds of 1000-item
-        dictionary lookups. Without caching, runtime increases by 1s even
-        for relatively simple plots.
         """
         if not cache:
             orig = self._getitem_mode
@@ -773,20 +755,16 @@ class rc_configurator(object):
 
     def category(self, cat, cache=True):
         """
-        Returns dictionary properties belonging to the indicated category.
+        Returns a dictionary of settings belonging to the indicated category,
+        i.e. settings beginning with the substring ``cat + '.'``.
 
         Parameters
         ----------
         cat : str, optional
-            Category of rc settings to retrieve
+            The `rc` settings category.
         cache : bool, optional
             If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
             set to ``0`` (see `~rc_configurator.context`).
-
-        Returns
-        -------
-        params : dict
-            Dictionary of rc settings the string ``cat + '.'``.
         """
         # Check
         if cat not in _rc_categories:
@@ -823,24 +801,33 @@ class rc_configurator(object):
 
         Parameters
         ----------
-        *args
-            Up to 2 positional args. The last argument is a dictionary of new rc
-            settings. If 2 arguments are passed, the first argument indicates
-            the rc setting category, and all rc setting keys are prefixed with
-            the string ``category + '.'``.
+        *args : str, dict, or (str, dict)
+            Positional arguments can be a dictionary of `rc` settings and/or
+            a "category" string name. If a category name is passed, all settings
+            in the dictionary (if it was passed) and all keyword arg names
+            (if they were passed) are prepended with the string ``cat + '.'``.
+            For example, ``rc.update('axes', labelsize=20, titlesize=20)``
+            changes the ``axes.labelsize`` and ``axes.titlesize`` properties.
         **kwargs
-            New rc settings passed as keyword args.
+            `rc` settings passed as keyword args.
         """
-        if not args:
-            args = [{}]
-        kw = args[-1]
-        kw.update(kwargs)
-        if len(args)==2:
-            prefix = args[0] + '.'
+        # Parse args
+        kw = {}
+        prefix = ''
+        if len(args)>2:
+            raise ValueError('Accepts 1-2 positional arguments. Use plot.rc.update(kw) to update a bunch of names, or plot.rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
+        elif len(args)==2:
+            prefix = args[0]
+            kw = args[1]
         elif len(args)==1:
-            prefix = ''
-        else:
-            raise ValueError('Accepts 1-2 positional arguments only. Use plot.rc.update(kw) to update a bunch of names, or plot.rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
+            if isinstance(args[0], str):
+                prefix = args[0]
+            else:
+                kw = args[0]
+        # Apply settings
+        if prefix:
+            prefix = prefix + '.'
+        kw.update(kwargs)
         for key,value in kw.items():
             self[prefix + key] = value
 
