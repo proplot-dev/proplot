@@ -641,11 +641,13 @@ class rc_configurator(object):
     # Internally used, but public methods.
     def context(self, *args, mode=0, **kwargs):
         """
-        Temporarily modifies global settings, used by ProPlot internally
-        but may also be useful for power users. This function was invented
-        to prevent successive calls to `~proplot.axes.BaseAxes.format` from
-        constantly looking up and re-applying unchanged global settings.
-        Testing showed that these gratuitous `rcParams <https://matplotlib.org/users/customizing.html>`__
+        Temporarily modifies global settings in a ``with...as`` block,
+        used by ProPlot internally but may also be useful for power users.
+
+        This function was invented to prevent successive calls to
+        `~proplot.axes.BaseAxes.format` from constantly looking up and re-applying
+        unchanged global settings.  Testing showed that these gratuitous
+        `rcParams <https://matplotlib.org/users/customizing.html>`__
         lookups and artist updates tended to slow things down quite a bit.
 
         Parameters
@@ -658,21 +660,18 @@ class rc_configurator(object):
         Other parameters
         ----------------
         mode : {0,1,2}, optional
-            Determines the behavior of the `rc` object when `~proplot.axes.BaseAxes.format`
-            requests `rc` object settings internally. If you are using
-            `~rc_configurator.context` manually, the `mode` is automatically
-            set to ``0`` -- other input is ignored.
-
-            Internally, however, ProPlot uses any of the three available modes.
-            They are as follows.
+            Dictates the behavior of the `rc` object within the ``with...as``
+            block when settings are requested with e.g. ``rc['setting']``. If
+            you are using `~rc_configurator.context` manually, the `mode` is
+            automatically set to ``0`` -- other input is ignored. Internally,
+            ProPlot uses all of the three available modes.
 
             0. All settings (`rcParams <https://matplotlib.org/users/customizing.html>`__,
-               :ref:`rcExtraParams`, and :ref:`rcGlobals`) are returned when
-               requested with e.g. ``rc['setting']``, whether or not
-               `~rc_configurator.context` has changed them.
-            1.  Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
+               :ref:`rcExtraParams`, and :ref:`rcGlobals`) are returned, whether
+               or not `~rc_configurator.context` has changed them.
+            1. Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcExtraParams` and :ref:`rcGlobals` are
-               returned whether or not `~rc_configurator.context` changed them.
+               returned whether or not `~rc_configurator.context` has changed them.
                This is used in the initial `~proplot.axes.BaseAxes.__init__`
                call to `~proplot.axes.BaseAxes.format`.
             2. All unchanged settings return ``None``. This is used during user
@@ -771,13 +770,14 @@ class rc_configurator(object):
     def category(self, cat, cache=True):
         """
         Returns dictionary properties belonging to the indicated category.
-        Respects caching (see `~rc_configurator.__getitem__`).
+        Respects caching (see `~rc_configurator.context`).
 
         Parameters
         ----------
         cat : str, optional
             Category of rc settings to retrieve
         cache : bool, optional
+            If false, 
             Whether to look for all properties or just cached (i.e.
             recently changed) properties.
 
