@@ -451,7 +451,7 @@ class rc_configurator(object):
         self._cache_restore = {}
 
     def __getitem__(self, key):
-        """Retrieves `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        """Returns `rcParams <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcExtraParams`, and :ref:`rcGlobals` settings. If we are in a
         `~rc_configurator.context` block, may return ``None`` if the setting
         is not cached (i.e. if it was not changed by the user).
@@ -621,11 +621,11 @@ class rc_configurator(object):
         self._cache_orig = {}
 
     def __delitem__(self, *args):
-        """Disable."""
+        """Pseudo-immutability."""
         raise NotImplementedError
 
     def __delattr__(self, *args):
-        """Disable."""
+        """Pseudo-immutability."""
         raise NotImplementedError
 
     def __repr__(self):
@@ -650,7 +650,8 @@ class rc_configurator(object):
         `~proplot.axes.BaseAxes.format` from constantly looking up and re-applying
         unchanged global settings.  Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
-        lookups and artist updates tended to slow things down quite a bit.
+        lookups and artist updates tended to increase runtime by seconds,
+        even for relatively simple plots.
 
         Parameters
         ----------
@@ -703,9 +704,7 @@ class rc_configurator(object):
 
     def get(self, key, cache=False):
         """
-        Return a setting, with an option to ignore the caching mode if you
-        really really need it. This is used internally by `~proplot.axes.BaseAxes`
-        and its subclasses.
+        Returns a setting.
 
         Parameters
         ----------
@@ -725,14 +724,13 @@ class rc_configurator(object):
 
     def fill(self, props, cache=True):
         """
-        Fill a dictionary containing rc property string names with the
-        corresponding property. Defaults to **only** looking for cached
-        (i.e. changed) properties.
+        Fills a dictionary with `rc` settings, used internally to build
+        dictionaries for updating `~matplotlib.artist.Artist` instances.
 
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are names of rc properties. The values
+            Dictionary whose values are names of `rc` settings. The values
             are replaced with the corresponding property only if
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
@@ -745,7 +743,7 @@ class rc_configurator(object):
         Returns
         -------
         dict
-            Dictionary filled with rc properties.
+            Dictionary filled with `rc` settings.
 
         Note
         ----
@@ -775,7 +773,6 @@ class rc_configurator(object):
     def category(self, cat, cache=True):
         """
         Returns dictionary properties belonging to the indicated category.
-        Respects caching (see `~rc_configurator.context`).
 
         Parameters
         ----------
