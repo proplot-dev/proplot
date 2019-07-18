@@ -596,7 +596,7 @@ class rc_configurator(object):
             return self[attr]
 
     def __setattr__(self, attr, value):
-        """Invoked `~rc_configurator.__setitem__`."""
+        """Invokes `~rc_configurator.__setitem__`."""
         if attr[:1]=='_':
             object.__setattr__(self, attr, value)
         else:
