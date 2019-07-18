@@ -2,11 +2,13 @@ Plot command wrappers
 =====================
 
 New features have been added to various matplotlib plotting commands
-thanks to a set of wrapper functions (see the `~proplot.axes`
-documentation). These features are a strict *superset* of the existing
-matplotlib API – if you want, you can use plotting commands exactly as
-you always have. This section documents the variety of wrapper
-functions. You should also see the :ref:`On-the-fly colormaps` and
+thanks to a set of wrapper functions. These features are a strict
+*superset* of the existing matplotlib API – if you want, you can use
+plotting commands exactly as you always have. This section documents
+these wrapper functions. For details, see the `~proplot.axes`
+documentation.
+
+You should also see the :ref:`On-the-fly colormaps` and
 :ref:`On-the-fly color cycles` sections, which explain how
 `~proplot.wrappers.cmap_wrapper` and
 `~proplot.wrappers.cycle_wrapper` can be used to apply new colormaps
@@ -17,13 +19,12 @@ Colormap normalizers
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
-for all colormap plots. This allows for discrete levels in all
-situations – that is, `~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh` now accept a ``levels`` keyword
-arg, just like `~matplotlib.axes.Axes.contourf`.
-`~proplot.colortools.BinNorm` also ensures the colorbar colors span
-the entire colormap range, and that “cyclic” colorbar colors are
-distinct on each end.
+for all plotting commands involving colormaps. This permits discrete
+``levels`` even for commands like `~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh`. `~proplot.colortools.BinNorm`
+also ensures that colorbar colors span the entire colormap range, no
+matter the ``extend`` setting, and that “cyclic” colormap colors are
+distinct on each end of the colorbar.
 
 `~proplot.wrappers.cmap_wrapper` also fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
