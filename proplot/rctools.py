@@ -451,9 +451,11 @@ class rc_configurator(object):
         self._cache_restore = {}
 
     def __getitem__(self, key):
-        """Retrieves property. If we are in a `~rc_configurator.context`
-        block, may return ``None`` if the property is not cached, i.e. if the
-        property was not changed by user."""
+        """Retrieves `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcExtraParams`, and :ref:`rcGlobals` settings. If we are in a
+        `~rc_configurator.context` block, may return ``None`` if the setting
+        is not cached (i.e. if it was not changed by the user).
+        """
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
