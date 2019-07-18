@@ -605,7 +605,7 @@ class rc_configurator(object):
             self[attr] = value
 
     def __enter__(self):
-        """Apply temporary user global settings."""
+        """Apply temporary user settings."""
         self._cache_orig = rc._cache.copy()
         for key,value in self._context.items():
             self[key] = value # applies globally linked and individual settings
@@ -643,12 +643,12 @@ class rc_configurator(object):
     # Internally used, but public methods.
     def context(self, *args, mode=0, **kwargs):
         """
-        Temporarily modifies global settings in a ``with...as`` block,
+        Temporarily modifies settings in a ``with...as`` block,
         used by ProPlot internally but may also be useful for power users.
 
         This function was invented to prevent successive calls to
         `~proplot.axes.BaseAxes.format` from constantly looking up and re-applying
-        unchanged global settings.  Testing showed that these gratuitous
+        unchanged settings.  Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
         lookups and artist updates tended to increase runtime by seconds,
         even for relatively simple plots.
@@ -797,7 +797,7 @@ class rc_configurator(object):
 
     def update(self, *args, **kwargs):
         """
-        Bulk updates global settings, usage is similar to python `dict` objects.
+        Bulk updates settings, usage is similar to python `dict` objects.
 
         Parameters
         ----------
