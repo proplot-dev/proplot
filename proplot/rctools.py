@@ -686,6 +686,7 @@ class rc_configurator(object):
         -------
         .. code-block:: python
 
+            import proplot as plot
             with plot.rc.context(linewidth=2, ticklen=5):
                 f, ax = plot.subplots()
                 ax.plot(data)
