@@ -660,7 +660,8 @@ class rc_configurator(object):
         Other parameters
         ----------------
         mode : {0,1,2}, optional
-            Dictates the behavior of the `rc` object within the ``with...as``
+            The `~rc_configurator.__getitem__` mode.
+            Dictates the behavior of the `rc` object within a ``with...as``
             block when settings are requested with e.g. ``rc['setting']``. If
             you are using `~rc_configurator.context` manually, the `mode` is
             automatically set to ``0`` -- other input is ignored. Internally,
@@ -673,13 +674,14 @@ class rc_configurator(object):
                return ``None``. :ref:`rcExtraParams` and :ref:`rcGlobals` are
                returned whether or not `~rc_configurator.context` has changed them.
                This is used in the initial `~proplot.axes.BaseAxes.__init__`
-               call to `~proplot.axes.BaseAxes.format`.
+               call to `~proplot.axes.BaseAxes.format`. When a setting lookup
+               returns ``None``, `~proplot.axes.BaseAxes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during user
                calls to `~proplot.axes.BaseAxes.format`.
 
         Example
         -------
-        .. python::
+        .. code-block:: python
 
             with plot.rc.context(linewidth=2, ticklen=5):
                 f, ax = plot.subplots()
@@ -706,10 +708,10 @@ class rc_configurator(object):
         Parameters
         ----------
         key : str
-            The key name.
+            The setting name.
         cache : bool, optional
-            Whether to look for all properties or just cached (i.e.
-            recently changed) properties.
+            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
+            set to ``0`` (see `~rc_configurator.context`).
         """
         if not cache:
             orig = self._getitem_mode
@@ -719,7 +721,7 @@ class rc_configurator(object):
             self._getitem_mode = orig
         return item
 
-    def fill(self, props, cache=True, nodict=True):
+    def fill(self, props, cache=True):
         """
         Fill a dictionary containing rc property string names with the
         corresponding property. Defaults to **only** looking for cached
@@ -733,9 +735,10 @@ class rc_configurator(object):
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
         cache : bool, optional
-            Whether to look for all properties or just cached (i.e.
-            recently changed) properties. In the later case, keys that
-            return ``None`` will be omitted from the output dictionary.
+            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
+            set to ``0`` (see `~rc_configurator.context`). Otherwise, if an `rc`
+            lookup returns ``None``, the setting is omitted from the output
+            dictionary.
 
         Returns
         -------
@@ -777,9 +780,8 @@ class rc_configurator(object):
         cat : str, optional
             Category of rc settings to retrieve
         cache : bool, optional
-            If false, 
-            Whether to look for all properties or just cached (i.e.
-            recently changed) properties.
+            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
+            set to ``0`` (see `~rc_configurator.context`).
 
         Returns
         -------
