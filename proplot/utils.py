@@ -25,7 +25,8 @@ __all__ = ['arange', 'edges', 'journals', 'units']
 _data_user_paths = {*()}
 _data_allowed_paths = {'cmaps', 'cycles', 'fonts'}
 def _check_data():
-    """Check data folder, run this inside every register function."""
+    """Checks the data folder and issues helpful warning message for new users.
+    This is called inside every register function."""
     global _data_user_paths
     data_user = os.path.join(os.path.expanduser('~'), '.proplot')
     data_user_paths = {os.path.basename(path) for path in glob.glob(os.path.join(data_user, '*'))}
@@ -34,7 +35,7 @@ def _check_data():
         warnings.warn(f'Found extra files {", ".join(data_user_paths - _data_allowed_paths)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
 
 def _default(*args):
-    """Return the first non-``None`` value, used with keyword arg aliases and
+    """Returns the first non-``None`` value, used with keyword arg aliases and
     for setting default values."""
     for arg in args:
         if arg is not None:

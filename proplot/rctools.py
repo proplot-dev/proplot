@@ -314,7 +314,11 @@ _rc_categories = {
 def _set_cycler(name):
     """Sets the default color cycler."""
     # Draw from dictionary
-    colors = mcm.cmap_d[name].colors
+    try:
+        colors = mcm.cmap_d[name].colors
+    except Exception:
+        cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
+        raise ValueError(f'Invalid cycle name "{name}". Options are: {", ".join(cycles)}')
     # Apply color name definitions
     if _rcGlobals['rgbcycle'] and name.lower()=='colorblind':
         regcolors = colors + [(0.1, 0.1, 0.1)]

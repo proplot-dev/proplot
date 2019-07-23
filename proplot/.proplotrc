@@ -124,16 +124,16 @@ axes.geogrid: True
 image.edgefix: True
 image.levels: 11
 # Colorbar settings
+colorbar.loc:         'lower right'
 colorbar.grid:        False
 colorbar.frameon:     True
 colorbar.framealpha:  0.8
-colorbar.extendinset: 0.08
 colorbar.extend:      0.15
-colorbar.length:      0.6
-colorbar.width:       0.12
-colorbar.loc:         'lower right'
+colorbar.extendinset: 1em
+colorbar.length:      8em
+colorbar.width:       1.5em
 colorbar.axespad:     0.5em
-colorbar.xspace:      0.3
+colorbar.xspace:      2.5em
 # Minor tick gridlines
 gridminor.alpha: # if empty, inherited from "grid"
 gridminor.color: # if empty, inherited from "grid"

@@ -1597,17 +1597,18 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     norm_kw : dict-like, optional
         Passed to `~proplot.colortools.Norm`.
     levels : None or int or list of float, optional
-        If list of numbers, these are the level *edges*. If integer, this is
-        the number of level edges, and positions are chosen based on the input
-        data. Default is ``rc['image.levels']``.
+        The number of level edges, or a list of level edges. If the former,
+        `locator` to generate this many levels at "nice" intervals.
+        Default is ``rc['image.levels']``.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
         accept the `levels` keyword arg. You can now discretize your
         colors in a ``pcolor`` plot just like with ``contourf``.
-    values : None or list of float, optional
-        The level *centers*. If not ``None``, levels are inferred using
-        `~proplot.utils.edges` and override the `levels` keyword arg.
+    values : None or int or list of float, optional
+        The number of level centers, or a list of level centers. If provided,
+        levels are inferred using `~proplot.utils.edges`. This will override
+        any `levels` input.
     vmin, vmax : None or float, optional
         Used to determine level locations if `levels` is an integer and at
         least one of `vmin` and `vmax` is provided. The levels will be
@@ -1615,10 +1616,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         was provided, `vmin` is the data minimum. If `vmax` was omitted but
         `vmin` was provided, `vmax` is the data maximum.
     locator : None or locator-spec, optional
-        Used to determine level locations if `levels` is an integer and `vmin`
-        or `vmax` were not provided. Passed to the `~proplot.axistools.Locator`
+        Used to determine level locations if `levels` or `values` is an integer
+        and `vmin` and `vmax` were not provided. Passed to the `~proplot.axistools.Locator`
         constructor. Defaults to `~matplotlib.ticker.MaxNLocator` with
-        ``levels`` integer levels.
+        ``levels`` or ``values+1`` integer levels.
     locator_kw : dict-like, optional
         Passed to `~proplot.axistools.Locator`.
     symmetric : bool, optional
@@ -1729,14 +1730,19 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
     # Get level edges from level centers
     # See this post: https://stackoverflow.com/a/48614231/4970632
-    if np.iterable(values):
-        if name in ('cmapline',):
-            kwargs['values'] = values
-        if norm is None:
-            levels = utils.edges(values)
+    if values is not None:
+        if np.iterable(values):
+            if name in ('cmapline',):
+                kwargs['values'] = values
+            if norm is None:
+                levels = utils.edges(values)
+            else:
+                norm_tmp = colortools.Norm(norm, **norm_kw)
+                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+        elif isinstance(values, Number):
+            levels = values + 1
         else:
-            norm_tmp = colortools.Norm(norm, **norm_kw)
-            levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+            raise ValueError('Unexpected values input "{values}". Must be integer or list of numbers.')
 
     # Input colormap, for methods that accept a colormap and normalizer
     if not name[-7:]=='contour': # contour, tricontour, i.e. not a method where cmap is optional
