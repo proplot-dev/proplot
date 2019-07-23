@@ -2253,7 +2253,7 @@ def breakdown_cmap(cmap, N=100, space='hcl', markersize=300, aspect=1, axwidth=1
         lut = cmap._lut[:-3,:3].copy()
     # Figure and plot
     from . import subplots
-    f, axs = subplots(
+    fig, axs = subplots(
         array=[[1,1,2,2,3,3],[0,4,4,5,5,0],[6,6,7,7,8,8]],
         axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0, aspect=aspect/2,
         subplotpad='1em',
@@ -2294,6 +2294,7 @@ def breakdown_cmap(cmap, N=100, space='hcl', markersize=300, aspect=1, axwidth=1
     axs.format(
         suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
         )
+    return fig
 
 def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
     """Generates hue-saturation, hue-luminance, and luminance-saturation
@@ -2301,7 +2302,6 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
     cross-section is determined by which of the `luminance`, `saturation`, and
     `hue` channels are fixed."""
     # Get colorspace properties
-    from . import subplots
     hues = np.linspace(0, 360, 361)
     sats = np.linspace(0, 120, 120) # use 120 instead of 121, prevents annoying rough edge on HSL plot
     lums = np.linspace(0, 99.99, 101)
@@ -2337,7 +2337,8 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    f, axs = subplots(
+    from . import subplots
+    fig, axs = subplots(
         ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
         right=0, aspect=1, tight=True, subplotpad=0.05
         )
@@ -2355,7 +2356,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
                   grid=False, xtickminor=False, ytickminor=False,
                   xlocator=xloc, ylocator=yloc, facecolor='k',
                   title=space.upper(), titleweight='bold')
-    return f
+    return fig
 
 def show_colors(opencolors=False, nbreak=17, minsat=0.2):
     """Visualizes the registered color names. Adapted from `this example
@@ -2475,8 +2476,8 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
     a = np.linspace(0, 1, 257).reshape(1,-1)
     a = np.vstack((a,a))
     # Figure
-    naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
     from . import subplots
+    naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
     fig, axs = subplots(
         nrows=naxs, axwidth=cbarlength, axheight=cbarwidth,
         span=False, share=False, hspace=0.03, tightsubplot=False,
@@ -2513,16 +2514,18 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
 def show_cycles(icycles=None, axwidth=1.5):
     """Visualizes all registered color cycles, or the list of colormap names
     `icycles` if it is provided."""
-    from . import subplots
     # Get the list of cycles
     if icycles is None:
         icycles = {key:mcm.cmap_d[key].colors for key in cycles} # use global cycles variable
     icycles = {key:icycles[key] for key in sorted(icycles.keys())}
     nrows = len(icycles)//3 + len(icycles)%3
     # Create plot
+    from . import subplots
     state = np.random.RandomState(528)
-    fig, axs = subplots(ncols=3, nrows=nrows, aspect=1, axwidth=axwidth,
-        sharey=False, sharex=False, subplotpad=0.05)
+    fig, axs = subplots(
+        ncols=3, nrows=nrows, aspect=1, axwidth=axwidth,
+        sharey=False, sharex=False, subplotpad=0.05
+        )
     for i,(ax,(key,cycle)) in enumerate(zip(axs, icycles.items())):
         key = key.lower()
         array = state.rand(20,len(cycle)) - 0.5
