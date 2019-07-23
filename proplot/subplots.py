@@ -270,8 +270,8 @@ class Figure(mfigure.Figure):
         self._smart_borderpad = units(_default(borderpad, rc['subplot.borderpad']))
         self._smart_subplotpad  = units(_default(subplotpad,  rc['subplot.subplotpad']))
         self._smart_panelpad = units(_default(panelpad, rc['subplot.panelpad']))
-        self._subplot_wflush = _default(flush, wflush)
-        self._subplot_hflush = _default(flush, hflush)
+        self._subplot_wflush = _default(wflush, flush)
+        self._subplot_hflush = _default(hflush, flush)
         # Gridspec information, filled in by subplots()
         self._ref_num = 1
         self._main_axes = []  # list of 'main' axes (i.e. not insets or panels)

@@ -430,10 +430,6 @@ class rc_configurator(object):
                 if ckeys!=_rc_names_custom:
                     raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {_rc_names_custom - ckeys}.')
 
-            # Update (rcParams checks against invalid keys by default)
-            for key,value in data.get('rcParams', {}).items():
-                _rcParams[key] = value
-
         # Set default fontname and cycler
         _set_cycler(_rcGlobals['cycle'])
         if _rcGlobals.get('fontname', None) is None:
@@ -840,44 +836,14 @@ class rc_configurator(object):
         if not self._init: # save resources if rc is unchanged!
             return self.__init__()
 
-# Rc object
+# Declare rc object
+# WARNING: Must be instantiated after ipython notebook setup! The default
+# backend may change some rc settings!
 rc = rc_configurator()
 """Instance of `rc_configurator`. This is used to change global settings.
 See the `~proplot.rctools` documentation for details."""
 
-#------------------------------------------------------------------------------#
 # Ipython notebook behavior
-#------------------------------------------------------------------------------#
-# Unbelievably weird problem:
-#   * Apparently you can change the backend until the first plot is drawn, then
-#     it stays the same. So the rcdefault() command changes the backend to a
-#     non-inline version. See: https://stackoverflow.com/q/48320804/4970632
-#
-# Notes on python figures:
-#   * Can use InlineBackend rc configuration to make inline figure properties
-#     different from figure.<subproperty> settings in rcParams. Problem is,
-#     whenever rcParams are reset/pyfuncs module is reloaded, the previous
-#     InlineBackend properties disappear.
-#   * It is *also* necessary to maintain separate savefig options, including 'transparent'
-#     and 'facecolor' -- cannot just set these to use the figure properties.
-#     If transparent set to False, saved figure will have no transparency *even if* the
-#     default figure.facecolor has zero alpha. Will *only* be transparent if alpha explicitly
-#     changed by user command. Try playing with settings in plot.globals to see.
-#
-# Notes on jupyter configuration:
-#   * In .jupyter, the jupyter_nbconvert_config.json sets up locations of stuff; templates
-#       for nbextensions and formatting files for markdown/code cells.
-#   * In .jupyter, the jupyter_notebook_config.json installs the configurator extension
-#       for managing extra plugins.
-#   * In .jupyter, not sure yet how to successfully use jupyter_console_config.py and
-#       jupyter_notebook_config.py; couldn't get it to do what this function does on startup.
-#   * In .jupyter/custom, current_theme.txt lists the current jupyterthemes theme, custom.css
-#       contains CSS formatting for it, and fonts should contain font files -- note that there
-#       are not font files on my Mac, even though jupyterthemes works; sometimes may be empty
-#   * In .jupyter/nbconfig, tree.json loads the extra tab for the NBconfigurator, and
-#       common.json gives option to hide incompatible plugs, and notebook.json contains all
-#       the new settings; just copy it over to current notebook to update
-#------------------------------------------------------------------------------#
 def nb_setup():
     """
     Sets up your iPython workspace, called on import if ``rc['nbsetup']`` is
@@ -903,6 +869,7 @@ def nb_setup():
 
     # Initialize with default 'inline' settings
     # Reset rc object afterwards
+    rc._init = False
     try:
         # For notebooks
         ipython.magic("matplotlib inline") # change print_figure_kwargs to see edges
@@ -918,7 +885,7 @@ def nb_setup():
                 ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
         # Retina probably more space efficient (high-res bitmap), but svg is
         # prettiest and is only one preserving vector graphics
-        ipython.magic("config InlineBackend.figure_formats = ['retina']")
+        ipython.magic("config InlineBackend.figure_formats = ['svg']")
         # Control all settings with 'rc' object, *no* notebook-specific overrides
         ipython.magic("config InlineBackend.rc = {}")
         # So don't have memory issues/have to keep re-closing them
@@ -926,6 +893,7 @@ def nb_setup():
         # Disable matplotlib tight layout, use proplot instead
         ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
-# Run nbsetup
+# Setup notebook
 if _rcGlobals['nbsetup']:
     nb_setup()
+

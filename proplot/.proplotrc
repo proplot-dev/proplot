@@ -52,10 +52,11 @@ figure.titleweight:      bold
 figure.max_open_warning: 0
 savefig.directory:
 savefig.dpi:             300
+savefig.facecolor:       white
+savefig.transparent:     True
 savefig.format:          pdf
 savefig.bbox:            standard
 savefig.pad_inches:      0.0
-savefig.transparent:     True
 axes.titleweight:        normal
 axes.xmargin:            0.0
 axes.ymargin:            0.0

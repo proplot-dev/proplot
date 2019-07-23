@@ -50,17 +50,17 @@ sections:
    folder. A great way to save colormaps to this folder is using the
    `~proplot.colortools.Colormap` constructor function. See
    :ref:`On-the-fly colormaps` for details.
--  Original matplotlib and seaborn colormaps.
--  ProPlot maps belonging to the
+-  Matplotlib and seaborn original colormaps.
+-  ProPlot colormaps belonging to the
    `~proplot.colortools.PerceptuallyUniformColormap` class. See the
    :ref:`Perceptually uniform colormaps` section.
--  `ColorBrewer <http://colorbrewer2.org/>`__ maps, included with
-   matplotlib by default.
+-  Miscellaneous diverging colormaps.
 -  `cmOcean <https://matplotlib.org/cmocean/>`__ colormaps, originally
    intended for oceanographic visualizations but useful for all
    scientific fields.
--  Miscellaneous diverging colormaps.
--  Maps from the
+-  `ColorBrewer <http://colorbrewer2.org/>`__ colormaps, included with
+   matplotlib by default.
+-  Colormaps from the
    `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ online
    interactive tool. There are so many of these maps because they are
    intended to be *merged* with one another – suitable for complex
@@ -76,12 +76,11 @@ See `~proplot.colortools.CmapDict` for more info.
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.show_cmaps(31)
+    f = plot.show_cmaps()
 
 
 
-
-.. image:: quickstart/quickstart_101_1.svg
+.. image:: quickstart/quickstart_101_0.svg
 
 
 On-the-fly colormaps
@@ -342,12 +341,11 @@ non-linear in saturation.
 
 
 
+.. image:: quickstart/quickstart_121_0.svg
+
+
 
 .. image:: quickstart/quickstart_121_1.svg
-
-
-
-.. image:: quickstart/quickstart_121_2.svg
 
 
 Adding online colormaps

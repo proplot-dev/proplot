@@ -87,6 +87,15 @@ _cmaps_categories = {
     'Miscellaneous Diverging': (
         'ColdHot', 'CoolWarm', 'BR',
         ),
+    # cmOcean
+    'cmOcean Sequential': (
+        'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
+        'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
+        'Amp', 'Phase',
+        ),
+    'cmOcean Diverging': (
+        'Balance', 'Delta', 'Curl',
+        ),
     # ColorBrewer
     'ColorBrewer2.0 Sequential': (
         'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
@@ -96,15 +105,6 @@ _cmaps_categories = {
     'ColorBrewer2.0 Diverging': (
         'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
         'RdBu', 'RdYlBu', 'RdYlGn',
-        ),
-    # cmOcean
-    'cmOcean Sequential': (
-        'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
-        'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
-        'Amp', 'Phase',
-        ),
-    'cmOcean Diverging': (
-        'Balance', 'Delta', 'Curl',
         ),
     # SciVisColor
     'SciVisColor Blues': (
@@ -260,13 +260,6 @@ _color_space_channel_scales = {
     'hcl': (360,100,100),
     'hsl': (360,100,100),
     'hpl': (360,100,100)
-    }
-_color_space_channel_names  = {
-    'rgb': ('red', 'green', 'blue'),
-    'hsv': ('hue', 'saturation', 'value'),
-    'hcl': ('hue', 'saturation', 'luminance'),
-    'hsl': ('hue', 'relative sat', 'luminance'),
-    'hpl': ('hue', 'relative sat', 'luminance')
     }
 
 #------------------------------------------------------------------------------#
@@ -2243,50 +2236,64 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Demos
 #------------------------------------------------------------------------------#
-def breakdown_cmap(cmap, N=100, space='hcl', axwidth=1.5, cbarwidth=0.4):
+def breakdown_cmap(cmap, N=100, space='hcl', markersize=300, aspect=1, axwidth=1.2):
     """Shows how an arbitrary colormap varies in the HCL, HSLuv, and HPLuv
     colorspaces."""
-    # Figure
-    from . import subplots
-    f, axs = subplots(ncols=4, aspect=1, axwidth=axwidth, span=0, sharey=1,
-        legends='b', colorbar='r', subplotpad=0.05, rwidth=cbarwidth)
+    # Get colormap
     x = np.linspace(0, 1, N)
     cmap = Colormap(cmap, N=N) # arbitrary cmap argument
     cmap._init()
     name = cmap.name
-    for j,(ax,space) in enumerate(zip(axs,('hcl','hsl','hpl','rgb'))):
-        # Get RGB table, unclipped
-        hs = []
-        if hasattr(cmap, 'space'):
-            lut = cmap._lut_hsl[:,:3].copy()
-            for i in range(len(lut)):
-                lut[i,:] = to_rgb(lut[i,:], cmap.space)
-        else:
-            lut = cmap._lut[:,:3].copy()
-        # Convert RGB to space
+    # Get RGB table, unclipped
+    if hasattr(cmap, 'space'):
+        lut = cmap._lut_hsl[:,:3].copy()
         for i in range(len(lut)):
-            lut[i,:] = to_xyz(lut[i,:], space=space)
-        scale  = _color_space_channel_scales[space]
-        labels = _color_space_channel_names[space]
-        # Draw line, add legend
-        colors = ('C1', 'C2', 'C0') # corresponds with RGB roughly
-        m = 0
-        for i,label in enumerate(labels):
-            y = lut[:-3,i]/scale[i]
-            y = np.clip(y, 0, 5)
-            h, = ax.plot(x, y, color=colors[i], lw=2, label=label)
-            m = max(m, max(y))
-            hs += [h]
-        f.bottompanel[j].legend([hs[:2], hs[-1:]], frame=False)
-        # ax.legend([hs[:2], hs[-1:]], frame=True)
-        ax.axhline(1, color='gray7', dashes=(1.5, 2.5), alpha=0.8, zorder=0, lw=2)
-        ax.format(title=space.upper(), titleloc='c', ylim=(0-0.1, m + 0.1))
+            lut[i,:] = to_rgb(lut[i,:], cmap.space)
+    else:
+        lut = cmap._lut[:-3,:3].copy()
+    # Figure and plot
+    from . import subplots
+    f, axs = subplots(
+        array=[[1,1,2,2,3,3],[0,4,4,5,5,0],[6,6,7,7,8,8]],
+        axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0, aspect=aspect/2,
+        subplotpad='1em',
+        )
+    channels = (
+        'hue', 'chroma', 'luminance',
+        'saturation', 'saturation',
+        'red', 'blue', 'green'
+        )
+    spaces = (
+        'HCL', 'HCL', 'HCL',
+        'HSL', 'HPL',
+        'RGB', 'RGB', 'RGB',
+    )
+    rgb = lut.T # 3 by N
+    hcl = np.array([to_xyz(color, space='hcl') for color in lut]).T # 3 by N
+    hsl = [to_xyz(color, space='hsl')[1] for color in lut]
+    hpl = [to_xyz(color, space='hpl')[1] for color in lut]
+    for ax,y,space,channel in zip(axs,(*hcl,hsl,hpl,*rgb),spaces,channels):
+        ax.scatter(x, y, c=x, cmap=cmap, s=markersize, linewidths=0)
+        ylim, ylocator = None, None
+        if space=='RGB':
+            ylim = (0,1)
+            ylocator = 0.2
+        elif channel=='luminance':
+            ylim = (0,100)
+            ylocator = 20
+        elif channel=='hue':
+            ylim = (0,360)
+            ylocator = 90
+        else:
+            ylim = (0,None)
+            ylocator = ('maxn', 5)
+        ax.format(
+            title=f'{space}: {channel}', xlocator='null', ylim=ylim, ylocator=ylocator,
+            )
     # Draw colorbar
-    with np.errstate(all='ignore'):
-        m = ax.contourf([[np.nan,np.nan],[np.nan,np.nan]], levels=100, cmap=cmap)
-    f.rightpanel.colorbar(m, locator='none', formatter='none', label=f'{name} colors')
-    axs.format(suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
-              xlabel='position', ylabel='scaled channel value')
+    axs.format(
+        suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
+        )
 
 def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
     """Generates hue-saturation, hue-luminance, and luminance-saturation
@@ -2330,8 +2337,10 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    f, axs = subplots(ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
-        right=0, aspect=1, tight=True, subplotpad=0.05)
+    f, axs = subplots(
+        ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
+        right=0, aspect=1, tight=True, subplotpad=0.05
+        )
     for ax,space in zip(axs,('hcl','hsl','hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
         for j in range(hsl.shape[0]):
@@ -2418,7 +2427,8 @@ def show_colors(opencolors=False, nbreak=17, minsat=0.2):
         # Easy peasy. And put 40 colors in a column
         fig, ax = subplots(
             width=8*wscale*(ncols/4), height=5*(nrows/40),
-            left=0, right=0, top=0, bottom=0, tight=False)
+            left=0, right=0, top=0, bottom=0, tight=False
+            )
         X, Y = fig.get_dpi()*fig.get_size_inches() # size in *dots*; make these axes units
         hsep, wsep = Y/(nrows+1), X/ncols # height and width of row/column in *dots*
         for col,huelist in enumerate(plot_names):
@@ -2444,7 +2454,6 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
     if it is provided. Adapted from `this example
     <http://matplotlib.org/examples/color/colormaps_reference.html>`__."""
     # Have colormaps separated into categories
-    from . import subplots
     if imaps is None:
         imaps = [
             name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
@@ -2452,6 +2461,7 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
             ]
 
     # Get dictionary of registered colormaps and their categories
+    imaps = [name.lower() for name in imaps]
     cats = {cat:names for cat,names in _cmaps_categories.items()}
     cats_plot = {cat:[name for name in names if name.lower() in imaps] for cat,names in cats.items()}
     # Distinguish known from unknown (i.e. user) maps, add as a new category
@@ -2466,10 +2476,11 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
     a = np.vstack((a,a))
     # Figure
     naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
-    fig, axs = subplots(nrows=naxs, axwidth=cbarlength, axheight=cbarwidth,
-            span=False, share=False, hspace=0.03,
-            tightsubplot=False,
-            )
+    from . import subplots
+    fig, axs = subplots(
+        nrows=naxs, axwidth=cbarlength, axheight=cbarwidth,
+        span=False, share=False, hspace=0.03, tightsubplot=False,
+        )
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
     for cat,names in cats_plot.items():
