@@ -95,7 +95,7 @@ Why not add to matplotlib directly?
 -----------------------------------
 ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the special ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
 ProPlot's "smart tight layout" feature also conflicts with
-matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable inter-subplot spacing*.
+matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable subplot spacing*.
 
 In other ways, ProPlot represents an alternative to the *existing* matplotlib, cartopy, and basemap APIs.
 For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``, and some of the functionality of ``subplots`` can be replicated with the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ project. As such, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
