@@ -29,11 +29,11 @@ This differentiates ProPlot from the usual "``plt``" abbreviation used for the `
 
 Documentation
 -------------
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`_.
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 Donations
 ---------
-At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the "donate" badge and sending me a small donation.
+At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
 
 Overview
 --------
@@ -63,7 +63,7 @@ Here are some highlights of the remaining features:
    and ``Cycle`` constructor functions, integrated with the ``format`` command,
    ``subplots`` command, and plotting commands. More power and less boilerplate code.
 *  Automatic axes, colorbar, and legend formatting when
-   `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` objects are passed
+   ``xarray.DataArray``, ``pandas.DataFrame``, or ``pandas.Series`` objects are passed
    to a plotting command, just like their respective ``plot`` methods.
 *  Beautiful new colormaps, named "color cycles", and easy-to-remember
    color names. Tools for merging colormaps and making new "perceptually
