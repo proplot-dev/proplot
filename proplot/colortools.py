@@ -64,7 +64,7 @@ _cmaps_categories = {
         ),
     # Builtin
     'Matplotlib Originals': (
-        'viridis', 'plasma', 'inferno', 'magma', 'twilight', 'twilight_shifted',
+        'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight', 'twilight_shifted',
         ),
     # seaborn
     'Seaborn Originals': (
@@ -137,7 +137,7 @@ _cmaps_categories = {
         'gist_rainbow', 'gist_stern', 'gist_yarg',
         ),
     'Miscellaneous': (
-        'cividis', 'binary', 'bwr', 'brg', # appear to be custom matplotlib, very simple construction
+        'binary', 'bwr', 'brg', # appear to be custom matplotlib, very simple construction
         'cubehelix', 'wistia',  'CMRmap', # individually released
         'seismic', 'terrain', 'nipy_spectral', # origin ambiguous
         ),
@@ -146,7 +146,7 @@ _cmaps_delete = (
     'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
     'spring', 'summer', 'autumn', 'winter', 'cool', 'wistia',
     'afmhot', 'gist_heat', 'copper',
-    'cividis', 'seismic', 'bwr', 'brg',
+    'seismic', 'bwr', 'brg',
     'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
     'gnuplot', 'gnuplot2', 'cmrmap', 'hsv', 'hot', 'rainbow',
     'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
