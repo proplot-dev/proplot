@@ -145,7 +145,7 @@ You can also add labels to `~matplotlib.axes.Axes.pcolor`,
 `~proplot.wrappers.cmap_wrapper`. Just pass the ``labels=True``
 keyword argument, and ProPlot will draw contour labels with
 `~matplotlib.axes.Axes.clabel` or grid box labels with
-``~matpltolib.axes.Axes.text``. The label format can be changed by
+`~matplotlib.axes.Axes.text`. The label format can be changed by
 passing a ``labels_kw`` dictionary of settings (e.g.
 ``labels_kw={'fontsize':12}``) and with the ``precision`` keyword arg.
 For grid box labels, the label color is automatically chosen based on
