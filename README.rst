@@ -97,7 +97,7 @@ ProPlot has some direct conflicts with the matplotlib API. It enforces a *static
 ProPlot's "smart tight layout" feature also conflicts with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable subplot spacing*.
 
-In other ways, ProPlot represents an alternative to the *existing* matplotlib, cartopy, and basemap APIs.
+In other ways, ProPlot represents an alternative to *existing* APIs.
 For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``, and some of the functionality of ``subplots`` can be replicated with the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ project. As such, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
 
 Nevertheless, if there are any core matplotlib developers reading this, and you think that some of ProPlot's features should be added to matplotlib, please contact me!
