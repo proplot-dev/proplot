@@ -50,11 +50,12 @@ The next most important utility is the ``format`` method, available on every axe
 
 Here are some highlights of the remaining features:
 
-*  A smarter "tight layout" feature. Figure width or height changed
-   so that subplot aspect ratios are fixed. Inner space between subplots
-   automatically scaled so subplot tick labels, etc. do
-   not overlap. Arbitrary physical units (e.g. ``cm``, ``mm``) when specifying
-   dimensions and sizes.
+*  A smarter "tight layout" feature. Figure width and height is allowed to vary
+   so that subplot aspect ratios remain fixed, which is particularly useful
+   for grids of map projections and images. Inner spaces between subplots are
+   automatically scaled so that subplot tick labels, etc. do
+   not overlap. Arbitrary physical units (e.g. ``cm``, ``mm``) can be used
+   when specifying dimensions and sizes.
 *  Axes panels and figure panels, generally used for colorbars and legends
    that refer to multiple subplots at once. New "inset" colorbars.
    Colorbars from lists of lines or colors. Legends with centered
@@ -93,12 +94,11 @@ In summary, this project is intended to unify the convenience of seaborn, pandas
 Why not add to matplotlib directly?
 -----------------------------------
 ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the special ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
-And ProPlot's "smart tight layout" feature conflicts with
-matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability to preserve axes aspect ratios by sacrificing fixed figure dimensions. Much of ``subplots`` can in fact be seen as a more flexible alternative to the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ package.
+ProPlot's "smart tight layout" feature also conflicts with
+matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable inter-subplot spacing*.
 
-Further, the ProPlot API in many ways represents an alternative to the *existing* matplotlib, cartopy, and basemap APIs.
-For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``.
-Thus, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
+In other ways, ProPlot represents an alternative to the *existing* matplotlib, cartopy, and basemap APIs.
+For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``, and some of the functionality of ``subplots`` can be replicated with the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ project. As such, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
 
 Nevertheless, if there are any core matplotlib developers reading this, and you think that some of ProPlot's features should be added to matplotlib, please contact me!
 
