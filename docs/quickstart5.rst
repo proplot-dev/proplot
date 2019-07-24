@@ -206,33 +206,35 @@ Perceptually uniform colormaps
 ------------------------------
 
 ProPlot’s custom colormaps are instances of the new
-``PerceptuallyUniformColormap`` class (see :ref:`Registered colormaps`
-for a table). These classes employ *linear transitions* between channel
-values in any of three possible “perceptually uniform”, HSV-like
-colorspaces. These colorspaces can be described as follows:
+`~proplot.colortools.PerceptuallyUniformColormap` class (see
+:ref:`Registered colormaps` for a table).
+`~proplot.colortools.PerceptuallyUniformColormap` objects generate
+colors by interpolating between coordinates in any of three possible
+“perceptually uniform” colorspaces:
 
 -  **HCL**: A purely perceptually uniform colorspace, where colors are
    broken down into “hue” (color, range 0-360), “chroma” (saturation,
    range 0-100), and “luminance” (brightness, range 0-100).
--  **HPLuv**: As with HCL, but 100 saturation is scaled to be the
-   *minimum maximum saturation* across all hues for a given luminance,
-   and is hence more appropriate for multi-hue colormaps.
--  **HSLuv**: As with HCL, but 100 saturation is scaled to be the
-   *maximum possible saturation* for a given hue and luminance. This is
-   more appropriate for single-hue colormaps, because crossing hues in
-   this space make it more likely that bands of higher absolute
-   saturation are crossed.
+-  **HPLuv**: Hue and luminance are identical to HCL, but 100 saturation
+   is scaled to be the *minimum maximum saturation* across all hues for
+   a given luminance. HPLuv is more appropriate for multi-hue colormaps.
+-  **HSLuv**: Hue and luminance are identical to HCL, but 100 saturation
+   is scaled to be the *maximum possible saturation* for a given hue and
+   luminance. HSLuv is more appropriate for single-hue colormaps –
+   saturation banding can occur when crossing hue thresholds in this
+   space.
 
-The HCL space is the only “purely” perceptually uniform colorspace. But
-during a linear transition between two values, we may cross over
-“impossible” colors (i.e. colors with RGB channels >1). The HSLuv and
-HPLuv colorspaces were developed to resolve this issue by (respectively)
-scaling and clipping high-saturation colors across different hues and
-luminances.
+HCL is the only “purely” perceptually uniform colorspace. But
+interpolating between coordinates in this space can result in
+“impossible” colors – colors that, when translated from HCL back into
+RGB, result in RGB channels greater than 1. HSLuv and HPLuv help resolve
+this issue by respectively *scaling* and *clipping* the
+highest-saturation colors across different hues and luminances. See
+`this page <http://www.hsluv.org/comparison/>`__ for more info.
 
-Use `~proplot.colortools.show_colorspaces` to plot arbitrary
-cross-sections of these colorspaces. Also see `this
-page <http://www.hsluv.org/comparison/>`__.
+To plot arbitrary cross-sections of these colorspaces, use
+`~proplot.colortools.show_colorspaces`. The blacked out regions
+represent “impossible” colors.
 
 .. code:: ipython3
 
@@ -264,26 +266,26 @@ page <http://www.hsluv.org/comparison/>`__.
 .. image:: quickstart/quickstart_115_0.svg
 
 
-To see how the colors in a colormap vary across different colorspaces,
-use the `~proplot.colortools.cmap_breakdown` function. This is done
-below for the builtin “viridis” colormap and the “Fire”
-`~proplot.colortools.PerceptuallyUniformColormap`. We see that “Fire”
-are “viridis” are linear in the hue and luminance channels, but not in
-the chroma channel.
+To see how any colormap varies with respect to each channel, use the
+`~proplot.colortools.cmap_breakdown` function. Below, we do this for
+the “magma”, “rocket”, and ProPlot “Fire” colormaps. The first two are
+nicely-designed `~matplotlib.colors.LinearSegmentedColormap` maps, and
+the last one is a `~proplot.colortools.PerceptuallyUniformColormap`.
+They all vary linearly across the hue and luminance channels, but not
+the chroma channel (top row). “Fire” is linear in the HSL scaling of the
+chroma channel (center left), while other ProPlot colormaps are linear
+in the HPL scaling of the chroma channel (center right). All of these
+colormaps vary eratically in the red, blue and green channels (bottom
+row), as is the case for most nice-looking colormaps.
 
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.breakdown_cmap('fire')
-    f = plot.breakdown_cmap('viridis')
+    f = plot.show_channels('fire', 'magma', 'rocket')
 
 
 
 .. image:: quickstart/quickstart_117_0.svg
-
-
-
-.. image:: quickstart/quickstart_117_1.svg
 
 
 You can generate your own
@@ -303,20 +305,28 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, span=False, axcolorbars='b', axwidth=2.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, span=False, axwidth=2.5, aspect=1.5)
     ax = axs[0]
-    cmap = plot.Colormap({'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100], 'space':'hcl'})
-    m = ax.contourf(np.random.rand(10,10), levels=plot.arange(0.1,0.9,0.1), extend='both', colorbar='b', cmap=cmap)
-    ax.format(xlabel='x axis', ylabel='y axis', title='Matter look-alike',
+    # Designs
+    data = np.random.rand(10,15)
+    cmap1 = plot.Colormap({'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100]}, name='Matter', space='hcl')
+    m = ax.pcolormesh(data, levels=plot.arange(0.1,0.9,0.1), extend='both', cmap=cmap1)
+    ax.format(xlabel='x axis', ylabel='y axis', title='Matter-style colormap',
               suptitle='Building your own PerceptuallyUniformColormaps')
     ax = axs[1]
-    cmap = plot.Colormap({'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100], 'space':'hpl'})
-    m = ax.contourf(np.random.rand(10,10), levels=plot.arange(0.1,0.9,0.05), extend='both', colorbar='b', colorbar_kw={'locator':0.1}, cmap=cmap)
-    ax.format(xlabel='x axis', ylabel='y axis', title='cubehelix look-alike')
+    cmap2 = plot.Colormap({'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100]}, name='cubehelix', space='hpl')
+    m = ax.pcolormesh(data, levels=plot.arange(0.1,0.9,0.05), extend='both', cmap=cmap2)
+    ax.format(xlabel='x axis', ylabel='y axis', title='Cubehelix-style colormap')
+    # Breakdowns
+    f = plot.show_channels(cmap1, cmap2)
 
 
 
 .. image:: quickstart/quickstart_119_0.svg
+
+
+
+.. image:: quickstart/quickstart_119_1.svg
 
 
 It is also easy to change the “gamma” of a
@@ -331,20 +341,28 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, nrows=2, axcolorbars='r', aspect=1)
+    name = 'boreal'
+    # Illustrations
+    f, axs = plot.subplots(ncols=3, axcolorbars='r', aspect=1)
     data = np.random.rand(10,10).cumsum(axis=1)
-    i = 0
-    for cmap in ('boreal','fire'):
-        for gamma in (0.8, 1.0, 1.4):
-            ax = axs[i]
-            m1 = ax.pcolormesh(data, cmap=cmap, cmap_kw={'gamma':gamma}, levels=10, extend='both')
-            ax.rpanel.colorbar(m1, locator='none')
-            ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Modifying existing PerceptuallyUniformColormaps')
-            i += 1
+    cmaps = []
+    for ax,gamma in zip(axs,(0.8, 1.0, 1.4)):
+        cmap = plot.Colormap(name, gamma=gamma)
+        cmap.name = f'gamma={gamma}'
+        cmaps.append(cmap)
+        m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
+        ax.rpanel.colorbar(m, locator='none')
+        ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Modifying existing PerceptuallyUniformColormaps')
+    # Breakdowns
+    f = plot.show_channels(*cmaps)
 
 
 
 .. image:: quickstart/quickstart_121_0.svg
+
+
+
+.. image:: quickstart/quickstart_121_1.svg
 
 
 Adding online colormaps

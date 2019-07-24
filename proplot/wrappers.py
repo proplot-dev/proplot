@@ -1601,15 +1601,15 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         constructor.
     cmap_kw : dict-like, optional
         Passed to `~proplot.colortools.Colormap`.
-    extend : {'neither', 'min', 'max', 'both'}, optional
-        Where to assign unique colors to out-of-bounds data and draw
-        "extensions" (triangles, by default) on the colorbar.
     norm : normalizer spec, optional
         The colormap normalizer, used to warp data before passing it
         to `~proplot.colortools.BinNorm`. This is passed to the
         `~proplot.colortools.Norm` constructor.
     norm_kw : dict-like, optional
         Passed to `~proplot.colortools.Norm`.
+    extend : {'neither', 'min', 'max', 'both'}, optional
+        Where to assign unique colors to out-of-bounds data and draw
+        "extensions" (triangles, by default) on the colorbar.
     N, levels : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
         `locator` to generate this many levels at "nice" intervals.
@@ -1771,6 +1771,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     if not name[-7:]=='contour': # contour, tricontour, i.e. not a method where cmap is optional
         cmap = _default(cmap, rc['image.cmap'])
     if cmap is not None:
+        # Get colormap object
         cmap = colortools.Colormap(cmap, N=None, **cmap_kw)
         cyclic = cmap._cyclic
         if cyclic and extend!='neither':
@@ -1780,7 +1781,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
         # Get default normalizer
         # Only use LinearSegmentedNorm if necessary, because it is slow
-        if norm is None:
+        if norm is None and name not in ('hexbin',):
             if not np.iterable(levels):
                 norm = 'linear'
             else:
@@ -1792,71 +1793,78 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                     norm = 'segmented'
                 else:
                     norm = 'linear'
-        norm_kw = {**norm_kw} # copy!
-        norm_kw.setdefault('vmin', _default(vmin, zmin))
-        norm_kw.setdefault('vmax', _default(vmax, zmax))
-        norm = colortools.Norm(norm, levels=levels, **norm_kw)
+        if norm is not None:
+            norm_kw = {**norm_kw} # copy!
+            norm = colortools.Norm(norm, levels=levels, **norm_kw)
 
     # Get default levels
     # TODO: Add kernel density plot to hexbin!
-    if name not in ('hexbin',):
-        levels = _default(N, levels, rc['image.levels']) # e.g. pcolormesh can auto-determine levels if you input a number
+    levels = _default(N, levels, rc['image.levels'])
     if isinstance(levels, Number):
-        # Set levels according to vmin and vmax
-        N = levels
-        if vmin is not None or vmax is not None:
-            vmin = _default(vmin, zmin)
-            vmax = _default(vmax, zmax)
-            levels = np.linspace(vmin, vmax, N)
-        # Use the locator to determine levels
-        # Mostly copied from the hidden contour.ContourSet._autolev
+        if name in ('hexbin',):
+            levels = None # cannot infer *counts*, so do nothing
         else:
-            # Get and apply the locator
-            if locator is not None:
-                locator = axistools.Locator(locator, **locator_kw)
-            elif isinstance(norm, mcolors.LogNorm):
-                locator = mticker.LogLocator(**locator_kw)
+            # Set levels according to vmin and vmax
+            N = levels
+            if vmin is not None or vmax is not None:
+                vmin = _default(vmin, zmin)
+                vmax = _default(vmax, zmax)
+                levels = np.linspace(vmin, vmax, N)
+            # Use the locator to determine levels
+            # Mostly copied from the hidden contour.ContourSet._autolev
             else:
-                locator_kw = {**locator_kw}
-                locator_kw.setdefault('symmetric', symmetric)
-                locator = mticker.MaxNLocator(N + 1, min_n_ticks=1, **locator_kw)
-            levels = locator.tick_values(zmin, zmax)
-            # Trim excess levels the locator may have supplied.
-            if not locator_kw.get('symmetric', None):
-                under, = np.where(levels < zmin)
-                i0 = under[-1] if len(under) else 0
-                over, = np.where(levels > zmax)
-                i1 = over[0] + 1 if len(over) else len(levels)
-                if extend in ('min', 'both'):
-                    i0 += 1
-                if extend in ('max', 'both'):
-                    i1 -= 1
-                if i1 - i0 < 3:
-                    i0, i1 = 0, len(levels)
-                levels = levels[i0:i1]
-            # Special consideration if not enough levels
-            nn = N//len(levels) # how many times more levels did we want than what we got?
-            if nn>=2:
-                olevels = norm(levels)
-                nlevels = []
-                for i in range(len(levels)-1):
-                    l1, l2 = olevels[i], olevels[i+1]
-                    nlevels.extend(np.linspace(l1, l2, nn+1)[:-1])
-                nlevels.append(olevels[-1])
-                levels = norm.inverse(nlevels)
+                # Get and apply the locator
+                if locator is not None:
+                    locator = axistools.Locator(locator, **locator_kw)
+                elif isinstance(norm, mcolors.LogNorm):
+                    locator = mticker.LogLocator(**locator_kw)
+                else:
+                    locator_kw = {**locator_kw}
+                    locator_kw.setdefault('symmetric', symmetric)
+                    locator = mticker.MaxNLocator(N + 1, min_n_ticks=1, **locator_kw)
+                levels = locator.tick_values(zmin, zmax)
+                # Trim excess levels the locator may have supplied.
+                if not locator_kw.get('symmetric', None):
+                    under, = np.where(levels < zmin)
+                    i0 = under[-1] if len(under) else 0
+                    over, = np.where(levels > zmax)
+                    i1 = over[0] + 1 if len(over) else len(levels)
+                    if extend in ('min', 'both'):
+                        i0 += 1
+                    if extend in ('max', 'both'):
+                        i1 -= 1
+                    if i1 - i0 < 3:
+                        i0, i1 = 0, len(levels)
+                    levels = levels[i0:i1]
+                # Special consideration if not enough levels
+                nn = N//len(levels) # how many times more levels did we want than what we got?
+                if nn>=2:
+                    olevels = norm(levels)
+                    nlevels = []
+                    for i in range(len(levels)-1):
+                        l1, l2 = olevels[i], olevels[i+1]
+                        nlevels.extend(np.linspace(l1, l2, nn+1)[:-1])
+                    nlevels.append(olevels[-1])
+                    levels = norm.inverse(nlevels)
 
-    # Call function
-    if 'contour' in name: # contour, contourf, tricontour, tricontourf
-        kwargs.update({'levels': levels, 'extend': extend})
+    # Norm settings
+    # Generate BinNorm, and update child norm object with vmin and vmax from levels
+    # This is important for the colorbar setting tick locations properly!
     if norm is not None:
+        if levels is not None:
+            norm.vmin, norm.vmax = levels.min(), levels.max()
         if levels is not None:
             bin_kw = {'extend':extend}
             if cyclic:
                 bin_kw.update({'step':0.5, 'extend':'both'})
             norm = colortools.BinNorm(norm=norm, levels=levels, **bin_kw)
         kwargs['norm'] = norm
+
+    # Call function
+    if 'contour' in name: # contour, contourf, tricontour, tricontourf
+        kwargs.update({'levels': levels, 'extend': extend})
     obj = func(*args, **kwargs)
-    obj.extend = extend # add attributes used by colorbar_wrapper
+    obj.extend = extend # for colorbar to determine 'extend' property
     if levels is not None:
         obj.levels = levels # for colorbar to determine tick locations
     if locator is not None and not isinstance(locator, mticker.MaxNLocator):
@@ -1951,6 +1959,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 #------------------------------------------------------------------------------#
 def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
     center=None, order='C', loc=None, label=None, title=None,
+    fontsize=None, fontweight=None, fontcolor=None,
     color=None, marker=None, lw=None, linewidth=None,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs):
@@ -2007,6 +2016,8 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
     label, title : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
         with `colorbar_wrapper`.
+    fontsize, fontweight, fontcolor : optional
+        The font size, weight, and color for legend text.
     color, lw, linewidth, marker, linestyle, dashes, markersize : property-spec, optional
         Properties used to override the legend handles. For example, if you
         want a legend that describes variations in line style ignoring variations
@@ -2034,7 +2045,15 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         kwargs['title'] = title
     if frameon is not None:
         kwargs['frameon'] = frameon
-    kwargs['prop'] = {'family': rc['fontname']} # 'prop' can be a FontProperties object or a dict for the kwargs
+
+    # Text properties, some of which have to be set after-the-fact
+    kw_text = {}
+    if fontsize is not None:
+        kwargs['fontsize'] = fontsize
+    if fontcolor is not None:
+        kw_text['color'] = fontcolor
+    if fontweight is not None:
+        kw_text['weight'] = fontweight
 
     # Automatically get labels and handles
     # Also accept non-list input
@@ -2191,7 +2210,7 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
 
     # Add legends manually so matplotlib does not remove old ones
     # Also apply override settings
-    override = {}
+    kw_handle = {}
     outline = rc.fill({
         'linewidth':'axes.linewidth',
         'edgecolor':'axes.edgecolor',
@@ -2212,12 +2231,14 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         ('dashes',dashes),
         ):
         if value is not None:
-            override[key] = value
+            kw_handle[key] = value
     for leg in legs:
         self.add_artist(leg)
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
-            obj.update(override)
+            obj.update(kw_handle)
+        for obj in leg.get_texts():
+            obj.update(kw_text)
     # Draw manual fancy bounding box for un-aligned legend
     # WARNING: The matplotlib legendPatch transform is the default transform,
     # i.e. universal coordinates in points. Means we have to transform
@@ -2264,10 +2285,15 @@ def colorbar_wrapper(self,
     title=None, label=None,
     grid=None, tickminor=None,
     tickloc=None, ticklocation=None,
-    locator=None, ticks=None, maxn=20, minorlocator=None, minorticks=None, locator_kw={}, minorlocator_kw={},
+    locator=None, ticks=None, maxn=20, maxn_minor=100,
+    minorlocator=None, minorticks=None, locator_kw={}, minorlocator_kw={},
     formatter=None, ticklabels=None, formatter_kw={},
-    fixticks=False, norm=None, norm_kw={}, # normalizer to use when passing colors/lines
+    norm=None, norm_kw={}, # normalizer to use when passing colors/lines
     orientation='horizontal',
+    edgecolor=None, linewidth=None,
+    labelsize=None, labelweight=None, labelcolor=None,
+    ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
+    fixticks=False,
     **kwargs):
     """
     Wraps `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` and
@@ -2276,20 +2302,27 @@ def colorbar_wrapper(self,
 
     Parameters
     ----------
-    mappable : mappable or list of str or list of plot handles
-        There are three options here:
+    mappable : mappable, list of plot handles, list of color-spec, or colormap-spec
+        There are four options here:
 
         1. A mappable object. Basically, any object with a ``get_cmap`` method,
            like the objects returned by `~matplotlib.axes.Axes.contourf` and
            `~matplotlib.axes.Axes.pcolormesh`.
-        2. A list of hex strings, color string names, or RGB tuples. From this,
-           a colormap will be generated and used with the colorbar. Requires
-           `values` is not ``None``.
-        3. A list of "plot handles". Basically, any object with a ``get_color``
-           method, like `~matplotlib.lines.Line2D` instances. From this,
-           a colormap will be generated and used with the colorbar. If `values`
-           is ``None``, they will try to be inferred by converting the handle
-           labels returned by `~matplotlib.artist.Artist.get_label` to `float`.
+        2. A list of "plot handles". Basically, any object with a ``get_color``
+           method, like `~matplotlib.lines.Line2D` instances. A colormap will
+           be generated from the colors of these objects, and colorbar levels
+           will be selected using `values`.  If `values` is ``None``, we try
+           to infer them by converting the handle labels returned by
+           `~matplotlib.artist.Artist.get_label` to `float`. Otherwise, it is
+           set to ``np.linspace(0, 1, len(mappable))``.
+        3. A list of hex strings, color string names, or RGB tuples. A colormap
+           will be generated from these colors, and colorbar levels will be
+           selected using `values`. If `values` is ``None``, it is set to
+           ``np.linspace(0, 1, len(mappable))``.
+        4. A `~matplotlib.colors.Colormap` instance. In this case, a colorbar
+           will be drawn using this colormap and with levels determined by
+           `values`. If `values` is ``None``, it is set to
+           ``np.linspace(0, 1, cmap._N)``.
 
     values : list of float, optional
         Ignored if `mappable` is a mappable object. This maps each color or
@@ -2325,6 +2358,8 @@ def colorbar_wrapper(self,
         Used if `locator` is ``None``. Determines the maximum number of levels
         that are ticked. Defaults to ``20``. The keyword name is meant to mimic
         the `~matplotlib.ticker.MaxNLocator` class name.
+    maxn_minor : int, optional
+        As with `maxn`, but for minor tick positions. Defaults to ``100``.
     locator_kw : dict-like, optional
         The locator settings. Passed to `~proplot.axistools.Locator`.
     minorlocator, minorticks
@@ -2336,6 +2371,21 @@ def colorbar_wrapper(self,
         constructor.
     formatter_kw : dict-like, optional
         The formatter settings. Passed to `~proplot.axistools.Formatter`.
+    norm : normalizer spec, optional
+        Ignored if `values` is ``None``. The normalizer
+        for converting `values` to colormap colors. Passed to the
+        `~proplot.colortools.Norm` constructor. As an example, if your
+        values are logarithmically spaced but you want the level boundaries
+        to appear halfway in-between the colorbar tick marks, try
+        ``norm='log'``.
+    norm_kw : dict-like, optional
+        The normalizer settings. Passed to `~proplot.colortools.Norm`.
+    edgecolor, linewidth : optional
+        The edge color and line width for the colorbar outline.
+    labelsize, labelweight, labelcolor : optional
+        The font size, weight, and color for colorbar label text.
+    ticklabelsize, ticklabelweight, ticklabelcolor : optional
+        The font size, weight, and color for colorbar tick labels.
     fixticks : bool, optional
         For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
         colorbar minor and major ticks can appear misaligned. When `fixticks`
@@ -2346,18 +2396,8 @@ def colorbar_wrapper(self,
         example, when the leftmost colormap colors seem to be "pulled" to the
         right farther than normal). In this case, you should stick with
         ``fixticks=False``.
-    norm : normalizer spec, optional
-        Ignored if `values` is ``None``. The normalizer
-        for converting `values` to colormap colors. Passed to the
-        `~proplot.colortools.Norm` constructor. As an example, if your
-        values are logarithmically spaced but you want the level boundaries
-        to appear halfway in-between the colorbar tick marks, try
-        ``norm='log'``.
-    norm_kw : dict-like, optional
-        The normalizer settings. Passed to `~proplot.colortools.Norm`.
     orientation : {'horizontal', 'vertical'}, optional
-        The colorbar orientation. Generally, you shouldn't have to explicitly
-        set this.
+        The colorbar orientation. You should not have to explicitly set this.
 
     Other parameters
     ----------------
@@ -2386,37 +2426,55 @@ def colorbar_wrapper(self,
     formatter = _default(ticklabels, formatter, 'default')
     minorlocator = _default(minorticks, minorlocator)
     ticklocation = _default(tickloc, ticklocation)
-    # Apply user-kwargs
+
+    # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!
+    grid = _default(grid, rc['colorbar.grid'])
     if extend is None:
         if isinstance(getattr(mappable, 'extend', None), str):
             extend = mappable.extend or 'neither'
         else:
             extend = 'neither'
-    grid = _default(grid, rc['colorbar.grid'])
-    kwdefault = {'cax':self, 'orientation':orientation, 'use_gridspec':True, # use space afforded by entire axes
-                 'spacing':'uniform', 'extend':extend, 'drawedges':grid} # this is default case unless mappable has special props
-    kwdefault.update(kwargs)
-    kwargs = kwdefault
+    kwargs.update({'cax':self, 'use_gridspec':True, 'orientation':orientation, 'extend':extend, 'spacing':'uniform'})
+    kwargs.setdefault('drawedges', grid)
+
+    # Text property keyword args
+    kw_label = {}
+    if label is not None:
+        kw_label['text'] = label
+    if labelsize is not None:
+        kw_label['size'] = labelsize
+    if labelweight is not None:
+        kw_label['weight'] = labelweight
+    if labelcolor is not None:
+        kw_label['color'] = labelcolor
+    kw_ticklabels = {}
+    if ticklabelsize is not None:
+        kw_ticklabels['size'] = ticklabelsize
+    if ticklabelweight is not None:
+        kw_ticklabels['weight'] = ticklabelweight
+    if ticklabelcolor is not None:
+        kw_ticklabels['color'] = ticklabelcolor
 
     # Special case where auto colorbar is generated from 1d methods, a list is
     # always passed but some 1d methods (scatter) do have colormaps.
     if np.iterable(mappable) and len(mappable)==1 and hasattr(mappable[0], 'get_cmap'):
         mappable = mappable[0]
+
     # Test if we were given a mappable, or iterable of stuff; note Container and
     # PolyCollection matplotlib classes are iterable.
     cmap = None
+    tick_all = (values is not None)
     if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
-        # Get object for testing
-        if not np.iterable(mappable):
-            mappable = [None] # raises error below
-        obj = mappable[0]
+        # Object for testing
+        obj = mappable[0] if np.iterable(mappable) else mappable
         try:
             obj = obj[0] # e.g. for BarContainer, which is not numpy.iterable
         except (TypeError,KeyError):
             pass
-        # Draw from handles
-        if hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor'): # simplest approach
+        # List of handles
+        if (hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor')): # simplest approach
+            # Make colormap
             colors = []
             for obj in mappable:
                 if np.iterable(obj):
@@ -2424,6 +2482,7 @@ def colorbar_wrapper(self,
                 color = getattr(obj, 'get_color', None) or getattr(obj, 'get_facecolor')
                 colors.append(color())
             cmap = colortools.Colormap(colors, listed=True)
+            # Infer values
             if values is None:
                 values = []
                 for obj in mappable:
@@ -2431,72 +2490,100 @@ def colorbar_wrapper(self,
                     try:
                         val = float(val)
                     except ValueError:
-                        raise ValueError(f'To generate colorbars from line handles or other objects, pass the "values" keyword arg to colorbar(), or give your handles numeric values with e.g. plot(..., label=123) or line.set_label(123).')
+                        values = None
+                        break
                     values.append(val)
-        # List of colors
-        elif all(isinstance(obj, str) for obj in mappable) or all(np.iterable(obj) and len(obj) in (3,4) for obj in mappable):
-            cmap = colortools.Colormap(mappable, listed=True)
             if values is None:
-                raise ValueError(f'To generate colorbars from lists of colors, pass the "values" keyword arg to colorbar().')
+                values = np.linspace(0, 1, len(mappable))
+            else:
+                tick_all = True
+        # Any colormap spec, including a list of colors, colormap name, or colormap instance
         else:
-            raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, or list of colors. Got {mappable}.')
-        # Enforce equal length
-        if len(values)!=len(mappable):
-            raise ValueError(f'Passed {len(values)} values, but only {len(mappable)} objects or colors.')
+            try:
+                cmap = colortools.Colormap(mappable, listed=True)
+            except Exception:
+                raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, list of colors, or colormap. Got {mappable}.')
+            if values is None:
+                if np.iterable(mappable) and not isinstance(mappable, str): # e.g. list of colors
+                    values = np.linspace(0, 1, len(mappable))
+                else:
+                    values = np.linspace(0, 1, cmap.N)
+
     # Build new ad hoc mappable object from handles
     if cmap is not None:
+        if np.iterable(mappable) and len(values)!=len(mappable):
+            raise ValueError(f'Passed {len(values)} values, but only {len(mappable)} objects or colors.')
         mappable = _cmap_wrapper(self, self.contourf)([[0,0],[0,0]],
             cmap=cmap, extend='neither', values=np.array(values),
             norm=norm, norm_kw=norm_kw) # workaround
 
-    # Get tick locations, prefer centers (values) over edges (levels).
-    # If values were provided as keyword arg, this is a colorbar from lines or
-    # colors, and we label *all* values by default.
-    locator = _default(locator, values) # use *all* values if they were provided
+    # Try to get tick locations from *levels* or from *values* rather than random
+    # points along the axis. If values were provided as keyword arg, this is a
+    # colorbar from lines or colors, and we label *all* values by default.
+    # TODO: Handle more of the log locator stuff here, instead of in cmap_wrapper?
+    if tick_all and locator is None:
+        locator = values
+        tickminor = False
     if locator is None:
         for attr in ('values', 'locator', 'levels'):
+            locator = getattr(mappable, attr, None)
             if locator is not None:
-                continue
-            locator = getattr(mappable, attr, locator)
-        if locator is not None and not isinstance(locator, mticker.Locator):
+                break
+        if locator is None: # i.e. no attributes found
+            if isinstance(getattr(mappable, 'norm', None), mcolors.LogNorm):
+                locator = 'log'
+            else:
+                locator = 'auto'
+        elif not isinstance(locator, mticker.Locator): # i.e. was a 'values' or 'levels' attribute
+            if tickminor and minorlocator is None:
+                step = 1 + len(locator)//maxn_minor
+                minorlocator = locator[::step]
             step = 1 + len(locator)//maxn
             locator = locator[::step]
+    # Locator object
+    locator = axistools.Locator(locator, **locator_kw)
+    # Minor ticks
+    if minorlocator is not None:
+        tickminor = True
+    if tickminor:
+        if minorlocator is None:
+            if isinstance(locator, mticker.LogLocator):
+                minorlocator = 'log'
+                minorlocator_kw = {**minorlocator_kw}
+                minorlocator_kw.setdefault('subs', np.arange(1,10))
+            else:
+                minorlocator = 'auto'
+        minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
+    else:
+        minorlocator = axistools.Locator('null')
 
-    # Determine major formatters and major/minor tick locators
-    # Can pass locator/minorlocator as the *jump values* between the mappables
-    # vmin/vmax if desired
-    ivalues = None # so linter doesn't detect error in if i==1 block
+    # Get tick formatters and locators
+    jvalues = None
     normfix = False # whether we need to modify the norm object
-    locators = [] # put them here
-    for i,(ilocator,ilocator_kw) in enumerate(zip((locator,minorlocator), (locator_kw,minorlocator_kw))):
-        # Get the locator values
-        # Need to use tick_values instead of accessing 'locs' attribute because
-        # many locators don't have these attributes; require norm.vmin/vmax as input
-        if i==1 and (not tickminor and ilocator is None): # means we never wanted minor ticks
-            locators.append(axistools.Locator('null'))
+    locators = []
+    for ilocator in (locator,minorlocator):
+        if isinstance(locator, mticker.NullLocator):
+            locators.append(locator)
             continue
-        ilocator = _default(ilocator, 'auto')
-        jvalues = np.array(axistools.Locator(ilocator, **ilocator_kw).tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
         # Modify ticks to work around mysterious error, and to prevent annoyance
         # where minor ticks extend beyond extendsize.
-        # We need to figure out the numbers that will eventually be rendered to
-        # solve the error, so we will always use a fixedlocator.
-        values_min = np.where(jvalues>=mappable.norm.vmin)[0]
-        values_max = np.where(jvalues<=mappable.norm.vmax)[0]
-        if len(values_min)==0 or len(values_max)==0:
+        ivalues = np.array(ilocator.tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        min_ = np.where(ivalues>=mappable.norm.vmin)[0]
+        max_ = np.where(ivalues<=mappable.norm.vmax)[0]
+        if len(min_)==0 or len(max_)==0:
             locators.append(axistools.Locator('null'))
             continue
-        values_min, values_max = values_min[0], values_max[-1]
-        jvalues = jvalues[values_min:values_max+1]
-        if jvalues[0]==mappable.norm.vmin:
+        min_, max_ = min_[0], max_[-1]
+        ivalues = ivalues[min_:max_+1]
+        if ivalues[0]==mappable.norm.vmin:
             normfix = True
-        # Prevent annoying major/minor overlaps where one is slightly shifted left/right
+        # Prevent major/minor overlaps where one is slightly shifted left/right
         # Consider floating point weirdness too
-        if i==1:
+        if jvalues is not None:
             eps = 1e-10
-            jvalues = [v for v in jvalues if not any(o+eps >= v >= o-eps for o in ivalues)]
-        ivalues = jvalues # record as new variable
-        locators.append(axistools.Locator(ivalues)) # final locator object
+            ivalues = [v for v in ivalues if not any(o+eps >= v >= o-eps for o in jvalues)]
+        locators.append(axistools.Locator(ivalues)) # fixed locator object
+        jvalues = ivalues # record as new variable
 
     # Fix the norm object; get weird error without this block
     # * The error is triggered when a *major* tick sits exactly on vmin, but
@@ -2514,11 +2601,11 @@ def colorbar_wrapper(self,
     #   datatype is float; otherwise division will be truncated and bottom
     #   level will still lie on same location, so error will occur
     if normfix:
-        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)/10000
+        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)*1e-4
     if hasattr(mappable.norm, 'levels'):
         mappable.norm.levels = np.atleast_1d(mappable.norm.levels).astype(np.float)
         if normfix:
-            mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]/10000
+            mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]*1e-4
 
     # Final settings
     # NOTE: The only way to avoid bugs seems to be to pass the major formatter
@@ -2532,40 +2619,41 @@ def colorbar_wrapper(self,
         scale = height*abs(self.get_position().height)
     extendsize = utils.units(_default(extendsize, rc['colorbar.extend']))
     extendsize = extendsize/(scale - 2*extendsize)
-    kwargs.update({'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
-                   'format':formatter,
-                   'ticklocation':ticklocation,
-                   'extendfrac':extendsize})
+    kwargs.update({
+        'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
+        'format':formatter,
+        'ticklocation':ticklocation,
+        'extendfrac':extendsize
+        })
+
     # Draw the colorbar
     cb = self.figure.colorbar(mappable, **kwargs)
-    # Make edges/dividers style consistent with gridline style
-    if cb.dividers is not None:
-        cb.dividers.update(rc['grid'])
-
-    # The minor locators and formatters
-    # NOTE: Re-apply major ticks here because for some reason minor ticks don't
-    # align with major ones for LogNorm. When we call set_ticks, labels and
-    # numbers are not changed; just re-adjust existing ticks to proper locations.
-    minorvals = np.array(locators[1].tick_values(mappable.norm.vmin, mappable.norm.vmax))
-    majorvals = np.array(locators[0].tick_values(mappable.norm.vmin, mappable.norm.vmax))
-    if isinstance(mappable.norm, colortools.BinNorm):
-        minorvals = mappable.norm._norm(minorvals) # use *child* normalizer
-        majorvals = mappable.norm._norm(majorvals)
-    else:
-        minorvals = mappable.norm(minorvals)
-        majorvals = mappable.norm(majorvals) # use *child* normalizer
-    minorvals = [tick for tick in minorvals if 0<=tick<=1]
-    majorvals = [tick for tick in majorvals if 0<=tick<=1]
     if orientation=='horizontal':
         axis = self.xaxis
     else:
         axis = self.yaxis
+
+    # The minor locators and formatters
+    # WARNING: Inexplicably, colorbar axis limits *are* the original,
+    # un-normalized data values. Always the case for hexbin. We detect this
+    # by checking for impossible axis limits. Axis limits are always
+    # from (0-extendfrac to 1+extendfrac).
+    lim = axis.get_view_interval()
+    vals = []
+    normed = (lim[0] >= -2*kwargs['extendfrac']) and (lim[1] <= 1 + 2*kwargs['extendfrac'])
+    for ilocator in locators:
+        ivals = np.array(ilocator.tick_values(mappable.norm.vmin, mappable.norm.vmax))
+        if normed:
+            if isinstance(mappable.norm, colortools.BinNorm):
+                ivals = mappable.norm._norm(ivals) # use *child* normalizer
+            else:
+                ivals = mappable.norm(ivals)
+            ivals = [tick for tick in ivals if 0<=tick<=1]
+        vals.append(ivals)
     if fixticks:
-        axis.set_ticks(majorvals, minor=False)
-    axis.set_ticks(minorvals, minor=True)
+        axis.set_ticks(vals[0], minor=False)
+    axis.set_ticks(vals[1], minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
-    if label is not None:
-        axis.label.update({'text':label})
 
     # Fix alpha issues. Cannot set edgecolor to 'face' if alpha non-zero
     # because blending will occur, will get colored lines instead of white ones;
@@ -2592,8 +2680,32 @@ def colorbar_wrapper(self,
         cb.solids.set_cmap(cmap)
         cb.solids.set_alpha(1.0)
 
-    # Fix pesky white lines between levels + misalignment with border due
-    # to rasterized blocks.
+    # Outline
+    kw_outline = {
+        'edgecolor': _default(edgecolor, rc['axes.edgecolor']),
+        'linewidth': _default(linewidth, rc['axes.linewidth']),
+        }
+    if cb.outline is not None:
+        cb.outline.update(kw_outline)
+    if cb.dividers is not None:
+        cb.dividers.update(kw_outline)
+        # cb.dividers.update(rc.category('grid', cache=False))
+    # Label and tick label settings
+    axis.label.update(kw_label)
+    for obj in axis.get_ticklabels():
+        obj.update(kw_ticklabels)
+    # Ticks
+    xy = axis.axis_name
+    for which in ('minor','major'):
+        kw = rc.category(xy + 'tick.' + which)
+        kw.pop('visible', None)
+        if edgecolor:
+            kw['color'] = edgecolor
+        if linewidth:
+            kw['width'] = linewidth
+        axis.set_tick_params(which=which, **kw)
+    # Fix pesky white lines between levels + misalignment
+    # Fix misalignment with border due to rasterized blocks
     if cb.solids:
         cb.solids.set_linewidth(0.4) # lowest size that works
         cb.solids.set_edgecolor('face')

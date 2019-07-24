@@ -70,10 +70,26 @@ __all__ = [
 
 # Aliases for panel names
 _aliases = {
-    'bpanel': 'bottompanel',
-    'rpanel': 'rightpanel',
-    'tpanel': 'toppanel',
-    'lpanel': 'leftpanel'
+    'bpanel':         'bottompanel',
+    'rpanel':         'rightpanel',
+    'tpanel':         'toppanel',
+    'lpanel':         'leftpanel',
+    'bcolorbar':      'bottompanel',
+    'rcolorbar':      'rightpanel',
+    'tcolorbar':      'toppanel',
+    'lcolorbar':      'leftpanel',
+    'blegend':        'bottompanel',
+    'rlegend':        'rightpanel',
+    'tlegend':        'toppanel',
+    'llegend':        'leftpanel',
+    'bottomcolorbar': 'bottompanel',
+    'rightcolorbar':  'rightpanel',
+    'topcolorbar':    'toppanel',
+    'leftcolorbar':   'leftpanel',
+    'bottomlegend':   'bottompanel',
+    'rightlegend':    'rightpanel',
+    'toplegend':      'toppanel',
+    'leftlegend':     'leftpanel'
     }
 
 # Silly recursive function, returns a...z...aa...zz...aaa...zzz
@@ -642,13 +658,10 @@ class BaseAxes(maxes.Axes):
         frame, frameon : bool, optional
             Whether to draw a frame behind the inset colorbar, just like
             `~matplotlib.axes.Axes.legend`. Defaults to ``rc['colorbar.frameon']``.
-        alpha : float, optional
-            Transparency of the frame. Defaults to ``rc['colorbar.framealpha']``.
-        linewidth : float, optional
-            Line width for the frame. Defaults to ``rc['axes.linewidth']``.
-        edgecolor, facecolor : color-spec, optional
-            Properties for the frame. Defaults are ``rc['axes.edgecolor']``
-            and ``rc['axes.facecolor']``.
+        alpha, linewidth, edgecolor, facecolor : optional
+            Transparency, edge width, edge color, and face color for the frame.
+            Defaults to ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
+            ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``.
         **kwargs, label, extendsize
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
@@ -692,7 +705,11 @@ class BaseAxes(maxes.Axes):
         self.add_child_axes(ax)
         # Make colorbar
         # WARNING: Inset colorbars are tiny! So use smart default locator
-        kwargs.update({'ticklocation':'bottom', 'extendsize':extend, 'label':label})
+        kwargs.update({
+            'ticklocation':'bottom',
+            'edgecolor':edgecolor, 'linewidth':linewidth,
+            'extendsize':extend, 'label':label
+            })
         kwargs.setdefault('maxn', 5)
         cbar = wrappers.colorbar_wrapper(ax, *args, **kwargs)
         # Make frame
@@ -1221,7 +1238,7 @@ class CartesianAxes(BaseAxes):
             # Get which spines are visible; needed for setting tick locations
             spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
 
-            # Rc settings, grid settings, major and minor settings
+            # Tick and grid settings, for major and minor ticks separately
             # Override is just a "new default", but user can override this
             grid_dict = lambda grid: {
                 'grid_color':     grid + '.color',
@@ -1233,6 +1250,12 @@ class CartesianAxes(BaseAxes):
             grid = _default(grid, override)
             gridminor = _default(gridminor, override)
             for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
+                # Tick properties
+                kw = rc.category(name + 'tick.' + which)
+                if kw is None:
+                    kw = {}
+                else:
+                    kw.pop('visible', None) # invalid setting
                 # Turn grid on
                 if igrid is not None:
                     axis.grid(igrid, which=which) # toggle with special global props
@@ -1244,8 +1267,6 @@ class CartesianAxes(BaseAxes):
                     kw_grid = rc.fill(grid_dict('gridminor'))
                     kw_grid.update({key:value for key,value in kw_major.items() if key not in kw_grid})
                 # Changed rc settings
-                kw = _default(rc.category(name + 'tick.' + which), {})
-                kw.pop('visible', None) # invalid setting
                 axis.set_tick_params(which=which, **kw_grid, **kw)
 
             # Tick and ticklabel properties
@@ -1286,12 +1307,12 @@ class CartesianAxes(BaseAxes):
                 if labelloc is not None:
                     axis.set_label_position(labelloc)
 
-            # The tick styles
+            # Tick label settings
             # First color and size
             kw = rc.fill({
                 'labelcolor': 'tick.labelcolor', # new props
-                'labelsize':  'tick.labelsize',
-                'color':      name + 'tick.color',
+                'labelsize': 'tick.labelsize',
+                'color': name + 'tick.color',
                 })
             if color:
                 kw['color'] = color

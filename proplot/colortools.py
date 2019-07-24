@@ -32,9 +32,9 @@ __all__ = [
     'cmaps', 'cycles', 'colors',
     'CmapDict', 'ColorCacheDict', 'Colormap', 'Cycle', 'Norm',
     'BinNorm', 'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
-    'breakdown_cmap', 'colors', 'make_mapping_array', 'monochrome_cmap',
+    'colors', 'make_mapping_array', 'monochrome_cmap',
     'register_cmaps', 'register_colors', 'register_cycles',
-    'saturate', 'shade', 'show_cmaps',
+    'saturate', 'shade', 'show_cmaps', 'show_channels',
     'show_colors', 'show_colorspaces', 'show_cycles',
     'to_rgb', 'to_xyz',
     ]
@@ -246,7 +246,6 @@ _color_space_aliases = {
     'hsl':   'hsl',
     'hsluv': 'hsl',
     'hcl':   'hcl',
-    'lch':   'hcl',
     }
 _color_space_channel_idxs = {
     'hue': 0,
@@ -441,7 +440,7 @@ if not isinstance(mcm.cmap_d, CmapDict):
 #------------------------------------------------------------------------------#
 def _get_space(space):
     """Verify requested colorspace is valid."""
-    space = _color_space_aliases.get(space, None)
+    space = _color_space_aliases.get(space.lower(), None)
     if space is None:
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
@@ -603,6 +602,7 @@ def _slice_cmap(cmap, left=None, right=None, name=None, N=None):
     # Bail out
     if left is None and right is None:
         return cmap
+
     # Simple process for listed colormap, just truncate the colors
     name = name or 'no_name'
     if isinstance(cmap, mcolors.ListedColormap):
@@ -610,11 +610,11 @@ def _slice_cmap(cmap, left=None, right=None, name=None, N=None):
             return mcolors.ListedColormap(cmap.colors[left:right])
         except Exception:
             raise ValueError(f'Invalid slice {slice(left,right)} for listed colormap.')
-    # Initial stuff
-    left = left or 0
-    right = right or 1
+
     # Resample the segmentdata arrays
     data = {}
+    left = left or 0
+    right = right or 1
     dict_ = {key:value for key,value in cmap._segmentdata.items() if 'gamma' not in key}
     gammas = {'saturation':'gamma1', 'luminance':'gamma2'}
     for key,xyy in dict_.items():
@@ -639,11 +639,13 @@ def _slice_cmap(cmap, left=None, right=None, name=None, N=None):
         ixyy[:,0] = (ixyy[:,0] - left)/(right - left)
         data[key] = ixyy
         # Retain the corresponding 'gamma' *segments*
-        if key in gammas:
-            gamma = cmap._segmentdata[gammas[key]]
-            if np.iterable(gamma):
-                gamma = gamma[l-1:r+1]
-            data[gammas[key]] = gamma
+        if key not in gammas:
+            continue
+        gamma = getattr(cmap, '_' + gammas[key])
+        if np.iterable(gamma):
+            gamma = gamma[l-1:r+1]
+        kwargs[gammas[key]] = gamma
+
     # Rebuild cmap
     kwargs = {}
     if hasattr(cmap, '_space'):
@@ -655,6 +657,7 @@ def _shift_cmap(cmap, shift=None, name=None):
     # Bail out
     if not shift:
         return cmap
+
     # Rotate colors for listed colormap
     name = name or 'no_name'
     if isinstance(cmap, mcolors.ListedColormap):
@@ -662,6 +665,7 @@ def _shift_cmap(cmap, shift=None, name=None):
         colors = [*cmap.colors] # ensure list
         colors = colors[shift:] + colors[:shift]
         return mcolors.ListedColormap(colors, name=name, N=len(colors))
+
     # Trickier for smooth colormaps, must shift coordinates
     # TODO: This won't work for lo-res colormaps or percpetually
     # uniform maps with only two coordinate transitions, right?
@@ -681,6 +685,7 @@ def _shift_cmap(cmap, shift=None, name=None):
         array[:,0] -= array[:,0].min()
         array[:,0] /= array[:,0].max()
         data[key] = array
+
     # Generate shifted colormap
     cmap = mcolors.LinearSegmentedColormap(name, data, N=cmap.N)
     cmap._cyclic = True
@@ -696,11 +701,13 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     if len(types)!=1:
         raise ValueError(f'Mixed colormap types {types}. Maps must all be LinearSegmentedColormap or PerceptuallyUniformColormap.')
     type_ = types.pop()
+
     # For listed colormap, just combine the colors
     name = name or 'no_name'
     if all(isinstance(cmap, mcolors.ListedColormap) for cmap in imaps):
         colors = [color for cmap in imaps for color in cmap.colors]
         return mcolors.ListedColormap(colors, name=name, N=len(colors))
+
     # Tricker for smooth maps
     kwargs = {}
     segmentdata = {}
@@ -710,24 +717,28 @@ def _merge_cmaps(*imaps, ratios=1, name=None, N=512, **kwargs):
     ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
     x0 = np.concatenate([[0], np.cumsum(ratios)]) # coordinates for edges
     xw = x0[1:] - x0[:-1] # widths between edges
+
     # PerceptuallyUniformColormaps checks
     if type_ is PerceptuallyUniformColormap:
+        # Colorspace
         spaces = {cmap._space for cmap in imaps}
         if len(spaces)>1:
             raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
         kwargs['space'] = spaces.pop()
+        # Gamma handling
         gammas = {0:'saturation', 1:'luminance'}
         for i,key in enumerate(('gamma1', 'gamma2')):
-            if key not in segmentdata:
-                segmentdata[key] = []
+            if key not in kwargs:
+                kwargs[key] = []
             for cmap in imaps:
-                gamma = cmap._segmentdata[key]
+                gamma = getattr(cmap, '_' + key)
                 if not np.iterable(gamma):
                     gamma = [gamma]*(len(cmap._segmentdata[gammas[i]])-1) # length is *number* of rows in segmentdata
-                segmentdata[key].extend([*gamma])
+                kwargs[key].extend([*gamma])
+
     # Combine the segmentdata, and use the y1/y2 slots at merge points so
     # we never interpolate between end colors of different colormaps
-    keys = {key for cmap in imaps for key in cmap._segmentdata.keys() if 'gamma' not in key}
+    keys = {key for cmap in imaps for key in cmap._segmentdata.keys()}
     for key in keys:
         # Combine xyy data
         # WARNING: If just reference a global 'funcs' list from inside the
@@ -1073,27 +1084,21 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
             if kwargs:
                 warnings.warn(f'Ignoring extra kwargs {kwargs}.')
             # Resample, allow overriding the gamma and copy over add-on attribute
-            # NOTE: Calling resample means cmaps are un-initialized
             cyclic = getattr(cmap, '_cyclic', False)
-            cmap = cmap._resample(N_)
+            cmap = cmap._resample(N_) # makes a copy!
             cmap._cyclic = cyclic
             if isinstance(cmap, PerceptuallyUniformColormap):
-                gamma1 = _default(gamma, gamma1)
-                gamma2 = _default(gamma, gamma2)
-                segmentdata = cmap._segmentdata
-                if gamma1:
-                    segmentdata['gamma1'] = gamma1
-                if gamma2:
-                    segmentdata['gamma2'] = gamma2
+                cmap._gamma1 = _default(gamma, gamma1, cmap._gamma1)
+                cmap._gamma2 = _default(gamma, gamma2, cmap._gamma2)
             elif gamma:
-                cmap._gamma = gamma
+                cmap._gamma = _default(gamma, cmap._gamma)
         # Build colormap on-the-fly
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
-            if {*cmap.keys()} <= {'hue','saturation','luminance','alpha','space','ratios','reverse'}:
+            try:
                 cmap = PerceptuallyUniformColormap.from_hsl(name, N=N_, **cmap, **kwargs)
-            else:
-                raise ValueError(f'Invalid cmap input "{cmap}".')
+            except Exception:
+                raise ValueError(f'Invalid input "{cmap}" for from_hsl method.')
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
             # List of color tuples or color strings, i.e. iterable of iterables
             cmap = [to_rgb(color, cycle=cycle) for color in cmap] # transform C0, C1, etc. to actual names
@@ -1101,22 +1106,19 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
                 cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
             else:
                 cmap = PerceptuallyUniformColormap.from_list(name, cmap, **kwargs)
-        elif isinstance(cmap, str) or (np.iterable(cmap) and len(cmap) in (2,3,4)):
-            # Monochrome colormap based from input color (i.e. single hue)
-            # TODO: What if colormap names conflict with color names!
+        else:
+            # Monochrome colormap from input color
             try:
-                color = to_rgb(cmap, cycle=cycle) # to ensure is hex code/registered color
-            except ValueError:
-                line = f'Invalid cmap, cycle, or color "{cmap}".'
+                color = to_rgb(cmap, cycle=cycle)
+            except Exception:
                 if not isinstance(cmap, str):
-                    raise ValueError(line)
+                    raise ValueError(f'Invalid cmap, cycle, or color "{cmap}".')
                 else:
-                    raise ValueError(f'{line}\nVALID CMAP AND CYCLE NAMES: {", ".join(sorted(mcm.cmap_d))}.\n'
+                    raise ValueError(f'Invalid cmap, cycle, or color "{cmap}".\n'
+                        f'VALID CMAP AND CYCLE NAMES: {", ".join(sorted(mcm.cmap_d))}.\n'
                         f'VALID COLOR NAMES: {", ".join(sorted(mcolors.colorConverter.colors.keys()))}.')
             fade = _default(fade, 100)
             cmap = monochrome_cmap(color, fade, name=name, N=N_, **kwargs)
-        else:
-            raise ValueError(f'Invalid cmap input "{cmap}".')
 
         # Optionally transform colormap by clipping colors or reversing
         if np.iterable(reverse) and reverse[i]:
@@ -1174,8 +1176,9 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
             data = {}
             for key,value in cmap._segmentdata.items():
                 data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
-            if hasattr(cmap, '_space'):
-                data['space'] = cmap._space
+            for key in ('space','gamma1','gamma2'):
+                if hasattr(cmap, '_' + key):
+                    data[key] = getattr(cmap, '_' + key)
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')
@@ -1331,8 +1334,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, we vary hue, saturation, and luminance in
     either the HCL colorspace or the HSLuv or HPLuv scalings of HCL."""
-    def __init__(self, name, segmentdata, space='hsl', clip=True,
-        gamma=None, gamma1=None, gamma2=None, **kwargs):
+    def __init__(self,
+        name, segmentdata, space=None, clip=True,
+        gamma=None, gamma1=None, gamma2=None, **kwargs
+        ):
         """
         Parameters
         ----------
@@ -1387,25 +1392,19 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
         """
         # Checks
-        space = _get_space(space)
+        space = _get_space(_default(space, 'hsl'))
         self._space = space
         self._clip  = clip
-        if 'gamma' in kwargs:
-            raise ValueError('Standard gamma scaling disabled. Use gamma1 or gamma2 instead.')
         keys = {*segmentdata.keys()}
-        target = {'hue', 'saturation', 'luminance', 'gamma1', 'gamma2', 'alpha'}
+        target = {'hue', 'saturation', 'luminance', 'alpha'}
         if not keys <= target:
             raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
         # Gamma scaling
-        if 'gamma1' not in segmentdata:
-            segmentdata['gamma1'] = _default(gamma, gamma1, 1.0)
-        if 'gamma2' not in segmentdata:
-            segmentdata['gamma2'] = _default(gamma, gamma2, 1.0)
-        # First sanitize the segmentdata by converting color strings to their
-        # corresponding channel values
+        self._gamma1 = _default(gamma, gamma1, 1.0)
+        self._gamma2 = _default(gamma, gamma2, 1.0)
+        # Sanitize segmentdata, convert color strings to their channel values
         for key,array in segmentdata.items():
-            # Allow specification of channels using registered string color names
-            if 'gamma' in key or callable(array):
+            if callable(array): # permit callable
                 continue
             for i,xyy in enumerate(array):
                 xyy = list(xyy) # make copy!
@@ -1413,7 +1412,6 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
                     xyy[j+1] = _get_channel(y, key, space)
                 segmentdata[key][i] = xyy
         # Initialize
-        # NOTE: Disable the standard gamma scaling, we control it specially.
         super().__init__(name, segmentdata, gamma=1.0, **kwargs)
 
     def _init(self):
@@ -1422,9 +1420,9 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         # First generate the lookup table
         channels = ('hue','saturation','luminance')
         reverse = (False, False, True) # gamma weights *low chroma* and *high luminance*
-        gammas = (1.0, self._segmentdata['gamma1'], self._segmentdata['gamma2'])
+        gammas = (1.0, self._gamma1, self._gamma2)
         self._lut_hsl = np.ones((self.N+3, 4), float) # fill
-        for i,(channel,gamma,reverse) in enumerate(zip(channels, gammas, reverse)):
+        for i,(channel,gamma,reverse) in enumerate(zip(channels,gammas,reverse)):
             self._lut_hsl[:-3,i] = make_mapping_array(self.N, self._segmentdata[channel], gamma, reverse)
         if 'alpha' in self._segmentdata:
             self._lut_hsl[:-3,3] = make_mapping_array(self.N, self._segmentdata['alpha'])
@@ -1441,7 +1439,10 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
     def _resample(self, N):
         """Returns a new colormap with *N* entries."""
-        return PerceptuallyUniformColormap(self.name, self._segmentdata, self._space, self._clip, N=N)
+        return PerceptuallyUniformColormap(
+            self.name, self._segmentdata, space=self._space,
+            clip=self._clip, gamma1=self._gamma1, gamma2=self._gamma2, N=N
+            )
 
     def reversed(self, name=None):
         """Returns reversed colormap."""
@@ -1451,18 +1452,18 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             def func_r(x):
                 return dat(1.0 - x)
             return func_r
+        # Reverse segment data
         data_r = {}
         for key,xyy in self._segmentdata.items():
-            if key in ('gamma1', 'gamma2', 'space'):
-                if 'gamma' in key: # optional per-segment gamma
-                    xyy = np.atleast_1d(xyy)[::-1]
-                data_r[key] = xyy
-                continue
-            elif callable(xyy):
+            if callable(xyy):
                 data_r[key] = factory(xyy)
             else:
                 data_r[key] = [[1.0 - x, y1, y0] for x, y0, y1 in reversed(xyy)]
-        return PerceptuallyUniformColormap(name, data_r, space=self._space)
+        # Reverse gamma scalings, which can be specified on per-segment basis
+        kw = {'space':self._space}
+        for gamma in ('gamma1','gamma2'):
+            kw[gamma] = np.atleast_1d(getattr(self, '_' + gamma))[::-1]
+        return PerceptuallyUniformColormap(name, data_r, **kw)
 
     @staticmethod
     def from_hsl(name, hue=0, saturation=100, luminance=(100, 20), alpha=None, ratios=None, reverse=False, **kwargs):
@@ -1818,7 +1819,6 @@ class LinearSegmentedNorm(mcolors.Normalize):
         """
         # Save levels
         levels = np.atleast_1d(levels)
-        levels = ma.masked_invalid(levels, copy=False) # not sure if this is necessary
         if levels.size<=1:
             raise ValueError('Need at least two levels.')
         elif ((levels[1:]-levels[:-1])<=0).any():
@@ -1946,11 +1946,13 @@ def _read_cmap_cycle_data(filename):
         with open(filename, 'r') as f:
             data = json.load(f)
         N = rcParams['image.lut']
-        if 'space' in data:
-            space = data.pop('space')
-            cmap = PerceptuallyUniformColormap(name, data, space=space, N=N)
-        else:
+        if 'red' in data:
             cmap = mcolors.LinearSegmentedColormap(name, data, N=N)
+        else:
+            kw = {}
+            for key in ('space','gamma1','gamma2'):
+                kw[key] = data.pop(key, None)
+            cmap = PerceptuallyUniformColormap(name, data, N=N, **kw)
         if name[-2:]=='_r':
             cmap = cmap.reversed(name[:-2])
         return name, None, cmap
@@ -2238,65 +2240,67 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Demos
 #------------------------------------------------------------------------------#
-def breakdown_cmap(cmap, N=100, space='hcl', markersize=300, aspect=1, axwidth=1.2):
-    """Shows how an arbitrary colormap varies in the HCL, HSLuv, and HPLuv
-    colorspaces."""
-    # Get colormap
-    x = np.linspace(0, 1, N)
-    cmap = Colormap(cmap, N=N) # arbitrary cmap argument
-    cmap._init()
-    name = cmap.name
-    # Get RGB table, unclipped
-    if hasattr(cmap, 'space'):
-        lut = cmap._lut_hsl[:,:3].copy()
-        for i in range(len(lut)):
-            lut[i,:] = to_rgb(lut[i,:], cmap.space)
-    else:
-        lut = cmap._lut[:-3,:3].copy()
+def show_channels(*args, N=100, markersize=100, aspect=1, axwidth=1.2):
+    """Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
+    luminance, HSl saturation, HPL saturation, red, blue, and green channels.
+    Positional arguments are colormap objects or names. `N` controls the
+    number of colors in the colormap."""
     # Figure and plot
     from . import subplots
+    if not args:
+        args = (rcParams['image.cmap'],)
     fig, axs = subplots(
         array=[[1,1,2,2,3,3],[0,4,4,5,5,0],[6,6,7,7,8,8]],
         axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0, aspect=aspect/2,
-        subplotpad='1em',
+        subplotpad='1em', colorbar='b', bstack=len(args),
         )
-    channels = (
-        'hue', 'chroma', 'luminance',
-        'saturation', 'saturation',
-        'red', 'blue', 'green'
+    labels = (
+        'Hue', 'Chroma', 'Luminance',
+        'HSL saturation', 'HPL saturation',
+        'Red', 'Blue', 'Green'
         )
-    spaces = (
-        'HCL', 'HCL', 'HCL',
-        'HSL', 'HPL',
-        'RGB', 'RGB', 'RGB',
-    )
-    rgb = lut.T # 3 by N
-    hcl = np.array([to_xyz(color, space='hcl') for color in lut]).T # 3 by N
-    hsl = [to_xyz(color, space='hsl')[1] for color in lut]
-    hpl = [to_xyz(color, space='hpl')[1] for color in lut]
-    for ax,y,space,channel in zip(axs,(*hcl,hsl,hpl,*rgb),spaces,channels):
-        ax.scatter(x, y, c=x, cmap=cmap, s=markersize, linewidths=0)
-        ylim, ylocator = None, None
-        if space=='RGB':
-            ylim = (0,1)
-            ylocator = 0.2
-        elif channel=='luminance':
-            ylim = (0,100)
-            ylocator = 20
-        elif channel=='hue':
-            ylim = (0,360)
-            ylocator = 90
-        else:
-            ylim = (0,None)
-            ylocator = ('maxn', 5)
-        ax.format(
-            title=f'{space}: {channel}', xlocator=0.25, xformatter='null',
-            ylim=ylim, ylocator=ylocator,
-            )
-    # Draw colorbar
+    # Iterate through colormaps
+    cmaps = []
+    for cmap in args:
+        # Get colormap
+        cmap = Colormap(cmap, N=N) # arbitrary cmap argument
+        cmap._init()
+        cmaps.append(cmap)
+        # Get clipped RGB table
+        x = np.linspace(0, 1, N)
+        lut = cmap._lut[:-3,:3].copy()
+        rgb = lut.T # 3 by N
+        hcl = np.array([to_xyz(color, space='hcl') for color in lut]).T # 3 by N
+        hsl = [to_xyz(color, space='hsl')[1] for color in lut]
+        hpl = [to_xyz(color, space='hpl')[1] for color in lut]
+        # Plot channels
+        for ax,y,label in zip(axs,(*hcl,hsl,hpl,*rgb),labels):
+            ax.scatter(x, y, c=x, cmap=cmap, s=markersize, linewidths=0)
+            ylim, ylocator = None, None
+            if label in ('Red','Blue','Green'):
+                ylim = (0,1)
+                ylocator = 0.2
+            elif label=='Luminance':
+                ylim = (0,100)
+                ylocator = 20
+            elif label=='Hue':
+                ylim = (0,360)
+                ylocator = 90
+            else:
+                ylim = (0,None)
+                ylocator = ('maxn', 5)
+            ax.format(title=label, ylim=ylim, ylocator=ylocator)
+    # Formatting
+    suptitle = ', '.join(f'"{cmap.name}"' for cmap in cmaps[:-1]) \
+        + (', and ' if len(cmaps)>2 else ' and ' if len(cmaps)==2 else ' ') \
+        + f'"{cmaps[-1].name}" colormap' + ('s' if len(cmaps)>1 else '')
     axs.format(
-        suptitle=f'{name} colormap breakdown', ylim=None, ytickminor=False,
+        xlocator=0.25, xformatter='null',
+        suptitle=f'{suptitle} by channel', ylim=None, ytickminor=False,
         )
+    # Colorbar on the bottom
+    for i,cmap in enumerate(cmaps):
+        fig.bpanel[i].colorbar(cmap, length=0.66, locator='null', label=cmap.name, labelweight='bold')
     return fig
 
 def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hcl'):

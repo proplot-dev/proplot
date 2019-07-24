@@ -11,7 +11,7 @@ abc:   False
 tight: True
 # Style
 fontname:     # if empty, default is Helvetica
-cmap:         sunset
+cmap:         fire
 lut:          256
 cycle:        colorblind
 rgbcycle:     False

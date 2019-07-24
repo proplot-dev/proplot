@@ -19,23 +19,12 @@ Colormap normalizers
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
-for all plotting commands involving colormaps.
-`~proplot.colortools.BinNorm` permits discrete ``levels`` even for
-commands like `~matplotlib.axes.Axes.pcolor` and
+for all plotting commands involving colormaps. This permits discrete
+``levels`` even for commands like `~matplotlib.axes.Axes.pcolor` and
 `~matplotlib.axes.Axes.pcolormesh`. `~proplot.colortools.BinNorm`
 also ensures that colorbar colors span the entire colormap range,
-independent of the ``extend`` setting. And for “cyclic” colormaps, it
-ensures that the color levels on either end of the colorbar are
-distinct.
-
-`~proplot.wrappers.cmap_wrapper` also fixes the well-documented
-`white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
-and
-`white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__
-issues by automatically changing the edge colors after
-`~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`,
-and `~matplotlib.axes.Axes.pcolormesh` are called. To disable this
-behavior, use ``edgefix=False``.
+independent of the ``extend`` setting, and that color levels on the ends
+of colorbars for “cyclic” colormaps are distinct.
 
 .. code:: ipython3
 

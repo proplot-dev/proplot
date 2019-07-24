@@ -37,10 +37,24 @@ from .utils import _default, units, journals
 from . import projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 __all__ = ['axes_list', 'close', 'show', 'subplots', 'Figure']
-_aliases = { # for panel names
-    'bpanel': 'bottompanel',
-    'rpanel': 'rightpanel',
-    'lpanel': 'leftpanel'
+
+# Aliases for panel names
+_aliases = {
+    'bpanel':         'bottompanel',
+    'rpanel':         'rightpanel',
+    'lpanel':         'leftpanel',
+    'bcolorbar':      'bottompanel',
+    'rcolorbar':      'rightpanel',
+    'lcolorbar':      'leftpanel',
+    'blegend':        'bottompanel',
+    'rlegend':        'rightpanel',
+    'llegend':        'leftpanel',
+    'bottomcolorbar': 'bottompanel',
+    'rightcolorbar':  'rightpanel',
+    'leftcolorbar':   'leftpanel',
+    'bottomlegend':   'bottompanel',
+    'rightlegend':    'rightpanel',
+    'leftlegend':     'leftpanel',
     }
 
 #------------------------------------------------------------------------------#
@@ -1904,15 +1918,28 @@ def subplots(array=None, ncols=1, nrows=1,
     # Get panel props
     kwargs = _panels_kwargs(panels, colorbars, legends, kwargs,
         ncols=ncols, nrows=nrows, figure=True)
+    # Warnings
+    axpanels    = _default(axpanel, axpanels, '')
+    axcolorbars = _default(axcolorbar, axcolorbars, '')
+    axlegends   = _default(axlegend, axlegends, '')
+    axpanels_kw    = _default(axpanel_kw, axpanels_kw, {})
+    axcolorbars_kw = _default(axcolorbar_kw, axcolorbars_kw, {})
+    axlegends_kw   = _default(axlegend_kw, axlegends_kw, {})
+    if not axpanels and axpanels_kw:
+        warnings.warn(f'Ignoring axpanels keyword args: {axpanels_kw}')
+    if not axcolorbars and axcolorbars_kw:
+        warnings.warn(f'Ignoring axcolorbars keyword args: {axcolorbars_kw}')
+    if not axlegends and axlegends_kw:
+        warnings.warn(f'Ignoring axlegends keyword args: {axlegends_kw}')
     # Create dictionary of panel toggles and settings
     # Input can be string e.g. 'rl' or dictionary e.g. {(1,2,3):'r', 4:'l'}
     # TODO: Allow separate settings for separate colorbar, legend, etc. panels
-    axpanels    = _axes_dict(naxs, _default(axpanel, axpanels, ''), kw=False, default='')
-    axcolorbars = _axes_dict(naxs, _default(axcolorbar, axcolorbars, ''), kw=False, default='')
-    axlegends   = _axes_dict(naxs, _default(axlegend, axlegends, ''), kw=False, default='')
-    axpanels_kw    = _axes_dict(naxs, _default(axpanel_kw, axpanels_kw, {}), kw=True)
-    axcolorbars_kw = _axes_dict(naxs, _default(axcolorbar_kw, axcolorbars_kw, {}), kw=True)
-    axlegends_kw   = _axes_dict(naxs, _default(axlegend_kw, axlegends_kw, {}), kw=True)
+    axpanels    = _axes_dict(naxs, axpanels, kw=False, default='')
+    axcolorbars = _axes_dict(naxs, axcolorbars, kw=False, default='')
+    axlegends   = _axes_dict(naxs, axlegends, kw=False, default='')
+    axpanels_kw    = _axes_dict(naxs, axpanels_kw, kw=True)
+    axcolorbars_kw = _axes_dict(naxs, axcolorbars_kw, kw=True)
+    axlegends_kw   = _axes_dict(naxs, axlegends_kw, kw=True)
     # Get which panels
     for num in range(1,naxs+1):
         axpanels_kw[num] = _panels_kwargs(
