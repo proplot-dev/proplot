@@ -2276,7 +2276,8 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
         array = array[:2]
     fig, axs = subplots(
         array=array, axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0,
-        aspect=aspect/2, subplotpad='1em', colorbar='b', bstack=len(args),
+        aspect=aspect/2, subplotpad='1em',
+        colorbar='b', bstack=len(args), bspan=[0,1,1,1,1,0],
         )
     labels = (
         'Hue', 'Chroma', 'Luminance',
@@ -2326,7 +2327,7 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
         )
     # Colorbar on the bottom
     for i,cmap in enumerate(cmaps):
-        fig.bpanel[i].colorbar(cmap, length=0.66, locator='null', label=cmap.name, labelweight='bold')
+        fig.bpanel[i].colorbar(cmap, locator='null', label=cmap.name, labelweight='bold')
     return fig
 
 def show_colorspaces(luminance=None, saturation=None, hue=None):
