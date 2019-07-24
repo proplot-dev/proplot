@@ -617,6 +617,7 @@ def _slice_cmap(cmap, left=None, right=None, name=None, N=None):
     right = right or 1
     dict_ = {key:value for key,value in cmap._segmentdata.items() if 'gamma' not in key}
     gammas = {'saturation':'gamma1', 'luminance':'gamma2'}
+    kwargs = {}
     for key,xyy in dict_.items():
         # Get coordinates
         xyy = np.array(xyy)
@@ -647,7 +648,6 @@ def _slice_cmap(cmap, left=None, right=None, name=None, N=None):
         kwargs[gammas[key]] = gamma
 
     # Rebuild cmap
-    kwargs = {}
     if hasattr(cmap, '_space'):
         kwargs['space'] = cmap._space
     return type(cmap)(name, data, N=cmap.N, **kwargs)
