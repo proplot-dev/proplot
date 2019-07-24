@@ -2136,7 +2136,7 @@ def register_cycles():
         cycles.append(name)
 
     # Sort
-    cycles[:] = sorted([*cycles, 'Set2', 'Set3'])
+    cycles[:] = sorted([*cycles, 'Set2', 'Set3'], key=lambda s: s.lower())
 
 def register_colors(nmax=np.inf):
     """
@@ -2148,14 +2148,14 @@ def register_colors(nmax=np.inf):
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
     # usage and will omit CSS4 colors from the demo table.
-    colors.clear()
+    colordict.clear()
     scale = (360, 100, 100)
     base = {**mcolors.BASE_COLORS} # make copy
     base.update({_color_names_shorthands[key]:value for key,value in base.items()}) # full names
     mcolors.colorConverter.colors.clear() # clean out!
     mcolors.colorConverter.cache.clear() # clean out!
     for name,dict_ in (('base',base), ('css',mcolors.CSS4_COLORS)):
-        colors.update({name:dict_})
+        colordict.update({name:dict_})
 
     # Load colors from file and get their HCL values
     names = ('opencolors', 'xkcd', 'crayola') # order is preference for identical color names from different groups
@@ -2169,13 +2169,13 @@ def register_colors(nmax=np.inf):
         # Immediately add all opencolors
         if category=='opencolors':
             dict_ = {name:color for name,color in data}
-            colors.update({'opencolors':dict_})
+            colordict.update({'opencolors':dict_})
             continue
         # Other color dictionaries are filtered, and their names are sanitized
         i = 0
         dict_ = {}
         ihcls = []
-        colors[category] = {} # just initialize this one
+        colordict[category] = {} # just initialize this one
         for name,color in data: # is list of name, color tuples
             if i>=nmax: # e.g. for xkcd colors
                 break
@@ -2188,7 +2188,7 @@ def register_colors(nmax=np.inf):
             ihcls.append(to_xyz(color, space=_color_names_filter_space))
             dict_[name] = color # save the color
             i += 1
-        _colors_unfiltered[category] = dict_
+        _colordict_unfiltered[category] = dict_
         hcls = np.concatenate((hcls, ihcls), axis=0)
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
@@ -2201,9 +2201,9 @@ def register_colors(nmax=np.inf):
         if name not in _color_names_add and idx not in idxs:
             deleted += 1
         else:
-            colors[category][name] = _colors_unfiltered[category][name]
+            colordict[category][name] = _colordict_unfiltered[category][name]
     # Add to colors mapping
-    for _,kw in colors.items():
+    for _,kw in colordict.items():
         mcolors.colorConverter.colors.update(kw)
 
 # Color lists
@@ -2211,9 +2211,9 @@ cmaps = [] # track *downloaded* colormaps, user can then check this list
 """List of new registered colormap names."""
 cycles = [] # track *all* color cycles
 """List of registered color cycle names."""
-_colors_unfiltered = {} # downloaded colors categorized by filename
-colors = {} # limit to 'sufficiently unique' color names
-"""Filtered, registered color names by category."""
+_colordict_unfiltered = {} # downloaded colors categorized by filename
+colordict = {} # limit to 'sufficiently unique' color names
+"""Registered color names by category."""
 
 # Register stuff, colors must come first
 register_colors()
@@ -2623,7 +2623,6 @@ def show_cycles(*args, axwidth=1.5):
         icycles = [colors(cycle) for cycle in args]
     else:
         icycles = {key:mcm.cmap_d[key].colors for key in cycles} # use global cycles variable
-    icycles = {key:icycles[key] for key in sorted(icycles.keys())}
     nrows = len(icycles)//3 + len(icycles)%3
 
     # Create plot
