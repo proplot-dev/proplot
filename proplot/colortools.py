@@ -2284,6 +2284,7 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
         'Red', 'Blue', 'Green'
         )
     # Iterate through colormaps
+    m = 0
     cmaps = []
     for cmap in args:
         # Get colormap
@@ -2312,7 +2313,7 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
                 ylim = (0,360)
                 ylocator = 90
             else:
-                ylim = (0,None)
+                ylim = (0,max(m,max(y)))
                 ylocator = ('maxn', 5)
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
     # Formatting
