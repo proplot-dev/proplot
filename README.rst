@@ -93,7 +93,7 @@ In summary, this project is intended to unify the convenience of seaborn, pandas
 
 Why not add to matplotlib directly?
 -----------------------------------
-ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the special ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
+ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
 ProPlot's "smart tight layout" feature also conflicts with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable subplot spacing*.
 
