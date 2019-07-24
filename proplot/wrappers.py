@@ -239,47 +239,44 @@ def _autoformat_1d(self, func, *args, **kwargs):
         raise ValueError(f'x coordinates must be 1-dimensional, but got {x.ndim}.')
 
     # Auto formatting
-    if self.figure._autoformat and not self._is_map:
+    xi = None # index version of 'x'
+    if not self._is_map:
+        # First handle string-type x-coordinates
+        kw = {}
         xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal') else 'x'
         yaxis = 'x' if xaxis=='y' else 'y'
-        # Ylabel
-        kw = {}
-        y, label = _auto_label(y)
-        if label:
-            axis = xaxis if name in ('hist',) else yaxis # for histogram, this indicates x coordinate
-            kw[axis + 'label'] = label
-        # Xlabel
-        x, label = _auto_label(x)
-        if label and name not in ('hist',):
-            kw[xaxis + 'label'] = label
-        if name!='scatter' and len(x)>1 and all(isinstance(x, Number) for x in x[:2]) and x[1]<x[0]:
-            kw[xaxis + 'reverse'] = True
-        # For bar plots, so we can offset by widths, need to convert to
-        # array prematurely and apply the IndexFormatter
-        if name in ('bar',):
-            x = _to_array(x)
-            if x.dtype=='object':
-                kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
-                kw[xaxis + 'minorlocator'] = mticker.NullLocator()
-                x = np.arange(len(x))
-        # Boxplot accepts a 'labels' argument but violinplot does not, so
-        # we try to set the locators and formatters here. Note x is ignored later.
+        if _to_array(x).dtype=='object':
+            xi = np.arange(len(x))
+            kw[xaxis + 'locator'] = mticker.FixedLocator(xi)
+            kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
+            kw[xaxis + 'minorlocator'] = mticker.NullLocator()
+            if name=='boxplot':
+                kwargs['labels'] = x
+            elif name=='violinplot':
+                kwargs['positions'] = xi
         if name in ('boxplot','violinplot'):
-            x, label = _auto_label(y, axis=1)
-            ys[0] = _to_array(y) # store naked array
+            kwargs['positions'] = xi
+        # Next handle labels if 'autoformat' is on
+        if self.figure._autoformat:
+            # Ylabel
+            y, label = _auto_label(y)
             if label:
+                iaxis = xaxis if name in ('hist',) else yaxis # for histogram, this indicates x coordinate
+                kw[iaxis + 'label'] = label
+            # Xlabel
+            x, label = _auto_label(x)
+            if label and name not in ('hist',):
                 kw[xaxis + 'label'] = label
-            if x is not None: # TODO: support for e.g. date axes?
-                x = _to_array(x)
-                if x.dtype=='object':
-                    kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
-                    kw[xaxis + 'minorlocator'] = mticker.NullLocator()
-                    if name=='boxplot':
-                        kwargs['labels'] = x # requires or get overwritten
-                if x.dtype!='object' or name=='violinplot':
-                    kwargs['positions'] = np.arange(len(x))
+            if name!='scatter' and len(x)>1 and xi is None and x[1]<x[0]:
+                kw[xaxis + 'reverse'] = True
+        # Appply
         if kw:
             self.format(**kw)
+    # Return result, maybe modify arguments
+    if xi is not None:
+        x = xi
+    if name in ('boxplot','violinplot'):
+        ys = [_to_array(yi) for yi in ys] # store naked array
     return func(x, *ys, *args, **kwargs)
 
 def _autoformat_2d(self, func, *args, order='C', **kwargs):
@@ -332,22 +329,41 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
             raise ValueError(f'{name} coordinates are {array.ndim}-dimensional, but must be 1 or 2-dimensional.')
 
     # Auto formatting
-    if self.figure._autoformat:
-        kw = {}
-        # Xlabel and Ylabel
-        if not self._is_map:
+    kw = {}
+    xi, yi = None, None
+    if not self._is_map:
+        # First handle string-type x and y-coordinates
+        if _to_array(x).dtype=='object':
+            xi = np.arange(len(x))
+            kw['xlocator'] = mticker.FixedLocator(xi)
+            kw['xformatter'] = mticker.IndexFormatter(x)
+            kw['xminorlocator'] = mticker.NullLocator()
+        if _to_array(y).dtype=='object':
+            yi = np.arange(len(y))
+            kw['ylocator'] = mticker.FixedLocator(yi)
+            kw['yformatter'] = mticker.IndexFormatter(y)
+            kw['yminorlocator'] = mticker.NullLocator()
+        # Handle labels if 'autoformat' is on
+        if self.figure._autoformat:
             for key,xy in zip(('xlabel','ylabel'), (x,y)):
                 _, label = _auto_label(xy)
                 if label:
                     kw[key] = label
                 if len(xy)>1 and all(isinstance(xy, Number) for xy in xy[:2]) and xy[1]<xy[0]:
                     kw[key[0] + 'reverse'] = True
-        # Title
+    # Handle figure titles
+    if self.figure._autoformat:
         _, title = _auto_label(Zs[0], units=False)
         if title:
             kw['title'] = title
         if kw:
             self.format(**kw)
+
+    # Return object
+    if xi is not None:
+        x = xi
+    if yi is not None:
+        y = yi
     return func(x, y, *Zs, **kwargs)
 
 #------------------------------------------------------------------------------
@@ -364,10 +380,9 @@ def enforce_centers(self, func, *args, order='C', **kwargs):
         if Z.ndim!=2:
             raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
         elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
-            # Get centers given edges
-            # NOTE: Do not print warning message because this use case is super
-            # common, will just be annoying for user.
-            if x.ndim==1 and y.ndim==1:
+            # Get centers given edges. Matplotlib may raise error if you pass
+            # 2D mesh of edges.
+            if x.ndim==1 and y.ndim==1 and x.dtype!='object' and y.dtype!='object':
                 x = (x[1:] + x[:-1])/2
                 y = (y[1:] + y[:-1])/2
         elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
@@ -394,11 +409,10 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
             raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
         elif Z.shape[1]==xlen and Z.shape[0]==ylen:
             # If 2D, don't raise error, but don't fix either, because
-            # matplotlib pcolor accepts grid center inputs.
-            # NOTE: Do not print warning message because this use case is super
-            # common, will just be annoying for user.
-            if x.ndim==1 and y.ndim==1:
-                x, y = utils.edges(x), utils.edges(y)
+            # matplotlib pcolor just trims last column and row
+            if x.ndim==1 and y.ndim==1 and x.dtype!='object' and y.dtype!='object':
+                x = utils.edges(x)
+                y = utils.edges(y)
         elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
             raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
     # Optionally re-order
@@ -450,32 +464,32 @@ def scatter_wrapper(self, func, *args,
 
     Parameters
     ----------
-    s, size, markersize : None, float, or list of float, optional
+    s, size, markersize : float or list of float, optional
         Aliases for the marker size.
-    smin, smax : None or float, optional
+    smin, smax : float, optional
         Used to scale the `s` array. These are the minimum and maximum marker
         sizes. Defaults to the minimum and maximum of the `s` array.
-    c, color, markercolor : None, color-spec, sequency of color-spec, or array, optional
+    c, color, markercolor : color-spec, sequency of color-spec, or array, optional
         Aliases for the marker fill color. If just an array of values, colors
         will be generated by passing the values through the `norm` normalizer
         and drawing from the `cmap` colormap.
-    cmap : None or colormap-spec, optional
+    cmap : colormap-spec, optional
         The colormap specifer, passed to the `~proplot.colortools.Colormap`
         constructor.
     cmap_kw : dict-like, optional
         Passed to `~proplot.colortools.Colormap`.
-    vmin, vmax : None or float, optional
+    vmin, vmax : float, optional
         Used to generate a `norm` for scaling the `c` array. These are the
         values corresponding to the leftmost and rightmost colors in the
         colormap. Defaults to the minimum and maximum values of the `c` array.
-    norm : None or normalizer spec, optional
+    norm : normalizer spec, optional
         The colormap normalizer, passed to the `~proplot.colortools.Norm`
         constructor.
-    norm_kw : None or norm-spec, optional
+    norm_kw : dict, optional
         Passed to `~proplot.colortools.Norm`.
-    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : None or float, or list thereof, optional
+    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : float or list thereof, optional
         Aliases for the marker edge width.
-    edgecolors, markeredgecolor, markeredgecolors : None or str or (R,G,B) tuple, or list thereof, optional
+    edgecolors, markeredgecolor, markeredgecolors : str or (R,G,B) tuple or list thereof, optional
         Aliases for the marker edge color.
     **kwargs
         Passed to `~matplotlib.axes.Axes.scatter`.
@@ -610,9 +624,9 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
 
     Parameters
     ----------
-    edgecolor : None or color-spec, optional
+    edgecolor : color-spec, optional
         The default edge color.
-    lw, linewidth : None or float, optional
+    lw, linewidth : float, optional
         The default edge width.
     orientation : {'vertical', 'horizontal'}, optional
         The orientation of the bars.
@@ -635,11 +649,11 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
         Percentile ranges for drawing thick and thin central error bars.
         The defaults are ``(25, 75)`` and ``(5, 95)``, respectively.
         Ignored if `medians` and `means` are both ``False``.
-    boxcolor, barcolor : None or float, optional
+    boxcolor, barcolor : float, optional
         Colors for the thick and thin error bars.
-    boxlw, barlw : None or float, optional
+    boxlw, barlw : float, optional
         Line widths for the thick and thin error bars.
-    capsize : None or float, optional
+    capsize : float, optional
         The cap size for thin error bars.
     """
     # Bail
@@ -720,26 +734,26 @@ def boxplot_wrapper(self, func, *args,
 
     Parameters
     ----------
-    color : None or color-spec, optional
+    color : color-spec, optional
         The color of all objects.
     fill : bool, optional
         Whether to fill the box with a color.
-    fillcolor : None or color-spec, optional
+    fillcolor : color-spec, optional
         The fill color for the boxes. Defaults to the next color cycler color.
-    fillalpha : None or float, optional
+    fillalpha : float, optional
         The opacity of the boxes. Defaults to ``1``.
-    lw, linewidth : None or float, optional
+    lw, linewidth : float, optional
         The linewidth of all objects.
     orientation : {None, 'horizontal', 'vertical'}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
-    marker : None or marker-spec, optional
+    marker : marker-spec, optional
         Marker style for the 'fliers', i.e. outliers.
-    markersize : None or float, optional
+    markersize : float, optional
         Marker size for the 'fliers', i.e. outliers.
-    boxcolor, capcolor, meancolor, mediancolor, whiskercolor : None or color-spec, optional
+    boxcolor, capcolor, meancolor, mediancolor, whiskercolor : color-spec, optional
         The color of various boxplot components. These are shorthands so you
         don't have to pass e.g. a ``boxprops`` dictionary.
-    boxlw, caplw, meanlw, medianlw, whiskerlw : None or float, optional
+    boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
         The line width of various boxplot components. These are shorthands so you
         don't have to pass e.g. a ``boxprops`` dictionary.
     """
@@ -811,13 +825,13 @@ def violinplot_wrapper(self, func, *args,
 
     Parameters
     ----------
-    color : None or color-spec, optional
+    color : color-spec, optional
         The color of all line objects. Defaults to ``'k'``.
-    fillcolor : None or color-spec, optional
+    fillcolor : color-spec, optional
         The violin plot fill color. Defaults to the next color cycler color.
-    fillalpha : None or float, optional
+    fillalpha : float, optional
         The opacity of the violins. Defaults to ``1``.
-    lw, linewidth : None or float, optional
+    lw, linewidth : float, optional
         The linewidth of all line objects. Defaults to ``1``.
     orientation : {None, 'horizontal', 'vertical'}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
@@ -828,11 +842,11 @@ def violinplot_wrapper(self, func, *args,
         Toggles showing the central thick vertical bar, thin vertical bar,
         median position marker, mean position marker, and the minimum maximum
         datum markers. These defaults are different from the matplotlib defaults.
-    bodycolor, boxcolor, barcolor, meancolor, mediancolor, mincolor, maxcolor : None or color-spec, optional
+    bodycolor, boxcolor, barcolor, meancolor, mediancolor, mincolor, maxcolor : color-spec, optional
         The color of various violin plot components. Applies to violin body,
         thick central bar, thin central bar, mean and median markers, and
         minimum and maximum markers.
-    bodylw, boxlw, barlw, meanlw, medianlw, minlw, maxlw : None or float, optional
+    bodylw, boxlw, barlw, meanlw, medianlw, minlw, maxlw : float, optional
         The line width of various violin plot components. Applies to violin body,
         thick central bar, thin central bar, mean and median markers, and
         minimum and maximum markers.
@@ -926,9 +940,9 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
         The transform, or a string pointing to either of the
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-        or `~matplotlib.figure.Figure.transFigure` transforms. Default is
-        ``'data'`` (unchanged).
-    fontname : None or str, optional
+        or `~matplotlib.figure.Figure.transFigure` transforms. Defaults to
+        ``'data'``, which is unchanged from matplotlib.
+    fontname : str, optional
         Alias for the ``fontfamily`` `~matplotlib.text.Text` property.
     border : bool, optional
         Whether to draw border around text.
@@ -991,7 +1005,7 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
 # Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
 # this will cause basemap's self.m.pcolormesh etc. to use *custom* version and
 # cause suite of weird errors. Prevent this recursion with the below decorator.
-def _general_norecurse(self, func):
+def _no_recurse(self, func):
     """Decorator to prevent recursion in certain method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
     @functools.wraps(func)
@@ -1309,14 +1323,14 @@ def cycle_wrapper(self, func, *args,
 
     Parameters
     ----------
-    cycle : None or cycle-spec, optional
+    cycle : cycle-spec, optional
         The cycle specifer, passed to the `~proplot.colortools.Cycle`
         constructor. If the returned list of colors is unchanged from the
         current axes color cycler, the axes cycle will **not** be reset to the
         first position.
     cycle_kw : dict-like, optional
         Passed to `~proplot.colortools.Cycle`.
-    labels, values : None or list, optional
+    labels, values : list, optional
         The legend labels or colorbar coordinates for each line in the
         input array. Can be numeric or string.
     legend : bool or str, optional
@@ -1566,9 +1580,9 @@ def cycle_wrapper(self, func, *args,
 @_expand_methods_list
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     extend='neither', norm=None, norm_kw={},
-    levels=None, values=None, vmin=None, vmax=None,
+    N=None, levels=None, values=None, vmin=None, vmax=None,
     locator=None, symmetric=False, locator_kw={},
-    edgefix=None, labels=False, labels_kw={}, precision=2,
+    edgefix=None, labels=False, labels_kw={}, fmt=None, precision=2,
     colorbar=False, colorbar_kw={},
     lw=None, linewidth=None, linewidths=None,
     ls=None, linestyle=None, linestyles=None,
@@ -1582,7 +1596,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
     Parameters
     ----------
-    cmap : None or colormap spec, optional
+    cmap : colormap spec, optional
         The colormap specifer, passed to the `~proplot.colortools.Colormap`
         constructor.
     cmap_kw : dict-like, optional
@@ -1590,32 +1604,32 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     extend : {'neither', 'min', 'max', 'both'}, optional
         Where to assign unique colors to out-of-bounds data and draw
         "extensions" (triangles, by default) on the colorbar.
-    norm : None or normalizer spec, optional
+    norm : normalizer spec, optional
         The colormap normalizer, used to warp data before passing it
         to `~proplot.colortools.BinNorm`. This is passed to the
         `~proplot.colortools.Norm` constructor.
     norm_kw : dict-like, optional
         Passed to `~proplot.colortools.Norm`.
-    levels : None or int or list of float, optional
+    N, levels : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
         `locator` to generate this many levels at "nice" intervals.
-        Default is ``rc['image.levels']``.
+        Defaults to ``rc['image.levels']``.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
         accept the `levels` keyword arg. You can now discretize your
         colors in a ``pcolor`` plot just like with ``contourf``.
-    values : None or int or list of float, optional
+    values : int or list of float, optional
         The number of level centers, or a list of level centers. If provided,
         levels are inferred using `~proplot.utils.edges`. This will override
         any `levels` input.
-    vmin, vmax : None or float, optional
+    vmin, vmax : float, optional
         Used to determine level locations if `levels` is an integer and at
         least one of `vmin` and `vmax` is provided. The levels will be
         ``np.linspace(vmin, vmax, levels)``. If `vmin` was omitted but `vmax`
         was provided, `vmin` is the data minimum. If `vmax` was omitted but
         `vmin` was provided, `vmax` is the data maximum.
-    locator : None or locator-spec, optional
+    locator : locator-spec, optional
         Used to determine level locations if `levels` or `values` is an integer
         and `vmin` and `vmax` were not provided. Passed to the `~proplot.axistools.Locator`
         constructor. Defaults to `~matplotlib.ticker.MaxNLocator` with
@@ -1624,12 +1638,12 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         Passed to `~proplot.axistools.Locator`.
     symmetric : bool, optional
         Toggle this to make automatically generated levels symmetric about zero.
-    edgefix : None or bool, optional
+    edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours
         <https://stackoverflow.com/q/8263769/4970632>`__
         and `white-lines-between-pcolor-rectangles
         <https://stackoverflow.com/q/27092991/4970632>`__
-        issues. This slows down figure rendering by a bit. Default is
+        issues. This slows down figure rendering by a bit. Defaults to
         ``rc['image.edgefix']``.
     labels : bool, optional
         For `~matplotlib.axes.Axes.contour`, whether to add contour labels
@@ -1643,8 +1657,11 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         For `~matplotlib.axes.Axes.contour`, passed to `~matplotlib.axes.Axes.clabel`.
         For `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
         passed to `~matplotlib.axes.Axes.text`.
+    fmt : format-spec, optional
+        Passed to the `~proplot.colortools.Norm` constructor, used to format
+        number labels. You can also use the `precision` keyword arg.
     precision : int, optional
-        Maximum precision (in decimal places) for the number labels.
+        Maximum number of decimal places for the number labels.
         Number labels are generated with the `~proplot.axistools.SimpleFormatter`
         formatter, which allows us to limit the precision.
     colorbar : bool or str, optional
@@ -1731,18 +1748,24 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     # Get level edges from level centers
     # See this post: https://stackoverflow.com/a/48614231/4970632
     if values is not None:
-        if np.iterable(values):
+        if isinstance(values, Number):
+            levels = values + 1
+        elif np.iterable(values):
             if name in ('cmapline',):
                 kwargs['values'] = values
-            if norm is None:
+            if norm is None or norm in ('segments','segmented'):
                 levels = utils.edges(values)
             else:
                 norm_tmp = colortools.Norm(norm, **norm_kw)
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
-        elif isinstance(values, Number):
-            levels = values + 1
         else:
             raise ValueError('Unexpected values input "{values}". Must be integer or list of numbers.')
+
+    # Data limits used for normalizer
+    Z = ma.masked_invalid(args[-1], copy=False)
+    zmin, zmax = float(Z.min()), float(Z.max())
+    if zmin==zmax or ma.is_masked(zmin) or ma.is_masked(zmax):
+        zmin, zmax = 0, 1
 
     # Input colormap, for methods that accept a colormap and normalizer
     if not name[-7:]=='contour': # contour, tricontour, i.e. not a method where cmap is optional
@@ -1769,22 +1792,21 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                     norm = 'segmented'
                 else:
                     norm = 'linear'
+        norm_kw = {**norm_kw} # copy!
+        norm_kw.setdefault('vmin', _default(vmin, zmin))
+        norm_kw.setdefault('vmax', _default(vmax, zmax))
         norm = colortools.Norm(norm, levels=levels, **norm_kw)
 
     # Get default levels
     # TODO: Add kernel density plot to hexbin!
     if name not in ('hexbin',):
-        levels = _default(levels, rc['image.levels']) # e.g. pcolormesh can auto-determine levels if you input a number
+        levels = _default(N, levels, rc['image.levels']) # e.g. pcolormesh can auto-determine levels if you input a number
     if isinstance(levels, Number):
         # Set levels according to vmin and vmax
         N = levels
-        Z = ma.masked_invalid(args[-1], copy=False)
-        zmin, zmax = float(Z.min()), float(Z.max())
         if vmin is not None or vmax is not None:
-            if vmin is None:
-                vmin = zmin
-            if vmax is None:
-                vmax = zmax
+            vmin = _default(vmin, zmin)
+            vmax = _default(vmax, zmax)
             levels = np.linspace(vmin, vmax, N)
         # Use the locator to determine levels
         # Mostly copied from the hidden contour.ContourSet._autolev
@@ -1836,23 +1858,39 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     obj = func(*args, **kwargs)
     obj.extend = extend # add attributes used by colorbar_wrapper
     if levels is not None:
-        obj.levels = levels
+        obj.levels = levels # for colorbar to determine tick locations
     if locator is not None and not isinstance(locator, mticker.MaxNLocator):
-        obj.locator = locator # for maxn locator we want to optionally skip level ticks in colorbar wrapper
+        obj.locator = locator # for colorbar to determine tick locations; if maxn is the locator, let colorbar infer tick locations from 'levels'
 
     # Apply labels
     # TODO: Add quiverkey to this!
     if labels:
-        # Very simple, use clabel args
-        fmt = axistools.Formatter('simple', precision=precision)
-        if name=='contour': # TODO: document alternate keyword args!
-            labels_kw_ = {'fmt':fmt, 'inline_spacing':3, 'fontsize':rc['small']} # for rest, we keep the defaults
-            for key1,key2 in (('size','fontsize'),):
-                value = labels_kw.pop(key1, None)
-                if value:
-                    labels_kw[key2] = value
-            labels_kw_.update(labels_kw)
-            self.clabel(obj, **labels_kw_)
+        # Formatting for labels
+        # Respect if 'fmt' was passed in labels_kw instead of as a main argument
+        fmt = _default(labels_kw.pop('fmt', None), fmt, 'simple')
+        fmt = axistools.Formatter(fmt, precision=precision)
+        # Use clabel method
+        if 'contour' in name:
+            if 'contourf' in name:
+                lums = [colortools.to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels]
+                colors = ['w' if lum<50 else 'k' for lum in lums]
+                cobj = self.contour(*args, levels=levels, linewidths=0)
+            else:
+                cobj = obj
+                colors = None
+            text_kw = {}
+            for key in (*labels_kw,): # allow dict to change size during iteration
+                if key not in (
+                    'levels', 'fontsize', 'colors', 'inline', 'inline_spacing',
+                    'manual', 'rightside_up', 'use_clabeltext',
+                    ):
+                    text_kw[key] = labels_kw.pop(key)
+            labels_kw.setdefault('colors', colors)
+            labels_kw.setdefault('inline_spacing', 3)
+            labels_kw.setdefault('fontsize', rc['small'])
+            labs = self.clabel(cobj, fmt=fmt, **labels_kw)
+            for lab in labs:
+                lab.update(text_kw)
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
         elif 'pcolor' in name:
@@ -1923,11 +1961,11 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
 
     Parameters
     ----------
-    handles : None or list of `~matplotlib.artist.Artist`, optional
+    handles : list of `~matplotlib.artist.Artist`, optional
         List of artists instances, or list of lists of artist instances (see
         the `center` keyword). If ``None``, the artists are retrieved with
         `~matplotlib.axes.Axes.get_legend_handles_labels`.
-    labels : None or list of str, optional
+    labels : list of str, optional
         Matching list of string labels, or list of lists of string labels (see
         the `center` keywod). If ``None``, the labels are retrieved by calling
         `~matplotlib.artist.Artist.get_label` on each `~matplotlib.artist.Artist`
@@ -1938,8 +1976,8 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
     order : {'C', 'F'}, optional
         Whether legend handles are drawn in row-major (``'C'``) or column-major
         (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
-        ``'F'`` was the original matplotlib default; the default is now ``'C'``.
-    center : None or bool, optional
+        ``'F'`` was the original matplotlib default. Defaults to ``'C'``.
+    center : bool, optional
         Whether to center each legend row individually. If ``True``, we
         actually draw successive single-row legends stacked on top of each
         other.
@@ -1947,7 +1985,7 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         If ``None``, we infer this setting from `handles`. Defaults to ``True``
         if `handles` is a list of lists; each sublist is used as a *row*
         in the legend. Otherwise, defaults to ``False``.
-    loc : None or str, optional
+    loc : int or str, optional
         The legend location. The following locations and location aliases are
         valid.
 
@@ -1966,10 +2004,10 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         ``'center'``        ``9``, ``'c'``
         ==================  ==============================================
 
-    label, title : None or str, optional
+    label, title : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
         with `colorbar_wrapper`.
-    color, lw, linewidth, marker, linestyle, dashes, markersize : None or property-spec, optional
+    color, lw, linewidth, marker, linestyle, dashes, markersize : property-spec, optional
         Properties used to override the legend handles. For example, if you
         want a legend that describes variations in line style ignoring variations
         in color, you might want to use ``color='k'``. For now this does not
@@ -2220,7 +2258,8 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
     # Return legend(s)
     return legs[0] if len(legs)==1 else (*legs,)
 
-def colorbar_wrapper(self, mappable, values=None,
+def colorbar_wrapper(self,
+    mappable, values=None,
     extend=None, extendsize=None,
     title=None, label=None,
     grid=None, tickminor=None,
@@ -2252,34 +2291,34 @@ def colorbar_wrapper(self, mappable, values=None,
            is ``None``, they will try to be inferred by converting the handle
            labels returned by `~matplotlib.artist.Artist.get_label` to `float`.
 
-    values : None or list of float, optional
-        Ignored if `mappable` is a mappable object. Maps each color or plot
-        handle in the `mappable` list to numeric values. From this, a
+    values : list of float, optional
+        Ignored if `mappable` is a mappable object. This maps each color or
+        plot handle in the `mappable` list to numeric values, from which a
         colormap and normalizer are constructed.
     extend : {None, 'neither', 'both', 'min', 'max'}, optional
         Direction for drawing colorbar "extensions" (i.e. references to
         out-of-bounds data with a unique color). These are triangles by
         default. If ``None``, we try to use the ``extend`` attribute on the
         mappable object. If the attribute is unavailable, we use ``'neither'``.
-    extendsize : None or float or str, optional
+    extendsize : float or str, optional
         The length of the colorbar "extensions" in *physical units*.
         If float, units are inches. If string, units are interpreted
-        by `~proplot.utils.units`. Default is ``rc['colorbar.extend']``.
+        by `~proplot.utils.units`. Defaults to ``rc['colorbar.extend']``.
 
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
         sizes to match, because the `extendsize` units are *relative*.
     tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
-    label, title : None or str, optional
+    label, title : str, optional
         The colorbar label. The `title` keyword is also accepted for
         consistency with `legend_wrapper`.
-    grid : None or bool, optional
+    grid : bool, optional
         Whether to draw "gridlines" between each level of the colorbar.
-        Default is ``rc['colorbar.grid']``.
+        Defaults to ``rc['colorbar.grid']``.
     tickminor : bool, optional
-        Whether to put minor ticks on the colorbar. Default is ``False``.
-    locator, ticks : None or locator spec, optional
+        Whether to put minor ticks on the colorbar. Defaults to ``False``.
+    locator, ticks : locator spec, optional
         Used to determine the colorbar tick mark positions. Passed to the
         `~proplot.axistools.Locator` constructor.
     maxn : int, optional
@@ -2292,7 +2331,7 @@ def colorbar_wrapper(self, mappable, values=None,
         As with `locator`, but for the minor tick marks.
     minorlocator_kw
         As for `locator_kw`, but for the minor locator.
-    formatter, ticklabels : None or formatter spec, optional
+    formatter, ticklabels : formatter spec, optional
         The tick label format. Passed to the `~proplot.axistools.Formatter`
         constructor.
     formatter_kw : dict-like, optional
@@ -2300,14 +2339,14 @@ def colorbar_wrapper(self, mappable, values=None,
     fixticks : bool, optional
         For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
         colorbar minor and major ticks can appear misaligned. When `fixticks`
-        is ``True``, this misalignment is fixed. The default is ``False``.
+        is ``True``, this misalignment is fixed. Defaults to ``False``.
 
         This will give incorrect positions when the colormap index does not
         appear to vary "linearly" from left-to-right across the colorbar (for
         example, when the leftmost colormap colors seem to be "pulled" to the
         right farther than normal). In this case, you should stick with
         ``fixticks=False``.
-    norm : None or normalizer spec, optional
+    norm : normalizer spec, optional
         Ignored if `values` is ``None``. The normalizer
         for converting `values` to colormap colors. Passed to the
         `~proplot.colortools.Norm` constructor. As an example, if your
@@ -2384,7 +2423,7 @@ def colorbar_wrapper(self, mappable, values=None,
                     obj = obj[0]
                 color = getattr(obj, 'get_color', None) or getattr(obj, 'get_facecolor')
                 colors.append(color())
-            cmap = colortools.Colormap(colors)
+            cmap = colortools.Colormap(colors, listed=True)
             if values is None:
                 values = []
                 for obj in mappable:
@@ -2396,30 +2435,29 @@ def colorbar_wrapper(self, mappable, values=None,
                     values.append(val)
         # List of colors
         elif all(isinstance(obj, str) for obj in mappable) or all(np.iterable(obj) and len(obj) in (3,4) for obj in mappable):
-            cmap = colortools.Colormap(mappable)
+            cmap = colortools.Colormap(mappable, listed=True)
             if values is None:
                 raise ValueError(f'To generate colorbars from lists of colors, pass the "values" keyword arg to colorbar().')
-        # Invalid
         else:
             raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, or list of colors. Got {mappable}.')
+        # Enforce equal length
+        if len(values)!=len(mappable):
+            raise ValueError(f'Passed {len(values)} values, but only {len(mappable)} objects or colors.')
     # Build new ad hoc mappable object from handles
     if cmap is not None:
-        func = _cmap_wrapper(self, self.contourf)
-        mappable = func([[0,0],[0,0]],
+        mappable = _cmap_wrapper(self, self.contourf)([[0,0],[0,0]],
             cmap=cmap, extend='neither', values=np.array(values),
             norm=norm, norm_kw=norm_kw) # workaround
-        if locator is None:
-            nstep = 1 + len(values)//20
-            locator = values[::nstep]
 
-    # Get tick locations, prefer centers (i.e. 'values') then the
-    # edges (i.e. 'levels') on the object.
+    # Get tick locations, prefer centers (values) over edges (levels).
+    # If values were provided as keyword arg, this is a colorbar from lines or
+    # colors, and we label *all* values by default.
+    locator = _default(locator, values) # use *all* values if they were provided
     if locator is None:
-        locator = getattr(mappable, 'values', None)
-        if locator is None: # TODO: this is helpful for log plots but does it mess up other ones?
-            locator = getattr(mappable, 'locator', None)
-        if locator is None:
-            locator = getattr(mappable, 'levels', None)
+        for attr in ('values', 'locator', 'levels'):
+            if locator is not None:
+                continue
+            locator = getattr(mappable, attr, locator)
         if locator is not None and not isinstance(locator, mticker.Locator):
             step = 1 + len(locator)//maxn
             locator = locator[::step]
@@ -2564,9 +2602,7 @@ def colorbar_wrapper(self, mappable, values=None,
     return cb
 
 #------------------------------------------------------------------------------#
-# Now that we have defined all wrappers in a way that will make nice documentation/
-# minimize the amount of new code that has to be generated when a method is
-# wrapped inside __getattribute__, construct the *actual* wrappers.
+# Construct *actual* wrappers. Above functions are just for documentation.
 #------------------------------------------------------------------------------#
 # Helper funcs
 def _wrapper(driver):
@@ -2584,7 +2620,7 @@ def _simple_wrapper(driver):
         return wrapper
     return decorator
 # Hidden wrappers
-# Also _basemap_call and _general_norecurse
+# There is also _basemap_call and _no_recurse
 _autoformat_1d_ = _wrapper(_autoformat_1d)
 _autoformat_2d_ = _wrapper(_autoformat_2d)
 # Documented

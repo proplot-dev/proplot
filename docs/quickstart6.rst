@@ -19,12 +19,14 @@ Colormap normalizers
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
-for all plotting commands involving colormaps. This permits discrete
-``levels`` even for commands like `~matplotlib.axes.Axes.pcolor` and
+for all plotting commands involving colormaps.
+`~proplot.colortools.BinNorm` permits discrete ``levels`` even for
+commands like `~matplotlib.axes.Axes.pcolor` and
 `~matplotlib.axes.Axes.pcolormesh`. `~proplot.colortools.BinNorm`
-also ensures that colorbar colors span the entire colormap range, no
-matter the ``extend`` setting, and that “cyclic” colormap colors are
-distinct on each end of the colorbar.
+also ensures that colorbar colors span the entire colormap range,
+independent of the ``extend`` setting. And for “cyclic” colormaps, it
+ensures that the color levels on either end of the colorbar are
+distinct.
 
 `~proplot.wrappers.cmap_wrapper` also fixes the well-documented
 `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__
@@ -39,16 +41,16 @@ behavior, use ``edgefix=False``.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=5, width=8, wratios=(5,3,3,3,3), axcolorbars='b')
-    axs.format(suptitle='Demo of colorbar color-range standardization')
-    levels = plot.arange(0,360,45)
-    data = (20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
+    f, axs = plot.subplots(ncols=2, axwidth=1.5, axcolorbars={1:'l', 2:'r'})
+    cmap = 'orange5'
+    data = np.random.rand(15,15)
+    axs.format(suptitle='Pcolor with levels demo')
     ax = axs[0]
-    ax.contourf(data, levels=levels, cmap='phase', extend='neither', colorbar='b')
-    ax.format(title='Cyclic map with separate ends')
-    for ax,extend in zip(axs[1:], ('min','max','neither','both')):
-        ax.contourf(data, levels=levels, cmap='spectral', extend=extend, colorbar='b', colorbar_kw={'locator':90})
-        ax.format(title=f'Map with extend={extend}')
+    ax.pcolor(data, cmap=cmap, colorbar='l', vmin=0, vmax=1, levels=200, colorbar_kw={'ticks':0.2})
+    ax.format(title='Ambiguous values', yformatter='null')
+    ax = axs[1]
+    ax.pcolor(data, cmap=cmap, colorbar='r', levels=np.linspace(0,1,6), colorbar_kw={'ticks':0.2})
+    ax.format(title='Discernible values')
 
 
 
@@ -59,16 +61,16 @@ behavior, use ``edgefix=False``.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=1.5, axcolorbars={1:'l', 2:'r'})
-    cmap = 'orange5'
-    data = np.random.rand(20,20)
-    axs.format(suptitle='Pcolor with levels demo')
+    f, axs = plot.subplots(ncols=5, width=8, wratios=(5,3,3,3,3), axcolorbars='b')
+    axs.format(suptitle='Demo of colorbar color-range standardization')
+    levels = plot.arange(0,360,45)
+    data = (20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
     ax = axs[0]
-    ax.pcolor(data, cmap=cmap, colorbar='l', vmin=0, vmax=1, levels=200, colorbar_kw={'locator':0.2})
-    ax.format(title='Fine transitions', yformatter='null')
-    ax = axs[1]
-    ax.pcolor(data, cmap=cmap, colorbar='r', levels=np.linspace(0,1,6), colorbar_kw={'locator':0.2})
-    ax.format(title='Discernible levels')
+    ax.pcolormesh(data, levels=levels, cmap='phase', extend='neither', colorbar='b')
+    ax.format(title='Cyclic map with separate ends')
+    for ax,extend in zip(axs[1:], ('min','max','neither','both')):
+        ax.pcolormesh(data, levels=levels, cmap='spectral', extend=extend, colorbar='b', colorbar_kw={'locator':90})
+        ax.format(title=f'Map with extend={extend}')
 
 
 
@@ -128,31 +130,42 @@ constructor.
 .. image:: quickstart/quickstart_151_0.svg
 
 
-Contourf and pcolor labels
---------------------------
+Heatmaps and labeling
+---------------------
 
-To add `~matplotlib.axes.Axes.clabel` labels to
-`~matplotlib.axes.Axes.contour` plots or add grid box labels to
-`~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh` plots, just pass ``labels=True`` to
-any command wrapped by `~proplot.wrappers.cmap_wrapper`. For grid box
-labels, the label color is automatically chosen based on the luminance
-of the underlying box color.
+The new `~proplot.axes.BaseAxes.heatmap` command calls
+`~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
+is suitable for heatmaps – no minor ticks, no gridlines, and major ticks
+at the center of each box.
+
+You can also add labels to `~matplotlib.axes.Axes.pcolor`,
+`~matplotlib.axes.Axes.pcolormesh`,
+`~proplot.axes.BaseAxes.heatmap`, and
+`~matplotlib.axes.Axes.contour` plots, thanks to
+`~proplot.wrappers.cmap_wrapper`. Just pass the ``labels=True``
+keyword argument, and ProPlot will draw contour labels with
+`~matplotlib.axes.Axes.clabel` or grid box labels with
+``~matpltolib.axes.Axes.text``. The label format can be changed by
+passing a ``labels_kw`` dictionary of settings (e.g.
+``labels_kw={'fontsize':12}``) and with the ``precision`` keyword arg.
+For grid box labels, the label color is automatically chosen based on
+the luminance of the underlying box color.
 
 .. code:: ipython3
 
     import proplot as plot
+    import pandas as pd
     import numpy as np
-    f, axs = plot.subplots(ncols=2, span=False, share=False)
-    data = np.random.rand(7,7)
+    f, axs = plot.subplots(axwidth=2, ncols=2, span=False, share=False)
+    data = np.random.rand(6,6)
+    data = pd.DataFrame(data, index=pd.Index(['a','b','c','d','e','f']))
     axs.format(suptitle='Labels demo')
     ax = axs[0]
-    m = ax.pcolormesh(data, cmap='greys', labels=True, levels=100)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Pcolor plot with labels')
+    m = ax.heatmap(data, cmap='rocket', labels=True, precision=2, labels_kw={'weight':'bold'})
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Heatmap plot with bold labels')
     ax = axs[1]
-    m = ax.contourf(data.cumsum(axis=0), cmap='greys', cmap_kw={'right':0.8})
-    m = ax.contour(data.cumsum(axis=0), color='k', labels=True)
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contour plot with labels')
+    m = ax.contourf(data.cumsum(axis=0), labels=True, cmap='rocket', labels_kw={'weight':'bold'})
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with bold labels')
 
 
 
@@ -259,7 +272,7 @@ spread represented by error bars.
     import proplot as plot
     import numpy as np
     import pandas as pd
-    plot.rc['title.loc'] = 'ci'
+    plot.rc['title.loc'] = 'uc'
     plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
     f, axs = plot.subplots(nrows=3, aspect=2, axwidth=3, span=False, share=False)
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
@@ -329,6 +342,7 @@ keywords, which is a bit less confusing. You can also pass colormaps to
     import proplot as plot
     import numpy as np
     import pandas as pd
+    plot.rc.reset()
     f, axs = plot.subplots(ncols=2, share=1)
     x = (np.random.rand(20)-0).cumsum()
     data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
@@ -339,7 +353,7 @@ keywords, which is a bit less confusing. You can also pass colormaps to
     obj = ax.scatter(x, data, legend='ul', cycle='538', legend_kw={'ncols':2},
                     cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
     ax = axs[1]
-    ax.format(title='With colormap and colorbar')
+    ax.format(title='Scatter colormap with colorbar')
     data = (np.random.rand(2,100)-0.5)
     obj = ax.scatter(*data, color=data.sum(axis=0), size=10*(data.sum(axis=0)+1),
                      marker='*', cmap='fire', colorbar='ll', colorbar_kw={'locator':0.5, 'label':'label'})

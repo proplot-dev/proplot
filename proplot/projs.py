@@ -147,9 +147,11 @@ def Proj(name, basemap=False, **kwargs):
         name = _basemap_cyl.get(name, name)
         kwproj = basemap_rc.get(name, {})
         kwproj.update(kwargs)
-        kwproj.update({'fix_aspect': True})
+        kwproj.setdefault('fix_aspect', True)
         if name in _basemap_circles:
-            kwproj.update({'round': True})
+            kwproj.setdefault('round', True)
+        if name=='geos': # fix non-conda installed basemap issue: https://github.com/matplotlib/basemap/issues/361
+            kwproj['rsphere'] = (6378137.00,6356752.3142)
         reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
         aspect = (proj.urcrnrx - proj.llcrnrx) / \
@@ -159,6 +161,8 @@ def Proj(name, basemap=False, **kwargs):
         import cartopy.crs as ccrs # verify package is available
         kwargs = {_crs_translate.get(key, key): value for key,value in kwargs.items()}
         crs = cartopy_projs.get(name, None)
+        if name=='geos': # fix common mistake
+            kwargs.pop('central_latitude', None)
         if crs is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
         for arg in ('boundinglat', 'centerlat'):

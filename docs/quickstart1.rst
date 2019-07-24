@@ -369,7 +369,7 @@ section.
     color = plot.shade('sky blue', 0.3)
     cycle_kw = {'fade':90, 'space':'hcl'}
     ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3,
-            colorbar='ll', colorbar_kw={'length':'2cm', 'frameon':True})
+            colorbar='ll', colorbar_kw={'length':'2cm', 'frameon':True, 'locator':20})
     # Plot Dataframe
     ax = axs[1]
     color = plot.shade('jade', 0.7)

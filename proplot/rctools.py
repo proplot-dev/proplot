@@ -171,7 +171,6 @@ Key                       Description
 ``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
 ``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
 ``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
-``colorbar.xspace``       Extra space for *x* label of inset colorbars.
 ========================  =========================================================================================================================
 
 The ``subplot`` category has settings that control the default figure
@@ -292,7 +291,7 @@ _rc_names_custom = {
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
     'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',
     'subplot.axwidth', 'subplot.panelwidth', 'subplot.panelspace',
-    'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad', 'colorbar.xspace',
+    'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
@@ -556,7 +555,7 @@ class rc_configurator(object):
                 # Gridlines are off for both, or off for the ones that we
                 # don't want to turn on. We can just turn on these ones.
                 else:
-                    pass
+                    which = owhich
             cache.update({'axes.grid':value, 'axes.grid.which':which})
             _rcParams.update({'axes.grid':value, 'axes.grid.which':which})
 

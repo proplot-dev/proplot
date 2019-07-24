@@ -136,16 +136,16 @@ class BaseAxes(maxes.Axes):
         """
         Parameters
         ----------
-        number : None or int
+        number : int
             The subplot number, used for a-b-c labelling (see
             `~BaseAxes.format`).
         sharex_level, sharey_level : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both
             axes.
-        sharex, sharey : None or `BaseAxes`, optional
+        sharex, sharey : `BaseAxes`, optional
             Axes to use for *x* and *y* axis sharing. Should correspond
             to the subplot in the bottommost row, leftmost column.
-        spanx, spany : None or `BaseAxes`, optional
+        spanx, spany : `BaseAxes`, optional
             Axes to use for the "spanning" *x* and *y* axis labels. Should
             correspond to the subplot in the leftmost column, bottommost row.
 
@@ -332,7 +332,7 @@ class BaseAxes(maxes.Axes):
 
     def _title_kwargs(self, abc=False, loc=None):
         """Position title text to the left, center, or right and either
-        inside or outside the axes (default is center, outside)."""
+        inside or outside the axes. The default is center, outside."""
         # Apply rc settings
         prefix = 'abc' if abc else 'title'
         kwargs = rc.fill({
@@ -392,7 +392,7 @@ class BaseAxes(maxes.Axes):
 
         Parameters
         ----------
-        rc_kw : None or dict, optional
+        rc_kw : dict, optional
             A dictionary containing "rc" configuration settings that will
             be applied to this axes. Temporarily updates the
             `~proplot.rctools.rc` object. See `~proplot.rctools` for details.
@@ -459,13 +459,13 @@ class BaseAxes(maxes.Axes):
 
         Parameters
         ----------
-        title : None or str, optional
+        title : str, optional
             The axes title.
         ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
             Axes titles, with the first part of the name indicating location.
             This lets you specify multiple "title" within a single axes. See
             the `titleloc` keyword.
-        abc : None or bool, optional
+        abc : bool, optional
             Whether to apply "a-b-c" subplot labelling based on the
             ``number`` attribute. If ``number`` is >26, the labels will loop
             around to a, ..., z, aa, ..., zz, aaa, ..., zzz, ... God help you
@@ -499,10 +499,10 @@ class BaseAxes(maxes.Axes):
             Whether to try to put title and a-b-c label above the top subplot
             panel (if it exists), or to always put them on the main subplot.
             Defaults to ``True``, i.e. the former.
-        rowlabels, colllabels : None or list of str, optional
+        rowlabels, colllabels : list of str, optional
             The subplot row and column labels. If list, length must match
             the number of subplot rows, columns.
-        figtitle, suptitle : None or str, optional
+        figtitle, suptitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
             column of subplots, and automatically offset above figure titles.
@@ -612,10 +612,10 @@ class BaseAxes(maxes.Axes):
 
         Parameters
         ----------
-        loc : None or str or int, optional
+        loc : str, optional
             The colorbar location. Just like ``loc`` for the native matplotlib
             `~matplotlib.axes.Axes.legend`, but filtered to only corner
-            positions. Default is ``rc['colorbar.loc']``. The following
+            positions. Defaults to ``rc['colorbar.loc']``. The following
             locations are valid:
 
             * ``'upper right'`` or ``'ur'``
@@ -623,30 +623,30 @@ class BaseAxes(maxes.Axes):
             * ``'lower left'`` or ``'ll'``
             * ``'lower right'`` or ``'lr'``
 
-        pad : None or str or float, optional
+        pad : str or float, optional
             Space between the axes edge and the colorbar.
             If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`. Default is ``rc['colorbar.pad']``.
-        length : None or str or float, optional
+            `~proplot.utils.units`. Defaults to ``rc['colorbar.pad']``.
+        length : str or float, optional
             The colorbar length.  If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Default is
+            units are interpreted by `~proplot.utils.units`. Defaults to
             ``rc['colorbar.length']``.
-        width : None or str or float, optional
+        width : str or float, optional
             The colorbar width.  If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Default is
+            units are interpreted by `~proplot.utils.units`. Defaults to
             ``rc['colorbar.width']``.
-        xspace : None or str or float, optional
+        xspace : str or float, optional
             Space allocated for the bottom x-label of the colorbar.
             If float, units are inches. If string, units are interpreted
-            by `~proplot.utils.units`. Default is ``rc['colorbar.xspace']``.
-        frame, frameon : None or bool, optional
+            by `~proplot.utils.units`. Defaults to ``rc['colorbar.xspace']``.
+        frame, frameon : bool, optional
             Whether to draw a frame behind the inset colorbar, just like
-            `~matplotlib.axes.Axes.legend`. Default is ``rc['colorbar.frameon']``.
-        alpha : None or float, optional
-            Transparency of the frame. Default is ``rc['colorbar.framealpha']``.
-        linewidth : None or float, optional
+            `~matplotlib.axes.Axes.legend`. Defaults to ``rc['colorbar.frameon']``.
+        alpha : float, optional
+            Transparency of the frame. Defaults to ``rc['colorbar.framealpha']``.
+        linewidth : float, optional
             Line width for the frame. Defaults to ``rc['axes.linewidth']``.
-        edgecolor, facecolor : None or color-spec, optional
+        edgecolor, facecolor : color-spec, optional
             Properties for the frame. Defaults are ``rc['axes.edgecolor']``
             and ``rc['axes.facecolor']``.
         **kwargs, label, extendsize
@@ -661,9 +661,10 @@ class BaseAxes(maxes.Axes):
         xpad = pad/self.width
         ypad = pad/self.height
         # Space for labels
-        xspace = units(_default(xspace, rc['colorbar.xspace'])) # for x label
-        if not label:
-            xspace -= 1.2*rc['font.size']/72
+        if label:
+            xspace = 2.4*rc['font.size']/72 + rc['xtick.major.size']/72
+        else:
+            xspace = 1.2*rc['font.size']/72 + rc['xtick.major.size']/72
         xspace /= self.height
         # Get location in axes-relative coordinates
         # Bounds are x0, y0, width, height in axes-relative coordinate to start
@@ -692,7 +693,7 @@ class BaseAxes(maxes.Axes):
         # Make colorbar
         # WARNING: Inset colorbars are tiny! So use smart default locator
         kwargs.update({'ticklocation':'bottom', 'extendsize':extend, 'label':label})
-        kwargs.setdefault('locator', ('maxn', 4))
+        kwargs.setdefault('maxn', 5)
         cbar = wrappers.colorbar_wrapper(ax, *args, **kwargs)
         # Make frame
         # NOTE: We do not allow shadow effects or fancy edges effect.
@@ -722,6 +723,22 @@ class BaseAxes(maxes.Axes):
         `~proplot.wrappers.fill_betweenx_wrapper`."""
         return self.fill_betweenx(*args, **kwargs)
 
+    def heatmap(self, *args, **kwargs):
+        """Calls `~matplotlib.axes.Axes.pcolormesh` and turns on major ticks
+        for every grid center."""
+        obj = self.pcolormesh(*args, **kwargs)
+        xlocator, ylocator = None, None
+        if hasattr(obj, '_coordinates'): # be careful in case private API changes! but this is only way to infer coordinates
+            xy = obj._coordinates
+            xy = (xy[1:,...] + xy[:-1,...])/2
+            xy = (xy[:,1:,:] + xy[:,:-1,:])/2
+            xlocator, ylocator = xy[0,:,0], xy[:,0,1]
+        self.format(
+            xgrid=False, ygrid=False, xtickminor=False, ytickminor=False,
+            xlocator=xlocator, ylocator=ylocator,
+            )
+        return obj
+
     def cmapline(self, *args, values=None,
         cmap=None, norm=None,
         interp=0, **kwargs):
@@ -737,12 +754,12 @@ class BaseAxes(maxes.Axes):
         ----------
         *args : (y,) or (x,y)
             The coordinates. If `x` is not provided, it is inferred from `y`.
-        cmap : None or colormap spec, optional
+        cmap : colormap spec, optional
             The colormap specifier, passed to `~proplot.colortools.Colormap`.
         values : list of float
             The parametric values used to map points on the line to colors
             in the colormap.
-        norm : None or normalizer spec, optional
+        norm : normalizer spec, optional
             The normalizer, passed to `~proplot.colortools.Norm`.
         interp : int, optional
             Number of values between each line joint and each *halfway* point
@@ -958,7 +975,7 @@ class CartesianAxes(BaseAxes):
 
         Parameters
         ----------
-        xlabel, ylabel : None or str, optional
+        xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`
             and `~matplotlib.axes.Axes.set_ylabel`.
@@ -967,13 +984,13 @@ class CartesianAxes(BaseAxes):
             `~matplotlib.artist.Artist.update` method on the
             `~matplotlib.text.Text` instance. Options include ``'color'``,
             ``'size'``, and ``'weight'``.
-        xlim, ylim : None or (float, float), optional
+        xlim, ylim : (float or None, float or None), optional
             The *x* and *y* axis data limits. Applied with
             `~matplotlib.axes.Axes.set_xlim` and `~matplotlib.axes.Axes.set_ylim`.
         xreverse, yreverse : bool, optional
             Puts the *x* and *y* axis in reverse, i.e. going from positive to
             negative numbers.
-        xscale, yscale : None or scale spec, optional
+        xscale, yscale : axis scale spec, optional
             The *x* and *y* axis scales. Arguments are passed to and interpreted
             by `~proplot.axistools.Scale`. Examples include ``'linear'``
             and ``('cutoff', 0.5, 2)``.
@@ -986,19 +1003,19 @@ class CartesianAxes(BaseAxes):
             Aliases for `xspineloc`, `yspineloc`.
         xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick marks.
-        xtickminor, ytickminor : None or bool, optional
+        xtickminor, ytickminor : bool, optional
             Whether to draw minor ticks on the *x* and *y* axes.
         xtickdir, ytickdir : {'out', 'in', 'inout'}
             Direction that major and minor tick marks point for the *x* and
             *y* axis.
-        xgrid, ygrid : None or bool, optional
+        xgrid, ygrid : bool, optional
             Whether to draw major gridlines on the *x* and *y* axis.
-        xgridminor, ygridminor : None or bool, optional
+        xgridminor, ygridminor : bool, optional
             Whether to draw minor gridlines for the *x* and *y* axis.
         xticklabeldir, yticklabeldir : {'in', 'out'}
             Whether to place *x* and *y* axis tick label text inside
             or outside the axes.
-        xlocator, ylocator : None or locator spec, optional
+        xlocator, ylocator : locator spec, optional
             Used to determine the *x* and *y* axis tick mark positions. Passed
             to the `~proplot.axistools.Locator` constructor.
         xticks, yticks
@@ -1012,7 +1029,7 @@ class CartesianAxes(BaseAxes):
             Aliases for `xminorlocator`, `yminorlocator`.
         xminorlocator_kw, yminorlocator_kw
             As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
-        xformatter, yformatter : None or format spec, optional
+        xformatter, yformatter : formatter spec, optional
             Used to determine the *x* and *y* axis tick label string format.
             Passed to the `~proplot.axistools.Formatter` constructor.
         xticklabels, yticklabels
@@ -1020,15 +1037,15 @@ class CartesianAxes(BaseAxes):
         xformatter_kw, yformatter_kw : dict-like, optional
             The *x* and *y* axis formatter settings. Passed to
             `~proplot.axistools.Formatter`.
-        xrotation, yrotation : None or float, optional
+        xrotation, yrotation : float, optional
             The rotation for *x* and *y* axis tick labels. Defaults to ``0``
             for normal axes, ``45`` for time axes.
-        xtickrange, ytickrange : None or (float, float), optional
+        xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks
             are labelled. For example, the tick range ``(-1,1)`` with
             axis range ``(-5,5)`` and a tick interval of 1 will only
             label the ticks marks at -1, 0, and 1.
-        xbounds, ybounds : None or (float, float), optional
+        xbounds, ybounds : (float, float), optional
             The *x* and *y* axis data bounds within which to draw the spines.
             For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
             will prevent the spines from meeting at the origin.
@@ -1391,7 +1408,7 @@ class CartesianAxes(BaseAxes):
             the opposite side, use ``yscale='inverse'``. If your-*y* axis
             is height and you want pressure on the opposite side, use
             ``yscale='pressure'`` (and vice versa).
-        ylabel : None or str, optional
+        ylabel : str, optional
             The axis label (highly recommended). A warning will be issued if
             this is not supplied.
         **kwargs
@@ -1624,9 +1641,8 @@ class PanelAxes(CartesianAxes):
             subplot or not.
         visible : bool, optional
             Whether to make the axes visible or not.
-        parent : None or `~matplotlib.axes.Axes`
-            The "parent" of the panel. Not relevant for "outer panel"
-            axes.
+        parent : `~matplotlib.axes.Axes`, optional
+            The "parent" of the panel. Not relevant for "outer panel" axes.
         *args, **kwargs
             Passed to the `CartesianAxes` initializer.
 
@@ -1785,8 +1801,8 @@ class ProjectionAxes(BaseAxes):
 
         Parameters
         ----------
-        labels : None or bool, optional
-            Whether to draw longitude and latitude labels. Default is
+        labels : bool, optional
+            Whether to draw longitude and latitude labels. Defaults to
             ``rc['geogrid.labels']``.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides
@@ -1803,15 +1819,15 @@ class ProjectionAxes(BaseAxes):
                The boolean values indicate whether to label gridlines intersecting
                the left, right, top, and bottom sides, respectively.
 
-        latmax : None or float, optional
+        latmax : float, optional
             Meridian gridlines are cut off poleward of this latitude. Defaults
             to ``rc['geogrid.latmax']``.
-        lonlim, latlim : None or (float, float), optional
+        lonlim, latlim : (float, float), optional
             Longitude and latitude limits of projection, applied
             with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
-        grid : None or bool, optional
+        grid : bool, optional
             Whether to add meridian and parallel gridlines.
-        lonlocator, latlocator : None or int or list of float, optional
+        lonlocator, latlocator : int or list of float, optional
             If integer, indicates the *number* of evenly spaced meridian and
             parallel gridlines to draw. Otherwise, must be a list of floats
             indicating specific meridian and parallel gridlines to draw.
@@ -2222,7 +2238,7 @@ class ProjectionAxesBasemap(ProjectionAxes):
         `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
         `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
         wrappers. Also wraps all plotting methods with the hidden ``_basemap_call``
-        and ``_general_norecurse`` wrappers. Respectively, these call methods on
+        and ``_no_recurse`` wrappers. Respectively, these call methods on
         the `~mpl_toolkits.basemap.Basemap` instance and prevent recursion
         issues arising from internal `~mpl_toolkits.basemap` calls to the
         axes methods."""
@@ -2265,7 +2281,7 @@ class ProjectionAxesBasemap(ProjectionAxes):
             elif attr=='fill_betweenx':
                 obj = wrappers._fill_betweenx_wrapper(self, obj)
             # Recursion fix at top level
-            obj = wrappers._general_norecurse(self, obj)
+            obj = wrappers._no_recurse(self, obj)
         return obj
 
     def format_partial(self, patch_kw={}, **kwargs):
@@ -2379,7 +2395,11 @@ class ProjectionAxesBasemap(ProjectionAxes):
                 continue
             kw = rc.category(name, cache=False)
             feat = getattr(self.m, method)(ax=self)
-            feat.update(kw)
+            if isinstance(feat, (list,tuple)): # can return single artist or list of artists
+                for obj in feat:
+                    obj.update(kw)
+            else:
+                feat.update(kw)
             setattr(self, f'_{name}', feat)
 
         # Pass stuff to parent formatter, e.g. title and abc labeling

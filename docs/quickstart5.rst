@@ -264,6 +264,28 @@ page <http://www.hsluv.org/comparison/>`__.
 .. image:: quickstart/quickstart_115_0.svg
 
 
+To see how the colors in a colormap vary across different colorspaces,
+use the `~proplot.colortools.cmap_breakdown` function. This is done
+below for the builtin “viridis” colormap and the “Fire”
+`~proplot.colortools.PerceptuallyUniformColormap`. We see that “Fire”
+are “viridis” are linear in the hue and luminance channels, but not in
+the chroma channel.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f = plot.breakdown_cmap('fire')
+    f = plot.breakdown_cmap('viridis')
+
+
+
+.. image:: quickstart/quickstart_117_0.svg
+
+
+
+.. image:: quickstart/quickstart_117_1.svg
+
+
 You can generate your own
 `~proplot.colortools.PerceptuallyUniformColormap` on-the-fly by
 passing a dictionary as the ``cmap`` keyword argument. This is powered
@@ -294,7 +316,7 @@ string with ``+N`` or ``-N`` to offset the channel value by the number
 
 
 
-.. image:: quickstart/quickstart_117_0.svg
+.. image:: quickstart/quickstart_119_0.svg
 
 
 It is also easy to change the “gamma” of a
@@ -322,30 +344,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: quickstart/quickstart_119_0.svg
-
-
-To see how the colors in a colormap vary across different colorspaces,
-use the `~proplot.colortools.cmap_breakdown` function. This is done
-below for the builtin “viridis” colormap and the “Fire”
-`~proplot.colortools.PerceptuallyUniformColormap`. We see that
-transitions for “Fire” are linear in HSL space, while transitions for
-“virids” are linear in hue and luminance for all colorspaces, but
-non-linear in saturation.
-
-.. code:: ipython3
-
-    import proplot as plot
-    plot.breakdown_cmap('fire')
-    plot.breakdown_cmap('viridis')
-
-
-
 .. image:: quickstart/quickstart_121_0.svg
-
-
-
-.. image:: quickstart/quickstart_121_1.svg
 
 
 Adding online colormaps
@@ -382,7 +381,7 @@ and color cycles.
 
 
 
-.. image:: quickstart/quickstart_126_1.svg
+.. image:: quickstart/quickstart_126_0.svg
 
 
 On-the-fly color cycles
@@ -453,7 +452,7 @@ the colormap before drawing colors from said map. See
     ax = axs[1]
     cycle = plot.Cycle('blues', 'reds', 'oranges', 21, left=[0.1]*3)
     lines = ax.plot(data, cycle=cycle, lw=5)
-    f.bpanel[1].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
+    f.bpanel[1].colorbar(lines, values=np.arange(0,len(lines)), locator=2, label='clabel')
     ax.format(title='Complex cycle', suptitle='Color cycles from colormaps demo')
 
 

@@ -236,7 +236,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
     Parameters
     ----------
-    formatter : None, function, list of str, or str
+    formatter : function, list of str, or str
         If string, there are 4 possibilities:
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
@@ -451,11 +451,12 @@ class AutoFormatter(mticker.ScalarFormatter):
         ----------
         zerotrim : bool, optional
             Whether to trim trailing zeros.
-        precision : None or float, optional
-            Optional maximum number of digits after the decimal point.
-        tickrange : None or (float, float), optional
+            Defaults to ``rc['axes.formatter.zerotrim']``.
+        precision : float, optional
+            The maximum number of digits after the decimal point.
+        tickrange : (float, float), optional
             Range within which major tick marks are labelled.
-        prefix, suffix : None or str, optional
+        prefix, suffix : str, optional
             Optional prefix and suffix for all strings.
         *args, **kwargs
             Passed to `matplotlib.ticker.ScalarFormatter`.
@@ -475,7 +476,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         ----------
         x : float
             The value.
-        pos : None or float, optional
+        pos : float, optional
             The position.
         """
         # Tick range limitation
@@ -511,9 +512,9 @@ def SimpleFormatter(*args, precision=6,
     ----------
     precision : int, optional
         Maximum number of digits after the decimal point.
-    prefix, suffix : None or str, optional
+    prefix, suffix : str, optional
         Optional prefix and suffix for all strings.
-    negpos : None or str, optional
+    negpos : str, optional
         Length-2 string that indicates suffix for "negative" and "positive"
         numbers, meant to replace the minus sign. This is useful for
         indicating cardinal geographic coordinates.
@@ -592,7 +593,7 @@ def PowerScaleFactory(power, inverse=False, name=None):
     inverse : bool, optional
         If ``True``, the "forward" direction performs
         the inverse operation :math:`x^{1/c}`.
-    name : None or str, optional
+    name : str, optional
         The registered scale name. Defaults to ``'polynomial_{power}'``.
     """
     name_ = _default(name, f'polynomial_{power:.1e}')
@@ -683,7 +684,7 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
     inverse : bool, optional
         If ``True``, the "forward" direction performs
         the inverse operation :math:`(\log(x) - \log(A))/b`.
-    name : None or str, optional
+    name : str, optional
         The registered scale name. Defaults to ``'power_{base}_{exp}_{scale}'``.
     """
     name_ = _default(name, f'exp_{base:.1e}_{scale:.1e}_{exp:.1e}')

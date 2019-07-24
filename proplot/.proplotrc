@@ -134,7 +134,6 @@ colorbar.extendinset: 1em
 colorbar.length:      8em
 colorbar.width:       1.5em
 colorbar.axespad:     0.5em
-colorbar.xspace:      2.5em
 # Minor tick gridlines
 gridminor.alpha: # if empty, inherited from "grid"
 gridminor.color: # if empty, inherited from "grid"

@@ -941,7 +941,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
         * If string and a *color string*, a `PerceptuallyUniformColormap` is
           generated with `monochrome_cmap`.
 
-    name : None or str, optional
+    name : str, optional
         Name of the resulting colormap. Default name is ``'no_name'``.
         The resulting colormap can then be invoked by passing ``cmap='name'``
         to plotting functions like `~matplotlib.axes.Axes.contourf`.
@@ -954,7 +954,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
         or `PerceptuallyUniformColormap.from_list`. Defaults to ``True`` when
         calling `Colormap` directly, and ``False`` when `Colormap` is called
         by `Cycle`.
-    fade : None or float, optional
+    fade : float, optional
         The maximum luminosity used when generating `monochrome_cmap` colormaps.
         Defaults to ``100`` when calling `Colormap` directly, and ``90`` when
         `Colormap` is called by `Cycle` (this prevents having pure white in
@@ -962,7 +962,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
 
         For example, ``plot.Colormap('blue', fade=80)`` generates a blue
         colormap that fades to a pale blue with 80% luminance.
-    cycle : None or str or list of color-spec, optional
+    cycle : str or list of color-spec, optional
         The registered cycle name or a list of colors used to interpret cycle
         color strings like ``'C0'`` and ``'C2'`` when generating
         `monochrome_cmap` colormaps. Defaults to colors from the currently
@@ -970,7 +970,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
 
         For example, ``plot.Colormap('C0', 'C1', 'C2', cycle='538')``
         generates a colormap using colors from the ``'538'`` color cycle.
-    shift : None, or float or list of float, optional
+    shift : float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, this
         rotates the colors by `shift` degrees out of 360 degrees. This is
         mainly useful for "cyclic" colormaps. For example, ``shift=180``
@@ -979,7 +979,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
         For `~matplotlib.colors.ListedColormap` maps, this rotates
         the color list by `shift` places. For example, ``shift=2`` moves the
         start of the color cycle two places to the right.
-    left, right : None or float or list of float, optional
+    left, right : float or list of float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, this
         deletes colors on the left and right sides of the
         colormap(s). For example, ``left=0.1`` deletes the leftmost 10% of
@@ -992,7 +992,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
         If float, these apply to the final, *merged* colormap. If list of float,
         these apply to *each* individual colormap before the colormaps are
         merged. There is no difference if ``len(args)==1``.
-    cut : None or float, optional
+    cut : float, optional
         For `~matplotlib.colors.LinearSegmentedColormap` maps, this
         cuts out colors in the *center* of the colormap. This is useful
         if you want to have a sharper cutoff between "negative" and "positive"
@@ -1024,7 +1024,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
 
         If the colormap is a `~matplotlib.colors.LinearSegmentedColormap`,
         the segment data dictionary is written to ``cmaps/name.json``.
-    N : None or int, optional
+    N : int, optional
         Number of colors to generate in the hidden lookup table ``_lut``.
         By default, a relatively high resolution of 256 is chosen (see notes).
 
@@ -1229,14 +1229,14 @@ def Cycle(*args, samples=None, name=None, save=False,
         of sample coordinates used to draw colors from the map, or an integer
         number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``.
-    name : None or str, optional
+    name : str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap` used to
         register the color cycle. Default name is ``'no_name'``.
     save : bool, optional
         Whether to save the color cycle in the folder ``~/.proplot``. The
         folder is created if it does not already exist. The cycle is saved
         as a list of hex strings to the file ``name.hex``.
-    marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : None or list of specs, optional
+    marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : list of specs, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be
         added to the `~cycler.Cycler` object. If the lists have unequal length,
         they will be filled to match the length of the longest list.
@@ -1359,17 +1359,17 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
             If `clip` is ``True`` (the default), channel values >1 are clipped
             to 1. Otherwise, the color is masked out as gray.
-        gamma1 : None or float, optional
+        gamma1 : float, optional
             If >1, makes low saturation colors more prominent. If <1,
             makes high saturation colors more prominent. Similar to the
             `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
             See `make_mapping_array` for details.
-        gamma2 : None or float, optional
+        gamma2 : float, optional
             If >1, makes high luminance colors more prominent. If <1,
             makes low luminance colors more prominent. Similar to the
             `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
             See `make_mapping_array` for details.
-        gamma : None or float, optional
+        gamma : float, optional
             Use this to identically set `gamma1` and `gamma2` at once.
 
         Example
@@ -1488,7 +1488,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             As with `hue`, but for the luminance channel.
         alpha : float, str, or list thereof, optional
             As with `hue`, but for the alpha channel (the opacity).
-        ratios : None or list of float, optional
+        ratios : list of float, optional
             Relative extent of the transitions indicated by the channel
             value lists.
 
@@ -1522,7 +1522,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             The colormap name.
         colors : list of color-spec
             The list of RGB colors, HEX strings, or registered color names.
-        ratios : None or list of float, optional
+        ratios : list of float, optional
             Length ``len(colors)-1`` list of scales for *x*-coordinate
             transitions between colors. Bigger numbers indicate a slower
             transition, smaller numbers indicate a faster transition.
@@ -1547,7 +1547,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
             cdict[key] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
-def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', **kwargs):
+def monochrome_cmap(color, fade, reverse=False, space='hsl', name='no_name', **kwargs):
     """
     Makes a monochromatic "sequential" colormap that blends from near-white
     to the input color.
@@ -1565,7 +1565,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='monochrome', 
     space : {'hcl', 'hsl', 'hpl'}, optional
         Colorspace in which the luminance is varied.
     name : str, optional
-        Colormap name. Default is ``'monochrome'``.
+        Colormap name. Defaults to ``'no_name'``.
 
     Other parameters
     ----------------
@@ -1612,10 +1612,10 @@ def Norm(norm, levels=None, values=None, **kwargs):
         ``'symlog'``                     `~matplotlib.colors.SymLogNorm`
         ===============================  ===============================
 
-    levels : None or array-like, optional
+    levels : array-like, optional
         Level *edges*, passed to `LinearSegmentedNorm` or used to determine
         the `vmin` and `vmax` arguments for `MidpointNorm`.
-    values : None or array-like, optional
+    values : array-like, optional
         Level *centers*, from which the `levels` argument is inferred using
         `~proplot.utils.edges`.
     **kwargs
@@ -1638,11 +1638,7 @@ def Norm(norm, levels=None, values=None, **kwargs):
         if norm_out is None:
             raise ValueError(f'Unknown normalizer "{norm}". Options are {", ".join(normalizers.keys())}.')
         # Instantiate class
-        if norm_out is MidpointNorm:
-            if not np.iterable(levels):
-                raise ValueError(f'Need levels for normalizer "{norm}". Received levels={levels}.')
-            kwargs.update({'vmin':min(levels), 'vmax':max(levels)})
-        elif norm_out is LinearSegmentedNorm:
+        if norm_out is LinearSegmentedNorm:
             if not np.iterable(levels):
                 raise ValueError(f'Need levels for normalizer "{norm}". Received levels={levels}.')
             kwargs.update({'levels':levels})
@@ -1696,13 +1692,13 @@ class BinNorm(mcolors.BoundaryNorm):
         ----------
         levels : list of float
             The discrete data levels.
-        norm : None or `~matplotlib.colors.Normalize`, optional
+        norm : `~matplotlib.colors.Normalize`, optional
             The normalizer used to transform `levels` and all data passed
             to `BinNorm.__call__` *before* discretization.
         step : float, optional
             The intensity of the transition to out-of-bounds color, as a
-            faction of the *average* step between in-bounds colors. The
-            default is ``1``.
+            faction of the *average* step between in-bounds colors.
+            Defaults to ``1``.
         extend : {'neither', 'both', 'min', 'max'}, optional
             Which direction colors will be extended. No matter the `extend`
             option, `BinNorm` ensures colors always extend through the
@@ -1782,7 +1778,7 @@ class BinNorm(mcolors.BoundaryNorm):
         norm_clip = self._norm_clip
         if norm_clip:
             xq = np.clip(xq, *norm_clip)
-        xq = self._norm(np.atleast_1d(xq))
+        xq = self._norm(xq)
         yq = self._y[np.searchsorted(self._x_b, xq)] # which x-bin does each point in xq belong to?
         mask = ma.getmaskarray(xq)
         return ma.array(yq, mask=mask)
@@ -1808,22 +1804,27 @@ class LinearSegmentedNorm(mcolors.Normalize):
     Can be used by passing ``norm='segmented'`` or ``norm='segments'`` to any
     command accepting ``cmap``. The default midpoint is zero.
     """
-    def __init__(self, levels, **kwargs):
+    def __init__(self, levels, vmin=None, vmax=None, **kwargs):
         """
         Parameters
         ----------
         levels : list of float
             The discrete data levels.
+        vmin, vmax : None
+            Ignored, because `vmin` and `vmax` are set to the minimum and
+            maximum of `levels`.
         **kwargs
             Passed to `~matplotlib.colors.Normalize`.
         """
         # Save levels
         levels = np.atleast_1d(levels)
+        levels = ma.masked_invalid(levels, copy=False) # not sure if this is necessary
         if levels.size<=1:
             raise ValueError('Need at least two levels.')
         elif ((levels[1:]-levels[:-1])<=0).any():
             raise ValueError(f'Levels {levels} passed to LinearSegmentedNorm must be monotonically increasing.')
-        super().__init__(np.nanmin(levels), np.nanmax(levels), **kwargs) # second level superclass
+        vmin, vmax = levels.min(), levels.max()
+        super().__init__(vmin, vmax, **kwargs) # second level superclass
         self._x = levels
         self._y = np.linspace(0, 1, len(levels))
 
@@ -2065,8 +2066,6 @@ def register_cmaps():
         mcm.cmap_d['Grays'] = cmap # to be consistent with registered color names (also 'Murica)
     for name in ('Spectral',):
         mcm.cmap_d[name] = mcm.cmap_d[name].reversed() # make spectral go from 'cold' to 'hot'
-    for cmap in mcm.cmap_d.values():
-        cmap._cyclic = (cmap.name.lower() in ('twilight', 'twilight_shifted', 'phase', 'graycycle')) # add hidden attribute used by BinNorm
 
     # Remove gross cmaps (strong-arm user into using the better ones)
     for name in _cmaps_delete:
@@ -2087,6 +2086,9 @@ def register_cmaps():
             cmap = mcolors.LinearSegmentedColormap.from_list(name, data, N=N)
         mcm.cmap_d[name] = cmap
         cmaps.append(name)
+    # Add cyclic attribute
+    for name,cmap in mcm.cmap_d.items():
+        cmap._cyclic = (name.lower() in ('twilight', 'twilight_shifted', 'phase', 'graycycle')) # add hidden attribute used by BinNorm
 
     # Sort
     cmaps[:] = sorted(cmaps)
@@ -2288,7 +2290,8 @@ def breakdown_cmap(cmap, N=100, space='hcl', markersize=300, aspect=1, axwidth=1
             ylim = (0,None)
             ylocator = ('maxn', 5)
         ax.format(
-            title=f'{space}: {channel}', xlocator='null', ylim=ylim, ylocator=ylocator,
+            title=f'{space}: {channel}', xlocator=0.25, xformatter='null',
+            ylim=ylim, ylocator=ylocator,
             )
     # Draw colorbar
     axs.format(

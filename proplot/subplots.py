@@ -1156,10 +1156,10 @@ class Figure(mfigure.Figure):
             Whether to draw panels on the left, right, bottom, or top
             sides. Should be a string containing any of the characters
             ``'l'``, ``'r'``, ``'b'``, or ``'t'`` in any order.
-            Default is ``'r'``.
+            Defaults to ``'r'``.
         stack, lstack, rstack, bstack, tstack : int, optional
             The number of optional "stacked" panels on the left, right, bottom,
-            and top sides, respectively. The default is ``1``. Use `stack` to
+            and top sides, respectively. Defaults to ``1``. Use `stack` to
             set for all sides at once.
         sep, lsep, rsep, bsep, tsep : None, or float or str or list thereof, optional
             The separation between stacked panels. If float, units are inches.
@@ -1191,7 +1191,7 @@ class Figure(mfigure.Figure):
             subplot, and *stacked* panels flush against each other.
             This overrides the `~Figure.smart_tight_layout` automatic spacing,
             and potentially overrides the `wspace`, `hspace`, and `lsep`,
-            `rsep`, `bsep`, and `tsep` manual spacing. The default is ``False``.
+            `rsep`, `bsep`, and `tsep` manual spacing. Defaults to ``False``.
             Use `flush` to set for all sides at once.
         """
         # Which panels

@@ -128,7 +128,7 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, proj={1:'ortho', 2:'geos'}, basemap={1:False, 2:True}, proj_kw={'lon_0':-60, 'lat_0':0})
+    f, axs = plot.subplots(ncols=2, proj={1:'geos', 2:'ortho'}, basemap={1:False, 2:True}, proj_kw={'lon_0':-60, 'lat_0':0})
     axs[0].format(title='Cartopy')
     axs[1].format(title='Basemap')
     axs.format(reso='med', land=True, coast=True, landcolor='desert sand', suptitle='Projection axes formatting demo',
@@ -155,7 +155,7 @@ declaring the projection by passing ``proj_kw`` to
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=3.3, basemap={1:False, 2:True},
+    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=4, basemap={1:False, 2:True},
                proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-20, 'urcrnrlon':180, 'urcrnrlat':80}})
     axs[0].format(lonlim=(-20,180), latlim=(-10,50), title='Cartopy')
     axs[1].format(title='Basemap')
