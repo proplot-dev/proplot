@@ -81,29 +81,6 @@ Here are some highlights of the remaining features:
 You can thank `bradyrx <https://github.com/bradyrx>`__ for getting this project in working order and helping me fix a lot of the initial bugs. If your field is atmospheric science, check out his awesome
 `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
-Why not add to matplotlib directly?
------------------------------------
-This project can be thought of as "matplotlib for power users."
-Many of its features represent an alternative to the existing matplotlib API -- and
-following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy,
-they should perhaps remain here as a side project. For example: the ``format`` and ``format_partial`` methods, which are meant to replace existing axes and axis methods.
-
-.. Some features could be relatively esoteric for the average user (for example,
-   "perceptually uniform" colormaps), or could be seen as "convenience features" that perhaps do not belong with the core API for the sake of minimalism (for example, direct integration
-   with cartographic toolkits).
-
-There are also some philosophical differences and more direct conflicts.
-ProPlot enforces **static** figure scaffoldings, while matplotlib encourages
-successively adding axes to an existing figure instance.
-The "smart tight layout" feature conflicts directly with
-matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability
-to preserve axes aspect ratios by sacrificing fixed figure dimensions.
-And much of ``subplots`` could be seen as a more flexible alternative to
-the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ toolkit.
-
-Despite all this, if there are any matplotlib developers out there that think
-some ProPlot features could be added to matplotlib directly, please contact me!
-
 What about other matplotlib wrappers?
 -------------------------------------
 
@@ -112,6 +89,18 @@ There is already a great matplotlib wrapper called `seaborn <https://seaborn.pyd
 While parts of ProPlot were inspired by these projects (in particular, ``rctools.py`` and ``colortools.py`` are modeled after seaborn), the goals are largely different. Seaborn, pandas, and xarray offer tools for generating rigid, simple, nice-looking plots from data stored in special objects (``pandas.DataFrame`` and ``xarray.DataArray``). Similarly, ProPlot uses metadata from these special objects and gives you nice-looking plots out of the box -- but critically, it also permits a *high level of customization*, permits building *complex grids of subplots*, and includes powerful tools for working with *colors* and *geographic datasets*. While seaborn, pandas, and xarray are meant to be used separately from the matplotlib API, ProPlot is built *into the matplotlib API*, thanks to special subclasses of the native matplotlib ``Figure`` and ``Axes`` classes.
 
 In summary, this project is intended to unify the convenience of seaborn, pandas, and xarray plotting with the power and customizability of the underlying matplotlib API.
+
+Why not add to matplotlib directly?
+-----------------------------------
+Many of ProPlot's features represent an *alternative* to the existing matplotlib API. For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``.
+Thus, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should perhaps remain here as a distinct project.
+
+ProPlot also has some more direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the special ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
+And ProPlot's "smart tight layout" feature conflicts with
+matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability to preserve axes aspect ratios by sacrificing fixed figure dimensions. Much of ``subplots`` can in fact be seen as a more flexible alternative to the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ package.
+
+Despite all this, if there are any matplotlib developers out there that think
+some ProPlot features could be added to matplotlib directly, please contact me!
 
 .. Links and badges
 
