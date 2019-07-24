@@ -148,7 +148,7 @@ _cmaps_delete = (
     'afmhot', 'gist_heat', 'copper',
     'cividis', 'seismic', 'bwr', 'brg',
     'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-    'gnuplot', 'gnuplot2', 'CMRmap', 'hsv', 'hot', 'rainbow',
+    'gnuplot', 'gnuplot2', 'cmrmap', 'hsv', 'hot', 'rainbow',
     'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
     )
 _cmaps_div_slices = {
@@ -191,7 +191,7 @@ _cycles_preset = {
     }
 _cycles_delete = (
     'tab10', 'tab20', 'tab20b', 'tab20c',
-    'Paired', 'Pastel1', 'Pastel2', 'Dark2',
+    'paired', 'pastel1', 'pastel2', 'dark2',
     ) # unappealing cycles, and cycles that are just merged monochrome colormaps
 _cycles_rename = (
     ('Accent','Set1'),
@@ -1216,8 +1216,8 @@ def Cycle(*args, samples=None, name=None, save=False,
         If no positional args are passed, the `~cycler.Cycler` object will
         not cycle through colors. The default draw color will always be black.
 
-        If the positional args are all `~cycler.Cycler` objects, they are
-        merged and returned. Nothing is done if just one object was passed.
+        If the positional args `~cycler.Cycler` objects, they are merged and
+        returned. Nothing is done if just one `~cycler.Cycler` was passed.
 
         Otherwise, positional args are passed to `Colormap`, and the
         resulting colors are used for the color cycler. If the last value of
@@ -2049,12 +2049,6 @@ def register_cmaps():
     ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
     =====================  =============================================================================================================================================================================================================
     """
-    # Fill initial user-accessible cmap list with the colormaps we will keep
-    cmaps.clear()
-    cmaps[:] = [
-        name for name in mcm.cmap_d if name not in _cmaps_delete and name not in _cycles_delete
-        ]
-
     # Turn original matplotlib maps from ListedColormaps to LinearSegmentedColormaps
     # It makes zero sense to me that they are stored as ListedColormaps
     for name in _cmaps_categories['Matplotlib Originals']: # initialize as empty lists
@@ -2067,11 +2061,15 @@ def register_cmaps():
     if cmap is not None:
         mcm.cmap_d['Grays'] = cmap # to be consistent with registered color names (also 'Murica)
     for name in ('Spectral',):
-        mcm.cmap_d[name] = mcm.cmap_d[name].reversed() # make spectral go from 'cold' to 'hot'
+        mcm.cmap_d[name] = mcm.cmap_d[name].reversed(name=name) # make spectral go from 'cold' to 'hot'
 
     # Remove gross cmaps (strong-arm user into using the better ones)
     for name in _cmaps_delete:
         mcm.cmap_d.pop(name, None)
+
+    # Fill initial user-accessible cmap list with the colormaps we will keep
+    cmaps.clear()
+    cmaps[:] = [name for name,cmap in mcm.cmap_d.items() if not isinstance(cmap,mcolors.ListedColormap)]
 
     # Add colormaps from ProPlot and user directories
     _check_data()
@@ -2138,7 +2136,7 @@ def register_cycles():
         cycles.append(name)
 
     # Sort
-    cycles[:] = sorted(cycles)
+    cycles[:] = sorted([*cycles, 'Set2', 'Set3'])
 
 def register_colors(nmax=np.inf):
     """
@@ -2240,19 +2238,45 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Demos
 #------------------------------------------------------------------------------#
-def show_channels(*args, N=100, markersize=100, aspect=1, axwidth=1.2):
-    """Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
-    luminance, HSl saturation, HPL saturation, red, blue, and green channels.
-    Positional arguments are colormap objects or names. `N` controls the
-    number of colors in the colormap."""
+def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
+    """
+    Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
+    luminance, HSl saturation, and HPL saturation channels, and optionally
+    the red, blue and green channels. Adapted from `this example <
+    https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
+
+    Parameters
+    ----------
+    *args : colormap-spec, optional
+        Positional arguments are colormap names or objects. Defaults to
+        ``rc['image.cmap']``.
+    N : int, optional
+        The number of markers to draw for each coormap.
+    rgb : bool, optional
+        Whether to also show the red, blue, and green channels in the bottom
+        row. Defaults to ``True``.
+    width : int, optional
+        The width of each colormap line in points.
+    aspect : float or (float,float), optional
+        The aspect ratio of the subplot.
+    axwidth : flaot, optional
+        The average width of the axes.
+
+    Returns
+    -------
+    `~proplot.subplots.Figure`
+        The figure object.
+    """
     # Figure and plot
     from . import subplots
     if not args:
         args = (rcParams['image.cmap'],)
+    array = [[1,1,2,2,3,3],[0,4,4,5,5,0],[6,6,7,7,8,8]]
+    if not rgb:
+        array = array[:2]
     fig, axs = subplots(
-        array=[[1,1,2,2,3,3],[0,4,4,5,5,0],[6,6,7,7,8,8]],
-        axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0, aspect=aspect/2,
-        subplotpad='1em', colorbar='b', bstack=len(args),
+        array=array, axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0,
+        aspect=aspect/2, subplotpad='1em', colorbar='b', bstack=len(args),
         )
     labels = (
         'Hue', 'Chroma', 'Luminance',
@@ -2274,8 +2298,9 @@ def show_channels(*args, N=100, markersize=100, aspect=1, axwidth=1.2):
         hsl = [to_xyz(color, space='hsl')[1] for color in lut]
         hpl = [to_xyz(color, space='hpl')[1] for color in lut]
         # Plot channels
+        # If rgb is False, the zip will just truncate the other iterables
         for ax,y,label in zip(axs,(*hcl,hsl,hpl,*rgb),labels):
-            ax.scatter(x, y, c=x, cmap=cmap, s=markersize, linewidths=0)
+            ax.scatter(x, y, c=x, cmap=cmap, s=width, linewidths=0)
             ylim, ylocator = None, None
             if label in ('Red','Blue','Green'):
                 ylim = (0,1)
@@ -2303,11 +2328,28 @@ def show_channels(*args, N=100, markersize=100, aspect=1, axwidth=1.2):
         fig.bpanel[i].colorbar(cmap, length=0.66, locator='null', label=cmap.name, labelweight='bold')
     return fig
 
-def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hcl'):
-    """Generates hue-saturation, hue-luminance, and luminance-saturation
-    cross-sections for the HCL, HSLuv, and HPLuv colorspaces. The type of
-    cross-section is determined by which of the `luminance`, `saturation`, and
-    `hue` channels are fixed."""
+def show_colorspaces(luminance=None, saturation=None, hue=None):
+    """
+    Generates hue-saturation, hue-luminance, and luminance-saturation
+    cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
+
+    Parameters
+    ----------
+    luminance : float, optional
+        If passed, chroma-saturation cross-sections are drawn for this luminance.
+        Must be between ``0` and ``100``. Defaults to ``50``.
+    saturation : float, optional
+        If passed, luminance-hue cross-sections are drawn for this saturation.
+        Must be between ``0` and ``100``.
+    hue : float, optional
+        If passed, luminance-saturation cross-sections are drawn for this hue.
+        Must be between ``0` and ``360``.
+
+    Returns
+    -------
+    `~proplot.subplots.Figure`
+        The figure object.
+    """
     # Get colorspace properties
     hues = np.linspace(0, 360, 361)
     sats = np.linspace(0, 120, 120) # use 120 instead of 121, prevents annoying rough edge on HSL plot
@@ -2365,9 +2407,25 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, N=100, space='hc
                   title=space.upper(), titleweight='bold')
     return fig
 
-def show_colors(opencolors=False, nbreak=17, minsat=0.2):
-    """Visualizes the registered color names. Adapted from `this example
-    <https://matplotlib.org/examples/color/named_colors.html>`_."""
+def show_colors(nbreak=17, minsat=0.2):
+    """
+    Visualizes the registered color names in two figures. Adapted from
+    `this example <https://matplotlib.org/examples/color/named_colors.html>`_.
+
+    Parameters
+    ----------
+    nbreak : int, optional
+        The number of breaks between hues for grouping "like colors" in the
+        color table.
+    minsat : float, optional
+        The threshold saturation, between ``0`` and ``1``, for designating
+        "gray colors" in the color table.
+
+    Returns
+    -------
+    (`~proplot.subplots.Figure`, `~proplot.subplots.Figure`)
+        A list of the figure objects.
+    """
     # Get colors explicitly defined in colorConverter, or the default
     # components of that map
     figs = []
@@ -2457,12 +2515,35 @@ def show_colors(opencolors=False, nbreak=17, minsat=0.2):
         figs.append(fig)
     return figs
 
-def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
-    """Visualizes all registered colormaps, or the list of colormap names `imaps`
-    if it is provided. Adapted from `this example
-    <http://matplotlib.org/examples/color/colormaps_reference.html>`__."""
+def show_cmaps(*args, N=256, length=4.0, width=0.2):
+    """
+    Visualizes all registered colormaps, or the list of colormap names if
+    positional arguments are passed. Adapted from `this example
+    <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
+
+    Parameters
+    ----------
+    *args : colormap-spec, optional
+        Positional arguments are colormap names or objects. Defaults to
+        all of the registered colormaps.
+    N : int, optional
+        The number of levels in each colorbar.
+    length : float or str, optional
+        The length of each colorbar. If float, units are inches. If string,
+        units are interpreted by `~proplot.utils.units`.
+    width : float or str, optional
+        The width of each colorbar. If float, units are inches. If string,
+        units are interpreted by `~proplot.utils.units`.
+
+    Returns
+    -------
+    `~proplot.subplots.Figure`
+        The figure object.
+    """
     # Have colormaps separated into categories
-    if imaps is None:
+    if args:
+        imaps = [Colormap(cmap, N=N).name for cmap in args]
+    else:
         imaps = [
             name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
             and isinstance(mcm.cmap_d[name], mcolors.LinearSegmentedColormap)
@@ -2486,7 +2567,7 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
     from . import subplots
     naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
     fig, axs = subplots(
-        nrows=naxs, axwidth=cbarlength, axheight=cbarwidth,
+        nrows=naxs, axwidth=length, axheight=width,
         span=False, share=False, hspace=0.03, tightsubplot=False,
         )
     iax = -1
@@ -2518,14 +2599,33 @@ def show_cmaps(imaps=None, N=256, cbarlength=4.0, cbarwidth=0.2):
         nplots += len(names)
     return fig
 
-def show_cycles(icycles=None, axwidth=1.5):
-    """Visualizes all registered color cycles, or the list of colormap names
-    `icycles` if it is provided."""
+def show_cycles(*args, axwidth=1.5):
+    """
+    Visualizes all registered color cycles, or the list of cycle names if
+    positional arguments are passed.
+
+    Parameters
+    ----------
+    *args : colormap-spec, optional
+        Positional arguments are cycle names or objects. Defaults to
+        all of the registered colormaps.
+    axwidth : str or float, optional
+        Average width of each subplot. If float, units are inches. If string,
+        units are interpreted by `~proplot.utils.units`.
+
+    Returns
+    -------
+    `~proplot.subplots.Figure`
+        The figure object.
+    """
     # Get the list of cycles
-    if icycles is None:
+    if args:
+        icycles = [colors(cycle) for cycle in args]
+    else:
         icycles = {key:mcm.cmap_d[key].colors for key in cycles} # use global cycles variable
     icycles = {key:icycles[key] for key in sorted(icycles.keys())}
     nrows = len(icycles)//3 + len(icycles)%3
+
     # Create plot
     from . import subplots
     state = np.random.RandomState(528)
