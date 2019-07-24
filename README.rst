@@ -92,15 +92,15 @@ In summary, this project is intended to unify the convenience of seaborn, pandas
 
 Why not add to matplotlib directly?
 -----------------------------------
-Many of ProPlot's features represent an *alternative* to the existing matplotlib API. For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``.
-Thus, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should perhaps remain here as a distinct project.
-
-ProPlot also has some more direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the special ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
+ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the special ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
 And ProPlot's "smart tight layout" feature conflicts with
 matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__, with more options and the ability to preserve axes aspect ratios by sacrificing fixed figure dimensions. Much of ``subplots`` can in fact be seen as a more flexible alternative to the `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__ package.
 
-Despite all this, if there are any matplotlib developers out there that think
-some ProPlot features could be added to matplotlib directly, please contact me!
+Further, the ProPlot API in many ways represents an alternative to the *existing* matplotlib, cartopy, and basemap APIs.
+For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``.
+Thus, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
+
+Nevertheless, if there are any core matplotlib developers reading this, and you think that some of ProPlot's features should be added to matplotlib, please contact me!
 
 .. Links and badges
 
