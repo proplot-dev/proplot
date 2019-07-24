@@ -29,7 +29,7 @@ from . import utils, colormath
 from .utils import _default, _check_data
 rcParams = mpl.rcParams
 __all__ = [
-    'cmaps', 'cycles', 'colors',
+    'cmaps', 'cycles', 'colordict',
     'CmapDict', 'ColorCacheDict', 'Colormap', 'Cycle', 'Norm',
     'BinNorm', 'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
     'colors', 'make_mapping_array', 'monochrome_cmap',
