@@ -278,8 +278,8 @@ details).
 
 ProPlot adds several new features to the
 `~matplotlib.axes.Axes.legend` command, powered by
-`~proplot.wrappers.legend_wrapper`. You can also *center legend rows*
-with the ``center`` keyword arg, or by passing a list of lists of plot
+`~proplot.wrappers.legend_wrapper`. You can *center legend rows* with
+the ``center`` keyword arg, or by passing a list of lists of plot
 handles. This is accomplished by stacking multiple single-row,
 horizontally centered legends, then manually adding an encompassing
 legend frame. `~proplot.wrappers.legend_wrapper` also lets you switch
