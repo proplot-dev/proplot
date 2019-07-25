@@ -48,7 +48,7 @@ sections:
 
 -  “User” colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
    folder. A great way to save colormaps to this folder is using the
-   `~proplot.colortools.Colormap` constructor function. See
+   `~proplot.colortools.Colormap` function. See
    :ref:`Making your own colormaps` for details.
 -  Matplotlib and seaborn original colormaps.
 -  ProPlot colormaps belonging to the
