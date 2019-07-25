@@ -147,19 +147,18 @@ Stacked panels
 
 ProPlot also allows arbitrarily *stacking* panels with the ``lstack``,
 ``bstack``, ``rstack``, and ``tstack`` keyword args. This can be useful
-when you want multiple figure colorbars, when you have illustrations
-with multiple colormaps inside a single axes, or when you need multiple
-panels for displaing various statistics across one dimension of a
-primary axes. The spacing between stacked panels is adjusted
-automatically to account for axis and tick labels. See
+when you want multiple global colorbars, when using more than one
+colormap inside a single axes, or when you need more than one panels for
+displaying different statistics. The spacing between stacked panels is
+adjusted automatically to account for axis and tick labels. See
 `~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 You can access individual panels in a “stack” by *indexing* the panel
 attribute. The default order is row-major, from top-left to
 bottom-right. For example, ``ax.lpanel[1]`` gives you a left panel,
-second from the left. If you are stacking *figure* panels, and you have
-more than one figure panel along each side (see :ref:`Figure panels`),
+second from the left. If you are stacking *figure* panels and have
+different panels for each row and column (see :ref:`Figure panels`),
 you can use 2D indexing. For example, ``fig.bpanel[1,0]`` gives you a
 panel in the first column, second from the top.
 
