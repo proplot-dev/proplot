@@ -5,6 +5,10 @@
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
+Documentation
+-------------
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
+
 Installation
 ------------
 
@@ -26,10 +30,6 @@ I recommend importing ProPlot with
    import proplot as plot
 
 This differentiates ProPlot from the usual "``plt``" abbreviation used for the ``pyplot`` module.
-
-Documentation
--------------
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 Overview
 --------
