@@ -80,9 +80,7 @@ def show():
 class axes_list(list):
     """List subclass used as a container for the list of axes returned by
     `subplots`. This overhauls the `~axes_list.__getattr__` and
-    `~axes_list.__getitem__` methods, allowing you to do stuff to an `axes_list`
-    of objects all at once. For example, ``axs.format(xticks=5)`` sets the tick
-    locations for all axes."""
+    `~axes_list.__getitem__` methods."""
     def __init__(self, list_, n=1, order='C'):
         # Add special attributes that support 2d grids of axes
         self._n = n # means ncols or nrows, depending on order
@@ -105,8 +103,11 @@ class axes_list(list):
             raise AttributeError('axes_list is immutable.')
 
     def __getitem__(self, key):
-        """When an integer is passed, the item is returned, and when a slice
-        is passed, an `axes_list` of objects is returned."""
+        """If an integer is passed, e.g. ``axs[0]``, the item is returned.
+        If a slice is passed, e.g. ``axs[1:3]``, an `axes_list` of the items
+        is returned."""
+        # For example, ``axs.format(xticks=5)`` sets the tick
+        # locations for all axes.
         # Allow 2D specification
         # For weirder keys, raise error down the line
         # NOTE: When order=='F', panels were unfurled columnwise, so number
@@ -128,11 +129,12 @@ class axes_list(list):
         return axs
 
     def __getattr__(self, attr):
-        """If the attribute is **callable**, returns a dummy function that
-        loops through each identically named method, calls them in succession,
-        and returns a tuple of the results. If the attribute is **not callable**,
-        returns an `axes_list` of identically named attributes for every object
-        in the list."""
+        """If the attribute is *callable*, e.g. ``axs.format(xtick=5)``, returns
+        a dummy function that loops through each identically named method,
+        calls them in succession, and returns a tuple of the results. This lets
+        you call arbitrary methods on multiple axes at once! If the attribute is
+        *not callable*, e.g. ``axs.bpanel``, returns an `axes_list` of
+        identically named attributes for every object in the list."""
         attrs = *(getattr(ax, attr, None) for ax in self), # magical tuple expansion
         # Not found
         if None in attrs:
