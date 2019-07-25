@@ -150,9 +150,18 @@ ProPlot also allows arbitrarily *stacking* panels with the ``lstack``,
 when you want multiple figure colorbars, when you have illustrations
 with multiple colormaps inside a single axes, or when you need multiple
 panels for displaing various statistics across one dimension of a
-primary axes. The stacked panel spacing is adjusted automatically to
-account for axis and tick labels. See `~proplot.subplots.subplots` for
-details.
+primary axes. The spacing between stacked panels is adjusted
+automatically to account for axis and tick labels. See
+`~proplot.subplots.subplots` and
+`~proplot.subplots.Figure.add_subplot_and_panels` for details.
+
+You can access individual panels in a “stack” by *indexing* the panel
+attribute. The default order is row-major, from top-left to
+bottom-right. For example, ``ax.lpanel[1]`` gives you a left panel,
+second from the left. If you are stacking *figure* panels, and you have
+more than one figure panel along each side (see :ref:`Figure panels`),
+you can use 2D indexing. For example, ``fig.bpanel[1,0]`` gives you a
+panel in the first column, second from the top.
 
 .. code:: ipython3
 
@@ -198,7 +207,7 @@ you call `~proplot.axes.PanelAxes.colorbar` on a
 You can also draw an *inset* or “*filled*” colorbar by passing the
 ``colorbar`` keyword arg to methods wrapped by
 `~proplot.colortools.cmap_wrapper` and
-`~proplot.colortools.cycle_wrapper`. Or, you can draw a “*filled*”
+`~proplot.colortools.cycle_wrapper`. Or, you can draw a “filled”
 colorbar by calling `~proplot.axes.BaseAxes.colorbar` on the *main*
 axes with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.colorbar`
 for details).
@@ -263,7 +272,7 @@ hidden.
 
 You can also draw an *inset* or “*filled*” legend by passing the
 ``legend`` keyword arg to methods wrapped by
-`~proplot.colortools.cycle_wrapper`. Or, you can draw a “*filled*”
+`~proplot.colortools.cycle_wrapper`. Or, you can draw a “filled”
 legend by calling `~proplot.axes.BaseAxes.legend` on the *main* axes
 with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.legend` for
 details).
