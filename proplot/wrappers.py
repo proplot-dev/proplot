@@ -90,9 +90,10 @@ _cmap_options = {
     '^cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
     '^pcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     }
+
 # Translator for inset colorbars and legends
 _loc_translate = {
-    # Numbers
+    None:None,
     0:'best',
     1:'upper right',
     2:'upper left',
@@ -103,15 +104,13 @@ _loc_translate = {
     7:'lower center',
     8:'upper center',
     9:'center',
-    # Simple
-    'i':'best', # for inset
     'b':'best',
+    'i':'best',
     'inset':'best',
     'ur':'upper right',
     'ul':'upper left',
     'll':'lower left',
     'lr':'lower right',
-    # Centered
     'cr':'center right',
     'cl':'center left',
     'uc':'upper center',
@@ -152,6 +151,39 @@ def _expand_methods_list(func):
             + ','*min((len(methods)-2, 1)) + f' and {_sphinx_name(methods[-1])}', doc)
     func.__doc__ = doc
     return func
+
+#------------------------------------------------------------------------------#
+# Legend and colorbar locations
+#------------------------------------------------------------------------------#
+def _get_panel(self, loc):
+    """Used to redirect to existing panels if the user requests a colorbar
+    or legend location on the main axes as e.g. ``'left'``."""
+    # Panel index
+    if np.iterable(loc) and not isinstance(loc, str) and len(loc)==2:
+        loc, idx = loc
+    else:
+        idx = 0
+    # Try getting the panel
+    ax = None
+    if isinstance(loc, str):
+        ax = getattr(self, loc + 'panel', None)
+    if ax is not None:
+        # Verify panel is available
+        try:
+            ax = ax[idx]
+        except IndexError:
+            raise ValueError(f'Stack index {idx} for panel "{loc}" is invalid. You must make room for it in your call to subplots() with e.g. axcolorbar_kw={{"{loc}stack":2}}.')
+        if not ax or not ax.get_visible():
+            raise ValueError(f'Panel "{loc}" does not exist. You must make room for it in your call to subplots() with e.g. axcolorbar="{loc}".')
+        loc = 'fill'
+    else:
+        # Translate to a location
+        ax = self
+        if loc is True:
+            loc = None # get default down the line
+        else:
+            loc = _loc_translate.get(loc, loc)
+    return ax, loc
 
 #------------------------------------------------------------------------------#
 # Standardized inputs and automatic formatting
@@ -936,12 +968,13 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     x, y : float
         The *x* and *y* coordinates for the text.
     text : str
-        The text.
+        The text string.
     transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
-        The transform, or a string pointing to either of the
+        The transform used to interpret `x` and `y`. Can be a
+        `~matplotlib.transforms.Transform` object or a string representing the
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
         or `~matplotlib.figure.Figure.transFigure` transforms. Defaults to
-        ``'data'``, which is unchanged from matplotlib.
+        ``'data'``, i.e. the text is positioned in data coordinates.
     fontname : str, optional
         Alias for the ``fontfamily`` `~matplotlib.text.Text` property.
     border : bool, optional
@@ -971,7 +1004,7 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     elif transform=='data':
         transform = self.transData
     else:
-        raise ValueError(f"Unknown transform {transform}. Use string \"axes\" or \"data\".")
+        raise ValueError(f'Unknown transform "{transform}".')
     # Font name strings
     if 'family' in kwargs: # builtin matplotlib alias
         kwargs.setdefault('fontfamily', kwargs.pop('family'))
@@ -1274,36 +1307,6 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
-def _get_panel(self, loc):
-    """Used to interpret colorbar=x and legend=x keyword args, and get inset
-    location. To pick a specific panel, use e.g. ``('left', 1)``."""
-    # Panel index
-    if np.iterable(loc) and not isinstance(loc, str) and len(loc)==2:
-        loc, idx = loc
-    else:
-        idx = 0
-    # Try getting the panel
-    ax = None
-    if isinstance(loc, str):
-        ax = getattr(self, loc + 'panel', None)
-    if ax is not None:
-        # Verify panel is available
-        try:
-            ax = ax[idx]
-        except IndexError:
-            raise ValueError(f'Stack index {idx} for panel "{loc}" is invalid. You must make room for it in your call to subplots() with e.g. axcolorbars_kw={{"{loc}stack":2}}.')
-        if not ax or not ax.get_visible():
-            raise ValueError(f'Panel "{loc}" does not exist. You must make room for it in your call to subplots() with e.g. axcolorbars="{loc}".')
-        loc = 'fill'
-    else:
-        # Translate to a location
-        ax = self
-        if loc is True:
-            loc = 'best'
-        else:
-            loc = _loc_translate.get(loc, loc)
-    return ax, loc
-
 @_expand_methods_list
 def cycle_wrapper(self, func, *args,
     cycle=None, cycle_kw={},
@@ -1333,39 +1336,20 @@ def cycle_wrapper(self, func, *args,
     labels, values : list, optional
         The legend labels or colorbar coordinates for each line in the
         input array. Can be numeric or string.
-    legend : bool or str, optional
-        Whether to draw a legend from the resulting handle list.
-        If ``'l'``, ``'r'``, ``'b'``, ``'left'``, ``'right'``, or ``'bottom'``,
-        an axes panel is filled with a legend. Note in this case that the
-        panel must already exist (i.e. it was generated by your call to
-        `~proplot.subplots.subplots`)!
-
-        Otherwise, an *inset* legend is drawn, and this sets the position.
-        The following locations and location aliases are valid:
-
-        ==================  ==============================================
-        Location            Valid aliases
-        ==================  ==============================================
-        ``'best'``          ``0``, ``'b'``, ``'i'``, ``'inset'``, ``True``
-        ``'upper right'``   ``1``, ``'ur'``
-        ``'upper left'``    ``2``, ``'ul'``
-        ``'lower left'``    ``3``, ``'ll'``
-        ``'lower right'``   ``4``, ``'lr'``
-        ``'center left'``   ``5``, ``'cl'``
-        ``'center right'``  ``6``, ``'cr'``
-        ``'lower center'``  ``7``, ``'lc'``
-        ``'upper center'``  ``8``, ``'uc'``
-        ``'center'``        ``9``, ``'c'``
-        ==================  ==============================================
-
+    legend : bool, int, or str, optional
+        If not ``None``, this is a location specifying where to draw an *inset*
+        or *panel* legend from the resulting handle(s). If ``True``, the
+        default location is used. Valid locations are described in
+        `~proplot.axes.BaseAxes.legend`.
     legend_kw : dict-like, optional
         Ignored if `legend` is ``None``. Extra keyword args for our call
         to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.legend` or
         `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`.
-    colorbar : bool or str, optional
-        As with `legend`, but draws a panel or inset *colorbar*. For valid
-        inset colorbar locations, see the `~proplot.axes.BaseAxes.colorbar`
-        method.
+    colorbar : bool, int, or str, optional
+        If not ``None``, this is a location specifying where to draw an *inset*
+        or *panel* colorbar from the resulting handle(s). If ``True``, the
+        default location is used. Valid locations are described in
+        `~proplot.axes.BaseAxes.colorbar`.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to the `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
@@ -1664,16 +1648,11 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         Maximum number of decimal places for the number labels.
         Number labels are generated with the `~proplot.axistools.SimpleFormatter`
         formatter, which allows us to limit the precision.
-    colorbar : bool or str, optional
-        Whether to draw a colorbar from the resulting mappable object.
-        If ``'l'``, ``'r'``, ``'b'``, ``'left'``, ``'right'``, or ``'bottom'``,
-        an axes panel is filled with a colorbar. Note in this case that the
-        panel must already exist (i.e. it was generated by your call to
-        `~proplot.subplots.subplots`)!
-
-        Otherwise, an *inset* colorbar is drawn, and this sets the position
-        (e.g. `'upper right'`). For valid inset colorbar locations, see the
-        `~proplot.axes.BaseAxes.colorbar` method.
+    colorbar : bool, int, or str, optional
+        If not ``None``, this is a location specifying where to draw an *inset*
+        or *panel* colorbar from the resulting mappable. If ``True``, the
+        default location is used. Valid locations are described in
+        `~proplot.axes.BaseAxes.colorbar`.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
@@ -1957,7 +1936,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 #------------------------------------------------------------------------------#
 # Legends and colorbars
 #------------------------------------------------------------------------------#
-def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
+def legend_wrapper(self,
+    handles=None, labels=None, ncol=None, ncols=None,
     center=None, order='C', loc=None, label=None, title=None,
     fontsize=None, fontweight=None, fontcolor=None,
     color=None, marker=None, lw=None, linewidth=None,
@@ -1995,23 +1975,22 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
         if `handles` is a list of lists; each sublist is used as a *row*
         in the legend. Otherwise, defaults to ``False``.
     loc : int or str, optional
-        The legend location. The following locations and location aliases are
-        valid.
+        The legend location. The following location keys are valid.
 
-        ==================  ==============================================
-        Location            Valid aliases
-        ==================  ==============================================
-        ``'best'``          ``0``, ``'b'``, ``'i'``, ``'inset'``, ``True``
-        ``'upper right'``   ``1``, ``'ur'``
-        ``'upper left'``    ``2``, ``'ul'``
-        ``'lower left'``    ``3``, ``'ll'``
-        ``'lower right'``   ``4``, ``'lr'``
-        ``'center left'``   ``5``, ``'cl'``
-        ``'center right'``  ``6``, ``'cr'``
-        ``'lower center'``  ``7``, ``'lc'``
-        ``'upper center'``  ``8``, ``'uc'``
-        ``'center'``        ``9``, ``'c'``
-        ==================  ==============================================
+        ==================  ==========================================================
+        Location            Valid keys
+        ==================  ==========================================================
+        "best" possible     ``0``, ``'best'``, ``'b'``, ``'i'``, ``'inset'``
+        upper right         ``1``, ``'upper right'``, ``'ur'``
+        upper left          ``2``, ``'upper left'``, ``'ul'``
+        lower left          ``3``, ``'lower left'``, ``'ll'``
+        lower right         ``4``, ``'lower right'``, ``'lr'``
+        center left         ``5``, ``'center left'``, ``'cl'``
+        center right        ``6``, ``'center right'``, ``'cr'``
+        lower center        ``7``, ``'lower center'``, ``'lc'``
+        upper center        ``8``, ``'upper center'``, ``'uc'``
+        center              ``9``, ``'center'``, ``'c'``
+        ==================  ==========================================================
 
     label, title : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
@@ -2147,10 +2126,9 @@ def legend_wrapper(self, handles=None, labels=None, ncol=None, ncols=None,
             for col,nrow in enumerate(nrows): # iterate through cols
                 fpairs.extend(split[row][col] for row in range(nrow))
             pairs = fpairs
-        if loc is not None:
-            kwargs['loc'] = _loc_translate.get(loc, loc)
         # Make legend object
-        leg = mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
+        loc = _loc_translate.get(loc, loc)
+        leg = mlegend.Legend(self, *zip(*pairs), ncol=ncol, loc=loc, **kwargs)
         legs.append(leg)
     # Separate legend for each row. The label spacing/border spacing will be
     # exactly replicated, as if we were using the original legend command.
@@ -2494,9 +2472,8 @@ def colorbar_wrapper(self,
                         break
                     values.append(val)
             if values is None:
-                values = np.linspace(0, 1, len(mappable))
-            else:
-                tick_all = True
+                values = np.arange(0, len(mappable))
+            tick_all = True
         # Any colormap spec, including a list of colors, colormap name, or colormap instance
         else:
             try:
@@ -2627,7 +2604,12 @@ def colorbar_wrapper(self,
         })
 
     # Draw the colorbar
-    cb = self.figure.colorbar(mappable, **kwargs)
+    try:
+        self.figure._locked = False
+        cb = self.figure.colorbar(mappable, **kwargs)
+    except Exception as err:
+        self.figure._locked = True
+        raise err
     if orientation=='horizontal':
         axis = self.xaxis
     else:
@@ -2724,13 +2706,6 @@ def _wrapper(driver):
             return driver(self, func, *args, **kwargs)
         return wrapper
     return decorator
-def _simple_wrapper(driver):
-    def decorator(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return driver(self, *args, **kwargs)
-        return wrapper
-    return decorator
 # Hidden wrappers
 # There is also _basemap_call and _no_recurse
 _autoformat_1d_ = _wrapper(_autoformat_1d)
@@ -2754,5 +2729,4 @@ _violinplot_wrapper    = _wrapper(violinplot_wrapper)
 _fill_between_wrapper  = _wrapper(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper(fill_betweenx_wrapper)
 _text_wrapper          = _wrapper(text_wrapper)
-_legend_wrapper        = _simple_wrapper(legend_wrapper) # special
 

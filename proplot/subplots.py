@@ -165,6 +165,26 @@ class axes_list(list):
 #------------------------------------------------------------------------------#
 # Figure class
 #------------------------------------------------------------------------------#
+def _iter_children(ax):
+    """Iterates over an axes and its children, including panels, twin
+    axes, and panel twin axes"""
+    # TODO: should this include inset axes? or should we ignore inset
+    # axes when doing tight layouts?
+    axs = []
+    iaxs = (ax, *ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel)
+    for iax in iaxs:
+        if not iax:
+            continue
+        if not iax.get_visible():
+            continue
+        for jax in (iax, iax._altx_child, iax._alty_child):
+            if not jax:
+                continue
+            if not jax.get_visible():
+                continue
+            axs.append(jax)
+    return axs
+
 def _intervalx_errfix(ax):
     """Given an axes and a bounding box, pads the intervalx according to the
     matplotlib "tight layout" error associated with invisible y ticks."""
@@ -186,16 +206,8 @@ def _intervaly_errfix(ax):
 def _ax_span(ax, renderer, children=True):
     """Get span, accounting for panels, shared axes, and whether axes has
     been replaced by colorbar in same location."""
-    axs = [ax]
-    if children:
-        iaxs = (*ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel, ax._altx_child, ax._alty_child)
-        for iax in iaxs:
-            if not iax:
-                continue
-            if not iax.get_visible():
-                continue
-            axs.append(iax)
     # Return arrays
+    axs = _iter_children(ax)
     axs = [ax for ax in axs if ax._tight_bbox is not None]
     xs = np.array([_intervalx_errfix(ax) for ax in axs])
     ys = np.array([_intervaly_errfix(ax) for ax in axs])
@@ -293,6 +305,7 @@ class Figure(mfigure.Figure):
         self._subplots_kw = None # extra special settings
         self._main_gridspec = None # gridspec encompassing drawing area
         # Figure-wide settings
+        self._locked = True
         self._autoformat = autoformat
         # Panels, initiate as empty
         self.leftpanel   = axes.EmptyPanel()
@@ -307,8 +320,13 @@ class Figure(mfigure.Figure):
     def __getattribute__(self, attr, *args):
         """Enables the attribute aliases ``bpanel`` for ``bottompanel``,
         ``tpanel`` for ``toppanel``, ``lpanel`` for ``leftpanel``, and
-        ``rpanel`` for ``rightpanel``."""
+        ``rpanel`` for ``rightpanel``. Issues warning for new users that
+        try to access the `~matplotlib.figure.Figure.add_subplot` and
+        `~matplotlib.figure.Figure.colorbar` functions."""
         attr = _aliases.get(attr, attr)
+        if attr in ('add_subplot','colorbar') and self._locked:
+            warnings.warn('Using "add_subplot" or "colorbar" with ProPlot figures may result in unexpected behavior. '
+                'Please use the subplots() command to create your figure, subplots, and panels all at once.')
         return super().__getattribute__(attr, *args)
 
     def _suptitle_setup(self, title, **kwargs):
@@ -351,14 +369,9 @@ class Figure(mfigure.Figure):
                 continue
             if not ax.get_visible():
                 continue
-            axs = (ax, *ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel, ax._altx_child, ax._alty_child)
-            for ax in axs:
-                if not ax:
-                    continue
-                if not ax.get_visible():
-                    continue
-                bbox = (ax._colorbar_child or ax).get_tightbbox(renderer)
-                ax._tight_bbox = bbox
+            for iax in _iter_children(ax):
+                bbox = (iax._colorbar_child or iax).get_tightbbox(renderer)
+                iax._tight_bbox = bbox
 
     def _post_aspect_fix(self):
         """Adjust average aspect ratio used for gridspec calculations."""
@@ -448,8 +461,8 @@ class Figure(mfigure.Figure):
         """Does various post-processing steps required due to user actions
         after the figure was created."""
         # Apply various post processing on per-axes basis
-        for ax in (iax for ax in self._main_axes for iax in (ax,
-            *ax.leftpanel, *ax.rightpanel, *ax.bottompanel, *ax.toppanel)):
+        axs = (iax for ax in self._main_axes for iax in _iter_children(ax))
+        for ax in axs:
             if not ax:
                 continue
             elif not ax.get_visible():
@@ -519,6 +532,8 @@ class Figure(mfigure.Figure):
                 for jax in (iax, iax._altx_child, iax._alty_child):
                     if not jax:
                         continue
+                    if not jax.get_visible():
+                        continue
                     # Box for column label
                     # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)
@@ -561,6 +576,8 @@ class Figure(mfigure.Figure):
                     continue
                 for jax in (iax, iax._altx_child, iax._alty_child):
                     if not jax:
+                        continue
+                    if not jax.get_visible():
                         continue
                     # Box for column label
                     # bbox = jax._tight_bbox
@@ -2138,6 +2155,7 @@ def subplots(array=None, ncols=1, nrows=1,
         flush=flush, wflush=wflush, hflush=hflush,
         autoformat=autoformat,
         )
+    fig._locked = False
     fig._main_gridspec = gs
     fig._subplots_kw = subplots_kw
 
@@ -2235,5 +2253,6 @@ def subplots(array=None, ncols=1, nrows=1,
     # Return results
     fig._main_axes = axs
     fig._ref_num = ref
+    fig._locked = True
     return fig, axes_list(axs)
 
