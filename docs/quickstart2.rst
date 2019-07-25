@@ -14,12 +14,13 @@ Axes panels
 To add arbitrary combinations of panels to the left, bottom, right, or
 top sides of axes, pass the ``axpanel`` or ``axpanels`` keyword args to
 `~proplot.subplots.subplots`. To modify panel properties, simply use
-the ``axpanel_kw`` or ``axpanels_kw`` dictionary keyword args. Axes
-panels are stored on each subplot as the attributes ``bottompanel``,
-``leftpanel``, ``rightpanel``, and ``toppanel`` and the shorthands
-``bpanel``, ``lpanel``, ``rpanel``, and ``tpanel``. The subplots will
-stay correctly aligned no matter the combination of panels. See
-`~proplot.subplots.subplots` and
+the ``axpanel_kw`` or ``axpanels_kw`` dictionary keyword args.
+
+Axes panels are stored on each subplot as the attributes
+``bottompanel``, ``leftpanel``, ``rightpanel``, and ``toppanel`` and the
+shorthands ``bpanel``, ``lpanel``, ``rpanel``, and ``tpanel``. The
+subplots will stay correctly aligned no matter the combination of
+panels. See `~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
@@ -43,11 +44,13 @@ If you intend to turn your panels into *colorbars* (see
 ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args instead of
 ``axpanel``, etc. The behavior is identical, except the *default* width
 of the resulting panels will be more appropriate for “filling” the panel
-with a colorbar. Similarly, if you intend to turn your panels into
-*legends* (see :ref:`Legends`), you should use the ``axlegend``,
-``axlegends``, ``axlegend_kw``, and ``axlegends_kw`` keyword args. You
-can modify the default panel settings with a custom ``.proplotrc`` file
-(see the `~proplot.rctools` documentation for details).
+with a colorbar.
+
+Similarly, if you intend to turn your panels into *legends* (see
+:ref:`Legends`), you should use the ``axlegend``, ``axlegends``,
+``axlegend_kw``, and ``axlegends_kw`` keyword args. You can modify the
+default panel settings with a custom ``.proplotrc`` file (see the
+`~proplot.rctools` documentation for details).
 
 If you want panels “flush” against the subplot, simply use the ``flush``
 keyword args. If you want to disable “axis sharing” with the parent
