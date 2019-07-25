@@ -38,23 +38,13 @@ stay correctly aligned no matter the combination of panels. See
 .. image:: quickstart/quickstart_36_0.svg
 
 
-All ProPlot “panels” are instances of the `~proplot.axes.PanelAxes`
-class. `~proplot.axes.PanelAxes` is a subclass of
-`~proplot.axes.CartesianAxes`. The *only* difference between these
-classes is that when you call `~proplot.axes.PanelAxes.colorbar` or
-`~proplot.axes.PanelAxes.legend` on a `~proplot.axes.PanelAxes`, the
-panel is “filled” with a colorbar or legend by default. Note that you
-can also “fill” a panel with a colorbar or legend by calling
-`~proplot.axes.BaseAxes.colorbar` and
-`~proplot.axes.BaseAxes.legend` on the *main* axes with e.g. the
-keyword arg ``loc='bottom'``. See `~proplot.axes.BaseAxes.colorbar`
-and `~proplot.axes.BaseAxes.legend` for details. If you intend to turn
-your panels into *colorbars*, you should use the ``axcolorbar``,
-``axcolorbars``, ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args
-instead of ``axpanel``, etc. The behavior is identical, except the
-*default* width of the resulting panels will be more appropriate for
-“filling” the panel with a colorbar. Similarly, if you intend to turn
-your panels into *legends*, you should use the ``axlegend``,
+If you intend to turn your panels into *colorbars* (see
+:ref:`Colorbars`), you should use the ``axcolorbar``, ``axcolorbars``,
+``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args instead of
+``axpanel``, etc. The behavior is identical, except the *default* width
+of the resulting panels will be more appropriate for “filling” the panel
+with a colorbar. Similarly, if you intend to turn your panels into
+*legends* (see :ref:`Legends`), you should use the ``axlegend``,
 ``axlegends``, ``axlegend_kw``, and ``axlegends_kw`` keyword args. You
 can modify the default panel settings with a custom ``.proplotrc`` file
 (see the `~proplot.rctools` documentation for details).
@@ -63,7 +53,7 @@ If you want panels “flush” against the subplot, simply use the ``flush``
 keyword args. If you want to disable “axis sharing” with the parent
 subplot (i.e. you want to draw tick labels on the panel, and do not want
 to inherit axis limits from the main subplot), use any of the ``share``
-keyword args. Again, see `~proplot.subplots.subplots` and
+keyword args. See `~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
@@ -194,16 +184,21 @@ details.
 Colorbars
 ---------
 
-To generate colorbars, simply use the ``colorbar`` methods on the
-`~proplot.axes.BaseAxes` and `~proplot.axes.PanelAxes` classes. When
-you call `~proplot.axes.BaseAxes.colorbar` on a
-`~proplot.axes.BaseAxes`, an **inset** colorbar is generated. When you
-call `~proplot.axes.PanelAxes.colorbar` on a
-`~proplot.axes.PanelAxes`, the axes is **filled** with a colorbar (see
-:ref:`Axes panels` and :ref:`Figure panels`). You can also generate
-colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
+All ProPlot “panels” are instances of the `~proplot.axes.PanelAxes`
+class (see :ref:`Axes panels` and :ref:`Figure panels`), which is a
+subclass of `~proplot.axes.CartesianAxes`. When you call
+`~proplot.axes.BaseAxes.colorbar` on a
+`~proplot.axes.CartesianAxes`, an *inset* colorbar is generated. When
+you call `~proplot.axes.PanelAxes.colorbar` on a
+`~proplot.axes.PanelAxes`, the panel is “*filled*” with a colorbar.
+
+You can also draw an *inset* or “*filled*” colorbar by passing the
+``colorbar`` keyword arg to methods wrapped by
 `~proplot.colortools.cmap_wrapper` and
-`~proplot.colortools.cycle_wrapper`.
+`~proplot.colortools.cycle_wrapper`. Or, you can draw a “*filled*”
+colorbar by calling `~proplot.axes.BaseAxes.colorbar` on the *main*
+axes with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.colorbar`
+for details).
 
 .. code:: ipython3
 
@@ -223,12 +218,15 @@ colorbars by passing the ``colorbar`` keyword arg to methods wrapped by
 
 
 ProPlot adds several new features to the
-`~matplotlib.figure.Figure.colorbar` command, powered by the
-`~proplot.wrappers.colorbar_wrapper` wrapper. A particular handy
-feature is the ability to draw colorbars from lists of colors or lists
-of artists, instead of just “mappable” objects (e.g. the return value of
-`~matplotlib.axes.Axes.contourf`). A colormap is constructed
-on-the-fly from the corresponding colors, as shown below.
+`~matplotlib.figure.Figure.colorbar` command, powered by
+`~proplot.wrappers.colorbar_wrapper`. A particular handy feature is
+the ability to draw colorbars from lists of colors or lists of artists,
+instead of just “mappable” objects. A colormap is constructed from the
+corresponding colors on-the-fly, as shown below.
+`~proplot.wrappers.colorbar_wrapper` also lets you change major and
+minor tick locations, handles colorbars normalized by
+`~matplotlib.colors.LogNorm` correctly, and lets you change outline,
+divider, tick, tick label, and colorbar label settings.
 
 .. code:: ipython3
 
@@ -252,22 +250,31 @@ on-the-fly from the corresponding colors, as shown below.
 Legends
 -------
 
-ProPlot also adds new features to the `~matplotlib.axes.Axes.legend`
-command, powered by the `~proplot.wrappers.legend_wrapper` wrapper.
-When you call `~proplot.axes.PanelAxes.legend` on a
-`~proplot.axes.PanelAxes`, the axes is **filled** with a legend (see
-:ref:`Axes panels` and :ref:`Figure panels`). That is, a centered
-legend is drawn and the axes spines are made invisible. You can also
-generate legends by passing the ``legends`` keyword arg to methods
-wrapped by `~proplot.colortools.cycle_wrapper`.
+Just like with :ref:`Colorbars`, when you call
+`~proplot.axes.BaseAxes.legend` on a `~proplot.axes.CartesianAxes`,
+an *inset* legend is generated. When you call
+`~proplot.axes.PanelAxes.legend` on a `~proplot.axes.PanelAxes`, the
+panel is “*filled*” with a legend – that is, a legend is drawn in the
+center of the panel, and the panel spines and background patch are
+hidden.
 
-Legend entries are now sorted in row-major order by default; you can
-switch back to column-major by passing ``order='F'`` to
+You can also draw an *inset* or “*filled*” legend by passing the
+``legend`` keyword arg to methods wrapped by
+`~proplot.colortools.cycle_wrapper`. Or, you can draw a “*filled*”
+legend by calling `~proplot.axes.BaseAxes.legend` on the *main* axes
+with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.legend` for
+details).
+
+ProPlot adds several new features to the
+`~matplotlib.axes.Axes.legend` command, powered by
 `~proplot.wrappers.legend_wrapper`. You can also *center legend rows*
 with the ``center`` keyword arg, or by passing a list of lists of plot
 handles. This is accomplished by stacking multiple single-row,
 horizontally centered legends, then manually adding an encompassing
-legend frame.
+legend frame. `~proplot.wrappers.legend_wrapper` also lets you switch
+between row-major and column-major order for legend entries (the new
+default is row-major), and lets you modify legend text properties and
+handle properties.
 
 .. code:: ipython3
 
