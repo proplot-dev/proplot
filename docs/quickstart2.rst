@@ -1,12 +1,12 @@
 Panels, colorbars, and legends
 ==============================
 
-It is common to need “panels” for plotting secondary 1-dimensional
-datasets or summary statistics. It is also common to need colorbars or
-legends along the edges of axes and figures. Setting these up can be
-time-consuming with the default matplotlib API. To make this easier,
-ProPlot introduces the “panels” construct, powered by the
-`~proplot.axes.PanelAxes` class.
+It is common to need colorbars and legends along the edges of axes and
+figures. It is also common to need “panels” along the edges of axes, for
+plotting secondary 1-dimensional datasets and summary statistics.
+ProPlot satisfies both of these needs by introducing the “panels”
+construct, powered by the `~proplot.axes.PanelAxes` class and the
+`~proplot.subplots.subplots` command.
 
 Axes panels
 -----------
