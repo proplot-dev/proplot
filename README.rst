@@ -5,10 +5,6 @@
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
-Documentation
--------------
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
-
 Installation
 ------------
 
@@ -20,6 +16,10 @@ on PyPi (coming soon!). However, feel free to install directly from Github using
    pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
 The dependencies are `matplotlib <https://matplotlib.org/>`_ and `numpy <http://www.numpy.org/>`_.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_ and/or `basemap <https://matplotlib.org/basemap/index.html>`_.
+
+Documentation
+-------------
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 Importing
 ---------
