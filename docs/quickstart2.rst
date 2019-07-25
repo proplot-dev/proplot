@@ -3,9 +3,9 @@ Panels, colorbars, and legends
 
 It is common to need “panels” for plotting secondary 1-dimensional
 datasets or summary statistics. It is also common to need colorbars or
-legends along the edges of axes or the figure. Setting these up can be
-incredibly time-consuming with the default matplotlib API. To make this
-easier, ProPlot introduces the “panels” construct, powered by the
+legends along the edges of axes and figures. Setting these up can be
+time-consuming with the default matplotlib API. To make this easier,
+ProPlot introduces the “panels” construct, powered by the
 `~proplot.axes.PanelAxes` class.
 
 Axes panels
@@ -13,12 +13,12 @@ Axes panels
 
 To add arbitrary combinations of panels to the left, bottom, right, or
 top sides of axes, pass the ``axpanel`` or ``axpanels`` keyword args to
-`~proplot.subplots.subplots`. To modify panel properties, simply pass
-a dictionary to ``axpanel_kw`` or ``axpanels_kw``. The panels are stored
-on each main subplot as the attributes ``bottompanel``, ``leftpanel``,
-``rightpanel``, and ``toppanel`` and the shorthands ``bpanel``,
-``lpanel``, ``rpanel``, and ``tpanel``. The subplots will stay correctly
-aligned no matter the combination of panels. See
+`~proplot.subplots.subplots`. To modify panel properties, simply use
+the ``axpanel_kw`` or ``axpanels_kw`` dictionary keyword args. Axes
+panels are stored on each subplot as the attributes ``bottompanel``,
+``leftpanel``, ``rightpanel``, and ``toppanel`` and the shorthands
+``bpanel``, ``lpanel``, ``rpanel``, and ``tpanel``. The subplots will
+stay correctly aligned no matter the combination of panels. See
 `~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
