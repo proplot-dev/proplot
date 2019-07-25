@@ -77,19 +77,21 @@ Figure panels
 -------------
 
 ProPlot also supports “global” colorbars or legends, meant to reference
-multiple subplots at once. Global colorbars and legends can extend
-across entire sides of the figure, or across arbitrary contiguous rows
-and columns of subplots. The associated axes instances are found on the
-`~proplot.subplots.Figure` instance under the names ``bottompanel``,
-``leftpanel``, and ``rightpanel`` (or the shorthands ``bpanel``,
-``lpanel``, and ``rpanel``). See `~proplot.subplots.subplots` for
-details.
+multiple subplots at once. Global colorbars and legends are declared
+with the ``panel``, ``colorbar``, ``legend``, ``panels``, ``colorbars``,
+and ``legends`` keyword args. They can extend across entire sides of the
+figure, or across arbitrary contiguous rows and columns of subplots,
+using the ``barray``, ``rarray``, or ``larray`` keyword args. The
+associated axes instances are found on the `~proplot.subplots.Figure`
+instance under the names ``bottompanel``, ``leftpanel``, and
+``rightpanel``, or the shorthands ``bpanel``, ``lpanel``, and
+``rpanel``. See `~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, colorbar='br', bspan=[1,2,2])
+    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, colorbar='br', barray=[1,2,2])
     m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
     axs.format(suptitle='Super title', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
     f.bpanel[0].colorbar(m, label='label', ticks=0.5)
@@ -109,7 +111,7 @@ details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', bspan=[1,1,2,2], share=0, span=0, wspace=0.3)
+    f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', barray=[1,1,2,2], share=0, span=0, wspace=0.3)
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
     cycle = plot.colors('grays', 5)

@@ -1762,9 +1762,9 @@ def subplots(array=None, ncols=1, nrows=1,
         ``'r'`` (right panel), or ``'b'`` (bottom panel). For example,
         ``'br'`` will draw a right and bottom panel.
 
-        Panels are stored on the ``leftpanel``, ``rightpanel``,
-        and ``bottompanel`` attributes on the figure instance.
-        You can also use the aliases ``lpanel``, ``rpanel``, and ``bpanel``.
+        Panel axes are stored as ``leftpanel``, ``rightpanel``, and
+        ``bottompanel`` attributes on the figure object. They can also
+        be accessed by the attribute aliases ``lpanel``, ``rpanel``, and ``bpanel``.
     panels : str, optional
         Similar to `panel`, but default behavior is to assign a panel
         to *every* row or column of subplots. Individual panels can then
@@ -1774,21 +1774,26 @@ def subplots(array=None, ncols=1, nrows=1,
         more appropriate for a colorbar or legend. The panel can then be
         "filled" with a colorbar or legend with e.g.
         ``fig.bottompanel.colorbar()`` or ``fig.bottompanel.legend()``.
-    lspan, rspan, bspan : bool or list of int, optional
+    larray, rarray, barray : bool or list of int, optional
         Defines how figure panels span rows and columns of subplots.
-        Argument is interpreted as follows:
+        Each argument is interpreted as follows:
 
-        * If ``True``, this is the default behavior for the `panel` keyword arg.
-          Draws single panel spanning **all** columns or rows of subplots.
-        * If ``False``, this is the default behavior for the `panels` keyword arg.
-          Draws separate panels **for each** column or row of subplots.
-        * If list of int, you can specify panels that span **contiguous**
-          columns or rows of subplots. Usage is similar to the `array` keyword arg.
+        * If ``True``, this is the default behavior for the `panel`, `colorbar`,
+          and `legend` keyword args. Draws *single* panel spanning *all* columns
+          or rows of subplots.
+        * If ``False``, this is the default behavior for the `panels`, `colorbars`,
+          and `legends` keyword args. Draws *separate* panels *for each* column
+          or row of subplots.
+        * If list of int, this is interpreted like `array`. The integers specify
+          panels that span *arbitrary, contiguous* columns or rows
+          of subplots.
 
         For example, ``plot.suplots(ncols=3, bspan=[1, 2, 2])`` draws a panel
         on the bottom of the first column and spanning the bottom of the right
         2 columns, and ``bspan=[0, 2, 2]`` only draws a panel underneath the
-        right 2 columns. As with `array`, a ``0`` indicates an empty space.
+        right 2 columns -- as with `array`, the ``0`` indicates an empty space.
+    lspan, rspan, bspan
+        Aliases for `larray`, `rarray`, and `barray`.
     lspace, rspace, bspace : float, optional
         Space between the "inner" edges of the left, right, and bottom
         panels and the edge of the main subplot grid. If float, units are
@@ -1821,10 +1826,10 @@ def subplots(array=None, ncols=1, nrows=1,
           draw a panel on the right side of subplot number 1, on the left
           side of subplots 2 and 3, and **no panel** on subplot 4.
 
-        Panels are stored on the ``leftpanel``, ``rightpanel``,
-        ``bottompanel`` and ``toppanel`` attributes on the axes instance.
-        You can also use the aliases ``lpanel``, ``rpanel``, ``bpanel``,
-        or ``tpanel``.
+        Panel axes are stored as ``leftpanel``, ``rightpanel``,
+        ``bottompanel`` and ``toppanel`` attributes on axes objects.
+        They can also be accessed by the attribute aliases ``lpanel``,
+        ``rpanel``, ``bpanel``, and ``tpanel``.
     axcolorbar, axcolorbars, axlegend, axlegends
         Identical to `axpanels`, except the *default* panel width is
         more appropriate for a colorbar or legend. The panel can then be
@@ -1910,7 +1915,9 @@ def subplots(array=None, ncols=1, nrows=1,
     # Parse outer panel kwargs, consolidate settings
     for ipanel in (panel,legend,colorbar):
         for side in (ipanel or ''):
-            if side + 'span' not in kwargs:
+            if side + 'array' in kwargs:
+                kwargs[side + 'span'] = kwargs.pop(side + 'array')
+            elif side + 'span' not in kwargs:
                 kwargs[side + 'span'] = True # spans all rows or columns
     panels    = _default(panel, panels, '')
     legends   = _default(legend, legends, '')

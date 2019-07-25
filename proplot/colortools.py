@@ -2277,7 +2277,7 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
     fig, axs = subplots(
         array=array, axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0,
         aspect=aspect/2, subplotpad='1em',
-        colorbar='b', bstack=len(args), bspan=[0,1,1,1,1,0],
+        colorbar='b', bstack=len(args), barray=[0,1,1,1,1,0],
         )
     labels = (
         'Hue', 'Chroma', 'Luminance',
@@ -2285,7 +2285,7 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
         'Red', 'Blue', 'Green'
         )
     # Iterate through colormaps
-    m = 0
+    mc, ms, mp = 0, 0, 0
     cmaps = []
     for cmap in args:
         # Get colormap
@@ -2314,7 +2314,16 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
                 ylim = (0,360)
                 ylocator = 90
             else:
-                ylim = (0,max(m,max(y)))
+                if label=='Chroma':
+                    mc = max(mc,max(y))
+                    m = mc
+                elif 'HSL' in label:
+                    ms = max(ms,max(y))
+                    m = ms
+                else:
+                    mp = max(mp,max(y))
+                    m = mp
+                ylim = (0,m)
                 ylocator = ('maxn', 5)
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
     # Formatting
