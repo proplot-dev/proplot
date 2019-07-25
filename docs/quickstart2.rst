@@ -44,9 +44,9 @@ If you intend to “fill” your panels with *colorbars* (see
 ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args instead of
 ``axpanel``, etc. The behavior is identical, except the *default* panel
 width is more appropriate for colorbars. Similarly, if you intend to
-turn your panels into *legends* (see :ref:`Legends`), you should use
+“fill” your panels with *legends* (see :ref:`Legends`), you should use
 the ``axlegend``, ``axlegends``, ``axlegend_kw``, and ``axlegends_kw``
-keyword args. You can modify these default settings with a custom
+keyword args. You can modify these default widths with a custom
 ``.proplotrc`` file (see the `~proplot.rctools` documentation for
 details).
 
