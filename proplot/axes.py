@@ -46,7 +46,6 @@ performance. And anyway, `Premature Optimization is the Root of All Evil
 """
 import numpy as np
 import warnings
-import functools
 from numbers import Number
 from matplotlib.cbook import mplDeprecation
 import matplotlib.projections as mproj
@@ -822,20 +821,11 @@ class BaseAxes(maxes.Axes):
         **kwargs
             Passed to `CartesianAxes`.
         """
-        # Carbon copy, but use my custom axes
-        # Defaults
+        # Carbon copy with my custom axes
         if not transform:
             transform = self.transAxes
-        elif isinstance(transform, mtransforms.Transform):
-            pass # do nothing
-        elif transform=='figure':
-            transform = self.figure.transFigure
-        elif transform=='axes':
-            transform = self.transAxes
-        elif transform=='data':
-            transform = self.transData
         else:
-            raise ValueError(f'Unknown transform "{transform}".')
+            transform = wrappers._get_transform(self, transform)
         label = kwargs.pop('label', 'inset_axes')
         # This puts the rectangle into figure-relative coordinates.
         locator = self._make_inset_locator(bounds, transform)

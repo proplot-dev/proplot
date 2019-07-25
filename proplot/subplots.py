@@ -165,24 +165,30 @@ class axes_list(list):
 #------------------------------------------------------------------------------#
 # Figure class
 #------------------------------------------------------------------------------#
-def _iter_children(ax):
-    """Iterates over an axes and its children, including panels, twin
-    axes, and panel twin axes"""
+def _iter_twins(ax):
+    """Iterates over twin axes."""
     # TODO: should this include inset axes? or should we ignore inset
     # axes when doing tight layouts?
     axs = []
-    iaxs = (ax, *ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel)
-    for iax in iaxs:
+    if not ax:
+        return axs
+    if not ax.get_visible():
+        return axs
+    for iax in (ax, ax._altx_child, ax._alty_child):
         if not iax:
             continue
         if not iax.get_visible():
             continue
-        for jax in (iax, iax._altx_child, iax._alty_child):
-            if not jax:
-                continue
-            if not jax.get_visible():
-                continue
-            axs.append(jax)
+        axs.append(ax)
+    return axs
+
+def _iter_children(ax):
+    """Iterates over an axes and its children, including panels, twin
+    axes, and panel twin axes"""
+    axs = []
+    iaxs = (ax, *ax.leftpanel, *ax.bottompanel, *ax.rightpanel, *ax.toppanel)
+    for iax in iaxs:
+        axs.extend(_iter_twins(iax))
     return axs
 
 def _intervalx_errfix(ax):
@@ -323,8 +329,10 @@ class Figure(mfigure.Figure):
         ``rpanel`` for ``rightpanel``. Issues warning for new users that
         try to access the `~matplotlib.figure.Figure.add_subplot` and
         `~matplotlib.figure.Figure.colorbar` functions."""
+        # Just test for add_subplot, do not care if user provides figure
+        # colorbar method with an axes manually.
         attr = _aliases.get(attr, attr)
-        if attr in ('add_subplot','colorbar') and self._locked:
+        if attr=='add_subplot' and self._locked:
             warnings.warn('Using "add_subplot" or "colorbar" with ProPlot figures may result in unexpected behavior. '
                 'Please use the subplots() command to create your figure, subplots, and panels all at once.')
         return super().__getattribute__(attr, *args)
@@ -525,15 +533,7 @@ class Figure(mfigure.Figure):
             else:
                 iaxs = (ax, *ax.toppanel, *ax.bottompanel)
             for iax in iaxs:
-                if not iax:
-                    continue
-                if not iax.get_visible():
-                    continue
-                for jax in (iax, iax._altx_child, iax._alty_child):
-                    if not jax:
-                        continue
-                    if not jax.get_visible():
-                        continue
+                for jax in _iter_twins(iax):
                     # Box for column label
                     # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)
@@ -570,15 +570,7 @@ class Figure(mfigure.Figure):
             else:
                 iaxs = (ax, *ax.leftpanel, *ax.rightpanel)
             for iax in iaxs:
-                if not iax:
-                    continue
-                if not iax.get_visible():
-                    continue
-                for jax in (iax, iax._altx_child, iax._alty_child):
-                    if not jax:
-                        continue
-                    if not jax.get_visible():
-                        continue
+                for jax in _iter_twins(iax):
                     # Box for column label
                     # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)

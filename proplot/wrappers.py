@@ -956,6 +956,19 @@ def violinplot_wrapper(self, func, *args,
 #------------------------------------------------------------------------------#
 # Text wrapper
 #------------------------------------------------------------------------------#
+def _get_transform(self, transform):
+    """Translates user input transform."""
+    if isinstance(transform, mtransforms.Transform):
+        return transform
+    elif transform=='figure':
+        return self.figure.transFigure
+    elif transform=='axes':
+        return self.transAxes
+    elif transform=='data':
+        return self.transData
+    else:
+        raise ValueError(f'Unknown transform "{transform}".')
+
 def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
     **kwargs):
@@ -995,16 +1008,8 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     # Default transform by string name
     if not transform:
         transform = self.transData
-    elif isinstance(transform, mtransforms.Transform):
-        pass # do nothing
-    elif transform=='figure':
-        transform = self.figure.transFigure
-    elif transform=='axes':
-        transform = self.transAxes
-    elif transform=='data':
-        transform = self.transData
     else:
-        raise ValueError(f'Unknown transform "{transform}".')
+        transform = _get_transform(self, transform)
     # Font name strings
     if 'family' in kwargs: # builtin matplotlib alias
         kwargs.setdefault('fontfamily', kwargs.pop('family'))
