@@ -8,11 +8,11 @@ plotting commands exactly as you always have. This section documents
 these wrapper functions. For details, see the `~proplot.axes`
 documentation.
 
-You should also see the :ref:`On-the-fly colormaps` and
-:ref:`On-the-fly color cycles` sections, which explain how
+You should also see :ref:`Making your own colormaps` and
+:ref:`Making your own color cycles`, which explain how
 `~proplot.wrappers.cmap_wrapper` and
-`~proplot.wrappers.cycle_wrapper` can be used to apply new colormaps
-and property cyclers to plots on-the-fly.
+`~proplot.wrappers.cycle_wrapper` can be used to create and apply new
+colormaps and property cyclers on-the-fly.
 
 Colormap normalizers
 --------------------
@@ -43,7 +43,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: quickstart/quickstart_146_0.svg
+.. image:: quickstart/quickstart_144_0.svg
 
 
 .. code:: ipython3
@@ -63,7 +63,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: quickstart/quickstart_147_0.svg
+.. image:: quickstart/quickstart_145_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -89,7 +89,7 @@ passed to the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: quickstart/quickstart_149_0.svg
+.. image:: quickstart/quickstart_147_0.svg
 
 
 Finally, there is a new `~proplot.colortools.MidpointNorm` class that
@@ -116,7 +116,7 @@ constructor.
 
 
 
-.. image:: quickstart/quickstart_151_0.svg
+.. image:: quickstart/quickstart_149_0.svg
 
 
 Heatmaps and labeling
@@ -158,7 +158,7 @@ the luminance of the underlying box color.
 
 
 
-.. image:: quickstart/quickstart_154_0.svg
+.. image:: quickstart/quickstart_152_0.svg
 
 
 Parametric plots
@@ -199,7 +199,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: quickstart/quickstart_157_1.svg
+.. image:: quickstart/quickstart_155_1.svg
 
 
 Area plots
@@ -242,7 +242,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: quickstart/quickstart_160_0.svg
+.. image:: quickstart/quickstart_158_0.svg
 
 
 Bar plots
@@ -278,7 +278,7 @@ spread represented by error bars.
 
 
 
-.. image:: quickstart/quickstart_163_0.svg
+.. image:: quickstart/quickstart_161_0.svg
 
 
 Box plots and violins
@@ -310,7 +310,7 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_166_0.svg
+.. image:: quickstart/quickstart_164_0.svg
 
 
 Scatter plots
@@ -350,4 +350,4 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_169_0.svg
+.. image:: quickstart/quickstart_167_0.svg

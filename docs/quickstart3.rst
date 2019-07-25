@@ -42,7 +42,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: quickstart/quickstart_56_0.svg
+.. image:: quickstart/quickstart_54_0.svg
 
 
 Axis tick labels
@@ -67,7 +67,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: quickstart/quickstart_59_0.svg
+.. image:: quickstart/quickstart_57_0.svg
 
 
 ProPlot also lets you easily change the axis formatter with
@@ -97,7 +97,7 @@ See `~proplot.axes.CartesianAxes.format_partial` and
 
 
 
-.. image:: quickstart/quickstart_61_0.svg
+.. image:: quickstart/quickstart_59_0.svg
 
 
 Axis scales
@@ -129,7 +129,7 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
 
 
-.. image:: quickstart/quickstart_64_0.svg
+.. image:: quickstart/quickstart_62_0.svg
 
 
 .. code:: ipython3
@@ -159,7 +159,7 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
 
 
-.. image:: quickstart/quickstart_65_0.svg
+.. image:: quickstart/quickstart_63_0.svg
 
 
 .. code:: ipython3
@@ -199,7 +199,7 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
 
 
-.. image:: quickstart/quickstart_66_0.svg
+.. image:: quickstart/quickstart_64_0.svg
 
 
 Time axis formatting
@@ -236,7 +236,7 @@ details.
 
 
 
-.. image:: quickstart/quickstart_69_0.svg
+.. image:: quickstart/quickstart_67_0.svg
 
 
 Dual unit axes
@@ -283,11 +283,11 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: quickstart/quickstart_72_0.svg
+.. image:: quickstart/quickstart_70_0.svg
 
 
 
-.. image:: quickstart/quickstart_72_1.svg
+.. image:: quickstart/quickstart_70_1.svg
 
 
 .. code:: ipython3
@@ -314,7 +314,7 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: quickstart/quickstart_73_0.svg
+.. image:: quickstart/quickstart_71_0.svg
 
 
 Polar axes
@@ -343,6 +343,6 @@ declare polar axes, pass ``proj='polar'`` or something like
 
 
 
-.. image:: quickstart/quickstart_76_0.svg
+.. image:: quickstart/quickstart_74_0.svg
 
 

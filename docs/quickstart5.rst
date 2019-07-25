@@ -1,5 +1,5 @@
-Color usage tools
-=================
+Color usage
+===========
 
 ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
 adds some neat features to help you use colors effectively in your
@@ -16,7 +16,7 @@ First things first, ProPlot makes a distinction between *colormaps* and
    `~matplotlib.colors.LinearSegmentedColormap` class, and also with
    the special ProPlot
    `~proplot.colortools.PerceptuallyUniformColormap` subclass (see
-   :ref:`On-the-fly colormaps`).
+   :ref:`Making your own colormaps`).
 -  A *color cycle* is a palette composed of a *jumbled set* of distinct
    colors. Interpolation between these colors does not make sense. Color
    cycles are generally used with line plots, bar plots, and other plot
@@ -27,7 +27,7 @@ First things first, ProPlot makes a distinction between *colormaps* and
    modifying the `property
    cycler <https://matplotlib.org/3.1.0/tutorials/intermediate/color_cycle.html>`__.
    *Colormaps* can also be cut up and used as color cycles (see
-   :ref:`On-the-fly color cycles`).
+   :ref:`Making your own color cycles`).
 
 This section documents the colormaps and cycles registered after
 importing ProPlot, explains how to make custom colormaps and cycles, and
@@ -49,7 +49,7 @@ sections:
 -  “User” colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
    folder. A great way to save colormaps to this folder is using the
    `~proplot.colortools.Colormap` constructor function. See
-   :ref:`On-the-fly colormaps` for details.
+   :ref:`Making your own colormaps` for details.
 -  Matplotlib and seaborn original colormaps.
 -  ProPlot colormaps belonging to the
    `~proplot.colortools.PerceptuallyUniformColormap` class. See the
@@ -80,126 +80,7 @@ See `~proplot.colortools.CmapDict` for more info.
 
 
 
-.. image:: quickstart/quickstart_101_0.svg
-
-
-On-the-fly colormaps
---------------------
-
-You can make a new colormap with ProPlot’s on-the-fly colormap
-generator! Every command that accepts a ``cmap`` argument (see
-`~proplot.wrappers.cmap_wrapper`) is passed to the
-`~proplot.colortools.Colormap` constructor.
-`~proplot.colortools.Colormap` keyword arguments can be specified with
-``cmap_kw``. If you want to save your own colormap into ``~/.proplot``,
-simply pass ``save=True`` to the `~proplot.colortools.Colormap`
-constructor (or supply a plotting command with
-``cmap_kw={'save':True, 'name':name}``, and it will be loaded every time
-you import ProPlot. See `~proplot.colortools.Colormap` and
-`~proplot.wrappers.cmap_wrapper` for details.
-
-As a first example: To merge colormaps, simply pass multiple arguments
-to the `~proplot.colortools.Colormap` constructor. This makes it easy
-to create complex SciVisColor-style colormaps, desirable for complex
-datasets with funky statistical distributions. The below reconstructs
-the colormap from `this
-example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-icon-1.png>`__.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, colorbars='b', bottom=0.1)
-    data = np.random.rand(100,100).cumsum(axis=1)
-    # Make colormap, save as "test1.json"
-    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
-    m = axs[0].contourf(data, cmap=cmap, levels=100)
-    f.bpanel[0].colorbar(m, locator='none')
-    # Make colormap, save as "test2.json"
-    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
-    m = axs[1].contourf(data, cmap=cmap, levels=100)
-    f.bpanel[1].colorbar(m, locator='none')
-    axs.format(xticks='none', yticks='none', suptitle='Merging existing colormaps')
-    for ax,title in zip(axs, ['Evenly spaced', 'Matching SciVisColor example']):
-        ax.format(title=title)
-
-
-
-
-.. image:: quickstart/quickstart_104_1.svg
-
-
-To build monochromatic colormaps from arbitrary colors, just pass a
-color name, hex string, or RGB tuple to
-`~proplot.colortools.Colormap`. The colormaps will vary from the
-specified color to some shade near white – this is controlled by the
-``fade`` keyword argument. The default is to fade to pure white. The
-first plot shows several of these maps merged into one, and the second
-is just one map.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, colorbars='b', bottom=0.1)
-    data = np.random.rand(50,50).cumsum(axis=1)
-    cmap = plot.Colormap('charcoal', 'navy', 'brick red', fade=90, reverse=True)
-    m = axs[0].contourf(data, cmap=cmap, levels=12)
-    f.bpanel[0].colorbar(m, locator='null')
-    m = axs[1].contourf(data, cmap='ocean blue')
-    f.bpanel[1].colorbar(m, locator='null')
-    axs.format(xticks='none', yticks='none', suptitle='On-the-fly monochromatic maps')
-    for ax,title in zip(axs, ['Three monochromatic colormaps, merged', 'Single monochromatic colormap']):
-        ax.format(title=title)
-
-
-
-.. image:: quickstart/quickstart_106_0.svg
-
-
-To modify a diverging colormap by cutting out some central colors, pass
-the ``cut`` argument to `~proplot.colortools.Colormap`. This is great
-when you want to have a sharper cutoff between negative and positive
-values.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
-    data = np.random.rand(50,50).cumsum(axis=0) - 50
-    for ax,cut in zip(axs,(0, 0.1, 0.2)):
-        m = ax.contourf(data, cmap='Div', cmap_kw={'cut':cut}, levels=13)
-        ax.format(xlabel='x axis', ylabel='y axis', title=f'cut = {cut}',
-                  suptitle='Cutting out the central colors from a diverging colormap')
-        ax.colorbar(m, loc='b', locator='null')
-
-
-
-.. image:: quickstart/quickstart_108_0.svg
-
-
-To rotate a cyclic colormap, pass the ``shift`` argument to
-`~proplot.colortools.Colormap`. Cyclic colormaps are colormaps for
-which ``cyclic=True`` was passed to `~proplot.colortools.Colormap` on
-construction. ProPlot ensures the colors at the ends of these maps are
-distinct, so that levels don’t blur together.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
-    data = (np.random.rand(50,50)-0.48).cumsum(axis=1).cumsum(axis=0) - 50
-    for ax,shift in zip(axs,(0, 90, 180)):
-        m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
-        ax.format(xlabel='x axis', ylabel='y axis', title=f'shift = {shift}',
-                  suptitle='Rotating the colors in a cyclic colormap')
-        ax.colorbar(m, loc='b', locator='null')
-
-
-
-.. image:: quickstart/quickstart_110_0.svg
+.. image:: quickstart/quickstart_99_0.svg
 
 
 Perceptually uniform colormaps
@@ -243,7 +124,7 @@ represent “impossible” colors.
 
 
 
-.. image:: quickstart/quickstart_113_0.svg
+.. image:: quickstart/quickstart_102_0.svg
 
 
 .. code:: ipython3
@@ -253,7 +134,7 @@ represent “impossible” colors.
 
 
 
-.. image:: quickstart/quickstart_114_0.svg
+.. image:: quickstart/quickstart_103_0.svg
 
 
 .. code:: ipython3
@@ -263,7 +144,7 @@ represent “impossible” colors.
 
 
 
-.. image:: quickstart/quickstart_115_0.svg
+.. image:: quickstart/quickstart_104_0.svg
 
 
 To see how any colormap varies with respect to each channel, use the
@@ -285,56 +166,201 @@ row), as is the case for most nice-looking colormaps.
 
 
 
-.. image:: quickstart/quickstart_117_0.svg
+.. image:: quickstart/quickstart_106_0.svg
 
 
-You can generate your own
-`~proplot.colortools.PerceptuallyUniformColormap` on-the-fly by
-passing a dictionary as the ``cmap`` keyword argument. This is powered
-by the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl`
-static method. See :ref:`Perceptually uniform colormaps` for details.
+Making your own colormaps
+-------------------------
 
-The ``h``, ``s``, and ``l`` arguments can be single numbers, color
-strings, or lists thereof. Numbers just indicate the channel value. For
-color strings, the corresponding channel value (i.e. hue, saturation, or
-luminance) for that color will be looked up. You can end any color
-string with ``+N`` or ``-N`` to offset the channel value by the number
-``N``, as shown below.
+You can make new colormaps with ProPlot’s on-the-fly colormap generator
+`~proplot.colortools.Colormap`. Every command that accepts a ``cmap``
+argument (see `~proplot.wrappers.cmap_wrapper`) is passed to
+`~proplot.colortools.Colormap`, and `~proplot.colortools.Colormap`
+keyword args can be specified with ``cmap_kw``. If you want to save your
+own colormap into the ``~/.proplot/cmaps`` folder, simply use
+``save=True``. Colormaps in this folder are loaded every time you import
+ProPlot. See `~proplot.colortools.Colormap` and
+`~proplot.wrappers.cmap_wrapper` for details.
+
+To build monochromatic
+`~proplot.colortools.PerceptuallyUniformColormap` maps from arbitrary
+colors, just pass a color name, hex string, or RGB tuple to
+`~proplot.colortools.Colormap`. The colormap colors will vary from the
+specified color to some shade near white (controlled by the ``fade``
+keyword arg). The default is to fade to pure white. The first plot shows
+several of these maps merged into one, and the second is just one map.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, span=False, axwidth=2.5, aspect=1.5)
-    ax = axs[0]
-    # Designs
-    data = np.random.rand(10,15)
-    cmap1 = plot.Colormap({'hue':['red-120', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100]}, name='Matter', space='hcl')
-    m = ax.pcolormesh(data, levels=plot.arange(0.1,0.9,0.1), extend='both', cmap=cmap1)
-    ax.format(xlabel='x axis', ylabel='y axis', title='Matter-style colormap',
-              suptitle='Building your own PerceptuallyUniformColormaps')
-    ax = axs[1]
-    cmap2 = plot.Colormap({'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100]}, name='cubehelix', space='hpl')
-    m = ax.pcolormesh(data, levels=plot.arange(0.1,0.9,0.05), extend='both', cmap=cmap2)
-    ax.format(xlabel='x axis', ylabel='y axis', title='Cubehelix-style colormap')
+    f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, bottom=0.1)
+    data = np.random.rand(50,50).cumsum(axis=1)
+    cmap1 = plot.Colormap('brick red_r', 'denim_r', 'warm gray_r', fade=90, name='tricolor')
+    m = axs[0].contourf(data, cmap=cmap1, levels=12)
+    m = axs[1].contourf(data, cmap='ocean blue', cmap_kw={'name':'ocean blue'})
+    cmap2 = m.cmap
+    axs.format(xticks='none', yticks='none', suptitle='Monochromatic PerceptuallyUniformColormaps')
+    for ax,title in zip(axs, ['Three monochromatic colormaps', 'One monochromatic colormap']):
+        ax.format(title=title)
     # Breakdowns
     f = plot.show_channels(cmap1, cmap2)
 
 
 
-.. image:: quickstart/quickstart_119_0.svg
+.. image:: quickstart/quickstart_110_0.svg
 
 
 
-.. image:: quickstart/quickstart_119_1.svg
+.. image:: quickstart/quickstart_110_1.svg
 
 
-It is also easy to change the “gamma” of a
-`~proplot.colortools.PerceptuallyUniformColormap` uniform colormap
-on-the-fly. The “gamma” controls how the luminance and saturation
-channels vary between segments of the colormap. A gamma larger than
-``1`` emphasizes high luminance, low saturation colors, and a gamma
-smaller than ``1`` emphasizes low luminance, high saturation colors. See
+To generate `~proplot.colortools.PerceptuallyUniformColormap` maps,
+you can pass a *dictionary* to `~proplot.colortools.Colormap`, which
+calls the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl`
+static method, or pass a *list of colors* to
+`~proplot.colortools.Colormap`, which calls the
+`~proplot.colortools.PerceptuallyUniformColormap.from_list` static
+method.
+
+`~proplot.colortools.PerceptuallyUniformColormap.from_list`
+interpolates between the listed colors in a perceptually uniform
+colorspace (see :ref:`Perceptually uniform colormaps`).
+`~proplot.colortools.PerceptuallyUniformColormap.from_hsl` draws lines
+between channel values specified by the keyword args ``'hue'``,
+``'saturation'``, and ``'luminance'``. The values can be numbers, color
+strings, or lists thereof. Numbers indicate the channel value. For color
+strings, the channel value is *inferred* from the specified color. You
+can end any color string with ``+N`` or ``-N`` to *offset* the channel
+value by the number ``N``, as shown below.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=3, span=False, axwidth=2, aspect=1.5)
+    ax = axs[0]
+    # From dicts
+    data = np.random.rand(10,15)
+    cmap1 = plot.Colormap({'hue':['red-90', 'red+90'], 'saturation':[50, 70, 30], 'luminance':[20, 100]}, name='Matter', space='hcl')
+    m = ax.pcolormesh(data, cmap=cmap1)
+    ax.format(xlabel='x axis', ylabel='y axis', title='From channel values',
+              suptitle='Building your own PerceptuallyUniformColormaps')
+    ax = axs[1]
+    cmap2 = plot.Colormap({'hue':['red', 'red-720'], 'saturation':[80,20], 'luminance':[20, 100]}, name='cubehelix', space='hpl')
+    m = ax.pcolormesh(data, cmap=cmap2)
+    ax.format(xlabel='x axis', ylabel='y axis', title='From channel values')
+    # From list
+    ax = axs[2]
+    m = ax.pcolormesh(data, cmap=('maroon', 'goldenrod'), cmap_kw={'name':'reddish'})
+    cmap3 = m.cmap
+    ax.format(title='From list of colors')
+    # Breakdowns
+    f = plot.show_channels(cmap1, cmap2, cmap3)
+
+
+
+.. image:: quickstart/quickstart_112_0.svg
+
+
+
+.. image:: quickstart/quickstart_112_1.svg
+
+
+Merging and modifying colormaps
+-------------------------------
+
+`~proplot.colortools.Colormap` also lets you merge arbitrary colormaps
+and modify existing colormaps. To merge colormaps, simply pass multiple
+arguments to the `~proplot.colortools.Colormap` constructor. This
+makes it easy to create complex
+`SciVisColor <https://sciviscolor.org/home/colormoves/>`__-style
+colormaps, which may be desirable for complex datasets with funky
+statistical distributions. The below reconstructs the colormap from
+`this
+example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-icon-1.png>`__.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, colorbars='b', span=0)
+    data = np.random.rand(100,100).cumsum(axis=1)
+    # Make colormap, save as "test1.json"
+    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
+    m = axs[0].contourf(data, cmap=cmap, levels=100)
+    f.bpanel[0].colorbar(m, locator='none')
+    # Make colormap, save as "test2.json"
+    cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
+    m = axs[1].contourf(data, cmap=cmap, levels=100)
+    f.bpanel[1].colorbar(m, locator='none')
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Merging existing colormaps')
+    for ax,title in zip(axs, ['Evenly spaced', 'Matching SciVisColor example']):
+        ax.format(title=title)
+
+
+
+
+.. image:: quickstart/quickstart_115_1.svg
+
+
+To modify a diverging colormap by cutting out some central colors, pass
+the ``cut`` keyword arg to `~proplot.colortools.Colormap`. This is
+great when you want to have a sharper cutoff between negative and
+positive values. To cut out colors from the left or right of a colormap,
+pass the ``left`` and ``right`` keyword args to
+`~proplot.colortools.Colormap`.
+
+To rotate a cyclic colormap, pass the ``shift`` argument to
+`~proplot.colortools.Colormap`. Cyclic colormaps are colormaps for
+which ``cyclic=True`` was passed to `~proplot.colortools.Colormap` on
+construction. ProPlot ensures the colors at the ends of these maps are
+distinct, so that levels don’t blur together.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots([[1,1,2,2,3,3],[0,4,4,5,5,0]], axcolorbars='b', axwidth=0.8, aspect=0.5)
+    data = np.random.rand(50,50).cumsum(axis=0) - 50
+    # Cutting central colors
+    for ax,cut in zip(axs[:3],(0, 0.1, 0.2)):
+        m = ax.contourf(data, cmap='Div', cmap_kw={'cut':cut}, levels=13)
+        ax.format(xlabel='xlabel', ylabel='ylabel', title=f'cut = {cut}',
+                  suptitle='Slicing existing colormaps')
+        ax.colorbar(m, loc='b', locator='null')
+    # Cutting left and right
+    for ax,cut in zip(axs[3:],(0.2,0.8)):
+        if cut<0.5:
+            title, cmap, cmap_kw = f'left={cut}', 'grays', {'left':cut}
+        else:
+            title, cmap, cmap_kw = f'right={cut}', 'grays', {'right':cut}
+        ax.contourf(data, cmap=cmap, cmap_kw=cmap_kw, colorbar='b', colorbar_kw={'locator':'null'})
+        ax.format(xlabel='xlabel', ylabel='ylabel', title=title)
+    # Rotating cyclic
+    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
+    data = (np.random.rand(50,50)-0.48).cumsum(axis=1).cumsum(axis=0) - 50
+    for ax,shift in zip(axs,(0, 90, 180)):
+        m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
+        ax.format(xlabel='x axis', ylabel='y axis', title=f'shift = {shift}',
+                  suptitle='Rotating cyclic colormaps')
+        ax.colorbar(m, loc='b', locator='null')
+
+
+
+.. image:: quickstart/quickstart_117_0.svg
+
+
+
+.. image:: quickstart/quickstart_117_1.svg
+
+
+You can also change the “gamma” of any
+`~proplot.colortools.PerceptuallyUniformColormap` map on-the-fly. The
+“gamma” controls how the luminance and saturation channels vary between
+segments of the colormap. A gamma larger than ``1`` emphasizes high
+luminance, low saturation colors, and a gamma smaller than ``1``
+emphasizes low luminance, high saturation colors. See
 `~proplot.colortools.PerceptuallyUniformColormap` for details.
 
 .. code:: ipython3
@@ -358,11 +384,11 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: quickstart/quickstart_121_0.svg
+.. image:: quickstart/quickstart_119_0.svg
 
 
 
-.. image:: quickstart/quickstart_121_1.svg
+.. image:: quickstart/quickstart_119_1.svg
 
 
 Adding online colormaps
@@ -389,8 +415,8 @@ Use `~proplot.colortools.show_cycles` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
 `~proplot.colortools.Cycle` constructor function. See
-:ref:`Color usage tools` for more on the differences between colormaps
-and color cycles.
+:ref:`Color usage` for more on the differences between colormaps and
+color cycles.
 
 .. code:: ipython3
 
@@ -399,26 +425,24 @@ and color cycles.
 
 
 
-.. image:: quickstart/quickstart_126_0.svg
+.. image:: quickstart/quickstart_124_0.svg
 
 
-On-the-fly color cycles
------------------------
+Making your own color cycles
+----------------------------
 
-With ProPlot, you can specify the color cycle by passing ``cycle`` to
-plotting commands like `~matplotlib.axes.Axes.plot` or
-`~matplotlib.axes.Axes.scatter` (e.g. ``ax.plot(..., cycle='538')`` –
-see `~proplot.wrappers.cycle_wrapper`), or by changing the global
-default cycle (e.g. ``plot.rc.cycle = '538'`` – see the
-`~proplot.rctools` documentation). In both cases, the arguments are
-passed to the `~proplot.colortools.Cycle` constructor.
-`~proplot.colortools.Cycle` keyword arguments can be specified by
-passing ``cycle_kw`` to a plotting command. If you want to save your own
-color cycle into ``~/.proplot``, simply pass ``save=True`` to the
-`~proplot.colortools.Cycle` constructor (or supply a plotting command
-with ``cycle_kw={'save':True, 'name':name}``), and it will be loaded
-every time you import ProPlot. The below example demonstrates these
-methods.
+You can make new color cycles with ProPlot’s on-the-fly property cycler
+generator `~proplot.colortools.Cycle`. ProPlot lets you specify a
+property cycle by passing ``cycle`` to plotting commands like
+`~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
+(see `~proplot.wrappers.cycle_wrapper`), which is passed to
+`~proplot.colortools.Cycle`, and `~proplot.colortools.Cycle` keyword
+args can be specified with ``cycle_kw``. If you want to save your own
+color cycle into the ``~/.proplot/cycles`` folder, simply pass
+``save=True`` to `~proplot.colortools.Cycle`. Color cycles in this
+folder are loaded every time you import ProPlot. If you want to change
+the global property cycler, use the ``plot.rc.cycle`` setting (see the
+`~proplot.rctools` documentation).
 
 .. code:: ipython3
 
@@ -438,22 +462,21 @@ methods.
     for i in range(data.shape[1]):
         ax.plot(data[:,i], cycle='qual2', lw=lw)
     # Format
-    axs.format(xformatter=[], yformatter=[], suptitle='Local and global color cycles demo')
+    axs.format(suptitle='Local and global color cycles demo')
 
 
 
-.. image:: quickstart/quickstart_129_0.svg
+.. image:: quickstart/quickstart_127_0.svg
 
 
-Finally, *colormaps* (or combinations thereof) can be used as sources
-for generating color cycles. Just pass a tuple of colormap name(s) to
-the `~proplot.colortools.Cycle` constructor, with the last entry of
-the tuple indicating the number of samples you want to draw. To exclude
-near-white colors on the end of a colormap, just pass e.g. ``left=x`` to
+Colormaps or combinations thereof can be used as sources for making
+color cycles. Just pass colormap name(s) to the
+`~proplot.colortools.Cycle` constructor, with the last positional
+argument indicating the number of samples you want to draw. To exclude
+near-white colors on the end of a colormap, pass e.g. ``left=x`` to
 `~proplot.colortools.Cycle` (or supply a plotting command with e.g.
-``cycle_kw={'left':x}``). This cuts out the leftmost ``x`` proportion of
-the colormap before drawing colors from said map. See
-`~proplot.colortools.Colormap` for details.
+``cycle_kw={'left':x}``). See `~proplot.colortools.Colormap` for
+details.
 
 .. code:: ipython3
 
@@ -475,21 +498,20 @@ the colormap before drawing colors from said map. See
 
 
 
-.. image:: quickstart/quickstart_131_0.svg
+.. image:: quickstart/quickstart_129_0.svg
 
 
-`~proplot.wrappers.cycle_wrapper` can also be used to change
+`~proplot.colortools.Cycle` can also generate cyclers that change
 properties other than color. Below, a single-color dash style cycler is
-generated using the `~proplot.colortools.Cycle` function and applied
-to the axes locally. To apply it globally, simply use
-``plot.rc['axes.prop_cycle'] = cycle``.
+constructed and applied to the axes locally. To apply it globally,
+simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     import pandas as pd
-    f, ax = plot.subplots(axwidth=3, aspect=2)
+    f, ax = plot.subplots(axwidth=3, aspect=1.5)
     data = (np.random.rand(20,4)-0.5).cumsum(axis=0)
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d'], name='label'))
     ax.format(suptitle='Plot without color cycle')
@@ -498,7 +520,7 @@ to the axes locally. To apply it globally, simply use
 
 
 
-.. image:: quickstart/quickstart_133_0.svg
+.. image:: quickstart/quickstart_131_0.svg
 
 
 Adding online color cycles
@@ -547,11 +569,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: quickstart/quickstart_138_0.svg
+.. image:: quickstart/quickstart_136_0.svg
 
 
 
-.. image:: quickstart/quickstart_138_1.svg
+.. image:: quickstart/quickstart_136_1.svg
 
 
 Individual color sampling
@@ -590,6 +612,6 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: quickstart/quickstart_141_0.svg
+.. image:: quickstart/quickstart_139_0.svg
 
 

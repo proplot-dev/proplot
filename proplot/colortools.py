@@ -950,7 +950,9 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
           passing the dictionary as keyword args to the
           `~PerceptuallyUniformColormap.from_hsl` static method.
         * If string and a *color string*, a `PerceptuallyUniformColormap` is
-          generated with `monochrome_cmap`.
+          generated with `monochrome_cmap`. If the string ends in ``'_r'``,
+          the monochrome map will be *reversed*, i.e. will go from dark to light
+          instead of light to dark.
 
     name : str, optional
         Name of the resulting colormap. Default name is ``'no_name'``.
@@ -1073,6 +1075,9 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
     imaps = []
     for i,cmap in enumerate(args):
         # Retrieve Colormap instance. Makes sure lookup table is reset.
+        ireverse = False
+        if np.iterable(reverse) and reverse[i]:
+            ireverse = True
         if isinstance(cmap,str) and cmap in mcm.cmap_d:
             cmap = mcm.cmap_d[cmap]
             if kwargs:
@@ -1108,6 +1113,9 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
                 cmap = PerceptuallyUniformColormap.from_list(name, cmap, **kwargs)
         else:
             # Monochrome colormap from input color
+            if isinstance(cmap, str) and cmap[-2:]=='_r':
+                cmap = cmap[:-2]
+                ireverse = (not ireverse)
             try:
                 color = to_rgb(cmap, cycle=cycle)
             except Exception:
@@ -1121,7 +1129,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
             cmap = monochrome_cmap(color, fade, name=name, N=N_, **kwargs)
 
         # Optionally transform colormap by clipping colors or reversing
-        if np.iterable(reverse) and reverse[i]:
+        if ireverse:
             cmap = cmap.reversed()
         cmap = _slice_cmap(cmap, None if not np.iterable(left) else left[i],
                                 None if not np.iterable(right) else right[i], N=N)

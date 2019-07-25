@@ -63,7 +63,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(axwidth=1.7, nrows=2, ncols=2, share=0, span=False, panelpad=0.1,
-                           axpanels='r', axcolorbars='b', axpanels_kw={'rshare':False, 'rflush':True})
+                           axpanels='r', axcolorbars='b', axpanels_kw={'share':False, 'flush':True})
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
     for i,ax in enumerate(axs):
         ax.format(title=f'Dataset {i+1}')
@@ -167,8 +167,8 @@ panel in the first column, second from the top.
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(nrows=2, axwidth=0.8, span=False, share=0,
-                          axcolorbars='l', axcolorbars_kw={'lstack':3},
-                          axpanels='r', axpanels_kw={'rstack':2, 'rflush':True, 'rwidth':0.5}
+                          axcolorbars='l', axcolorbars_kw={'stack':3},
+                          axpanels='r', axpanels_kw={'stack':2, 'flush':True, 'width':0.5}
                           )
     axs[0].format(title='Stacked panel demo', titleweight='bold')
     # Draw stuff in axes
@@ -211,43 +211,35 @@ colorbar by calling `~proplot.axes.BaseAxes.colorbar` on the *main*
 axes with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.colorbar`
 for details).
 
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, ax = plot.subplots(colorbar='b', tight=True, axwidth=2)
-    m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
-    ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
-    ax.colorbar(m, ticks=2, label='data label', frameon=True)
-    ax.colorbar(m, ticks=2, loc='lower left', frameon=False)
-    f.bpanel.colorbar(m, label='standard outer colorbar', length=0.9)
-    ax.format(suptitle='ProPlot colorbars')
-
-
-
-.. image:: quickstart/quickstart_47_0.svg
-
-
 ProPlot adds several new features to the
 `~matplotlib.figure.Figure.colorbar` command, powered by
 `~proplot.wrappers.colorbar_wrapper`. A particular handy feature is
 the ability to draw colorbars from lists of colors or lists of artists,
 instead of just “mappable” objects. A colormap is constructed from the
-corresponding colors on-the-fly, as shown below.
-`~proplot.wrappers.colorbar_wrapper` also lets you change major and
-minor tick locations, handles colorbars normalized by
-`~matplotlib.colors.LogNorm` correctly, and lets you change outline,
-divider, tick, tick label, and colorbar label settings.
+corresponding colors on-the-fly. `~proplot.wrappers.colorbar_wrapper`
+also lets you change major and minor tick locations, handles colorbars
+normalized by `~matplotlib.colors.LogNorm` correctly, and lets you
+change outline, divider, tick, tick label, and colorbar label settings.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
+    # Original
     plot.rc.cycle = 'qual2'
-    f, ax = plot.subplots(colorbar='b', axwidth=3, aspect=1.5)
-    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=5)
-    ax.format(suptitle='ProPlot line object colorbar', xlabel='x axis', ylabel='y axis')
-    f.bpanel.colorbar(hs, values=np.arange(0,len(hs)), label='numeric values', tickloc='bottom')
+    f, axs = plot.subplots(ncols=2, axcolorbar='b', tight=True, axwidth=2.5, aspect=1.5, share=0)
+    ax = axs[0]
+    m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
+    ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
+    ax.colorbar(m, ticks=2, label='data label', labelweight='bold', frame=True)
+    ax.colorbar(m, ticks=2, loc='lower left', frame=False)
+    ax.colorbar(m, loc='b', label='standard outer colorbar', length=0.9)
+    ax.format(title='Inset and panel colorbars', suptitle='ProPlot colorbars')
+    # From lines
+    ax = axs[1]
+    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=4)
+    ax.format(title='Line object colorbar', xlabel='xlabel')
+    ax.colorbar(hs, loc='b', values=np.arange(0,len(hs)), label='numeric values', tickloc='bottom')
 
 
 
@@ -255,7 +247,7 @@ divider, tick, tick label, and colorbar label settings.
 
 
 
-.. image:: quickstart/quickstart_49_1.svg
+.. image:: quickstart/quickstart_47_1.svg
 
 
 Legends
@@ -292,23 +284,27 @@ handle properties.
     import proplot as plot
     import numpy as np
     plot.rc.cycle = 'contrast'
-    labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee', 'ffffff']
-    f, axs = plot.subplots(ncols=2, legends='b', panels='r', span=False, share=0)
-    hs = []
+    labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
+    f, axs = plot.subplots(ncols=2, legends='b', panels='r', span=0, share=1)
+    hs1, hs2 = [], []
+    # Plot lines and draw inner legends
     for i,label in enumerate(labels):
-        h = axs.plot(np.random.rand(20), label=label, lw=3)[0]
-        hs.extend(h)
-    axs[0].legend(order='F', frameon=True, loc='lower left')
-    f.bpanel[0].legend(hs, ncols=4, center=False, frameon=True)
-    f.bpanel[1].legend(hs, ncols=4, center=True)
-    f.rpanel.legend(hs, ncols=1, center=True)
-    axs.format(ylim=(-0.1, 1.1), xlabel='xlabel', ylabel='ylabel',
-               suptitle='ProPlot legend options')
-    for ax,title in zip(axs, ['Inner and outer legends', 'Outer centered-row legends']):
+        data = (np.random.rand(20)-0.45).cumsum(axis=0)
+        h1 = axs[0].plot(data, lw=4, label=label, legend='ul', legend_kw={'order':'F'}) # add to legend in upper left
+        hs1.extend(h1)
+        h2 = axs[1].plot(data, lw=4, label=label, cycle='floral')
+        hs2.extend(h2)
+    # Outer legends
+    f.bpanel[0].legend(hs1, ncols=3, center=False, frameon=True)
+    f.bpanel[1].legend(hs2, ncols=3, center=True)
+    f.rpanel.legend(hs2, ncols=1, center=True, frame=False)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='ProPlot legends')
+    for ax,title in zip(axs, ['Inset and panel legends', 'Row-centered legends']):
         ax.format(title=title)
 
 
 
-.. image:: quickstart/quickstart_52_0.svg
+
+.. image:: quickstart/quickstart_50_1.svg
 
 

@@ -653,12 +653,10 @@ class BaseAxes(maxes.Axes):
         ax, loc = wrappers._get_panel(self, loc)
         if loc=='fill':
             return ax.legend(*args, **kwargs)
-        return wrappers.legend_wrapper(ax, *args, **kwargs)
+        return wrappers.legend_wrapper(ax, *args, loc=loc, **kwargs)
 
     def colorbar(self, *args, loc=None, pad=None,
-        length=None, width=None, xspace=None,
-        label=None, extendsize=None,
-        frame=None, frameon=None,
+        length=None, width=None, xspace=None, frame=None, frameon=None,
         alpha=None, linewidth=None, edgecolor=None, facecolor=None,
         **kwargs):
         """
@@ -710,7 +708,7 @@ class BaseAxes(maxes.Axes):
             Transparency, edge width, edge color, and face color for the frame.
             Defaults to ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
             ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``.
-        **kwargs, label, extendsize
+        **kwargs
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
         # Location
@@ -719,14 +717,14 @@ class BaseAxes(maxes.Axes):
             return ax.colorbar(*args, **kwargs)
         # Default props
         loc = _default(loc, rc['colorbar.loc'])
-        extend = units(_default(extendsize, rc['colorbar.extendinset']))
+        extend = units(_default(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
         length = units(_default(length, rc['colorbar.length']))/self.width
         width = units(_default(width, rc['colorbar.width']))/self.height
         pad = units(_default(pad, rc['colorbar.axespad']))
         xpad = pad/self.width
         ypad = pad/self.height
         # Space for labels
-        if label:
+        if kwargs.get('label', ''):
             xspace = 2.4*rc['font.size']/72 + rc['xtick.major.size']/72
         else:
             xspace = 1.2*rc['font.size']/72 + rc['xtick.major.size']/72
@@ -760,9 +758,8 @@ class BaseAxes(maxes.Axes):
         # Make colorbar
         # WARNING: Inset colorbars are tiny! So use smart default locator
         kwargs.update({
-            'ticklocation':'bottom',
-            'edgecolor':edgecolor, 'linewidth':linewidth,
-            'extendsize':extend, 'label':label
+            'ticklocation':'bottom', 'edgecolor':edgecolor,
+            'linewidth':linewidth, 'extendsize':extend,
             })
         kwargs.setdefault('maxn', 5)
         cb = wrappers.colorbar_wrapper(ax, *args, **kwargs)
@@ -1193,7 +1190,7 @@ class CartesianAxes(BaseAxes):
             `~proplot.axistools.Scale`.
         xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
             The *x* and *y* axis spine locations.
-        xloc, yloc
+        xloc, yloc : optional
             Aliases for `xspineloc`, `yspineloc`.
         xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick marks.
@@ -1212,21 +1209,21 @@ class CartesianAxes(BaseAxes):
         xlocator, ylocator : locator spec, optional
             Used to determine the *x* and *y* axis tick mark positions. Passed
             to the `~proplot.axistools.Locator` constructor.
-        xticks, yticks
+        xticks, yticks : optional
             Aliases for `xlocator`, `ylocator`.
         xlocator_kw, ylocator_kw : dict-like, optional
             The *x* and *y* axis locator settings. Passed to
             `~proplot.axistools.Locator`.
-        xminorlocator, yminorlocator
+        xminorlocator, yminorlocator : optional
             As for `xlocator`, `ylocator`, but for the minor ticks.
-        xminorticks, yminorticks
+        xminorticks, yminorticks : optional
             Aliases for `xminorlocator`, `yminorlocator`.
         xminorlocator_kw, yminorlocator_kw
             As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
         xformatter, yformatter : formatter spec, optional
             Used to determine the *x* and *y* axis tick label string format.
             Passed to the `~proplot.axistools.Formatter` constructor.
-        xticklabels, yticklabels
+        xticklabels, yticklabels : optional
             Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
             The *x* and *y* axis formatter settings. Passed to
@@ -1305,6 +1302,12 @@ class CartesianAxes(BaseAxes):
 
         # Override for weird bug where title doesn't get automatically offset
         # from ticklabels in certain circumstance, check out notebook
+        # NOTE: Latest matplotlib versions seem to have fixed below bug. For
+        # now remove warning message, because it is triggered whenever user
+        # draws a top 'flush' panel.
+        # if xticklabelloc in ('both','top') and (xlabelloc!='top' or not xlabel): # xtickloc *cannot* be 'top', *only* appears for 'both'
+        #     warnings.warn('This keyword combo causes matplotlib bug where title is not offset from tick labels. Try again with xticklabelloc="bottom" or xlabelloc="top". Defaulting to the latter.')
+        #     xticklabelloc = xlabelloc = 'top'
         xlabelloc = _default(xlabelloc, xticklabelloc)
         ylabelloc = _default(ylabelloc, yticklabelloc)
         xtickloc = _default(xtickloc, xticklabelloc, _rcloc_to_stringloc('x', 'xtick'))
@@ -1317,9 +1320,6 @@ class CartesianAxes(BaseAxes):
             xticklabelloc = xtickloc
         if yticklabelloc=='both' and ytickloc!='both':
             yticklabelloc = ytickloc
-        if xticklabelloc in ('both','top') and (xlabelloc!='top' or not xlabel): # xtickloc *cannot* be 'top', *only* appears for 'both'
-            warnings.warn('This keyword combo causes matplotlib bug where title is not offset from tick labels. Try again with xticklabelloc="bottom" or xlabelloc="top". Defaulting to the former.')
-            xticklabelloc = xlabelloc = 'bottom'
 
         # Begin loop
         for (axis, label, color, margin,
@@ -1969,7 +1969,7 @@ class ProjectionAxes(BaseAxes):
             If integer, indicates the *number* of evenly spaced meridian and
             parallel gridlines to draw. Otherwise, must be a list of floats
             indicating specific meridian and parallel gridlines to draw.
-        lonlines, latlines, lonticks, latticks
+        lonlines, latlines, lonticks, latticks : optional
             Aliases for `lonlocator`, `latlocator`.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
