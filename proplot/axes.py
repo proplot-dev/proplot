@@ -491,19 +491,23 @@ class BaseAxes(maxes.Axes):
             ``rc['abc.format']``.
         abcloc, titleloc : str, optional
             They are strings indicating the location for the a-b-c label and
-            main title. The following locations are valid.
+            main title. The following locations keys are valid. Defaults to
+            ``rc['abc.loc']`` and ``rc['title.loc']``.
 
-            * ``'center'`` or ``'c'``
-            * ``'left'`` or ``'l'``
-            * ``'right'`` or ``'r'``
-            * ``'lower center``' or ``'lc'``, inside axes
-            * ``'upper center'`` or ``'uc'``, inside axes
-            * ``'upper right'`` or ``'ur'``, inside axes
-            * ``'upper left'`` or ``'ul'``, inside axes
-            * ``'lower left'`` or ``'ll'``, inside axes
-            * ``'lower right'`` or ``'lr'``, inside axes
+            =========================  ============================
+            Location                   Valid keys
+            =========================  ============================
+            center, above axes         ``'center'``, ``'c'``
+            left, above axes           ``'left'``, ``'l'``
+            right, above axes          ``'right'``, ``'r'``
+            lower center, inside axes  ``'lower center``', ``'lc'``
+            upper center, inside axes  ``'upper center'``, ``'uc'``
+            upper right, inside axes   ``'upper right'``, ``'ur'``
+            upper left, inside axes    ``'upper left'``, ``'ul'``
+            lower left, inside axes    ``'lower left'``, ``'ll'``
+            lower right, inside axes   ``'lower right'``, ``'lr'``
+            =========================  ============================
 
-            Defaults to ``rc['abc.loc']`` and ``rc['title.loc']``.
         abcborder, titleborder : bool, optional
             These are the ``rc['abc.border']`` and ``rc['title.border']``
             settings. They indicate whether to draw a border around the
