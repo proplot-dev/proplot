@@ -31,10 +31,6 @@ Documentation
 -------------
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
-Donations
----------
-At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
-
 Overview
 --------
 
@@ -81,6 +77,10 @@ Here are some highlights of the remaining features:
 
 You can thank `bradyrx <https://github.com/bradyrx>`__ for getting this project in working order and helping me fix a lot of the initial bugs. If your field is atmospheric science, check out his awesome
 `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
+
+Donations
+---------
+At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
 
 What about other matplotlib wrappers?
 -------------------------------------
