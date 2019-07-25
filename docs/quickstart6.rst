@@ -179,7 +179,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
     m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
                 cmap='thermal', values=np.arange(50), lw=7, extend='both')
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
-    ax.bpanel.colorbar(m, label='parametric coordinate', locator=5)
+    ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
     N = 12
     ax = axs[1]
     values = np.arange(1, N+1)
@@ -191,7 +191,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
                 linewidth=15, interp=False, cmap='thermal')
     ax.format(xlim=(-1,1), ylim=(-1,1), title='With step gradations', titleweight='bold',
               xlabel='cosine angle', ylabel='sine angle')
-    ax.bpanel.colorbar(m, locator=None, label=f'parametric coordinate')
+    ax.colorbar(m, loc='b', locator=None, label=f'parametric coordinate')
 
 
 

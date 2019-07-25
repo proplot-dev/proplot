@@ -172,7 +172,7 @@ values.
         m = ax.contourf(data, cmap='Div', cmap_kw={'cut':cut}, levels=13)
         ax.format(xlabel='x axis', ylabel='y axis', title=f'cut = {cut}',
                   suptitle='Cutting out the central colors from a diverging colormap')
-        ax.bpanel.colorbar(m, locator='null')
+        ax.colorbar(m, loc='b', locator='null')
 
 
 
@@ -195,7 +195,7 @@ distinct, so that levels don’t blur together.
         m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
         ax.format(xlabel='x axis', ylabel='y axis', title=f'shift = {shift}',
                   suptitle='Rotating the colors in a cyclic colormap')
-        ax.bpanel.colorbar(m, locator='null')
+        ax.colorbar(m, loc='b', locator='null')
 
 
 
@@ -351,7 +351,7 @@ smaller than ``1`` emphasizes low luminance, high saturation colors. See
         cmap.name = f'gamma={gamma}'
         cmaps.append(cmap)
         m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
-        ax.rpanel.colorbar(m, locator='none')
+        ax.colorbar(m, loc='r', locator='none')
         ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Modifying existing PerceptuallyUniformColormaps')
     # Breakdowns
     f = plot.show_channels(*cmaps)

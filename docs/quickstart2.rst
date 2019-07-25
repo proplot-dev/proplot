@@ -12,10 +12,14 @@ Axes panels
 -----------
 
 To add arbitrary combinations of panels to the left, bottom, right, or
-top sides of axes with the `~proplot.subplots.subplots` ``axpanels``
-keyword arg. To modify panel properties, simply pass a dictionary to
-``axpanels_kw``. The subplots will stay correctly aligned no matter the
-combination of panels. See `~proplot.subplots.subplots` and
+top sides of axes, pass the ``axpanel`` or ``axpanels`` keyword args to
+`~proplot.subplots.subplots`. To modify panel properties, simply pass
+a dictionary to ``axpanel_kw`` or ``axpanels_kw``. The panels are stored
+on each main subplot as the attributes ``bottompanel``, ``leftpanel``,
+``rightpanel``, and ``toppanel`` and the shorthands ``bpanel``,
+``lpanel``, ``rpanel``, and ``tpanel``. The subplots will stay correctly
+aligned no matter the combination of panels. See
+`~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
@@ -34,13 +38,26 @@ combination of panels. See `~proplot.subplots.subplots` and
 .. image:: quickstart/quickstart_36_0.svg
 
 
-If you want “colorbar” panels, the simplest option is to use the
-``axcolorbar`` and ``axcolorbar_kw`` keywords instead of ``axpanels``
-and ``axpanels_kw``. This makes the width of the panels more appropriate
-for filling with a colorbar. Similarly, you can also use the
-``axlegend`` and ``axlegend_kw`` args. You can modify these default
-spacings with a custom ``.proplotrc`` file (see the `~proplot.rctools`
-documentation).
+All ProPlot “panels” are instances of the `~proplot.axes.PanelAxes`
+class. `~proplot.axes.PanelAxes` is a subclass of
+`~proplot.axes.CartesianAxes`. The *only* difference between these
+classes is that when you call `~proplot.axes.PanelAxes.colorbar` or
+`~proplot.axes.PanelAxes.legend` on a `~proplot.axes.PanelAxes`, the
+panel is “filled” with a colorbar or legend by default. Note that you
+can also “fill” a panel with a colorbar or legend by calling
+`~proplot.axes.BaseAxes.colorbar` and
+`~proplot.axes.BaseAxes.legend` on the *main* axes with e.g. the
+keyword arg ``loc='bottom'``. See `~proplot.axes.BaseAxes.colorbar`
+and `~proplot.axes.BaseAxes.legend` for details. If you intend to turn
+your panels into *colorbars*, you should use the ``axcolorbar``,
+``axcolorbars``, ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args
+instead of ``axpanel``, etc. The behavior is identical, except the
+*default* width of the resulting panels will be more appropriate for
+“filling” the panel with a colorbar. Similarly, if you intend to turn
+your panels into *legends*, you should use the ``axlegend``,
+``axlegends``, ``axlegend_kw``, and ``axlegends_kw`` keyword args. You
+can modify the default panel settings with a custom ``.proplotrc`` file
+(see the `~proplot.rctools` documentation for details).
 
 If you want panels “flush” against the subplot, simply use the ``flush``
 keyword args. If you want to disable “axis sharing” with the parent
@@ -63,6 +80,7 @@ keyword args. Again, see `~proplot.subplots.subplots` and
     axs.rpanel.plot(data.mean(axis=1), np.arange(20), color='k')
     axs.rpanel.format(title='Mean')
     axs.bpanel.colorbar(m, label='cbar')
+    # axs.colorbar(m, loc='b', label='cbar') # also works!
 
 
 
@@ -76,16 +94,17 @@ keyword args. Again, see `~proplot.subplots.subplots` and
 Figure panels
 -------------
 
-ProPlot also supports “global” colorbars or legends, meant to reference
-multiple subplots at once. Global colorbars and legends are declared
-with the ``panel``, ``colorbar``, ``legend``, ``panels``, ``colorbars``,
-and ``legends`` keyword args. They can extend across entire sides of the
+ProPlot also supports “figure” panels. These panels are generally filled
+with colorbars and legends as *global* references for content that
+appears in more than one subplot. Figure panels are declared with the
+``panel``, ``colorbar``, ``legend``, ``panels``, ``colorbars``, and
+``legends`` keyword args. They can extend across entire sides of the
 figure, or across arbitrary contiguous rows and columns of subplots,
-using the ``barray``, ``rarray``, or ``larray`` keyword args. The
-associated axes instances are found on the `~proplot.subplots.Figure`
-instance under the names ``bottompanel``, ``leftpanel``, and
-``rightpanel``, or the shorthands ``bpanel``, ``lpanel``, and
-``rpanel``. See `~proplot.subplots.subplots` for details.
+using the ``barray``, ``rarray``, or ``larray`` keyword args. Figure
+panel axes are stored on the `~proplot.subplots.Figure` instance as
+the attributes ``bottompanel``, ``leftpanel``, and ``rightpanel`` and
+the shorthands ``bpanel``, ``lpanel``, and ``rpanel``. See
+`~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
 
