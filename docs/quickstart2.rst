@@ -43,8 +43,8 @@ If you intend to turn your panels into *colorbars* (see
 :ref:`Colorbars`), you should use the ``axcolorbar``, ``axcolorbars``,
 ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args instead of
 ``axpanel``, etc. The behavior is identical, except the *default* width
-of the resulting panels will be more appropriate for “filling” the panel
-with a colorbar.
+of the resulting panels is more appropriate for “filling” the panel with
+a colorbar.
 
 Similarly, if you intend to turn your panels into *legends* (see
 :ref:`Legends`), you should use the ``axlegend``, ``axlegends``,
