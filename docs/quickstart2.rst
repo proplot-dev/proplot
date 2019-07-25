@@ -39,24 +39,23 @@ panels. See `~proplot.subplots.subplots` and
 .. image:: quickstart/quickstart_36_0.svg
 
 
-If you intend to turn your panels into *colorbars* (see
+If you intend to “fill” your panels with *colorbars* (see
 :ref:`Colorbars`), you should use the ``axcolorbar``, ``axcolorbars``,
 ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args instead of
-``axpanel``, etc. The behavior is identical, except the *default* width
-of the resulting panels is more appropriate for “filling” the panel with
-a colorbar.
+``axpanel``, etc. The behavior is identical, except the *default* panel
+width is more appropriate for colorbars. Similarly, if you intend to
+turn your panels into *legends* (see :ref:`Legends`), you should use
+the ``axlegend``, ``axlegends``, ``axlegend_kw``, and ``axlegends_kw``
+keyword args. You can modify these default settings with a custom
+``.proplotrc`` file (see the `~proplot.rctools` documentation for
+details).
 
-Similarly, if you intend to turn your panels into *legends* (see
-:ref:`Legends`), you should use the ``axlegend``, ``axlegends``,
-``axlegend_kw``, and ``axlegends_kw`` keyword args. You can modify the
-default panel settings with a custom ``.proplotrc`` file (see the
-`~proplot.rctools` documentation for details).
-
-If you want panels “flush” against the subplot, simply use the ``flush``
-keyword args. If you want to disable “axis sharing” with the parent
-subplot (i.e. you want to draw tick labels on the panel, and do not want
-to inherit axis limits from the main subplot), use any of the ``share``
-keyword args. See `~proplot.subplots.subplots` and
+The below example demonstrates a few more panel features. To draw panels
+“flush” against the subplot, use the ``bflush``, ``tflush``, ``lflush``,
+and ``rflush`` keyword args. If you want to disable “axis sharing” with
+the parent subplot (see :ref:`Axis sharing and spanning`), use the
+``bshare``, ``tshare``, ``rshare``, and ``lshare`` keyword args. See
+`~proplot.subplots.subplots` and
 `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 .. code:: ipython3
@@ -93,11 +92,12 @@ appears in more than one subplot. Figure panels are declared with the
 ``panel``, ``colorbar``, ``legend``, ``panels``, ``colorbars``, and
 ``legends`` keyword args. They can extend across entire sides of the
 figure, or across arbitrary contiguous rows and columns of subplots,
-using the ``barray``, ``rarray``, or ``larray`` keyword args. Figure
-panel axes are stored on the `~proplot.subplots.Figure` instance as
-the attributes ``bottompanel``, ``leftpanel``, and ``rightpanel`` and
-the shorthands ``bpanel``, ``lpanel``, and ``rpanel``. See
-`~proplot.subplots.subplots` for details.
+using the ``barray``, ``rarray``, or ``larray`` keyword args.
+
+Figure panel axes are stored on the `~proplot.subplots.Figure`
+instance as the attributes ``bottompanel``, ``leftpanel``, and
+``rightpanel`` and the shorthands ``bpanel``, ``lpanel``, and
+``rpanel``. See `~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
 
