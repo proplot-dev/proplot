@@ -431,11 +431,6 @@ class BaseAxes(maxes.Axes):
             This can help prevent a massive number of unnecessary lookups
             when the settings haven't been changed by the user.
             See `~proplot.rctools.rc_configurator` for details.
-
-        See also
-        --------
-        `~proplot.rctools`, `BaseAxes.format_partial`, `CartesianAxes.format_partial`,
-        `ProjectionAxes.format_partial`
         """
         # Figure out which kwargs are valid rc settings
         kw = {} # for format
