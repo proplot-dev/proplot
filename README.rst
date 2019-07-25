@@ -93,12 +93,7 @@ In summary, this project is intended to unify the convenience of seaborn, pandas
 
 Why not add to matplotlib directly?
 -----------------------------------
-ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the ``FlexibleGridSpec`` class. Matplotlib encourages successively adding subplots and panels to existing figures.
-ProPlot's "smart tight layout" feature also conflicts with
-matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable subplot spacing*.
-
-In other ways, ProPlot represents an alternative to *existing* APIs.
-For example, ``BaseAxes.format`` replaces various axes and axis "setter" methods, like ``Axes.set_title``, and some of the functionality of ``subplots`` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. As such, following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
+ProPlot has some direct conflicts with the matplotlib API. It enforces a *static* figure layout with the entire subplot grid declared at figure creation time, so that we can implement subplot panels, exert more control on the subplot layout, and replace matplotlib's ``GridSpec`` class with the ``FlexibleGridSpec`` class. By contrast, matplotlib encourages successively adding subplots and panels to existing figures. ProPlot's "smart tight layout" conflicts with matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ feature by permitting *flexible figure dimensions* to preserve subplot aspect ratios and by permitting *variable subplot spacing* with the ``FlexibleGridSpec`` class. Other parts of ProPlot would arguably make the matplotlib API redundant if implemented directly -- for example, ``BaseAxes.format`` is convenient, but the same tasks can be accomplished with *existing* axes and axis "setter" methods; also, some of the functionality of ``subplots`` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
 
 Nevertheless, if there are any core matplotlib developers reading this, and you think that some of ProPlot's features should be added to matplotlib, please contact me!
 
