@@ -1080,7 +1080,7 @@ def _basemap_call(self, func):
 @_expand_methods_list
 def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
     """
-    Wraps plotting functions for `~proplot.axes.CartopyAxes` (`_transform_methods`).
+    Wraps `_transform_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -1099,9 +1099,8 @@ def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
 @_expand_methods_list
 def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
     """
-    Wraps axes functions for `~proplot.axes.CartopyAxes` (`_crs_methods`).
-
-    As in `cartopy_transform`, but sets ``crs=cartopy.crs.PlateCarree()``
+    Wraps `_crs_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    As with `cartopy_transform`, but passes ``crs=cartopy.crs.PlateCarree()``
     as the default.
     """
     # Simple
@@ -1128,7 +1127,7 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
 @_expand_methods_list
 def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
-    Wraps plotting functions for `~proplot.axes.BasemapAxes` (`_latlon_methods`).
+    Wraps `_latlon_methods` for `~proplot.axes.ProjectionAxesBasemap` axes.
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude
@@ -1176,7 +1175,7 @@ def _gridfix_coordinates(lon, lat):
 @_expand_methods_list
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps 2D plotting functions for `~proplot.axes.CartopyAxes` (`_centers_edges_methods`).
+    Wraps `_centers_edges_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
 
     Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
     optionally make data coverage *global*. Passing ``globe=True`` does the
@@ -1215,7 +1214,7 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 @_expand_methods_list
 def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps 2D plotting functions for `~proplot.axes.BasemapAxes` (`_centers_edges_methods`).
+    Wraps `_centers_edges_methods` for `~proplot.axes.ProjectionAxesBasemap` axes.
 
     Makes 1D longitude vectors monotonic and cycles them to fit within the map
     edges (i.e. if the projection central longitude is 90 degrees, will permute
