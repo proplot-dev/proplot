@@ -51,6 +51,7 @@ axes **simultaneously**. This is used repeatedly in the examples.
 
 .. code:: ipython3
 
+    # ProPlot API
     import proplot as plot
     f, axs = plot.subplots(ncols=2)
     axs.format(suptitle='ProPlot API', xlabel='x axis', ylabel='y axis')
