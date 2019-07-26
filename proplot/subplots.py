@@ -102,7 +102,18 @@ class axes_grid(list):
         If a slice is passed, e.g. ``axs[1:3]``, an `axes_grid` of the items
         is returned. You can also use 2D indexing, e.g. ``axs[1,2]`` or
         ``axs[:,0]``, and the corresponding axes in the axes grid will be
-        chosen."""
+        chosen.
+
+        Example
+        -------
+        .. code-block:: python
+
+            f, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
+            axs[0] # the subplot in the top-right corner
+            axs[3] # the first subplot in the second row
+            axs[1,2] # the subplot in the second row, third from the left
+            axs[:,0] # the subplots in the first column
+        """
         # Allow 2D specification
         if isinstance(key, tuple) and len(key)==1:
             key = key[0]
@@ -155,12 +166,21 @@ class axes_grid(list):
             return objs
 
     def __getattr__(self, attr):
-        """If the attribute is *callable*, e.g. ``axs.format(xtick=5)``, returns
-        a dummy function that loops through each identically named method,
-        calls them in succession, and returns a tuple of the results. This lets
-        you call arbitrary methods on multiple axes at once! If the attribute is
-        *not callable*, e.g. ``axs.bpanel``, returns an `axes_grid` of
-        identically named attributes for every object in the list."""
+        """If the attribute is *callable*, returns a dummy function that loops
+        through each identically named method, calls them in succession, and
+        returns a tuple of the results. This lets you call arbitrary methods
+        on multiple axes at once! If the attribute is *not callable*, returns
+        an `axes_grid` of identically named attributes for every object in the
+        list.
+
+        Example
+        -------
+        .. code-block:: python
+
+            f, axs = plot.subplots(nrows=2, ncols=2, axcolorbars='b')
+            axs.format(xtick=5) # calls "format" on all subplots in the list
+            axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
+        """
         attrs = *(getattr(ax, attr, None) for ax in self), # magical tuple expansion
         # Not found
         if None in attrs:
