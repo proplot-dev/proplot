@@ -155,8 +155,8 @@ a nice 2D grid, simply use 1D indexing.
 .. image:: quickstart/quickstart_12_0.svg
 
 
-Automatic subplot spacing
--------------------------
+Smart tight layout
+------------------
 
 With ProPlot, you will always get just the right amount of spacing
 between subplots so that elements don’t overlap, and just the right
