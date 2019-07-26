@@ -1725,7 +1725,7 @@ class EmptyPanel(object):
     Replaces `PanelAxes` when the axes or figure panel does not exist.
     This gives a nicer error message than if we had just ``None``, and
     permits indexing to mimick the behavior of a singleton
-    `~proplot.subplots.axes_list`.
+    `~proplot.subplots.axes_grid`.
 
     Note
     ----
@@ -1739,12 +1739,12 @@ class EmptyPanel(object):
 
     def __len__(self):
         """Returns 1. This allows us to treat `EmptyPanel` like an
-        `~proplot.subplots.axes_list` of stacked panels."""
+        `~proplot.subplots.axes_grid` of stacked panels."""
         return 1
 
     def __getitem__(self, key):
         """Returns itself. This allows us to treat `EmptyPanel` like an
-        `~proplot.subplots.axes_list` of stacked panels."""
+        `~proplot.subplots.axes_grid` of stacked panels."""
         # See: https://stackoverflow.com/a/26611639/4970632
         if key not in (0,(0,0)):
             raise IndexError

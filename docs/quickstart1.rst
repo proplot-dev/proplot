@@ -44,10 +44,10 @@ features. This section documents the most basic features.
 
 `~proplot.subplots.subplots` returns a special
 `~proplot.subplots.Figure` instance and an
-`~proplot.subplots.axes_list` of special
+`~proplot.subplots.axes_grid` of special
 `~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes features`)
 or `~proplot.axes.ProjectionAxes` (see :ref:`Map projection axes`).
-`~proplot.subplots.axes_list` is a magical container that lets you
+`~proplot.subplots.axes_grid` is a magical container that lets you
 call any method (e.g. `~proplot.axes.BaseAxes.format`) on multiple
 axes **simultaneously**. This is used repeatedly in the examples.
 
@@ -101,10 +101,10 @@ centimeters, millimeters, and pixels. This is demonstrated below.
 .. image:: quickstart/quickstart_8_2.svg
 
 
-The `~proplot.subplots.axes_list` object returned by
+The `~proplot.subplots.axes_grid` object returned by
 `~proplot.subplots.subplots` is extremely powerful. It supports 2D
 indexing, and slicing the container will return an
-`~proplot.subplots.axes_list` of the selected axes. This is used below
+`~proplot.subplots.axes_grid` of the selected axes. This is used below
 to call axes method on multiple axes at once (see
 :ref:`The format command` for details). If your subplots do not fit on
 a nice 2D grid, simply use 1D indexing.
@@ -117,7 +117,7 @@ a nice 2D grid, simply use 1D indexing.
     axs[0,:].format(color='blue')
     axs[1:,1:].plot(np.random.rand(5,5), linestyle='--', color='gray7')
     axs[0].format(color='black', linewidth=2)
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_list')
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
 
 
 
@@ -130,7 +130,7 @@ a “picture” of your figure, where each unique number corresponds to a
 unique axes. This feature allows us to build the below grid in just one
 line of code, instead of 6 lines. The number order determines the order
 of a-b-c labels, and the order in which the axes appear in the
-`~proplot.subplots.axes_list`. See `~proplot.subplots.subplots` for
+`~proplot.subplots.axes_grid`. See `~proplot.subplots.subplots` for
 details.
 
 .. code:: ipython3

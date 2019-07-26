@@ -2,7 +2,7 @@
 """
 The starting point for creating custom ProPlot figures and axes.
 The `subplots` function is all you'll need to directly use here.
-It returns a `Figure` instance and an `axes_list` list of
+It returns a `Figure` instance and an `axes_grid` list of
 `~proplot.axes.BaseAxes` axes.
 
 .. raw:: html
@@ -36,7 +36,7 @@ from .rctools import rc
 from .utils import _default, units, journals
 from . import projs, axes
 from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
-__all__ = ['axes_list', 'close', 'show', 'subplots', 'Figure']
+__all__ = ['axes_grid', 'close', 'show', 'subplots', 'Figure']
 
 # Aliases for panel names
 _aliases = {
@@ -75,11 +75,11 @@ def show():
     plt.show()
 
 # Helper classes
-class axes_list(list):
+class axes_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
     list of axes returned by `subplots`, lists of figure panels, and lists of
-    stacked axes panels. See the `~axes_list.__getattr__` and
-    `~axes_list.__getitem__` methods for details."""
+    stacked axes panels. See the `~axes_grid.__getattr__` and
+    `~axes_grid.__getitem__` methods for details."""
     def __init__(self, list_, n=1, order='C'):
         # Add special attributes that support 2D grids of axes
         # NOTE: The input list is always a vector *already unfurled* in row-major
@@ -91,15 +91,15 @@ class axes_list(list):
 
     def __repr__(self):
         """Wraps the string representation."""
-        return 'axes_list(' + super().__repr__() + ')'
+        return 'axes_grid(' + super().__repr__() + ')'
 
     def __setitem__(self, key, value):
         """Pseudo immutability, raises error."""
-        raise LookupError('axes_list is immutable.')
+        raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):
         """If an integer is passed, e.g. ``axs[0]``, the item is returned.
-        If a slice is passed, e.g. ``axs[1:3]``, an `axes_list` of the items
+        If a slice is passed, e.g. ``axs[1:3]``, an `axes_grid` of the items
         is returned. You can also use 2D indexing, e.g. ``axs[1,2]`` or
         ``axs[:,0]``, and the corresponding axes in the axes grid will be
         chosen."""
@@ -134,7 +134,7 @@ class axes_list(list):
             # Get index pairs and get objects
             # Note that in double for loop, right loop varies fastest, so
             # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
-            # Remember for order=='F', axes_list was sent a list unfurled in
+            # Remember for order=='F', axes_grid was sent a list unfurled in
             # column-major order, so we replicate row-major indexing syntax by
             # reversing the order of the keys.
             objs = []
@@ -150,7 +150,7 @@ class axes_list(list):
             raise IndexError
         # Return
         if axlist:
-            return axes_list(objs)
+            return axes_grid(objs)
         else:
             return objs
 
@@ -159,7 +159,7 @@ class axes_list(list):
         a dummy function that loops through each identically named method,
         calls them in succession, and returns a tuple of the results. This lets
         you call arbitrary methods on multiple axes at once! If the attribute is
-        *not callable*, e.g. ``axs.bpanel``, returns an `axes_list` of
+        *not callable*, e.g. ``axs.bpanel``, returns an `axes_grid` of
         identically named attributes for every object in the list."""
         attrs = *(getattr(ax, attr, None) for ax in self), # magical tuple expansion
         # Not found
@@ -172,7 +172,7 @@ class axes_list(list):
             return null_iterator
         # Objects
         if not any(callable(_) for _ in attrs):
-            return axes_list(attrs) # or just attrs?
+            return axes_grid(attrs) # or just attrs?
         # Methods
         if all(callable(_) for _ in attrs):
             @functools.wraps(attrs[0])
@@ -1329,10 +1329,10 @@ class Figure(mfigure.Figure):
                 pax._panels_main_gridspec = gs
                 pax._panels_stack_gridspec = igs
                 paxs += [pax]
-            # Add as axes_list. Support 2D indexing, even though these are
-            # always vector stacks, because consistency. See axes_list docs.
+            # Add as axes_grid. Support 2D indexing, even though these are
+            # always vector stacks, because consistency. See axes_grid docs.
             n = 1 if (side in 'tb' and order=='C') or (side in 'lr' and order!='C') else stack
-            paxs = axes_list(paxs, n=n, order=order)
+            paxs = axes_grid(paxs, n=n, order=order)
             setattr(ax, name + 'panel', paxs)
         # Set up axis sharing
         # * Sharex and sharey methods should be called on the 'child' axes,
@@ -1949,8 +1949,8 @@ def subplots(array=None, ncols=1, nrows=1,
     -------
     f : `Figure`
         The figure instance.
-    axs : `axes_list`
-        A special list of axes instances. See `axes_list`.
+    axs : `axes_grid`
+        A special list of axes instances. See `axes_grid`.
 
     See also
     --------
@@ -2266,10 +2266,10 @@ def subplots(array=None, ncols=1, nrows=1,
         # Sort panel axes into row-major or column-major order
         if (side=='b' and order=='C') or (side in 'lr' and order!='C'):
             paxs = [*zip(*paxs)]
-        # Store in axes_list with support for 2D indexing
+        # Store in axes_grid with support for 2D indexing
         n = len(paxs[0])
         paxs = [ax for ipaxs in paxs for ax in ipaxs]
-        paxs = axes_list(paxs, n=n, order=order)
+        paxs = axes_grid(paxs, n=n, order=order)
         setattr(fig, name + 'panel', paxs)
 
     # Set up axis sharing
@@ -2299,9 +2299,9 @@ def subplots(array=None, ncols=1, nrows=1,
                 raise ValueError(f'Something went wrong; axis {idx:d} belongs to multiple {name} groups.')
 
     # Return results
-    # Store axes in axes_list with support for 2D indexing
+    # Store axes in axes_grid with support for 2D indexing
     fig._main_axes = axs
     fig._ref_num = ref
     fig._locked = True
-    return fig, axes_list(axs, n=(ncols if order=='C' else nrows), order=order)
+    return fig, axes_grid(axs, n=(ncols if order=='C' else nrows), order=order)
 
