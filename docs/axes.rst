@@ -1,5 +1,5 @@
-Axes and plot command wrappers
-------------------------------
+Axes classes and plotting wrappers
+----------------------------------
 
 **Classes**
 

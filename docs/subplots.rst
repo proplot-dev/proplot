@@ -1,4 +1,4 @@
-Figures and subplots
+The subplots command
 --------------------
 
 **Classes**

@@ -1,16 +1,17 @@
 Introduction
 ============
 
-Matplotlib APIs
----------------
+The subplots command
+--------------------
 
 Matplotlib has `two
 APIs <https://matplotlib.org/api/api_overview.html>`__ – the “pyplot”
 API (which is MATLAB-like), and the “object-oriented” API (which is more
 “pythonic”). Contrary to the similar names, this package is not meant to
-be a pyplot replacement. ProPlot’s features are invoked with the
-“object-oriented” API, thanks to subclasses of the
-`~matplotlib.axes.Axes` and `~matplotlib.figure.Figure` classes.
+be a pyplot replacement, where everything is done using commands on the
+top-level module. ProPlot’s features are invoked with the
+“object-oriented” API, using the objects returned by ProPlot’s version
+of the `~proplot.subplots.subplots` command.
 
 .. code:: ipython3
 
@@ -34,11 +35,8 @@ be a pyplot replacement. ProPlot’s features are invoked with the
     ax.set_xlabel('x axis')
     ax.set_ylabel('y axis')
 
-The subplots command
---------------------
-
-The `~proplot.subplots.subplots` command is your gateway to all of
-ProPlot’s features. Its usage is similar to the pyplot
+`~proplot.subplots.subplots` is your gateway to all of ProPlot’s
+features. Its usage is similar to the pyplot
 `~matplotlib.pyplot.subplots` command, but it is packed with new
 features. This section documents the most basic features.
 
@@ -101,29 +99,6 @@ centimeters, millimeters, and pixels. This is demonstrated below.
 .. image:: quickstart/quickstart_8_2.svg
 
 
-The `~proplot.subplots.axes_grid` object returned by
-`~proplot.subplots.subplots` is extremely powerful. It supports 2D
-indexing, and slicing the container will return an
-`~proplot.subplots.axes_grid` of the selected axes. This is used below
-to call axes method on multiple axes at once (see
-:ref:`The format command` for details). If your subplots do not fit on
-a nice 2D grid, simply use 1D indexing.
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
-    axs[:,0].format(color='red')
-    axs[0,:].format(color='blue')
-    axs[1:,1:].plot(np.random.rand(5,5), linestyle='--', color='gray7')
-    axs[0].format(color='black', linewidth=2)
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
-
-
-
-.. image:: quickstart/quickstart_10_0.svg
-
-
 You can also set up complex grids of subplots by passing 2D arrays of
 integers to `~proplot.subplots.subplots`. Just think of this array as
 a “picture” of your figure, where each unique number corresponds to a
@@ -151,11 +126,37 @@ details.
 
 
 
-.. image:: quickstart/quickstart_12_1.svg
+.. image:: quickstart/quickstart_10_1.svg
 
 
 
-.. image:: quickstart/quickstart_12_2.svg
+.. image:: quickstart/quickstart_10_2.svg
+
+
+Axes grids
+----------
+
+The `~proplot.subplots.axes_grid` object returned by
+`~proplot.subplots.subplots` is extremely powerful. It supports 2D
+indexing, and slicing the container will return an
+`~proplot.subplots.axes_grid` of the selected axes. This is used below
+to call axes method on multiple axes at once (see
+:ref:`The format command` for details). If your subplots do not fit on
+a nice 2D grid, simply use 1D indexing.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
+    axs[:,0].format(color='red')
+    axs[0,:].format(color='blue')
+    axs[1:,1:].plot(np.random.rand(5,5), linestyle='--', color='gray7')
+    axs[0].format(color='black', linewidth=2)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
+
+
+
+.. image:: quickstart/quickstart_13_0.svg
 
 
 Automatic subplot spacing
@@ -194,11 +195,11 @@ different rows and columns of subplots, where the builtin
 
 
 
-.. image:: quickstart/quickstart_15_0.svg
+.. image:: quickstart/quickstart_16_0.svg
 
 
 
-.. image:: quickstart/quickstart_15_1.svg
+.. image:: quickstart/quickstart_16_1.svg
 
 
 .. code:: ipython3
@@ -212,7 +213,7 @@ different rows and columns of subplots, where the builtin
 
 
 
-.. image:: quickstart/quickstart_16_0.svg
+.. image:: quickstart/quickstart_17_0.svg
 
 
 .. code:: ipython3
@@ -226,7 +227,7 @@ different rows and columns of subplots, where the builtin
 
 
 
-.. image:: quickstart/quickstart_17_0.svg
+.. image:: quickstart/quickstart_18_0.svg
 
 
 Axis sharing and spanning
@@ -259,19 +260,19 @@ new **spanning label option**, controlled by the ``share``, ``sharex``,
 
 
 
-.. image:: quickstart/quickstart_20_0.svg
+.. image:: quickstart/quickstart_21_0.svg
 
 
 
-.. image:: quickstart/quickstart_20_1.svg
+.. image:: quickstart/quickstart_21_1.svg
 
 
 
-.. image:: quickstart/quickstart_20_2.svg
+.. image:: quickstart/quickstart_21_2.svg
 
 
 
-.. image:: quickstart/quickstart_20_3.svg
+.. image:: quickstart/quickstart_21_3.svg
 
 
 .. code:: ipython3
@@ -288,11 +289,11 @@ new **spanning label option**, controlled by the ``share``, ``sharex``,
 
 
 
-.. image:: quickstart/quickstart_21_0.svg
+.. image:: quickstart/quickstart_22_0.svg
 
 
 
-.. image:: quickstart/quickstart_21_1.svg
+.. image:: quickstart/quickstart_22_1.svg
 
 
 The format command
@@ -346,7 +347,7 @@ need for boilerplate plotting code.
 
 
 
-.. image:: quickstart/quickstart_23_0.svg
+.. image:: quickstart/quickstart_24_0.svg
 
 
 Automatic formatting
@@ -363,9 +364,8 @@ labelling, pass ``autoformat=False`` to `~proplot.subplots.subplots`.
 The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keywords, see `~proplot.wrappers.cmap_wrapper`,
-`~proplot.wrappers.cycle_wrapper`, and :ref:`Plot command wrappers`.
-For more on panels, see the :ref:`Panels, colorbars, and legends`
-section.
+`~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting wrappers`. For
+more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
 .. code:: ipython3
 
@@ -408,7 +408,7 @@ section.
 
 
 
-.. image:: quickstart/quickstart_26_1.svg
+.. image:: quickstart/quickstart_27_1.svg
 
 
 .. code:: ipython3
@@ -444,7 +444,7 @@ section.
 
 
 
-.. image:: quickstart/quickstart_27_0.svg
+.. image:: quickstart/quickstart_28_0.svg
 
 
 Global settings control
@@ -497,7 +497,7 @@ default state, use `~proplot.rctools.rc_configurator.reset`. See the
 
 
 
-.. image:: quickstart/quickstart_29_1.svg
+.. image:: quickstart/quickstart_30_1.svg
 
 
 DejaVu Sans is the default matplotlib font, but it’s not exactly the
@@ -522,6 +522,6 @@ modifying your ``~/.proplotrc``. See the `~proplot.fonttools` and
 
 
 
-.. image:: quickstart/quickstart_31_0.svg
+.. image:: quickstart/quickstart_32_0.svg
 
 

@@ -80,7 +80,7 @@ See `~proplot.colortools.CmapDict` for more info.
 
 
 
-.. image:: quickstart/quickstart_99_0.svg
+.. image:: quickstart/quickstart_100_0.svg
 
 
 Perceptually uniform colormaps
@@ -124,7 +124,7 @@ represent “impossible” colors.
 
 
 
-.. image:: quickstart/quickstart_102_0.svg
+.. image:: quickstart/quickstart_103_0.svg
 
 
 .. code:: ipython3
@@ -134,7 +134,7 @@ represent “impossible” colors.
 
 
 
-.. image:: quickstart/quickstart_103_0.svg
+.. image:: quickstart/quickstart_104_0.svg
 
 
 .. code:: ipython3
@@ -144,7 +144,7 @@ represent “impossible” colors.
 
 
 
-.. image:: quickstart/quickstart_104_0.svg
+.. image:: quickstart/quickstart_105_0.svg
 
 
 To see how any colormap varies with respect to each channel, use the
@@ -166,7 +166,7 @@ row), as is the case for most nice-looking colormaps.
 
 
 
-.. image:: quickstart/quickstart_106_0.svg
+.. image:: quickstart/quickstart_107_0.svg
 
 
 Making your own colormaps
@@ -208,11 +208,11 @@ several of these maps merged into one, and the second is just one map.
 
 
 
-.. image:: quickstart/quickstart_110_0.svg
+.. image:: quickstart/quickstart_111_0.svg
 
 
 
-.. image:: quickstart/quickstart_110_1.svg
+.. image:: quickstart/quickstart_111_1.svg
 
 
 To generate `~proplot.colortools.PerceptuallyUniformColormap` maps,
@@ -260,11 +260,11 @@ value by the number ``N``, as shown below.
 
 
 
-.. image:: quickstart/quickstart_112_0.svg
+.. image:: quickstart/quickstart_113_0.svg
 
 
 
-.. image:: quickstart/quickstart_112_1.svg
+.. image:: quickstart/quickstart_113_1.svg
 
 
 Merging and modifying colormaps
@@ -301,7 +301,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: quickstart/quickstart_115_1.svg
+.. image:: quickstart/quickstart_116_1.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -348,11 +348,11 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: quickstart/quickstart_117_0.svg
+.. image:: quickstart/quickstart_118_0.svg
 
 
 
-.. image:: quickstart/quickstart_117_1.svg
+.. image:: quickstart/quickstart_118_1.svg
 
 
 You can also change the “gamma” of any
@@ -384,11 +384,11 @@ emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: quickstart/quickstart_119_0.svg
+.. image:: quickstart/quickstart_120_0.svg
 
 
 
-.. image:: quickstart/quickstart_119_1.svg
+.. image:: quickstart/quickstart_120_1.svg
 
 
 Adding online colormaps
@@ -425,7 +425,7 @@ color cycles.
 
 
 
-.. image:: quickstart/quickstart_124_0.svg
+.. image:: quickstart/quickstart_125_0.svg
 
 
 Making your own color cycles
@@ -466,7 +466,7 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 
 
-.. image:: quickstart/quickstart_127_0.svg
+.. image:: quickstart/quickstart_128_0.svg
 
 
 Colormaps or combinations thereof can be used as sources for making
@@ -498,7 +498,7 @@ details.
 
 
 
-.. image:: quickstart/quickstart_129_0.svg
+.. image:: quickstart/quickstart_130_0.svg
 
 
 `~proplot.colortools.Cycle` can also generate cyclers that change
@@ -520,7 +520,7 @@ simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 
 
-.. image:: quickstart/quickstart_131_0.svg
+.. image:: quickstart/quickstart_132_0.svg
 
 
 Adding online color cycles
@@ -569,11 +569,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: quickstart/quickstart_136_0.svg
+.. image:: quickstart/quickstart_137_0.svg
 
 
 
-.. image:: quickstart/quickstart_136_1.svg
+.. image:: quickstart/quickstart_137_1.svg
 
 
 Individual color sampling
@@ -612,6 +612,6 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: quickstart/quickstart_139_0.svg
+.. image:: quickstart/quickstart_140_0.svg
 
 
