@@ -83,8 +83,8 @@ class axes_list(list):
     def __init__(self, list_, n=1, order='C'):
         # Add special attributes that support 2D grids of axes
         # NOTE: The input list is always a vector *already unfurled* in row-major
-        # or column-major order, and 'n' is the slowest-moving dimension size, i.e.
-        # nrows for order=='C' and ncols for order=='F'.
+        # or column-major order, and 'n' is the fastest-moving dimension size, i.e.
+        # ncols for order=='C' and nrows for order=='F'.
         self._n = n # ncols or nrows
         self._order = order # order
         super().__init__(list_)
@@ -1328,7 +1328,7 @@ class Figure(mfigure.Figure):
                 paxs += [pax]
             # Add as axes_list. Support 2D indexing, even though these are
             # always vector stacks, because consistency. See axes_list docs.
-            n = stack if (side in 'tb' and order=='C') or (side in 'lr' and order!='C') else 1
+            n = 1 if (side in 'tb' and order=='C') or (side in 'lr' and order!='C') else stack
             paxs = axes_list(paxs, n=n, order=order)
             setattr(ax, name + 'panel', paxs)
         # Set up axis sharing
@@ -2298,5 +2298,5 @@ def subplots(array=None, ncols=1, nrows=1,
     fig._main_axes = axs
     fig._ref_num = ref
     fig._locked = True
-    return fig, axes_list(axs, n=(nrows if order=='C' else ncols), order=order)
+    return fig, axes_list(axs, n=(ncols if order=='C' else nrows), order=order)
 

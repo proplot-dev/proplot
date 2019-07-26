@@ -105,8 +105,9 @@ The `~proplot.subplots.axes_list` object returned by
 `~proplot.subplots.subplots` is extremely powerful. It supports 2D
 indexing, and slicing the container will return an
 `~proplot.subplots.axes_list` of the selected axes. This is used below
-to call axes method on multiple axes at once. See
-:ref:`The format command` for details.
+to call axes method on multiple axes at once (see
+:ref:`The format command` for details). If your subplots do not fit on
+a nice 2D grid, simply use 1D indexing.
 
 .. code:: ipython3
 
