@@ -129,9 +129,6 @@ details.
 .. image:: quickstart/quickstart_9_2.svg
 
 
-Axes grids
-----------
-
 The `~proplot.subplots.axes_grid` object returned by
 `~proplot.subplots.subplots` is extremely powerful. It supports 2D
 indexing, and slicing the container will return an
@@ -152,7 +149,7 @@ a nice 2D grid, simply use 1D indexing.
 
 
 
-.. image:: quickstart/quickstart_12_0.svg
+.. image:: quickstart/quickstart_11_0.svg
 
 
 Smart tight layout
@@ -191,11 +188,11 @@ different rows and columns of subplots, where the builtin
 
 
 
-.. image:: quickstart/quickstart_15_0.svg
+.. image:: quickstart/quickstart_14_0.svg
 
 
 
-.. image:: quickstart/quickstart_15_1.svg
+.. image:: quickstart/quickstart_14_1.svg
 
 
 .. code:: ipython3
@@ -209,7 +206,7 @@ different rows and columns of subplots, where the builtin
 
 
 
-.. image:: quickstart/quickstart_16_0.svg
+.. image:: quickstart/quickstart_15_0.svg
 
 
 .. code:: ipython3
@@ -223,7 +220,7 @@ different rows and columns of subplots, where the builtin
 
 
 
-.. image:: quickstart/quickstart_17_0.svg
+.. image:: quickstart/quickstart_16_0.svg
 
 
 Axis sharing and spanning
@@ -256,19 +253,19 @@ new **spanning label option**, controlled by the ``share``, ``sharex``,
 
 
 
-.. image:: quickstart/quickstart_20_0.svg
+.. image:: quickstart/quickstart_19_0.svg
 
 
 
-.. image:: quickstart/quickstart_20_1.svg
+.. image:: quickstart/quickstart_19_1.svg
 
 
 
-.. image:: quickstart/quickstart_20_2.svg
+.. image:: quickstart/quickstart_19_2.svg
 
 
 
-.. image:: quickstart/quickstart_20_3.svg
+.. image:: quickstart/quickstart_19_3.svg
 
 
 .. code:: ipython3
@@ -285,11 +282,11 @@ new **spanning label option**, controlled by the ``share``, ``sharex``,
 
 
 
-.. image:: quickstart/quickstart_21_0.svg
+.. image:: quickstart/quickstart_20_0.svg
 
 
 
-.. image:: quickstart/quickstart_21_1.svg
+.. image:: quickstart/quickstart_20_1.svg
 
 
 The format command
@@ -343,7 +340,7 @@ need for boilerplate plotting code.
 
 
 
-.. image:: quickstart/quickstart_23_0.svg
+.. image:: quickstart/quickstart_22_0.svg
 
 
 Automatic formatting
@@ -404,7 +401,7 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
 
 
-.. image:: quickstart/quickstart_26_1.svg
+.. image:: quickstart/quickstart_25_1.svg
 
 
 .. code:: ipython3
@@ -440,7 +437,7 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
 
 
-.. image:: quickstart/quickstart_27_0.svg
+.. image:: quickstart/quickstart_26_0.svg
 
 
 Global settings control
@@ -493,7 +490,7 @@ default state, use `~proplot.rctools.rc_configurator.reset`. See the
 
 
 
-.. image:: quickstart/quickstart_29_1.svg
+.. image:: quickstart/quickstart_28_1.svg
 
 
 DejaVu Sans is the default matplotlib font, but it’s not exactly the
@@ -518,6 +515,6 @@ modifying your ``~/.proplotrc``. See the `~proplot.fonttools` and
 
 
 
-.. image:: quickstart/quickstart_31_0.svg
+.. image:: quickstart/quickstart_30_0.svg
 
 
