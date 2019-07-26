@@ -1525,7 +1525,7 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     width,  height, axwidth, axheight,
     hspace, wspace, hratios, wratios,
     left,   bottom, right,   top,
-    # Args filled with rc settings by _panels_kwargs
+    # Args filled with rc settings by _panels_kwargs()
     bspan, bwidth, bspace, bsep, bflush, bshare,
     lspan, lwidth, lspace, lsep, lflush, lshare,
     rspan, rwidth, rspace, rsep, rflush, rshare,
@@ -1550,8 +1550,6 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     # If width and height are not fixed, will scale them to preserve aspect
     # ratio of the first plot
     dx, dy = xref[1]-xref[0], yref[1]-yref[0]
-    rwratio = sum(wratios[slice(*xref)])
-    rhratio = sum(hratios[slice(*yref)])
     rwspace = sum(wspace[xref[0]:xref[1]-1])
     rhspace = sum(hspace[yref[0]:yref[1]-1])
     auto_both = (width is None and height is None)
@@ -1596,7 +1594,7 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     # For e.g. common use case [[1,1,2,2],[0,3,3,0]], make sure we still scale
     # the reference axes like a square even though it occupes two columns of gridspec!
     if auto_width:
-        axheight = axheight_all*(rhratio + rhspace)/sum(hratios)
+        axwidth = axheight*aspect
         axwidth_all = ((axwidth - rwspace)/dx)*ncols
         width = axwidth_all + left + right + sum(wspace) + sum(wpanels) + rpanel_space + lpanel_space
     elif auto_height:
