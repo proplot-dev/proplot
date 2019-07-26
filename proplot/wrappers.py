@@ -969,7 +969,9 @@ def _get_transform(self, transform):
     else:
         raise ValueError(f'Unknown transform "{transform}".')
 
-def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
+def text_wrapper(self, func,
+    x=0, y=0, text='', transform='data',
+    family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
     **kwargs):
     """
@@ -988,8 +990,11 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
         or `~matplotlib.figure.Figure.transFigure` transforms. Defaults to
         ``'data'``, i.e. the text is positioned in data coordinates.
-    fontname : str, optional
-        Alias for the ``fontfamily`` `~matplotlib.text.Text` property.
+    size, fontsize : float or str, optional
+        The font size. If float, units are inches. If string, units are
+        interpreted by `~proplot.utils.units`.
+    fontname, family, fontfamily : str, optional
+        Aliases for the ``fontfamily`` `~matplotlib.text.Text` property.
     border : bool, optional
         Whether to draw border around text.
     bordercolor : color-spec, optional
@@ -1011,17 +1016,17 @@ def text_wrapper(self, func, x, y, text, transform='data', fontname=None,
     else:
         transform = _get_transform(self, transform)
     # Font name strings
-    if 'family' in kwargs: # builtin matplotlib alias
-        kwargs.setdefault('fontfamily', kwargs.pop('family'))
+    fontname = _default(fontfamily, family, fontname)
     if fontname is not None:
-        kwargs.setdefault('fontfamily', fontname)
-    # Raise helpful error message if font unavailable
-    font = kwargs.get('fontfamily', None)
-    if font and font not in fonttools.fonts:
-        warnings.warn(f'Font "{font}" unavailable. Available fonts are {", ".join(fonttools.fonts)}.')
-        kwargs.pop('fontfamily')
-    # Apply color default which is sometimes ignored?
-    kwargs.setdefault('color', rc.get('text.color'))
+        if fontname in fonttools.fonts:
+            kwargs['fontfamily'] = fontname
+        else:
+            warnings.warn(f'Font "{font}" unavailable. Available fonts are {", ".join(fonttools.fonts)}.')
+    size = _default(fontsize, size)
+    if size is not None:
+        kwargs['fontsize'] = utils.units(size, 'pt')
+    kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
+    # Call function
     obj = func(x, y, text, transform=transform, **kwargs)
     # Draw border around text
     if border:

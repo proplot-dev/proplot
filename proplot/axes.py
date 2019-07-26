@@ -433,6 +433,7 @@ class BaseAxes(maxes.Axes):
             See `~proplot.rctools.rc_configurator` for details.
         """
         # Figure out which kwargs are valid rc settings
+        # TODO: Support for 'small', 'large', etc. font
         kw = {} # for format
         rc_kw = rc_kw or {}
         for key,value in kwargs.items():

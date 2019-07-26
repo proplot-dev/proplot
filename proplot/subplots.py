@@ -283,31 +283,31 @@ class Figure(mfigure.Figure):
 
         Parameters
         ----------
-        tight : None or bool, optional
+        tight : bool, optional
             Default setting for `tightborder`, `tightsubplot`, and `tightpanel`
             keyword args. Defaults to ``rc['tight']``.
-        tightborder : None or bool, optional
+        tightborder : bool, optional
             Whether to draw a tight bounding box around the whole figure.
             If ``None``, takes the value of `tight`.
-        tightsubplot : None or bool, optional
+        tightsubplot : bool, optional
             Whether to automatically space out subplots to prevent overlapping
             axis tick labels, etc. If ``None``, takes the value of `tight`.
-        tightpanel : None or bool, optional
+        tightpanel : bool, optional
             Whether to automatically space between subplots and their panels
             to prevent overlap. If ``None``, takes the value of `tight`.
-        borderpad : None, float, or str, optional
+        borderpad : float or str, optional
             Margin size for tight bounding box surrounding the edge of the
             figure. Defaults to ``rc['subplot.borderpad']``. If float, units are inches.
             If string, units are interpreted by `~proplot.utils.units`.
-        subplotpad : None, float, or str, optional
+        subplotpad : float or str, optional
             Margin size between content from adjacent subplots. Defaults to
             ``rc['subplot.subplotpad']``. If float, units are inches.
             If string, units are interpreted by `~proplot.utils.units`.
-        panelpad : None, float, or str, optional
+        panelpad : float or str, optional
             Margin size between content from subplots and their child panels.
             Defaults to ``rc['subplot.subplotpad']``. If float, units are inches.
             If string, units are interpreted by `~proplot.utils.units`.
-        flush, wflush, hflush : None or bool, optional
+        flush, wflush, hflush : bool, optional
             Whether subplots should be "flush" against each other in the
             horizontal (`wflush`), vertical (`hflush`), or both (`flush`)
             directions. Useful if you want to let axis ticks overlap with other
@@ -318,6 +318,9 @@ class Figure(mfigure.Figure):
             Whether to automatically format the axes when a `~pandas.Series`,
             `~pandas.DataFrame` or `~xarray.DataArray` is passed to a plotting
             command.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `matplotlib.figure.Figure`.
         """
@@ -815,7 +818,7 @@ class Figure(mfigure.Figure):
 
         Parameters
         ----------
-        renderer : None or `~matplotlib.backend_bases.RendererBase`
+        renderer : `~matplotlib.backend_bases.RendererBase`
             The backend renderer. If ``None``, it is retrieved with
             `~matplotlib.figure.Figure.canvas.get_renderer`.
         """
@@ -1156,10 +1159,10 @@ class Figure(mfigure.Figure):
         filename : str
             The file name and path. Use a tilde ``~`` to represent the home
             directory.
-        alpha : None or float, optional
+        alpha : float, optional
             Alternative for the `~matplotlib.figure.Figure.savefig`
             `transparent` keyword arg.
-        color : None or str or RGB tuple, optional
+        color : color-spec, optional
             Alternative for the `~matplotlib.figure.Figure.savefig`
             `facecolor` keyword arg.
         **kwargs
@@ -1193,7 +1196,7 @@ class Figure(mfigure.Figure):
         subspec : `~matplotlib.gridspec.SubplotSpec`
             The `~matplotlib.gridspec.SubplotSpec` instance onto which
             the main subplot and its panels are drawn.
-        which : None or str, optional
+        which : str, optional
             Whether to draw panels on the left, right, bottom, or top
             sides. Should be a string containing any of the characters
             ``'l'``, ``'r'``, ``'b'``, or ``'t'`` in any order.
@@ -1202,7 +1205,7 @@ class Figure(mfigure.Figure):
             The number of optional "stacked" panels on the left, right, bottom,
             and top sides, respectively. Defaults to ``1``. Use `stack` to
             set for all sides at once.
-        sep, lsep, rsep, bsep, tsep : None, or float or str or list thereof, optional
+        sep, lsep, rsep, bsep, tsep : float, str, or list thereof, optional
             The separation between stacked panels. If float, units are inches.
             If string, units are interpreted by `~proplot.utils.units`. Ignored
             if the respecitve `stack` keyword arg is None. Use `sep` to set
@@ -1552,6 +1555,8 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     dx, dy = xref[1]-xref[0], yref[1]-yref[0]
     rwspace = sum(wspace[xref[0]:xref[1]-1])
     rhspace = sum(hspace[yref[0]:yref[1]-1])
+    rwratio = ncols*(sum(wratios[slice(*xref)])/dx)/sum(wratios)
+    rhratio = nrows*(sum(hratios[slice(*yref)])/dy)/sum(hratios)
     auto_both = (width is None and height is None)
     auto_width  = (width is None and height is not None)
     auto_height = (height is None and width is not None)
@@ -1572,11 +1577,11 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
             axwidth = units(rc['subplot.axwidth'])
         if axheight is not None:
             auto_width = True
-            axheight_all = ((axheight - rhspace)/dy)*nrows # must omit space covered by reference axes
+            axheight_all = ((axheight - rhspace)/dy/rhratio)*nrows # must omit space covered by reference axes
             height = axheight_all + top + bottom + sum(hspace) + sum(hpanels) + bpanel_space
         if axwidth is not None:
             auto_height = True
-            axwidth_all = ((axwidth - rwspace)/dx)*ncols
+            axwidth_all = ((axwidth - rwspace)/dx/rwratio)*ncols
             width = axwidth_all + left + right + sum(wspace) + sum(wpanels) + rpanel_space + lpanel_space
         if axwidth is not None and axheight is not None:
             auto_width = auto_height = False
@@ -1595,11 +1600,11 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     # the reference axes like a square even though it occupes two columns of gridspec!
     if auto_width:
         axwidth = axheight*aspect
-        axwidth_all = ((axwidth - rwspace)/dx)*ncols
+        axwidth_all = ((axwidth - rwspace)/dx/rwratio)*ncols
         width = axwidth_all + left + right + sum(wspace) + sum(wpanels) + rpanel_space + lpanel_space
     elif auto_height:
         axheight = axwidth/aspect
-        axheight_all = ((axheight - rhspace)/dy)*nrows
+        axheight_all = ((axheight - rhspace)/dy/rhratio)*nrows
         height = axheight_all + top + bottom + sum(hspace) + sum(hpanels) + bpanel_space
     if axwidth_all<0:
         raise ValueError(f"Not enough room for axes (would have width {axwidth_all}). Try using tight=False, increasing figure width, or decreasing 'left', 'right', or 'wspace' spaces.")
@@ -1690,7 +1695,7 @@ def subplots(array=None, ncols=1, nrows=1,
         flush=False, wflush=None, hflush=None,
         left=None, bottom=None, right=None, top=None, # spaces around edge of main plotting area, in inches
         # Padding settings
-        emptycols=None, emptyrows=None, # obsolete?
+        ecols=None, erows=None, # obsolete?
         tight=None, tightborder=None, tightsubplot=None, tightpanel=None,
         borderpad=None, panelpad=None, subplotpad=None,
         # Shared axes and spanning labels
@@ -1724,7 +1729,7 @@ def subplots(array=None, ncols=1, nrows=1,
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
         the order axes appear in the `axs` list, and the order of a-b-c
         labelling when using `~proplot.axes.BaseAxes.format` with ``abc=True``.
-    array : None or array-like of int, optional
+    array : array-like of int, optional
         2-dimensional array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
@@ -1736,14 +1741,14 @@ def subplots(array=None, ncols=1, nrows=1,
         ``0`` indicates an empty space. For example, ``[[1, 1, 1], [2, 0, 3]]``
         creates one long subplot in the top row with two subplots in the bottom
         row separated by a space.
-    emptyrows, emptycols : None or list of int, optional
-        Row, column numbers (starting from 1) that you want empty. Generally
-        this is used with `ncols` and `nrows`; with `array`, you can
+    ecols, erows : int or list of int, optional
+        List, column numbers (starting from 1) that you want *empty*. Generally
+        this is used with `ncols` and `nrows`. With `array`, you can
         just use zeros.
 
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
-    journal : None or str, optional
+    journal : str, optional
         Conform figure width (and height, if specified) to academic journal
         standards. See `~proplot.gridspec.journal_size` for details.
     width, height : float or str, optional
@@ -1933,19 +1938,19 @@ def subplots(array=None, ncols=1, nrows=1,
         As with `axpanel_kw`, but for panels listed in the `axlegend`
         and `axlegends` keyword args.
 
-    Returns
-    -------
-    f : `Figure`
-        The figure instance.
-    axs : `axes_list`
-        A special list of axes instances. See `axes_list`.
-
     Other parameters
     ----------------
     tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat
         Passed to `Figure`.
     **kwargs
         Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
+
+    Returns
+    -------
+    f : `Figure`
+        The figure instance.
+    axs : `axes_list`
+        A special list of axes instances. See `axes_list`.
 
     See also
     --------
@@ -1977,13 +1982,13 @@ def subplots(array=None, ncols=1, nrows=1,
         array = array.astype(int)
     except (TypeError,ValueError):
         raise ValueError(f'Invalid subplot array {array}. Must be array of integers from 1 to naxs, with 0 representing empty spaces.')
-    if emptycols:
-        emptycols = np.atleast_1d(emptycols)
-        for col in emptycols.flat:
+    if ecols:
+        ecols = np.atleast_1d(ecols)
+        for col in ecols.flat:
             array[:,col-1] = 0
-    if emptyrows:
-        emptyrows = np.atleast_1d(emptyrows)
-        for row in emptyrows.flat:
+    if erows:
+        erows = np.atleast_1d(erows)
+        for row in erows.flat:
             array[row-1,:] = 0
     # Enforce rule
     nums = np.unique(array[array!=0])

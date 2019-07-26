@@ -141,17 +141,17 @@ def edges(values, axis=-1):
 #------------------------------------------------------------------------------#
 # Units
 #------------------------------------------------------------------------------#
-def units(value):
+def units(value, numeric='in'):
     """
     Flexible units! This function is used internally all over ProPlot, so that
-    you don't have to use "inches" for sizing arguments.
+    you don't have to use "inches" or "points" for all sizing arguments.
     See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
     for info on the em square units.
 
     Parameters
     ----------
     value : float or str or list thereof
-        A size "unit". If numeric, assumed unit is inches.
+        A size "unit". If numeric, assumed unit is `numeric`.
 
         If string, we look for the format ``'123.456unit'``, where the
         number is the value and ``'unit'`` is one of the following:
@@ -174,6 +174,9 @@ def units(value):
         ======  ===================================================================
 
         Lists of sizes are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
+    numeric : str, optional
+        The assumed unit for numeric arguments, and the output unit. Default
+        is ``'in'``.
     """
     # Loop through arbitrary list, or return None if input was None (this
     # is the exception).
@@ -211,11 +214,15 @@ def units(value):
     # Display units
     # WARNING: In ipython shell these take the value 'figure'
     if not isinstance(rcParams['figure.dpi'], str):
-        unit_dict['px'] = 1/rcParams['figure.dpi'], # on screen
+        unit_dict['px'] = 1/rcParams['figure.dpi'] # on screen
     if not isinstance(rcParams['savefig.dpi'], str):
-        unit_dict['pp'] = 1/rcParams['savefig.dpi'], # once 'printed', i.e. saved
+        unit_dict['pp'] = 1/rcParams['savefig.dpi'] # once 'printed', i.e. saved
 
     # Iterate
+    try:
+        scale = unit_dict[numeric]
+    except KeyError:
+        raise ValueError(f'Invalid numeric unit {numeric}. Valid units are {", ".join(unit_dict.keys())}.')
     result = []
     for value in values:
         if isinstance(value, Number):
@@ -226,7 +233,7 @@ def units(value):
         regex = re.match('^([0-9.]*)(.*)$', value)
         num, unit = regex.groups()
         try:
-            result.append(float(num)*unit_dict[unit])
+            result.append(float(num)*unit_dict[unit]/scale)
         except (KeyError, ValueError):
             raise ValueError(f'Invalid size spec {value}. Valid units are {", ".join(unit_dict.keys())}.')
     if singleton:

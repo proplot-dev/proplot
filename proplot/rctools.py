@@ -204,6 +204,7 @@ import cycler
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib.pyplot as plt
+from . import utils
 try:
     import IPython
     get_ipython = IPython.get_ipython
@@ -310,6 +311,18 @@ _rc_categories = {
 # Contextual settings management
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 #-------------------------------------------------------------------------------
+def _to_points(value, key=None):
+    """Converts certain keys to the units "points". If "key" is passed, tests
+    that key against possible keys that accept physical units."""
+    # See: https://matplotlib.org/users/customizing.html, all props matching
+    # the below strings use the units 'points'!
+    if isinstance(value,str) and (
+        key is None or
+        (isinstance(key,str) and any(s in key for s in ('width','size','pad')))
+        ):
+        value = utils.units(value, 'pt')
+    return value
+
 def _set_cycler(name):
     """Sets the default color cycler."""
     # Draw from dictionary
@@ -345,18 +358,18 @@ def _get_globals(key=None, value=None):
     for key,value in items:
         # Tick length/major-minor tick length ratio
         if key in ('ticklen', 'ticklenratio'):
-            if key=='ticklenratio':
+            if key=='ticklen':
+                ticklen = _to_points(value)
+                ratio = _rcGlobals['ticklenratio']
+            else:
                 ticklen = _rcGlobals['ticklen']
                 ratio = value
-            else:
-                ticklen = value
-                ratio = _rcGlobals['ticklenratio']
             kw['xtick.minor.size'] = ticklen*ratio
             kw['ytick.minor.size'] = ticklen*ratio
         # Spine width/major-minor tick width ratio
         elif key in ('linewidth', 'tickratio'):
             if key=='linewidth':
-                tickwidth = value
+                tickwidth = _to_points(value)
                 ratio = _rcGlobals['tickratio']
             else:
                 tickwidth = _rcGlobals['linewidth']
@@ -366,16 +379,19 @@ def _get_globals(key=None, value=None):
         # Grid line
         # NOTE: Changing minor width does not affect major width
         elif key in ('grid.linewidth', 'gridratio'):
-            if key=='gridratio':
+            if key=='grid.linewidth':
+                gridwidth = _to_points(value)
+                ratio = _rcGlobals['gridratio']
+            else:
                 gridwidth = _rcParams['grid.linewidth']
                 ratio = value
-            else:
-                gridwidth = value
-                ratio = _rcGlobals['gridratio']
             kw_custom['gridminor.linewidth'] = gridwidth*ratio
         # Now update linked settings
         if key not in ('gridratio','tickratio','ticklenratio'):
+            points = (key.split('.')[0] not in ('colorbar','subplot'))
             for name in _rcGlobals_children[key]:
+                if points:
+                    value = _to_points(value, key=name)
                 if name in _rcExtraParams:
                     kw_custom[name] = value
                 else:
@@ -413,15 +429,19 @@ class rc_configurator(object):
                     _rcGlobals[key] = value
                     if i==0:
                         gkeys.add(key)
-                elif key in _rc_names_custom:
-                    _rcExtraParams[key] = value
-                    if i==0:
-                        ckeys.add(key)
                 else:
-                    try:
-                        _rcParams[key] = value
-                    except KeyError:
-                        raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key "{key}".')
+                    points = (key.split('.')[0] not in ('colorbar','subplot'))
+                    if points:
+                        value = _to_points(value, key=key)
+                    if key in _rc_names_custom:
+                        _rcExtraParams[key] = value
+                        if i==0:
+                            ckeys.add(key)
+                    else:
+                        try:
+                            _rcParams[key] = value
+                        except KeyError:
+                            raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key "{key}".')
             # Make sure we did not miss anything
             if i==0:
                 if gkeys!=_rc_names_global:
@@ -575,18 +595,22 @@ class rc_configurator(object):
                 restore.update({key:_rcExtraParams[key] for key in rc_new})
             _rcParams.update(rc)
             _rcExtraParams.update(rc_new)
-        elif key in _rc_names_custom:
-            cache[key] = value
-            if context:
-                restore[key] = _rcExtraParams[key]
-            _rcExtraParams[key] = value
-        elif key in _rc_names:
-            cache[key] = value
-            if context:
-                restore[key] = _rcParams[key]
-            _rcParams[key] = value # rcParams dict has key validation
         else:
-            raise KeyError(f'Invalid key "{key}".')
+            points = (key.split('.')[0] not in ('colorbar','subplot'))
+            if points:
+                value = _to_points(value, key=key)
+            if key in _rc_names_custom:
+                cache[key] = value
+                if context:
+                    restore[key] = _rcExtraParams[key]
+                _rcExtraParams[key] = value
+            elif key in _rc_names:
+                cache[key] = value
+                if context:
+                    restore[key] = _rcParams[key]
+                _rcParams[key] = value # rcParams dict has key validation
+            else:
+                raise KeyError(f'Invalid key "{key}".')
         self._init = False # setitem was successful, we are no longer in initial state
 
     def __getattribute__(self, attr):
