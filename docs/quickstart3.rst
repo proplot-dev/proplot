@@ -1,10 +1,12 @@
 Cartesian axes features
 =======================
 
-The previous sections discussed features relevant to all figures
-generated with ProPlot, or with axes regardless of whether or not they
-contain map projections. This section discusses a few features specific
-to Cartesian axes, powered by the `~proplot.axes.CartesianAxes` class.
+`~proplot.axes.CartesianAxes` is the *default* axes type returned by
+`~proplot.subplots.subplots`. The previous sections discussed features
+relevant to all figures generated with ProPlot, or with axes regardless
+of whether or not they are `~proplot.axes.ProjectionAxes`. This
+section documents the features specific to
+`~proplot.axes.CartesianAxes`.
 
 Axis tick locations
 -------------------
@@ -253,6 +255,7 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 .. code:: ipython3
 
     import proplot as plot
+    plot.rc.reset()
     plot.rc.update({'grid.alpha':0.4, 'linewidth':1, 'grid.linewidth':1})
     f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=2.2, axwidth=3)
     N = 200

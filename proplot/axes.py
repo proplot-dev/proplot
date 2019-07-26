@@ -1388,7 +1388,7 @@ class CartesianAxes(BaseAxes):
             for spine,side in zip(spines,sides):
                 # Line properties
                 # Override if we're settings spine bounds
-                spineloc = getattr(self, name + 'spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
+                spineloc = getattr(self, xyname + 'spine_override', spineloc) # optionally override; necessary for twinx/twiny situation
                 if bounds is not None and spineloc not in sides:
                     spineloc = sides[0] # by default, should just have spines on edges in this case
                 # Eliminate sides
@@ -1428,7 +1428,7 @@ class CartesianAxes(BaseAxes):
             gridminor = _default(gridminor, override)
             for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
                 # Tick properties
-                kw = rc.category(name + 'tick.' + which)
+                kw = rc.category(xyname + 'tick.' + which)
                 if kw is None:
                     kw = {}
                 else:
@@ -1489,7 +1489,7 @@ class CartesianAxes(BaseAxes):
             kw = rc.fill({
                 'labelcolor': 'tick.labelcolor', # new props
                 'labelsize': 'tick.labelsize',
-                'color': name + 'tick.color',
+                'color': xyname + 'tick.color',
                 })
             if color:
                 kw['color'] = color
@@ -1499,7 +1499,7 @@ class CartesianAxes(BaseAxes):
                 kw['pad'] = 1 # ticklabels should be much closer
             if ticklabeldir=='in': # put tick labels inside the plot
                 tickdir = 'in'
-                pad = rc.get(name + 'tick.major.size') + rc.get(name + 'tick.major.pad') + rc.get(name + 'tick.labelsize')
+                pad = rc.get(xyname + 'tick.major.size') + rc.get(xyname + 'tick.major.pad') + rc.get(xyname + 'tick.labelsize')
                 kw['pad'] = -pad
             if tickdir is not None:
                 kw['direction'] = tickdir
@@ -1511,14 +1511,14 @@ class CartesianAxes(BaseAxes):
             kw = rc.fill({'fontfamily':'font.family', 'weight':'tick.labelweight'})
             if rotation is not None:
                 kw.update({'rotation':rotation})
-                if name=='x':
+                if xyname=='x':
                     kw.update({'ha':'right' if rotation>0 else 'left'})
-                setattr(self, f'_{name}rotated', True)
+                setattr(self, f'_{xyname}rotated', True)
             for t in axis.get_ticklabels():
                 t.update(kw)
             # Margins
             if margin is not None:
-                self.margins(**{name: margin})
+                self.margins(**{xyname: margin})
 
             # Major and minor locator
             # WARNING: MultipleLocator fails sometimes, notably when doing
@@ -1557,7 +1557,7 @@ class CartesianAxes(BaseAxes):
             #   have tick_values method, so we just call them.
             if fixticks or fixedformatfix or bounds is not None or axis.get_scale()=='cutoff':
                 if bounds is None:
-                    bounds = getattr(self, f'get_{name}lim')()
+                    bounds = getattr(self, f'get_{xyname}lim')()
                 locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                 axis.set_major_locator(locator)
                 locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
@@ -1745,7 +1745,7 @@ class EmptyPanel(object):
         """Returns itself. This allows us to treat `EmptyPanel` like an
         `~proplot.subplots.axes_list` of stacked panels."""
         # See: https://stackoverflow.com/a/26611639/4970632
-        if key>0:
+        if key not in (0,(0,0)):
             raise IndexError
         return self
 

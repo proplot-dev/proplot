@@ -2,7 +2,7 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <!-- Created with matplotlib (https://matplotlib.org/) -->
-<svg height="1352.4pt" version="1.1" viewBox="0 0 405.232593 1352.4" width="405.232593pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg height="1348.6pt" version="1.1" viewBox="0 0 400.826343 1348.6" width="400.826343pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <style type="text/css">
 *{stroke-linecap:butt;stroke-linejoin:round;}
@@ -10,19 +10,19 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 1352.4 
-L 405.232593 1352.4 
-L 405.232593 0 
+   <path d="M 0 1348.6 
+L 400.826343 1348.6 
+L 400.826343 0 
 L 0 0 
 z
-" style="fill:none;"/>
+" style="fill:#f2f2f2;"/>
   </g>
   <g id="axes_1">
    <g id="patch_2">
-    <path d="M 11.2 87.2 
-L 335.2 87.2 
-L 335.2 21.2 
-L 11.2 21.2 
+    <path d="M 7.2 87.4 
+L 331.2 87.4 
+L 331.2 21.4 
+L 7.2 21.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -287,7 +287,7 @@ L 19.203125 51.703125
 z
 " id="HelveticaNeue-Bold-109"/>
     </defs>
-    <g transform="translate(11.2 16.02875)scale(0.12 -0.12)">
+    <g transform="translate(7.2 16.22875)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-Bold-70"/>
      <use x="59.299988" xlink:href="#HelveticaNeue-Bold-111"/>
      <use x="120.399979" xlink:href="#HelveticaNeue-Bold-110"/>
@@ -895,7 +895,7 @@ L 54.390625 54.6875
 z
 " id="DejaVuSans-103"/>
     </defs>
-    <g transform="translate(11.2 37.257688)scale(0.12 -0.12)">
+    <g transform="translate(7.2 37.469875)scale(0.12 -0.12)">
      <use xlink:href="#DejaVuSans-68"/>
      <use x="77.001953" xlink:href="#DejaVuSans-101"/>
      <use x="138.525391" xlink:href="#DejaVuSans-106"/>
@@ -1320,7 +1320,7 @@ Q 56.25 8.5 59.515625 10.40625
 z
 " id="DejaVuSans-71"/>
     </defs>
-    <g transform="translate(11.2 50.695063)scale(0.12 -0.12)">
+    <g transform="translate(7.2 50.90725)scale(0.12 -0.12)">
      <use xlink:href="#DejaVuSans-84"/>
      <use x="61.083984" xlink:href="#DejaVuSans-72"/>
      <use x="136.279297" xlink:href="#DejaVuSans-69"/>
@@ -1976,7 +1976,7 @@ Q 50.875 17.625 57.5625 17.625
 z
 " id="DejaVuSans-8733"/>
     </defs>
-    <g transform="translate(11.2 64.132438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 64.344625)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#DejaVuSans-40"/>
      <use transform="translate(39.013672 0.015625)" xlink:href="#DejaVuSans-48"/>
      <use transform="translate(102.636719 0.015625)" xlink:href="#DejaVuSans-41"/>
@@ -2818,7 +2818,7 @@ Q 14.59375 74.21875 22.3125 74.21875
 z
 " id="DejaVuSans-37"/>
     </defs>
-    <g transform="translate(11.2 77.716063)scale(0.12 -0.12)">
+    <g transform="translate(7.2 77.92825)scale(0.12 -0.12)">
      <use transform="translate(0 0.234375)" xlink:href="#DejaVuSans-945"/>
      <use transform="translate(65.917969 0.234375)" xlink:href="#DejaVuSans-946"/>
      <use transform="translate(129.736328 0.234375)" xlink:href="#DejaVuSans-32"/>
@@ -2871,7 +2871,7 @@ z
    </g>
    <g id="text_3">
     <!-- Fonts demo -->
-    <g transform="translate(11.2 16.02875)scale(0.12 -0.12)">
+    <g transform="translate(7.2 16.22875)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-Bold-70"/>
      <use x="59.299988" xlink:href="#HelveticaNeue-Bold-111"/>
      <use x="120.399979" xlink:href="#HelveticaNeue-Bold-110"/>
@@ -2887,10 +2887,10 @@ z
   </g>
   <g id="axes_2">
    <g id="patch_3">
-    <path d="M 11.2 153.2 
-L 335.2 153.2 
-L 335.2 87.2 
-L 11.2 87.2 
+    <path d="M 7.2 153.4 
+L 331.2 153.4 
+L 331.2 87.4 
+L 7.2 87.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -3493,7 +3493,7 @@ Q 12.25 36.234375 12.25 26.859375
 z
 " id="ArialMT-103"/>
     </defs>
-    <g transform="translate(11.2 103.677688)scale(0.12 -0.12)">
+    <g transform="translate(7.2 103.934875)scale(0.12 -0.12)">
      <use xlink:href="#ArialMT-65"/>
      <use x="66.699219" xlink:href="#ArialMT-114"/>
      <use x="100" xlink:href="#ArialMT-105"/>
@@ -4030,7 +4030,7 @@ L 62.25 28.078125
 z
 " id="ArialMT-71"/>
     </defs>
-    <g transform="translate(11.2 116.510563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 116.76775)scale(0.12 -0.12)">
      <use xlink:href="#ArialMT-84"/>
      <use x="61.083984" xlink:href="#ArialMT-72"/>
      <use x="133.300781" xlink:href="#ArialMT-69"/>
@@ -4710,7 +4710,7 @@ Q 39 16.203125 40.40625 18.09375
 z
 " id="STIXGeneral-Regular-8733"/>
     </defs>
-    <g transform="translate(11.2 129.407563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 129.66475)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#ArialMT-40"/>
      <use transform="translate(33.300781 0.203125)" xlink:href="#ArialMT-48"/>
      <use transform="translate(88.916016 0.203125)" xlink:href="#ArialMT-41"/>
@@ -5534,7 +5534,7 @@ Q 70.703125 29.15625 67.4375 29.15625
 z
 " id="ArialMT-37"/>
     </defs>
-    <g transform="translate(11.2 142.703563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 142.96075)scale(0.12 -0.12)">
      <use transform="translate(0 0.265625)" xlink:href="#ArialMT-945"/>
      <use transform="translate(57.8125 0.265625)" xlink:href="#ArialMT-946"/>
      <use transform="translate(115.332031 0.265625)" xlink:href="#ArialMT-32"/>
@@ -5588,10 +5588,10 @@ z
   </g>
   <g id="axes_3">
    <g id="patch_4">
-    <path d="M 11.2 219.2 
-L 335.2 219.2 
-L 335.2 153.2 
-L 11.2 153.2 
+    <path d="M 7.2 219.4 
+L 331.2 219.4 
+L 331.2 153.4 
+L 7.2 153.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -6363,7 +6363,7 @@ Q 10.40625 -19.40625 5.90625 -14.59375
 z
 " id="Avenir-Book-103"/>
     </defs>
-    <g transform="translate(11.2 167.568313)scale(0.12 -0.12)">
+    <g transform="translate(7.2 167.768313)scale(0.12 -0.12)">
      <use xlink:href="#Avenir-Book-65"/>
      <use x="68.584366" xlink:href="#Avenir-Book-118"/>
      <use x="116.784363" xlink:href="#Avenir-Book-101"/>
@@ -6936,7 +6936,7 @@ Q 62.5 67.90625 67.296875 63.09375
 z
 " id="Avenir-Book-71"/>
     </defs>
-    <g transform="translate(11.2 181.909438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 182.109438)scale(0.12 -0.12)">
      <use xlink:href="#Avenir-Book-84"/>
      <use x="57.399994" xlink:href="#Avenir-Book-72"/>
      <use x="129.599976" xlink:href="#Avenir-Book-69"/>
@@ -7663,7 +7663,7 @@ L 17.09375 0
 z
 " id="Avenir-Book-57"/>
     </defs>
-    <g transform="translate(11.2 196.250563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 196.450563)scale(0.12 -0.12)">
      <use transform="translate(0 0.40625)" xlink:href="#Avenir-Book-40"/>
      <use transform="translate(25.999985 0.40625)" xlink:href="#Avenir-Book-48"/>
      <use transform="translate(81.599976 0.40625)" xlink:href="#Avenir-Book-41"/>
@@ -8716,7 +8716,7 @@ Q 39 58.203125 39 54.5
 z
 " id="Avenir-Book-37"/>
     </defs>
-    <g transform="translate(11.2 210.591688)scale(0.12 -0.12)">
+    <g transform="translate(7.2 210.791688)scale(0.12 -0.12)">
      <use transform="translate(0 0.09375)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.09375)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.09375)" xlink:href="#Avenir-Book-32"/>
@@ -8770,10 +8770,10 @@ z
   </g>
   <g id="axes_4">
    <g id="patch_5">
-    <path d="M 11.2 285.2 
-L 335.2 285.2 
-L 335.2 219.2 
-L 11.2 219.2 
+    <path d="M 7.2 285.4 
+L 331.2 285.4 
+L 331.2 219.4 
+L 7.2 219.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -9373,7 +9373,7 @@ Q 19.1875 1.515625 15.328125 2
 z
 " id="FranklinGothic-Book-103"/>
     </defs>
-    <g transform="translate(11.2 236.844688)scale(0.12 -0.12)">
+    <g transform="translate(7.2 237.248125)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Book-70"/>
      <use x="50.734375" xlink:href="#FranklinGothic-Book-114"/>
      <use x="83.693359" xlink:href="#FranklinGothic-Book-97"/>
@@ -9794,7 +9794,7 @@ L 16.703125 59.671875
 z
 " id="FranklinGothic-Book-68"/>
     </defs>
-    <g transform="translate(11.2 248.759563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 249.163)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Book-84"/>
      <use x="48.535156" xlink:href="#FranklinGothic-Book-72"/>
      <use x="112.792969" xlink:href="#FranklinGothic-Book-69"/>
@@ -10332,7 +10332,7 @@ Q 21.578125 29.78125 27.828125 29.78125
 z
 " id="FranklinGothic-Book-57"/>
     </defs>
-    <g transform="translate(11.2 260.694313)scale(0.12 -0.12)">
+    <g transform="translate(7.2 261.09775)scale(0.12 -0.12)">
      <use transform="translate(0 0.9375)" xlink:href="#FranklinGothic-Book-40"/>
      <use transform="translate(29.345703 0.9375)" xlink:href="#FranklinGothic-Book-48"/>
      <use transform="translate(87.988281 0.9375)" xlink:href="#FranklinGothic-Book-41"/>
@@ -11099,7 +11099,7 @@ Q 46.046875 3.21875 54.78125 3.21875
 z
 " id="FranklinGothic-Book-37"/>
     </defs>
-    <g transform="translate(11.2 272.670313)scale(0.12 -0.12)">
+    <g transform="translate(7.2 273.07375)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#FranklinGothic-Book-945"/>
      <use transform="translate(58.251953 0.34375)" xlink:href="#FranklinGothic-Book-946"/>
      <use transform="translate(112.255859 0.34375)" xlink:href="#FranklinGothic-Book-32"/>
@@ -11153,10 +11153,10 @@ z
   </g>
   <g id="axes_5">
    <g id="patch_6">
-    <path d="M 11.2 351.2 
-L 335.2 351.2 
-L 335.2 285.2 
-L 11.2 285.2 
+    <path d="M 7.2 351.4 
+L 331.2 351.4 
+L 331.2 285.4 
+L 7.2 285.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -11724,7 +11724,7 @@ Q 18.796875 1.46875 14.15625 2.6875
 z
 " id="FranklinGothic-Medium-103"/>
     </defs>
-    <g transform="translate(11.2 302.87225)scale(0.12 -0.12)">
+    <g transform="translate(7.2 303.329125)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Medium-70"/>
      <use x="50.734375" xlink:href="#FranklinGothic-Medium-114"/>
      <use x="83.888672" xlink:href="#FranklinGothic-Medium-97"/>
@@ -12165,7 +12165,7 @@ L 19.34375 57.171875
 z
 " id="FranklinGothic-Medium-68"/>
     </defs>
-    <g transform="translate(11.2 314.597)scale(0.12 -0.12)">
+    <g transform="translate(7.2 315.053875)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Medium-84"/>
      <use x="48.339844" xlink:href="#FranklinGothic-Medium-72"/>
      <use x="112.451172" xlink:href="#FranklinGothic-Medium-69"/>
@@ -12709,7 +12709,7 @@ Q 21.6875 33.59375 27.6875 33.59375
 z
 " id="FranklinGothic-Medium-57"/>
     </defs>
-    <g transform="translate(11.2 326.53175)scale(0.12 -0.12)">
+    <g transform="translate(7.2 326.988625)scale(0.12 -0.12)">
      <use transform="translate(0 0.984375)" xlink:href="#FranklinGothic-Medium-40"/>
      <use transform="translate(29.345703 0.984375)" xlink:href="#FranklinGothic-Medium-48"/>
      <use transform="translate(87.988281 0.984375)" xlink:href="#FranklinGothic-Medium-41"/>
@@ -13463,7 +13463,7 @@ Q 51.90625 6.5 58.453125 6.5
 z
 " id="FranklinGothic-Medium-37"/>
     </defs>
-    <g transform="translate(11.2 338.50775)scale(0.12 -0.12)">
+    <g transform="translate(7.2 338.964625)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#FranklinGothic-Medium-945"/>
      <use transform="translate(59.814453 0.34375)" xlink:href="#FranklinGothic-Medium-946"/>
      <use transform="translate(115.576172 0.34375)" xlink:href="#FranklinGothic-Medium-32"/>
@@ -13517,10 +13517,10 @@ z
   </g>
   <g id="axes_6">
    <g id="patch_7">
-    <path d="M 11.2 417.2 
-L 335.2 417.2 
-L 335.2 351.2 
-L 11.2 351.2 
+    <path d="M 7.2 417.4 
+L 331.2 417.4 
+L 331.2 351.4 
+L 7.2 351.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -14218,7 +14218,7 @@ Q 31.34375 42 27.484375 42
 z
 " id="Frutiger-100"/>
     </defs>
-    <g transform="translate(11.2 367.79375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 368.048125)scale(0.12 -0.12)">
      <use xlink:href="#Frutiger-70"/>
      <use x="48.193359" xlink:href="#Frutiger-114"/>
      <use x="84.179688" xlink:href="#Frutiger-117"/>
@@ -14815,7 +14815,7 @@ Q 51.171875 67.09375 59.421875 63.921875
 z
 " id="Frutiger-71"/>
     </defs>
-    <g transform="translate(11.2 380.69525)scale(0.12 -0.12)">
+    <g transform="translate(7.2 380.949625)scale(0.12 -0.12)">
      <use xlink:href="#Frutiger-84"/>
      <use x="52.880859" xlink:href="#Frutiger-72"/>
      <use x="121.386719" xlink:href="#Frutiger-69"/>
@@ -15427,7 +15427,7 @@ Q 29 60.203125 25.59375 60.203125
 z
 " id="Frutiger-57"/>
     </defs>
-    <g transform="translate(11.2 393.656)scale(0.12 -0.12)">
+    <g transform="translate(7.2 393.910375)scale(0.12 -0.12)">
      <use transform="translate(0 0.984375)" xlink:href="#Frutiger-40"/>
      <use transform="translate(35.400391 0.984375)" xlink:href="#Frutiger-48"/>
      <use transform="translate(89.111328 0.984375)" xlink:href="#Frutiger-41"/>
@@ -15752,7 +15752,7 @@ L 58.59375 70.796875
 z
 " id="Frutiger-37"/>
     </defs>
-    <g transform="translate(11.2 406.54625)scale(0.12 -0.12)">
+    <g transform="translate(7.2 406.800625)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.203125)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.203125)" xlink:href="#Frutiger-32"/>
@@ -15806,10 +15806,10 @@ z
   </g>
   <g id="axes_7">
    <g id="patch_8">
-    <path d="M 11.2 483.2 
-L 335.2 483.2 
-L 335.2 417.2 
-L 11.2 417.2 
+    <path d="M 7.2 483.4 
+L 331.2 483.4 
+L 331.2 417.4 
+L 7.2 417.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -16320,7 +16320,7 @@ Q 42.390625 17.1875 42.390625 23.6875
 z
 " id="Futura-Medium-103"/>
     </defs>
-    <g transform="translate(11.2 431.204563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 431.398)scale(0.12 -0.12)">
      <use xlink:href="#Futura-Medium-70"/>
      <use x="50.814453" xlink:href="#Futura-Medium-117"/>
      <use x="105.306641" xlink:href="#Futura-Medium-116"/>
@@ -16767,7 +16767,7 @@ L 47.796875 28.5625
 z
 " id="Futura-Medium-71"/>
     </defs>
-    <g transform="translate(11.2 446.198188)scale(0.12 -0.12)">
+    <g transform="translate(7.2 446.391625)scale(0.12 -0.12)">
      <use xlink:href="#Futura-Medium-84"/>
      <use x="48.242188" xlink:href="#Futura-Medium-72"/>
      <use x="121.582031" xlink:href="#Futura-Medium-69"/>
@@ -17299,7 +17299,7 @@ Q 16.609375 58.015625 16.609375 52.296875
 z
 " id="Futura-Medium-57"/>
     </defs>
-    <g transform="translate(11.2 461.178688)scale(0.12 -0.12)">
+    <g transform="translate(7.2 461.372125)scale(0.12 -0.12)">
      <use transform="translate(0 0.359375)" xlink:href="#Futura-Medium-40"/>
      <use transform="translate(36.621094 0.359375)" xlink:href="#Futura-Medium-48"/>
      <use transform="translate(98.339844 0.359375)" xlink:href="#Futura-Medium-41"/>
@@ -17593,7 +17593,7 @@ Q 60.015625 21.046875 60.015625 17.140625
 z
 " id="Futura-Medium-37"/>
     </defs>
-    <g transform="translate(11.2 476.159188)scale(0.12 -0.12)">
+    <g transform="translate(7.2 476.352625)scale(0.12 -0.12)">
      <use transform="translate(0 0.75)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.75)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.75)" xlink:href="#Futura-Medium-32"/>
@@ -17647,10 +17647,10 @@ z
   </g>
   <g id="axes_8">
    <g id="patch_9">
-    <path d="M 11.2 549.2 
-L 335.2 549.2 
-L 335.2 483.2 
-L 11.2 483.2 
+    <path d="M 7.2 549.4 
+L 331.2 549.4 
+L 331.2 483.4 
+L 7.2 483.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -18300,7 +18300,7 @@ Q 44.671875 19.34375 44.671875 28.90625
 z
 " id="Geneva-103"/>
     </defs>
-    <g transform="translate(11.2 498.58925)scale(0.12 -0.12)">
+    <g transform="translate(7.2 498.80425)scale(0.12 -0.12)">
      <use xlink:href="#Geneva-71"/>
      <use x="67.431641" xlink:href="#Geneva-101"/>
      <use x="125" xlink:href="#Geneva-110"/>
@@ -18813,7 +18813,7 @@ L 17.046875 68.171875
 z
 " id="Geneva-68"/>
     </defs>
-    <g transform="translate(11.2 512.66825)scale(0.12 -0.12)">
+    <g transform="translate(7.2 512.88325)scale(0.12 -0.12)">
      <use xlink:href="#Geneva-84"/>
      <use x="64.013672" xlink:href="#Geneva-72"/>
      <use x="132.958984" xlink:href="#Geneva-69"/>
@@ -19481,7 +19481,7 @@ Q 34.8125 70.453125 30.5625 70.453125
 z
 " id="Geneva-57"/>
     </defs>
-    <g transform="translate(11.2 526.55975)scale(0.12 -0.12)">
+    <g transform="translate(7.2 526.77475)scale(0.12 -0.12)">
      <use transform="translate(0 0.671875)" xlink:href="#Geneva-40"/>
      <use transform="translate(44.677734 0.671875)" xlink:href="#Geneva-48"/>
      <use transform="translate(111.328125 0.671875)" xlink:href="#Geneva-41"/>
@@ -20591,7 +20591,7 @@ Q 61.71875 29.59375 61.71875 22.703125
 z
 " id="Geneva-37"/>
     </defs>
-    <g transform="translate(11.2 540.47825)scale(0.12 -0.12)">
+    <g transform="translate(7.2 540.69325)scale(0.12 -0.12)">
      <use transform="translate(0 0.96875)" xlink:href="#Geneva-945"/>
      <use transform="translate(73.828125 0.96875)" xlink:href="#Geneva-946"/>
      <use transform="translate(126.416016 0.96875)" xlink:href="#Geneva-32"/>
@@ -20645,10 +20645,10 @@ z
   </g>
   <g id="axes_9">
    <g id="patch_10">
-    <path d="M 11.2 615.2 
-L 335.2 615.2 
-L 335.2 549.2 
-L 11.2 549.2 
+    <path d="M 7.2 615.4 
+L 331.2 615.4 
+L 331.2 549.4 
+L 7.2 549.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -21229,7 +21229,7 @@ Q 25.09375 -2.09375 18.609375 -2.09375
 z
 " id="GillSans-103"/>
     </defs>
-    <g transform="translate(11.2 565.624625)scale(0.12 -0.12)">
+    <g transform="translate(7.2 565.824625)scale(0.12 -0.12)">
      <use xlink:href="#GillSans-71"/>
      <use x="74.023438" xlink:href="#GillSans-105"/>
      <use x="95.947266" xlink:href="#GillSans-108"/>
@@ -21681,7 +21681,7 @@ Q 36.625 59.515625 29.59375 59.515625
 z
 " id="GillSans-68"/>
     </defs>
-    <g transform="translate(11.2 578.336375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 578.536375)scale(0.12 -0.12)">
      <use xlink:href="#GillSans-84"/>
      <use x="60.400391" xlink:href="#GillSans-72"/>
      <use x="133.300781" xlink:href="#GillSans-69"/>
@@ -22213,7 +22213,7 @@ Q 30.171875 37.984375 35.40625 41.609375
 z
 " id="GillSans-57"/>
     </defs>
-    <g transform="translate(11.2 591.608375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 591.808375)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#GillSans-40"/>
      <use transform="translate(32.324219 0.203125)" xlink:href="#GillSans-48"/>
      <use transform="translate(82.324219 0.203125)" xlink:href="#GillSans-41"/>
@@ -22450,7 +22450,7 @@ Q 20.90625 61.625 17.578125 61.625
 z
 " id="GillSans-37"/>
     </defs>
-    <g transform="translate(11.2 604.317875)scale(0.12 -0.12)">
+    <g transform="translate(7.2 604.517875)scale(0.12 -0.12)">
      <use transform="translate(0 0.8125)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.8125)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.8125)" xlink:href="#GillSans-32"/>
@@ -22504,10 +22504,10 @@ z
   </g>
   <g id="axes_10">
    <g id="patch_11">
-    <path d="M 11.2 681.2 
-L 335.2 681.2 
-L 335.2 615.2 
-L 11.2 615.2 
+    <path d="M 7.2 681.4 
+L 331.2 681.4 
+L 331.2 615.4 
+L 7.2 615.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -23102,7 +23102,7 @@ M 25.921875 53.5625
 z
 " id="Helvetica-103"/>
     </defs>
-    <g transform="translate(11.2 631.7375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 631.93)scale(0.12 -0.12)">
      <use xlink:href="#Helvetica-72"/>
      <use x="72.216797" xlink:href="#Helvetica-101"/>
      <use x="127.832031" xlink:href="#Helvetica-108"/>
@@ -23609,7 +23609,7 @@ M 37.015625 73.6875
 z
 " id="Helvetica-71"/>
     </defs>
-    <g transform="translate(11.2 644.72225)scale(0.12 -0.12)">
+    <g transform="translate(7.2 644.91475)scale(0.12 -0.12)">
      <use xlink:href="#Helvetica-84"/>
      <use x="61.083984" xlink:href="#Helvetica-72"/>
      <use x="133.300781" xlink:href="#Helvetica-69"/>
@@ -24114,41 +24114,41 @@ Q 3.21875 25.828125 6.25 30.34375
 Q 9.28125 34.859375 15.234375 37.25 
 z
 " id="Helvetica-56"/>
-     <path d="M 2.203125 37.5 
-Q 6.0625 40.921875 8.84375 42.140625 
-Q 11.625 43.359375 15.375 43.359375 
-Q 20.125 43.359375 28.15625 39.71875 
-Q 36.1875 36.078125 39.65625 36.078125 
-Q 44.390625 36.078125 48.875 39.265625 
-Q 51.5625 41.109375 53.125 43.171875 
-L 53.125 33.796875 
-Q 51.171875 31.984375 48.53125 30.5625 
-Q 44.140625 28.21875 39.796875 28.21875 
-Q 38.578125 28.21875 36.59375 28.515625 
-Q 34.625 28.8125 33.015625 29.390625 
-Q 32.078125 29.6875 25.34375 32.625 
-Q 22.015625 34.078125 20.3125 34.671875 
-Q 17.625 35.5 15.234375 35.5 
-Q 10.984375 35.5 7.5625 33.296875 
-Q 5.46875 31.9375 2.203125 28.46875 
+     <path d="M 2.25 37.5 
+Q 6.09375 40.921875 8.875 42.140625 
+Q 11.671875 43.359375 15.421875 43.359375 
+Q 20.15625 43.359375 28.1875 39.71875 
+Q 36.234375 36.078125 39.6875 36.078125 
+Q 44.4375 36.078125 48.921875 39.265625 
+Q 51.609375 41.109375 53.171875 43.171875 
+L 53.171875 33.796875 
+Q 51.21875 31.984375 48.578125 30.5625 
+Q 44.1875 28.21875 39.84375 28.21875 
+Q 38.625 28.21875 36.640625 28.515625 
+Q 34.671875 28.8125 33.046875 29.390625 
+Q 32.125 29.6875 25.390625 32.625 
+Q 22.0625 34.078125 20.359375 34.671875 
+Q 17.671875 35.5 15.28125 35.5 
+Q 11.03125 35.5 7.609375 33.296875 
+Q 5.515625 31.9375 2.25 28.46875 
 z
-M 2.203125 16.890625 
-Q 6.0625 20.3125 8.84375 21.53125 
-Q 11.625 22.75 15.375 22.75 
-Q 20.125 22.75 28.15625 19.109375 
-Q 36.1875 15.484375 39.65625 15.484375 
-Q 44.046875 15.484375 47.484375 17.703125 
-Q 50.921875 19.921875 53.125 22.5625 
-L 53.125 13.1875 
-Q 49.859375 10.5 46.625 9.0625 
-Q 43.40625 7.625 39.796875 7.625 
-Q 38.28125 7.625 36.390625 7.984375 
-Q 34.515625 8.34375 33.015625 8.796875 
-Q 31.890625 9.1875 25.34375 12.015625 
-Q 22.015625 13.484375 20.3125 14.0625 
-Q 17.625 14.890625 15.234375 14.890625 
-Q 10.9375 14.890625 7.421875 12.59375 
-Q 5.28125 11.234375 2.203125 7.859375 
+M 2.25 16.890625 
+Q 6.09375 20.3125 8.875 21.53125 
+Q 11.671875 22.75 15.421875 22.75 
+Q 20.15625 22.75 28.1875 19.109375 
+Q 36.234375 15.484375 39.6875 15.484375 
+Q 44.09375 15.484375 47.53125 17.703125 
+Q 50.96875 19.921875 53.171875 22.5625 
+L 53.171875 13.1875 
+Q 49.90625 10.5 46.671875 9.0625 
+Q 43.453125 7.625 39.84375 7.625 
+Q 38.328125 7.625 36.4375 7.984375 
+Q 34.5625 8.34375 33.046875 8.796875 
+Q 31.9375 9.1875 25.390625 12.015625 
+Q 22.0625 13.484375 20.359375 14.0625 
+Q 17.671875 14.890625 15.28125 14.890625 
+Q 10.984375 14.890625 7.46875 12.59375 
+Q 5.3125 11.234375 2.25 7.859375 
 z
 " id="Helvetica-8776"/>
      <path d="M 13.28125 16.890625 
@@ -24181,7 +24181,7 @@ Q 19.34375 31.25 26.609375 31.25
 z
 " id="Helvetica-57"/>
     </defs>
-    <g transform="translate(11.2 657.7355)scale(0.12 -0.12)">
+    <g transform="translate(7.2 657.928)scale(0.12 -0.12)">
      <use xlink:href="#Helvetica-40"/>
      <use transform="translate(33.300781 0)" xlink:href="#Helvetica-48"/>
      <use transform="translate(88.916016 0)" xlink:href="#Helvetica-41"/>
@@ -25062,7 +25062,7 @@ Q 63.96875 6.9375 68.171875 6.9375
 z
 " id="Helvetica-37"/>
     </defs>
-    <g transform="translate(11.2 670.7675)scale(0.12 -0.12)">
+    <g transform="translate(7.2 670.96)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#Helvetica-945"/>
      <use transform="translate(61.083984 0.34375)" xlink:href="#Helvetica-946"/>
      <use transform="translate(122.167969 0.34375)" xlink:href="#Helvetica-32"/>
@@ -25116,10 +25116,10 @@ z
   </g>
   <g id="axes_11">
    <g id="patch_12">
-    <path d="M 11.2 747.2 
-L 335.2 747.2 
-L 335.2 681.2 
-L 11.2 681.2 
+    <path d="M 7.2 747.4 
+L 331.2 747.4 
+L 331.2 681.4 
+L 7.2 681.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -25891,7 +25891,7 @@ Q 31.40625 6.90625 27.203125 6.90625
 z
 " id="HelveticaNeue-103"/>
     </defs>
-    <g transform="translate(11.2 697.64075)scale(0.12 -0.12)">
+    <g transform="translate(7.2 697.906375)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-72"/>
      <use x="72.199982" xlink:href="#HelveticaNeue-101"/>
      <use x="125.899979" xlink:href="#HelveticaNeue-108"/>
@@ -26476,7 +26476,7 @@ Q 57 3.296875 61.203125 8.90625
 z
 " id="HelveticaNeue-71"/>
     </defs>
-    <g transform="translate(11.2 710.432)scale(0.12 -0.12)">
+    <g transform="translate(7.2 710.697625)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-84"/>
      <use x="57.399994" xlink:href="#HelveticaNeue-72"/>
      <use x="129.599976" xlink:href="#HelveticaNeue-69"/>
@@ -27236,7 +27236,7 @@ Q 40.90625 50.5 40.90625 47.203125
 z
 " id="HelveticaNeue-57"/>
     </defs>
-    <g transform="translate(11.2 723.452375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 723.718)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#HelveticaNeue-40"/>
      <use transform="translate(25.899994 0.90625)" xlink:href="#HelveticaNeue-48"/>
      <use transform="translate(81.499985 0.90625)" xlink:href="#HelveticaNeue-41"/>
@@ -28353,7 +28353,7 @@ L 81.09375 72.203125
 z
 " id="HelveticaNeue-37"/>
     </defs>
-    <g transform="translate(11.2 736.652375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 736.918)scale(0.12 -0.12)">
      <use transform="translate(0 0.59375)" xlink:href="#HelveticaNeue-945"/>
      <use transform="translate(58.699997 0.59375)" xlink:href="#HelveticaNeue-946"/>
      <use transform="translate(115.099991 0.59375)" xlink:href="#HelveticaNeue-32"/>
@@ -28407,10 +28407,10 @@ z
   </g>
   <g id="axes_12">
    <g id="patch_13">
-    <path d="M 11.2 813.2 
-L 335.2 813.2 
-L 335.2 747.2 
-L 11.2 747.2 
+    <path d="M 7.2 813.4 
+L 331.2 813.4 
+L 331.2 747.4 
+L 7.2 747.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -28898,7 +28898,7 @@ Q 36.28125 9.625 43.65625 18.359375
 z
 " id="LucidaGrande-103"/>
     </defs>
-    <g transform="translate(11.2 763.276438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 763.50925)scale(0.12 -0.12)">
      <use xlink:href="#LucidaGrande-76"/>
      <use x="53.320312" xlink:href="#LucidaGrande-117"/>
      <use x="115.380859" xlink:href="#LucidaGrande-99"/>
@@ -29329,7 +29329,7 @@ L 19.578125 64.59375
 z
 " id="LucidaGrande-68"/>
     </defs>
-    <g transform="translate(11.2 776.832313)scale(0.12 -0.12)">
+    <g transform="translate(7.2 777.065125)scale(0.12 -0.12)">
      <use xlink:href="#LucidaGrande-84"/>
      <use x="63.232422" xlink:href="#LucidaGrande-72"/>
      <use x="136.71875" xlink:href="#LucidaGrande-69"/>
@@ -29878,7 +29878,7 @@ Q 17.234375 57.953125 17.234375 50.296875
 z
 " id="LucidaGrande-57"/>
     </defs>
-    <g transform="translate(11.2 790.247563)scale(0.12 -0.12)">
+    <g transform="translate(7.2 790.480375)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#LucidaGrande-40"/>
      <use transform="translate(32.519531 0.90625)" xlink:href="#LucidaGrande-48"/>
      <use transform="translate(95.751953 0.90625)" xlink:href="#LucidaGrande-41"/>
@@ -30785,7 +30785,7 @@ Q 47.125 4.828125 50.78125 4.828125
 z
 " id="LucidaGrande-37"/>
     </defs>
-    <g transform="translate(11.2 803.937313)scale(0.12 -0.12)">
+    <g transform="translate(7.2 804.170125)scale(0.12 -0.12)">
      <use transform="translate(0 0.671875)" xlink:href="#LucidaGrande-945"/>
      <use transform="translate(69.384766 0.671875)" xlink:href="#LucidaGrande-946"/>
      <use transform="translate(129.638672 0.671875)" xlink:href="#LucidaGrande-32"/>
@@ -30839,10 +30839,10 @@ z
   </g>
   <g id="axes_13">
    <g id="patch_14">
-    <path d="M 11.2 879.2 
-L 335.2 879.2 
-L 335.2 813.2 
-L 11.2 813.2 
+    <path d="M 7.2 879.4 
+L 331.2 879.4 
+L 331.2 813.4 
+L 7.2 813.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -31371,7 +31371,7 @@ C 39.796875 32.09375 39.90625 30.796875 39.90625 29.296875
 z
 " id="MyriadPro-Regular-103"/>
     </defs>
-    <g transform="translate(11.2 830.03)scale(0.12 -0.12)">
+    <g transform="translate(7.2 830.23)scale(0.12 -0.12)">
      <use xlink:href="#MyriadPro-Regular-77"/>
      <use x="80.399994" xlink:href="#MyriadPro-Regular-121"/>
      <use x="127.499985" xlink:href="#MyriadPro-Regular-114"/>
@@ -31786,7 +31786,7 @@ C 47.296875 -0.703125 55.09375 1.5 59 3
 z
 " id="MyriadPro-Regular-71"/>
     </defs>
-    <g transform="translate(11.2 842.894)scale(0.12 -0.12)">
+    <g transform="translate(7.2 843.094)scale(0.12 -0.12)">
      <use xlink:href="#MyriadPro-Regular-84"/>
      <use x="49.699997" xlink:href="#MyriadPro-Regular-72"/>
      <use x="114.899994" xlink:href="#MyriadPro-Regular-69"/>
@@ -32256,7 +32256,7 @@ C 12.796875 52.796875 18.09375 59.40625 25.5 59.40625
 z
 " id="MyriadPro-Regular-57"/>
     </defs>
-    <g transform="translate(11.2 855.493625)scale(0.12 -0.12)">
+    <g transform="translate(7.2 855.693625)scale(0.12 -0.12)">
      <use transform="translate(0 0.59375)" xlink:href="#MyriadPro-Regular-40"/>
      <use transform="translate(28.399994 0.59375)" xlink:href="#MyriadPro-Regular-48"/>
      <use transform="translate(79.699982 0.59375)" xlink:href="#MyriadPro-Regular-41"/>
@@ -32966,7 +32966,7 @@ C 52.296875 27.40625 55.296875 33.90625 60.703125 33.90625
 z
 " id="MyriadPro-Regular-37"/>
     </defs>
-    <g transform="translate(11.2 868.38125)scale(0.12 -0.12)">
+    <g transform="translate(7.2 868.58125)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#MyriadPro-Regular-945"/>
      <use transform="translate(55.099991 0.90625)" xlink:href="#MyriadPro-Regular-946"/>
      <use transform="translate(111.099976 0.90625)" xlink:href="#MyriadPro-Regular-32"/>
@@ -33020,10 +33020,10 @@ z
   </g>
   <g id="axes_14">
    <g id="patch_15">
-    <path d="M 11.2 945.2 
-L 335.2 945.2 
-L 335.2 879.2 
-L 11.2 879.2 
+    <path d="M 7.2 945.4 
+L 331.2 945.4 
+L 331.2 879.4 
+L 7.2 879.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -33691,7 +33691,7 @@ Q 44.28125 -8.6875 44.28125 -1.609375
 z
 " id="NotoSans-103"/>
     </defs>
-    <g transform="translate(11.2 893.234188)scale(0.12 -0.12)">
+    <g transform="translate(7.2 893.492313)scale(0.12 -0.12)">
      <use xlink:href="#NotoSans-78"/>
      <use x="75.976562" xlink:href="#NotoSans-111"/>
      <use x="136.474609" xlink:href="#NotoSans-116"/>
@@ -34144,7 +34144,7 @@ L 40.71875 29.6875
 z
 " id="NotoSans-71"/>
     </defs>
-    <g transform="translate(11.2 907.059688)scale(0.12 -0.12)">
+    <g transform="translate(7.2 907.317813)scale(0.12 -0.12)">
      <use xlink:href="#NotoSans-84"/>
      <use x="55.615234" xlink:href="#NotoSans-72"/>
      <use x="129.736328" xlink:href="#NotoSans-69"/>
@@ -34983,7 +34983,7 @@ Q 30.5625 64.890625 27 64.890625
 z
 " id="NotoSans-57"/>
     </defs>
-    <g transform="translate(11.2 922.903438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 923.161563)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#NotoSans-40"/>
      <use transform="translate(35.351562 0.34375)" xlink:href="#NotoSans-48"/>
      <use transform="translate(90.429688 0.34375)" xlink:href="#NotoSans-41"/>
@@ -35971,7 +35971,7 @@ L 56.9375 62.203125
 z
 " id="NotoSans-37"/>
     </defs>
-    <g transform="translate(11.2 937.231438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 937.489563)scale(0.12 -0.12)">
      <use transform="translate(0 0.390625)" xlink:href="#NotoSans-945"/>
      <use transform="translate(61.523438 0.390625)" xlink:href="#NotoSans-946"/>
      <use transform="translate(124.609375 0.390625)" xlink:href="#NotoSans-32"/>
@@ -36025,10 +36025,10 @@ z
   </g>
   <g id="axes_15">
    <g id="patch_16">
-    <path d="M 11.2 1011.2 
-L 335.2 1011.2 
-L 335.2 945.2 
-L 11.2 945.2 
+    <path d="M 7.2 1011.4 
+L 331.2 1011.4 
+L 331.2 945.4 
+L 7.2 945.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -36681,7 +36681,7 @@ Q 14.109375 42.4375 14.109375 36.375
 z
 " id="OpenSans-103"/>
     </defs>
-    <g transform="translate(11.2 960.349438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 960.607563)scale(0.12 -0.12)">
      <use xlink:href="#OpenSans-79"/>
      <use x="77.880859" xlink:href="#OpenSans-112"/>
      <use x="139.160156" xlink:href="#OpenSans-101"/>
@@ -37121,7 +37121,7 @@ L 41.21875 29.984375
 z
 " id="OpenSans-71"/>
     </defs>
-    <g transform="translate(11.2 974.174938)scale(0.12 -0.12)">
+    <g transform="translate(7.2 974.433063)scale(0.12 -0.12)">
      <use xlink:href="#OpenSans-84"/>
      <use x="55.322266" xlink:href="#OpenSans-72"/>
      <use x="129.101562" xlink:href="#OpenSans-69"/>
@@ -37442,10 +37442,10 @@ L 52 37.203125
 L 52 32.421875 
 L 5.078125 11.8125 
 z
-M 5.078125 0.046875 
-L 5.078125 6.78125 
-L 52 6.78125 
-L 52 0.046875 
+M 5.078125 -0.109375 
+L 5.078125 6.625 
+L 52 6.625 
+L 52 -0.109375 
 z
 " id="OpenSans-8805"/>
      <path d="M 27.203125 43.609375 
@@ -37489,10 +37489,10 @@ L 52 53.328125
 L 13.8125 35.203125 
 L 52 19.1875 
 z
-M 5.078125 0.046875 
-L 5.078125 6.78125 
-L 52 6.78125 
-L 52 0.046875 
+M 5.078125 -0.109375 
+L 5.078125 6.625 
+L 52 6.625 
+L 52 -0.109375 
 z
 " id="OpenSans-8804"/>
      <path d="M 16.5 34.8125 
@@ -37674,7 +37674,7 @@ Q 32.421875 65.484375 27.78125 65.484375
 z
 " id="OpenSans-57"/>
     </defs>
-    <g transform="translate(11.2 988.000438)scale(0.12 -0.12)">
+    <g transform="translate(7.2 988.258563)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#OpenSans-40"/>
      <use transform="translate(29.589844 0.015625)" xlink:href="#OpenSans-48"/>
      <use transform="translate(86.767578 0.015625)" xlink:href="#OpenSans-41"/>
@@ -38586,7 +38586,7 @@ L 57.421875 71.390625
 z
 " id="OpenSans-37"/>
     </defs>
-    <g transform="translate(11.2 1002.116188)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1002.374313)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#OpenSans-945"/>
      <use transform="translate(61.083984 0.90625)" xlink:href="#OpenSans-946"/>
      <use transform="translate(123.876953 0.90625)" xlink:href="#OpenSans-32"/>
@@ -38640,10 +38640,10 @@ z
   </g>
   <g id="axes_16">
    <g id="patch_17">
-    <path d="M 11.2 1077.2 
-L 335.2 1077.2 
-L 335.2 1011.2 
-L 11.2 1011.2 
+    <path d="M 7.2 1077.4 
+L 331.2 1077.4 
+L 331.2 1011.4 
+L 7.2 1011.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -39822,7 +39822,7 @@ Q 5 26.5 5 32
 z
 " id="Optima-Regular-103"/>
     </defs>
-    <g transform="translate(11.2 1026.126125)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1026.308313)scale(0.12 -0.12)">
      <use xlink:href="#Optima-Regular-79"/>
      <use x="83.299988" xlink:href="#Optima-Regular-112"/>
      <use x="138.899979" xlink:href="#Optima-Regular-116"/>
@@ -40886,7 +40886,7 @@ L 67.09375 56.296875
 z
 " id="Optima-Regular-71"/>
     </defs>
-    <g transform="translate(11.2 1040.171)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1040.353188)scale(0.12 -0.12)">
      <use xlink:href="#Optima-Regular-84"/>
      <use x="55.599991" xlink:href="#Optima-Regular-72"/>
      <use x="133.399979" xlink:href="#Optima-Regular-69"/>
@@ -41738,7 +41738,7 @@ Q 10.703125 4.296875 10.09375 5.40625
 z
 " id="Optima-Regular-57"/>
     </defs>
-    <g transform="translate(11.2 1054.18025)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1054.362438)scale(0.12 -0.12)">
      <use transform="translate(0 0.703125)" xlink:href="#Optima-Regular-40"/>
      <use transform="translate(27.799988 0.703125)" xlink:href="#Optima-Regular-48"/>
      <use transform="translate(83.399979 0.703125)" xlink:href="#Optima-Regular-41"/>
@@ -42086,7 +42086,7 @@ Q 4.203125 47 4.203125 50.59375
 z
 " id="Optima-Regular-37"/>
     </defs>
-    <g transform="translate(11.2 1068.1895)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1068.371688)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.203125)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.203125)" xlink:href="#Optima-Regular-32"/>
@@ -42140,10 +42140,10 @@ z
   </g>
   <g id="axes_17">
    <g id="patch_18">
-    <path d="M 11.2 1143.2 
-L 335.2 1143.2 
-L 335.2 1077.2 
-L 11.2 1077.2 
+    <path d="M 7.2 1143.4 
+L 331.2 1143.4 
+L 331.2 1077.4 
+L 7.2 1077.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -42781,7 +42781,7 @@ L 8.109375 -8.734375
 z
 " id="Tahoma-103"/>
     </defs>
-    <g transform="translate(11.2 1093.38575)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1093.606375)scale(0.12 -0.12)">
      <use xlink:href="#Tahoma-84"/>
      <use x="58.226562" xlink:href="#Tahoma-97"/>
      <use x="110.716797" xlink:href="#Tahoma-104"/>
@@ -43380,7 +43380,7 @@ Q 41.890625 -1.421875 37.796875 -1.421875
 z
 " id="Tahoma-71"/>
     </defs>
-    <g transform="translate(11.2 1106.80625)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1107.026875)scale(0.12 -0.12)">
      <use xlink:href="#Tahoma-84"/>
      <use x="58.398438" xlink:href="#Tahoma-72"/>
      <use x="125.927734" xlink:href="#Tahoma-69"/>
@@ -43958,15 +43958,15 @@ L 8.890625 27.9375
 L 8.890625 35.75 
 L 63.875 35.75 
 z
-M 63.875 48.453125 
-L 8.890625 48.453125 
-L 8.890625 56.265625 
-L 63.875 56.265625 
+M 63.875 48.9375 
+L 8.890625 48.9375 
+L 8.890625 56.75 
+L 63.875 56.75 
 z
-M 63.875 7.421875 
-L 8.890625 7.421875 
-L 8.890625 15.234375 
-L 63.875 15.234375 
+M 63.875 6.9375 
+L 8.890625 6.9375 
+L 8.890625 14.75 
+L 63.875 14.75 
 z
 " id="Tahoma-8801"/>
      <path d="M 39.59375 55.765625 
@@ -44101,7 +44101,7 @@ Q 3.265625 42.625 3.265625 49.078125
 z
 " id="Tahoma-57"/>
     </defs>
-    <g transform="translate(11.2 1120.16525)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1120.385875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Tahoma-40"/>
      <use transform="translate(38.28125 0.015625)" xlink:href="#Tahoma-48"/>
      <use transform="translate(92.871094 0.015625)" xlink:href="#Tahoma-41"/>
@@ -45125,7 +45125,7 @@ Q 83.9375 12.796875 83.9375 20.171875
 z
 " id="Tahoma-37"/>
     </defs>
-    <g transform="translate(11.2 1133.62925)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1133.849875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Tahoma-945"/>
      <use transform="translate(55.46875 0.015625)" xlink:href="#Tahoma-946"/>
      <use transform="translate(110.986328 0.015625)" xlink:href="#Tahoma-32"/>
@@ -45179,10 +45179,10 @@ z
   </g>
   <g id="axes_18">
    <g id="patch_19">
-    <path d="M 11.2 1209.2 
-L 335.2 1209.2 
-L 335.2 1143.2 
-L 11.2 1143.2 
+    <path d="M 7.2 1209.4 
+L 331.2 1209.4 
+L 331.2 1143.4 
+L 7.2 1143.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -45782,7 +45782,7 @@ Q 28.859375 45.796875 24.359375 45.796875
 z
 " id="TrebuchetMS-103"/>
     </defs>
-    <g transform="translate(11.2 1159.45625)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1159.745312)scale(0.12 -0.12)">
      <use xlink:href="#TrebuchetMS-84"/>
      <use x="57.884766" xlink:href="#TrebuchetMS-114"/>
      <use x="96.751953" xlink:href="#TrebuchetMS-101"/>
@@ -46195,7 +46195,7 @@ Q 49.859375 72.75 56.890625 66.546875
 z
 " id="TrebuchetMS-71"/>
     </defs>
-    <g transform="translate(11.2 1172.535875)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1172.824938)scale(0.12 -0.12)">
      <use xlink:href="#TrebuchetMS-84"/>
      <use x="58.056641" xlink:href="#TrebuchetMS-72"/>
      <use x="123.486328" xlink:href="#TrebuchetMS-69"/>
@@ -46718,7 +46718,7 @@ Q 37.546875 35.109375 37.546875 49.21875
 z
 " id="TrebuchetMS-57"/>
     </defs>
-    <g transform="translate(11.2 1185.65375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1185.942812)scale(0.12 -0.12)">
      <use transform="translate(0 0.265625)" xlink:href="#TrebuchetMS-40"/>
      <use transform="translate(36.71875 0.265625)" xlink:href="#TrebuchetMS-48"/>
      <use transform="translate(89.160156 0.265625)" xlink:href="#TrebuchetMS-41"/>
@@ -47521,7 +47521,7 @@ Q 35.5 21.34375 35.5 16.015625
 z
 " id="TrebuchetMS-37"/>
     </defs>
-    <g transform="translate(11.2 1198.97375)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1199.262812)scale(0.12 -0.12)">
      <use transform="translate(0 0.578125)" xlink:href="#TrebuchetMS-945"/>
      <use transform="translate(58.203125 0.578125)" xlink:href="#TrebuchetMS-946"/>
      <use transform="translate(114.599609 0.578125)" xlink:href="#TrebuchetMS-32"/>
@@ -47575,10 +47575,10 @@ z
   </g>
   <g id="axes_19">
    <g id="patch_20">
-    <path d="M 11.2 1275.2 
-L 335.2 1275.2 
-L 335.2 1209.2 
-L 11.2 1209.2 
+    <path d="M 7.2 1275.4 
+L 331.2 1275.4 
+L 331.2 1209.4 
+L 7.2 1209.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -48038,7 +48038,7 @@ C 37.40625 9.90625 34.203125 7.90625 28.703125 7.90625
 z
 " id="Univers-103"/>
     </defs>
-    <g transform="translate(11.2 1225.86725)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1226.181625)scale(0.12 -0.12)">
      <use xlink:href="#Univers-85"/>
      <use x="77.799988" xlink:href="#Univers-110"/>
      <use x="138.899979" xlink:href="#Univers-105"/>
@@ -48454,7 +48454,7 @@ C 51.203125 65.5 56.59375 60.90625 57.703125 54.203125
 z
 " id="Univers-71"/>
     </defs>
-    <g transform="translate(11.2 1238.66)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1238.974375)scale(0.12 -0.12)">
      <use xlink:href="#Univers-84"/>
      <use x="61.099991" xlink:href="#Univers-72"/>
      <use x="133.299973" xlink:href="#Univers-69"/>
@@ -48846,7 +48846,7 @@ C 33.40625 63 39.90625 58 39.90625 48
 z
 " id="Univers-57"/>
     </defs>
-    <g transform="translate(11.2 1251.357125)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1251.6715)scale(0.12 -0.12)">
      <use transform="translate(0 0.796875)" xlink:href="#Univers-40"/>
      <use transform="translate(33.299988 0.796875)" xlink:href="#Univers-48"/>
      <use transform="translate(88.899979 0.796875)" xlink:href="#Univers-41"/>
@@ -49049,7 +49049,7 @@ L 18.5 -3.90625
 z
 " id="Univers-37"/>
     </defs>
-    <g transform="translate(11.2 1264.47275)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1264.787125)scale(0.12 -0.12)">
      <use transform="translate(0 0.40625)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.40625)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.40625)" xlink:href="#Univers-32"/>
@@ -49103,10 +49103,10 @@ z
   </g>
   <g id="axes_20">
    <g id="patch_21">
-    <path d="M 11.2 1341.2 
-L 335.2 1341.2 
-L 335.2 1275.2 
-L 11.2 1275.2 
+    <path d="M 7.2 1341.4 
+L 331.2 1341.4 
+L 331.2 1275.4 
+L 7.2 1275.4 
 z
 " style="fill:none;opacity:0;"/>
    </g>
@@ -49716,7 +49716,7 @@ Q 40.71875 12.40625 44.09375 14.984375
 z
 " id="Verdana-103"/>
     </defs>
-    <g transform="translate(11.2 1291.26575)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1291.546375)scale(0.12 -0.12)">
      <use xlink:href="#Verdana-86"/>
      <use x="68.296875" xlink:href="#Verdana-101"/>
      <use x="127.867188" xlink:href="#Verdana-114"/>
@@ -50288,7 +50288,7 @@ L 70.40625 36.578125
 z
 " id="Verdana-71"/>
     </defs>
-    <g transform="translate(11.2 1304.68625)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1304.966875)scale(0.12 -0.12)">
      <use xlink:href="#Verdana-84"/>
      <use x="61.621094" xlink:href="#Verdana-72"/>
      <use x="136.767578" xlink:href="#Verdana-69"/>
@@ -50961,7 +50961,7 @@ Q 47.125 41.265625 47.125 42.828125
 z
 " id="Verdana-57"/>
     </defs>
-    <g transform="translate(11.2 1318.04525)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1318.325875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Verdana-40"/>
      <use transform="translate(45.410156 0.015625)" xlink:href="#Verdana-48"/>
      <use transform="translate(108.984375 0.015625)" xlink:href="#Verdana-41"/>
@@ -51934,7 +51934,7 @@ Q 91.65625 11.671875 91.65625 20.171875
 z
 " id="Verdana-37"/>
     </defs>
-    <g transform="translate(11.2 1331.50925)scale(0.12 -0.12)">
+    <g transform="translate(7.2 1331.789875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Verdana-945"/>
      <use transform="translate(62.304688 0.015625)" xlink:href="#Verdana-946"/>
      <use transform="translate(124.316406 0.015625)" xlink:href="#Verdana-32"/>

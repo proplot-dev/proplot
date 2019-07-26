@@ -27,9 +27,9 @@ panels. See `~proplot.subplots.subplots` and
 
     # Arbitrarily complex combinations are possible, and inner spaces still determined automatically
     import proplot as plot
-    f, axs = plot.subplots(axwidth=2, nrows=2, ncols=2,
+    f, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2,
                            axpanels={1:'t', 2:'l', 3:'b', 4:'r'},
-                           tight=True, share=0, span=0, wratios=[1,2])
+                           tight=True, share=0, span=0)
     axs.format(title='Title', suptitle='This is a super title', collabels=['Column 1','Column 2'],
                abcloc='ul', titleloc='uc', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
     axs.format(xlim=(0,1), ylim=(0,1), ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
@@ -62,6 +62,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
 
     import proplot as plot
     import numpy as np
+    plot.rc.reset()
     f, axs = plot.subplots(axwidth=1.7, nrows=2, ncols=2, share=0, span=False, panelpad=0.1,
                            axpanels='r', axcolorbars='b', axpanels_kw={'share':False, 'flush':True})
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
@@ -166,7 +167,7 @@ panel in the first column, second from the top.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=2, axwidth=0.8, span=False, share=0,
+    f, axs = plot.subplots(nrows=2, axwidth='4cm', span=False, share=0,
                           axcolorbars='l', axcolorbars_kw={'stack':3},
                           axpanels='r', axpanels_kw={'stack':2, 'flush':True, 'width':0.5}
                           )
@@ -176,7 +177,7 @@ panel in the first column, second from the top.
     for ax in axs:
         # Colormap data
         ax.format(xlabel='data', xlocator=np.linspace(0, 0.8, 5))
-        for i,(x0,y0,x1,y1,cmap,scale) in enumerate(((0,0.5,1,1,'greys',0.5), (0,0,0.5,0.5,'reds',1), (0.5,0,1,0.5,'blues',2))):
+        for i,(x0,y0,x1,y1,cmap,scale) in enumerate(((0,0.5,1,1,'grays',0.5), (0,0,0.5,0.5,'reds',1), (0.5,0,1,0.5,'blues',2))):
             data = np.random.rand(n,n)*scale
             x, y = np.linspace(x0, x1, 11), np.linspace(y0, y1, 11)
             m = ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0,scale,11))

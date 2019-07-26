@@ -75,16 +75,18 @@ def show():
     plt.show()
 
 # Helper classes
-# WARNING: Cannot wrap tuple because can only add attributes in init, and
-# if add them in class they become global.
 class axes_list(list):
-    """List subclass used as a container for the list of axes returned by
-    `subplots`. This overhauls the `~axes_list.__getattr__` and
-    `~axes_list.__getitem__` methods."""
+    """List subclass and pseudo-2D array that is used as a container for the
+    list of axes returned by `subplots`, lists of figure panels, and lists of
+    stacked axes panels. See the `~axes_list.__getattr__` and
+    `~axes_list.__getitem__` methods for details."""
     def __init__(self, list_, n=1, order='C'):
-        # Add special attributes that support 2d grids of axes
-        self._n = n # means ncols or nrows, depending on order
-        self._order = order
+        # Add special attributes that support 2D grids of axes
+        # NOTE: The input list is always a vector *already unfurled* in row-major
+        # or column-major order, and 'n' is the slowest-moving dimension size, i.e.
+        # nrows for order=='C' and ncols for order=='F'.
+        self._n = n # ncols or nrows
+        self._order = order # order
         super().__init__(list_)
 
     def __repr__(self):
@@ -95,38 +97,62 @@ class axes_list(list):
         """Pseudo immutability, raises error."""
         raise LookupError('axes_list is immutable.')
 
-    def __setattr__(self, key, value):
-        """Pseudo immutability, raises error."""
-        if key in ('_n','_order'):
-            object.__setattr__(self, key, value)
-        else:
-            raise AttributeError('axes_list is immutable.')
-
     def __getitem__(self, key):
         """If an integer is passed, e.g. ``axs[0]``, the item is returned.
         If a slice is passed, e.g. ``axs[1:3]``, an `axes_list` of the items
-        is returned."""
-        # For example, ``axs.format(xticks=5)`` sets the tick
-        # locations for all axes.
+        is returned. You can also use 2D indexing, e.g. ``axs[1,2]`` or
+        ``axs[:,0]``, and the corresponding axes in the axes grid will be
+        chosen."""
         # Allow 2D specification
-        # For weirder keys, raise error down the line
-        # NOTE: When order=='F', panels were unfurled columnwise, so number
-        # of rows is actually number of columns on the array
-        # TODO: Test this stuff. For order=='F':
-        # 0, 1 --> 1*nrows, but nrows is ncols
-        # 2, 1 --> 1*nrows + 2
-        if isinstance(key, tuple):
-            if len(key)==1:
-                key = key[0]
-            elif len(key)==2 and all(isinstance(k, Number) for k in key):
-                if self._order=='C':
-                    key = key[0]*self._n + key[1]
-                elif self._order=='F':
-                    key = key[1]*self._n + key[0]
-        axs = list.__getitem__(self, key)
-        if isinstance(key, slice): # i.e. returns a list
-            axs = axes_list(axs)
-        return axs
+        if isinstance(key, tuple) and len(key)==1:
+            key = key[0]
+        if not isinstance(key, tuple): # do not expand single slice to list of integers or we get recursion! len() operator uses __getitem__!
+            axlist = isinstance(key, slice)
+            objs = list.__getitem__(self, key)
+        elif len(key)==2:
+            axlist = any(isinstance(ikey, slice) for ikey in key)
+            # Expand keys
+            # Testing shows that this order stuff works.
+            keys = []
+            order = self._order
+            for i,ikey in enumerate(key):
+                if isinstance(ikey, slice):
+                    start, stop, step = ikey.start, ikey.stop, ikey.step
+                    if start is None:
+                        start = 0
+                    if step is None:
+                        step = 1
+                    if stop is None:
+                        if (i==1 and order=='C') or (i==0 and order!='C'):
+                            stop = self._n
+                        else:
+                            stop = len(self)//self._n
+                    ikeys = [*range(start, stop, step)]
+                else:
+                    ikeys = [ikey]
+                keys.append(ikeys)
+            # Get index pairs and get objects
+            # Note that in double for loop, right loop varies fastest, so
+            # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
+            # Remember for order=='F', axes_list was sent a list unfurled in
+            # column-major order, so we replicate row-major indexing syntax by
+            # reversing the order of the keys.
+            objs = []
+            if self._order=='C':
+                idxs = [key0*self._n + key1 for key0 in keys[0] for key1 in keys[1]]
+            else:
+                idxs = [key1*self._n + key0 for key1 in keys[1] for key0 in keys[0]]
+            for idx in idxs:
+                objs.append(list.__getitem__(self, idx))
+            if not axlist: # objs will always be length 1
+                objs = objs[0]
+        else:
+            raise IndexError
+        # Return
+        if axlist:
+            return axes_list(objs)
+        else:
+            return objs
 
     def __getattr__(self, attr):
         """If the attribute is *callable*, e.g. ``axs.format(xtick=5)``, returns
@@ -650,97 +676,108 @@ class Figure(mfigure.Figure):
         self._smart_tight_init = False
 
     def _panel_tight_layout(self, side, paxs, renderer, figure=False):
-        """From list of panels and the axes coordinates spanned by the
-        main axes, figure out the necessary new 'spacing' to apply to the inner
-        gridspec object. For axes panels, this function just modifies mutable
-        width/height ratio lists in place, returns nothing. For figure panels, it
-        returns the lsep, rspe, or bsep argument needed for _subplots_kwargs."""
+        """From a list of panels axes int he same row or column, figure out
+        the necessary new 'spacing' to apply to the inner gridspec object.
+        For axes panels, this function just modifies mutable width and height
+        ratio lists in place, and returns the 'wpanels' or 'hpanels' arguments.
+        For figure panels, it returns the 'lsep', 'rsep', or 'bsep' argument
+        needed for _subplots_kwargs."""
         # Initial stuff
         # Check that none of input panels are EmptyPanel, although they can
         # certainly be invisible/allocated to make spacing even.
         pad = self._smart_panelpad
-        if all(not ipanel for pax in paxs for ipanel in pax): # exists, but may be invisible
-            return
+        if not paxs:
+            return 0
+        elif all(not ipanel for pax in paxs for ipanel in pax): # exists, but may be invisible
+            return 0
         elif not all(ipanel for pax in paxs for ipanel in pax):
             raise ValueError('Either all or no axes in this row should have panels.')
         elif len({len(pax) for pax in paxs})>1:
-            raise ValueError('Different numbers of stacked panels in same row or column.')
-        # Get full width/height ratios for main gridspec
+            raise ValueError(f'Different numbers of stacked panels in same row or column: {[len(pax) for pax in paxs]}.')
+        # Get list of panels in each panel stack that are adjacent to the
+        # main subplot area.
         if side in 'br':
-            paxs_adj = [pax[0] for pax in paxs]
+            paxs_main = [pax[0] for pax in paxs]
         else:
-            paxs_adj = [pax[-1] for pax in paxs]
-        gspecs = [pax._panels_main_gridspec for pax in paxs_adj]
-        pgspecs = [pax._panels_stack_gridspec for pax in paxs_adj]
+            paxs_main = [pax[-1] for pax in paxs]
+        # Get full width and height ratios for the panel and outer gridspecs
+        # NOTE: We edit the *ratio lists* themselves. The getters do not
+        # return copies, but the mutable underlying objects!
+        gridspecs = [pax._panels_main_gridspec for pax in paxs_main]
+        pgridspecs = [pax._panels_stack_gridspec for pax in paxs_main]
         if side in 'lr':
-            ratios = [gs.get_width_ratios() for gs in gspecs]
-            pratios = [gs.get_width_ratios() for gs in pgspecs]
+            ratios = [gs.get_width_ratios() for gs in gridspecs]
+            pratios = [gs.get_width_ratios() for gs in pgridspecs]
         else:
-            ratios = [gs.get_height_ratios() for gs in gspecs]
-            pratios = [gs.get_height_ratios() for gs in pgspecs]
+            ratios = [gs.get_height_ratios() for gs in gridspecs]
+            pratios = [gs.get_height_ratios() for gs in pgridspecs]
 
-        # Space between stacked panels
-        # Iterate through pairs of panels
-        # Get *minimum* actual space between adjacent panels, and use
-        # that to adjust the inner panel separation.
-        # WARNING: Order of stacks is always left-right and top-bottom
-        space = []
+        # Get necessary space between stacked panels. We iterate through pairs
+        # of panels and get *minimum* actual space between adjacent panels.
+        seps = []
         for pax in paxs:
             # Ratios
-            ispace = []
-            for i in range(len(pax)-1):
+            isep = []
+            for i in range(len(pax)-1): # empty if there is just one panel in the stack
                 ipaxs = pax[i:i+2] # lists are left-to-right, top-to-bottom
                 if any(ipax._tight_bbox is None for ipax in ipaxs):
-                    ispace.append(None)
+                    isep.append(None)
                     continue
                 # Get intervals and spacing. Options are:
                 # 1) Bottom of top panel minus top of bottom panel
                 # 2) Left of right panel minus right of left panel
+                # NOTE: Order of stacks is always left-right and top-bottom
                 if side in 'lr':
                     ispans = [_intervalx(pax) for pax in ipaxs]
-                    ispace.append((ispans[1][0] - ispans[0][1])/self.dpi) # bottom of top one minus top of bottom one
+                    isep.append((ispans[1][0] - ispans[0][1])/self.dpi) # bottom of top one minus top of bottom one
                 else: # 'tb'
                     ispans = [_intervaly(pax) for pax in ipaxs]
-                    ispace.append((ispans[0][0] - ispans[1][1])/self.dpi) # bottom of top one minus top of bottom one
-            # Add to list of lists
-            space.append(ispace)
-        # Update the panel stack gridspec ratios, *and*, correspondingly, the
-        # ratios for the main gridspec containing panels and main axes
-        # NOTE: All ispace will be empty unless have any stacked panels
-        sep = []
-        if any(space):
-            # Iterate through axes, then through gaps
-            # NOTE: Iterate through paxs_adj just to use it for _flush setting
-            space = [[*_] for _ in zip(*space)] # grouped by axes
-            for pax,iratios,ipratios in zip(paxs_adj,ratios,pratios):
-                sep = []
-                flush = pax._flush # must be same for all panels!
-                for idx,ispace in enumerate(space):
-                    idx = 1 + idx*2 # index of *spaces* in ratios list
-                    ispace = [i for i in ispace if i is not None] # if panel invisible
-                    if not ispace:
-                        warnings.warn('All panels in this row or column at some stack level are invisible. That is really weird.')
-                        continue
-                    # Adjust ratios for panel gridspec
-                    if flush: # assume user means, always want panels touching, in spite of ticks, etc.
-                        isep = 0
-                    else:
-                        isep = max([0, ipratios[idx] - min(ispace) + pad])
-                    ipratios[idx] = isep
-                    # Adjust ratio for main gridspec, or save stats for figure panels
-                    if figure:
-                        sep.append(isep)
-                    else:
-                        idx_stack = (-1 if side in 'br' else 0)
-                        iratios[idx_stack] = sum(ipratios)
-        if figure:
-            return sep # should be same for each "panel"!
+                    isep.append((ispans[0][0] - ispans[1][1])/self.dpi) # bottom of top one minus top of bottom one
+            # List of actual spacing between panels in each panel stack
+            seps.append(isep)
 
-        # Space between main subplot and adjacent panels
-        # Iterate through panels, get maximum necessary spacing; assign
-        # equal spacing to all so they are still aligned
-        space = []
-        for pax in paxs_adj:
+        # Setup
+        sep = []
+        flush = [pax._flush for pax in paxs_main]
+        if not all(flush) and any(flush):
+            warning.warn('"flush" setting varies between panels in the same row or column. Using "flush" from the first axes in the row or column: {flush[0]}.')
+        flush = flush[0]
+        # Apply updated *space* to the underlying panel gridspec and main
+        # axes gridspec width and height ratios
+        # NOTE: The existing seps in ipratios will be *identical* along
+        # the row or column, so we use a sample.
+        seps = [[*_] for _ in zip(*seps)] # seps grouped by like row or column
+        for idx,isep in enumerate(seps):
+            idx = 1 + idx*2 # index of *spaces* in ratios list
+            isep = [i for i in isep if i is not None] # if panel invisible
+            if not isep:
+                warnings.warn('All panels in this row or column at some stack level are invisible. That is really weird.')
+                sep.append(0)
+                continue
+            if flush: # always want panels touching, in spite of ticks, etc.
+                isep = 0
+            else:
+                isep = max([0, pratios[0][idx] - min(isep) + pad])
+            sep.append(isep)
+        # Adjust ratios for panel gridspec
+        for iratios,ipratios in zip(ratios,pratios):
+            for idx,isep in enumerate(sep):
+                idx = 1 + idx*2 # index of *spaces* in ratios list
+                ipratios[idx] = isep
+                if figure:
+                    continue
+                idx_stack = (-1 if side in 'br' else 0)
+                iratios[idx_stack] = sum(ipratios)
+        # Just need the 'sep' argument for outer panels. We have already adjusted
+        # 'lspace', etc. arguments by modifying the wratio and hratio lists.
+        if figure:
+            return sep
+
+        # Get space between main subplot and adjacent panels. Iterate through
+        # panels, get maximum necessary spacing. Assign equal spacing to all
+        # so they are still aligned
+        spaces = []
+        for pax in paxs_main:
             if pax._tight_bbox is None:
                 continue
             if side in 'lr':
@@ -750,20 +787,22 @@ class Figure(mfigure.Figure):
                 pspan = _intervaly(pax)
                 span = _intervaly(pax._parent)
             if side in 'tr':
-                space.append((pspan[0] - span[1])/self.dpi)
+                spaces.append((pspan[0] - span[1])/self.dpi)
             else:
-                space.append((span[0] - pspan[1])/self.dpi)
-        # Update the ratios, and fix
-        if not space:
-            warnings.warn('All panels in this row or column are invisible. That is really weird.')
+                spaces.append((span[0] - pspan[1])/self.dpi)
+        # Get the new spacing, remember ratios in like row/column are identical
+        # warnings.warn('All panels in this row or column are invisible. You are probably doing something really weird.')
+        idx = (-2 if side in 'br' else 1)
+        if flush or not spaces:
+            space = 0
         else:
-            for pax,iratios in zip(paxs_adj,ratios):
-                idx = (-2 if side in 'br' else 1)
-                if pax._flush: # assume user means, always want panels touching, in spite of ticks, etc.
-                    ispace = 0
-                else:
-                    ispace = max([0, iratios[idx] - min(space) + pad])
-                iratios[idx] = ispace
+            space = max([0, ratios[0][idx] - min(spaces) + pad])
+        for iratios in ratios:
+            iratios[idx] = space
+        # Get array of panel widths, which we left unchanged
+        # Then return the 'hpanels' and 'wpanels' arguments
+        width = pratios[0][::2]
+        return sum(sep) + sum(width) + space
 
     def smart_tight_layout(self, renderer=None):
         """
@@ -868,7 +907,8 @@ class Figure(mfigure.Figure):
             pad = self._smart_subplotpad
             xspans, yspans, xrange, yrange = _ax_props(self._main_axes, renderer)
             for side,paxs in zip('lbr', (self.leftpanel, self.bottompanel, self.rightpanel)):
-                # Only test panels on *inside* of subplot region
+                # Initial stuff
+                # TODO: Shouldn't this also test if get_visible is on?
                 if not any(paxs):
                     continue
                 npanel = len(paxs)
@@ -877,25 +917,26 @@ class Figure(mfigure.Figure):
                 m = npanel//n # columns or rows
                 # Add bbox spans and "ranges" for figure panels
                 if (side=='b' and order=='C') or (side=='r' and order!='C'):
-                    pax_adj = paxs[:n]
+                    paxs_main = paxs[:n]
                 elif (side=='l' and order=='C'):
-                    pax_adj = paxs[n-1::n]
+                    paxs_main = paxs[n-1::n]
                 elif (side=='l' and order!='C'):
-                    pax_adj = paxs[-n:]
+                    paxs_main = paxs[-n:]
                 elif (side=='r' and order=='C') or (side=='b' and order!='C'):
-                    pax_adj = paxs[::n]
-                xs, ys, xr, yr = _ax_props(pax_adj, renderer)
+                    paxs_main = paxs[::n]
+                xs, ys, xr, yr = _ax_props(paxs_main, renderer)
                 xspans, yspans = np.vstack((xspans, xs)), np.vstack((yspans, ys))
                 xrange, yrange = np.vstack((xrange, xr)), np.vstack((yrange, yr))
-                # Space between border panels
-                # Turn 2D list of panels into list of stacked panels!
+                # Space between stacked figure panels
+                # First turn 2D list of panels into list of stacked panels!
                 if (side=='b' and order=='C') or (side!='b' and order!='C'):
                     paxs = [paxs[i::n] for i in range(n)] # n is number of panels
                 else:
                     paxs = [paxs[i*n:i*n+n] for i in range(m)] # m is number of panels
                 sep = self._panel_tight_layout(side, paxs, renderer, figure=True)
                 subplots_kw[side + 'sep'] = sep
-            # Construct "wspace" and "hspace" including panel spaces
+
+            # Get *original* "wspace" and "hspace" for comparative purposes
             wspace_orig, hspace_orig = subplots_kw['wspace'], subplots_kw['hspace'] # originals
             if self.leftpanel:
                 wspace_orig = [subplots_kw['lspace'], *wspace_orig]
@@ -957,37 +998,33 @@ class Figure(mfigure.Figure):
                         groups.append({'b':{bottom}, 't':{top}}) # form new group
                 ygroups.append(groups)
 
-            # Correct wspace and hspace
-            if self._subplot_wflush:
-                wspace = [0]*len(wspace_orig)
-            else:
-                wspace = []
-                for space_orig, groups in zip(wspace_orig, xgroups):
-                    if not groups:
-                        wspace.append(space_orig)
-                        continue
-                    seps = [] # will use *maximum* necessary separation
-                    for group in groups: # groups with touching edges
-                        left = max(xspans[idx,1] for idx in group['l']) # axes on left side of column
-                        right = min(xspans[idx,0] for idx in group['r']) # axes on right side of column
-                        seps.append((right - left)/self.dpi)
-                    wspace.append(max((0, space_orig - min(seps) + pad)))
-            if self._subplot_hflush:
-                hspace = [0]*len(hspace_orig)
-            else:
-                hspace = []
-                for space_orig, groups in zip(hspace_orig, ygroups):
-                    if not groups:
-                        hspace.append(space_orig)
-                        continue
-                    seps = [] # will use *maximum* necessary separation
-                    for group in groups: # groups with touching edges
-                        bottom = min(yspans[idx,0] for idx in group['b'])
-                        top = max(yspans[idx,1] for idx in group['t'])
-                        seps.append((bottom - top)/self.dpi)
-                    hspace.append(max((0, space_orig - min(seps) + pad)))
+            # Correct wspace and hspace for each group in the 'groups' list
+            # For now, ignore the wflush and hflush settings
+            wspace = []
+            for space_orig, groups in zip(wspace_orig, xgroups):
+                if not groups:
+                    wspace.append(space_orig)
+                    continue
+                seps = [] # will use *maximum* necessary separation
+                for group in groups: # groups with touching edges
+                    left = max(xspans[idx,1] for idx in group['l']) # axes on left side of column
+                    right = min(xspans[idx,0] for idx in group['r']) # axes on right side of column
+                    seps.append((right - left)/self.dpi)
+                wspace.append(max((0, space_orig - min(seps) + pad)))
+            hspace = []
+            for space_orig, groups in zip(hspace_orig, ygroups):
+                if not groups:
+                    hspace.append(space_orig)
+                    continue
+                seps = [] # will use *maximum* necessary separation
+                for group in groups: # groups with touching edges
+                    bottom = min(yspans[idx,0] for idx in group['b'])
+                    top = max(yspans[idx,1] for idx in group['t'])
+                    seps.append((bottom - top)/self.dpi)
+                hspace.append(max((0, space_orig - min(seps) + pad)))
 
-            # If had panels, need to pull out args
+            # If had figure panels, need to pull out args
+            # If wflush or hflush enabled, overwrite the resulting wspace and hspace
             lspace, rspace, bspace = 0, 0, 0 # does not matter if no panels
             if self.leftpanel:
                 lspace, *wspace = wspace
@@ -995,8 +1032,14 @@ class Figure(mfigure.Figure):
                 *wspace, rspace = wspace
             if self.bottompanel:
                 *hspace, bspace = hspace
-            subplots_kw.update({'wspace':wspace, 'hspace':hspace,
-                'lspace':lspace, 'rspace':rspace, 'bspace':bspace})
+            if self._subplot_wflush:
+                wspace = [0]*len(wspace)
+            if self._subplot_hflush:
+                hspace = [0]*len(hspace)
+            subplots_kw.update({
+                'wspace':wspace, 'hspace':hspace,
+                'lspace':lspace, 'rspace':rspace, 'bspace':bspace,
+                })
 
         #----------------------------------------------------------------------#
         # The same, but for spaces between *axes panels*
@@ -1013,33 +1056,25 @@ class Figure(mfigure.Figure):
 
             # Bottom, top panels in same rows
             axs = self._main_axes
+            hpanels = []
             for row in range(nrows):
+                ihpanels = 0
                 paxs = [ax.bottompanel for ax in axs if ax._yrange[1]==row]
-                if paxs: # usage is (side, panels, spans, renderer)
-                    self._panel_tight_layout('b', paxs, renderer)
+                ihpanels += self._panel_tight_layout('b', paxs, renderer)
                 paxs = [ax.toppanel for ax in axs if ax._yrange[0]==row]
-                if paxs:
-                    self._panel_tight_layout('t', paxs, renderer)
-
+                ihpanels += self._panel_tight_layout('t', paxs, renderer)
+                hpanels.append(ihpanels)
             # Left, right panels in same columns
+            wpanels = []
             for col in range(ncols):
+                iwpanels = 0
                 paxs = [ax.leftpanel for ax in axs if ax._xrange[0]==col]
-                if paxs:
-                    self._panel_tight_layout('l', paxs, renderer)
+                iwpanels += self._panel_tight_layout('l', paxs, renderer)
                 paxs = [ax.rightpanel for ax in axs if ax._xrange[1]==col]
-                if paxs:
-                    self._panel_tight_layout('r', paxs, renderer)
-
-            # Reference axes
-            axref = axs[self._ref_num - 1]
-            wextra, hextra = 0, 0
-            igridspec = axref._panels_main_gridspec
-            if igridspec is not None:
-                wextra = sum(w for i,w in enumerate(igridspec.get_width_ratios())
-                    if i!=2*int(bool(axref.leftpanel))) # main subplot index is position 2 of left panel is present, 0 if not
-                hextra = sum(w for i,w in enumerate(igridspec.get_height_ratios())
-                    if i!=2*int(bool(axref.toppanel))) # as for wextra
-            subplots_kw.update({'wextra':wextra, 'hextra':hextra})
+                iwpanels += self._panel_tight_layout('r', paxs, renderer)
+                wpanels.append(iwpanels)
+            # Add to dictionary
+            subplots_kw.update({'wpanels':wpanels, 'hpanels':hpanels})
 
             # Put back row and column labels
             for ax in self._main_axes:
@@ -1070,15 +1105,15 @@ class Figure(mfigure.Figure):
                 # Ratios and 'extra' space for axes and its panels
                 iwratios = igridspec.get_width_ratios() # gets my *custom* ratios
                 ihratios = igridspec.get_height_ratios()
-                ihextra = sum(h for i,h in enumerate(ihratios) if i!=idx[0])
-                iwextra = sum(w for i,w in enumerate(iwratios) if i!=idx[1])
+                ihpanels = sum(h for i,h in enumerate(ihratios) if i!=idx[0])
+                iwpanels = sum(w for i,w in enumerate(iwratios) if i!=idx[1])
                 # Calculate
                 xrange = 2*np.array(ax._xrange) # endpoint inclusive
                 yrange = 2*np.array(ax._yrange)
                 fullwidth = sum(wratios[xrange[0]:xrange[1]+1]) # including panels!
                 fullheight = sum(hratios[yrange[0]:yrange[1]+1])
-                axwidth = fullwidth - iwextra
-                axheight = fullheight - ihextra
+                axwidth = fullwidth - iwpanels
+                axheight = fullheight - ihpanels
                 # Update axes panels
                 iwratios[2 if ax.leftpanel else 0] = axwidth
                 ihratios[2 if ax.toppanel else 0] = axheight
@@ -1142,7 +1177,7 @@ class Figure(mfigure.Figure):
         # Render
         return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
-    def add_subplot_and_panels(self, subspec, which=None, ax_kw={}, *,
+    def add_subplot_and_panels(self, subspec, which=None, order='C', ax_kw={}, *,
             hspace, wspace,
             bwidth, bvisible, bflush, bshare, bsep,
             twidth, tvisible, tflush, tshare, tsep,
@@ -1214,8 +1249,6 @@ class Figure(mfigure.Figure):
         boxwidth = abs(bbox.width)*figwidth
         height = boxheight - sum(hspace)
         width = boxwidth - sum(wspace)
-        # hspace = hspace/(height/nrows)
-        # wspace = wspace/(width/ncols)
 
         # Figure out hratios/wratios
         # Will enforce (main_width + panel_width)/total_width = 1
@@ -1262,8 +1295,10 @@ class Figure(mfigure.Figure):
                 ):
             if side not in which:
                 continue
-            # Settings
+            # Settings, and apply flush
             stack = len(width)
+            if flush:
+                sep = sep*0.0
             if side in 'lr':
                 r, = np.where('c'==rows)
                 c, = np.where(side==cols)
@@ -1291,7 +1326,11 @@ class Figure(mfigure.Figure):
                 pax._panels_main_gridspec = gs
                 pax._panels_stack_gridspec = igs
                 paxs += [pax]
-            setattr(ax, name + 'panel', axes_list(paxs))
+            # Add as axes_list. Support 2D indexing, even though these are
+            # always vector stacks, because consistency. See axes_list docs.
+            n = stack if (side in 'tb' and order=='C') or (side in 'lr' and order!='C') else 1
+            paxs = axes_list(paxs, n=n, order=order)
+            setattr(ax, name + 'panel', paxs)
         # Set up axis sharing
         # * Sharex and sharey methods should be called on the 'child' axes,
         #   with labelling preferred on the axes in the first argument.
@@ -1322,9 +1361,44 @@ class Figure(mfigure.Figure):
 #-------------------------------------------------------------------------------
 # Primary plotting function, used to create figure/axes
 #-------------------------------------------------------------------------------
-def _panels_kwargs(panels, colorbars, legends,
+def _panels_sync(side, nums, panels_kw):
+    """Makes sure we leave space for invisible panels for subplots *without*
+    panels that reside in the same row or column as subplots *with* panels."""
+    # Get dict of panels_kw dictionaries in the column or row, and dict
+    # of panels_kw dictionaries in the column or row with *active panels*
+    all_kw = {num:panels_kw[num] for num in nums}
+    on_kw = {num:kw for num,kw in all_kw.items() if side in kw['which']}
+    if not on_kw:
+        return 0
+    # Compare all other panel dicts to the first dict with active panels
+    # on the requested side side
+    ref_kw = (*on_kw.values(),)[0]
+    ispace = 0 if side in 'tl' else -1 # index for wspace/hspace arg for axes panels
+    nspace = 'wspace' if side in 'lr' else 'hspace'
+    nsep, nwidth = side + 'sep', side + 'width'
+    sep, width, space = ref_kw[nsep], ref_kw[nwidth], ref_kw[nspace]
+    for num,kw in all_kw.items():
+        # Make sure stacked-panel separation and panel widths always match
+        kw[nsep] = sep
+        kw[nwidth] = width
+        # Match subplot-panel spacing
+        if num in on_kw:
+            kw[nspace][ispace] = space[ispace] # enforce, e.g. in case one left panel has different width compared to another!
+        else:
+            kw['which'] += side
+            kw[side + 'visible'] = False
+            if side in 'tl':
+                kw[nspace] = [space[ispace], *kw[nspace]]
+            else:
+                kw[nspace] = [*kw[nspace], space[ispace]]
+    # Return the space we have alotted for the panel(s) in this row/column
+    return sum(sep) + sum(width) + space[ispace]
+
+def _panels_kwargs(
+    panels, colorbars, legends,
     panels_kw, colorbars_kw=None, legends_kw=None,
-    figure=False, ncols=None, nrows=None):
+    figure=False, ncols=None, nrows=None
+    ):
     """Returns standardized keyword args for axes and figure panels."""
     # Get which panels
     kwout = {}
@@ -1336,6 +1410,7 @@ def _panels_kwargs(panels, colorbars, legends,
     allsides = 'lrb' if figure else 'lrbt'
     if len({*allpanels}) != len(allpanels):
         raise ValueError('You requested the same side for a panel, colorbar, and/or legend.')
+
     # Fill non-panels with empty args, copy over extra args to potentially
     # raise errors down the line.
     # NOTE: This is done to require keyword-only arguments to _subplots_kwargs
@@ -1357,8 +1432,10 @@ def _panels_kwargs(panels, colorbars, legends,
         for key,value in kwargs.items():
             if not regex.match(key):
                 kwout[key] = value
-    # Helper function
-    def _get(side, name, defaults):
+    # Define helper function
+    def _panel_prop(side, name, defaults):
+        """Returns property from the appropriate dictionary, or returns the
+        default from the rc.subplots category."""
         if not isinstance(defaults, tuple):
             defaults = 3*(defaults,)
         for check,kwargs,default in zip((panels, colorbars, legends), (panels_kw, colorbars_kw, legends_kw), defaults):
@@ -1372,11 +1449,11 @@ def _panels_kwargs(panels, colorbars, legends,
     # NOTE: Accounts for stacked panels
     for side in allpanels:
         # Simple props
-        stack = _get(side, 'stack', 1)
-        share = _get(side, 'share', (True,False,True))
+        stack = _panel_prop(side, 'stack', 1)
+        share = _panel_prop(side, 'share', (True,False,True))
         kwout[side + 'share'] = share
         # Widths
-        width = _get(side, 'width', ('panelwidth', 'cbarwidth', 'legwidth'))
+        width = _panel_prop(side, 'width', ('panelwidth', 'cbarwidth', 'legwidth'))
         width = np.atleast_1d(units(width))
         if len(width)==1:
             width = np.repeat(width, (stack,))
@@ -1384,12 +1461,12 @@ def _panels_kwargs(panels, colorbars, legends,
             raise ValueError(f'For side "{side}", have {stack} stacked panels, but got {len(width)} widths.')
         kwout[side + 'width'] = width
         # Panel separation
-        flush = _get(side, 'flush', False)
+        flush = _panel_prop(side, 'flush', False)
         if stack==1 or flush:
             sep = 0
         else:
             default = 'nolabspace' if share else 'ylabspace' if side in 'lr' else 'xlabspace'
-            sep = _get(side, 'sep', (default,default,default))
+            sep = _panel_prop(side, 'sep', (default,default,default))
         sep = np.atleast_1d(units(sep))
         if len(sep)==1:
             sep = np.repeat(sep, (stack-1,))
@@ -1402,11 +1479,11 @@ def _panels_kwargs(panels, colorbars, legends,
     if figure:
         for side in allpanels:
             # Space between panels and main subplots
-            space = _get(side, 'space', 'xlabspace' if side=='b' else 'ylabspace' if side=='l' else 'nolabspace')
+            space = _panel_prop(side, 'space', 'xlabspace' if side=='b' else 'ylabspace' if side=='l' else 'nolabspace')
             kwout[side + 'space'] = units(space)
             # Spanning of panels along subplot rows and columns
             nmax = ncols if side=='b' else nrows
-            span = _get(side, 'span', False)
+            span = _panel_prop(side, 'span', False)
             if np.iterable(span):
                 nums = [*span]
                 if len(span)!=nmax:
@@ -1420,7 +1497,7 @@ def _panels_kwargs(panels, colorbars, legends,
         # Panel visibility, toggling
         kwout['which'] = allpanels
         for side in allpanels:
-            kwout[side + 'visible'] = _get(side, 'visible', True)
+            kwout[side + 'visible'] = _panel_prop(side, 'visible', True)
         # Space between panels and parent subplot
         for name,axis,sides in zip(('hspace','wspace'), ('x','y'), ('tb','lr')):
             n = len([side for side in sides if side in allpanels])
@@ -1436,15 +1513,15 @@ def _panels_kwargs(panels, colorbars, legends,
                         default = 0
                     else:
                         default = ('panelspace', big if side in 'bl' else 'panelspace', 'panelspace')
-                    space[-i] = _get(side, 'space', default) # not this also tests for 'lhspace', etc.; nonsense, but it's harmless
+                    space[-i] = _panel_prop(side, 'space', default) # not this also tests for 'lhspace', etc.; nonsense, but it's harmless
             kwout[name] = units(space)
 
     # Return the dictionary
     return kwout
 
-def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes used for scaling things
+def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference axes used for scaling things
     # Args filled with rc settings by main body of subplots()
-    wextra, hextra,
+    wpanels, hpanels,
     width,  height, axwidth, axheight,
     hspace, wspace, hratios, wratios,
     left,   bottom, right,   top,
@@ -1458,9 +1535,10 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
     bwidth, bspace, etc. must be supplied or will get error, but this should
     be taken care of by _parse_panels."""
     # Necessary arguments to reconstruct this grid, with defaults filled in
-    subplots_kw = {'nrows': nrows, 'ncols': ncols, 'aspect': aspect, 'ref': ref,
+    subplots_kw = {
+        'nrows': nrows, 'ncols': ncols, 'aspect': aspect, 'xref': xref, 'yref': yref,
         'width': width, 'height': height, 'axwidth': axwidth, 'axheight': axheight,
-        'wextra': wextra, 'hextra': hextra, 'hspace': hspace, 'wspace': wspace, 'hratios': hratios, 'wratios': wratios,
+        'wpanels': wpanels, 'hpanels': hpanels, 'hspace': hspace, 'wspace': wspace, 'hratios': hratios, 'wratios': wratios,
         'left': left, 'bottom': bottom, 'right': right, 'top': top,
         'bspan': bspan, 'lspan': lspan, 'rspan': rspan,
         'bwidth': bwidth, 'bsep': bsep, 'bspace': bspace, 'bflush': bflush, 'bshare': bshare, # separation between panels
@@ -1471,6 +1549,11 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
     # Determine figure size
     # If width and height are not fixed, will scale them to preserve aspect
     # ratio of the first plot
+    dx, dy = xref[1]-xref[0], yref[1]-yref[0]
+    rwratio = sum(wratios[slice(*xref)])
+    rhratio = sum(hratios[slice(*yref)])
+    rwspace = sum(wspace[xref[0]:xref[1]-1])
+    rhspace = sum(hspace[yref[0]:yref[1]-1])
     auto_both = (width is None and height is None)
     auto_width  = (width is None and height is not None)
     auto_height = (height is None and width is not None)
@@ -1480,55 +1563,58 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
     lpanel_space = sum(lwidth) + sum(lsep) + lspace if lspan else 0
     if np.iterable(aspect):
         aspect = aspect[0]/aspect[1]
-    # Determine average axes widths/heights
+    # Determine figure dims from axes width and height
     # Default behavior: axes average 2.0 inches wide
     # aspect = aspect*(hratios[0]/np.mean(hratios))
-    if auto_width or auto_neither:
-        axheights = height - top - bottom - sum(hspace) - bpanel_space
-    if auto_height or auto_neither:
-        axwidths = width - left - right - sum(wspace) - rpanel_space - lpanel_space
-    # If both are auto (i.e. no figure dims specified), this is where
-    # we set figure dims according to axwidth and axheight input
+    # NOTE: Account for 'whitespace' that is spanned by our reference axes.
+    # When user passes 'axwidth' or 'axheight' they mean the width or height
+    # of the entire thing including the part spanning over empty space.
     if auto_both: # get stuff directly from axes
         if axwidth is None and axheight is None:
             axwidth = units(rc['subplot.axwidth'])
         if axheight is not None:
-            height = axheight*nrows + top + bottom + sum(hspace) + bpanel_space
-            axheights = axheight*nrows
             auto_width = True
+            axheight_all = ((axheight - rhspace)/dy)*nrows # must omit space covered by reference axes
+            height = axheight_all + top + bottom + sum(hspace) + sum(hpanels) + bpanel_space
         if axwidth is not None:
-            width = axwidth*ncols + left + right + sum(wspace) + rpanel_space + lpanel_space
-            axwidths = axwidth*ncols
             auto_height = True
+            axwidth_all = ((axwidth - rwspace)/dx)*ncols
+            width = axwidth_all + left + right + sum(wspace) + sum(wpanels) + rpanel_space + lpanel_space
         if axwidth is not None and axheight is not None:
             auto_width = auto_height = False
+    # Determine axes widths and heights from requested figure dims
+    # Make sure to exclude the 'wpanels' and 'hpanels' props
+    else:
+        if auto_width or auto_neither:
+            axheight_all = height - top - bottom - sum(hspace) - sum(hpanels) - bpanel_space
+            axheight = (axheight_all*dy/nrows) + rhspace # reverse engineered from above
+        if auto_height or auto_neither:
+            axwidth_all = width - left - right - sum(wspace) - sum(wpanels) - rpanel_space - lpanel_space
+            axwidth = (axwidth_all*dx/ncols) + rwspace
 
     # Automatically scale fig dimensions
-    # TODO: Fails for complex grids?
-    href = (ref - 1) % ncols
-    wref = (ref - 1) // ncols
+    # For e.g. common use case [[1,1,2,2],[0,3,3,0]], make sure we still scale
+    # the reference axes like a square even though it occupes two columns of gridspec!
     if auto_width:
-        axheight = axheights*hratios[href]/sum(hratios)
-        axwidth  = (axheight - hextra)*aspect + wextra # bigger w ratio, bigger width
-        axwidths = axwidth*sum(wratios)/wratios[wref]
-        width = axwidths + left + right + sum(wspace) + rpanel_space + lpanel_space
+        axheight = axheight_all*(rhratio + rhspace)/sum(hratios)
+        axwidth_all = ((axwidth - rwspace)/dx)*ncols
+        width = axwidth_all + left + right + sum(wspace) + sum(wpanels) + rpanel_space + lpanel_space
     elif auto_height:
-        axwidth = axwidths*wratios[wref]/sum(wratios)
-        axheight = (axwidth - wextra)/aspect + hextra
-        axheights = axheight*sum(hratios)/hratios[href]
-        height = axheights + top + bottom + sum(hspace) + bpanel_space
-    if axwidths<0:
-        raise ValueError(f"Not enough room for axes (would have width {axwidths}). Try using tight=False, increasing figure width, or decreasing 'left', 'right', or 'wspace' spaces.")
-    if axheights<0:
-        raise ValueError(f"Not enough room for axes (would have height {axheights}). Try using tight=False, increasing figure height, or decreasing 'top', 'bottom', or 'hspace' spaces.")
+        axheight = axwidth/aspect
+        axheight_all = ((axheight - rhspace)/dy)*nrows
+        height = axheight_all + top + bottom + sum(hspace) + sum(hpanels) + bpanel_space
+    if axwidth_all<0:
+        raise ValueError(f"Not enough room for axes (would have width {axwidth_all}). Try using tight=False, increasing figure width, or decreasing 'left', 'right', or 'wspace' spaces.")
+    if axheight_all<0:
+        raise ValueError(f"Not enough room for axes (would have height {axheight_all}). Try using tight=False, increasing figure height, or decreasing 'top', 'bottom', or 'hspace' spaces.")
+
     # Make sure the 'ratios' and 'spaces' are in physical units (we cast the
     # former to physical units), easier then to add stuff as below
     wspace = [*wspace]
     hspace = [*hspace]
-    wratios = [*(axwidths*wratios/sum(wratios))]
-    hratios = [*(axheights*hratios/sum(hratios))]
-    # Now add the outer panel considerations, will enforce panels with
-    # constant widths.
+    wratios = [*(axwidth_all*wratios/sum(wratios) + wpanels)]
+    hratios = [*(axheight_all*hratios/sum(hratios) + hpanels)]
+    # Now add outer panels, will enforce constant width.
     nrows += int(bool(bspan))
     ncols += int(bool(rspan)) + int(bool(lspan))
     if bspan:
@@ -1540,6 +1626,7 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
     if rspan:
         wratios = wratios + [sum(rwidth) + sum(rsep)]
         wspace  = wspace  + [rspace]
+
     # Keyword args for gridspec class
     bottom = bottom/height
     left   = left/width
@@ -1553,8 +1640,8 @@ def _subplots_kwargs(nrows, ncols, aspect, ref, *, # ref is the reference axes u
     return (width, height), gridspec_kw, subplots_kw
 
 def _axes_dict(naxs, value, kw=False, default=None):
-    """Build a dictionary that looks like {1:value1, 2:value2, ...} or
-    {1:{key1:value1, ...}, 2:{key2:value2, ...}, ...} for storing
+    """Build a dictionary that looks like ``{1:value1, 2:value2, ...}`` or
+    ``{1:{key1:value1, ...}, 2:{key2:value2, ...}, ...}`` for storing
     standardized axes-specific properties or keyword args."""
     # First build up dictionary
     # 1) 'string' or {1:'string1', (2,3):'string2'}
@@ -1676,7 +1763,7 @@ def subplots(array=None, ncols=1, nrows=1,
         height) or as (width, height) tuple. If you do not provide
         the `hratios` or `wratios` keyword args, all axes will have
         identical aspect ratios.
-    hratios, wratios : optional
+    hratios, wratios, axheights, axwidths : optional
         Aliases for `height_ratios`, `width_ratios`.
     height_ratios, width_ratios : float or list thereof, optional
         Passed to `~proplot.gridspec.FlexibleGridSpecBase`. The height
@@ -1964,11 +2051,14 @@ def subplots(array=None, ncols=1, nrows=1,
     spany  = _default(span, spany)
     if sharex not in range(4) or sharey not in range(4):
         raise ValueError('Axis sharing options sharex/sharey can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels).')
-    # Get some axes properties. Locations are sorted by axes id.
+    # Get some axes properties, where locations are sorted by axes id.
+    # NOTE: These ranges are endpoint exclusive, like a slice object!
     axids = [np.where(array==i) for i in np.sort(np.unique(array)) if i>0] # 0 stands for empty
     idxoff = (0, int(bool(kwargs.get('lspan', None))))
     yrange = idxoff[0] + np.array([[y.min(), y.max()+1] for y,_ in axids]) # yrange is shared columns
     xrange = idxoff[1] + np.array([[x.min(), x.max()+1] for _,x in axids])
+    xref = xrange[ref-1,:] # range for reference axes
+    yref = yrange[ref-1,:]
 
     # Shared axes: Generate list of base axes-dependent axes pairs
     # That is, find where the minimum-maximum gridspec extent in 'x' for a
@@ -1976,7 +2066,7 @@ def subplots(array=None, ncols=1, nrows=1,
     xgroups_base, xgroups, grouped = [], [], {*()}
     if sharex:
         for i in range(naxs): # axes now have pseudo-numbers from 0 to naxs-1
-            matches       = (xrange[i,:]==xrange).all(axis=1) # *broadcasting rules apply here*
+            matches = (xrange[i,:]==xrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0] # gives ID number of matching_axes, from 0 to naxs-1
             if i not in grouped and matching_axes.size>1:
                 # Find all axes that have the same gridspec 'x' extents
@@ -1988,54 +2078,32 @@ def subplots(array=None, ncols=1, nrows=1,
     # Similar for *y* axis
     if sharey:
         for i in range(naxs):
-            matches       = (yrange[i,:]==yrange).all(axis=1) # *broadcasting rules apply here*
+            matches = (yrange[i,:]==yrange).all(axis=1) # *broadcasting rules apply here*
             matching_axes = np.where(matches)[0]
             if i not in grouped and matching_axes.size>1:
                 ygroups += [matching_axes]
                 ygroups_base += [matching_axes[np.argmin(xrange[matching_axes,0])]] # left-most axis with shared y, for matching_axes
             grouped.update(matching_axes) # bookkeeping; record ids that have been grouped already
 
-    # Make sure same panels are present on ***all rows and columns***
-    # Example: If left panel was requested for top subplot in 2-row figure, will
-    # allocate space for empty left panel in bottom subplot too, to keep
-    # things aligned!
-    # WARNING: This is very limited right now. Will just use the lowest number
-    # in the dictionary (since np.where return is sorted, so idxs is sorted,
-    # so filt_kw and side_kw are sorted, since python 3.6+ dicts preserve order)
-    # WARNING: Used to test for maximum spacing, panel widths along row, but
-    # now that have stacked panels this becomes just too complex. Note smart
-    # tight layout does its own thing to ensure appropriate spacing.
-    def sync(side, idxs):
-        all_kw = {idx+1: axpanels_kw[idx+1] for idx in idxs}
-        on_kw = {num:kw for num,kw in all_kw.items() if side in kw['which']}
-        if not on_kw:
-            return
-        dict_ = (*on_kw.values(),)[0]
-        idx = 0 if side in 'tl' else -1
-        space_ = 'wspace' if side in 'lr' else 'hspace'
-        sep, space, width = dict_[side + 'sep'], dict_[space_], dict_[side + 'width']
-        for num,kw in all_kw.items():
-            kw[side + 'sep'] = sep
-            kw[side + 'width'] = width
-            if num in on_kw:
-                kw[space_][idx] = space[idx] # enforce, e.g. in case one left panel has different width compared to another!
-                continue
-            kw['which'] += side
-            kw[side + 'visible'] = False
-            if side in 'tl':
-                kw[space_] = [space[idx], *kw[space_]]
-            else:
-                kw[space_] = [*kw[space_], space[idx]]
+    # Make sure same panels are present on *all rows and columns*
+    # Also sompute the extra space alloted for panels
+    hpanels = []
     for row in range(nrows):
+        ihpanels = 0
         idxs, = np.where(yrange[:,0]==row) # note ranges are *slices*, not endpoint inclusive
-        sync('t', idxs)
-        idxs, = np.where((yrange[:,1]-1)==row) # note ranges are *slices*, not endpoint inclusive
-        sync('b', idxs)
+        ihpanels += _panels_sync('t', idxs+1, axpanels_kw)
+        idxs, = np.where((yrange[:,1]-1)==row)
+        ihpanels += _panels_sync('b', idxs+1, axpanels_kw)
+        hpanels.append(ihpanels)
+    wpanels = []
     for col in range(ncols):
-        idxs, = np.where(xrange[:,0]==col) # note ranges are *slices*, not endpoint inclusive
-        sync('l', idxs)
-        idxs, = np.where((xrange[:,1]-1)==col) # note ranges are *slices*, not endpoint inclusive
-        sync('r', idxs)
+        iwpanels = 0
+        idxs, = np.where(xrange[:,0]==col)
+        iwpanels += _panels_sync('l', idxs+1, axpanels_kw)
+        idxs, = np.where((xrange[:,1]-1)==col)
+        iwpanels += _panels_sync('r', idxs+1, axpanels_kw)
+        wpanels.append(iwpanels)
+    wpanels, hpanels = np.array(wpanels), np.array(hpanels)
 
     #--------------------------------------------------------------------------#
     # Get basemap.Basemap or cartopy.CRS instances for map, and
@@ -2092,12 +2160,16 @@ def subplots(array=None, ncols=1, nrows=1,
         else rc['subplot.ylabspace'] - rc['subplot.titlespace'] if sharey in (1,2) # space for tick labels only
         else rc['subplot.ylabspace']
         )))
-    wratios = np.atleast_1d(_default(width_ratios, wratios, 1))
-    hratios = np.atleast_1d(_default(height_ratios, hratios, 1))
+    wratios = np.atleast_1d(_default(width_ratios, wratios, axwidths, 1))
+    hratios = np.atleast_1d(_default(height_ratios, hratios, axheights, 1))
     if len(wspace)==1:
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace)==1:
         hspace = np.repeat(hspace, (nrows-1,))
+    if flush or wflush:
+        wspace = wspace*0.0
+    if flush or hflush:
+        hspace = hspace*0.0
     if len(wratios)==1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios)==1:
@@ -2106,24 +2178,12 @@ def subplots(array=None, ncols=1, nrows=1,
     bottom = units(_default(bottom, rc['subplot.xlabspace']))
     right  = units(_default(right,  rc['subplot.nolabspace']))
     top    = units(_default(top,    rc['subplot.titlespace']))
-    # Extra space necessary to account for fixing axes aspect ratios when
-    # inner panels are present
-    axkw = axpanels_kw[ref]
-    wextra = sum(axkw['wspace']) + \
-            sum(sum(_default(axkw[side + 'width'], [0])) for side in 'lr') + \
-            sum(sum(_default(axkw[side + 'sep'], [0])) for side in 'lr')
-    hextra = sum(axkw['hspace']) + \
-            sum(sum(_default(axkw[side + 'width'], [0])) for side in 'tb') + \
-            sum(sum(_default(axkw[side + 'sep'], [0])) for side in 'tb')
-    if axwidth is not None:
-        axwidth += wextra
-    if axheight is not None:
-        axheight += hextra
     # Parse arguments, fix dimensions in light of desired aspect ratio
-    figsize, gridspec_kw, subplots_kw = _subplots_kwargs(nrows, ncols, aspect, ref,
+    figsize, gridspec_kw, subplots_kw = _subplots_kwargs(
+            nrows, ncols, aspect, xref, yref,
             left=left, right=right, bottom=bottom, top=top,
             width=width, height=height, axwidth=axwidth, axheight=axheight,
-            wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace, wextra=wextra, hextra=hextra,
+            wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace, wpanels=wpanels, hpanels=hpanels,
             **kwargs)
     # Apply settings and add attributes
     gs = FlexibleGridSpec(**gridspec_kw)
@@ -2151,7 +2211,7 @@ def subplots(array=None, ncols=1, nrows=1,
         ax_kw = axes_kw[num]
         if axpanels_kw[num]['which']: # non-empty
             axs[idx] = fig.add_subplot_and_panels(gs[slice(*yrange[idx,:]), slice(*xrange[idx,:])],
-                    number=num, spanx=spanx, spany=spany, ax_kw=ax_kw, **axpanels_kw[num])
+                    number=num, order=order, spanx=spanx, spany=spany, ax_kw=ax_kw, **axpanels_kw[num])
         else:
             axs[idx] = fig.add_subplot(gs[slice(*yrange[idx,:]), slice(*xrange[idx,:])],
                     number=num, spanx=spanx, spany=spany, **ax_kw) # main axes can be a cartopy projection
@@ -2200,10 +2260,13 @@ def subplots(array=None, ncols=1, nrows=1,
                 ipax._panels_stack_gridspec = igs
                 ipaxs += [ipax]
             paxs += [ipaxs]
-        # Then *unfurl* lists of lists in consistent order
-        if (side=='b' and order=='C') or (side in 'lr' and order=='F'):
+        # Sort panel axes into row-major or column-major order
+        if (side=='b' and order=='C') or (side in 'lr' and order!='C'):
             paxs = [*zip(*paxs)]
-        paxs = axes_list([ax for ipaxs in paxs for ax in ipaxs], order=order, n=len(paxs[0]))
+        # Store in axes_list with support for 2D indexing
+        n = len(paxs[0])
+        paxs = [ax for ipaxs in paxs for ax in ipaxs]
+        paxs = axes_list(paxs, n=n, order=order)
         setattr(fig, name + 'panel', paxs)
 
     # Set up axis sharing
@@ -2233,8 +2296,9 @@ def subplots(array=None, ncols=1, nrows=1,
                 raise ValueError(f'Something went wrong; axis {idx:d} belongs to multiple {name} groups.')
 
     # Return results
+    # Store axes in axes_list with support for 2D indexing
     fig._main_axes = axs
     fig._ref_num = ref
     fig._locked = True
-    return fig, axes_list(axs)
+    return fig, axes_list(axs, n=(nrows if order=='C' else ncols), order=order)
 

@@ -601,7 +601,7 @@ def PowerScaleFactory(power, inverse=False, name=None):
         # Declare name
         name = name_
         def __init__(self, axis, minpos=1e-300, **kwargs):
-            super().__init__()
+            super().__init__(axis)
             if not inverse:
                 transform = _PowerTransform(power, minpos)
             else:
@@ -692,7 +692,7 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
         # Declare name
         name = name_
         def __init__(self, axis, minpos=1e-300, **kwargs):
-            super().__init__()
+            super().__init__(axis)
             if not inverse:
                 transform = _ExpTransform(base, exp, scale, minpos)
             else:
@@ -796,7 +796,7 @@ def CutoffScaleFactory(scale, lower, upper=None):
         # Declare name
         name = name_
         def __init__(self, axis, **kwargs):
-            super().__init__()
+            super().__init__(axis)
             self._transform = _CutoffTransform()
         def get_transform(self):
             return self._transform
@@ -905,7 +905,7 @@ class MercatorLatitudeScale(mscale.ScaleBase):
     name = 'mercator'
     """Registered scale name."""
     def __init__(self, axis, *, thresh=85.0, **kwargs):
-        super().__init__()
+        super().__init__(axis)
         if thresh >= 90.0:
             raise ValueError('Threshold "thresh" must be <=90.')
         self.thresh = thresh
@@ -975,7 +975,7 @@ class SineLatitudeScale(mscale.ScaleBase):
     name = 'sine'
     """Registered scale name."""
     def __init__(self, axis, **kwargs):
-        super().__init__()
+        super().__init__(axis)
     def get_transform(self):
         """See `~matplotlib.scale.ScaleBase`."""
         return _SineLatitudeTransform()
@@ -1047,7 +1047,7 @@ class InverseScale(mscale.ScaleBase):
     name = 'inverse'
     """Registered scale name."""
     def __init__(self, axis, minpos=1e-300, **kwargs):
-        super().__init__()
+        super().__init__(axis)
         self.minpos = minpos
     def get_transform(self):
         """See `~matplotlib.scale.ScaleBase`."""

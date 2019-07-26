@@ -40,9 +40,16 @@ The subplots command
 The `~proplot.subplots.subplots` command is your gateway to all of
 ProPlot’s features. Its usage is similar to the pyplot
 `~matplotlib.pyplot.subplots` command, but it is packed with new
-features and generates a subclassed figure and specially subclassed
-axes. This section documents the most basic
-`~proplot.subplots.subplots` features.
+features. This section documents the most basic features.
+
+`~proplot.subplots.subplots` returns a special
+`~proplot.subplots.Figure` instance and an
+`~proplot.subplots.axes_list` of special
+`~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes features`)
+or `~proplot.axes.ProjectionAxes` (see :ref:`Map projection axes`).
+`~proplot.subplots.axes_list` is a magical container that lets you
+call any method (e.g. `~proplot.axes.BaseAxes.format`) on multiple
+axes **simultaneously**. This is used repeatedly in the examples.
 
 .. code:: ipython3
 
@@ -55,30 +62,6 @@ axes. This section documents the most basic
 .. image:: quickstart/quickstart_6_0.svg
 
 
-To set up a complex grid of subplots, use a 2D array of integers. You
-can think of this array as a “picture” of your figure. This lets you
-build the below grid in just one line of code, instead of 6 lines. The
-numbering determines the order of a-b-c labels. See
-`~proplot.subplots.subplots` for details.
-
-.. code:: ipython3
-
-    # Arbitrarily complex array of subplots, with shared/spanning x/y axes detected automatically
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots([[1, 1, 2], [1, 1, 6], [3, 4, 4], [3, 5, 5]], span=1, share=3, width=5)
-    axs.format(suptitle='Complex subplot grid with axis-sharing + spanning labels', xlabel='time (seconds)', ylabel='temperature (K)', abc=True)
-    axs[0].plot(2*(np.random.rand(100,5)-0.5).cumsum(axis=0), lw=2)
-
-
-
-
-
-
-
-.. image:: quickstart/quickstart_8_1.svg
-
-
 A-b-c subplot labeling is easily accomplished with ProPlot. The label
 order is set by the array numbers – or if an array was not provided, it
 is row-major by default and controlled by the
@@ -88,6 +71,13 @@ the label style can be changed with the ``abc.format``
 `~proplot.rctools.rc` option. See :ref:`The format command` and
 :ref:`Global settings control` for details.
 
+Also, while matplotlib generally uses inches for physical sizing
+arguments, ProPlot supports *arbitrary* units – that is, if a sizing
+argument is numeric, the units are inches, and if string, the units are
+interpreted by `~proplot.utils.units`. A table of acceptable units is
+found in the `~proplot.utils.units` documentation – they include
+centimeters, millimeters, and pixels. This is demonstrated below.
+
 .. code:: ipython3
 
     import proplot as plot
@@ -95,33 +85,76 @@ the label style can be changed with the ``abc.format``
     axs.format(abc=True, abcloc='l', abcformat='A.', xlabel='x axis', ylabel='y axis', suptitle='Subplots with column-major labeling')
     f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
     axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
+    f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
+    axs.format(suptitle='Subplot grid from arbitrary units', xlabel='x axis', ylabel='y axis')
+
+
+
+.. image:: quickstart/quickstart_8_0.svg
+
+
+
+.. image:: quickstart/quickstart_8_1.svg
+
+
+
+.. image:: quickstart/quickstart_8_2.svg
+
+
+The `~proplot.subplots.axes_list` object returned by
+`~proplot.subplots.subplots` is extremely powerful. It supports 2D
+indexing, and slicing the container will return an
+`~proplot.subplots.axes_list` of the selected axes. This is used below
+to call axes method on multiple axes at once. See
+:ref:`The format command` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
+    axs[:,0].format(color='red')
+    axs[0,:].format(color='blue')
+    axs[1:,1:].plot(np.random.rand(5,5), linestyle='--', color='gray7')
+    axs[0].format(color='black', linewidth=2)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_list')
 
 
 
 .. image:: quickstart/quickstart_10_0.svg
 
 
-
-.. image:: quickstart/quickstart_10_1.svg
-
-
-Most matplotlib sizing arguments assume the units inches or some
-*relative* unit size – e.g. relative to the axes width. With ProPlot,
-all sizing arguments are interpreted the same way. If numeric, the units
-are inches, and if string, the units are interpreted by
-`~proplot.utils.units`. A table of acceptable units is found in the
-`~proplot.utils.units` documentation – they include cm, mm, and
-pixels. See `~proplot.subplots.subplots` for details.
+You can also set up complex grids of subplots by passing 2D arrays of
+integers to `~proplot.subplots.subplots`. Just think of this array as
+a “picture” of your figure, where each unique number corresponds to a
+unique axes. This feature allows us to build the below grid in just one
+line of code, instead of 6 lines. The number order determines the order
+of a-b-c labels, and the order in which the axes appear in the
+`~proplot.subplots.axes_list`. See `~proplot.subplots.subplots` for
+details.
 
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
-    axs.format(suptitle='Sizing with arbitrary units', xlabel='x axis', ylabel='y axis')
+    import numpy as np
+    data = 2*(np.random.rand(100,5)-0.5).cumsum(axis=0)
+    f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=1.5)
+    axs.format(abc=True, abcloc='ul', suptitle='Subplot grid with centered rows', xlabel='xlabel', ylabel='ylabel')
+    axs[2].plot(data, lw=2)
+    f, axs = plot.subplots([[1, 1, 2], [1, 1, 6], [3, 4, 4], [3, 5, 5]], span=1, share=3, width=5)
+    axs.format(suptitle='Complex subplot grid with axis-sharing + spanning labels', xlabel='xlabel', ylabel='ylabel', abc=True)
+    axs[0].plot(data, lw=2)
 
 
 
-.. image:: quickstart/quickstart_12_0.svg
+
+
+
+
+.. image:: quickstart/quickstart_12_1.svg
+
+
+
+.. image:: quickstart/quickstart_12_2.svg
 
 
 Automatic subplot spacing
@@ -184,7 +217,7 @@ different rows and columns of subplots, where the builtin
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=2, ncols=2, span=False, share=0, axpanels='lr', axpanels_kw={'rshare':False})
+    f, axs = plot.subplots(axwidth=1.5, ncols=2, span=False, share=0, axpanels={1:'lrb',2:'lr'}, axpanels_kw={'rshare':False})
     axs.format(ylabel='ylabel', xlabel='xlabel')
     axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right',
@@ -297,11 +330,6 @@ classes, `~proplot.axes.BaseAxes.format` lets you change everything at
 once and adds several useful shorthands. This effectively eliminates the
 need for boilerplate plotting code.
 
-The axes returned by `~proplot.subplots.subplots` are also contained
-in a special `~proplot.subplots.axes_list` list. This lets you call
-any method (e.g. `~proplot.axes.BaseAxes.format`) on every axes
-**simultaneously**. This is used in the below example.
-
 .. code:: ipython3
 
     import proplot as plot
@@ -378,7 +406,8 @@ section.
 
 
 
-.. image:: quickstart/quickstart_26_0.svg
+
+.. image:: quickstart/quickstart_26_1.svg
 
 
 .. code:: ipython3
