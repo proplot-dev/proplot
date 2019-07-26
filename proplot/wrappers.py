@@ -1127,7 +1127,7 @@ def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
 @_expand_methods_list
 def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
-    Wraps `_latlon_methods` for `~proplot.axes.ProjectionAxesBasemap` axes.
+    Wraps `_latlon_methods` for `~proplot.axes.BasemapProjectionAxes` axes.
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude
@@ -1214,7 +1214,7 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 @_expand_methods_list
 def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `_centers_edges_methods` for `~proplot.axes.ProjectionAxesBasemap` axes.
+    Wraps `_centers_edges_methods` for `~proplot.axes.BasemapProjectionAxes` axes.
 
     Makes 1D longitude vectors monotonic and cycles them to fit within the map
     edges (i.e. if the projection central longitude is 90 degrees, will permute

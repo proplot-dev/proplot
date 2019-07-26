@@ -65,7 +65,7 @@ __all__ = [
     'BaseAxes', 'CartesianAxes',
     'EmptyPanel', 'PanelAxes',
     'PolarAxes', 'ProjectionAxes',
-    'ProjectionAxesBasemap', 'ProjectionAxesCartopy',
+    'BasemapProjectionAxes', 'CartopyProjectionAxes',
     ]
 
 # Aliases for panel names
@@ -1901,16 +1901,16 @@ class PanelAxes(CartesianAxes):
         return cbar
 
 class ProjectionAxes(BaseAxes):
-    """Intermediate class, shared by `ProjectionAxesCartopy` and
-    `ProjectionAxesBasemap`. Disables methods that are inappropriate for map
+    """Intermediate class, shared by `CartopyProjectionAxes` and
+    `BasemapProjectionAxes`. Disables methods that are inappropriate for map
     projections and adds `ProjectionAxes.format_partial`, so that arguments
-    passed to `~BaseAxes.format` are identical for `ProjectionAxesCartopy`
-    and `ProjectionAxesBasemap`."""
+    passed to `~BaseAxes.format` are identical for `CartopyProjectionAxes`
+    and `BasemapProjectionAxes`."""
     def __init__(self, *args, **kwargs): # just to disable docstring inheritence
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `ProjectionAxesCartopy`, `ProjectionAxesBasemap`
+        `~proplot.subplots.subplots`, `CartopyProjectionAxes`, `BasemapProjectionAxes`
         """
         super().__init__(*args, **kwargs)
         self._is_map = True # needed by wrappers, which can't import this file
@@ -1925,7 +1925,7 @@ class ProjectionAxes(BaseAxes):
         return super().__getattribute__(attr, *args)
 
     # Note this *actually* just returns some standardized arguments
-    # to the ProjectionAxesCartopy.format_partial and ProjectionAxesBasemap.format_partial methods; they
+    # to the CartopyProjectionAxes.format_partial and BasemapProjectionAxes.format_partial methods; they
     # both jump over this intermediate class and call BaseAxes.format_partial
     def format_partial(self, labels=None, latlabels=None, lonlabels=None,
         latmax=None, lonlim=None, latlim=None, grid=None,
@@ -1990,7 +1990,7 @@ class ProjectionAxes(BaseAxes):
 
         # Interptet latitude
         latmax = _default(latmax, rc.get('geogrid.latmax'))
-        if isinstance(self, ProjectionAxesCartopy):
+        if isinstance(self, CartopyProjectionAxes):
             lon_0 = self.projection.proj4_params.get('lon_0', 0)
         else:
             lon_0 = self.m.lonmin + 180 # central longitude
@@ -2069,8 +2069,8 @@ class PolarAxes(CartesianAxes, mproj.PolarAxes):
 # Cartopy takes advantage of documented feature where any class with method
 # named _as_mpl_axes can be passed as 'projection' object.
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
-# class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
-class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
+# class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
+class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
     """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
     projections. Initializes the `cartopy.crs.Projection` instance. Also
     allows for *partial* coverage of azimuthal projections by zooming into
@@ -2107,7 +2107,7 @@ class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
         # associated with the axes. Does not matter whether attribute is hidden.
         # self._hold = None # do not do this
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('You must initialize ProjectionAxesCartopy with map_projection=<cartopy.crs.Projection>.')
+            raise ValueError('You must initialize CartopyProjectionAxes with map_projection=<cartopy.crs.Projection>.')
         self._hasrecurred = False # use this so we can override plotting methods
         self._cartopy_gl = None # gridliner
         self.projection = map_projection # attribute used extensively by GeoAxes methods, and by builtin one
@@ -2316,7 +2316,7 @@ class ProjectionAxesCartopy(ProjectionAxes, GeoAxes):
         # Pass stuff to parent formatter, e.g. title and abc labeling
         BaseAxes.format_partial(self, **kwargs)
 
-class ProjectionAxesBasemap(ProjectionAxes):
+class BasemapProjectionAxes(ProjectionAxes):
     """Axes subclass for plotting `~mpl_toolkits.basemap` projections. The
     `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `m` attribute, but this is all abstracted away -- you can use
@@ -2361,7 +2361,7 @@ class ProjectionAxesBasemap(ProjectionAxes):
         #   both the edges and the fill; so calling it again will replace *both*
         import mpl_toolkits.basemap as mbasemap # verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError('You must initialize ProjectionAxesBasemap with map_projection=(basemap.Basemap instance).')
+            raise ValueError('You must initialize BasemapProjectionAxes with map_projection=(basemap.Basemap instance).')
         self.m = map_projection
         self.boundary = None
         self._hasrecurred = False # use this so we can override plotting methods
@@ -2549,6 +2549,6 @@ mproj.register_projection(BaseAxes)
 mproj.register_projection(PanelAxes)
 mproj.register_projection(PolarAxes)
 mproj.register_projection(CartesianAxes)
-mproj.register_projection(ProjectionAxesBasemap)
-mproj.register_projection(ProjectionAxesCartopy)
+mproj.register_projection(BasemapProjectionAxes)
+mproj.register_projection(CartopyProjectionAxes)
 
