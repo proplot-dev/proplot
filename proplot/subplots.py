@@ -194,7 +194,7 @@ class axes_grid(list):
         # Methods
         if all(callable(_) for _ in attrs):
             @functools.wraps(attrs[0])
-            def iterator(*args, **kwargs):
+            def axes_grid_iterator(*args, **kwargs):
                 ret = []
                 for func in attrs:
                     ret.append(func(*args, **kwargs))
@@ -204,7 +204,7 @@ class axes_grid(list):
                     return None
                 else:
                     return (*ret,) # expand to tuple
-            return iterator
+            return axes_grid_iterator
         # Mixed
         raise AttributeError(f'Found mixed types for attribute "{attr}".')
 
