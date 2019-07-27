@@ -16,11 +16,11 @@ of the `~proplot.subplots.subplots` command.
 `~proplot.subplots.subplots` is your gateway to all of ProPlot’s
 features. It returns a special `~proplot.subplots.Figure` instance and
 an `~proplot.subplots.axes_grid` of special
-`~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes features`)
-or `~proplot.axes.ProjectionAxes` (see
-:ref:`Projection axes features`). `~proplot.subplots.axes_grid` is a
-magical container that lets you call any method on multiple axes
-*simultaneously*. This is used repeatedly in the examples.
+`~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes`) or
+`~proplot.axes.ProjectionAxes` (see :ref:`Map projection axes`).
+`~proplot.subplots.axes_grid` is a magical container that lets you
+call any method on multiple axes *simultaneously*. This is used
+repeatedly in the examples.
 
 The below is a simple worked example comparing the 3 APIs. For more on
 the `~proplot.axes.BaseAxes.format` command, see

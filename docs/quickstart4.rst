@@ -1,5 +1,5 @@
-Projection axes features
-========================
+Map projection axes
+===================
 
 ProPlot includes seamless integration with the `cartopy` and
 `~mpl_toolkits.basemap` packages. This feature is optional – if you
