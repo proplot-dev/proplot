@@ -12,14 +12,14 @@ Axis tick locations
 -------------------
 
 ProPlot lets you easily specify tick locations with
-`~proplot.axes.BaseAxes.format` (keywords ``xlocator``, ``ylocator``,
-``xminorlocator``, and ``yminorlocator``, or their aliases ``xticks``,
-``yticks``, ``xminorticks``, and ``yminorticks``). Pass a number to tick
-every ``N`` data values, lookup a builtin matplotlib
+`~proplot.axes.BaseAxes.format` (keyword args ``xlocator``,
+``ylocator``, ``xminorlocator``, and ``yminorlocator``, or their aliases
+``xticks``, ``yticks``, ``xminorticks``, and ``yminorticks``). Pass a
+number to tick every ``N`` data values, lookup a builtin matplotlib
 `~matplotlib.ticker` with a string key name, or pass a list of numbers
 to tick specific locations. I recommend using ProPlot’s
 `~proplot.utils.arange` function to generate lists of ticks – it’s
-like numpy’s `~numpy.arange`, but is **endpoint-inclusive**, which is
+like numpy’s `~numpy.arange`, but is *endpoint-inclusive*, which is
 usually what you’ll want in this context. See
 `~proplot.axes.CartesianAxes.format_partial` and
 `~proplot.axistools.Locator` for details.
@@ -73,7 +73,7 @@ some data range*, as demonstrated below. See
 
 
 ProPlot also lets you easily change the axis formatter with
-`~proplot.axes.BaseAxes.format` (keywords ``xformatter`` and
+`~proplot.axes.BaseAxes.format` (keyword args ``xformatter`` and
 ``yformatter``, or their aliases ``xticklabels`` and ``yticklabels``).
 The builtin matplotlib formatters can be referenced by string name, and
 several new formatters have been introduced – for example, you can now

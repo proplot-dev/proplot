@@ -90,7 +90,7 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 Formatting projections
 ----------------------
 
-To pass keywords to `~mpl_toolkits.basemap.Basemap` and
+To pass keyword args to `~mpl_toolkits.basemap.Basemap` and
 `cartopy.crs.Projection` classes on instantiation, pass a ``proj_kw``
 dictionary of keyword args to `~proplot.subplots.subplots`. With
 ProPlot, you can supply native PROJ.4 keyword names to the

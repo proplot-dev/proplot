@@ -249,9 +249,9 @@ Matplotlib has an “axis sharing” feature that holds axis limits the same
 for axes within a grid of subplots. But this has no effect and the axis
 labels and tick labels; unless some considerable effort is taken, your
 figures can end up with lots of redundant labels. To help you eliminate
-these redundancies, ProPlot introduces **4 axis-sharing options** and a
-new **spanning label option**, controlled by the ``share``, ``sharex``,
-``sharey``, ``span``, ``spanx``, and ``spany`` keywords. See
+these redundancies, ProPlot introduces *4 axis-sharing options* and a
+new *spanning label option*, controlled by the ``share``, ``sharex``,
+``sharey``, ``span``, ``spanx``, and ``spany`` keyword args. See
 `~proplot.subplots.sublots` and the below example for details.
 
 .. code:: ipython3
@@ -375,7 +375,7 @@ labelling, pass ``autoformat=False`` to `~proplot.subplots.subplots`.
 
 The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
-keywords, see `~proplot.wrappers.cmap_wrapper`,
+keyword args, see `~proplot.wrappers.cmap_wrapper`,
 `~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting wrappers`. For
 more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
