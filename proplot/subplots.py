@@ -392,35 +392,35 @@ class Figure(mfigure.Figure):
 
     def _suptitle_setup(self, title, **kwargs):
         """Assign figure "super title"."""
-        title = title.strip()
-        if self._suptitle.get_text()!=title:
-            self._suptitle.update({'text': title, **kwargs})
+        if title is not None and self._suptitle.get_text()!=title:
+            self._suptitle.set_text(title)
+        self._suptitle.update(kwargs)
 
     def _rowlabels(self, labels, **kwargs):
         """Assign row labels."""
         axs = [ax for ax in self._main_axes if ax._xrange[0]==0]
-        if isinstance(labels, str): # common during testing
+        if labels is None or isinstance(labels, str): # common during testing
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
         axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))] # order by yrange
         for ax,label in zip(axs,labels):
-            label = label.strip()
-            if label and ax.rowlabel.get_text()!=label:
-                ax.rowlabel.update({'text':label, **kwargs})
+            if label is not None and ax.rowlabel.get_text()!=label:
+                ax.rowlabel.set_text(label)
+            ax.rowlabel.update(kwargs)
 
     def _collabels(self, labels, **kwargs):
         """Assign column labels."""
         axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
-        if isinstance(labels, str):
+        if labels is None or isinstance(labels, str):
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} columns.')
         axs = [ax for _,ax in sorted(zip([ax._xrange[0] for ax in axs],axs))]
         for ax,label in zip(axs,labels):
-            label = label.strip()
-            if label and ax.collabel.get_text()!=label:
-                ax.collabel.update({'text':label, **kwargs})
+            if label is not None and ax.collabel.get_text()!=label:
+                ax.collabel.set_text(label)
+            ax.collabel.update(kwargs)
 
     def _tight_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have

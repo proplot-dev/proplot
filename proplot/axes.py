@@ -539,29 +539,29 @@ class BaseAxes(maxes.Axes):
         # one axes, but operations are fast so some redundancy is nbd.
         fig = self.figure # the figure
         suptitle = figtitle or suptitle
-        if suptitle is not None:
-            kw = rc.fill({
-                'fontsize':   'suptitle.fontsize',
-                'weight':     'suptitle.weight',
-                'color':      'suptitle.color',
-                'fontfamily': 'font.family'
-                }, cache=False)
+        kw = rc.fill({
+            'fontsize':   'suptitle.fontsize',
+            'weight':     'suptitle.weight',
+            'color':      'suptitle.color',
+            'fontfamily': 'font.family'
+            })
+        if suptitle or kw: # if either is not None or non-empty
             fig._suptitle_setup(suptitle, **kw)
-        if rowlabels is not None:
-            kw = rc.fill({
-                'fontsize':   'rowlabel.fontsize',
-                'weight':     'rowlabel.weight',
-                'color':      'rowlabel.color',
-                'fontfamily': 'font.family'
-                }, cache=False)
+        kw = rc.fill({
+            'fontsize':   'rowlabel.fontsize',
+            'weight':     'rowlabel.weight',
+            'color':      'rowlabel.color',
+            'fontfamily': 'font.family'
+            })
+        if rowlabels or kw:
             fig._rowlabels(rowlabels, **kw)
-        if collabels is not None:
-            kw = rc.fill({
-                'fontsize':   'collabel.fontsize',
-                'weight':     'collabel.weight',
-                'color':      'collabel.color',
-                'fontfamily': 'font.family'
-                }, cache=False)
+        kw = rc.fill({
+            'fontsize':   'collabel.fontsize',
+            'weight':     'collabel.weight',
+            'color':      'collabel.color',
+            'fontfamily': 'font.family'
+            })
+        if collabels or kw:
             fig._collabels(collabels, **kw)
 
         # Axes for title or abc
@@ -1341,19 +1341,21 @@ class CartesianAxes(BaseAxes):
             # to the correct *spanning* axis label.
             name = axis.axis_name
             xyname = 'x' if axis is self.xaxis else 'y'
+            kw = rc.fill({
+                'color':      'axes.edgecolor',
+                'fontsize':   'axes.labelsize',
+                'weight':     'axes.labelweight',
+                'fontfamily': 'font.family',
+                })
             if label is not None:
-                kw = rc.fill({
-                    'color':      'axes.edgecolor',
-                    'fontsize':   'axes.labelsize',
-                    'weight':     'axes.labelweight',
-                    'fontfamily': 'font.family',
-                    })
-                if axis.get_label_position() == 'top':
-                    kw['va'] = 'bottom' # baseline was cramped if no ticklabels present
-                if color:
-                    kw['color'] = color
-                kw.update(label_kw)
-                self.figure._axis_label_update(axis, text=label, **kw)
+                kw['text'] = label
+            if color:
+                kw['color'] = color
+            if axis.get_label_position() == 'top':
+                kw['va'] = 'bottom' # baseline gets cramped if no ticklabels present
+            kw.update(label_kw)
+            if kw:
+                self.figure._axis_label_update(axis, **kw)
 
             # Axis scale and limits. These don't have axis-specific setters.
             # If user specified xlocator or ylocator and scale is log, enforce
