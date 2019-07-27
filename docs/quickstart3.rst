@@ -328,7 +328,8 @@ Polar axes in ProPlot work just like Cartesian axes, except the
 args correspond to the “theta” and “radius” axes, respectively. To
 declare polar axes, pass ``proj='polar'`` or something like
 ``proj={1:'polar'}`` to `~proplot.subplots.subplots`. See
-:ref:`Map projection axes` for more on specifying subplot projections.
+:ref:`Projection axes features` for more on specifying subplot
+projections.
 
 .. code:: ipython3
 
