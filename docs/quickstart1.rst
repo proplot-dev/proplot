@@ -34,7 +34,7 @@ the `~proplot.axes.BaseAxes.format` command, see
     plt.figure(figsize=(5,3))
     plt.suptitle('PyPlot API')
     plt.subplot(121)
-    plt.plot(np.random.rand(10,5), lw=3)
+    plt.plot(np.random.rand(10,5).cumsum(axis=1), lw=2)
     plt.title('Title')
     plt.xlabel('x axis')
     plt.ylabel('y axis')
@@ -54,7 +54,7 @@ the `~proplot.axes.BaseAxes.format` command, see
     import numpy as np
     f, axs = plt.subplots(ncols=2, figsize=(5,3))
     f.suptitle('Object-Oriented API')
-    axs[0].plot(np.random.rand(10,5), lw=3)
+    axs[0].plot(np.random.rand(10,5).cumsum(axis=1), lw=2)
     axs[0].set_xticks(np.arange(0,10))
     axs[0].minorticks_off()
     for ax in axs:
@@ -68,7 +68,7 @@ the `~proplot.axes.BaseAxes.format` command, see
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=2)
-    axs[0].plot(np.random.rand(10,5), lw=3)
+    axs[0].plot(np.random.rand(10,5).cumsum(axis=1), lw=2)
     axs[0].format(xticks=1, xtickminor=False)
     axs.format(suptitle='ProPlot API', title='Title', xlabel='x axis', ylabel='y axis')
 
@@ -134,7 +134,7 @@ is demonstrated below.
     f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
     axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
     f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
-    axs.format(small='12px', large='15px', linewidth='1mm')
+    axs.format(small='12px', large='15px', linewidth='0.5mm')
     axs.format(suptitle='Arguments with arbitrary units', xlabel='x axis', ylabel='y axis')
 
 
@@ -150,17 +150,19 @@ The `~proplot.subplots.axes_grid` object returned by
 `~proplot.subplots.subplots` is extremely powerful. It supports 2D
 indexing, and slicing the container will return an
 `~proplot.subplots.axes_grid` of the selected axes. This is used below
-to call axes method on multiple axes at once (see
+to call axes methods on multiple axes at once (see
 :ref:`The format command` for details). If your subplots do not fit on
 a nice 2D grid, simply use 1D indexing.
 
 .. code:: ipython3
 
     import proplot as plot
+    import numpy as np
     f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
     axs[:,0].format(color='red')
     axs[0,:].format(color='blue')
-    axs[1:,1:].plot(np.random.rand(5,5), linestyle='--', color='gray7')
+    for ax in axs[1:,1:]:
+        ax.plot(np.random.rand(5,5), linestyle='--', color='gray7')
     axs[0].format(color='black', linewidth=2)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
 

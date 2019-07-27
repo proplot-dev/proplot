@@ -15,8 +15,8 @@ ProPlot stuffs them right into the `subplots` function. The reason for this
 approach?
 
 ProPlot builds a static "scaffolding" of subplots before anything is plotted,
-so that we can exert a ton of control over the layout and make things
-look "nice" without any manual tweaking on the part of the user. This includes
+so that we can exert more control on the layout and make things look "nice"
+without any manual tweaking on the part of the user. This includes
 aligning axes panels in the subplot grid, accounting for map projection aspect
 ratios, and controlling the amount of whitespace between subplot content, panel
 content, and the figure border. See `subplots` and `~Figure.smart_tight_layout`
@@ -39,7 +39,7 @@ from .gridspec import FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
 __all__ = ['axes_grid', 'close', 'show', 'subplots', 'Figure']
 
 # Aliases for panel names
-_aliases = {
+_panel_aliases = {
     'bpanel':         'bottompanel',
     'rpanel':         'rightpanel',
     'lpanel':         'leftpanel',
@@ -98,11 +98,9 @@ class axes_grid(list):
         raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):
-        """If an integer is passed, e.g. ``axs[0]``, the item is returned.
-        If a slice is passed, e.g. ``axs[1:3]``, an `axes_grid` of the items
-        is returned. You can also use 2D indexing, e.g. ``axs[1,2]`` or
-        ``axs[:,0]``, and the corresponding axes in the axes grid will be
-        chosen.
+        """If an integer is passed, the item is returned, and if a slice is passed,
+        an `axes_grid` of the items is returned. You can also use 2D indexing,
+        and the corresponding axes in the axes grid will be chosen.
 
         Example
         -------
@@ -384,7 +382,7 @@ class Figure(mfigure.Figure):
         `~matplotlib.figure.Figure.colorbar` functions."""
         # Just test for add_subplot, do not care if user provides figure
         # colorbar method with an axes manually.
-        attr = _aliases.get(attr, attr)
+        attr = _panel_aliases.get(attr, attr)
         if attr=='add_subplot' and self._locked:
             warnings.warn('Using "add_subplot" or "colorbar" with ProPlot figures may result in unexpected behavior. '
                 'Please use the subplots() command to create your figure, subplots, and panels all at once.')

@@ -21,8 +21,8 @@ geographic features, and much more.
 
 Axes method wrappers are documented in the "functions" table. The wrappers are
 dynamically applied within the `~proplot.axes.BaseAxes.__getattribute__` methods
-on `~proplot.axes.BaseAxes` and its subclasses. You may be wondering: why
-didn't I just use *decorators*? Two reasons:
+on `~proplot.axes.BaseAxes` and its subclasses. But why doesn't ProPlot just
+use *decorators*? Two reasons.
 
 1. Brevity. For example: `~proplot.wrappers.cmap_wrapper` overrides **a dozen** different
    methods. This lets me override these methods in *one* line, instead of 50
@@ -38,12 +38,17 @@ didn't I just use *decorators*? Two reasons:
    they were probably looking for! I only add a handful of features to these
    functions, but the native methods generally have way more options.
 
-It should be noted that dynamically wrapping every time the user accesses
-the corresponding method will be slower than "decoration", which just wraps them
-once the class is declared. But this was not found to significantly affect
-performance. And anyway, `Premature Optimization is the Root of All Evil
+It should be noted that dynamically wrapping every time the user requests a
+method is slower than "decoration", which just wraps the method when the class
+is declared. But this was not found to significantly affect performance. And
+anyway, `Premature Optimization is the Root of All Evil
 <http://wiki.c2.com/?PrematureOptimization>`__.
 """
+# WARNING: Wanted to bulk wrap methods using __new__ on a *metaclass*, since
+# this would just wrap method *once* and not every single time user accesses
+# object. More elegant, but __new__ *does not receive inherited methods* (that
+# comes later down the line), so we can't wrap them. Anyway overriding
+# __getattribute__ is fine, and premature optimiztaion is root of all evil!
 import numpy as np
 import warnings
 from numbers import Number
@@ -69,7 +74,7 @@ __all__ = [
     ]
 
 # Aliases for panel names
-_aliases = {
+_panel_aliases = {
     'bpanel':         'bottompanel',
     'rpanel':         'rightpanel',
     'tpanel':         'toppanel',
@@ -92,19 +97,21 @@ _aliases = {
     'leftlegend':     'leftpanel'
     }
 
-# Silly recursive function, returns a...z...aa...zz...aaa...zzz
+# Helper function
 _abc_string = 'abcdefghijklmnopqrstuvwxyz'
 def _abc(i):
+    """Function for a-b-c labeling, returns a...z...aa...zz...aaa...zzz."""
     if i < 26:
         return _abc_string[i]
     else:
-        return _abc(i - 26) + _abc_string[i % 26]
+        return _abc(i - 26) + _abc_string[i % 26] # sexy sexy recursion
 
-# Filter warnings, seems to be necessary before drawing stuff for first time,
-# otherwise this has no effect (e.g. if you stick it in a function)
+# Filter warnings, must call this before drawing stuff for the first time
+# TODO: Disable this filter? What was I doing that raised deprecation errors?
+# This is from a long long time ago.
 warnings.filterwarnings('ignore', category=mplDeprecation)
-# Import mapping toolboxes
-# Main conda distro says they are incompatible, so make sure not required!
+
+# Import mapping toolbox
 try:
     from cartopy.mpl.geoaxes import GeoAxes
 except ModuleNotFoundError:
@@ -113,11 +120,6 @@ except ModuleNotFoundError:
 #------------------------------------------------------------------------------#
 # Generalized custom axes class
 #------------------------------------------------------------------------------#
-# WARNING: Wanted to bulk wrap methods using __new__ on a *metaclass*, since
-# this would just wrap method *once* and not every single time user accesses
-# object. More elegant, but __new__ *does not receive inherited methods* (that
-# comes later down the line), so we can't wrap them. Anyway overriding
-# __getattribute__ is fine, and premature optimiztaion is root of all evil!
 def _redraw_text(obj, overwrite=True, **kwargs):
     """Allows updating new text properties introduced by override."""
     # Attempt update, but will raise error if e.g. border is passed
@@ -240,7 +242,7 @@ class BaseAxes(maxes.Axes):
         the redundant methods `_disabled_methods`. Enables the attribute aliases
         ``bpanel`` for ``bottompanel``, ``tpanel`` for ``toppanel``,
         ``lpanel`` for ``leftpanel``, and ``rpanel`` for ``rightpanel``."""
-        attr = _aliases.get(attr, attr)
+        attr = _panel_aliases.get(attr, attr)
         obj = super().__getattribute__(attr, *args)
         # Disabled methods
         for message,attrs in wrappers._disabled_methods.items():
