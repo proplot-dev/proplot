@@ -19,8 +19,12 @@ an `~proplot.subplots.axes_grid` of special
 `~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes features`)
 or `~proplot.axes.ProjectionAxes` (see :ref:`Map projection axes`).
 `~proplot.subplots.axes_grid` is a magical container that lets you
-call any method (e.g. `~proplot.axes.BaseAxes.format`) on multiple
-axes **simultaneously**. This is used repeatedly in the examples.
+call any method on multiple axes *simultaneously*. This is used
+repeatedly in the examples.
+
+The below is a simple worked example comparing the 3 APIs. For more on
+the `~proplot.axes.BaseAxes.format` command, see
+:ref:`The format command` section.
 
 .. code:: ipython3
 
@@ -28,28 +32,45 @@ axes **simultaneously**. This is used repeatedly in the examples.
     import matplotlib.pyplot as plt
     import numpy as np
     plt.figure(figsize=(5,3))
-    plt.plot(np.random.rand(10,10), lw=3)
+    plt.suptitle('PyPlot API')
+    plt.subplot(121)
+    plt.plot(np.random.rand(10,5), lw=3)
     plt.title('Title')
     plt.xlabel('x axis')
     plt.ylabel('y axis')
+    plt.xticks(np.arange(0,10))
+    plt.minorticks_off()
+    plt.subplot(122)
+    plt.title('Title')
+    plt.xlabel('x axis')
+    plt.ylabel('y axis')
+    plt.xticks(np.arange(0,10))
+    plt.minorticks_off()
 
 .. code:: ipython3
 
     # Object-oriented API
     import matplotlib.pyplot as plt
     import numpy as np
-    f, ax = plt.subplots(figsize=(5,3))
-    ax.plot(np.random.rand(10,10), lw=3)
-    ax.set_title('Title')
-    ax.set_xlabel('x axis')
-    ax.set_ylabel('y axis')
+    f, axs = plt.subplots(ncols=2, figsize=(5,3))
+    f.suptitle('Object-Oriented API')
+    axs[0].plot(np.random.rand(10,5), lw=3)
+    axs[0].set_xticks(np.arange(0,10))
+    axs[0].minorticks_off()
+    for ax in axs:
+        ax.set_title('Title')
+        ax.set_xlabel('x axis')
+        ax.set_ylabel('y axis')
 
 .. code:: ipython3
 
     # ProPlot API
     import proplot as plot
+    import numpy as np
     f, axs = plot.subplots(ncols=2)
-    axs.format(suptitle='ProPlot API', xlabel='x axis', ylabel='y axis')
+    axs[0].plot(np.random.rand(10,5), lw=3)
+    axs[0].format(xticks=1, xtickminor=False)
+    axs.format(suptitle='ProPlot API', title='Title', xlabel='x axis', ylabel='y axis')
 
 
 
@@ -152,30 +173,30 @@ a nice 2D grid, simply use 1D indexing.
 .. image:: quickstart/quickstart_11_0.svg
 
 
-Smart tight layout
-------------------
+Auto tight layout
+-----------------
 
 With ProPlot, you will always get just the right amount of spacing
 between subplots so that elements don’t overlap, and just the right
 amount of space around the figure edge so that labels and whatnot are
 not cut off. Furthermore, if you didn’t specify both the figure width
-and height, the original subplot aspect ratios are **preserved**. And
-when axes panels are present, the panel widths are held fixed in the
-scaling. See :ref:`Panels, colorbars, and legends` for more on panels.
-You can disable automatic spacing by passing ``tight=False`` to
+and height, the original subplot *aspect ratios are preserved*. And when
+axes panels are present, the panel widths are held fixed in the scaling.
+See :ref:`Panels, colorbars, and legends` for more on panels. You can
+disable automatic spacing by passing ``tight=False`` to
 `~proplot.subplots.subplots`.
 
 Aspect ratio conservation is useful for ordinary Cartesian plots where
 an aspect ratio of ``1`` is often desirable, and critical for grids of
 map projections or `~matplotlib.axes.Axes.imshow` plots that require
-fixed aspect ratios. It works by **scaling** either the figure width or
+fixed aspect ratios. It works by *scaling* either the figure width or
 height dimension to accommodate the required subplot dimensions. And
 automatic inter-subplot spacing keeps you from having to fiddle with the
 ``wspace`` and ``hspace`` `~matplotlib.gridspec.GridSpec` keyword args
-depending on tick label size, whether axis labels are present, etc. It
-works by using the special `~proplot.gridspec.FlexibleGridSpec` class,
-which permits **variable** ``wspace`` and ``hspace`` spacing between
-different rows and columns of subplots, where the builtin
+depending on tick label size, whether axis labels are present, etc. This
+uses the special `~proplot.gridspec.FlexibleGridSpec` class, which
+permits *variable* ``wspace`` and ``hspace`` spacing between different
+rows and columns of subplots, where the builtin
 `~matplotlib.gridspec.GridSpec` class requires equivalent spacing).
 
 .. code:: ipython3

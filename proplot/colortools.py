@@ -2246,10 +2246,10 @@ normalizers = {
 #------------------------------------------------------------------------------#
 # Demos
 #------------------------------------------------------------------------------#
-def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
+def show_channels(*args, N=100, rgb=True, minhue=0, width=100, aspect=1, axwidth=1.7):
     """
     Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
-    luminance, HSl saturation, and HPL saturation channels, and optionally
+    luminance, HSL saturation, and HPL saturation channels, and optionally
     the red, blue and green channels. Adapted from `this example <
     https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
 
@@ -2259,16 +2259,18 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
         Positional arguments are colormap names or objects. Defaults to
         ``rc['image.cmap']``.
     N : int, optional
-        The number of markers to draw for each coormap.
+        The number of markers to draw for each colormap.
     rgb : bool, optional
         Whether to also show the red, blue, and green channels in the bottom
         row. Defaults to ``True``.
+    minhue : float, optional
+        The minimum hue. This lets you rotate the hue plot cyclically.
     width : int, optional
         The width of each colormap line in points.
     aspect : float or (float,float), optional
         The aspect ratio of the subplot.
-    axwidth : flaot, optional
-        The average width of the axes.
+    axwidth : float, optional
+        The width of the subplots.
 
     Returns
     -------
@@ -2283,8 +2285,8 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
     if not rgb:
         array = array[:2]
     fig, axs = subplots(
-        array=array, axwidth=axwidth/2, spanx=0, sharex=0, spany=0, sharey=0,
-        aspect=aspect/2, subplotpad='1em',
+        array=array, axwidth=axwidth, span=0, sharex=1, sharey=1,
+        aspect=aspect, subplotpad='1em',
         colorbar='b', bstack=len(args), barray=[0,1,1,1,1,0],
         )
     labels = (
@@ -2310,7 +2312,6 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
         # Plot channels
         # If rgb is False, the zip will just truncate the other iterables
         for ax,y,label in zip(axs,(*hcl,hsl,hpl,*rgb),labels):
-            ax.scatter(x, y, c=x, cmap=cmap, s=width, linewidths=0)
             ylim, ylocator = None, None
             if label in ('Red','Blue','Green'):
                 ylim = (0,1)
@@ -2319,8 +2320,11 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
                 ylim = (0,100)
                 ylocator = 20
             elif label=='Hue':
-                ylim = (0,360)
+                ylim = (minhue,minhue+360)
                 ylocator = 90
+                y = y - 720
+                for i in range(3): # rotate up to 1080 degrees
+                    y[y<minhue] += 360
             else:
                 if label=='Chroma':
                     mc = max(mc,max(y))
@@ -2333,6 +2337,7 @@ def show_channels(*args, rgb=True, N=100, width=100, aspect=1, axwidth=1.2):
                     m = mp
                 ylim = (0,m)
                 ylocator = ('maxn', 5)
+            ax.scatter(x, y, c=x, cmap=cmap, s=width, linewidths=0)
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
     # Formatting
     suptitle = ', '.join(f'"{cmap.name}"' for cmap in cmaps[:-1]) \

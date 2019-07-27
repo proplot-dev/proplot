@@ -152,17 +152,17 @@ To see how any colormap varies with respect to each channel, use the
 the “magma”, “rocket”, and ProPlot “Fire” colormaps. The first two are
 nicely-designed `~matplotlib.colors.LinearSegmentedColormap` maps, and
 the last one is a `~proplot.colortools.PerceptuallyUniformColormap`.
-They all vary linearly across the hue and luminance channels, but not
-the chroma channel (top row). “Fire” is linear in the HSL scaling of the
-chroma channel (center left), while other ProPlot colormaps are linear
-in the HPL scaling of the chroma channel (center right). All of these
-colormaps vary eratically in the red, blue and green channels (bottom
-row), as is the case for most nice-looking colormaps.
+They are all roughly linear across the hue and luminance channels, but
+not the chroma channel (top row). “Fire” is linear in the HSL scaling of
+the chroma channel (center left), while other ProPlot colormaps are
+linear in the HPL scaling of the chroma channel (center right). All of
+these colormaps vary eratically in the red, blue and green channels
+(bottom row), as is the case for most nice-looking colormaps.
 
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.show_channels('fire', 'magma', 'rocket')
+    f = plot.show_channels('fire', 'magma', 'rocket', minhue=-180)
 
 
 
@@ -256,7 +256,7 @@ value by the number ``N``, as shown below.
     cmap3 = m.cmap
     ax.format(title='From list of colors')
     # Breakdowns
-    f = plot.show_channels(cmap1, cmap2, cmap3)
+    f = plot.show_channels(cmap1, cmap2, cmap3, minhue=-180)
 
 
 
@@ -380,7 +380,7 @@ emphasizes low luminance, high saturation colors. See
         ax.colorbar(m, loc='r', locator='none')
         ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Modifying existing PerceptuallyUniformColormaps')
     # Breakdowns
-    f = plot.show_channels(*cmaps)
+    f = plot.show_channels(*cmaps, rgb=False)
 
 
 
