@@ -106,6 +106,7 @@ class axes_grid(list):
         -------
         .. code-block:: python
 
+            import proplot as plot
             f, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
             axs[0] # the subplot in the top-right corner
             axs[3] # the first subplot in the second row
@@ -175,6 +176,7 @@ class axes_grid(list):
         -------
         .. code-block:: python
 
+            import proplot as plot
             f, axs = plot.subplots(nrows=2, ncols=2, axcolorbars='b')
             axs.format(xtick=5) # calls "format" on all subplots in the list
             axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
