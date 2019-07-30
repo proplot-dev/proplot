@@ -250,11 +250,13 @@ Bar plots
 
 `~proplot.wrappers.bar_wrapper` and
 `~proplot.wrappers.cycle_wrapper` make it easier to generate useful
-bar plots. You can now pass 2d arrays to `~matplotlib.axes.Axes.bar`
+bar plots. You can now pass 2D arrays to `~matplotlib.axes.Axes.bar`
 or `~matplotlib.axes.Axes.barh`, and columns of data will be grouped
-or stacked together. You can also request that columns are interpreted
-as data ranges, with the means or medians represented by bars and the
-spread represented by error bars.
+or stacked together. And if *x* coordinates are not provided, default
+coordinates are applied, just like with `~matplotlib.axes.Axes.plot`.
+You can also request that the input *height* coordinates are interpreted
+as *ranges*, with bars showing the means and medians of each column and
+error bars showing the spread.
 
 .. code:: ipython3
 

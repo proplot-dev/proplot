@@ -2169,11 +2169,32 @@ def subplots(array=None, ncols=1, nrows=1,
     # Figure architecture
     #--------------------------------------------------------------------------#
     # Figure and/or average axes dimensions
+    names, values = (), ()
     if journal:
         figsize = journals(journal) # if user passed width=<string>, will use that journal size
-    elif not figsize:
-        figsize = (width, height)
-    width, height = figsize
+        spec = f'journal={repr(journal)}'
+        names = ('axwidth', 'axheight', 'width')
+        values = (axwidth, axheight, width)
+        width, height = figsize
+    elif figsize:
+        spec = f'figsize={repr(figsize)}'
+        names = ('axwidth', 'axheight', 'width', 'height')
+        values = (axwidth, axheight, width, height)
+        width, height = figsize
+    elif width is not None or height is not None:
+        spec = []
+        if width is not None:
+            spec.append(f'width={repr(width)}')
+        if height is not None:
+            spec.append(f'height="{repr(height)}"')
+        spec = ', '.join(spec)
+        names = ('axwidth', 'axheight')
+        values = (axwidth, axheight)
+    # Raise warning
+    for name,value in zip(names,values):
+        if value is not None:
+            warnings.warn(f'You specified both {spec} and {name}={repr(value)}. Ignoring "{name}".')
+    # Standardize input
     width  = units(width)
     height = units(height)
     axwidth  = units(axwidth)

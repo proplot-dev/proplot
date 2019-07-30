@@ -305,6 +305,8 @@ def _autoformat_1d(self, func, *args, **kwargs):
         if kw:
             self.format(**kw)
     # Return result, maybe modify arguments
+    # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
+    # cycle_wrapper is also applied so it can strip 'x' input.
     if xi is not None:
         x = xi
     if name in ('boxplot','violinplot'):
@@ -638,13 +640,16 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
     """Wraps `~matplotlib.axes.Axes.fill_betweenx`, usage is same as `fill_between_wrapper`."""
     return _fill_between_parse(func, *args, **kwargs)
 
-def barh_wrapper(self, func, *args, **kwargs):
+def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, *, align='center', **kwargs):
     """Wraps `~matplotlib.axes.Axes.barh`, usage is same as `bar_wrapper`."""
-    kwargs['orientation'] = 'horizontal'
-    return self.bar(*args, **kwargs)
+    kwargs.setdefault('orientation', 'horizontal')
+    if y is None and width is None:
+        raise ValueError(f'barh() requires at least 1 positional argument, got 0.')
+    return self.bar(x=left, height=height, width=width, bottom=y, align=align, **kwargs)
 
-def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
-    vert=True, orientation='vertical',
+def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
+    edgecolor=None, lw=None, linewidth=None,
+    vert=None, orientation='vertical',
     stacked=False, medians=False, means=False,
     box=True, bar=True, boxrange=(25, 75), barrange=(5, 95),
     boxcolor=None, barcolor=None,
@@ -652,10 +657,14 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
     capsize=None,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.bar`, applies sensible defaults.
+    Wraps `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh`, applies
+    sensible defaults.
 
     Parameters
     ----------
+    x, height, width, bottom : float or list of float, optional
+        The dimensions of the bars. If the *x* coordinates are not provided,
+        they are set to ``np.arange(0, len(height))``.
     edgecolor : color-spec, optional
         The default edge color.
     lw, linewidth : float, optional
@@ -688,48 +697,60 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
     capsize : float, optional
         The cap size for thin error bars.
     """
-    # Bail
+    # Barh converts y-->bottom, left-->x, width-->height, height-->width. Convert
+    # back to (x, bottom, width, height) so we can pass stuff through cycle_wrapper
+    # NOTE: You *must* do juggling of barh keyword order --> bar keyword order -->
+    # barh keyword order, because horizontal hist passes arguments to bar directly
+    # and will not use a 'barh' method with overridden argument order!
+    if vert is not None:
+        orientation = ('vertical' if vert else 'horizontal')
+    if orientation=='horizontal':
+        x, bottom = bottom, x
+        width, height = height, width
+    # Parse args
     # TODO: Stacked feature is implemented in `cycle_wrapper`, but makes more
     # sense do document here; figure out way to move it here?
-    # TODO: The 1d parser picks column index for x-coordinates if it detects
-    # the means or medians keyword arg; move that behavior to this function?
-    if not args:
-        return func(*args, **kwargs)
-    if len(args) not in (1,2,3,4):
-        raise ValueError(f'Expected 1-4 positional args, got {len(args)}.')
-    if len(args)==4: # note these are translated by cycle_wrapper for horizontal bars
-        *args, kwargs['bottom'] = args
-    if len(args)==3:
-        *args, kwargs['width'] = args
-    if 'left' in kwargs: # 'left' does not exist
-        kwargs['bottom'] = kwargs.pop('left')
-    # Defaults
+    if left is not None:
+        warnings.warn(f'The "left" keyword with bar() is deprecated. Use "x" instead.')
+        x = left
+    if x is None and height is None:
+        raise ValueError(f'bar() requires at least 1 positional argument, got 0.')
+    elif height is None:
+        x, height = None, x
+    # Get stats from data array, and get default coordinates
+    iheight = height
+    if means:
+        iheight = height.mean(axis=0) # should work with DataFrame and DataArray
+    elif medians:
+        if hasattr(height, 'median'): # true for DataFrame and DataArray
+            iheight = height.median(axis=0)
+        else:
+            iheight = np.percentile(height, 50, axis=0)
+    if x is None:
+        if np.iterable(iheight):
+            x = np.arange(0, len(iheight))
+        else:
+            x = 0
+    # Call func
+    # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
+    # permutes back the x/bottom args for horizontal bars! Need to clean this up.
     lw = _default(lw, linewidth, 0.7)
     edgecolor = _default(edgecolor, 'k')
-    x, y, *args = args
-    if not vert:
-        orientation = 'horizontal'
-    # Function
-    iy = y
-    if means:
-        iy = y.mean(axis=0) # should work with DataFrame and DataArray
-    if medians:
-        if hasattr(y, 'median'): # true for DataFrame and DataArray
-            iy = y.median(axis=0)
-        else:
-            iy = np.percentile(y, 50, axis=0)
-    obj = func(x, iy, *args, linewidth=lw, edgecolor=edgecolor, stacked=stacked, orientation=orientation, **kwargs)
+    obj = func(x, iheight, width=width, bottom=bottom,
+        linewidth=lw, edgecolor=edgecolor,
+        stacked=stacked, orientation=orientation,
+        **kwargs)
     # Add error bars
     if means or medians:
         if orientation=='horizontal':
             axis = 'x' # xerr
-            xy = (iy,x)
+            xy = (iheight,x)
         else:
             axis = 'y' # yerr
-            xy = (x,iy)
+            xy = (x,iheight)
         if box:
-            err = np.percentile(y, boxrange, axis=0)
-            err = err - np.array(iy)
+            err = np.percentile(height, boxrange, axis=0)
+            err = err - np.array(iheight)
             err[0,:] *= -1 # array now represents error bar sizes
             boxlw = _default(boxlw, 4*lw)
             boxcolor = _default(boxcolor, edgecolor)
@@ -737,8 +758,8 @@ def bar_wrapper(self, func, *args, edgecolor=None, lw=None, linewidth=None,
             self.errorbar(*xy, **{axis+'err': err, 'capsize':0,
                 'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
         if bar: # note it is now impossible to make thin bar width different from cap width!
-            err = np.percentile(y, barrange, axis=0)
-            err = err - np.array(iy)
+            err = np.percentile(height, barrange, axis=0)
+            err = err - np.array(iheight)
             err[0,:] *= -1 # array now represents error bar sizes
             barlw = _default(barlw, lw)
             barcolor = _default(barcolor, edgecolor)
@@ -905,20 +926,24 @@ def violinplot_wrapper(self, func, *args,
     if 'positions' not in kwargs:
         raise ValueError('Could not find violinplot positions, but 1d parser should have supplied them.')
     x, y = kwargs['positions'], args[1]
-    if showboxes:
-        box1, box2 = np.percentile(y, boxrange, axis=0)
-        obj['cboxes'] = self.vlines(x, box1, box2, linestyle='-')
-    if showbars:
-        bar1, bar2 = np.percentile(y, barrange, axis=0)
-        obj['cbars'] = self.vlines(x, bar1, bar2, linestyle='-')
     if showmeans is None and showmedians is None:
         showmeans = True
+    if showboxes:
+        box1, box2 = np.percentile(y, boxrange, axis=0)
+        func = getattr(self, orientation[0] + 'lines') # 'hlines' or 'vlines'
+        obj['cboxes'] = func(x, box1, box2, linestyle='-')
+    if showbars:
+        bar1, bar2 = np.percentile(y, barrange, axis=0)
+        func = getattr(self, orientation[0] + 'lines') # 'hlines' or 'vlines'
+        obj['cbars'] = func(x, bar1, bar2, linestyle='-')
     if showmeans:
         means = np.mean(y, axis=0)
-        obj['cmeans'] = self.scatter(x, means, marker='o', color='white', s=boxlw, zorder=5)
+        xy = (means, x) if orientation=='horizontal' else (x, means)
+        obj['cmeans'] = self.scatter(*xy, marker='o', color='white', s=boxlw, zorder=5)
     if showmedians:
         medians = np.percentile(y, 50, axis=0)
-        obj['cmedians'] = self.scatter(x, medians, marker='o', color='white', s=boxlw, zorder=5)
+        xy = (medians, x) if orientation=='horizontal' else (x, medians)
+        obj['cmedians'] = self.scatter(*xy, marker='o', color='white', s=boxlw, zorder=5)
     # Modify results
     # NOTE: In this case we can *only* modify after instantiation
     for key,icolor,ilw in (
@@ -1471,6 +1496,7 @@ def cycle_wrapper(self, func, *args,
     if name in ('bar',):
         width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
         kwargs['height' if barh else 'width'] = width if stacked else width/ncols
+    # print('hi', name, ncols)
     for i in range(ncols):
         # Prop cycle properties
         kw = {**kwargs} # copy
@@ -1494,8 +1520,6 @@ def cycle_wrapper(self, func, *args,
                 ix = x + (i - ncols/2 + 0.5)*width/ncols
             elif stacked and not is1d:
                 key = 'x' if barh else 'bottom'
-                # iy = _to_iloc(iy)[:,:i].sum(axis=1) # sum of empty slice will be zero
-                # kw[key] = iy
                 kw[key] = _to_iloc(iy)[:,:i].sum(axis=1) # sum of empty slice will be zero
         # Get y coordinates and labels
         if name in ('pie','boxplot','violinplot'):
@@ -1521,7 +1545,7 @@ def cycle_wrapper(self, func, *args,
         elif name in ('pie','hist','boxplot','violinplot'): # no x-coordinate
             xy = (*iys,)
         else: # has x-coordinates, and maybe more than one y
-            xy = (ix,*iys)
+            xy = (ix, *iys)
         obj = func(*xy, *args, **kw)
         if isinstance(obj, (list,tuple)) and len(obj)==1: # plot always returns list or tuple
             obj = obj[0]

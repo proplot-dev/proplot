@@ -52,7 +52,6 @@ anyway, `Premature Optimization is the Root of All Evil
 import numpy as np
 import warnings
 from numbers import Number
-from matplotlib.cbook import mplDeprecation
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
@@ -105,11 +104,6 @@ def _abc(i):
         return _abc_string[i]
     else:
         return _abc(i - 26) + _abc_string[i % 26] # sexy sexy recursion
-
-# Filter warnings, must call this before drawing stuff for the first time
-# TODO: Disable this filter? What was I doing that raised deprecation errors?
-# This is from a long long time ago.
-warnings.filterwarnings('ignore', category=mplDeprecation)
 
 # Import mapping toolbox
 try:
@@ -1122,6 +1116,7 @@ class CartesianAxes(BaseAxes):
             if attr in wrappers._2d_methods:
                 obj = wrappers._autoformat_2d_(self, obj)
             elif attr in wrappers._1d_methods:
+                # if attr in ('plot','bar','hist'):
                 obj = wrappers._autoformat_1d_(self, obj)
             # Step 0) Special wrappers
             if attr=='barh': # skips cycle wrapper and calls bar method
