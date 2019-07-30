@@ -1097,13 +1097,11 @@ class CartesianAxes(BaseAxes):
                 obj = wrappers._cmap_wrapper(self, obj)
             elif attr in wrappers._cycle_methods:
                 obj = wrappers._cycle_wrapper(self, obj)
-            # Step 2) Wrappers specific to plot methods
+            # Step 2) Wrappers that must be applied after autoformat
             if attr=='plot':
                 obj = wrappers._plot_wrapper(self, obj)
             elif attr=='scatter':
                 obj = wrappers._scatter_wrapper(self, obj)
-            elif attr=='bar':
-                obj = wrappers._bar_wrapper(self, obj)
             elif attr=='boxplot':
                 obj = wrappers._boxplot_wrapper(self, obj)
             elif attr=='violinplot':
@@ -1118,9 +1116,13 @@ class CartesianAxes(BaseAxes):
             elif attr in wrappers._1d_methods:
                 # if attr in ('plot','bar','hist'):
                 obj = wrappers._autoformat_1d_(self, obj)
-            # Step 0) Special wrappers
-            if attr=='barh': # skips cycle wrapper and calls bar method
+            # Step 0) Wrappers that must be applied before autoformat
+            if attr=='bar':
+                obj = wrappers._bar_wrapper(self, obj)
+            elif attr=='barh': # skips cycle wrapper and calls bar method
                 obj = wrappers._barh_wrapper(self, obj)
+            elif attr=='hist': # skips cycle wrapper and calls bar method
+                obj = wrappers._hist_wrapper(self, obj)
             elif attr=='fill_between':
                 obj = wrappers._fill_between_wrapper(self, obj)
             elif attr=='fill_betweenx':

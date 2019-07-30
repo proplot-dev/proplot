@@ -20,7 +20,7 @@ import matplotlib.legend as mlegend
 from numbers import Number
 from .rctools import rc
 __all__ = [
-    'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper', 'violinplot_wrapper',
+    'bar_wrapper', 'barh_wrapper', 'hist_wrapper', 'boxplot_wrapper', 'violinplot_wrapper',
     'basemap_gridfix', 'basemap_latlon',
     'cartopy_crs', 'cartopy_gridfix', 'cartopy_transform',
     'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
@@ -198,7 +198,7 @@ def _to_array(data):
     data = getattr(data, 'values', data)
     return np.array(data)
 
-def _array_std(data):
+def _atleast_array(data):
     """Converts list of lists to array."""
     if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
         data = np.array(data)
@@ -242,8 +242,9 @@ def _autoformat_1d(self, func, *args, **kwargs):
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
+    # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
-    if len(args)==0:
+    if not args:
         return func(*args, **kwargs)
     elif len(args)==1:
         x = None
@@ -259,14 +260,14 @@ def _autoformat_1d(self, func, *args, **kwargs):
         ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    ys = [_array_std(y) for y in ys]
+    ys = [_atleast_array(y) for y in ys]
 
     # Auto x coords
     y = ys[0] # test the first y input
     if x is None:
-        axis = 1 if (name in ('boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None)) else 0
+        axis = 1 if (name in ('hist','boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None)) else 0
         x, _ = _auto_label(y, axis=axis)
-    x = _array_std(x)
+    x = _atleast_array(x)
     if x.ndim!=1:
         raise ValueError(f'x coordinates must be 1-dimensional, but got {x.ndim}.')
 
@@ -318,7 +319,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
     and `enforce_edges`, which are used for all 2d plot methods."""
     # Sanitize input
     name = func.__name__
-    if len(args)==0:
+    if not args:
         return func(*args, **kwargs)
     elif len(args)>4:
         raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
@@ -330,7 +331,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
     # WARNING: Why is DataFrame always column major? Is this best behavior?
     Zs = []
     for Z in args:
-        Z = _array_std(Z)
+        Z = _atleast_array(Z)
         if Z.ndim!=2:
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
@@ -355,7 +356,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
             y = Z.columns
 
     # Check coordinates
-    x, y = _array_std(x), _array_std(y)
+    x, y = _atleast_array(x), _atleast_array(y)
     if x.ndim != y.ndim:
         raise ValueError(f'x coordinates are {x.ndim}-dimensional, but y coordinates are {y.ndim}-dimensional.')
     for name,array in zip(('x','y'), (x,y)):
@@ -477,7 +478,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
         `~matplotlib.lines.Line2D` properties.
     """
     if len(args) not in (2,3): # e.g. with fmt string
-        raise ValueError(f'Expected 1-3 plot args, got {len(args)}.')
+        raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if cmap is None:
         lines = func(*args, **kwargs)
     else:
@@ -536,7 +537,7 @@ def scatter_wrapper(self, func, *args,
     if len(args)==1:
         s = args.pop(0)
     if args:
-        raise ValueError(f'Expected 1-4 scatter args, got {len(args)}.')
+        raise ValueError(f'Expected 1-4 positional args, got {len(args)}.')
     # Format cmap and norm
     if cmap is not None:
         if isinstance(cmap, (str, dict, mcolors.Colormap)):
@@ -638,23 +639,35 @@ def fill_between_wrapper(self, func, *args, **kwargs):
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
     """Wraps `~matplotlib.axes.Axes.fill_betweenx`, usage is same as `fill_between_wrapper`."""
+    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
+    # we can handle common keyword arg usage.
     return _fill_between_parse(func, *args, **kwargs)
 
-def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, *, align='center', **kwargs):
+def hist_wrapper(self, func, x, bins=None, **kwargs):
+    """Wraps `~matplotlib.axes.Axes.hist`, enforces that all arguments after
+    `bins` are keyword-only and sets the default patch linewidth to ``0``."""
+    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
+    # we can enforce keyword arg usage.
+    kwargs.setdefault('linewidth', 0)
+    return func(x, bins=bins, **kwargs)
+
+def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, **kwargs):
     """Wraps `~matplotlib.axes.Axes.barh`, usage is same as `bar_wrapper`."""
+    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
+    # that we can pass through the bar wrapper
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(f'barh() requires at least 1 positional argument, got 0.')
-    return self.bar(x=left, height=height, width=width, bottom=y, align=align, **kwargs)
+    return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
 def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
-    edgecolor=None, lw=None, linewidth=None,
     vert=None, orientation='vertical',
     stacked=False, medians=False, means=False,
     box=True, bar=True, boxrange=(25, 75), barrange=(5, 95),
     boxcolor=None, barcolor=None,
     boxlw=None, barlw=None,
     capsize=None,
+    lw=None, linewidth=0.7, edgecolor='k',
     **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh`, applies
@@ -665,10 +678,6 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     x, height, width, bottom : float or list of float, optional
         The dimensions of the bars. If the *x* coordinates are not provided,
         they are set to ``np.arange(0, len(height))``.
-    edgecolor : color-spec, optional
-        The default edge color.
-    lw, linewidth : float, optional
-        The default edge width.
     orientation : {'vertical', 'horizontal'}, optional
         The orientation of the bars.
     vert : bool, optional
@@ -696,6 +705,10 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         Line widths for the thick and thin error bars.
     capsize : float, optional
         The cap size for thin error bars.
+    edgecolor : color-spec, optional
+        The edge color for the bar patches.
+    lw, linewidth : float, optional
+        The edge width for the bar patches.
     """
     # Barh converts y-->bottom, left-->x, width-->height, height-->width. Convert
     # back to (x, bottom, width, height) so we can pass stuff through cycle_wrapper
@@ -726,22 +739,23 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
             iheight = height.median(axis=0)
         else:
             iheight = np.percentile(height, 50, axis=0)
-    if x is None:
-        if np.iterable(iheight):
-            x = np.arange(0, len(iheight))
-        else:
-            x = 0
     # Call func
     # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
-    lw = _default(lw, linewidth, 0.7)
-    edgecolor = _default(edgecolor, 'k')
+    lw = _default(lw, linewidth)
     obj = func(x, iheight, width=width, bottom=bottom,
         linewidth=lw, edgecolor=edgecolor,
         stacked=stacked, orientation=orientation,
         **kwargs)
     # Add error bars
+    # NOTE: Make sure 'x' is not None now, after the fact, otherwise need to
+    # pass 'x' as None through autoformat.
     if means or medians:
+        if x is None:
+            if np.iterable(iheight):
+                x = np.arange(0, len(iheight))
+            else:
+                x = 0
         if orientation=='horizontal':
             axis = 'x' # xerr
             xy = (iheight,x)
@@ -771,8 +785,8 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     return obj
 
 def boxplot_wrapper(self, func, *args,
-    color=None, fill=True, fillcolor=None, fillalpha=None,
-    lw=None, linewidth=None, orientation=None,
+    color='k', fill=True, fillcolor=None, fillalpha=0.7,
+    lw=None, linewidth=0.7, orientation=None,
     marker=None, markersize=None,
     boxcolor=None, boxlw=None,
     capcolor=None, caplw=None,
@@ -787,6 +801,8 @@ def boxplot_wrapper(self, func, *args,
 
     Parameters
     ----------
+    *args : 1D or 2D ndarray
+        The data array.
     color : color-spec, optional
         The color of all objects.
     fill : bool, optional
@@ -811,18 +827,19 @@ def boxplot_wrapper(self, func, *args,
         don't have to pass e.g. a ``boxprops`` dictionary.
     """
     # Call function
-    if not args:
-        return func(*args, **kwargs)
+    if len(args)>2:
+        raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
     if orientation is not None:
         if orientation=='horizontal':
             kwargs['vert'] = False
         elif orientation!='vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
     obj = func(*args, **kwargs)
+    if not args:
+        return obj
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
     lw = _default(lw, linewidth)
-    fillalpha = _default(fillalpha, 0.7)
     if fillcolor is None:
         cycler = next(self._get_lines.prop_cycler)
         fillcolor = cycler.get('color', None)
@@ -857,8 +874,8 @@ def boxplot_wrapper(self, func, *args,
     return obj
 
 def violinplot_wrapper(self, func, *args,
-    color=None, fillcolor=None, fillalpha=None,
-    lw=None, linewidth=None, orientation=None,
+    color='k', fillcolor=None, fillalpha=0.7,
+    lw=None, linewidth=0.7, orientation=None,
     boxrange=(25, 75), barrange=(5, 95),
     showboxes=True, showbars=True, showmedians=None, showmeans=None,
     bodycolor=None, bodylw=None,
@@ -878,6 +895,8 @@ def violinplot_wrapper(self, func, *args,
 
     Parameters
     ----------
+    *args : 1D or 2D ndarray
+        The data array.
     color : color-spec, optional
         The color of all line objects. Defaults to ``'k'``.
     fillcolor : color-spec, optional
@@ -905,18 +924,18 @@ def violinplot_wrapper(self, func, *args,
         minimum and maximum markers.
     """
     # Call function
-    if not args:
-        return func(*args, **kwargs)
+    if len(args)>2:
+        raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
     if orientation is not None:
         if orientation=='horizontal':
             kwargs['vert'] = False
         elif orientation!='vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
     obj = func(*args, showmeans=False, showmedians=False, showextrema=False, **kwargs)
+    if not args:
+        return obj
     # Defaults
     lw = _default(lw, linewidth)
-    color = _default(color, 'k') # use black for edges
-    fillalpha = _default(fillalpha, 0.7)
     if boxlw is None: # use a multiplier
         boxlw = 4*_default(lw, rc['lines.linewidth'])
     # Add custom thin and thick lines
@@ -1496,7 +1515,6 @@ def cycle_wrapper(self, func, *args,
     if name in ('bar',):
         width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
         kwargs['height' if barh else 'width'] = width if stacked else width/ncols
-    # print('hi', name, ncols)
     for i in range(ncols):
         # Prop cycle properties
         kw = {**kwargs} # copy
@@ -1727,12 +1745,11 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     --------
     `~proplot.colortools.Colormap`, `~proplot.colortools.Norm`, `~proplot.colortools.BinNorm`,
     """
+    # Parse args, disable edgefix=True for certain keyword combos e.g. if user
+    # wants white lines around their pcolor mesh.
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
-
-    # Parse args, disable edgefix=True for certain keyword combos e.g. if user
-    # wants white lines around their pcolor mesh.
     colors = _default(color, colors, edgecolor, edgecolors)
     edgefix = _default(edgefix, rc['image.edgefix'])
     linewidths = _default(lw, linewidth, linewidths)
@@ -2756,6 +2773,7 @@ _cartopy_crs           = _wrapper(cartopy_crs)
 _cmap_wrapper          = _wrapper(cmap_wrapper)
 _cycle_wrapper         = _wrapper(cycle_wrapper)
 _bar_wrapper           = _wrapper(bar_wrapper)
+_hist_wrapper          = _wrapper(hist_wrapper)
 _barh_wrapper          = _wrapper(barh_wrapper)
 _plot_wrapper          = _wrapper(plot_wrapper)
 _scatter_wrapper       = _wrapper(scatter_wrapper)
