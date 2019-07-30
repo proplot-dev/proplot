@@ -1096,6 +1096,13 @@ class Figure(mfigure.Figure):
                 paxs = [ax.rightpanel for ax in axs if ax._xrange[1]==col]
                 iwpanels += self._panel_tight_layout('r', paxs, renderer)
                 wpanels.append(iwpanels)
+            # Adjust for panels
+            if self.leftpanel:
+                _, *wpanels = wpanels
+            if self.rightpanel:
+                *wpanels, _ = wpanels
+            if self.bottompanel:
+                *hpanels, _ = hpanels
             # Add to dictionary
             subplots_kw.update({'wpanels':wpanels, 'hpanels':hpanels})
 
