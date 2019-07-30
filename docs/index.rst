@@ -19,7 +19,7 @@ on PyPi (but it's coming soon!). For the time being, you may install directly fr
 
    pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
 
-The dependencies are `matplotlib <https://matplotlib.org/>`__ and `numpy <http://www.numpy.org/>`__.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and/or `basemap <https://matplotlib.org/basemap/index.html>`__.
+To upgrade to the latest version, run ``pip uninstall proplot``, then re-install -- ``pip install --upgrade`` doesn't always work with packages downloaded from git. The dependencies are `matplotlib <https://matplotlib.org/>`__ and `numpy <http://www.numpy.org/>`__.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and/or `basemap <https://matplotlib.org/basemap/index.html>`__.
 
 Importing
 =========
