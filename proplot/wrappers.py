@@ -2782,4 +2782,3 @@ _violinplot_wrapper    = _wrapper(violinplot_wrapper)
 _fill_between_wrapper  = _wrapper(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper(fill_betweenx_wrapper)
 _text_wrapper          = _wrapper(text_wrapper)
-
