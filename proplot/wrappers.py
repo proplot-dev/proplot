@@ -334,7 +334,6 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
         x, y, *args = args
 
     # Ensure DataArray, DataFrame or ndarray
-    # WARNING: Why is DataFrame always column major? Is this best behavior?
     Zs = []
     for Z in args:
         Z = _atleast_array(Z)
@@ -498,9 +497,9 @@ def add_errorbars(self, func, *args,
         representing the mean or median. Defaults to ``True`` when `means` is
         ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
     means : bool, optional
-        Whether to plot the medians of columns of input data.
-    medians : bool, optional
         Whether to plot the means of columns of input data.
+    medians : bool, optional
+        Whether to plot the medians of columns of input data.
     bardata, boxdata : 2xN ndarray, optional
         Arrays that manually specify the thin and thick error bar coordinates.
         The first row corresponds to lower bounds, the second row corresponds
@@ -794,28 +793,20 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_between`.
     """
-    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
-    # we can handle common keyword arg usage.
     return _fill_between_parse(func, *args, **kwargs)
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
     """Wraps `~matplotlib.axes.Axes.fill_betweenx`, usage is same as `fill_between_wrapper`."""
-    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
-    # we can handle common keyword arg usage.
     return _fill_between_parse(func, *args, **kwargs)
 
 def hist_wrapper(self, func, x, bins=None, **kwargs):
     """Wraps `~matplotlib.axes.Axes.hist`, enforces that all arguments after
     `bins` are keyword-only and sets the default patch linewidth to ``0``."""
-    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
-    # we can enforce keyword arg usage.
     kwargs.setdefault('linewidth', 0)
     return func(x, bins=bins, **kwargs)
 
 def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, **kwargs):
     """Wraps `~matplotlib.axes.Axes.barh`, usage is same as `bar_wrapper`."""
-    # WARNING: Unlike others, this wrapper is applied *before* parse_1d, so
-    # that we can pass through the bar wrapper
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(f'barh() requires at least 1 positional argument, got 0.')
@@ -1480,7 +1471,7 @@ def cycle_wrapper(self, func, *args,
             cycle_kw.setdefault('samples', y.shape[1])
         cycle = colortools.Cycle(cycle, **cycle_kw)
         # Get the original property cycle
-        # WARNING: Matplotlib saves itertools.cycle(cycler), not the original
+        # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
         # cycler object, so we must build up the keys again.
         i = 0
         by_key = {}
@@ -2670,7 +2661,7 @@ def colorbar_wrapper(self,
     extendsize = utils.units(_default(extendsize, rc['colorbar.extend']))
     extendsize = extendsize/(scale - 2*extendsize)
     kwargs.update({
-        'ticks':locators[0], # WARNING: without this, set_ticks screws up number labels for some reason
+        'ticks':locators[0],
         'format':formatter,
         'ticklocation':ticklocation,
         'extendfrac':extendsize
@@ -2689,10 +2680,10 @@ def colorbar_wrapper(self,
         axis = self.yaxis
 
     # The minor locators and formatters
-    # WARNING: Inexplicably, colorbar axis limits *are* the original,
-    # un-normalized data values. Always the case for hexbin. We detect this
-    # by checking for impossible axis limits. Axis limits are always
-    # from (0-extendfrac to 1+extendfrac).
+    # WARNING: Inexplicably, for hexbin, axis lims *are* original, un-normalized
+    # data values, and maybe in other situations too? We detect this by checking
+    # for impossible normalized axis limits (normalized lims are from
+    # 0-extendfrac to 1+extendfrac).
     lim = axis.get_view_interval()
     vals = []
     normed = (lim[0] >= -2*kwargs['extendfrac']) and (lim[1] <= 1 + 2*kwargs['extendfrac'])

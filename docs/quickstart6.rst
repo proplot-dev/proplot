@@ -164,11 +164,11 @@ the luminance of the underlying box color.
 Easy error bars
 ---------------
 
-Thanks to the `~proplot.wrappers.add_errorbars` wrapper, the
-`~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
-`~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`, and
-`~matplotlib.axes.Axes.violinplot` methods can all be used to draw
-error bars. If you pass 2D arrays of data to these commands with
+Thanks to the `~proplot.wrappers.add_errorbars` wrapper, you can now
+add error bars when using the `~matplotlib.axes.Axes.plot`,
+`~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.bar`,
+`~matplotlib.axes.Axes.barh`, and `~matplotlib.axes.Axes.violinplot`
+methods. If you pass 2D arrays of data to these commands with
 ``means=True`` or ``medians=True``, the *means or medians* of each
 column are drawn as points, lines, or bars, and error bars represent the
 *spread* in each column. You can draw both thin “bars” with optional
