@@ -1084,12 +1084,13 @@ class CartesianAxes(BaseAxes):
 
     def __getattribute__(self, attr, *args):
         """Applies the `~proplot.wrappers.cmap_wrapper`,
-        `~proplot.wrappers.cycle_wrapper`, `~proplot.wrappers.enforce_centers`,
-        `~proplot.wrappers.enforce_edges`, `~proplot.wrappers.plot_wrapper`,
-        `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.bar_wrapper`,
-        `~proplot.wrappers.barh_wrapper`, `~proplot.wrappers.boxplot_wrapper`,
-        `~proplot.wrappers.violinplot_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
-        and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
+        `~proplot.wrappers.cycle_wrapper`, `~proplot.wrappers.add_errorbars`,
+        `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
+        `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
+        `~proplot.wrappers.bar_wrapper`, `~proplot.wrappers.barh_wrapper`,
+        `~proplot.wrappers.boxplot_wrapper`, `~proplot.wrappers.violinplot_wrapper`,
+        `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
+        wrappers."""
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
             # Step 3) Color usage wrappers
@@ -1097,7 +1098,19 @@ class CartesianAxes(BaseAxes):
                 obj = wrappers._cmap_wrapper(self, obj)
             elif attr in wrappers._cycle_methods:
                 obj = wrappers._cycle_wrapper(self, obj)
-            # Step 2) Wrappers that must be applied after autoformat
+            # Step 2) Utilities
+            if attr in wrappers._centers_methods:
+                obj = wrappers._enforce_centers(self, obj)
+            elif attr in wrappers._edges_methods:
+                obj = wrappers._enforce_edges(self, obj)
+            elif attr in wrappers._errorbar_methods:
+                obj = wrappers._add_errorbars(self, obj)
+            # Step 1) Parse input
+            if attr in wrappers._2d_methods:
+                obj = wrappers._autoformat_2d_(self, obj)
+            elif attr in wrappers._1d_methods:
+                obj = wrappers._autoformat_1d_(self, obj)
+            # Step 0) Special wrappers
             if attr=='plot':
                 obj = wrappers._plot_wrapper(self, obj)
             elif attr=='scatter':
@@ -1106,18 +1119,7 @@ class CartesianAxes(BaseAxes):
                 obj = wrappers._boxplot_wrapper(self, obj)
             elif attr=='violinplot':
                 obj = wrappers._violinplot_wrapper(self, obj)
-            elif attr in wrappers._centers_methods:
-                obj = wrappers._enforce_centers(self, obj)
-            elif attr in wrappers._edges_methods:
-                obj = wrappers._enforce_edges(self, obj)
-            # Step 1) Parse input
-            if attr in wrappers._2d_methods:
-                obj = wrappers._autoformat_2d_(self, obj)
-            elif attr in wrappers._1d_methods:
-                # if attr in ('plot','bar','hist'):
-                obj = wrappers._autoformat_1d_(self, obj)
-            # Step 0) Wrappers that must be applied before autoformat
-            if attr=='bar':
+            elif attr=='bar':
                 obj = wrappers._bar_wrapper(self, obj)
             elif attr=='barh': # skips cycle wrapper and calls bar method
                 obj = wrappers._barh_wrapper(self, obj)
@@ -2153,12 +2155,8 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
             # Step 4) Fix coordinate grid
             if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
                 obj = wrappers._cartopy_gridfix(self, obj)
-            # Step 3) Individual plot method wrappers
-            if attr=='plot':
-                obj = wrappers._plot_wrapper(self, obj)
-            elif attr=='scatter':
-                obj = wrappers._scatter_wrapper(self, obj)
-            elif attr in wrappers._edges_methods:
+            # Step 3) Utilities
+            if attr in wrappers._edges_methods:
                 obj = wrappers._enforce_edges(self, obj)
             elif attr in wrappers._centers_methods:
                 obj = wrappers._enforce_centers(self, obj)
@@ -2173,7 +2171,11 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
             elif attr in wrappers._1d_methods:
                 obj = wrappers._autoformat_1d_(self, obj)
             # Step 0) Special wrappers
-            if attr=='fill_between':
+            if attr=='plot':
+                obj = wrappers._plot_wrapper(self, obj)
+            elif attr=='scatter':
+                obj = wrappers._scatter_wrapper(self, obj)
+            elif attr=='fill_between':
                 obj = wrappers._fill_between_wrapper(self, obj)
             elif attr=='fill_betweenx':
                 obj = wrappers._fill_betweenx_wrapper(self, obj)
@@ -2398,12 +2400,8 @@ class BasemapProjectionAxes(ProjectionAxes):
             # Step 4) Fix coordinate grid
             if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
                 obj = wrappers._basemap_gridfix(self, obj)
-            # Step 3) Individual plot method wrappers
-            if attr=='plot':
-                obj = wrappers._plot_wrapper(self, obj)
-            elif attr=='scatter':
-                obj = wrappers._scatter_wrapper(self, obj)
-            elif attr in wrappers._edges_methods:
+            # Step 3) Utilities
+            if attr in wrappers._edges_methods:
                 obj = wrappers._enforce_edges(self, obj)
             elif attr in wrappers._centers_methods:
                 obj = wrappers._enforce_centers(self, obj)
@@ -2416,7 +2414,11 @@ class BasemapProjectionAxes(ProjectionAxes):
             elif attr in wrappers._1d_methods:
                 obj = wrappers._autoformat_1d_(self, obj)
             # Step 0) Special wrappers
-            if attr=='fill_between':
+            if attr=='plot':
+                obj = wrappers._plot_wrapper(self, obj)
+            elif attr=='scatter':
+                obj = wrappers._scatter_wrapper(self, obj)
+            elif attr=='fill_between':
                 obj = wrappers._fill_between_wrapper(self, obj)
             elif attr=='fill_betweenx':
                 obj = wrappers._fill_betweenx_wrapper(self, obj)

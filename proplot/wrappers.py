@@ -20,7 +20,7 @@ import matplotlib.legend as mlegend
 from numbers import Number
 from .rctools import rc
 __all__ = [
-    'bar_wrapper', 'barh_wrapper', 'hist_wrapper', 'boxplot_wrapper', 'violinplot_wrapper',
+    'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'hist_wrapper', 'boxplot_wrapper', 'violinplot_wrapper',
     'basemap_gridfix', 'basemap_latlon',
     'cartopy_crs', 'cartopy_gridfix', 'cartopy_transform',
     'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
@@ -48,6 +48,7 @@ except ModuleNotFoundError:
 
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
+_errorbar_methods = ('plot', 'scatter', 'bar', 'violinplot')
 _edges_methods = ('pcolor', 'pcolormesh',)
 _centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
 _2d_methods = (*_centers_methods, *_edges_methods)
@@ -238,7 +239,7 @@ def _auto_label(data, axis=None, units=True):
     return data, str(label).strip()
 
 def _autoformat_1d(self, func, *args, **kwargs):
-    """Accepts 1d DataArray or Series, or
+    """Accepts 1D DataArray or Series, or
     2D DataArray or DataFrame, in which case list of lines or points
     are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
     # Sanitize input
@@ -253,6 +254,11 @@ def _autoformat_1d(self, func, *args, **kwargs):
         x, y, *args = args # same
     else:
         raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
+    vert = kwargs.get('vert', None)
+    if vert is not None:
+        orientation = ('vertical' if vert else 'horizontal')
+    else:
+        orientation = kwargs.get('orientation', 'vertical')
 
     # Iterate through list of ys that we assume are identical
     # Standardize based on the first y input
@@ -276,7 +282,7 @@ def _autoformat_1d(self, func, *args, **kwargs):
     if not self._is_map:
         # First handle string-type x-coordinates
         kw = {}
-        xaxis = 'y' if (kwargs.get('orientation', None)=='horizontal') else 'x'
+        xaxis = 'y' if (orientation=='horizontal') else 'x'
         yaxis = 'x' if xaxis=='y' else 'y'
         if _to_array(x).dtype=='object':
             xi = np.arange(len(x))
@@ -315,8 +321,8 @@ def _autoformat_1d(self, func, *args, **kwargs):
     return func(x, *ys, *args, **kwargs)
 
 def _autoformat_2d(self, func, *args, order='C', **kwargs):
-    """Gets 2d data. Accepts ndarray and DataArray. Used by `enforce_centers`
-    and `enforce_edges`, which are used for all 2d plot methods."""
+    """Gets 2D data. Accepts ndarray and DataArray. Used by `enforce_centers`
+    and `enforce_edges`, which are used for all 2D plot methods."""
     # Sanitize input
     name = func.__name__
     if not args:
@@ -351,7 +357,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
         elif isinstance(Z, DataArray): # DataArray
             x = Z.coords[Z.dims[idx]]
             y = Z.coords[Z.dims[idy]]
-        else: # DataFrame; never Series or Index because these are 1d
+        else: # DataFrame; never Series or Index because these are 1D
             x = Z.index
             y = Z.columns
 
@@ -394,7 +400,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
         if kw:
             self.format(**kw)
 
-    # Return object
+    # Get edges
     if xi is not None:
         x = xi
     if yi is not None:
@@ -463,6 +469,101 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------#
 # 1D plot wrappers
 #------------------------------------------------------------------------------#
+@_expand_methods_list
+def add_errorbars(self, func, *args,
+    medians=False, means=False,
+    boxes=True, bars=True, boxrange=(25, 75), barrange=(5, 95),
+    meancolor=None, mediancolor=None, boxcolor=None, barcolor=None,
+    boxlw=None, barlw=None, capsize=None,
+    **kwargs):
+    """
+    Wraps `_errorbar_methods`, supports interpreting columns of data as ranges,
+    representing the mean or median of those ranges with lines, points, or bars,
+    and drawing error bars representing the data spread in each column.
+
+    Parameters
+    ----------
+    *args
+        The input data.
+    medians : bool, optional
+        Whether to plot the mean of columns of input data, instead of stacking
+        or grouping the bars.
+    means : bool, optional
+        Whether to plot the median of columns of input data, instead of stacking
+        or grouping the bars.
+    boxes, bars : bool, optional
+        Toggles thick and thin error bars when either of `means` or `medians`
+        is ``True``.
+    boxrange, barrange : (float, float), optional
+        Percentile ranges for drawing thick and thin central error bars.
+        The defaults are ``(25, 75)`` and ``(5, 95)``, respectively.
+        Ignored if `medians` and `means` are both ``False``.
+    meancolor, mediancolor : color-spec, optional
+        Color for the marker denoting the mean or median position. Ignored
+        if `boxes` is ``False``. Defaults to ``'w'``.
+    boxcolor, barcolor : color-spec, optional
+        Colors for the thick and thin error bars. Defaults to ``'k'``.
+    boxlw, barlw : float, optional
+        Line widths for the thick and thin error bars. Defaults to ``0.7``.
+    capsize : float, optional
+        The cap size for thin error bars.
+    """
+    # Optionally supply function with medians and means
+    # TODO: Also add support for error bars in *x* direction!
+    name = func.__name__
+    x, y, *args = args
+    iy = y
+    if (means or medians):
+        if y.ndim!=2:
+            raise ValueError(f'Need 2D data array for means=True or medians=True, got {y.ndim}D array.')
+        if means:
+            iy = np.mean(y, axis=0)
+        elif medians:
+            iy = np.percentile(y, 50, axis=0)
+    # Call function
+    get = kwargs.pop if name=='violinplot' else kwargs.get
+    lw = _default(get('lw', None), get('linewidth', None), 0.7)
+    edgecolor = _default(get('edgecolor', None), 'k')
+    if name=='violinplot':
+        xy = (x, y) # full data
+    else:
+        xy = (x, iy) # just the stats
+    obj = func(*xy, *args, **kwargs)
+    if not means and not medians:
+        return obj
+    # Add error bars
+    if 'vert' in kwargs:
+        orientation = 'vertical' if kwargs['vert'] else 'horizontal'
+    else:
+        orientation = kwargs.get('orientation', 'vertical')
+    if orientation=='horizontal':
+        axis = 'x' # xerr
+        xy = (iy,x)
+    else:
+        axis = 'y' # yerr
+        xy = (x,iy)
+    if boxes:
+        err = np.percentile(y, boxrange, axis=0)
+        err = err - np.array(iy)
+        err[0,:] *= -1 # array now represents error bar sizes
+        boxlw = _default(boxlw, 4*lw)
+        boxcolor = _default(boxcolor, edgecolor)
+        color = _default(mediancolor, meancolor, 'white')
+        self.scatter(*xy, marker='o', color=color, s=boxlw, zorder=5)
+        self.errorbar(*xy, **{axis+'err': err, 'capsize':0,
+            'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
+    if bars: # note it is now impossible to make thin bar width different from cap width!
+        err = np.percentile(y, barrange, axis=0)
+        err = err - np.array(iy)
+        err[0,:] *= -1 # array now represents error bar sizes
+        barlw = _default(barlw, lw)
+        barcolor = _default(barcolor, edgecolor)
+        capsize = _default(capsize, 3) # better default than 5
+        self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize,
+            'color':barcolor, 'linewidth':barlw, 'linestyle':'none',
+            'markeredgecolor':barcolor, 'markeredgewidth':barlw})
+    return obj
+
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.plot`, calls `~proplot.axes.BaseAxes.cmapline`
@@ -477,7 +578,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
-    if len(args) not in (2,3): # e.g. with fmt string
+    if len(args)>3: # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if cmap is None:
         lines = func(*args, **kwargs)
@@ -530,23 +631,19 @@ def scatter_wrapper(self, func, *args,
         Passed to `~matplotlib.axes.Axes.scatter`.
     """
     # Manage input arguments
-    # NOTE: Parse 1d must come before this
-    x, y, *args = args
-    if len(args)==2:
+    # NOTE: Parse 1D must come before this
+    nargs = len(args)
+    if len(args)>4:
+        raise ValueError(f'Expected 1-4 positional args, got {nargs}.')
+    if len(args)==4:
         c = args.pop(1)
-    if len(args)==1:
+    if len(args)==3:
         s = args.pop(0)
-    if args:
-        raise ValueError(f'Expected 1-4 positional args, got {len(args)}.')
     # Format cmap and norm
     if cmap is not None:
-        if isinstance(cmap, (str, dict, mcolors.Colormap)):
-            cmap = cmap, # make a tuple
-        cmap = colortools.Colormap(*cmap, N=None, **cmap_kw)
+        cmap = colortools.Colormap(cmap, N=None, **cmap_kw)
     if norm is not None:
-        if isinstance(norm, (str, dict, mcolors.Normalize)):
-            norm = norm,
-        norm = colortools.Norm(*norm, N=None, **norm_kw)
+        norm = colortools.Norm(norm, N=None, **norm_kw)
     # Apply some aliases for keyword arguments
     c = _default(c, color, markercolor)
     s = _default(s, size, markersize)
@@ -561,7 +658,7 @@ def scatter_wrapper(self, func, *args,
             smax = smax_true
         s = smin + (smax - smin)*(np.array(s) - smin_true)/(smax_true - smin_true)
     # Call function
-    return func(x, y, c=c, s=s,
+    return func(*args, c=c, s=s,
         cmap=cmap, vmin=vmin, vmax=vmax,
         norm=norm, linewidths=lw, edgecolors=ec,
         **kwargs)
@@ -661,12 +758,7 @@ def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, **kwargs
     return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
 def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
-    vert=None, orientation='vertical',
-    stacked=False, medians=False, means=False,
-    box=True, bar=True, boxrange=(25, 75), barrange=(5, 95),
-    boxcolor=None, barcolor=None,
-    boxlw=None, barlw=None,
-    capsize=None,
+    vert=None, orientation='vertical', stacked=False,
     lw=None, linewidth=0.7, edgecolor='k',
     **kwargs):
     """
@@ -686,25 +778,6 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         and `~matplotlib.axes.Axes.violinplot`.
     stacked : bool, optional
         Whether to stack columns of input data, or plot the bars side-by-side.
-    medians : bool, optional
-        Whether to plot the mean of columns of input data, instead of stacking
-        or grouping the bars.
-    means : bool, optional
-        Whether to plot the median of columns of input data, instead of stacking
-        or grouping the bars.
-    box, bar : bool, optional
-        Toggles thick and thin error bars when either of `means` or `medians`
-        is ``True``.
-    boxrange, barrange : (float, float), optional
-        Percentile ranges for drawing thick and thin central error bars.
-        The defaults are ``(25, 75)`` and ``(5, 95)``, respectively.
-        Ignored if `medians` and `means` are both ``False``.
-    boxcolor, barcolor : float, optional
-        Colors for the thick and thin error bars.
-    boxlw, barlw : float, optional
-        Line widths for the thick and thin error bars.
-    capsize : float, optional
-        The cap size for thin error bars.
     edgecolor : color-spec, optional
         The edge color for the bar patches.
     lw, linewidth : float, optional
@@ -730,59 +803,14 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         raise ValueError(f'bar() requires at least 1 positional argument, got 0.')
     elif height is None:
         x, height = None, x
-    # Get stats from data array, and get default coordinates
-    iheight = height
-    if means:
-        iheight = height.mean(axis=0) # should work with DataFrame and DataArray
-    elif medians:
-        if hasattr(height, 'median'): # true for DataFrame and DataArray
-            iheight = height.median(axis=0)
-        else:
-            iheight = np.percentile(height, 50, axis=0)
     # Call func
     # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
     lw = _default(lw, linewidth)
-    obj = func(x, iheight, width=width, bottom=bottom,
+    return func(x, height, width=width, bottom=bottom,
         linewidth=lw, edgecolor=edgecolor,
         stacked=stacked, orientation=orientation,
         **kwargs)
-    # Add error bars
-    # NOTE: Make sure 'x' is not None now, after the fact, otherwise need to
-    # pass 'x' as None through autoformat.
-    if means or medians:
-        if x is None:
-            if np.iterable(iheight):
-                x = np.arange(0, len(iheight))
-            else:
-                x = 0
-        if orientation=='horizontal':
-            axis = 'x' # xerr
-            xy = (iheight,x)
-        else:
-            axis = 'y' # yerr
-            xy = (x,iheight)
-        if box:
-            err = np.percentile(height, boxrange, axis=0)
-            err = err - np.array(iheight)
-            err[0,:] *= -1 # array now represents error bar sizes
-            boxlw = _default(boxlw, 4*lw)
-            boxcolor = _default(boxcolor, edgecolor)
-            self.scatter(*xy, marker='o', color='white', s=boxlw, zorder=5)
-            self.errorbar(*xy, **{axis+'err': err, 'capsize':0,
-                'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
-        if bar: # note it is now impossible to make thin bar width different from cap width!
-            err = np.percentile(height, barrange, axis=0)
-            err = err - np.array(iheight)
-            err[0,:] *= -1 # array now represents error bar sizes
-            barlw = _default(barlw, lw)
-            barcolor = _default(barcolor, edgecolor)
-            capsize = _default(capsize, 3) # better default than 5
-            self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize,
-                'color':barcolor, 'linewidth':barlw, 'linestyle':'none',
-                'markeredgecolor':barcolor, 'markeredgewidth':barlw})
-    # Return object
-    return obj
 
 def boxplot_wrapper(self, func, *args,
     color='k', fill=True, fillcolor=None, fillalpha=0.7,
@@ -874,56 +902,34 @@ def boxplot_wrapper(self, func, *args,
     return obj
 
 def violinplot_wrapper(self, func, *args,
-    color='k', fillcolor=None, fillalpha=0.7,
-    lw=None, linewidth=0.7, orientation=None,
-    boxrange=(25, 75), barrange=(5, 95),
-    showboxes=True, showbars=True, showmedians=None, showmeans=None,
-    bodycolor=None, bodylw=None,
-    boxcolor=None, boxlw=None,
-    barcolor=None, barlw=None,
-    meancolor=None, meanlw=None,
-    mediancolor=None, medianlw=None,
-    mincolor=None, minlw=None,
-    maxcolor=None, maxlw=None,
+    lw=None, linewidth=0.7, fillcolor=None, edgecolor='k', fillalpha=0.7, orientation=None,
     **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.violinplot`, adds convenient keyword args.
     Makes the style shown in right plot of `this matplotlib example
     <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
-    the default. Among other things, it is no longer possible to show minima
-    and maxima with whiskers, because that is redundant anyway.
+    the default. It is also no longer possible to show minima and maxima with
+    whiskers, because this is redundant.
 
     Parameters
     ----------
     *args : 1D or 2D ndarray
         The data array.
-    color : color-spec, optional
-        The color of all line objects. Defaults to ``'k'``.
+    lw, linewidth : float, optional
+        The linewidth of the line objects. Defaults to ``1``.
+    edgecolor : color-spec, optional
+        The edge color for the violin patches. Defaults to ``'k'``.
     fillcolor : color-spec, optional
         The violin plot fill color. Defaults to the next color cycler color.
     fillalpha : float, optional
         The opacity of the violins. Defaults to ``1``.
-    lw, linewidth : float, optional
-        The linewidth of all line objects. Defaults to ``1``.
     orientation : {None, 'horizontal', 'vertical'}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
     boxrange, barrange : (float, float), optional
         Percentile ranges for the thick and thin central bars. The defaults
         are ``(25, 75)`` and ``(5, 95)``, respectively.
-    showboxes, showbars, showmedians, showmeans : bool, optional
-        Toggles showing the central thick vertical bar, thin vertical bar,
-        median position marker, mean position marker, and the minimum maximum
-        datum markers. These defaults are different from the matplotlib defaults.
-    bodycolor, boxcolor, barcolor, meancolor, mediancolor, mincolor, maxcolor : color-spec, optional
-        The color of various violin plot components. Applies to violin body,
-        thick central bar, thin central bar, mean and median markers, and
-        minimum and maximum markers.
-    bodylw, boxlw, barlw, meanlw, medianlw, minlw, maxlw : float, optional
-        The line width of various violin plot components. Applies to violin body,
-        thick central bar, thin central bar, mean and median markers, and
-        minimum and maximum markers.
     """
-    # Call function
+    # Orientation and checks
     if len(args)>2:
         raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
     if orientation is not None:
@@ -931,70 +937,25 @@ def violinplot_wrapper(self, func, *args,
             kwargs['vert'] = False
         elif orientation!='vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
-    obj = func(*args, showmeans=False, showmedians=False, showextrema=False, **kwargs)
+    # Sanitize input
+    lw = _default(linewidth, lw)
+    if kwargs.pop('showextrema', None):
+        warnings.warn(f'Ignoring showextrema=True.')
+    if 'showmeans' in kwargs:
+        kwargs.setdefault('means', kwargs.pop('showmeans'))
+    if 'showmedians' in kwargs:
+        kwargs.setdefault('medians', kwargs.pop('showmedians'))
+    kwargs.setdefault('capsize', 0)
+    obj = func(*args, showmeans=False, showmedians=False, showextrema=False, edgecolor=edgecolor, lw=lw, **kwargs)
     if not args:
         return obj
-    # Defaults
-    lw = _default(lw, linewidth)
-    if boxlw is None: # use a multiplier
-        boxlw = 4*_default(lw, rc['lines.linewidth'])
-    # Add custom thin and thick lines
-    # WARNING: This wrapper comes after the parse 1d wrapper, which always
-    # passes an (x,y) pair as args; but in this case the x is nonsense, just
-    # indicates each datum index. We want the positions keyword arg.
-    if 'positions' not in kwargs:
-        raise ValueError('Could not find violinplot positions, but 1d parser should have supplied them.')
-    x, y = kwargs['positions'], args[1]
-    if showmeans is None and showmedians is None:
-        showmeans = True
-    if showboxes:
-        box1, box2 = np.percentile(y, boxrange, axis=0)
-        func = getattr(self, orientation[0] + 'lines') # 'hlines' or 'vlines'
-        obj['cboxes'] = func(x, box1, box2, linestyle='-')
-    if showbars:
-        bar1, bar2 = np.percentile(y, barrange, axis=0)
-        func = getattr(self, orientation[0] + 'lines') # 'hlines' or 'vlines'
-        obj['cbars'] = func(x, bar1, bar2, linestyle='-')
-    if showmeans:
-        means = np.mean(y, axis=0)
-        xy = (means, x) if orientation=='horizontal' else (x, means)
-        obj['cmeans'] = self.scatter(*xy, marker='o', color='white', s=boxlw, zorder=5)
-    if showmedians:
-        medians = np.percentile(y, 50, axis=0)
-        xy = (medians, x) if orientation=='horizontal' else (x, medians)
-        obj['cmedians'] = self.scatter(*xy, marker='o', color='white', s=boxlw, zorder=5)
-    # Modify results
-    # NOTE: In this case we can *only* modify after instantiation
-    for key,icolor,ilw in (
-        ('bodies',bodycolor,bodylw), # poly collection
-        ('cboxes',boxcolor,boxlw), # line collections
-        ('cbars',barcolor,barlw), # line collections
-        ('cmeans',meancolor,meanlw),
-        ('cmedians',mediancolor,medianlw),
-        ):
-        if key not in obj: # possible if not rendered
-            continue
-        artists = obj[key]
-        ilw = _default(ilw, lw)
-        icolor = _default(icolor, color)
-        if not isinstance(artists, (list,tuple)): # only for bodies
-            artists = [artists]
-        for artist in artists:
-            if key=='bodies':
-                if isinstance(artist, tuple):
-                    continue
-                artist.set_alpha(fillalpha)
-                if fillcolor is not None:
-                    artist.set_facecolor(fillcolor)
-                if icolor is not None:
-                    artist.set_edgecolor(icolor)
-                if ilw is not None:
-                    artist.set_linewidths(ilw)
-            else:
-                if icolor is not None:
-                    artist.set_color(icolor)
-                if ilw is not None:
-                    artist.set_linewidth(ilw)
+    # Modify body settings
+    for artist in obj['bodies']:
+        artist.set_alpha(fillalpha)
+        artist.set_edgecolor(edgecolor)
+        artist.set_linewidths(lw)
+        if fillcolor is not None:
+            artist.set_facecolor(fillcolor)
     return obj
 
 #------------------------------------------------------------------------------#
@@ -1199,8 +1160,8 @@ def _gridfix_poles(lat, Z):
 
 def _gridfix_coordinates(lon, lat):
     """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
-    contents can be modified. Ignores 2d coordinate arrays."""
-    # Sanitization and bail if 2d
+    contents can be modified. Ignores 2D coordinate arrays."""
+    # Sanitization and bail if 2D
     if lon.ndim==1:
         lon = ma.array(lon)
     if lat.ndim==1:
@@ -1497,7 +1458,7 @@ def cycle_wrapper(self, func, *args,
                 apply.add(key)
 
     # Plot susccessive columns
-    # WARNING: Most methods that accept 2d arrays use columns of data, but when
+    # WARNING: Most methods that accept 2D arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data assumed!
     # This is fixed in parse_1d by converting to values.
     objs = []
@@ -1608,7 +1569,7 @@ def cycle_wrapper(self, func, *args,
     if name=='plot':
         return (*objs,) # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
-        return objs[0] # always singleton, because these methods accept the whole 2d object
+        return objs[0] # always singleton, because these methods accept the whole 2D object
     else:
         return objs[0] if is1d else (*objs,) # sensible default behavior
 
@@ -2482,8 +2443,8 @@ def colorbar_wrapper(self,
     if ticklabelcolor is not None:
         kw_ticklabels['color'] = ticklabelcolor
 
-    # Special case where auto colorbar is generated from 1d methods, a list is
-    # always passed but some 1d methods (scatter) do have colormaps.
+    # Special case where auto colorbar is generated from 1D methods, a list is
+    # always passed but some 1D methods (scatter) do have colormaps.
     if np.iterable(mappable) and len(mappable)==1 and hasattr(mappable[0], 'get_cmap'):
         mappable = mappable[0]
 
@@ -2763,6 +2724,7 @@ def _wrapper(driver):
 _autoformat_1d_ = _wrapper(_autoformat_1d)
 _autoformat_2d_ = _wrapper(_autoformat_2d)
 # Documented
+_add_errorbars         = _wrapper(add_errorbars)
 _enforce_centers       = _wrapper(enforce_centers)
 _enforce_edges         = _wrapper(enforce_edges)
 _basemap_gridfix       = _wrapper(basemap_gridfix)
