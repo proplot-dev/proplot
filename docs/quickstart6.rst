@@ -137,8 +137,8 @@ keyword argument, and ProPlot will draw contour labels with
 `~matplotlib.axes.Axes.text`. The label format can be changed by
 passing a ``labels_kw`` dictionary of settings (e.g.
 ``labels_kw={'fontsize':12}``) and with the ``precision`` keyword arg.
-For grid box labels, the label color is automatically chosen based on
-the luminance of the underlying box color.
+Label colors are automatically chosen based on the luminance of the
+underlying box or contour color.
 
 .. code:: ipython3
 
