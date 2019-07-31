@@ -134,6 +134,7 @@ def _expand_methods_list(func):
     names, this is much cleaner."""
     doc = func.__doc__
     for name,methods in (
+        ('_errorbar_methods',      _errorbar_methods),
         ('_centers_methods',       _centers_methods),
         ('_edges_methods',         _edges_methods),
         ('_centers_edges_methods', (*_centers_methods, *_edges_methods)),
