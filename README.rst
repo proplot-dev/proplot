@@ -80,10 +80,6 @@ Here are some highlights of the remaining features:
 You can thank `bradyrx <https://github.com/bradyrx>`__ for getting this project in working order and helping me fix a lot of the initial bugs. If your field is atmospheric science, check out his awesome
 `decadal climate prediction package <https://github.com/bradyrx/climpred>`_.
 
-Donations
----------
-At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
-
 What about other matplotlib wrappers?
 -------------------------------------
 
@@ -100,6 +96,10 @@ Certain parts of ProPlot conflict directly with the matplotlib API. ProPlot enfo
 Other parts of ProPlot would arguably make the matplotlib API redundant if implemented directly. For example, ``BaseAxes.format`` is convenient, but the same tasks can be accomplished with *existing* axes and axis "setter" methods. Also, some of the functionality of ``subplots`` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, ProPlot should probably remain here as a separate project.
 
 Nevertheless, if there are any core matplotlib developers reading this, and you think that some of ProPlot's features should be added to matplotlib, please contact me!
+
+Donations
+---------
+At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
 
 .. Links and badges
 
