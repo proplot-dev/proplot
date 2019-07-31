@@ -503,30 +503,32 @@ def add_errorbars(self, func, *args,
         Whether to plot the medians of columns of input data.
     bardata, boxdata : 2xN ndarray, optional
         Arrays that manually specify the thin and thick error bar coordinates.
-        The first row corresponds to lower bounds, the second row corresponds
-        to upper bounds, and columns correspond to points in the dataset.
+        The first row contains lower bounds, and the second row contains
+        upper bounds. Columns correspond to points in the dataset.
     barstd, boxstd : bool, optional
-        Whether the thin and thick error bar ranges refer to multiples of
-        standard deviations, or to percentile ranges. Defaults to ``False``.
-    barrange, boxrange : (float, float), optional
+        Whether `barrange` and `boxrange` refer to multiples of the standard
+        deviation, or percentile ranges. Defaults to ``False``.
+    barrange : (float, float), optional
         Percentile ranges or standard deviation multiples for drawing thin
-        and thick central error bars. The `boxrange` defaults are ``(-1,1)``
-        (i.e. +/-1 standard deviation) when `boxstd` is ``True``, and
-        ``(25,75)`` (i.e. the middle 50th percentile) when `boxstd` is
-        ``False``. The `barrange` defaults are ``(-3,3)`` (i.e. +/-3 standard
-        deviations) when `barstd` is ``True``, and ``(0,100)`` (i.e. the full
-        data range) when `barstd` is ``False``.
+        error bars. The defaults are ``(-3,3)`` (i.e. +/-3 standard deviations)
+        when `barstd` is ``True``, and ``(0,100)`` (i.e. the full data range)
+        when `barstd` is ``False``.
+    boxrange : (float, float), optional
+        Percentile ranges or standard deviation multiples for drawing thick
+        error bars. The defaults are ``(-1,1)`` (i.e. +/-1 standard deviation)
+        when `boxstd` is ``True``, and ``(25,75)`` (i.e. the middle 50th
+        percentile) when `boxstd` is ``False``.
     barcolor, boxcolor : color-spec, optional
         Colors for the thick and thin error bars. Defaults to ``'k'``.
+    barlw, boxlw : float, optional
+        Line widths for the thin and thick error bars, in points. `barlw`
+        defaults to ``0.7`` and `boxlw` defaults to ``4*barlw``.
     boxmarker : bool, optional
         Whether to draw a small marker in the middle of the box denoting
         the mean or median position. Ignored if `boxes` is ``False``.
         Defaults to ``True``.
     boxmarkercolor : color-spec, optional
         Color for the `boxmarker` marker. Defaults to ``'w'``.
-    barlw, boxlw : float, optional
-        Line widths for the thin and thick error bars, in points. `barlw`
-        defaults to ``0.7`` and `boxlw` defaults to ``4*barlw``.
     capsize : float, optional
         The cap size for thin error bars, in points.
     barzorder, boxzorder : float, optional
