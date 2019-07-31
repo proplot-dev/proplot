@@ -161,6 +161,56 @@ the luminance of the underlying box color.
 .. image:: quickstart/quickstart_151_0.svg
 
 
+Easy error bars
+---------------
+
+Thanks to the `~proplot.wrappers.errorbar_wrapper`, the
+`~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
+`~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`, and
+`~matplotlib.axes.Axes.violinplot` methods can all be used to draw
+error bars. If you pass 2D arrays of data to these commands with
+``means=True`` or ``medians=True``, the *means or medians* of each
+column are drawn as points, lines, or bars, and error bars represent the
+*spread* in each column. You can draw both thin “bars” with optional
+whiskers, and thick “boxes” overlayed on top of these bars. You can also
+pass error bar coordinates manually with the ``bardata`` and ``boxdata``
+keyword args. See `~proplot.wrappers.errorbar_wrapper` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    plot.rc['title.loc'] = 'uc'
+    plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
+    data = np.random.rand(20,8).cumsum(axis=0).cumsum(axis=1)[:,::-1]
+    f, axs = plot.subplots(nrows=3, aspect=1.5, axwidth=3, span=False, share=False, hratios=(2,1,1))
+    axs.format(suptitle='Error bars with various plotting commands')
+    # Asking errorbar_wrapper to calculate bars
+    ax = axs[0]
+    obj = ax.barh(data, color='red orange', means=True)
+    ax.format(title='Column statistics')
+    # Showing a standard deviation range instead of percentile range
+    ax = axs[1]
+    ax.scatter(data, color='cerulean', marker='X', markersize=50,
+               medians=True, barstd=True, barrange=(-5,5), barzorder=0, boxes=False, capsize=2)
+    # Supplying error bar data manually
+    ax = axs[2]
+    boxdata = np.percentile(data, (20,80), axis=0)
+    bardata = np.array([-5,5])[:,None] * np.std(data, axis=0)[None,:] # 2xN array
+    ax.plot(data.mean(axis=0), lw=3, barlw=1, boxmarker=False, edgecolor='gray6', color='yellow orange',
+            boxdata=boxdata, bardata=bardata)
+    # Formatting
+    axs[0].format(ylabel='column number', title='Bar plot')
+    axs[1].format(title='Scatter plot')
+    axs[2].format(title='Line plot')
+    axs[1:].format(xlabel='column number', xticks=1)
+
+
+
+.. image:: quickstart/quickstart_154_0.svg
+
+
 Parametric plots
 ----------------
 
@@ -199,7 +249,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: quickstart/quickstart_154_1.svg
+.. image:: quickstart/quickstart_157_1.svg
 
 
 Area plots
@@ -242,7 +292,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: quickstart/quickstart_157_0.svg
+.. image:: quickstart/quickstart_160_0.svg
 
 
 Bar plots
@@ -254,18 +304,16 @@ bar plots. You can now pass 2D arrays to `~matplotlib.axes.Axes.bar`
 or `~matplotlib.axes.Axes.barh`, and columns of data will be grouped
 or stacked together. And if *x* coordinates are not provided, default
 coordinates are applied, just like with `~matplotlib.axes.Axes.plot`.
-You can also request that the input *height* coordinates are interpreted
-as *ranges*, with bars showing the means and medians of each column and
-error bars showing the spread.
+See `~proplot.wrappers.bar_wrapper` for details.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     import pandas as pd
-    plot.rc['title.loc'] = 'uc'
-    plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
-    f, axs = plot.subplots(nrows=3, aspect=2, axwidth=3, span=False, share=False)
+    plot.rc.titleloc = 'uc'
+    plot.rc.margin = 0.05
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, span=False, share=False)
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
     data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
     ax = axs[0]
@@ -274,13 +322,10 @@ error bars showing the spread.
     ax = axs[1]
     obj = ax.barh(data.iloc[::-1,:], cycle='Grays', legend='ur', stacked=True)
     ax.format(title='Stacked')
-    ax = axs[2]
-    obj = ax.barh(data, color='red orange', means=True)
-    ax.format(title='Column statistics')
 
 
 
-.. image:: quickstart/quickstart_160_0.svg
+.. image:: quickstart/quickstart_163_0.svg
 
 
 Box plots and violins
@@ -306,13 +351,13 @@ automatic axis labeling.
     obj1 = ax.boxplot(data, lw=0.7, marker='x', fillcolor='gray5', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
     ax.format(title='Box plots', titleloc='uc')
     ax = axs[1]
-    obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', showmeans=True)
+    obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', means=True)
     ax.format(title='Violin plots', titleloc='uc')
     axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
 
 
 
-.. image:: quickstart/quickstart_163_0.svg
+.. image:: quickstart/quickstart_166_0.svg
 
 
 Scatter plots
@@ -352,4 +397,4 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_166_0.svg
+.. image:: quickstart/quickstart_169_0.svg

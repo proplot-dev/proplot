@@ -271,7 +271,7 @@ def _autoformat_1d(self, func, *args, **kwargs):
     # Auto x coords
     y = ys[0] # test the first y input
     if x is None:
-        axis = 1 if (name in ('hist','boxplot','violinplot') or kwargs.get('means', None) or kwargs.get('medians', None)) else 0
+        axis = 1 if (name in ('hist','boxplot','violinplot') or any(kwargs.get(s, None) for s in ('means','medians'))) else 0
         x, _ = _auto_label(y, axis=axis)
     x = _atleast_array(x)
     if x.ndim!=1:
@@ -472,9 +472,13 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
 @_expand_methods_list
 def add_errorbars(self, func, *args,
     medians=False, means=False,
-    boxes=True, bars=True, boxrange=(25, 75), barrange=(5, 95),
-    meancolor=None, mediancolor=None, boxcolor=None, barcolor=None,
+    boxes=None, bars=None,
+    boxdata=None, bardata=None,
+    boxstd=False, barstd=False,
+    boxmarker=True, boxmarkercolor='white',
+    boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
     boxlw=None, barlw=None, capsize=None,
+    boxzorder=3, barzorder=3,
     **kwargs):
     """
     Wraps `_errorbar_methods`, supports interpreting columns of data as ranges,
@@ -485,35 +489,70 @@ def add_errorbars(self, func, *args,
     ----------
     *args
         The input data.
-    medians : bool, optional
-        Whether to plot the mean of columns of input data, instead of stacking
-        or grouping the bars.
+    bars : bool, optional
+        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Defaults
+        to ``True`` when `means` is ``True``, `medians` is ``True``, or
+        `bardata` is not ``None``.
+    boxes : bool, optional
+        Toggles *thick* boxplot-like error bars with a marker inside
+        representing the mean or median. Defaults to ``True`` when `means` is
+        ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
     means : bool, optional
-        Whether to plot the median of columns of input data, instead of stacking
-        or grouping the bars.
-    boxes, bars : bool, optional
-        Toggles thick and thin error bars when either of `means` or `medians`
-        is ``True``.
-    boxrange, barrange : (float, float), optional
-        Percentile ranges for drawing thick and thin central error bars.
-        The defaults are ``(25, 75)`` and ``(5, 95)``, respectively.
-        Ignored if `medians` and `means` are both ``False``.
-    meancolor, mediancolor : color-spec, optional
-        Color for the marker denoting the mean or median position. Ignored
-        if `boxes` is ``False``. Defaults to ``'w'``.
-    boxcolor, barcolor : color-spec, optional
+        Whether to plot the medians of columns of input data.
+    medians : bool, optional
+        Whether to plot the means of columns of input data.
+    bardata, boxdata : 2xN ndarray, optional
+        Arrays that manually specify the thin and thick error bar coordinates.
+        The first row corresponds to lower bounds, the second row corresponds
+        to upper bounds, and columns correspond to points in the dataset.
+    barstd, boxstd : bool, optional
+        Whether the thin and thick error bar ranges refer to multiples of
+        standard deviations, or to percentile ranges. Defaults to ``False``.
+    barrange, boxrange : (float, float), optional
+        Percentile ranges or standard deviation multiples for drawing thin
+        and thick central error bars. The `boxrange` defaults are ``(-1,1)``
+        (i.e. +/-1 standard deviation) when `boxstd` is ``True``, and
+        ``(25,75)`` (i.e. the middle 50th percentile) when `boxstd` is
+        ``False``. The `barrange` defaults are ``(-3,3)`` (i.e. +/-3 standard
+        deviations) when `barstd` is ``True``, and ``(0,100)`` (i.e. the full
+        data range) when `barstd` is ``False``.
+    barcolor, boxcolor : color-spec, optional
         Colors for the thick and thin error bars. Defaults to ``'k'``.
-    boxlw, barlw : float, optional
-        Line widths for the thick and thin error bars. Defaults to ``0.7``.
+    boxmarker : bool, optional
+        Whether to draw a small marker in the middle of the box denoting
+        the mean or median position. Ignored if `boxes` is ``False``.
+        Defaults to ``True``.
+    boxmarkercolor : color-spec, optional
+        Color for the `boxmarker` marker. Defaults to ``'w'``.
+    barlw, boxlw : float, optional
+        Line widths for the thin and thick error bars, in points. `barlw`
+        defaults to ``0.7`` and `boxlw` defaults to ``4*barlw``.
     capsize : float, optional
-        The cap size for thin error bars.
+        The cap size for thin error bars, in points.
+    barzorder, boxzorder : float, optional
+        The "zorder" for the thin and thick error bars.
+    lw, linewidth : float, optional
+        If passed, this is used for the default `barlw`.
+    edgecolor : float, optional
+        If passed, this is used for the default `barcolor` and `boxcolor`.
     """
     # Optionally supply function with medians and means
     # TODO: Also add support for error bars in *x* direction!
     name = func.__name__
     x, y, *args = args
     iy = y
+    # Sensible defaults
+    if boxdata is not None:
+        bars = _default(bars, True)
+    if bardata is not None:
+        boxes = _default(boxes, True)
+    if boxdata is not None or bardata is not None:
+        bars = _default(bars, False) # e.g. if boxdata passed but bardata not passed, use bars=False
+        boxes = _default(boxes, False)
+    # Get means or medians for plotting
     if (means or medians):
+        bars = _default(bars, True)
+        boxes = _default(boxes, True)
         if y.ndim!=2:
             raise ValueError(f'Need 2D data array for means=True or medians=True, got {y.ndim}D array.')
         if means:
@@ -523,15 +562,16 @@ def add_errorbars(self, func, *args,
     # Call function
     get = kwargs.pop if name=='violinplot' else kwargs.get
     lw = _default(get('lw', None), get('linewidth', None), 0.7)
+    get = kwargs.pop if name!='bar' else kwargs.get
     edgecolor = _default(get('edgecolor', None), 'k')
     if name=='violinplot':
         xy = (x, y) # full data
     else:
         xy = (x, iy) # just the stats
     obj = func(*xy, *args, **kwargs)
-    if not means and not medians:
+    if not boxes and not bars:
         return obj
-    # Add error bars
+    # Account for horizontal bar plots
     if 'vert' in kwargs:
         orientation = 'vertical' if kwargs['vert'] else 'horizontal'
     else:
@@ -542,24 +582,48 @@ def add_errorbars(self, func, *args,
     else:
         axis = 'y' # yerr
         xy = (x,iy)
+    # Defaults
+    barlw = _default(barlw, lw)
+    boxlw = _default(boxlw, 4*barlw)
+    capsize = _default(capsize, 3)
+    barcolor = _default(barcolor, edgecolor)
+    boxcolor = _default(boxcolor, edgecolor)
+    # Draw boxes and bars
     if boxes:
-        err = np.percentile(y, boxrange, axis=0)
+        if boxdata is not None:
+            err = np.array(boxdata)
+            if err.ndim==1:
+                err = err[:,None]
+            if err.ndim!=2 or err.shape[0]!=2 or err.shape[1]!=iy.shape[-1]:
+                raise ValueError(f'boxdata must have shape (2, {iy.shape[-1]}), but got {err.shape}.')
+        elif boxstd:
+            boxrange = _default(boxrange, (-1,1))
+            err = np.std(y, axis=0)[None,:] * np.array(boxrange)[:,None]
+        else:
+            boxrange = _default(boxrange, (25,75))
+            err = np.percentile(y, boxrange, axis=0)
         err = err - np.array(iy)
         err[0,:] *= -1 # array now represents error bar sizes
-        boxlw = _default(boxlw, 4*lw)
-        boxcolor = _default(boxcolor, edgecolor)
-        color = _default(mediancolor, meancolor, 'white')
-        self.scatter(*xy, marker='o', color=color, s=boxlw, zorder=5)
-        self.errorbar(*xy, **{axis+'err': err, 'capsize':0,
+        if boxmarker:
+            self.scatter(*xy, marker='o', color=boxmarkercolor, s=boxlw, zorder=5)
+        self.errorbar(*xy, **{axis+'err': err, 'capsize':0, 'zorder':boxzorder,
             'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
     if bars: # note it is now impossible to make thin bar width different from cap width!
-        err = np.percentile(y, barrange, axis=0)
+        if bardata is not None:
+            err = np.array(bardata)
+            if err.ndim==1:
+                err = err[:,None]
+            if err.ndim!=2 or err.shape[0]!=2 or err.shape[1]!=iy.shape[-1]:
+                raise ValueError(f'bardata must have shape (2, {iy.shape[-1]}), but got {err.shape}.')
+        elif barstd:
+            barrange = _default(barrange, (-3,3))
+            err = np.std(y, axis=0)[None,:] * np.array(barrange)[:,None]
+        else:
+            barrange = _default(barrange, (0,100))
+            err = np.percentile(y, barrange, axis=0)
         err = err - np.array(iy)
         err[0,:] *= -1 # array now represents error bar sizes
-        barlw = _default(barlw, lw)
-        barcolor = _default(barcolor, edgecolor)
-        capsize = _default(capsize, 3) # better default than 5
-        self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize,
+        self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize, 'zorder':barzorder,
             'color':barcolor, 'linewidth':barlw, 'linestyle':'none',
             'markeredgecolor':barcolor, 'markeredgewidth':barlw})
     return obj
