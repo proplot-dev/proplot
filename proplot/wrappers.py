@@ -481,9 +481,11 @@ def add_errorbars(self, func, *args,
     boxzorder=3, barzorder=3,
     **kwargs):
     """
-    Wraps `_errorbar_methods`, supports interpreting columns of data as ranges,
-    representing the mean or median of those ranges with lines, points, or bars,
-    and drawing error bars representing the data spread in each column.
+    Wraps `_errorbar_methods`, adds support for drawing error bars. Includes
+    options for interpreting columns of data as ranges, representing the mean
+    or median of each column with lines, points, or bars, and drawing error
+    bars representing percentile ranges or standard deviation multiples for
+    the data in each column.
 
     Parameters
     ----------
@@ -498,9 +500,9 @@ def add_errorbars(self, func, *args,
         representing the mean or median. Defaults to ``True`` when `means` is
         ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
     means : bool, optional
-        Whether to plot the means of columns of input data.
+        Whether to plot the means of each column in the input data.
     medians : bool, optional
-        Whether to plot the medians of columns of input data.
+        Whether to plot the medians of each column in the input data.
     bardata, boxdata : 2xN ndarray, optional
         Arrays that manually specify the thin and thick error bar coordinates.
         The first row contains lower bounds, and the second row contains
