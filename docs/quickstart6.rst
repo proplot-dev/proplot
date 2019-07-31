@@ -164,7 +164,7 @@ the luminance of the underlying box color.
 Easy error bars
 ---------------
 
-Thanks to the `~proplot.wrappers.errorbar_wrapper`, the
+Thanks to the `~proplot.wrappers.add_errorbars` wrapper, the
 `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
 `~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`, and
 `~matplotlib.axes.Axes.violinplot` methods can all be used to draw
@@ -174,7 +174,7 @@ column are drawn as points, lines, or bars, and error bars represent the
 *spread* in each column. You can draw both thin “bars” with optional
 whiskers, and thick “boxes” overlayed on top of these bars. You can also
 pass error bar coordinates manually with the ``bardata`` and ``boxdata``
-keyword args. See `~proplot.wrappers.errorbar_wrapper` for details.
+keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 .. code:: ipython3
 
@@ -186,7 +186,7 @@ keyword args. See `~proplot.wrappers.errorbar_wrapper` for details.
     data = np.random.rand(20,8).cumsum(axis=0).cumsum(axis=1)[:,::-1]
     f, axs = plot.subplots(nrows=3, aspect=1.5, axwidth=3, span=False, share=False, hratios=(2,1,1))
     axs.format(suptitle='Error bars with various plotting commands')
-    # Asking errorbar_wrapper to calculate bars
+    # Asking add_errorbars to calculate bars
     ax = axs[0]
     obj = ax.barh(data, color='red orange', means=True)
     ax.format(title='Column statistics')
