@@ -469,6 +469,23 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------#
 # 1D plot wrappers
 #------------------------------------------------------------------------------#
+def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
+    """Returns values that can be passed to the `~matplotlib.axes.Axes.errorbar`
+    `xerr` and `yerr` keyword args."""
+    if bardata is not None:
+        err = np.array(bardata)
+        if err.ndim==1:
+            err = err[:,None]
+        if err.ndim!=2 or err.shape[0]!=2 or err.shape[1]!=idata.shape[-1]:
+            raise ValueError(f'bardata must have shape (2, {idata.shape[-1]}), but got {err.shape}.')
+    elif barstd:
+        err = np.array(idata) + np.std(data, axis=0)[None,:] * np.array(barrange)[:,None]
+    else:
+        err = np.percentile(data, barrange, axis=0)
+    err = err - np.array(idata)
+    err[0,:] *= -1 # array now represents error bar sizes
+    return err
+
 @_expand_methods_list
 def add_errorbars(self, func, *args,
     medians=False, means=False,
@@ -594,39 +611,17 @@ def add_errorbars(self, func, *args,
     boxcolor = _default(boxcolor, edgecolor)
     # Draw boxes and bars
     if boxes:
-        if boxdata is not None:
-            err = np.array(boxdata)
-            if err.ndim==1:
-                err = err[:,None]
-            if err.ndim!=2 or err.shape[0]!=2 or err.shape[1]!=iy.shape[-1]:
-                raise ValueError(f'boxdata must have shape (2, {iy.shape[-1]}), but got {err.shape}.')
-        elif boxstd:
-            boxrange = _default(boxrange, (-1,1))
-            err = np.std(y, axis=0)[None,:] * np.array(boxrange)[:,None]
-        else:
-            boxrange = _default(boxrange, (25,75))
-            err = np.percentile(y, boxrange, axis=0)
-        err = err - np.array(iy)
-        err[0,:] *= -1 # array now represents error bar sizes
+        default = (-1,1) if barstd else (25,75)
+        boxrange = _default(boxrange, default)
+        err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
             self.scatter(*xy, marker='o', color=boxmarkercolor, s=boxlw, zorder=5)
         self.errorbar(*xy, **{axis+'err': err, 'capsize':0, 'zorder':boxzorder,
             'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
     if bars: # note it is now impossible to make thin bar width different from cap width!
-        if bardata is not None:
-            err = np.array(bardata)
-            if err.ndim==1:
-                err = err[:,None]
-            if err.ndim!=2 or err.shape[0]!=2 or err.shape[1]!=iy.shape[-1]:
-                raise ValueError(f'bardata must have shape (2, {iy.shape[-1]}), but got {err.shape}.')
-        elif barstd:
-            barrange = _default(barrange, (-3,3))
-            err = np.std(y, axis=0)[None,:] * np.array(barrange)[:,None]
-        else:
-            barrange = _default(barrange, (0,100))
-            err = np.percentile(y, barrange, axis=0)
-        err = err - np.array(iy)
-        err[0,:] *= -1 # array now represents error bar sizes
+        default = (-3,3) if barstd else (0,100)
+        barrange = _default(barrange, default)
+        err = _errorbar_values(y, iy, bardata, barrange, barstd)
         self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize, 'zorder':barzorder,
             'color':barcolor, 'linewidth':barlw, 'linestyle':'none',
             'markeredgecolor':barcolor, 'markeredgewidth':barlw})

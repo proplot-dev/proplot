@@ -124,13 +124,13 @@ Heatmaps and labeling
 
 The new `~proplot.axes.BaseAxes.heatmap` command calls
 `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
-is suitable for heatmaps – no minor ticks, no gridlines, and major ticks
+is suitable for heatmaps: no minor ticks, no gridlines, and major ticks
 at the center of each box.
 
 You can also add labels to `~matplotlib.axes.Axes.pcolor`,
 `~matplotlib.axes.Axes.pcolormesh`,
-`~proplot.axes.BaseAxes.heatmap`, and
-`~matplotlib.axes.Axes.contour` plots, thanks to
+`~proplot.axes.BaseAxes.heatmap`, `~matplotlib.axes.Axes.contour`,
+and `~matplotlib.axes.Axes.contourf` plots, thanks to
 `~proplot.wrappers.cmap_wrapper`. Just pass the ``labels=True``
 keyword argument, and ProPlot will draw contour labels with
 `~matplotlib.axes.Axes.clabel` or grid box labels with
@@ -183,7 +183,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
     import pandas as pd
     plot.rc['title.loc'] = 'uc'
     plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
-    data = np.random.rand(20,8).cumsum(axis=0).cumsum(axis=1)[:,::-1]
+    data = np.random.rand(20,8).cumsum(axis=0).cumsum(axis=1)[:,::-1] + 20*np.random.normal(size=(20,8)) + 30
     f, axs = plot.subplots(nrows=3, aspect=1.5, axwidth=3, span=False, share=False, hratios=(2,1,1))
     axs.format(suptitle='Error bars with various plotting commands')
     # Asking add_errorbars to calculate bars
@@ -192,17 +192,17 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
     ax.format(title='Column statistics')
     # Showing a standard deviation range instead of percentile range
     ax = axs[1]
-    ax.scatter(data, color='cerulean', marker='X', markersize=50,
-               medians=True, barstd=True, barrange=(-5,5), barzorder=0, boxes=False, capsize=2)
+    ax.scatter(data, color='goldenrod', marker='x', markersize=50, barcolor='gray8',
+               medians=True, barstd=True, barrange=(-1,1), barzorder=0, boxes=False, capsize=2)
     # Supplying error bar data manually
     ax = axs[2]
-    boxdata = np.percentile(data, (20,80), axis=0)
-    bardata = np.array([-5,5])[:,None] * np.std(data, axis=0)[None,:] # 2xN array
-    ax.plot(data.mean(axis=0), lw=3, barlw=1, boxmarker=False, edgecolor='gray6', color='yellow orange',
+    boxdata = np.percentile(data, (25,75), axis=0)
+    bardata = np.percentile(data, (5,95), axis=0)
+    ax.plot(data.mean(axis=0), lw=2, barlw=1, boxmarker=False, edgecolor='gray6', color='yellow orange',
             boxdata=boxdata, bardata=bardata)
     # Formatting
     axs[0].format(ylabel='column number', title='Bar plot')
-    axs[1].format(title='Scatter plot')
+    axs[1].format(title='Scatter plot')ss
     axs[2].format(title='Line plot')
     axs[1:].format(xlabel='column number', xticks=1)
 
