@@ -123,7 +123,7 @@ _loc_translate = {
 #------------------------------------------------------------------------------#
 def _sphinx_name(name):
     """Gets sphinx name."""
-    if name=='cmapline':
+    if name in ('cmapline','heatmap'):
         return f'`~proplot.axes.BaseAxes.{name}`'
     else:
         return f'`~matplotlib.axes.Axes.{name}`'
@@ -1663,7 +1663,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         "extensions" (triangles, by default) on the colorbar.
     N, levels : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
-        `locator` to generate this many levels at "nice" intervals.
+        `locator` is used to generate this many levels at "nice" intervals.
         Defaults to ``rc['image.levels']``.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
