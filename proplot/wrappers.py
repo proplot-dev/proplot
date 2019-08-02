@@ -123,7 +123,7 @@ _loc_translate = {
 #------------------------------------------------------------------------------#
 def _sphinx_name(name):
     """Gets sphinx name."""
-    if name in ('cmapline','heatmap'):
+    if name in ('cmapline','heatmap','area','areax'):
         return f'`~proplot.axes.BaseAxes.{name}`'
     else:
         return f'`~matplotlib.axes.Axes.{name}`'
@@ -1520,7 +1520,7 @@ def cycle_wrapper(self, func, *args,
     ncols = 1
     label_leg = None # for colorbar or legend
     labels = _default(values, labels, label, None)
-    stacked = kwargs.pop('stacked', False) # for 'bar', 'barh', 'area', 'areax' plots
+    stacked = kwargs.pop('stacked', False)
     if name in ('pie','boxplot','violinplot'):
         if labels is not None:
             kwargs['labels'] = labels

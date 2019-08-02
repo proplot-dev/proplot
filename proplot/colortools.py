@@ -1393,9 +1393,12 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
         .. code-block:: python
 
-            data = dict(hue = [[0, 'red', 'red'], [1, 'blue', 'blue']],
-                saturation = [[0, 100, 100], [1, 100, 100]],
-                luminance  = [[0, 100, 100], [1, 20, 20]])
+            import proplot as plot
+            data = {
+                'hue': [[0, 'red', 'red'], [1, 'blue', 'blue']],
+                'saturation': [[0, 100, 100], [1, 100, 100]],
+                'luminance': [[0, 100, 100], [1, 20, 20]],
+                }
             cmap = plot.PerceptuallyUniformColormap(data)
 
         """
