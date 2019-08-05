@@ -1785,7 +1785,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     for key,val in (('levels',levels),('values',values)):
         if not np.iterable(val):
             continue
-        if len(val)<2 or any(np.diff(val)<0):
+        if len(val)<2 or any(np.diff(val)<=0):
             raise ValueError(f'"{key}" must be monotonically increasing and at least length 2, got {val}.')
 
     # Aspect ratio handling for matrix show plots
@@ -1809,6 +1809,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 levels = [values[0] - (values[1]-values[0])/2] # reasonable starting point
                 for i,val in enumerate(values):
                     levels.append(2*val - levels[-1])
+                if any(np.diff(levels)<=0): # algorithm failed, default to this
+                    levels = utils.edges(values)
             else:
                 norm_tmp = colortools.Norm(norm, **norm_kw)
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
