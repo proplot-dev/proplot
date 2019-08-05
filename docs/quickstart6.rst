@@ -82,7 +82,7 @@ passed to the `~proplot.colortools.Norm` constructor.
     data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
     for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm (default)'))):
-        m = axs[i].contourf(data, values=ticks, extend='both', cmap='blue2', norm=norm)
+        m = axs[i].contourf(data, values=ticks, extend='both', cmap='Mako', norm=norm)
         f.bpanel[i].colorbar(m, locator=ticks, fixticks=False)
         axs[i].format(title=title)
     axs.format(suptitle='Level normalizers demo')
@@ -107,7 +107,7 @@ constructor.
     data1 = (np.random.rand(20,20) - 0.43).cumsum(axis=0)
     data2 = (np.random.rand(20,20) - 0.57).cumsum(axis=0)
     f, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5, axcolorbars='b')
-    cmap = plot.Colormap('Vlag', cut=0.1)
+    cmap = plot.Colormap('Moisture', cut=0.1)
     axs.format(suptitle='Midpoint normalizer demo')
     axs[0].contourf(data1, norm='midpoint', cmap=cmap, colorbar='b')
     axs[0].format(title='Skewed positive data')
