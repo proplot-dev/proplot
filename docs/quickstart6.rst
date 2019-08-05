@@ -78,12 +78,11 @@ passed to the `~proplot.colortools.Norm` constructor.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(colorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
+    f, axs = plot.subplots(axcolorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
     data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
     for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm (default)'))):
-        m = axs[i].contourf(data, values=ticks, extend='both', cmap='Mako', norm=norm)
-        f.bpanel[i].colorbar(m, locator=ticks, fixticks=False)
+        m = axs[i].contourf(data, values=ticks, extend='both', cmap='Mako', norm=norm, colorbar='b')
         axs[i].format(title=title)
     axs.format(suptitle='Level normalizers demo')
 

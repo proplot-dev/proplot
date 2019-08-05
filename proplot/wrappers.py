@@ -1781,6 +1781,12 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 kwargs[names[key]] = value
             else:
                 raise ValueError(f'Unknown keyword arg "{key}" for function "{name}".')
+    # Check input
+    for key,val in (('levels',levels),('values',values)):
+        if not np.iterable(val):
+            continue
+        if len(val)<2 or any(np.diff(val)<0):
+            raise ValueError(f'"{key}" must be monotonically increasing and at least length 2, got {val}.')
 
     # Aspect ratio handling for matrix show plots
     # NOTE: For some bizarre reason, in first pass to draw, aspect ratio
@@ -1791,7 +1797,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         self._aspect_equal = args[-1].shape[1] / args[-1].shape[0]
 
     # Get level edges from level centers
-    # See this post: https://stackoverflow.com/a/48614231/4970632
+    # Make sure values are *averages* of encompassing levels, so that tick
+    # marks appear in the center of the colorbar level.
     if values is not None:
         if isinstance(values, Number):
             levels = values + 1
@@ -1799,7 +1806,9 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
             if name in ('cmapline',):
                 kwargs['values'] = values
             if norm is None or norm in ('segments','segmented'):
-                levels = utils.edges(values)
+                levels = [values[0] - (values[1]-values[0])/2] # reasonable starting point
+                for i,val in enumerate(values):
+                    levels.append(2*val - levels[-1])
             else:
                 norm_tmp = colortools.Norm(norm, **norm_kw)
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
@@ -1831,8 +1840,6 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                 norm = 'linear'
             else:
                 diff = np.diff(levels)
-                if (diff<0).any() or diff.size<2:
-                    raise ValueError(f'Need at least 3 monotonically increasing levels, got {levels}.')
                 eps = diff.mean()/1e3
                 if (np.abs(np.diff(diff)) >= eps).any():
                     norm = 'segmented'
@@ -1897,7 +1904,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
     # This is important for the colorbar setting tick locations properly!
     if norm is not None:
         if levels is not None:
-            norm.vmin, norm.vmax = levels.min(), levels.max()
+            norm.vmin, norm.vmax = min(levels), max(levels)
         if levels is not None:
             bin_kw = {'extend':extend}
             if cyclic:
@@ -1910,6 +1917,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
         kwargs.update({'levels': levels, 'extend': extend})
     obj = func(*args, **kwargs)
     obj.extend = extend # for colorbar to determine 'extend' property
+    if values is not None:
+        obj.values = values # preferred tick locations
     if levels is not None:
         obj.levels = levels # for colorbar to determine tick locations
     if locator is not None and not isinstance(locator, mticker.MaxNLocator):

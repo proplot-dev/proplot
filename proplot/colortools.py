@@ -1626,9 +1626,6 @@ def Norm(norm, levels=None, values=None, **kwargs):
     levels : array-like, optional
         Level *edges*, passed to `LinearSegmentedNorm` or used to determine
         the `vmin` and `vmax` arguments for `MidpointNorm`.
-    values : array-like, optional
-        Level *centers*, from which the `levels` argument is inferred using
-        `~proplot.utils.edges`.
     **kwargs
         Passed to the `~matplotlib.colors.Normalize` initializer.
         See `this tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
@@ -1641,8 +1638,6 @@ def Norm(norm, levels=None, values=None, **kwargs):
     """
     if isinstance(norm, mcolors.Normalize):
         return norm
-    if levels is None and values is not None:
-        levels = utils.edges(values)
     if isinstance(norm, str):
         # Get class
         norm_out = normalizers.get(norm, None)
@@ -1659,11 +1654,12 @@ def Norm(norm, levels=None, values=None, **kwargs):
     return norm_out
 
 #------------------------------------------------------------------------------
-# Very important normalization class.
+# Meta-normalizer class for discrete levels
 #------------------------------------------------------------------------------
+# See this post: https://stackoverflow.com/a/48614231/4970632
 # WARNING: Many methods in ColorBarBase tests for class membership, crucially
 # including _process_values(), which if it doesn't detect BoundaryNorm will
-# end up trying to infer boundaries from inverse() method. So make it parent class.
+# end up trying to infer boundaries from inverse() method. So make it parent.
 class BinNorm(mcolors.BoundaryNorm):
     """
     This normalizer is used for all colormap plots. It can be thought of as a
