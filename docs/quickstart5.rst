@@ -154,15 +154,13 @@ nicely-designed `~matplotlib.colors.LinearSegmentedColormap` maps, and
 the last one is a `~proplot.colortools.PerceptuallyUniformColormap`.
 They are all roughly linear across the hue and luminance channels, but
 not the chroma channel (top row). “Fire” is linear in the HSL scaling of
-the chroma channel (center left), while other ProPlot colormaps are
-linear in the HPL scaling of the chroma channel (center right). All of
-these colormaps vary eratically in the red, blue and green channels
-(bottom row), as is the case for most nice-looking colormaps.
+the chroma channel (bottom left), while other ProPlot colormaps are
+linear in the HPL scaling of the chroma channel (bottom right).
 
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.show_channels('fire', 'magma', 'rocket', minhue=-180)
+    f = plot.show_channels('magma', 'rocket', 'fire', minhue=-180, rgb=False)
 
 
 
@@ -204,7 +202,7 @@ several of these maps merged into one, and the second is just one map.
     for ax,title in zip(axs, ['Three monochromatic colormaps', 'One monochromatic colormap']):
         ax.format(title=title)
     # Breakdowns
-    f = plot.show_channels(cmap1, cmap2)
+    f = plot.show_channels(cmap1, cmap2, rgb=False)
 
 
 
@@ -256,7 +254,7 @@ value by the number ``N``, as shown below.
     cmap3 = m.cmap
     ax.format(title='From list of colors')
     # Breakdowns
-    f = plot.show_channels(cmap1, cmap2, cmap3, minhue=-180)
+    f = plot.show_channels(cmap1, cmap2, cmap3, minhue=-180, rgb=False)
 
 
 
