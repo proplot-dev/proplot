@@ -60,12 +60,12 @@ def register_fonts():
     paths = _data_fonts + ':' + _data_user_fonts
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
-    elif 'proplot' not in os.environ['TTFPATH']:
+    elif paths not in os.environ['TTFPATH']:
         os.environ['TTFPATH'] += (':' + paths)
     mfonts._rebuild()
     # Populate font lists
-    fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if 'proplot' not in font.fname})
-    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if 'proplot' in font.fname})
+    fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if not (_data_user_fonts in font.fname or _data_fonts in font.fname)})
+    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if (_data_user_fonts in font.fname or _data_fonts in font.fname)})
     fonts[:] = sorted((*fonts_system, *fonts_proplot))
 
 def clean_fonts():
