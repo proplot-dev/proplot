@@ -1177,15 +1177,6 @@ def Cycle(*args, samples=None, name=None, save=False,
     used to interpret the `cycle` and `cycle_kw` arguments when passed to
     any plotting method wrapped by `~proplot.wrappers.cycle_wrapper`.
 
-    This works by calling `Colormap` and returning a `~cycler.Cycler` instance
-    that cycles through the resulting colors. The cycle colors are selected
-    from the colormap as follows.
-
-    1. If `Colormap` returns a `~matplotlib.colors.ListedColormap` (i.e. a
-       color cycle), its ``colors`` attribute is used as the cycle.
-    2. If `Colormap` returns a `~matplotlib.colors.LinearSegmentedColormap` (i.e.
-       a colormap), sample colors are drawn and used for the cycle.
-
     If you just want a list of colors instead of a `~cycler.Cycler` instance,
     use the `colors` function. If you want a `~cycler.Cycler` instance that
     imposes black as the default color and cycles through properties like
@@ -1206,7 +1197,7 @@ def Cycle(*args, samples=None, name=None, save=False,
           is looked up and its ``colors`` attribute is used.
         * Otherwise, the argument is passed to `Colormap`, and colors
           from the resulting `~matplotlib.colors.LinearSegmentedColormap`
-          are used.
+          are used. See the `samples` argument.
 
         If the last positional argument is numeric, it is used for the `samples`
         keyword argument. For example, ``Cycle('538', 4)`` returns the first 4
@@ -1214,11 +1205,12 @@ def Cycle(*args, samples=None, name=None, save=False,
         ``'Reds'`` colormap into five evenly spaced colors.
     samples : float or list of float, optional
         When drawing from `~matplotlib.colors.ListedColormap` instances, this
-        is the number of colors to select from the list. When drawing from
-        `~matplotlib.colors.LinearSegmentedColormap` instances, this is either
-        a list of sample coordinates used to draw colors from the map, or an
-        integer number of colors to draw. If the latter, the sample coordinates
-        are ``np.linspace(0, 1, samples)``.
+        is the number of colors to select from the list.
+
+        When drawing from `~matplotlib.colors.LinearSegmentedColormap` instances,
+        this is either a list of sample coordinates used to draw colors from the
+        map, or an integer number of colors to draw. If the latter, the sample
+        coordinates are ``np.linspace(0, 1, samples)``.
     name : str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap` used to
         register the color cycle. Default name is ``'no_name'``.
