@@ -163,14 +163,15 @@ def Locator(locator, *args, **kwargs):
 
     For the `locator` dictionary lookup, options are as follows.
 
-    ======================  ===========================================
+    ======================  ==========================================================
     Key                     Class
-    ======================  ===========================================
+    ======================  ==========================================================
     ``'auto'``              `~matplotlib.ticker.AutoLocator`
     ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`
     ``'date'``              `~matplotlib.dates.AutoDateLocator`
     ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`
-    ``'log'``               `~matplotlib.ticker.LogLocator`
+    ``'log'``               `~matplotlib.ticker.LogLocator`, default ``subs=(1,)``
+    ``'logminor'``          `~matplotlib.ticker.LogLocator`, default ``subs=(1,2,...,9)``
     ``'maxn'``              `~matplotlib.ticker.MaxNLocator`
     ``'linear'``            `~matplotlib.ticker.LinearLocator`
     ``'log'``               `~matplotlib.ticker.LogLocator`
@@ -187,7 +188,7 @@ def Locator(locator, *args, **kwargs):
     ``'minute'``            `~matplotlib.dates.MinuteLocator`
     ``'second'``            `~matplotlib.dates.SecondLocator`
     ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`
-    ======================  ===========================================
+    ======================  ==========================================================
 
     Returns
     -------
