@@ -1200,17 +1200,17 @@ def Cycle(*args, samples=None, name=None, save=False,
           are used. See the `samples` argument.
 
         If the last positional argument is numeric, it is used for the `samples`
-        keyword argument. For example, ``Cycle('538', 4)`` returns the first 4
-        colors of the ``'538'`` cycle, and ``Cycle('Reds', 5)`` divides the
-        ``'Reds'`` colormap into five evenly spaced colors.
+        keyword argument.
     samples : float or list of float, optional
-        When drawing from `~matplotlib.colors.ListedColormap` instances, this
-        is the number of colors to select from the list.
+        For `~matplotlib.colors.ListedColormap` maps, this is the number of
+        colors to select. For example, ``Cycle('538', 4)`` returns the first 4
+        colors of the ``'538'`` color cycle.
 
-        When drawing from `~matplotlib.colors.LinearSegmentedColormap` instances,
-        this is either a list of sample coordinates used to draw colors from the
-        map, or an integer number of colors to draw. If the latter, the sample
-        coordinates are ``np.linspace(0, 1, samples)``.
+        For `~matplotlib.colors.LinearSegmentedColormap` maps, this is either
+        a list of sample coordinates used to draw colors from the map, or an
+        integer number of colors to draw. If the latter, the sample coordinates
+        are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
+        divides the ``'Reds'`` colormap into five evenly spaced colors.
     name : str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap` used to
         register the color cycle. Default name is ``'no_name'``.
