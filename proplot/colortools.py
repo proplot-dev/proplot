@@ -932,12 +932,12 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
     Parameters
     ----------
     *args : colormap-spec
-        Positional args that individually generate colormaps. If there is more
-        than one positional arg, the resulting colormaps are merged.
+        Positional arguments that individually generate colormaps. If more than
+        one argument is passed, the resulting colormaps are merged. Arguments
+        are interpreted as follows.
 
-        If a positional arg is a `~matplotlib.colors.Colormap`, nothing more
-        is done. Otherwise, the positional arg is interpreted as follows.
-
+        * If `~matplotlib.colors.LinearSegmentedColormap` or
+          `~matplotlib.colors.ListedColormap`, nothing more is done.
         * If string colormap or color cycle name, that
           `~matplotlib.colors.LinearSegmentedColormap` or
           `~matplotlib.colors.ListedColormap` is looked up and used.
@@ -1176,14 +1176,14 @@ def Cycle(*args, samples=None, name=None, save=False,
     markersize=None, markeredgewidth=None, markeredgecolor=None, markerfacecolor=None,
     **kwargs):
     """
-    Function for generating and merging `~cycler.Cycler` objects in a variety of ways;
+    Function for generating and merging `~cycler.Cycler` instances in a variety of ways;
     used to interpret the `cycle` and `cycle_kw` arguments when passed to
     any plotting method wrapped by `~proplot.wrappers.cycle_wrapper`.
 
-    This works by calling `Colormap` and returning a `~cycler.Cycler` object
-    that cycles through the resulting colors. Note that all "cycle names" (e.g.
-    ``'colorblind'``) are stored and *registered* as `~matplotlib.colors.ListedColormap`
-    objects.
+    This works by calling `Colormap` and returning a `~cycler.Cycler` instance
+    that cycles through the resulting colors. Note that all "cycle names" are
+    stored and registered as `~matplotlib.colors.ListedColormap` instances,
+    and so can be retrieved with the `Colormap` function.
 
     The cycle colors are selected from the colormap as follows.
 
@@ -1192,26 +1192,33 @@ def Cycle(*args, samples=None, name=None, save=False,
     2. If `Colormap` returns a `~matplotlib.colors.LinearSegmentedColormap` (i.e.
        a colormap), sample colors are drawn and used for the cycle.
 
-    If you just want a list of colors instead of a `~cycler.Cycler` object,
-    use the `colors` function. If you want a `~cycler.Cycler` object that
+    If you just want a list of colors instead of a `~cycler.Cycler` instance,
+    use the `colors` function. If you want a `~cycler.Cycler` instance that
     does not cycle through colors (e.g. just `linestyle`), call `Cycle`
     without any positional arguments.
 
     Parameters
     ----------
     *args : colormap-spec or cycle-spec, optional
-        If no positional args are passed, the `~cycler.Cycler` object will
-        not cycle through colors. The default draw color will always be black.
+        Positional arguments that control the color values in the `~cycler.Cycler`
+        object returned by this function. Arguments are interpreted as follows.
 
-        If the positional args `~cycler.Cycler` objects, they are merged and
-        returned. Nothing is done if just one `~cycler.Cycler` was passed.
+        * If no arguments are passed, returns a `~cycler.Cycler` instance that
+          applies the default color black.
+        * If the arguments are `~cycler.Cycler` instances, a composite
+          `~cycler.Cycler` instance is returned.
+        * Otherwise, positional arguments are passed to `Colormap` with
+          ``listed=True``, and colors from the resulting
+          `~matplotlib.colors.LinearSegmentedColormap` or `~matplotlib.colors.ListedColormap`
+          are used for the `~cycler.Cycler` colors. For example,
+          ``Cycle(['red','blue','green'])`` generates a three-color
+          `~matplotlib.colors.ListedColormap`, whose colors are used for the
+          `~cycler.Cycler` instance.
 
-        Otherwise, positional args are passed to `Colormap`, and the
-        resulting colors are used for the color cycler. If the last value of
-        `args` is numeric, it is used for the `samples` keyword argument. For
-        example, use ``Cycle('538', 4)`` to get the first 4 colors of the
-        ``'538'`` cycle, or ``Cycle('Reds', 5)`` to divide the ``'Reds'``
-        colormap into five evenly spaced colors.
+        If the last positional argument is numeric, it is used for the `samples`
+        keyword argument. For example, ``Cycle('538', 4)`` returns the first 4
+        colors of the ``'538'`` cycle, and ``Cycle('Reds', 5)`` divides the
+        ``'Reds'`` colormap into five evenly spaced colors.
     samples : float or list of float, optional
         If `Colormap` returns a `~matplotlib.colors.ListedColormap`, this should be
         the number of colors to select from the list. If `Colormap` returns
@@ -1228,7 +1235,7 @@ def Cycle(*args, samples=None, name=None, save=False,
         as a list of hex strings to the file ``name.hex``.
     marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : list of specs, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be
-        added to the `~cycler.Cycler` object. If the lists have unequal length,
+        added to the `~cycler.Cycler` instance. If the lists have unequal length,
         they will be filled to match the length of the longest list.
         See `~matplotlib.axes.Axes.set_prop_cycle` for more info on property cyclers.
         Also see the `line style reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
