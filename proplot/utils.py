@@ -240,63 +240,6 @@ def units(value, numeric='in'):
         result = result[0]
     return result
 
-def journals(journal):
-    """
-    Used by `~proplot.subplots.subplots` with the ``journal`` keyword argument,
-    returns `width` and `height` matching academic journal figure size standards.
-    If height is not specified by the standard, `height` takes the value
-    ``None`` and is allowed to vary.
-
-    The options for `journal` are as follows:
-
-    ===========  =====================  ====================================================
-    Key          Size description       Organization
-    ===========  =====================  ====================================================
-    ``'pnas1'``  1-column               Proceedings of the National Academy of Sciences [1]_
-    ``'pnas2'``  2-column               "
-    ``'pnas3'``  Landscape page         "
-    ``'ams1'``   1-column               American Meteorological Society [2]_
-    ``'ams2'``   Small 2-column         "
-    ``'ams3'``   Medium 2-column        "
-    ``'ams4'``   Full 2-column          "
-    ``'agu1'``   1-column               American Geophysical Union [3]_
-    ``'agu2'``   2-column               "
-    ``'agu3'``   1-column, full height  "
-    ``'agu4'``   2-column, full height  "
-    ===========  =====================  ====================================================
-
-    Feel free to submit a pull request if you'd like to add additional
-    standards.
-
-    .. [1] `PNAS recommendations <http://www.pnas.org/page/authors/submission>`__
-    .. [2] `AMS recommendations <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-    .. [3] `AGU recommendations <https://publications.agu.org/author-resource-center/figures-faq/>`__
-    """
-    table = {
-        'pnas1': '8.7cm', # if 1 number specified, this is a tuple
-        'pnas2': '11.4cm',
-        'pnas3': '17.8cm',
-        'ams1': 3.2, # spec is in inches
-        'ams2': 4.5,
-        'ams3': 5.5,
-        'ams4': 6.5,
-        'agu1': ('95mm',  '115mm'),
-        'agu2': ('190mm', '115mm'),
-        'agu3': ('95mm',  '230mm'),
-        'agu4': ('190mm', '230mm'),
-        }
-    value = table.get(journal, None)
-    if value is None:
-        raise ValueError(f'Unknown journal figure size specifier "{journal}". ' +
-                          'Current options are: ' + ', '.join(table.keys()))
-    # Return width, and optionally also the height
-    width, height = None, None
-    try:
-        width, height = value
-    except TypeError:
-        width = value
-    return width, height
-
 #------------------------------------------------------------------------------#
 # Outdated
 #------------------------------------------------------------------------------#

@@ -35,7 +35,7 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from .rctools import rc
-from .utils import _default, units, journals
+from .utils import _default, units
 from . import projs, axes
 __all__ = [
     'axes_grid', 'close', 'show', 'subplots', 'Figure',
@@ -1872,8 +1872,34 @@ def _axes_dict(naxs, value, kw=False, default=None):
         raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i) for i in sorted(kwargs.keys()))}.')
     return kwargs
 
+def _journals(journal):
+    """Journal sizes for figures."""
+    table = {
+        'pnas1': '8.7cm', # if 1 number specified, this is a tuple
+        'pnas2': '11.4cm',
+        'pnas3': '17.8cm',
+        'ams1': 3.2, # spec is in inches
+        'ams2': 4.5,
+        'ams3': 5.5,
+        'ams4': 6.5,
+        'agu1': ('95mm',  '115mm'),
+        'agu2': ('190mm', '115mm'),
+        'agu3': ('95mm',  '230mm'),
+        'agu4': ('190mm', '230mm'),
+        }
+    value = table.get(journal, None)
+    if value is None:
+        raise ValueError(f'Unknown journal figure size specifier "{journal}". ' +
+                          'Current options are: ' + ', '.join(table.keys()))
+    # Return width, and optionally also the height
+    width, height = None, None
+    try:
+        width, height = value
+    except TypeError:
+        width = value
+    return width, height
+
 def subplots(array=None, ncols=1, nrows=1,
-        # Figure settings
         ref=1, # reference axes for fixing aspect ratio
         order='C', # allow calling with subplots(array)
         aspect=1, figsize=None,
@@ -1884,14 +1910,11 @@ def subplots(array=None, ncols=1, nrows=1,
         width_ratios=None, height_ratios=None,
         flush=False, wflush=None, hflush=None,
         left=None, bottom=None, right=None, top=None, # spaces around edge of main plotting area, in inches
-        # Padding settings
         ecols=None, erows=None, # obsolete?
         tight=None, tightborder=None, tightsubplot=None, tightpanel=None,
         borderpad=None, panelpad=None, subplotpad=None,
-        # Shared axes and spanning labels
         span=None,  spanx=1,  spany=1,  # custom setting, optionally share axis labels for axes with same xmin/ymin extents
         share=None, sharex=3, sharey=3, # for sharing x/y axis limits/scales/locators for axes with matching GridSpec extents, and making ticklabels/labels invisible
-        # Panels and projections
         panel=None, panels=None, legend=None, legends=None, colorbar=None, colorbars=None,
         axpanel=None, axlegend=None, axcolorbar=None,
         axpanel_kw=None, axcolorbar_kw=None, axlegend_kw=None,
@@ -1938,9 +1961,6 @@ def subplots(array=None, ncols=1, nrows=1,
 
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
-    journal : str, optional
-        Conform figure width (and height, if specified) to academic journal
-        standards. See `~proplot.gridspec.journal_size` for details.
     width, height : float or str, optional
         The figure width and height. If float, units are inches. If string,
         units are interpreted by `~proplot.utils.units` -- for example,
@@ -1951,6 +1971,28 @@ def subplots(array=None, ncols=1, nrows=1,
 
         These arguments are convenient where you don't care about the figure
         dimensions and just want your axes to have enough "room".
+    journal : str, optional
+        Conforms figure width (and height, if specified) to academic journal
+        standards. The current options are as follows.
+
+        ===========  =====================  =========================================================================================================================================================
+        Key          Size description       Organization
+        ===========  =====================  =========================================================================================================================================================
+        ``'pnas1'``  1-column               `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+        ``'pnas2'``  2-column               "
+        ``'pnas3'``  Landscape page         "
+        ``'ams1'``   1-column               `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+        ``'ams2'``   Small 2-column         "
+        ``'ams3'``   Medium 2-column        "
+        ``'ams4'``   Full 2-column          "
+        ``'agu1'``   1-column               `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+        ``'agu2'``   2-column               "
+        ``'agu3'``   1-column, full height  "
+        ``'agu4'``   2-column, full height  "
+        ===========  =====================  =========================================================================================================================================================
+
+        Feel free to submit a pull request if you'd like to add additional
+        standards.
     aspect : float or length-2 list of floats, optional
         The (average) axes aspect ratio, in numeric form (width divided by
         height) or as (width, height) tuple. If you do not provide
@@ -2334,7 +2376,7 @@ def subplots(array=None, ncols=1, nrows=1,
     # Figure and/or average axes dimensions
     names, values = (), ()
     if journal:
-        figsize = journals(journal) # if user passed width=<string>, will use that journal size
+        figsize = _journals(journal) # if user passed width=<string>, will use that journal size
         spec = f'journal={repr(journal)}'
         names = ('axwidth', 'axheight', 'width')
         values = (axwidth, axheight, width)
