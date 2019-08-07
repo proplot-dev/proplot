@@ -144,20 +144,36 @@ underlying box or contour color.
     import proplot as plot
     import pandas as pd
     import numpy as np
-    f, axs = plot.subplots(axwidth=2, ncols=2, span=False, share=False)
+    # Heatmap plot
+    f, axs = plot.subplots(ncols=2, axwidth=2, span=0, share=1)
     data = np.random.rand(6,6)
     data = pd.DataFrame(data, index=pd.Index(['a','b','c','d','e','f']))
     axs.format(suptitle='Labels demo')
     ax = axs[0]
     m = ax.heatmap(data, cmap='rocket', labels=True, precision=2, labels_kw={'weight':'bold'})
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Heatmap plot with bold labels')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Heatmap plot with labels')
+    # Filled contours with labels
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), labels=True, cmap='rocket', labels_kw={'weight':'bold'})
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with bold labels')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with labels')
+    # Correlation plot
+    f, ax = plot.subplots(axwidth=3)
+    data = np.random.normal(size=(10,10)).cumsum(axis=0)
+    data = (data - data.mean(axis=0)) / data.std(axis=0)
+    data = (data.T @ data) / data.shape[0]
+    data[np.tril_indices(data.shape[0], -1)] = np.nan
+    data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
+    m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100, labels=True, labels_kw={'size':7, 'weight':'bold'})
+    ax.format(title='Auto-correlation plot with heatmap', alpha=0,
+              xloc='top', yloc='right', linewidth=0, ticklen=0, yreverse=True)
 
 
 
 .. image:: tutorial/tutorial_151_0.svg
+
+
+
+.. image:: tutorial/tutorial_151_1.svg
 
 
 Easy error bars

@@ -912,8 +912,9 @@ class BaseAxes(maxes.Axes):
         return self.fill_betweenx(*args, **kwargs)
 
     def heatmap(self, *args, **kwargs):
-        """Calls `~matplotlib.axes.Axes.pcolormesh` and turns on major ticks
-        for every grid center."""
+        """Calls `~matplotlib.axes.Axes.pcolormesh` and applies default formatting
+        that is suitable for heatmaps: no minor ticks, no gridlines, and major
+        ticks at the center of each grid box."""
         obj = self.pcolormesh(*args, **kwargs)
         xlocator, ylocator = None, None
         if hasattr(obj, '_coordinates'): # be careful in case private API changes! but this is only way to infer coordinates
@@ -1281,8 +1282,6 @@ class CartesianAxes(BaseAxes):
         ytickdir      = _default(ytickdir, rc['ytick.direction'])
         xtickminor    = _default(xtickminor, rc['xtick.minor.visible'])
         ytickminor    = _default(ytickminor, rc['ytick.minor.visible'])
-        xspineloc     = _default(xloc, xspineloc, _rcloc_to_stringloc('x', 'axes.spines'))
-        yspineloc     = _default(yloc, yspineloc, _rcloc_to_stringloc('y', 'axes.spines'))
         xformatter    = _default(xticklabels, xformatter) # default is just matplotlib version
         yformatter    = _default(yticklabels, yformatter)
         xlocator      = _default(xticks, xlocator) # default is AutoLocator, no setting
@@ -1302,26 +1301,30 @@ class CartesianAxes(BaseAxes):
             xgridminor = _default(xgridminor, grid and axis in ('x','both') and which in ('minor','both'))
             ygridminor = _default(ygridminor, grid and axis in ('y','both') and which in ('minor','both'))
 
-        # Override for weird bug where title doesn't get automatically offset
-        # from ticklabels in certain circumstance, check out notebook
+        # Weird bug override
         # NOTE: Latest matplotlib versions seem to have fixed below bug. For
         # now remove warning message, because it is triggered whenever user
         # draws a top 'flush' panel.
         # if xticklabelloc in ('both','top') and (xlabelloc!='top' or not xlabel): # xtickloc *cannot* be 'top', *only* appears for 'both'
         #     warnings.warn('This keyword combo causes matplotlib bug where title is not offset from tick labels. Try again with xticklabelloc="bottom" or xlabelloc="top". Defaulting to the latter.')
         #     xticklabelloc = xlabelloc = 'top'
-        xlabelloc = _default(xlabelloc, xticklabelloc)
-        ylabelloc = _default(ylabelloc, yticklabelloc)
-        xtickloc = _default(xtickloc, xticklabelloc, _rcloc_to_stringloc('x', 'xtick'))
-        ytickloc = _default(ytickloc, yticklabelloc, _rcloc_to_stringloc('y', 'ytick'))
+        # Sensible defaults for spine, tick, tick label, and label locations
+        # NOTE: Allow tick labels to be present without ticks! User may
+        # want this sometimes! Same goes for spines!
+        xspineloc     = _default(xloc, xspineloc)
+        yspineloc     = _default(yloc, yspineloc)
+        xtickloc      = _default(xtickloc, xspineloc, _rcloc_to_stringloc('x', 'xtick'))
+        ytickloc      = _default(ytickloc, yspineloc, _rcloc_to_stringloc('y', 'ytick'))
+        xspineloc     = _default(xspineloc, _rcloc_to_stringloc('x', 'axes.spines'))
+        yspineloc     = _default(yspineloc, _rcloc_to_stringloc('y', 'axes.spines'))
+        xticklabelloc = _default(xticklabelloc, xtickloc)
+        yticklabelloc = _default(yticklabelloc, ytickloc)
+        xlabelloc     = _default(xlabelloc, xticklabelloc)
+        ylabelloc     = _default(ylabelloc, yticklabelloc)
         if xlabelloc=='both':
             xlabelloc = 'bottom'
         if ylabelloc=='both':
             ylabelloc = 'left'
-        if xticklabelloc=='both' and xtickloc!='both':
-            xticklabelloc = xtickloc
-        if yticklabelloc=='both' and ytickloc!='both':
-            yticklabelloc = ytickloc
 
         # Begin loop
         for (axis, label, color, margin,
@@ -1409,7 +1412,10 @@ class CartesianAxes(BaseAxes):
                     # and tuple with (units, location) where units can be axes, data, or outward
                     if side==sides[0]: # move the left/semabottom spine onto the specified location, with set_position
                         spine.set_visible(True)
-                        spine.set_position(spineloc)
+                        try:
+                            spine.set_position(spineloc)
+                        except ValueError:
+                            raise ValueError(f'Invalid {xyname} spine location "{spineloc}".')
                     else:
                         spine.set_visible(False)
                 # Apply spine bounds
