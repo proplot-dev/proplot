@@ -43,7 +43,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: quickstart/quickstart_143_0.svg
+.. image:: gettingstarted/gettingstarted_143_0.svg
 
 
 .. code:: ipython3
@@ -63,7 +63,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: quickstart/quickstart_144_0.svg
+.. image:: gettingstarted/gettingstarted_144_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -88,7 +88,7 @@ passed to the `~proplot.colortools.Norm` constructor.
 
 
 
-.. image:: quickstart/quickstart_146_0.svg
+.. image:: gettingstarted/gettingstarted_146_0.svg
 
 
 Finally, there is a new `~proplot.colortools.MidpointNorm` class that
@@ -115,7 +115,7 @@ constructor.
 
 
 
-.. image:: quickstart/quickstart_148_0.svg
+.. image:: gettingstarted/gettingstarted_148_0.svg
 
 
 Heatmaps and labeling
@@ -157,7 +157,7 @@ underlying box or contour color.
 
 
 
-.. image:: quickstart/quickstart_151_0.svg
+.. image:: gettingstarted/gettingstarted_151_0.svg
 
 
 Easy error bars
@@ -207,7 +207,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: quickstart/quickstart_154_0.svg
+.. image:: gettingstarted/gettingstarted_154_0.svg
 
 
 Parametric plots
@@ -248,7 +248,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: quickstart/quickstart_157_1.svg
+.. image:: gettingstarted/gettingstarted_157_1.svg
 
 
 Area plots
@@ -291,7 +291,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: quickstart/quickstart_160_0.svg
+.. image:: gettingstarted/gettingstarted_160_0.svg
 
 
 Bar plots
@@ -324,7 +324,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: quickstart/quickstart_163_0.svg
+.. image:: gettingstarted/gettingstarted_163_0.svg
 
 
 Box plots and violins
@@ -356,7 +356,7 @@ automatic axis labeling.
 
 
 
-.. image:: quickstart/quickstart_166_0.svg
+.. image:: gettingstarted/gettingstarted_166_0.svg
 
 
 Scatter plots
@@ -396,4 +396,4 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: quickstart/quickstart_169_0.svg
+.. image:: gettingstarted/gettingstarted_169_0.svg

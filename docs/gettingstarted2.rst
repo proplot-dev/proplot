@@ -36,7 +36,7 @@ panels. See `~proplot.subplots.subplots` and
 
 
 
-.. image:: quickstart/quickstart_35_0.svg
+.. image:: gettingstarted/gettingstarted_35_0.svg
 
 
 If you intend to “fill” your panels with *colorbars* (see
@@ -81,7 +81,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
 
 
 
-.. image:: quickstart/quickstart_37_1.svg
+.. image:: gettingstarted/gettingstarted_37_1.svg
 
 
 Figure panels
@@ -117,7 +117,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
 
 
-.. image:: quickstart/quickstart_40_1.svg
+.. image:: gettingstarted/gettingstarted_40_1.svg
 
 
 .. code:: ipython3
@@ -140,7 +140,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
 
 
-.. image:: quickstart/quickstart_41_0.svg
+.. image:: gettingstarted/gettingstarted_41_0.svg
 
 
 Stacked panels
@@ -190,7 +190,7 @@ panel in the first column, second from the top.
 
 
 
-.. image:: quickstart/quickstart_43_0.svg
+.. image:: gettingstarted/gettingstarted_43_0.svg
 
 
 Colorbars
@@ -248,7 +248,7 @@ change outline, divider, tick, tick label, and colorbar label settings.
 
 
 
-.. image:: quickstart/quickstart_46_1.svg
+.. image:: gettingstarted/gettingstarted_46_1.svg
 
 
 Legends
@@ -306,6 +306,6 @@ handle properties.
 
 
 
-.. image:: quickstart/quickstart_49_1.svg
+.. image:: gettingstarted/gettingstarted_49_1.svg
 
 

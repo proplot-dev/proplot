@@ -5,7 +5,7 @@
 #------------------------------------------------------------------------------#
 # Find notebooks
 cwd=$(pwd)
-notebooks=($cwd/quickstart.ipynb) # bash array of notebooks you want to convert
+notebooks=($cwd/gettingstarted.ipynb) # bash array of notebooks you want to convert
 cd "${0%/*}"/../docs # go to docs of script
 for notebook in "${notebooks[@]}"; do
   # Convert notebook
