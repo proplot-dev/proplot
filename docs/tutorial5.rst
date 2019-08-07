@@ -1,5 +1,5 @@
-Color usage and fonts
-=====================
+Colormaps, cycles, colors, and fonts
+====================================
 
 ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
 adds some neat features to help you use colors effectively in your
@@ -413,8 +413,8 @@ Use `~proplot.styletools.show_cycles` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
 `~proplot.styletools.Cycle` constructor function. See
-:ref:`Color usage` for more on the differences between colormaps and
-color cycles.
+:ref:`Colormaps, cycles, colors, and fonts` for more on the
+differences between colormaps and color cycles.
 
 .. code:: ipython3
 
