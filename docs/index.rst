@@ -91,12 +91,12 @@ To get started, check out the :ref:`Introduction`.
    :maxdepth: 4
    :caption: Getting Started
 
-   gettingstarted1
-   gettingstarted2
-   gettingstarted3
-   gettingstarted4
-   gettingstarted5
-   gettingstarted6
+   tutorial1
+   tutorial2
+   tutorial3
+   tutorial4
+   tutorial5
+   tutorial6
 
 .. toctree::
    :hidden:
