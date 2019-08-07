@@ -89,7 +89,7 @@ To get started, check out the :ref:`Introduction`.
 .. toctree::
    :hidden:
    :maxdepth: 4
-   :caption: Getting Started
+   :caption: Tutorial
 
    tutorial1
    tutorial2
