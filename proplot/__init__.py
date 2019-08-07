@@ -31,12 +31,11 @@ if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
 
 # Import stuff
-# WARNING: Must import colortools and register names first, since rctools will
+# WARNING: Must import styletools and register names first, since rctools will
 # try to look up e.g. 'sunset' in the colormap dictionary! Also must import
 # subplots within demo functions.
 from .utils import *      # misc stuff
-from .fonttools import *  # fonts
-from .colortools import * # color tools
+from .styletools import * # color tools
 from .rctools import *    # custom configuration implementation
 from .axes import *       # everything, axes definitions
 from .wrappers import *   # wrappers

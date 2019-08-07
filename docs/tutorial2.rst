@@ -206,11 +206,10 @@ you call `~proplot.axes.PanelAxes.colorbar` on a
 
 You can also draw an *inset* or “*filled*” colorbar by passing the
 ``colorbar`` keyword arg to methods wrapped by
-`~proplot.colortools.cmap_wrapper` and
-`~proplot.colortools.cycle_wrapper`. Or, you can draw a “filled”
-colorbar by calling `~proplot.axes.BaseAxes.colorbar` on the *main*
-axes with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.colorbar`
-for details).
+`~proplot..cmap_wrapper` and `~proplot..cycle_wrapper`. Or, you can
+draw a “filled” colorbar by calling `~proplot.axes.BaseAxes.colorbar`
+on the *main* axes with e.g. ``loc='bottom'`` (see
+`~proplot.axes.BaseAxes.colorbar` for details).
 
 ProPlot adds several new features to the
 `~matplotlib.figure.Figure.colorbar` command, powered by
@@ -264,10 +263,9 @@ hidden.
 
 You can also draw an *inset* or “*filled*” legend by passing the
 ``legend`` keyword arg to methods wrapped by
-`~proplot.colortools.cycle_wrapper`. Or, you can draw a “filled”
-legend by calling `~proplot.axes.BaseAxes.legend` on the *main* axes
-with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.legend` for
-details).
+`~proplot..cycle_wrapper`. Or, you can draw a “filled” legend by
+calling `~proplot.axes.BaseAxes.legend` on the *main* axes with e.g.
+``loc='bottom'`` (see `~proplot.axes.BaseAxes.legend` for details).
 
 ProPlot adds several new features to the
 `~matplotlib.axes.Axes.legend` command, powered by

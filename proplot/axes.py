@@ -949,12 +949,12 @@ class BaseAxes(maxes.Axes):
         *args : (y,) or (x,y)
             The coordinates. If `x` is not provided, it is inferred from `y`.
         cmap : colormap spec, optional
-            The colormap specifier, passed to `~proplot.colortools.Colormap`.
+            The colormap specifier, passed to `~proplot.styletools.Colormap`.
         values : list of float
             The parametric values used to map points on the line to colors
             in the colormap.
         norm : normalizer spec, optional
-            The normalizer, passed to `~proplot.colortools.Norm`.
+            The normalizer, passed to `~proplot.styletools.Norm`.
         interp : int, optional
             Number of values between each line joint and each *halfway* point
             between line joints to which you want to interpolate.

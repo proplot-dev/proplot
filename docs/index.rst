@@ -106,8 +106,7 @@ To get started, check out the :ref:`Introduction`.
    subplots
    axes
    axistools
-   colortools
-   fonttools
+   styletools
    projs
    rctools
    utils

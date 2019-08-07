@@ -15,7 +15,7 @@ First things first, ProPlot makes a distinction between *colormaps* and
    This is implemented in matplotlib with the
    `~matplotlib.colors.LinearSegmentedColormap` class, and also with
    the special ProPlot
-   `~proplot.colortools.PerceptuallyUniformColormap` subclass (see
+   `~proplot.styletools.PerceptuallyUniformColormap` subclass (see
    :ref:`Making your own colormaps`).
 -  A *color cycle* is a palette composed of a *jumbled set* of distinct
    colors. Interpolation between these colors does not make sense. Color
@@ -39,20 +39,20 @@ Registered colormaps
 --------------------
 
 On import, ProPlot registers a few sample
-`~proplot.colortools.PerceptuallyUniformColormap` colormaps (see
+`~proplot.styletools.PerceptuallyUniformColormap` colormaps (see
 :ref:`Perceptually uniform colormaps`) plus a ton of other colormaps
 from other online data viz projects. Use
-`~proplot.colortools.show_cmaps` to generate a table of registered
+`~proplot.styletools.show_cmaps` to generate a table of registered
 maps, as shown below. The figure is broken down into the following
 sections:
 
 -  “User” colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
    folder. A great way to save colormaps to this folder is using the
-   `~proplot.colortools.Colormap` function. See
+   `~proplot.styletools.Colormap` function. See
    :ref:`Making your own colormaps` for details.
 -  Matplotlib and seaborn original colormaps.
 -  ProPlot colormaps belonging to the
-   `~proplot.colortools.PerceptuallyUniformColormap` class. See the
+   `~proplot.styletools.PerceptuallyUniformColormap` class. See the
    :ref:`Perceptually uniform colormaps` section.
 -  Miscellaneous diverging colormaps.
 -  `cmOcean <https://matplotlib.org/cmocean/>`__ colormaps, originally
@@ -71,7 +71,7 @@ transitions. Note that colormap and color cycle identification is now
 flexible: names are *case-insensitive* (e.g. ``'Viridis'``,
 ``'viridis'``, and ``'ViRiDiS'`` are equivalent) and can be specified in
 their “reversed” form (e.g. ``'BuRd'`` is equivalent to ``'RdBu_r'``).
-See `~proplot.colortools.CmapDict` for more info.
+See `~proplot.styletools.CmapDict` for more info.
 
 .. code:: ipython3
 
@@ -87,9 +87,9 @@ Perceptually uniform colormaps
 ------------------------------
 
 ProPlot’s custom colormaps are instances of the new
-`~proplot.colortools.PerceptuallyUniformColormap` class (see
+`~proplot.styletools.PerceptuallyUniformColormap` class (see
 :ref:`Registered colormaps` for a table).
-`~proplot.colortools.PerceptuallyUniformColormap` objects generate
+`~proplot.styletools.PerceptuallyUniformColormap` objects generate
 colors by interpolating between coordinates in any of three possible
 “perceptually uniform” colorspaces:
 
@@ -114,7 +114,7 @@ highest-saturation colors across different hues and luminances. See
 `this page <http://www.hsluv.org/comparison/>`__ for more info.
 
 To plot arbitrary cross-sections of these colorspaces, use
-`~proplot.colortools.show_colorspaces`. The blacked out regions
+`~proplot.styletools.show_colorspaces`. The blacked out regions
 represent “impossible” colors.
 
 .. code:: ipython3
@@ -148,10 +148,10 @@ represent “impossible” colors.
 
 
 To see how any colormap varies with respect to each channel, use the
-`~proplot.colortools.cmap_breakdown` function. Below, we do this for
+`~proplot.styletools.cmap_breakdown` function. Below, we do this for
 the “magma”, “rocket”, and ProPlot “Fire” colormaps. The first two are
 nicely-designed `~matplotlib.colors.LinearSegmentedColormap` maps, and
-the last one is a `~proplot.colortools.PerceptuallyUniformColormap`.
+the last one is a `~proplot.styletools.PerceptuallyUniformColormap`.
 They are all roughly linear across the hue and luminance channels, but
 not the chroma channel (top row). “Fire” is linear in the HSL scaling of
 the chroma channel (bottom left), while other ProPlot colormaps are
@@ -171,19 +171,19 @@ Making your own colormaps
 -------------------------
 
 You can make new colormaps with ProPlot’s on-the-fly colormap generator
-`~proplot.colortools.Colormap`. Every command that accepts a ``cmap``
+`~proplot.styletools.Colormap`. Every command that accepts a ``cmap``
 argument (see `~proplot.wrappers.cmap_wrapper`) is passed to
-`~proplot.colortools.Colormap`, and `~proplot.colortools.Colormap`
+`~proplot.styletools.Colormap`, and `~proplot.styletools.Colormap`
 keyword args can be specified with ``cmap_kw``. If you want to save your
 own colormap into the ``~/.proplot/cmaps`` folder, simply use
 ``save=True``. Colormaps in this folder are loaded every time you import
-ProPlot. See `~proplot.colortools.Colormap` and
+ProPlot. See `~proplot.styletools.Colormap` and
 `~proplot.wrappers.cmap_wrapper` for details.
 
 To build monochromatic
-`~proplot.colortools.PerceptuallyUniformColormap` maps from arbitrary
+`~proplot.styletools.PerceptuallyUniformColormap` maps from arbitrary
 colors, just pass a color name, hex string, or RGB tuple to
-`~proplot.colortools.Colormap`. The colormap colors will vary from the
+`~proplot.styletools.Colormap`. The colormap colors will vary from the
 specified color to some shade near white (controlled by the ``fade``
 keyword arg). The default is to fade to pure white. The first plot shows
 several of these maps merged into one, and the second is just one map.
@@ -213,18 +213,18 @@ several of these maps merged into one, and the second is just one map.
 .. image:: tutorial/tutorial_109_1.svg
 
 
-To generate `~proplot.colortools.PerceptuallyUniformColormap` maps,
-you can pass a *dictionary* to `~proplot.colortools.Colormap`, which
-calls the `~proplot.colortools.PerceptuallyUniformColormap.from_hsl`
+To generate `~proplot.styletools.PerceptuallyUniformColormap` maps,
+you can pass a *dictionary* to `~proplot.styletools.Colormap`, which
+calls the `~proplot.styletools.PerceptuallyUniformColormap.from_hsl`
 static method, or pass a *list of colors* to
-`~proplot.colortools.Colormap`, which calls the
-`~proplot.colortools.PerceptuallyUniformColormap.from_list` static
+`~proplot.styletools.Colormap`, which calls the
+`~proplot.styletools.PerceptuallyUniformColormap.from_list` static
 method.
 
-`~proplot.colortools.PerceptuallyUniformColormap.from_list`
+`~proplot.styletools.PerceptuallyUniformColormap.from_list`
 interpolates between the listed colors in a perceptually uniform
 colorspace (see :ref:`Perceptually uniform colormaps`).
-`~proplot.colortools.PerceptuallyUniformColormap.from_hsl` draws lines
+`~proplot.styletools.PerceptuallyUniformColormap.from_hsl` draws lines
 between channel values specified by the keyword args ``'hue'``,
 ``'saturation'``, and ``'luminance'``. The values can be numbers, color
 strings, or lists thereof. Numbers indicate the channel value. For color
@@ -268,9 +268,9 @@ value by the number ``N``, as shown below.
 Merging and modifying colormaps
 -------------------------------
 
-`~proplot.colortools.Colormap` also lets you merge arbitrary colormaps
+`~proplot.styletools.Colormap` also lets you merge arbitrary colormaps
 and modify existing colormaps. To merge colormaps, simply pass multiple
-arguments to the `~proplot.colortools.Colormap` constructor. This
+arguments to the `~proplot.styletools.Colormap` constructor. This
 makes it easy to create complex
 `SciVisColor <https://sciviscolor.org/home/colormoves/>`__-style
 colormaps, which may be desirable for complex datasets with funky
@@ -303,15 +303,15 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 To modify a diverging colormap by cutting out some central colors, pass
-the ``cut`` keyword arg to `~proplot.colortools.Colormap`. This is
+the ``cut`` keyword arg to `~proplot.styletools.Colormap`. This is
 great when you want to have a sharper cutoff between negative and
 positive values. To cut out colors from the left or right of a colormap,
 pass the ``left`` and ``right`` keyword args to
-`~proplot.colortools.Colormap`.
+`~proplot.styletools.Colormap`.
 
 To rotate a cyclic colormap, pass the ``shift`` argument to
-`~proplot.colortools.Colormap`. Cyclic colormaps are colormaps for
-which ``cyclic=True`` was passed to `~proplot.colortools.Colormap` on
+`~proplot.styletools.Colormap`. Cyclic colormaps are colormaps for
+which ``cyclic=True`` was passed to `~proplot.styletools.Colormap` on
 construction. ProPlot ensures the colors at the ends of these maps are
 distinct, so that levels don’t blur together.
 
@@ -354,12 +354,12 @@ distinct, so that levels don’t blur together.
 
 
 You can also change the “gamma” of any
-`~proplot.colortools.PerceptuallyUniformColormap` map on-the-fly. The
+`~proplot.styletools.PerceptuallyUniformColormap` map on-the-fly. The
 “gamma” controls how the luminance and saturation channels vary between
 segments of the colormap. A gamma larger than ``1`` emphasizes high
 luminance, low saturation colors, and a gamma smaller than ``1``
 emphasizes low luminance, high saturation colors. See
-`~proplot.colortools.PerceptuallyUniformColormap` for details.
+`~proplot.styletools.PerceptuallyUniformColormap` for details.
 
 .. code:: ipython3
 
@@ -401,18 +401,18 @@ picker <http://tristen.ca/hcl-picker/#/hlc/12/0.99/C6F67D/0B2026>`__.
 
 To add colormaps downloaded from any of these sources, save the colormap
 data to a file in your ``~/.proplot/cmaps`` folder, then call
-`~proplot.colortools.register_cmaps`. The file should be named
+`~proplot.styletools.register_cmaps`. The file should be named
 ``name.ext``, where ``name`` is the registered colormap name and ``ext``
-is the file extension. See `~proplot.colortools.register_cmaps` for
+is the file extension. See `~proplot.styletools.register_cmaps` for
 valid file extensions.
 
 Registered color cycles
 -----------------------
 
-Use `~proplot.colortools.show_cycles` to generate a table of the color
+Use `~proplot.styletools.show_cycles` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
 folder. You can make your own color cycles using the
-`~proplot.colortools.Cycle` constructor function. See
+`~proplot.styletools.Cycle` constructor function. See
 :ref:`Color usage` for more on the differences between colormaps and
 color cycles.
 
@@ -430,14 +430,14 @@ Making your own color cycles
 ----------------------------
 
 You can make new color cycles with ProPlot’s on-the-fly property cycler
-generator `~proplot.colortools.Cycle`. ProPlot lets you specify a
+generator `~proplot.styletools.Cycle`. ProPlot lets you specify a
 property cycle by passing ``cycle`` to plotting commands like
 `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
 (see `~proplot.wrappers.cycle_wrapper`), which is passed to
-`~proplot.colortools.Cycle`, and `~proplot.colortools.Cycle` keyword
+`~proplot.styletools.Cycle`, and `~proplot.styletools.Cycle` keyword
 args can be specified with ``cycle_kw``. If you want to save your own
 color cycle into the ``~/.proplot/cycles`` folder, simply pass
-``save=True`` to `~proplot.colortools.Cycle`. Color cycles in this
+``save=True`` to `~proplot.styletools.Cycle`. Color cycles in this
 folder are loaded every time you import ProPlot. If you want to change
 the global property cycler, use the ``plot.rc.cycle`` setting (see the
 `~proplot.rctools` documentation).
@@ -469,11 +469,11 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 Colormaps or combinations thereof can be used as sources for making
 color cycles. Just pass colormap name(s) to the
-`~proplot.colortools.Cycle` constructor, with the last positional
+`~proplot.styletools.Cycle` constructor, with the last positional
 argument indicating the number of samples you want to draw. To exclude
 near-white colors on the end of a colormap, pass e.g. ``left=x`` to
-`~proplot.colortools.Cycle` (or supply a plotting command with e.g.
-``cycle_kw={'left':x}``). See `~proplot.colortools.Colormap` for
+`~proplot.styletools.Cycle` (or supply a plotting command with e.g.
+``cycle_kw={'left':x}``). See `~proplot.styletools.Colormap` for
 details.
 
 .. code:: ipython3
@@ -499,7 +499,7 @@ details.
 .. image:: tutorial/tutorial_128_0.svg
 
 
-`~proplot.colortools.Cycle` can also generate cyclers that change
+`~proplot.styletools.Cycle` can also generate cyclers that change
 properties other than color. Below, a single-color dash style cycler is
 constructed and applied to the axes locally. To apply it globally,
 simply use ``plot.rc['axes.prop_cycle'] = cycle``.
@@ -532,9 +532,9 @@ palette <https://projects.susielu.com/viz-palette>`__.
 
 To add color cycles downloaded from any of these sources, save the cycle
 data to a file in your ``~/.proplot/cycles`` folder, then call
-`~proplot.colortools.register_cycles`. The file should be named
+`~proplot.styletools.register_cycles`. The file should be named
 ``name.ext``, where ``name`` is the registered cycle name and ``ext`` is
-the file extension. See `~proplot.colortools.register_cmaps` for valid
+the file extension. See `~proplot.styletools.register_cmaps` for valid
 file extensions.
 
 Registered color names
@@ -547,7 +547,7 @@ colors <https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors>`__,
 and from the `“Open color” <https://github.com/yeun/open-color>`__
 Github project. This was inspired by
 `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-Use `~proplot.colortools.show_colors` to generate tables of these
+Use `~proplot.styletools.show_colors` to generate tables of these
 colors, as shown below. Note that the native matplotlib `CSS4 named
 colors <https://matplotlib.org/examples/color/named_colors.html>`__ are
 still registered, but I encourage using colors from the tables instead.
@@ -556,7 +556,7 @@ To reduce the number of registered color names to a more manageable
 size, XKCD and Crayola colors must have *sufficiently distinct
 coordinates* in the HCL perceptually uniform colorspace before they are
 added to ProPlot. This makes it a bit easier to pick out colors from a
-table generated with `~proplot.colortools.show_colors`. Similar names
+table generated with `~proplot.styletools.show_colors`. Similar names
 were also cleaned up – for example, “reddish” and “reddy” are changed to
 “red”.
 
@@ -582,7 +582,7 @@ color cycle, use ``color=(cmapname, position)`` or
 ``color=(cyclename, index)`` with any command that accepts the ``color``
 keyword! The ``position`` should be between 0 and 1, while the ``index``
 is the index on the list of colors in the cycle. This feature is powered
-by the `~proplot.colortools.ColorCacheDict` class.
+by the `~proplot.styletools.ColorCacheDict` class.
 
 .. code:: ipython3
 
