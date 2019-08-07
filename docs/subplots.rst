@@ -1,5 +1,5 @@
-The subplots command and related classes
-----------------------------------------
+Subplots and related classes
+----------------------------
 
 **Classes**
 
