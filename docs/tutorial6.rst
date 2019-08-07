@@ -163,7 +163,8 @@ arg and the ``precision`` keyword arg. See
     data = (data.T @ data) / data.shape[0]
     data[np.tril_indices(data.shape[0], -1)] = np.nan # empty boxes
     data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
-    m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100, labels=True, labels_kw={'size':7, 'weight':'bold'})
+    m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100,
+              labels=True, labels_kw={'size':7, 'weight':'bold'})
     ax.format(title='Cross-correlation matrix', alpha=0, linewidth=0,
               xloc='top', yloc='right', yreverse=True)
 
@@ -207,17 +208,17 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
     ax.format(title='Column statistics')
     # Showing a standard deviation range instead of percentile range
     ax = axs[1]
-    ax.scatter(data, color='goldenrod', marker='x', markersize=50, barcolor='gray8',
+    ax.scatter(data, color='k', marker='x', markersize=50, barcolor='gray8',
                medians=True, barstd=True, barrange=(-1,1), barzorder=0, boxes=False, capsize=2)
     # Supplying error bar data manually
     ax = axs[2]
     boxdata = np.percentile(data, (25,75), axis=0)
     bardata = np.percentile(data, (5,95), axis=0)
-    ax.plot(data.mean(axis=0), lw=2, barlw=1, boxmarker=False, edgecolor='gray6', color='yellow orange',
+    ax.plot(data.mean(axis=0), lw=2, barlw=1, boxmarker=False, edgecolor='gray7', color='k',
             boxdata=boxdata, bardata=bardata)
     # Formatting
     axs[0].format(ylabel='column number', title='Bar plot')
-    axs[1].format(title='Scatter plot')ss
+    axs[1].format(title='Scatter plot')
     axs[2].format(title='Line plot')
     axs[1:].format(xlabel='column number', xticks=1)
 
@@ -343,8 +344,8 @@ See `~proplot.wrappers.bar_wrapper` for details.
 .. image:: tutorial/tutorial_163_0.svg
 
 
-Box plots and violins
----------------------
+Box plots
+---------
 
 `~matplotlib.axes.Axes.boxplot` and
 `~matplotlib.axes.Axes.violinplot` are now wrapped with
@@ -406,8 +407,8 @@ keywords, which is a bit less confusing. You can also pass colormaps to
     ax = axs[1]
     ax.format(title='Scatter colormap with colorbar')
     data = (np.random.rand(2,100)-0.5)
-    obj = ax.scatter(*data, color=data.sum(axis=0), size=10*(data.sum(axis=0)+1),
-                     marker='*', cmap='fire', colorbar='ll', colorbar_kw={'locator':0.5, 'label':'label'})
+    obj = ax.scatter(*data, color=data.sum(axis=0), size=data.sum(axis=0), smin=2, smax=20,
+                     marker='o', cmap='dusk', colorbar='ul', colorbar_kw={'locator':0.5, 'label':'label'})
     axs.format(xlabel='xlabel', ylabel='ylabel')
 
 
