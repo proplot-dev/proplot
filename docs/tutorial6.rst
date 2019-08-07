@@ -118,7 +118,7 @@ constructor.
 .. image:: tutorial/tutorial_148_0.svg
 
 
-Heatmaps and labels
+Labels and heatmaps
 -------------------
 
 The new `~proplot.axes.BaseAxes.heatmap` command calls
@@ -157,7 +157,7 @@ arg and the ``precision`` keyword arg. See
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), labels=True, cmap='rocket', labels_kw={'weight':'bold'})
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with labels')
-    # Autocorrelation matrix
+    # Cross-correlation matrix
     f, ax = plot.subplots(axwidth=3)
     data = np.random.normal(size=(10,10)).cumsum(axis=0)
     data = (data - data.mean(axis=0)) / data.std(axis=0)
@@ -165,7 +165,7 @@ arg and the ``precision`` keyword arg. See
     data[np.tril_indices(data.shape[0], -1)] = np.nan # empty boxes
     data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
     m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100, labels=True, labels_kw={'size':7, 'weight':'bold'})
-    ax.format(title='Autocorrelation matrix', alpha=0, linewidth=0,
+    ax.format(title='Cross-correlation matrix', alpha=0, linewidth=0,
               xloc='top', yloc='right', yreverse=True)
 
 
