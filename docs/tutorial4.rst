@@ -82,11 +82,11 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 
 
 
-.. image:: gettingstarted/gettingstarted_78_1.svg
+.. image:: tutorial/tutorial_78_1.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_78_2.svg
+.. image:: tutorial/tutorial_78_2.svg
 
 
 Formatting projections
@@ -125,7 +125,7 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 
 
 
-.. image:: gettingstarted/gettingstarted_81_0.svg
+.. image:: tutorial/tutorial_81_0.svg
 
 
 .. code:: ipython3
@@ -140,7 +140,7 @@ axes. This time, `~proplot.axes.BaseAxes.format` will call the special
 
 
 
-.. image:: gettingstarted/gettingstarted_82_0.svg
+.. image:: tutorial/tutorial_82_0.svg
 
 
 Zooming into projections
@@ -169,7 +169,7 @@ declaring the projection by passing ``proj_kw`` to
 
 
 
-.. image:: gettingstarted/gettingstarted_85_0.svg
+.. image:: tutorial/tutorial_85_0.svg
 
 
 For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
@@ -194,7 +194,7 @@ Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
 
 
 
-.. image:: gettingstarted/gettingstarted_87_0.svg
+.. image:: tutorial/tutorial_87_0.svg
 
 
 Registered cartopy projections
@@ -225,7 +225,7 @@ and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: gettingstarted/gettingstarted_90_1.svg
+.. image:: tutorial/tutorial_90_1.svg
 
 
 Registered basemap projections
@@ -256,6 +256,6 @@ if you fail to specify them.
 
 
 
-.. image:: gettingstarted/gettingstarted_93_0.svg
+.. image:: tutorial/tutorial_93_0.svg
 
 

@@ -80,7 +80,7 @@ See `~proplot.colortools.CmapDict` for more info.
 
 
 
-.. image:: gettingstarted/gettingstarted_98_0.svg
+.. image:: tutorial/tutorial_98_0.svg
 
 
 Perceptually uniform colormaps
@@ -124,7 +124,7 @@ represent “impossible” colors.
 
 
 
-.. image:: gettingstarted/gettingstarted_101_0.svg
+.. image:: tutorial/tutorial_101_0.svg
 
 
 .. code:: ipython3
@@ -134,7 +134,7 @@ represent “impossible” colors.
 
 
 
-.. image:: gettingstarted/gettingstarted_102_0.svg
+.. image:: tutorial/tutorial_102_0.svg
 
 
 .. code:: ipython3
@@ -144,7 +144,7 @@ represent “impossible” colors.
 
 
 
-.. image:: gettingstarted/gettingstarted_103_0.svg
+.. image:: tutorial/tutorial_103_0.svg
 
 
 To see how any colormap varies with respect to each channel, use the
@@ -164,7 +164,7 @@ linear in the HPL scaling of the chroma channel (bottom right).
 
 
 
-.. image:: gettingstarted/gettingstarted_105_0.svg
+.. image:: tutorial/tutorial_105_0.svg
 
 
 Making your own colormaps
@@ -206,11 +206,11 @@ several of these maps merged into one, and the second is just one map.
 
 
 
-.. image:: gettingstarted/gettingstarted_109_0.svg
+.. image:: tutorial/tutorial_109_0.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_109_1.svg
+.. image:: tutorial/tutorial_109_1.svg
 
 
 To generate `~proplot.colortools.PerceptuallyUniformColormap` maps,
@@ -258,11 +258,11 @@ value by the number ``N``, as shown below.
 
 
 
-.. image:: gettingstarted/gettingstarted_111_0.svg
+.. image:: tutorial/tutorial_111_0.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_111_1.svg
+.. image:: tutorial/tutorial_111_1.svg
 
 
 Merging and modifying colormaps
@@ -299,7 +299,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: gettingstarted/gettingstarted_114_1.svg
+.. image:: tutorial/tutorial_114_1.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -346,11 +346,11 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: gettingstarted/gettingstarted_116_0.svg
+.. image:: tutorial/tutorial_116_0.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_116_1.svg
+.. image:: tutorial/tutorial_116_1.svg
 
 
 You can also change the “gamma” of any
@@ -382,11 +382,11 @@ emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: gettingstarted/gettingstarted_118_0.svg
+.. image:: tutorial/tutorial_118_0.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_118_1.svg
+.. image:: tutorial/tutorial_118_1.svg
 
 
 Adding online colormaps
@@ -423,7 +423,7 @@ color cycles.
 
 
 
-.. image:: gettingstarted/gettingstarted_123_0.svg
+.. image:: tutorial/tutorial_123_0.svg
 
 
 Making your own color cycles
@@ -464,7 +464,7 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 
 
-.. image:: gettingstarted/gettingstarted_126_0.svg
+.. image:: tutorial/tutorial_126_0.svg
 
 
 Colormaps or combinations thereof can be used as sources for making
@@ -496,7 +496,7 @@ details.
 
 
 
-.. image:: gettingstarted/gettingstarted_128_0.svg
+.. image:: tutorial/tutorial_128_0.svg
 
 
 `~proplot.colortools.Cycle` can also generate cyclers that change
@@ -518,7 +518,7 @@ simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 
 
-.. image:: gettingstarted/gettingstarted_130_0.svg
+.. image:: tutorial/tutorial_130_0.svg
 
 
 Adding online color cycles
@@ -567,11 +567,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: gettingstarted/gettingstarted_135_0.svg
+.. image:: tutorial/tutorial_135_0.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_135_1.svg
+.. image:: tutorial/tutorial_135_1.svg
 
 
 Individual color sampling
@@ -610,6 +610,6 @@ by the `~proplot.colortools.ColorCacheDict` class.
 
 
 
-.. image:: gettingstarted/gettingstarted_138_0.svg
+.. image:: tutorial/tutorial_138_0.svg
 
 

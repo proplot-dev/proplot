@@ -44,7 +44,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: gettingstarted/gettingstarted_53_0.svg
+.. image:: tutorial/tutorial_53_0.svg
 
 
 Axis tick labels
@@ -69,7 +69,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: gettingstarted/gettingstarted_56_0.svg
+.. image:: tutorial/tutorial_56_0.svg
 
 
 ProPlot also lets you easily change the axis formatter with
@@ -99,7 +99,7 @@ See `~proplot.axes.CartesianAxes.format_partial` and
 
 
 
-.. image:: gettingstarted/gettingstarted_58_0.svg
+.. image:: tutorial/tutorial_58_0.svg
 
 
 Axis scales
@@ -131,7 +131,7 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
 
 
-.. image:: gettingstarted/gettingstarted_61_0.svg
+.. image:: tutorial/tutorial_61_0.svg
 
 
 .. code:: ipython3
@@ -161,7 +161,7 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
 
 
-.. image:: gettingstarted/gettingstarted_62_0.svg
+.. image:: tutorial/tutorial_62_0.svg
 
 
 .. code:: ipython3
@@ -201,7 +201,7 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
 
 
-.. image:: gettingstarted/gettingstarted_63_0.svg
+.. image:: tutorial/tutorial_63_0.svg
 
 
 Time axis formatting
@@ -238,7 +238,7 @@ details.
 
 
 
-.. image:: gettingstarted/gettingstarted_66_0.svg
+.. image:: tutorial/tutorial_66_0.svg
 
 
 Dual unit axes
@@ -286,11 +286,11 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: gettingstarted/gettingstarted_69_0.svg
+.. image:: tutorial/tutorial_69_0.svg
 
 
 
-.. image:: gettingstarted/gettingstarted_69_1.svg
+.. image:: tutorial/tutorial_69_1.svg
 
 
 .. code:: ipython3
@@ -317,7 +317,7 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: gettingstarted/gettingstarted_70_0.svg
+.. image:: tutorial/tutorial_70_0.svg
 
 
 Polar axes
@@ -346,6 +346,6 @@ declare polar axes, pass ``proj='polar'`` or something like
 
 
 
-.. image:: gettingstarted/gettingstarted_73_0.svg
+.. image:: tutorial/tutorial_73_0.svg
 
 
