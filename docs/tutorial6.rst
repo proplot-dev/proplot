@@ -43,7 +43,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_143_0.svg
+.. image:: tutorial/tutorial_144_0.svg
 
 
 .. code:: ipython3
@@ -63,7 +63,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_144_0.svg
+.. image:: tutorial/tutorial_145_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -88,7 +88,7 @@ passed to the `~proplot.styletools.Norm` constructor.
 
 
 
-.. image:: tutorial/tutorial_146_0.svg
+.. image:: tutorial/tutorial_147_0.svg
 
 
 Finally, there is a new `~proplot.styletools.MidpointNorm` class that
@@ -115,7 +115,7 @@ constructor.
 
 
 
-.. image:: tutorial/tutorial_148_0.svg
+.. image:: tutorial/tutorial_149_0.svg
 
 
 Heatmaps and labels
@@ -171,11 +171,11 @@ arg and the ``precision`` keyword arg. See
 
 
 
-.. image:: tutorial/tutorial_151_0.svg
+.. image:: tutorial/tutorial_152_0.svg
 
 
 
-.. image:: tutorial/tutorial_151_1.svg
+.. image:: tutorial/tutorial_152_1.svg
 
 
 Easy error bars
@@ -225,7 +225,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: tutorial/tutorial_154_0.svg
+.. image:: tutorial/tutorial_155_0.svg
 
 
 Area plots
@@ -248,6 +248,8 @@ and positive area underneath a line, as shown below.
 
     import proplot as plot
     import numpy as np
+    plot.rc.reset()
+    plot.rc.margin = 0
     f, axs = plot.subplots(array=[[1,2],[3,3]], hratios=(1,0.8), span=False, share=0)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
     data = np.random.rand(5,3).cumsum(axis=0)
@@ -268,7 +270,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: tutorial/tutorial_157_0.svg
+.. image:: tutorial/tutorial_158_0.svg
 
 
 Bar plots
@@ -289,11 +291,11 @@ See `~proplot.wrappers.bar_wrapper` for details.
     import pandas as pd
     plot.rc.titleloc = 'uc'
     plot.rc.margin = 0.05
-    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, span=False, share=False)
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, span=False, share=False, hratios=(3,2))
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
     data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
     ax = axs[0]
-    obj = ax.bar(data, cycle='Reds', cycle_kw={'left':0.2}, colorbar='ul', colorbar_kw={'frameon':False})
+    obj = ax.bar(data, cycle='Grays', colorbar='ul', colorbar_kw={'frameon':False})
     ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side', suptitle='Bar plot wrapper demo')
     ax = axs[1]
     obj = ax.barh(data.iloc[::-1,:], cycle='Grays', legend='ur', stacked=True)
@@ -301,7 +303,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: tutorial/tutorial_160_0.svg
+.. image:: tutorial/tutorial_161_0.svg
 
 
 Box plots
@@ -333,7 +335,7 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_163_0.svg
+.. image:: tutorial/tutorial_164_0.svg
 
 
 Parametric plots
@@ -374,7 +376,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: tutorial/tutorial_166_1.svg
+.. image:: tutorial/tutorial_167_1.svg
 
 
 Scatter plots
@@ -414,4 +416,4 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: tutorial/tutorial_169_0.svg
+.. image:: tutorial/tutorial_170_0.svg

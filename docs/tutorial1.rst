@@ -512,28 +512,3 @@ default state, use `~proplot.rctools.rc_configurator.reset`. See the
 .. image:: tutorial/tutorial_28_1.svg
 
 
-DejaVu Sans is the default matplotlib font, but it’s not exactly the
-best of the best and it can be tricky to change when using multiple
-workstations with different fonts installed. ProPlot adds a bunch of
-sans-serif fonts, introudces a `~proplot.styletools.show_fonts`
-command to display them (see below), and makes Helvetica the default, as
-in MATLAB. Generally speaking, simple, clean sans-serif fonts are more
-appropriate for figures than serif fonts.
-
-You can register your own fonts by adding ``.ttf`` and ``.otf`` files to
-the ``~/.proplot/fonts`` directory and calling
-`~proplot.styletools.register_fonts` (which is also called on import).
-To change the default font, use the `~proplot.rctools.rc` object or by
-modifying your ``~/.proplotrc``. See the `~proplot.styletools` and
-`~proplot.rctools` documentation for more info.
-
-.. code:: ipython3
-
-    import proplot as plot
-    f = plot.show_fonts()
-
-
-
-.. image:: tutorial/tutorial_30_0.svg
-
-

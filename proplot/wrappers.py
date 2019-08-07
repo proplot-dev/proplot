@@ -425,7 +425,7 @@ def enforce_centers(self, func, *args, order='C', **kwargs):
         elif Z.shape[1]==xlen-1 and Z.shape[0]==ylen-1 and x.ndim==1 and y.ndim==1:
             # Get centers given edges. Matplotlib may raise error if you pass
             # 2D mesh of edges.
-            if x.ndim==1 and y.ndim==1 and x.dtype!='object' and y.dtype!='object':
+            if all(z.ndim==1 and z.size>1 and z.dtype!='object' for z in (x,y)):
                 x = (x[1:] + x[:-1])/2
                 y = (y[1:] + y[:-1])/2
         elif Z.shape[1]!=xlen or Z.shape[0]!=ylen:
@@ -453,7 +453,7 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
         elif Z.shape[1]==xlen and Z.shape[0]==ylen:
             # If 2D, don't raise error, but don't fix either, because
             # matplotlib pcolor just trims last column and row
-            if x.ndim==1 and y.ndim==1 and x.dtype!='object' and y.dtype!='object':
+            if all(z.ndim==1 and z.size>1 and z.dtype!='object' for z in (x,y)):
                 x = utils.edges(x)
                 y = utils.edges(y)
         elif Z.shape[1]!=xlen-1 or Z.shape[0]!=ylen-1:
@@ -1821,9 +1821,12 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
 
     # Data limits used for normalizer
     Z = ma.masked_invalid(args[-1], copy=False)
-    zmin, zmax = float(Z.min()), float(Z.max())
-    if zmin==zmax or ma.is_masked(zmin) or ma.is_masked(zmax):
+    if Z.size==0:
         zmin, zmax = 0, 1
+    else:
+        zmin, zmax = float(Z.min()), float(Z.max())
+        if zmin==zmax or ma.is_masked(zmin) or ma.is_masked(zmax):
+            zmin, zmax = 0, 1
 
     # Input colormap, for methods that accept a colormap and normalizer
     if not name[-7:]=='contour': # contour, tricontour, i.e. not a method where cmap is optional
@@ -1878,7 +1881,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw={},
                     locator_kw = {**locator_kw}
                     locator_kw.setdefault('symmetric', symmetric)
                     locator = mticker.MaxNLocator(N + 1, min_n_ticks=1, **locator_kw)
-                levels = locator.tick_values(zmin, zmax)
+                try:
+                    levels = locator.tick_values(zmin, zmax)
+                except RuntimeError:
+                    levels = np.linspace(zmin, zmax, N + 1)
                 # Trim excess levels the locator may have supplied.
                 if not locator_kw.get('symmetric', None):
                     under, = np.where(levels < zmin)

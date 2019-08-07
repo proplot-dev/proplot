@@ -1,5 +1,5 @@
-Color usage
-===========
+Color usage and fonts
+=====================
 
 ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
 adds some neat features to help you use colors effectively in your
@@ -80,7 +80,7 @@ See `~proplot.styletools.CmapDict` for more info.
 
 
 
-.. image:: tutorial/tutorial_98_0.svg
+.. image:: tutorial/tutorial_96_0.svg
 
 
 Perceptually uniform colormaps
@@ -124,7 +124,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_101_0.svg
+.. image:: tutorial/tutorial_99_0.svg
 
 
 .. code:: ipython3
@@ -134,7 +134,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_102_0.svg
+.. image:: tutorial/tutorial_100_0.svg
 
 
 .. code:: ipython3
@@ -144,7 +144,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_103_0.svg
+.. image:: tutorial/tutorial_101_0.svg
 
 
 To see how any colormap varies with respect to each channel, use the
@@ -164,7 +164,7 @@ linear in the HPL scaling of the chroma channel (bottom right).
 
 
 
-.. image:: tutorial/tutorial_105_0.svg
+.. image:: tutorial/tutorial_103_0.svg
 
 
 Making your own colormaps
@@ -206,11 +206,11 @@ several of these maps merged into one, and the second is just one map.
 
 
 
-.. image:: tutorial/tutorial_109_0.svg
+.. image:: tutorial/tutorial_107_0.svg
 
 
 
-.. image:: tutorial/tutorial_109_1.svg
+.. image:: tutorial/tutorial_107_1.svg
 
 
 To generate `~proplot.styletools.PerceptuallyUniformColormap` maps,
@@ -258,11 +258,11 @@ value by the number ``N``, as shown below.
 
 
 
-.. image:: tutorial/tutorial_111_0.svg
+.. image:: tutorial/tutorial_109_0.svg
 
 
 
-.. image:: tutorial/tutorial_111_1.svg
+.. image:: tutorial/tutorial_109_1.svg
 
 
 Merging and modifying colormaps
@@ -299,7 +299,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: tutorial/tutorial_114_1.svg
+.. image:: tutorial/tutorial_112_1.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -346,11 +346,11 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: tutorial/tutorial_116_0.svg
+.. image:: tutorial/tutorial_114_0.svg
 
 
 
-.. image:: tutorial/tutorial_116_1.svg
+.. image:: tutorial/tutorial_114_1.svg
 
 
 You can also change the “gamma” of any
@@ -382,11 +382,11 @@ emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: tutorial/tutorial_118_0.svg
+.. image:: tutorial/tutorial_116_0.svg
 
 
 
-.. image:: tutorial/tutorial_118_1.svg
+.. image:: tutorial/tutorial_116_1.svg
 
 
 Adding online colormaps
@@ -423,7 +423,7 @@ color cycles.
 
 
 
-.. image:: tutorial/tutorial_123_0.svg
+.. image:: tutorial/tutorial_121_0.svg
 
 
 Making your own color cycles
@@ -464,7 +464,7 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 
 
-.. image:: tutorial/tutorial_126_0.svg
+.. image:: tutorial/tutorial_124_0.svg
 
 
 Colormaps or combinations thereof can be used as sources for making
@@ -496,7 +496,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_128_0.svg
+.. image:: tutorial/tutorial_126_0.svg
 
 
 `~proplot.styletools.Cycle` can also generate cyclers that change
@@ -518,7 +518,7 @@ simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 
 
-.. image:: tutorial/tutorial_130_0.svg
+.. image:: tutorial/tutorial_128_0.svg
 
 
 Adding online color cycles
@@ -567,11 +567,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: tutorial/tutorial_135_0.svg
+.. image:: tutorial/tutorial_133_0.svg
 
 
 
-.. image:: tutorial/tutorial_135_1.svg
+.. image:: tutorial/tutorial_133_1.svg
 
 
 Individual color sampling
@@ -588,28 +588,59 @@ by the `~proplot.styletools.ColorCacheDict` class.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=3, aspect=(2,1), axwidth=3.5, axcolorbars='r', share=False)
-    m = axs[0].pcolormesh(np.random.rand(10,10), cmap='thermal', levels=np.linspace(0, 1, 101))
-    axs[0].rpanel.colorbar(m, label='colormap', locator=0.2)
-    axs[0].format(title='Thermal colormap')
-    l = []
-    for idx in plot.arange(0, 1, 0.1):
-        h = axs[1].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('thermal', idx), label=f'idx {idx:.1f}')
-        l.append(h)
-    axs[1].rpanel.legend(l, ncols=1)
-    axs[1].format(title='Drawing from the Thermal colormap')
-    l = []
-    idxs = np.arange(7)
+    plot.rc.reset()
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, axcolorbars='r', share=False)
+    # Drawing from colormap
+    ax = axs[0]
+    cmap = 'deep'
+    m = ax.pcolormesh([[0],[1]], cmap=cmap, N=1000)
+    idxs = plot.arange(0,1,0.2)
     np.random.shuffle(idxs)
     for idx in idxs:
-        h = axs[2].plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('ggplot', idx), label=f'idx {idx:.0f}')
-        l.append(h)
-    axs[2].rpanel.legend(l, ncols=1)
-    axs[2].format(title='Drawing randomly from the ggplot color cycle')
+        h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=(cmap, idx),
+                    label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols':1})
+    ax.colorbar(m, loc='ul', locator=0.2, label='colormap')
+    ax.format(title='Drawing from the Solar colormap', grid=True)
+    # Drawing from color cycle
+    ax = axs[1]
+    idxs = np.arange(6)
+    np.random.shuffle(idxs)
+    for idx in idxs:
+        h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('qual1', idx),
+                    label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols':1})
+    ax.format(title='Drawing from the ggplot color cycle')
     axs.format(xlocator='null', abc=True, abcloc='ul', suptitle='Getting individual colors from colormaps and cycles')
 
 
 
-.. image:: tutorial/tutorial_138_0.svg
+.. image:: tutorial/tutorial_136_0.svg
+
+
+Font selection
+--------------
+
+DejaVu Sans is the default matplotlib font, but it’s not very
+aesthetically pleasing. ProPlot adds a bunch of sans-serif fonts so that
+you have them on every workstation, introduces a
+`~proplot.styletools.show_fonts` command to display them (see below),
+and makes Helvetica the default, as in MATLAB. Generally speaking,
+simple, clean sans-serif fonts are more appropriate for figures than
+serif fonts.
+
+You can register your own fonts by adding ``.ttf`` and ``.otf`` files to
+the ``~/.proplot/fonts`` directory and calling
+`~proplot.styletools.register_fonts` (which is also called on import).
+To change the default font, use the `~proplot.rctools.rc` object or
+modify your ``~/.proplotrc``. See the `~proplot.styletools` and
+`~proplot.rctools` documentation for more info.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f = plot.show_fonts()
+
+
+
+.. image:: tutorial/tutorial_139_0.svg
 
 

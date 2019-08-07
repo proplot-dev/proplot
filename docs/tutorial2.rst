@@ -36,7 +36,7 @@ panels. See `~proplot.subplots.subplots` and
 
 
 
-.. image:: tutorial/tutorial_35_0.svg
+.. image:: tutorial/tutorial_33_0.svg
 
 
 If you intend to “fill” your panels with *colorbars* (see
@@ -81,7 +81,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
 
 
 
-.. image:: tutorial/tutorial_37_1.svg
+.. image:: tutorial/tutorial_35_1.svg
 
 
 Figure panels
@@ -117,7 +117,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
 
 
-.. image:: tutorial/tutorial_40_1.svg
+.. image:: tutorial/tutorial_38_1.svg
 
 
 .. code:: ipython3
@@ -140,7 +140,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
 
 
-.. image:: tutorial/tutorial_41_0.svg
+.. image:: tutorial/tutorial_39_0.svg
 
 
 Stacked panels
@@ -190,7 +190,7 @@ panel in the first column, second from the top.
 
 
 
-.. image:: tutorial/tutorial_43_0.svg
+.. image:: tutorial/tutorial_41_0.svg
 
 
 Colorbars
@@ -248,7 +248,7 @@ change outline, divider, tick, tick label, and colorbar label settings.
 
 
 
-.. image:: tutorial/tutorial_46_1.svg
+.. image:: tutorial/tutorial_44_1.svg
 
 
 Legends
@@ -306,6 +306,6 @@ handle properties.
 
 
 
-.. image:: tutorial/tutorial_49_1.svg
+.. image:: tutorial/tutorial_47_1.svg
 
 
