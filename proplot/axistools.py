@@ -188,11 +188,6 @@ def Locator(locator, *args, **kwargs):
     -------
     `~matplotlib.ticker.Locator`
         A `~matplotlib.ticker.Locator` instance.
-
-    Note
-    ----
-    `~matplotlib.ticker.AutoLocator` has a useful ``nbins`` option. This
-    limits the maximum number of ticks to ``nbins-1``.
     """
     if isinstance(locator, mticker.Locator):
         return locator
