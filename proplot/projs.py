@@ -134,11 +134,11 @@ def Proj(name, basemap=False, **kwargs):
     axes_kw : dict
         "Projection" arguments that must be passed to the *axes* initializer
         instead of `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`.
-        So far only used with `~proplot.axes.CartopyAxes`.
+        So far only used with `~proplot.axes.CartopyProjectionAxes`.
 
     See also
     --------
-    `CartopyAxes`, `BasemapAxes`
+    `~proplot.axes.CartopyProjectionAxes`, `~proplot.axes.BasemapProjectionAxes`
     """
     # Basemap
     axes_kw = {}
