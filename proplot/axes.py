@@ -1325,9 +1325,9 @@ class CartesianAxes(BaseAxes):
         yticklabelloc = _default(yticklabelloc, ytickloc)
         xlabelloc     = _default(xlabelloc, xticklabelloc)
         ylabelloc     = _default(ylabelloc, yticklabelloc)
-        if xlabelloc not in ('bottom','top'):
+        if xlabelloc not in (None,'bottom','top'):
             xlabelloc = 'bottom'
-        if ylabelloc not in ('left','right'):
+        if ylabelloc not in (None,'left','right'):
             ylabelloc = 'left'
 
         # Begin loop
