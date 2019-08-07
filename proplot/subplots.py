@@ -1965,6 +1965,11 @@ def subplots(array=None, ncols=1, nrows=1,
         The figure width and height. If float, units are inches. If string,
         units are interpreted by `~proplot.utils.units` -- for example,
         `width="10cm"` creates a 10cm wide figure.
+    journal : str, optional
+        String name corresponding to an academic journal standard that is used
+        to control the figure width (and height, if specified). Valid names
+        are described in a table below. Feel free to submit a pull request if
+        you'd like to add additional standards.
     axwidth, axheight : float or str, optional
         Sets the average width, height of your axes. If float, units are
         inches. If string, units are interpreted by `~proplot.utils.units`.
@@ -1976,20 +1981,6 @@ def subplots(array=None, ncols=1, nrows=1,
         height) or as (width, height) tuple. If you do not provide
         the `hratios` or `wratios` keyword args, all axes will have
         identical aspect ratios.
-    journal : str, optional
-        Conforms figure width (and height, if specified) to academic journal
-        standards. The current options are as follows.
-
-        ==============================================  ==============================================================  =========================================================================================================================================================
-        Key(s)                                          Size description(s)                                             Organization
-        ==============================================  ==============================================================  =========================================================================================================================================================
-        ``'pnas1'``, ``'pnas2'``, ``'pnas3'``           1-column, 2-column, landscape page                              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-        ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-        ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-        ==============================================  ==============================================================  =========================================================================================================================================================
-
-        Feel free to submit a pull request if you'd like to add additional
-        standards.
     hratios, wratios, axheights, axwidths : optional
         Aliases for `height_ratios`, `width_ratios`.
     height_ratios, width_ratios : float or list thereof, optional
@@ -2161,6 +2152,18 @@ def subplots(array=None, ncols=1, nrows=1,
     axlegend_kw, axlegends_kw : optional
         As with `axpanel_kw`, but for panels listed in the `axlegend`
         and `axlegends` keyword args.
+
+
+    The current options for the `journal` keyword argument are described
+    in the following table.
+
+    ==============================================  ==============================================================  =========================================================================================================================================================
+    Key(s)                                          Size description(s)                                             Organization
+    ==============================================  ==============================================================  =========================================================================================================================================================
+    ``'pnas1'``, ``'pnas2'``, ``'pnas3'``           1-column, 2-column, landscape page                              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+    ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+    ==============================================  ==============================================================  =========================================================================================================================================================
 
     Other parameters
     ----------------
