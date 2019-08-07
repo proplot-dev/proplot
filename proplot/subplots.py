@@ -10,18 +10,17 @@ It returns a `Figure` instance and an `axes_grid` container of
 
    <h1>Developer notes</h1>
 
-Instead of separating various ProPlot features into their own functions --
-for example, ``ax.panel('right')`` or ``ax.set_projection('proj')`` --
-ProPlot stuffs them right into the `subplots` function. The reason for this
-approach?
+Many of ProPlot's more complex features are stuffed right into the `subplots`
+function. But why didn't we separate these features into their own functions --
+for example, ``ax.add_panel('right')`` or ``ax.set_projection('proj')``?
 
-ProPlot builds a static "scaffolding" of subplots before anything is plotted,
+ProPlot requires a *static* grid of subplots and panels before anything is plotted,
 so that we can exert more control on the layout and make things look "nice"
-without any manual tweaking on the part of the user. This includes
-aligning axes panels in the subplot grid, accounting for map projection aspect
-ratios, and controlling the amount of whitespace between subplot content, panel
-content, and the figure border. See `subplots` and `~Figure.smart_tight_layout`
-for details.
+without any manual tweaking on the part of the user. `subplots` automatically
+aligns axes and figure panels in the subplot grid and controls subplot aspect
+ratios. `~Figure.smart_tight_layout` automatically adjusts aspect ratios for map
+projection and imshow plots, and controls the amount of whitespace between subplot
+content, panel content, and the figure edge.
 """
 import os
 import re
@@ -2178,7 +2177,6 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Feel free to submit a pull request if you'd like to add additional standards.
     """
-    #--------------------------------------------------------------------------#
     # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
     # axes sharing mode where we *disable ticklabels and labels*, but *do not
     # use the builtin sharex/sharey API*, suitable for complex map projections.
