@@ -143,8 +143,8 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 .. image:: tutorial/tutorial_83_0.svg
 
 
-Stacked axes and figure panels
-------------------------------
+Stacked panels
+--------------
 
 ProPlot also allows arbitrarily *stacking* panels with the ``lstack``,
 ``bstack``, ``rstack``, and ``tstack`` keyword args. This can be useful
