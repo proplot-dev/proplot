@@ -17,14 +17,14 @@ colormaps and property cyclers on-the-fly.
 Normalizers and levels
 ----------------------
 
-`~proplot.wrappers.cmap_wrapper` assigns the `~proplot..BinNorm`
-“meta-normalizer” as the data normalizer for all plotting commands
-involving colormaps. This permits discrete ``levels`` even for commands
-like `~matplotlib.axes.Axes.pcolor` and
-`~matplotlib.axes.Axes.pcolormesh`. `~proplot..BinNorm` also ensures
-that colorbar colors span the entire colormap range, independent of the
-``extend`` setting, and that color levels on the ends of colorbars for
-“cyclic” colormaps are distinct.
+`~proplot.wrappers.cmap_wrapper` assigns the
+`~proplot.styletools.BinNorm` “meta-normalizer” as the data normalizer
+for all plotting commands involving colormaps. This permits discrete
+``levels`` even for commands like `~matplotlib.axes.Axes.pcolor` and
+`~matplotlib.axes.Axes.pcolormesh`. `~proplot.styletools.BinNorm`
+also ensures that colorbar colors span the entire colormap range,
+independent of the ``extend`` setting, and that color levels on the ends
+of colorbars for “cyclic” colormaps are distinct.
 
 .. code:: ipython3
 
@@ -67,12 +67,12 @@ that colorbar colors span the entire colormap range, independent of the
 
 
 If you pass unevenly spaced ``levels``, the
-`~proplot..LinearSegmentedNorm` normalizer is applied by default. This
-results in even color gradations across *indices* of the level list, no
-matter their spacing. To use an arbitrary colormap normalizer, just pass
-``norm`` and optionally ``norm_kw`` to a command wrapped by
-`~proplot.wrappers.cmap_wrapper`. These arguments are passed to the
-`~proplot..Norm` constructor.
+`~proplot.styletools.LinearSegmentedNorm` normalizer is applied by
+default. This results in even color gradations across *indices* of the
+level list, no matter their spacing. To use an arbitrary colormap
+normalizer, just pass ``norm`` and optionally ``norm_kw`` to a command
+wrapped by `~proplot.wrappers.cmap_wrapper`. These arguments are
+passed to the `~proplot.styletools.Norm` constructor.
 
 .. code:: ipython3
 
@@ -91,12 +91,13 @@ matter their spacing. To use an arbitrary colormap normalizer, just pass
 .. image:: tutorial/tutorial_146_0.svg
 
 
-Finally, there is a new `~proplot..MidpointNorm` class that warps your
-colormap so that its midpoint lies on some central data value, no matter
-the minimum and maximum colormap colors. Again, to use an arbitrary
-colormap normalizer, just pass ``norm`` and optionally ``norm_kw`` to a
-command wrapped by `~proplot.wrappers.cmap_wrapper`. These arguments
-are passed to the `~proplot..Norm` constructor.
+Finally, there is a new `~proplot.styletools.MidpointNorm` class that
+warps your colormap so that its midpoint lies on some central data
+value, no matter the minimum and maximum colormap colors. Again, to use
+an arbitrary colormap normalizer, just pass ``norm`` and optionally
+``norm_kw`` to a command wrapped by `~proplot.wrappers.cmap_wrapper`.
+These arguments are passed to the `~proplot.styletools.Norm`
+constructor.
 
 .. code:: ipython3
 
