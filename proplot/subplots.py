@@ -2153,18 +2153,6 @@ def subplots(array=None, ncols=1, nrows=1,
         As with `axpanel_kw`, but for panels listed in the `axlegend`
         and `axlegends` keyword args.
 
-
-    The current options for the `journal` keyword argument are described
-    in the following table.
-
-    ==============================================  ==============================================================  =========================================================================================================================================================
-    Key(s)                                          Size description(s)                                             Organization
-    ==============================================  ==============================================================  =========================================================================================================================================================
-    ``'pnas1'``, ``'pnas2'``, ``'pnas3'``           1-column, 2-column, landscape page                              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-    ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-    ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-    ==============================================  ==============================================================  =========================================================================================================================================================
-
     Other parameters
     ----------------
     tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat
@@ -2178,6 +2166,18 @@ def subplots(array=None, ncols=1, nrows=1,
         The figure instance.
     axs : `axes_grid`
         A special list of axes instances. See `axes_grid`.
+
+    Note
+    ----
+    The current options for the `journal` keyword argument are as follows.
+
+    ==============================================  ==============================================================  =========================================================================================================================================================
+    Key(s)                                          Size description(s)                                             Organization
+    ==============================================  ==============================================================  =========================================================================================================================================================
+    ``'pnas1'``, ``'pnas2'``, ``'pnas3'``           1-column, 2-column, landscape page                              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+    ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+    ==============================================  ==============================================================  =========================================================================================================================================================
 
     See also
     --------
