@@ -105,10 +105,10 @@ To get started, check out the :ref:`Introduction`.
 
    subplots
    axes
-   axistools
-   styletools
-   projs
    rctools
+   axistools
+   projs
+   styletools
    utils
 
 

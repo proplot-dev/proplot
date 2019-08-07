@@ -1,5 +1,5 @@
-Colormaps, cycles, colors, and fonts
-====================================
+Color usage
+===========
 
 ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
 adds some neat features to help you use colors effectively in your
