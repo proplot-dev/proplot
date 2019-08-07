@@ -417,8 +417,8 @@ def Scale(scale, *args, **kwargs):
 
 def InvertedScaleFactory(scale, name=None, **kwargs):
     """Returns name of newly registered *inverted* version of the
-    `~matplotlib.scale.ScaleBase` corresponding to the scale name."""
-    # Note I use private API here; no other way to get class directly
+    `~matplotlib.scale.ScaleBase` corresponding to the scale name. The
+    scale name `name` defaults to ``'{scale}_{inverted}'``."""
     scale = Scale(scale, **kwargs) # get the class
     name_ = name or f'{scale}_inverted' # name of inverted version
     class Inverted(scales[scale]):
