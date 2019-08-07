@@ -40,15 +40,15 @@ panels. See `~proplot.subplots.subplots` and
 
 
 If you intend to “fill” your panels with *colorbars* (see
-:ref:`Colorbars`), you should use the ``axcolorbar``, ``axcolorbars``,
-``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args instead of
-``axpanel``, etc. The behavior is identical, except the *default* panel
-width is more appropriate for colorbars. Similarly, if you intend to
-“fill” your panels with *legends* (see :ref:`Legends`), you should use
-the ``axlegend``, ``axlegends``, ``axlegend_kw``, and ``axlegends_kw``
-keyword args. You can modify these default widths with a custom
-``.proplotrc`` file (see the `~proplot.rctools` documentation for
-details).
+:ref:`Inset and panel colorbars`), you should use the ``axcolorbar``,
+``axcolorbars``, ``axcolorbar_kw``, or ``axcolorbars_kw`` keyword args
+instead of ``axpanel``, etc. The behavior is identical, except the
+*default* panel width is more appropriate for colorbars. Similarly, if
+you intend to “fill” your panels with *legends* (see
+:ref:`Inset and panel legends`), you should use the ``axlegend``,
+``axlegends``, ``axlegend_kw``, and ``axlegends_kw`` keyword args. You
+can modify these default widths with a custom ``.proplotrc`` file (see
+the `~proplot.rctools` documentation for details).
 
 The below example demonstrates a few more panel features. To draw panels
 “flush” against the subplot, use the ``bflush``, ``tflush``, ``lflush``,
@@ -143,8 +143,8 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 .. image:: tutorial/tutorial_83_0.svg
 
 
-Stacked panels
---------------
+Stacked axes and figure panels
+------------------------------
 
 ProPlot also allows arbitrarily *stacking* panels with the ``lstack``,
 ``bstack``, ``rstack``, and ``tstack`` keyword args. This can be useful
@@ -193,8 +193,8 @@ panel in the first column, second from the top.
 .. image:: tutorial/tutorial_85_0.svg
 
 
-Colorbars
----------
+Inset and panel colorbars
+-------------------------
 
 All ProPlot “panels” are instances of the `~proplot.axes.PanelAxes`
 class (see :ref:`Axes panels` and :ref:`Figure panels`), which is a
@@ -251,10 +251,10 @@ change outline, divider, tick, tick label, and colorbar label settings.
 .. image:: tutorial/tutorial_88_1.svg
 
 
-Legends
--------
+Inset and panel legends
+-----------------------
 
-Just like with :ref:`Colorbars`, when you call
+Just like with :ref:`Inset and panel colorbars`, when you call
 `~proplot.axes.BaseAxes.legend` on a `~proplot.axes.CartesianAxes`,
 an *inset* legend is generated. When you call
 `~proplot.axes.PanelAxes.legend` on a `~proplot.axes.PanelAxes`, the
