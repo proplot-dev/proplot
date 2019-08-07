@@ -1968,8 +1968,7 @@ def subplots(array=None, ncols=1, nrows=1,
     journal : str, optional
         String name corresponding to an academic journal standard that is used
         to control the figure width (and height, if specified). Valid names
-        are described in a table below. Feel free to submit a pull request if
-        you'd like to add additional standards.
+        are described in a table below.
     axwidth, axheight : float or str, optional
         Sets the average width, height of your axes. If float, units are
         inches. If string, units are interpreted by `~proplot.utils.units`.
@@ -2177,9 +2176,7 @@ def subplots(array=None, ncols=1, nrows=1,
     ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
     ==============================================  ==============================================================  =========================================================================================================================================================
 
-    See also
-    --------
-    `~proplot.axes.BaseAxes`, `~proplot.axes.BaseAxes.format`
+    Feel free to submit a pull request if you'd like to add additional standards.
     """
     #--------------------------------------------------------------------------#
     # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
