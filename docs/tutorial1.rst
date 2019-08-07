@@ -180,8 +180,8 @@ amount of space around the figure edge so that labels and whatnot are
 not cut off. Furthermore, if you didn’t specify both the figure width
 and height, the original subplot *aspect ratios are preserved*. And when
 axes panels are present, the panel widths are held fixed in the scaling.
-See :ref:`Panels, colorbars, and legends` for more on panels. You can
-disable automatic spacing by passing ``tight=False`` to
+See :ref:`Panels and insets` for more on panels. You can disable
+automatic spacing by passing ``tight=False`` to
 `~proplot.subplots.subplots`.
 
 Aspect ratio conservation is useful for ordinary Cartesian plots where
@@ -377,7 +377,7 @@ The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keyword args, see `~proplot.wrappers.cmap_wrapper`,
 `~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting wrappers`. For
-more on panels, see the :ref:`Panels, colorbars, and legends` section.
+more on panels, see the :ref:`Panels and insets` section.
 
 .. code:: ipython3
 

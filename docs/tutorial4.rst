@@ -1,5 +1,5 @@
-Panels, colorbars, and legends
-==============================
+Panels and insets
+=================
 
 It is common to need colorbars and legends along the edges of axes and
 figures. It is also common to need “panels” along the edges of axes, for
