@@ -682,10 +682,10 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
     exp : float
         The scale for the exonent, i.e. the :math:`b` in :math:`Ca^{bx}`.
     scale : float, optional
-        The coefficient, i.e. the :math:`C` in :math:`Ce^{bx}`.
+        The coefficient, i.e. the :math:`C` in :math:`Ca^{bx}`.
     inverse : bool, optional
         If ``True``, the "forward" direction performs
-        the inverse operation :math:`(\log(x) - \log(A))/b`.
+        the inverse operation :math:`(\log(x) - \log(C))/(b\log(a))`.
     name : str, optional
         The registered scale name. Defaults to ``'power_{base}_{exp}_{scale}'``.
     """
