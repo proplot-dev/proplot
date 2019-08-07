@@ -149,14 +149,14 @@ def Locator(locator, *args, **kwargs):
 
     Parameters
     ----------
-    locator : float, list of float, or str
-        If str, a dictionary lookup is performed (see below table).
-
+    locator : str, float, or list of float
         If number, specifies the *multiple* used to define tick separation.
         Returns a `~matplotlib.ticker.MultipleLocator` instance.
 
         If list of numbers, these points are ticked. Returns a
         `~matplotlib.ticker.FixedLocator` instance.
+
+        If string, a dictionary lookup is performed (see below table).
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class.
 
@@ -237,7 +237,13 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
     Parameters
     ----------
-    formatter : function, list of str, or str
+    formatter : str, list of str, or function
+        If list of strings, ticks are labeled with these strings. Returns a
+        `~matplotlib.ticker.FixedFormatter` instance.
+
+        If function, labels will be generated using this function. Returns a
+        `~matplotlib.ticker.FuncFormatter` instance.
+
         If string, there are 4 possibilities:
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
@@ -252,11 +258,6 @@ def Formatter(formatter, *args, date=False, **kwargs):
            formatted by calling ``string.format(x=number)``.
         4. In all other cases, a dictionary lookup is performed (see below table).
 
-        If list of string, labels major ticks with these strings. Returns a
-        `~matplotlib.ticker.FixedFormatter` instance.
-
-        If function, function is used to output label string from numeric
-        input. Returns a `~matplotlib.ticker.FuncFormatter` instance.
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
         above).
