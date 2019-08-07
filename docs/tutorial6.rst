@@ -14,7 +14,7 @@ You should also see :ref:`Making your own colormaps` and
 `~proplot.wrappers.cycle_wrapper` can be used to create and apply new
 colormaps and property cyclers on-the-fly.
 
-Levels and normalizers
+Normalizers and levels
 ----------------------
 
 `~proplot.wrappers.cmap_wrapper` assigns the
@@ -118,7 +118,7 @@ constructor.
 .. image:: tutorial/tutorial_148_0.svg
 
 
-Labels and heatmaps
+Heatmaps and labels
 -------------------
 
 The new `~proplot.axes.BaseAxes.heatmap` command calls
