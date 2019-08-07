@@ -637,6 +637,7 @@ modify your ``~/.proplotrc``. See the `~proplot.styletools` and
 .. code:: ipython3
 
     import proplot as plot
+    plot.rc.reset()
     f = plot.show_fonts()
 
 

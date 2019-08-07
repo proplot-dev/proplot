@@ -507,8 +507,9 @@ default state, use `~proplot.rctools.rc_configurator.reset`. See the
 
 
 
-
-
 .. image:: tutorial/tutorial_28_1.svg
+
+
+
 
 
