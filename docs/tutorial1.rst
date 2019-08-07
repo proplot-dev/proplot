@@ -94,7 +94,7 @@ details.
     f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=1.5)
     axs.format(abc=True, abcloc='ul', suptitle='Subplot grid with centered rows', xlabel='xlabel', ylabel='ylabel')
     axs[2].plot(data, lw=2)
-    f, axs = plot.subplots([[1, 1, 2], [1, 1, 6], [3, 4, 4], [3, 5, 5]], span=1, share=3, width=5)
+    f, axs = plot.subplots([[1,1,2],[1,1,6],[3,4,4],[3,5,5]], span=1, share=3, width=5)
     axs.format(suptitle='Complex subplot grid with axis-sharing + spanning labels', xlabel='xlabel', ylabel='ylabel', abc=True)
     axs[0].plot(data, lw=2)
 
