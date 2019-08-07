@@ -14,8 +14,8 @@ You should also see :ref:`Making your own colormaps` and
 `~proplot.wrappers.cycle_wrapper` can be used to create and apply new
 colormaps and property cyclers on-the-fly.
 
-Colormap normalizers
---------------------
+Levels and normalizers
+----------------------
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.colortools.BinNorm` “meta-normalizer” as the data normalizer
@@ -118,13 +118,14 @@ constructor.
 .. image:: tutorial/tutorial_148_0.svg
 
 
-Heatmaps and labeling
----------------------
+Heatmaps and labels
+-------------------
 
 The new `~proplot.axes.BaseAxes.heatmap` command calls
 `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
-is suitable for heatmaps: no minor ticks, no gridlines, and major ticks
-at the center of each box.
+is suitable for heatmaps: no gridlines, no minor ticks, and major ticks
+at the center of each box. Among other things, this is useful for
+displaying autocorrelation matrices (see below).
 
 You can also add labels to `~matplotlib.axes.Axes.pcolor`,
 `~matplotlib.axes.Axes.pcolormesh`,
@@ -133,11 +134,11 @@ and `~matplotlib.axes.Axes.contourf` plots, thanks to
 `~proplot.wrappers.cmap_wrapper`. Just pass the ``labels=True``
 keyword argument, and ProPlot will draw contour labels with
 `~matplotlib.axes.Axes.clabel` or grid box labels with
-`~matplotlib.axes.Axes.text`. The label format can be changed by
-passing a ``labels_kw`` dictionary of settings (e.g.
-``labels_kw={'fontsize':12}``) and with the ``precision`` keyword arg.
-Label colors are automatically chosen based on the luminance of the
-underlying box or contour color.
+`~matplotlib.axes.Axes.text`. Label colors are automatically chosen
+based on the luminance of the underlying box or contour color. The label
+text objects can be changed with the ``labels_kw`` dictionary keyword
+arg and the ``precision`` keyword arg. See
+`~proplot.wrappers.cmap_wrapper` for details.
 
 .. code:: ipython3
 
@@ -156,16 +157,16 @@ underlying box or contour color.
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), labels=True, cmap='rocket', labels_kw={'weight':'bold'})
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with labels')
-    # Auto-correlation matrix
+    # Autocorrelation matrix
     f, ax = plot.subplots(axwidth=3)
     data = np.random.normal(size=(10,10)).cumsum(axis=0)
     data = (data - data.mean(axis=0)) / data.std(axis=0)
     data = (data.T @ data) / data.shape[0]
-    data[np.tril_indices(data.shape[0], -1)] = np.nan
+    data[np.tril_indices(data.shape[0], -1)] = np.nan # empty boxes
     data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
     m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100, labels=True, labels_kw={'size':7, 'weight':'bold'})
-    ax.format(title='Auto-correlation plot with heatmap', alpha=0,
-              xloc='top', yloc='right', linewidth=0, ticklen=0, yreverse=True)
+    ax.format(title='Autocorrelation matrix', alpha=0, linewidth=0,
+              xloc='top', yloc='right', yreverse=True)
 
 
 

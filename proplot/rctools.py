@@ -396,6 +396,10 @@ def _get_globals(key=None, value=None):
                     kw_custom[name] = value
                 else:
                     kw[name] = value
+            if key=='linewidth' and value==0:
+                ikw, ikw_custom = _get_globals('ticklen', 0)
+                kw.update(ikw)
+                kw_custom.update(ikw_custom)
     return kw, kw_custom
 
 class rc_configurator(object):

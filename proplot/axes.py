@@ -228,7 +228,12 @@ class BaseAxes(maxes.Axes):
         self.collabel = self.text(0, 0, '', va='bottom', ha='center', transform=self._title_transform)
         self.rowlabel = self.text(0, 0, '', va='center', ha='right', transform=self.transAxes)
         # Apply custom props
-        self.format(mode=1)
+        # Make sure tick length is zero for polar plots, or azimuthal labels
+        # are excessively offset from the border.
+        kw = {}
+        if isinstance(self, mproj.PolarAxes):
+            kw.setdefault('ticklen', 0)
+        self.format(mode=1, **kw)
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):
@@ -913,7 +918,7 @@ class BaseAxes(maxes.Axes):
 
     def heatmap(self, *args, **kwargs):
         """Calls `~matplotlib.axes.Axes.pcolormesh` and applies default formatting
-        that is suitable for heatmaps: no minor ticks, no gridlines, and major
+        that is suitable for heatmaps: no gridlines, no minor ticks, and major
         ticks at the center of each grid box."""
         obj = self.pcolormesh(*args, **kwargs)
         xlocator, ylocator = None, None

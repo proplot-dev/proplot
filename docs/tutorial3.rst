@@ -338,9 +338,9 @@ declare polar axes, pass ``proj='polar'`` or something like
     axs.format(suptitle='Polar axes demo', collabels=['With labels', 'Without labels'], collabelweight='normal')
     N = 20
     x = np.linspace(0, 2*np.pi, N)
-    y = np.random.rand(N,5).cumsum(axis=0) + 5*np.random.rand(N,5)
+    y = np.random.rand(N,5).cumsum(axis=0) + 15*np.random.rand(N,5)
     axs.plot(x, y, cycle='contrast', lw=3)
-    axs.format(linewidth=0.8, ticklabelsize=9, ticklabelweight='bold', ylocator=5, ytickloc=45, ylim=(0,19))
+    axs.format(ticklabelsize=9, ticklabelweight='bold', ylocator=5, ylim=(0,19))
     axs[0].format(xformatter='pi')
     axs[1].format(xformatter='none', yformatter='none')
 
