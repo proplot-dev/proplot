@@ -6,7 +6,7 @@ The subplots command
 .. automodsumm:: proplot.subplots
    :classes-only:
    :toctree: api
-   :skip: Number, FlexibleGridSpec, FlexibleGridSpecFromSubplotSpec
+   :skip: Number
 
 **Functions**
 

@@ -41,6 +41,5 @@ from .axes import *       # everything, axes definitions
 from .wrappers import *   # wrappers
 from .axistools import *  # locators, normalizers, and formatters
 from .subplots import *
-from .gridspec import *   # gridspec objects
 from .projs import *      # projections and whatnot
 

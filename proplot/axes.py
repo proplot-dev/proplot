@@ -64,7 +64,6 @@ import matplotlib.collections as mcollections
 from .rctools import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
 from .utils import _default, units
-from .gridspec import FlexibleGridSpecFromSubplotSpec
 __all__ = [
     'BaseAxes', 'CartesianAxes',
     'EmptyPanel', 'PanelAxes',
@@ -1874,16 +1873,16 @@ class PanelAxes(CartesianAxes):
         if side=='top': # this is ugly, and hard to implement with title, super title, and stuff
             raise NotImplementedError('Filling top panels with colorbars is not allowed. Use a left, bottom, or right panel instead.')
         if length!=1:
-            if side in ['bottom']:
-                gridspec = FlexibleGridSpecFromSubplotSpec(
-                        nrows=1, ncols=3, wspace=0, #hspace=space,
+            if side in ('bottom','top'):
+                gridspec = mgridspec.GridSpecFromSubplotSpec(
+                        nrows=1, ncols=3, wspace=0,
                         subplot_spec=subspec,
                         width_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subspec = gridspec[1]
-            elif side in ['left','right']:
-                gridspec = FlexibleGridSpecFromSubplotSpec(
-                        nrows=3, ncols=1, hspace=0, #wspace=space,
+            elif side in ('left','right'):
+                gridspec = mgridspec.GridSpecFromSubplotSpec(
+                        nrows=3, ncols=1, hspace=0,
                         subplot_spec=subspec,
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
