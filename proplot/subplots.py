@@ -1971,33 +1971,25 @@ def subplots(array=None, ncols=1, nrows=1,
 
         These arguments are convenient where you don't care about the figure
         dimensions and just want your axes to have enough "room".
-    journal : str, optional
-        Conforms figure width (and height, if specified) to academic journal
-        standards. The current options are as follows.
-
-        ===========  =====================  =========================================================================================================================================================
-        Key          Size description       Organization
-        ===========  =====================  =========================================================================================================================================================
-        ``'pnas1'``  1-column               `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-        ``'pnas2'``  2-column               "
-        ``'pnas3'``  Landscape page         "
-        ``'ams1'``   1-column               `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-        ``'ams2'``   Small 2-column         "
-        ``'ams3'``   Medium 2-column        "
-        ``'ams4'``   Full 2-column          "
-        ``'agu1'``   1-column               `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-        ``'agu2'``   2-column               "
-        ``'agu3'``   1-column, full height  "
-        ``'agu4'``   2-column, full height  "
-        ===========  =====================  =========================================================================================================================================================
-
-        Feel free to submit a pull request if you'd like to add additional
-        standards.
     aspect : float or length-2 list of floats, optional
         The (average) axes aspect ratio, in numeric form (width divided by
         height) or as (width, height) tuple. If you do not provide
         the `hratios` or `wratios` keyword args, all axes will have
         identical aspect ratios.
+    journal : str, optional
+        Conforms figure width (and height, if specified) to academic journal
+        standards. The current options are as follows.
+
+        ==============================================  ==============================================================  =========================================================================================================================================================
+        Key(s)                                          Size description(s)                                             Organization
+        ==============================================  ==============================================================  =========================================================================================================================================================
+        ``'pnas1'``, ``'pnas2'``, ``'pnas3'``           1-column, 2-column, landscape page                              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+        ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+        ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+        ==============================================  ==============================================================  =========================================================================================================================================================
+
+        Feel free to submit a pull request if you'd like to add additional
+        standards.
     hratios, wratios, axheights, axwidths : optional
         Aliases for `height_ratios`, `width_ratios`.
     height_ratios, width_ratios : float or list thereof, optional
