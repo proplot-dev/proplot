@@ -227,47 +227,6 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 .. image:: tutorial/tutorial_154_0.svg
 
 
-Parametric plots
-----------------
-
-`~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
-lets you draw line collections that map individual segments of the line
-to individual colors. This can be useful for drawing “parametric” plots,
-where you want to indicate the time or some other coordinate at each
-point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth='5cm', aspect=(2,1))
-    ax = axs[0]
-    m = ax.plot((np.random.rand(50)-0.5).cumsum(), np.random.rand(50),
-                cmap='thermal', values=np.arange(50), lw=7, extend='both')
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
-    ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
-    N = 12
-    ax = axs[1]
-    values = np.arange(1, N+1)
-    radii = np.linspace(1,0.2,N)
-    angles = np.linspace(0,4*np.pi,N)
-    x = radii*np.cos(1.4*angles)
-    y = radii*np.sin(1.4*angles)
-    m = ax.plot(x, y, values=values,
-                linewidth=15, interp=False, cmap='thermal')
-    ax.format(xlim=(-1,1), ylim=(-1,1), title='With step gradations', titleweight='bold',
-              xlabel='cosine angle', ylabel='sine angle')
-    ax.colorbar(m, loc='b', locator=None, label=f'parametric coordinate')
-
-
-
-
-
-
-
-.. image:: tutorial/tutorial_157_1.svg
-
-
 Area plots
 ----------
 
@@ -308,7 +267,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: tutorial/tutorial_160_0.svg
+.. image:: tutorial/tutorial_157_0.svg
 
 
 Bar plots
@@ -341,7 +300,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: tutorial/tutorial_163_0.svg
+.. image:: tutorial/tutorial_160_0.svg
 
 
 Box plots
@@ -373,7 +332,48 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_166_0.svg
+.. image:: tutorial/tutorial_163_0.svg
+
+
+Parametric plots
+----------------
+
+`~matplotlib.axes.Axes.plot` now accepts a ``cmap`` keyword – this
+lets you draw line collections that map individual segments of the line
+to individual colors. This can be useful for drawing “parametric” plots,
+where you want to indicate the time or some other coordinate at each
+point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    N = 50
+    cmap = 'IceFire'
+    values = np.linspace(-N/2, N/2, N)
+    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth='6cm', aspect=(2,1))
+    ax = axs[0]
+    m = ax.plot((np.random.rand(N)-0.5).cumsum(), np.random.rand(N), cmap=cmap, values=values, lw=7, extend='both')
+    ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
+    ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
+    N = 12
+    ax = axs[1]
+    values = np.linspace(-N/2, N/2 - 1, N)
+    radii = np.linspace(1,0.2,N)
+    angles = np.linspace(0,4*np.pi,N)
+    x = radii*np.cos(1.4*angles)
+    y = radii*np.sin(1.4*angles)
+    m = ax.plot(x, y, values=values, linewidth=15, interp=False, cmap=cmap)
+    ax.format(xlim=(-1,1), ylim=(-1,1), title='With step gradations', titleweight='bold', xlabel='cosine angle', ylabel='sine angle')
+    ax.colorbar(m, loc='b', maxn=10, label=f'parametric coordinate')
+
+
+
+
+
+
+
+.. image:: tutorial/tutorial_166_1.svg
 
 
 Scatter plots
@@ -405,10 +405,10 @@ keywords, which is a bit less confusing. You can also pass colormaps to
     obj = ax.scatter(x, data, legend='ul', cycle='538', legend_kw={'ncols':2},
                     cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
     ax = axs[1]
-    ax.format(title='Scatter colormap with colorbar')
+    ax.format(title='Scatter plot with cmap')
     data = (np.random.rand(2,100)-0.5)
-    obj = ax.scatter(*data, color=data.sum(axis=0), size=data.sum(axis=0), smin=2, smax=20,
-                     marker='o', cmap='dusk', colorbar='ul', colorbar_kw={'locator':0.5, 'label':'label'})
+    obj = ax.scatter(*data, color=data.sum(axis=0), size=np.random.rand(100), smin=3, smax=30,
+                     marker='o', cmap='dusk', colorbar='lr', colorbar_kw={'locator':0.5, 'label':'label'})
     axs.format(xlabel='xlabel', ylabel='ylabel')
 
 
