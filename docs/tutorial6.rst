@@ -144,7 +144,7 @@ underlying box or contour color.
     import proplot as plot
     import pandas as pd
     import numpy as np
-    # Heatmap plot
+    # Heatmap with labels
     f, axs = plot.subplots(ncols=2, axwidth=2, span=0, share=1)
     data = np.random.rand(6,6)
     data = pd.DataFrame(data, index=pd.Index(['a','b','c','d','e','f']))
@@ -156,7 +156,7 @@ underlying box or contour color.
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), labels=True, cmap='rocket', labels_kw={'weight':'bold'})
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with labels')
-    # Correlation plot
+    # Auto-correlation matrix
     f, ax = plot.subplots(axwidth=3)
     data = np.random.normal(size=(10,10)).cumsum(axis=0)
     data = (data - data.mean(axis=0)) / data.std(axis=0)
