@@ -2157,8 +2157,6 @@ def subplots(array=None, ncols=1, nrows=1,
     ----------------
     tight, tightborder, tightsubplot, tightpanel, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat
         Passed to `Figure`.
-    **kwargs
-        Passed to `~proplot.gridspec.FlexibleGridSpecBase`.
 
     Returns
     -------
