@@ -160,7 +160,7 @@ linear in the HPL scaling of the chroma channel (bottom right).
 .. code:: ipython3
 
     import proplot as plot
-    f = plot.show_channels('magma', 'rocket', 'fire', minhue=-180, rgb=False)
+    f = plot.show_channels('magma', 'rocket', 'fire', axwidth=1.2, minhue=-180, rgb=False)
 
 
 
@@ -192,7 +192,7 @@ several of these maps merged into one, and the second is just one map.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2.4, aspect=1, bottom=0.1)
+    f, axs = plot.subplots(ncols=2, axwidth=2, aspect=1, bottom=0.1)
     data = np.random.rand(50,50).cumsum(axis=1)
     cmap1 = plot.Colormap('brick red_r', 'denim_r', 'warm gray_r', fade=90, name='tricolor')
     m = axs[0].contourf(data, cmap=cmap1, levels=12)
@@ -202,7 +202,7 @@ several of these maps merged into one, and the second is just one map.
     for ax,title in zip(axs, ['Three monochromatic colormaps', 'One monochromatic colormap']):
         ax.format(title=title)
     # Breakdowns
-    f = plot.show_channels(cmap1, cmap2, rgb=False)
+    f = plot.show_channels(cmap1, cmap2, axwidth=1.2, rgb=False)
 
 
 
@@ -254,7 +254,7 @@ value by the number ``N``, as shown below.
     cmap3 = m.cmap
     ax.format(title='From list of colors')
     # Breakdowns
-    f = plot.show_channels(cmap1, cmap2, cmap3, minhue=-180, rgb=False)
+    f = plot.show_channels(cmap1, cmap2, cmap3, minhue=-180, axwidth=1.2, rgb=False)
 
 
 
@@ -282,7 +282,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, colorbars='b', span=0)
+    f, axs = plot.subplots(ncols=2, axwidth=2, colorbars='b', span=0)
     data = np.random.rand(100,100).cumsum(axis=1)
     # Make colormap, save as "test1.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
@@ -319,7 +319,7 @@ distinct, so that levels don’t blur together.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots([[1,1,2,2,3,3],[0,4,4,5,5,0]], axcolorbars='b', axwidth=0.8, aspect=0.5)
+    f, axs = plot.subplots([[1,1,2,2,3,3],[0,4,4,5,5,0]], axwidth=1.5, axcolorbars='b')
     data = np.random.rand(50,50).cumsum(axis=0) - 50
     # Cutting central colors
     for ax,cut in zip(axs[:3],(0, 0.1, 0.2)):
@@ -336,7 +336,7 @@ distinct, so that levels don’t blur together.
         ax.contourf(data, cmap=cmap, cmap_kw=cmap_kw, colorbar='b', colorbar_kw={'locator':'null'})
         ax.format(xlabel='xlabel', ylabel='ylabel', title=title)
     # Rotating cyclic
-    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=2)
+    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=1.5)
     data = (np.random.rand(50,50)-0.48).cumsum(axis=1).cumsum(axis=0) - 50
     for ax,shift in zip(axs,(0, 90, 180)):
         m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
@@ -367,7 +367,7 @@ emphasizes low luminance, high saturation colors. See
     import numpy as np
     name = 'boreal'
     # Illustrations
-    f, axs = plot.subplots(ncols=3, axcolorbars='r', aspect=1)
+    f, axs = plot.subplots(ncols=3, axwidth=1.5, axcolorbars='r', aspect=1)
     data = np.random.rand(10,10).cumsum(axis=1)
     cmaps = []
     for ax,gamma in zip(axs,(0.8, 1.0, 1.4)):
@@ -378,7 +378,7 @@ emphasizes low luminance, high saturation colors. See
         ax.colorbar(m, loc='r', locator='none')
         ax.format(title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis', suptitle='Modifying existing PerceptuallyUniformColormaps')
     # Breakdowns
-    f = plot.show_channels(*cmaps, rgb=False)
+    f = plot.show_channels(*cmaps, axwidth=1.2, rgb=False)
 
 
 
