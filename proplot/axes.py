@@ -1739,11 +1739,6 @@ class EmptyPanel(object):
     This gives a nicer error message than if we had just ``None``, and
     permits indexing to mimick the behavior of a singleton
     `~proplot.subplots.axes_grid`.
-
-    Note
-    ----
-    `__getattr__` is invoked only when `__getattribute__` fails, i.e.
-    when the user requests anything that isn't a builtin method.
     """
     def __bool__(self):
         """Returns False. Provides shorthand way to check whether panel
@@ -1765,6 +1760,8 @@ class EmptyPanel(object):
 
     def __getattr__(self, attr, *args):
         """Raises AttributeError."""
+        # NOTE: `__getattr__` is invoked only when `__getattribute__` fails, i.e.
+        # when the user requests anything that isn't a builtin method.
         raise AttributeError('Panel does not exist.')
 
 class PanelAxes(CartesianAxes):
