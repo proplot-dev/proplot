@@ -218,10 +218,10 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
     ax.plot(data.mean(axis=0), boxes=False, marker='o', markersize=5,
             edgecolor='k', color='cerulean', boxdata=boxdata, bardata=bardata)
     # Formatting
-    axs[0].format(ylabel='column number', title='Bar plot')
+    axs[0].format(ylabel='column number', title='Bar plot', ygrid=False)
     axs[1].format(title='Scatter plot')
     axs[2].format(title='Line plot')
-    axs[1:].format(xlabel='column number', xticks=1)
+    axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
 
 
 
@@ -268,6 +268,7 @@ and positive area underneath a line, as shown below.
     data = 5*(np.random.rand(20)-0.5)
     ax.area(data, negpos=True, negcolor='blue7', poscolor='red7')
     ax.format(title='Negative and positive data', xlabel='xlabel', ylabel='ylabel')
+    axs.format(grid=False)
 
 
 
@@ -301,6 +302,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
     ax = axs[1]
     obj = ax.barh(data.iloc[::-1,:], cycle='Blues', legend='ur', edgecolor='blue9', stacked=True)
     ax.format(title='Stacked')
+    axs.format(grid=False)
 
 
 
@@ -333,7 +335,7 @@ automatic axis labeling.
     ax = axs[1]
     obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', points=500, bw_method=0.3, means=True)
     ax.format(title='Violin plots', titleloc='uc')
-    axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
+    axs.format(ymargin=0.1, xmargin=0.1, grid=False, suptitle='Boxes and violins demo')
 
 
 
@@ -353,6 +355,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
     import proplot as plot
     import numpy as np
+    plot.rc.reset()
     N = 50
     cmap = 'IceFire'
     values = np.linspace(-N/2, N/2, N)
@@ -407,7 +410,7 @@ keywords, which is a bit less confusing. You can also pass colormaps to
     # Scatter demo
     ax = axs[0]
     ax.format(title='New prop cycle properties', suptitle='Scatter plot demo')
-    obj = ax.scatter(x, data, legend='ul', cycle='538', legend_kw={'ncols':2},
+    obj = ax.scatter(x, data, legend='ul', cycle='warm', legend_kw={'ncols':2},
                     cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
     ax = axs[1]
     ax.format(title='Scatter plot with cmap')

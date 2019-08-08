@@ -55,11 +55,9 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     'sphinxcontrib.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    # 'sphinxext.audomodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    # 'sphinxext.custom_roles', # copied directly from matplotlib
     # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
     # 'IPython.sphinxext.ipython_console_highlighting',
-    # 'matplotlib.sphinxext.only_directives', # deprecated; see: https://github.com/statsmodels/statsmodels/issues/5291
+    # 'matplotlib.sphinxext.only_directives', # deprecated, see: https://github.com/statsmodels/statsmodels/issues/5291
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
     ]
 
