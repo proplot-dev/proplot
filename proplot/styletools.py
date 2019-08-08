@@ -32,17 +32,17 @@ from .utils import _check_data
 from matplotlib import get_data_path
 rcParams = mpl.rcParams
 __all__ = [
+    'BinNorm', 'CmapDict', 'ColorCacheDict',
+    'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
+    'Colormap', 'Cycle', 'Norm',
     'cmaps', 'cycles', 'colordict',
     'fonts', 'fonts_system', 'fonts_proplot',
-    'clean_fonts',
-    'colors', 'Colormap', 'Cycle',
-    'make_mapping_array', 'monochrome_cmap', 'Norm',
+    'clean_fonts', 'colors',
+    'make_mapping_array', 'monochrome_cmap',
     'register_cmaps', 'register_colors', 'register_cycles', 'register_fonts',
     'saturate', 'shade', 'show_cmaps', 'show_channels',
     'show_colors', 'show_colorspaces', 'show_cycles', 'show_fonts',
     'to_rgb', 'to_xyz',
-    'BinNorm', 'CmapDict', 'ColorCacheDict',
-    'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
     ]
 
 # Data diretories

@@ -80,10 +80,12 @@ import numpy as np
 import matplotlib.path as mpath
 import warnings
 __all__ = [
-    'Aitoff', 'Hammer', 'KavrayskiyVII', 'WinkelTripel', 'Proj', 'Circle',
+    'Circle', 'Proj',
+    'basemap_rc', 'cartopy_projs',
+    'Aitoff', 'Hammer', 'KavrayskiyVII',
     'NorthPolarAzimuthalEquidistant', 'NorthPolarLambertAzimuthalEqualArea',
     'SouthPolarAzimuthalEquidistant', 'SouthPolarLambertAzimuthalEqualArea',
-    'basemap_rc', 'cartopy_projs', 'cartopy_projs',
+    'WinkelTripel',
     ]
 try:
     from cartopy.crs import _WarpedRectangularProjection, \

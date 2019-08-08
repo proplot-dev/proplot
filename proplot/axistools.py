@@ -116,11 +116,12 @@ import matplotlib.ticker as mticker
 import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
 __all__ = [
-    'Formatter', 'Locator', 'Scale',
-    'AutoFormatter', 'SimpleFormatter', 'FracFormatter',
-    'InverseScale', 'MercatorLatitudeScale', 'SineLatitudeScale',
-    'CutoffScaleFactory', 'ExpScaleFactory', 'InvertedScaleFactory', 'PowerScaleFactory',
     'formatters', 'locators', 'scales',
+    'Formatter', 'Locator', 'Scale',
+    'AutoFormatter', 'CutoffScaleFactory', 'ExpScaleFactory',
+    'FracFormatter', 'InverseScale', 'InvertedScaleFactory',
+    'MercatorLatitudeScale', 'PowerScaleFactory', 'SimpleFormatter',
+    'SineLatitudeScale',
     ]
 
 #------------------------------------------------------------------------------#
