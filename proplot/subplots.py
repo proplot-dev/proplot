@@ -556,33 +556,42 @@ class Figure(mfigure.Figure):
         """Assign figure "super title"."""
         if title is not None and self._suptitle.get_text()!=title:
             self._suptitle.set_text(title)
-        self._suptitle.update(kwargs)
+        if kwargs:
+            self._suptitle.update(kwargs)
 
-    def _rowlabels(self, labels, **kwargs):
-        """Assign row labels."""
-        axs = [ax for ax in self._main_axes if ax._xrange[0]==0]
+    def _rowlabels(self, ax, labels, **kwargs):
+        """Assign row labels and update row label settings."""
+        if not self._main_axes:
+            axs = [ax]
+        else:
+            axs = [ax for ax in self._main_axes if ax._xrange[0]==0]
+            axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))] # order by yrange
         if labels is None or isinstance(labels, str): # common during testing
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
-        axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))] # order by yrange
         for ax,label in zip(axs,labels):
             if label is not None and ax.rowlabel.get_text()!=label:
                 ax.rowlabel.set_text(label)
-            ax.rowlabel.update(kwargs)
+            if kwargs:
+                ax.rowlabel.update(kwargs)
 
-    def _collabels(self, labels, **kwargs):
-        """Assign column labels."""
-        axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
+    def _collabels(self, ax, labels, **kwargs):
+        """Assign column labels and update column label setting."""
+        if not self._main_axes:
+            axs = [ax]
+        else:
+            axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
+            axs = [ax for _,ax in sorted(zip([ax._xrange[0] for ax in axs],axs))]
         if labels is None or isinstance(labels, str):
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
             raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} columns.')
-        axs = [ax for _,ax in sorted(zip([ax._xrange[0] for ax in axs],axs))]
         for ax,label in zip(axs,labels):
             if label is not None and ax.collabel.get_text()!=label:
                 ax.collabel.set_text(label)
-            ax.collabel.update(kwargs)
+            if kwargs:
+                ax.collabel.update(kwargs)
 
     def _tight_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have
@@ -627,37 +636,36 @@ class Figure(mfigure.Figure):
         name = axis.axis_name
         if name not in 'xy': # i.e. theta or radius
             return
+        bail = False
         base = axis.axes
         for _ in range(2): # try 2 levels down, should be sufficient
             base = getattr(base, '_share' + name, None) or base
         if not getattr(base, '_span'  + name):
-            axis = getattr(base, name + 'axis')
-            axis.label.update({'visible':True, **kwargs})
-            return
-        # Get the 'edge' we want to share (bottom row, or leftmost column)
-        # Identify the *main* axes spanning this edge, and if those axes have
-        # a panel and are shared with it, point to the panel label
-        if name=='x':
-            axs = [ax for ax in self._main_axes if ax._yrange[1]==base._yrange[1]]
+            axes = [getattr(base, name + 'axis')]
+            span = False
         else:
-            axs = [ax for ax in self._main_axes if ax._xrange[0]==base._xrange[0]]
-        ranges = np.array([getattr(ax, '_' + name + 'range') for ax in axs])
-        # Get list of axes that span this one
-        # Store original position and transform
-        axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axs]
+            # Get the 'edge' we want to share (bottom row, or leftmost column)
+            # Identify the *main* axes spanning this edge, and if those axes have
+            # a panel and are shared with it, point to the panel label
+            if name=='x':
+                axs = [ax for ax in self._main_axes if ax._yrange[1]==base._yrange[1]]
+            else:
+                axs = [ax for ax in self._main_axes if ax._xrange[0]==base._xrange[0]]
+            ranges = np.array([getattr(ax, '_' + name + 'range') for ax in axs])
+            axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axs]
+        # Apply settings and store list of spanning axes
         for axis in axes:
-            if axis not in self._spanning_axes:
+            if span and axis not in self._spanning_axes:
                 self._spanning_axes.append(axis)
+            if axis.get_label_position() == 'top':
+                kwargs['va'] = 'bottom' # baseline gets cramped if no ticklabels present
             axis.label.update({'visible':True, **kwargs})
+
         # If requested, turn on spanning
         # TODO: Use tightbbox for this?
         if span:
-            # Axis to use for spanning label
-            # NOTE: Try halfway point because if odd number of columns or rows,
-            # can get the perfect offset.
-            # TODO: If tick labels are different size, can get different row label offsets
-            # Figure out how to always align row labels?
-            # saxis = axes[np.argmin(ranges[:,0])]
+            # Use halfway-point axis for spanning label, because if we have an
+            # odd number of columns or rows, that transform gives us perfect offset
             half = (np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2
             saxis = axes[half]
             for axis in axes:
@@ -708,16 +716,20 @@ class Figure(mfigure.Figure):
                     lim = lim[::-1]
                 getattr(twin, f'set_{xy}lim')(scale[0] + scale[1]*lim)
             # Axis rotation, if user drew anything that triggered datetime x-axis
+            # WARNING: Rotation is done *before* horizontal/vertical alignment
+            # for normal text, and *after* when using set_tick_params.
             # WARNING: Do not just use set_tick_params rotation because will mess up
             # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
             # See discussion: https://stackoverflow.com/q/11264521/4970632
             if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
                 # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
                 rotation = rc['axes.formatter.timerotation']
-                ha = 'right' if rotation>0 else 'left'
-                for label in ax.xaxis.get_ticklabels():
-                    label.set_rotation(rotation)
-                    label.set_horizontalalignment(ha)
+                rotation = 90
+                ax.xaxis.set_tick_params(labelrotation=rotation)
+                # ha = 'right' if rotation>0 else 'left'
+                # for label in ax.xaxis.get_ticklabels():
+                #     label.update({'rotation':rotation})
+                #     # label.update({'rotation':rotation, 'ha':'right' if rotation>0 else 'left'})
             # Automatic labels and colorbars for plot
             # NOTE: The legend wrapper supports multiple legends in one axes
             # by adding legend artists manually.
@@ -925,7 +937,7 @@ class Figure(mfigure.Figure):
         sep = []
         flush = [pax._flush for pax in paxs_main]
         if not all(flush) and any(flush):
-            warning.warn('"flush" setting varies between panels in the same row or column. Using "flush" from the first axes in the row or column: {flush[0]}.')
+            warnings.warn(f'"flush" setting varies between panels in the same row or column. Using "flush" from the first axes in the row or column: {flush[0]}.')
         flush = flush[0]
         # Apply updated *space* to the underlying panel gridspec and main
         # axes gridspec width and height ratios
@@ -1567,12 +1579,13 @@ def _panels_sync(side, nums, panels_kw):
     ref_kw = (*on_kw.values(),)[0]
     ispace = 0 if side in 'tl' else -1 # index for wspace/hspace arg for axes panels
     nspace = 'wspace' if side in 'lr' else 'hspace'
-    nsep, nwidth = side + 'sep', side + 'width'
-    sep, width, space = ref_kw[nsep], ref_kw[nwidth], ref_kw[nspace]
+    nsep, nwidth, nflush = side + 'sep', side + 'width', side + 'flush'
+    sep, width, flush, space = ref_kw[nsep], ref_kw[nwidth], ref_kw[nflush], ref_kw[nspace]
     for num,kw in all_kw.items():
         # Make sure stacked-panel separation and panel widths always match
         kw[nsep] = sep
         kw[nwidth] = width
+        kw[nflush] = flush
         # Match subplot-panel spacing
         if num in on_kw:
             kw[nspace][ispace] = space[ispace] # enforce, e.g. in case one left panel has different width compared to another!

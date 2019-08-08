@@ -176,7 +176,6 @@ class BaseAxes(maxes.Axes):
         self._ncols = None
         # Misc necessary
         self._xrotated = False # whether manual rotation was applied
-        self._yrotated = False # change default tick label rotation when datetime labels present, if user did not override
         self._titles_dict = {} # dictionar of title text objects and their locations
         self._gridliner_on = False # whether cartopy gridliners are enabled
         self._aspect_equal = None # for imshow and stuff
@@ -556,7 +555,7 @@ class BaseAxes(maxes.Axes):
             'fontfamily': 'font.family'
             })
         if rowlabels or kw:
-            fig._rowlabels(rowlabels, **kw)
+            fig._rowlabels(self, rowlabels, **kw)
         kw = rc.fill({
             'fontsize':   'collabel.fontsize',
             'weight':     'collabel.weight',
@@ -564,7 +563,7 @@ class BaseAxes(maxes.Axes):
             'fontfamily': 'font.family'
             })
         if collabels or kw:
-            fig._collabels(collabels, **kw)
+            fig._collabels(self, collabels, **kw)
 
         # Axes for title or abc
         # NOTE: We check filled property but top panel filled is not allowed, change this?
@@ -1239,7 +1238,7 @@ class CartesianAxes(BaseAxes):
             `~proplot.axistools.Formatter`.
         xrotation, yrotation : float, optional
             The rotation for *x* and *y* axis tick labels. Defaults to ``0``
-            for normal axes, ``45`` for time axes.
+            for normal axes, ``rc['axes.formatter.timerotation']`` for time *x* axes.
         xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks
             are labelled. For example, the tick range ``(-1,1)`` with
@@ -1361,8 +1360,6 @@ class CartesianAxes(BaseAxes):
                 kw['text'] = label
             if color:
                 kw['color'] = color
-            if axis.get_label_position() == 'top':
-                kw['va'] = 'bottom' # baseline gets cramped if no ticklabels present
             kw.update(label_kw)
             if kw:
                 self.figure._axis_label_update(axis, **kw)
@@ -1525,11 +1522,11 @@ class CartesianAxes(BaseAxes):
             # Also set rotation here, otherwise get weird alignment
             # See discussion: https://stackoverflow.com/q/11264521/4970632
             kw = rc.fill({'fontfamily':'font.family', 'weight':'tick.labelweight'})
-            if rotation is not None:
-                kw.update({'rotation':rotation})
-                if xyname=='x':
-                    kw.update({'ha':'right' if rotation>0 else 'left'})
-                setattr(self, f'_{xyname}rotated', True)
+            # if rotation is not None:
+            #     kw.update({'rotation':rotation})
+            #     if xyname=='x':
+            #         kw.update({'ha':'center' if rotation>0 else 'left', 'va':'center'})
+            #         self._xrotated = True
             for t in axis.get_ticklabels():
                 t.update(kw)
             # Margins

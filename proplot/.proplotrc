@@ -118,7 +118,7 @@ tick.labelweight:  normal
 # Extra axes settings
 axes.alpha: # if empty, depends on 'savefig.transparent' setting
 axes.formatter.zerotrim: True
-axes.formatter.timerotation: 30
+axes.formatter.timerotation: 90
 axes.gridminor: True
 axes.geogrid: True
 # Extra image settings

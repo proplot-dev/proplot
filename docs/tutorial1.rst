@@ -171,39 +171,44 @@ a nice 2D grid, simply use 1D indexing.
 .. image:: tutorial/tutorial_11_0.svg
 
 
-Auto tight layout
------------------
+Automatic subplot spacing
+-------------------------
 
 With ProPlot, you will always get just the right amount of spacing
-between subplots so that elements don’t overlap, and just the right
-amount of space around the figure edge so that labels and whatnot are
-not cut off. Furthermore, if you didn’t specify both the figure width
-and height, the original subplot *aspect ratios are preserved*. And when
-axes panels are present, the panel widths are held fixed in the scaling.
-See :ref:`Panels and insets` for more on panels. You can disable
-automatic spacing by passing ``tight=False`` to
-`~proplot.subplots.subplots`.
+between subplots so that labels don’t overlap, and just the right amount
+of space around the figure edge so that labels are not cut off. When
+axes panels are present, the panel widths are held fixed in the scaling
+(see :ref:`Panels and insets`). Furthermore, if you did not specify
+the figure dimensions, subplot *aspect ratios are preserved*. You can
+disable automatic spacing by passing ``tight=False`` to
+`~proplot.subplots.subplots`. The below examples rigorously test this
+feature.
 
-Aspect ratio conservation is useful for ordinary Cartesian plots where
-an aspect ratio of ``1`` is often desirable, and critical for grids of
-map projections or `~matplotlib.axes.Axes.imshow` plots that require
-fixed aspect ratios. It works by *scaling* either the figure width or
-height dimension to accommodate the required subplot dimensions. And
-automatic inter-subplot spacing keeps you from having to fiddle with the
+Automatic inter-subplot spacing keeps you from having to fiddle with the
 ``wspace`` and ``hspace`` `~matplotlib.gridspec.GridSpec` keyword args
 depending on tick label size, whether axis labels are present, etc. This
 uses the special `~proplot.gridspec.FlexibleGridSpec` class, which
 permits *variable* ``wspace`` and ``hspace`` spacing between different
 rows and columns of subplots, where the builtin
-`~matplotlib.gridspec.GridSpec` class requires equivalent spacing).
+`~matplotlib.gridspec.GridSpec` class requires equivalent spacing.
+
+Aspect ratio conservation is *useful* for ordinary Cartesian plots where
+an aspect ratio of ``1`` is desirable, and *critical* for grids of map
+projections or `~matplotlib.axes.Axes.imshow` plots that require fixed
+aspect ratios. It works by making figure dimensions *flexible*: the
+width or height is scaled to accommodate the subplot dimensions. The
+``aspect`` keyword arg, along with the ``axwidth`` and ``axheight``
+keyword args, apply to the *reference* axes specified by the ``ref``
+keyword arg (defaults to ``1``, i.e. the subplot in the top-left
+corner).
 
 .. code:: ipython3
 
     import proplot as plot
     for share in (3,0):
-        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, share=share, span=False, tight=True)
-        axs[4].format(title='title\ntitle\ntitle', suptitle='"Smart tight layout" automatic spacing')
-        axs[1].format(ylabel='ylabel', xlabel='xlabel')
+        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, wratios=(3,2,2), share=share, span=False, tight=True)
+        axs[4].format(title='title\ntitle\ntitle', suptitle='Automatic spacing and aspect ratio conservation')
+        axs[1].format(ylabel='ylabel\nylabel', xlabel='xlabel')
 
 
 
@@ -217,11 +222,11 @@ rows and columns of subplots, where the builtin
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,2],[3,2],[3,4]], share=0, span=0, axwidth=1.5)
-    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='"Smart tight layout" automatic spacing')
+    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,6,6]], wratios=(1,1,2), share=0, span=0, axwidth=1.5)
+    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Automatic spacing and aspect ratio conservation')
     axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
-    axs[2].format(yformatter='null', title='Title', ytickloc='both')
-    axs[3].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
+    axs[2:4].format(yformatter='null', title='Title', ytickloc='both')
+    axs[4:].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
 
 
 
@@ -231,11 +236,13 @@ rows and columns of subplots, where the builtin
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=1.5, ncols=2, span=False, share=0, axpanels={1:'lrb',2:'lr'}, axpanels_kw={'rshare':False})
-    axs.format(ylabel='ylabel', xlabel='xlabel')
+    f, axs = plot.subplots(axwidth=1.2, ncols=2, span=False, share=0, axpanels={1:'lrb',2:'lrt'},
+               axpanels_kw={'rshare':False, 'bstack':3, 'bwidth':0.15, 'bshare':False, 'tflush':True})
+    axs.format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Hello', collabels=['Column 1', 'Column 2'],
+               suptitle='Automatic spacing and aspect ratio conservation')
     axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
-    axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right',
-                         suptitle='"Smart tight layout" automatic spacing with panels', collabels=['Column 1', 'Column 2'])
+    axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right')
+    axs[1].tpanel.format(ylim=(-0.2,1.2), ylocator=0.5)
 
 
 
@@ -246,13 +253,13 @@ Axis sharing and spanning
 -------------------------
 
 Matplotlib has an “axis sharing” feature that holds axis limits the same
-for axes within a grid of subplots. But this has no effect and the axis
-labels and tick labels; unless some considerable effort is taken, your
-figures can end up with lots of redundant labels. To help you eliminate
-these redundancies, ProPlot introduces *4 axis-sharing options* and a
-new *spanning label option*, controlled by the ``share``, ``sharex``,
-``sharey``, ``span``, ``spanx``, and ``spany`` keyword args. See
-`~proplot.subplots.sublots` and the below example for details.
+for axes within a grid of subplots. But this has no effect on the axis
+labels and tick labels, which can lead to lots of redundant labels. To
+help you eliminate these redundancies, ProPlot introduces *4
+axis-sharing options* and a new *spanning label option*, controlled by
+the ``share``, ``sharex``, ``sharey``, ``span``, ``spanx``, and
+``spany`` keyword args. See `~proplot.subplots.sublots` and the below
+example for details.
 
 .. code:: ipython3
 
@@ -385,7 +392,6 @@ more on panels, see the :ref:`Panels and insets` section.
     import numpy as np
     import pandas as pd
     import proplot as plot
-    plot.rc['axes.formatter.timerotation']
     # DataArray
     # Must be column major since plot draws lines from columns of arrays
     data = np.sin(np.linspace(0, 2*np.pi, 20))[:,None] + np.random.rand(20,8).cumsum(axis=1)
@@ -403,7 +409,7 @@ more on panels, see the :ref:`Panels and insets` section.
     # Series
     series = pd.Series(np.random.rand(20).cumsum())
     # Figure
-    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=False, span=False)
+    f, axs = plot.subplots(ncols=2, figsize=(5,3), axwidth=1.8, share=False, span=False)
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
@@ -415,12 +421,16 @@ more on panels, see the :ref:`Panels and insets` section.
     ax = axs[1]
     color = plot.shade('jade', 0.7)
     ax.plot(df, cycle=color, cycle_kw=cycle_kw, legend='uc', legend_kw={'frameon':True}, lw=3)
-    ax.format(xrotation=45)
+    # ax.format(xrotation=45)
 
 
 
 
-.. image:: tutorial/tutorial_25_1.svg
+
+
+
+
+.. image:: tutorial/tutorial_25_2.svg
 
 
 .. code:: ipython3
