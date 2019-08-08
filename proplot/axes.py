@@ -65,10 +65,12 @@ from .rctools import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
 from .utils import _default, units
 __all__ = [
-    'BaseAxes', 'CartesianAxes',
+    'BaseAxes',
+    'BasemapProjectionAxes',
+    'CartesianAxes',
+    'CartopyProjectionAxes',
     'EmptyPanel', 'PanelAxes',
     'PolarAxes', 'ProjectionAxes',
-    'BasemapProjectionAxes', 'CartopyProjectionAxes',
     ]
 
 # Aliases for panel names
