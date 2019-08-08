@@ -1,5 +1,5 @@
-Global settings control
-=======================
+Global settings utilities
+=========================
 
 .. automodsumm:: proplot.rctools
    :toctree: api
