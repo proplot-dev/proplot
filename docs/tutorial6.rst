@@ -30,15 +30,15 @@ of colorbars for “cyclic” colormaps are distinct.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=1.5, axcolorbars={1:'l', 2:'r'})
-    cmap = 'orange5'
-    data = np.random.rand(15,15)
+    f, axs = plot.subplots(ncols=2, axwidth=2, axcolorbars={1:'l', 2:'r'})
+    cmap = 'spectral'
+    data = (np.random.rand(15,15)-0.5).cumsum(axis=0)
     axs.format(suptitle='Pcolor with levels demo')
     ax = axs[0]
-    ax.pcolor(data, cmap=cmap, colorbar='l', vmin=0, vmax=1, levels=200, colorbar_kw={'ticks':0.2})
+    ax.pcolor(data, cmap=cmap, N=200, symmetric=True, colorbar='l', colorbar_kw={'locator':0.5})
     ax.format(title='Ambiguous values', yformatter='null')
     ax = axs[1]
-    ax.pcolor(data, cmap=cmap, colorbar='r', levels=np.linspace(0,1,6), colorbar_kw={'ticks':0.2})
+    ax.pcolor(data, cmap=cmap, N=8, symmetric=True, colorbar='r')
     ax.format(title='Discernible values')
 
 
@@ -50,7 +50,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=5, width=8, wratios=(5,3,3,3,3), axcolorbars='b')
+    f, axs = plot.subplots(ncols=5, axwidth=2, ref=1, wratios=(5,3,3,3,3), axcolorbars='b')
     axs.format(suptitle='Demo of colorbar color-range standardization')
     levels = plot.arange(0,360,45)
     data = (20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
@@ -58,7 +58,7 @@ of colorbars for “cyclic” colormaps are distinct.
     ax.pcolormesh(data, levels=levels, cmap='phase', extend='neither', colorbar='b')
     ax.format(title='Cyclic map with separate ends')
     for ax,extend in zip(axs[1:], ('min','max','neither','both')):
-        ax.pcolormesh(data, levels=levels, cmap='spectral', extend=extend, colorbar='b', colorbar_kw={'locator':90})
+        ax.pcolormesh(data[:,:10], levels=levels, cmap='oxy', extend=extend, colorbar='b', colorbar_kw={'locator':90})
         ax.format(title=f'Map with extend={extend}')
 
 
@@ -81,7 +81,7 @@ passed to the `~proplot.styletools.Norm` constructor.
     f, axs = plot.subplots(axcolorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
     data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
-    for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm (default)'))):
+    for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm'))):
         m = axs[i].contourf(data, levels=ticks, extend='both', cmap='Mako', norm=norm, colorbar='b')
         axs[i].format(title=title)
     axs.format(suptitle='Level normalizers demo')
