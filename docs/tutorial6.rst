@@ -209,14 +209,14 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
     ax.format(title='Column statistics')
     # Showing a standard deviation range instead of percentile range
     ax = axs[1]
-    ax.scatter(data, color='k', marker='x', markersize=50, barcolor='gray8',
+    ax.scatter(data, color='k', marker='x', markersize=50, barcolor='gray5',
                medians=True, barstd=True, barrange=(-1,1), barzorder=0, boxes=False, capsize=2)
     # Supplying error bar data manually
     ax = axs[2]
     boxdata = np.percentile(data, (25,75), axis=0)
     bardata = np.percentile(data, (5,95), axis=0)
-    ax.plot(data.mean(axis=0), lw=2, barlw=1, boxmarker=False, edgecolor='gray7', color='k',
-            boxdata=boxdata, bardata=bardata)
+    ax.plot(data.mean(axis=0), boxes=False, marker='o', markersize=5,
+            edgecolor='k', color='cerulean', boxdata=boxdata, bardata=bardata)
     # Formatting
     axs[0].format(ylabel='column number', title='Bar plot')
     axs[1].format(title='Scatter plot')
@@ -253,13 +253,14 @@ and positive area underneath a line, as shown below.
     f, axs = plot.subplots(array=[[1,2],[3,3]], hratios=(1,0.8), span=False, share=0)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
     data = np.random.rand(5,3).cumsum(axis=0)
+    cycle = ('gray3', 'gray5', 'gray7')
     ax = axs[0]
-    ax.areax(np.arange(5), data, data + np.random.rand(5)[:,None], alpha=0.5,
+    ax.areax(np.arange(5), data, data + np.random.rand(5)[:,None], cycle=cycle, alpha=0.5,
             legend='uc', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
             )
     ax.format(title='Fill between columns')
     ax = axs[1]
-    ax.area(np.arange(5), data, stacked=True, alpha=0.8,
+    ax.area(np.arange(5), data, stacked=True, cycle=cycle, alpha=0.8,
             legend='ul', legend_kw={'center':True, 'ncols':2, 'labels':['z','y','qqqq']},
             )
     ax.format(title='Stack between columns')
@@ -295,10 +296,10 @@ See `~proplot.wrappers.bar_wrapper` for details.
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
     data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
     ax = axs[0]
-    obj = ax.bar(data, cycle='Grays', colorbar='ul', colorbar_kw={'frameon':False})
+    obj = ax.bar(data, cycle='Reds', colorbar='ul', edgecolor='red9', colorbar_kw={'frameon':False})
     ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side', suptitle='Bar plot wrapper demo')
     ax = axs[1]
-    obj = ax.barh(data.iloc[::-1,:], cycle='Grays', legend='ur', stacked=True)
+    obj = ax.barh(data.iloc[::-1,:], cycle='Blues', legend='ur', edgecolor='blue9', stacked=True)
     ax.format(title='Stacked')
 
 
@@ -322,14 +323,15 @@ automatic axis labeling.
     import proplot as plot
     import numpy as np
     import pandas as pd
+    N = 500
     f, axs = plot.subplots(ncols=2)
-    data = np.random.normal(size=(20,5)) + 2*(np.random.rand(20,5)-0.5)
+    data = np.random.normal(size=(N,5)) + 2*(np.random.rand(N,5)-0.5)*np.arange(5)
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d','e'], name='xlabel'))
     ax = axs[0]
     obj1 = ax.boxplot(data, lw=0.7, marker='x', fillcolor='gray5', medianlw=1, mediancolor='k')#, boxprops={'color':'C0'})#, labels=data.columns)
     ax.format(title='Box plots', titleloc='uc')
     ax = axs[1]
-    obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', means=True)
+    obj2 = ax.violinplot(data, lw=0.7, fillcolor='gray7', points=500, bw_method=0.3, means=True)
     ax.format(title='Violin plots', titleloc='uc')
     axs.format(ymargin=0.1, xmargin=0.1, suptitle='Boxes and violins demo')
 

@@ -133,7 +133,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
         h = axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')
         hs.extend(h[0])
     f.bpanel[0].colorbar(m[0], length=0.8, label='label')
-    f.bpanel[1].legend(hs, ncols=5, label='label', frame=False)
+    f.bpanel[1].legend(hs, ncols=5, label='label', frame=True)
     axs.format(suptitle='Global colorbar and global legend', abc=True, abcloc='ul', abcformat='A')
     for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
         ax.format(xlabel='xlabel', title=title)

@@ -336,12 +336,13 @@ declare polar axes, pass ``proj='polar'`` or something like
     import numpy as np
     f, axs = plot.subplots(proj='polar', ncols=2)
     axs.format(suptitle='Polar axes demo', collabels=['With labels', 'Without labels'], collabelweight='normal')
-    N = 20
+    N = 200
     x = np.linspace(0, 2*np.pi, N)
-    y = np.random.rand(N,5).cumsum(axis=0) + 15*np.random.rand(N,5)
-    axs.plot(x, y, cycle='contrast', lw=3)
+    y = 100*(np.random.rand(N,5)-0.3).cumsum(axis=0)/N
+    for i in range(5):
+        axs.plot(x + i*2*np.pi/5, y[:,i], cycle='contrast', zorder=0, lw=3)
     axs.format(ticklabelsize=9, ticklabelweight='bold', ylocator=5, ylim=(0,19))
-    axs[0].format(xformatter='pi')
+    axs[0].format(xformatter='pi', ytickloc=45)
     axs[1].format(xformatter='none', yformatter='none')
 
 
