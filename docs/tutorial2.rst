@@ -6,9 +6,7 @@ Cartesian axes
 relevant to all figures generated with ProPlot, or with axes regardless
 of whether or not they are `~proplot.axes.ProjectionAxes`. This
 section documents the features specific to
-`~proplot.axes.CartesianAxes`. The examples are pretty boring, so I
-play with various rc settings (see :ref:`Global settings control` for
-details).
+`~proplot.axes.CartesianAxes`.
 
 Axis tick locations
 -------------------
