@@ -1266,8 +1266,12 @@ def Cycle(*args, samples=None, name=None, save=False,
     # If args is non-empty, means we want color cycle; otherwise is always black
     if not args:
         props['color'] = ['k'] # ensures property cycler is non empty
+        if kwargs:
+            warnings.warn(f'Ignoring keyword args {kwargs}.')
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         # Merge cycler objects
+        if kwargs:
+            warnings.warn(f'Ignoring keyword args {kwargs}.')
         if len(args)==1:
             return args[0]
         else:

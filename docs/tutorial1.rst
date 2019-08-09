@@ -159,10 +159,10 @@ a nice 2D grid, simply use 1D indexing.
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
-    axs[:,0].format(color='red')
-    axs[0,:].format(color='blue')
+    axs[:,0].format(color='red8')
+    axs[0,:].format(color='blue8')
     for ax in axs[1:,1:]:
-        ax.plot(np.random.rand(5,5), linestyle='--', color='gray7')
+        ax.plot(np.random.rand(10,4), color='gray7', cycle_kw={'linestyle':('-',':','--','-.')})
     axs[0].format(color='black', linewidth=2)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
 

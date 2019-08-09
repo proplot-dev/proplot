@@ -1468,10 +1468,11 @@ def cycle_wrapper(self, func, *args,
     # fact the same, below does not reset the color position, cycles us to start!
     if cycle is not None or cycle_kw:
         # Get the new cycler
+        cycle_args = () if cycle is None else (cycle,)
         cycle_kw = {**cycle_kw} # copy
         if not is1d and y.shape[1]>1: # default samples count
             cycle_kw.setdefault('samples', y.shape[1])
-        cycle = styletools.Cycle(cycle, **cycle_kw)
+        cycle = styletools.Cycle(*cycle_args, **cycle_kw)
         # Get the original property cycle
         # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
         # cycler object, so we must build up the keys again.
