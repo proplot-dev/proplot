@@ -120,8 +120,10 @@ __all__ = [
     'Formatter', 'Locator', 'Scale',
     'AutoFormatter', 'CutoffScaleFactory', 'ExpScaleFactory',
     'FracFormatter', 'InverseScale', 'InvertedScaleFactory',
+    'LogScale',
     'MercatorLatitudeScale', 'PowerScaleFactory', 'SimpleFormatter',
     'SineLatitudeScale',
+    'SymmetricalLogScale',
     ]
 
 #------------------------------------------------------------------------------#
