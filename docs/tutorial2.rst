@@ -234,12 +234,16 @@ details.
     plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=0.7,
                    figurefacecolor='w', facecolor=plot.shade('C0', 2.7))
     f, axs = plot.subplots(nrows=5, axwidth=6, aspect=(8,1), share=0, span=0, hspace=0.3)
+    # Default date locator enabled if you plot datetime data or set datetime limits
     axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02')),
-                  xrotation=0) # default date locator enabled if you plot datetime data or set datetime limits
+                  xrotation=0)
+    # Minor ticks every year, major every 10 years
     axs[1].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')), xrotation=0,
-                  xlocator=('year', 10), xformatter='\'%y') # minor ticks every month
+                  xlocator=('year', 10), xformatter='\'%y')
+    # Minor ticks every 10 minutes, major every 2 minutes
     axs[2].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')), xrotation=0,
-                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S') # minor ticks every 10 minutes, major every 2
+                  xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S')
+    # Month and year labels, with default tick label rotation
     axs[3].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
                   xlocator='year', xminorlocator='month', xformatter='%b %Y') # minor ticks every month
     axs[4].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
