@@ -355,24 +355,24 @@ def Scale(scale, *args, **kwargs):
 
     For the `scale` dictionary lookup, options are as follows.
 
-    ===============  =======================================  ====================================================
-    Key              Class or Factory                         Description
-    ===============  =======================================  ====================================================
-    ``'linear'``     `~matplotlib.scale.LinearScale`          Linear
-    ``'log'``        `~matplotlib.scale.LogScale`             Logarithmic
-    ``'symlog'``     `~matplotlib.scale.SymmetricalLogScale`  Logarithmic beyond finite space around zero
-    ``'logit'``      `~matplotlib.scale.LogitScale`           Logistic
-    ``'inverse'``    `InverseScale`                           Inverse
-    ``'sine'``       `SineLatitudeScale`                      Sine function (in degrees)
-    ``'mercator'``   `MercatorLatitudeScale`                  Mercator latitude function (in degrees)
-    ``'quadratic'``  `PowerScaleFactory` preset               Quadratic function
-    ``'cubic'``      `PowerScaleFactory` preset               Cubic function
-    ``'height'``     `ExpScaleFactory` preset                 Pressure (in hPa) linear in height
-    ``'pressure'``   `ExpScaleFactory` preset                 Height (in km) linear in pressure
-    ``'power'``      `PowerScaleFactory`                      Arbitrary power function
-    ``'exp'``        `ExpScaleFactory`                        Arbitrary exponential function
-    ``'cutoff'``     `CutoffScaleFactory`                     Arbitrary linear transformations
-    ===============  =======================================  ====================================================
+    ===============  ===============================  ====================================================
+    Key              Class or Factory                 Description
+    ===============  ===============================  ====================================================
+    ``'linear'``     `~matplotlib.scale.LinearScale`  Linear
+    ``'log'``        `LogScale`                       Logarithmic
+    ``'symlog'``     `SymmetricalLogScale`            Logarithmic beyond finite space around zero
+    ``'logit'``      `~matplotlib.scale.LogitScale`   Logistic
+    ``'inverse'``    `InverseScale`                   Inverse
+    ``'sine'``       `SineLatitudeScale`              Sine function (in degrees)
+    ``'mercator'``   `MercatorLatitudeScale`          Mercator latitude function (in degrees)
+    ``'quadratic'``  `PowerScaleFactory` preset       Quadratic function
+    ``'cubic'``      `PowerScaleFactory` preset       Cubic function
+    ``'height'``     `ExpScaleFactory` preset         Pressure (in hPa) linear in height
+    ``'pressure'``   `ExpScaleFactory` preset         Height (in km) linear in pressure
+    ``'power'``      `PowerScaleFactory`              Arbitrary power function
+    ``'exp'``        `ExpScaleFactory`                Arbitrary exponential function
+    ``'cutoff'``     `CutoffScaleFactory`             Arbitrary linear transformations
+    ===============  ===============================  ====================================================
 
     Returns
     -------
@@ -576,6 +576,84 @@ def FracFormatter(symbol='', number=1):
     return mticker.FuncFormatter(f)
 
 #------------------------------------------------------------------------------#
+# Simple scale overrides
+#------------------------------------------------------------------------------#
+# TODO: Submit matplotlib pull request, fix this! How has no one fixed this
+# already!
+def _parse_xyargs(axis, kwargs, keys):
+    """Parses args for `LogScale` and `SymmetricalLogScale`."""
+    name = axis.axis_name
+    if name not in ('x','y'):
+        raise ValueError(f'Axis {axis} with name "{axis.axis_name}" is invalid for log scale.')
+    for key in keys:
+        value = None
+        for suffix in ('','x','y'):
+            value = kwargs.pop(key + suffix, value)
+        if value is not None:
+            kwargs[key + name] = value
+    return kwargs
+
+class LogScale(mscale.LogScale):
+    """
+    As with `~matplotlib.scale.LogScale`, but fixes the inexplicable
+    choice to have separate "``x``" and "``y``" versions of each keyword argument.
+    """
+    name = 'log'
+    def __init__(self, axis, **kwargs):
+        """
+        Parameters
+        ----------
+        base : float, optional
+            The base of the logarithm. Defaults to ``10``.
+        nonpos : {'mask', 'clip'}, optional
+            Non-positive values in *x* or *y* can be masked as
+            invalid, or clipped to a very small positive number.
+        subs : list of int, optional
+            Default minor tick locations are on these multiples of each power of the
+            base. For example, ``subs=[1,2,5]`` draws ticks on 1, 2, 5, 10, 20, 50,
+            100, 200, 500, etc.
+        basex, basey, nonposx, nonposy, subsx, subsy
+            Aliases for the above keywords. These used to be conditional
+            on the *name* of the axis...... yikes.
+        """
+        kwargs = _parse_xyargs(axis, kwargs, ('base','nonpos','subs'))
+        super().__init__(axis, **kwargs)
+
+class SymmetricalLogScale(mscale.SymmetricalLogScale):
+    """
+    As with `~matplotlib.scale.SymmetricLogScale`, but fixes the inexplicable
+    choice to have separate "``x``" and "``y``" versions of each keyword argument.
+    """
+    name = 'symlog'
+    def __init__(self, axis, **kwargs):
+        """
+        Parameters
+        ----------
+        base : float, optional
+            The base of the logarithm. Defaults to ``10``.
+        linthresh : float, optional
+            Defines the range ``(-linthresh, linthresh)``, within which the plot is
+            linear.  This avoids having the plot go to infinity around zero. Defaults
+            to 2.
+        linscale : float, optional
+            This allows the linear range ``(-linthresh, linthresh)`` to be
+            stretched relative to the logarithmic range. Its value is the number of
+            decades to use for each half of the linear range. For example, when
+            `linscale` is ``1`` (the default), the space used for the positive and
+            negative halves of the linear range will be equal to one decade in
+            the logarithmic range.
+        subs : sequence of int, optional
+            Default minor tick locations are on these multiples of each power of the
+            base. For example, ``subs=[1,2,5]`` draws ticks on 1, 2, 5, 10, 20, 50,
+            100, 200, 500, etc.
+        basex, basey, linthreshx, linthreshy, linscalex, linscaley, subsx, subsy
+            Aliases for the above keywords. These used to be conditional
+            on the *name* of the axis...... yikes.
+        """
+        kwargs = _parse_xyargs(axis, kwargs, ('base','linthresh','linscale','subs'))
+        super().__init__(axis, **kwargs)
+
+#------------------------------------------------------------------------------#
 # Power axis scale
 #------------------------------------------------------------------------------#
 def PowerScaleFactory(power, inverse=False, name=None):
@@ -605,7 +683,6 @@ def PowerScaleFactory(power, inverse=False, name=None):
                 transform = _InvertedPowerTransform(power, minpos)
             self._transform = transform
         def limit_range_for_scale(self, vmin, vmax, minpos):
-            # return min(vmin, minpos), min(vmax, minpos)
             return vmin, vmax
         def set_default_locators_and_formatters(self, axis):
             axis.set_smart_bounds(True) # unnecessary?
@@ -696,7 +773,6 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
                 transform = _InvertedExpTransform(base, exp, scale, minpos)
             self._transform = transform
         def limit_range_for_scale(self, vmin, vmax, minpos):
-            # return min(vmin, minpos), min(vmax, minpos)
             return vmin, vmax
         def set_default_locators_and_formatters(self, axis):
             axis.set_smart_bounds(True) # unnecessary?
@@ -798,9 +874,9 @@ def CutoffScaleFactory(scale, lower, upper=None):
         def get_transform(self):
             return self._transform
         def set_default_locators_and_formatters(self, axis):
+            axis.set_smart_bounds(True) # may prevent ticks from extending off sides
             axis.set_major_formatter(Formatter('default'))
             axis.set_minor_formatter(Formatter('null'))
-            axis.set_smart_bounds(True) # may prevent ticks from extending off sides
 
     class _CutoffTransform(mtransforms.Transform):
         # Create transform object
@@ -873,7 +949,7 @@ def CutoffScaleFactory(scale, lower, upper=None):
     return CutoffScale
 
 #------------------------------------------------------------------------------#
-# Geographic axes
+# Cartographic scales
 #------------------------------------------------------------------------------#
 class MercatorLatitudeScale(mscale.ScaleBase):
     r"""
@@ -1057,7 +1133,7 @@ class InverseScale(mscale.ScaleBase):
         # TODO: Fix minor locator issue
         # NOTE: Log formatter can ignore certain major ticks! Why is that?
         axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-        axis.set_major_locator(mticker.LogLocator(base=10, subs=[1, 2, 5]))
+        axis.set_major_locator(mticker.LogLocator(base=10, subs=(1, 2, 5)))
         axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
         axis.set_major_formatter(Formatter('default')) # use 'log' instead?
         axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
@@ -1138,12 +1214,14 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
 `Formatter` for a table."""
 
 # Register scale names, so user can set_xscale and set_yscale with strings.
-# Misc
+# Custom scales and overrides
+mscale.register_scale(LogScale)
+mscale.register_scale(SymmetricalLogScale)
 mscale.register_scale(InverseScale)
 # Common powers
 PowerScaleFactory(2, 'quadratic')
 PowerScaleFactory(3, 'cubic')
-# Geographic coordinates
+# Cartographic coordinates
 mscale.register_scale(SineLatitudeScale)
 mscale.register_scale(MercatorLatitudeScale)
 # Height coordinates

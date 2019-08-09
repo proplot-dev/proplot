@@ -109,34 +109,43 @@ See `~proplot.axes.CartesianAxes.format_partial` and
 Axis scales
 -----------
 
-The axis scale (e.g. ``'log'``, ``'linear'``) can now be changed with
-`~proplot.axes.BaseAxes.format`, and ProPlot adds several new ones.
-The ``'cutoff'`` scale is great when you have weirdly distributed data
-(see `~proplot.axistools.CutoffScaleFactory`). The ``'sine'`` scale
-scales the axis as the sine of the coordinate, resulting in an
-“area-weighted” spherical latitude coordinate. The ``'inverse'`` scale
-is perfect for labeling spectral coordinates (this is more useful with
-the `~proplot.axes.CartesianAxes.dualx` and
+The axis scale can now be changed with
+`~proplot.axes.BaseAxes.format`, and you can now use simpler keyword
+args to configure the ``'log'`` and ``'symlog'`` axis scales. See
+`~proplot.axes.CartesianAxes.format_partial`,
+`~proplot.axistools.Scale`, `~proplot.axistools.LogScale` and
+`~proplot.axistools.SymmetricalLogScale` for details.
+
+ProPlot also adds several new axis scales. The ``'cutoff'`` scale is
+great when you have weirdly distributed data (see
+`~proplot.axistools.CutoffScaleFactory`). The ``'sine'`` scale scales
+the axis as the sine of the coordinate, resulting in an “area-weighted”
+spherical latitude coordinate. The ``'inverse'`` scale is perfect for
+labeling spectral coordinates (this is more useful with the
+`~proplot.axes.CartesianAxes.dualx` and
 `~proplot.axes.CartesianAxes.dualy` commands; see
-:ref:`Dual unit axes`). See
-`~proplot.axes.CartesianAxes.format_partial` and
-`~proplot.axistools.Scale` for details.
+:ref:`Dual unit axes`).
 
 .. code:: ipython3
 
     import proplot as plot
+    import numpy as np
     plot.rc.reset()
     plot.rc.update({'linewidth':1, 'ticklabelweight':'bold', 'axeslabelweight':'bold'})
     N = 200
-    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=0, span=False)
-    ax = axs[0]
-    ax.format(xlim=(0,1), ylim=(1e-3, 1e3), xscale='linear', yscale='log',
-              ylabel='log scale', xlabel='linear scale', suptitle='Changing the axis scale')
-    ax.plot(np.linspace(0,1,N), np.linspace(0,1000,N))
-    ax = axs[1]
-    ax.format(ylim=(-1e3, 1e3), yscale='symlog', yscale_kw={'linthreshy':1}, xscale='logit',
-              xlabel='logit scale', ylabel='symlog scale')
-    ax.plot(np.linspace(0.01,0.99,N), np.linspace(-1000,1000,N))
+    f, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.8, share=0, span=False)
+    axs.format(suptitle='Changing the axis scale')
+    # Linear and log scales
+    axs[0].format(yscale='linear', ylabel='linear scale')
+    axs[1].format(ylim=(1e-3, 1e3), yscale='log', yscale_kw={'subs':np.arange(1,10)}, ylabel='log scale')
+    axs[:2].plot(np.linspace(0,1,N), np.linspace(0,1000,N))
+    # Symlog and logit scales
+    ax = axs[2]
+    ax.format(yscale='symlog', yscale_kw={'linthresh':1}, ylabel='symlog scale')
+    ax.plot(np.linspace(0,1,N), np.linspace(-1000,1000,N))
+    ax = axs[3]
+    ax.format(yscale='logit', ylabel='symlog scale')
+    ax.plot(np.linspace(0,1,N), np.linspace(0.01,0.99,N))
 
 
 
