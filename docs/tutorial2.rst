@@ -6,7 +6,9 @@ Cartesian axes
 relevant to all figures generated with ProPlot, or with axes regardless
 of whether or not they are `~proplot.axes.ProjectionAxes`. This
 section documents the features specific to
-`~proplot.axes.CartesianAxes`.
+`~proplot.axes.CartesianAxes`. The examples are pretty boring, so I
+play with various rc settings (see :ref:`Global settings control` for
+details).
 
 Axis tick locations
 -------------------
@@ -213,8 +215,8 @@ the `~proplot.axes.CartesianAxes.dualx` and
 .. image:: tutorial/tutorial_42_0.svg
 
 
-Datetime axis formatting
-------------------------
+Datetime axes
+-------------
 
 Labeling datetime axes is incredibly easy with ProPlot. Pass a time-unit
 string as the ``locator`` argument, and the axis will be ticked at those
