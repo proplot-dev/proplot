@@ -1388,7 +1388,7 @@ class CartesianAxes(BaseAxes):
                     iaxis.isDefault_minfmt = True
                     iax._update_transScale()
                     iax.stale = True
-                iax.autoscale_view(**{'scale' + ('y' if xyname=='x' else 'x'):False})
+                self.autoscale_view(**{'scale' + ('y' if xyname=='x' else 'x'):False})
             # Axis limits, we can still use the default API for this
             if lim is not None:
                 getattr(self, f'set_{xyname}lim')(lim)
