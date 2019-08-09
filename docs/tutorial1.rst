@@ -7,10 +7,8 @@ The subplots command
 Matplotlib has `two
 APIs <https://matplotlib.org/api/api_overview.html>`__ – the “pyplot”
 API (which is MATLAB-like), and the “object-oriented” API (which is more
-“pythonic”). This package is not meant to be a pyplot replacement –
-ProPlot’s features are invoked with the “object-oriented” API, using the
-axes and figure classes returned by ProPlot’s version of the
-`~proplot.subplots.subplots` command.
+“pythonic”). This package is not meant to be a pyplot replacement – its
+features are invoked with the “object-oriented” API.
 
 `~proplot.subplots.subplots` is your gateway to all of ProPlot’s
 features. It returns a special `~proplot.subplots.Figure` instance and
