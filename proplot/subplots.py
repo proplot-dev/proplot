@@ -2163,7 +2163,7 @@ def subplots(array=None, ncols=1, nrows=1,
           `lsep`, `rsep`, or `bsep` figure panel keyword args. ``True`` otherwise.
         * `tightpanels` defaults to ``False`` if user provided the `lspace`,
           `rspace`, `tspace`, `bspace`, `lsep`, `rsep`, `tsep`, or `bsep` axes
-          panel keyword args with e.g. the `axpanels_kw` dictionary, ``True``
+          panel keyword args with e.g. the `axpanels_kw` dictionary. ``True``
           otherwise.
 
     Returns
@@ -2173,9 +2173,9 @@ def subplots(array=None, ncols=1, nrows=1,
     axs : `axes_grid`
         A special list of axes instances. See `axes_grid`.
 
-    Note
-    ----
+
     The current options for the `journal` keyword argument are as follows.
+    Feel free to submit a pull request if you'd like to add additional standards.
 
     ==============================================  ==============================================================  =========================================================================================================================================================
     Key(s)                                          Size description(s)                                             Organization
@@ -2184,8 +2184,6 @@ def subplots(array=None, ncols=1, nrows=1,
     ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
     ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
     ==============================================  ==============================================================  =========================================================================================================================================================
-
-    Feel free to submit a pull request if you'd like to add additional standards.
     """
     # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
     # axes sharing mode where we *disable ticklabels and labels*, but *do not
