@@ -222,7 +222,7 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,6,6]], wratios=(1,1,2), share=0, span=0, axwidth=1.5)
+    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,6,6]], wratios=(1,1,2), share=0, span=False, axwidth=1.5)
     axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Automatic spacing and aspect ratio conservation')
     axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
     axs[2:4].format(yformatter='null', title='Title', ytickloc='both')
@@ -267,7 +267,7 @@ example for details.
     import numpy as np
     N = 50
     M = 40
-    colors = plot.colors('grays_r', M, 90, left=0.1, right=0.8)
+    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
     for share in (0,1,2,3):
         f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
@@ -298,6 +298,7 @@ example for details.
 
     import proplot as plot
     import numpy as np
+    plot.rc.reset()
     plot.rc.cycle = 'Set3'
     titles = ['With redundant labels', 'Without redundant labels']
     for mode in (0,1):

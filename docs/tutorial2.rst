@@ -33,14 +33,12 @@ usually what you’ll want in this context. See
     f, axs = plot.subplots(nrows=5, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
     # Custom locations
     axs[0].format(xlim=(0,200), xminorlocator=10, xlocator=30, suptitle='Declaring tick locations with ProPlot')
-    axs[1].format(xlim=(0,10), xlocator=[0, 0.3,0.8,1.6, 4.4, 8, 8.8, 10], xminorlocator=0.1)
+    axs[1].format(xlim=(0,10), xlocator=[0,0.3,0.8,1.6,4.4,8,8.8,10], xminorlocator=0.1)
     # Locator classes
-    axs[2].format(xlim=(1,100), xscale='log', xlocator='log')
-    axs[3].format(xlim=(1,10), xscale='inverse', xlocator='linear')
-    # Index locator
-    axs[4].plot(np.arange(10)-5, np.random.rand(10), alpha=0) # index locators 
-    axs[4].format(xlim=(0,6), xlocator='index',
-                  xformatter=[r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$', r'$\epsilon$', r'$\zeta$', r'$\eta$'])
+    axs[3].format(xlim=(1,10), xlocator=('maxn',20)) # specify the approx number of ticks you want, but not locations
+    axs[2].format(xlim=(1,100), xlocator='log', xminorlocator='logminor') # automatically applied for log scale plots
+    axs[4].plot(np.arange(10)-5, np.random.rand(10), alpha=0) # index locator, something must be plotted for it to work 
+    axs[4].format(xlim=(0,6), xlocator='index', xformatter=[r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$', r'$\epsilon$', r'$\zeta$', r'$\eta$'])
 
 
 

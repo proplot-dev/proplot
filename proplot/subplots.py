@@ -636,26 +636,22 @@ class Figure(mfigure.Figure):
         name = axis.axis_name
         if name not in 'xy': # i.e. theta or radius
             return
-        bail = False
         base = axis.axes
         for _ in range(2): # try 2 levels down, should be sufficient
             base = getattr(base, '_share' + name, None) or base
-        if not getattr(base, '_span'  + name):
+        span_on = getattr(base, '_span'  + name)
+        if not span_on:
             axes = [getattr(base, name + 'axis')]
-            span = False
         else:
-            # Get the 'edge' we want to share (bottom row, or leftmost column)
-            # Identify the *main* axes spanning this edge, and if those axes have
-            # a panel and are shared with it, point to the panel label
             if name=='x':
                 axs = [ax for ax in self._main_axes if ax._yrange[1]==base._yrange[1]]
             else:
                 axs = [ax for ax in self._main_axes if ax._xrange[0]==base._xrange[0]]
-            ranges = np.array([getattr(ax, '_' + name + 'range') for ax in axs])
             axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axs]
+
         # Apply settings and store list of spanning axes
         for axis in axes:
-            if span and axis not in self._spanning_axes:
+            if span_on and axis not in self._spanning_axes:
                 self._spanning_axes.append(axis)
             if axis.get_label_position() == 'top':
                 kwargs['va'] = 'bottom' # baseline gets cramped if no ticklabels present
@@ -663,9 +659,10 @@ class Figure(mfigure.Figure):
 
         # If requested, turn on spanning
         # TODO: Use tightbbox for this?
-        if span:
+        if span and span_on:
             # Use halfway-point axis for spanning label, because if we have an
             # odd number of columns or rows, that transform gives us perfect offset
+            ranges = np.array([getattr(ax, '_' + name + 'range') for ax in axs])
             half = (np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2
             saxis = axes[half]
             for axis in axes:
