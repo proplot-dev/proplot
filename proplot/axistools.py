@@ -4,7 +4,6 @@ Defines various axis scales, locators, and formatters. Also "registers"
 the locator and formatter names, so that they can be called selected with
 the `~proplot.axes.CartesianAxes.format` method.
 """
-################################################################################
 # Developer notes section?
 # Too damn long, comments are fine.
 # .. raw:: html
@@ -102,7 +101,6 @@ the `~proplot.axes.CartesianAxes.format` method.
 # The matplotlib default `~matplotlib.ticker.ScalarFormatter` is much more
 # complex, but can be overridden in the typical way: adding stuff to the
 # `__init__` and `__call__` methods.
-#------------------------------------------------------------------------------#
 import re
 from .utils import _default
 from .rctools import rc
