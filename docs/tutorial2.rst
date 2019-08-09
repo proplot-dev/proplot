@@ -144,7 +144,7 @@ labeling spectral coordinates (this is more useful with the
     ax.format(yscale='symlog', yscale_kw={'linthresh':1}, ylabel='symlog scale')
     ax.plot(np.linspace(0,1,N), np.linspace(-1000,1000,N))
     ax = axs[3]
-    ax.format(yscale='logit', ylabel='symlog scale')
+    ax.format(yscale='logit', ylabel='logit scale')
     ax.plot(np.linspace(0,1,N), np.linspace(0.01,0.99,N))
 
 
