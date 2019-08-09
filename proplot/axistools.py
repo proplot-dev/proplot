@@ -337,24 +337,20 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
 def Scale(scale, *args, **kwargs):
     """
-    Returns the name for a registered or "on-the-fly" generated
-    `~matplotlib.scale.ScaleBase` class, used to interpret the `xscale`,
-    `xscale_kw`, `yscale`, and `yscale_kw` arguments when passed to
+    Returns a `~matplotlib.scale.ScaleBase` subclass, used to interpret the
+    `xscale`, `xscale_kw`, `yscale`, and `yscale_kw` arguments when passed to
     `~proplot.axes.CartesianAxes.format_partial`.
 
     Parameters
     ----------
-    scale : str or (str, ...)
+    scale : str, (str, ...), or class
         The string represents the registered scale name or corresponds to a
         scale factory function (see below table).
 
-        If a tuple or list was passed, the items after the string are passed
-        as positional arguments to the corresponding scale factory function.
-        They are ignored if the string name does not correspond to a factory
-        function.
-    **kwargs
-        Passed to the scale factory function. Ignored if the scale name does
-        not correspond to a factory function.
+        If a tuple or list was passed, the items after the string are used
+        as positional arguments.
+    *args, **kwargs
+        Passed to the factory function, or simply returned.
 
 
     For the `scale` dictionary lookup, options are as follows.
@@ -380,45 +376,53 @@ def Scale(scale, *args, **kwargs):
 
     Returns
     -------
-    `~matplotlib.scale.ScaleBase`
-        A `~matplotlib.scale.ScaleBase` instance.
+    scale
+        A `~matplotlib.scale.ScaleBase` subclass.
+    *args, **kwargs
+        Positional and keyword arguments to be used for initializing the axis scale.
     """
-    if isinstance(scale, mscale.ScaleBase):
+    if isinstance(scale, type):
+        # User-supplied scale class
         mscale.register_scale(scale) # ensure it is registered!
-        return scale.name
-    # Pull out extra args
-    if np.iterable(scale) and not isinstance(scale, str):
-        scale, args = scale[0], (*scale[1:], *args)
-    # Lookup
-    if scale in scales:
-        if args:
-            warnings.warn(f'Scale constructor ignored positional arguments {args}.')
-        if kwargs:
-            warnings.warn(f'Scale constructor ignored keyword arguments {kwargs}.')
-        return scale # already registered
-    # Build an on-the-fly scale
-    # NOTE: The factories register the scales in one go
-    if scale=='exp':
-        return ExpScaleFactory(*args, **kwargs)
-    elif scale=='power':
-        return PowerScaleFactory(*args, **kwargs)
-    elif scale=='cutoff':
-        return CutoffScaleFactory(*args, **kwargs)
     else:
-        raise ValueError(f'Unknown scale {scale}. Options are {", ".join(scales.keys())}.')
+        # Pull out extra args
+        if np.iterable(scale) and not isinstance(scale, str):
+            scale, args = scale[0], (*scale[1:], *args)
+        if not isinstance(scale, str):
+            raise ValueError(f'Invalid scale name "{scale}". Must be string.')
+        # Instantiate existing scales or build on-the-fly scales
+        scale = scale.lower()
+        if scale in scales:
+            scale = scales[scale]
+        else:
+            args, kwargs = [], {}
+            if scale=='exp':
+                scale = ExpScaleFactory(*args, **kwargs)
+            elif scale=='power':
+                scale = PowerScaleFactory(*args, **kwargs)
+            elif scale=='cutoff':
+                scale = CutoffScaleFactory(*args, **kwargs)
+            else:
+                raise ValueError(f'Unknown scale "{scale}". Options are {", ".join(scales.keys())}.')
+    return scale, args, kwargs
 
-def InvertedScaleFactory(scale, name=None, **kwargs):
+def InvertedScaleFactory(scale, name=None):
     """Returns name of newly registered *inverted* version of the
-    `~matplotlib.scale.ScaleBase` corresponding to the scale name. The
-    scale name `name` defaults to ``'{scale}_{inverted}'``."""
-    scale = Scale(scale, **kwargs) # get the class
-    name_ = name or f'{scale}_inverted' # name of inverted version
-    class Inverted(scales[scale]):
+    `~matplotlib.scale.ScaleBase` specified by ``scale``. The scale name
+    defaults to ``'{scale}_inverted'``."""
+    if not isinstance(scale, str):
+        raise ValueError(f'Invalid scale name "{scale}". Must be string.')
+    if scale in scales:
+        scale = scales[scale]
+    else:
+        raise ValueError(f'Unknown scale "{scale}". Options are {", ".join(scales.keys())}.')
+    name_ = name or f'{scale.name}_inverted' # name of inverted version
+    class Inverted(scale):
         name = name_
         def get_transform(self):
             return super().get_transform().inverted() # that's all we need!
     mscale.register_scale(Inverted)
-    return name_
+    return Inverted
 
 #-------------------------------------------------------------------------------
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
@@ -612,7 +616,7 @@ def PowerScaleFactory(power, inverse=False, name=None):
 
     # Register and return
     mscale.register_scale(PowerScale)
-    return name_
+    return PowerScale
 
 class _PowerTransform(mtransforms.Transform):
     """Power transform."""
@@ -703,7 +707,7 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
 
     # Register and return
     mscale.register_scale(ExpScale)
-    return name_
+    return ExpScale
 
 class _ExpTransform(mtransforms.Transform):
     """Exponential coordinate transform."""
@@ -866,7 +870,7 @@ def CutoffScaleFactory(scale, lower, upper=None):
 
     # Register and return
     mscale.register_scale(CutoffScale)
-    return name_
+    return CutoffScale
 
 #------------------------------------------------------------------------------#
 # Geographic axes

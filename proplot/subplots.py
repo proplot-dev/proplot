@@ -716,20 +716,16 @@ class Figure(mfigure.Figure):
                     lim = lim[::-1]
                 getattr(twin, f'set_{xy}lim')(scale[0] + scale[1]*lim)
             # Axis rotation, if user drew anything that triggered datetime x-axis
-            # WARNING: Rotation is done *before* horizontal/vertical alignment
-            # for normal text, and *after* when using set_tick_params.
-            # WARNING: Do not just use set_tick_params rotation because will mess up
-            # alignment, and do not use fig.autofmt_xdate becuase messes up other plots.
-            # See discussion: https://stackoverflow.com/q/11264521/4970632
+            # WARNING: Rotation is done *before* horizontal/vertical alignment, and
+            # cannot change alignment with set_tick_params. Need to iterate through
+            # text objects. Also do not use fig.autofmt_date, it calls subplots_adjust
             if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
-                # axis.set_tick_params(which='both', rotation=rotation) # weird alignment
                 rotation = rc['axes.formatter.timerotation']
-                rotation = 90
-                ax.xaxis.set_tick_params(labelrotation=rotation)
-                # ha = 'right' if rotation>0 else 'left'
-                # for label in ax.xaxis.get_ticklabels():
-                #     label.update({'rotation':rotation})
-                #     # label.update({'rotation':rotation, 'ha':'right' if rotation>0 else 'left'})
+                kw = {'rotation':rotation}
+                if rotation not in (0,90,-90):
+                    kw['ha'] = ('right' if rotation>0 else 'left')
+                for label in ax.xaxis.get_ticklabels():
+                    label.update(kw)
             # Automatic labels and colorbars for plot
             # NOTE: The legend wrapper supports multiple legends in one axes
             # by adding legend artists manually.

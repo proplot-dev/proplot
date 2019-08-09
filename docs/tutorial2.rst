@@ -122,23 +122,32 @@ the `~proplot.axes.CartesianAxes.dualx` and
 
     import proplot as plot
     plot.rc.reset()
+    plot.rc.update({'linewidth':1, 'ticklabelweight':'bold', 'axeslabelweight':'bold'})
+    N = 200
     f, axs = plot.subplots(ncols=2, axwidth=1.8, share=0, span=False)
     ax = axs[0]
     ax.format(xlim=(0,1), ylim=(1e-3, 1e3), xscale='linear', yscale='log',
-              ylabel='log scale', xlabel='linear scale', suptitle='Changing the axis scale with ProPlot')
+              ylabel='log scale', xlabel='linear scale', suptitle='Changing the axis scale')
+    ax.plot(np.linspace(0,1,N), np.linspace(0,1000,N))
     ax = axs[1]
-    ax.format(xlim=(0,1), ylim=(-1e3, 1e3), yscale='symlog', xlabel='linear', ylabel='symlog scale')
+    ax.format(ylim=(-1e3, 1e3), yscale='symlog', yscale_kw={'linthreshy':1}, xscale='logit',
+              xlabel='logit scale', ylabel='symlog scale')
+    ax.plot(np.linspace(0.01,0.99,N), np.linspace(-1000,1000,N))
 
 
 
-.. image:: tutorial/tutorial_40_0.svg
+
+
+
+
+.. image:: tutorial/tutorial_40_1.svg
 
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    # plot.rc.fontname = 'Verdana'
+    plot.rc.reset()
     f, axs = plot.subplots(width=6, nrows=4, aspect=(5,1), sharey=False, sharex=False)
     # Compression
     ax = axs[0]
@@ -204,8 +213,8 @@ the `~proplot.axes.CartesianAxes.dualx` and
 .. image:: tutorial/tutorial_42_0.svg
 
 
-Time axis formatting
---------------------
+Datetime axis formatting
+------------------------
 
 Labeling datetime axes is incredibly easy with ProPlot. Pass a time-unit
 string as the ``locator`` argument, and the axis will be ticked at those
@@ -221,7 +230,7 @@ details.
     import proplot as plot
     import numpy as np
     plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=0.7,
-                   figurefacecolor='w', facecolor=plot.shade('C0', 2.7), abcformat='BBBa')
+                   figurefacecolor='w', facecolor=plot.shade('C0', 2.7))
     f, axs = plot.subplots(nrows=5, axwidth=6, aspect=(8,1), share=0, span=0, hspace=0.3)
     axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02')),
                   xrotation=0) # default date locator enabled if you plot datetime data or set datetime limits
@@ -311,7 +320,7 @@ pass the name of any registered “axis scale” to the ``xscale`` or
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
     ax.dualx(xscale='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
               xlabel='period (days)',
-              title='Imgaginary response function',
+              title='Imaginary response function',
               suptitle='Duplicate x-axes with wavenumber and period', 
               )
 

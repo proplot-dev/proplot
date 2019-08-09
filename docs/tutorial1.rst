@@ -400,6 +400,7 @@ more on panels, see the :ref:`Panels and insets` section.
         'cat':xr.DataArray(np.arange(0,80,10), dims=('cat',), attrs={'long_name':'parameter', 'units':'K'})
         }, name='position series')
     # DataFrame
+    plot.rc.reset()
     ts = pd.date_range('1/1/2000', periods=20)
     data = (np.cos(np.linspace(0, 2*np.pi, 20))**4)[:,None] + np.random.rand(20,5)**2
     df = pd.DataFrame(data, index=ts, columns=['foo','bar','baz','zap','baf'])
@@ -409,28 +410,21 @@ more on panels, see the :ref:`Panels and insets` section.
     # Series
     series = pd.Series(np.random.rand(20).cumsum())
     # Figure
-    f, axs = plot.subplots(ncols=2, figsize=(5,3), axwidth=1.8, share=False, span=False)
+    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=False, span=False)
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
     color = plot.shade('sky blue', 0.3)
     cycle_kw = {'fade':90, 'space':'hcl'}
-    ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3,
-            colorbar='ll', colorbar_kw={'length':'2cm', 'frameon':True, 'locator':20})
+    ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3, colorbar='ul', colorbar_kw={'frame':True, 'locator':20})
     # Plot Dataframe
     ax = axs[1]
     color = plot.shade('jade', 0.7)
     ax.plot(df, cycle=color, cycle_kw=cycle_kw, legend='uc', legend_kw={'frameon':True}, lw=3)
-    # ax.format(xrotation=45)
 
 
 
-
-
-
-
-
-.. image:: tutorial/tutorial_25_2.svg
+.. image:: tutorial/tutorial_25_0.svg
 
 
 .. code:: ipython3
