@@ -169,24 +169,24 @@ panel in the first column, second from the top.
     import numpy as np
     f, axs = plot.subplots(nrows=2, axwidth='4cm', span=False, share=0,
                           axcolorbars='l', axcolorbars_kw={'stack':3},
-                          axpanels='r', axpanels_kw={'stack':2, 'flush':True, 'width':0.5}
-                          )
+                          axpanels='r', axpanels_kw={'stack':2, 'flush':True, 'width':0.5})
     axs[0].format(title='Stacked panel demo', titleweight='bold')
     # Draw stuff in axes
-    n = 10
+    N = 10
     for ax in axs:
         # Colormap data
         ax.format(xlabel='data', xlocator=np.linspace(0, 0.8, 5))
         for i,(x0,y0,x1,y1,cmap,scale) in enumerate(((0,0.5,1,1,'grays',0.5), (0,0,0.5,0.5,'reds',1), (0.5,0,1,0.5,'blues',2))):
-            data = np.random.rand(n,n)*scale
+            data = np.random.rand(N,N)*scale
             x, y = np.linspace(x0, x1, 11), np.linspace(y0, y1, 11)
             m = ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0,scale,11))
             ax.lpanel[i].colorbar(m)
         # Plot data
         for i,pax in enumerate(ax.rpanel):
             func = data.mean if i==0 else data.std
+            label = ('mean' if i==0 else 'stdev')
             pax.plot(func(axis=1), plot.arange(0.05, 0.95, 0.1), lw=2, color='k')
-            pax.format(xlabel='mean' if i==0 else 'stdev', xlim=(0,1), xlocator=(0,0.5))
+            pax.format(yticklen=0, xlabel=label, xlim=(0,1), xlocator=(0,0.5))
 
 
 
@@ -228,7 +228,7 @@ change outline, divider, tick, tick label, and colorbar label settings.
     import numpy as np
     # Original
     plot.rc.cycle = 'qual2'
-    f, axs = plot.subplots(ncols=2, axcolorbar='b', tight=True, axwidth=2.5, aspect=1.5, share=0)
+    f, axs = plot.subplots(ncols=2, axcolorbars='b', span=False, share=0)
     ax = axs[0]
     m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
@@ -264,10 +264,9 @@ hidden.
 
 You can also draw an *inset* or “*filled*” legend by passing the
 ``legend`` keyword arg to methods wrapped by
-`~proplot.styletools.cycle_wrapper`. Or, you can draw a “filled”
-legend by calling `~proplot.axes.BaseAxes.legend` on the *main* axes
-with e.g. ``loc='bottom'`` (see `~proplot.axes.BaseAxes.legend` for
-details).
+`~proplot.styletools.cycle_wrapper`. Or, you can “fill” a panel with a
+legend by calling `~proplot.axes.BaseAxes.legend` on the *parent* of
+that panel with e.g. ``loc='b'``, as in the example below.
 
 ProPlot adds several new features to the
 `~matplotlib.axes.Axes.legend` command, powered by
@@ -286,26 +285,27 @@ handle properties.
     import numpy as np
     plot.rc.cycle = 'contrast'
     labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
-    f, axs = plot.subplots(ncols=2, legends='b', panels='r', span=0, share=1)
+    f, axs = plot.subplots(ncols=2, axlegends={1:'b', 2:'br'}, span=0, share=1)
     hs1, hs2 = [], []
-    # Plot lines and draw inner legends
+    # Plot lines and add to legends on-the-fly
     for i,label in enumerate(labels):
         data = (np.random.rand(20)-0.45).cumsum(axis=0)
         h1 = axs[0].plot(data, lw=4, label=label, legend='ul', legend_kw={'order':'F'}) # add to legend in upper left
         hs1.extend(h1)
-        h2 = axs[1].plot(data, lw=4, label=label, cycle='floral')
+        h2 = axs[1].plot(data, lw=4, label=label, legend='r', legend_kw={'ncols':1}, cycle='floral') # add to legend in right panel
         hs2.extend(h2)
     # Outer legends
-    f.bpanel[0].legend(hs1, ncols=3, center=False, frameon=True)
-    f.bpanel[1].legend(hs2, ncols=3, center=True)
-    f.rpanel.legend(hs2, ncols=1, center=True, frame=False)
+    ax = axs[0]
+    ax.format(title='Inset and panel legends')
+    ax.bpanel.legend(hs1, ncols=3, center=False, frame=True)
+    # axs[0].legend(hs1, loc='b', ncols=3, center=False, frame=True) # also works!
+    ax = axs[1]
+    ax.format(title='Row-centered legends')
+    ax.legend(hs2, loc='b', ncols=3, center=True) # also works!
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='ProPlot legends')
-    for ax,title in zip(axs, ['Inset and panel legends', 'Row-centered legends']):
-        ax.format(title=title)
 
 
 
-
-.. image:: tutorial/tutorial_91_1.svg
+.. image:: tutorial/tutorial_91_0.svg
 
 

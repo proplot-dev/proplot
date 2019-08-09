@@ -1139,8 +1139,6 @@ class CartesianAxes(BaseAxes):
 
     def format_partial(self,
         xloc=None, yloc=None, # aliases for 'where to put spine'
-        xmargin=None, ymargin=None,
-        xcolor=None, ycolor=None, # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
         xspineloc=None, yspineloc=None, # deals with spine options
         xtickloc=None, ytickloc=None, fixticks=False, # whether to always transform locator to FixedLocator
         xlabelloc=None, ylabelloc=None,
@@ -1154,12 +1152,15 @@ class CartesianAxes(BaseAxes):
         xreverse=False, yreverse=False, # special properties
         xlabel=None, ylabel=None, # axis labels
         xlim=None, ylim=None,
-        xbounds=None, ybounds=None, # limit spine bounds?
         xscale=None, yscale=None,
         xrotation=None, yrotation=None, # tick label rotation
         xformatter=None, yformatter=None, xticklabels=None, yticklabels=None,
         xticks=None, xminorticks=None, xlocator=None, xminorlocator=None,
         yticks=None, yminorticks=None, ylocator=None, yminorlocator=None, # locators, or derivatives that are passed to locators
+        xbounds=None, ybounds=None, # limit spine bounds?
+        xmargin=None, ymargin=None,
+        xcolor=None, ycolor=None, # separate color for x or y axis spines, ticks, tick labels, and axis labels; useful for twin axes
+        xticklen=None, yticklen=None, # separate tick lengths for x and y axis spines
         xlabel_kw={}, ylabel_kw={},
         xscale_kw={}, yscale_kw={},
         xlocator_kw={}, ylocator_kw={},
@@ -1245,10 +1246,25 @@ class CartesianAxes(BaseAxes):
             are labelled. For example, the tick range ``(-1,1)`` with
             axis range ``(-5,5)`` and a tick interval of 1 will only
             label the ticks marks at -1, 0, and 1.
+        xmargin, ymargin : float, optional
+            The default margin between plotted content and the *x* and *y*
+            axis spines. Value is proportional to the width, height of the axes.
+            Use this if you want whitespace between plotted content
+            and the spines, but don't want to explicitly set `xlim` or `ylim`.
         xbounds, ybounds : (float, float), optional
             The *x* and *y* axis data bounds within which to draw the spines.
             For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
             will prevent the spines from meeting at the origin.
+        xcolor, ycolor : color-spec, optional
+            Color for the *x* and *y* axis spines, ticks, tick labels, and axis
+            labels. Defaults to ``rc['color']``. Use e.g. ``ax.format(color='red')``
+            to set for both axes.
+        xticklen, yticklen : float or str, optional
+            Tick lengths for the *x* and *y* axis. If float, units are points.
+            If string, units are interpreted by `~proplot.utils.units`. Defaults
+            to ``rc['ticklen']``. Minor tick lengths are scaled according
+            to ``rc['ticklenratio']``. Use e.g. ``ax.format(ticklen=1)`` to
+            set for both axes.
         fixticks : bool, optional
             Whether to always transform the tick locators to a
             `~matplotlib.ticker.FixedLocator` instance. Defaults to ``False``.
@@ -1333,13 +1349,13 @@ class CartesianAxes(BaseAxes):
             ylabelloc = 'left'
 
         # Begin loop
-        for (axis, label, color, margin,
+        for (axis, label, color, ticklen, margin,
             tickloc, spineloc, ticklabelloc, labelloc,
             bounds, grid, gridminor, tickminor, tickminorlocator,
             lim, reverse, scale, locator,
             formatter, tickrange, tickdir, ticklabeldir, rotation,
             scale_kw, label_kw, formatter_kw, locator_kw, minorlocator_kw) in zip(
-            (self.xaxis, self.yaxis), (xlabel, ylabel), (xcolor, ycolor), (xmargin, ymargin),
+            (self.xaxis, self.yaxis), (xlabel, ylabel), (xcolor, ycolor), (xticklen, yticklen), (xmargin, ymargin),
             (xtickloc, ytickloc), (xspineloc, yspineloc), (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
             (xbounds, ybounds), (xgrid, ygrid), (xgridminor, ygridminor), (xtickminor, ytickminor), (xminorlocator, yminorlocator), # minor ticks
             (xlim, ylim), (xreverse, yreverse), (xscale, yscale), (xlocator, ylocator),
@@ -1444,7 +1460,7 @@ class CartesianAxes(BaseAxes):
             # Get which spines are visible; needed for setting tick locations
             spines = [side for side,spine in zip(sides,spines) if spine.get_visible()]
 
-            # Tick and grid settings, for major and minor ticks separately
+            # Tick and grid settings for major and minor ticks separately
             # Override is just a "new default", but user can override this
             grid_dict = lambda grid: {
                 'grid_color':     grid + '.color',
@@ -1457,15 +1473,19 @@ class CartesianAxes(BaseAxes):
             gridminor = _default(gridminor, override)
             for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
                 # Tick properties
-                kw = rc.category(xyname + 'tick.' + which)
-                if kw is None:
-                    kw = {}
+                kw_ticks = rc.category(xyname + 'tick.' + which)
+                if kw_ticks is None:
+                    kw_ticks = {}
                 else:
-                    kw.pop('visible', None) # invalid setting
-                # Turn grid on
+                    kw_ticks.pop('visible', None) # invalid setting
+                if ticklen is not None:
+                    if which=='major':
+                        kw_ticks['size'] = utils.units(ticklen, 'pt')
+                    else:
+                        kw_ticks['size'] = utils.units(ticklen, 'pt') * rc.get('ticklenratio')
+                # Grid style and toggling
                 if igrid is not None:
                     axis.grid(igrid, which=which) # toggle with special global props
-                # Grid and tick style
                 if which=='major':
                     kw_grid = rc.fill(grid_dict('grid'))
                 else:
@@ -1473,9 +1493,9 @@ class CartesianAxes(BaseAxes):
                     kw_grid = rc.fill(grid_dict('gridminor'))
                     kw_grid.update({key:value for key,value in kw_major.items() if key not in kw_grid})
                 # Changed rc settings
-                axis.set_tick_params(which=which, **kw_grid, **kw)
+                axis.set_tick_params(which=which, **kw_grid, **kw_ticks)
 
-            # Tick and ticklabel properties
+            # Tick and ticklabel properties that apply to both major and minor
             # * Weird issue seems to cause set_tick_params to reset/forget that the grid
             #   is turned on if you access tick.gridOn directly, instead of passing through tick_params.
             #   Since gridOn is undocumented feature, don't use it. So calling _format_axes() a second time will remove the lines
@@ -1483,7 +1503,6 @@ class CartesianAxes(BaseAxes):
             #   group of left/right or top/bottom
             # * Includes option to draw spines but not draw ticks on that spine, e.g.
             #   on the left/right edges
-            # First tick sides
             if not isinstance(self, mproj.PolarAxes):
                 kw = {}
                 translate = {None: None, 'both': sides, 'neither': (), 'none': ()}

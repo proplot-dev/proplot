@@ -165,18 +165,18 @@ innerborders.linewidth: 0.6
 rivers.color:           k
 rivers.linewidth:       0.6
 # Subplot property sizes
-subplot.axwidth:    2
-subplot.panelwidth: 0.45
-subplot.cbarwidth:  0.17
-subplot.legwidth:   0.25
+subplots.axwidth:    2
+subplots.panelwidth: 0.45
+subplots.cbarwidth:  0.17
+subplots.legwidth:   0.25
 # Tight layout padding, affect the figure when tight=True
-subplot.panelpad:   0.05
-subplot.borderpad:  0.10
-subplot.subplotpad: 0.10
+subplots.panelpad:   0.05
+subplots.borderpad:  0.10
+subplots.subplotpad: 0.10
 # Spaces, affect the figure when tight=False
-subplot.titlespace: 0.2
-subplot.innerspace: 0.1
-subplot.ylabspace:  0.6
-subplot.xlabspace:  0.45
-subplot.nolabspace: 0.15
-subplot.panelspace: 0.15
+subplots.titlespace: 0.2
+subplots.innerspace: 0.1
+subplots.ylabspace:  0.6
+subplots.xlabspace:  0.45
+subplots.nolabspace: 0.15
+subplots.panelspace: 0.15

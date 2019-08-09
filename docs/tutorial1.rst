@@ -31,7 +31,7 @@ the `~proplot.axes.BaseAxes.format` command, see
     plt.figure(figsize=(5,3))
     plt.suptitle('PyPlot API')
     plt.subplot(121)
-    plt.plot(np.random.rand(10,5).cumsum(axis=1), lw=2)
+    plt.plot(np.random.rand(10,5).cumsum(axis=0), lw=2)
     plt.title('Title')
     plt.xlabel('x axis')
     plt.ylabel('y axis')
@@ -51,7 +51,7 @@ the `~proplot.axes.BaseAxes.format` command, see
     import numpy as np
     f, axs = plt.subplots(ncols=2, figsize=(5,3))
     f.suptitle('Object-Oriented API')
-    axs[0].plot(np.random.rand(10,5).cumsum(axis=1), lw=2)
+    axs[0].plot(np.random.rand(10,5).cumsum(axis=0), lw=2)
     axs[0].set_xticks(np.arange(0,10))
     axs[0].minorticks_off()
     for ax in axs:
@@ -65,7 +65,7 @@ the `~proplot.axes.BaseAxes.format` command, see
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=2)
-    axs[0].plot(np.random.rand(10,5).cumsum(axis=1), lw=2)
+    axs[0].plot(np.random.rand(10,5).cumsum(axis=0), lw=2)
     axs[0].format(xticks=1, xtickminor=False)
     axs.format(suptitle='ProPlot API', title='Title', xlabel='x axis', ylabel='y axis')
 
@@ -77,11 +77,10 @@ the `~proplot.axes.BaseAxes.format` command, see
 You can set up complex grids of subplots by passing 2D arrays of
 integers to `~proplot.subplots.subplots`. Just think of this array as
 a “picture” of your figure, where each unique number corresponds to a
-unique axes. This feature allows us to build the below grid in just one
-line of code, instead of 6 lines. The number order determines the order
-of a-b-c labels, and the order in which the axes appear in the
-`~proplot.subplots.axes_grid`. See `~proplot.subplots.subplots` for
-details.
+unique axes. This allows us to build the below grids in just one line of
+code. The number order determines the order of a-b-c labels, and the
+order in which the axes appear in the `~proplot.subplots.axes_grid`.
+See `~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
 
@@ -130,7 +129,7 @@ is demonstrated below.
     import proplot as plot
     f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
     axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
-    f, axs = plot.subplots(ncols=3, tightsubplot=False, width='12cm', height='55mm', wspace=('10pt', '20pt'))
+    f, axs = plot.subplots(ncols=3, width='12cm', height='55mm', wspace=('10pt', '20pt'))
     axs.format(small='12px', large='15px', linewidth='0.5mm')
     axs.format(suptitle='Arguments with arbitrary units', xlabel='x axis', ylabel='y axis')
 
@@ -217,7 +216,7 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,6,6]], wratios=(1,1,2), share=0, span=False, axwidth=1.5)
+    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,5,5]], wratios=(1,1,2), hratios=(2,1,1), share=0, span=False, axwidth=1.5)
     axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Automatic spacing and aspect ratio conservation')
     axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
     axs[2:4].format(yformatter='null', title='Title', ytickloc='both')

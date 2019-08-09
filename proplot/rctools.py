@@ -180,19 +180,19 @@ are inches. If string, the units are interpreted by `~proplot.utils.units`.
 =======================  ==================================================================
 Key                      Description
 =======================  ==================================================================
-``subplot.axwidth``      Default width of each axes.
-``subplot.panelwidth``   Width of side panels.
-``subplot.cbarwidth``    Width of "colorbar" panels.
-``subplot.legwidth``     Width of "legend" panels.
-``subplot.borderpad``    Padding around edges for tight subplot.
-``subplot.subplotpad``   Padding between main subplots.
-``subplot.panelpad``     Padding between axes panels and their parents.
-``subplot.titlespace``   Vertical space for titles.
-``subplot.ylabspace``    Horizontal space between subplots alotted for *y*-labels.
-``subplot.xlabspace``    Vertical space between subplots alotted for *x*-labels.
-``subplot.nolabspace``   Space between subplots alotted for tick marks.
-``subplot.innerspace``   Purely empty space between subplots.
-``subplot.panelspace``   Purely empty space between main axes and side panels.
+``subplots.axwidth``      Default width of each axes.
+``subplots.panelwidth``   Width of side panels.
+``subplots.cbarwidth``    Width of "colorbar" panels.
+``subplots.legwidth``     Width of "legend" panels.
+``subplots.borderpad``    Padding around edges for tight subplots.
+``subplots.subplotpad``   Padding between main subplots.
+``subplots.panelpad``     Padding between axes panels and their parents.
+``subplots.titlespace``   Vertical space for titles.
+``subplots.ylabspace``    Horizontal space between subplots alotted for *y*-labels.
+``subplots.xlabspace``    Vertical space between subplots alotted for *x*-labels.
+``subplots.nolabspace``   Space between subplots alotted for tick marks.
+``subplots.innerspace``   Purely empty space between subplots.
+``subplots.panelspace``   Purely empty space between main axes and side panels.
 =======================  ==================================================================
 """
 # TODO: Add 'style' setting that overrides .proplotrc
@@ -287,11 +287,11 @@ _rc_names_custom = {
     'collabel.fontsize', 'collabel.weight', 'collabel.color',
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonstep', 'geogrid.latstep',
-    'subplot.subplotpad', 'subplot.panelpad', 'subplot.borderpad', 'subplot.titlespace',
-    'subplot.innerspace',
+    'subplots.subplotpad', 'subplots.panelpad', 'subplots.borderpad', 'subplots.titlespace',
+    'subplots.innerspace',
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
-    'subplot.legwidth', 'subplot.cbarwidth', 'subplot.ylabspace', 'subplot.xlabspace', 'subplot.nolabspace',
-    'subplot.axwidth', 'subplot.panelwidth', 'subplot.panelspace',
+    'subplots.legwidth', 'subplots.cbarwidth', 'subplots.ylabspace', 'subplots.xlabspace', 'subplots.nolabspace',
+    'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace',
     'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,
