@@ -559,39 +559,26 @@ class Figure(mfigure.Figure):
         if kwargs:
             self._suptitle.update(kwargs)
 
-    def _rowlabels(self, ax, labels, **kwargs):
-        """Assign row labels and update row label settings."""
+    def _labels_setup(self, ax, labels, rows=True, **kwargs):
+        """Assigns row labels and column labels, updates label settings."""
+        attr = ('rowlabel' if rows else 'collabel')
+        range_along = ('_yrange' if rows else '_xrange') # along labels
+        range_across = ('_xrange' if rows else '_yrange') # across from labels
         if not self._main_axes:
             axs = [ax]
         else:
-            axs = [ax for ax in self._main_axes if ax._xrange[0]==0]
-            axs = [ax for _,ax in sorted(zip([ax._yrange[0] for ax in axs], axs))] # order by yrange
+            axs = [ax for ax in self._main_axes if getattr(ax, range_across)[0]==0] # axes on the edge
+            axs = [ax for _,ax in sorted(zip([getattr(ax, range_along)[0] for ax in axs], axs))] # order by yrange
         if labels is None or isinstance(labels, str): # common during testing
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
-            raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} rows.')
+            raise ValueError(f'Got {len(labels)} {attr}s, but there are {len(axs)} {attr.split("label")[0]}s.')
         for ax,label in zip(axs,labels):
-            if label is not None and ax.rowlabel.get_text()!=label:
-                ax.rowlabel.set_text(label)
+            obj = getattr(ax, attr)
+            if label is not None and obj.get_text()!=label:
+                obj.set_text(label)
             if kwargs:
-                ax.rowlabel.update(kwargs)
-
-    def _collabels(self, ax, labels, **kwargs):
-        """Assign column labels and update column label setting."""
-        if not self._main_axes:
-            axs = [ax]
-        else:
-            axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
-            axs = [ax for _,ax in sorted(zip([ax._xrange[0] for ax in axs],axs))]
-        if labels is None or isinstance(labels, str):
-            labels = [labels]*len(axs)
-        if len(labels)!=len(axs):
-            raise ValueError(f'Got {len(labels)} labels, but there are {len(axs)} columns.')
-        for ax,label in zip(axs,labels):
-            if label is not None and ax.collabel.get_text()!=label:
-                ax.collabel.set_text(label)
-            if kwargs:
-                ax.collabel.update(kwargs)
+                obj.update(kwargs)
 
     def _tight_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have

@@ -555,7 +555,7 @@ class BaseAxes(maxes.Axes):
             'fontfamily': 'font.family'
             })
         if rowlabels or kw:
-            fig._rowlabels(self, rowlabels, **kw)
+            fig._labels_setup(self, rowlabels, rows=True, **kw)
         kw = rc.fill({
             'fontsize':   'collabel.fontsize',
             'weight':     'collabel.weight',
@@ -563,7 +563,7 @@ class BaseAxes(maxes.Axes):
             'fontfamily': 'font.family'
             })
         if collabels or kw:
-            fig._collabels(self, collabels, **kw)
+            fig._labels_setup(self, collabels, rows=False, **kw)
 
         # Axes for title or abc
         # NOTE: We check filled property but top panel filled is not allowed, change this?
