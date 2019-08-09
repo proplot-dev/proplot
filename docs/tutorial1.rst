@@ -146,13 +146,11 @@ is demonstrated below.
 .. image:: tutorial/tutorial_9_1.svg
 
 
-The `~proplot.subplots.axes_grid` object returned by
-`~proplot.subplots.subplots` is extremely powerful. It supports 2D
-indexing, and slicing the container will return an
-`~proplot.subplots.axes_grid` of the selected axes. This is used below
-to call axes methods on multiple axes at once (see
-:ref:`The format command` for details). If your subplots do not fit on
-a nice 2D grid, simply use 1D indexing.
+The `~proplot.subplots.axes_grid` container supports 2D indexing, and
+slicing it returns an `~proplot.subplots.axes_grid` of the selected
+axes. This is used below to call axes methods on multiple axes at once
+(see :ref:`The format command` for details). If your subplots do not
+fit on a nice 2D grid, simply use 1D indexing.
 
 .. code:: ipython3
 
