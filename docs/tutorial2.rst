@@ -33,13 +33,13 @@ usually what you’ll want in this context. See
     plot.rc.facecolor = plot.shade('powder blue', 1.15) # shade makes it a bit brighter, multiplies luminance channel by this much!
     plot.rc.update(linewidth=1, small=10, large=12, color='dark blue', suptitlecolor='dark blue')
     f, axs = plot.subplots(nrows=5, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
-    # Basic locators
+    # Custom locations
     axs[0].format(xlim=(0,200), xminorlocator=10, xlocator=30, suptitle='Declaring tick locations with ProPlot')
     axs[1].format(xlim=(0,10), xlocator=[0, 0.3,0.8,1.6, 4.4, 8, 8.8, 10], xminorlocator=0.1)
-    axs[2].format(xlim=(1,100), xscale='log', xformatter='default') # use this to prevent exponential notation
+    # Locator classes
+    axs[2].format(xlim=(1,100), xscale='log', xlocator='log')
     axs[3].format(xlim=(1,10), xscale='inverse', xlocator='linear')
-    # Index locators are weird...require something plotted in the axes, will only label up bounds of data range
-    # For below, could also use ('index', [...]) (i.e. an IndexFormatter), but not sure why this exists when we can just use FixedFormatter
+    # Index locator
     axs[4].plot(np.arange(10)-5, np.random.rand(10), alpha=0) # index locators 
     axs[4].format(xlim=(0,6), xlocator='index',
                   xformatter=[r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$', r'$\epsilon$', r'$\zeta$', r'$\eta$'])
@@ -91,10 +91,14 @@ See `~proplot.axes.CartesianAxes.format_partial` and
     plot.rc.update(linewidth=1.2, small=10, large=12, facecolor='gray8', figurefacecolor='gray8',
                    suptitlecolor='w', gridcolor='w', color='w')
     f, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
+    # Fraction formatters
     axs[0].format(xlim=(0,4*np.pi), xlocator=plot.arange(0, 4, 0.25)*np.pi, xformatter='pi')
     axs[1].format(xlim=(0,2*np.e), xlocator=plot.arange(0, 2, 0.5)*np.e, xticklabels='e')
+    # Geographic formatter
     axs[2].format(xlim=(-90,90), xlocator=plot.arange(-90, 90, 30), xformatter='deglat')
+    # User input labels
     axs[3].format(xlim=(-1.01,1), xlocator=0.5, xticklabels=['a', 'b', 'c', 'd', 'e'])
+    # Custom style labels
     axs[4].format(xlim=(0, 0.001), xlocator=0.0001, xformatter='%.E')
     axs[5].format(xlim=(0,100), xtickminor=False, xlocator=20, xformatter='{x:.1f}')
     axs.format(ylocator='null', suptitle='Setting tick styles with ProPlot')
