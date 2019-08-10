@@ -1940,7 +1940,6 @@ def subplots(array=None, ncols=1, nrows=1,
         width_ratios=None, height_ratios=None,
         flush=False, wflush=None, hflush=None,
         left=None, bottom=None, right=None, top=None, # spaces around edge of main plotting area, in inches
-        ecols=None, erows=None, # obsolete?
         tight=None, tightborders=None, tightsubplots=None, tightpanels=None,
         borderpad=None, panelpad=None, subplotpad=None,
         span=None, spanx=None, spany=None, # custom setting, optionally share axis labels for axes with same xmin/ymin extents
@@ -1984,10 +1983,6 @@ def subplots(array=None, ncols=1, nrows=1,
         ``0`` indicates an empty space. For example, ``[[1, 1, 1], [2, 0, 3]]``
         creates one long subplot in the top row with two subplots in the bottom
         row separated by a space.
-    ecols, erows : int or list of int, optional
-        List, column numbers (starting from 1) that you want *empty*. Generally
-        this is used with `ncols` and `nrows`. With `array`, you can
-        just use zeros.
 
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
@@ -2241,14 +2236,6 @@ def subplots(array=None, ncols=1, nrows=1,
         array = array.astype(int)
     except (TypeError,ValueError):
         raise ValueError(f'Invalid subplot array {array}. Must be array of integers from 1 to naxs, with 0 representing empty spaces.')
-    if ecols:
-        ecols = np.atleast_1d(ecols)
-        for col in ecols.flat:
-            array[:,col-1] = 0
-    if erows:
-        erows = np.atleast_1d(erows)
-        for row in erows.flat:
-            array[row-1,:] = 0
     # Enforce rule
     nums = np.unique(array[array!=0])
     naxs = len(nums)
