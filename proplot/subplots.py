@@ -713,7 +713,7 @@ class Figure(mfigure.Figure):
                 position = (1, y0 + height/2)
             saxis.label.update({'position':position, 'transform':transform})
 
-    def _post_process_misc(self):
+    def _post_plotting(self):
         """Does various post-processing steps required due to user actions
         after the figure was created."""
         # Apply various post processing on per-axes basis
@@ -760,7 +760,7 @@ class Figure(mfigure.Figure):
             for loc,handles in ax._auto_legend.items():
                 ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
 
-    def _post_text_align(self, renderer):
+    def _post_labels_align(self, renderer):
         """Adjusts position of row titles and figure super title."""
         # Adjust row labels as axis tick labels are generated and y-axis
         # labels is generated.
@@ -769,6 +769,7 @@ class Figure(mfigure.Figure):
         # to *exlude* labels before positioning them by making them invisible!
         w, h = self.get_size_inches()
         axs = [ax for ax in self._main_axes if _xrange(ax)[0]==0] # order by xrange
+        lxs, labels = [], []
         for ax in axs:
             label = ax.rowlabel
             label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
@@ -783,7 +784,6 @@ class Figure(mfigure.Figure):
             for iax in iaxs:
                 for jax in _iter_twins(iax):
                     # Box for column label
-                    # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)
                     x, _ = self.transFigure.inverted().transform((bbox.xmin, 0))
                     ixs.append(x)
@@ -793,15 +793,17 @@ class Figure(mfigure.Figure):
                 warnings.warn('Axes on left row are invisible. Cannot determine rowtitle position.')
                 continue
             # Update position
-            # bbox = ax._tight_bbox
-            label.set_visible(True)
-            x = min(ixs)
-            transform = mtransforms.blended_transform_factory(self.transFigure, ax.transAxes)
-            x = x - (0.6*label.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-            label.update({'x':x, 'y':0.5, 'ha':'right', 'va':'center', 'transform':transform})
+            x = min(ixs) - (0.6*label.get_fontsize()/72)/w # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+            lxs.append(x)
+            labels.append(label)
+        # Apply
+        x = min(lxs)
+        for label in labels:
+            label.update({'x':x, 'y':0.5})
 
         # Adjust col labels -- this is much simpler
-        ys = []
+        sys, saxes = [], [] # for suptitle
+        lys, labels = [], []
         suptitle = self._suptitle
         suptitle.set_visible(False)
         axs = [ax for ax in self._main_axes if _yrange(ax)[0]==0] # order by xrange
@@ -820,7 +822,6 @@ class Figure(mfigure.Figure):
             for iax in iaxs:
                 for jax in _iter_twins(iax):
                     # Box for column label
-                    # bbox = jax._tight_bbox
                     bbox = jax.get_tightbbox(renderer)
                     _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                     iys.append(y)
@@ -829,28 +830,31 @@ class Figure(mfigure.Figure):
             if not iys:
                 warnings.warn('Axes on top row is invisible. Cannot determine coltitle position.')
                 continue
+            saxes.append(ax)
             if label.get_text().strip():
-                y = max(iys)
-                transform = mtransforms.blended_transform_factory(ax.transAxes, self.transFigure)
-                y = y + (0.3*label.get_fontsize()/72)/h # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-                label.update({'x':0.5, 'y':y, 'ha':'center', 'va':'bottom', 'transform':transform})
-            # Box for super title
-            # This time account for column labels of course!
-            if suptitle.get_text().strip():
-                if label.get_text().strip(): # by construction it is above everything else!
-                    # bbox = ax._tight_bbox
-                    bbox = ax.get_tightbbox(renderer)
-                    _, y = self.transFigure.inverted().transform((0, bbox.ymax))
-                else:
-                    y = max(iys)
-                ys.append(y)
+                y = max(iys) + (0.3*label.get_fontsize()/72)/h # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                sys.append(None) # we have to re-calcualte
+                lys.append(y)
+                labels.append(label)
+            else:
+                sys.append(max(iys)) # just use the coordinate we were going to use for the label
+        # Apply
+        y = max(lys)
+        for label in labels:
+            label.update({'x':0.5, 'y':y})
 
         # Super title position
         # Get x position as center between left edge of leftmost main axes
         # and right edge of rightmost main axes
         suptitle.set_visible(True)
         if suptitle.get_text().strip():
-            if not ys:
+            iys = []
+            for y,ax in zip(sys,saxes):
+                if y is None:
+                    bbox = ax.get_tightbbox(renderer)
+                    _, y = self.transFigure.inverted().transform((0, bbox.ymax))
+                iys.append(y)
+            if not iys: # means sys and saxes is empty
                 warnings.warn('All axes on top row are invisible. Cannot determine suptitle position.')
             else:
                 kw = self._subplots_kw
@@ -861,7 +865,7 @@ class Figure(mfigure.Figure):
                 if self.rightpanel:
                     right += (kw['rwidth'] + kw['rspace'])
                 x = left/w + 0.5*(w - left - right)/w
-                y = max(ys) + (0.3*suptitle.get_fontsize()/72)/h
+                y = max(iys) + (0.3*suptitle.get_fontsize()/72)/h
                 suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
 
     def _post_process(self, renderer=None):
@@ -870,15 +874,17 @@ class Figure(mfigure.Figure):
         if renderer is None:
             renderer = self.canvas.get_renderer()
         # Post-plotting stuff
+        # TODO: Use align_xlabels, etc? Panels make this potentially complicated,
+        # source code uses subplotspec and not topmost subplot spec
         if self._smart_tight_init:
             self._post_aspect_fix()
-            self._post_process_misc()
+            self._post_plotting()
         # Row, column, figure, spanning labels
         # WARNING: draw() is called *more than once* and title positions are
         # appropriately offset only during the *later* calls! Must run each time.
         for axis in self._spanning_axes: # turn spanning off so rowlabels adjust properly
             self._axis_label_update(axis, span=False)
-        self._post_text_align(renderer) # just applies the spacing
+        self._post_labels_align(renderer) # just applies the spacing
         # Tight layout
         # WARNING: For now just call this once, get bugs if call it every
         # time draw() is called, but also means bbox accounting for titles

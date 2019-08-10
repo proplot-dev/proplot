@@ -219,9 +219,11 @@ class BaseAxes(maxes.Axes):
         width, height = self.figure.get_size_inches()
         self.width = abs(self._position.width)*width # position is in figure units
         self.height = abs(self._position.height)*height
+        coltransform = mtransforms.blended_transform_factory(self.transAxes, self.figure.transFigure)
+        rowtransform = mtransforms.blended_transform_factory(self.figure.transFigure, self.transAxes)
         self.abc = self.text(0, 0, '') # position tbd
-        self.collabel = self.text(0, 0, '', va='bottom', ha='center', transform=self._title_transform)
-        self.rowlabel = self.text(0, 0, '', va='center', ha='right', transform=self.transAxes)
+        self.collabel = self.text(0.5, 0, '', va='bottom', ha='center', transform=coltransform)
+        self.rowlabel = self.text(0, 0.5, '', va='center', ha='right', transform=rowtransform)
         # Apply custom props
         # Make sure tick length is zero for polar plots, or azimuthal labels
         # are excessively offset from the border.
