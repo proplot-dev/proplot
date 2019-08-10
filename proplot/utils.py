@@ -143,18 +143,17 @@ def edges(values, axis=-1):
 #------------------------------------------------------------------------------#
 def units(value, numeric='in'):
     """
-    Flexible units! This function is used internally all over ProPlot, so that
-    you don't have to use "inches" or "points" for all sizing arguments.
+    Flexible units -- this function is used internally all over ProPlot, so
+    that you don't have to use "inches" or "points" for all sizing arguments.
     See `this link <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
     for info on the em square units.
 
     Parameters
     ----------
     value : float or str or list thereof
-        A size "unit". If numeric, assumed unit is `numeric`.
-
+        A size "unit" or *list thereof*. If numeric, assumed unit is `numeric`.
         If string, we look for the format ``'123.456unit'``, where the
-        number is the value and ``'unit'`` is one of the following:
+        number is the value and ``'unit'`` is one of the following.
 
         ======  ===================================================================
         Key     Description
@@ -173,7 +172,6 @@ def units(value, numeric='in'):
         ``Ex``  Ex-square for ``rc['axes.titlesize']``
         ======  ===================================================================
 
-        Lists of sizes are also acceptable, e.g. ``[0.5, '1cm', '5em']``.
     numeric : str, optional
         The assumed unit for numeric arguments, and the output unit. Default
         is ``'in'``.
