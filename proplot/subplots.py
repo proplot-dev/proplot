@@ -1975,10 +1975,8 @@ def subplots(array=None, ncols=1, nrows=1,
         2-dimensional array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
-        smaller subplots in the bottom row.
-
-        Integers must range from 1 to the number of plots. For example,
-        ``[[1, 4]]`` is invalid.
+        smaller subplots in the bottom row. Integers must range from 1 to the
+        number of plots.
 
         ``0`` indicates an empty space. For example, ``[[1, 1, 1], [2, 0, 3]]``
         creates one long subplot in the top row with two subplots in the bottom
