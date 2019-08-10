@@ -1981,13 +1981,12 @@ def subplots(array=None, ncols=1, nrows=1,
         ``0`` indicates an empty space. For example, ``[[1, 1, 1], [2, 0, 3]]``
         creates one long subplot in the top row with two subplots in the bottom
         row separated by a space.
-
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     width, height : float or str, optional
         The figure width and height. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units` -- for example,
-        `width="10cm"` creates a 10cm wide figure.
+        units are interpreted by `~proplot.utils.units`. For example,
+        ``width="10cm"`` creates a 10cm wide figure.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
         to control the figure width (and height, if specified). Valid names
