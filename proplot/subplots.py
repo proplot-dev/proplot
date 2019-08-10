@@ -1629,7 +1629,7 @@ def _panels_sync(side, nums, panels_kw):
 def _panels_kwargs(
     panels, colorbars, legends,
     panels_kw, colorbars_kw=None, legends_kw=None,
-    figure=False, ncols=None, nrows=None
+    figure=False,
     ):
     """Returns standardized keyword args for axes and figure panels."""
     # Get which panels
@@ -1651,7 +1651,7 @@ def _panels_kwargs(
     # and add_subplot_and_panels, so we don't have to duplicate the rc stuff.
     names = ('width', 'sep', 'flush', 'share', 'space')
     if figure:
-        names = (*names, 'span')
+        names = (*names, 'array')
     else:
         names = (*names, 'visible')
     for side in {*allsides} - {*allpanels}: # add in specific ones
@@ -1715,18 +1715,10 @@ def _panels_kwargs(
             # Space between panels and main subplots grid
             space = _panel_prop(side, 'space', 'xlabspace' if side=='b' else 'ylabspace' if side=='l' else 'nolabspace')
             kwout[side + 'space'] = units(space)
-            # Spanning of panels along subplot rows and columns
-            nmax = ncols if side=='b' else nrows
-            span = _panel_prop(side, 'span', False)
-            if np.iterable(span):
-                nums = [*span]
-                if len(span)!=nmax:
-                    raise ValueError(f'Expected {nmax} {side}panel entries, got {len(span)}.')
-            elif span:
-                nums = [1]*nmax
-            else:
-                nums = [*range(1,nmax+1)]
-            kwout[side + 'span'] = nums
+            # Spanning of panels along subplot rows and columns, should be filled
+            # in subplots call. None will indicate panels are not present.
+            array = _panel_prop(side, 'array', None)
+            kwout[side + 'array'] = array
     else:
         # Panel visibility, toggling
         kwout['which'] = allpanels
@@ -1751,9 +1743,9 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     hspace, wspace, hratios, wratios,
     left,   bottom, right,   top,
     # Args filled with rc settings by _panels_kwargs()
-    bspan, bwidth, bspace, bsep, bflush, bshare,
-    lspan, lwidth, lspace, lsep, lflush, lshare,
-    rspan, rwidth, rspace, rsep, rflush, rshare,
+    barray, bwidth, bspace, bsep, bflush, bshare,
+    larray, lwidth, lspace, lsep, lflush, lshare,
+    rarray, rwidth, rspace, rsep, rflush, rshare,
     ):
     """Handle complex keyword args and aliases thereof, and determine figure
     sizes such that aspect ratio of first subplot is preserved. Note
@@ -1765,7 +1757,7 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
         'width': width, 'height': height, 'axwidth': axwidth, 'axheight': axheight,
         'wpanels': wpanels, 'hpanels': hpanels, 'hspace': hspace, 'wspace': wspace, 'hratios': hratios, 'wratios': wratios,
         'left': left, 'bottom': bottom, 'right': right, 'top': top,
-        'bspan': bspan, 'lspan': lspan, 'rspan': rspan,
+        'barray': barray, 'larray': larray, 'rarray': rarray,
         'bwidth': bwidth, 'bsep': bsep, 'bspace': bspace, 'bflush': bflush, 'bshare': bshare, # separation between panels
         'rwidth': rwidth, 'rsep': rsep, 'rspace': rspace, 'rflush': rflush, 'rshare': rshare,
         'lwidth': lwidth, 'lsep': lsep, 'lspace': lspace, 'lflush': lflush, 'lshare': lshare,
@@ -1783,9 +1775,9 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     auto_width  = (width is None and height is not None)
     auto_height = (height is None and width is not None)
     auto_neither = (width is not None and height is not None)
-    bpanel_space = sum(bwidth) + sum(bsep) + bspace if bspan else 0
-    rpanel_space = sum(rwidth) + sum(rsep) + rspace if rspan else 0
-    lpanel_space = sum(lwidth) + sum(lsep) + lspace if lspan else 0
+    bpanel_space = sum(bwidth) + sum(bsep) + bspace if barray else 0
+    rpanel_space = sum(rwidth) + sum(rsep) + rspace if rarray else 0
+    lpanel_space = sum(lwidth) + sum(lsep) + lspace if larray else 0
     if np.iterable(aspect):
         aspect = aspect[0]/aspect[1]
     # Determine figure dims from axes width and height
@@ -1840,15 +1832,15 @@ def _subplots_kwargs(nrows, ncols, aspect, xref, yref, *, # ref is the reference
     wratios = [*(axwidth_all*wratios/sum(wratios) + wpanels)]
     hratios = [*(axheight_all*hratios/sum(hratios) + hpanels)]
     # Now add outer panels, will enforce constant width.
-    nrows += int(bool(bspan))
-    ncols += int(bool(rspan)) + int(bool(lspan))
-    if bspan:
+    nrows += int(bool(barray))
+    ncols += int(bool(rarray)) + int(bool(larray))
+    if barray:
         hratios = hratios + [sum(bwidth) + sum(bsep)]
         hspace  = hspace  + [bspace]
-    if lspan:
+    if larray:
         wratios = [sum(lwidth) + sum(lsep)] + wratios
         wspace  = [lspace] + wspace
-    if rspan:
+    if rarray:
         wratios = wratios + [sum(rwidth) + sum(rsep)]
         wspace  = wspace  + [rspace]
 
@@ -2107,26 +2099,15 @@ def subplots(array=None, ncols=1, nrows=1,
         more appropriate for a colorbar or legend. The panel can then be
         "filled" with a colorbar or legend with e.g.
         ``fig.bottompanel.colorbar()`` or ``fig.bottompanel.legend()``.
-    larray, rarray, barray : bool or list of int, optional
+    larray, rarray, barray : list of int, optional
         Defines how figure panels span rows and columns of subplots.
-        Each argument is interpreted as follows:
+        Interpreted like `array` -- the integers specify panels that span
+        *arbitrary, contiguous* columns or rows of subplots.
 
-        * If ``True``, this is the default behavior for the `panel`, `colorbar`,
-          and `legend` keyword args. Draws *single* panel spanning *all* columns
-          or rows of subplots.
-        * If ``False``, this is the default behavior for the `panels`, `colorbars`,
-          and `legends` keyword args. Draws *separate* panels *for each* column
-          or row of subplots.
-        * If list of int, this is interpreted like `array`. The integers specify
-          panels that span *arbitrary, contiguous* columns or rows
-          of subplots.
-
-        For example, ``plot.suplots(ncols=3, bspan=[1, 2, 2])`` draws a panel
+        For example, ``plot.suplots(ncols=3, barray=[1, 2, 2])`` draws a panel
         on the bottom of the first column and spanning the bottom of the right
-        2 columns, and ``bspan=[0, 2, 2]`` only draws a panel underneath the
+        2 columns, and ``barray=[0, 2, 2]`` only draws a panel underneath the
         right 2 columns -- as with `array`, the ``0`` indicates an empty space.
-    lspan, rspan, bspan : optional
-        Aliases for `larray`, `rarray`, and `barray`.
     lspace, rspace, bspace : float, optional
         If passed, turns off `tightsubplots`.
         Space between the edge of the main subplot grid and the left, right,
@@ -2278,19 +2259,21 @@ def subplots(array=None, ncols=1, nrows=1,
     #--------------------------------------------------------------------------#
     # Panels
     #--------------------------------------------------------------------------#
-    # Parse outer panel kwargs, consolidate settings
-    for ipanel in (panel,legend,colorbar):
+    # Get array for outer figure panels
+    for ipanel,ispan in zip((panel,legend,colorbar,panels,legends,colorbars),(1,1,1,0,0,0)):
+        if ipanel is not None and not isinstance(ipanel, str):
+            raise ValueError(f'Figure panel input must be string containing any of the characters: l, r, b.')
         for side in (ipanel or ''):
-            if side + 'array' in kwargs:
-                kwargs[side + 'span'] = kwargs.pop(side + 'array')
-            elif side + 'span' not in kwargs:
-                kwargs[side + 'span'] = True # spans all rows or columns
-    panels    = _default(panel, panels, '')
-    legends   = _default(legend, legends, '')
-    colorbars = _default(colorbar, colorbars, '')
-    # Get panel props
-    kwargs = _panels_kwargs(panels, colorbars, legends, kwargs,
-        ncols=ncols, nrows=nrows, figure=True)
+            value = kwargs.get(side + 'array', None)
+            nmax, name = ((ncols,'cols') if side=='b' else (nrows,'rows'))
+            if value is None:
+                if ispan:
+                    value = [1]*nmax
+                else:
+                    value = [*range(1,nmax+1)]
+            elif not np.iterable(value) or len(value)!=(ncols if side=='b' else nrows):
+                raise ValueError(f'Need {nmax}-length list of integers for "{side}array" figure with {nmax} {name}, got {side}array={value}.')
+            kwargs[side + 'array'] = [*value] # must be listk we test truthiness of contents
     # Warnings
     axpanels    = _default(axpanel, axpanels, '')
     axcolorbars = _default(axcolorbar, axcolorbars, '')
@@ -2330,7 +2313,8 @@ def subplots(array=None, ncols=1, nrows=1,
     # Turn off tightsubplots
     args = {**{key:value for key,value in (('wspace',wspace),('hspace',hspace))
         if value is not None}, **{key:value for key,value in kwargs.items()
-        if ('space' in key or 'sep' in key) and value is not None}}
+        if ('space' in key or 'sep' in key) and value is not None
+        and not (np.iterable(value) and not len(value))}}
     if args:
         tightsubplots = _default(tightsubplots, False)
         if tightsubplots:
@@ -2338,7 +2322,8 @@ def subplots(array=None, ncols=1, nrows=1,
     # Turn off tightpanels
     args = {key:value for ikw in (axpanels_kw,axcolorbars_kw,axlegends_kw)
         for jkw in ikw.values() for key,value in jkw.items()
-        if ('space' in key or 'sep' in key) and value is not None}
+        if ('space' in key or 'sep' in key) and value is not None
+        and not (np.iterable(value) and not len(value))}
     if args:
         tightpanels = _default(tightpanels, False)
         if tightpanels:
@@ -2347,6 +2332,11 @@ def subplots(array=None, ncols=1, nrows=1,
     #--------------------------------------------------------------------------#
     # Shared and spanning axes, panel syncing
     #--------------------------------------------------------------------------#
+    # Get default figure panel props
+    panels    = _default(panel, panels, '')
+    legends   = _default(legend, legends, '')
+    colorbars = _default(colorbar, colorbars, '')
+    kwargs = _panels_kwargs(panels, colorbars, legends, kwargs, figure=True)
     # Figure out rows and columns "spanned" by each axes in list, for
     # axis sharing and axis label spanning settings
     sharex = int(_default(share, sharex, rc['share']))
@@ -2358,7 +2348,7 @@ def subplots(array=None, ncols=1, nrows=1,
     # Get some axes properties, where locations are sorted by axes id.
     # NOTE: These ranges are endpoint exclusive, like a slice object!
     axids = [np.where(array==i) for i in np.sort(np.unique(array)) if i>0] # 0 stands for empty
-    idxoff = (0, int(bool(kwargs.get('lspan', None))))
+    idxoff = (0, int(bool(kwargs.get('larray', None))))
     yrange = idxoff[0] + np.array([[y.min(), y.max()+1] for y,_ in axids]) # yrange is shared columns
     xrange = idxoff[1] + np.array([[x.min(), x.max()+1] for _,x in axids])
     xref = xrange[ref-1,:] # range for reference axes
@@ -2551,7 +2541,7 @@ def subplots(array=None, ncols=1, nrows=1,
     # Create outer panels
     for side in 'blr':
         # Draw panel from gridspec
-        panels = subplots_kw[side + 'span']
+        panels = subplots_kw[side + 'array']
         if not panels:
             continue
         paxs = []
