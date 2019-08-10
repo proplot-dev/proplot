@@ -167,9 +167,9 @@ class BaseAxes(maxes.Axes):
         `~proplot.subplots.subplots`, `CartesianAxes`, `ProjectionAxes`
         """
         # Properties
+        # TODO: Just use subspec get_columns_and_rows, instead of saving
+        # these properties! Redundant! See align_xlabels Figure for example.
         self.number = number # for abc numbering
-        self._spanx = spanx # boolean toggles, whether we want to span axes labels
-        self._spany = spany
         self._yrange = None # geometry, filled later
         self._xrange = None
         self._nrows = None
@@ -221,6 +221,8 @@ class BaseAxes(maxes.Axes):
             self._nrows = 1 + nrows // 2 # remember, we have rows masquerading as empty spaces!
             self._ncols = 1 + ncols // 2
         # Axis sharing, title stuff, new text attributes
+        self._spanx = spanx # boolean toggles, whether we want to span axes labels
+        self._spany = spany
         self._sharex_setup(sharex, sharex_level)
         self._sharey_setup(sharey, sharey_level)
         self._title_transform = self.title.get_transform() # save in case it changes
@@ -313,13 +315,15 @@ class BaseAxes(maxes.Axes):
         self._sharex = sharex
         if level>1:
             self._shared_x_axes.join(self, sharex)
-        # "Shared" axis and tick labels
-        # WARNING: Assigning *another* axis label to this axes will raise error,
-        # because matplotlib tries to draw same Artist twice. Just make it invisible.
+        # Make axis and tick labels invisible for "shared" axes
+        # TODO: Why does this work?! Is only called on initialization, but
+        # shouldn't this be overridden when user changes e.g. the formatter,
+        # since the tick label objects themselves will also change? Maybe
+        # new tick labels inherit properties from old tick labels.
+        self.xaxis.label.set_visible(False)
         if level>2:
             for t in self.xaxis.get_ticklabels():
                 t.set_visible(False)
-        self.xaxis.label.set_visible(False)
 
     def _sharey_setup(self, sharey, level):
         """Sets up shared axes. The input is the 'parent' axes, from which

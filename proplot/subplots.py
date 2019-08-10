@@ -277,11 +277,12 @@ class FlexibleGridSpecBase(object):
         """
         # Add these as attributes; want _spaces_as_ratios to be
         # self-contained, so it can be invoked on already instantiated
-        # gridspec (see 'update')
-        self._nrows_visible = nrows
-        self._ncols_visible = ncols
+        # gridspec (see update() method).
+        # TODO Does _nrows or _ncols conflict with default gridspec attributes?
         self._nrows = nrows*2-1
         self._ncols = ncols*2-1
+        self._nrows_visible = nrows
+        self._ncols_visible = ncols
         wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
         super().__init__(self._nrows, self._ncols,
                 hspace=0, wspace=0, # we implement these as invisible rows/columns
@@ -520,6 +521,10 @@ class Figure(mfigure.Figure):
         self._subplot_wflush = _default(wflush, flush)
         self._subplot_hflush = _default(hflush, flush)
         # Gridspec information, filled in by subplots()
+        # TODO: Add ability to modify existing gridspec and subspecs, so we
+        # can finally create panels or declare projections on-the-fly!
+        # TODO: Use existing matplotlib main gridspec and axes tracking
+        # attributes, instead of my own attributes.
         self._ref_num = 1
         self._main_axes = []  # list of 'main' axes (i.e. not insets or panels)
         self._spanning_axes = [] # add axis instances to this, and label position will be updated
@@ -1570,16 +1575,25 @@ def _panels_sync(side, nums, panels_kw):
     ref_kw = (*on_kw.values(),)[0]
     nsep, nspace, nwidth, nflush = side + 'sep', side + 'space', side + 'width', side + 'flush'
     sep, space, width, flush = ref_kw[nsep], ref_kw[nspace], ref_kw[nwidth], ref_kw[nflush]
+    for (key,value) in ((nsep,sep),(nwidth,width),(nflush,flush),(nspace,space)):
+        # Warning message
+        # NOTE: Warning message will include *default* values that were
+        # filled in by _panels_kwargs, but that's ok.
+        vals = {num: kw[key] for num,kw in on_kw.items()}
+        vals = {num: tuple(val) if np.iterable(val) else val for num,val in vals.items()}
+        if len({*vals.values()})>1:
+            warnings.warn(f'Got conflicting values for panel keyword arg "{key}" in this row or column of subplots: '
+                    + '{' + ', '.join(f'{num}: {val}' for num,val in vals.items()) + '}. '
+                    + f'Using {value}.')
+        # Apply matches
+        for num,kw in all_kw.items():
+            kw[key] = value
+    # Make some panels invisible if user doesn't want them
     for num,kw in all_kw.items():
-        # Make sure stacked-panel separation and panel widths always match
-        kw[nsep] = sep
-        kw[nwidth] = width
-        kw[nflush] = flush
-        kw[nspace] = space
-        # Match subplot-panel spacing
-        if num not in on_kw:
-            kw['which'] += side
-            kw[side + 'visible'] = False
+        if num in on_kw:
+            continue
+        kw['which'] += side
+        kw[side + 'visible'] = False
     # Return the space we have alotted for the panel(s) in this row/column
     return sum(sep) + sum(width) + space
 
@@ -1597,8 +1611,10 @@ def _panels_kwargs(
     colorbars = translate.get(colorbars, colorbars)
     allpanels = panels + colorbars + legends
     allsides = 'lrb' if figure else 'lrbt'
+    if not {*allpanels} <= {*allsides}:
+        raise ValueError(f'Invalid panel spec "{allpanels}" for {"figure" if figure else "axes"} panels. Valid characters are: {", ".join(allsides)}.')
     if len({*allpanels}) != len(allpanels):
-        raise ValueError('You requested the same side for a panel, colorbar, and/or legend.')
+        raise ValueError('You requested the same panel side more than once, e.g. by passing panels="b" and colorbars="b".')
 
     # Fill non-panels with empty args, copy over extra args to potentially
     # raise errors down the line.
@@ -1623,7 +1639,8 @@ def _panels_kwargs(
             if not regex.match(key):
                 kwout[key] = value
 
-    # Define helper function
+    # Get panel widths, account for stacked panels
+    # NOTE: Accounts for stacked panels
     def _panel_prop(side, name, defaults):
         """Returns property from the appropriate dictionary, or returns the
         default from the rc.subplots category."""
@@ -1635,8 +1652,6 @@ def _panels_kwargs(
             if isinstance(default, str):
                 default = rc['subplots.' + default]
             return _default(kwargs.get(name, None), kwargs.get(side + name, None), default)
-    # Get panel widths, account for stacked panels
-    # NOTE: Accounts for stacked panels
     for side in allpanels:
         # Simple props
         stack = _panel_prop(side, 'stack', 1)
