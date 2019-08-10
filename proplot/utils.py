@@ -19,9 +19,9 @@ except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 __all__ = ['arange', 'edges', 'units']
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Important private helper funcs
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 _data_user_paths = {*()}
 _data_allowed_paths = {'cmaps', 'cycles', 'fonts'}
 def _check_data():
@@ -42,9 +42,9 @@ def _default(*args):
             return arg
     return arg # last one
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Decorators
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _timer(func):
     """A decorator that prints the time a function takes to execute.
     See: https://stackoverflow.com/a/1594484/4970632"""
@@ -82,9 +82,9 @@ def _counter(func):
     decorator.count = 0 # initialize
     return decorator
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Accessible for user
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def arange(min_, *args):
     """Identical to `numpy.arange`, but with inclusive endpoints. For
     example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])``."""
@@ -138,9 +138,9 @@ def edges(values, axis=-1):
     values = np.swapaxes(values, axis, -1)
     return values
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Units
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
@@ -238,9 +238,9 @@ def units(value, numeric='in'):
         result = result[0]
     return result
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Outdated
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Throw this one out, use kwarg interpolation from method.
 # Why? Because matplotlib plot_directive sphinx extension will look for
 # gallery images in the old documentation that do not exist for ProPlot.

@@ -112,9 +112,10 @@ try:
 except ModuleNotFoundError:
     GeoAxes = object
 
-#------------------------------------------------------------------------------#
+
+#-----------------------------------------------------------------------------#
 # Generalized custom axes class
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _redraw_text(obj, overwrite=True, **kwargs):
     """Allows updating new text properties introduced by override."""
     # Attempt update, but will raise error if e.g. border is passed
@@ -1011,9 +1012,9 @@ class BaseAxes(maxes.Axes):
         hs.levels = levels # needed for other functions some
         return hs
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Specific classes, which subclass the base one
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _rcloc_to_stringloc(xy, string): # figures out string location
     """Gets location string from the boolean rc settings, for a given string
     prefix like ``'axes.spines'`` or ``'xtick'``."""

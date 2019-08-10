@@ -198,6 +198,7 @@ Key                         Description
 ==========================  ==================================================================
 """
 # TODO: Add 'style' setting that overrides .proplotrc
+# Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 import re
 import os
 import sys
@@ -307,10 +308,6 @@ _rc_categories = {
     *(re.sub('\..*$', '', name) for names in (_rc_names_custom, _rc_names) for name in names)
     }
 
-#-------------------------------------------------------------------------------
-# Contextual settings management
-# Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
-#-------------------------------------------------------------------------------
 def _to_points(value, key=None):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""

@@ -271,9 +271,9 @@ _color_space_channel_scales = {
     'hpl': (360,100,100)
     }
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Classes
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Flexible color names class
 # 1. Matplotlib 'color' arguments are passed to to_rgba, which tries
 #    to read directly from cache and if that fails, tries to sanitize input.
@@ -445,9 +445,9 @@ class CmapDict(dict):
 if not isinstance(mcm.cmap_d, CmapDict):
     mcm.cmap_d = CmapDict(mcm.cmap_d)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Color manipulation functions
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _get_space(space):
     """Verify requested colorspace is valid."""
     space = _color_space_aliases.get(space.lower(), None)
@@ -567,9 +567,9 @@ def to_xyz(color, space):
         raise ValueError(f'Invalid colorspace {space}.')
     return color
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Helper functions
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _clip_colors(colors, clip=True, gray=0.2):
     """
     Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
@@ -920,9 +920,9 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
     lut[-1] = y0[-1]
     return lut
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Generalized colormap/cycle constructors
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def colors(*args, **kwargs):
     """Identical to `Cycle`, but returns a list of colors instead of
     a `~cycler.Cycler` object."""
@@ -1582,9 +1582,9 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='no_name', **k
         s, l = (fs,s), (fl,l) # from faded to color
     return PerceptuallyUniformColormap.from_hsl(name, h, s, l, space=space, **kwargs)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Return arbitrary normalizer
-#------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------#
 def Norm(norm, levels=None, values=None, **kwargs):
     """
     Returns an arbitrary `~matplotlib.colors.Normalize` instance, used to
@@ -1780,9 +1780,9 @@ class BinNorm(mcolors.BoundaryNorm):
         """Raises error -- inversion after discretization is impossible."""
         raise ValueError('BinNorm is not invertible.')
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Normalizers intended to *pre-scale* levels passed to BinNorm
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 class LinearSegmentedNorm(mcolors.Normalize):
     """
     This is the default normalizer paired with `BinNorm` whenever `levels`
@@ -1920,9 +1920,9 @@ class MidpointNorm(mcolors.Normalize):
         mask = ma.getmaskarray(yq)
         return ma.array(xq, mask=mask)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Register data
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _read_cmap_cycle_data(filename):
     """
     Helper function that reads generalized colormap and color cycle files.
@@ -2201,9 +2201,9 @@ def register_colors(nmax=np.inf):
     for _,kw in colordict.items():
         mcolors.colorConverter.colors.update(kw)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Font stuff
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # See: https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac
 # Notes on getting ttf files on Mac
 # * Location in /System/Library/Font, /Library/Fonts, or ~/Library/Fonts
@@ -2266,9 +2266,9 @@ def clean_fonts():
     print(f'Removed fonts {", ".join(os.path.basename(font) for font in rm)}.')
     mfonts._rebuild()
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Register stuff and define variables
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 cmaps = [] # track *downloaded* colormaps, user can then check this list
 """List of new registered colormap names."""
 cycles = [] # track *all* color cycles
@@ -2303,9 +2303,9 @@ normalizers = {
     }
 """Dictionary of possible normalizers. See `Norm` for a table."""
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Demos
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def show_channels(*args, N=100, rgb=True, minhue=0, width=100, aspect=1, axwidth=1.7):
     """
     Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
@@ -2752,12 +2752,11 @@ def show_fonts(fonts=None, size=12):
                     fontsize=size, weight=weight, ha='left', va='center')
     return f
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Deleted colormaps and colormap categories
+#-----------------------------------------------------------------------------#
 # TODO: add examples of how to reconstruct e.g. 'tab20c' on-the-fly
-# TODO: add examples of how to reconstruct Wave, Insert, Highlight,
-# and Outlier colormaps.
-#------------------------------------------------------------------------------#
+# TODO: add examples of how to reconstruct Wave, Insert, Highlight, and Outlier
 # Fabio Crameri
 # See: http://www.fabiocrameri.ch/colourmaps.php
 # 'Fabio Crameri Sequential': [

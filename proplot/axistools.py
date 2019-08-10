@@ -123,9 +123,9 @@ __all__ = [
     'SymmetricalLogScale',
     ]
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Helper functions for instantiating arbitrary Locator and Formatter classes
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # When calling these functions, the format() method should automatically
 # detect presence of date axis by testing if unit converter is on axis is
 # DateConverter instance
@@ -423,11 +423,11 @@ def InvertedScaleFactory(scale, name=None):
     mscale.register_scale(Inverted)
     return Inverted
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------#
 # Formatting classes for mapping numbers (axis ticks) to formatted strings
 # Create pseudo-class functions that actually return auto-generated formatting
 # classes by passing function references to Funcformatter
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------#
 class AutoFormatter(mticker.ScalarFormatter):
     """
     The new default formatter, a simple wrapper around
@@ -574,9 +574,9 @@ def FracFormatter(symbol='', number=1):
     # And create FuncFormatter class
     return mticker.FuncFormatter(f)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Simple scale overrides
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # TODO: Submit matplotlib pull request, fix this! How has no one fixed this
 # already!
 def _parse_xyargs(axis, kwargs, keys):
@@ -652,9 +652,9 @@ class SymmetricalLogScale(mscale.SymmetricalLogScale):
         kwargs = _parse_xyargs(axis, kwargs, ('base','linthresh','linscale','subs'))
         super().__init__(axis, **kwargs)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Power axis scale
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def PowerScaleFactory(power, inverse=False, name=None):
     r"""
     Returns a "power scale" that performs the transformation
@@ -732,11 +732,11 @@ class _InvertedPowerTransform(mtransforms.Transform):
     def inverted(self):
         return _PowerTransform(self._power, self.minpos)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Exp axis scale
 # Why can't this just be a class that accepts args for changing the scale
 # params? Because then would need kwargs for every set_xscale call.
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
     r"""
     Returns an "exponential scale" that performs the transformation
@@ -824,9 +824,9 @@ class _InvertedExpTransform(mtransforms.Transform):
     def inverted(self):
         return _ExpTransform(self._base, self._exp, self._scale, self.minpos)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Cutoff axis
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def CutoffScaleFactory(scale, lower, upper=None):
     """
     Constructs a scale with custom cutoffs.
@@ -947,9 +947,9 @@ def CutoffScaleFactory(scale, lower, upper=None):
     mscale.register_scale(CutoffScale)
     return CutoffScale
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Cartographic scales
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 class MercatorLatitudeScale(mscale.ScaleBase):
     r"""
     Scales axis as with latitudes in the `Mercator projection
@@ -1098,9 +1098,9 @@ class _InvertedSineLatitudeTransform(mtransforms.Transform):
     def inverted(self):
         return _SineLatitudeTransform()
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Other transformations
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 class InverseScale(mscale.ScaleBase):
     r"""
     Scales axis to be linear in the *inverse* of *x*. The scale
@@ -1158,10 +1158,10 @@ class _InverseTransform(mtransforms.Transform):
     def inverted(self):
         return _InverseTransform(self.minpos)
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 scales = mscale._scale_mapping
 """The registered scale names and their associated
 `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table."""

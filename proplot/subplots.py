@@ -59,9 +59,9 @@ _panel_aliases = {
     'leftlegend':     'leftpanel',
     }
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Miscellaneous stuff
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Wrapper functions, so user doesn't have to import pyplot
 def close():
     """Alias for ``matplotlib.pyplot.close('all')``, included so you don't have
@@ -212,9 +212,9 @@ class axes_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute "{attr}".')
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Gridspec classes
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _adjust(n):
     """Account for negative indices."""
     if n<0:
@@ -379,9 +379,9 @@ class FlexibleGridSpecFromSubplotSpec(FlexibleGridSpecBase, mgridspec.GridSpecFr
     """Mixes `FlexibleGridSpecBase` with `~matplotlib.gridspec.GridSpecFromSubplotSpec`."""
     pass
 
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 # Figure class
-#------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------#
 def _iter_twins(ax):
     """Iterates over twin axes."""
     # TODO: should this include inset axes? or should we ignore inset
@@ -1082,9 +1082,9 @@ class Figure(mfigure.Figure):
         #         #            pad*ticks[0].tick2On*(side != 'right'))
         #         # iax._ytick_pad_error += np.array(pad)*self.dpi/72 # is left, right tuple
 
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         # Put tight box *around* figure
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         if self._smart_tight_outer:
             # Get old un-updated bounding box
             pad = self._smart_borderpad
@@ -1110,9 +1110,9 @@ class Figure(mfigure.Figure):
                         warnings.warn(f'Got negative {key} margin in smart tight layout.')
                     subplots_kw[key] = margin
 
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         # Prevent overlapping axis tick labels and whatnot *within* figure
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         if self._smart_tight_subplot and self._main_axes:
             # Get bounding box for each axes
             self._tight_bboxs(renderer) # can use same bboxs
@@ -1253,9 +1253,9 @@ class Figure(mfigure.Figure):
                 'lspace':lspace, 'rspace':rspace, 'bspace':bspace,
                 })
 
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         # The same, but for spaces between *axes panels*
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         # NOTE: any([]) is False so if _main_axes is empty, this is skipped
         panels = False
         if self._smart_tight_panel and any(ax._panels_main_gridspec for ax in self._main_axes):
@@ -1300,9 +1300,9 @@ class Figure(mfigure.Figure):
                 ax.rowlabel.set_visible(True) # needed for panel tight layout!
                 ax.collabel.set_visible(True)
 
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         # Update gridspec(s)
-        #----------------------------------------------------------------------#
+        #---------------------------------------------------------------------#
         # Parse arguments and update gridspec
         # Get the new width and height ratios including spaces
         figsize, gridspec_kw, _ = _subplots_kwargs(**subplots_kw)
@@ -1586,9 +1586,9 @@ class Figure(mfigure.Figure):
                 iax._sharey_setup(left, 3)
         return ax
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------#
 # Primary plotting function, used to create figure/axes
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------#
 def _panels_sync(side, nums, panels_kw):
     """Makes sure we leave space for invisible panels for subplots *without*
     panels that reside in the same row or column as subplots *with* panels."""
@@ -2212,9 +2212,9 @@ def subplots(array=None, ncols=1, nrows=1,
     # use the builtin sharex/sharey API*, suitable for complex map projections.
     # For spanning axes labels, right now only detect **x labels on bottom**
     # and **ylabels on top**. Generalize for all subplot edges.
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Array setup
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     rc._getitem_mode = 0 # ensure still zero; might be non-zero if had error in 'with context' block
     if array is None:
         array = np.arange(1,nrows*ncols+1)[...,None]
@@ -2240,9 +2240,9 @@ def subplots(array=None, ncols=1, nrows=1,
     nrows = array.shape[0]
     ncols = array.shape[1]
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Panels
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Get array for outer figure panels
     for ipanel,ispan in zip((panel,legend,colorbar,panels,legends,colorbars),(1,1,1,0,0,0)):
         if ipanel is not None and not isinstance(ipanel, str):
@@ -2281,9 +2281,9 @@ def subplots(array=None, ncols=1, nrows=1,
     axcolorbars_kw = _axes_dict(naxs, axcolorbars_kw, kw=True)
     axlegends_kw   = _axes_dict(naxs, axlegends_kw, kw=True)
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Default behavior
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # TODO: Finer level of customization, have tight figure panels mode and
     # tight axes panel mode? Not too important.
     # Turn off tightborders
@@ -2313,9 +2313,9 @@ def subplots(array=None, ncols=1, nrows=1,
         if tightpanels:
             warnings.warn(_args_string('tightpanels', args))
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Shared and spanning axes, panel syncing
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Get default figure panel props
     panels    = _default(panel, panels, '')
     legends   = _default(legend, legends, '')
@@ -2389,10 +2389,10 @@ def subplots(array=None, ncols=1, nrows=1,
         wpanels.append(iwpanels)
     wpanels, hpanels = np.array(wpanels), np.array(hpanels)
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Get basemap.Basemap or cartopy.CRS instances for map, and
     # override aspect ratio.
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # NOTE: Cannot have mutable dict as default arg, because it changes the
     # "default" if user calls function more than once! Swap dicts for None.
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
@@ -2419,9 +2419,9 @@ def subplots(array=None, ncols=1, nrows=1,
         else:
             raise ValueError('All projection names should be declared. Wut.')
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Figure architecture
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Figure and/or average axes dimensions
     names, values = (), ()
     if journal:
@@ -2493,9 +2493,9 @@ def subplots(array=None, ncols=1, nrows=1,
     # Apply settings and add attributes
     gs = FlexibleGridSpec(**gridspec_kw)
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Create blank figure
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize,
         tightborders=tightborders, tightsubplots=tightsubplots, tightpanels=tightpanels,
         borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
@@ -2506,9 +2506,9 @@ def subplots(array=None, ncols=1, nrows=1,
     fig._main_gridspec = gs
     fig._subplots_kw = subplots_kw
 
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Draw on figure
-    #--------------------------------------------------------------------------#
+    #-------------------------------------------------------------------------#
     # Create axes
     axs = naxs*[None] # list of axes
     for idx in range(naxs):
