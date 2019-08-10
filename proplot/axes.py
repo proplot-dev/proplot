@@ -143,9 +143,9 @@ class BaseAxes(maxes.Axes):
     name = 'base'
     """The registered projection name."""
     def __init__(self, *args, number=None,
-            sharex=None, sharey=None, spanx=None, spany=None,
-            sharex_level=0, sharey_level=0,
-            **kwargs):
+        sharex=None, sharey=None, spanx=None, spany=None,
+        sharex_level=0, sharey_level=0,
+        **kwargs):
         """
         Parameters
         ----------
@@ -206,6 +206,8 @@ class BaseAxes(maxes.Axes):
         self._dualx_scale = None
         self._panels_main_gridspec = None # filled with gridspec used for axes subplot and its panels
         self._panels_stack_gridspec = None # filled with gridspec used for 'stacked' panels
+        self._xtick_pad_error = (0,0)
+        self._ytick_pad_error = (0,0)
 
         # Call parent
         super().__init__(*args, **kwargs)
@@ -1062,16 +1064,9 @@ class CartesianAxes(BaseAxes):
         # longer aligned. Matter of taste really; will see if others like it.
         formatter = axistools.Formatter('default')
         self.xaxis.set_major_formatter(formatter)
-        formatter = axistools.Formatter('default')
         self.yaxis.set_major_formatter(formatter)
-        # Reset this, otherwise matplotlib won't automatically change
-        # formatter when it encounters certain types of data, like datetime.
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
-        # For tight layout; matplotlib draws tick bbox around ticks, even
-        # if they are actually all turned off.
-        self._xtick_pad_error = (0,0)
-        self._ytick_pad_error = (0,0)
 
     def __getattribute__(self, attr, *args):
         """Applies the `~proplot.wrappers.cmap_wrapper`,
