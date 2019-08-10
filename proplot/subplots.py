@@ -797,9 +797,10 @@ class Figure(mfigure.Figure):
             lxs.append(x)
             labels.append(label)
         # Apply
-        x = min(lxs)
-        for label in labels:
-            label.update({'x':x, 'y':0.5})
+        if lxs:
+            x = min(lxs)
+            for label in labels:
+                label.update({'x':x, 'y':0.5})
 
         # Adjust col labels -- this is much simpler
         sys, saxes = [], [] # for suptitle
@@ -839,9 +840,10 @@ class Figure(mfigure.Figure):
             else:
                 sys.append(max(iys)) # just use the coordinate we were going to use for the label
         # Apply
-        y = max(lys)
-        for label in labels:
-            label.update({'x':0.5, 'y':y})
+        if lys:
+            y = max(lys)
+            for label in labels:
+                label.update({'x':0.5, 'y':y})
 
         # Super title position
         # Get x position as center between left edge of leftmost main axes
