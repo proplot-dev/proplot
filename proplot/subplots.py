@@ -2021,20 +2021,20 @@ def subplots(array=None, ncols=1, nrows=1,
     hratios, wratios, axheights, axwidths : optional
         Aliases for `height_ratios`, `width_ratios`.
     height_ratios, width_ratios : float or list thereof, optional
-        Passed to `~proplot.gridspec.FlexibleGridSpecBase`. The height
+        Passed to `FlexibleGridSpecBase`. The height
         and width ratios for the subplot grid. Length of `height_ratios`
         must match the number of rows, and length of `width_ratios` must
         match the number of columns.
     hspace, wspace : float or str or list thereof, optional
         If passed, turns off `tightsubplots`.
-        These are passed to `~proplot.gridspec.FlexibleGridSpecBase`, denote
+        These are passed to `FlexibleGridSpecBase`, denote
         spacing between each column and row of the grid. If float
         or string, expanded into lists of length ``ncols-1`` (for `wspace`) or
         length ``nrows-1`` (for `hspace`). For each element of the list, if float,
         units are inches. If string, units are interpreted by `~proplot.utils.units`.
     top, bottom, left, right : float or str, optional
         If passed, turns off `tightborders`. These are passed to
-        `~proplot.gridspec.FlexibleGridSpecBase`, except `right` and
+        `FlexibleGridSpecBase`, except `right` and
         `top` now refer to the **margin widths** instead of the *x* and *y*
         coordinates for the right and top of the gridspec grid. If float,
         units are inches. If string, units are interpreted by
