@@ -2104,10 +2104,11 @@ def subplots(array=None, ncols=1, nrows=1,
         Interpreted like `array` -- the integers specify panels that span
         *arbitrary, contiguous* columns or rows of subplots.
 
-        For example, ``plot.suplots(ncols=3, barray=[1, 2, 2])`` draws a panel
-        on the bottom of the first column and spanning the bottom of the right
-        2 columns, and ``barray=[0, 2, 2]`` only draws a panel underneath the
-        right 2 columns -- as with `array`, the ``0`` indicates an empty space.
+        For example, ``plot.suplots(ncols=3, panels='b', barray=[1, 2, 2])``
+        draws a panel on the bottom of the first column and spanning the bottom
+        of the right 2 columns, and ``barray=[0, 2, 2]`` only draws a panel
+        underneath the right 2 columns -- as with `array`, the ``0`` indicates
+        an empty space.
     lspace, rspace, bspace : float, optional
         If passed, turns off `tightsubplots`.
         Space between the edge of the main subplot grid and the left, right,
