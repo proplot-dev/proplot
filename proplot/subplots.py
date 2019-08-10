@@ -2174,16 +2174,24 @@ def subplots(array=None, ncols=1, nrows=1,
         A special list of axes instances. See `axes_grid`.
 
 
-    The current options for the `journal` keyword argument are as follows.
-    Feel free to submit a pull request if you'd like to add additional standards.
+    Current options for the `journal` keyword argument are as follows.
+    If you'd like to add additional standards, feel free to submit a pull request
 
-    ==============================================  ==============================================================  =========================================================================================================================================================
-    Key(s)                                          Size description(s)                                             Organization
-    ==============================================  ==============================================================  =========================================================================================================================================================
-    ``'pnas1'``, ``'pnas2'``, ``'pnas3'``           1-column, 2-column, landscape page                              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-    ``'ams1'``, ``'ams2'``, ``'ams3'``, ``'ams4'``  1-column, small 2-column, medium 2-column, full 2-column        `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-    ``'agu1'``, ``'agu2'``, ``'agu3'``, ``'agu4'``  1-column, 2-column, full height 1-column, full height 2-column  `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-    ==============================================  ==============================================================  =========================================================================================================================================================
+    ===========  ====================  ==============================================================  ==========================================================================================
+    Key          Size description      Organization
+    ===========  ====================  ==============================================================  ==========================================================================================
+    ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+    ``'pnas2'``  2-column              ”
+    ``'pnas3'``  landscape page        ”
+    ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    ``'ams2'``   small 2-column        ”
+    ``'ams3'``   medium 2-column       ”
+    ``'ams4'``   full 2-column         ”
+    ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+    ``'agu2'``   2-column              ”
+    ``'agu3'``   full height 1-column  ”
+    ``'agu4'``   full height 2-column  ”
+    ===========  ====================  ==============================================================  ==========================================================================================
     """
     # TODO: Generalize axes sharing for right y-axes and top x-axes. Enable a secondary
     # axes sharing mode where we *disable ticklabels and labels*, but *do not
