@@ -6,7 +6,6 @@ Subplots and related classes
 .. automodsumm:: proplot.subplots
    :classes-only:
    :toctree: api
-   :skip: Number
 
 **Functions**
 

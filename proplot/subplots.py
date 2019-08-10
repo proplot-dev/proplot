@@ -25,7 +25,6 @@ content, panel content, and the figure edge.
 import os
 import re
 import numpy as np
-from numbers import Number
 import functools
 import warnings
 import matplotlib.pyplot as plt

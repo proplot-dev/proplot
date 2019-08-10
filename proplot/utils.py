@@ -11,7 +11,7 @@ import warnings
 import functools
 import matplotlib as mpl
 import matplotlib.font_manager as mfonts
-from numbers import Number
+from numbers import Number, Integral
 rcParams = mpl.rcParams
 try:
     from icecream import ic
@@ -102,14 +102,14 @@ def arange(min_, *args):
     else:
         raise ValueError('Function takes from one to three arguments.')
     # All input is integer
-    if min_//1==min_ and max_//1==max_ and step//1==step:
+    if all(isinstance(val,Integral) for val in (min_,max_,step)):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
         max_ += 1
-    # Input is float or mixed, cast all to float64
+    # Input is float or mixed, cast to float64
+    # Don't try to increment to next float, because round-off errors from
+    # continually adding step to min mess this up. Just use max plus step/2.
+    # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
     else:
-        # Forget this. Round-off errors from continually adding step to min
-        # mess this up. Just run to max plus step/2.
-        # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
     return np.arange(min_, max_, step)

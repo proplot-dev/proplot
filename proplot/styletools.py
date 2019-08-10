@@ -18,7 +18,7 @@ import json
 import glob
 import cycler
 from lxml import etree
-from numbers import Number
+from numbers import Number, Integral
 import warnings
 import numpy as np
 import numpy.ma as ma
@@ -26,9 +26,9 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 import matplotlib.font_manager as mfonts
-from . import utils, colormath
+from . import colormath
 from .utils import _default, _check_data
-from .utils import _check_data
+
 from matplotlib import get_data_path
 rcParams = mpl.rcParams
 __all__ = [
@@ -1294,7 +1294,7 @@ def Cycle(*args, samples=None, name=None, save=False,
             colors = cmap.colors[:N] # if samples is None, does nothing
         else:
             samples = _default(samples, 10)
-            if isinstance(samples, Number):
+            if isinstance(samples, Integral):
                 samples = np.linspace(0, 1, samples) # from edge to edge
             elif np.iterable(samples) and all(isinstance(item,Number) for item in samples):
                 samples = np.array(samples)

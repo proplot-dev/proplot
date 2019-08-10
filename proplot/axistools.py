@@ -106,7 +106,6 @@ from .utils import _default
 from .rctools import rc
 from numbers import Number
 from fractions import Fraction
-import warnings
 import numpy as np
 import numpy.ma as ma
 import matplotlib.dates as mdates

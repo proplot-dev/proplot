@@ -6,7 +6,7 @@ Colormaps, cycles, colors, and fonts
 .. automodsumm:: proplot.styletools
    :classes-only:
    :toctree: api
-   :skip: Number
+   :skip: Number, Integral
 
 **Functions**
 

@@ -1083,7 +1083,7 @@ def text_wrapper(self, func,
         if fontname in styletools.fonts:
             kwargs['fontfamily'] = fontname
         else:
-            warnings.warn(f'Font "{font}" unavailable. Available fonts are {", ".join(styletools.fonts)}.')
+            warnings.warn(f'Font "{fontname}" unavailable. Available fonts are {", ".join(styletools.fonts)}.')
     size = _default(fontsize, size)
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
