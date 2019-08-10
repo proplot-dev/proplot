@@ -131,7 +131,7 @@ labeling spectral coordinates (this is more useful with the
     plot.rc.reset()
     plot.rc.update({'linewidth':1, 'ticklabelweight':'bold', 'axeslabelweight':'bold'})
     N = 200
-    f, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.8, share=0, span=False)
+    f, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.8, share=0)
     axs.format(suptitle='Changing the axis scale')
     # Linear and log scales
     axs[0].format(yscale='linear', ylabel='linear scale')
@@ -189,7 +189,7 @@ labeling spectral coordinates (this is more useful with the
     import proplot as plot
     import numpy as np
     plot.rc.reset()
-    f, axs = plot.subplots(nrows=3, ncols=2, axwidth=1.5, span=False, share=0)
+    f, axs = plot.subplots(nrows=3, ncols=2, axwidth=1.5, share=0)
     axs.format(rowlabels=['Power\nscales', 'Exponential\nscales', 'Geographic\nscales'], suptitle='Demo of esoteric axis scales')
     x = np.linspace(0,1,50)
     y = 10*x

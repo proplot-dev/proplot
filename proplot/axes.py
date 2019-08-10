@@ -154,17 +154,17 @@ class BaseAxes(maxes.Axes):
             `~BaseAxes.format`).
         sharex_level, sharey_level : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both
-            axes.
+            axes. See `~proplot.subplots.subplots` for details.
         sharex, sharey : `BaseAxes`, optional
-            Axes to use for *x* and *y* axis sharing. Should correspond
-            to the subplot in the bottommost row, leftmost column.
-        spanx, spany : `BaseAxes`, optional
-            Axes to use for the "spanning" *x* and *y* axis labels. Should
-            correspond to the subplot in the leftmost column, bottommost row.
+            Axes to use for *x* and *y* axis sharing.
+        spanx, spany : bool, optional
+            Boolean toggle for whether spanning labels are enabled for the
+            *x* axis, *y* axis, or both axes. See `~proplot.subplots.subplots`
+            for details.
 
         See also
         --------
-        `~proplot.subplots.subplots`, `CartesianAxes`, `ProjectionAxes`
+        `CartesianAxes`, `ProjectionAxes`
         """
         # Properties
         # TODO: Just use subspec get_columns_and_rows, instead of saving

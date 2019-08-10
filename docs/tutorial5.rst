@@ -480,7 +480,7 @@ details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, colorbars='b', share=0, span=False, axwidth=2.2, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, colorbars='b', share=0, axwidth=2.2, aspect=1.5)
     data = (20*np.random.rand(10,21)-10).cumsum(axis=0)
     # Example 1
     ax = axs[0]

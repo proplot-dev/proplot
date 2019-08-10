@@ -63,7 +63,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
     import proplot as plot
     import numpy as np
     plot.rc.reset()
-    f, axs = plot.subplots(axwidth=1.7, nrows=2, ncols=2, share=0, span=False, panelpad=0.1,
+    f, axs = plot.subplots(axwidth=1.7, nrows=2, ncols=2, share=0, panelpad=0.1,
                            axpanels='r', axcolorbars='b', axpanels_kw={'share':False, 'flush':True})
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
     for i,ax in enumerate(axs):
@@ -167,7 +167,7 @@ panel in the first column, second from the top.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(nrows=2, axwidth='4cm', span=False, share=0,
+    f, axs = plot.subplots(nrows=2, axwidth='4cm', share=0,
                           axcolorbars='l', axcolorbars_kw={'stack':3},
                           axpanels='r', axpanels_kw={'stack':2, 'flush':True, 'width':0.5})
     axs[0].format(title='Stacked panel demo', titleweight='bold')
@@ -228,7 +228,7 @@ change outline, divider, tick, tick label, and colorbar label settings.
     import numpy as np
     # Original
     plot.rc.cycle = 'qual2'
-    f, axs = plot.subplots(ncols=2, axcolorbars='b', span=False, share=0)
+    f, axs = plot.subplots(ncols=2, axcolorbars='b', share=0)
     ax = axs[0]
     m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='matter')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))

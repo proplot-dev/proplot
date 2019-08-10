@@ -6,10 +6,11 @@ nbsetup:    True
 backend:    inline # could also be notebook, but ProPlot discourages interactive figure resizing
 autosave:   30
 autoreload: 2
-# Subplots
-abc:   False
-tight: True
 # Style
+abc:          False
+share:        3
+span:         True
+tight:        True
 fontname:     # if empty, default is Helvetica
 cmap:         fire
 lut:          256
@@ -115,15 +116,15 @@ collabel.color:    k
 tick.labelsize:    # filled by 'small'
 tick.labelcolor:   # filled by 'color'
 tick.labelweight:  normal
+# Extra image settings
+image.edgefix: True
+image.levels: 11
 # Extra axes settings
 axes.alpha: # if empty, depends on 'savefig.transparent' setting
 axes.formatter.zerotrim: True
 axes.formatter.timerotation: 90
 axes.gridminor: True
 axes.geogrid: True
-# Extra image settings
-image.edgefix: True
-image.levels: 11
 # Colorbar settings
 colorbar.loc:         'lower right'
 colorbar.grid:        False
@@ -135,9 +136,9 @@ colorbar.length:      8em
 colorbar.width:       1.5em
 colorbar.axespad:     0.5em
 # Minor tick gridlines
-gridminor.alpha: # if empty, inherited from "grid"
-gridminor.color: # if empty, inherited from "grid"
-gridminor.linestyle: # if empty, inherited from "grid"
+gridminor.alpha:     # filled by "grid.alpha"
+gridminor.color:     # filled by "grid.color"
+gridminor.linestyle: # filled by "grid.linewidth"
 gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
 # Parallels and meridians
 geogrid.labels:    False
@@ -150,9 +151,9 @@ geogrid.color:     k
 geogrid.linewidth: 1.0
 geogrid.linestyle: ':'
 # Geographic content
-map.linewidth: # filled by "linewidth"
-map.facecolor: # filled by "facecolor"
-map.edgecolor: # filled by "color"
+map.linewidth:          # filled by "linewidth"
+map.facecolor:          # filled by "facecolor"
+map.edgecolor:          # filled by "color"
 land.color:             k
 ocean.color:            w
 lakes.color:            w
@@ -164,19 +165,24 @@ innerborders.color:     k
 innerborders.linewidth: 0.6
 rivers.color:           k
 rivers.linewidth:       0.6
-# Subplot property sizes
-subplots.axwidth:    2
-subplots.panelwidth: 0.45
-subplots.cbarwidth:  0.17
-subplots.legwidth:   0.25
-# Tight layout padding, affect the figure when tight=True
-subplots.panelpad:   0.05
-subplots.borderpad:  0.10
-subplots.subplotpad: 0.10
-# Spaces, affect the figure when tight=False
-subplots.titlespace: 0.2
-subplots.innerspace: 0.1
-subplots.ylabspace:  0.6
-subplots.xlabspace:  0.45
-subplots.nolabspace: 0.15
-subplots.panelspace: 0.15
+# Subplot properties
+subplots.axwidth:       2
+subplots.panelwidth:    0.45
+subplots.cbarwidth:     0.17
+subplots.legwidth:      0.25
+subplots.panelpad:      0.05 # affects the figure when tight=True
+subplots.borderpad:     0.10
+subplots.subplotpad:    0.10
+subplots.titlespace:    0.2 # affects the figure when tight=False
+subplots.innerspace:    0.1
+subplots.ylabspace:     0.6
+subplots.xlabspace:     0.45
+subplots.nolabspace:    0.15
+subplots.panelspace:    0.15
+subplots.tightborders:  # filled by "tight"
+subplots.tightsubplots: # filled by "tight"
+subplots.tightpanels:   # filled by "tight"
+subplots.sharex:        # filled by "share"
+subplots.sharey:        # filled by "share"
+subplots.spanx:         # filled by "span"
+subplots.spany:         # filled by "span"

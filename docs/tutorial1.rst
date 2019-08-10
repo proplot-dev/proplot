@@ -90,7 +90,7 @@ See `~proplot.subplots.subplots` for details.
     f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=1.5)
     axs.format(abc=True, abcloc='ul', suptitle='Subplot grid with centered rows', xlabel='xlabel', ylabel='ylabel')
     axs[2].plot(data, lw=2)
-    f, axs = plot.subplots([[1,1,2],[1,1,6],[3,4,4],[3,5,5]], span=1, share=3, width=5)
+    f, axs = plot.subplots([[1,1,2],[1,1,6],[3,4,4],[3,5,5]], width=5)
     axs.format(suptitle='Complex subplot grid with axis-sharing + spanning labels', xlabel='xlabel', ylabel='ylabel', abc=True)
     axs[0].plot(data, lw=2)
 
@@ -200,7 +200,7 @@ corner).
 
     import proplot as plot
     for share in (3,0):
-        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, wratios=(3,2,2), share=share, span=False, tight=True)
+        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, wratios=(3,2,2), share=0, tight=True)
         axs[4].format(title='title\ntitle\ntitle', suptitle='Automatic spacing and aspect ratio conservation')
         axs[1].format(ylabel='ylabel\nylabel', xlabel='xlabel')
 
@@ -216,7 +216,7 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,5,5]], wratios=(1,1,2), hratios=(2,1,1), share=0, span=False, axwidth=1.5)
+    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,5,5]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5)
     axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Automatic spacing and aspect ratio conservation')
     axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
     axs[2:4].format(yformatter='null', title='Title', ytickloc='both')
@@ -230,7 +230,7 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=1.2, ncols=2, span=False, share=0, axpanels={1:'lrb',2:'lrt'},
+    f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0, axpanels={1:'lrb',2:'lrt'},
                axpanels_kw={'rshare':False, 'bstack':3, 'bwidth':0.15, 'bshare':False, 'tflush':True})
     axs.format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Hello', collabels=['Column 1', 'Column 2'],
                suptitle='Automatic spacing and aspect ratio conservation')
@@ -349,7 +349,7 @@ need for boilerplate plotting code.
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(ncols=2, nrows=2, share=False, span=False, tight=True, axwidth=1.5)
+    f, axs = plot.subplots(ncols=2, nrows=2, share=0, tight=True, axwidth=1.5)
     axs.format(xlabel='x-axis', ylabel='y-axis', xlim=(1,10), xlocator=1, xscale='log',
               ylim=(0,4), ylocator=plot.arange(0,4), yticklabels=('a', 'bb', 'c', 'dd', 'e'),
               title='Main', ltitle='Left', rtitle='Right', # different titles
@@ -405,7 +405,7 @@ more on panels, see the :ref:`Panels and insets` section.
     # Series
     series = pd.Series(np.random.rand(20).cumsum())
     # Figure
-    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=False, span=False)
+    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=0)
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
@@ -443,7 +443,7 @@ more on panels, see the :ref:`Panels and insets` section.
     df.columns.name = 'time (days)'
     # Figure
     # We must make room for the axes panels during subplots call!
-    f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=1.8, share=False, span=False)
+    f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=1.8, share=0)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
     ax = axs[1]

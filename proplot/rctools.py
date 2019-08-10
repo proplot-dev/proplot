@@ -55,6 +55,8 @@ Key                 Description
 ``autoreload``      If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
 ``abc``             Boolean, indicates whether to draw a-b-c labels by default.
 ``tight``           Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
+``share``           The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``.
+``span``            Boolean, toggles spanning axis labels.
 ``fontname``        Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
 ``cmap``            The default colormap.
 ``lut``             The number of colors to put in the colormap lookup table.
@@ -173,27 +175,34 @@ Key                       Description
 ``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
 ========================  =========================================================================================================================
 
-The ``subplot`` category has settings that control the default figure
+The ``subplots`` category has settings that control the default figure
 layout. As with all sizing arguments, if specified as a number, the units
 are inches. If string, the units are interpreted by `~proplot.utils.units`.
 
-=======================  ==================================================================
-Key                      Description
-=======================  ==================================================================
-``subplots.axwidth``      Default width of each axes.
-``subplots.panelwidth``   Width of side panels.
-``subplots.cbarwidth``    Width of "colorbar" panels.
-``subplots.legwidth``     Width of "legend" panels.
-``subplots.borderpad``    Padding around edges for tight subplots.
-``subplots.subplotpad``   Padding between main subplots.
-``subplots.panelpad``     Padding between axes panels and their parents.
-``subplots.titlespace``   Vertical space for titles.
-``subplots.ylabspace``    Horizontal space between subplots alotted for *y*-labels.
-``subplots.xlabspace``    Vertical space between subplots alotted for *x*-labels.
-``subplots.nolabspace``   Space between subplots alotted for tick marks.
-``subplots.innerspace``   Purely empty space between subplots.
-``subplots.panelspace``   Purely empty space between main axes and side panels.
-=======================  ==================================================================
+==========================  ==================================================================
+Key                         Description
+==========================  ==================================================================
+``subplots.axwidth``        Default width of each axes.
+``subplots.panelwidth``     Width of side panels.
+``subplots.cbarwidth``      Width of "colorbar" panels.
+``subplots.legwidth``       Width of "legend" panels.
+``subplots.borderpad``      Padding around edges for tight subplots.
+``subplots.subplotpad``     Padding between main subplots.
+``subplots.panelpad``       Padding between axes panels and their parents.
+``subplots.titlespace``     Vertical space for titles.
+``subplots.ylabspace``      Horizontal space between subplots alotted for *y*-labels.
+``subplots.xlabspace``      Vertical space between subplots alotted for *x*-labels.
+``subplots.nolabspace``     Space between subplots alotted for tick marks.
+``subplots.innerspace``     Purely empty space between subplots.
+``subplots.panelspace``     Purely empty space between main axes and side panels.
+``subplots.sharex``         The axis sharing level. See `~proplot.subplots`.
+``subplots.sharey``         The axis sharing level. See `~proplot.subplots`.
+``subplots.spanx``          Boolean, toggles spanning axis labels. See `~proplot.subplots`.
+``subplots.spany``          Boolean, toggles spanning axis labels. See `~proplot.subplots`.
+``subplots.tightborders``   Boolean, whether to automatically adjust space around figure edge.
+``subplots.tightsubplots``  Boolean, whether to automatically adjust space between subplots.
+``subplots.tightpanels``    Boolean, whether to automatically adjust space between panels.
+==========================  ==================================================================
 """
 # TODO: Add 'style' setting that overrides .proplotrc
 import re
@@ -229,15 +238,11 @@ if not os.path.exists(_default_rc):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 _rcGlobals_children = {
-    # Notebooks
-    'nbsetup':      [],
-    'backend':      [],
-    'autosave':     [],
-    'autoreload':   [],
-    # Subplots
-    'tight':        [],
+    # General
     'abc':          [],
-    # Style
+    'span':         ['subplots.spanx', 'subplots.spany'],
+    'share':        ['subplots.sharex', 'subplots.sharey'],
+    'tight':        ['subplots.tightborders', 'subplots.tightsubplots', 'subplots.tightpanels'],
     'fontname':     ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
     'cmap':         ['image.cmap'],
     'lut':          ['image.lut'],
@@ -258,7 +263,6 @@ _rcGlobals_children = {
     'tickratio':    [],
     'ticklenratio': [],
     'gridratio':    [],
-    # Geography
     'reso':         [],
     'geogrid':      ['axes.geogrid'],
     'land':         [],
@@ -268,6 +272,10 @@ _rcGlobals_children = {
     'borders':      [],
     'innerborders': [],
     'rivers':       [],
+    'nbsetup':      [],
+    'backend':      [],
+    'autosave':     [],
+    'autoreload':   [],
     }
 
 # Names of the new settings
@@ -287,11 +295,12 @@ _rc_names_custom = {
     'collabel.fontsize', 'collabel.weight', 'collabel.color',
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonstep', 'geogrid.latstep',
-    'subplots.subplotpad', 'subplots.panelpad', 'subplots.borderpad', 'subplots.titlespace',
-    'subplots.innerspace',
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
+    'subplots.sharex', 'subplots.sharey', 'subplots.spanx', 'subplots.spany',
+    'subplots.subplotpad', 'subplots.panelpad', 'subplots.borderpad', 'subplots.titlespace',
+    'subplots.tightsubplots', 'subplots.tightborders', 'subplots.tightpanels',
     'subplots.legwidth', 'subplots.cbarwidth', 'subplots.ylabspace', 'subplots.xlabspace', 'subplots.nolabspace',
-    'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace',
+    'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace', 'subplots.innerspace',
     'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
     }
 # Used by BaseAxes.format, allows user to pass rc settings as keyword args,

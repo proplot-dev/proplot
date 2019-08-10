@@ -201,7 +201,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
     plot.rc['title.loc'] = 'uc'
     plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
     data = np.random.rand(20,8).cumsum(axis=0).cumsum(axis=1)[:,::-1] + 20*np.random.normal(size=(20,8)) + 30
-    f, axs = plot.subplots(nrows=3, aspect=1.5, axwidth=3, span=False, share=False, hratios=(2,1,1))
+    f, axs = plot.subplots(nrows=3, aspect=1.5, axwidth=3, share=0, hratios=(2,1,1))
     axs.format(suptitle='Error bars with various plotting commands')
     # Asking add_errorbars to calculate bars
     ax = axs[0]
@@ -250,7 +250,7 @@ and positive area underneath a line, as shown below.
     import numpy as np
     plot.rc.reset()
     plot.rc.margin = 0
-    f, axs = plot.subplots(array=[[1,2],[3,3]], hratios=(1,0.8), span=False, share=0)
+    f, axs = plot.subplots(array=[[1,2],[3,3]], hratios=(1,0.8), share=0)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
     data = np.random.rand(5,3).cumsum(axis=0)
     cycle = ('gray3', 'gray5', 'gray7')
@@ -293,7 +293,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
     import pandas as pd
     plot.rc.titleloc = 'uc'
     plot.rc.margin = 0.05
-    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, span=False, share=False, hratios=(3,2))
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, share=0, hratios=(3,2))
     data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
     data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
     ax = axs[0]
@@ -359,7 +359,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
     N = 50
     cmap = 'IceFire'
     values = np.linspace(-N/2, N/2, N)
-    f, axs = plot.subplots(span=False, share=False, ncols=2, wratios=(2,1), axcolorbars='b', axwidth='6cm', aspect=(2,1))
+    f, axs = plot.subplots(share=0, ncols=2, wratios=(2,1), axcolorbars='b', axwidth='6cm', aspect=(2,1))
     ax = axs[0]
     m = ax.plot((np.random.rand(N)-0.5).cumsum(), np.random.rand(N), cmap=cmap, values=values, lw=7, extend='both')
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
