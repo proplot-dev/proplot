@@ -279,7 +279,7 @@ class FlexibleGridSpecBase(object):
         # self-contained, so it can be invoked on already instantiated
         # gridspec (see update() method).
         # TODO Does _nrows or _ncols conflict with default gridspec attributes?
-        self._nrows = nrows*2-1
+        self._nrows = nrows*2-1 # used for get_geometry and needed by _spaces_as_ratios
         self._ncols = ncols*2-1
         self._nrows_visible = nrows
         self._ncols_visible = ncols
@@ -295,8 +295,8 @@ class FlexibleGridSpecBase(object):
         """Magic obfuscation that renders `~matplotlib.gridspec.GridSpecBase`
         rows and columns designated as 'spaces' inaccessible."""
         # Get indices
-        nrows, ncols = self._nrows, self._ncols
-        nrows_visible, ncols_visible = self._nrows_visible, self._ncols_visible
+        nrows, ncols = self.get_geometry()
+        nrows_visible, ncols_visible = self.get_visible_geometry()
         if not isinstance(key, tuple): # usage gs[1,2]
             num1, num2 = _normalize(key, nrows_visible * ncols_visible)
         else:
@@ -317,8 +317,7 @@ class FlexibleGridSpecBase(object):
             **kwargs):
         """For keyword arg usage, see `FlexibleGridSpecBase`."""
         # Parse flexible input
-        nrows = self._nrows_visible
-        ncols = self._ncols_visible
+        nrows, ncols = self.get_visible_geometry()
         hratios = np.atleast_1d(_default(height_ratios, 1))
         wratios = np.atleast_1d(_default(width_ratios,  1))
         hspace = np.atleast_1d(_default(hspace, np.mean(hratios)*0.10)) # this is relative to axes
@@ -346,24 +345,45 @@ class FlexibleGridSpecBase(object):
         # Assign spacing as ratios
         # Also return extra kwargs, will be passed to superclass initializers
         # or superclass update method.
-        wratios_final = [None]*self._ncols
+        nrows, ncols = self.get_geometry()
+        wratios_final = [None]*ncols
         wratios_final[::2] = [*wratios]
-        if self._ncols>1:
+        if ncols>1:
             wratios_final[1::2] = [*wspace]
-        hratios_final = [None]*self._nrows
+        hratios_final = [None]*nrows
         hratios_final[::2] = [*hratios]
-        if self._nrows>1:
+        if nrows>1:
             hratios_final[1::2] = [*hspace]
         return wratios_final, hratios_final, kwargs # bring extra kwargs back
 
-    def update(self, **gridspec_kw):
-        """Update the width, height ratios and spacing for subplot columns, rows."""
-        wratios, hratios, edges_kw = self._spaces_as_ratios(**gridspec_kw)
+    def update(self, **kwargs):
+        """Updates the width ratios, height ratios, and spacing for subplot
+        columns and rows."""
+        wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
         self.set_width_ratios(wratios)
         self.set_height_ratios(hratios)
-        edges_kw.pop('nrows', None) # cannot be modified
-        edges_kw.pop('ncols', None)
-        super().update(**edges_kw) # remaining kwargs should just be left, right, top, bottom
+        for key in ('nrows','ncols'):
+            kwargs.pop(key, None) # cannot be modified
+        super().update(**kwargs) # remaining kwargs should just be left, right, top, bottom
+
+    def get_visible_rows_columns(self):
+        """Like `~matplotlib.gridspec.GridspecBase.get_rows_columns`, but returns
+        props for number of visible rows and columns, i.e. the number of rows and
+        columns that aren't skipped over by `~FlexibleGridSpecBase.__getitem__`."""
+        nrows, ncols = self.get_geometry()
+        row_start, col_start = divmod(self.num1, ncols)
+        if self.num2 is not None:
+            row_stop, col_stop = divmod(self.num2, ncols)
+        else:
+            row_stop = row_start
+            col_stop = col_start
+        return row_start//2, row_stop//2, col_start//2, col_stop//2 # factor of two corrects to visible indices
+
+    def get_visible_geometry(self):
+        """Like `~matplotlib.gridspec.GridspecBase.get_geometry`, but returns
+        the number of visible rows and columns, i.e. the number of rows and
+        columns that aren't skipped over by `~FlexibleGridSpecBase.__getitem__`."""
+        return self._nrows_visible, self._ncols_visible
 
 class FlexibleGridSpec(FlexibleGridSpecBase, mgridspec.GridSpec):
     """Mixes `FlexibleGridSpecBase` with `~matplotlib.gridspec.GridSpec`."""
@@ -424,6 +444,22 @@ def _intervaly(ax):
     yerr = ax._xtick_pad_error # error in y-direction, due to x ticks
     return (bbox.ymin + yerr[0], bbox.ymax - sum(yerr))
 
+def _xrange(ax):
+    """Gets the column range for the axes. If this is a child of the main axes,
+    returns properties for the parent axes."""
+    # Factor of two corrects for inaccessible 'space' gridspec locations
+    # e.g. 0-->0, 2-->1, 4-->2, and axes can never lie on 1, 3, 5, etc.
+    subspec = ax.get_subplotspec().get_topmost_subplotspec()
+    _, _, _, _, col1, col2 = subspec.get_rows_columns()
+    return col1//2, col2//2
+
+def _yrange(ax):
+    """Gets the row range for axes. If this is a child of the main axes,
+    returns properties for the parent axes."""
+    subspec = ax.get_subplotspec().get_topmost_subplotspec()
+    _, _, row1, row2, _, _ = subspec.get_rows_columns()
+    return row1//2, row2//2
+
 def _ax_span(ax, renderer, children=True):
     """Get span, accounting for panels, shared axes, and whether axes has
     been replaced by colorbar in same location."""
@@ -446,8 +482,8 @@ def _ax_props(axs, renderer):
     spans = [_ax_span(ax, renderer) for ax in axs]
     xspans = np.array([span[0] for span in spans])
     yspans = np.array([span[1] for span in spans])
-    xrange = np.array([(ax._colorbar_parent or ax)._xrange for ax in axs])
-    yrange = np.array([(ax._colorbar_parent or ax)._yrange for ax in axs])
+    xrange = np.array([_xrange(ax._colorbar_parent or ax) for ax in axs])
+    yrange = np.array([_yrange(ax._colorbar_parent or ax) for ax in axs])
     return xspans, yspans, xrange, yrange
 
 class Figure(mfigure.Figure):
@@ -568,13 +604,13 @@ class Figure(mfigure.Figure):
     def _labels_setup(self, ax, labels, rows=True, **kwargs):
         """Assigns row labels and column labels, updates label settings."""
         attr = ('rowlabel' if rows else 'collabel')
-        range_along = ('_yrange' if rows else '_xrange') # along labels
-        range_across = ('_xrange' if rows else '_yrange') # across from labels
+        range_along = (_yrange if rows else _xrange) # along labels
+        range_across = (_xrange if rows else _yrange) # across from labels
         if not self._main_axes:
             axs = [ax]
         else:
-            axs = [ax for ax in self._main_axes if getattr(ax, range_across)[0]==0] # axes on the edge
-            axs = [ax for _,ax in sorted(zip([getattr(ax, range_along)[0] for ax in axs], axs))] # order by yrange
+            axs = [ax for ax in self._main_axes if range_across(ax)[0]==0] # axes on the edge
+            axs = [ax for _,ax in sorted(zip([range_along(ax)[0] for ax in axs], axs))] # order by yrange
         if labels is None or isinstance(labels, str): # common during testing
             labels = [labels]*len(axs)
         if len(labels)!=len(axs):
@@ -637,9 +673,9 @@ class Figure(mfigure.Figure):
             axes = [getattr(base, name + 'axis')]
         else:
             if name=='x':
-                axs = [ax for ax in self._main_axes if ax._yrange[1]==base._yrange[1]]
+                axs = [ax for ax in self._main_axes if _yrange(ax)[1]==_yrange(base)[1]]
             else:
-                axs = [ax for ax in self._main_axes if ax._xrange[0]==base._xrange[0]]
+                axs = [ax for ax in self._main_axes if _xrange(ax)[0]==_xrange(base)[0]]
             axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axs]
 
         # Apply settings and store list of spanning axes
@@ -655,7 +691,7 @@ class Figure(mfigure.Figure):
         if span and span_on:
             # Use halfway-point axis for spanning label, because if we have an
             # odd number of columns or rows, that transform gives us perfect offset
-            ranges = np.array([getattr(ax, '_' + name + 'range') for ax in axs])
+            ranges = np.array([_xrange(ax) if name=='x' else _yrange(ax) for ax in axs])
             half = (np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2
             saxis = axes[half]
             for axis in axes:
@@ -732,7 +768,7 @@ class Figure(mfigure.Figure):
         # attribute *includes* labels for appropriate tight layout, but we need
         # to *exlude* labels before positioning them by making them invisible!
         w, h = self.get_size_inches()
-        axs = [ax for ax in self._main_axes if ax._xrange[0]==0] # order by xrange
+        axs = [ax for ax in self._main_axes if _xrange(ax)[0]==0] # order by xrange
         for ax in axs:
             label = ax.rowlabel
             label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
@@ -768,7 +804,7 @@ class Figure(mfigure.Figure):
         ys = []
         suptitle = self._suptitle
         suptitle.set_visible(False)
-        axs = [ax for ax in self._main_axes if ax._yrange[0]==0] # order by xrange
+        axs = [ax for ax in self._main_axes if _yrange(ax)[0]==0] # order by xrange
         for ax in axs:
             label = ax.collabel
             label.set_visible(False)
@@ -1005,6 +1041,7 @@ class Figure(mfigure.Figure):
         # Initial stuff
         gridspec = self._main_gridspec
         subplots_kw = self._subplots_kw
+        nrows, ncols = gridspec.get_visible_geometry()
         if subplots_kw is None or gridspec is None:
             return
 
@@ -1135,8 +1172,6 @@ class Figure(mfigure.Figure):
             xgroups = []
             xrange[:,1] += 1
             yrange[:,1] += 1
-            ncols = self._main_axes[0]._ncols
-            nrows = self._main_axes[0]._nrows
             for cspace in range(1, ncols): # spaces between columns
                 groups = []
                 for row in range(nrows):
@@ -1239,23 +1274,21 @@ class Figure(mfigure.Figure):
 
             # Bottom, top panels in same rows
             axs = self._main_axes
-            ncols = axs[0]._ncols
-            nrows = axs[0]._nrows
             hpanels = []
             for row in range(nrows):
                 ihpanels = 0
-                paxs = [ax.bottompanel for ax in axs if ax._yrange[1]==row]
+                paxs = [ax.bottompanel for ax in axs if _yrange(ax)[1]==row]
                 ihpanels += self._panel_tight_layout('b', paxs, renderer)
-                paxs = [ax.toppanel for ax in axs if ax._yrange[0]==row]
+                paxs = [ax.toppanel for ax in axs if _yrange(ax)[0]==row]
                 ihpanels += self._panel_tight_layout('t', paxs, renderer)
                 hpanels.append(ihpanels)
             # Left, right panels in same columns
             wpanels = []
             for col in range(ncols):
                 iwpanels = 0
-                paxs = [ax.leftpanel for ax in axs if ax._xrange[0]==col]
+                paxs = [ax.leftpanel for ax in axs if _xrange(ax)[0]==col]
                 iwpanels += self._panel_tight_layout('l', paxs, renderer)
-                paxs = [ax.rightpanel for ax in axs if ax._xrange[1]==col]
+                paxs = [ax.rightpanel for ax in axs if _xrange(ax)[1]==col]
                 iwpanels += self._panel_tight_layout('r', paxs, renderer)
                 wpanels.append(iwpanels)
             # Adjust for panels
@@ -1300,8 +1333,8 @@ class Figure(mfigure.Figure):
                 ihpanels = sum(h for i,h in enumerate(ihratios) if i!=idx[0])
                 iwpanels = sum(w for i,w in enumerate(iwratios) if i!=idx[1])
                 # Calculate
-                xrange = 2*np.array(ax._xrange) # endpoint inclusive
-                yrange = 2*np.array(ax._yrange)
+                xrange = 2*np.array(_xrange(ax)) # endpoint inclusive
+                yrange = 2*np.array(_yrange(ax))
                 fullwidth = sum(wratios[xrange[0]:xrange[1]+1]) # including panels!
                 fullheight = sum(hratios[yrange[0]:yrange[1]+1])
                 axwidth = fullwidth - iwpanels

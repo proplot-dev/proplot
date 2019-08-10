@@ -210,22 +210,15 @@ class BaseAxes(maxes.Axes):
         # Call parent
         super().__init__(*args, **kwargs)
 
-        # Set up axis sharing, save geometry
-        width, height = self.figure.get_size_inches()
-        self.width = abs(self._position.width)*width # position is in figure units
-        self.height = abs(self._position.height)*height
-        if isinstance(self, maxes.SubplotBase):
-            nrows, ncols, subspec = self._topmost_subspec()
-            self._yrange = ((subspec.num1 // ncols) // 2, (subspec.num2 // ncols) // 2)
-            self._xrange = ((subspec.num1 % ncols) // 2,  (subspec.num2 % ncols) // 2)
-            self._nrows = 1 + nrows // 2 # remember, we have rows masquerading as empty spaces!
-            self._ncols = 1 + ncols // 2
         # Axis sharing, title stuff, new text attributes
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
         self._sharex_setup(sharex, sharex_level)
         self._sharey_setup(sharey, sharey_level)
         self._title_transform = self.title.get_transform() # save in case it changes
+        width, height = self.figure.get_size_inches()
+        self.width = abs(self._position.width)*width # position is in figure units
+        self.height = abs(self._position.height)*height
         self.abc = self.text(0, 0, '') # position tbd
         self.collabel = self.text(0, 0, '', va='bottom', ha='center', transform=self._title_transform)
         self.rowlabel = self.text(0, 0, '', va='center', ha='right', transform=self.transAxes)
@@ -254,20 +247,6 @@ class BaseAxes(maxes.Axes):
         if attr=='text':
             obj = wrappers._text_wrapper(self, obj)
         return obj
-
-    def _topmost_subspec(self):
-        """Get the top-level SubplotSpec (i.e. the one encompassed by an
-        axes and all its panels, if any are present)."""
-        subspec = self.get_subplotspec()
-        gridspec = subspec.get_gridspec()
-        while isinstance(gridspec, mgridspec.GridSpecFromSubplotSpec):
-            try:
-                subspec = gridspec._subplot_spec
-            except AttributeError:
-                raise ValueError('The _subplot_spec attribute is missing from this GridSpecFromSubplotSpec. Cannot determine the parent GridSpec rows/columns occupied by this slot.')
-            gridspec = subspec.get_gridspec()
-        nrows, ncols = gridspec.get_geometry()
-        return nrows, ncols, subspec
 
     def _share_short_axis(self, share, side, level):
         """When sharing main subplots, shares the short axes of their side panels."""
