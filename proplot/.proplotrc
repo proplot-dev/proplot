@@ -179,10 +179,3 @@ subplots.ylabspace:     0.6
 subplots.xlabspace:     0.45
 subplots.nolabspace:    0.15
 subplots.panelspace:    0.15
-subplots.tightborders:  # filled by "tight"
-subplots.tightsubplots: # filled by "tight"
-subplots.tightpanels:   # filled by "tight"
-subplots.sharex:        # filled by "share"
-subplots.sharey:        # filled by "share"
-subplots.spanx:         # filled by "span"
-subplots.spany:         # filled by "span"

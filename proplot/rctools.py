@@ -195,13 +195,6 @@ Key                         Description
 ``subplots.nolabspace``     Space between subplots alotted for tick marks.
 ``subplots.innerspace``     Purely empty space between subplots.
 ``subplots.panelspace``     Purely empty space between main axes and side panels.
-``subplots.sharex``         The axis sharing level. See `~proplot.subplots`.
-``subplots.sharey``         The axis sharing level. See `~proplot.subplots`.
-``subplots.spanx``          Boolean, toggles spanning axis labels. See `~proplot.subplots`.
-``subplots.spany``          Boolean, toggles spanning axis labels. See `~proplot.subplots`.
-``subplots.tightborders``   Boolean, whether to automatically adjust space around figure edge.
-``subplots.tightsubplots``  Boolean, whether to automatically adjust space between subplots.
-``subplots.tightpanels``    Boolean, whether to automatically adjust space between panels.
 ==========================  ==================================================================
 """
 # TODO: Add 'style' setting that overrides .proplotrc
@@ -240,9 +233,9 @@ if not os.path.exists(_default_rc):
 _rcGlobals_children = {
     # General
     'abc':          [],
-    'span':         ['subplots.spanx', 'subplots.spany'],
-    'share':        ['subplots.sharex', 'subplots.sharey'],
-    'tight':        ['subplots.tightborders', 'subplots.tightsubplots', 'subplots.tightpanels'],
+    'span':         [],
+    'share':        [],
+    'tight':        [],
     'fontname':     ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
     'cmap':         ['image.cmap'],
     'lut':          ['image.lut'],
@@ -296,9 +289,7 @@ _rc_names_custom = {
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonstep', 'geogrid.latstep',
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
-    'subplots.sharex', 'subplots.sharey', 'subplots.spanx', 'subplots.spany',
     'subplots.subplotpad', 'subplots.panelpad', 'subplots.borderpad', 'subplots.titlespace',
-    'subplots.tightsubplots', 'subplots.tightborders', 'subplots.tightpanels',
     'subplots.legwidth', 'subplots.cbarwidth', 'subplots.ylabspace', 'subplots.xlabspace', 'subplots.nolabspace',
     'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace', 'subplots.innerspace',
     'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',

@@ -471,15 +471,15 @@ class Figure(mfigure.Figure):
             all at once.
         tightborders : bool, optional
             Whether to draw a tight bounding box around the whole figure.
-            Defaults to `tight` if passed, ``rc['subplots.tightborders']`` otherwise.
+            Defaults to `tight` if passed, ``rc['tight']`` otherwise.
         tightsubplots : bool, optional
             Whether to automatically space out subplots to prevent overlapping
             axis tick labels, etc. Defaults to `tight` if passed,
-            ``rc['subplots.tightsubplots']`` otherwise.
+            ``rc['tight']`` otherwise.
         tightpanels : bool, optional
             Whether to automatically space between subplots and their panels
             to prevent overlap.  Defaults to `tight` if passed,
-            ``rc['subplots.tightpanels']`` otherwise.
+            ``rc['tight']`` otherwise.
         borderpad : float or str, optional
             Margin size for tight bounding box surrounding the edge of the
             figure. Defaults to ``rc['subplots.borderpad']``. If float, units are inches.
@@ -510,9 +510,9 @@ class Figure(mfigure.Figure):
             Passed to `matplotlib.figure.Figure`.
         """
         # Tight toggling
-        self._smart_tight_outer   = _default(tight, tightborders, rc['subplots.tightborders'])
-        self._smart_tight_subplot = _default(tight, tightsubplots, rc['subplots.tightsubplots'])
-        self._smart_tight_panel   = _default(tight, tightpanels, rc['subplots.tightpanels'])
+        self._smart_tight_outer   = _default(tight, tightborders, rc['tight'])
+        self._smart_tight_subplot = _default(tight, tightsubplots, rc['tight'])
+        self._smart_tight_panel   = _default(tight, tightpanels, rc['tight'])
         self._smart_tight_init = True # is figure in its initial state?
         # Padding and "flush" args
         self._extra_pad = 0 # sometimes matplotlib fails, cuts off super title! will add to this
@@ -2329,10 +2329,10 @@ def subplots(array=None, ncols=1, nrows=1,
     for (xy,share,span) in (('x',sharex,spany),('y',sharey,spany)):
         if share==0 and span:
             warnings.warn(f'Axis sharing must be turned on for spanning axis labels, but got span{xy}={span} and share{xy}={share}. Using span{xy}=False.')
-    sharex = int(_default(sharex, rc['subplots.sharex']))
-    sharey = int(_default(sharey, rc['subplots.sharey']))
-    spanx = _default(0 if sharex==0 else None, spanx, rc['subplots.spanx'])
-    spany = _default(0 if sharey==0 else None, spany, rc['subplots.spany'])
+    sharex = int(_default(sharex, rc['share']))
+    sharey = int(_default(sharey, rc['share']))
+    spanx = _default(0 if sharex==0 else None, spanx, rc['span'])
+    spany = _default(0 if sharey==0 else None, spany, rc['span'])
     if sharex not in range(4) or sharey not in range(4):
         raise ValueError(f'Axis sharing level can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels). Got sharex={sharex} and sharey={sharey}.')
     # Get some axes properties, where locations are sorted by axes id.
