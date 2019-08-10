@@ -2100,15 +2100,18 @@ def subplots(array=None, ncols=1, nrows=1,
         of the right 2 columns, and ``barray=[0, 2, 2]`` only draws a panel
         underneath the right 2 columns -- as with `array`, the ``0`` indicates
         an empty space.
+    lwidth, rwidth, bwidth : optional
+        See `~Figure.add_subplot_and_panels`, usage is identical.
     lspace, rspace, bspace : float, optional
         If passed, turns off `tightsubplots`.
         Space between the edge of the main subplot grid and the left, right,
         and bottom figure panels. If float, units are inches. If string, units
         are interpreted by `~proplot.utils.units`.
-    lwidth, rwidth, bwidth : optional
-        See `~Figure.add_subplot_and_panels`, usage is identical.
     lstack, rstack, bstack : optional
         See `~Figure.add_subplot_and_panels`, usage is identical.
+    lshare, rshare, bshare : optional
+        As in `~Figure.add_subplot_and_panels`, but only controls axis
+        sharing between *stacked* panels.
     lsep, rsep, bsep : optional
         If passed, turns off `tightsubplots`.
         See `~Figure.add_subplot_and_panels`, usage is identical.
@@ -2116,9 +2119,6 @@ def subplots(array=None, ncols=1, nrows=1,
         As in `~Figure.add_subplot_and_panels`, but only controls whether
         *stacked* panels are flush against each other -- i.e. does not make
         figure panels flush against the main subplots.
-    lshare, rshare, bshare : optional
-        As in `~Figure.add_subplot_and_panels`, but only controls axis
-        sharing between *stacked* panels.
 
     axpanel, axpanels : str or dict-like, optional
         Specifies which axes should have "panels". Both `axpanel` and `axpanels`
