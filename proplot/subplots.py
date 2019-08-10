@@ -366,19 +366,6 @@ class FlexibleGridSpecBase(object):
             kwargs.pop(key, None) # cannot be modified
         super().update(**kwargs) # remaining kwargs should just be left, right, top, bottom
 
-    def get_visible_rows_columns(self):
-        """Like `~matplotlib.gridspec.GridspecBase.get_rows_columns`, but returns
-        props for number of visible rows and columns, i.e. the number of rows and
-        columns that aren't skipped over by `~FlexibleGridSpecBase.__getitem__`."""
-        nrows, ncols = self.get_geometry()
-        row_start, col_start = divmod(self.num1, ncols)
-        if self.num2 is not None:
-            row_stop, col_stop = divmod(self.num2, ncols)
-        else:
-            row_stop = row_start
-            col_stop = col_start
-        return row_start//2, row_stop//2, col_start//2, col_stop//2 # factor of two corrects to visible indices
-
     def get_visible_geometry(self):
         """Like `~matplotlib.gridspec.GridspecBase.get_geometry`, but returns
         the number of visible rows and columns, i.e. the number of rows and
