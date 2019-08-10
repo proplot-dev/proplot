@@ -2058,7 +2058,8 @@ def subplots(array=None, ncols=1, nrows=1,
         axes. This can considerably redundancy in your figure.
         Options are as follows:
 
-        0. No axis sharing. Also disables `spanx` and `spany`.
+        0. No axis sharing. Also sets the default `spanx` and `spany` values
+           to ``False``.
         1. Only draw *axis label* on the leftmost column (*y*) or
            bottommost row (*x*) of subplots. Axis tick labels
            still appear on every subplot.
@@ -2068,11 +2069,11 @@ def subplots(array=None, ncols=1, nrows=1,
            leftmost column (*y*) or bottommost row (*x*) of subplots.
 
     spanx, spany, span : bool or {0, 1}, optional
-        Ignored if `sharex`, `sharey`, or `share` are ``0``.
-        Whether to use "spanning" axis labels for the *x* axis, *y* axis, or
-        both axes. When ``True``, a single, centered axis label is used for
-        all axes with bottom and left edges in the same row or column.
-        This can considerably redundancy in your figure.
+        Default is ``False`` if `sharex`, `sharey`, or `share` are ``0``,
+        ``True`` otherwise. Toggles "spanning" axis labels for the *x* axis,
+        *y* axis, or both axes. When ``True``, a single, centered axis label
+        is used for all axes with bottom and left edges in the same row or
+        column.  This can considerably redundancy in your figure.
 
         "Spanning" labels integrate with "shared" axes. For example,
         for a 3-row, 3-column figure, with ``sharey>1`` and ``spany=1``,
@@ -2363,19 +2364,12 @@ def subplots(array=None, ncols=1, nrows=1,
     #--------------------------------------------------------------------------#
     # Figure out rows and columns "spanned" by each axes in list, for
     # axis sharing and axis label spanning settings
-    sharex = _default(share, sharex)
-    sharey = _default(share, sharey)
-    spanx = _default(span, spanx)
-    spany = _default(span, spany)
-    for (xy,share,span) in (('x',sharex,spany),('y',sharey,spany)):
-        if share==0 and span:
-            warnings.warn(f'Axis sharing must be turned on for spanning axis labels, but got span{xy}={span} and share{xy}={share}. Using span{xy}=False.')
-    sharex = int(_default(sharex, rc['share']))
-    sharey = int(_default(sharey, rc['share']))
-    spanx = _default(0 if sharex==0 else None, spanx, rc['span'])
-    spany = _default(0 if sharey==0 else None, spany, rc['span'])
+    sharex = int(_default(share, sharex, rc['share']))
+    sharey = int(_default(share, sharey, rc['share']))
     if sharex not in range(4) or sharey not in range(4):
         raise ValueError(f'Axis sharing level can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels). Got sharex={sharex} and sharey={sharey}.')
+    spanx = _default(span, spanx, 0 if sharex==0 else None, rc['span'])
+    spany = _default(span, spany, 0 if sharey==0 else None, rc['span'])
     # Get some axes properties, where locations are sorted by axes id.
     # NOTE: These ranges are endpoint exclusive, like a slice object!
     axids = [np.where(array==i) for i in np.sort(np.unique(array)) if i>0] # 0 stands for empty
