@@ -146,7 +146,7 @@ arg and the ``precision`` keyword arg. See
     import pandas as pd
     import numpy as np
     # Heatmap with labels
-    f, axs = plot.subplots(ncols=2, axwidth=2, span=0, share=1)
+    f, axs = plot.subplots(ncols=2, axwidth=2, span=False, share=1)
     data = np.random.rand(6,6)
     data = pd.DataFrame(data, index=pd.Index(['a','b','c','d','e','f']))
     axs.format(suptitle='Labels demo')

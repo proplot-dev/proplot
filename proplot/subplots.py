@@ -534,7 +534,7 @@ class Figure(mfigure.Figure):
             Passed to `matplotlib.figure.Figure`.
         """
         # Tight toggling
-        self._smart_tight_outer   = _default(tight, tightborders, rc['tight'])
+        self._smart_tight_borders   = _default(tight, tightborders, rc['tight'])
         self._smart_tight_subplot = _default(tight, tightsubplots, rc['tight'])
         self._smart_tight_panel   = _default(tight, tightpanels, rc['tight'])
         self._smart_tight_init = True # is figure in its initial state?
@@ -603,6 +603,67 @@ class Figure(mfigure.Figure):
             if kwargs:
                 obj.update(kwargs)
 
+    def _setup_axis_labels(self, axis=None, span=False, **kwargs):
+        """Get axis label for axes with axis sharing or spanning enabled.
+        When `span` is False, we add labels to all axes. When `span` is
+        True, we filter to one axes."""
+        if axis is None:
+            axes = self._spanning_axes
+        else:
+            axes = [axis]
+        # Loop through axes
+        # NOTE: We turn off spanning labels before adjusting row and column
+        # labels so they are offset appropriately.
+        for axis in axes:
+            # Get the axes
+            name = axis.axis_name
+            if name not in 'xy': # i.e. theta or radius
+                return
+            base = axis.axes
+            for _ in range(2): # try 2 levels down, should be sufficient
+                base = getattr(base, '_share' + name, None) or base
+            span_on = getattr(base, '_span'  + name)
+            if not span_on:
+                axes = [getattr(base, name + 'axis')]
+            else:
+                axes_axs = self._get_axs('b' if name=='x' else 'l', base)
+                axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axes_axs]
+
+            # Apply settings and store list of spanning axes
+            for axis in axes:
+                if span_on and axis not in self._spanning_axes:
+                    self._spanning_axes.append(axis)
+                if axis.get_label_position() == 'top':
+                    kwargs['va'] = 'bottom' # baseline gets cramped if no ticklabels present
+                axis.label.update({'visible':True, **kwargs})
+
+            # If requested, turn on spanning
+            # TODO: Use tightbbox for this?
+            if span and span_on:
+                # Use halfway-point axis for spanning label, because if we have an
+                # odd number of columns or rows, that transform gives us perfect offset
+                ranges = np.array([_xrange(ax) if name=='x' else _yrange(ax) for ax in axes_axs])
+                half = (np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2
+                saxis = axes[half]
+                for axis in axes:
+                    if saxis is not axis:
+                        axis.label.update({'visible':False})
+                # Reposition to "span" other axes
+                idx = slice(ranges.min(), ranges.max() + 1)
+                if name=='x': # span columns
+                    subspec = self._main_gridspec[0,idx]
+                else: # spans rows
+                    subspec = self._main_gridspec[idx,0]
+                bbox = subspec.get_position(self) # in figure-relative coordinates
+                x0, y0, width, height = bbox.bounds
+                if name=='x':
+                    transform = mtransforms.blended_transform_factory(self.transFigure, mtransforms.IdentityTransform())
+                    position = (x0 + width/2, 1)
+                else:
+                    transform = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.transFigure)
+                    position = (1, y0 + height/2)
+                saxis.label.update({'position':position, 'transform':transform})
+
     def _tight_bboxs(self, renderer=None):
         """Sets the ``_tight_bbox`` attribute on axes, so that we don't have
         to call the tight bbox algorithm multiple times."""
@@ -611,18 +672,20 @@ class Figure(mfigure.Figure):
                 bbox = (iax._colorbar_child or iax).get_tightbbox(renderer)
                 iax._tight_bbox = bbox
 
-    def _get_panels(self, side, num):
-        """Returns groups of axes panels that share the same left, right, top,
-        or bottom side, used when aligning panel properties and figuring out
-        proper inter-subplot spacing."""
-        # Get idx
-        # TODO: Track panel properties unique to each column and row space.
+    def _get_axs(self, side, ref):
+        """Returns axes in row or column `ref`, or in the same row or column
+        as axes `ref`, with matching side `side`."""
         if not isinstance(side, str) or len(side)!=1:
             raise ValueError(f'Invalid side "{side}".')
         range_along = (_yrange if side in 'bt' else _xrange)
         idx = (1 if side in 'br' else 0) # which side of range to test
-        axs = [getattr(ax, side+'panel') for ax in self._main_axes if range_along(ax)[idx]==num]
-        return axs # single group, or list of groups
+        if isinstance(ref, axes.BaseAxes):
+            ref = range_along(ref)[idx]
+        return [ax for ax in self._main_axes if range_along(ax)[idx]==ref]
+
+    def _get_panels(self, side, ref):
+        """Calls `_get_axs` and returns a list of the *panels* on that side."""
+        return [getattr(ax, side+'panel') for ax in self._get_axs(side, ref)]
 
     def _aspect_update(self):
         """Adjust average aspect ratio used for gridspec calculations."""
@@ -648,64 +711,6 @@ class Figure(mfigure.Figure):
             figsize, gridspec_kw, _ = _subplots_kwargs(**subplots_kw)
             self._main_gridspec.update(**gridspec_kw)
             self.set_size_inches(figsize)
-
-    def _axis_label_update(self, axis, span=False, **kwargs):
-        """Get axis label for axes with axis sharing or spanning enabled.
-        When `span` is False, we add labels to all axes. When `span` is
-        True, we filter to one axes."""
-        # Get the axes
-        # TODO: Account for axis with different size tick labels?
-        # NOTE: Only do this *after* tight bounding boxes have been drawn!
-        name = axis.axis_name
-        if name not in 'xy': # i.e. theta or radius
-            return
-        base = axis.axes
-        for _ in range(2): # try 2 levels down, should be sufficient
-            base = getattr(base, '_share' + name, None) or base
-        span_on = getattr(base, '_span'  + name)
-        if not span_on:
-            axes = [getattr(base, name + 'axis')]
-        else:
-            if name=='x':
-                axs = [ax for ax in self._main_axes if _yrange(ax)[1]==_yrange(base)[1]]
-            else:
-                axs = [ax for ax in self._main_axes if _xrange(ax)[0]==_xrange(base)[0]]
-            axes = [getattr(getattr(ax, '_share' + name) or ax, name + 'axis') for ax in axs]
-
-        # Apply settings and store list of spanning axes
-        for axis in axes:
-            if span_on and axis not in self._spanning_axes:
-                self._spanning_axes.append(axis)
-            if axis.get_label_position() == 'top':
-                kwargs['va'] = 'bottom' # baseline gets cramped if no ticklabels present
-            axis.label.update({'visible':True, **kwargs})
-
-        # If requested, turn on spanning
-        # TODO: Use tightbbox for this?
-        if span and span_on:
-            # Use halfway-point axis for spanning label, because if we have an
-            # odd number of columns or rows, that transform gives us perfect offset
-            ranges = np.array([_xrange(ax) if name=='x' else _yrange(ax) for ax in axs])
-            half = (np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2
-            saxis = axes[half]
-            for axis in axes:
-                if saxis is not axis:
-                    axis.label.update({'visible':False})
-            # Reposition to "span" other axes
-            idx = slice(ranges.min(), ranges.max() + 1)
-            if name=='x': # span columns
-                subspec = self._main_gridspec[0,idx]
-            else: # spans rows
-                subspec = self._main_gridspec[idx,0]
-            bbox = subspec.get_position(self) # in figure-relative coordinates
-            x0, y0, width, height = bbox.bounds
-            if name=='x':
-                transform = mtransforms.blended_transform_factory(self.transFigure, mtransforms.IdentityTransform())
-                position = (x0 + width/2, 1)
-            else:
-                transform = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.transFigure)
-                position = (1, y0 + height/2)
-            saxis.label.update({'position':position, 'transform':transform})
 
     def _misc_updates(self):
         """Does various post-processing steps required due to user actions
@@ -739,7 +744,7 @@ class Figure(mfigure.Figure):
             # WARNING: Rotation is done *before* horizontal/vertical alignment, and
             # cannot change alignment with set_tick_params. Need to iterate through
             # text objects. Also do not use fig.autofmt_date, it calls subplots_adjust
-            if not ax._xrotated and isinstance(ax.xaxis.converter, mdates.DateConverter):
+            if isinstance(ax.xaxis.converter, mdates.DateConverter) and ax._rotate_time:
                 rotation = rc['axes.formatter.timerotation']
                 kw = {'rotation':rotation}
                 if rotation not in (0,90,-90):
@@ -754,7 +759,7 @@ class Figure(mfigure.Figure):
             for loc,handles in ax._auto_legend.items():
                 ax.legend(handles, **ax._auto_legend_kw[loc]) # deletes other ones!
 
-    def _post_labels_align(self, renderer):
+    def _align_labels(self, renderer):
         """Adjusts position of row titles and figure super title."""
         # Adjust row labels as axis tick labels are generated and y-axis
         # labels is generated.
@@ -878,22 +883,20 @@ class Figure(mfigure.Figure):
         # Row, column, figure, spanning labels
         # WARNING: draw() is called *more than once* and title positions are
         # appropriately offset only during the *later* calls! Must run each time.
-        for axis in self._spanning_axes: # turn spanning off so rowlabels adjust properly
-            self._axis_label_update(axis, span=False)
-        self._post_labels_align(renderer) # just applies the spacing
+        self._setup_axis_labels(span=False)
+        self._align_labels(renderer) # just applies the spacing
         # Tight layout
         # WARNING: For now just call this once, get bugs if call it every
         # time draw() is called, but also means bbox accounting for titles
         # and labels may be slightly off
-        if not self._smart_tight_init or not (self._smart_tight_outer or self._smart_tight_subplot or self._smart_tight_panel):
+        if not self._smart_tight_init or not (self._smart_tight_borders or self._smart_tight_subplot or self._smart_tight_panel):
             pass
-        elif any(ax._gridliner_on for ax in self._main_axes):
+        elif any(getattr(ax, '_cartopy_gl', None) is not None for ax in self._main_axes):
             warnings.warn('Tight subplots do not work with cartopy gridline labels. Use tight=False in your call to subplots().')
         else:
             self.smart_tight_layout(renderer)
-        for axis in self._spanning_axes: # turn spanning back on
-            self._axis_label_update(axis, span=True)
         # Set flag
+        self._setup_axis_labels(span=True)
         self._smart_tight_init = False
 
     def _panel_tight_layout(self, side, paxs, renderer, figure=False):
@@ -1048,7 +1051,7 @@ class Figure(mfigure.Figure):
         nrows, ncols = gridspec.get_visible_geometry()
 
         # Tight box *around* figure
-        if self._smart_tight_outer:
+        if self._smart_tight_borders:
             # Get old un-updated bounding box
             pad = self._smart_borderpad
             obbox = self.bbox_inches # original bbox

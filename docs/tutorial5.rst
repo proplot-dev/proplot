@@ -282,7 +282,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2, colorbars='b', span=0)
+    f, axs = plot.subplots(ncols=2, axwidth=2, colorbars='b', span=False)
     data = np.random.rand(100,100).cumsum(axis=1)
     # Make colormap, save as "test1.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)

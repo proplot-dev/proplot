@@ -485,7 +485,7 @@ default state, use `~proplot.rctools.rc_configurator.reset`. See the
     plot.rc['figure.facecolor'] = 'gray3'
     plot.rc['axes.facecolor'] = 'gray5'
     # Make plot
-    f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=0, sharey=2)
+    f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
     N, M = 100, 6
     values = np.arange(1,M+1)
     cycle = plot.Cycle('C0', 'C1', M, fade=80)

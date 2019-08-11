@@ -256,14 +256,16 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
     For the `formatter` dictionary lookup, options are as follows.
 
-    =========================  ============================================  =================================================================
+    =========================  ============================================  ============================================================================================================================================
     Key                        Class                                         Description
-    =========================  ============================================  =================================================================
+    =========================  ============================================  ============================================================================================================================================
     ``'null'``, ``'none'``     `~matplotlib.ticker.NullFormatter`            No tick labels
     ``'auto'``, ``'default'``  `AutoFormatter`                               New default tick labels for axes
     ``'simple'``               `SimpleFormatter`                             New default tick labels for e.g. contour labels
     ``'frac'``                 `FracFormatter`                               Rational fractions
     ``'date'``                 `~matplotlib.dates.AutoDateFormatter`         Default tick labels for datetime axes
+    ``'datestr'``              `~matplotlib.dates.DateFormatter`             Date formatting with C-style ``string % format`` notation
+    ``'concise'``              `~matplotlib.dates.ConciseDateForamtter`      More concise default tick labels, introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
     ``'scalar'``               `~matplotlib.ticker.ScalarFormatter`          Old default tick labels for axes
     ``'strmethod'``            `~matplotlib.ticker.StrMethodFormatter`       From the ``string.format`` method
     ``'formatstr'``            `~matplotlib.ticker.FormatStrFormatter`       From C-style ``string % format`` notation
@@ -281,7 +283,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     ``'deglat'``               `SimpleFormatter` preset                      Trailing degree symbol and cardinal "SN" indicator
     ``'lon'``                  `SimpleFormatter` preset                      Cardinal "WE" indicator
     ``'lat'``                  `SimpleFormatter` preset                      Cardinal "SN" indicator
-    =========================  ============================================  =================================================================
+    =========================  ============================================  ============================================================================================================================================
 
     Returns
     -------
@@ -1179,6 +1181,7 @@ locators = {
     'symmetric':   mticker.SymmetricalLogLocator,
     'logit':       mticker.LogitLocator,
     'minor':       mticker.AutoMinorLocator,
+    'date':        mdates.AutoDateLocator,
     'microsecond': mdates.MicrosecondLocator,
     'second':      mdates.SecondLocator,
     'minute':      mdates.MinuteLocator,
@@ -1196,6 +1199,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     'auto':       AutoFormatter,
     'frac':       FracFormatter,
     'simple':     SimpleFormatter,
+    'date':       mdates.AutoDateFormatter,
+    'datestr':    mdates.DateFormatter,
     'scalar':     mticker.ScalarFormatter,
     'none':       mticker.NullFormatter,
     'null':       mticker.NullFormatter,
@@ -1211,6 +1216,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
     }
 """Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 `Formatter` for a table."""
+if hasattr(mdates, 'ConciseDateFormatter'):
+    formatters['concise'] = mdates.ConciseDateFormatter
 
 # Register scale names, so user can set_xscale and set_yscale with strings.
 # Custom scales and overrides

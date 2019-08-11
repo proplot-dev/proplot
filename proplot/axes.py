@@ -176,9 +176,8 @@ class BaseAxes(maxes.Axes):
         self._nrows = None
         self._ncols = None
         # Misc necessary
-        self._xrotated = False # whether manual rotation was applied
+        self._rotate_time = True # whether to automatically apply rotation to datetime labels during post processing
         self._titles_dict = {} # dictionar of title text objects and their locations
-        self._gridliner_on = False # whether cartopy gridliners are enabled
         self._aspect_equal = None # for imshow and stuff
         self._is_map = False # needed by wrappers, which can't import this file
         # Children and related properties
@@ -252,6 +251,16 @@ class BaseAxes(maxes.Axes):
         if attr=='text':
             obj = wrappers._text_wrapper(self, obj)
         return obj
+
+    def _make_inset_locator(self, bounds, trans):
+        """Helper function, copied from private matplotlib version."""
+        def inset_locator(ax, renderer):
+            bbox = mtransforms.Bbox.from_bounds(*bounds)
+            bb = mtransforms.TransformedBbox(bbox, trans)
+            tr = self.figure.transFigure.inverted()
+            bb = mtransforms.TransformedBbox(bb, tr)
+            return bb
+        return inset_locator
 
     def _share_short_axis(self, share, side, level):
         """When sharing main subplots, shares the short axes of their side panels."""
@@ -772,10 +781,6 @@ class BaseAxes(maxes.Axes):
             self.add_artist(patch)
         return cb
 
-    def inset_axes(self, *args, **kwargs):
-        """Alias for `~BaseAxes.inset`."""
-        return self.inset(*args, **kwargs)
-
     def inset(self, bounds, *, transform=None, zorder=5, zoom=True, zoom_kw={}, **kwargs):
         """
         Like the builtin `~matplotlib.axes.Axes.inset_axes` method, but
@@ -828,6 +833,10 @@ class BaseAxes(maxes.Axes):
         if zoom:
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
+
+    def inset_axes(self, *args, **kwargs):
+        """Alias for `~BaseAxes.inset`."""
+        return self.inset(*args, **kwargs)
 
     def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
         """
@@ -883,16 +892,6 @@ class BaseAxes(maxes.Axes):
                 line.set_alpha(alpha)
         self._zoom = (rectpatch, connects)
         return (rectpatch, connects)
-
-    def _make_inset_locator(self, bounds, trans):
-        """Helper function, copied from private matplotlib version."""
-        def inset_locator(ax, renderer):
-            bbox = mtransforms.Bbox.from_bounds(*bounds)
-            bb = mtransforms.TransformedBbox(bbox, trans)
-            tr = self.figure.transFigure.inverted()
-            bb = mtransforms.TransformedBbox(bb, tr)
-            return bb
-        return inset_locator
 
     def area(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.fill_between`, which is wrapped by
@@ -1360,7 +1359,7 @@ class CartesianAxes(BaseAxes):
                 kw['color'] = color
             kw.update(label_kw)
             if kw:
-                self.figure._axis_label_update(axis, **kw)
+                self.figure._setup_axis_labels(axis, **kw)
 
             # Axis scale. This doesn't have axis-specific setters because they
             # sync up with "shared" axes, but we want to handle classes directly
@@ -1540,7 +1539,7 @@ class CartesianAxes(BaseAxes):
             if rotation is not None:
                 kw = {'rotation':rotation}
                 if xyname=='x':
-                    self._xrotated = True
+                    self._rotate_time = False
                     if rotation not in (0,90,-90):
                         kw['ha'] = ('right' if rotation>0 else 'left')
             for t in axis.get_ticklabels():
@@ -1566,13 +1565,16 @@ class CartesianAxes(BaseAxes):
             fixedformatfix = False
             if formatter is not None or tickrange is not None:
                 # Tick range
+                formatter_kw = {**formatter_kw} # make a copy
                 if tickrange is not None:
                     if formatter not in (None,'auto'):
                         warnings.warn('The tickrange feature requires proplot.AutoFormatter formatter. Overriding input formatter.')
                     formatter = 'auto'
-                    formatter_kw = {**formatter_kw} # make a copy
                     formatter_kw.setdefault('tickrange', tickrange)
                 # Set the formatter
+                if formatter in ('date','concise'):
+                    locator = axis.get_major_locator()
+                    formatter_kw.setdefault('locator', locator)
                 formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
                 axis.set_major_formatter(formatter)
                 if isinstance(formatter, mticker.FixedFormatter): # if locator is MultipleLocator, first tick gets cut off!
@@ -2269,13 +2271,10 @@ class CartopyProjectionAxes(ProjectionAxes, GeoAxes):
             # Grid labels
             if labels:
                 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-                self._gridliner_on = True
                 gl.xformatter = LONGITUDE_FORMATTER
                 gl.yformatter = LATITUDE_FORMATTER
                 gl.xlabels_bottom, gl.xlabels_top = lonlabels[2:]
                 gl.ylabels_left, gl.ylabels_right = latlabels[:2]
-            else:
-                self._gridliner_on = False
 
         # Geographic features
         # WARNING: Seems cartopy features can't be updated!

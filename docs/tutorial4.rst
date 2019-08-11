@@ -29,7 +29,7 @@ panels. See `~proplot.subplots.subplots` and
     import proplot as plot
     f, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2,
                            axpanels={1:'t', 2:'l', 3:'b', 4:'r'},
-                           tight=True, share=0, span=0)
+                           tight=True, share=0)
     axs.format(title='Title', suptitle='This is a super title', collabels=['Column 1','Column 2'],
                abcloc='ul', titleloc='uc', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
     axs.format(xlim=(0,1), ylim=(0,1), ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
@@ -124,7 +124,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', barray=[1,1,2,2], share=0, span=0, wspace=0.3)
+    f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', barray=[1,1,2,2], share=0, wspace=0.3)
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
     cycle = plot.colors('grays', 5)
@@ -285,7 +285,7 @@ handle properties.
     import numpy as np
     plot.rc.cycle = 'contrast'
     labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
-    f, axs = plot.subplots(ncols=2, axlegends={1:'b', 2:'br'}, span=0, share=1)
+    f, axs = plot.subplots(ncols=2, axlegends={1:'b', 2:'br'}, span=False, share=1)
     hs1, hs2 = [], []
     # Plot lines and add to legends on-the-fly
     for i,label in enumerate(labels):

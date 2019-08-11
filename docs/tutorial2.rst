@@ -30,7 +30,7 @@ usually what you’ll want in this context. See
     import numpy as np
     plot.rc.facecolor = plot.shade('powder blue', 1.15) # shade makes it a bit brighter, multiplies luminance channel by this much!
     plot.rc.update(linewidth=1, small=10, large=12, color='dark blue', suptitlecolor='dark blue')
-    f, axs = plot.subplots(nrows=5, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
+    f, axs = plot.subplots(nrows=5, axwidth=5, aspect=(8,1), share=0, hspace=0.3)
     # Custom locations
     axs[0].format(xlim=(0,200), xminorlocator=10, xlocator=30, suptitle='Declaring tick locations with ProPlot')
     axs[1].format(xlim=(0,10), xlocator=[0,0.3,0.8,1.6,4.4,8,8.8,10], xminorlocator=0.1)
@@ -86,7 +86,7 @@ See `~proplot.axes.CartesianAxes.format_partial` and
     import numpy as np
     plot.rc.update(linewidth=1.2, small=10, large=12, facecolor='gray8', figurefacecolor='gray8',
                    suptitlecolor='w', gridcolor='w', color='w')
-    f, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8,1), share=0, span=0, hspace=0.3)
+    f, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8,1), share=0, hspace=0.3)
     # Fraction formatters
     axs[0].format(xlim=(0,4*np.pi), xlocator=plot.arange(0, 4, 0.25)*np.pi, xformatter='pi')
     axs[1].format(xlim=(0,2*np.e), xlocator=plot.arange(0, 2, 0.5)*np.e, xticklabels='e')
@@ -240,22 +240,25 @@ details.
 
     import proplot as plot
     import numpy as np
-    plot.rc.update(linewidth=1.2, small=10, large=12, ticklabelweight='bold', ticklenratio=0.7,
-                   figurefacecolor='w', facecolor=plot.shade('C0', 2.7))
-    f, axs = plot.subplots(nrows=5, axwidth=6, aspect=(8,1), share=0, span=0, hspace=0.3)
+    plot.rc.update(linewidth=1.2, small=10, large=12, ticklenratio=0.7)
+    plot.rc.update(figurefacecolor='w', facecolor=plot.shade('C0', 2.7))
+    f, axs = plot.subplots(nrows=6, axwidth=6, aspect=(8,1), share=0)
     # Default date locator enabled if you plot datetime data or set datetime limits
     axs[0].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02')),
                   xrotation=0)
+    # Concise date formatter introduced in matplotlib 3.1
+    axs[1].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
+                  xformatter='concise', xrotation=0)
     # Minor ticks every year, major every 10 years
-    axs[1].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')), xrotation=0,
+    axs[2].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')), xrotation=0,
                   xlocator=('year', 10), xformatter='\'%y')
     # Minor ticks every 10 minutes, major every 2 minutes
-    axs[2].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')), xrotation=0,
+    axs[3].format(xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')), xrotation=0,
                   xlocator=('hour',range(0,24,2)), xminorlocator=('minute',range(0,60,10)), xformatter='T%H:%M:%S')
     # Month and year labels, with default tick label rotation
-    axs[3].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
+    axs[4].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
                   xlocator='year', xminorlocator='month', xformatter='%b %Y') # minor ticks every month
-    axs[4].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
+    axs[5].format(xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
                   xgridminor=True, xgrid=False,
                   xlocator='month', xminorlocator='weekday', xformatter='%B') # minor ticks every Monday, major every month
     axs.format(ylocator='null', suptitle='Tick locators and formatters with time axes in ProPlot')
@@ -281,7 +284,7 @@ pass the name of any registered “axis scale” to the ``xscale`` or
     import proplot as plot
     plot.rc.reset()
     plot.rc.update({'grid.alpha':0.4, 'linewidth':1, 'grid.linewidth':1})
-    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=2.2, axwidth=3)
+    f, axs = plot.subplots(ncols=2, share=0, aspect=2.2, axwidth=3)
     N = 200
     c1, c2 = plot.shade('cerulean', 0.5), plot.shade('red', 0.5)
     # These first 2 are for general users
@@ -298,7 +301,7 @@ pass the name of any registered “axis scale” to the ``xscale`` or
              xcolor=c1, gridcolor=c1, grid=True)
     
     # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
-    f, axs = plot.subplots(ncols=2, share=0, span=0, aspect=0.4, axwidth=1.8)
+    f, axs = plot.subplots(ncols=2, share=0, aspect=0.4, axwidth=1.8)
     ax = axs[0]
     ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], 
               gridcolor=c1, ycolor=c1)
