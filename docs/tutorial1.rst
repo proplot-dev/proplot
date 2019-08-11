@@ -178,10 +178,11 @@ ProPlot has a similar tight layout feature, powered by
 ProPlot’s tight layout *preserves subplot aspect ratios, panel widths,
 and subplot physical dimensions* – the latter only if ``axwidth`` or
 ``axheight`` were passed to `~proplot.subplots.subplots` instead of
-``width``, ``height``, or ``figsize``. It also permits *variable spacing
-between rows and columns* – that is, ``wspace`` and ``hspace`` no longer
-have to be scalars, thanks to the `~proplot.gridspec.FlexibleGridSpec`
-class. To disable automatic tight layout, pass ``tight=False`` to
+``width``, ``height``, or ``figsize``. It is also likely more robust to
+complex geometry, and permits *variable spacing between rows and
+columns* – that is, ``wspace`` and ``hspace`` no longer have to be
+scalars, thanks to the `~proplot.gridspec.FlexibleGridSpec` class. To
+disable automatic tight layout, pass ``tight=False`` to
 `~proplot.subplots.subplots`.
 
 Aspect ratio conservation is *useful* for ordinary Cartesian plots where
