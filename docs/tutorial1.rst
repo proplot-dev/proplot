@@ -181,7 +181,7 @@ and subplot physical dimensions* – the latter only if ``axwidth`` or
 ``width``, ``height``, or ``figsize``. It is also likely more robust to
 complex geometry, and permits *variable spacing between rows and
 columns* – that is, ``wspace`` and ``hspace`` no longer have to be
-scalars, thanks to the `~proplot.gridspec.FlexibleGridSpec` class. To
+scalars, thanks to the `~proplot.subplots.FlexibleGridSpec` class. To
 disable automatic tight layout, pass ``tight=False`` to
 `~proplot.subplots.subplots`.
 
@@ -192,7 +192,7 @@ aspect ratios. It works by making figure dimensions *flexible*: the
 width or height is scaled to accommodate the subplot dimensions. The
 ``aspect`` keyword arg, along with the ``axwidth`` and ``axheight``
 keyword args, apply to the *reference* axes specified by the ``ref``
-keyword arg (defaults to ``1``, i.e. the subplot in the top-left
+keyword arg (defaults to ``1``, i.e. the subplot in the upper left
 corner).
 
 .. code:: ipython3
