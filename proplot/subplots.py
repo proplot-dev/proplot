@@ -2011,7 +2011,7 @@ def subplots(array=None, ncols=1, nrows=1,
         If an axes projection is not specified in the dictionary, that axes
         will be Cartesian.
 
-        For example, with ``plot.subplots(ncols=4, proj={1:'mercator', (2,3):'hammer'})``,
+        For example, with ``ncols=4`` and ``proj={1:'mercator', (2,3):'hammer'})``,
         the leftmost subplot is a Mercator projection, the middle 2 are
         Hammer projections, and the rightmost is a normal Cartesian axes.
     proj_kw : dict-like, optional
@@ -2020,9 +2020,10 @@ def subplots(array=None, ncols=1, nrows=1,
         If dictionary of properties, applies globally. If *dictionary of
         dictionaries* of properties, applies to specific subplots, as with `axpanels`.
 
-        For example, with ``plot.subplots(ncols=2, proj='cyl', proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}})``,
-        the left subplot is a Plate Carrée projection centered on the prime meridian,
-        and the right subplot is centered on the international dateline.
+        For example, with ``ncols=2`` and ``proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}}``,
+        the projection in the left subplot is centered on the prime meridian,
+        and the projection in the right subplot is centered on the
+        international dateline.
     basemap : bool or dict-like, optional
         Whether to use `~mpl_toolkits.basemap.Basemap` or
         `~cartopy.crs.Projection` for map projections. Defaults to ``False``.
