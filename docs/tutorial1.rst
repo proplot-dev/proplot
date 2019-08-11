@@ -168,23 +168,21 @@ fit on a nice 2D grid, simply use 1D indexing.
 Automatic subplot spacing
 -------------------------
 
-With ProPlot, you will always get just the right amount of spacing
-between subplots so that labels don’t overlap, and just the right amount
-of space around the figure edge so that labels are not cut off. When
-axes panels are present, the panel widths are held fixed in the scaling
-(see :ref:`Panels and insets`). Furthermore, if you did not specify
-the figure dimensions, subplot *aspect ratios are preserved*. You can
-disable automatic spacing by passing ``tight=False`` to
-`~proplot.subplots.subplots`. The below examples rigorously test this
-feature.
+Matplotlib has a `tight layout
+feature <https://matplotlib.org/3.1.1/tutorials/intermediate/tight_layout_guide.html>`__
+whereby the spacing between subplot content and the figure edge, and
+between content in adjacent subplots, is automatically adjusted.
 
-Automatic inter-subplot spacing keeps you from having to fiddle with the
-``wspace`` and ``hspace`` `~matplotlib.gridspec.GridSpec` keyword args
-depending on tick label size, whether axis labels are present, etc. This
-uses the special `~proplot.gridspec.FlexibleGridSpec` class, which
-permits *variable* ``wspace`` and ``hspace`` spacing between different
-rows and columns of subplots, where the builtin
-`~matplotlib.gridspec.GridSpec` class requires equivalent spacing.
+ProPlot has a similar tight layout feature, powered by
+`~proplot.subplots.Figure.smart_tight_layout` (see below examples).
+ProPlot’s tight layout *preserves subplot aspect ratios, panel widths,
+and subplot physical dimensions* – the latter only if ``axwidth`` or
+``axheight`` were passed to `~proplot.subplots.subplots` instead of
+``width``, ``height``, or ``figsize``. It also permits *variable spacing
+between rows and columns* – that is, ``wspace`` and ``hspace`` no longer
+have to be scalars, thanks to the `~proplot.gridspec.FlexibleGridSpec`
+class. To disable automatic tight layout, pass ``tight=False`` to
+`~proplot.subplots.subplots`.
 
 Aspect ratio conservation is *useful* for ordinary Cartesian plots where
 an aspect ratio of ``1`` is desirable, and *critical* for grids of map
