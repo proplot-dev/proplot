@@ -431,7 +431,6 @@ class rc_configurator(object):
                     if i==0:
                         gkeys.add(key)
                 else:
-                    points = (key.split('.')[0] not in ('colorbar','subplots'))
                     if key in _rc_names_custom:
                         _rcExtraParams[key] = value
                         if i==0:

@@ -610,7 +610,7 @@ class Figure(mfigure.Figure):
                 bbox = (iax._colorbar_child or iax).get_tightbbox(renderer)
                 iax._tight_bbox = bbox
 
-    def _post_aspect_fix(self):
+    def _aspect_update(self):
         """Adjust average aspect ratio used for gridspec calculations."""
         # This will fix grids with identically fixed aspect ratios, i.e.
         # identically zoomed-in cartopy projections or imshow images. For more
@@ -693,7 +693,7 @@ class Figure(mfigure.Figure):
                 position = (1, y0 + height/2)
             saxis.label.update({'position':position, 'transform':transform})
 
-    def _post_plotting(self):
+    def _misc_updates(self):
         """Does various post-processing steps required due to user actions
         after the figure was created."""
         # Apply various post processing on per-axes basis
@@ -859,8 +859,8 @@ class Figure(mfigure.Figure):
         # TODO: Use align_xlabels, etc? Panels make this potentially complicated,
         # source code uses subplotspec and not topmost subplot spec
         if self._smart_tight_init:
-            self._post_aspect_fix()
-            self._post_plotting()
+            self._aspect_update()
+            self._misc_updates()
         # Row, column, figure, spanning labels
         # WARNING: draw() is called *more than once* and title positions are
         # appropriately offset only during the *later* calls! Must run each time.
@@ -1029,9 +1029,9 @@ class Figure(mfigure.Figure):
         # Initial stuff
         gridspec = self._main_gridspec
         subplots_kw = self._subplots_kw
-        nrows, ncols = gridspec.get_visible_geometry()
         if subplots_kw is None or gridspec is None:
             return
+        nrows, ncols = gridspec.get_visible_geometry()
 
         #---------------------------------------------------------------------#
         # Put tight box *around* figure
@@ -1323,7 +1323,7 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         filename : str
-            The file name and path. Use a tilde ``~`` to represent the home
+            The file name and path. A tilde ``~`` is expanded to the home
             directory.
         alpha : float, optional
             Alternative for the `~matplotlib.figure.Figure.savefig`
@@ -1334,16 +1334,13 @@ class Figure(mfigure.Figure):
         **kwargs
             Passed to `~matplotlib.figure.Figure.savefig`.
         """
-        # Minor changes
         filename = os.path.expanduser(filename)
         if alpha is not None:
             kwargs['transparent'] = not bool(alpha) # 1 is non-transparent
         if color is not None:
             kwargs['facecolor'] = color
             kwargs['transparent'] = False
-        # Prepare for rendering
         self._post_process()
-        # Render
         return super().savefig(filename, **kwargs) # specify DPI for embedded raster objects
 
     def add_subplot(self, *args, **kwargs):
