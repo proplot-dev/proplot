@@ -1422,86 +1422,69 @@ class Figure(mfigure.Figure):
         which = _default(which, 'r')
         if re.sub('[lrbt]', '', which): # i.e. other characters are present
             raise ValueError(f'Whichpanels argument can contain characters l (left), r (right), b (bottom), or t (top), instead got "{which}".')
-        # Fill space arrays
-        wspace = []
-        if 'l' in which:
-            wspace = [lspace, *wspace]
-        if 'r' in which:
-            wspace = [*wspace, rspace]
-        hspace = []
-        if 't' in which:
-            hspace = [tspace, *hspace]
-        if 'b' in which:
-            hspace = [*hspace, bspace]
 
         # Fix wspace/hspace in inches, using the Bbox from get_postition
         # on the subspec object to determine physical width of axes to be created
         # Fix widths and heights
-        bbox = subspec.get_position(self) # valid since axes not drawn yet
         figwidth, figheight = self.get_size_inches()
-        boxheight = abs(bbox.height)*figheight
-        boxwidth = abs(bbox.width)*figwidth
-        height = boxheight - sum(hspace)
-        width = boxwidth - sum(wspace)
+        wspace = [_default(lspace,0), _default(rspace,0)]
+        hspace = [_default(tspace,0), _default(bspace,0)]
+        bbox = subspec.get_position(self) # valid since axes not drawn yet
+        width = abs(bbox.width)*figwidth - sum(wspace)
+        height = abs(bbox.height)*figheight - sum(hspace)
 
         # Figure out hratios/wratios
         # Will enforce (main_width + panel_width)/total_width = 1
-        wratios = [width]
-        if 'l' in which:
-            lextra = sum(lwidth) + sum(lsep)
-            wratios = [lextra, wratios[0] - lextra, *wratios[1:]]
-        if 'r' in which:
-            rextra = sum(rwidth) + sum(rsep)
-            wratios = [*wratios[:-1], wratios[-1] - rextra, rextra]
-        hratios = [height]
-        if 't' in which:
-            textra = sum(twidth) + sum(tsep)
-            hratios = [textra, hratios[0] - textra, *hratios[1:]]
-        if 'b' in which:
-            bextra = sum(bwidth) + sum(bsep)
-            hratios = [*hratios[:-1], hratios[-1] - bextra, bextra]
+        lwidth, rwidth = _default(lwidth,[0]), _default(rwidth,[0])
+        twidth, bwidth = _default(twidth,[0]), _default(bwidth,[0])
+        lsep, rsep = _default(lsep,[0]), _default(rsep,[0])
+        tsep, bsep = _default(tsep,[0]), _default(bsep,[0])
+        lextra, rextra = sum(lwidth) + sum(lsep), sum(rwidth) + sum(rsep)
+        textra, bextra = sum(twidth) + sum(tsep), sum(bwidth) + sum(bsep)
+        wratios = [lextra, width - lextra - rextra, rextra]
+        hratios = [textra, height - textra - bextra, bextra]
         if any(w < 0 for w in wratios):
             raise ValueError(f'Left and/or right panel widths too large for available space {width}in.')
         if any(h < 0 for h in hratios):
             raise ValueError(f'Top and/or bottom panel widths too large for available space {height}in.')
 
-        # Make subplotspec
-        nrows = 1 + len(re.sub('[^bt]', '', which))
-        ncols = 1 + len(re.sub('[^lr]', '', which))
-        rows = np.array([w for w in ('t', 'c', 'b') if w in ('c', *which)])
-        cols = np.array([w for w in ('l', 'c', 'r') if w in ('c', *which)])
-        gs = FlexibleGridSpecFromSubplotSpec(subplot_spec=subspec,
-            nrows=nrows, ncols=ncols,
+        # Draw main axes
+        gs = FlexibleGridSpecFromSubplotSpec(
+            subplot_spec=subspec,
+            nrows=3, ncols=3,
             wspace=wspace, hspace=hspace,
             width_ratios=wratios, height_ratios=hratios)
-        # Draw main axes
-        r, = np.where('c'==rows)
-        c, = np.where('c'==cols)
-        ax = self.add_subplot(gs[r[0],c[0]], **ax_kw)
+        ax = self.add_subplot(gs[1,1], **ax_kw)
         ax._panels_main_gridspec = gs
+
         # Draw panels
         for side,width,sep,flush,share,visible, in zip('lrbt',
-                (lwidth, rwidth, bwidth, twidth),
-                (lsep, rsep, bsep, tsep),
-                (lflush, rflush, bflush, tflush),
-                (lshare, rshare, bshare, tshare),
-                (lvisible, rvisible, bvisible, tvisible),
-                ):
+            (lwidth, rwidth, bwidth, twidth),
+            (lsep, rsep, bsep, tsep),
+            (lflush, rflush, bflush, tflush),
+            (lshare, rshare, bshare, tshare),
+            (lvisible, rvisible, bvisible, tvisible),
+            ):
+            # Get subplotspec
             if side not in which:
                 continue
+            if side=='l':
+                subplotspec = gs[1,0]
+            elif side=='r':
+                subplotspec = gs[1,2]
+            elif side=='b':
+                subplotspec = gs[2,1]
+            elif side=='t':
+                subplotspec = gs[0,1]
             # Settings, and apply flush
             stack = len(width)
             if flush:
                 sep = sep*0.0
             if side in 'lr':
-                r, = np.where('c'==rows)
-                c, = np.where(side==cols)
                 wspace, hspace = sep, []
                 wratios, hratios = width, [1]
                 nrows, ncols = 1, stack
             else:
-                r, = np.where(side==rows)
-                c, = np.where('c'==cols)
                 wspace, hspace = [], sep
                 wratios, hratios = [1], width
                 nrows, ncols = stack, 1
@@ -1509,7 +1492,7 @@ class Figure(mfigure.Figure):
             paxs = []
             name = {'b':'bottom', 't':'top', 'l':'left', 'r':'right'}[side]
             igs = FlexibleGridSpecFromSubplotSpec(
-                subplot_spec=gs[r[0],c[0]],
+                subplot_spec=subplotspec,
                 nrows=nrows, ncols=ncols,
                 wspace=wspace, hspace=hspace,
                 width_ratios=wratios, height_ratios=hratios)
@@ -1525,12 +1508,12 @@ class Figure(mfigure.Figure):
             n = 1 if (side in 'tb' and order=='C') or (side in 'lr' and order!='C') else stack
             paxs = axes_grid(paxs, n=n, order=order)
             setattr(ax, name + 'panel', paxs)
+
         # Set up axis sharing
         # * Sharex and sharey methods should be called on the 'child' axes,
         #   with labelling preferred on the axes in the first argument.
         # * This block must come *after* the above; sharex_setup and
         #   sharey_setup will detect invisible panels and not share with them.
-        # First the x-axis
         bottom = None
         if 'b' in which and bvisible and bshare:
             bottom = ax.bottompanel[-1]
@@ -1540,7 +1523,6 @@ class Figure(mfigure.Figure):
             bottom = bottom or ax
             for iax in ax.toppanel:
                 iax._sharex_setup(bottom, 3)
-        # Now the y-axis
         left = None
         if 'l' in which and lvisible and lshare:
             left = ax.leftpanel[0]
@@ -2347,9 +2329,11 @@ def subplots(array=None, ncols=1, nrows=1,
             axpanels_kw[num], axcolorbars_kw[num], axlegends_kw[num],
             figure=False)
     # Make sure same panels are present on *all rows and columns*
-    # Also sompute the extra space alloted for panels
+    # Also compute the extra space alloted for panels
+    # TODO: Should xrange and yrange be offset? Will it break shared axes stuff above?
     hpanels = []
     for row in range(nrows):
+        row += idxoff[0]
         ihpanels = 0
         idxs, = np.where(yrange[:,0]==row) # note ranges are *slices*, not endpoint inclusive
         ihpanels += _panels_sync('t', idxs+1, axpanels_kw)
@@ -2358,6 +2342,7 @@ def subplots(array=None, ncols=1, nrows=1,
         hpanels.append(ihpanels)
     wpanels = []
     for col in range(ncols):
+        col += idxoff[1]
         iwpanels = 0
         idxs, = np.where(xrange[:,0]==col)
         iwpanels += _panels_sync('l', idxs+1, axpanels_kw)
@@ -2428,6 +2413,7 @@ def subplots(array=None, ncols=1, nrows=1,
     height = units(height)
     axwidth  = units(axwidth)
     axheight = units(axheight)
+
     # Gridspec defaults
     # NOTE: Ratios are scaled to take physical units in _subplots_kwargs, so
     # user can manually provide hspace and wspace in physical units.
@@ -2458,6 +2444,7 @@ def subplots(array=None, ncols=1, nrows=1,
     bottom = units(_default(bottom, rc['subplots.xlabspace']))
     right  = units(_default(right,  rc['subplots.nolabspace']))
     top    = units(_default(top,    rc['subplots.titlespace']))
+
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = _subplots_kwargs(
         nrows=nrows, ncols=ncols, aspect=aspect, xref=xref, yref=yref,
@@ -2468,10 +2455,7 @@ def subplots(array=None, ncols=1, nrows=1,
         **kwargs)
     # Apply settings and add attributes
     gs = FlexibleGridSpec(**gridspec_kw)
-
-    #-------------------------------------------------------------------------#
     # Create blank figure
-    #-------------------------------------------------------------------------#
     fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize,
         tightborders=tightborders, tightsubplots=tightsubplots, tightpanels=tightpanels,
         borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
