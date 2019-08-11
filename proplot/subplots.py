@@ -1218,6 +1218,8 @@ class Figure(mfigure.Figure):
             # Figure panels
             # Requires us to turn 2D panel axes_grids into lists of stacked panels
             for side,paxs in zip('lbr', (self.leftpanel, self.bottompanel, self.rightpanel)):
+                if not paxs:
+                    continue
                 if side=='b':
                     paxs = [paxs[:,i] for i in range(paxs.shape[1])]
                 else:
