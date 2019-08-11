@@ -315,12 +315,12 @@ _regex = re.compile('^.*(width|space|size|pad|len)$') # len is for ticklen, spac
 def _convert_units(key, value):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""
-    if isinstance(value,str) and _regex.match(key):
-        if key.split('.')[0] in ('colorbar','subplots'):
-            to_units = 'in'
-        else:
-            to_units = 'pt'
-        value = utils.units(value, to_units)
+    # WARNING: Must keep colorbar and subplots units alive, so when user
+    # requests em units, values change with respect to font size. The points
+    # thing is a conveniene feature so not as important for them.
+    if isinstance(value,str) and _regex.match(key) \
+        and key.split('.')[0] not in ('colorbar','subplots'):
+            value = utils.units(value, 'pt')
     return value
 
 def _set_cycler(name):
@@ -388,6 +388,7 @@ def _get_globals(key=None, value=None):
         # Now update linked settings
         if key not in ('gridratio','tickratio','ticklenratio'):
             for name in _rcGlobals_children[key]:
+                value = _convert_units(key, value)
                 if name in _rcExtraParams:
                     kw_custom[name] = value
                 else:
@@ -425,21 +426,20 @@ class rc_configurator(object):
             # Add keys to dictionaries
             gkeys, ckeys = {*()}, {*()}
             for key,value in data.items():
-                value = _convert_units(key, value)
                 if key in _rc_names_global:
                     _rcGlobals[key] = value
                     if i==0:
                         gkeys.add(key)
+                elif key in _rc_names_custom:
+                    value = _convert_units(key, value)
+                    _rcExtraParams[key] = value
+                    if i==0:
+                        ckeys.add(key)
+                elif key in _rc_names:
+                    value = _convert_units(key, value)
+                    _rcParams[key] = value
                 else:
-                    if key in _rc_names_custom:
-                        _rcExtraParams[key] = value
-                        if i==0:
-                            ckeys.add(key)
-                    else:
-                        try:
-                            _rcParams[key] = value
-                        except KeyError:
-                            raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key "{key}".')
+                    raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key "{key}".')
             # Make sure we did not miss anything
             if i==0:
                 if gkeys!=_rc_names_global:
@@ -525,7 +525,6 @@ class rc_configurator(object):
 
         # Set the default cycler
         # If rgbcycle is changed, change it, and re-apply the cycler
-        value = _convert_units(key, value)
         if key=='rgbcycle':
             cache[key] = value
             _rcGlobals[key] = value
@@ -594,19 +593,21 @@ class rc_configurator(object):
                 restore.update({key:_rcExtraParams[key] for key in rc_new})
             _rcParams.update(rc)
             _rcExtraParams.update(rc_new)
+        # Update normal settings
+        elif key in _rc_names_custom:
+            value = _convert_units(key, value)
+            cache[key] = value
+            if context:
+                restore[key] = _rcExtraParams[key]
+            _rcExtraParams[key] = value
+        elif key in _rc_names:
+            value = _convert_units(key, value)
+            cache[key] = value
+            if context:
+                restore[key] = _rcParams[key]
+            _rcParams[key] = value # rcParams dict has key validation
         else:
-            if key in _rc_names_custom:
-                cache[key] = value
-                if context:
-                    restore[key] = _rcExtraParams[key]
-                _rcExtraParams[key] = value
-            elif key in _rc_names:
-                cache[key] = value
-                if context:
-                    restore[key] = _rcParams[key]
-                _rcParams[key] = value # rcParams dict has key validation
-            else:
-                raise KeyError(f'Invalid key "{key}".')
+            raise KeyError(f'Invalid key "{key}".')
         self._init = False # setitem was successful, we are no longer in initial state
 
     def __getattribute__(self, attr):

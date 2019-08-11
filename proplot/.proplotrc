@@ -125,16 +125,6 @@ axes.formatter.zerotrim: True
 axes.formatter.timerotation: 90
 axes.gridminor: True
 axes.geogrid: True
-# Colorbar settings
-colorbar.loc:         'lower right'
-colorbar.grid:        False
-colorbar.frameon:     True
-colorbar.framealpha:  0.8
-colorbar.extend:      0.15
-colorbar.extendinset: 1em
-colorbar.length:      8em
-colorbar.width:       1.5em
-colorbar.axespad:     0.5em
 # Minor tick gridlines
 gridminor.alpha:     # filled by "grid.alpha"
 gridminor.color:     # filled by "grid.color"
@@ -165,12 +155,23 @@ innerborders.color:     k
 innerborders.linewidth: 0.6
 rivers.color:           k
 rivers.linewidth:       0.6
+# Colorbar settings
+colorbar.loc:         'lower right'
+colorbar.grid:        False
+colorbar.frameon:     True
+colorbar.framealpha:  0.8
+colorbar.extend:      0.15
+colorbar.extendinset: 1em
+colorbar.length:      8em
+colorbar.width:       1.5em
+colorbar.axespad:     0.5em
 # Subplot properties
-# Make padding in font-relative units like in matplotlib tight layout
-subplots.axwidth:    2in
-subplots.panelwidth: 0.45in
-subplots.cbarwidth:  0.17in
-subplots.legwidth:   0.25in
+# Use font relative units for everything because this is common way user
+# might want to increase figure resolution
+subplots.axwidth:    18em  # 2 inches
+subplots.panelwidth: 4em   # 0.45 inches
+subplots.cbarwidth:  1.5em # 0.17 inches
+subplots.legwidth:   2em   # 0.25 inches
 subplots.panelpad:   0.5em # affects the figure when tight=True
 subplots.borderpad:  1em
 subplots.subplotpad: 1em

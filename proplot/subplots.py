@@ -1625,7 +1625,7 @@ def _panels_kwargs(
             if side not in check:
                 continue
             if isinstance(default, str):
-                default = rc['subplots.' + default]
+                default = units(rc['subplots.' + default])
             return _default(kwargs.get(name, None), kwargs.get(side + name, None), default)
     # Loop through panels
     for side in allpanels:
@@ -2417,15 +2417,16 @@ def subplots(array=None, ncols=1, nrows=1,
     # Gridspec defaults
     # NOTE: Ratios are scaled to take physical units in _subplots_kwargs, so
     # user can manually provide hspace and wspace in physical units.
-    hspace = np.atleast_1d(units(_default(hspace,
-        rc['subplots.titlespace'] + rc['subplots.innerspace'] if sharex==3
-        else rc['subplots.xlabspace'] if sharex in (1,2) # space for tick labels and title
-        else rc['subplots.titlespace'] + rc['subplots.xlabspace'])))
-    wspace = np.atleast_1d(units(_default(wspace,
-        rc['subplots.innerspace'] if sharey==3
-        else rc['subplots.ylabspace'] - rc['subplots.titlespace'] if sharey in (1,2) # space for tick labels only
-        else rc['subplots.ylabspace']
+    hspace = np.atleast_1d(_default(units(hspace),
+        units(rc['subplots.titlespace']) + units(rc['subplots.innerspace']) if sharex==3
+        else units(rc['subplots.xlabspace']) if sharex in (1,2) # space for tick labels and title
+        else units(rc['subplots.titlespace']) + units(rc['subplots.xlabspace']
         )))
+    wspace = np.atleast_1d(_default(units(wspace),
+        units(rc['subplots.innerspace']) if sharey==3
+        else units(rc['subplots.ylabspace']) - units(rc['subplots.titlespace']) if sharey in (1,2) # space for tick labels only
+        else units(rc['subplots.ylabspace'])
+        ))
     wratios = np.atleast_1d(_default(width_ratios, wratios, axwidths, 1))
     hratios = np.atleast_1d(_default(height_ratios, hratios, axheights, 1))
     if len(wspace)==1:
