@@ -166,16 +166,17 @@ innerborders.linewidth: 0.6
 rivers.color:           k
 rivers.linewidth:       0.6
 # Subplot properties
-subplots.axwidth:       2
-subplots.panelwidth:    0.45
-subplots.cbarwidth:     0.17
-subplots.legwidth:      0.25
-subplots.panelpad:      0.05 # affects the figure when tight=True
-subplots.borderpad:     0.10
-subplots.subplotpad:    0.10
-subplots.titlespace:    0.2 # affects the figure when tight=False
-subplots.innerspace:    0.1
-subplots.ylabspace:     0.6
-subplots.xlabspace:     0.45
-subplots.nolabspace:    0.15
-subplots.panelspace:    0.15
+# Make padding in font-relative units like in matplotlib tight layout
+subplots.axwidth:    2in
+subplots.panelwidth: 0.45in
+subplots.cbarwidth:  0.17in
+subplots.legwidth:   0.25in
+subplots.panelpad:   0.5em # affects the figure when tight=True
+subplots.borderpad:  1em
+subplots.subplotpad: 1em
+subplots.titlespace: 2em # affects the figure when tight=False
+subplots.innerspace: 1em
+subplots.ylabspace:  5.5em # tick labels and axis label
+subplots.xlabspace:  4em
+subplots.nolabspace: 1.5em
+subplots.panelspace: 1.5em

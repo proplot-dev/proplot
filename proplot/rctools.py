@@ -308,16 +308,19 @@ _rc_categories = {
     *(re.sub('\..*$', '', name) for names in (_rc_names_custom, _rc_names) for name in names)
     }
 
-def _to_points(value, key=None):
+# Unit conversion
+# See: https://matplotlib.org/users/customizing.html, all props matching
+# the below strings use the units 'points', and my special categories are inches!
+_regex = re.compile('^.*(width|space|size|pad|len)$') # len is for ticklen, space is for subplots props
+def _convert_units(key, value):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""
-    # See: https://matplotlib.org/users/customizing.html, all props matching
-    # the below strings use the units 'points'!
-    if isinstance(value,str) and (
-        key is None or
-        (isinstance(key,str) and any(s in key for s in ('width','size','pad')))
-        ):
-        value = utils.units(value, 'pt')
+    if isinstance(value,str) and _regex.match(key):
+        if key.split('.')[0] in ('colorbar','subplots'):
+            to_units = 'in'
+        else:
+            to_units = 'pt'
+        value = utils.units(value, to_units)
     return value
 
 def _set_cycler(name):
@@ -356,7 +359,7 @@ def _get_globals(key=None, value=None):
         # Tick length/major-minor tick length ratio
         if key in ('ticklen', 'ticklenratio'):
             if key=='ticklen':
-                ticklen = _to_points(value)
+                ticklen = value
                 ratio = _rcGlobals['ticklenratio']
             else:
                 ticklen = _rcGlobals['ticklen']
@@ -366,7 +369,7 @@ def _get_globals(key=None, value=None):
         # Spine width/major-minor tick width ratio
         elif key in ('linewidth', 'tickratio'):
             if key=='linewidth':
-                tickwidth = _to_points(value)
+                tickwidth = value
                 ratio = _rcGlobals['tickratio']
             else:
                 tickwidth = _rcGlobals['linewidth']
@@ -374,10 +377,9 @@ def _get_globals(key=None, value=None):
             kw['xtick.minor.width'] = tickwidth*ratio
             kw['ytick.minor.width'] = tickwidth*ratio
         # Grid line
-        # NOTE: Changing minor width does not affect major width
         elif key in ('grid.linewidth', 'gridratio'):
             if key=='grid.linewidth':
-                gridwidth = _to_points(value)
+                gridwidth = value
                 ratio = _rcGlobals['gridratio']
             else:
                 gridwidth = _rcParams['grid.linewidth']
@@ -385,10 +387,7 @@ def _get_globals(key=None, value=None):
             kw_custom['gridminor.linewidth'] = gridwidth*ratio
         # Now update linked settings
         if key not in ('gridratio','tickratio','ticklenratio'):
-            points = (key.split('.')[0] not in ('colorbar','subplot'))
             for name in _rcGlobals_children[key]:
-                if points:
-                    value = _to_points(value, key=name)
                 if name in _rcExtraParams:
                     kw_custom[name] = value
                 else:
@@ -426,14 +425,13 @@ class rc_configurator(object):
             # Add keys to dictionaries
             gkeys, ckeys = {*()}, {*()}
             for key,value in data.items():
+                value = _convert_units(key, value)
                 if key in _rc_names_global:
                     _rcGlobals[key] = value
                     if i==0:
                         gkeys.add(key)
                 else:
-                    points = (key.split('.')[0] not in ('colorbar','subplot'))
-                    if points:
-                        value = _to_points(value, key=key)
+                    points = (key.split('.')[0] not in ('colorbar','subplots'))
                     if key in _rc_names_custom:
                         _rcExtraParams[key] = value
                         if i==0:
@@ -528,6 +526,7 @@ class rc_configurator(object):
 
         # Set the default cycler
         # If rgbcycle is changed, change it, and re-apply the cycler
+        value = _convert_units(key, value)
         if key=='rgbcycle':
             cache[key] = value
             _rcGlobals[key] = value
@@ -597,9 +596,6 @@ class rc_configurator(object):
             _rcParams.update(rc)
             _rcExtraParams.update(rc_new)
         else:
-            points = (key.split('.')[0] not in ('colorbar','subplot'))
-            if points:
-                value = _to_points(value, key=key)
             if key in _rc_names_custom:
                 cache[key] = value
                 if context:
