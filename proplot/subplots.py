@@ -962,7 +962,7 @@ class Figure(mfigure.Figure):
         # 2) Left of right panel minus right of left panel
         # NOTE: Order of stacks is always left-right and top-bottom
         seps = []
-        for ax,pax in zip(axs,paxs):
+        for pax in paxs:
             isep = []
             for i in range(len(pax)-1): # empty if pax is EmptyPanel
                 ipaxs = pax[i:i+2] # lists are left-to-right, top-to-bottom
@@ -1553,7 +1553,7 @@ def _panels_kwargs(
         # Widths
         width = _prop(side, 'width', ('panelwidth', 'cbarwidth', 'legwidth'))
         width = np.atleast_1d(units(width))
-        stack = _prop(side, 'stack', len(width) if np.iterable(width) else stack)
+        stack = _prop(side, 'stack', len(width) if np.iterable(width) else 1)
         if stack < 1:
             raise ValueError(f'"{side+stack}" argument must be integer >=1.')
         if len(width) == 1:
