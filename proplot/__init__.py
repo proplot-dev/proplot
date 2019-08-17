@@ -12,21 +12,24 @@ __version__ = '1.0'
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
 # For default warning source code see: https://github.com/python/cpython/blob/master/Lib/warnings.py
-# WARNING: Message must end with newline or will not be shown in ipython sessions
 import warnings
 def _warning_proplot(message, category, filename, lineno, line=None):
-    if 'proplot' in filename:
+    # Get line text
+    if line is None:
+        try:
+            import linecache
+            line = linecache.getline(filename, lineno)
+        except ModuleNotFoundError:
+            pass
+    # Make sure this is not matplotlib external warning whose stack has been
+    # traced back to proplot
+    if 'proplot' in filename and line is not None and 'warnings' in line:
         string = f'{filename}:{lineno}: ProPlotWarning: {message}'
     else:
         string = f'{filename}:{lineno}: {category.__name__}: {message}'
-        if line is None:
-            try:
-                import linecache
-                line = linecache.getline(filename, lineno)
-                string = f'{string}\n{line}'
-            except Exception:
-                pass
-    return string + '\n'
+        if line is not None:
+            string += ('\n' + line) # default behavior
+    return string + '\n' # must end in newline or not shown in IPython
 if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
 

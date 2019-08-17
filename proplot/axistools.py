@@ -5,7 +5,7 @@ the locator and formatter names, so that they can be called selected with
 the `~proplot.axes.CartesianAxes.format` method.
 """
 import re
-from .utils import _default
+from .utils import _notNone
 from .rctools import rc
 from numbers import Number
 from fractions import Fraction
@@ -368,8 +368,9 @@ class AutoFormatter(mticker.ScalarFormatter):
        tick label string.
 
     """
-    def __init__(self, *args, zerotrim=None, precision=None, tickrange=None,
-                        prefix=None, suffix=None, **kwargs):
+    def __init__(self, *args,
+        zerotrim=None, precision=None, tickrange=None,
+        prefix=None, suffix=None, **kwargs):
         """
         Parameters
         ----------
@@ -387,7 +388,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(*args, **kwargs)
-        zerotrim = _default(zerotrim, rc.get('axes.formatter.zerotrim'))
+        zerotrim = _notNone(zerotrim, rc.get('axes.formatter.zerotrim'))
         self._maxprecision = precision
         self._zerotrim = zerotrim
         self._tickrange = tickrange
@@ -597,7 +598,7 @@ def PowerScaleFactory(power, inverse=False, name=None):
     name : str, optional
         The registered scale name. Defaults to ``'polynomial_{power}'``.
     """
-    name_ = _default(name, f'polynomial_{power:.1e}')
+    name_ = _notNone(name, f'polynomial_{power:.1e}')
     class PowerScale(mscale.ScaleBase):
         # Declare name
         name = name_
@@ -687,7 +688,7 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
     name : str, optional
         The registered scale name. Defaults to ``'power_{base}_{exp}_{scale}'``.
     """
-    name_ = _default(name, f'exp_{base:.1e}_{scale:.1e}_{exp:.1e}')
+    name_ = _notNone(name, f'exp_{base:.1e}_{scale:.1e}_{exp:.1e}')
     class ExpScale(mscale.ScaleBase):
         # Declare name
         name = name_

@@ -2,12 +2,9 @@
 """
 Simple tools used in various places across this package.
 """
-import os
 import re
 import time
-import glob
 import numpy as np
-import warnings
 import functools
 import matplotlib as mpl
 import matplotlib.font_manager as mfonts
@@ -15,14 +12,14 @@ from numbers import Number, Integral
 rcParams = mpl.rcParams
 try:
     from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed.
+except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 __all__ = ['arange', 'edges', 'units', '_debug']
 
 # Important private helper func
-def _default(*args):
+def _notNone(*args):
     """Returns the first non-``None`` value, used with keyword arg aliases and
-    for setting default values."""
+    for setting default values. Ugly name but clear purpose."""
     for arg in args:
         if arg is not None:
             return arg

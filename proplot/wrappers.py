@@ -5,10 +5,10 @@ Imported by `~proplot.axes`, declares wrappers for various plotting functions.
 import re
 import numpy as np
 import numpy.ma as ma
-import warnings
 import functools
+import warnings
 from . import utils, styletools, axistools
-from .utils import _default, _debug
+from .utils import _notNone, _debug
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -512,16 +512,16 @@ def add_errorbars(self, func, *args,
     iy = y
     # Sensible defaults
     if boxdata is not None:
-        bars = _default(bars, True)
+        bars = _notNone(bars, True)
     if bardata is not None:
-        boxes = _default(boxes, True)
+        boxes = _notNone(boxes, True)
     if boxdata is not None or bardata is not None:
-        bars = _default(bars, False) # e.g. if boxdata passed but bardata not passed, use bars=False
-        boxes = _default(boxes, False)
+        bars = _notNone(bars, False) # e.g. if boxdata passed but bardata not passed, use bars=False
+        boxes = _notNone(boxes, False)
     # Get means or medians for plotting
     if (means or medians):
-        bars = _default(bars, True)
-        boxes = _default(boxes, True)
+        bars = _notNone(bars, True)
+        boxes = _notNone(boxes, True)
         if y.ndim != 2:
             raise ValueError(f'Need 2D data array for means=True or medians=True, got {y.ndim}D array.')
         if means:
@@ -530,9 +530,9 @@ def add_errorbars(self, func, *args,
             iy = np.percentile(y, 50, axis=0)
     # Call function
     get = kwargs.pop if name == 'violinplot' else kwargs.get
-    lw = _default(get('lw', None), get('linewidth', None), 0.7)
+    lw = _notNone(get('lw', None), get('linewidth', None), 0.7)
     get = kwargs.pop if name != 'bar' else kwargs.get
-    edgecolor = _default(get('edgecolor', None), 'k')
+    edgecolor = _notNone(get('edgecolor', None), 'k')
     if name == 'violinplot':
         xy = (x, y) # full data
     else:
@@ -552,15 +552,15 @@ def add_errorbars(self, func, *args,
         axis = 'y' # yerr
         xy = (x,iy)
     # Defaults
-    barlw = _default(barlw, lw)
-    boxlw = _default(boxlw, 4*barlw)
-    capsize = _default(capsize, 3)
-    barcolor = _default(barcolor, edgecolor)
-    boxcolor = _default(boxcolor, edgecolor)
+    barlw = _notNone(barlw, lw)
+    boxlw = _notNone(boxlw, 4*barlw)
+    capsize = _notNone(capsize, 3)
+    barcolor = _notNone(barcolor, edgecolor)
+    boxcolor = _notNone(boxcolor, edgecolor)
     # Draw boxes and bars
     if boxes:
         default = (-1,1) if barstd else (25,75)
-        boxrange = _default(boxrange, default)
+        boxrange = _notNone(boxrange, default)
         err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
             self.scatter(*xy, marker='o', color=boxmarkercolor, s=boxlw, zorder=5)
@@ -568,7 +568,7 @@ def add_errorbars(self, func, *args,
             'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
     if bars: # note it is now impossible to make thin bar width different from cap width!
         default = (-3,3) if barstd else (0,100)
-        barrange = _default(barrange, default)
+        barrange = _notNone(barrange, default)
         err = _errorbar_values(y, iy, bardata, barrange, barstd)
         self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize, 'zorder':barzorder,
             'color':barcolor, 'linewidth':barlw, 'linestyle':'none',
@@ -658,10 +658,10 @@ def scatter_wrapper(self, func, *args,
     if norm is not None:
         norm = styletools.Norm(norm, N=None, **norm_kw)
     # Apply some aliases for keyword arguments
-    c = _default(c, color, markercolor)
-    s = _default(s, size, markersize)
-    lw = _default(lw, linewidth, linewidths, markeredgewidth, markeredgewidths)
-    ec = _default(edgecolor, edgecolors, markeredgecolor, markeredgecolors)
+    c = _notNone(c, color, markercolor)
+    s = _notNone(s, size, markersize)
+    lw = _notNone(lw, linewidth, linewidths, markeredgewidth, markeredgewidths)
+    ec = _notNone(edgecolor, edgecolors, markeredgecolor, markeredgecolors)
     # Scale s array
     if np.iterable(s):
         smin_true, smax_true = min(s), max(s)
@@ -746,7 +746,9 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     return _fill_between_parse(func, *args, **kwargs)
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
-    """Wraps `~matplotlib.axes.Axes.fill_betweenx`, usage is same as `fill_between_wrapper`."""
+    """Wraps `~matplotlib.axes.Axes.fill_betweenx`, also accessible via the
+    `~proplot.axes.BaseAxes.areax` alias. Usage is same as
+    `fill_between_wrapper`."""
     return _fill_between_parse(func, *args, **kwargs)
 
 def hist_wrapper(self, func, x, bins=None, **kwargs):
@@ -811,7 +813,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     # Call func
     # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
-    lw = _default(lw, linewidth)
+    lw = _notNone(lw, linewidth)
     return func(x, height, width=width, bottom=bottom,
         linewidth=lw, edgecolor=edgecolor,
         stacked=stacked, orientation=orientation,
@@ -872,7 +874,7 @@ def boxplot_wrapper(self, func, *args,
         return obj
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
-    lw = _default(lw, linewidth)
+    lw = _notNone(lw, linewidth)
     if fillcolor is None:
         cycler = next(self._get_lines.prop_cycler)
         fillcolor = cycler.get('color', None)
@@ -887,8 +889,8 @@ def boxplot_wrapper(self, func, *args,
         if key not in obj: # possible if not rendered
             continue
         artists = obj[key]
-        ilw = _default(ilw, lw)
-        icolor = _default(icolor, color)
+        ilw = _notNone(ilw, lw)
+        icolor = _notNone(icolor, color)
         for artist in artists:
             if icolor is not None:
                 artist.set_color(icolor)
@@ -943,7 +945,7 @@ def violinplot_wrapper(self, func, *args,
         elif orientation != 'vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
     # Sanitize input
-    lw = _default(linewidth, lw)
+    lw = _notNone(linewidth, lw)
     if kwargs.pop('showextrema', None):
         warnings.warn(f'Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
@@ -1026,7 +1028,7 @@ def text_wrapper(self, func,
     else:
         transform = _get_transform(self, transform)
     # Font name strings
-    fontname = _default(fontfamily, family, fontname)
+    fontname = _notNone(fontfamily, family, fontname)
     if fontname is not None:
         if not isinstance(fontname, str) and np.iterable(fontname) and len(fontname) == 1:
             fontname = fontname[0]
@@ -1034,7 +1036,7 @@ def text_wrapper(self, func,
             kwargs['fontfamily'] = fontname
         else:
             warnings.warn(f'Font "{fontname}" unavailable. Available fonts are {", ".join(styletools.fonts)}.')
-    size = _default(fontsize, size)
+    size = _notNone(fontsize, size)
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
     kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
@@ -1482,7 +1484,7 @@ def cycle_wrapper(self, func, *args,
     objs = []
     ncols = 1
     label_leg = None # for colorbar or legend
-    labels = _default(values, labels, label, None)
+    labels = _notNone(values, labels, label, None)
     stacked = kwargs.pop('stacked', False)
     if name in ('pie','boxplot','violinplot'):
         if labels is not None:
@@ -1511,7 +1513,7 @@ def cycle_wrapper(self, func, *args,
         # Get x coordinates
         ix, iy = x, ys[0] # samples
         if name in ('pie',):
-            kw['labels'] = _default(labels, ix) # TODO: move to pie wrapper?
+            kw['labels'] = _notNone(labels, ix) # TODO: move to pie wrapper?
         if name in ('bar',): # adjust
             if not stacked:
                 ix = x + (i - ncols/2 + 0.5)*width/ncols
@@ -1745,10 +1747,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
-    colors = _default(color, colors, edgecolor, edgecolors)
-    edgefix = _default(edgefix, rc['image.edgefix'])
-    linewidths = _default(lw, linewidth, linewidths)
-    linestyles = _default(ls, linestyle, linestyles)
+    colors = _notNone(color, colors, edgecolor, edgecolors)
+    edgefix = _notNone(edgefix, rc['image.edgefix'])
+    linewidths = _notNone(lw, linewidth, linewidths)
+    linestyles = _notNone(ls, linestyle, linestyles)
     for regex,names in _cmap_options.items():
         if not re.search(regex, name):
             continue
@@ -1799,7 +1801,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
 
     # Input colormap, for methods that accept a colormap and normalizer
     if not name[-7:] == 'contour': # contour, tricontour, i.e. not a method where cmap is optional
-        cmap = _default(cmap, rc['image.cmap'])
+        cmap = _notNone(cmap, rc['image.cmap'])
     if cmap is not None:
         # Get colormap object
         cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
@@ -1826,7 +1828,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
 
     # Get default levels
     # TODO: Add kernel density plot to hexbin!
-    levels = _default(N, levels, rc['image.levels'])
+    levels = _notNone(N, levels, rc['image.levels'])
     if isinstance(levels, Number):
         if name in ('hexbin',):
             levels = None # cannot infer *counts*, so do nothing
@@ -1834,8 +1836,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
             # Set levels according to vmin and vmax
             N = levels
             if vmin is not None or vmax is not None:
-                vmin = _default(vmin, zmin)
-                vmax = _default(vmax, zmax)
+                vmin = _notNone(vmin, zmin)
+                vmax = _notNone(vmax, zmax)
                 levels = np.linspace(vmin, vmax, N)
             # Use the locator to determine levels
             # Mostly copied from the hidden contour.ContourSet._autolev
@@ -1907,7 +1909,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     if labels:
         # Formatting for labels
         # Respect if 'fmt' was passed in labels_kw instead of as a main argument
-        fmt = _default(labels_kw.pop('fmt', None), fmt, 'simple')
+        fmt = _notNone(labels_kw.pop('fmt', None), fmt, 'simple')
         fmt = axistools.Formatter(fmt, precision=precision)
         # Use clabel method
         if 'contour' in name:
@@ -2071,9 +2073,9 @@ def legend_wrapper(self,
     # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
         raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-    ncol = _default(ncols, ncol) # may still be None, wait till later
-    title = _default(label, title)
-    frameon = _default(frame, frameon, rc['legend.frameon'])
+    ncol = _notNone(ncols, ncol) # may still be None, wait till later
+    title = _notNone(label, title)
+    frameon = _notNone(frame, frameon, rc['legend.frameon'])
     if title is not None:
         kwargs['title'] = title
     if frameon is not None:
@@ -2155,7 +2157,7 @@ def legend_wrapper(self,
         pairs = [pair for ipairs in pairs for pair in ipairs]
     elif center and not list_of_lists:
         list_of_lists = True
-        ncol = _default(ncol, 3)
+        ncol = _notNone(ncol, 3)
         pairs = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs))] # to list of iterables
     if list_of_lists: # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
@@ -2174,7 +2176,7 @@ def legend_wrapper(self,
         # See: https://stackoverflow.com/q/10101141/4970632
         # Example: If 5 columns, but final row length 3, columns 0-2 have
         # N rows but 3-4 have N-1 rows.
-        ncol = _default(ncol, 3)
+        ncol = _notNone(ncol, 3)
         if order == 'C':
             fpairs = []
             split = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs)//ncol+1)] # split into rows
@@ -2212,7 +2214,7 @@ def legend_wrapper(self,
         ymin, ymax = None, None
         if order == 'F':
             raise NotImplementedError(f'When center=True, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
-        loc = _default(loc, 'upper center')
+        loc = _notNone(loc, 'upper center')
         if not isinstance(loc, str):
             raise ValueError(f'Invalid location {repr(loc)} for legend with center=True. Must be a location *string*.')
         elif loc == 'best':
@@ -2232,8 +2234,8 @@ def legend_wrapper(self,
             else: # center
                 y1 = 0.5 + interval*len(pairs)/2 - (i+1)*interval
                 y2 = 0.5 + interval*len(pairs)/2 - i*interval
-            ymin = min(y1, _default(ymin, y1))
-            ymax = max(y2, _default(ymax, y2))
+            ymin = min(y1, _notNone(ymin, y1))
+            ymax = max(y2, _notNone(ymax, y2))
             # Draw legend
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
             leg = mlegend.Legend(self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
@@ -2458,15 +2460,15 @@ def colorbar_wrapper(self,
     formatter_kw = formatter_kw or {}
     norm_kw = norm_kw or {}
     # Parse flexible input
-    label = _default(title, label)
-    locator = _default(ticks, locator)
-    formatter = _default(ticklabels, formatter, 'default')
-    minorlocator = _default(minorticks, minorlocator)
-    ticklocation = _default(tickloc, ticklocation)
+    label = _notNone(title, label)
+    locator = _notNone(ticks, locator)
+    formatter = _notNone(ticklabels, formatter, 'default')
+    minorlocator = _notNone(minorticks, minorlocator)
+    ticklocation = _notNone(tickloc, ticklocation)
 
     # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!
-    grid = _default(grid, rc['colorbar.grid'])
+    grid = _notNone(grid, rc['colorbar.grid'])
     if extend is None:
         if isinstance(getattr(mappable, 'extend', None), str):
             extend = mappable.extend or 'neither'
@@ -2651,7 +2653,7 @@ def colorbar_wrapper(self,
         scale = width*abs(self.get_position().width)
     else:
         scale = height*abs(self.get_position().height)
-    extendsize = utils.units(_default(extendsize, rc['colorbar.extend']))
+    extendsize = utils.units(_notNone(extendsize, rc['colorbar.extend']))
     extendsize = extendsize/(scale - 2*extendsize)
     kwargs.update({
         'ticks':locators[0],
@@ -2721,8 +2723,8 @@ def colorbar_wrapper(self,
 
     # Outline
     kw_outline = {
-        'edgecolor': _default(edgecolor, rc['axes.edgecolor']),
-        'linewidth': _default(linewidth, rc['axes.linewidth']),
+        'edgecolor': _notNone(edgecolor, rc['axes.edgecolor']),
+        'linewidth': _notNone(linewidth, rc['axes.linewidth']),
         }
     if cb.outline is not None:
         cb.outline.update(kw_outline)

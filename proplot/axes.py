@@ -64,7 +64,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 from .rctools import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
-from .utils import _default, units
+from .utils import _notNone, units
 __all__ = [
     'BaseAxes',
     'BasemapProjectionAxes',
@@ -254,7 +254,7 @@ class BaseAxes(maxes.Axes):
         # Location string and position coordinates
         cache = True
         prefix = 'abc' if abc else 'title'
-        loc = _default(loc, rc[f'{prefix}.loc'])
+        loc = _notNone(loc, rc[f'{prefix}.loc'])
         iloc = getattr(self, '_' + ('abc' if abc else 'title') + '_loc') # old
         if loc is None:
             loc = iloc
@@ -545,8 +545,8 @@ class BaseAxes(maxes.Axes):
         text = kwargs.pop('text', obj.get_text())
         x, y = kwargs.pop('position', (None,None))
         pos = obj.get_position()
-        x = _default(kwargs.pop('x', x), pos[0])
-        y = _default(kwargs.pop('y', y), pos[1])
+        x = _notNone(kwargs.pop('x', x), pos[0])
+        y = _notNone(kwargs.pop('y', y), pos[1])
         return self.text(x, y, text, **kwextra)
 
     def context(self, *, mode=2, rc_kw=None, **kwargs):
@@ -852,7 +852,7 @@ class BaseAxes(maxes.Axes):
         **kwargs
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
-        loc = _default(loc, rc['colorbar.loc'])
+        loc = _notNone(loc, rc['colorbar.loc'])
         panel_kw = panel_kw or {}
         panel_kw.setdefault('mode', 'colorbar')
         if width is not None:
@@ -863,10 +863,10 @@ class BaseAxes(maxes.Axes):
         if loc == 'fill':
             return ax.colorbar(*args, **kwargs)
         # Default props
-        extend = units(_default(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
-        length = units(_default(length, rc['colorbar.length']))/self.width
-        width = units(_default(width, rc['colorbar.width']))/self.height
-        pad = units(_default(pad, rc['colorbar.axespad']))
+        extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
+        length = units(_notNone(length, rc['colorbar.length']))/self.width
+        width = units(_notNone(width, rc['colorbar.width']))/self.height
+        pad = units(_notNone(pad, rc['colorbar.axespad']))
         xpad = pad/self.width
         ypad = pad/self.height
         # Space for labels
@@ -913,17 +913,17 @@ class BaseAxes(maxes.Axes):
         # Make frame
         # NOTE: We do not allow shadow effects or fancy edges effect.
         # Also keep zorder same as with legend.
-        frameon = _default(frame, frameon, rc['colorbar.frameon'])
+        frameon = _notNone(frame, frameon, rc['colorbar.frameon'])
         if frameon:
             # Make object
             xmin, ymin, width, height = fbounds
             patch = mpatches.Rectangle((xmin,ymin), width, height,
                     snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
             # Properties
-            alpha = _default(alpha, rc['colorbar.framealpha'])
-            linewidth = _default(linewidth, rc['axes.linewidth'])
-            edgecolor = _default(edgecolor, rc['axes.edgecolor'])
-            facecolor = _default(facecolor, rc['axes.facecolor'])
+            alpha = _notNone(alpha, rc['colorbar.framealpha'])
+            linewidth = _notNone(linewidth, rc['axes.linewidth'])
+            edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
+            facecolor = _notNone(facecolor, rc['axes.facecolor'])
             patch.update({'alpha':alpha, 'linewidth':linewidth, 'edgecolor':edgecolor, 'facecolor':facecolor})
             self.add_artist(patch)
         return cb
@@ -1658,18 +1658,18 @@ class CartesianAxes(BaseAxes):
             xminorlocator_kw = xminorlocator_kw or {}
             yminorlocator_kw = yminorlocator_kw or {}
             # Flexible keyword args, declare defaults
-            xmargin       = _default(xmargin, rc['axes.xmargin'])
-            ymargin       = _default(ymargin, rc['axes.ymargin'])
-            xtickdir      = _default(xtickdir, rc['xtick.direction'])
-            ytickdir      = _default(ytickdir, rc['ytick.direction'])
-            xtickminor    = _default(xtickminor, rc['xtick.minor.visible'])
-            ytickminor    = _default(ytickminor, rc['ytick.minor.visible'])
-            xformatter    = _default(xticklabels, xformatter)
-            yformatter    = _default(yticklabels, yformatter)
-            xlocator      = _default(xticks, xlocator)
-            ylocator      = _default(yticks, ylocator)
-            xminorlocator = _default(xminorticks, xminorlocator)
-            yminorlocator = _default(yminorticks, yminorlocator)
+            xmargin       = _notNone(xmargin, rc['axes.xmargin'])
+            ymargin       = _notNone(ymargin, rc['axes.ymargin'])
+            xtickdir      = _notNone(xtickdir, rc['xtick.direction'])
+            ytickdir      = _notNone(ytickdir, rc['ytick.direction'])
+            xtickminor    = _notNone(xtickminor, rc['xtick.minor.visible'])
+            ytickminor    = _notNone(ytickminor, rc['ytick.minor.visible'])
+            xformatter    = _notNone(xticklabels, xformatter)
+            yformatter    = _notNone(yticklabels, yformatter)
+            xlocator      = _notNone(xticks, xlocator)
+            ylocator      = _notNone(yticks, ylocator)
+            xminorlocator = _notNone(xminorticks, xminorlocator)
+            yminorlocator = _notNone(yminorticks, yminorlocator)
             # Grid defaults are more complicated
             axis = rc.get('axes.grid.axis') # always need this property
             grid, which = rc['axes.grid'], rc['axes.grid.which']
@@ -1678,32 +1678,32 @@ class CartesianAxes(BaseAxes):
                     grid = rc.get('axes.grid')
                 elif which is None:
                     which = rc.get('axes.grid.which')
-                xgrid = _default(xgrid, grid
+                xgrid = _notNone(xgrid, grid
                     and axis in ('x','both') and which in ('major','both'))
-                ygrid = _default(ygrid, grid
+                ygrid = _notNone(ygrid, grid
                     and axis in ('y','both') and which in ('major','both'))
-                xgridminor = _default(xgridminor, grid
+                xgridminor = _notNone(xgridminor, grid
                     and axis in ('x','both') and which in ('minor','both'))
-                ygridminor = _default(ygridminor, grid
+                ygridminor = _notNone(ygridminor, grid
                     and axis in ('y','both') and which in ('minor','both'))
 
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
             # want this sometimes! Same goes for spines!
-            xspineloc  = _default(xloc, xspineloc)
-            yspineloc  = _default(yloc, yspineloc)
-            xtickloc   = _default(xtickloc, xspineloc, _rcloc_to_stringloc('x', 'xtick'))
-            ytickloc   = _default(ytickloc, yspineloc, _rcloc_to_stringloc('y', 'ytick'))
-            xspineloc  = _default(xspineloc, _rcloc_to_stringloc('x', 'axes.spines'))
-            yspineloc  = _default(yspineloc, _rcloc_to_stringloc('y', 'axes.spines'))
+            xspineloc  = _notNone(xloc, xspineloc)
+            yspineloc  = _notNone(yloc, yspineloc)
+            xtickloc   = _notNone(xtickloc, xspineloc, _rcloc_to_stringloc('x', 'xtick'))
+            ytickloc   = _notNone(ytickloc, yspineloc, _rcloc_to_stringloc('y', 'ytick'))
+            xspineloc  = _notNone(xspineloc, _rcloc_to_stringloc('x', 'axes.spines'))
+            yspineloc  = _notNone(yspineloc, _rcloc_to_stringloc('y', 'axes.spines'))
             if xtickloc != 'both':
-                xticklabelloc = _default(xticklabelloc, xtickloc)
-                xlabelloc     = _default(xlabelloc, xticklabelloc)
+                xticklabelloc = _notNone(xticklabelloc, xtickloc)
+                xlabelloc     = _notNone(xlabelloc, xticklabelloc)
                 if xlabelloc not in (None,'bottom','top'): # "both", "neither", etc
                     xlabelloc = 'bottom'
             if ytickloc != 'both':
-                yticklabelloc = _default(yticklabelloc, ytickloc)
-                ylabelloc     = _default(ylabelloc, yticklabelloc)
+                yticklabelloc = _notNone(yticklabelloc, ytickloc)
+                ylabelloc     = _notNone(ylabelloc, yticklabelloc)
                 if ylabelloc not in (None,'left','right'):
                     ylabelloc = 'left'
 
@@ -2411,10 +2411,10 @@ class ProjectionAxes(BaseAxes):
         # NOTE: For now, cannot update existing gridline properties, can only
         # redraw them. So, always get uncached properties. Also, if labels
         # keyword args were passed, automatically turn grid on
-        grid = _default(grid, rc.get('geogrid'))
-        labels = _default(labels, rc.get('geogrid.labels')) or bool(lonlabels or latlabels)
-        lonlocator = _default(lonlines, lonlocator, rc.get('geogrid.lonstep'))
-        latlocator = _default(latlines, latlocator, rc.get('geogrid.latstep'))
+        grid = _notNone(grid, rc.get('geogrid'))
+        labels = _notNone(labels, rc.get('geogrid.labels')) or bool(lonlabels or latlabels)
+        lonlocator = _notNone(lonlines, lonlocator, rc.get('geogrid.lonstep'))
+        latlocator = _notNone(latlines, latlocator, rc.get('geogrid.latstep'))
 
         # Longitude gridlines, draw relative to projection prime meridian
         if isinstance(self, CartopyProjectionAxes):
@@ -2427,7 +2427,7 @@ class ProjectionAxes(BaseAxes):
             lonlocator = [*lonlocator]
         # Latitudes gridlines, draw from -latmax to latmax, but if result would
         # be asymmetrical across equator, do not use
-        latmax = _default(latmax, rc.get('geogrid.latmax'))
+        latmax = _notNone(latmax, rc.get('geogrid.latmax'))
         if latlocator is not None:
             if not np.iterable(latlocator):
                 if (latmax % latlocator) == (-latmax % latlocator):
@@ -2601,10 +2601,10 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 rmin, rmax = rlim
             if thetalim is not None:
                 thetamin, thetamax = thetalim
-            thetalocator   = _default(thetalines, thetalocator)
-            thetaformatter = _default(thetalabels, thetaformatter)
-            rlocator       = _default(rlines, rlocator)
-            rformatter     = _default(rlabels, rformatter)
+            thetalocator   = _notNone(thetalines, thetalocator)
+            thetaformatter = _notNone(thetalabels, thetaformatter)
+            rlocator       = _notNone(rlines, rlocator)
+            rformatter     = _notNone(rlabels, rformatter)
 
             # Special radius settings
             if r0 is not None:

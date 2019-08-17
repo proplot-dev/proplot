@@ -36,13 +36,13 @@ import os
 import re
 import numpy as np
 import functools
-import warnings
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+import warnings
 from .rctools import rc
-from .utils import _default, _counter, _timer, units
+from .utils import _notNone, _counter, _timer, units
 from . import projs, axes
 __all__ = [
     'axes_grid', 'close', 'show', 'subplots', 'Figure',
@@ -340,10 +340,10 @@ class FlexibleGridSpecBase(object):
         """For keyword arg usage, see `FlexibleGridSpecBase`."""
         # Parse flexible input
         nrows, ncols = self.get_visible_geometry()
-        hratios = np.atleast_1d(_default(height_ratios, 1))
-        wratios = np.atleast_1d(_default(width_ratios,  1))
-        hspace = np.atleast_1d(_default(hspace, np.mean(hratios)*0.10)) # this is relative to axes
-        wspace = np.atleast_1d(_default(wspace, np.mean(wratios)*0.10))
+        hratios = np.atleast_1d(_notNone(height_ratios, 1))
+        wratios = np.atleast_1d(_notNone(width_ratios,  1))
+        hspace = np.atleast_1d(_notNone(hspace, np.mean(hratios)*0.10)) # this is relative to axes
+        wspace = np.atleast_1d(_notNone(wspace, np.mean(wratios)*0.10))
         if len(wspace) == 1:
             wspace = np.repeat(wspace, (ncols-1,)) # note: may be length 0
         if len(hspace) == 1:
@@ -524,17 +524,17 @@ class Figure(mfigure.Figure):
         """
         # Tight settings
         # NOTE: _tight taken by matplotlib tight layout, use _smart_tight!
-        self._tight_borders = _default(tightborders, tight, rc['tight'])
-        self._tight_subplots = _default(tightsubplots, tight, rc['tight'])
-        self._tight_panels = _default(tightpanels, tight, rc['tight'])
+        self._tight_borders = _notNone(tightborders, tight, rc['tight'])
+        self._tight_subplots = _notNone(tightsubplots, tight, rc['tight'])
+        self._tight_panels = _notNone(tightpanels, tight, rc['tight'])
         self._smart_tight = (self._tight_borders or self._tight_subplots or self._tight_panels)
         self._post_init = True
         self._smart_tight_init = True
-        self._border_pad = units(_default(borderpad, rc['subplots.borderpad']))
-        self._subplot_pad  = units(_default(subplotpad,  rc['subplots.subplotpad']))
-        self._panel_pad = units(_default(panelpad, rc['subplots.panelpad']))
-        self._wflush = _default(wflush, flush)
-        self._hflush = _default(hflush, flush)
+        self._border_pad = units(_notNone(borderpad, rc['subplots.borderpad']))
+        self._subplot_pad  = units(_notNone(subplotpad,  rc['subplots.subplotpad']))
+        self._panel_pad = units(_notNone(panelpad, rc['subplots.panelpad']))
+        self._wflush = _notNone(wflush, flush)
+        self._hflush = _notNone(hflush, flush)
         self._locked = True
         self._autoformat = autoformat
         # Gridspec info and panels, filled in by subplots
@@ -875,11 +875,11 @@ class Figure(mfigure.Figure):
                 warnings.warn('All axes on top row are invisible. Cannot determine suptitle position.')
             else:
                 kw = self._subplots_kw
-                lsep, rsep = _default(kw['lsep'], []), _default(kw['rsep'], [])
-                lwidth = _default(kw['lwidth'], [0])
-                rwidth = _default(kw['rwidth'], [0])
-                lspace = _default(kw['lspace'], 0)
-                rspace = _default(kw['rspace'], 0)
+                lsep, rsep = _notNone(kw['lsep'], []), _notNone(kw['rsep'], [])
+                lwidth = _notNone(kw['lwidth'], [0])
+                rwidth = _notNone(kw['rwidth'], [0])
+                lspace = _notNone(kw['lspace'], 0)
+                rspace = _notNone(kw['rspace'], 0)
                 left = kw['left'] + sum(lwidth) + sum(lsep) + lspace
                 right = kw['right'] + sum(rwidth) + sum(rsep) + rspace
                 x = left/width + 0.5*(width - left - right)/width
@@ -1420,8 +1420,7 @@ class Figure(mfigure.Figure):
         `~matplotlib.figure.Figure.colorbar` functions."""
         kwargs.setdefault('projection', 'cartesian')
         if self._locked:
-            warnings.warn('Using "add_subplot" or "colorbar" with ProPlot figures may result in unexpected behavior. '
-                'Please use the subplots() command to create your figure, subplots, and panels all at once.')
+            warnings.warn('Using "fig.add_subplot" or "fig.colorbar" with ProPlot figures may result in unexpected behavior. Please use "proplot.subplots" and "Axes.colorbar" instead.')
         ax = super().add_subplot(*args, **kwargs)
         return ax
 
@@ -1544,7 +1543,7 @@ def _panels_kwargs(
             vside = kw.get(side + key, None)
             if vglobal is not None and vside is not None:
                 warnings.warn(f'Got conflicting values {key}={vglobal} and {side}{key}={vside}. Using "{key}".')
-            return _default(vglobal, vside, default)
+            return _notNone(vglobal, vside, default)
     # Apply default props for all panels that are turned on
     for side in onpanels:
         # Axis sharing
@@ -1624,12 +1623,12 @@ def _subplots_geometry(**kwargs):
     lsep, _, _ = _pop('lsep'), _pop('lshare'), _pop('lflush')
     tsep, _, _ = _pop('tsep'), _pop('tshare'), _pop('tflush')
     # Defaults for below calculations
-    lsep, rsep = _default(lsep, []), _default(rsep, [])
-    tsep, bsep = _default(tsep, []), _default(bsep, [])
-    lspace, rspace = _default(lspace, 0), _default(rspace, 0)
-    tspace, bspace = _default(tspace, 0), _default(bspace, 0)
-    lwidth, rwidth = _default(lwidth, [0]), _default(rwidth, [0])
-    twidth, bwidth = _default(twidth, [0]), _default(bwidth, [0])
+    lsep, rsep = _notNone(lsep, []), _notNone(rsep, [])
+    tsep, bsep = _notNone(tsep, []), _notNone(bsep, [])
+    lspace, rspace = _notNone(lspace, 0), _notNone(rspace, 0)
+    tspace, bspace = _notNone(tspace, 0), _notNone(bspace, 0)
+    lwidth, rwidth = _notNone(lwidth, [0]), _notNone(rwidth, [0])
+    twidth, bwidth = _notNone(twidth, [0]), _notNone(bwidth, [0])
     # Check no extra args passed
     if kwargs:
         raise ValueError(f'Unknown keyword args passed to _subplots_geometry: {kwargs}.')
@@ -2105,12 +2104,12 @@ def subplots(array=None, ncols=1, nrows=1,
     # Axes panels
     #-------------------------------------------------------------------------#
     # Flexible args
-    axpanels    = _default(axpanel, axpanels, '')
-    axcolorbars = _default(axcolorbar, axcolorbars, '')
-    axlegends   = _default(axlegend, axlegends, '')
-    axpanels_kw    = _default(axpanel_kw, axpanels_kw, {})
-    axcolorbars_kw = _default(axcolorbar_kw, axcolorbars_kw, {})
-    axlegends_kw   = _default(axlegend_kw, axlegends_kw, {})
+    axpanels    = _notNone(axpanel, axpanels, '')
+    axcolorbars = _notNone(axcolorbar, axcolorbars, '')
+    axlegends   = _notNone(axlegend, axlegends, '')
+    axpanels_kw    = _notNone(axpanel_kw, axpanels_kw, {})
+    axcolorbars_kw = _notNone(axcolorbar_kw, axcolorbars_kw, {})
+    axlegends_kw   = _notNone(axlegend_kw, axlegends_kw, {})
     for iname,ipanels,ikw in (
         ('panels', axpanels, axpanels_kw),
         ('colorbars', axcolorbars, axcolorbars_kw),
@@ -2131,7 +2130,7 @@ def subplots(array=None, ncols=1, nrows=1,
         (('left',left),('right',right),('top',top),('bottom',bottom))
         if value is not None}
     if args:
-        tightborders = _default(tightborders, False)
+        tightborders = _notNone(tightborders, False)
         if tightborders:
             warnings.warn(_args_string('tightborders', args))
     # Turn off tightsubplots
@@ -2140,7 +2139,7 @@ def subplots(array=None, ncols=1, nrows=1,
         if ('space' in key or 'sep' in key) and value is not None
         and not (np.iterable(value) and not len(value))}}
     if args:
-        tightsubplots = _default(tightsubplots, False)
+        tightsubplots = _notNone(tightsubplots, False)
         if tightsubplots:
             warnings.warn(_args_string('tightsubplots', args))
     # Turn off tightpanels
@@ -2149,7 +2148,7 @@ def subplots(array=None, ncols=1, nrows=1,
         if ('space' in key or 'sep' in key) and value is not None
         and not (np.iterable(value) and not len(value))}
     if args:
-        tightpanels = _default(tightpanels, False)
+        tightpanels = _notNone(tightpanels, False)
         if tightpanels:
             warnings.warn(_args_string('tightpanels', args))
 
@@ -2163,9 +2162,9 @@ def subplots(array=None, ncols=1, nrows=1,
             axpanels_kw[num], axcolorbars_kw[num], axlegends_kw[num],
             figure=False)
     # Get default figure panel keyword args
-    panels = _default(panel, panels, '')
-    legends = _default(legend, legends, '')
-    colorbars = _default(colorbar, colorbars, '')
+    panels = _notNone(panel, panels, '')
+    legends = _notNone(legend, legends, '')
+    colorbars = _notNone(colorbar, colorbars, '')
     kwargs = _panels_kwargs(panels, colorbars, legends, kwargs, figure=True)
     # Get figure panel arrays
     for ipanel,ispan in zip((panel,legend,colorbar,panels,legends,colorbars),(1,1,1,0,0,0)):
@@ -2188,12 +2187,12 @@ def subplots(array=None, ncols=1, nrows=1,
     #-------------------------------------------------------------------------#
     # Figure out rows and columns "spanned" by each axes in list, for
     # axis sharing and axis label spanning settings
-    sharex = int(_default(share, sharex, rc['share']))
-    sharey = int(_default(share, sharey, rc['share']))
+    sharex = int(_notNone(share, sharex, rc['share']))
+    sharey = int(_notNone(share, sharey, rc['share']))
     if sharex not in range(4) or sharey not in range(4):
         raise ValueError(f'Axis sharing level can be 0 (no sharing), 1 (sharing, but keep all tick labels), and 2 (sharing, but only keep one set of tick labels). Got sharex={sharex} and sharey={sharey}.')
-    spanx = _default(span, spanx, 0 if sharex == 0 else None, rc['span'])
-    spany = _default(span, spany, 0 if sharey == 0 else None, rc['span'])
+    spanx = _notNone(span, spanx, 0 if sharex == 0 else None, rc['span'])
+    spany = _notNone(span, spany, 0 if sharey == 0 else None, rc['span'])
     # Get some axes properties, where locations are sorted by axes id.
     # NOTE: These ranges are endpoint exclusive, like a slice object!
     axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0] # 0 stands for empty
@@ -2209,8 +2208,8 @@ def subplots(array=None, ncols=1, nrows=1,
     # NOTE: Cannot have mutable dict as default arg, because it changes the
     # "default" if user calls function more than once! Swap dicts for None.
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    proj    = _axes_dict(naxs, _default(projection, proj), kw=False, default='cartesian')
-    proj_kw = _axes_dict(naxs, _default(projection_kw, proj_kw, {}), kw=True)
+    proj    = _axes_dict(naxs, _notNone(projection, proj), kw=False, default='cartesian')
+    proj_kw = _axes_dict(naxs, _notNone(projection_kw, proj_kw, {}), kw=True)
     axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
     for num,name in proj.items():
         # The default, my CartesianAxes projection
@@ -2268,21 +2267,21 @@ def subplots(array=None, ncols=1, nrows=1,
     # Gridspec defaults
     # NOTE: Ratios are scaled to take physical units in _subplots_geometry, so
     # user can manually provide hspace and wspace in physical units.
-    wratios = np.atleast_1d(_default(width_ratios, wratios, axwidths, 1))
-    hratios = np.atleast_1d(_default(height_ratios, hratios, axheights, 1))
+    wratios = np.atleast_1d(_notNone(width_ratios, wratios, axwidths, 1))
+    hratios = np.atleast_1d(_notNone(height_ratios, hratios, axheights, 1))
     # Subplot space
-    hspace = np.atleast_1d(_default(units(hspace),
+    hspace = np.atleast_1d(_notNone(units(hspace),
         units(rc['subplots.titlespace']) + units(rc['subplots.innerspace']) if sharex == 3
         else units(rc['subplots.xlabspace']) if sharex in (1,2) # space for tick labels and title
         else units(rc['subplots.titlespace']) + units(rc['subplots.xlabspace']
         )))
-    wspace = np.atleast_1d(_default(units(wspace),
+    wspace = np.atleast_1d(_notNone(units(wspace),
         units(rc['subplots.innerspace']) if sharey == 3
         else units(rc['subplots.ylabspace']) - units(rc['subplots.titlespace']) if sharey in (1,2) # space for tick labels only
         else units(rc['subplots.ylabspace'])
         ))
-    wflush = _default(wflush, flush, False)
-    hflush = _default(hflush, flush, False)
+    wflush = _notNone(wflush, flush, False)
+    hflush = _notNone(hflush, flush, False)
     if len(wratios) == 1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios) == 1:
@@ -2296,10 +2295,10 @@ def subplots(array=None, ncols=1, nrows=1,
     if hflush:
         hspace = hspace*0.0
     # Border space
-    left   = units(_default(left,   rc['subplots.ylabspace']))
-    bottom = units(_default(bottom, rc['subplots.xlabspace']))
-    right  = units(_default(right,  rc['subplots.nolabspace']))
-    top    = units(_default(top,    rc['subplots.titlespace']))
+    left   = units(_notNone(left,   rc['subplots.ylabspace']))
+    bottom = units(_notNone(bottom, rc['subplots.xlabspace']))
+    right  = units(_notNone(right,  rc['subplots.nolabspace']))
+    top    = units(_notNone(top,    rc['subplots.titlespace']))
 
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = _subplots_geometry(

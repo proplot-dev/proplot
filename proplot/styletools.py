@@ -19,15 +19,15 @@ import glob
 import cycler
 from lxml import etree
 from numbers import Number, Integral
-import warnings
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
 import matplotlib.font_manager as mfonts
+import warnings
 from . import colormath
-from .utils import _default, _counter
+from .utils import _notNone, _counter
 from matplotlib import get_data_path
 rcParams = mpl.rcParams
 __all__ = [
@@ -1091,10 +1091,10 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
             cmap = cmap._resample(N_) # makes a copy!
             cmap._cyclic = cyclic
             if isinstance(cmap, PerceptuallyUniformColormap):
-                cmap._gamma1 = _default(gamma, gamma1, cmap._gamma1)
-                cmap._gamma2 = _default(gamma, gamma2, cmap._gamma2)
+                cmap._gamma1 = _notNone(gamma, gamma1, cmap._gamma1)
+                cmap._gamma2 = _notNone(gamma, gamma2, cmap._gamma2)
             elif gamma:
-                cmap._gamma = _default(gamma, cmap._gamma)
+                cmap._gamma = _notNone(gamma, cmap._gamma)
         # Build colormap on-the-fly
         elif isinstance(cmap, dict):
             # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
@@ -1123,7 +1123,7 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
                     raise ValueError(f'Invalid cmap, cycle, or color "{cmap}".\n'
                         f'VALID CMAP AND CYCLE NAMES: {", ".join(sorted(mcm.cmap_d))}.\n'
                         f'VALID COLOR NAMES: {", ".join(sorted(mcolors.colorConverter.colors.keys()))}.')
-            fade = _default(fade, 100)
+            fade = _notNone(fade, 100)
             cmap = monochrome_cmap(color, fade, name=name, N=N_, **kwargs)
 
         # Optionally transform colormap by clipping colors or reversing
@@ -1305,7 +1305,7 @@ def Cycle(*args, samples=None, name=None, save=False,
             N = samples
             colors = cmap.colors[:N] # if samples is None, does nothing
         else:
-            samples = _default(samples, 10)
+            samples = _notNone(samples, 10)
             if isinstance(samples, Integral):
                 samples = np.linspace(0, 1, samples) # from edge to edge
             elif np.iterable(samples) and all(isinstance(item,Number) for item in samples):
@@ -1400,7 +1400,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
 
         """
         # Checks
-        space = _get_space(_default(space, 'hsl'))
+        space = _get_space(_notNone(space, 'hsl'))
         self._space = space
         self._clip  = clip
         keys = {*segmentdata.keys()}
@@ -1408,8 +1408,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         if not keys <= target:
             raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
         # Gamma scaling
-        self._gamma1 = _default(gamma, gamma1, 1.0)
-        self._gamma2 = _default(gamma, gamma2, 1.0)
+        self._gamma1 = _notNone(gamma, gamma1, 1.0)
+        self._gamma2 = _notNone(gamma, gamma2, 1.0)
         # Sanitize segmentdata, convert color strings to their channel values
         for key,array in segmentdata.items():
             if callable(array): # permit callable
@@ -1515,7 +1515,7 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         """
         # Build dictionary, easy peasy
         cdict = {}
-        alpha = _default(alpha, 1.0)
+        alpha = _notNone(alpha, 1.0)
         for key,channel in zip(('hue','saturation','luminance','alpha'), (hue,saturation,luminance,alpha)):
             cdict[key] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
@@ -2566,7 +2566,7 @@ def show_colors(nbreak=17, minsat=0.2):
             breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
             plot_names = [] # initialize
             sat_test = (lambda x: x < minsat) # test saturation for 'grays'
-            for n in range(len(breakpoints)):
+            for n in range(nbreak):
                 # 'Grays' column
                 if n == 0:
                     hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if sat_test(hcl[1])]
@@ -2589,7 +2589,7 @@ def show_colors(nbreak=17, minsat=0.2):
                     plot_names.append([]) # add new empty list
                 plot_names[-1].append(name)
 
-        # Create plot by iterating over columns 
+        # Create plot by iterating over columns
         # Easy peasy. And put 40 colors in a column
         fig, ax = subplots(
             width=8*wscale*(ncols/4), height=5*(nrows/40),

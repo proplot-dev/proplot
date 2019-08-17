@@ -1,0 +1,7 @@
+---
+exclude_paths:
+  - 'proplot/fonts/**'
+  - 'proplot/colors/**'
+  - 'proplot/cycles/**'
+  - 'proplot/cmaps/**'
+  - 'proplot/cmaps_rejects/**'
