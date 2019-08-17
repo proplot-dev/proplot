@@ -13,6 +13,7 @@ trash
 garbage
 
 # Python extras
+*.log
 *.pyc
 .*.pyc
 __pycache__

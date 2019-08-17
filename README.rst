@@ -48,12 +48,12 @@ The next most important utility is the ``format`` method, available on every axe
 
 Here are some highlights of the remaining features:
 
-*  A smarter "tight layout" feature. Figure width and height is allowed to vary
+*  Improvements to and automatic application of the
+   `tight layout <https://matplotlib.org/3.1.1/tutorials/intermediate/tight_layout_guide.html>`__ 
+   feature. Figure width and height is allowed to vary
    so that subplot aspect ratios remain fixed, which is particularly useful
-   for grids of map projections and images. Inner spaces between subplots are
-   automatically scaled so that subplot tick labels, etc. do
-   not overlap. Arbitrary physical units (e.g. ``cm``, ``mm``) can be used
-   when specifying dimensions and sizes.
+   for grids of map projections and images. Arbitrary physical units, including
+   *metric* units like ``cm`` and ``mm``, can be used for sizing arguments.
 *  Axes panels and figure panels, generally used for colorbars and legends
    that refer to multiple subplots at once. New "inset" colorbars.
    Colorbars from lists of lines or colors. Legends with centered

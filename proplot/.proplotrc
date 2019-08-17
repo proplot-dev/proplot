@@ -91,8 +91,9 @@ mathtext.default:        regular
 # rcExtraParams defaults
 #-----------------------
 # Extra label settings
-abc.loc:           l # outside the axes, to the left
-title.loc:         c # outside the axes, in the center
+abc.loc:           l # left side above the axes
+title.loc:         c # centered above the axes
+title.pad:         3.0 # copy
 abc.format:        a
 abc.fontsize:      # filled by 'large'
 abc.color:         k
@@ -133,7 +134,7 @@ gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
 # Parallels and meridians
 geogrid.labels:    False
 geogrid.labelsize: # filled by "small"
-geogrid.latmax:    80
+geogrid.latmax:    90
 geogrid.lonstep:   30
 geogrid.latstep:   20
 geogrid.alpha:     0.5
@@ -163,7 +164,7 @@ colorbar.framealpha:  0.8
 colorbar.extend:      0.15
 colorbar.extendinset: 1em
 colorbar.length:      8em
-colorbar.width:       1.5em
+colorbar.width:       1.2em
 colorbar.axespad:     0.5em
 # Subplot properties
 # Use font relative units for everything because this is common way user
@@ -173,7 +174,7 @@ subplots.panelwidth: 4em   # 0.45 inches
 subplots.cbarwidth:  1.5em # 0.17 inches
 subplots.legwidth:   2em   # 0.25 inches
 subplots.panelpad:   0.5em # affects the figure when tight=True
-subplots.borderpad:  1em
+subplots.borderpad:  0.5em
 subplots.subplotpad: 1em
 subplots.titlespace: 2em # affects the figure when tight=False
 subplots.innerspace: 1em

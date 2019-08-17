@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #------------------------------------------------------------------------------#
-# Import everything in this folder into a giant module
-# Files are segretated by function, so we don't end up with
-# giant 5,000-line single file
+# Import everything into the top-level module namespace
+# Have sepearate files for various categories, so we don't end up with a
+# single enormous 12,000-line file
 #------------------------------------------------------------------------------#
 # Constants
 name = 'ProPlot'
@@ -31,15 +31,40 @@ if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
 
 # Import stuff
-# WARNING: Must import styletools and register names first, since rctools will
-# try to look up e.g. 'sunset' in the colormap dictionary! Also must import
-# subplots within demo functions.
-from .utils import *      # misc stuff
-from .styletools import * # color tools
-from .rctools import *    # custom configuration implementation
-from .axes import *       # everything, axes definitions
-from .wrappers import *   # wrappers
-from .axistools import *  # locators, normalizers, and formatters
-from .subplots import *
-from .projs import *      # projections and whatnot
+# WARNING: Beware inter-dependencies! For example import styletools must come
+# first because rctools may try to register a colormap that doesn't exist.
+from .utils import * # misc stuff, debug mode
+if _debug:
+    import time
+    t = time.clock()
+    t0 = t
+from .styletools import * # colors and fonts
+if _debug:
+    print(f'styletools: {time.clock() - t}')
+    t = time.clock()
+from .rctools import * # custom configuration implementation
+if _debug:
+    print(f'rctools: {time.clock() - t}')
+    t = time.clock()
+from .axistools import * # locators, normalizers, and formatters
+if _debug:
+    print(f'axistools: {time.clock() - t}')
+    t = time.clock()
+from .wrappers import * # wrappers
+if _debug:
+    print(f'wrappers: {time.clock() - t}')
+    t = time.clock()
+from .projs import * # projections and whatnot
+if _debug:
+    print(f'projs: {time.clock() - t}')
+    t = time.clock()
+from .axes import * # axes classes
+if _debug:
+    print(f'axes: {time.clock() - t}')
+    t = time.clock()
+from .subplots import * # subplots and figure class
+if _debug:
+    print(f'subplots: {time.clock() - t}')
+    t = time.clock()
+    print(f'total time: {time.clock() - t0}')
 

@@ -173,17 +173,16 @@ feature <https://matplotlib.org/3.1.1/tutorials/intermediate/tight_layout_guide.
 whereby the spacing between subplot content and the figure edge, and
 between content in adjacent subplots, is automatically adjusted.
 
-ProPlot has a similar tight layout feature, powered by
-`~proplot.subplots.Figure.smart_tight_layout` (see below examples).
-ProPlot’s tight layout *preserves subplot aspect ratios, panel widths,
-and subplot physical dimensions* – the latter only if ``axwidth`` or
-``axheight`` were passed to `~proplot.subplots.subplots` instead of
-``width``, ``height``, or ``figsize``. It is also likely more robust to
-complex geometry, and permits *variable spacing between rows and
-columns* – that is, ``wspace`` and ``hspace`` no longer have to be
-scalars, thanks to the `~proplot.subplots.FlexibleGridSpec` class. To
-disable automatic tight layout, pass ``tight=False`` to
-`~proplot.subplots.subplots`.
+ProPlot has a similar tight layout feature, applied automatically when
+the figure is drawn (see below examples). ProPlot’s tight layout
+*preserves subplot aspect ratios, panel widths, and subplot physical
+dimensions* – the latter only if ``axwidth`` or ``axheight`` were passed
+to `~proplot.subplots.subplots` instead of ``width``, ``height``, or
+``figsize``. It is also likely more robust to complex geometry, and
+permits *variable spacing between rows and columns* – that is,
+``wspace`` and ``hspace`` no longer have to be scalars, thanks to the
+`~proplot.subplots.FlexibleGridSpec` class. To disable automatic tight
+layout, pass ``tight=False`` to `~proplot.subplots.subplots`.
 
 Aspect ratio conservation is *useful* for ordinary Cartesian plots where
 an aspect ratio of ``1`` is desirable, and *critical* for grids of map
@@ -230,7 +229,7 @@ corner).
 
     import proplot as plot
     f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0, axpanels={1:'lrb',2:'lrt'},
-               axpanels_kw={'rshare':False, 'bstack':3, 'bwidth':0.15, 'bshare':False, 'tflush':True})
+               axpanels_kw={'rshare':False, 'bwidth':0.15, 'bshare':False, 'tflush':True})
     axs.format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Hello', collabels=['Column 1', 'Column 2'],
                suptitle='Automatic spacing and aspect ratio conservation')
     axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
@@ -319,31 +318,36 @@ The `~proplot.subplots.subplots` method populates the
 axes) axes objects. Both of these classes inherit from the base class
 `~proplot.axes.BaseAxes`.
 
-The **most important** new method you need to know is
-`~proplot.axes.BaseAxes.format`. This is your one-stop-shop for
-changing axis labels, tick labels, titles, etc. Keyword args passed to
-this function are interpreted as follows:
+The **most important** new method you need to know is ``format``, found
+on the `~proplot.axes.BaseAxes`, `~proplot.axes.CartesianAxes`, and
+`~proplot.axes.ProjectionAxes` classes. ``format`` is your
+one-stop-shop for changing axes settings. Keyword args passed to
+``format`` are interpreted as follows.
 
 1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
-   setting will be applied to the axes. If the name has “dots”, simply
+   setting will be applied to the axes using
+   `~proplot.axes.BaseAxes.context`. If the name has “dots”, simply
    omit them. See the `~proplot.rctools` documentation for details.
-2. Remaining keyword args are passed to the
+2. Remaining keyword args are passed to ``format`` on the
    `~proplot.axes.CartesianAxes` or `~proplot.axes.ProjectionAxes`
-   ``format_partial`` methods. Use these to change settings specific to
-   Cartesian or map projection axes, e.g. changing tick locations (the
-   former) or toggling geographic features (the latter).
-3. Remaining keyword args are passed to the `~proplot.axes.BaseAxes`
-   ``format_partial`` method. This one controls settings shared by
-   `~proplot.axes.CartesianAxes` and `~proplot.axes.ProjectionAxes`
-   axes – namely, titles, “super titles”, row and column labels, and
-   a-b-c subplot labeling.
+   classes. This changes settings specific to Cartesian or map
+   projection axes, e.g. changing tick locations (the former) or
+   parallel and meridian gridlines (the latter).
+3. The last keyword args are passed to ``format`` on the
+   `~proplot.axes.BaseAxes` class. This changes settings shared by
+   both `~proplot.axes.CartesianAxes` and
+   `~proplot.axes.ProjectionAxes` – namely titles, a-b-c subplot
+   labeling, and “super titles”.
 
-Instead of needing all of these verbose, one-liner matplotlib commands
-like ``ax.set_title`` and ``ax.xaxis.tick_params``, or even using
-verbose abstract classes like the matplotlib `~matplotlib.ticker`
-classes, `~proplot.axes.BaseAxes.format` lets you change everything at
-once and adds several useful shorthands. This effectively eliminates the
-need for boilerplate plotting code.
+Instead of using a series of verbose, one-liner setter methods like
+``ax.set_title`` and ``ax.xaxis.tick_params``, ``format`` provides
+simple shorthands for changing everything all at once. It also
+integrates with the `~proplot.axistools.Locator`,
+`~proplot.axistools.Formatter`, and `~proplot.axistools.Scale`
+constructors, so you don’t have to directly invoke verbose abstract
+classes. The goal of ``format`` is to reduce the amount of boilerplate
+code needed for drawing highly customized plots. The power of ``format``
+is demonstrated in the below example.
 
 .. code:: ipython3
 
@@ -418,7 +422,11 @@ more on panels, see the :ref:`Panels and insets` section.
 
 
 
-.. image:: tutorial/tutorial_25_0.svg
+
+
+
+
+.. image:: tutorial/tutorial_25_1.svg
 
 
 .. code:: ipython3
@@ -442,7 +450,7 @@ more on panels, see the :ref:`Panels and insets` section.
     df.columns.name = 'time (days)'
     # Figure
     # We must make room for the axes panels during subplots call!
-    f, axs = plot.subplots(nrows=2, axcolorbars={1:'r', 2:'l'}, axwidth=1.8, share=0)
+    f, axs = plot.subplots(nrows=2, axwidth=1.8, share=0)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
     ax = axs[1]
@@ -477,15 +485,15 @@ default state, use `~proplot.rctools.rc_configurator.reset`. See the
 
     import proplot as plot
     import numpy as np
-    # A bunch od different ways to update settings
+    # A bunch of different ways to update settings
     plot.rc.reset()
     plot.rc.cycle = 'colorblind'
-    plot.rc.linewidth = 1.5
     plot.rc.update({'fontname': 'DejaVu Sans'})
     plot.rc['figure.facecolor'] = 'gray3'
     plot.rc['axes.facecolor'] = 'gray5'
+    with plot.rc.context(linewidth=1.5): # above mods are persistent, context mod only applies to figure
+        f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
     # Make plot
-    f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
     N, M = 100, 6
     values = np.arange(1,M+1)
     cycle = plot.Cycle('C0', 'C1', M, fade=80)

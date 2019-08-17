@@ -17,23 +17,9 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed.
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units']
+__all__ = ['arange', 'edges', 'units', '_debug']
 
-#-----------------------------------------------------------------------------#
-# Important private helper funcs
-#-----------------------------------------------------------------------------#
-_data_user_paths = {*()}
-_data_allowed_paths = {'cmaps', 'cycles', 'fonts'}
-def _check_data():
-    """Checks the data folder and issues helpful warning message for new users.
-    This is called inside every register function."""
-    global _data_user_paths
-    data_user = os.path.join(os.path.expanduser('~'), '.proplot')
-    data_user_paths = {os.path.basename(path) for path in glob.glob(os.path.join(data_user, '*'))}
-    if data_user_paths!=_data_user_paths and data_user_paths>_data_allowed_paths:
-        _data_user_paths = data_user_paths
-        warnings.warn(f'Found extra files {", ".join(data_user_paths - _data_allowed_paths)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
-
+# Important private helper func
 def _default(*args):
     """Returns the first non-``None`` value, used with keyword arg aliases and
     for setting default values."""
@@ -42,28 +28,29 @@ def _default(*args):
             return arg
     return arg # last one
 
-#-----------------------------------------------------------------------------#
-# Decorators
-#-----------------------------------------------------------------------------#
-def _timer(func):
-    """A decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        t = time.clock()
-        print(f'{func.__name__}()')
-        res = func(*args, **kwargs)
-        print(f'{func.__name__}() time: {time.clock()-t}s')
-        return res
-    return decorator
-
+# Debug decorators
+_debug = False # debug mode, used for recording various times
 def _logger(func):
     """A decorator that logs the activity of the script (it actually just prints it,
     but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
-        print(f'{func.__name__} called with: {args} {kwargs}')
+        if _debug:
+            print(f'{func.__name__} called with: {args} {kwargs}')
+        return res
+    return decorator
+
+def _timer(func):
+    """A decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if _debug:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if _debug:
+            print(f'{func.__name__}() time: {time.clock()-t}s')
         return res
     return decorator
 
@@ -72,31 +59,31 @@ def _counter(func):
     has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        t = time.clock()
+        if _debug:
+            t = time.clock()
         res = func(*args, **kwargs)
-        decorator.time += (time.clock() - t)
-        decorator.count += 1
-        print(f'{func.__name__} cumulative time: {decorator.time}s ({decorator.count} calls)')
+        if _debug:
+            decorator.time += (time.clock() - t)
+            decorator.count += 1
+            print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
         return res
     decorator.time = 0
     decorator.count = 0 # initialize
     return decorator
 
-#-----------------------------------------------------------------------------#
 # Accessible for user
-#-----------------------------------------------------------------------------#
 def arange(min_, *args):
     """Identical to `numpy.arange`, but with inclusive endpoints. For
     example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])``."""
     # Optional arguments just like np.arange
-    if len(args)==0:
+    if len(args) == 0:
         max_ = min_
         min_ = 0
         step = 1
-    elif len(args)==1:
+    elif len(args) == 1:
         max_ = args[0]
         step = 1
-    elif len(args)==2:
+    elif len(args) == 2:
         max_ = args[0]
         step = args[1]
     else:
@@ -106,9 +93,8 @@ def arange(min_, *args):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
         max_ += 1
     # Input is float or mixed, cast to float64
-    # Don't try to increment to next float, because round-off errors from
-    # continually adding step to min mess this up. Just use max plus step/2.
-    # max_ = np.nextafter(max_, np.finfo(np.dtype(np.float64)).max)
+    # Don't use np.nextafter with np.finfo(np.dtype(np.float64)).max, because
+    # round-off errors from continually adding step to min mess this up
     else:
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
         max_ += step/2
@@ -138,9 +124,7 @@ def edges(values, axis=-1):
     values = np.swapaxes(values, axis, -1)
     return values
 
-#-----------------------------------------------------------------------------#
 # Units
-#-----------------------------------------------------------------------------#
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
@@ -237,46 +221,4 @@ def units(value, numeric='in'):
     if singleton:
         result = result[0]
     return result
-
-#-----------------------------------------------------------------------------#
-# Outdated
-#-----------------------------------------------------------------------------#
-# Throw this one out, use kwarg interpolation from method.
-# Why? Because matplotlib plot_directive sphinx extension will look for
-# gallery images in the old documentation that do not exist for ProPlot.
-# from inspect import cleandoc
-# def _docstring_fix(child):
-#     """
-#     Decorator function for appending documentation from overridden method
-#     onto the overriding method docstring.
-#     Adapted from: https://stackoverflow.com/a/8101598/4970632
-#     """
-#     for name,chfunc in vars(child).items(): # returns __dict__ object
-#         if not callable(chfunc): # better! see: https://stackoverflow.com/a/624939/4970632
-#             continue
-#         for parent in getattr(child, '__bases__', ()):
-#             # Obtain documentation
-#             parfunc = getattr(parent, name, None)
-#             if not getattr(parfunc, '__doc__', None):
-#                 continue
-#             if not getattr(chfunc, '__doc__', None):
-#                 chfunc.__doc__ = '' # in case it's None
-#
-#             # Ugly
-#             # cmessage = f'Full name: {parfunc.__qualname__}()'
-#             # pmessage = f'Parent method (documentation below): {chfunc.__qualname__}()'
-#             # chfunc.__doc__ = f'\n{cmessage}\n{cleandoc(chfunc.__doc__)}\n{pmessage}\n{cleandoc(parfunc.__doc__)}'
-#
-#             # Simple
-#             # chfunc.__doc__ = f'{cleandoc(chfunc.__doc__)}\n\n\n{cleandoc(parfunc.__doc__)}'
-#
-#             # Fails because numpydoc disallows custom subsections; see: https://developer.lsst.io/python/numpydoc.html#sections-are-restricted-to-the-numpydoc-section-set
-#             # chfunc.__doc__ = f'ProPlot Override\n================\n{cleandoc(chfunc.__doc__)}\n\n\n' \
-#             #                  f'Original Documentation\n======================\n{cleandoc(parfunc.__doc__)}'
-#
-#             # Differentiate with bold text
-#             chfunc.__doc__ = f'**ProPlot Override**\n{cleandoc(chfunc.__doc__)}\n\n\n' \
-#                              f'**Original Documentation**\n{cleandoc(parfunc.__doc__)}'
-#             break # only do this for the first parent class
-#     return child
 

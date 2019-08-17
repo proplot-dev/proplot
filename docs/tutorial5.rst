@@ -80,7 +80,7 @@ See `~proplot.styletools.CmapDict` for more info.
 
 
 
-.. image:: tutorial/tutorial_96_0.svg
+.. image:: tutorial/tutorial_98_0.svg
 
 
 Perceptually uniform colormaps
@@ -124,7 +124,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_99_0.svg
+.. image:: tutorial/tutorial_101_0.svg
 
 
 .. code:: ipython3
@@ -134,7 +134,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_100_0.svg
+.. image:: tutorial/tutorial_102_0.svg
 
 
 .. code:: ipython3
@@ -144,7 +144,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_101_0.svg
+.. image:: tutorial/tutorial_103_0.svg
 
 
 To see how any colormap varies with respect to each channel, use the
@@ -164,7 +164,7 @@ linear in the HPL scaling of the chroma channel (bottom right).
 
 
 
-.. image:: tutorial/tutorial_103_0.svg
+.. image:: tutorial/tutorial_105_0.svg
 
 
 Making your own colormaps
@@ -206,11 +206,11 @@ several of these maps merged into one, and the second is just one map.
 
 
 
-.. image:: tutorial/tutorial_107_0.svg
+.. image:: tutorial/tutorial_109_0.svg
 
 
 
-.. image:: tutorial/tutorial_107_1.svg
+.. image:: tutorial/tutorial_109_1.svg
 
 
 To generate `~proplot.styletools.PerceptuallyUniformColormap` maps,
@@ -258,11 +258,11 @@ value by the number ``N``, as shown below.
 
 
 
-.. image:: tutorial/tutorial_109_0.svg
+.. image:: tutorial/tutorial_111_0.svg
 
 
 
-.. image:: tutorial/tutorial_109_1.svg
+.. image:: tutorial/tutorial_111_1.svg
 
 
 Merging and modifying colormaps
@@ -299,7 +299,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: tutorial/tutorial_112_1.svg
+.. image:: tutorial/tutorial_114_1.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -319,7 +319,7 @@ distinct, so that levels don’t blur together.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots([[1,1,2,2,3,3],[0,4,4,5,5,0]], axwidth=1.5, axcolorbars='b')
+    f, axs = plot.subplots([[1,1,2,2,3,3],[0,4,4,5,5,0]], axwidth=1.5)
     data = np.random.rand(50,50).cumsum(axis=0) - 50
     # Cutting central colors
     for ax,cut in zip(axs[:3],(0, 0.1, 0.2)):
@@ -336,7 +336,7 @@ distinct, so that levels don’t blur together.
         ax.contourf(data, cmap=cmap, cmap_kw=cmap_kw, colorbar='b', colorbar_kw={'locator':'null'})
         ax.format(xlabel='xlabel', ylabel='ylabel', title=title)
     # Rotating cyclic
-    f, axs = plot.subplots(ncols=3, axcolorbars='b', axwidth=1.5)
+    f, axs = plot.subplots(ncols=3, axwidth=1.5)
     data = (np.random.rand(50,50)-0.48).cumsum(axis=1).cumsum(axis=0) - 50
     for ax,shift in zip(axs,(0, 90, 180)):
         m = ax.contourf(data, cmap='twilight', cmap_kw={'shift':shift}, levels=12)
@@ -346,11 +346,11 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: tutorial/tutorial_114_0.svg
+.. image:: tutorial/tutorial_116_0.svg
 
 
 
-.. image:: tutorial/tutorial_114_1.svg
+.. image:: tutorial/tutorial_116_1.svg
 
 
 You can also change the “gamma” of any
@@ -367,7 +367,7 @@ emphasizes low luminance, high saturation colors. See
     import numpy as np
     name = 'boreal'
     # Illustrations
-    f, axs = plot.subplots(ncols=3, axwidth=1.5, axcolorbars='r', aspect=1)
+    f, axs = plot.subplots(ncols=3, axwidth=1.5, aspect=1)
     data = np.random.rand(10,10).cumsum(axis=1)
     cmaps = []
     for ax,gamma in zip(axs,(0.8, 1.0, 1.4)):
@@ -382,11 +382,11 @@ emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: tutorial/tutorial_116_0.svg
+.. image:: tutorial/tutorial_118_0.svg
 
 
 
-.. image:: tutorial/tutorial_116_1.svg
+.. image:: tutorial/tutorial_118_1.svg
 
 
 Adding online colormaps
@@ -423,7 +423,7 @@ differences between colormaps and color cycles.
 
 
 
-.. image:: tutorial/tutorial_121_0.svg
+.. image:: tutorial/tutorial_123_0.svg
 
 
 Making your own color cycles
@@ -464,7 +464,7 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 
 
-.. image:: tutorial/tutorial_124_0.svg
+.. image:: tutorial/tutorial_126_0.svg
 
 
 Colormaps or combinations thereof can be used as sources for making
@@ -496,7 +496,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_126_0.svg
+.. image:: tutorial/tutorial_128_0.svg
 
 
 `~proplot.styletools.Cycle` can also generate cyclers that change
@@ -518,7 +518,7 @@ simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 
 
-.. image:: tutorial/tutorial_128_0.svg
+.. image:: tutorial/tutorial_130_0.svg
 
 
 Adding online color cycles
@@ -567,11 +567,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: tutorial/tutorial_133_0.svg
+.. image:: tutorial/tutorial_135_0.svg
 
 
 
-.. image:: tutorial/tutorial_133_1.svg
+.. image:: tutorial/tutorial_135_1.svg
 
 
 Individual color sampling
@@ -589,7 +589,7 @@ by the `~proplot.styletools.ColorCacheDict` class.
     import proplot as plot
     import numpy as np
     plot.rc.reset()
-    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, axcolorbars='r', share=False)
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, share=0)
     # Drawing from colormap
     ax = axs[0]
     cmap = 'deep'
@@ -609,11 +609,11 @@ by the `~proplot.styletools.ColorCacheDict` class.
         h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('qual1', idx),
                     label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols':1})
     ax.format(title='Drawing from the ggplot color cycle')
-    axs.format(xlocator='null', abc=True, abcloc='ul', suptitle='Getting individual colors from colormaps and cycles')
+    axs.format(xlocator='null', abc=True, abcloc='ur', suptitle='Getting individual colors from colormaps and cycles')
 
 
 
-.. image:: tutorial/tutorial_136_0.svg
+.. image:: tutorial/tutorial_138_0.svg
 
 
 Font selection
@@ -642,6 +642,6 @@ modify your ``~/.proplotrc``. See the `~proplot.styletools` and
 
 
 
-.. image:: tutorial/tutorial_139_0.svg
+.. image:: tutorial/tutorial_141_0.svg
 
 

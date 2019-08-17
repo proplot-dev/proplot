@@ -30,7 +30,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2, axcolorbars={1:'l', 2:'r'})
+    f, axs = plot.subplots(ncols=2, axwidth=2)
     cmap = 'spectral'
     data = (np.random.rand(15,15)-0.5).cumsum(axis=0)
     axs.format(suptitle='Pcolor with levels demo')
@@ -43,14 +43,14 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_144_0.svg
+.. image:: tutorial/tutorial_146_0.svg
 
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=5, axwidth=2, ref=1, wratios=(5,3,3,3,3), axcolorbars='b')
+    f, axs = plot.subplots(ncols=5, axwidth=2, ref=1, wratios=(5,3,3,3,3))
     axs.format(suptitle='Demo of colorbar color-range standardization')
     levels = plot.arange(0,360,45)
     data = (20*(np.random.rand(20,20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
@@ -63,7 +63,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_145_0.svg
+.. image:: tutorial/tutorial_147_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -78,7 +78,7 @@ passed to the `~proplot.styletools.Norm` constructor.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(axcolorbars='b', ncols=2, axwidth=2.5, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5)
     data = 10**(2*np.random.rand(20,20).cumsum(axis=0)/7)
     ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
     for i,(norm,title) in enumerate(zip(('linear','segments'),('Linear normalizer','LinearSegmentedNorm'))):
@@ -88,7 +88,7 @@ passed to the `~proplot.styletools.Norm` constructor.
 
 
 
-.. image:: tutorial/tutorial_147_0.svg
+.. image:: tutorial/tutorial_149_0.svg
 
 
 Finally, there is a new `~proplot.styletools.MidpointNorm` class that
@@ -105,7 +105,7 @@ constructor.
     import numpy as np
     data1 = (np.random.rand(20,20) - 0.43).cumsum(axis=0)
     data2 = (np.random.rand(20,20) - 0.57).cumsum(axis=0)
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5, axcolorbars='b')
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5)
     cmap = plot.Colormap('Moisture', cut=0.1)
     axs.format(suptitle='Midpoint normalizer demo')
     axs[0].contourf(data1, norm='midpoint', cmap=cmap, colorbar='b')
@@ -115,7 +115,7 @@ constructor.
 
 
 
-.. image:: tutorial/tutorial_149_0.svg
+.. image:: tutorial/tutorial_151_0.svg
 
 
 Heatmaps and labels
@@ -171,11 +171,11 @@ arg and the ``precision`` keyword arg. See
 
 
 
-.. image:: tutorial/tutorial_152_0.svg
+.. image:: tutorial/tutorial_154_0.svg
 
 
 
-.. image:: tutorial/tutorial_152_1.svg
+.. image:: tutorial/tutorial_154_1.svg
 
 
 Easy error bars
@@ -225,7 +225,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: tutorial/tutorial_155_0.svg
+.. image:: tutorial/tutorial_157_0.svg
 
 
 Area plots
@@ -272,7 +272,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: tutorial/tutorial_158_0.svg
+.. image:: tutorial/tutorial_160_0.svg
 
 
 Bar plots
@@ -306,7 +306,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: tutorial/tutorial_161_0.svg
+.. image:: tutorial/tutorial_163_0.svg
 
 
 Box plots
@@ -339,7 +339,7 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_164_0.svg
+.. image:: tutorial/tutorial_166_0.svg
 
 
 Parametric plots
@@ -359,7 +359,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
     N = 50
     cmap = 'IceFire'
     values = np.linspace(-N/2, N/2, N)
-    f, axs = plot.subplots(share=0, ncols=2, wratios=(2,1), axcolorbars='b', axwidth='6cm', aspect=(2,1))
+    f, axs = plot.subplots(share=0, ncols=2, wratios=(2,1), axwidth='6cm', aspect=(2,1))
     ax = axs[0]
     m = ax.plot((np.random.rand(N)-0.5).cumsum(), np.random.rand(N), cmap=cmap, values=values, lw=7, extend='both')
     ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth color gradations', titleweight='bold')
@@ -381,7 +381,7 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 
 
 
-.. image:: tutorial/tutorial_167_1.svg
+.. image:: tutorial/tutorial_169_1.svg
 
 
 Scatter plots
@@ -421,4 +421,4 @@ keywords, which is a bit less confusing. You can also pass colormaps to
 
 
 
-.. image:: tutorial/tutorial_170_0.svg
+.. image:: tutorial/tutorial_172_0.svg

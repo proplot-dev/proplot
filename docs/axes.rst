@@ -6,7 +6,7 @@ Axes classes and related wrappers
 .. automodsumm:: proplot.axes
    :toctree: api
    :classes-only:
-   :skip: Number, GeoAxes, mplDeprecation, FlexibleGridSpecFromSubplotSpec
+   :skip: Number, Integral, GeoAxes
 
 **Functions**
 
