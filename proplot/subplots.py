@@ -1421,8 +1421,9 @@ class Figure(mfigure.Figure):
         return ax
 
     def draw(self, renderer):
-        """Applies "tight layout" and aspect ratio-conserving adjustments, and
-        aligns row and column labels."""
+        """Before drawing the figure, applies "tight layout" and
+        aspect ratio-conserving adjustments, and aligns row and column
+        labels."""
         if self._post_init:
             self._update_aspect()
             self._update_layout(renderer) # want user to have ability to call it manually
@@ -1431,9 +1432,8 @@ class Figure(mfigure.Figure):
 
     def savefig(self, filename, **kwargs):
         """
-        Applies various post-processing steps, including tight layout
-        adjustment and aspect ratio preservation. Then calls the parent
-        `~matplotlib.figure.Figure.savefig` method.
+        Before saving the figure, applies "tight layout" and aspect
+        ratio-conserving adjustments, and aligns row and column labels.
 
         Parameters
         ----------
