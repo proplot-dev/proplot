@@ -513,14 +513,11 @@ class Figure(mfigure.Figure):
 
         Warning
         -------
-        To make "tight layout" and aspect ratio adjustments, we rely on the
-        hidden `~Figure._update_layout` method
-        `~Figure._update_layout` may also call
-        `~matplotlib.figure.Figure.set_size_inches`, which may interfere with
-        figure rendering when used with certain popup backends. It also seems
-        to have
-        Inline
-        backends seem to have no problem with this.
+        To make the "tight layout" and aspect ratio-conserving adjustments,
+        `~Figure.draw` may call `~matplotlib.figure.Figure.set_size_inches`.
+        This can cause figure rendering issues with certain popup backends
+        that expect the figure size to be static. Inline backends have
+        no problem with this.
         """
         # Tight settings
         # NOTE: _tight taken by matplotlib tight layout, use _smart_tight!
@@ -1414,10 +1411,9 @@ class Figure(mfigure.Figure):
             self._suptitle.update(kwargs)
 
     def add_subplot(self, *args, **kwargs):
-        """Establishes `~proplot.axes.CartesianAxes` as the default projection.
-        Issues warning for new users that try to access the
-        `~matplotlib.figure.Figure.add_subplot` and
-        `~matplotlib.figure.Figure.colorbar` functions."""
+        """Issues warning for new users that try to call
+        `~matplotlib.figure.Figure.add_subplot` or
+        `~matplotlib.figure.Figure.colorbar` manually."""
         kwargs.setdefault('projection', 'cartesian')
         if self._locked:
             warnings.warn('Using "fig.add_subplot" or "fig.colorbar" with ProPlot figures may result in unexpected behavior. Please use "proplot.subplots" and "Axes.colorbar" instead.')
