@@ -112,14 +112,13 @@ class axes_grid(list):
 
         Example
         -------
-        .. code-block:: python
 
-            import proplot as plot
-            f, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
-            axs[0] # the subplot in the top-right corner
-            axs[3] # the first subplot in the second row
-            axs[1,2] # the subplot in the second row, third from the left
-            axs[:,0] # the subplots in the first column
+        >>> import proplot as plot
+        ... f, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
+        ... axs[0] # the subplot in the top-right corner
+        ... axs[3] # the first subplot in the second row
+        ... axs[1,2] # the subplot in the second row, third from the left
+        ... axs[:,0] # the subplots in the first column
 
         """
         # Allow 2D specification
@@ -190,12 +189,11 @@ class axes_grid(list):
 
         Example
         -------
-        .. code-block:: python
 
-            import proplot as plot
-            f, axs = plot.subplots(nrows=2, ncols=2, axcolorbars='b')
-            axs.format(xtick=5) # calls "format" on all subplots in the list
-            axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
+        >>> import proplot as plot
+        ... f, axs = plot.subplots(nrows=2, ncols=2, axcolorbars='b')
+        ... axs.format(xtick=5) # calls "format" on all subplots in the list
+        ... axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
 
         """
         attrs = (*(getattr(ax, attr, None) for ax in self),)
@@ -289,13 +287,8 @@ class FlexibleGridSpecBase(object):
             For example, ``width_ratios=[1,2]`` specifes 2 columns of subplots,
             the second one twice as wide as the first.
         left, right, top, bottom : float or str
-            Passed to `~matplotlib.gridspec.GridSpec`. Indicates width of "margins"
-            surrounding the grid. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`.
-
-            Generally, these are used to set the "figure edges" around the
-            region of subplots. If `~proplot.subplots.subplots` was called
-            with ``tight=True`` (the default), these are ignored.
+            Passed to `~matplotlib.gridspec.GridSpec`, denote the margin
+            positions for the subplot grid in figure-relative coordinates.
         """
         # Add these as attributes; want _spaces_as_ratios to be
         # self-contained, so it can be invoked on already instantiated
@@ -1818,8 +1811,8 @@ def subplots(array=None, ncols=1, nrows=1,
     order : {'C', 'F'}, optional
         Whether subplots are numbered in column-major (``'C'``) or row-major
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
-        the order axes appear in the `axs` list, and the order of a-b-c
-        labelling when using `~proplot.axes.BaseAxes.format` with ``abc=True``.
+        the order axes appear in the `axs` list, and the order of subplot
+        a-b-c labeling (see `~proplot.axes.BaseAxes.format`).
     array : array-like of int, optional
         2-dimensional array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
@@ -1858,21 +1851,22 @@ def subplots(array=None, ncols=1, nrows=1,
         identical aspect ratios.
     hratios, wratios, axheights, axwidths : optional
         Aliases for `height_ratios`, `width_ratios`.
-    height_ratios, width_ratios : float or list thereof, optional
-        Passed to `FlexibleGridSpecBase`. The height
-        and width ratios for the subplot grid. Length of `height_ratios`
-        must match the number of rows, and length of `width_ratios` must
+    width_ratios, height_ratios : float or list thereof, optional
+        Passed to `FlexibleGridSpec`. The width
+        and height ratios for the subplot grid. Length of `width_ratios`
+        must match the number of rows, and length of `height_ratios` must
         match the number of columns.
-    hspace, wspace : float or str or list thereof, optional
+    wspace, hspace : float or str or list thereof, optional
         If passed, turns off `tightsubplots`.
-        These are passed to `FlexibleGridSpecBase`, denote the
-        spacing between each column and row of the grid. If float
-        or string, expanded into lists of length ``ncols-1`` (for `wspace`) or
-        length ``nrows-1`` (for `hspace`). For each element of the list, if float,
-        units are inches. If string, units are interpreted by `~proplot.utils.units`.
-    top, bottom, left, right : float or str, optional
-        If passed, turns off `tightborders`. These are passed to
-        `FlexibleGridSpecBase`, denote the width of padding between the subplots
+        Passed to `FlexibleGridSpec`, denotes the
+        spacing between grid columns and rows. If float
+        or string, expanded into lists of length ``ncols-1`` (for `wspace`)
+        or length ``nrows-1`` (for `hspace`). For each element of the list,
+        if float, units are inches. If string, units are interpreted by
+        `~proplot.utils.units`.
+    left, right, top, bottom : float or str, optional
+        If passed, turns off `tightborders`. Passed to
+        `FlexibleGridSpec`, denote the width of padding between the subplots
         and the figure edge. If float, units are inches. If string, units are
         interpreted by `~proplot.utils.units`.
 
