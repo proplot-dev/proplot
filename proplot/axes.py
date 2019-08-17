@@ -186,6 +186,7 @@ class BaseAxes(maxes.Axes):
         self._auto_legend = {}
         self._auto_colorbar_kw = {} # keyword args for auto colorbar()
         self._auto_legend_kw = {}
+        self._legends = [] # we permit multiple legends, must add to bbox manually
         self._filled = False # True when panels "filled" with colorbar/legend
         self._main_gridspec = main_gridspec # 5x5 gridspec for axes and panels
         self._stack_gridspec = stack_gridspec # gridspec for 'stacked' panels

@@ -172,7 +172,7 @@ colorbar.axespad:     0.5em
 subplots.axwidth:    18em  # 2 inches
 subplots.panelwidth: 4em   # 0.45 inches
 subplots.cbarwidth:  1.5em # 0.17 inches
-subplots.legwidth:   2em   # 0.25 inches
+subplots.legwidth:   1.5em # 0.25 inches
 subplots.panelpad:   0.5em # affects the figure when tight=True
 subplots.borderpad:  0.5em
 subplots.subplotpad: 1em

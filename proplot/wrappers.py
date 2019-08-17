@@ -2311,6 +2311,8 @@ def legend_wrapper(self,
                 self.add_artist(shadow)
             # Add patch to list
             legs = (patch, *legs)
+    # Append attributes and return
+    self._legends.extend(legs)
     return legs[0] if len(legs) == 1 else (*legs,)
 
 def colorbar_wrapper(self,
