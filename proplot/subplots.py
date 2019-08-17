@@ -1421,8 +1421,8 @@ class Figure(mfigure.Figure):
         return ax
 
     def draw(self, renderer):
-        """Applies various post-processing steps, including tight layout
-        adjustment and aspect ratio preservation."""
+        """Applies "tight layout" and aspect ratio-conserving adjustments, and
+        aligns row and column labels."""
         if self._post_init:
             self._update_aspect()
             self._update_layout(renderer) # want user to have ability to call it manually
@@ -1451,7 +1451,7 @@ class Figure(mfigure.Figure):
         super().savefig(filename, **kwargs)
 
     save = savefig
-    """Alias for `~Figure.savefig`... because calling ``fig.savefig``
+    """Alias for `~Figure.savefig`, because calling ``fig.savefig``
     is sort of redundant."""
 
     # Define panels as immutable properties, can only be set internally
