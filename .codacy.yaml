@@ -1,5 +1,6 @@
 ---
 exclude_paths:
+  - 'docs/**'
   - 'proplot/fonts/**'
   - 'proplot/colors/**'
   - 'proplot/cycles/**'
