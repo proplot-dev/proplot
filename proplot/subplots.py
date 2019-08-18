@@ -762,6 +762,25 @@ class Figure(mfigure.Figure):
         self._sync_panels(ax, side, sep=sep, width=width, space=space)
         return paxs
 
+    def _align_helper(self, name, axs):
+        """Gets figure coordinates for spanning labels and super title. The
+        `name` can be ``'x'`` or ``'y'``."""
+        # Get position in figure relative coordinates
+        along = (_xrange if name == 'x' else _yrange)
+        ranges = np.array([along(ax) for ax in axs])
+        min_, max_ = ranges[:,0].min(), ranges[:,1].max()
+        axlo = axs[np.where(ranges[:,0]==min_)[0][0]]
+        axhi = axs[np.where(ranges[:,1]==max_)[0][0]]
+        lobox = axlo.get_subplotspec().get_position(self)
+        hibox = axhi.get_subplotspec().get_position(self)
+        if name=='x':
+            pos = (getattr(lobox, 'x0') + getattr(hibox, 'x1'))/2
+        else:
+            pos = (getattr(lobox, 'y1') + getattr(hibox, 'y0'))/2 # 'lo' is actually on top, highest up in gridspec
+        # Return axis suitable for spanning position
+        spanax = axs[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,1]))//2]
+        return pos, spanax
+
     def _align_axislabels(self):
         """Aligns spanning *x* and *y* axis labels, accounting for figure
         margins and axes and figure panels."""
@@ -771,42 +790,33 @@ class Figure(mfigure.Figure):
         # and top labels! Is this already a thing!?
         for axis in self._spanning_labels:
             # Constants
-            base = axis.axes
+            ref = axis.axes
             name = axis.axis_name
             if name not in 'xy': # PolarAxes
                 continue
-            if not getattr(base, '_span'  + name):
+            if not getattr(ref, '_span'  + name):
                 continue
+            # Call helper func, get position and 'central' axes
             side = ('b' if name == 'x' else 'l')
-            along = (_xrange if name=='x' else _yrange)
-            # Use halfway-point axis label for spanning label, because for odd
-            # number of columns or rows, gives us perfect offset. Make other
-            # labels invisible
-            axs = self._get_side_axes(side, ref=base)
+            axs = self._get_side_axes(side, ref=ref)
             axs = [getattr(ax, '_share' + name) or ax for ax in axs]
+            pos, spanax = self._align_helper(name, axs)
+            # Make other labels invisible
             axes = [getattr(ax, name + 'axis') for ax in axs]
-            ranges = np.array([along(ax) for ax in axs])
-            saxis = axes[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2]
+            spanaxis = getattr(spanax, name + 'axis')
             for axis in axes:
-                if saxis is not axis:
+                if spanaxis is not axis:
                     axis.label.set_visible(False)
-            # Get and apply spanning label position
-            idx = slice(ranges.min(), ranges.max() + 1)
-            if name == 'x': # span columns
-                subspec = self._main_gridspec[0,idx]
-            else: # spans rows
-                subspec = self._main_gridspec[idx,0]
-            bbox = subspec.get_position(self) # in figure-relative coordinates
-            x0, y0, width, height = bbox.bounds
+            # Reposition spanning label
             if name == 'x':
+                position = (pos, 1)
                 transform = mtransforms.blended_transform_factory(
                         self.transFigure, mtransforms.IdentityTransform())
-                position = (x0 + width/2, 1)
             else:
+                position = (1, pos)
                 transform = mtransforms.blended_transform_factory(
                         mtransforms.IdentityTransform(), self.transFigure)
-                position = (1, y0 + height/2)
-            saxis.label.update({'position':position, 'transform':transform})
+            spanaxis.label.update({'position':position, 'transform':transform})
 
     def _align_suplabels(self, renderer):
         """Adjusts position of row and column labels, and aligns figure
@@ -826,15 +836,11 @@ class Figure(mfigure.Figure):
             # Iterate panels
             ixs = []
             label.set_visible(False) # make temporarily invisible, so tightbbox does not include existing label!
-            if ax.leftpanel:
-                iaxs = ax.leftpanel
-            else:
-                iaxs = (ax, *ax.toppanel, *ax.bottompanel)
+            iaxs = (ax, *ax.toppanel, *ax.bottompanel, *ax.leftpanel)
             for iax in iaxs:
                 if not iax:
                     continue
                 for jax in iax._iter_children():
-                    # Box for column label
                     bbox = jax.get_tightbbox(renderer)
                     x, _ = self.transFigure.inverted().transform((bbox.xmin, 0))
                     ixs.append(x)
@@ -846,7 +852,7 @@ class Figure(mfigure.Figure):
             x = min(ixs) - (0.6*label.get_fontsize()/72)/width # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
             lxs.append(x)
             labels.append(label)
-        # Apply
+        # Align labels
         if lxs:
             x = min(lxs)
             for label in labels:
@@ -866,10 +872,7 @@ class Figure(mfigure.Figure):
             # e.g. twin x-axes with their own labels are common
             iys = []
             label.set_visible(False)
-            if ax.toppanel and ax.toppanel.get_visible():
-                iaxs = ax.toppanel
-            else:
-                iaxs = (ax, *ax.leftpanel, *ax.rightpanel)
+            iaxs = (ax, *ax.leftpanel, *ax.rightpanel, *ax.toppanel)
             for iax in iaxs:
                 if not iax:
                     continue
@@ -880,18 +883,16 @@ class Figure(mfigure.Figure):
                     iys.append(y)
             label.set_visible(True)
             # Update column label position
-            if not iys:
-                warnings.warn('Axes on top row is invisible. Cannot determine coltitle position.')
-                continue
+            # See: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
             saxes.append(ax)
             if label.get_text().strip():
-                y = max(iys) + (0.3*label.get_fontsize()/72)/height # see: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                y = max(iys) + (0.3*label.get_fontsize()/72)/height
                 sys.append(None) # we have to re-calcualte
                 lys.append(y)
                 labels.append(label)
             else:
                 sys.append(max(iys)) # just use the coordinate we were going to use for the label
-        # Apply
+        # Align labels
         if lys:
             y = max(lys)
             for label in labels:
@@ -901,27 +902,22 @@ class Figure(mfigure.Figure):
         # Get x position as center between left edge of leftmost main axes
         # and right edge of rightmost main axes
         suptitle.set_visible(True)
+        kw = {'ha':'center', 'va':'bottom', 'transform':self.transFigure}
         if suptitle.get_text().strip():
+            # Get vertical suptitle position
             iys = []
             for y,ax in zip(sys,saxes):
                 if y is None:
                     bbox = ax.get_tightbbox(renderer)
                     _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                 iys.append(y)
-            if not iys: # means sys and saxes is empty
-                warnings.warn('All axes on top row are invisible. Cannot determine suptitle position.')
-            else:
-                kw = self._subplots_kw
-                lsep, rsep = _notNone(kw['lsep'], []), _notNone(kw['rsep'], [])
-                lwidth = _notNone(kw['lwidth'], [0])
-                rwidth = _notNone(kw['rwidth'], [0])
-                lspace = _notNone(kw['lspace'], 0)
-                rspace = _notNone(kw['rspace'], 0)
-                left = kw['left'] + sum(lwidth) + sum(lsep) + lspace
-                right = kw['right'] + sum(rwidth) + sum(rsep) + rspace
-                x = left/width + 0.5*(width - left - right)/width
+            if iys: # for really weird layout, may happen
                 y = max(iys) + (0.3*suptitle.get_fontsize()/72)/height
-                suptitle.update({'x':x, 'y':y, 'ha':'center', 'va':'bottom', 'transform':self.transFigure})
+                kw['y'] = y
+            # Horizontal position
+            x, _ = self._align_helper('x', axs)
+            kw['x'] = x
+            suptitle.update(kw)
 
     def _update_layout(self, renderer=None):
         """Aligns row labels, column labels, and super titles, and applies
