@@ -139,7 +139,7 @@ stylize geographic features, like continents and international borders.
     import proplot as plot
     import numpy as np
     N = 40
-    f, axs = plot.subplots(axwidth=3, ncols=3, proj={1:'robin', 2:'ortho', 3:'wintri'}, wratios=(2,1,1.8))
+    f, axs = plot.subplots([[1,1,2],[3,3,3]], axwidth=4, proj={1:'robin', 2:'ortho', 3:'wintri'})
     ax = axs[0]
     ax.format(title='Robinson map', land=True, landcolor='navy blue', facecolor='pale blue',
                coastcolor='gray5', borderscolor='gray5', innerborderscolor='gray5',
@@ -152,7 +152,7 @@ stylize geographic features, like continents and international borders.
     ax = axs[2]
     ax.format(land=True, facecolor='ocean blue', landcolor='almond', title='Winkel tripel map',
              lonlines=60, latlines=15)
-    axs.format(suptitle='Projection axes formatting demo', collabels=['col 1', 'col 2', 'col 3'],
+    axs.format(suptitle='Projection axes formatting demo', collabels=['col 1', 'col 2'],
                abc=True, abcformat='A.', abcloc='ul', abcborder=False, linewidth=1.5)
 
 
