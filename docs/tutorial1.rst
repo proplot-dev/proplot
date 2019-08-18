@@ -178,11 +178,11 @@ the figure is drawn (pass ``tight=False`` to turn this off). ProPlot’s
 tight layout *preserves subplot aspect ratios, panel widths, and subplot
 physical dimensions* – the latter only if ``axwidth`` or ``axheight``
 were passed to `~proplot.subplots.subplots` instead of ``width``,
-``height``, or ``figsize``. It is also likely more robust to complex
-geometry, and permits *variable spacing between rows and columns* – that
-is, ``wspace`` and ``hspace`` no longer have to be scalars, thanks to
-the `~proplot.subplots.FlexibleGridSpec` class. **The below examples
-are a stress test of this feature.**
+``height``, or ``figsize``. It is also more robust to complex geometry,
+and permits *variable spacing between rows and columns* – that is,
+``wspace`` and ``hspace`` no longer have to be scalars, thanks to the
+`~proplot.subplots.FlexibleGridSpec` class. The below examples are a
+stress test of this feature.
 
 Aspect ratio conservation is *useful* for ordinary Cartesian plots where
 an aspect ratio of ``1`` is desirable, and *critical* for grids of map
@@ -267,7 +267,7 @@ example for details.
     M = 40
     colors = plot.colors('grays_r', M, left=0.1, right=0.8)
     for share in (0,1,2,3):
-        f, axs = plot.subplots(ncols=4, aspect=1, wspace=0.5, axwidth=1.2, sharey=share, spanx=share//2)
+        f, axs = plot.subplots(ncols=4, aspect=1, axwidth=1.2, sharey=share, spanx=share//2)
         gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
         for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
             array = gen(scale)
