@@ -141,8 +141,8 @@ stylize geographic features, like continents and international borders.
     N = 40
     f, axs = plot.subplots(axwidth=3, ncols=3, proj={1:'robin', 2:'ortho', 3:'wintri'}, wratios=(2,1,1.8))
     ax = axs[0]
-    ax.format(title='Robinson map', land=True, landcolor='pink gray', facecolor='cerulean',
-               coastcolor='brown', borderscolor='brown', innerborderscolor='brown',
+    ax.format(title='Robinson map', land=True, landcolor='navy blue', facecolor='pale blue',
+               coastcolor='gray5', borderscolor='gray5', innerborderscolor='gray5',
                geogridlinewidth=1.5, geogridcolor='gray8', geogridalpha=1, 
                coast=True, innerborders=True, borders=True)
     ax = axs[1]
@@ -173,23 +173,6 @@ passing ``proj_kw`` to `~proplot.subplots.subplots` with any of the
 ``llcrnry``, ``urcrnrx``, ``urcrnry``, ``width``, and/or ``height``
 keyword args.
 
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=5, basemap={1:False, 2:True},
-               proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-10, 'urcrnrlon':180, 'urcrnrlat':50}})
-    axs[0].format(lonlim=(-20,180), latlim=(-10,50), title='Cartopy example')
-    axs[1].format(title='Basemap example')
-    axs.format(land=True, landcolor='adobe', linewidth=2, grid=True,
-               coast=True, coastcolor='chestnut', coastlinewidth=1,
-               suptitle='Zooming into projections', facecolor='none',
-               borders=True, borderscolor='chestnut')
-
-
-
-.. image:: tutorial/tutorial_66_0.svg
-
-
 For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
 dictionary containing the ``'boundinglat'`` key to ``proj_kw``. For
 `cartopy` projections, a circular boundary is drawn around zoomed-in
@@ -204,15 +187,26 @@ Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(ncols=2, axwidth=2.2, basemap={1:False,2:True}, proj={1:'splaea', 2:'npaeqd'},
+    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=4.5, basemap={1:False, 2:True},
+               proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-10, 'urcrnrlon':180, 'urcrnrlat':50}})
+    # Normal projection
+    axs[0].format(lonlim=(-20,180), latlim=(-10,50), title='Cartopy example')
+    axs[1].format(title='Basemap example')
+    axs.format(land=True, suptitle='Zooming into projections')
+    # Polar projection
+    f, axs = plot.subplots(ncols=2, axwidth=2, basemap={1:False,2:True}, proj={1:'splaea', 2:'npaeqd'},
                           proj_kw={1:{'boundinglat': -30, 'lon_0': 120}, 2:{'boundinglat':60}})
-    axs.format(land=True, reso='med', facecolor='pale blue', landcolor='navy blue', suptitle='Zooming into polar projections')
+    axs.format(land=True, suptitle='Zooming into polar projections')
     axs[0].format(title='Cartopy example', latmax=80, latlines=20)
     axs[1].format(title='Basemap example', latmax=80, latlines=10)
 
 
 
-.. image:: tutorial/tutorial_68_0.svg
+.. image:: tutorial/tutorial_66_0.svg
+
+
+
+.. image:: tutorial/tutorial_66_1.svg
 
 
 Registered cartopy projections
@@ -243,7 +237,7 @@ and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: tutorial/tutorial_71_1.svg
+.. image:: tutorial/tutorial_69_1.svg
 
 
 Registered basemap projections
@@ -274,7 +268,7 @@ if you fail to specify them.
 
 
 
-.. image:: tutorial/tutorial_74_0.svg
+.. image:: tutorial/tutorial_72_0.svg
 
 
 Polar projections
@@ -305,6 +299,6 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 
 
 
-.. image:: tutorial/tutorial_77_0.svg
+.. image:: tutorial/tutorial_75_0.svg
 
 
