@@ -62,7 +62,7 @@ some data range*, as demonstrated below. See
     plot.rc.linewidth = 2
     plot.rc.small = plot.rc.large = 12
     locator = [0, 0.25, 0.5, 0.75, 1]
-    f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=2, share=0)
+    f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=1.5, share=0)
     axs[0].format(xformatter='scalar', yformatter='scalar', title='Matplotlib formatter')
     axs[1].format(yticklabelloc='both', title='ProPlot formatter')
     axs[:2].format(xlocator=locator, ylocator=locator)
