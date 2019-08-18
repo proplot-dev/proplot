@@ -165,6 +165,73 @@ fit on a nice 2D grid, simply use 1D indexing.
 .. image:: tutorial/tutorial_11_0.svg
 
 
+Axis sharing and spanning
+-------------------------
+
+Matplotlib has an “axis sharing” feature that holds axis limits the same
+for axes within a grid of subplots. But this has no effect on the axis
+labels and tick labels, which can lead to lots of redundant labels. To
+help you eliminate these redundancies, ProPlot introduces *4
+axis-sharing options* and a new *spanning label option*, controlled by
+the ``share``, ``sharex``, ``sharey``, ``span``, ``spanx``, and
+``spany`` keyword args. See `~proplot.subplots.sublots` and the below
+example for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    N = 50
+    M = 40
+    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
+    for share in (0,1,2,3):
+        f, axs = plot.subplots(ncols=4, aspect=1, axwidth=1.2, sharey=share, spanx=share//2)
+        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
+        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
+            array = gen(scale)
+            for l in range(array.shape[1]):
+                ax.plot(array[:,l], color=colors[l])
+            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
+
+
+
+.. image:: tutorial/tutorial_14_0.svg
+
+
+
+.. image:: tutorial/tutorial_14_1.svg
+
+
+
+.. image:: tutorial/tutorial_14_2.svg
+
+
+
+.. image:: tutorial/tutorial_14_3.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.rc.reset()
+    plot.rc.cycle = 'Set3'
+    titles = ['With redundant labels', 'Without redundant labels']
+    for mode in (0,1):
+        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
+        for ax in axs:
+            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
+        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcloc='ul')
+
+
+
+.. image:: tutorial/tutorial_15_0.svg
+
+
+
+.. image:: tutorial/tutorial_15_1.svg
+
+
 Automatic subplot spacing
 -------------------------
 
@@ -207,11 +274,11 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_14_0.svg
+.. image:: tutorial/tutorial_18_0.svg
 
 
 
-.. image:: tutorial/tutorial_14_1.svg
+.. image:: tutorial/tutorial_18_1.svg
 
 
 .. code:: ipython3
@@ -226,7 +293,7 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_15_0.svg
+.. image:: tutorial/tutorial_19_0.svg
 
 
 .. code:: ipython3
@@ -239,79 +306,12 @@ corner).
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right')
     axs[1].rpanel.format(ylim=(0, 0.01), ylabel='ylabel')
     axs[1].format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Title', top=False,
-                  collabels=['col 1', 'col 2'], suptitle='Tight layout and grids with panels')
+                  collabels=['col 1', 'col 2'], suptitle='Tight layout with axes panels')
     axs.tpanel.format(ylim=(-0.5,1.5), ylocator=1, ytickminor=False)
 
 
 
-.. image:: tutorial/tutorial_16_0.svg
-
-
-Axis sharing and spanning
--------------------------
-
-Matplotlib has an “axis sharing” feature that holds axis limits the same
-for axes within a grid of subplots. But this has no effect on the axis
-labels and tick labels, which can lead to lots of redundant labels. To
-help you eliminate these redundancies, ProPlot introduces *4
-axis-sharing options* and a new *spanning label option*, controlled by
-the ``share``, ``sharex``, ``sharey``, ``span``, ``spanx``, and
-``spany`` keyword args. See `~proplot.subplots.sublots` and the below
-example for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    N = 50
-    M = 40
-    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
-    for share in (0,1,2,3):
-        f, axs = plot.subplots(ncols=4, aspect=1, axwidth=1.2, sharey=share, spanx=share//2)
-        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
-        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
-            array = gen(scale)
-            for l in range(array.shape[1]):
-                ax.plot(array[:,l], color=colors[l])
-            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
-
-
-
-.. image:: tutorial/tutorial_19_0.svg
-
-
-
-.. image:: tutorial/tutorial_19_1.svg
-
-
-
-.. image:: tutorial/tutorial_19_2.svg
-
-
-
-.. image:: tutorial/tutorial_19_3.svg
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.rc.reset()
-    plot.rc.cycle = 'Set3'
-    titles = ['With redundant labels', 'Without redundant labels']
-    for mode in (0,1):
-        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
-        for ax in axs:
-            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
-        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcloc='ul')
-
-
-
 .. image:: tutorial/tutorial_20_0.svg
-
-
-
-.. image:: tutorial/tutorial_20_1.svg
 
 
 The format command
@@ -378,7 +378,7 @@ Automatic formatting
 
 With ProPlot, when you pass a `~pandas.DataFrame` or
 `~xarray.DataArray` to any plotting command, labels and colorbars can
-be generated automatically, and the x-axis label, y-axis label, legend
+be generated on-the-fly, and the x-axis label, y-axis label, legend
 label, colorbar label, and/or title are configured from the metadata.
 This restores some of the convenience you get with the builtin
 `pandas` and `xarray` plotting tools. To disable automatic
@@ -477,15 +477,18 @@ Global settings control
 A special object named `~proplot.rctools.rc`, belonging to the
 `~proplot.rctools.rc_configurator` class, is created whenever you
 import ProPlot. This object gives you advanced control over the look of
-your plots. **Use** `~proplot.rctools.rc` **as your one-stop shop for
-changing global settings**. If you’re curious, it is a common `UNIX
-convention <https://stackoverflow.com/a/37728339/4970632>`__ to use the
-abbreviation ``rc`` for global settings.
+your plots. `~proplot.rctools.rc` is your **one-stop shop for changing
+global settings** – including matplotlib
+`rcParams <https://matplotlib.org/users/customizing.html>`__ settings,
+custom ProPlot :ref:`rcExtraParams` settings, and special
+:ref:`rcGlobals` meta-settings. See the `~proplot.rctools`
+documentation for more info.
 
 To modify a setting for just one subplot, pass it to the
 `~proplot.axes.BaseAxes.format` command. To reset everything to the
-default state, use `~proplot.rctools.rc_configurator.reset`. See the
-`~proplot.rctools` documentation for more info.
+default state, use `~proplot.rctools.rc_configurator.reset`. To
+temporarily modify global settings for a block of code, use
+`~proplot.rctools.rc_configurator.context`.
 
 .. code:: ipython3
 
