@@ -173,13 +173,13 @@ passing ``proj_kw`` to `~proplot.subplots.subplots` with any of the
 ``llcrnry``, ``urcrnrx``, ``urcrnry``, ``width``, and/or ``height``
 keyword args.
 
-For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
-dictionary containing the ``'boundinglat'`` key to ``proj_kw``. For
-`cartopy` projections, a circular boundary is drawn around zoomed-in
-polar projections, just like in `~mpl_toolkits.basemap` (implemented
+For North or South Pole-centered projections, pass a dictionary
+containing the ``'boundinglat'`` key to ``proj_kw``. For `cartopy`
+projections, a circular boundary is drawn around zoomed-in polar
+projections, just like in `~mpl_toolkits.basemap` (implemented
 following `this
 example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__).
-Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
+Note that ProPlot also adds the ``'npaeqd'``, ``'spaeqd'``,
 ``'nplaea'``, and ``'splaea'`` `cartopy` projections to the existing
 ``'npstere'`` and ``'spstere'`` projections, just like in
 `~mpl_toolkits.basemap`.
