@@ -667,7 +667,7 @@ class BaseAxes(maxes.Axes):
         top : bool, optional
             Whether to try to put title and a-b-c label above the top subplot
             panel (if it exists), or to always put them on the main subplot.
-            Defaults to ``True``, i.e. the former.
+            Defaults to ``True``.
         rowlabels, colllabels : list of str, optional
             The subplot row and column labels. If list, length must match
             the number of subplot rows, columns.
