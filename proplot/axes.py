@@ -2531,7 +2531,7 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
             Specifies `thetamin` and `thetamax` at once.
         rmin, rmax : float, optional
             The inner and outer radial limits. If ``r0 != rmin``, this
-            produces a "donut" plot.
+            produces an annular plot.
         rlim : (float, float), optional
             Specifies `rmin` and `rmax` at once.
         rborder : bool, optional

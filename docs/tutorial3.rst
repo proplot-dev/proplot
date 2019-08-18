@@ -274,10 +274,10 @@ if you fail to specify them.
 Polar projections
 -----------------
 
-Matplotlib `~matplotlib.projections.PolarAxes` are also integrated
-with ProPlot, thanks to the `~proplot.axes.PolarAxes` subclass. The
+Matplotlib polar axes are also integrated with ProPlot, thanks to the
+`~proplot.axes.PolarAxes` subclass. The
 `~proplot.axes.PolarAxes.format` command permits all sorts of polar
-axes-specific modifications, including making sector plots, doughnut
+axes-specific modifications, including making sector plots, annular
 plots, and changing the positive azimuthal direction. To draw polar
 axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 `~proplot.subplots.subplots`.
@@ -286,16 +286,21 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(proj='polar', ncols=2)
-    axs.format(suptitle='Polar axes demo', collabels=['Example 1', 'Example 2'], collabelweight='normal')
+    f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], proj='polar')
+    axs.format(suptitle='Polar axes demo', collabelweight='normal')
     N = 200
     x = np.linspace(0, 2*np.pi, N)
     y = 100*(np.random.rand(N,5)-0.3).cumsum(axis=0)/N
     for i in range(5):
         axs.plot(x + i*2*np.pi/5, y[:,i], cycle='contrast', zorder=0, lw=3)
     axs.format(linewidth=1, ticklabelsize=9, rlines=0.5, rlim=(0,19))
-    axs[0].format(thetaformatter='pi', rlines=5, gridalpha=1, gridlinestyle=':', rlabelpos=180, color='gray8', ticklabelweight='bold')
-    axs[1].format(thetadir=-1, thetalines=90, thetalim=(0,270), theta0='N', r0=0, rlim=(8,22), rlines=5)
+    axs[0].format(title='Normal plot', thetaformatter='pi', rlines=5, gridalpha=1, gridlinestyle=':',
+                  rlabelpos=180, color='gray8', ticklabelweight='bold')
+    axs[1].format(title='Sector plot', thetadir=-1, thetalines=90, thetalim=(0,270), theta0='N',
+                  rlim=(0,22), rlines=5)
+    axs[2].format(title='Annular plot', thetadir=-1, thetalines=10,
+                  r0=0, rlim=(10,22), rformatter='null', rlocator=2)
+    axs.format(titlepad='1.5em') # matplotlib default title offset is incorrect
 
 
 
