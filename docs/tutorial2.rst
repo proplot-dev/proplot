@@ -106,8 +106,8 @@ See `~proplot.axes.CartesianAxes.format` and
 .. image:: tutorial/tutorial_40_0.svg
 
 
-Axis scales
------------
+New and old axis scales
+-----------------------
 
 The axis scale can now be changed with
 `~proplot.axes.BaseAxes.format`, and you can now use simpler keyword
@@ -227,8 +227,8 @@ labeling spectral coordinates (this is more useful with the
 .. image:: tutorial/tutorial_45_0.svg
 
 
-Datetime axes
--------------
+Datetime axis formatting
+------------------------
 
 Labeling datetime axes is incredibly easy with ProPlot. Pass a time-unit
 string as the ``locator`` argument, and the axis will be ticked at those

@@ -2384,7 +2384,8 @@ class ProjectionAxes(BaseAxes):
         if isinstance(self, CartopyAxes):
             lon_0 = self.projection.proj4_params.get('lon_0', 0)
         else:
-            lon_0 = self.projection.lonmin + 180 # central longitude
+            base = 5
+            lon_0 = base*round(self.projection.lonmin/base) + 180 # central longitude
         if lonlocator is not None:
             if not np.iterable(lonlocator):
                 lonlocator = utils.arange(lon_0 - 180, lon_0 + 180, lonlocator)
@@ -2731,7 +2732,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         if name not in self._proj_circles:
             self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
         else:
-            eps = 1e-5 # had bug with full -180, 180 range when lon_0 not 0
+            eps = 1e-10 # had bug with full -180, 180 range when lon_0 not 0
             center = self.projection.proj4_params['lon_0']
             if isinstance(map_projection, (ccrs.NorthPolarStereo,
                 projs.NorthPolarAzimuthalEquidistant,
@@ -2797,13 +2798,9 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         # Initial gridliner object, which ProPlot passively modifies
         # TODO: Flexible formatter?
         if not self._gridliners:
-            gl = self.gridlines(zorder=5)
+            gl = self.gridlines(zorder=5, draw_labels=False)
             gl.xlines = False
             gl.ylines = False
-            gl.xlabels_top    = False
-            gl.xlabels_bottom = False
-            gl.ylabels_left   = False
-            gl.ylabels_right  = False
             try:
                 lonformat = gridliner.LongitudeFormatter # newer
                 latformat = gridliner.LatitudeFormatter
@@ -2812,6 +2809,10 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                 latformat = gridliner.LATITUDE_FORMATTER
             gl.xformatter = lonformat
             gl.yformatter = latformat
+            gl.xlabels_top    = False
+            gl.xlabels_bottom = False
+            gl.ylabels_left   = False
+            gl.ylabels_right  = False
 
         # Format
         context, kwargs = self.context(**kwargs)
@@ -2867,7 +2868,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                     if latlocator[-1] == 90:
                         latlocator[-1] -= eps
                     gl.ylocator = mticker.FixedLocator(latlocator)
-                if labels and isinstance(self.projection, (ccrs.Mercator,
+                if labels and not isinstance(self.projection, (ccrs.Mercator,
                                                            ccrs.PlateCarree)):
                     warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
                     labels = False
@@ -2885,6 +2886,8 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                     gl.xlabels_top    = False
             # Turn off gridlines
             elif grid is not None:
+                gl.xlines = False
+                gl.ylines = False
                 gl.ylabels_left   = False
                 gl.ylabels_right  = False
                 gl.xlabels_bottom = False
@@ -3155,7 +3158,7 @@ class BasemapAxes(ProjectionAxes):
                 # Turn off old ones
                 # NOTE: Need to redraw both lon and lat lines if one changed,
                 # because latmax affects their extent!
-                if latlocator is not None or lonlocator is not None:
+                if latlocator is not None or lonlocator is not None or labels:
                     if self._meridians:
                         for pi in self._meridians.values():
                             for obj in [i for j in pi for i in j]: # magic

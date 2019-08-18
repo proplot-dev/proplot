@@ -1116,11 +1116,10 @@ class Figure(mfigure.Figure):
             roff, toff = oxmax - xmax, oymax - ymax # top right margin *deltas*
             for key,off in zip(('left','right','bottom','top'), (loff,roff,boff,toff)):
                 margin = subplots_kw[key] - off + pad
-                if margin < 0:
-                    warnings.warn(f'Got negative {key} margin in smart tight layout.')
-                elif np.isnan(margin):
+                if np.isnan(margin):
                     warnings.warn('Bounding box has NaNs, cannot get outer tight layout.')
                 else:
+                    # warnings.warn(f'Got negative {key} margin in smart tight layout.')
                     subplots_kw[key] = margin
             self._tight_borders_init = False
 
