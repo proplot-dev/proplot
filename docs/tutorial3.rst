@@ -274,8 +274,8 @@ if you fail to specify them.
 Polar projections
 -----------------
 
-Matplotlib `~matplotlib.projection.PolarAxes` are also integrated with
-ProPlot, thanks to the `~proplot.axes.PolarAxes` subclass. The
+Matplotlib `~matplotlib.projections.PolarAxes` are also integrated
+with ProPlot, thanks to the `~proplot.axes.PolarAxes` subclass. The
 `~proplot.axes.PolarAxes.format` command permits all sorts of polar
 axes-specific modifications, including making sector plots, doughnut
 plots, and changing the positive azimuthal direction. To draw polar
@@ -294,7 +294,7 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
     for i in range(5):
         axs.plot(x + i*2*np.pi/5, y[:,i], cycle='contrast', zorder=0, lw=3)
     axs.format(linewidth=1, ticklabelsize=9, rlines=0.5, rlim=(0,19))
-    axs[0].format(thetaformatter='pi', rlines=5, rlabelpos=180, rborder=False, gridcolor='red9', ticklabelweight='bold')
+    axs[0].format(thetaformatter='pi', rlines=5, gridalpha=1, gridlinestyle=':', rlabelpos=180, color='gray8', ticklabelweight='bold')
     axs[1].format(thetadir=-1, thetalines=90, thetalim=(0,270), theta0='N', r0=0, rlim=(8,22), rlines=5)
 
 
