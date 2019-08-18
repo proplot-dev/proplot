@@ -658,10 +658,10 @@ def scatter_wrapper(self, func, *args,
     if norm is not None:
         norm = styletools.Norm(norm, N=None, **norm_kw)
     # Apply some aliases for keyword arguments
-    c = _notNone(c, color, markercolor)
-    s = _notNone(s, size, markersize)
-    lw = _notNone(lw, linewidth, linewidths, markeredgewidth, markeredgewidths)
-    ec = _notNone(edgecolor, edgecolors, markeredgecolor, markeredgecolors)
+    c = _notNone(c, color, markercolor, None, names=('c', 'color', 'markercolor'))
+    s = _notNone(s, size, markersize, None, names=('s', 'size', 'markersize'))
+    lw = _notNone(linewidth, linewidths, markeredgewidth, markeredgewidths, None, names=('lw', 'linewidth', 'linewidths', 'markeredgewidth', 'markeredgewidths'))
+    ec = _notNone(edgecolor, edgecolors, markeredgecolor, markeredgecolors, None, names=('edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'))
     # Scale s array
     if np.iterable(s):
         smin_true, smax_true = min(s), max(s)
@@ -676,7 +676,9 @@ def scatter_wrapper(self, func, *args,
         norm=norm, linewidths=lw, edgecolors=ec,
         **kwargs)
 
-def _fill_between_parse(func, *args, negcolor='blue', poscolor='red', negpos=False, **kwargs):
+def _fill_between_parse(func, *args,
+    negcolor='blue', poscolor='red', negpos=False,
+    **kwargs):
     """Parse args and call function."""
     # Allow common keyword usage
     xy = 'y' if 'x' in func.__name__ else 'y'
@@ -874,7 +876,7 @@ def boxplot_wrapper(self, func, *args,
         return obj
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
-    lw = _notNone(lw, linewidth)
+    lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     if fillcolor is None:
         cycler = next(self._get_lines.prop_cycler)
         fillcolor = cycler.get('color', None)
@@ -945,7 +947,7 @@ def violinplot_wrapper(self, func, *args,
         elif orientation != 'vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
     # Sanitize input
-    lw = _notNone(linewidth, lw)
+    lw = _notNone(linewidth, lw, None, names=('linewidth', 'lw'))
     if kwargs.pop('showextrema', None):
         warnings.warn(f'Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
@@ -1028,7 +1030,7 @@ def text_wrapper(self, func,
     else:
         transform = _get_transform(self, transform)
     # Font name strings
-    fontname = _notNone(fontfamily, family, fontname)
+    fontname = _notNone(fontfamily, family, fontname, None, names=('fontfamily', 'family', 'fontname'))
     if fontname is not None:
         if not isinstance(fontname, str) and np.iterable(fontname) and len(fontname) == 1:
             fontname = fontname[0]
@@ -1036,7 +1038,7 @@ def text_wrapper(self, func,
             kwargs['fontfamily'] = fontname
         else:
             warnings.warn(f'Font "{fontname}" unavailable. Available fonts are {", ".join(styletools.fonts)}.')
-    size = _notNone(fontsize, size)
+    size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
     kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
@@ -1357,6 +1359,8 @@ def cycle_wrapper(self, func, *args,
         first position.
     cycle_kw : dict-like, optional
         Passed to `~proplot.styletools.Cycle`.
+    label : float or str, optional
+        The legend label to be used for this plotted element.
     labels, values : list of float or list of str, optional
         Used with 2D input arrays. The legend labels or colorbar coordinates
         for each column in the array. Can be numeric or string, and must match
@@ -1484,7 +1488,7 @@ def cycle_wrapper(self, func, *args,
     objs = []
     ncols = 1
     label_leg = None # for colorbar or legend
-    labels = _notNone(values, labels, label, None)
+    labels = _notNone(values, labels, label, None, names=('values', 'labels', 'label'))
     stacked = kwargs.pop('stacked', False)
     if name in ('pie','boxplot','violinplot'):
         if labels is not None:
@@ -1747,10 +1751,10 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
-    colors = _notNone(color, colors, edgecolor, edgecolors)
+    colors = _notNone(color, colors, edgecolor, edgecolors, None, names=('color', 'colors', 'edgecolor', 'edgecolors'))
     edgefix = _notNone(edgefix, rc['image.edgefix'])
-    linewidths = _notNone(lw, linewidth, linewidths)
-    linestyles = _notNone(ls, linestyle, linestyles)
+    linewidths = _notNone(lw, linewidth, linewidths, None, names=('lw', 'linewidth', 'linewidths'))
+    linestyles = _notNone(ls, linestyle, linestyles, None, names=('ls', 'linestyle', 'linestyles'))
     for regex,names in _cmap_options.items():
         if not re.search(regex, name):
             continue
@@ -1828,7 +1832,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
 
     # Get default levels
     # TODO: Add kernel density plot to hexbin!
-    levels = _notNone(N, levels, rc['image.levels'])
+    levels = _notNone(N, levels, rc['image.levels'], names=('N', 'levels'))
     if isinstance(levels, Number):
         if name in ('hexbin',):
             levels = None # cannot infer *counts*, so do nothing
@@ -2073,9 +2077,9 @@ def legend_wrapper(self,
     # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
         raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
-    ncol = _notNone(ncols, ncol) # may still be None, wait till later
-    title = _notNone(label, title)
-    frameon = _notNone(frame, frameon, rc['legend.frameon'])
+    ncol = _notNone(ncols, ncol, None, names=('ncols', 'ncol')) # may still be None, wait till later
+    title = _notNone(label, title, None, names=('label', 'title'))
+    frameon = _notNone(frame, frameon, rc['legend.frameon'], names=('frame', 'frameon'))
     if title is not None:
         kwargs['title'] = title
     if frameon is not None:
@@ -2462,11 +2466,11 @@ def colorbar_wrapper(self,
     formatter_kw = formatter_kw or {}
     norm_kw = norm_kw or {}
     # Parse flexible input
-    label = _notNone(title, label)
-    locator = _notNone(ticks, locator)
-    formatter = _notNone(ticklabels, formatter, 'default')
-    minorlocator = _notNone(minorticks, minorlocator)
-    ticklocation = _notNone(tickloc, ticklocation)
+    label = _notNone(title, label, None, names=('title', 'label'))
+    locator = _notNone(ticks, locator, None, names=('ticks', 'locator'))
+    formatter = _notNone(ticklabels, formatter, 'default', names=('ticklabels', 'formatter'))
+    minorlocator = _notNone(minorticks, minorlocator, None, names=('minorticks', 'minorlocator'))
+    ticklocation = _notNone(tickloc, ticklocation, None, names=('tickloc', 'ticklocation'))
 
     # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!

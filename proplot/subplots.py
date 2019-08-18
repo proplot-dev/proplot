@@ -1856,7 +1856,7 @@ def subplots(array=None, ncols=1, nrows=1,
         height) or as (width, height) tuple. If you do not provide
         the `hratios` or `wratios` keyword args, all axes will have
         identical aspect ratios.
-    hratios, wratios, axheights, axwidths : optional
+    hratios, wratios
         Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
         Passed to `FlexibleGridSpec`. The width
@@ -2101,12 +2101,12 @@ def subplots(array=None, ncols=1, nrows=1,
     # Axes panels
     #-------------------------------------------------------------------------#
     # Flexible args
-    axpanels    = _notNone(axpanel, axpanels, '')
-    axcolorbars = _notNone(axcolorbar, axcolorbars, '')
-    axlegends   = _notNone(axlegend, axlegends, '')
-    axpanels_kw    = _notNone(axpanel_kw, axpanels_kw, {})
-    axcolorbars_kw = _notNone(axcolorbar_kw, axcolorbars_kw, {})
-    axlegends_kw   = _notNone(axlegend_kw, axlegends_kw, {})
+    axpanels = _notNone(axpanel, axpanels, '', names=('axpanel','axpanels'))
+    axcolorbars = _notNone(axcolorbar, axcolorbars, '', names=('axcolorbar','axcolorbars'))
+    axlegends = _notNone(axlegend, axlegends, '', names=('axlegend','axlegends'))
+    axpanels_kw = _notNone(axpanel_kw, axpanels_kw, {}, names=('axpanel_kw', 'axpanels_kw'))
+    axcolorbars_kw = _notNone(axcolorbar_kw, axcolorbars_kw, {}, names=('axcolorbar_kw', 'axcolorbars_kw'))
+    axlegends_kw = _notNone(axlegend_kw, axlegends_kw, {}, names=('axlegend_kw', 'axlegends_kw'))
     for iname,ipanels,ikw in (
         ('panels', axpanels, axpanels_kw),
         ('colorbars', axcolorbars, axcolorbars_kw),
@@ -2159,15 +2159,24 @@ def subplots(array=None, ncols=1, nrows=1,
             axpanels_kw[num], axcolorbars_kw[num], axlegends_kw[num],
             figure=False)
     # Get default figure panel keyword args
-    panels = _notNone(panel, panels, '')
-    legends = _notNone(legend, legends, '')
-    colorbars = _notNone(colorbar, colorbars, '')
-    kwargs = _panels_kwargs(panels, colorbars, legends, kwargs, figure=True)
+    panel = _notNone(panel, '')
+    legend = _notNone(legend, '')
+    colorbar = _notNone(colorbar, '')
+    panels = _notNone(panels, '')
+    legends = _notNone(legends, '')
+    colorbars = _notNone(colorbars, '')
     # Get figure panel arrays
-    for ipanel,ispan in zip((panel,legend,colorbar,panels,legends,colorbars),(1,1,1,0,0,0)):
-        if ipanel is not None and not isinstance(ipanel, str):
+    kwargs = _panels_kwargs(
+        panel + panels, colorbar + colorbars, legend + legends,
+        kwargs, figure=True)
+    for ipanel,ispan in zip(
+        (panel,legend,colorbar,panels,legends,colorbars),
+        (1,1,1,0,0,0)
+        ):
+        ipanel = _notNone(ipanel, '')
+        if not isinstance(ipanel, str):
             raise ValueError(f'Figure panel input must be string containing any of the characters: l, r, b.')
-        for side in (ipanel or ''):
+        for side in ipanel:
             value = kwargs.get(side + 'array', None)
             nmax, name = ((ncols,'cols') if side in 'bt' else (nrows,'rows'))
             if value is None:
@@ -2264,8 +2273,8 @@ def subplots(array=None, ncols=1, nrows=1,
     # Gridspec defaults
     # NOTE: Ratios are scaled to take physical units in _subplots_geometry, so
     # user can manually provide hspace and wspace in physical units.
-    wratios = np.atleast_1d(_notNone(width_ratios, wratios, axwidths, 1))
-    hratios = np.atleast_1d(_notNone(height_ratios, hratios, axheights, 1))
+    wratios = np.atleast_1d(_notNone(width_ratios, wratios, 1, names=('width_ratios', 'wratios')))
+    hratios = np.atleast_1d(_notNone(height_ratios, hratios, 1, names=('height_ratios', 'hratios')))
     # Subplot space
     hspace = np.atleast_1d(_notNone(units(hspace),
         units(rc['subplots.titlespace']) + units(rc['subplots.innerspace']) if sharex == 3

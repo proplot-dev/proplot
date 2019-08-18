@@ -919,7 +919,7 @@ class BaseAxes(maxes.Axes):
         # Make frame
         # NOTE: We do not allow shadow effects or fancy edges effect.
         # Also keep zorder same as with legend.
-        frameon = _notNone(frame, frameon, rc['colorbar.frameon'])
+        frameon = _notNone(frame, frameon, rc['colorbar.frameon'], names=('frame','frameon'))
         if frameon:
             # Make object
             xmin, ymin, width, height = fbounds
@@ -1670,12 +1670,12 @@ class CartesianAxes(BaseAxes):
             ytickdir      = _notNone(ytickdir, rc['ytick.direction'])
             xtickminor    = _notNone(xtickminor, rc['xtick.minor.visible'])
             ytickminor    = _notNone(ytickminor, rc['ytick.minor.visible'])
-            xformatter    = _notNone(xticklabels, xformatter)
-            yformatter    = _notNone(yticklabels, yformatter)
-            xlocator      = _notNone(xticks, xlocator)
-            ylocator      = _notNone(yticks, ylocator)
-            xminorlocator = _notNone(xminorticks, xminorlocator)
-            yminorlocator = _notNone(yminorticks, yminorlocator)
+            xformatter    = _notNone(xticklabels, xformatter, None, names=('xticklabels', 'xformatter'))
+            yformatter    = _notNone(yticklabels, yformatter, None, names=('yticklabels', 'yformatter'))
+            xlocator      = _notNone(xticks, xlocator, None, names=('xticks', 'xlocator'))
+            ylocator      = _notNone(yticks, ylocator, None, names=('yticks', 'ylocator'))
+            xminorlocator = _notNone(xminorticks, xminorlocator, None, names=('xminorticks', 'xminorlocator'))
+            yminorlocator = _notNone(yminorticks, yminorlocator, None, names=('yminorticks', 'yminorlocator'))
             # Grid defaults are more complicated
             axis = rc.get('axes.grid.axis') # always need this property
             grid, which = rc['axes.grid'], rc['axes.grid.which']
@@ -1696,8 +1696,8 @@ class CartesianAxes(BaseAxes):
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
             # want this sometimes! Same goes for spines!
-            xspineloc  = _notNone(xloc, xspineloc)
-            yspineloc  = _notNone(yloc, yspineloc)
+            xspineloc  = _notNone(xloc, xspineloc, None, names=('xloc', 'xspineloc'))
+            yspineloc  = _notNone(yloc, yspineloc, None, names=('yloc', 'yspineloc'))
             xtickloc   = _notNone(xtickloc, xspineloc, _rcloc_to_stringloc('x', 'xtick'))
             ytickloc   = _notNone(ytickloc, yspineloc, _rcloc_to_stringloc('y', 'ytick'))
             xspineloc  = _notNone(xspineloc, _rcloc_to_stringloc('x', 'axes.spines'))
@@ -2368,9 +2368,9 @@ class ProjectionAxes(BaseAxes):
         ):
         # Parse alternative keyword args
         grid = _notNone(grid, rc.get('geogrid'))
-        labels = _notNone(labels, rc.get('geogrid.labels')) or bool(lonlabels or latlabels)
-        lonlocator = _notNone(lonlines, lonlocator, rc['geogrid.lonstep'])
-        latlocator = _notNone(latlines, latlocator, rc['geogrid.latstep'])
+        labels = _notNone(labels, rc.get('geogrid.labels')) or (bool(lonlabels or latlabels))
+        lonlocator = _notNone(lonlines, lonlocator, rc['geogrid.lonstep'], names=('lonlines', 'lonlocator'))
+        latlocator = _notNone(latlines, latlocator, rc['geogrid.latstep'], names=('latlines', 'latlocator'))
 
         # Longitude gridlines, draw relative to projection prime meridian
         if isinstance(self, CartopyAxes):
@@ -2560,13 +2560,17 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
             rformatter_kw     = rformatter_kw or {}
             # Flexible input
             if rlim is not None:
+                if rmin is not None or rmax is not None:
+                    warnings.warn(f'Conflicting keyword args rmin={rmin}, rmax={rmax}, and rlim={rlim}. Using "rlim".')
                 rmin, rmax = rlim
             if thetalim is not None:
+                if thetamin is not None or thetamax is not None:
+                    warnings.warn(f'Conflicting keyword args thetamin={thetamin}, thetamax={thetamax}, and thetalim={thetalim}. Using "thetalim".')
                 thetamin, thetamax = thetalim
-            thetalocator   = _notNone(thetalines, thetalocator)
-            thetaformatter = _notNone(thetalabels, thetaformatter)
-            rlocator       = _notNone(rlines, rlocator)
-            rformatter     = _notNone(rlabels, rformatter)
+            thetalocator   = _notNone(thetalines, thetalocator, None, names=('thetalines', 'thetalocator'))
+            thetaformatter = _notNone(thetalabels, thetaformatter, None, names=('thetalabels', 'thetaformatter'))
+            rlocator       = _notNone(rlines, rlocator, None, names=('rlines', 'rlocator'))
+            rformatter     = _notNone(rlabels, rformatter, None, names=('rlabels', 'rformatter'))
 
             # Special radius settings
             if r0 is not None:

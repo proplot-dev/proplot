@@ -6,6 +6,7 @@ import re
 import time
 import numpy as np
 import functools
+import warnings
 import matplotlib as mpl
 import matplotlib.font_manager as mfonts
 from numbers import Number, Integral
@@ -17,13 +18,29 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 __all__ = ['arange', 'edges', 'units', '_debug']
 
 # Important private helper func
-def _notNone(*args):
+def _notNone(*args, names=None):
     """Returns the first non-``None`` value, used with keyword arg aliases and
-    for setting default values. Ugly name but clear purpose."""
-    for arg in args:
-        if arg is not None:
-            return arg
-    return arg # last one
+    for setting default values. Ugly name but clear purpose. Pass the `names`
+    keyword arg to issue warning if multiple args were passed. Must be list
+    of non-empty strings."""
+    if names is None:
+        for arg in args:
+            if arg is not None:
+                return arg
+        return arg # last one
+    else:
+        ret = {}
+        first = None
+        names = [*names, '']
+        for name,arg in zip(names,args):
+            if arg is not None:
+                if first is None:
+                    first = arg
+                if name:
+                    ret[name] = arg
+        if len(ret)>1:
+            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {ret}')
+        return first
 
 # Debug decorators
 _debug = False # debug mode, used for recording various times
