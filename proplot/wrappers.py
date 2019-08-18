@@ -1564,9 +1564,9 @@ def cycle_wrapper(self, func, *args,
         ax._auto_colorbar[loc].extend(objs)
         # Add keywords
         if loc != 'fill':
-            colorbar_kw['loc'] = loc
+            colorbar_kw.setdefault('loc', loc)
         if label_leg:
-            colorbar_kw['label'] = label_leg
+            colorbar_kw.setdefault('label', label_leg)
         ax._auto_colorbar_kw[loc].update(colorbar_kw)
     if legend:
         # Add handles
@@ -1579,9 +1579,9 @@ def cycle_wrapper(self, func, *args,
         ax._auto_legend[loc].extend(objs)
         # Add keywords
         if loc != 'fill':
-            legend_kw['loc'] = loc
+            legend_kw.setdefault('loc', loc)
         if label_leg:
-            legend_kw['label'] = label_leg
+            legend_kw.setdefault('label', label_leg)
         ax._auto_legend_kw[loc].update(legend_kw)
 
     # Return
@@ -1981,11 +1981,11 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         if 'label' not in colorbar_kw and self.figure._autoformat:
             _, label = _auto_label(args[-1]) # last one is data, we assume
             if label:
-                colorbar_kw['label'] = label
+                colorbar_kw.setdefault('label', label)
         if name in ('cmapline',) and values is not None:
-            colorbar_kw['values'] = values
+            colorbar_kw.setdefault('values', values)
         if loc != 'fill':
-            colorbar_kw['loc'] = loc
+            colorbar_kw.setdefault('loc', loc)
         ax.colorbar(obj, **colorbar_kw)
     return obj
 

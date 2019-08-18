@@ -153,7 +153,7 @@ def Proj(name, basemap=False, **kwargs):
         if name in _basemap_circles:
             kwproj.setdefault('round', True)
         if name == 'geos': # fix non-conda installed basemap issue: https://github.com/matplotlib/basemap/issues/361
-            kwproj['rsphere'] = (6378137.00,6356752.3142)
+            kwproj.setdefault('rsphere', (6378137.00,6356752.3142))
         reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
         aspect = (proj.urcrnrx - proj.llcrnrx) / \

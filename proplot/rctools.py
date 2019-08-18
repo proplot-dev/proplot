@@ -682,11 +682,11 @@ class rc_configurator(object):
         used by ProPlot internally but may also be useful for power users.
 
         This function was invented to prevent successive calls to
-        `~proplot.axes.BaseAxes.format` from constantly looking up and re-applying
-        unchanged settings.  Testing showed that these gratuitous
+        `~proplot.axes.BaseAxes.format` from constantly looking up and
+        re-applying unchanged settings. Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
-        lookups and artist updates tended to increase runtime by seconds,
-        even for relatively simple plots.
+        lookups and artist updates increased runtime by seconds, even for
+        relatively simple plots.
 
         Parameters
         ----------
@@ -711,20 +711,19 @@ class rc_configurator(object):
             1. Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcExtraParams` and :ref:`rcGlobals` are
                returned whether or not `~rc_configurator.context` has changed them.
-               This is used in the initial `~proplot.axes.BaseAxes.__init__`
-               call to `~proplot.axes.BaseAxes.format`. When a setting lookup
-               returns ``None``, `~proplot.axes.BaseAxes.format` does not apply it.
+               This is used in the `~proplot.axes.BaseAxes.__init__` call to
+               `~proplot.axes.BaseAxes.format`. When a setting lookup returns
+               ``None``, `~proplot.axes.BaseAxes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during user
                calls to `~proplot.axes.BaseAxes.format`.
 
         Example
         -------
-        .. code-block:: python
 
-            import proplot as plot
-            with plot.rc.context(linewidth=2, ticklen=5):
-                f, ax = plot.subplots()
-                ax.plot(data)
+        >>> import proplot as plot
+        >>> with plot.rc.context(linewidth=2, ticklen=5):
+        ...     f, ax = plot.subplots()
+        ...     ax.plot(data)
 
         """
         if mode not in range(3):

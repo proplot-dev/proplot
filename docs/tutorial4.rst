@@ -37,16 +37,15 @@ on-the-fly axes panel:
    location, e.g. ``colorbar='left'`` or ``colorbar='l'``. To specify
    panel settings, pass the ``panel_kw`` dictionary keyword arg.
 2. Pass the ``loc`` keyword to the `~proplot.axes.BaseAxes.colorbar`
-   or `~proplot.axes.BaseAxes.legend` `~proplot.axes.BaseAxes`
-   methods. Again, the argument is the panel location, e.g.
-   ``loc='left'`` or ``loc='l'``. This is what approach #1 does
-   internally. To specify panel settings, pass the ``panel_kw``
-   dictionary keyword arg.
+   or `~proplot.axes.BaseAxes.legend` ``BaseAxes`` methods. Again, the
+   argument is the panel location, e.g. ``loc='left'`` or ``loc='l'``.
+   This is what approach #1 does internally. To specify panel settings,
+   pass the ``panel_kw`` dictionary keyword arg.
 3. Directly call the `~proplot.axes.BaseAxes.panel` method, e.g.
    ``pax = ax.panel('l', **kwargs)``, and then call the
    `~proplot.axes.PanelAxes.colorbar` or
-   `~proplot.axes.PanelAxes.legend` `~proplot.axes.PanelAxes`
-   methods on ``pax``. This is what the approach #2 does internally.
+   `~proplot.axes.PanelAxes.legend` ``PanelAxes`` methods on ``pax``.
+   This is what the approach #2 does internally.
 
 No matter the combination of axes panels in your subplot grid, the
 layout will stay aligned. To modify default panel settings, use the
@@ -207,20 +206,20 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 Stacked panels
 --------------
 
-ProPlot also allows arbitrarily *stacking* panels with the ``lstack``,
-``bstack``, ``rstack``, and ``tstack`` `~proplot.axes.BaseAxes.panel`
-keyword args. This can be useful when you want multiple global
-colorbars, when using more than one colormap inside a single axes, or
-when you need multiple panels for displaying different statistics. The
-spacing between stacked panels is adjusted automatically to account for
-axis and tick labels. See `~proplot.subplots.subplots` and
-`~proplot.subplots.Figure.add_subplot_and_panels` for details.
+You can draw *stacks* of figure and axes panels by passing the
+``lstack``, ``bstack``, ``rstack``, and ``tstack`` keyword args to
+`~proplot.axes.BaseAxes.panel`. This is useful when you need multiple
+*global* colorbars, when using more than one colormap inside a *single
+subplot*, or when you need multiple panels for displaying different
+statistics. The spacing between stacked panels is adjusted automatically
+to account for axis and tick labels. See `~proplot.subplots.subplots`
+and `~proplot.subplots.Figure.add_subplot_and_panels` for details.
 
 You can access individual panels in a stack by *indexing* the panel
 attribute. The default order is row-major, from top-left to
 bottom-right. For example, ``ax.lpanel[1]`` gives you a left panel,
 second from the left. If you are stacking *figure* panels and have
-different panels for each row and column (see
+different panels on each row and column (see
 :ref:`Global figure panels`), you can use 2D indexing. For example,
 ``fig.bpanel[1,0]`` gives you a panel in the first column, second from
 the top.
@@ -256,66 +255,89 @@ the top.
 .. image:: tutorial/tutorial_87_0.svg
 
 
-New colorbar features
----------------------
+Inset colorbars
+---------------
 
 As seen above, `~proplot.axes.BaseAxes` and
-`~proplot.axes.PanelAxes` axes have their own colorbar methods. These
-methods are packed with new features, powered by the
-`~proplot.wrappers.colorbar_wrapper` wrapper. For example, when you
-call `~proplot.axes.BaseAxes.colorbar` on an ordinary axes, an *inset*
-colorbar is generated. And to draw colorbars from *lists of colors* or
-*lists of artists* instead of “mappable” objects, just pass the list to
-`~proplot.axes.BaseAxes.colorbar`. A colormap is constructed from the
-corresponding colors on-the-fly.
-
-`~proplot.axes.BaseAxes.colorbar` also handles colorbars normalized by
-`~matplotlib.colors.LogNorm` correctly, and can be used to change
-outline, divider, tick location, tick label, and colorbar label
-settings. See `~proplot.wrappers.colorbar_wrapper` for details.
+`~proplot.axes.PanelAxes` have their own colorbar methods. Calling
+``PanelAxes`` `~proplot.axes.PanelAxes.colorbar` fills the panel with
+a colorbar, but calling `~proplot.axes.BaseAxes`
+``PanelAxes.colorbar`` draws an *inset* colorbar. You can also draw
+inset colorbars on panel axes by passing ``fill=False`` to ``PanelAxes``
+`~proplot.axes.PanelAxes.colorbar`.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    # Original
-    f, axs = plot.subplots(ncols=2, share=0)
-    ax = axs[0]
-    m = ax.contourf((np.random.rand(20,20)).cumsum(axis=0), extend='both', levels=np.linspace(0,10,11), cmap='marine')
+    f, ax = plot.subplots()
+    data = (np.random.rand(20,20)).cumsum(axis=0)
+    m = ax.contourf(data, extend='both', levels=np.linspace(0,10,11), cmap='marine')
     ax.format(xlabel='xlabel', ylabel='ylabel', xlim=(0,19), ylim=(0,19))
-    ax.colorbar(m, ticks=2, label='data label', labelweight='bold', frame=True)
+    ax.colorbar(m, ticks=2, label='data label', frame=True)
     ax.colorbar(m, ticks=2, loc='lower left', frame=False)
     ax.colorbar(m, loc='b', label='standard outer colorbar', length=0.9)
-    ax.format(title='Inset and panel colorbars', suptitle='Colorbars demo')
-    # From lines
+    ax.format(suptitle='Inset colorbars demo')
+
+
+
+.. image:: tutorial/tutorial_90_0.svg
+
+
+Misc colorbar features
+----------------------
+
+``PanelAxes`` `~proplot.axes.PanelAxes.colorbar` and ``BaseAxes``
+`~proplot.axes.PanelAxes.colorbar` are both wrapped by
+`~proplot.wrappers.colorbar_wrapper`, which adds several new features.
+
+`~proplot.wrappers.colorbar_wrapper` can draw colorbars from *lists of
+colors* or *lists of artists* by passing a list instead of a “mappable”
+object – a colormap is constructed from the corresponding colors
+on-the-fly. To change outline, divider, tick location, tick label, and
+colorbar label settings, just pass the appropriate keyword arg to
+`~proplot.wrappers.colorbar_wrapper`. The below example demos the
+various keyword args accepted by this wrapper.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(share=0, ncols=2, colorbar='b')
+    data = (np.random.rand(12,10)-0.45).cumsum(axis=0)
+    ax = axs[0]
+    cycle = plot.Cycle('algae')
+    hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'14em', 'label':'numeric values'})
+    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='alt numeric values',
+                 ticks=2, edgecolor='gray7', linewidth=1)
     ax = axs[1]
-    hs = ax.plot((np.random.rand(12,12)-0.45).cumsum(axis=0), lw=4, cycle='set3')
-    ax.format(title='Line object colorbar', xlabel='xlabel')
-    ax.colorbar(hs, loc='b', values=np.arange(0,len(hs)), label='numeric values', tickloc='bottom')
+    m = ax.contourf(data.T, extend='both', cmap='algae')
+    f.bpanel.colorbar(m, length=0.6,  label='figure colorbar', labelweight='bold',
+                tickloc='top', grid=True)
+    ax.colorbar(m, loc='ul', length=1.5, tickminor=True, minorticks=0.2, extendrect=True,
+                label='inset colorbar', labelcolor='orange9', labelweight='bold',
+                linewidth=1, edgecolor='gray7', ticklabelcolor='gray7', alpha=0.5)
+    axs.format(suptitle='Colorbar formatting demo', xlabel='xlabel', ylabel='ylabel')
 
 
 
+.. image:: tutorial/tutorial_93_0.svg
 
 
+Misc legend features
+--------------------
 
+``PanelAxes`` `~proplot.axes.PanelAxes.legend` and ``BaseAxes``
+`~proplot.axes.PanelAxes.legend` are both wrapped by
+`~proplot.wrappers.legend_wrapper`, which adds several new features.
 
-.. image:: tutorial/tutorial_90_1.svg
-
-
-New legend features
--------------------
-
-ProPlot also adds several new features to the
-`~matplotlib.axes.Axes.legend` command, powered by
-`~proplot.wrappers.legend_wrapper`. You can *center legend rows* with
-the ``center`` keyword arg, or by passing a list of lists of plot
-handles. This is accomplished by stacking multiple single-row,
-horizontally centered legends, then manually adding an encompassing
-legend frame.
-
-You can also switch between row-major and column-major order for legend
-entries (the new default is row-major), and modify legend text
-properties and handle properties. See
+`~proplot.wrappers.legend_wrapper` can draw legends with *centered
+legend rows*, either by passing ``center=True`` or by passing *list of
+lists* of plot handles. This is accomplished by stacking multiple
+single-row, horizontally centered legends, then manually adding an
+encompassing legend frame. You can also switch between row-major and
+column-major order for legend entries (the new default is row-major),
+and modify legend text properties and handle properties. See
 `~proplot.wrappers.legend_wrapper` for details.
 
 .. code:: ipython3
@@ -329,21 +351,23 @@ properties and handle properties. See
     # Plot lines and add to legends on-the-fly
     for i,label in enumerate(labels):
         data = (np.random.rand(20)-0.45).cumsum(axis=0)
-        h1 = axs[0].plot(data, lw=4, label=label, legend='ul', legend_kw={'order':'F'}) # add to legend in upper left
+        h1 = axs[0].plot(data, lw=4, label=label, legend='ul',
+                         legend_kw={'order':'F', 'title':'column major'}) # add to legend in upper left
         hs1.extend(h1)
-        h2 = axs[1].plot(data, lw=4, label=label, legend='r', legend_kw={'ncols':1}, cycle='floral') # add to legend in right panel
+        h2 = axs[1].plot(data, lw=4, label=label, legend='r', cycle='floral',
+                         legend_kw={'ncols':1, 'frame':False, 'title':'no frame'}) # add to legend in right panel
         hs2.extend(h2)
     # Outer legends
     ax = axs[0]
-    ax.format(title='Added legend features')
-    ax.legend(hs1, loc='b', ncols=3, center=False, frame=True)
+    ax.legend(hs1, loc='b', ncols=3, linewidth=2, title='row major', order='C',
+              edgecolor='gray4', facecolor='gray2')
     ax = axs[1]
-    ax.format(title='Row-centered legends')
-    ax.legend(hs2, loc='b', ncols=3, center=True) # also works!
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Legends demo')
+    ax.legend(hs2, loc='b', ncols=3, center=True, title='centered legend',
+             handlelength=1) # also works!
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Legend formatting demo')
 
 
 
-.. image:: tutorial/tutorial_93_0.svg
+.. image:: tutorial/tutorial_96_0.svg
 
 

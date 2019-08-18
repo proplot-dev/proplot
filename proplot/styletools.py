@@ -1388,15 +1388,13 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         `segmentdata` dictionary that uses color names for the hue data,
         instead of channel values between ``0`` and ``360``.
 
-        .. code-block:: python
-
-            import proplot as plot
-            data = {
-                'hue': [[0, 'red', 'red'], [1, 'blue', 'blue']],
-                'saturation': [[0, 100, 100], [1, 100, 100]],
-                'luminance': [[0, 100, 100], [1, 20, 20]],
-                }
-            cmap = plot.PerceptuallyUniformColormap(data)
+        >>> import proplot as plot
+        >>> data = {
+        ...     'hue': [[0, 'red', 'red'], [1, 'blue', 'blue']],
+        ...     'saturation': [[0, 100, 100], [1, 100, 100]],
+        ...     'luminance': [[0, 100, 100], [1, 20, 20]],
+        ...     }
+        >>> cmap = plot.PerceptuallyUniformColormap(data)
 
         """
         # Checks

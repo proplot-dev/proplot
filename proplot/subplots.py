@@ -192,7 +192,7 @@ class axes_grid(list):
 
         >>> import proplot as plot
         ... f, axs = plot.subplots(nrows=2, ncols=2, axcolorbars='b')
-        ... axs.format(xtick=5) # calls "format" on all subplots in the list
+        ... axs.format(xticks=5) # calls "format" on all subplots in the list
         ... axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
 
         """
@@ -527,12 +527,12 @@ class Figure(mfigure.Figure):
         self._hflush = _notNone(hflush, flush)
         self._locked = True
         self._autoformat = autoformat
+        self._spanning_labels = []
         # Gridspec info and panels, filled in by subplots
         # TODO: Use existing axes tracking attributes?
         self._ref_num = ref
         self._main_axes = []
         self._main_gridspec = main_gridspec
-        self._axes_spanning = []
         self._subplots_kw = subplots_kw
         self._leftpanel   = axes.EmptyPanel()
         self._bottompanel = axes.EmptyPanel()
@@ -762,8 +762,55 @@ class Figure(mfigure.Figure):
         self._sync_panels(ax, side, sep=sep, width=width, space=space)
         return paxs
 
+    def _align_axislabels(self):
+        """Aligns spanning *x* and *y* axis labels, accounting for figure
+        margins and axes and figure panels."""
+        # TODO: Use fig.align_ylabels to make sure global y label is *always*
+        # properly offset? Panels may make this too complicated.
+        # TODO: Aligned axis labels for arbitrary sides, e.g. right labels
+        # and top labels! Is this already a thing!?
+        for axis in self._spanning_labels:
+            # Constants
+            base = axis.axes
+            name = axis.axis_name
+            if name not in 'xy': # PolarAxes
+                continue
+            if not getattr(base, '_span'  + name):
+                continue
+            side = ('b' if name == 'x' else 'l')
+            along = (_xrange if name=='x' else _yrange)
+            # Use halfway-point axis label for spanning label, because for odd
+            # number of columns or rows, gives us perfect offset. Make other
+            # labels invisible
+            axs = self._get_side_axes(side, ref=base)
+            axs = [getattr(ax, '_share' + name) or ax for ax in axs]
+            axes = [getattr(ax, name + 'axis') for ax in axs]
+            ranges = np.array([along(ax) for ax in axs])
+            saxis = axes[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2]
+            for axis in axes:
+                if saxis is not axis:
+                    axis.label.set_visible(False)
+            # Get and apply spanning label position
+            idx = slice(ranges.min(), ranges.max() + 1)
+            if name == 'x': # span columns
+                subspec = self._main_gridspec[0,idx]
+            else: # spans rows
+                subspec = self._main_gridspec[idx,0]
+            bbox = subspec.get_position(self) # in figure-relative coordinates
+            x0, y0, width, height = bbox.bounds
+            if name == 'x':
+                transform = mtransforms.blended_transform_factory(
+                        self.transFigure, mtransforms.IdentityTransform())
+                position = (x0 + width/2, 1)
+            else:
+                transform = mtransforms.blended_transform_factory(
+                        mtransforms.IdentityTransform(), self.transFigure)
+                position = (1, y0 + height/2)
+            saxis.label.update({'position':position, 'transform':transform})
+
     def _align_suplabels(self, renderer):
-        """Adjusts position of row titles and figure super title."""
+        """Adjusts position of row and column labels, and aligns figure
+        super title accounting for figure marins and axes and figure panels."""
         # Adjust row labels. Remember we always leave room for figure panels
         # gridspec, so want to find where xrange and yrange == 1, not 0.
         # NOTE: Must uset get_tightbbox so this will still work if we are
@@ -884,6 +931,7 @@ class Figure(mfigure.Figure):
         # Just align subplot labels
         if not self._smart_tight:
             self._align_suplabels(renderer)
+            self._align_axislabels()
         # Align labels and apply tight spacing
         else:
             # Get boxes before aligning labels -- get_tightbbox will
@@ -901,6 +949,7 @@ class Figure(mfigure.Figure):
             self._align_suplabels(renderer)
             self._smart_tight_layout(renderer)
             self._align_suplabels(renderer)
+            self._align_axislabels()
         # Flag
         self._post_init = False
 
@@ -1253,7 +1302,7 @@ class Figure(mfigure.Figure):
         ax = self._main_axes[self._ref_num-1]
         aspect = None
         subplots_kw = self._subplots_kw
-        if isinstance(ax, axes.CartopyProjectionAxes):
+        if isinstance(ax, axes.CartopyAxes):
             # Basemap projections are static but cartopy can change
             bbox = ax.background_patch._path.get_extents()
             aspect = abs(bbox.width)/abs(bbox.height)
@@ -1277,70 +1326,32 @@ class Figure(mfigure.Figure):
             self.set_size_inches(figsize)
             self._update_ratios(**gridspec_kw)
 
-    def _update_axislabels(self, axis=None, span=False, **kwargs):
-        """Get axis label for axes with axis sharing or spanning enabled.
-        When `span` is False, we add labels to all axes. When `span` is
-        True, we filter to one axes."""
+    def _update_axislabels(self, axis=None, **kwargs):
+        """Applies axis labels to the relevant shared axis. If spanning
+        labels are toggled, keeps the labels synced for all subplots in the
+        same row or column. Label positions will be adjusted at draw-time
+        with _align_axislabels."""
         # Get spanning axes
-        # TODO: Use fig.align_ylabels to make sure global y label is *always*
-        # properly offset? Panels may make this too complicated.
-        # TODO: Aligned axis labels for arbitrary sides, e.g. right labels
-        # and top labels! Is this already a thing!?
-        axes = [axis]
-        record = self._axes_spanning
-        if axis is None:
-            axes = record
-        # Loop through axes
-        for axis in axes:
-            base = axis.axes
-            name = axis.axis_name
-            side = ('b' if name == 'x' else 'l')
-            along = (_xrange if name=='x' else _yrange)
-            if name not in 'xy': # i.e. theta or radius
-                return
-            for _ in range(2): # try 2 levels down, should be sufficient
-                base = getattr(base, '_share' + name, None) or base
-            # Get the x/y axes, make sure to select shared panels if possible
-            spanon = getattr(base, '_span'  + name)
-            if not spanon:
-                axes = [getattr(base, name + 'axis')]
-            else:
-                axs = self._get_side_axes(side, ref=base)
-                axs = [getattr(ax, '_share' + name) or ax for ax in axs]
-                axes = [getattr(ax, name + 'axis') for ax in axs]
-            # Apply settings and store list of spanning axes, and change
-            # vertical align from baseline to bottom so less cramped
+        base = axis.axes
+        name = axis.axis_name
+        side = ('b' if name == 'x' else 'l')
+        record = self._spanning_labels
+        for _ in range(2): # try 2 levels down, should be sufficient
+            base = getattr(base, '_share' + name, None) or base
+        # Apply to axis labels, and apply identically to all if spanning
+        # labels are toggled
+        if not getattr(base, '_span'  + name):
+            axis = getattr(base, name + 'axis')
+            axis.label.set_visible(True)
+            axis.label.update(kwargs)
+        else:
+            axs = self._get_side_axes(side, ref=base)
+            axs = [getattr(ax, '_share' + name) or ax for ax in axs]
+            axes = [getattr(ax, name + 'axis') for ax in axs]
+            record.extend([axis for axis in axes if axis not in record])
             for axis in axes:
-                if spanon and axis not in record:
-                    record.append(axis)
                 axis.label.set_visible(True)
                 axis.label.update(kwargs)
-            # If requested, turn on spanning
-            # TODO: Use tightbbox for this?
-            if not span or not spanon:
-                continue
-            # Use halfway-point axis for spanning label, because for odd
-            # number of columns or rows, gives us perfect offset
-            ranges = np.array([along(ax) for ax in axs])
-            saxis = axes[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,0]))//2]
-            for axis in axes:
-                if saxis is not axis:
-                    axis.label.set_visible(False)
-            # Reposition to "span" other axes
-            idx = slice(ranges.min(), ranges.max() + 1)
-            if name == 'x': # span columns
-                subspec = self._main_gridspec[0,idx]
-            else: # spans rows
-                subspec = self._main_gridspec[idx,0]
-            bbox = subspec.get_position(self) # in figure-relative coordinates
-            x0, y0, width, height = bbox.bounds
-            if name == 'x':
-                transform = mtransforms.blended_transform_factory(self.transFigure, mtransforms.IdentityTransform())
-                position = (x0 + width/2, 1)
-            else:
-                transform = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.transFigure)
-                position = (1, y0 + height/2)
-            saxis.label.update({'position':position, 'transform':transform})
 
     def _update_ratios(self, **kwargs):
         """Updates the width and height ratios values in the 5x5 subplot
@@ -1420,7 +1431,6 @@ class Figure(mfigure.Figure):
         if self._post_init:
             self._update_aspect()
             self._update_layout(renderer) # want user to have ability to call it manually
-            self._update_axislabels(span=True)
         super().draw(renderer)
 
     def savefig(self, filename, **kwargs):
@@ -1440,7 +1450,6 @@ class Figure(mfigure.Figure):
         if self._post_init:
             self._update_aspect()
             self._update_layout() # necessary! get weird layout without this
-            self._update_axislabels(span=True)
         super().savefig(filename, **kwargs)
 
     save = savefig
