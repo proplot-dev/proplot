@@ -14,10 +14,7 @@ features are invoked with the “object-oriented” API.
 features. It returns a special `~proplot.subplots.Figure` instance and
 an `~proplot.subplots.axes_grid` of special
 `~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes`) or
-`~proplot.axes.ProjectionAxes` (see :ref:`Map projection axes`).
-`~proplot.subplots.axes_grid` is a magical container that lets you
-call any method on multiple axes *simultaneously*. This is used
-repeatedly in the examples.
+`~proplot.axes.ProjectionAxes` (see :ref:`Projection axes`).
 
 The below is a simple worked example comparing the 3 APIs. For more on
 the `~proplot.axes.BaseAxes.format` command, see
@@ -166,14 +163,17 @@ is demonstrated in the below example.
 .. image:: tutorial/tutorial_9_0.svg
 
 
-The axes_grid container
+The axes grid container
 -----------------------
 
-The `~proplot.subplots.axes_grid` container returned by
-`~proplot.subplots.subplots` supports 2D indexing, and slicing it
-returns an `~proplot.subplots.axes_grid` of the selected axes. This is
-used below to call axes methods on multiple axes at once. If your
-subplots do not fit on a nice 2D grid, simply use 1D indexing.
+Axes returned by `~proplot.subplots.subplots` are stored in the
+special `~proplot.subplots.axes_grid` container. This container lets
+you call any method on multiple axes *simultaneously*. It also supports
+2D indexing, and slicing it returns an `~proplot.subplots.axes_grid`
+of the selected axes. In the below example,
+`~proplot.subplots.axes_grid` is used to call
+:ref:`The format command` on several axes at once. 1D indexing is also
+acceptable, in case your subplots do not fit on a simple 2D grid.
 
 .. code:: ipython3
 
@@ -192,14 +192,14 @@ subplots do not fit on a nice 2D grid, simply use 1D indexing.
 .. image:: tutorial/tutorial_11_0.svg
 
 
-Global settings control
------------------------
+The rc object
+-------------
 
 A special object named `~proplot.rctools.rc`, belonging to the
 `~proplot.rctools.rc_configurator` class, is created whenever you
 import ProPlot. This object gives you advanced control over the look of
-your plots. `~proplot.rctools.rc` is your **one-stop shop for changing
-global settings** – including matplotlib
+your plots – it is your **one-stop shop for changing global settings**.
+`~proplot.rctools.rc` can be used to change matplotlib
 `rcParams <https://matplotlib.org/users/customizing.html>`__ settings,
 custom ProPlot :ref:`rcExtraParams` settings, and special
 :ref:`rcGlobals` meta-settings. See the `~proplot.rctools`
