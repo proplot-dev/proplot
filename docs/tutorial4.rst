@@ -79,7 +79,7 @@ aliases ``bpanel``, ``lpanel``, ``rpanel``, and ``tpanel``.
 
 
 
-.. image:: tutorial/tutorial_77_0.svg
+.. image:: tutorial/tutorial_80_0.svg
 
 
 Bulk axes panels
@@ -120,7 +120,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
 
 
 
-.. image:: tutorial/tutorial_80_0.svg
+.. image:: tutorial/tutorial_83_0.svg
 
 
 .. code:: ipython3
@@ -141,7 +141,7 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
 
 
 
-.. image:: tutorial/tutorial_81_0.svg
+.. image:: tutorial/tutorial_84_0.svg
 
 
 Global figure panels
@@ -177,7 +177,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
 
 
-.. image:: tutorial/tutorial_84_1.svg
+.. image:: tutorial/tutorial_87_1.svg
 
 
 .. code:: ipython3
@@ -200,7 +200,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
 
 
-.. image:: tutorial/tutorial_85_0.svg
+.. image:: tutorial/tutorial_88_0.svg
 
 
 Stacked panels
@@ -252,7 +252,7 @@ the top.
 
 
 
-.. image:: tutorial/tutorial_87_0.svg
+.. image:: tutorial/tutorial_90_0.svg
 
 
 Inset colorbars
@@ -281,7 +281,7 @@ inset colorbars on panel axes by passing ``fill=False`` to ``PanelAxes``
 
 
 
-.. image:: tutorial/tutorial_90_0.svg
+.. image:: tutorial/tutorial_93_0.svg
 
 
 Misc colorbar features
@@ -321,7 +321,7 @@ various keyword args accepted by this wrapper.
 
 
 
-.. image:: tutorial/tutorial_93_0.svg
+.. image:: tutorial/tutorial_96_0.svg
 
 
 Misc legend features
@@ -368,6 +368,6 @@ and modify legend text properties and handle properties. See
 
 
 
-.. image:: tutorial/tutorial_96_0.svg
+.. image:: tutorial/tutorial_99_0.svg
 
 

@@ -79,11 +79,11 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 
 
 
-.. image:: tutorial/tutorial_54_1.svg
+.. image:: tutorial/tutorial_57_1.svg
 
 
 
-.. image:: tutorial/tutorial_54_2.svg
+.. image:: tutorial/tutorial_57_2.svg
 
 
 Formatting maps
@@ -121,7 +121,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_57_0.svg
+.. image:: tutorial/tutorial_60_0.svg
 
 
 .. code:: ipython3
@@ -136,7 +136,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_58_0.svg
+.. image:: tutorial/tutorial_61_0.svg
 
 
 Zooming into maps
@@ -165,7 +165,7 @@ keyword args.
 
 
 
-.. image:: tutorial/tutorial_61_0.svg
+.. image:: tutorial/tutorial_64_0.svg
 
 
 For polar projections (e.g. ``'npstere'`` and ``'spstere'``), pass a
@@ -190,7 +190,7 @@ Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
 
 
 
-.. image:: tutorial/tutorial_63_0.svg
+.. image:: tutorial/tutorial_66_0.svg
 
 
 Polar projections
@@ -221,7 +221,7 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 
 
 
-.. image:: tutorial/tutorial_66_0.svg
+.. image:: tutorial/tutorial_69_0.svg
 
 
 Registered cartopy projections
@@ -252,7 +252,7 @@ and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: tutorial/tutorial_69_1.svg
+.. image:: tutorial/tutorial_72_1.svg
 
 
 Registered basemap projections
@@ -283,6 +283,6 @@ if you fail to specify them.
 
 
 
-.. image:: tutorial/tutorial_72_0.svg
+.. image:: tutorial/tutorial_75_0.svg
 
 

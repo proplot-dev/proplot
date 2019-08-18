@@ -43,7 +43,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: tutorial/tutorial_32_0.svg
+.. image:: tutorial/tutorial_35_0.svg
 
 
 Axis tick labels
@@ -68,7 +68,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: tutorial/tutorial_35_0.svg
+.. image:: tutorial/tutorial_38_0.svg
 
 
 ProPlot also lets you easily change the axis formatter with
@@ -103,7 +103,7 @@ See `~proplot.axes.CartesianAxes.format` and
 
 
 
-.. image:: tutorial/tutorial_37_0.svg
+.. image:: tutorial/tutorial_40_0.svg
 
 
 Axis scales
@@ -154,7 +154,7 @@ labeling spectral coordinates (this is more useful with the
 
 
 
-.. image:: tutorial/tutorial_40_1.svg
+.. image:: tutorial/tutorial_43_1.svg
 
 
 .. code:: ipython3
@@ -184,7 +184,7 @@ labeling spectral coordinates (this is more useful with the
 
 
 
-.. image:: tutorial/tutorial_41_0.svg
+.. image:: tutorial/tutorial_44_0.svg
 
 
 .. code:: ipython3
@@ -224,7 +224,7 @@ labeling spectral coordinates (this is more useful with the
 
 
 
-.. image:: tutorial/tutorial_42_0.svg
+.. image:: tutorial/tutorial_45_0.svg
 
 
 Datetime axes
@@ -268,7 +268,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_45_0.svg
+.. image:: tutorial/tutorial_48_0.svg
 
 
 Dual unit axes
@@ -320,11 +320,11 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: tutorial/tutorial_48_1.svg
+.. image:: tutorial/tutorial_51_1.svg
 
 
 
-.. image:: tutorial/tutorial_48_2.svg
+.. image:: tutorial/tutorial_51_2.svg
 
 
 .. code:: ipython3
@@ -355,6 +355,6 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: tutorial/tutorial_49_1.svg
+.. image:: tutorial/tutorial_52_1.svg
 
 
