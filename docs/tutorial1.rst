@@ -236,7 +236,7 @@ temporarily modify global settings for a block of code, use
                suptitle='Applying new rc settings',
                patch_kw={'hatch':'xxx', 'edgecolor':'w'})
     ay = axs[-1].twinx()
-    ay.format(ycolor='r', ylabel='secondary axis')
+    ay.format(ycolor='r', linewidth=1.5, ylabel='secondary axis')
     ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=3)
 
 

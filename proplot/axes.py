@@ -1410,9 +1410,13 @@ class CartesianAxes(BaseAxes):
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None: # altx was called on this axes
+            self.spines['top'].set_visible(False)
+            self.spines['bottom'].set_visible(True)
             self.xaxis.tick_bottom()
             self.xaxis.set_label_position('bottom')
         elif self._altx_parent is not None: # this axes is the result of altx
+            self.spines['bottom'].set_visible(False)
+            self.spines['top'].set_visible(True)
             self.xaxis.tick_top()
             self.xaxis.set_label_position('top')
             self.yaxis.set_visible(False)
@@ -1421,9 +1425,13 @@ class CartesianAxes(BaseAxes):
     def _alty_overrides(self):
         """Applies alternate *y* axis overrides."""
         if self._alty_child is not None:
+            self.spines['right'].set_visible(False)
+            self.spines['left'].set_visible(True)
             self.yaxis.tick_left()
             self.yaxis.set_label_position('left')
         elif self._alty_parent is not None:
+            self.spines['left'].set_visible(False)
+            self.spines['right'].set_visible(True)
             self.yaxis.tick_right()
             self.yaxis.set_label_position('right')
             self.xaxis.set_visible(False)
@@ -2001,8 +2009,8 @@ class CartesianAxes(BaseAxes):
         ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
-        self._altx_overrides()
         ax._altx_parent = self
+        self._altx_overrides()
         ax._altx_overrides()
         return ax
 
@@ -2024,8 +2032,8 @@ class CartesianAxes(BaseAxes):
         ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax
-        self._alty_overrides()
         ax._alty_parent = self
+        self._alty_overrides()
         ax._alty_overrides()
         return ax
 
