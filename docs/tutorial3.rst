@@ -47,7 +47,7 @@ make things a bit less verbose.
 
     import proplot as plot
     # Simple example
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0':0})
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0':180})
     axs.format(suptitle='Simple projection axes demo', coast=True, latlines=30, lonlines=60)
     # Complex example
     f, axs = plot.subplots(
@@ -87,7 +87,7 @@ global data coverage.
 These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 `~proplot.wrappers.cartopy_transform`,
 `~proplot.wrappers.basemap_gridfix`, and
-`~proplot.wrappers.cartopy_latlon` wrappers.
+`~proplot.wrappers.basemap_latlon` wrappers.
 
 .. code:: ipython3
 
