@@ -46,8 +46,8 @@ usually what you’ll want in this context. See
 .. image:: tutorial/tutorial_35_0.svg
 
 
-Axis tick labels
-----------------
+Axis tick label formatting
+--------------------------
 
 ProPlot changes the default axis formatter (i.e. the class used to
 convert float numbers to tick label strings). The new formatter trims
@@ -60,13 +60,14 @@ some data range*, as demonstrated below. See
     import proplot as plot
     plot.rc.reset()
     plot.rc.linewidth = 2
-    plot.rc.small = plot.rc.large = 12
+    plot.rc.small = plot.rc.large = 11
     locator = [0, 0.25, 0.5, 0.75, 1]
     f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=1.5, share=0)
     axs[0].format(xformatter='scalar', yformatter='scalar', title='Matplotlib formatter')
     axs[1].format(yticklabelloc='both', title='ProPlot formatter')
     axs[:2].format(xlocator=locator, ylocator=locator)
-    axs[2].format(title='Limiting the tick range', ticklen=5, xlim=(0,5), ylim=(0,5), xtickrange=(0,2), ytickrange=(0,2))
+    axs[2].format(title='Limiting the tick range', ticklen=5, xlim=(0,5), ylim=(0,5),
+                  xtickrange=(0,2), ytickrange=(0,2), xlocator=1, ylocator=1)
     axs.format(ytickloc='both', yticklabelloc='both', titleweight='bold')
 
 
