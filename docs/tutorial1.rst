@@ -77,7 +77,6 @@ a “picture” of your figure, where each unique number corresponds to a
 unique axes. This allows us to build the below grids in just one line of
 code. The number order determines the order of a-b-c labels, and the
 order in which the axes appear in the `~proplot.subplots.axes_grid`.
-See `~proplot.subplots.subplots` for details.
 
 .. code:: ipython3
 
