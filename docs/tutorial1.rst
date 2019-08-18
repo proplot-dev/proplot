@@ -174,10 +174,10 @@ whereby the spacing between subplot content and the figure edge, and
 between content in adjacent subplots, is automatically adjusted.
 
 ProPlot has a similar tight layout feature, applied automatically when
-the figure is drawn (see below examples). ProPlot’s tight layout
-*preserves subplot aspect ratios, panel widths, and subplot physical
-dimensions* – the latter only if ``axwidth`` or ``axheight`` were passed
-to `~proplot.subplots.subplots` instead of ``width``, ``height``, or
+the figure is drawn. ProPlot’s tight layout *preserves subplot aspect
+ratios, panel widths, and subplot physical dimensions* – the latter only
+if ``axwidth`` or ``axheight`` were passed to
+`~proplot.subplots.subplots` instead of ``width``, ``height``, or
 ``figsize``. It is also likely more robust to complex geometry, and
 permits *variable spacing between rows and columns* – that is,
 ``wspace`` and ``hspace`` no longer have to be scalars, thanks to the
@@ -194,13 +194,18 @@ keyword args, apply to the *reference* axes specified by the ``ref``
 keyword arg (defaults to ``1``, i.e. the subplot in the upper left
 corner).
 
+The below examples are a stress test of this feature.
+
 .. code:: ipython3
 
     import proplot as plot
-    for share in (3,0):
-        f, axs = plot.subplots(nrows=3, ncols=3, aspect=1, axwidth=1, wratios=(3,2,2), share=0, tight=True)
-        axs[4].format(title='title\ntitle\ntitle', suptitle='Automatic spacing and aspect ratio conservation')
-        axs[1].format(ylabel='ylabel\nylabel', xlabel='xlabel')
+    for ref in (1,2):
+        f, axs = plot.subplots(ref=ref, nrows=3, ncols=3, aspect=1, axwidth=1, wratios=(3,2,2), share=0)
+        axs[ref-1].format(title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red')
+        axs[4].format(title='title\ntitle\ntitle', suptitle='Tight layout with simple grids')
+        axs[1].format(ylabel='ylabel\nylabel')
+        axs[:4:2].format(xlabel='xlabel\nxlabel\nxlabel')
+        axs.format(rowlabels=['row 1', 'row 2', 'row 3'], collabels=['col 1', 'col 2', 'col 3'])
 
 
 
@@ -214,11 +219,12 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,1,2],[3,4,2],[5,5,5]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5)
-    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='Title', suptitle='Automatic spacing and aspect ratio conservation')
-    axs[1].format(ylabel='ylabel\nylabel', xformatter='null', yticklabelloc='both')
-    axs[2:4].format(yformatter='null', title='Title', ytickloc='both')
+    f, axs = plot.subplots([[1,1,2],[3,3,2],[4,4,4]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5, colorbar='b')
+    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red')
+    axs[1].format(ylabel='ylabel\nylabel', xformatter='null', ytickloc='both', yticklabelloc='both', title='Title')
+    axs[2:4].format(yformatter='null', title='Title', ytickloc='both', yticklabelloc='both')
     axs[4:].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
+    axs.format(suptitle='Tight layout with complex grids', collabels=['col 1', 'col 2'], rowlabels=['row 1', 'row 2', 'row 3'])
 
 
 
@@ -228,13 +234,15 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0, axpanels={1:'lrb',2:'lrt'},
-               axpanels_kw={'rshare':False, 'bwidth':0.15, 'bshare':False, 'tflush':True})
-    axs.format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Hello', collabels=['Column 1', 'Column 2'],
-               suptitle='Automatic spacing and aspect ratio conservation')
+    f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0, axpanels='lrbt',
+               axpanels_kw={'bstack':1, 'share':False})
+    axs[0].format(ylim=(0,1e-3), title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red')
     axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right')
-    axs[1].tpanel.format(ylim=(-0.2,1.2), ylocator=0.5)
+    axs[1].rpanel.format(ylim=(0, 0.01), ylabel='ylabel')
+    axs[1].format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Title', top=False,
+                  collabels=['col 1', 'col 2'], rowlabels=['row 1'], suptitle='Tight layout and grids with panels')
+    axs.tpanel.format(ylim=(-0.5,1.5), ylocator=1, ytickminor=False)
 
 
 

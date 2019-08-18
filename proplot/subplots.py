@@ -744,12 +744,15 @@ class Figure(mfigure.Figure):
             wspace=wspace, hspace=hspace,
             width_ratios=wratios, height_ratios=hratios)
         for i in range(stack):
-            self._locked = False
-            pax = self.add_subplot(sgridspec[i],
-                side=name, flush=flush,
-                share=share, parent=ax, projection='panel',
-                )
-            self._locked = True
+            try:
+                self._locked = False
+                pax = self.add_subplot(sgridspec[i],
+                    side=name, flush=flush,
+                    share=share, parent=ax, projection='panel',
+                    )
+            except Exception as err:
+                self._locked = True
+                raise err
             pax._main_gridspec = gridspec
             pax._stack_gridspec = sgridspec
             paxs += [pax]
