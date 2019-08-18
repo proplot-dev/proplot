@@ -1091,8 +1091,8 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
             cmap = cmap._resample(N_) # makes a copy!
             cmap._cyclic = cyclic
             if isinstance(cmap, PerceptuallyUniformColormap):
-                cmap._gamma1 = _notNone(gamma, gamma1, cmap._gamma1)
-                cmap._gamma2 = _notNone(gamma, gamma2, cmap._gamma2)
+                cmap._gamma1 = _notNone(gamma1, gamma, cmap._gamma1)
+                cmap._gamma2 = _notNone(gamma2, gamma, cmap._gamma2)
             elif gamma:
                 cmap._gamma = _notNone(gamma, cmap._gamma)
         # Build colormap on-the-fly
@@ -1406,8 +1406,8 @@ class PerceptuallyUniformColormap(mcolors.LinearSegmentedColormap):
         if not keys <= target:
             raise ValueError(f'Invalid segmentdata dictionary with keys {keys}.')
         # Gamma scaling
-        self._gamma1 = _notNone(gamma, gamma1, 1.0)
-        self._gamma2 = _notNone(gamma, gamma2, 1.0)
+        self._gamma1 = _notNone(gamma1, gamma, 1.0)
+        self._gamma2 = _notNone(gamma2, gamma, 1.0)
         # Sanitize segmentdata, convert color strings to their channel values
         for key,array in segmentdata.items():
             if callable(array): # permit callable

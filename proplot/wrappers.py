@@ -815,7 +815,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     # Call func
     # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
-    lw = _notNone(lw, linewidth)
+    lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     return func(x, height, width=width, bottom=bottom,
         linewidth=lw, edgecolor=edgecolor,
         stacked=stacked, orientation=orientation,
@@ -947,7 +947,7 @@ def violinplot_wrapper(self, func, *args,
         elif orientation != 'vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
     # Sanitize input
-    lw = _notNone(linewidth, lw, None, names=('linewidth', 'lw'))
+    lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     if kwargs.pop('showextrema', None):
         warnings.warn(f'Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
