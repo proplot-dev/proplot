@@ -902,7 +902,6 @@ class Figure(mfigure.Figure):
         # Get x position as center between left edge of leftmost main axes
         # and right edge of rightmost main axes
         suptitle.set_visible(True)
-        kw = {'ha':'center', 'va':'bottom', 'transform':self.transFigure}
         if suptitle.get_text().strip():
             # Get vertical suptitle position
             iys = []
@@ -911,13 +910,13 @@ class Figure(mfigure.Figure):
                     bbox = ax.get_tightbbox(renderer)
                     _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                 iys.append(y)
+            # Adjust position
             if iys: # for really weird layout, may happen
                 y = max(iys) + (0.3*suptitle.get_fontsize()/72)/height
-                kw['y'] = y
-            # Horizontal position
-            x, _ = self._align_helper('x', axs)
-            kw['x'] = x
-            suptitle.update(kw)
+                x, _ = self._align_helper('x', axs)
+                kw = {'x':x, 'y':y, 'ha':'center', 'va':'bottom',
+                      'transform':self.transFigure}
+                suptitle.update(kw)
 
     def _update_layout(self, renderer=None):
         """Aligns row labels, column labels, and super titles, and applies
