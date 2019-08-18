@@ -59,12 +59,15 @@ some data range*, as demonstrated below. See
 
     import proplot as plot
     plot.rc.reset()
-    locator = [0, 0.25, 0.5, 0.75, 1]
     plot.rc.linewidth = 2
     plot.rc.small = plot.rc.large = 12
-    f, axs = plot.subplots(ncols=2, axwidth=2, share=0, subplotpad=0.5) # change subplotpad to change padding between subplots
-    axs[1].format(xlocator=locator, ylocator=locator, xtickrange=[0,0.5], yticklabelloc='both', title='ProPlot formatter', titleweight='bold')
-    axs[0].format(xlocator=locator, ylocator=locator, yticklabelloc='both', xformatter='scalar', yformatter='scalar', title='Matplotlib formatter', titleweight='bold')
+    locator = [0, 0.25, 0.5, 0.75, 1]
+    f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=2, share=0)
+    axs[0].format(xformatter='scalar', yformatter='scalar', title='Matplotlib formatter')
+    axs[1].format(yticklabelloc='both', title='ProPlot formatter')
+    axs[:2].format(xlocator=locator, ylocator=locator)
+    axs[2].format(title='Limiting the tick range', ticklen=5, xlim=(0,5), ylim=(0,5), xtickrange=(0,2), ytickrange=(0,2))
+    axs.format(ytickloc='both', yticklabelloc='both', titleweight='bold')
 
 
 
