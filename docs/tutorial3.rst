@@ -47,7 +47,7 @@ make things a bit less verbose.
 
     import proplot as plot
     # Simple example
-    f, axs = plot.subplots(nrows=2, axwidth=2.5, proj='robin', proj_kw={'lon_0':0})
+    f, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0':0})
     axs.format(suptitle='Simple projection axes demo', coast=True, latlines=30, lonlines=60)
     # Complex example
     f, axs = plot.subplots(
@@ -139,7 +139,7 @@ stylize geographic features, like continents and international borders.
     import proplot as plot
     import numpy as np
     N = 40
-    f, axs = plot.subplots(axwidth=4, ncols=3, proj={1:'robin', 2:'ortho', 3:'wintri'}, wratios=(2,1,1.8))
+    f, axs = plot.subplots(axwidth=3, ncols=3, proj={1:'robin', 2:'ortho', 3:'wintri'}, wratios=(2,1,1.8))
     ax = axs[0]
     ax.format(title='Robinson map', land=True, landcolor='pink gray', facecolor='cerulean',
                coastcolor='brown', borderscolor='brown', innerborderscolor='brown',
@@ -204,7 +204,7 @@ Also note that ProPlot adds the ``'npaeqd'``, ``'spaeqd'``,
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(ncols=2, axwidth=2.5, basemap={1:False,2:True}, proj={1:'splaea', 2:'npaeqd'},
+    f, axs = plot.subplots(ncols=2, axwidth=2.2, basemap={1:False,2:True}, proj={1:'splaea', 2:'npaeqd'},
                           proj_kw={1:{'boundinglat': -30, 'lon_0': 120}, 2:{'boundinglat':60}})
     axs.format(land=True, reso='med', facecolor='pale blue', landcolor='navy blue', suptitle='Zooming into polar projections')
     axs[0].format(title='Cartopy example', latmax=80, latlines=20)
