@@ -247,16 +247,20 @@ temporarily modify global settings for a block of code, use
 .. image:: tutorial/tutorial_13_1.svg
 
 
-Automatic formatting
---------------------
+Pandas and xarray integration
+-----------------------------
 
-With ProPlot, when you pass a `~pandas.DataFrame` or
-`~xarray.DataArray` to any plotting command, the x-axis label, y-axis
-label, legend label, colorbar label, and/or title are configured from
-the metadata, and labels and colorbars can be generated on-the-fly. This
-restores some of the convenience you get with the builtin `pandas` and
-`xarray` plotting tools. To disable automatic labelling, pass
-``autoformat=False`` to `~proplot.subplots.subplots`.
+With ProPlot, when you pass a `pandas
+DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`__
+or `xarray
+DataArray <http://xarray.pydata.org/en/stable/data-structures.html>`__
+to any plotting command, the x-axis label, y-axis label, legend label,
+colorbar label, and/or title are configured from the metadata, and
+labels and colorbars can be generated on-the-fly. This restores some of
+the convenience you get with the builtin `pandas` and `xarray`
+plotting tools. To disable automatic labelling, pass
+``autoformat=False`` to `~proplot.subplots.subplots`. Note `pandas`
+and `xarray` are *not required* for this package.
 
 The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
