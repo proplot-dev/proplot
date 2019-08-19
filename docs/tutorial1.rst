@@ -433,8 +433,9 @@ details.
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.5, flush=True) # not 
-    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis', xticks=[], yticks=[], suptitle='Grid of "flush" subplots')
+    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.7, flush=True) 
+    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
+               xticks=[], yticks=[], suptitle='A-b-c labels on grid of flush subplots')
 
 
 

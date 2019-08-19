@@ -290,11 +290,7 @@ class FlexibleGridSpecBase(object):
             Passed to `~matplotlib.gridspec.GridSpec`, denote the margin
             positions for the subplot grid in figure-relative coordinates.
         """
-        # Add these as attributes; want _spaces_as_ratios to be
-        # self-contained, so it can be invoked on already instantiated
-        # gridspec (see update() method).
-        # TODO Does _nrows or _ncols conflict with default gridspec attributes?
-        self._nrows = nrows*2-1 # used for get_geometry and needed by _spaces_as_ratios
+        self._nrows = nrows*2-1 # used with get_geometry
         self._ncols = ncols*2-1
         self._nrows_visible = nrows
         self._ncols_visible = ncols
@@ -384,7 +380,8 @@ class FlexibleGridSpecBase(object):
     def get_visible_geometry(self):
         """Like `~matplotlib.gridspec.GridspecBase.get_geometry`, but returns
         the number of visible rows and columns, i.e. the number of rows and
-        columns that aren't skipped over by `~FlexibleGridSpecBase.__getitem__`."""
+        columns that aren't skipped over by
+        `~FlexibleGridSpecBase.__getitem__`."""
         return self._nrows_visible, self._ncols_visible
 
 class FlexibleGridSpec(FlexibleGridSpecBase, mgridspec.GridSpec):
