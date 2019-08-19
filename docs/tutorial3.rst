@@ -62,11 +62,11 @@ make things a bit less verbose.
 
 
 
-.. image:: tutorial/tutorial_57_3.svg
+.. image:: tutorial/tutorial_59_3.svg
 
 
 
-.. image:: tutorial/tutorial_57_4.svg
+.. image:: tutorial/tutorial_59_4.svg
 
 
 Plotting geophysical data
@@ -118,11 +118,11 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 
 
 
-.. image:: tutorial/tutorial_60_0.svg
+.. image:: tutorial/tutorial_62_0.svg
 
 
 
-.. image:: tutorial/tutorial_60_1.svg
+.. image:: tutorial/tutorial_62_1.svg
 
 
 Formatting projection axes
@@ -157,7 +157,7 @@ stylize geographic features, like continents and international borders.
 
 
 
-.. image:: tutorial/tutorial_63_0.svg
+.. image:: tutorial/tutorial_65_0.svg
 
 
 Zooming into projections
@@ -202,11 +202,11 @@ Note that ProPlot also adds the ``'npaeqd'``, ``'spaeqd'``,
 
 
 
-.. image:: tutorial/tutorial_66_0.svg
+.. image:: tutorial/tutorial_68_0.svg
 
 
 
-.. image:: tutorial/tutorial_66_1.svg
+.. image:: tutorial/tutorial_68_1.svg
 
 
 Registered cartopy projections
@@ -237,7 +237,7 @@ and Kavrisky VII projections by subclassing the
 
 
 
-.. image:: tutorial/tutorial_69_1.svg
+.. image:: tutorial/tutorial_71_1.svg
 
 
 Registered basemap projections
@@ -268,7 +268,7 @@ if you fail to specify them.
 
 
 
-.. image:: tutorial/tutorial_72_0.svg
+.. image:: tutorial/tutorial_74_0.svg
 
 
 Polar projections
@@ -304,6 +304,6 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 
 
 
-.. image:: tutorial/tutorial_75_0.svg
+.. image:: tutorial/tutorial_77_0.svg
 
 

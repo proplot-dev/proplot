@@ -292,8 +292,11 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
     df.columns.name = 'columns'
     # Series
     series = pd.Series(np.random.rand(20).cumsum())
+
+.. code:: ipython3
+
     # Figure
-    f, axs = plot.subplots(ncols=2, axwidth=1.8, share=0)
+    f, axs = plot.subplots(ncols=2, axwidth=2.2, share=0)
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
     ax = axs[0]
@@ -311,7 +314,8 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
 
 
-.. image:: tutorial/tutorial_16_1.svg
+
+.. image:: tutorial/tutorial_17_2.svg
 
 
 .. code:: ipython3
@@ -333,21 +337,24 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
     df.name = 'funky data'
     df.index.name = 'index'
     df.columns.name = 'time (days)'
+
+.. code:: ipython3
+
     # Figure
-    # We must make room for the axes panels during subplots call!
-    f, axs = plot.subplots(nrows=2, axwidth=1.8, share=0)
+    f, axs = plot.subplots(nrows=2, axwidth=2.2, share=0)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
     ax = axs[1]
-    ax.contourf(da, cmap='Greens', cmap_kw={'left':0.05}, colorbar='l')
+    ax.contourf(da, cmap='Greens', cmap_kw={'left':0.05}, colorbar='l', linewidth=0.7, color='gray7')
+    ax.format(yreverse=True)
     # Plot DataFrame
     ax = axs[0]
-    ax.contourf(df, cmap='Blues', colorbar='r')
+    ax.contourf(df, cmap='Blues', colorbar='r', linewidth=0.7, color='gray7')
     ax.format(xtickminor=False)
 
 
 
-.. image:: tutorial/tutorial_17_0.svg
+.. image:: tutorial/tutorial_19_0.svg
 
 
 Axis sharing and spanning
@@ -380,19 +387,19 @@ example for details.
 
 
 
-.. image:: tutorial/tutorial_20_0.svg
+.. image:: tutorial/tutorial_22_0.svg
 
 
 
-.. image:: tutorial/tutorial_20_1.svg
+.. image:: tutorial/tutorial_22_1.svg
 
 
 
-.. image:: tutorial/tutorial_20_2.svg
+.. image:: tutorial/tutorial_22_2.svg
 
 
 
-.. image:: tutorial/tutorial_20_3.svg
+.. image:: tutorial/tutorial_22_3.svg
 
 
 .. code:: ipython3
@@ -410,11 +417,11 @@ example for details.
 
 
 
-.. image:: tutorial/tutorial_21_0.svg
+.. image:: tutorial/tutorial_23_0.svg
 
 
 
-.. image:: tutorial/tutorial_21_1.svg
+.. image:: tutorial/tutorial_23_1.svg
 
 
 A-b-c subplot labels
@@ -439,7 +446,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_23_0.svg
+.. image:: tutorial/tutorial_25_0.svg
 
 
 Arbitrary physical units
@@ -462,7 +469,7 @@ millimeters, and pixels).
 
 
 
-.. image:: tutorial/tutorial_26_0.svg
+.. image:: tutorial/tutorial_28_0.svg
 
 
 Automatic subplot spacing
@@ -507,11 +514,11 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_29_0.svg
+.. image:: tutorial/tutorial_31_0.svg
 
 
 
-.. image:: tutorial/tutorial_29_1.svg
+.. image:: tutorial/tutorial_31_1.svg
 
 
 .. code:: ipython3
@@ -527,7 +534,7 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_30_0.svg
+.. image:: tutorial/tutorial_32_0.svg
 
 
 .. code:: ipython3
@@ -546,6 +553,6 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_31_0.svg
+.. image:: tutorial/tutorial_33_0.svg
 
 

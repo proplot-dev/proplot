@@ -91,12 +91,15 @@ _map_disabled_methods = (
     'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram',
     )
 
-# Keywords
-# These may automatically override the 'fix' option!
-_cmap_options = {
-    'contour$': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    '^cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
-    '^pcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+# Keywords for styling cmap overridden plots
+_cmap_style_kwargs = {
+    'contour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
+    'hexbin': {'colors':'edgecolors', 'linewidths':'linewidths'},
+    'tricontour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
+    'cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'pcolor': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'tripcolor': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'pcolormesh': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     }
 
 #------------------------------------------------------------------------------#
@@ -1705,17 +1708,15 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     Other parameters
     ----------------
     lw, linewidth, linewidths
-        Aliases. Refers to `linewidths` for `~matplotlib.axes.Axes.contour`,
-        `linewidth` for `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, and `linewidth` for `~proplot.axes.BaseAxes.cmapline`.
+        The width of `~matplotlib.axes.Axes.contour` lines and
+        `~proplot.axes.BaseAxes.cmapline` lines. Also the width of lines
+        *between* `~matplotlib.axes.Axes.pcolor` boxes,
+        `~matplotlib.axes.Axes.pcolormesh` boxes, and
+        `~matplotlib.axes.Axes.contourf` filled contours.
     ls, linestyle, linestyles
-        Aliases. Refers to `linestyles` for `~matplotlib.axes.Axes.contour`,
-        `linestyle` for `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, and `linestyle` for `~proplot.axes.BaseAxes.cmapline`.
+        As above, but for the line style.
     color, colors, edgecolor, edgecolors
-        Aliases. Refers to `colors` for `~matplotlib.axes.Axes.contour`,
-        `edgecolors` for `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, and `color` for `~proplot.axes.BaseAxes.cmapline`.
+        As above, but for the line color.
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
@@ -1752,20 +1753,20 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     if not args:
         return func(*args, **kwargs)
     colors = _notNone(color, colors, edgecolor, edgecolors, None, names=('color', 'colors', 'edgecolor', 'edgecolors'))
-    edgefix = _notNone(edgefix, rc['image.edgefix'])
     linewidths = _notNone(lw, linewidth, linewidths, None, names=('lw', 'linewidth', 'linewidths'))
     linestyles = _notNone(ls, linestyle, linestyles, None, names=('ls', 'linestyle', 'linestyles'))
-    for regex,names in _cmap_options.items():
-        if not re.search(regex, name):
+    style_kw = _cmap_style_kwargs.get(name, {})
+    edgefix = _notNone(edgefix, rc['image.edgefix'])
+    for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
+        if value is None:
             continue
-        for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
-            if value is None:
-                continue
-            if key in names:
-                edgefix = False # override!
-                kwargs[names[key]] = value
-            else:
-                raise ValueError(f'Unknown keyword arg "{key}" for function "{name}".')
+        elif 'contourf' in name: # special case, we re-draw our own contours
+            continue
+        if key in style_kw:
+            edgefix = False # override!
+            kwargs[style_kw[key]] = value
+        else:
+            raise ValueError(f'Unknown keyword arg "{key}" for function "{name}".')
     # Check input
     for key,val in (('levels',levels),('values',values)):
         if not np.iterable(val):
@@ -1907,6 +1908,13 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         obj.levels = levels # for colorbar to determine tick locations
     if locator is not None and not isinstance(locator, mticker.MaxNLocator):
         obj.locator = locator # for colorbar to determine tick locations; if maxn is the locator, let colorbar infer tick locations from 'levels'
+
+    # Call again for contourf plots with edges
+    if 'contourf' in name and (linewidths is not None or colors is not None
+            or linestyles is not None):
+        colors = _notNone(colors, 'k')
+        cobj = self.contour(*args, levels=levels, linewidths=linewidths,
+                linestyles=linestyles, colors=colors)
 
     # Apply labels
     # TODO: Add quiverkey to this!
