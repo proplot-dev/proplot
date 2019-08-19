@@ -517,12 +517,12 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,1,2],[3,3,2],[4,4,4]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5)
+    f, axs = plot.subplots([[1,1,2],[5,3,2],[5,4,4]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5)
     axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red9')
-    axs[1].format(ylabel='ylabel\nylabel\nylabel', xformatter='null', ytickloc='both', yticklabelloc='both', title='Title')
+    axs[1].format(ylabel='ylabel\nylabel\nylabel', ytickloc='both', yticklabelloc='both', title='Title')
     axs[2:4].format(yformatter='null', title='Title', ytickloc='both', yticklabelloc='both')
     axs[3:].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
-    axs.format(suptitle='Tight layout with complex grids', rowlabels=['Row 1', 'Row 2', 'Row 3'], collabels=['Column 1', 'Column 2'])
+    axs.format(suptitle='Tight layout with complex grids', rowlabels=['Row 1', 'Row 2'], collabels=['Column 1', 'Column 2'])
 
 
 
