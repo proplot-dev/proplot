@@ -263,11 +263,11 @@ the convenience you get with the builtin
 *optional*, and does not require that `pandas` and `xarray` are
 installed.
 
-The below examples showcase these features for 1-dimensional and
-2-dimensional datasets. For more on the ``colorbar`` and ``legend``
-keyword args, see `~proplot.wrappers.cmap_wrapper`,
-`~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting wrappers`. For
-more on panels, see the :ref:`Panels, colorbars, and legends` section.
+This feature is showcased below for 1-dimensional and 2-dimensional
+datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
+`~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
+and :ref:`Plotting wrappers`. For more on panels, see the
+:ref:`Panels, colorbars, and legends` section.
 
 .. code:: ipython3
 
@@ -302,11 +302,11 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
     ax = axs[0]
     color = plot.shade('sky blue', 0.3)
     cycle_kw = {'fade':90, 'space':'hcl'}
-    ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3, colorbar='ul', colorbar_kw={'frame':True, 'locator':20})
+    ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3, colorbar='ul', colorbar_kw={'locator':20})
     # Plot Dataframe
     ax = axs[1]
     color = plot.shade('jade', 0.7)
-    ax.plot(df, cycle=color, cycle_kw=cycle_kw, legend='uc', legend_kw={'frameon':True}, lw=3)
+    ax.plot(df, cycle=color, cycle_kw=cycle_kw, legend='uc', lw=3)
 
 
 
@@ -314,8 +314,7 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
 
 
-
-.. image:: tutorial/tutorial_17_2.svg
+.. image:: tutorial/tutorial_17_1.svg
 
 
 .. code:: ipython3
@@ -329,7 +328,7 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
     data = 50*(np.sin(np.linspace(0, 2*np.pi, 20) + 0)**2) * np.cos(np.linspace(0, np.pi, 20)+np.pi/2)[:,None]**2
     da = xr.DataArray(data, dims=('plev','lat'), coords={
         'plev':xr.DataArray(np.linspace(1000,0,20), dims=('plev',), attrs={'long_name':'pressure', 'units':'hPa'}),
-        'lat':xr.DataArray(np.linspace(-90,90,20), dims=('lat',), attrs={'units':'deg_N'}), # if long_name absent, variable name is used
+        'lat':xr.DataArray(np.linspace(-90,90,20), dims=('lat',), attrs={'units':'degN'}), # if long_name absent, variable name is used
         }, name='u', attrs={'long_name':'zonal wind', 'units':'m/s'})
     # DataFrame
     data = np.random.rand(20,20)
@@ -344,13 +343,11 @@ more on panels, see the :ref:`Panels, colorbars, and legends` section.
     f, axs = plot.subplots(nrows=2, axwidth=2.2, share=0)
     axs.format(collabels=['Automatic subplot formatting']) # suptitle will look off center with the empty left panel
     # Plot DataArray
-    ax = axs[1]
-    ax.contourf(da, cmap='Greens', cmap_kw={'left':0.05}, colorbar='l', linewidth=0.7, color='gray7')
-    ax.format(yreverse=True)
+    axs[0].contourf(da, cmap='Greens', cmap_kw={'left':0.05}, colorbar='l', linewidth=0.7, color='gray7')
+    axs[0].format(yreverse=True)
     # Plot DataFrame
-    ax = axs[0]
-    ax.contourf(df, cmap='Blues', colorbar='r', linewidth=0.7, color='gray7')
-    ax.format(xtickminor=False)
+    axs[1].contourf(df, cmap='Blues', colorbar='r', linewidth=0.7, color='gray7')
+    axs[1].format(xtickminor=False)
 
 
 
