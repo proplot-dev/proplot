@@ -257,16 +257,17 @@ DataArray <http://xarray.pydata.org/en/stable/data-structures.html>`__
 to any plotting command, the x-axis label, y-axis label, legend label,
 colorbar label, and/or title are configured from the metadata, and
 labels and colorbars can be generated on-the-fly. This restores some of
-the convenience you get with the builtin `pandas` and `xarray`
-plotting tools. To disable automatic labelling, pass
-``autoformat=False`` to `~proplot.subplots.subplots`. Note `pandas`
-and `xarray` are *not required* for this package.
+the convenience you get with the builtin
+`pandas <https://pandas.pydata.org>`__ and
+`xarray <https://pandas.pydata.org>`__ plotting tools. This feature is
+*optional*, and does not require that `pandas` and `xarray` are
+installed.
 
 The below examples showcase these features for 1-dimensional and
 2-dimensional datasets. For more on the ``colorbar`` and ``legend``
 keyword args, see `~proplot.wrappers.cmap_wrapper`,
 `~proplot.wrappers.cycle_wrapper`, and :ref:`Plotting wrappers`. For
-more on panels, see the :ref:`Panels and insets` section.
+more on panels, see the :ref:`Panels, colorbars, and legends` section.
 
 .. code:: ipython3
 
