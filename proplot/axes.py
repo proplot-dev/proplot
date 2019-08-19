@@ -3241,15 +3241,15 @@ lonlabels, latlabels
     of the map. There are four different options:
 
     1. Boolean ``True``. Indicates left side for latitudes,
-        bottom for longitudes.
+       bottom for longitudes.
     2. A string, e.g. ``'lr'`` or ``'bt'``.
     3. A boolean ``(left,right)`` tuple for longitudes,
-        ``(bottom,top)`` for latitudes.
+       ``(bottom,top)`` for latitudes.
     4. A boolean ``(n1,n2,n3,n4)`` tuple as in the
-        `~mpl_toolkits.basemap.Basemap.drawmeridians` and
-        `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
-        The boolean values indicate whether to label gridlines intersecting
-        the left, right, top, and bottom sides, respectively.
+       `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+       `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
+       The boolean values indicate whether to label gridlines intersecting
+       the left, right, top, and bottom sides, respectively.
 
 lonlim, latlim : (float, float), optional
     Longitude and latitude limits of projection, applied
