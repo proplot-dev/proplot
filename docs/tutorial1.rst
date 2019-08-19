@@ -499,11 +499,11 @@ corner).
     import proplot as plot
     for ref in (1,2):
         f, axs = plot.subplots(ref=ref, nrows=3, ncols=3, aspect=1, axwidth=1, wratios=(3,2,2), share=0)
-        axs[ref-1].format(title='reference axes', titleweight='bold', titleloc='uc')
+        axs[ref-1].format(title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red9')
         axs[4].format(title='title\ntitle\ntitle', suptitle='Tight layout with simple grids')
-        axs[1].format(ylabel='ylabel\nylabel')
+        axs[1].format(ylabel='ylabel\nylabel\nylabel')
         axs[:4:2].format(xlabel='xlabel\nxlabel\nxlabel')
-        axs.format(rowlabels=['row 1', 'row 2', 'row 3'], collabels=['col 1', 'col 2', 'col 3'])
+        axs.format(rowlabels=['Row 1', 'Row 2', 'Row 3'], collabels=['Column 1', 'Column 2', 'Column 3'])
 
 
 
@@ -518,11 +518,11 @@ corner).
 
     import proplot as plot
     f, axs = plot.subplots([[1,1,2],[3,3,2],[4,4,4]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5)
-    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='reference axes', titleweight='bold', titleloc='uc')
-    axs[1].format(ylabel='ylabel\nylabel', xformatter='null', ytickloc='both', yticklabelloc='both', title='Title')
+    axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red9')
+    axs[1].format(ylabel='ylabel\nylabel\nylabel', xformatter='null', ytickloc='both', yticklabelloc='both', title='Title')
     axs[2:4].format(yformatter='null', title='Title', ytickloc='both', yticklabelloc='both')
     axs[3:].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
-    axs.format(suptitle='Tight layout with complex grids', collabels=['col 1', 'col 2'], rowlabels=['row 1', 'row 2', 'row 3'])
+    axs.format(suptitle='Tight layout with complex grids', rowlabels=['Row 1', 'Row 2', 'Row 3'], collabels=['Column 1', 'Column 2'])
 
 
 
@@ -534,12 +534,13 @@ corner).
     import proplot as plot
     f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0, axpanels='lrbt',
                axpanels_kw={'bstack':1, 'share':False})
-    axs[0].format(ylim=(0,1e-3), title='reference axes', titleweight='bold', titleloc='uc')
+    axs[0].format(ylim=(0,1e-3), title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red9')
     axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
     axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right')
+    axs[0].bpanel.format(xlabel='xlabel')
     axs[1].rpanel.format(ylim=(0, 0.01), ylabel='ylabel')
-    axs[1].format(ylabel='ylabel\nylabel', xlabel='xlabel\nxlabel', title='Title', top=False,
-                  collabels=['col 1', 'col 2'], suptitle='Tight layout with axes panels')
+    axs[1].format(ylabel='ylabel\nylabel\nylabel', xlabel='xlabel\nxlabel\nxlabel', title='Title', top=False,
+                  collabels=['Column 1', 'Column 2'], suptitle='Tight layout with axes panels')
     axs.tpanel.format(ylim=(-0.5,1.5), ylocator=1, ytickminor=False)
 
 
