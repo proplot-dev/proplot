@@ -254,7 +254,7 @@ def _normalize(key, size):
             key += size
         if 0 <= key < size:
             return key, key
-        raise IndexError(f"Invalid index: {key} with size {size}.")
+    raise IndexError(f"Invalid index: {key} with size {size}.")
 
 class FlexibleGridSpecBase(object):
     """

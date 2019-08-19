@@ -81,7 +81,7 @@ myself doing 99% of the time); ProPlot makes this the default. And
 the `~mpl_toolkits.basemap.Basemap` instance, and you no longer need
 to pass ``latlon=True`` to the plotting command; ProPlot makes this the
 default. For both `~mpl_toolkits.basemap` and `cartopy` projections,
-you can also pass ``globe=True`` to 2d plotting commands to ensure
+you can also pass ``globe=True`` to 2D plotting commands to ensure
 global data coverage.
 
 These features are powered by the `~proplot.wrappers.cartopy_gridfix`,

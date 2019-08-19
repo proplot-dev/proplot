@@ -31,6 +31,8 @@ def _notNone(*args, names=None):
     else:
         ret = {}
         first = None
+        if len(names) != len(args) - 1:
+            raise ValueError(f'Need {len(args)+1} names for {len(args)} args, but got {len(names)} names.')
         names = [*names, '']
         for name,arg in zip(names,args):
             if arg is not None:

@@ -166,13 +166,13 @@ The axes grid container
 -----------------------
 
 Axes returned by `~proplot.subplots.subplots` are stored in the
-special `~proplot.subplots.axes_grid` container. This container lets
-you call any method on multiple axes *simultaneously*. It also supports
-2D indexing, and slicing it returns an `~proplot.subplots.axes_grid`
-of the selected axes. In the below example,
-`~proplot.subplots.axes_grid` is used to call
-:ref:`The format command` on several axes at once. 1D indexing is also
-acceptable, in case your subplots do not fit on a simple 2D grid.
+`~proplot.subplots.axes_grid` container, which lets you call any
+method on multiple axes *simultaneously*. It supports 1D and 2D indexing
+(e.g. ``axs[2]`` or ``axs[1,2]``), and slicing it returns an
+`~proplot.subplots.axes_grid` of the selection. 1D indexing is
+row-major by default, but this can be changed with the ``order`` keyword
+arg. In the below example, `~proplot.subplots.axes_grid` is used to
+call :ref:`The format command` on several axes at once.
 
 .. code:: ipython3
 
@@ -517,12 +517,13 @@ corner).
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots([[1,1,2],[5,3,2],[5,4,4]], wratios=(1,1,2), hratios=(2,1,1), share=0, axwidth=1.5)
+    f, axs = plot.subplots([[1,1,2],[1,1,3],[4,5,3],[4,6,6],[7,7,8]], span=False)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Super title')
     axs[0].format(xlabel='xlabel\nxlabel\nxlabel', title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red9')
     axs[1].format(ylabel='ylabel\nylabel\nylabel', ytickloc='both', yticklabelloc='both', title='Title')
     axs[2:4].format(yformatter='null', title='Title', ytickloc='both', yticklabelloc='both')
     axs[3:].format(yformatter='null', xlabel='xlabel\nxlabel\nxlabel')
-    axs.format(suptitle='Tight layout with complex grids', rowlabels=['Row 1', 'Row 2'], collabels=['Column 1', 'Column 2'])
+    axs.format(suptitle='Tight layout with complex grids', rowlabels=['Row 1', 'Row 2', 'Row 3'], collabels=['Column 1', 'Column 2'])
 
 
 
