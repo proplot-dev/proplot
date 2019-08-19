@@ -299,14 +299,11 @@ and :ref:`Plotting wrappers`. For more on panels, see the
     f, axs = plot.subplots(ncols=2, axwidth=2.2, share=0)
     axs.format(suptitle='Automatic subplot formatting')
     # Plot DataArray
-    ax = axs[0]
-    color = plot.shade('sky blue', 0.3)
-    cycle_kw = {'fade':90, 'space':'hcl'}
-    ax.plot(da, cycle=color, cycle_kw=cycle_kw, lw=3, colorbar='ul', colorbar_kw={'locator':20})
+    cycle = plot.Cycle(plot.shade('light blue', 0.4), fade=90, space='hcl')
+    axs[0].plot(da, cycle=cycle, lw=3, colorbar='ul', colorbar_kw={'locator':20})
     # Plot Dataframe
-    ax = axs[1]
-    color = plot.shade('jade', 0.7)
-    ax.plot(df, cycle=color, cycle_kw=cycle_kw, legend='uc', lw=3)
+    cycle = plot.Cycle(plot.shade('jade', 0.7), fade=90, space='hcl')
+    axs[1].plot(df, cycle=color, lw=3, legend='uc')
 
 
 
