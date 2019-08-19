@@ -552,8 +552,8 @@ class BaseAxes(maxes.Axes):
 
     def context(self, *, mode=2, rc_kw=None, **kwargs):
         """
-        Sets up temporary `~proplot.rctools.rc` settings by returning the
-        result of the `~proplot.rctools.rc_configurator.context` method.
+        For internal use. Sets up temporary `~proplot.rctools.rc` settings by
+        returning the result of `~proplot.rctools.rc_configurator.context`.
 
         Parameters
         ----------
@@ -3226,7 +3226,7 @@ class BasemapAxes(ProjectionAxes):
             BaseAxes.format(self, **kwargs)
 
 # Docstring setup
-_projectionaxes_format_docstring = """
+_projection_format_docstring = """
 Calls `BaseAxes.format` and `BaseAxes.context`, formats the meridian
 and parallel labels, longitude and latitude map limits, geographic
 features, and more.
@@ -3272,8 +3272,8 @@ patch_kw : dict-like, optional
 **kwargs
     Passed to `BaseAxes.format` and `BaseAxes.context`.
 """
-CartopyAxes.format.__doc__ = _projectionaxes_format_docstring
-BasemapAxes.format.__doc__ = _projectionaxes_format_docstring
+CartopyAxes.format.__doc__ = _projection_format_docstring
+BasemapAxes.format.__doc__ = _projection_format_docstring
 
 # Register the projections
 mproj.register_projection(BaseAxes)

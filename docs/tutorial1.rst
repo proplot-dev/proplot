@@ -290,8 +290,6 @@ and :ref:`Plotting wrappers`. For more on panels, see the
     df.name = 'time series'
     df.index.name = 'time (s)'
     df.columns.name = 'columns'
-    # Series
-    series = pd.Series(np.random.rand(20).cumsum())
 
 .. code:: ipython3
 
