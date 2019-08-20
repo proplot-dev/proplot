@@ -99,6 +99,35 @@ determines the order the subplots appear in the
 .. image:: tutorial/tutorial_6_2.svg
 
 
+The axes grid container
+-----------------------
+
+The `~proplot.subplots.axes_grid` container returned by
+`~proplot.subplots.subplots` lets you call *any axes method* on
+multiple axes at once. It supports 1D and 2D indexing (e.g. ``axs[2]``
+or ``axs[1,2]``), and slicing it returns an
+`~proplot.subplots.axes_grid` of the selection. 1D indexing is
+row-major by default, but this can be changed with the ``order`` keyword
+arg. In the below example, `~proplot.subplots.axes_grid` is used to
+call ``format`` on several axes at once.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
+    axs[:,0].format(color='red8')
+    axs[0,:].format(color='blue8')
+    for ax in axs[1:,1:]:
+        ax.plot(np.random.rand(10,4), color='gray7', cycle_kw={'linestyle':('-',':','--','-.')})
+    axs[0].format(color='black', linewidth=2)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
+
+
+
+.. image:: tutorial/tutorial_8_0.svg
+
+
 The format command
 ------------------
 
@@ -147,35 +176,6 @@ is demonstrated in the below example.
               urtitle='Title A', lltitle='Title B', lrtitle='Title C', # extra titles
               ytickloc='both', yticklabelloc='both', ygridminor=True, xtickminor=False,
               collabels=['Column label 1', 'Column label 2'], rowlabels=['Row label 1', 'Row label 2'])
-
-
-
-.. image:: tutorial/tutorial_8_0.svg
-
-
-The axes grid container
------------------------
-
-The `~proplot.subplots.axes_grid` container returned by
-`~proplot.subplots.subplots` lets you call *any axes method* on
-multiple axes at once. It supports 1D and 2D indexing (e.g. ``axs[2]``
-or ``axs[1,2]``), and slicing it returns an
-`~proplot.subplots.axes_grid` of the selection. 1D indexing is
-row-major by default, but this can be changed with the ``order`` keyword
-arg. In the below example, `~proplot.subplots.axes_grid` is used to
-call :ref:`The format command` on several axes at once.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=5, nrows=5, axwidth=0.8)
-    axs[:,0].format(color='red8')
-    axs[0,:].format(color='blue8')
-    for ax in axs[1:,1:]:
-        ax.plot(np.random.rand(10,4), color='gray7', cycle_kw={'linestyle':('-',':','--','-.')})
-    axs[0].format(color='black', linewidth=2)
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Demo of axes_grid')
 
 
 
