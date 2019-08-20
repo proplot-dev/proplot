@@ -8,17 +8,22 @@ Matplotlib has `two
 APIs <https://matplotlib.org/api/api_overview.html>`__ – the “pyplot”
 API (which is MATLAB-like), and the “object-oriented” API (which is more
 “pythonic”). This package is not meant to be a pyplot replacement – its
-features are invoked with the “object-oriented” API.
+features are invoked with the “object-oriented” API. The below example
+compares the 3 APIs.
 
 `~proplot.subplots.subplots` is your gateway to all of ProPlot’s
-features. It returns a special `~proplot.subplots.Figure` instance and
-an `~proplot.subplots.axes_grid` of special
-`~proplot.axes.CartesianAxes` (see :ref:`Cartesian axes`) or
-`~proplot.axes.ProjectionAxes` (see :ref:`Projection axes`).
+features. It returns a subclassed `~proplot.subplots.Figure` instance
+and an `~proplot.subplots.axes_grid` of
+`~proplot.axes.CartesianAxes` instances (see :ref:`Cartesian axes`)
+or `~proplot.axes.ProjectionAxes` instances (see
+:ref:`Projection axes`).
 
-The below is a simple worked example comparing the 3 APIs. For more on
-the `~proplot.axes.BaseAxes.format` command, see
-:ref:`The format command` section.
+You can set up complex grids of subplots by passing 2D arrays of
+integers to `~proplot.subplots.subplots`. Just think of this array as
+a “picture” of your figure, where each unique number corresponds to a
+unique axes. The number order determines the order of a-b-c labels, and
+the order in which the axes appear in the
+`~proplot.subplots.axes_grid`.
 
 .. code:: ipython3
 
@@ -71,13 +76,6 @@ the `~proplot.axes.BaseAxes.format` command, see
 .. image:: tutorial/tutorial_5_0.svg
 
 
-You can set up complex grids of subplots by passing 2D arrays of
-integers to `~proplot.subplots.subplots`. Just think of this array as
-a “picture” of your figure, where each unique number corresponds to a
-unique axes. This allows us to build the below grids in just one line of
-code. The number order determines the order of a-b-c labels, and the
-order in which the axes appear in the `~proplot.subplots.axes_grid`.
-
 .. code:: ipython3
 
     import proplot as plot
@@ -96,22 +94,22 @@ order in which the axes appear in the `~proplot.subplots.axes_grid`.
 
 
 
-.. image:: tutorial/tutorial_7_1.svg
+.. image:: tutorial/tutorial_6_1.svg
 
 
 
-.. image:: tutorial/tutorial_7_2.svg
+.. image:: tutorial/tutorial_6_2.svg
 
 
 The format command
 ------------------
 
-The `~proplot.subplots.subplots` method populates the
-`~proplot.subplots.Figure` object with either
-`~proplot.axes.CartesianAxes` (for Cartesian axes) or
-`~proplot.axes.ProjectionAxes` (for cartopy or basemap projection
-axes) axes objects. Both of these classes inherit from the base class
-`~proplot.axes.BaseAxes`.
+`~proplot.subplots.subplots` populates the
+`~proplot.subplots.Figure` with either `~proplot.axes.CartesianAxes`
+(for Cartesian axes) or `~proplot.axes.ProjectionAxes` (for cartopy or
+basemap projection axes). These are subclasses of
+`~proplot.axes.BaseAxes`, which is a subclass of matplotlib’s
+`~matplotlib.axes.Axes` class.
 
 The **most important** new method you need to know is ``format``, found
 on the `~proplot.axes.BaseAxes`, `~proplot.axes.CartesianAxes`, and
@@ -159,7 +157,7 @@ is demonstrated in the below example.
 
 
 
-.. image:: tutorial/tutorial_9_0.svg
+.. image:: tutorial/tutorial_8_0.svg
 
 
 The axes grid container
@@ -188,7 +186,7 @@ call :ref:`The format command` on several axes at once.
 
 
 
-.. image:: tutorial/tutorial_11_0.svg
+.. image:: tutorial/tutorial_10_0.svg
 
 
 The rc object
@@ -244,7 +242,7 @@ temporarily modify global settings for a block of code, use
 
 
 
-.. image:: tutorial/tutorial_13_1.svg
+.. image:: tutorial/tutorial_12_1.svg
 
 
 Pandas and xarray integration
@@ -309,7 +307,7 @@ and :ref:`Plotting wrappers`. For more on panels, see the
 
 
 
-.. image:: tutorial/tutorial_17_1.svg
+.. image:: tutorial/tutorial_16_1.svg
 
 
 .. code:: ipython3
@@ -346,7 +344,7 @@ and :ref:`Plotting wrappers`. For more on panels, see the
 
 
 
-.. image:: tutorial/tutorial_19_0.svg
+.. image:: tutorial/tutorial_18_0.svg
 
 
 Axis sharing and spanning
@@ -379,19 +377,19 @@ example for details.
 
 
 
-.. image:: tutorial/tutorial_22_0.svg
+.. image:: tutorial/tutorial_21_0.svg
 
 
 
-.. image:: tutorial/tutorial_22_1.svg
+.. image:: tutorial/tutorial_21_1.svg
 
 
 
-.. image:: tutorial/tutorial_22_2.svg
+.. image:: tutorial/tutorial_21_2.svg
 
 
 
-.. image:: tutorial/tutorial_22_3.svg
+.. image:: tutorial/tutorial_21_3.svg
 
 
 .. code:: ipython3
@@ -409,11 +407,11 @@ example for details.
 
 
 
-.. image:: tutorial/tutorial_23_0.svg
+.. image:: tutorial/tutorial_22_0.svg
 
 
 
-.. image:: tutorial/tutorial_23_1.svg
+.. image:: tutorial/tutorial_22_1.svg
 
 
 A-b-c subplot labels
@@ -438,7 +436,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_25_0.svg
+.. image:: tutorial/tutorial_24_0.svg
 
 
 Arbitrary physical units
@@ -461,7 +459,7 @@ millimeters, and pixels).
 
 
 
-.. image:: tutorial/tutorial_28_0.svg
+.. image:: tutorial/tutorial_27_0.svg
 
 
 Automatic subplot spacing
@@ -506,11 +504,11 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_31_0.svg
+.. image:: tutorial/tutorial_30_0.svg
 
 
 
-.. image:: tutorial/tutorial_31_1.svg
+.. image:: tutorial/tutorial_30_1.svg
 
 
 .. code:: ipython3
@@ -526,7 +524,7 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_32_0.svg
+.. image:: tutorial/tutorial_31_0.svg
 
 
 .. code:: ipython3
@@ -545,6 +543,6 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_33_0.svg
+.. image:: tutorial/tutorial_32_0.svg
 
 

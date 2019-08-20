@@ -62,11 +62,11 @@ make things a bit less verbose.
 
 
 
-.. image:: tutorial/tutorial_59_3.svg
+.. image:: tutorial/tutorial_58_3.svg
 
 
 
-.. image:: tutorial/tutorial_59_4.svg
+.. image:: tutorial/tutorial_58_4.svg
 
 
 Plotting geophysical data
@@ -118,11 +118,11 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 
 
 
-.. image:: tutorial/tutorial_62_0.svg
+.. image:: tutorial/tutorial_61_0.svg
 
 
 
-.. image:: tutorial/tutorial_62_1.svg
+.. image:: tutorial/tutorial_61_1.svg
 
 
 Formatting projection axes
@@ -157,7 +157,7 @@ stylize geographic features, like continents and international borders.
 
 
 
-.. image:: tutorial/tutorial_65_0.svg
+.. image:: tutorial/tutorial_64_0.svg
 
 
 Zooming into projections
@@ -199,20 +199,20 @@ keyword args.
 
 
 
-.. image:: tutorial/tutorial_68_0.svg
+.. image:: tutorial/tutorial_67_0.svg
 
 
 
-.. image:: tutorial/tutorial_68_1.svg
+.. image:: tutorial/tutorial_67_1.svg
 
 
 Registered cartopy projections
 ------------------------------
 
 Below is an illustration of the available `cartopy` projections (see
-the `~proplot.projs` documentation for a table). Note that you no
-longer have to reference the `cartopy.crs.Projection` classes directly
-– instead, just like `~mpl_toolkits.basemap`, you can specify a native
+the :ref:`Table of projections` for details). Note that you no longer
+have to reference the `cartopy.crs.Projection` classes directly –
+instead, just like `~mpl_toolkits.basemap`, you can specify a native
 PROJ.4 short name (e.g. ``'robin'`` or ``'merc'``).
 
 ProPlot adds to `cartopy` the previously unavailable Aitoff, Hammer,
@@ -240,7 +240,7 @@ Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
 
 
 
-.. image:: tutorial/tutorial_71_1.svg
+.. image:: tutorial/tutorial_70_1.svg
 
 
 Registered basemap projections
@@ -271,7 +271,7 @@ if you fail to specify them.
 
 
 
-.. image:: tutorial/tutorial_74_0.svg
+.. image:: tutorial/tutorial_73_0.svg
 
 
 Polar projections
@@ -307,6 +307,6 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 
 
 
-.. image:: tutorial/tutorial_77_0.svg
+.. image:: tutorial/tutorial_76_0.svg
 
 
