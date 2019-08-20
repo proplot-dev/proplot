@@ -1162,13 +1162,15 @@ class Figure(mfigure.Figure):
                 hspace = [0]*len(hspace)
             subplots_kw.update({
                 'wspace':wspace, 'hspace':hspace,
-                'lspace':lspace, 'rspace':rspace, 'bspace':bspace, 'tspace':tspace,
+                'lspace':lspace, 'rspace':rspace,
+                'bspace':bspace, 'tspace':tspace,
                 })
 
         # The same, but for spaces between figure and axes panels
         if panels:
             # Figure panels
-            # Requires us to turn 2D panel axes_grids into lists of stacked panels
+            # Requires us to turn 2D panel axes_grids into lists of stacked
+            # panels, always
             for side in 'lrbt':
                 paxs = getattr(self, side + 'panel')
                 if not paxs:
@@ -1592,14 +1594,18 @@ def _subplots_geometry(**kwargs):
     aspect, xref, yref = _pop('aspect'), _pop('xref'), _pop('yref')
     width, height      = _pop('width'), _pop('height')
     axwidth, axheight  = _pop('axwidth'), _pop('axheight')
-    # Space between subplots and space inside each row/column allocated
-    # for axes panels.
-    wpanels, hpanels = _pop('wpanels'), _pop('hpanels')
+    # Basic gridspec settings
     hspace, wspace   = _pop('hspace'), _pop('wspace')
     hratios, wratios = _pop('hratios'), _pop('wratios')
     left, bottom     = _pop('left'), _pop('bottom')
     right, top       = _pop('right'), _pop('top')
-    # Various panel settings
+    # Axes panel settings
+    # wpanels, hpanels = _pop('wpanels'), _pop('hpanels')
+    lwidths, rwidths = _pop('lwidths'), _pop('rwidths')
+    lspaces, rspaces = _pop('lspaces'), _pop('rspaces')
+    bwidths, twidths = _pop('bwidths'), _pop('twidths')
+    bspaces, tspaces = _pop('bspaces'), _pop('tspaces')
+    # Figure panel settings
     # Some are only needed when setting up panel axes, so we ignore them
     _, bwidth, bspace = _pop('barray'), _pop('bwidth'), _pop('bspace')
     _, lwidth, lspace = _pop('larray'), _pop('lwidth'), _pop('lspace')
@@ -1609,7 +1615,8 @@ def _subplots_geometry(**kwargs):
     bsep, _, _ = _pop('bsep'), _pop('bshare'), _pop('bflush')
     lsep, _, _ = _pop('lsep'), _pop('lshare'), _pop('lflush')
     tsep, _, _ = _pop('tsep'), _pop('tshare'), _pop('tflush')
-    # Defaults for below calculations
+    # Defaults for axes panel calculations
+    # Defaults for figure panel calculations
     lsep, rsep = _notNone(lsep, []), _notNone(rsep, [])
     tsep, bsep = _notNone(tsep, []), _notNone(bsep, [])
     lspace, rspace = _notNone(lspace, 0), _notNone(rspace, 0)
@@ -1678,14 +1685,15 @@ def _subplots_geometry(**kwargs):
     if axheight_all < 0:
         raise ValueError(f"Not enough room for axes (would have height {axheight_all}). Try using tight=False, increasing figure height, or decreasing 'top', 'bottom', or 'hspace' spaces.")
 
-    # Keyword args for gridspec class
-    # Make 'ratios' and 'spaces' in physical units
+    # Add figure panels space
     wspace = [lspace, *wspace, rspace] # may be zero
     hspace = [tspace, *hspace, bspace]
     lpanel, rpanel = sum(lwidth) + sum(lsep), sum(rwidth) + sum(rsep)
     tpanel, bpanel = sum(twidth) + sum(tsep), sum(bwidth) + sum(bsep)
     wratios = [lpanel, *(axwidth_all*wratios/sum(wratios) + wpanels), rpanel]
     hratios = [tpanel, *(axheight_all*hratios/sum(hratios) + hpanels), bpanel]
+    # Keyword args for gridspec class
+    # Make 'ratios' and 'spaces' in physical units
     left, right = left/width, 1 - right/width
     top, bottom = 1 - top/height, bottom/height
     gridspec_kw = {
@@ -2311,7 +2319,11 @@ def subplots(array=None, ncols=1, nrows=1,
         left=left, right=right, bottom=bottom, top=top,
         width=width, height=height, axwidth=axwidth, axheight=axheight,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
-        wpanels=[0]*ncols, hpanels=[0]*nrows, # computed automatically later
+        # wpanels=[0]*ncols, hpanels=[0]*nrows, # computed automatically later
+        lspaces=[0]*ncols, rspaces=[0]*ncols,
+        bspaces=[0]*nrows, tspaces=[0]*nrows, # computed automatically later
+        lwidths=[0]*ncols, rwidths=[0]*ncols,
+        bwidths=[0]*nrows, twidths=[0]*nrows, # computed automatically later
         **kwargs)
     # Apply settings and add attributes
     gridspec = FlexibleGridSpec(**gridspec_kw)
