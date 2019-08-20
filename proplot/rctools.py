@@ -31,17 +31,6 @@ any dots, you can simply **omit the dots**. For example, to change the
 :ref:`rcExtraParams` property ``title.loc``, use ``plot.rc.titleloc = value``,
 ``plot.rc.update(titleloc=value)``, or ``ax.format(titleloc=value)``.
 
-..
-    The ``rcParams`` categories can be grouped as follows:
-
-    * Axes: ``axes``.
-    * Text: ``font``, ``text``, ``mathtext``.
-    * Plot elements: ``lines``, ``patch``, ``hatch``, ``legend``, ``contour``, ``image``,
-    ``boxplot``, ``errorbar``, ``hist``, ``scatter``, ``animation``.
-    * Axis elements: ``date``, ``xtick``, ``ytick``, ``grid``.
-    * Printing and saving: ``path``, ``figure``, ``savefig``, ``ps``, ``tk``, ``pdf``, ``svg``.
-    * Other: ``keymap``, ``examples``, ``debug``.
-
 #########
 rcGlobals
 #########

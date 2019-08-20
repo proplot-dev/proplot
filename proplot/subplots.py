@@ -34,7 +34,6 @@ subclass `list` instead of `~numpy.ndarray`? Two reasons.
 """
 import os
 import re
-import traceback
 import numpy as np
 import functools
 import matplotlib.pyplot as plt
@@ -1896,50 +1895,60 @@ def subplots(array=None, ncols=1, nrows=1,
         your figure will have 1 ylabel instead of 9.
 
     proj, projection : str or dict-like, optional
-        The map projection name. If string, applies to all subplots. If
-        dictionary, values apply to specific subplots, as with `axpanels`.
-        If an axes projection is not specified in the dictionary, that axes
-        will be Cartesian.
+        The map projection name. The argument is interpreted as follows.
 
-        For example, with ``ncols=4`` and ``proj={1:'mercator', (2,3):'hammer'})``,
-        the leftmost subplot is a Mercator projection, the middle 2 are
-        Hammer projections, and the rightmost is a normal Cartesian axes.
+        * If string, this projection is used for all subplots. For valid
+          names, see the :ref:`Table of projections`.
+        * If list of string, these are the projections to use for each
+          subplot in their `array` order.
+        * If dict-like, keys are integers or tuple integers that indicate
+          the projection to use for each subplot. If a key is not provided,
+          that subplot will be a `~proplot.axes.CartesianAxes`. For example,
+          in a 4-subplot figure, ``proj={2:'merc', (3,4):'stere'}``
+          draws a Cartesian axes for the first subplot, a Mercator
+          projection for the second subplot, and a Stereographic projection
+          for the second and third subplots.
+
     proj_kw, projection_kw : dict-like, optional
         Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
-        cartopy `~cartopy.crs.Projection` class on instantiation.
+        cartopy `~cartopy.crs.Projection` classes on instantiation.
         If dictionary of properties, applies globally. If *dictionary of
-        dictionaries* of properties, applies to specific subplots, as with `axpanels`.
+        dictionaries* of properties, applies to specific subplots, as
+        with `proj`.
 
-        For example, with ``ncols=2`` and ``proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}}``,
-        the projection in the left subplot is centered on the prime meridian,
-        and the projection in the right subplot is centered on the
-        international dateline.
+        For example, with ``ncols=2`` and
+        ``proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}}``, the projection in
+        the left subplot is centered on the prime meridian, and the projection
+        in the right subplot is centered on the international dateline.
     basemap : bool or dict-like, optional
         Whether to use `~mpl_toolkits.basemap.Basemap` or
         `~cartopy.crs.Projection` for map projections. Defaults to ``False``.
         If boolean, applies to all subplots. If dictionary, values apply to
-        specific subplots, as with `axpanels`.
+        specific subplots, as with `proj`.
 
     panel : str, optional
-        Specify which sides of the figure should have a "panel".
-        This is great for creating global colorbars and legends.
-        String should contain any of the characters ``'l'`` (left panel),
-        ``'r'`` (right panel), ``'b'`` (bottom panel), or ``'t'`` (top panel).
-        For example, ``'br'`` will draw a right and bottom panel.
+        Adds :ref:`Global figure panels` to the specified side.
+        String should contain any of the characters ``'l'`` (left), ``'r'``
+        (right), ``'b'`` (bottom), or ``'t'`` (top). For example, ``'br'``
+        will draw panels on the right and bottom sides of the figure.
 
-        Panel axes are stored as ``leftpanel``, ``rightpanel``,
-        ``bottompanel``, and ``toppanel`` attributes on the figure object.
-        They can also be accessed by the attribute aliases ``lpanel``,
-        ``rpanel``, ``bpanel``, and ``tpanel``.
+        Figure panels are saved as the `~Figure.leftpanel`,
+        `~Figure.rightpanel`, `~Figure.bottompanel`, or
+        `~Figure.toppanel` attributes, with respective shorthands
+        `~Figure.lpanel`, `~Figure.rpanel`, `~Figure.bpanel`, and
+        `~Figure.tpanel`.
     panels : str, optional
         As with `panel`, but the default behavior is to assign a panel
         to *every* row or column of subplots. Individual panels can then
         be accessed with e.g. ``fig.leftpanel[0]``, ``fig.leftpanel[1]``.
-    colorbar, legend, colorbars, legends : optional
-        Identical to `panel` and `panels`, except the *default* panel width is
-        more appropriate for being "filled" with a colorbar or legend with
-        the `~proplot.axes.PanelAxes.colorbar` and
-        the `~proplot.axes.PanelAxes.legend` methods.
+    colorbar, colorbars : optional
+        As with `panel` and `panels`, except the *default* panel
+        width is more appropriate for a colorbar. The panel can later be
+        "filled" with a colorbar with e.g. ``fig.rpanel.colorbar()``.
+    legend, legends : optional
+        As with `panel` and `panels`, except the *default* panel
+        width is more appropriate for a legend. The panel can later be
+        "filled" with a legend with e.g. ``fig.rpanel.legend()``.
     larray, rarray, barray, tarray : list of int, optional
         Defines how figure panels span rows and columns of subplots.
         Interpreted like `array` -- the integers specify panels that span
@@ -1950,14 +1959,6 @@ def subplots(array=None, ncols=1, nrows=1,
         of the right 2 columns, and ``barray=[0, 2, 2]`` only draws a panel
         underneath the right 2 columns -- as with `array`, the ``0`` indicates
         an empty space.
-    lwidth, rwidth, bwidth, twidth : optional
-        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
-    lstack, rstack, bstack, tstack : optional
-        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
-    lsep, rsep, bsep, tsep : optional
-        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
-    lshare, rshare, bshare, tshare : optional
-        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
     lspace, rspace, bspace, tspace : float, optional
         If passed, turns off `tightsubplots`. As in
         `~proplot.axes.BaseAxes.panel_axes`, but controls space between the
@@ -1966,45 +1967,48 @@ def subplots(array=None, ncols=1, nrows=1,
         As in `~proplot.axes.BaseAxes.panel_axes`, but only controls whether
         *stacked* panels are flush against each other -- i.e. does not make
         figure panels flush against the main subplots.
+    lwidth, rwidth, bwidth, twidth : optional
+        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
+    lstack, rstack, bstack, tstack : optional
+        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
+    lsep, rsep, bsep, tsep : optional
+        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
+    lshare, rshare, bshare, tshare : optional
+        See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
 
     axpanel, axpanels : str or dict-like, optional
-        Bulk adds axes panels with `~proplot.axes.BaseAxes.panel_axes`. You
-        can also build on-the-fly panels in myriad ways (see
-        :ref:`On-the-fly panels`). Both `axpanel` and `axpanels`
-        are acceptable. The argument is interpreted as follows:
+        Adds :ref:`Bulk axes panels` to subplots with
+        `~proplot.axes.BaseAxes.panel_axes`. Both `axpanel` and `axpanels`
+        are acceptable. The argument is interpreted as follows.
 
         * If string, panels are drawn on the same side for all subplots.
           String should contain any of the characters ``'l'`` (left panel),
-          ``'r'`` (right panel), ``'t'`` (top panel), or ``'b'`` (bottom panel).
-          For example, ``'rt'`` will draw a right and top panel.
+          ``'r'`` (right panel), ``'t'`` (top panel), or ``'b'`` (bottom
+          panel). For example, ``'rt'`` will draw a right and top panel.
         * If dict-like, panels can be drawn on different sides for
-          different subplots. For example, for a 4-subplot figure,
-          ``axpanels={1:'r', (2,3):'l'}`` indicates that we want to
-          draw a panel on the right side of subplot number 1, on the left
-          side of subplots 2 and 3, and **no panel** on subplot 4.
+          different subplots. For example, consider a 3-subplot figure.
+          With ``axpanels={2:'r', 3:'l'}``, subplot 1 will have no panel,
+          subplot 2 will have a panel on the right side, and subplot 3
+          will have a panel on the left side.
 
-        Panel axes are stored as ``leftpanel``, ``rightpanel``,
-        ``bottompanel``, and ``toppanel`` attributes on axes objects.
-        They can also be accessed by the attribute aliases ``lpanel``,
-        ``rpanel``, ``bpanel``, and ``tpanel``.
     axcolorbar, axcolorbars : optional
-        Identical to `axpanel` and `axpanels`, except the *default* panel
-        width is more appropriate for a colorbar. The panel can then be
+        As with `axpanel` and `axpanels`, except the *default* panel
+        width is more appropriate for a colorbar. The panel can later be
         "filled" with a colorbar with e.g. ``ax.rpanel.colorbar()``.
     axlegend, axlegends : optional
-        Identical to `axpanel` and `axpanels`, except the *default* panel
-        width is more appropriate for a legend. The panel can then be
+        As with `axpanel` and `axpanels`, except the *default* panel
+        width is more appropriate for a legend. The panel can later be
         "filled" with a legend with e.g. ``ax.rpanel.legend()``.
     axpanel_kw, axpanels_kw : dict-like, optional
         Keyword args passed to `~proplot.axes.BaseAxes.panel_axes` for panels
-        listed in the `axpanel` and `axpanels` keyword args.
-        If dictionary of properties, applies globally. If *dictionary of
-        dictionary* of properties, applies to specific subplots, as with `axpanels`.
+        listed in `axpanel` and `axpanels`. If dictionary of properties,
+        applies globally. If *dictionary of dictionary* of properties, applies
+        to specific subplots, as with `axpanels`.
 
         For example, consider a 2-subplot figure with ``axpanels='l'``.
-        With ``{'lwidth':1}``, both left panels will be 1 inch wide.
-        With ``{1:{'lwidth':1}, 2:{'lwidth':0.5}}``, the left subplot
-        panel will be 1 inch wide and the right subplot panel will be
+        With ``axpanel_kw={'lwidth':1}``, both left panels will be 1 inch wide.
+        With ``axpanel_kw={1:{'lwidth':1}, 2:{'lwidth':0.5}}``, the left
+        subplot panel will be 1 inch wide and the right subplot panel will be
         0.5 inches wide.
     axcolorbar_kw, axcolorbars_kw : optional
         As with `axpanel_kw`, but for panels listed in the `axcolorbar`
@@ -2015,18 +2019,21 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    tight, tightborders, tightsubplots, tightpanels, borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat
-        Passed to `Figure`. Defaults are as follows.
+    tight, tightborders, tightsubplots, tightpanels
+        Passed to `Figure`. The defaults are ``True`` except in the
+        following situations.
 
-        * `tightborders` defaults to ``False`` if user provided the `top`,
-          `bottom`, `left`, or `right` keyword args. ``True`` otherwise.
-        * `tightsubplots` defaults to ``False`` if user  provided the `wspace`
-          or `hspace` gridspec keyword args, or the `lspace`, `rspace`, `bspace`,
-          `lsep`, `rsep`, or `bsep` figure panel keyword args. ``True`` otherwise.
-        * `tightpanels` defaults to ``False`` if user provided the `lspace`,
+        * `tightborders` defaults to ``False`` if you provided the `top`,
+          `bottom`, `left`, or `right` keyword args.
+        * `tightsubplots` defaults to ``False`` if you provided the `wspace`
+          or `hspace` gridspec keyword args, or the `lspace`, `rspace`,
+          `bspace`, `lsep`, `rsep`, or `bsep` figure panel keyword args.
+        * `tightpanels` defaults to ``False`` if you provided the `lspace`,
           `rspace`, `tspace`, `bspace`, `lsep`, `rsep`, `tsep`, or `bsep` axes
-          panel keyword args with e.g. the `axpanels_kw` dictionary. ``True``
-          otherwise.
+          panel keyword args with e.g. the `axpanels_kw` dictionary.
+
+    borderpad, subplotpad, panelpad, flush, wflush, hflush, autoformat
+        Passed to `Figure`. These control the tight layout behavior.
 
     Returns
     -------
@@ -2205,9 +2212,11 @@ def subplots(array=None, ncols=1, nrows=1,
     #-------------------------------------------------------------------------#
     # NOTE: Cannot have mutable dict as default arg, because it changes the
     # "default" if user calls function more than once! Swap dicts for None.
+    proj = _notNone(projection, proj, None, names=('projection', 'proj'))
+    proj_kw = _notNone(projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw'))
+    proj    = _axes_dict(naxs, proj, kw=False, default='cartesian')
+    proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    proj    = _axes_dict(naxs, _notNone(projection, proj), kw=False, default='cartesian')
-    proj_kw = _axes_dict(naxs, _notNone(projection_kw, proj_kw, {}), kw=True)
     axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
     for num,name in proj.items():
         # The default, my CartesianAxes projection

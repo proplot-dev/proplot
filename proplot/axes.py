@@ -1211,12 +1211,17 @@ class BaseAxes(maxes.Axes):
 
     def panel_axes(self, *args, **kwargs):
         """
-        Adds *one* or a *stack* of `~proplot.axes.PanelAxes` , returns an
-        `axes_grid` container of the panel stack, and saves the container as
-        axes attributes ``ax.leftpanel`` or ``ax.lpanel``, ``ax.rightpanel``
-        or ``ax.rpanel``, ``ax.bottompanel`` or ``ax.bpanel``, and
-        ``ax.toppanel`` or ``ax.bpanel``. All keyword args can be made
-        panel-specific, e.g. `lwidth` instead of `lwidth`.
+        Adds a single `~proplot.axes.PanelAxes` or a stack of panels, and
+        returns an `~proplot.subplots.axes_grid` of the panel stack. Also
+        saves the panel stack as the `~BaseAxes.leftpanel`,
+        `~BaseAxes.rightpanel`, `~BaseAxes.bottompanel`, or
+        `~BaseAxes.toppanel` attribute, with respective shorthands
+        `~BaseAxes.lpanel`, `~BaseAxes.rpanel`, `~BaseAxes.bpanel`, and
+        `~BaseAxes.tpanel`.
+
+        Note that all `~BaseAxes.panel_axes` keyword args can be side-specific,
+        e.g. `lwidth` instead of `width`. This is for compatibility with the
+        `~proplot.subplots.subplots` API.
 
         Parameters
         ----------
