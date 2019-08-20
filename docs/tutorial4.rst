@@ -9,7 +9,7 @@ construct, powered by `~proplot.axes.BaseAxes.panel`,
 `~proplot.subplots.subplots`, and the `~proplot.axes.PanelAxes`
 class.
 
-`~proplot.axes.PanelAxes` instances have their own
+`~proplot.axes.PanelAxes` have their own
 `~proplot.axes.PanelAxes.colorbar` and
 `~proplot.axes.PanelAxes.legend` methods.
 `~proplot.axes.PanelAxes.colorbar` *fills* the panel with a legend –

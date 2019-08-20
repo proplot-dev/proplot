@@ -12,16 +12,16 @@ features are invoked with the “object-oriented” API. The below example
 compares the 3 APIs.
 
 `~proplot.subplots.subplots` is your gateway to all of ProPlot’s
-features. It returns a subclassed `~proplot.subplots.Figure` instance
-and an `~proplot.subplots.axes_grid` of
-`~proplot.axes.CartesianAxes` or `~proplot.axes.ProjectionAxes`
-instances. You can use it without arguments to generate a single-axes
-subplot, with ``ncols`` and ``nrows`` to set up simple grids of
-subplots, or with a 2D array of integers to set up complex grids of
-subplots. Just think of this array as a “picture” of your figure, where
-each unique number corresponds to a unique axes, and the number order
-determines the order the subplots appear in the
-`~proplot.subplots.axes_grid` and the order of a-b-c labels.
+features. It returns a `~proplot.subplots.Figure` subclass and an
+`~proplot.subplots.axes_grid` of `~proplot.axes.CartesianAxes` or
+`~proplot.axes.ProjectionAxes` subclasses. You can use it without
+arguments to generate a single-axes subplot, with ``ncols`` and
+``nrows`` to set up simple grids of subplots, or with a 2D array of
+integers to set up complex grids of subplots. Just think of this array
+as a “picture” of your figure, where each unique number corresponds to a
+unique axes, and the number order determines the order the subplots
+appear in the `~proplot.subplots.axes_grid` and the order of a-b-c
+labels.
 
 .. code:: ipython3
 
@@ -133,11 +133,12 @@ The format command
 
 The `~matplotlib.axes.Axes` subclasses returned by
 `~proplot.subplots.subplots` add several new methods and wrap several
-old ones. But the most important method you need to know is ``format``,
-described in detail in the `~proplot.axes.BaseAxes`,
-`~proplot.axes.CartesianAxes`, and `~proplot.axes.ProjectionAxes`
-documentation. This is your one-stop-shop for changing axes settings.
-Keyword args passed to ``format`` are interpreted as follows.
+old ones (see :ref:`Plotting wrappers`). But the most important method
+you need to know is ``format``, described in detail in the
+`~proplot.axes.BaseAxes`, `~proplot.axes.CartesianAxes`, and
+`~proplot.axes.ProjectionAxes` documentation. This is your
+one-stop-shop for changing axes settings. Keyword args passed to
+``format`` are interpreted as follows.
 
 1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
    setting will be applied to the axes using
@@ -247,7 +248,7 @@ or `xarray
 DataArray <http://xarray.pydata.org/en/stable/data-structures.html>`__
 to any plotting command, the x-axis label, y-axis label, legend label,
 colorbar label, and/or title are configured from the metadata, and
-labels and colorbars can be generated on-the-fly. This restores some of
+legends and colorbars can be generated on-the-fly. This restores some of
 the convenience you get with the builtin
 `pandas <https://pandas.pydata.org>`__ and
 `xarray <https://pandas.pydata.org>`__ plotting tools. This feature is
@@ -257,8 +258,7 @@ installed.
 This feature is showcased below for 1-dimensional and 2-dimensional
 datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
 `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-and :ref:`Plotting wrappers`. For more on panels, see the
-:ref:`Panels, colorbars, and legends` section.
+and :ref:`On-the-fly axes panels`.
 
 .. code:: ipython3
 
