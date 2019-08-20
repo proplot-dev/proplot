@@ -53,6 +53,7 @@ Key                                   Name                                      
 ``'mill'``                            `Miller Cylindrical <https://proj4.org/operations/projections/mill.html>`_                   ✓          ✓
 ``'moll'``                            `Mollweide <https://proj4.org/operations/projections/moll.html>`_                            ✓          ✓
 ``'npaeqd'``                          North-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
+``'npgnom'``                          North-Polar Gnomonic                                                                         ✓ (added)  ✗
 ``'nplaea'``                          North-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
 ``'npstere'``                         North-Polar Stereographic                                                                    ✓          ✓
 ``'nsper'``                           `Near-Sided Perspective <https://proj4.org/operations/projections/nsper.html>`_              ✓          ✓
@@ -64,6 +65,7 @@ Key                                   Name                                      
 ``'rotpole'``                         Rotated Pole                                                                                 ✓          ✓
 ``'sinu'``                            `Sinusoidal <https://proj4.org/operations/projections/sinu.html>`_                           ✓          ✓
 ``'spaeqd'``                          South-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
+``'spgnom'``                          South-Polar Gnomonic                                                                         ✓ (added)  ✗
 ``'splaea'``                          South-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
 ``'spstere'``                         South-Polar Stereographic                                                                    ✓          ✓
 ``'stere'``                           `Stereographic <https://proj4.org/operations/projections/stere.html>`_                       ✓          ✓
@@ -88,13 +90,14 @@ __all__ = [
     'WinkelTripel',
     ]
 try:
-    from cartopy.crs import _WarpedRectangularProjection, \
-        LambertAzimuthalEqualArea, AzimuthalEquidistant
+    from cartopy.crs import (_WarpedRectangularProjection,
+        LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic)
     _cartopy_installed = True
 except ModuleNotFoundError:
     _WarpedRectangularProjection = object
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
+    Gnomonic = object
     _cartopy_installed = False
 
 def Circle(N=100):
@@ -132,18 +135,15 @@ def Proj(name, basemap=False, **kwargs):
     proj : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
         The projection instance.
     aspect : float
-        The map projection aspect ratio.
-    axes_kw : dict
-        "Projection" arguments that must be passed to the *axes* initializer
-        instead of `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`.
-        So far only used with `~proplot.axes.CartopyProjectionAxes`.
+        The map projection aspect ratio. This may change if user zooms
+        into a projection, but returning an initial guess helps avoid
+        unnecessarily calculations down the line.
 
     See also
     --------
     `~proplot.axes.CartopyProjectionAxes`, `~proplot.axes.BasemapProjectionAxes`
     """
     # Basemap
-    axes_kw = {}
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         name = _basemap_cyl.get(name, name)
@@ -165,15 +165,14 @@ def Proj(name, basemap=False, **kwargs):
         crs = cartopy_projs.get(name, None)
         if name == 'geos': # fix common mistake
             kwargs.pop('central_latitude', None)
+        if 'boundinglat' in kwargs:
+            raise ValueError(f'"boundinglat" must be passed to the ax.format() command for cartopy axes.')
         if crs is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
-        for arg in ('boundinglat', 'centerlat'):
-            if arg in kwargs:
-                axes_kw[arg] = kwargs.pop(arg)
         proj = crs(**kwargs)
         aspect = (np.diff(proj.x_limits) / \
                   np.diff(proj.y_limits))[0]
-    return proj, aspect, axes_kw
+    return proj, aspect
 
 # Various pseudo-rectangular projections
 # Inspired by source code for Mollweide implementation
@@ -258,6 +257,18 @@ class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
         super().__init__(central_latitude=-90,
                 central_longitude=central_longitude, globe=globe)
 
+class NorthPolarGnomonic(Gnomonic):
+    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    def __init__(self, central_longitude=0.0, globe=None):
+        super().__init__(central_latitude=90,
+                central_longitude=central_longitude, globe=globe)
+
+class SouthPolarGnomonic(Gnomonic):
+    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    def __init__(self, central_longitude=0.0, globe=None):
+        super().__init__(central_latitude=-90,
+                central_longitude=central_longitude, globe=globe)
+
 # Basemap stuff
 _basemap_circles = (
     'npstere', 'spstere', 'nplaea',
@@ -316,6 +327,8 @@ if _cartopy_installed:
       'hammer': Hammer,
       'kav7':   KavrayskiyVII,
       'wintri': WinkelTripel,
+      'npgnom': NorthPolarGnomonic,
+      'spgnom': SouthPolarGnomonic,
       'npaeqd': NorthPolarAzimuthalEquidistant,
       'spaeqd': SouthPolarAzimuthalEquidistant,
       'nplaea': NorthPolarLambertAzimuthalEqualArea,

@@ -136,15 +136,15 @@ The below properties are particular to `~proplot.axes.MapAxes`. The properties
 for geographic elements like ``land`` are used when the corresponding
 :ref:`rcGlobals` geographic feature is toggled on.
 
-=======================================================  =============================================================================
-Key                                                      Description
-=======================================================  =============================================================================
-``map.facecolor``, ``map.edgecolor``, ``map.linewidth``  Face color, edge color, and edge width for the map outline patch.
-``land.color``, ``ocean.color``, ``lakes.color``         Face color for land, ocean, and lake patches.
-``rivers.color``, ``rivers.linewidth``                   Line color and linewidth for river lines.
-``borders.color``, ``borders.linewidth``                 Line color and linewidth for country border lines.
-``innerborders.color``, ``innerborders.linewidth``       Line color and linewidth for internal border lines.
-=======================================================  =============================================================================
+===================================================================  =============================================================================
+Key                                                                  Description
+===================================================================  =============================================================================
+``geoaxes.facecolor``, ``geoaxes.edgecolor``, ``geoaxes.linewidth``  Face color, edge color, and edge width for the map outline patch.
+``land.color``, ``ocean.color``, ``lakes.color``                     Face color for land, ocean, and lake patches.
+``rivers.color``, ``rivers.linewidth``                               Line color and linewidth for river lines.
+``borders.color``, ``borders.linewidth``                             Line color and linewidth for country border lines.
+``innerborders.color``, ``innerborders.linewidth``                   Line color and linewidth for internal border lines.
+===================================================================  =============================================================================
 
 There are two new additions to pre-existing ``image`` category, described
 in the table below.
@@ -250,11 +250,11 @@ _rcGlobals_children = {
     'cycle':        [],
     'rgbcycle':     [],
     'alpha':        ['axes.alpha'], # this is a custom setting
-    'color':        ['axes.edgecolor', 'map.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'facecolor':    ['axes.facecolor', 'map.facecolor'],
+    'color':        ['axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
+    'facecolor':    ['axes.facecolor', 'geoaxes.facecolor'],
     'small':        ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
     'large':        ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
-    'linewidth':    ['axes.linewidth', 'map.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
+    'linewidth':    ['axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
     'margin':       ['axes.xmargin', 'axes.ymargin'],
     'grid':         ['axes.grid'],
     'gridminor':    ['axes.gridminor'],
@@ -286,7 +286,7 @@ _rc_names_custom = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
     'image.levels', 'image.edgefix',
-    'map.linewidth', 'map.facecolor', 'map.edgecolor',
+    'geoaxes.linewidth', 'geoaxes.facecolor', 'geoaxes.edgecolor',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
     'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
     'abc.fontsize', 'abc.weight', 'abc.color', 'abc.loc', 'abc.format', 'abc.border', 'abc.linewidth',

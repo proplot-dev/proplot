@@ -142,9 +142,9 @@ geogrid.color:     k
 geogrid.linewidth: 1.0
 geogrid.linestyle: ':'
 # Geographic content
-map.linewidth:          # filled by "linewidth"
-map.facecolor:          # filled by "facecolor"
-map.edgecolor:          # filled by "color"
+geoaxes.linewidth:          # filled by "linewidth"
+geoaxes.facecolor:          # filled by "facecolor"
+geoaxes.edgecolor:          # filled by "color"
 land.color:             k
 ocean.color:            w
 lakes.color:            w

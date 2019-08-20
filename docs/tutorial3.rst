@@ -165,40 +165,37 @@ Zooming into projections
 
 Zooming into projections is done much as before. For `cartopy`
 projections, you can use `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or
-alternatively pass ``lonlim`` and/or ``latlim`` to
-`~proplot.axes.ProjectionAxes.format`. For `~mpl_toolkits.basemap`
-projections, you must set the limits when declaring the projection by
-passing ``proj_kw`` to `~proplot.subplots.subplots` with any of the
+alternatively pass ``lonlim``, ``latlim``, or ``boundinglat`` to
+`~proplot.axes.ProjectionAxes.format`. Note that ProPlot always draws
+a *circular boundary* around Stereographic, Azimuthal Equidistant,
+Lambert Azimuthal Equal-Area, and Gnomic projections, no matter the
+“zoom” setting (implemented following `this
+example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__).
+
+For `~mpl_toolkits.basemap` projections, you must set the limits when
+declaring the projection by passing ``proj_kw`` to
+`~proplot.subplots.subplots` with any of the ``boundinglat``,
 ``llcrnrlon``, ``llcrnrlat``, ``urcrnrlon``, ``urcrnrlat``, ``llcrnrx``,
 ``llcrnry``, ``urcrnrx``, ``urcrnry``, ``width``, and/or ``height``
 keyword args.
 
-For North or South Pole-centered projections, pass a dictionary
-containing the ``'boundinglat'`` key to ``proj_kw``. For `cartopy`
-projections, a circular boundary is drawn around zoomed-in polar
-projections, just like in `~mpl_toolkits.basemap` (implemented
-following `this
-example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__).
-Note that ProPlot also adds the ``'npaeqd'``, ``'spaeqd'``,
-``'nplaea'``, and ``'splaea'`` `cartopy` projections to the existing
-``'npstere'`` and ``'spstere'`` projections, just like in
-`~mpl_toolkits.basemap`.
-
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(nrows=2, proj='pcarree', axwidth=4.5, basemap={1:False, 2:True},
-               proj_kw={1:{'lon_0':0}, 2:{'llcrnrlon':-20, 'llcrnrlat':-10, 'urcrnrlon':180, 'urcrnrlat':50}})
+    f, axs = plot.subplots(nrows=2, axwidth=4.5,
+               proj='pcarree', basemap={1:False, 2:True},
+               proj_kw={2:{'llcrnrlon':-20, 'llcrnrlat':-10, 'urcrnrlon':180, 'urcrnrlat':50}})
     # Normal projection
-    axs[0].format(lonlim=(-20,180), latlim=(-10,50), title='Cartopy example')
+    axs.format(land=True, labels=True, lonlines=20, latlines=20, suptitle='Zooming into projections')
+    axs[0].format(lonlim=(-140,60), latlim=(-10,50), labels=True, title='Cartopy example')
     axs[1].format(title='Basemap example')
-    axs.format(land=True, suptitle='Zooming into projections')
     # Polar projection
-    f, axs = plot.subplots(ncols=2, axwidth=2, basemap={1:False,2:True}, proj={1:'splaea', 2:'npaeqd'},
-                          proj_kw={1:{'boundinglat': -30, 'lon_0': 120}, 2:{'boundinglat':60}})
-    axs.format(land=True, suptitle='Zooming into polar projections')
-    axs[0].format(title='Cartopy example', latmax=80, latlines=20)
-    axs[1].format(title='Basemap example', latmax=80, latlines=10)
+    f, axs = plot.subplots(ncols=2, axwidth=2.2,
+               proj={1:'splaea', 2:'npaeqd'}, basemap={1:False,2:True},
+               proj_kw={2:{'boundinglat':60}})
+    axs.format(land=True, latlines=10, latmax=80, suptitle='Zooming into polar projections')
+    axs[0].format(boundinglat=-60, title='Cartopy example')
+    axs[1].format(title='Basemap example')
 
 
 
@@ -216,10 +213,15 @@ Below is an illustration of the available `cartopy` projections (see
 the `~proplot.projs` documentation for a table). Note that you no
 longer have to reference the `cartopy.crs.Projection` classes directly
 – instead, just like `~mpl_toolkits.basemap`, you can specify a native
-PROJ.4 short name (e.g. ``'robin'`` or ``'merc'``). ProPlot also adds to
-`cartopy` the previously unavailable Aitoff, Hammer, Winkel Tripel,
-and Kavrisky VII projections by subclassing the
-`cartopy.crs.Projection` class.
+PROJ.4 short name (e.g. ``'robin'`` or ``'merc'``).
+
+ProPlot adds to `cartopy` the previously unavailable Aitoff, Hammer,
+Winkel Tripel, and Kavrisky VII projections (i.e. ``'aitoff'``,
+``'hammer'``, ``'wintri'``, and ``'kav7'``), as well as North Polar and
+South Polar versions of the Stereographic, Azimuthal Equidistant,
+Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
+``'npstere'``, ``'spstere'``, ``'npaeqd'``, ``'spaeqd'``, ``'nplaea'``,
+``'splaea'``, ``'npgnom'``, and ``'spgnom'``).
 
 .. code:: ipython3
 
@@ -227,9 +229,10 @@ and Kavrisky VII projections by subclassing the
     import numpy as np
     projs = ['cyl', 'merc', 'mill', 'lcyl', 'tmerc',
              'robin', 'hammer', 'moll', 'kav7', 'aitoff', 'wintri', 'sinu',
-             'geos', 'ortho', 'nsper', 'aea', 'eqdc', 'lcc', 'gnom', 'npstere', 'igh',
+             'geos', 'ortho', 'nsper', 'aea', 'eqdc', 'lcc', 'gnom',
+             'npstere', 'nplaea', 'npaeqd', 'npgnom', 'igh',
              'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6']
-    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, proj=projs)
+    f, axs = plot.subplots(ncols=3, nrows=10, proj=projs)
     axs.format(land=True, reso='lo', labels=False, suptitle='Table of cartopy projections')
     for proj,ax in zip(projs,axs):
         ax.format(title=proj, titleweight='bold', labels=False)
@@ -260,8 +263,8 @@ if you fail to specify them.
              'eck4', 'robin', 'moll', 'kav7', 'hammer', 'mbtfpq',
              'geos', 'ortho', 'nsper',
              'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
-             'npstere', 'npaeqd', 'nplaea', 'spstere', 'spaeqd', 'splaea']
-    f, axs = plot.subplots(ncols=3, nrows=9, left=0.1, bottom=0.1, right=0.1, top=0.5, basemap=True, proj=projs)
+             'npstere', 'npaeqd', 'nplaea']
+    f, axs = plot.subplots(ncols=3, nrows=8, basemap=True, proj=projs)
     axs.format(land=True, labels=False, suptitle='Table of basemap projections')
     for proj,ax in zip(projs,axs):
         ax.format(title=proj, titleweight='bold', labels=False)

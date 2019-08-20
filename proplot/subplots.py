@@ -34,6 +34,7 @@ subclass `list` instead of `~numpy.ndarray`? Two reasons.
 """
 import os
 import re
+import traceback
 import numpy as np
 import functools
 import matplotlib.pyplot as plt
@@ -196,10 +197,7 @@ class axes_grid(list):
         ... axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
 
         """
-        attrs = (*(getattr(ax, attr, None) for ax in self),)
-        # Not found
-        if None in attrs:
-            raise AttributeError(f'Attribute "{attr}" not found.')
+        attrs = (*(getattr(ax, attr) for ax in self),) # may raise error
         # Empty
         if not attrs:
             def null_iterator(*args, **kwargs):
@@ -515,8 +513,8 @@ class Figure(mfigure.Figure):
         self._tight_subplots = _notNone(tightsubplots, tight, rc['tight'])
         self._tight_panels = _notNone(tightpanels, tight, rc['tight'])
         self._smart_tight = (self._tight_borders or self._tight_subplots or self._tight_panels)
-        self._post_init = True
-        self._smart_tight_init = True
+        self._stale_layout = True
+        self._stale_aspect = True
         self._border_pad = units(_notNone(borderpad, rc['subplots.borderpad']))
         self._subplot_pad  = units(_notNone(subplotpad,  rc['subplots.subplotpad']))
         self._panel_pad = units(_notNone(panelpad, rc['subplots.panelpad']))
@@ -946,7 +944,7 @@ class Figure(mfigure.Figure):
             self._align_suplabels(renderer)
             self._align_axislabels()
         # Flag
-        self._post_init = False
+        self._stale_layout = False
 
     def _panel_tight_layout(self, side, axs, renderer, figure=False):
         """From a list of axes in the same row or column, figure out the
@@ -1291,28 +1289,26 @@ class Figure(mfigure.Figure):
         """Adjust average aspect ratio used for gridspec calculations. This
         fixes grids with identically fixed aspect ratios, e.g. identically
         zoomed-in cartopy projections and imshow images."""
+        # NOTE: This works for any projection axes
         if not self._main_axes:
             return
         ax = self._main_axes[self._ref_num-1]
+        mode = ax.get_aspect()
         aspect = None
-        subplots_kw = self._subplots_kw
-        if isinstance(ax, axes.CartopyAxes):
-            # Basemap projections are static but cartopy can change
-            bbox = ax.background_patch._path.get_extents()
-            aspect = abs(bbox.width)/abs(bbox.height)
-        elif isinstance(ax, axes.CartesianAxes):
-            # Image plots, etc. Mostly copied from apply_aspect().
-            mode = ax.get_aspect()
+        if mode == 'equal':
             xscale, yscale = ax.get_xscale(), ax.get_yscale()
-            if mode == 'equal':
-                if xscale == 'log' and yscale == 'log':
-                    aspect = 1.0/ax.get_data_ratio_log()
-                elif xscale == 'linear' and yscale == 'linear':
-                    aspect = 1.0/ax.get_data_ratio()
-                else:
-                    pass # matplotlib issues warning, forces aspect == 'auto'
+            if xscale == 'linear' and yscale == 'linear':
+                aspect = 1.0/ax.get_data_ratio()
+            elif xscale == 'log' and yscale == 'log':
+                aspect = 1.0/ax.get_data_ratio_log()
+            else:
+                pass # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
-        if aspect is not None and aspect != subplots_kw['aspect']:
+        # Account for floating point errors
+        aspect = round(aspect*1e10)*1e-10
+        subplots_kw = self._subplots_kw
+        aspect_prev = round(subplots_kw['aspect']*1e10)*1e-10
+        if aspect is not None and aspect != aspect_prev:
             gridspec = self._main_gridspec
             subplots_kw['aspect'] = aspect
             figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
@@ -1400,6 +1396,7 @@ class Figure(mfigure.Figure):
                 obj.set_text(label)
             if kwargs:
                 obj.update(kwargs)
+        self._stale_layout = True
 
     def _update_suptitle(self, title, **kwargs):
         """Assign figure "super title"."""
@@ -1407,6 +1404,7 @@ class Figure(mfigure.Figure):
             self._suptitle.set_text(title)
         if kwargs:
             self._suptitle.update(kwargs)
+        self._stale_layout = True
 
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
@@ -1422,7 +1420,7 @@ class Figure(mfigure.Figure):
         """Before drawing the figure, applies "tight layout" and
         aspect ratio-conserving adjustments, and aligns row and column
         labels."""
-        if self._post_init:
+        if self._stale_layout:
             self._update_aspect()
             self._update_layout(renderer) # want user to have ability to call it manually
         super().draw(renderer)
@@ -1441,7 +1439,7 @@ class Figure(mfigure.Figure):
             Passed to `~matplotlib.figure.Figure.savefig`.
         """
         filename = os.path.expanduser(filename)
-        if self._post_init:
+        if self._stale_layout:
             self._update_aspect()
             self._update_layout() # necessary! get weird layout without this
         super().savefig(filename, **kwargs)
@@ -1449,6 +1447,31 @@ class Figure(mfigure.Figure):
     save = savefig
     """Alias for `~Figure.savefig`, because calling ``fig.savefig``
     is sort of redundant."""
+
+    # Fix for popup backends! Draw before window is created!!!
+    def get_size_inches(self):
+        """Get figure size."""
+        # print('\n\n\nget size!!!')
+        # for line in traceback.format_stack():
+        #     print(re.sub('.*site-packages/', '', line.strip()))
+        return super().get_size_inches()
+
+    @property
+    def stale(self):
+        """Introduce stale property."""
+        value = self._stale
+        # if value: # post-process!!!
+        #     print('\n\n\nfigure is stale!!! oh no!!!')
+        #     for line in traceback.format_stack():
+        #         print(re.sub('.*site-packages/', '', line.strip()))
+        #     self._update_aspect()
+        #     self._update_layout() # want user to have ability to call it manually
+        return value
+
+    @stale.setter
+    def stale(self, value):
+        """Sets the stale state."""
+        self._stale = value
 
     # Define panels as immutable properties, can only be set internally
     # This also documents the properties in sphinx
@@ -2225,11 +2248,10 @@ def subplots(array=None, ncols=1, nrows=1,
         # Custom Basemap and Cartopy axes
         else:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, iaspect, kwproj = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
+            instance, iaspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
             if num == ref:
                 aspect = iaspect
             axes_kw[num].update({'projection':package, 'map_projection':instance})
-            axes_kw[num].update(kwproj)
 
     #-------------------------------------------------------------------------#
     # Figure architecture
