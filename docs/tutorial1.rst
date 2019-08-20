@@ -14,9 +14,9 @@ compares the 3 APIs.
 `~proplot.subplots.subplots` is your gateway to all of ProPlot’s
 features. It returns a subclassed `~proplot.subplots.Figure` instance
 and an `~proplot.subplots.axes_grid` of
-`~proplot.axes.CartesianAxes` instances (see :ref:`Cartesian axes`)
-or `~proplot.axes.ProjectionAxes` instances (see
-:ref:`Projection axes`).
+`~proplot.axes.CartesianAxes` or `~proplot.axes.ProjectionAxes`
+instances, which are subclasses of matplotlib’s
+`~matplotlib.axes.Axes` class.
 
 You can set up complex grids of subplots by passing 2D arrays of
 integers to `~proplot.subplots.subplots`. Just think of this array as
@@ -33,11 +33,11 @@ the order in which the axes appear in the
     plt.figure(figsize=(5,3))
     plt.suptitle('PyPlot API')
     plt.subplot(121)
-    plt.plot(np.random.rand(10,5).cumsum(axis=0), lw=2)
+    plt.plot(2*(np.random.rand(100,5)-0.5).cumsum(axis=0), lw=2)
     plt.title('Title')
     plt.xlabel('x axis')
     plt.ylabel('y axis')
-    plt.xticks(np.arange(0,10))
+    plt.xticks(np.arange(0,100,10))
     plt.minorticks_off()
     plt.subplot(122)
     plt.title('Title')
@@ -53,8 +53,8 @@ the order in which the axes appear in the
     import numpy as np
     f, axs = plt.subplots(ncols=2, figsize=(5,3))
     f.suptitle('Object-Oriented API')
-    axs[0].plot(np.random.rand(10,5).cumsum(axis=0), lw=2)
-    axs[0].set_xticks(np.arange(0,10))
+    axs[0].plot(2*(np.random.rand(100,5)-0.5).cumsum(axis=0), lw=2)
+    axs[0].set_xticks(np.arange(0,100,10))
     axs[0].minorticks_off()
     for ax in axs:
         ax.set_title('Title')
@@ -67,8 +67,8 @@ the order in which the axes appear in the
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(ncols=2)
-    axs[0].plot(np.random.rand(10,5).cumsum(axis=0), lw=2)
-    axs[0].format(xticks=1, xtickminor=False)
+    axs[0].plot(2*(np.random.rand(100,5)-0.5).cumsum(axis=0), lw=2)
+    axs[0].format(xticks=20, xtickminor=False)
     axs.format(suptitle='ProPlot API', title='Title', xlabel='x axis', ylabel='y axis')
 
 
@@ -104,16 +104,11 @@ the order in which the axes appear in the
 The format command
 ------------------
 
-`~proplot.subplots.subplots` populates the
-`~proplot.subplots.Figure` with either `~proplot.axes.CartesianAxes`
-(for Cartesian axes) or `~proplot.axes.ProjectionAxes` (for cartopy or
-basemap projection axes). These are subclasses of
-`~proplot.axes.BaseAxes`, which is a subclass of matplotlib’s
-`~matplotlib.axes.Axes` class.
-
-The **most important** new method you need to know is ``format``, found
-on the `~proplot.axes.BaseAxes`, `~proplot.axes.CartesianAxes`, and
-`~proplot.axes.ProjectionAxes` classes. ``format`` is your
+The `~matplotlib.axes.Axes` subclasses add several new commands and
+wrap several old ones. But **the most important** method you need to
+know is ``format``, described in detail in the
+`~proplot.axes.BaseAxes`, `~proplot.axes.CartesianAxes`, and
+`~proplot.axes.ProjectionAxes` documentation. This is your
 one-stop-shop for changing axes settings. Keyword args passed to
 ``format`` are interpreted as follows.
 
@@ -163,10 +158,10 @@ is demonstrated in the below example.
 The axes grid container
 -----------------------
 
-Axes returned by `~proplot.subplots.subplots` are stored in the
-`~proplot.subplots.axes_grid` container, which lets you call any
-method on multiple axes *simultaneously*. It supports 1D and 2D indexing
-(e.g. ``axs[2]`` or ``axs[1,2]``), and slicing it returns an
+The `~proplot.subplots.axes_grid` container returned by
+`~proplot.subplots.subplots` lets you call *any axes method* on
+multiple axes at once. It supports 1D and 2D indexing (e.g. ``axs[2]``
+or ``axs[1,2]``), and slicing it returns an
 `~proplot.subplots.axes_grid` of the selection. 1D indexing is
 row-major by default, but this can be changed with the ``order`` keyword
 arg. In the below example, `~proplot.subplots.axes_grid` is used to
@@ -347,121 +342,6 @@ and :ref:`Plotting wrappers`. For more on panels, see the
 .. image:: tutorial/tutorial_18_0.svg
 
 
-Axis sharing and spanning
--------------------------
-
-Matplotlib has an “axis sharing” feature that holds axis limits the same
-for axes within a grid of subplots. But this has no effect on the axis
-labels and tick labels, which can lead to lots of redundant labels. To
-help you eliminate these redundancies, ProPlot introduces *4
-axis-sharing options* and a new *spanning label option*, controlled by
-the ``share``, ``sharex``, ``sharey``, ``span``, ``spanx``, and
-``spany`` keyword args. See `~proplot.subplots.sublots` and the below
-example for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    N = 50
-    M = 40
-    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
-    for share in (0,1,2,3):
-        f, axs = plot.subplots(ncols=4, aspect=1, axwidth=1.2, sharey=share, spanx=share//2)
-        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
-        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
-            array = gen(scale)
-            for l in range(array.shape[1]):
-                ax.plot(array[:,l], color=colors[l])
-            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
-
-
-
-.. image:: tutorial/tutorial_21_0.svg
-
-
-
-.. image:: tutorial/tutorial_21_1.svg
-
-
-
-.. image:: tutorial/tutorial_21_2.svg
-
-
-
-.. image:: tutorial/tutorial_21_3.svg
-
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    plot.rc.reset()
-    plot.rc.cycle = 'Set3'
-    titles = ['With redundant labels', 'Without redundant labels']
-    for mode in (0,1):
-        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
-        for ax in axs:
-            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
-        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcloc='ul')
-
-
-
-.. image:: tutorial/tutorial_22_0.svg
-
-
-
-.. image:: tutorial/tutorial_22_1.svg
-
-
-A-b-c subplot labels
---------------------
-
-It is easy to add a-b-c labels to axes generated by
-`~proplot.subplots.subplots`. The label order is set by the array
-numbers – or if an array was not provided, it is row-major by default
-and controlled by the `~proplot.subplots.subplots` ``order`` keyword
-arg. The label position can be changed with the ``abc.loc``
-`~proplot.rctools.rc` option, and the label style can be changed with
-the ``abc.format`` `~proplot.rctools.rc` option. See
-:ref:`The format command` and :ref:`Global settings control` for
-details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.7, flush=True) 
-    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
-               xticks=[], yticks=[], suptitle='A-b-c labels on grid of flush subplots')
-
-
-
-.. image:: tutorial/tutorial_24_0.svg
-
-
-Arbitrary physical units
-------------------------
-
-*Arbitrary units* are supported for most arguments to ProPlot functions.
-That is, if a sizing argument is numeric, the units are inches or
-points, and if string, the units are interpreted by
-`~proplot.utils.units`. A table of acceptable units is found in the
-`~proplot.utils.units` documentation (they include centimeters,
-millimeters, and pixels).
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    f, axs = plot.subplots(ncols=3, width='12cm', height='55mm', wspace=('10pt', '20pt'))
-    axs.format(small='12px', large='15px', linewidth='0.5mm')
-    axs.format(suptitle='Arguments with arbitrary units', xlabel='x axis', ylabel='y axis')
-
-
-
-.. image:: tutorial/tutorial_27_0.svg
-
-
 Automatic subplot spacing
 -------------------------
 
@@ -504,11 +384,11 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_30_0.svg
+.. image:: tutorial/tutorial_21_0.svg
 
 
 
-.. image:: tutorial/tutorial_30_1.svg
+.. image:: tutorial/tutorial_21_1.svg
 
 
 .. code:: ipython3
@@ -524,7 +404,7 @@ corner).
 
 
 
-.. image:: tutorial/tutorial_31_0.svg
+.. image:: tutorial/tutorial_22_0.svg
 
 
 .. code:: ipython3
@@ -540,6 +420,121 @@ corner).
     axs[1].format(ylabel='ylabel\nylabel\nylabel', xlabel='xlabel\nxlabel\nxlabel', title='Title', top=False,
                   collabels=['Column 1', 'Column 2'], suptitle='Tight layout with axes panels')
     axs.tpanel.format(ylim=(-0.5,1.5), ylocator=1, ytickminor=False)
+
+
+
+.. image:: tutorial/tutorial_23_0.svg
+
+
+Axis sharing and spanning
+-------------------------
+
+Matplotlib has an “axis sharing” feature that holds axis limits the same
+for axes within a grid of subplots. But this has no effect on the axis
+labels and tick labels, which can lead to lots of redundant labels. To
+help you eliminate these redundancies, ProPlot introduces *4
+axis-sharing options* and a new *spanning label option*, controlled by
+the ``share``, ``sharex``, ``sharey``, ``span``, ``spanx``, and
+``spany`` keyword args. See `~proplot.subplots.sublots` and the below
+example for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    N = 50
+    M = 40
+    colors = plot.colors('grays_r', M, left=0.1, right=0.8)
+    for share in (0,1,2,3):
+        f, axs = plot.subplots(ncols=4, aspect=1, axwidth=1.2, sharey=share, spanx=share//2)
+        gen = lambda scale: scale*(np.random.rand(N,M)-0.5).cumsum(axis=0)[N//2:,:]
+        for ax,scale,color in zip(axs,(1,3,7,0.2),('gray9','gray7','gray5','gray3')):
+            array = gen(scale)
+            for l in range(array.shape[1]):
+                ax.plot(array[:,l], color=colors[l])
+            ax.format(suptitle=f'Axis-sharing level: {share}, spanning labels {["off","on"][share//2]}', ylabel='y-label', xlabel='x-axis label')
+
+
+
+.. image:: tutorial/tutorial_26_0.svg
+
+
+
+.. image:: tutorial/tutorial_26_1.svg
+
+
+
+.. image:: tutorial/tutorial_26_2.svg
+
+
+
+.. image:: tutorial/tutorial_26_3.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.rc.reset()
+    plot.rc.cycle = 'Set3'
+    titles = ['With redundant labels', 'Without redundant labels']
+    for mode in (0,1):
+        f, axs = plot.subplots(nrows=4, ncols=4, share=3*mode, span=1*mode, axwidth=1)
+        for ax in axs:
+            ax.plot((np.random.rand(100,20)-0.4).cumsum(axis=0))
+        axs.format(xlabel='x-label', ylabel='y-label', suptitle=titles[mode], abc=mode, abcloc='ul')
+
+
+
+.. image:: tutorial/tutorial_27_0.svg
+
+
+
+.. image:: tutorial/tutorial_27_1.svg
+
+
+A-b-c subplot labels
+--------------------
+
+It is easy to add a-b-c labels to axes generated by
+`~proplot.subplots.subplots`. The label order is set by the array
+numbers – or if an array was not provided, it is row-major by default
+and controlled by the `~proplot.subplots.subplots` ``order`` keyword
+arg. The label position can be changed with the ``abc.loc``
+`~proplot.rctools.rc` option, and the label style can be changed with
+the ``abc.format`` `~proplot.rctools.rc` option. See
+:ref:`The format command` and :ref:`Global settings control` for
+details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.7, flush=True) 
+    axs.format(abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
+               xticks=[], yticks=[], suptitle='A-b-c labels on grid of flush subplots')
+
+
+
+.. image:: tutorial/tutorial_29_0.svg
+
+
+Arbitrary physical units
+------------------------
+
+*Arbitrary units* are supported for most arguments to ProPlot functions.
+That is, if a sizing argument is numeric, the units are inches or
+points, and if string, the units are interpreted by
+`~proplot.utils.units`. A table of acceptable units is found in the
+`~proplot.utils.units` documentation (they include centimeters,
+millimeters, and pixels).
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=3, width='12cm', height='55mm', wspace=('10pt', '20pt'))
+    axs.format(small='12px', large='15px', linewidth='0.5mm')
+    axs.format(suptitle='Arguments with arbitrary units', xlabel='x axis', ylabel='y axis')
 
 
 
