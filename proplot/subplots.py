@@ -509,12 +509,11 @@ class Figure(mfigure.Figure):
         """
         # Tight settings
         # NOTE: _tight taken by matplotlib tight layout, use _smart_tight!
+        self._stale_layout = True
         self._tight_borders = _notNone(tightborders, tight, rc['tight'])
         self._tight_subplots = _notNone(tightsubplots, tight, rc['tight'])
         self._tight_panels = _notNone(tightpanels, tight, rc['tight'])
         self._smart_tight = (self._tight_borders or self._tight_subplots or self._tight_panels)
-        self._stale_layout = True
-        self._stale_aspect = True
         self._border_pad = units(_notNone(borderpad, rc['subplots.borderpad']))
         self._subplot_pad  = units(_notNone(subplotpad,  rc['subplots.subplotpad']))
         self._panel_pad = units(_notNone(panelpad, rc['subplots.panelpad']))
@@ -1305,16 +1304,17 @@ class Figure(mfigure.Figure):
                 pass # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
         # Account for floating point errors
-        aspect = round(aspect*1e10)*1e-10
-        subplots_kw = self._subplots_kw
-        aspect_prev = round(subplots_kw['aspect']*1e10)*1e-10
-        if aspect is not None and aspect != aspect_prev:
-            gridspec = self._main_gridspec
-            subplots_kw['aspect'] = aspect
-            figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-            gridspec.update(**gridspec_kw)
-            self.set_size_inches(figsize)
-            self._update_ratios(**gridspec_kw)
+        if aspect is not None:
+            aspect = round(aspect*1e10)*1e-10
+            subplots_kw = self._subplots_kw
+            aspect_prev = round(subplots_kw['aspect']*1e10)*1e-10
+            if aspect != aspect_prev:
+                gridspec = self._main_gridspec
+                subplots_kw['aspect'] = aspect
+                figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+                gridspec.update(**gridspec_kw)
+                self.set_size_inches(figsize)
+                self._update_ratios(**gridspec_kw)
 
     def _update_axislabels(self, axis=None, **kwargs):
         """Applies axis labels to the relevant shared axis. If spanning
@@ -1420,8 +1420,8 @@ class Figure(mfigure.Figure):
         """Before drawing the figure, applies "tight layout" and
         aspect ratio-conserving adjustments, and aligns row and column
         labels."""
+        self._update_aspect()
         if self._stale_layout:
-            self._update_aspect()
             self._update_layout(renderer) # want user to have ability to call it manually
         super().draw(renderer)
 
@@ -1439,8 +1439,8 @@ class Figure(mfigure.Figure):
             Passed to `~matplotlib.figure.Figure.savefig`.
         """
         filename = os.path.expanduser(filename)
+        self._update_aspect()
         if self._stale_layout:
-            self._update_aspect()
             self._update_layout() # necessary! get weird layout without this
         super().savefig(filename, **kwargs)
 

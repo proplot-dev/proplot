@@ -2869,7 +2869,6 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                         latlim[1] = 90
                     extent = [*lonlim, *latlim]
                     self.set_extent(extent, crs=ccrs.PlateCarree())
-                    self.figure._stale_aspect = True
 
             # Draw gridlines, manage them with one custom gridliner generated
             # by ProPlot, user may want to use griliner API directly
