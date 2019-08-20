@@ -1976,6 +1976,8 @@ def subplots(array=None, ncols=1, nrows=1,
     lshare, rshare, bshare, tshare : optional
         See `~proplot.axes.BaseAxes.panel_axes`, usage is identical.
 
+    Other parameters
+    ----------------
     axpanel, axpanels : str or dict-like, optional
         Adds :ref:`Bulk axes panels` to subplots with
         `~proplot.axes.BaseAxes.panel_axes`. Both `axpanel` and `axpanels`
@@ -2016,9 +2018,6 @@ def subplots(array=None, ncols=1, nrows=1,
     axlegend_kw, axlegends_kw : optional
         As with `axpanel_kw`, but for panels listed in the `axlegend`
         and `axlegends` keyword args.
-
-    Other parameters
-    ----------------
     tight, tightborders, tightsubplots, tightpanels
         Passed to `Figure`. The defaults are ``True`` except in the
         following situations.
