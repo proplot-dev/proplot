@@ -15,47 +15,40 @@ the `~proplot.axes.ProjectionAxes` class, the parent class to
 Note that in 2020, active development for `~mpl_toolkits.basemap` will
 stop. Its users are encouraged to switch to `cartopy`, which is
 integrated more closely with the matplotlib API and has more room for
-growth. However for the time being, `~mpl_toolkits.basemap` has one
-major advantage: meridian and parallel labeling. With `cartopy`,
-gridline labels are only possible with equirectangular and Mercator
-projections. With `~mpl_toolkits.basemap`, labels are possible with
-all projections.
+growth. However for the time being, basemap has one major advantage:
+meridian and parallel labeling. With cartopy, gridline labels are only
+possible with equirectangular and Mercator projections. With basemap,
+labels are possible with all projections.
 
 Choosing map projections
 ------------------------
 
 To specify a projection, supply `~proplot.subplots.subplots` with the
-``proj`` keyword arg. To specify projection properties, use the
-``proj_kw`` keyword arg (see below). To toggle `~mpl_toolkits.basemap`
-for arbitrary subplots, use the ``basemap`` keyword arg. See
-`~proplot.subplots.subplots` for details. See the `~proplot.projs`
-documentation for a table of full projection names, short projection
-names, and links to the
+``proj`` keyword arg. To toggle `~mpl_toolkits.basemap` for arbitrary
+subplots, use the ``basemap`` keyword arg. For details on available
+projections and links to
 `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
-documentation (both `cartopy` and `~mpl_toolkits.basemap` are
-internally powered by `PROJ.4 <https://proj4.org>`__).
+documentation, see the :ref:`Table of projections`.
 
-To pass keyword args to `~mpl_toolkits.basemap.Basemap` and
-`cartopy.crs.Projection` classes on instantiation, pass a ``proj_kw``
-dictionary of keyword args to `~proplot.subplots.subplots`. With
-ProPlot, you can supply native PROJ.4 keyword names to the
-`cartopy.crs.Projection` classes just like `~mpl_toolkits.basemap`
-(e.g. ``lon_0`` instead of ``central_longitude``). This is just meant to
-make things a bit less verbose.
+Use ``proj_kw`` to pass keyword args to
+`~mpl_toolkits.basemap.Basemap` and `cartopy.crs.Projection` classes
+on instantiation. ProPlot lets you supply native PROJ.4 keyword names to
+the `cartopy.crs.Projection` classes, e.g. ``lon_0`` instead of
+``central_longitude``. This makes things a bit less verbose.
 
 .. code:: ipython3
 
     import proplot as plot
     # Simple example
     f, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0':180})
-    axs.format(suptitle='Simple projection axes demo', coast=True, latlines=30, lonlines=60)
+    axs.format(suptitle='Simple projection axes demo', land=True, latlines=30, lonlines=60)
     # Complex example
     f, axs = plot.subplots(
         basemap={(1,3,5,7,9):False, (2,4,6,8,10):True},
         proj={(1,2):'mill', (3,4):'eck4', (5,6):'moll', (7,8):'cyl', (9,10):'npstere'},
         ncols=2, nrows=5) #, proj_kw={'lon_0':0})
     axs.format(suptitle='Complex projection axes demo')
-    axs.format(labels=True, coast=True, latlines=30, lonlines=60)
+    axs.format(labels=True, land=True, latlines=30, lonlines=60)
     axs.format(collabels=['Cartopy examples', 'Basemap examples'])
 
 
@@ -73,16 +66,15 @@ Plotting geophysical data
 -------------------------
 
 The below demonstrates how to plot geophysical data with ProPlot. For
-`cartopy` projections, you no longer need to pass
+cartopy projections, you no longer need to pass
 ``transform=crs.PlateCarree()`` to the plotting method (as I found
 myself doing 99% of the time); ProPlot makes this the default. And
-`~mpl_toolkits.basemap` usage is considerably simplified with ProPlot
-– you can simply call the axes method instead of calling the method on
-the `~mpl_toolkits.basemap.Basemap` instance, and you no longer need
-to pass ``latlon=True`` to the plotting command; ProPlot makes this the
-default. For both `~mpl_toolkits.basemap` and `cartopy` projections,
-you can also pass ``globe=True`` to 2D plotting commands to ensure
-global data coverage.
+basemap usage is considerably simplified with ProPlot – you can simply
+call the axes method instead of calling the method on the
+`~mpl_toolkits.basemap.Basemap` instance, and you no longer need to
+pass ``latlon=True`` to the plotting command; ProPlot makes this the
+default. For both basemap and cartopy projections, you can also pass
+``globe=True`` to 2D plotting commands to ensure global data coverage.
 
 These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 `~proplot.wrappers.cartopy_transform`,
@@ -128,9 +120,8 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 Formatting projection axes
 --------------------------
 
-Just like `~proplot.axes.CartesianAxes`, `~proplot.axes.CartopyAxes`
-and `~proplot.axes.BasemapAxes` have their own ``format`` methods
-(their usage is identical). ``format`` can be used to draw gridlines,
+`~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` have
+their own ``format`` methods. ``format`` can be used to draw gridlines,
 add gridline labels, modify the projection bounding box, and add and
 stylize geographic features, like continents and international borders.
 
@@ -163,21 +154,20 @@ stylize geographic features, like continents and international borders.
 Zooming into projections
 ------------------------
 
-Zooming into projections is done much as before. For `cartopy`
-projections, you can use `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or
-alternatively pass ``lonlim``, ``latlim``, or ``boundinglat`` to
+To zoom into cartopy projections, you can use
+`~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or alternatively pass
+``lonlim``, ``latlim``, or ``boundinglat`` to
 `~proplot.axes.ProjectionAxes.format`. Note that ProPlot always draws
-a *circular boundary* around Stereographic, Azimuthal Equidistant,
-Lambert Azimuthal Equal-Area, and Gnomic projections, no matter the
-“zoom” setting (implemented following `this
+a *circular boundary* around North Polar and South Polar Stereographic,
+Azimuthal Equidistant, Lambert Azimuthal Equal-Area, and Gnomic
+projections, no matter the “zoom” setting (implemented following `this
 example <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__).
 
-For `~mpl_toolkits.basemap` projections, you must set the limits when
-declaring the projection by passing ``proj_kw`` to
-`~proplot.subplots.subplots` with any of the ``boundinglat``,
-``llcrnrlon``, ``llcrnrlat``, ``urcrnrlon``, ``urcrnrlat``, ``llcrnrx``,
-``llcrnry``, ``urcrnrx``, ``urcrnry``, ``width``, and/or ``height``
-keyword args.
+For basemap projections, you must set the limits when declaring the
+projection by passing ``proj_kw`` to `~proplot.subplots.subplots` with
+any of the ``boundinglat``, ``llcrnrlon``, ``llcrnrlat``, ``urcrnrlon``,
+``urcrnrlat``, ``llcrnrx``, ``llcrnry``, ``urcrnrx``, ``urcrnry``,
+``width``, and/or ``height`` keyword args.
 
 .. code:: ipython3
 
@@ -211,11 +201,11 @@ Registered cartopy projections
 
 Below is an illustration of the available `cartopy` projections (see
 the :ref:`Table of projections` for details). Note that you no longer
-have to reference the `cartopy.crs.Projection` classes directly –
-instead, just like `~mpl_toolkits.basemap`, you can specify a native
-PROJ.4 short name (e.g. ``'robin'`` or ``'merc'``).
+have to reference the `cartopy.crs.Projection` classes directly – now,
+just like basemap, you can specify a native PROJ.4 short name (e.g.
+``'robin'`` or ``'merc'``).
 
-ProPlot adds to `cartopy` the previously unavailable Aitoff, Hammer,
+ProPlot adds to cartopy the previously unavailable Aitoff, Hammer,
 Winkel Tripel, and Kavrisky VII projections (i.e. ``'aitoff'``,
 ``'hammer'``, ``'wintri'``, and ``'kav7'``), as well as North Polar and
 South Polar versions of the Stereographic, Azimuthal Equidistant,
@@ -247,13 +237,12 @@ Registered basemap projections
 ------------------------------
 
 Below is an illustration of the available `~mpl_toolkits.basemap`
-projections (see the `~proplot.projs` documentation for a table).
-`~mpl_toolkits.basemap` projection bounds are usually rectangles,
-while `cartopy` bounds are more flexible. While the default
-`~mpl_toolkits.basemap` API requires you to specify projection keyword
-args *explicitly* or an error is thrown (e.g. ``lon_0`` and ``lat_0``),
-ProPlot passes default keyword args to `~mpl_toolkits.basemap.Basemap`
-if you fail to specify them.
+projections (see the :ref:`Table of projections` for details). Basemap
+projection bounds are usually rectangles, while cartopy bounds are more
+flexible. Also, while the default `~mpl_toolkits.basemap` API requires
+you to specify projection keyword args *explicitly* or an error is
+thrown (e.g. ``lon_0`` and ``lat_0``), ProPlot passes default keyword
+args to `~mpl_toolkits.basemap.Basemap` if you fail to specify them.
 
 .. code:: ipython3
 
