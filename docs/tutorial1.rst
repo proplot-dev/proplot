@@ -15,15 +15,13 @@ compares the 3 APIs.
 features. It returns a subclassed `~proplot.subplots.Figure` instance
 and an `~proplot.subplots.axes_grid` of
 `~proplot.axes.CartesianAxes` or `~proplot.axes.ProjectionAxes`
-instances, which are subclasses of matplotlib’s
-`~matplotlib.axes.Axes` class.
-
-You can set up complex grids of subplots by passing 2D arrays of
-integers to `~proplot.subplots.subplots`. Just think of this array as
-a “picture” of your figure, where each unique number corresponds to a
-unique axes. The number order determines the order of a-b-c labels, and
-the order in which the axes appear in the
-`~proplot.subplots.axes_grid`.
+instances. You can use it without arguments to generate a single-axes
+subplot, with ``ncols`` and ``nrows`` to set up simple grids of
+subplots, or with a 2D array of integers to set up complex grids of
+subplots. Just think of this array as a “picture” of your figure, where
+each unique number corresponds to a unique axes, and the number order
+determines the order the subplots appear in the
+`~proplot.subplots.axes_grid` and the order of a-b-c labels.
 
 .. code:: ipython3
 
@@ -104,13 +102,13 @@ the order in which the axes appear in the
 The format command
 ------------------
 
-The `~matplotlib.axes.Axes` subclasses add several new commands and
-wrap several old ones. But **the most important** method you need to
-know is ``format``, described in detail in the
-`~proplot.axes.BaseAxes`, `~proplot.axes.CartesianAxes`, and
-`~proplot.axes.ProjectionAxes` documentation. This is your
-one-stop-shop for changing axes settings. Keyword args passed to
-``format`` are interpreted as follows.
+The `~matplotlib.axes.Axes` subclasses returned by
+`~proplot.subplots.subplots` add several new methods and wrap several
+old ones. But **the most important** method you need to know is
+``format``, described in detail in the `~proplot.axes.BaseAxes`,
+`~proplot.axes.CartesianAxes`, and `~proplot.axes.ProjectionAxes`
+documentation. This is your one-stop-shop for changing axes settings.
+Keyword args passed to ``format`` are interpreted as follows.
 
 1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
    setting will be applied to the axes using
