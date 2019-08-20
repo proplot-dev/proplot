@@ -104,8 +104,8 @@ The format command
 
 The `~matplotlib.axes.Axes` subclasses returned by
 `~proplot.subplots.subplots` add several new methods and wrap several
-old ones. But **the most important** method you need to know is
-``format``, described in detail in the `~proplot.axes.BaseAxes`,
+old ones. But the most important method you need to know is ``format``,
+described in detail in the `~proplot.axes.BaseAxes`,
 `~proplot.axes.CartesianAxes`, and `~proplot.axes.ProjectionAxes`
 documentation. This is your one-stop-shop for changing axes settings.
 Keyword args passed to ``format`` are interpreted as follows.
@@ -126,9 +126,9 @@ Keyword args passed to ``format`` are interpreted as follows.
    labeling, and “super titles”.
 
 Instead of using a series of verbose, one-liner setter methods like
-``ax.set_title`` and ``ax.xaxis.tick_params``, ``format`` provides
-simple shorthands for changing everything all at once. It also
-integrates with the `~proplot.axistools.Locator`,
+``ax.set_title``, ``ax.set_xlabel``, and ``ax.xaxis.tick_params``,
+``format`` provides simple shorthands for changing everything all at
+once. It also integrates with the `~proplot.axistools.Locator`,
 `~proplot.axistools.Formatter`, and `~proplot.axistools.Scale`
 constructors, so you don’t have to directly invoke verbose abstract
 classes. The goal of ``format`` is to reduce the amount of boilerplate
