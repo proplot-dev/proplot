@@ -1258,11 +1258,10 @@ class BaseAxes(maxes.Axes):
         """
         return self.figure._add_panel(self, *args, **kwargs)
 
-    # Method aliases
     area = maxes.Axes.fill_between
     """Alias for `~matplotlib.axes.Axes.fill_between`, which is wrapped by
     `~proplot.wrappers.fill_between_wrapper`."""
-    area = maxes.Axes.fill_betweenx
+    areax = maxes.Axes.fill_betweenx
     """Alias for `~matplotlib.axes.Axes.fill_betweenx`, which is wrapped by
     `~proplot.wrappers.fill_betweenx_wrapper`."""
     panel = panel_axes
@@ -1270,8 +1269,6 @@ class BaseAxes(maxes.Axes):
     inset = inset_axes
     """Alias for `~BaseAxes.inset_axes`."""
 
-    # Define panels as immutable properties, can only be set internally
-    # This will also document the properties in sphinx
     @property
     def leftpanel(self):
         """An `~proplot.subplots.axes_grid` of the left panel stack."""
@@ -1288,6 +1285,7 @@ class BaseAxes(maxes.Axes):
     def bottompanel(self):
         """An `~proplot.subplots.axes_grid` of the bottom panel stack."""
         return self._bottompanel
+
     lpanel = leftpanel
     """Alias for `~BaseAxes.leftpanel`."""
     rpanel = rightpanel

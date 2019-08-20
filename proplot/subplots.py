@@ -1448,33 +1448,6 @@ class Figure(mfigure.Figure):
     """Alias for `~Figure.savefig`, because calling ``fig.savefig``
     is sort of redundant."""
 
-    # Fix for popup backends! Draw before window is created!!!
-    def get_size_inches(self):
-        """Get figure size."""
-        # print('\n\n\nget size!!!')
-        # for line in traceback.format_stack():
-        #     print(re.sub('.*site-packages/', '', line.strip()))
-        return super().get_size_inches()
-
-    @property
-    def stale(self):
-        """Introduce stale property."""
-        value = self._stale
-        # if value: # post-process!!!
-        #     print('\n\n\nfigure is stale!!! oh no!!!')
-        #     for line in traceback.format_stack():
-        #         print(re.sub('.*site-packages/', '', line.strip()))
-        #     self._update_aspect()
-        #     self._update_layout() # want user to have ability to call it manually
-        return value
-
-    @stale.setter
-    def stale(self, value):
-        """Sets the stale state."""
-        self._stale = value
-
-    # Define panels as immutable properties, can only be set internally
-    # This also documents the properties in sphinx
     @property
     def leftpanel(self):
         """An `~proplot.subplots.axes_grid` of the left panel stack."""
@@ -1491,6 +1464,7 @@ class Figure(mfigure.Figure):
     def bottompanel(self):
         """An `~proplot.subplots.axes_grid` of the bottom panel stack."""
         return self._bottompanel
+
     lpanel = leftpanel
     """Alias for `~Figure.leftpanel`."""
     rpanel = rightpanel
@@ -1499,7 +1473,6 @@ class Figure(mfigure.Figure):
     """Alias for `~Figure.toppanel`."""
     bpanel = bottompanel
     """Alias for `~Figure.bottompanel`."""
-
 
 #-----------------------------------------------------------------------------#
 # Primary plotting function, used to create figure/axes
