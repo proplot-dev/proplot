@@ -1,47 +1,42 @@
-Panels, colorbars, and legends
-==============================
+Panel axes
+==========
 
 It is common to need colorbars and legends along the *edges* of subplots
 and figures. It is also common to need “panels” along the edges of
 subplots, for plotting secondary 1-dimensional datasets or summary
-statistics. ProPlot satisfies both of these needs with the “panels”
-construct, powered by `~proplot.axes.BaseAxes.panel`,
-`~proplot.subplots.subplots`, and the `~proplot.axes.PanelAxes`
-class.
+statistics. ProPlot satisfies both of these needs with the
+`~proplot.axes.PanelAxes` class.
 
-`~proplot.axes.PanelAxes` have their own
+`~proplot.axes.PanelAxes` can be drawn alongside *individual axes* or
+alongisde the *figure edge*, and have their own
 `~proplot.axes.PanelAxes.colorbar` and
 `~proplot.axes.PanelAxes.legend` methods.
-`~proplot.axes.PanelAxes.colorbar` *fills* the panel with a legend –
+`~proplot.axes.PanelAxes.colorbar` *fills* the panel with a colorbar –
 that is, the panel is used as the ``cax`` argument in the call to
 `~matplotlib.figure.Figure.colorbar`.
 `~proplot.axes.PanelAxes.legend` *fills* the panel with a legend –
 that is, a legend is drawn in the center, and the axes background and
 spines are hidden.
 
-There are two types of panels: *axes panels* and *figure panels*. The
-former lie along the edge of subplots, and the latter lie along the edge
-of figures. This section documents their usage.
-
 On-the-fly axes panels
 ----------------------
 
 On-the-fly panels are a great way to draw colorbars and legends along
 the edges of axes. There are three ways to generate and *fill* an
-on-the-fly axes panel:
+on-the-fly axes panel.
 
-1. Pass the ``colorbar`` keyword to any method wrapped by
-   `~proplot.wrappers.cmap_wrapper`, or pass the ``colorbar`` or
-   ``legend`` keywords to any method wrapped by
+1. Pass ``colorbar`` to any method wrapped by
+   `~proplot.wrappers.cmap_wrapper`, or pass ``colorbar`` or
+   ``legend`` to any method wrapped by
    `~proplot.wrappers.cycle_wrapper`. The argument is the panel
    location, e.g. ``colorbar='left'`` or ``colorbar='l'``. To specify
-   panel settings, pass the ``panel_kw`` dictionary keyword arg.
-2. Pass the ``loc`` keyword to the `~proplot.axes.BaseAxes.colorbar`
-   or `~proplot.axes.BaseAxes.legend` ``BaseAxes`` methods. Again, the
+   panel settings, use the ``panel_kw`` keyword arg.
+2. Pass ``loc`` to the `~proplot.axes.BaseAxes.colorbar` or
+   `~proplot.axes.BaseAxes.legend` ``BaseAxes`` methods. Again, the
    argument is the panel location, e.g. ``loc='left'`` or ``loc='l'``.
    This is what approach #1 does internally. To specify panel settings,
-   pass the ``panel_kw`` dictionary keyword arg.
-3. Directly call the `~proplot.axes.BaseAxes.panel` method, e.g.
+   use the ``panel_kw`` keyword arg.
+3. Directly call the `~proplot.axes.BaseAxes.panel_axes` method, e.g.
    ``pax = ax.panel('l', **kwargs)``, and then call the
    `~proplot.axes.PanelAxes.colorbar` or
    `~proplot.axes.PanelAxes.legend` ``PanelAxes`` methods on ``pax``.
@@ -50,10 +45,7 @@ on-the-fly axes panel:
 No matter the combination of axes panels in your subplot grid, the
 layout will stay aligned. To modify default panel settings, use the
 `~proplot.rctools.rc` object or create a custom ``.proplotrc`` file
-(see the `~proplot.rctools` documentation for details). Note that all
-axes panels are stored as the “parent” axes attributes ``bottompanel``,
-``leftpanel``, ``rightpanel``, and ``toppanel``, with the shorthand
-aliases ``bpanel``, ``lpanel``, ``rpanel``, and ``tpanel``.
+(see the `~proplot.rctools` documentation for details).
 
 .. code:: ipython3
 

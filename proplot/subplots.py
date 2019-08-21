@@ -320,9 +320,9 @@ class FlexibleGridSpecBase(object):
         return mgridspec.SubplotSpec(self, num1, num2)
 
     def _spaces_as_ratios(self,
-            hspace=None, wspace=None, # spacing between axes
-            height_ratios=None, width_ratios=None,
-            **kwargs):
+        hspace=None, wspace=None, # spacing between axes
+        height_ratios=None, width_ratios=None,
+        **kwargs):
         """For keyword arg usage, see `FlexibleGridSpecBase`."""
         # Parse flexible input
         nrows, ncols = self.get_visible_geometry()
@@ -345,9 +345,9 @@ class FlexibleGridSpecBase(object):
             raise ValueError(f'Got {nrows} rows, but {len(hratios)} hratios.')
         if len(wratios) != ncols:
             raise ValueError(f'Got {ncols} columns, but {len(wratios)} wratios.')
-        if ncols > 1 and len(wspace) != ncols-1:
+        if len(wspace) != ncols-1:
             raise ValueError(f'Require {ncols-1} width spacings for {ncols} columns, got {len(wspace)}.')
-        if nrows > 1 and len(hspace) != nrows-1:
+        if len(hspace) != nrows-1:
             raise ValueError(f'Require {nrows-1} height spacings for {nrows} rows, got {len(hspace)}.')
 
         # Assign spacing as ratios
@@ -668,9 +668,6 @@ class Figure(mfigure.Figure):
         if paxs:
             warnings.warn(f'{name}panel already exists.')
             return paxs # return existing panels! should already be synced
-        gridspec = ax._main_gridspec
-        if gridspec is None:
-            raise ValueError(f'Gridspec attribute is empty.')
 
         # Parse keyword args
         # NOTE: This looks funny but it is meant to work with alternative API
@@ -684,54 +681,55 @@ class Figure(mfigure.Figure):
         else:
             raise ValueError(f'Invalid panel mode "{mode}". Must be one of "panel", "colorbar", or "legend".')
         kwargs = _panels_kwargs(*args, *kwtuple, figure=False)
-        kwargs.pop('sides') # which is only needed for axpanels='' usage
         # Get props pertaining to this side, issue warning if found others!
         width, sep = kwargs.pop(side + 'width'), kwargs.pop(side + 'sep')
         space, flush = kwargs.pop(side + 'space'), kwargs.pop(side + 'flush')
         share = kwargs.pop(side + 'share')
+        nstack = len(width)
+        # Check arguments
+        kwargs.pop('sides') # which is only needed for axpanels='' usage
         for key in (*kwargs,): # so dict can change size
             if kwargs[key] is None:
                 kwargs.pop(key)
         if kwargs:
             raise ValueError(f'Unknown or unused keyword args for {name}panel: {kwargs}.')
 
-        # Fix main gridspec
-        if side in 'lr':
-            ratios = gridspec.get_width_ratios()
-        else:
-            ratios = gridspec.get_height_ratios()
-        idx = (1 if side in 'lt' else -2)
-        ratios[idx] = space # space between subplot and panels
-        idx = (0 if side in 'lt' else -1)
-        ratios[idx] = sum(sep) + sum(width)
-        # Fix axes ratio, so it is in physical units
-        # ratios[2] -= (sum(sep) + sum(width) + space)
-        # Get subplotspec
-        if side == 'l':
-            key = (1,0)
-        elif side == 'r':
-            key = (1,2)
-        elif side == 'b':
-            key = (2,1)
-        elif side == 't':
-            key = (0,1)
-        subplotspec = gridspec[key]
-        # Stack settings
-        stack = len(width)
+        # Initial stuff
+        subplots_kw = self._subplots_kw
+        gridspec = self._main_gridspec
+        if gridspec is None:
+            raise ValueError(f'Gridspec attribute is empty.')
+        _along = (_yrange if side in 'lr' else _xrange) # long side
+        _across = (_xrange if side in 'lr' else _yrange) # short side
+        offset = (-1 if side in 'lt' else 1)
+        idx1 = _along(ax)
+        idx2 = _across(ax) + offset
+        # Assign spaces to subplots_kw and re-calculate layout
+        # TODO: Remove update ratios!!!
+        subplots_kw[side + 'widths'][idx2//3] = width
+        subplots_kw[side + 'spaces'][idx2//3] = space
+        subplots_kw[side + 'seps'][idx2//3] = sep
+        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+        gridspec.update(**gridspec_kw)
+        self.set_size_inches(figsize)
+        # Get subplotspec and stack gridspec settings
         if flush:
             sep = sep*0.0
         if side in 'lr':
             wspace, hspace = sep, []
             wratios, hratios = width, [1]
-            nrows, ncols = 1, stack
+            nrows, ncols = 1, nstack
         else:
             wspace, hspace = [], sep
             wratios, hratios = [1], width
-            nrows, ncols = stack, 1
+            nrows, ncols = nstack, 1
+        if side in 'bt':
+            idx1, idx2 = idx2, idx1
+        subplotspec = gridspec[idx1,idx2]
 
         # Draw panel(s)
         paxs = []
-        sgridspec = FlexibleGridSpecFromSubplotSpec(
+        igridspec = FlexibleGridSpecFromSubplotSpec(
             subplot_spec=subplotspec,
             nrows=nrows, ncols=ncols,
             wspace=wspace, hspace=hspace,
@@ -739,15 +737,14 @@ class Figure(mfigure.Figure):
         for i in range(stack):
             try:
                 self._locked = False
-                pax = self.add_subplot(sgridspec[i],
+                pax = self.add_subplot(igridspec[i],
                     side=name, flush=flush,
                     share=share, parent=ax, projection='panel',
                     )
             except Exception as err:
                 self._locked = True
                 raise err
-            pax._main_gridspec = gridspec
-            pax._stack_gridspec = sgridspec
+            pax._stack_gridspec = igridspec
             paxs += [pax]
 
         # Add as axes_grid. Support 2D indexing, even though these are
@@ -762,8 +759,8 @@ class Figure(mfigure.Figure):
         """Gets figure coordinates for spanning labels and super title. The
         `name` can be ``'x'`` or ``'y'``."""
         # Get position in figure relative coordinates
-        along = (_xrange if name == 'x' else _yrange)
-        ranges = np.array([along(ax) for ax in axs])
+        _along = (_xrange if name == 'x' else _yrange)
+        ranges = np.array([_along(ax) for ax in axs])
         min_, max_ = ranges[:,0].min(), ranges[:,1].max()
         axlo = axs[np.where(ranges[:,0]==min_)[0][0]]
         axhi = axs[np.where(ranges[:,1]==max_)[0][0]]
@@ -1207,8 +1204,7 @@ class Figure(mfigure.Figure):
         # self.subplots_adjust(**{key:value for key,value in gridspec_kw.items() if key in ('left','right','top','bottom')})
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         gridspec.update(**gridspec_kw)
-        self.set_size_inches(figsize, forward=True)
-        self._update_ratios(**gridspec_kw) # update axes width/height in wratios/hratios
+        self.set_size_inches(figsize)
         # Axes width and height used for unit scaling in various places
         width, height = figsize
         for ax in axs:
@@ -1282,8 +1278,7 @@ class Figure(mfigure.Figure):
         subplots_kw[key][loc] += sum(sep) + sum(width) + space
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         gridspec.update(**gridspec_kw)
-        self.set_size_inches(figsize, forward=True)
-        self._update_ratios(**gridspec_kw)
+        self.set_size_inches(figsize)
 
     def _update_aspect(self):
         """Adjust average aspect ratio used for gridspec calculations. This
@@ -1315,7 +1310,6 @@ class Figure(mfigure.Figure):
                 figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
                 gridspec.update(**gridspec_kw)
                 self.set_size_inches(figsize)
-                self._update_ratios(**gridspec_kw)
 
     def _update_axislabels(self, axis=None, **kwargs):
         """Applies axis labels to the relevant shared axis. If spanning
@@ -1343,39 +1337,6 @@ class Figure(mfigure.Figure):
             for axis in axes:
                 axis.label.set_visible(True)
                 axis.label.update(kwargs)
-
-    def _update_ratios(self, **kwargs):
-        """Updates the width and height ratios values in the 5x5 subplot
-        gridspecs to account for changes to figure size -- makes sure
-        ratio values match physical units in inches. Without this, if the
-        figure size changes, panel widths change! Keyword args are sent
-        to `~matplotlib.gridspec.GridSpec.update`."""
-        # Main gridspec ratios
-        gridspec = self._main_gridspec
-        wratios = gridspec.get_width_ratios()
-        hratios = gridspec.get_height_ratios()
-        for ax in self._main_axes:
-            # Get extra space for panels
-            igridspec = ax._main_gridspec
-            iwratios = igridspec.get_width_ratios() # gets my *custom* ratios
-            ihratios = igridspec.get_height_ratios()
-            wpanels = sum(r for i,r in enumerate(iwratios) if i != 2)
-            hpanels = sum(r for i,r in enumerate(ihratios) if i != 2) # all entries of 5x5 gridspec
-            # Get current space alotted in main gridspec
-            xrange = 2*np.array(_xrange(ax)) # get range for *actual* grid, not just visible grid
-            yrange = 2*np.array(_yrange(ax))
-            fullwidth = sum(wratios[xrange[0]:xrange[1]+1])
-            fullheight = sum(hratios[yrange[0]:yrange[1]+1])
-            # Adjust child gridspec to reflect changes in parent
-            iwratios[2] = fullwidth - wpanels
-            ihratios[2] = fullheight - hpanels
-            igridspec.set_width_ratios(iwratios)
-            igridspec.set_height_ratios(ihratios)
-        # Update main gridspec to reflect changes to child gridspecs.
-        # Required because update propagates *down*, not *up*
-        # NOTE: gridspec.update *always* needs the original keyword args, or
-        # it seems to impose default properties!
-        gridspec.update(**kwargs)
 
     def _update_suplabels(self, ax, labels, rows=True, **kwargs):
         """Assigns row labels and column labels, updates label settings."""
@@ -1602,20 +1563,21 @@ def _subplots_geometry(**kwargs):
     # Axes panel settings
     # wpanels, hpanels = _pop('wpanels'), _pop('hpanels')
     lwidths, rwidths = _pop('lwidths'), _pop('rwidths')
-    lspaces, rspaces = _pop('lspaces'), _pop('rspaces')
     bwidths, twidths = _pop('bwidths'), _pop('twidths')
+    lspaces, rspaces = _pop('lspaces'), _pop('rspaces')
     bspaces, tspaces = _pop('bspaces'), _pop('tspaces')
+    lseps, rseps = _pop('lseps'), _pop('rseps')
+    bseps, tseps = _pop('bseps'), _pop('tseps')
     # Figure panel settings
     # Some are only needed when setting up panel axes, so we ignore them
-    _, bwidth, bspace = _pop('barray'), _pop('bwidth'), _pop('bspace')
-    _, lwidth, lspace = _pop('larray'), _pop('lwidth'), _pop('lspace')
-    _, rwidth, rspace = _pop('rarray'), _pop('rwidth'), _pop('rspace')
-    _, twidth, tspace = _pop('tarray'), _pop('twidth'), _pop('tspace')
-    rsep, _, _ = _pop('rsep'), _pop('rshare'), _pop('rflush')
-    bsep, _, _ = _pop('bsep'), _pop('bshare'), _pop('bflush')
-    lsep, _, _ = _pop('lsep'), _pop('lshare'), _pop('lflush')
-    tsep, _, _ = _pop('tsep'), _pop('tshare'), _pop('tflush')
-    # Defaults for axes panel calculations
+    bwidth, bspace, rsep = _pop('bwidth'), _pop('bspace'), _pop('bsep')
+    lwidth, lspace, bsep = _pop('lwidth'), _pop('lspace'), _pop('lsep')
+    rwidth, rspace, lsep = _pop('rwidth'), _pop('rspace'), _pop('rsep')
+    twidth, tspace, tsep = _pop('twidth'), _pop('tspace'), _pop('tsep')
+    *_ = _pop('rarray'), _pop('rshare'), _pop('rflush') # make sure they are present
+    *_ = _pop('barray'), _pop('bshare'), _pop('bflush')
+    *_ = _pop('larray'), _pop('lshare'), _pop('lflush')
+    *_ = _pop('tarray'), _pop('tshare'), _pop('tflush')
     # Defaults for figure panel calculations
     lsep, rsep = _notNone(lsep, []), _notNone(rsep, [])
     tsep, bsep = _notNone(tsep, []), _notNone(bsep, [])
@@ -1623,6 +1585,15 @@ def _subplots_geometry(**kwargs):
     tspace, bspace = _notNone(tspace, 0), _notNone(bspace, 0)
     lwidth, rwidth = _notNone(lwidth, [0]), _notNone(rwidth, [0])
     twidth, bwidth = _notNone(twidth, [0]), _notNone(bwidth, [0])
+    # Space allocated for figure and axes panel stacks
+    lpanel = sum(lwidth) + sum(lsep)
+    rpanel = sum(rwidth) + sum(rsep)
+    bpanel = sum(bwidth) + sum(bsep)
+    tpanel = sum(twidth) + sum(tsep)
+    lpanels = [sum(lwidth) + sum(lsep) for lwidth,lsep in zip(lwidths,lseps)]
+    rpanels = [sum(rwidth) + sum(rsep) for rwidth,rsep in zip(rwidths,rseps)]
+    bpanels = [sum(bwidth) + sum(bsep) for bwidth,bsep in zip(bwidths,bseps)]
+    tpanels = [sum(twidth) + sum(tsep) for twidth,tsep in zip(twidths,tseps)]
     # Check no extra args passed
     if kwargs:
         raise ValueError(f'Unknown keyword args passed to _subplots_geometry: {kwargs}.')
@@ -1637,10 +1608,6 @@ def _subplots_geometry(**kwargs):
     rhspace = sum(hspace[yref[0]:yref[1]-1])
     rwratio = ncols*(sum(wratios[xref[0]:xref[1]])/dx)/sum(wratios)
     rhratio = nrows*(sum(hratios[yref[0]:yref[1]])/dy)/sum(hratios)
-    bpanel = sum(bwidth) + sum(bsep) + bspace
-    rpanel = sum(rwidth) + sum(rsep) + rspace
-    lpanel = sum(lwidth) + sum(lsep) + lspace
-    tpanel = sum(twidth) + sum(tsep) + tspace
     if np.iterable(aspect):
         aspect = aspect[0]/aspect[1]
 
@@ -1654,19 +1621,27 @@ def _subplots_geometry(**kwargs):
         if axheight is not None:
             auto_width = True
             axheight_all = ((axheight - rhspace)/dy/rhratio)*nrows
-            height = axheight_all + top + bottom + sum(hspace) + sum(hpanels) + bpanel + tpanel
+            height = (axheight_all + top + bottom + sum(hspace)
+                + sum(bpanels) + sum(tpanels) + sum(lspaces) + sum(rspaces)
+                + bpanel + tpanel + bspace + tspace)
         if axwidth is not None:
             auto_height = True
             axwidth_all = ((axwidth - rwspace)/dx/rwratio)*ncols
-            width = axwidth_all + left + right + sum(wspace) + sum(wpanels) + rpanel + lpanel
+            width = (axwidth_all + left + right + sum(wspace)
+                + sum(lpanels) + sum(rpanels) + sum(lspaces) + sum(rspaces)
+                + lpanel + rpanel + lspace + rspace)
         if axwidth is not None and axheight is not None:
             auto_width = auto_height = False
     else:
         if height is not None:
-            axheight_all = height - top - bottom - sum(hspace) - sum(hpanels) - bpanel - tpanel
+            axheight_all = (height - top - bottom - sum(hspace)
+                - sum(bpanels) - sum(tpanels) - sum(bspaces) - sum(tspaces)
+                - bpanel - tpanel - bspace - tspace)
             axheight = (axheight_all*dy/nrows) + rhspace # reverse engineered from above
         if width is not None:
-            axwidth_all = width - left - right - sum(wspace) - sum(wpanels) - rpanel - lpanel
+            axwidth_all = (width - left - right - sum(wspace)
+                - sum(lpanels) - sum(rpanels) - sum(lspaces) - sum(rspaces)
+                - lpanel - rpanel - lspace - rspace)
             axwidth = (axwidth_all*dx/ncols) + rwspace
 
     # Automatically scale fig dimensions
@@ -1685,13 +1660,27 @@ def _subplots_geometry(**kwargs):
     if axheight_all < 0:
         raise ValueError(f"Not enough room for axes (would have height {axheight_all}). Try using tight=False, increasing figure height, or decreasing 'top', 'bottom', or 'hspace' spaces.")
 
-    # Add figure panels space
+    # Ratios and spaces in physical units
+    iwspace = wspace
+    ihspace = hspace
+    iwratios = axwidth_all*wratios/sum(wratios)
+    ihratios = axheight_all*hratios/sum(hratios)
+    # Ratios and spaces with axes panels
+    wspace = [None]*(3*ncols-1)
+    hspace = [None]*(3*nrows-1)
+    wratios = [None]*(3*ncols)
+    hratios = [None]*(3*nrows)
+    wratios[1::3], hratios[1::3] = iwratios, ihratios
+    wratios[0::3], hratios[0::3] = lpanels, tpanels
+    wratios[2::3], hratios[2::3] = rpanels, bpanels
+    wspace[2::3], hspace[2::3] = iwspace, ihspace # should be ncols-1, nrows-1
+    wspace[0::3], hspace[0::3] = lspaces, tspaces
+    wspace[1::3], hspace[1::3] = rspaces, bspaces
+    # Ratios and spaces with figure panels
+    wratios = [lpanel, *wratios, rpanel]
+    hratios = [tpanel, *hratios, bpanel]
     wspace = [lspace, *wspace, rspace] # may be zero
     hspace = [tspace, *hspace, bspace]
-    lpanel, rpanel = sum(lwidth) + sum(lsep), sum(rwidth) + sum(rsep)
-    tpanel, bpanel = sum(twidth) + sum(tsep), sum(bwidth) + sum(bsep)
-    wratios = [lpanel, *(axwidth_all*wratios/sum(wratios) + wpanels), rpanel]
-    hratios = [tpanel, *(axheight_all*hratios/sum(hratios) + hpanels), bpanel]
     # Keyword args for gridspec class
     # Make 'ratios' and 'spaces' in physical units
     left, right = left/width, 1 - right/width
@@ -2107,12 +2096,12 @@ def subplots(array=None, ncols=1, nrows=1,
     # Axes panels
     #-------------------------------------------------------------------------#
     # Flexible args
-    axpanels = _notNone(axpanel, axpanels, '', names=('axpanel','axpanels'))
+    axpanels    = _notNone(axpanel, axpanels, '', names=('axpanel','axpanels'))
     axcolorbars = _notNone(axcolorbar, axcolorbars, '', names=('axcolorbar','axcolorbars'))
-    axlegends = _notNone(axlegend, axlegends, '', names=('axlegend','axlegends'))
-    axpanels_kw = _notNone(axpanel_kw, axpanels_kw, {}, names=('axpanel_kw', 'axpanels_kw'))
+    axlegends   = _notNone(axlegend, axlegends, '', names=('axlegend','axlegends'))
+    axpanels_kw    = _notNone(axpanel_kw, axpanels_kw, {}, names=('axpanel_kw', 'axpanels_kw'))
     axcolorbars_kw = _notNone(axcolorbar_kw, axcolorbars_kw, {}, names=('axcolorbar_kw', 'axcolorbars_kw'))
-    axlegends_kw = _notNone(axlegend_kw, axlegends_kw, {}, names=('axlegend_kw', 'axlegends_kw'))
+    axlegends_kw   = _notNone(axlegend_kw, axlegends_kw, {}, names=('axlegend_kw', 'axlegends_kw'))
     for iname,ipanels,ikw in (
         ('panels', axpanels, axpanels_kw),
         ('colorbars', axcolorbars, axcolorbars_kw),
@@ -2214,8 +2203,8 @@ def subplots(array=None, ncols=1, nrows=1,
     yref = yrange[ref-1,:]
 
     #-------------------------------------------------------------------------#
-    # Get basemap.Basemap or cartopy.CRS instances for map, and
-    # override aspect ratio.
+    # Get basemap.Basemap or cartopy.crs.Projection instances for map, and
+    # override aspect ratio
     #-------------------------------------------------------------------------#
     # NOTE: Cannot have mutable dict as default arg, because it changes the
     # "default" if user calls function more than once! Swap dicts for None.
@@ -2237,10 +2226,10 @@ def subplots(array=None, ncols=1, nrows=1,
         # Custom Basemap and Cartopy axes
         else:
             package = 'basemap' if basemap[num] else 'cartopy'
-            instance, iaspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
+            obj, iaspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
             if num == ref:
                 aspect = iaspect
-            axes_kw[num].update({'projection':package, 'map_projection':instance})
+            axes_kw[num].update({'projection':package, 'map_projection':obj})
 
     #-------------------------------------------------------------------------#
     # Figure architecture
@@ -2271,17 +2260,21 @@ def subplots(array=None, ncols=1, nrows=1,
     for name,value in zip(names,values):
         if value is not None:
             warnings.warn(f'You specified both {spec} and {name}={repr(value)}. Ignoring "{name}".')
+
     # Standardize input
     width  = units(width)
     height = units(height)
     axwidth  = units(axwidth)
     axheight = units(axheight)
-
     # Gridspec defaults
     # NOTE: Ratios are scaled to take physical units in _subplots_geometry, so
     # user can manually provide hspace and wspace in physical units.
     wratios = np.atleast_1d(_notNone(width_ratios, wratios, 1, names=('width_ratios', 'wratios')))
     hratios = np.atleast_1d(_notNone(height_ratios, hratios, 1, names=('height_ratios', 'hratios')))
+    if len(wratios) == 1:
+        wratios = np.repeat(wratios, (ncols,))
+    if len(hratios) == 1:
+        hratios = np.repeat(hratios, (nrows,))
     # Subplot space
     hspace = np.atleast_1d(_notNone(units(hspace),
         units(rc['subplots.titlespace']) + units(rc['subplots.innerspace']) if sharex == 3
@@ -2293,20 +2286,27 @@ def subplots(array=None, ncols=1, nrows=1,
         else units(rc['subplots.ylabspace']) - units(rc['subplots.titlespace']) if sharey in (1,2) # space for tick labels only
         else units(rc['subplots.ylabspace'])
         ))
-    wflush = _notNone(wflush, flush, False)
-    hflush = _notNone(hflush, flush, False)
-    if len(wratios) == 1:
-        wratios = np.repeat(wratios, (ncols,))
-    if len(hratios) == 1:
-        hratios = np.repeat(hratios, (nrows,))
     if len(wspace) == 1:
         wspace = np.repeat(wspace, (ncols-1,))
     if len(hspace) == 1:
         hspace = np.repeat(hspace, (nrows-1,))
+    # Flush spacing
+    wflush = _notNone(wflush, flush, False)
+    hflush = _notNone(hflush, flush, False)
     if wflush:
         wspace = wspace*0.0
     if hflush:
         hspace = hspace*0.0
+    # Checks, copied from FlexibleGridSpec but needed here because we make
+    # these complicated list assignments in _subplots_geometry
+    if len(hratios) != nrows:
+        raise ValueError(f'Got {nrows} rows, but {len(hratios)} hratios.')
+    if len(wratios) != ncols:
+        raise ValueError(f'Got {ncols} columns, but {len(wratios)} wratios.')
+    if ncols > 1 and len(wspace) != ncols-1:
+        raise ValueError(f'Require {ncols-1} width spacings for {ncols} columns, got {len(wspace)}.')
+    if nrows > 1 and len(hspace) != nrows-1:
+        raise ValueError(f'Require {nrows-1} height spacings for {nrows} rows, got {len(hspace)}.')
     # Border space
     left   = units(_notNone(left,   rc['subplots.ylabspace']))
     bottom = units(_notNone(bottom, rc['subplots.xlabspace']))
@@ -2319,17 +2319,15 @@ def subplots(array=None, ncols=1, nrows=1,
         left=left, right=right, bottom=bottom, top=top,
         width=width, height=height, axwidth=axwidth, axheight=axheight,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
-        # wpanels=[0]*ncols, hpanels=[0]*nrows, # computed automatically later
+        lwidths=[[0]]*ncols, rwidths=[[0]]*ncols,
+        bwidths=[[0]]*nrows, twidths=[[0]]*nrows,
         lspaces=[0]*ncols, rspaces=[0]*ncols,
-        bspaces=[0]*nrows, tspaces=[0]*nrows, # computed automatically later
-        lwidths=[0]*ncols, rwidths=[0]*ncols,
-        bwidths=[0]*nrows, twidths=[0]*nrows, # computed automatically later
+        bspaces=[0]*nrows, tspaces=[0]*nrows,
+        lseps=[[]]*ncols, rseps=[[]]*ncols,
+        bseps=[[]]*nrows, tseps=[[]]*nrows,
         **kwargs)
-    # Apply settings and add attributes
-    gridspec = FlexibleGridSpec(**gridspec_kw)
     # Create blank figure
-    # WARNING: Important to pass main_gridspec and supblots_kw to figure right
-    # away because some backends will call fig.draw immediately on instantiation.
+    gridspec = FlexibleGridSpec(**gridspec_kw)
     fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize, ref=ref,
         tightborders=tightborders, tightsubplots=tightsubplots, tightpanels=tightpanels,
         borderpad=borderpad, subplotpad=subplotpad, panelpad=panelpad,
@@ -2338,7 +2336,6 @@ def subplots(array=None, ncols=1, nrows=1,
         main_gridspec=gridspec,
         subplots_kw=subplots_kw,
         )
-    fig._locked = False
 
     #-------------------------------------------------------------------------#
     # Draw on figure
@@ -2348,27 +2345,20 @@ def subplots(array=None, ncols=1, nrows=1,
     for idx in range(naxs):
         # Get figure gridspec ranges
         num = idx + 1
-        x0, x1 = xrange[idx,0]+1, xrange[idx,1]+1
-        y0, y1 = yrange[idx,0]+1, yrange[idx,1]+1
-        # Get gridspec for ensemble of axes and panels
-        # TODO: What happens when figure size changes? Are these fixed?
+        x0, x1 = xrange[idx,0]*3 + 2, xrange[idx,1]*3 + 2 # offsets for panels
+        y0, y1 = yrange[idx,0]*3 + 2, yrange[idx,1]*3 + 2
+        # Draw subplot
         subplotspec = gridspec[y0:y1, x0:x1]
-        figwidth, figheight = fig.get_size_inches()
-        bbox = subplotspec.get_position(fig) # valid since axes not drawn yet
-        width = abs(bbox.width)*figwidth
-        height = abs(bbox.height)*figheight
-        igridspec = FlexibleGridSpecFromSubplotSpec(
-                subplot_spec=subplotspec,
-                nrows=3, ncols=3,
-                wspace=[0,0], hspace=[0,0],
-                width_ratios=[0,width,0], height_ratios=[0,height,0],
-                )
-        # Add subplot
-        axs[idx] = fig.add_subplot(igridspec[1,1],
-            number=num, spanx=spanx, spany=spany,
-            sharex_level=sharex, sharey_level=sharey,
-            main_gridspec=igridspec,
-            **axes_kw[num])
+        try:
+            fig._locked = False
+            axs[idx] = fig.add_subplot(subplotspec,
+                number=num, spanx=spanx, spany=spany,
+                sharex_level=sharex, sharey_level=sharey,
+                main_gridspec=gridspec,
+                **axes_kw[num])
+        except Exception as err:
+            fig._locked = True
+            raise err
     # Set up shared axes
     fig._main_axes = axs
     if sharex:
@@ -2392,51 +2382,56 @@ def subplots(array=None, ncols=1, nrows=1,
         kw = axpanels_kw[num]
         sides = kw.pop('sides')
         for side in sides:
-            ax.panel_axes(side, order=order, **kw)
-
-    # Create outer panels
+            fig._add_panel(ax, side, order=order, **kw)
+    # Draw figure panels
     for side in 'blrt':
-        # Draw panel from gridspec
         array = subplots_kw[side + 'array']
         if array is None:
             continue
-        name = _side_translate[side]
         paxs = []
+        name = _side_translate[side]
         for num in np.unique(array).flat:
-            # Get subspec, and settings
+            # Get gridspec stack settings
             # TODO: Allow for different width ratios and stuff
             if num == 0:
                 continue
             flush = kwargs[side + 'flush']
-            idx, = np.where(array == num)
-            idx = slice(min(idx)+1, max(idx)+2)
+            share = kwargs[side + 'share']
             if side in 'lr':
                 hspace, hratios = [], 1
                 wspace, wratios = kwargs[side + 'sep'], kwargs[side + 'width']
                 nrows, ncols = 1, len(wratios)
-                if side == 'r':
-                    subspec = gridspec[idx,-1] # ignore corners
-                else:
-                    subspec = gridspec[idx,0]
             else:
                 wspace, wratios = [], 1
                 hspace, hratios = kwargs[side + 'sep'], kwargs[side + 'width']
                 nrows, ncols = len(hratios), 1
-                if side == 'b':
-                    subspec = gridspec[-1,idx]
-                else:
-                    subspec = gridspec[0,idx]
+            # Get subplotspec
+            idx, = np.where(array == num)
+            idx1 = slice(min(idx) + 2, max(idx) + 3) # ignores axes panel slots
+            idx2 = 0 if side in 'lt' else -1
+            if side in 'bt':
+                idx1, idx2 = idx2, idx1
+            subplotspec = gridpsec[idx1,idx2]
             # Make gridspec for containing the "stack" of panels
             ipaxs = []
-            igridspec = FlexibleGridSpecFromSubplotSpec(subplot_spec=subspec,
+            igridspec = FlexibleGridSpecFromSubplotSpec(
+                subplot_spec=subplotspec,
                 nrows=nrows, ncols=ncols,
                 wspace=wspace, hspace=hspace,
                 width_ratios=wratios, height_ratios=hratios,
                 )
             for i in range(max((nrows,ncols))):
-                ipax = fig.add_subplot(igridspec[i], projection='panel', side=name, flush=flush)
-                ipax._main_gridspec = fig._main_gridspec
-                ipax._stack_gridspec = igridspec
+                try:
+                    fig._locked = False
+                    ipax = fig.add_subplot(igridspec[i],
+                        projection='panel', side=name,
+                        flush=flush, share=share,
+                        main_gridspec=gridspec,
+                        stack_gridspec=igridspec,
+                        )
+                except Exception as err:
+                    fig._locked = True
+                    raise err
                 ipaxs += [ipax]
             paxs += [ipaxs]
         # Sort panel axes into row-major or column-major order
@@ -2450,6 +2445,5 @@ def subplots(array=None, ncols=1, nrows=1,
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
-    fig._locked = True
     return fig, axes_grid(axs, n=n, order=order)
 
