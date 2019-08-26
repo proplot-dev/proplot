@@ -27,7 +27,6 @@ import matplotlib as mpl
 import warnings
 from . import colormath
 from .utils import _notNone, _timer
-from matplotlib import get_data_path
 rcParams = mpl.rcParams
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorCacheDict',

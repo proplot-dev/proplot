@@ -17,7 +17,7 @@ on PyPi (but it's coming soon!). For the time being, you may install directly fr
 
 .. code-block:: bash
 
-   pip install git+https://github.com/lukelbd/proplot.git#egg=proplot
+   pip install git+https://github.com/lukelbd/proplot.git
 
 To upgrade to the latest version, run ``pip uninstall proplot``, then re-install -- ``pip install --upgrade`` doesn't always work with packages downloaded from Github.
 
