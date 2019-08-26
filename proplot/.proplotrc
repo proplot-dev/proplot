@@ -3,12 +3,13 @@
 #------------------------
 # Notebooks
 nbsetup:    True
-backend:    inline # could also be notebook, but ProPlot discourages interactive figure resizing
+format:     retina
 autosave:   30
 autoreload: 2
 # Style
 abc:          False
 share:        3
+align:        False
 span:         True
 tight:        True
 fontname:     # if empty, default is Helvetica
@@ -91,32 +92,38 @@ mathtext.default:        regular
 # rcExtraParams defaults
 #-----------------------
 # Extra label settings
-abc.loc:           l # left side above the axes
-title.loc:         c # centered above the axes
-title.pad:         3.0 # copy
-abc.format:        a
-abc.fontsize:      # filled by 'large'
-abc.color:         k
-abc.weight:        bold
-abc.border:        True
-abc.linewidth:     1.5 
-title.fontsize:    # filled by 'large'
-title.color:       k
-title.weight:      normal
-title.border:      True
-title.linewidth:   1.5
-suptitle.fontsize: # filled by 'large'
-suptitle.color:    k
-suptitle.weight:   bold
-rowlabel.fontsize: # filled by 'large'
-rowlabel.weight:   bold
-rowlabel.color:    k
-collabel.fontsize: # filled by 'large'
-collabel.weight:   bold
-collabel.color:    k
-tick.labelsize:    # filled by 'small'
-tick.labelcolor:   # filled by 'color'
-tick.labelweight:  normal
+abc.loc:              l # left side above the axes
+title.loc:            c # centered above the axes
+title.pad:            3.0 # copy
+abc.format:           a
+abc.fontsize:         # filled by 'large'
+abc.color:            k
+abc.weight:           bold
+abc.border:           True
+abc.linewidth:        1.5
+tick.labelsize:       # filled by 'small'
+tick.labelcolor:      # filled by 'color'
+tick.labelweight:     normal
+title.fontsize:       # filled by 'large'
+title.color:          k
+title.weight:         normal
+title.border:         True
+title.linewidth:      1.5
+suptitle.fontsize:    # filled by 'large'
+suptitle.color:       k
+suptitle.weight:      bold
+leftlabel.fontsize:   # filled by 'large'
+leftlabel.weight:     bold
+leftlabel.color:      k
+toplabel.fontsize:    # filled by 'large'
+toplabel.weight:      bold
+toplabel.color:       k
+rightlabel.fontsize:  # filled by 'large'
+rightlabel.weight:    bold
+rightlabel.color:     k
+bottomlabel.fontsize: # filled by 'large'
+bottomlabel.weight:   bold
+bottomlabel.color:    k
 # Extra image settings
 image.edgefix: True
 image.levels: 11
@@ -169,16 +176,15 @@ colorbar.axespad:     0.5em
 # Subplot properties
 # Use font relative units for everything because this is common way user
 # might want to increase figure resolution
-subplots.axwidth:    18em  # 2 inches
-subplots.panelwidth: 4em   # 0.45 inches
-subplots.cbarwidth:  1.5em # 0.17 inches
-subplots.legwidth:   1.5em # 0.25 inches
-subplots.panelpad:   0.5em # affects the figure when tight=True
-subplots.borderpad:  0.5em
-subplots.subplotpad: 1em
-subplots.titlespace: 2em # affects the figure when tight=False
-subplots.innerspace: 1em
-subplots.ylabspace:  5.5em # tick labels and axis label
-subplots.xlabspace:  4em
-subplots.nolabspace: 1.5em
-subplots.panelspace: 1.5em
+subplots.axwidth:       18em  # 2 inches
+subplots.panelwidth:    4em   # 0.45 inches
+subplots.colorbarwidth: 1.5em # 0.17 inches
+subplots.legendwidth:   1.5em # 0.25 inches
+subplots.pad:           0.5em
+subplots.axpad:         1em
+subplots.panelpad:      0.5em
+subplots.panelspace:    1em
+subplots.innerspace:    1.5em
+subplots.ylabspace:     5.5em
+subplots.xlabspace:     4em
+subplots.titlespace:    2em

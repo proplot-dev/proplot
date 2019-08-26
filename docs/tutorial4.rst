@@ -1,15 +1,15 @@
 Panel axes
 ==========
 
-It is common to need colorbars and legends along the *edges* of subplots
-and figures. It is also common to need “panels” along the edges of
-subplots, for plotting secondary 1-dimensional datasets or summary
-statistics. ProPlot satisfies both of these needs with the
-`~proplot.axes.PanelAxes` class.
+It is common to need colorbars and legends along the outside edge of
+*individual axes* or on the inner edge of the *figure*. It is also
+common to need “panels” for plotting secondary 1-dimensional datasets or
+summary statistics next to a larger subplot. ProPlot satisfies both of
+these needs with the `~proplot.axes.PanelAxes` class.
 
-`~proplot.axes.PanelAxes` can be drawn alongside *individual axes* or
-alongisde the *figure edge*, and have their own
-`~proplot.axes.PanelAxes.colorbar` and
+`~proplot.axes.PanelAxes` are constructed with the
+`~proplot.subplots.subplots` and `~proplot.axes.Axes.panel_axes`
+functions, and have special `~proplot.axes.PanelAxes.colorbar` and
 `~proplot.axes.PanelAxes.legend` methods.
 `~proplot.axes.PanelAxes.colorbar` *fills* the panel with a colorbar –
 that is, the panel is used as the ``cax`` argument in the call to
@@ -31,12 +31,12 @@ on-the-fly axes panel.
    `~proplot.wrappers.cycle_wrapper`. The argument is the panel
    location, e.g. ``colorbar='left'`` or ``colorbar='l'``. To specify
    panel settings, use the ``panel_kw`` keyword arg.
-2. Pass ``loc`` to the `~proplot.axes.BaseAxes.colorbar` or
-   `~proplot.axes.BaseAxes.legend` ``BaseAxes`` methods. Again, the
-   argument is the panel location, e.g. ``loc='left'`` or ``loc='l'``.
-   This is what approach #1 does internally. To specify panel settings,
-   use the ``panel_kw`` keyword arg.
-3. Directly call the `~proplot.axes.BaseAxes.panel_axes` method, e.g.
+2. Pass ``loc`` to the `~proplot.axes.Axes.colorbar` or
+   `~proplot.axes.Axes.legend` ``Axes`` methods. Again, the argument
+   is the panel location, e.g. ``loc='left'`` or ``loc='l'``. This is
+   what approach #1 does internally. To specify panel settings, use the
+   ``panel_kw`` keyword arg.
+3. Directly call the `~proplot.axes.Axes.panel_axes` method, e.g.
    ``pax = ax.panel('l', **kwargs)``, and then call the
    `~proplot.axes.PanelAxes.colorbar` or
    `~proplot.axes.PanelAxes.legend` ``PanelAxes`` methods on ``pax``.
@@ -58,7 +58,7 @@ layout will stay aligned. To modify default panel settings, use the
     ax.colorbar(m, loc='r')
     ax.format(title='On-the-fly colorbars', suptitle='On-the-fly panels demo')
     ax = axs[1]
-    ax.format(title='On-the-fly legends')
+    ax.format(title='On-the-fly legends', titlepad='0em')
     hs = ax.plot((np.random.rand(10,5)-0.5).cumsum(axis=0), lw=3, legend='t', cycle='sharp',
             labels=list('abcde'), legend_kw={'ncols':5, 'frame':False})
     ax.legend(hs, loc='r', ncols=1, frame=False)
@@ -67,7 +67,7 @@ layout will stay aligned. To modify default panel settings, use the
         pax = ax.panel('b', share=True)
         pax.plot(np.random.rand(10,4), cycle_kw={'linestyle':('-','--','-.',':')})
         # ax.bpanel.plot(...) # also works!
-    axs.format(xlabel='xlabel', ylabel='ylabel')
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Super title')
 
 
 
@@ -97,16 +97,15 @@ The below examples demonstrate a few more panel features. To draw panels
 and ``rflush`` keyword args. If you want to disable “axis sharing” with
 the parent subplot (see :ref:`Axis sharing and spanning`), use the
 ``bshare``, ``tshare``, ``rshare``, and ``lshare`` keyword args. See
-`~proplot.axes.BaseAxes.panel` for details.
+`~proplot.axes.Axes.panel` for details.
 
 .. code:: ipython3
 
-    # Arbitrarily complex combinations are possible, and inner spaces still determined automatically
     import proplot as plot
     f, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2,
                            axpanels={1:'t', 2:'l', 3:'b', 4:'r'},
                            tight=True, share=0)
-    axs.format(title='Title', suptitle='This is a super title', collabels=['Column 1','Column 2'],
+    axs.format(title='Title', suptitle='Bulk axes panels demo', collabels=['Column 1','Column 2'],
                abcloc='ul', titleloc='uc', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
     axs.format(xlim=(0,1), ylim=(0,1), ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
 
@@ -121,8 +120,8 @@ the parent subplot (see :ref:`Axis sharing and spanning`), use the
     import numpy as np
     plot.rc.reset()
     f, axs = plot.subplots(axwidth=1.7, nrows=2, ncols=2, share=0, panelpad=0.1,
-                           axpanels='r', axpanels_kw={'share':False, 'flush':True})
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='This is a super title')
+                           axpanels='r', axpanels_kw={'share':False, 'space':0})
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Bulk axes panels demo')
     for i,ax in enumerate(axs):
         ax.format(title=f'Dataset {i+1}')
     data = (np.random.rand(20,20)-0.1).cumsum(axis=1)
@@ -158,7 +157,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
     import numpy as np
     f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, colorbar='br', barray=[1,2,2])
     m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
-    axs.format(suptitle='Super title', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
+    axs.format(suptitle='Figure panels demo', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
     f.bpanel[0].colorbar(m, label='label', ticks=0.5)
     f.bpanel[1].colorbar(m, label='label', ticks=0.2)
     f.rpanel.colorbar(m, label='label', ticks=0.1, length=0.7)
@@ -186,7 +185,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
         hs.extend(h[0])
     f.bpanel[0].colorbar(m[0], length=0.8, label='label')
     f.bpanel[1].legend(hs, ncols=5, label='label', frame=True)
-    axs.format(suptitle='Global colorbar and global legend', abc=True, abcloc='ul', abcformat='A')
+    axs.format(suptitle='Figure panels demo', abc=True, abcloc='ul', abcformat='A')
     for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
         ax.format(xlabel='xlabel', title=title)
 
@@ -200,7 +199,7 @@ Stacked panels
 
 You can draw *stacks* of figure and axes panels by passing the
 ``lstack``, ``bstack``, ``rstack``, and ``tstack`` keyword args to
-`~proplot.axes.BaseAxes.panel`. This is useful when you need multiple
+`~proplot.axes.Axes.panel`. This is useful when you need multiple
 *global* colorbars, when using more than one colormap inside a *single
 subplot*, or when you need multiple panels for displaying different
 statistics. The spacing between stacked panels is adjusted automatically
@@ -222,8 +221,8 @@ the top.
     import numpy as np
     f, axs = plot.subplots(nrows=2, axwidth='4cm', share=0)
     axs.panel_axes('l', mode='colorbar', stack=3) # subplots(..., axcolorbars='l') also works
-    axs.panel_axes('r', stack=2, flush=True, width=0.5) # subplots(..., axpanels='r') also works
-    axs[0].format(title='Stacked panel demo', titleweight='bold')
+    axs.panel_axes('r', stack=2, space=0, sep=0, width=0.5) # subplots(..., axpanels='r') also works
+    axs[0].format(title='Stacked panels demo', titleweight='bold')
     # Draw stuff in axes
     N = 10
     for ax in axs:
@@ -236,11 +235,13 @@ the top.
             ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0,scale,11), colorbar=('l',i))
             # ax.bpanel[i].colorbar(m) # also works
         # Plot data
+        n = 20
         for i,pax in enumerate(ax.rpanel):
-            func = data.mean if i==0 else data.std
+            data = (np.random.rand(n,n)-0.5).cumsum(axis=0)
+            data = (data.mean(axis=1) if i==0 else data.std(axis=1))
             label = ('mean' if i==0 else 'stdev')
-            pax.plot(func(axis=1), plot.arange(0.05, 0.95, 0.1), lw=2, color='k')
-            pax.format(yticklen=0, xlabel=label, xlim=(0,1.5), xlocator=1)
+            pax.plot(data, np.linspace(0,1,n), lw=2, color='k')
+            pax.format(yticklen=0, xlabel=label, xlocator=0.5)
 
 
 
@@ -250,12 +251,12 @@ the top.
 Inset colorbars
 ---------------
 
-As seen above, `~proplot.axes.BaseAxes` and
-`~proplot.axes.PanelAxes` have their own colorbar methods. Calling
-``PanelAxes`` `~proplot.axes.PanelAxes.colorbar` fills the panel with
-a colorbar, but calling `~proplot.axes.BaseAxes`
-``PanelAxes.colorbar`` draws an *inset* colorbar. You can also draw
-inset colorbars on panel axes by passing ``fill=False`` to ``PanelAxes``
+As seen above, `~proplot.axes.Axes` and `~proplot.axes.PanelAxes`
+have their own colorbar methods. Calling ``PanelAxes``
+`~proplot.axes.PanelAxes.colorbar` fills the panel with a colorbar,
+but calling `~proplot.axes.Axes` ``PanelAxes.colorbar`` draws an
+*inset* colorbar. You can also draw inset colorbars on panel axes by
+passing ``fill=False`` to ``PanelAxes``
 `~proplot.axes.PanelAxes.colorbar`.
 
 .. code:: ipython3
@@ -279,7 +280,7 @@ inset colorbars on panel axes by passing ``fill=False`` to ``PanelAxes``
 Misc colorbar features
 ----------------------
 
-``PanelAxes`` `~proplot.axes.PanelAxes.colorbar` and ``BaseAxes``
+``PanelAxes`` `~proplot.axes.PanelAxes.colorbar` and ``Axes``
 `~proplot.axes.PanelAxes.colorbar` are both wrapped by
 `~proplot.wrappers.colorbar_wrapper`, which adds several new features.
 
@@ -305,7 +306,7 @@ various keyword args accepted by this wrapper.
     ax = axs[1]
     m = ax.contourf(data.T, extend='both', cmap='algae')
     f.bpanel.colorbar(m, length=0.6,  label='figure colorbar', labelweight='bold',
-                tickloc='top', grid=True)
+                tickloc='bottom', grid=True)
     ax.colorbar(m, loc='ul', length=1.5, tickminor=True, minorticks=0.2, extendrect=True,
                 label='inset colorbar', labelcolor='orange9', labelweight='bold',
                 linewidth=1, edgecolor='gray7', ticklabelcolor='gray7', alpha=0.5)
@@ -319,7 +320,7 @@ various keyword args accepted by this wrapper.
 Misc legend features
 --------------------
 
-``PanelAxes`` `~proplot.axes.PanelAxes.legend` and ``BaseAxes``
+``PanelAxes`` `~proplot.axes.PanelAxes.legend` and ``Axes``
 `~proplot.axes.PanelAxes.legend` are both wrapped by
 `~proplot.wrappers.legend_wrapper`, which adds several new features.
 
@@ -346,7 +347,7 @@ and modify legend text properties and handle properties. See
         h1 = axs[0].plot(data, lw=4, label=label, legend='ul',
                          legend_kw={'order':'F', 'title':'column major'}) # add to legend in upper left
         hs1.extend(h1)
-        h2 = axs[1].plot(data, lw=4, label=label, legend='r', cycle='floral',
+        h2 = axs[1].plot(data, lw=4, label=label, legend='r', cycle='floral', panel_kw={'width':0.5},
                          legend_kw={'ncols':1, 'frame':False, 'title':'no frame'}) # add to legend in right panel
         hs2.extend(h2)
     # Outer legends
@@ -360,6 +361,7 @@ and modify legend text properties and handle properties. See
 
 
 
-.. image:: tutorial/tutorial_100_0.svg
+
+.. image:: tutorial/tutorial_100_1.svg
 
 

@@ -35,47 +35,48 @@ any dots, you can simply **omit the dots**. For example, to change the
 rcGlobals
 #########
 
-==================  ==================================================================================================================================================================
-Key                 Description
-==================  ==================================================================================================================================================================
-``nbsetup``         Whether to run `setup` on import.
-``backend``         The matplotlib backend, passed to `%matplotlib <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__.
-``autosave``        If non-empty and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
-``autoreload``      If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
-``abc``             Boolean, indicates whether to draw a-b-c labels by default.
-``tight``           Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
-``share``           The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``.
-``span``            Boolean, toggles spanning axis labels.
-``fontname``        Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
-``cmap``            The default colormap.
-``lut``             The number of colors to put in the colormap lookup table.
-``cycle``           The default color cycle name, used e.g. for lines.
-``rgbcycle``        Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-``color``           The color of axis spines, tick marks, tick labels, and labels.
-``alpha``           The opacity of the background axes patch.
-``facecolor``       The color of the background axes patch.
-``small``           Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
-``large``           Font size for titles, "super" titles, and a-b-c subplot labels.
-``linewidth``       Thickness of axes spines and major tick lines.
-``margin``          The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
-``ticklen``         Length of major ticks in points.
-``tickdir``         Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
-``tickpad``         Padding between ticks and tick labels in points.
-``grid``            Boolean, toggles major grid lines on and off.
-``gridminor``       Boolean, toggles minor grid lines on and off.
-``tickratio``       Ratio of minor tickline width to major tickline width.
-``gridratio``       Ratio of minor gridline width to major gridline width.
-``ticklenratio``    Ratio of minor tickline length to major tickline length.
-``reso``            Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
-``geogrid``         Boolean, toggles meridian and parallel gridlines on and off.
-``land``            Boolean, toggles land patches on and off.
-``ocean``           Boolean, toggles ocean patches on and off.
-``lakes``           Boolean, toggles lake patches on and off.
-``coast``           Boolean, toggles coastline lines on and off.
-``borders``         Boolean, toggles country border lines on and off.
-``innerborders``    Boolean, toggles internal border lines on and off, e.g. for states and provinces.
-``rivers``          Boolean, toggles river lines on and off.
-==================  ==================================================================================================================================================================
+================  ====================================================================================================================================================================================================================
+Key               Description
+================  ====================================================================================================================================================================================================================
+``nbsetup``       Whether to run `setup` on import. Can only be changed from the ``~/.proplotrc`` file.
+``format``        The inline backend figure format, one of ``retina``, ``png``, ``jpeg``, ``pdf``, or ``svg``. Can only be changed from the ``~/.proplotrc`` file.
+``autosave``      If non-empty and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__. Can only be changed from the ``~/.proplotrc`` file.
+``autoreload``    If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__. Can only be changed from the ``~/.proplotrc`` file.
+``abc``           Boolean, indicates whether to draw a-b-c labels by default.
+``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
+``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``.
+``align``         Whether to align axis labels during draw; see `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
+``span``          Boolean, toggles spanning axis labels.
+``fontname``      Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
+``cmap``          The default colormap.
+``lut``           The number of colors to put in the colormap lookup table.
+``cycle``         The default color cycle name, used e.g. for lines.
+``rgbcycle``      Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
+``color``         The color of axis spines, tick marks, tick labels, and labels.
+``alpha``         The opacity of the background axes patch.
+``facecolor``     The color of the background axes patch.
+``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
+``large``         Font size for titles, "super" titles, and a-b-c subplot labels.
+``linewidth``     Thickness of axes spines and major tick lines.
+``margin``        The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
+``ticklen``       Length of major ticks in points.
+``tickdir``       Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
+``tickpad``       Padding between ticks and tick labels in points.
+``grid``          Boolean, toggles major grid lines on and off.
+``gridminor``     Boolean, toggles minor grid lines on and off.
+``tickratio``     Ratio of minor tickline width to major tickline width.
+``gridratio``     Ratio of minor gridline width to major gridline width.
+``ticklenratio``  Ratio of minor tickline length to major tickline length.
+``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``geogrid``       Boolean, toggles meridian and parallel gridlines on and off.
+``land``          Boolean, toggles land patches on and off.
+``ocean``         Boolean, toggles ocean patches on and off.
+``lakes``         Boolean, toggles lake patches on and off.
+``coast``         Boolean, toggles coastline lines on and off.
+``borders``       Boolean, toggles country border lines on and off.
+``innerborders``  Boolean, toggles internal border lines on and off, e.g. for states and provinces.
+``rivers``        Boolean, toggles river lines on and off.
+================  ====================================================================================================================================================================================================================
 
 #############
 rcExtraParams
@@ -83,25 +84,28 @@ rcExtraParams
 For a-b-c labels and axes title settings, use the ``abc`` and ``title``
 categories. For axis tick label settings, use the ``tick`` category.
 For figure title, row label, and column label settings, use the new
-``suptitle``, ``rowlabel``, and ``collabel`` categories.
+``suptitle``, ``leftlabel``, ``toplabel``, ``rightlabel``, and ``bottomlabel``
+categories.
 
-==============================================================  ================================================================================================================================================================================================
-Key(s)                                                          Description
-==============================================================  ================================================================================================================================================================================================
-``abc.format``                                                  a-b-c label format (for options, see `~proplot.axes.BaseAxes.format_partial`).
-``title.pad``                                                   Alias for ``axes.titlepad``, the title offset in arbitrary units
-``abc.loc``, ``title.loc``                                      a-b-c label or title position (for options, see `~proplot.axes.BaseAxes.format_partial`).
-``abc.border``, ``title.border``                                Boolean, indicates whether to draw a white border around a-b-c labels or titles located inside an axes.
-``abc.linewidth``, ``title.linewidth``                          Width of the white border around a-b-c labels or titles.
-``abc.color``, ``abc.fontsize``, ``abc.weight``                 Font color, size, and weight for a-b-c labels.
-``title.color``, ``title.fontsize``, ``title.weight``           Font color, size, and weight for subplot titles.
-``rowlabel.color``, ``rowlabel.fontsize``, ``rowlabel.weight``  Font color, size, and weight for row labels.
-``collabel.color``, ``collabel.fontsize``, ``collabel.weight``  Font color, size, and weight for column labels.
-``suptitle.color``, ``suptitle.fontsize``, ``suptitle.weight``  Font color, size, and weight for the figure title.
-``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``   Font color, size, and weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
-``axes.formatter.zerotrim``                                     Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
-``axes.formatter.timerotation``                                 Float, indicates the default *x* axis tick label rotation for datetime tick labels.
-==============================================================  ================================================================================================================================================================================================
+=======================================================================  ================================================================================================================================================================================================
+Key(s)                                                                   Description
+=======================================================================  ================================================================================================================================================================================================
+``abc.format``                                                           a-b-c label format (for options, see `~proplot.axes.Axes.format_partial`).
+``title.pad``                                                            Alias for ``axes.titlepad``, the title offset in arbitrary units
+``abc.loc``, ``title.loc``                                               a-b-c label or title position (for options, see `~proplot.axes.Axes.format_partial`).
+``abc.border``, ``title.border``                                         Boolean, indicates whether to draw a white border around a-b-c labels or titles located inside an axes.
+``abc.linewidth``, ``title.linewidth``                                   Width of the white border around a-b-c labels or titles.
+``abc.color``, ``abc.fontsize``, ``abc.weight``                          Font color, size, and weight for a-b-c labels.
+``title.color``, ``title.fontsize``, ``title.weight``                    Font color, size, and weight for subplot titles.
+``leftlabel.color``, ``leftlabel.fontsize``, ``leftlabel.weight``        Font color, size, and weight for row labels on the left-hand side.
+``rightlabel.color``, ``rightlabel.fontsize``, ``rightlabel.weight``     Font color, size, and weight for row labels on the right-hand side.
+``toplabel.color``, ``toplabel.fontsize``, ``toplabel.weight``           Font color, size, and weight for column labels on the top of the figure.
+``bottomlabel.color``, ``bottomlabel.fontsize``, ``bottomlabel.weight``  Font color, size, and weight for column labels on the bottom of the figure.
+``suptitle.color``, ``suptitle.fontsize``, ``suptitle.weight``           Font color, size, and weight for the figure title.
+``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``            Font color, size, and weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
+``axes.formatter.zerotrim``                                              Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
+``axes.formatter.timerotation``                                          Float, indicates the default *x* axis tick label rotation for datetime tick labels.
+=======================================================================  ================================================================================================================================================================================================
 
 For minor gridlines, use the ``gridminor`` category. For meridian and parallel
 gridlines on `~proplot.axes.MapAxes`, use the ``geogrid`` category.
@@ -145,45 +149,43 @@ Key                Description
 ``image.edgefix``  Whether to fix the the `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__ and `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__ issues. This slows down figure rendering a bit.
 =================  =========================================================================================================================================================================================================================================================
 
-The ``colorbar`` category has settings that control the default colorbar
-layout. It is analogous to the builtin ``legend`` category, but configures
-both *inset* and *panel* colorbars (see the `~proplot.axes.BaseAxes`
-`~proplot.axes.BaseAxes.colorbar` and `~proplot.axes.PanelAxes`
-`~proplot.axes.PanelAxes.colorbar` methods for details).
+The ``colorbar`` category controls default settings for *inset* and *panel*
+colorbars (see `~proplot.axes.Axes.colorbar`). For the last 5 settings,
+if float, units are inches. If string, units are interpreted by
+`~proplot.utils.units`.
 
-========================  =========================================================================================================================
+========================  =================================================================================
 Key                       Description
-========================  =========================================================================================================================
-``colorbar.grid``         Boolean, indicates whether to draw "gridlines" between each level of the colorbar.
+========================  =================================================================================
+``colorbar.loc``          Inset colorbar location, options are listed in `~proplot.axes.Axes.colorbar`.
+``colorbar.grid``         Boolean, indicates whether to draw borders between each level of the colorbar.
 ``colorbar.frameon``      Boolean, indicates whether to draw a frame behind inset colorbars.
-``colorbar.framealpha``   The opacity of colorbar frame.
-``colorbar.loc``          Default inset colorbar location, one of "upper right", "upper left", "lower left", or "lower right", or "center" options.
-``colorbar.length``       Default length of inset colorbars.
-``colorbar.width``        Default width of inset colorbars.
+``colorbar.framealpha``   Opacity for inset colorbar frames.
+``colorbar.length``       Length of inset colorbars.
+``colorbar.width``        Width of inset colorbars.
+``colorbar.axespad``      Padding between axes edge and inset colorbars.
 ``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
 ``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
-``colorbar.pad``          Default padding between figure edge of rectangular or triangular "extensions" for inset colorbars.
-========================  =========================================================================================================================
+========================  =================================================================================
 
-The ``subplots`` category has settings that control the default figure
-layout. As with all sizing arguments, if specified as a number, the units
-are inches. If string, the units are interpreted by `~proplot.utils.units`.
+The ``subplots`` category controls default layout settings for the
+`~proplot.subplots.subplots` command. If float, units are inches.
+If string, the units are interpreted by `~proplot.utils.units`.
 
 ==========================  ==================================================================
 Key                         Description
 ==========================  ==================================================================
 ``subplots.axwidth``        Default width of each axes.
 ``subplots.panelwidth``     Width of side panels.
-``subplots.cbarwidth``      Width of "colorbar" panels.
-``subplots.legwidth``       Width of "legend" panels.
-``subplots.borderpad``      Padding around edges for tight subplots.
-``subplots.subplotpad``     Padding between main subplots.
-``subplots.panelpad``       Padding between axes panels and their parents.
+``subplots.colorbarwidth``  Width of "colorbar" panels.
+``subplots.legendwidth``    Width of "legend" panels.
+``subplots.pad``            Padding around figure edge.
+``subplots.axpad``          Padding between adjacent subplots.
+``subplots.panelpad``       Padding between subplots and panels, and between stacked panels.
 ``subplots.titlespace``     Vertical space for titles.
 ``subplots.ylabspace``      Horizontal space between subplots alotted for *y*-labels.
 ``subplots.xlabspace``      Vertical space between subplots alotted for *x*-labels.
-``subplots.nolabspace``     Space between subplots alotted for tick marks.
-``subplots.innerspace``     Purely empty space between subplots.
+``subplots.innerspace``     Space between subplots alotted for tick marks.
 ``subplots.panelspace``     Purely empty space between main axes and side panels.
 ==========================  ==================================================================
 """
@@ -196,6 +198,7 @@ import os
 import sys
 import yaml
 import cycler
+import warnings
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 if _debug:
@@ -228,25 +231,26 @@ if not os.path.exists(_default_rc):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 _rcGlobals_children = {
-    # General
     'abc':          [],
     'span':         [],
     'share':        [],
+    'align':        [],
     'tight':        [],
-    'fontname':     ['font.family'], # specify family directly, so we can easily switch between serif/sans-serif; requires text.usetex = False; see below
+    'fontname':     ['font.family'],
     'cmap':         ['image.cmap'],
     'lut':          ['image.lut'],
     'cycle':        [],
     'rgbcycle':     [],
     'alpha':        ['axes.alpha'], # this is a custom setting
-    'color':        ['axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'facecolor':    ['axes.facecolor', 'geoaxes.facecolor'],
+    'color':        ['axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
     'small':        ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
-    'large':        ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'rowlabel.fontsize', 'collabel.fontsize'], # the 'large' fonts
+    'large':        ['abc.fontsize', 'figure.titlesize', 'axes.titlesize', 'suptitle.fontsize', 'title.fontsize', 'leftlabel.fontsize', 'toplabel.fontsize', 'rightlabel.fontsize', 'bottomlabel.fontsize'], # the 'large' fonts
     'linewidth':    ['axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
     'margin':       ['axes.xmargin', 'axes.ymargin'],
     'grid':         ['axes.grid'],
     'gridminor':    ['axes.gridminor'],
+    'geogrid':      ['axes.geogrid'],
     'ticklen' :     ['xtick.major.size', 'ytick.major.size'],
     'tickdir':      ['xtick.direction',  'ytick.direction'],
     'tickpad':      ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
@@ -254,7 +258,6 @@ _rcGlobals_children = {
     'ticklenratio': [],
     'gridratio':    [],
     'reso':         [],
-    'geogrid':      ['axes.geogrid'],
     'land':         [],
     'ocean':        [],
     'lakes':        [],
@@ -263,7 +266,7 @@ _rcGlobals_children = {
     'innerborders': [],
     'rivers':       [],
     'nbsetup':      [],
-    'backend':      [],
+    'format':       [],
     'autosave':     [],
     'autoreload':   [],
     }
@@ -281,17 +284,19 @@ _rc_names_custom = {
     'abc.fontsize', 'abc.weight', 'abc.color', 'abc.loc', 'abc.format', 'abc.border', 'abc.linewidth',
     'title.loc', 'title.pad', 'title.color', 'title.border', 'title.linewidth', 'title.weight', 'title.fontsize',
     'suptitle.fontsize', 'suptitle.weight', 'suptitle.color',
-    'rowlabel.fontsize', 'rowlabel.weight', 'rowlabel.color',
-    'collabel.fontsize', 'collabel.weight', 'collabel.color',
+    'leftlabel.fontsize', 'leftlabel.weight', 'leftlabel.color',
+    'rightlabel.fontsize', 'rightlabel.weight', 'rightlabel.color',
+    'toplabel.fontsize', 'toplabel.weight', 'toplabel.color',
+    'bottomlabel.fontsize', 'bottomlabel.weight', 'bottomlabel.color',
     'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonstep', 'geogrid.latstep',
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
-    'subplots.subplotpad', 'subplots.panelpad', 'subplots.borderpad', 'subplots.titlespace',
-    'subplots.legwidth', 'subplots.cbarwidth', 'subplots.ylabspace', 'subplots.xlabspace', 'subplots.nolabspace',
-    'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace', 'subplots.innerspace',
+    'subplots.pad', 'subplots.axpad', 'subplots.panelpad',
+    'subplots.legendwidth', 'subplots.colorbarwidth', 'subplots.ylabspace', 'subplots.xlabspace', 'subplots.innerspace', 'subplots.titlespace',
+    'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace',
     'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
     }
-# Used by BaseAxes.format, allows user to pass rc settings as keyword args,
+# Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
 _rc_names_nodots = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
@@ -326,7 +331,7 @@ def _set_cycler(name):
         colors = mcm.cmap_d[name].colors
     except Exception:
         cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
-        raise ValueError(f'Invalid cycle name "{name}". Options are: {", ".join(cycles)}')
+        raise ValueError(f'Invalid cycle name {name!r}. Options are: {", ".join(cycles)}')
     # Apply color name definitions
     if _rcGlobals['rgbcycle'] and name.lower() == 'colorblind':
         regcolors = colors + [(0.1, 0.1, 0.1)]
@@ -396,7 +401,14 @@ def _get_globals(key=None, value=None):
     return kw, kw_custom
 
 class rc_configurator(object):
-    _public_api = ('get', 'fill', 'category', 'reset', 'context', 'update') # getattr and setattr will not look for these items on underlying dictionary
+    _public_api = (
+        'get', 'fill', 'category', 'reset', 'context', 'update'
+        ) # getattr and setattr will not look for these items
+    def __str__(self):
+        return type(_rcParams).__str__(_rcGlobals) # just show globals
+    def __repr__(self):
+        return type(_rcParams).__repr__(_rcGlobals)
+
     @_counter # about 0.05s
     def __init__(self):
         """Magical abstract class for managing matplotlib `rcParams
@@ -407,7 +419,6 @@ class rc_configurator(object):
         for details."""
         # Set the default style. Note that after first figure made, backend
         # is 'sticky', never changes! See: https://stackoverflow.com/a/48322150/4970632
-        # TODO: Flexible styles, and register proplot as a style!
         plt.style.use('default')
 
         # Load the defaults from file
@@ -441,7 +452,7 @@ class rc_configurator(object):
                     value = _convert_units(key, value)
                     _rcParams[key] = value
                 else:
-                    raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key "{key}".')
+                    raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key {key!r}.')
             # Make sure we did not miss anything
             if i == 0:
                 if gkeys != _rc_names_global:
@@ -494,7 +505,7 @@ class rc_configurator(object):
         elif mode == 2:
             kws = (self._cache,) # changed only!
         else:
-            raise KeyError(f'Invalid caching mode {mode}.')
+            raise KeyError(f'Invalid caching mode {mode!r}.')
 
         # Get individual property. Will successively index a few different dicts
         # Try to return the value
@@ -505,7 +516,7 @@ class rc_configurator(object):
                 continue
         # If we were in one of the exclusive modes, return None
         if mode == 0:
-            raise KeyError(f'Invalid prop name "{key}".')
+            raise KeyError(f'Invalid prop name {key!r}.')
         else:
             return None
 
@@ -611,9 +622,10 @@ class rc_configurator(object):
                 restore[key] = _rcParams[key]
             _rcParams[key] = value # rcParams dict has key validation
         else:
-            raise KeyError(f'Invalid key "{key}".')
+            raise KeyError(f'Invalid key {key!r}.')
         self._init = False # setitem was successful, we are no longer in initial state
 
+    # Attributes same as items
     def __getattribute__(self, attr):
         """Invokes `~rc_configurator.__getitem__`."""
         if attr[:1] == '_' or attr in self._public_api:
@@ -628,13 +640,23 @@ class rc_configurator(object):
         else:
             self[attr] = value
 
+    # Immutability
+    def __delitem__(self, *args):
+        """Pseudo-immutability."""
+        raise RuntimeError('rc settings cannot be deleted.')
+
+    def __delattr__(self, *args):
+        """Pseudo-immutability."""
+        raise RuntimeError('rc settings cannot be deleted.')
+
+    # Context tools
     def __enter__(self):
-        """Apply temporary user settings."""
+        """Apply settings from configurator cache."""
         self._cache_orig = rc._cache.copy()
         for key,value in self._context.items():
             self[key] = value # applies globally linked and individual settings
 
-    def __exit__(self, _type, _value, _traceback):
+    def __exit__(self, *args):
         """Restore configurator cache to initial state."""
         self._context = {}
         self._getitem_mode = 0
@@ -644,34 +666,13 @@ class rc_configurator(object):
         self._cache_restore = {}
         self._cache_orig = {}
 
-    def __delitem__(self, *args):
-        """Pseudo-immutability."""
-        raise RuntimeError('rc settings cannot be deleted.')
-
-    def __delattr__(self, *args):
-        """Pseudo-immutability."""
-        raise RuntimeError('rc settings cannot be deleted.')
-
-    def __repr__(self):
-        """Pretty string representation."""
-        length = 1 + max(len(key) for key in _rcGlobals.keys())
-        return 'rc = {\n' + '\n'.join(
-                f'  {key}: {" "*(length-len(key))}{value}'
-                for key,value in _rcGlobals.items()
-                ) + '\n}'
-
-    def __str__(self):
-        """Short string representation."""
-        return ', '.join(f'{key}: {value}' for key,value in _rcGlobals.items())
-
-    # Internally used, but public methods.
     def context(self, *args, mode=0, **kwargs):
         """
         Temporarily modifies settings in a ``with...as`` block,
         used by ProPlot internally but may also be useful for power users.
 
         This function was invented to prevent successive calls to
-        `~proplot.axes.BaseAxes.format` from constantly looking up and
+        `~proplot.axes.Axes.format` from constantly looking up and
         re-applying unchanged settings. Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
         lookups and artist updates increased runtime by seconds, even for
@@ -700,11 +701,11 @@ class rc_configurator(object):
             1. Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcExtraParams` and :ref:`rcGlobals` are
                returned whether or not `~rc_configurator.context` has changed them.
-               This is used in the `~proplot.axes.BaseAxes.__init__` call to
-               `~proplot.axes.BaseAxes.format`. When a setting lookup returns
-               ``None``, `~proplot.axes.BaseAxes.format` does not apply it.
+               This is used in the `~proplot.axes.Axes.__init__` call to
+               `~proplot.axes.Axes.format`. When a setting lookup returns
+               ``None``, `~proplot.axes.Axes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during user
-               calls to `~proplot.axes.BaseAxes.format`.
+               calls to `~proplot.axes.Axes.format`.
 
         Example
         -------
@@ -725,6 +726,7 @@ class rc_configurator(object):
         self._getitem_mode = mode
         return self
 
+    # Other tools
     def get(self, key, cache=False):
         """
         Returns a setting.
@@ -900,23 +902,27 @@ def nb_setup():
         rc.reset()
     except KeyError:
         # For terminals
-        try:
-            ipython.magic("matplotlib osx")
-        except KeyError:
-            ipython.magic("matplotlib qt") # should always be present
+        # TODO: Fix auto tight layout with osx backend -- currently has
+        # standard issue where content adjusted but canvas size not adjusted
+        # until second draw command, and other issue where window size does
+        # not sync with figure size
+        ipython.magic("matplotlib qt")
         rc.reset()
     else:
-        # Autosaving, capture the annoying message + 2 line breaks
-        if _rcGlobals['autosave']:
+        # Choose svg vector or retina hi-res bitmap backends
+        autosave = _rcGlobals['autosave']
+        if autosave: # capture annoying message + line breaks
             with IPython.utils.io.capture_output():
-                ipython.magic("autosave " + str(_rcGlobals['autosave'])) # autosave every minute
-        # Misc settings, choose pretty backend
-        ipython.magic("config InlineBackend.figure_formats = ['svg']") # 'retina' is hi-res bitmap, 'svg' is vector
+                ipython.magic("autosave " + str(autosave))
+        ipython.magic("config InlineBackend.figure_formats = ['" + _rcGlobals['format'] + "']")
         ipython.magic("config InlineBackend.rc = {}") # no notebook-specific overrides
         ipython.magic("config InlineBackend.close_figures = True") # memory issues
         ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") # use ProPlot tight layout
 
-# Setup notebook
+# Setup notebook and issue warning
+# TODO: Add to list of incompatible backends?
 if _rcGlobals['nbsetup']:
     nb_setup()
+if _rcParams['backend'][:2] == 'nb' or _rcParams['backend'] in ('MacOSX',):
+    warnings.warn(f'Due to automatic figure resizing, using ProPlot with the {_rcParams["backend"]!r} backend may result in unexpected behavior. Try using %matplotlib inline or %matplotlib qt, or just import ProPlot before specifying the backend and ProPlot will automatically load it.')
 

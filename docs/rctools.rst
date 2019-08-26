@@ -3,7 +3,6 @@ Global settings utilities
 
 .. automodsumm:: proplot.rctools
    :toctree: api
-   :skip: units, get_ipython
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

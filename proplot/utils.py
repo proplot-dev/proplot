@@ -8,7 +8,6 @@ import numpy as np
 import functools
 import warnings
 import matplotlib as mpl
-import matplotlib.font_manager as mfonts
 from numbers import Number, Integral
 rcParams = mpl.rcParams
 try:
@@ -45,7 +44,7 @@ def _notNone(*args, names=None):
         return first
 
 # Debug decorators
-_debug = False # debug mode, used for recording various times
+_debug = False # debug mode, used for profiling and activating timer decorators
 def _logger(func):
     """A decorator that logs the activity of the script (it actually just prints it,
     but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
@@ -188,9 +187,13 @@ def units(value, numeric='in'):
         values = value
 
     # Font unit scales
+    # NOTE: Delay font_manager import, because want to avoid rebuilding font
+    # cache, which means import must come after TTFPATH added to environ,
+    # i.e. inside styletools.register_fonts()!
     small = rcParams['font.size'] # must be absolute
     large = rcParams['axes.titlesize']
     if isinstance(large, str):
+        import matplotlib.font_manager as mfonts
         scale = mfonts.font_scalings.get(large, 1) # error will be raised somewhere else if string name is invalid!
         large = small*scale
 
@@ -228,7 +231,7 @@ def units(value, numeric='in'):
             continue
         elif not isinstance(value, str):
             raise ValueError(f'Size spec must be string or number or list thereof, received {values}.')
-        regex = re.match('^([0-9.]*)(.*)$', value)
+        regex = re.match('^([-+]?[0-9.]*)(.*)$', value)
         num, unit = regex.groups()
         try:
             result.append(float(num)*unit_dict[unit]/scale)

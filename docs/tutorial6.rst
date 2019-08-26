@@ -121,16 +121,16 @@ constructor.
 Heatmaps and labels
 -------------------
 
-The new `~proplot.axes.BaseAxes.heatmap` command calls
+The new `~proplot.axes.Axes.heatmap` command calls
 `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
 is suitable for heatmaps: no gridlines, no minor ticks, and major ticks
 at the center of each box. Among other things, this is useful for
 displaying autocorrelation matrices (see below).
 
 You can also add labels to `~matplotlib.axes.Axes.pcolor`,
-`~matplotlib.axes.Axes.pcolormesh`,
-`~proplot.axes.BaseAxes.heatmap`, `~matplotlib.axes.Axes.contour`,
-and `~matplotlib.axes.Axes.contourf` plots, thanks to
+`~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`,
+`~matplotlib.axes.Axes.contour`, and
+`~matplotlib.axes.Axes.contourf` plots, thanks to
 `~proplot.wrappers.cmap_wrapper`. Just pass the ``labels=True``
 keyword argument, and ProPlot will draw contour labels with
 `~matplotlib.axes.Axes.clabel` or grid box labels with
@@ -231,9 +231,9 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 Area plots
 ----------
 
-Make area plots with the convenient aliases
-`~proplot.axes.BaseAxes.area` and `~proplot.axes.BaseAxes.areax`.
-These point to the `~matplotlib.axes.Axes.fill_between` and
+Make area plots with the convenient aliases `~proplot.axes.Axes.area`
+and `~proplot.axes.Axes.areax`. These point to the
+`~matplotlib.axes.Axes.fill_between` and
 `~matplotlib.axes.Axes.fill_betweenx` methods, which are wrapped with
 `~proplot.wrappers.fill_between_wrapper` and
 `~proplot.wrappers.fill_betweenx_wrapper`.
@@ -339,7 +339,8 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_173_0.svg
+
+.. image:: tutorial/tutorial_173_1.svg
 
 
 Parametric plots
@@ -349,7 +350,7 @@ Parametric plots
 lets you draw line collections that map individual segments of the line
 to individual colors. This can be useful for drawing “parametric” plots,
 where you want to indicate the time or some other coordinate at each
-point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
+point on the line. See `~proplot.axes.Axes.cmapline` for details.
 
 .. code:: ipython3
 
@@ -384,8 +385,8 @@ point on the line. See `~proplot.axes.BaseAxes.cmapline` for details.
 .. image:: tutorial/tutorial_176_1.svg
 
 
-Scatter plots
--------------
+Misc plot enhancements
+----------------------
 
 Thanks to `~proplot.wrappers.scatter_wrapper` and
 `~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
@@ -396,6 +397,12 @@ cycle keys other than ``color`` – for example, ``marker`` and
 accepts keywords that look like the `~matplotlib.axes.Axes.plot`
 keywords, which is a bit less confusing. You can also pass colormaps to
 `~matplotlib.axes.Axes.scatter` just as with matplotlib.
+
+I am also considering supporting 2D array input and property cycle
+iteration for more obscure matplotlib plotting commands like
+`~matplotlib.axes.Axes.stem`, `~matplotlib.axes.Axes.step`,
+`~matplotlib.axes.Axes.vlines`, and `~matplotlib.axes.Axes.hlines`.
+Stay tuned!
 
 .. code:: ipython3
 

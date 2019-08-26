@@ -109,14 +109,14 @@ def Locator(locator, *args, **kwargs):
                 args = (*args, 0)
         # Lookup
         if locator not in locators:
-            raise ValueError(f'Unknown locator "{locator}". Options are {", ".join(locators.keys())}.')
+            raise ValueError(f'Unknown locator {locator!r}. Options are {", ".join(locators.keys())}.')
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number): # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
         locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs) # not necessary
     else:
-        raise ValueError(f'Invalid locator "{locator}".')
+        raise ValueError(f'Invalid locator {locator!r}.')
     return locator
 
 def Formatter(formatter, *args, date=False, **kwargs):
@@ -230,14 +230,14 @@ def Formatter(formatter, *args, date=False, **kwargs):
                 formatter = 'simple'
             # Lookup
             if formatter not in formatters:
-                raise ValueError(f'Unknown formatter "{formatter}". Options are {", ".join(formatters.keys())}.')
+                raise ValueError(f'Unknown formatter {formatter!r}. Options are {", ".join(formatters.keys())}.')
             formatter = formatters[formatter](*args, **kwargs)
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif np.iterable(formatter): # list of strings on the major ticks, wherever they may be
         formatter = mticker.FixedFormatter(formatter)
     else:
-        raise ValueError(f'Invalid formatter "{formatter}".')
+        raise ValueError(f'Invalid formatter {formatter!r}.')
     return formatter
 
 def Scale(scale, *args, **kwargs):
@@ -294,7 +294,7 @@ def Scale(scale, *args, **kwargs):
         if np.iterable(scale) and not isinstance(scale, str):
             scale, args = scale[0], (*scale[1:], *args)
         if not isinstance(scale, str):
-            raise ValueError(f'Invalid scale name "{scale}". Must be string.')
+            raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
         # Instantiate existing scales or build on-the-fly scales
         scale = scale.lower()
         if scale in scales:
@@ -307,7 +307,7 @@ def Scale(scale, *args, **kwargs):
             elif scale == 'cutoff':
                 scale = CutoffScaleFactory(*args, **kwargs)
             else:
-                raise ValueError(f'Unknown scale "{scale}". Options are {", ".join(scales.keys())}.')
+                raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
             args, kwargs = [], {}
     return scale, args, kwargs
 
@@ -316,11 +316,11 @@ def InvertedScaleFactory(scale, name=None):
     `~matplotlib.scale.ScaleBase` specified by ``scale``. The scale name
     defaults to ``'{scale}_inverted'``."""
     if not isinstance(scale, str):
-        raise ValueError(f'Invalid scale name "{scale}". Must be string.')
+        raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
     if scale in scales:
         scale = scales[scale]
     else:
-        raise ValueError(f'Unknown scale "{scale}". Options are {", ".join(scales.keys())}.')
+        raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
     name_ = name or f'{scale.name}_inverted' # name of inverted version
     class Inverted(scale):
         name = name_
@@ -345,7 +345,7 @@ def _scale_factory(scale, axis, *args, **kwargs):
     else:
         scale = scale.lower()
         if scale not in scales:
-            raise ValueError(f'Unknown scale "{scale}". Options are {", ".join(scales.keys())}.')
+            raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
         return scales[scale](axis, *args, **kwargs)
 if mscale.scale_factory is not _scale_factory:
     mscale.scale_factory = _scale_factory
@@ -511,7 +511,7 @@ def _parse_xyargs(axis, kwargs, keys):
     """Parses args for `LogScale` and `SymmetricalLogScale`."""
     name = axis.axis_name
     if name not in ('x','y'):
-        raise ValueError(f'Axis {axis} with name "{axis.axis_name}" is invalid for log scale.')
+        raise ValueError(f'Axis {axis!r} with name {name!r} is invalid for log scale.')
     for key in keys:
         value = None
         for suffix in ('','x','y'):

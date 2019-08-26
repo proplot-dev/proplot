@@ -3,12 +3,13 @@
 Imported by `~proplot.axes`, declares wrappers for various plotting functions.
 """
 import re
+import sys
 import numpy as np
 import numpy.ma as ma
 import functools
 import warnings
 from . import utils, styletools, axistools
-from .utils import _notNone, _debug
+from .utils import _notNone
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -32,40 +33,46 @@ __all__ = [
     ]
 
 # Xarray and pandas integration
-if _debug:
-    import time
-    t = time.clock()
+# These are 0.5s in load time! We just want to detect if input arrays already
+# belong to these types, which necessarily means user has already imported
+# module, so only load objects at that point!
 ndarray = np.ndarray
-try:
-    from xarray import DataArray
-except ModuleNotFoundError:
-    DataArray = ndarray
-try:
-    from pandas import DataFrame, Series, Index
-except ModuleNotFoundError:
-    DataFrame, Series, Index = ndarray, ndarray, ndarray
-# Cartopy
-try:
-    from cartopy.crs import PlateCarree
-except ModuleNotFoundError:
-    PlateCarree = object
-if _debug:
-    print(f'dependencies: {time.clock() - t}')
+def _load_objects():
+    global DataArray, DataFrame, Series, Index
+    DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
+    DataFrame = getattr(sys.modules.get('pandas', None), 'DataFrame', ndarray)
+    Series = getattr(sys.modules.get('pandas', None), 'Series', ndarray)
+    Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
+_load_objects()
 
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
-_errorbar_methods = ('plot', 'scatter', 'bar', 'violinplot')
-_edges_methods = ('pcolor', 'pcolormesh',)
-_centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs')
-_2d_methods = (*_centers_methods, *_edges_methods)
-_1d_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot', 'pie', 'fill_between', 'fill_betweenx', 'hexbin')
-_cycle_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot', 'pie', 'fill_between', 'fill_betweenx')
+# TODO: 'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
+_errorbar_methods = ('plot', 'scatter', 'bar', 'violinplot'
+    )
+_centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs'
+    )
+_edges_methods = ('pcolor', 'pcolormesh'
+    )
+_1d_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
+    'pie', 'fill_between', 'fill_betweenx', 'step', 'stem', 'hexbin',
+    )
+_2d_methods = (*_centers_methods, *_edges_methods
+    )
+_cycle_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
+    'pie', 'fill_between', 'fill_betweenx', 'step', 'stem',
+    )
 _cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
-    'hexbin', 'matshow', 'imshow', 'spy', 'hist2d')
-_crs_methods = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks',) # adds crs=PlateCarree()
-_latlon_methods = ('plot', 'scatter', *_edges_methods, *_centers_methods) # adds latlon=True
-_transform_methods = ('plot', 'scatter', *_edges_methods, *_centers_methods, 'tripcolor', 'tricontour', 'tricontourf',) # adds transform=PlateCarree()
+    'hexbin', 'matshow', 'imshow', 'spy', 'hist2d'
+    )
+_crs_methods = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks'
+    )
+_latlon_methods = ('plot', 'scatter', *_edges_methods, *_centers_methods
+    )
+_transform_methods = ('plot', 'scatter', 'tripcolor',
+    'tricontour', 'tricontourf', *_edges_methods, *_centers_methods
+    )
 
 # Disabled methods; keys are error messages
 # TODO: rigorous support for violin plots, bar, barh, streamline and quiver
@@ -84,21 +91,20 @@ _map_disabled_methods = (
     # TODO: Error bars? Will they work? Also bar and barh can be used w/ polar
     'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
     'hist', 'hist2d', 'boxplot', 'violinplot', 'step', 'stem',
-    'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
     # Look into these
     'stackplot', 'table', 'eventplot', 'pie',
-    'xcorr', 'acorr', 'psd', 'csd', 'magnitude_spectrum',
-    'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram',
+    'xcorr', 'acorr', 'psd', 'csd', 'cohere', 'specgram',
+    'magnitude_spectrum', 'angle_spectrum', 'phase_spectrum',
     )
 
 # Keywords for styling cmap overridden plots
 _cmap_style_kwargs = {
-    'contour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    'hexbin': {'colors':'edgecolors', 'linewidths':'linewidths'},
+    'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
+    'hexbin':     {'colors':'edgecolors', 'linewidths':'linewidths'},
     'tricontour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    'cmapline': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
-    'pcolor': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
-    'tripcolor': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'cmapline':   {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'pcolor':     {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'tripcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     'pcolormesh': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     }
 
@@ -108,7 +114,7 @@ _cmap_style_kwargs = {
 def _sphinx_name(name):
     """Gets sphinx name."""
     if name in ('cmapline','heatmap','area','areax'):
-        return f'`~proplot.axes.BaseAxes.{name}`'
+        return f'`~proplot.axes.Axes.{name}`'
     else:
         return f'`~matplotlib.axes.Axes.{name}`'
 
@@ -153,6 +159,7 @@ def _to_array(data):
 
 def _atleast_array(data):
     """Converts list of lists to array."""
+    _load_objects()
     if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
         data = np.array(data)
     if not np.iterable(data):
@@ -162,6 +169,7 @@ def _atleast_array(data):
 def _auto_label(data, axis=None, units=True):
     """Gets data and label for pandas or xarray objects or their coordinates."""
     label = ''
+    _load_objects()
     if isinstance(data, ndarray):
         if axis is not None and data.ndim > axis:
             data = np.arange(data.shape[axis])
@@ -197,6 +205,7 @@ def _autoformat_1d(self, func, *args, **kwargs):
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
+    _load_objects()
     if not args:
         return func(*args, **kwargs)
     elif len(args) == 1:
@@ -248,7 +257,7 @@ def _autoformat_1d(self, func, *args, **kwargs):
         if name in ('boxplot','violinplot'):
             kwargs['positions'] = xi
         # Next handle labels if 'autoformat' is on
-        if self.figure._autoformat:
+        if self.figure._auto_format:
             # Ylabel
             y, label = _auto_label(y)
             if label:
@@ -277,6 +286,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
     and `enforce_edges`, which are used for all 2D plot methods."""
     # Sanitize input
     name = func.__name__
+    _load_objects()
     if not args:
         return func(*args, **kwargs)
     elif len(args) > 4:
@@ -336,7 +346,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
             kw['yformatter'] = mticker.IndexFormatter(y)
             kw['yminorlocator'] = mticker.NullLocator()
         # Handle labels if 'autoformat' is on
-        if self.figure._autoformat:
+        if self.figure._auto_format:
             for key,xy in zip(('xlabel','ylabel'), (x,y)):
                 _, label = _auto_label(xy)
                 if label:
@@ -344,7 +354,7 @@ def _autoformat_2d(self, func, *args, order='C', **kwargs):
                 if len(xy) > 1 and all(isinstance(xy, Number) for xy in xy[:2]) and xy[1] < xy[0]:
                     kw[key[0] + 'reverse'] = True
     # Handle figure titles
-    if self.figure._autoformat:
+    if self.figure._auto_format:
         _, title = _auto_label(Zs[0], units=False)
         if title:
             kw['title'] = title
@@ -385,7 +395,7 @@ def enforce_centers(self, func, *args, order='C', **kwargs):
         x, y = x.T, y.T # in case they are 2-dimensional
         Zs = (Z.T for Z in Zs)
     elif order != 'C':
-        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
     result = func(x, y, *Zs, **kwargs)
     return result
 
@@ -413,7 +423,7 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
         x, y = x.T, y.T # in case they are 2-dimensional
         Zs = (Z.T for Z in Zs)
     elif order != 'C':
-        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
     result = func(x, y, *Zs, **kwargs)
     return result
 
@@ -580,7 +590,7 @@ def add_errorbars(self, func, *args,
 
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.plot`, calls `~proplot.axes.BaseAxes.cmapline`
+    Wraps `~matplotlib.axes.Axes.plot`, calls `~proplot.axes.Axes.cmapline`
     if ``cmap`` is passed by the user.
 
     Parameters
@@ -588,7 +598,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     *args
         Passed to `~matplotlib.axes.Axes.plot`.
     cmap, values
-        Passed to `~proplot.axes.BaseAxes.cmapline`.
+        Passed to `~proplot.axes.Axes.cmapline`.
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
@@ -663,7 +673,7 @@ def scatter_wrapper(self, func, *args,
     # Apply some aliases for keyword arguments
     c = _notNone(c, color, markercolor, None, names=('c', 'color', 'markercolor'))
     s = _notNone(s, size, markersize, None, names=('s', 'size', 'markersize'))
-    lw = _notNone(linewidth, linewidths, markeredgewidth, markeredgewidths, None, names=('lw', 'linewidth', 'linewidths', 'markeredgewidth', 'markeredgewidths'))
+    lw = _notNone(lw, linewidth, linewidths, markeredgewidth, markeredgewidths, None, names=('lw', 'linewidth', 'linewidths', 'markeredgewidth', 'markeredgewidths'))
     ec = _notNone(edgecolor, edgecolors, markeredgecolor, markeredgecolors, None, names=('edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'))
     # Scale s array
     if np.iterable(s):
@@ -722,7 +732,7 @@ def _fill_between_parse(func, *args,
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.fill_between`, also accessible via the
-    `~proplot.axes.BaseAxes.area` alias.
+    `~proplot.axes.Axes.area` alias.
 
     Parameters
     ----------
@@ -752,7 +762,7 @@ def fill_between_wrapper(self, func, *args, **kwargs):
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
     """Wraps `~matplotlib.axes.Axes.fill_betweenx`, also accessible via the
-    `~proplot.axes.BaseAxes.areax` alias. Usage is same as
+    `~proplot.axes.Axes.areax` alias. Usage is same as
     `fill_between_wrapper`."""
     return _fill_between_parse(func, *args, **kwargs)
 
@@ -873,7 +883,7 @@ def boxplot_wrapper(self, func, *args,
         if orientation == 'horizontal':
             kwargs['vert'] = False
         elif orientation != 'vertical':
-            raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
+            raise ValueError('Orientation must be "horizontal" or "vertical", got {orientation!r}.')
     obj = func(*args, **kwargs)
     if not args:
         return obj
@@ -948,7 +958,7 @@ def violinplot_wrapper(self, func, *args,
         if orientation == 'horizontal':
             kwargs['vert'] = False
         elif orientation != 'vertical':
-            raise ValueError('Orientation must be "horizontal" or "vertical", got "{orientation}".')
+            raise ValueError('Orientation must be "horizontal" or "vertical", got {orientation!r}.')
     # Sanitize input
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     if kwargs.pop('showextrema', None):
@@ -984,7 +994,7 @@ def _get_transform(self, transform):
     elif transform == 'data':
         return self.transData
     else:
-        raise ValueError(f'Unknown transform "{transform}".')
+        raise ValueError(f'Unknown transform {transform!r}.')
 
 def text_wrapper(self, func,
     x=0, y=0, text='', transform='data',
@@ -1040,7 +1050,7 @@ def text_wrapper(self, func,
         if fontname in styletools.fonts:
             kwargs['fontfamily'] = fontname
         else:
-            warnings.warn(f'Font "{fontname}" unavailable. Available fonts are {", ".join(styletools.fonts)}.')
+            warnings.warn(f'Font {fontname!r} unavailable. Available fonts are {", ".join(styletools.fonts)}.')
     size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
@@ -1097,7 +1107,7 @@ def _basemap_call(self, func):
     return wrapper
 
 @_expand_methods_list
-def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
+def cartopy_transform(self, func, *args, transform=None, **kwargs):
     """
     Wraps `_transform_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
 
@@ -1106,37 +1116,37 @@ def cartopy_transform(self, func, *args, transform=PlateCarree, **kwargs):
     longitude and latitude instead of map projection units. Now,
     ``transform=cartopy.crs.PlateCarree()`` is the default.
     """
-    # Simple
-    if isinstance(transform, type):
-        transform = transform() # instantiate
+    # Apply default transform
+    if transform is None:
+        import cartopy.crs as ccrs
+        transform = ccrs.PlateCarree()
     result = func(*args, transform=transform, **kwargs)
     # Re-enforce settings because some plot functions seem to reset the
-    # outlinepatch or backgroundpatch (TODO: Double check this)
+    # outlinepatch or backgroundpatch (TODO: double check this)
     self.format()
     return result
 
 @_expand_methods_list
-def cartopy_crs(self, func, *args, crs=PlateCarree, **kwargs):
+def cartopy_crs(self, func, *args, crs=None, **kwargs):
     """
     Wraps `_crs_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
     As with `cartopy_transform`, but passes ``crs=cartopy.crs.PlateCarree()``
-    as the default.
+    as the default. Also fixes bug associated with tight bounding boxes and
+    `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
     """
     # Simple
     name = func.__name__
-    if isinstance(crs, type):
-        crs = crs() # instantiate
+    if crs is None:
+        import cartopy.crs as ccrs
+        crs = ccrs.PlateCarree()
     try:
         result = func(*args, crs=crs, **kwargs)
-    except TypeError as err:
+    except TypeError as err: # duplicate keyword args, i.e. crs is positional
         if not args:
             raise err
-        args, crs = args[:-1], args[-1]
-        result = func(*args, crs=crs, **kwargs)
+        result = func(*args[:-1], crs=args[-1], **kwargs)
     # Fix extent, so axes tight bounding box gets correct box!
     # From this issue: https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
-    # NOTE: May still get weird positioning because ProPlot assumes aspect
-    # ratio from the full size projection, not the zoomed in version
     if name == 'set_extent':
         clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
         self.outline_patch._path = clipped_path
@@ -1207,7 +1217,8 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     If latitude and longitude arrays are 2D, `globe` is set to ``False``.
     """
     # Bail if using map coordinates
-    if not isinstance(kwargs.get('transform', None), PlateCarree):
+    import cartopy.crs as ccrs
+    if not isinstance(kwargs.get('transform', None), ccrs.PlateCarree):
         return func(lon, lat, *Zs, **kwargs)
     # Fix grid
     lon, lat = _gridfix_coordinates(lon, lat)
@@ -1372,23 +1383,23 @@ def cycle_wrapper(self, func, *args,
         If not ``None``, this is a location specifying where to draw an *inset*
         or *panel* legend from the resulting handle(s). If ``True``, the
         default location is used. Valid locations are described in
-        `~proplot.axes.BaseAxes.legend`.
+        `~proplot.axes.Axes.legend`.
     legend_kw : dict-like, optional
         Ignored if `legend` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.legend` or
+        to `~proplot.axes.Axes` `~proplot.axes.Axes.legend` or
         `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`.
     colorbar : bool, int, or str, optional
         If not ``None``, this is a location specifying where to draw an *inset*
         or *panel* colorbar from the resulting handle(s). If ``True``, the
         default location is used. Valid locations are described in
-        `~proplot.axes.BaseAxes.colorbar`.
+        `~proplot.axes.Axes.colorbar`.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
-        to the `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
+        to the `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or
         `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar` methods.
     panel_kw : dict-like, optional
         Dictionary of keyword arguments passed to
-        `~proplot.axes.BaseAxes.panel`, if you are generating an
+        `~proplot.axes.Axes.panel`, if you are generating an
         on-the-fly panel.
 
     Other parameters
@@ -1537,7 +1548,7 @@ def cycle_wrapper(self, func, *args,
             else:
                 iys = tuple(iy if is1d else _to_iloc(iy)[:,i] for iy in ys)
             # Possible legend labels
-            if len(labels)!=ncols:
+            if len(labels) != ncols:
                 raise ValueError(f'Got {ncols} columns in data array, but {len(labels)} labels.')
             label = labels[i]
             values, label_leg = _auto_label(iy, axis=1) # _auto_label(iy) # e.g. a pd.Series name
@@ -1564,7 +1575,7 @@ def cycle_wrapper(self, func, *args,
         # Add handles
         ax, loc = self._inset_or_panel_loc(colorbar, mode='colorbar', **panel_kw)
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid on-the-fly location {repr(loc)}. Must be a preset location. See BaseAxes.colorbar')
+            raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar')
         if loc not in ax._auto_colorbar:
             ax._auto_colorbar[loc] = []
             ax._auto_colorbar_kw[loc] = {}
@@ -1579,7 +1590,7 @@ def cycle_wrapper(self, func, *args,
         # Add handles
         ax, loc = self._inset_or_panel_loc(legend, mode='legend', **panel_kw)
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid on-the-fly location {repr(loc)}. Must be a preset location. See BaseAxes.legend')
+            raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.legend')
         if loc not in ax._auto_legend:
             ax._auto_legend[loc] = []
             ax._auto_legend_kw[loc] = {}
@@ -1657,10 +1668,11 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         was provided, `vmin` is the data minimum. If `vmax` was omitted but
         `vmin` was provided, `vmax` is the data maximum.
     locator : locator-spec, optional
-        Used to determine level locations if `levels` or `values` is an integer
-        and `vmin` and `vmax` were not provided. Passed to the `~proplot.axistools.Locator`
-        constructor. Defaults to `~matplotlib.ticker.MaxNLocator` with
-        ``levels`` or ``values+1`` integer levels.
+        The locator used to determine level locations if `levels` or `values`
+        is an integer and `vmin` and `vmax` were not provided. Passed to the
+        `~proplot.axistools.Locator` constructor. Defaults to
+        `~matplotlib.ticker.MaxNLocator` with ``levels`` or ``values+1``
+        integer levels.
     locator_kw : dict-like, optional
         Passed to `~proplot.axistools.Locator`.
     symmetric : bool, optional
@@ -1695,21 +1707,21 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         If not ``None``, this is a location specifying where to draw an *inset*
         or *panel* colorbar from the resulting mappable. If ``True``, the
         default location is used. Valid locations are described in
-        `~proplot.axes.BaseAxes.colorbar`.
+        `~proplot.axes.Axes.colorbar`.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` or
+        to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or
         `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`.
     panel_kw : dict-like, optional
         Dictionary of keyword arguments passed to
-        `~proplot.axes.BaseAxes.panel`, if you are generating an
+        `~proplot.axes.Axes.panel`, if you are generating an
         on-the-fly panel.
 
     Other parameters
     ----------------
     lw, linewidth, linewidths
         The width of `~matplotlib.axes.Axes.contour` lines and
-        `~proplot.axes.BaseAxes.cmapline` lines. Also the width of lines
+        `~proplot.axes.Axes.cmapline` lines. Also the width of lines
         *between* `~matplotlib.axes.Axes.pcolor` boxes,
         `~matplotlib.axes.Axes.pcolormesh` boxes, and
         `~matplotlib.axes.Axes.contourf` filled contours.
@@ -1766,13 +1778,13 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
             edgefix = False # override!
             kwargs[style_kw[key]] = value
         else:
-            raise ValueError(f'Unknown keyword arg "{key}" for function "{name}".')
+            raise ValueError(f'Unknown keyword arg {key!r} for function {name!r}.')
     # Check input
     for key,val in (('levels',levels),('values',values)):
         if not np.iterable(val):
             continue
         if len(val) < 2 or any(np.diff(val) <= 0):
-            raise ValueError(f'"{key}" must be monotonically increasing and at least length 2, got {val}.')
+            raise ValueError(f'{key!r} must be monotonically increasing and at least length 2, got {val}.')
 
     # Get level edges from level centers
     # Make sure values are *averages* of encompassing levels, so that tick
@@ -1793,7 +1805,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
                 norm_tmp = styletools.Norm(norm, **norm_kw)
                 levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
         else:
-            raise ValueError('Unexpected values input "{values}". Must be integer or list of numbers.')
+            raise ValueError('Unexpected values input {values!r}. Must be integer or list of numbers.')
 
     # Data limits used for normalizer
     Z = ma.masked_invalid(args[-1], copy=False)
@@ -1812,7 +1824,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
         cyclic = cmap._cyclic
         if cyclic and extend != 'neither':
-            warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend="{extend}".')
+            warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend={extend!r}.')
             extend = 'neither'
         kwargs['cmap'] = cmap
 
@@ -1969,7 +1981,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
                     labels_kw_['color'] = color
                 self.text(x, y, fmt(num), **labels_kw_)
         else:
-            raise RuntimeError(f'Not possible to add labels to "{name}" plot.')
+            raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 
     # Fix white lines between filled contours/mesh, allow user to override!
     if edgefix:
@@ -1989,8 +2001,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     if colorbar:
         ax, loc = self._inset_or_panel_loc(colorbar, mode='colorbar', **panel_kw)
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid on-the-fly location {repr(loc)}. Must be a preset location. See BaseAxes.colorbar.')
-        if 'label' not in colorbar_kw and self.figure._autoformat:
+            raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar.')
+        if 'label' not in colorbar_kw and self.figure._auto_format:
             _, label = _auto_label(args[-1]) # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
@@ -2012,7 +2024,7 @@ def legend_wrapper(self,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.BaseAxes` `~matplotlib.axes.BaseAxes.legend` and
+    Wraps `~matplotlib.axes.Axes` `~matplotlib.axes.Axes.legend` and
     `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`, adds some
     handy features.
 
@@ -2084,7 +2096,7 @@ def legend_wrapper(self,
     """
     # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
-        raise ValueError(f'Invalid order "{order}". Choose from "C" (row-major, default) and "F" (column-major).')
+        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
     ncol = _notNone(ncols, ncol, None, names=('ncols', 'ncol')) # may still be None, wait till later
     title = _notNone(label, title, None, names=('label', 'title'))
     frameon = _notNone(frame, frameon, rc['legend.frameon'], names=('frame', 'frameon'))
@@ -2228,7 +2240,7 @@ def legend_wrapper(self,
             raise NotImplementedError(f'When center=True, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
         loc = _notNone(loc, 'upper center')
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid location {repr(loc)} for legend with center=True. Must be a location *string*.')
+            raise ValueError(f'Invalid location {loc!r} for legend with center=True. Must be a location *string*.')
         elif loc == 'best':
             warnings.warn('For centered-row legends, cannot use "best" location. Defaulting to "upper center".')
         for i,ipairs in enumerate(pairs):
@@ -2344,7 +2356,7 @@ def colorbar_wrapper(self,
     fixticks=False,
     **kwargs):
     """
-    Wraps `~proplot.axes.BaseAxes` `~proplot.axes.BaseAxes.colorbar` and
+    Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and
     `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`, adds some
     handy features.
 
@@ -2454,12 +2466,12 @@ def colorbar_wrapper(self,
 
     See also
     --------
-    `~proplot.axes.BaseAxes.colorbar`, `~proplot.axes.PanelAxes.colorbar`
+    `~proplot.axes.Axes.colorbar`, `~proplot.axes.PanelAxes.colorbar`
     """
     # Developer notes
     # * Colorbar axes must be of type `matplotlib.axes.Axes`,
-    #   not `~proplot.axes.BaseAxes`, because colorbar uses some internal methods
-    #   that are wrapped by `~proplot.axes.BaseAxes`.
+    #   not `~proplot.axes.Axes`, because colorbar uses some internal methods
+    #   that are wrapped by `~proplot.axes.Axes`.
     # * There is an insanely weird problem with colorbars when simultaneously
     #   passing levels and norm object to a mappable; fixed by passing
     #   vmin/vmax instead of levels.
@@ -2532,7 +2544,7 @@ def colorbar_wrapper(self,
                     obj = obj[0]
                 color = getattr(obj, 'get_color', None) or getattr(obj, 'get_facecolor')
                 colors.append(color())
-            cmap = styletools.Colormap(colors, listed=True)
+            cmap = styletools.Colormap(colors, listmode='listed')
             # Infer values
             if values is None:
                 values = []
@@ -2550,7 +2562,7 @@ def colorbar_wrapper(self,
         # Any colormap spec, including a list of colors, colormap name, or colormap instance
         else:
             try:
-                cmap = styletools.Colormap(mappable, listed=True)
+                cmap = styletools.Colormap(mappable, listmode='listed')
             except Exception:
                 raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, list of colors, or colormap. Got {mappable}.')
             if values is None:

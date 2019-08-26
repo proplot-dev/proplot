@@ -63,7 +63,7 @@ extensions = [
 
 # Do not run doctest tests, these are just to show syntax and expected
 # output may be graphical
-doctest_test_doctest_blocks = None
+doctest_test_doctest_blocks = ''
 
 # Generate stub pages whenever ::autosummary directive encountered
 # This way don't have to call sphinx-autogen manually

@@ -598,7 +598,7 @@ by the `~proplot.styletools.ColorCacheDict` class.
     np.random.shuffle(idxs)
     for idx in idxs:
         h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=(cmap, idx),
-                    label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols':1})
+                    label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols':1}, panel_kw={'width':0.8})
     ax.colorbar(m, loc='ul', locator=0.2, label='colormap')
     ax.format(title='Drawing from the Solar colormap', grid=True)
     # Drawing from color cycle
@@ -607,13 +607,15 @@ by the `~proplot.styletools.ColorCacheDict` class.
     np.random.shuffle(idxs)
     for idx in idxs:
         h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('qual1', idx),
-                    label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols':1})
+                    label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols':1}, panel_kw={'width':0.8})
     ax.format(title='Drawing from the ggplot color cycle')
-    axs.format(xlocator='null', abc=True, abcloc='ur', suptitle='Getting individual colors from colormaps and cycles')
+    axs.format(xlocator='null', abc=True, abcloc='ur', abcformat='A.',
+               suptitle='Getting individual colors from colormaps and cycles')
 
 
 
-.. image:: tutorial/tutorial_145_0.svg
+
+.. image:: tutorial/tutorial_145_1.svg
 
 
 Font selection

@@ -43,7 +43,7 @@ the `cartopy.crs.Projection` classes, e.g. ``lon_0`` instead of
     f, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0':180})
     axs.format(suptitle='Simple projection axes demo', coast=True, latlines=30, lonlines=60)
     # Complex example
-    f, axs = plot.subplots(
+    f, axs = plot.subplots(hratios=(1.5,1,1,1,1),
         basemap={(1,3,5,7,9):False, (2,4,6,8,10):True},
         proj={(1,2):'mill', (3,4):'eck4', (5,6):'moll', (7,8):'cyl', (9,10):'npstere'},
         ncols=2, nrows=5) #, proj_kw={'lon_0':0})
@@ -69,11 +69,11 @@ Plotting geophysical data
 The below demonstrates how to plot geophysical data with ProPlot. For
 cartopy projections, you no longer need to pass
 ``transform=crs.PlateCarree()`` to the plotting method (as I found
-myself doing 99% of the time); ProPlot makes this the default. And
-basemap usage is considerably simplified with ProPlot – you can simply
+myself doing 99% of the time) – ProPlot makes this the default. And
+basemap usage is considerably simplified with ProPlot. You can simply
 call the axes method instead of calling the method on the
 `~mpl_toolkits.basemap.Basemap` instance, and you no longer need to
-pass ``latlon=True`` to the plotting command; ProPlot makes this the
+pass ``latlon=True`` to the plotting command – ProPlot makes this the
 default. For both basemap and cartopy projections, you can also pass
 ``globe=True`` to 2D plotting commands to ensure global data coverage.
 
@@ -126,7 +126,7 @@ Formatting projection axes
 gridlines, add gridline labels, set gridline label locations, modify the
 projection bounding box, and add and stylize geographic features, like
 land masses, coastlines, and international borders. These methods also
-call ``format`` on `~proplot.axes.BaseAxes`, and so can be used for
+call ``format`` on `~proplot.axes.Axes`, and so can be used for
 subplot titles, a-b-c labels, and figure titles as before.
 
 .. code:: ipython3

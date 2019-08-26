@@ -7,7 +7,7 @@ tools for creating new colormaps and color cycles. Defines helpful new
 Adds tools for visualizing colorspaces, colormaps, color names, and color
 cycles.
 
-See the :ref:`Color usage tools` section of "Getting Started" for details.
+See the :ref:`Color usage` section of "Getting Started" for details.
 """
 # Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
 # register functions, turns out worst is colormap one at 0.1 seconds. Just happens
@@ -24,10 +24,9 @@ import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import matplotlib as mpl
-import matplotlib.font_manager as mfonts
 import warnings
 from . import colormath
-from .utils import _notNone, _counter
+from .utils import _notNone, _timer
 from matplotlib import get_data_path
 rcParams = mpl.rcParams
 __all__ = [
@@ -36,7 +35,7 @@ __all__ = [
     'Colormap', 'Cycle', 'Norm',
     'cmaps', 'cycles', 'colordict',
     'fonts', 'fonts_system', 'fonts_proplot',
-    'clean_fonts', 'colors',
+    'colors',
     'make_mapping_array', 'monochrome_cmap',
     'register_cmaps', 'register_colors', 'register_cycles', 'register_fonts',
     'saturate', 'shade', 'show_cmaps', 'show_channels',
@@ -941,7 +940,8 @@ def colors(*args, **kwargs):
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
-def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
+def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
+        fade=None, cycle=None,
         shift=None, cut=None, left=None, right=None, reverse=False,
         ratios=1, gamma=None, gamma1=None, gamma2=None,
         save=False, N=None,
@@ -980,11 +980,16 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
         Whether the colormap is cyclic. Will cause `~proplot.wrappers.cmap_wrapper`
         to pass this flag to `BinNorm`. This will prevent having the same color
         on either end of the colormap.
-    listed : bool, optional
-        Whether to pass lists of colors to `~matplotlib.colors.ListedColormap`
-        or `PerceptuallyUniformColormap.from_list`. Defaults to ``True`` when
-        calling `Colormap` directly, and ``False`` when `Colormap` is called
-        by `Cycle`.
+    listmode : {'perceptual', 'linear', 'listed'}, optional
+        Controls how colormaps are generated when you input list(s) of colors.
+        If ``'perceptual'``, a `PerceptuallyUniformColormap` is generated with
+        `PerceptuallyUniformColormap.from_list`. If ``'linear'``,
+        a `~matplotlib.colors.LinearSegmentedColormap` is generated with
+        `~matplotlib.colors.LinearSegmentedColormap.from_list`. If
+        ``'listed'``, the `~matplotlib.colors.ListedColormap` is generated.
+        Defaults to ``'perceptual'`` when calling `Colormap` directly, and
+        ``'listed'`` when `Colormap` is called by `Cycle`.
+    perceptual : bool, optional
     fade : float, optional
         The maximum luminosity used when generating `monochrome_cmap` colormaps.
         Defaults to ``100`` when calling `Colormap` directly, and ``90`` when
@@ -1068,6 +1073,8 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
     # Initial stuff
     if not args:
         raise ValueError(f'Colormap requires at least one positional argument.')
+    if listmode not in ('listed', 'linear', 'perceptual'):
+        raise ValueError(f'Invalid listmode={listmode!r}. Options are "listed", "linear", and "perceptual".')
     N_ = N or rcParams['image.lut']
     name = name or 'no_name' # must have name, mcolors utilities expect this
     imaps = []
@@ -1105,8 +1112,10 @@ def Colormap(*args, name=None, cyclic=None, listed=False, fade=None, cycle=None,
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
             # List of color tuples or color strings, i.e. iterable of iterables
             cmap = [to_rgb(color, cycle=cycle) for color in cmap] # transform C0, C1, etc. to actual names
-            if listed:
+            if listmode == 'listed':
                 cmap = mcolors.ListedColormap(cmap, name=name, **kwargs)
+            elif listmode == 'linear':
+                cmap = mcolors.LinearSegmentedColormap.from_list(name, cmap, **kwargs)
             else:
                 cmap = PerceptuallyUniformColormap.from_list(name, cmap, **kwargs)
         else:
@@ -1238,8 +1247,9 @@ def Cycle(*args, samples=None, name=None, save=False,
         register the color cycle. Default name is ``'no_name'``.
     save : bool, optional
         Whether to save the color cycle in the folder ``~/.proplot``. The
-        folder is created if it does not already exist. The cycle is saved
-        as a list of hex strings to the file ``name.hex``.
+        folder is created if it does not already exist.
+
+        The cycle is saved as a list of hex strings to the file ``name.hex``.
     marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : list of specs, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be
         added to the `~cycler.Cycler` instance. If the lists have unequal length,
@@ -1299,7 +1309,7 @@ def Cycle(*args, samples=None, name=None, save=False,
         if args and isinstance(args[-1], Number):
             args, samples = args[:-1], args[-1] # means we want to sample existing colormaps or cycles
         kwargs.setdefault('fade', 90)
-        kwargs.setdefault('listed', True)
+        kwargs.setdefault('listmode', 'listed')
         cmap = Colormap(*args, **kwargs) # the cmap object itself
         if isinstance(cmap, mcolors.ListedColormap):
             N = samples
@@ -2035,7 +2045,7 @@ def _read_cmap_cycle_data(filename):
     # Return data
     return name, x, data
 
-@_counter
+@_timer
 def register_cmaps():
     """
     Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
@@ -2099,7 +2109,7 @@ def register_cmaps():
     # Sort
     cmaps[:] = sorted(cmaps)
 
-@_counter
+@_timer
 def register_cycles():
     """
     Adds color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
@@ -2145,7 +2155,7 @@ def register_cycles():
     # Sort
     cycles[:] = sorted([*cycles, 'Set2', 'Set3'], key=lambda s: s.lower())
 
-@_counter
+@_timer
 def register_colors(nmax=np.inf):
     """
     Reads full database of crowd-sourced XKCD color names and official
@@ -2244,7 +2254,7 @@ def register_colors(nmax=np.inf):
 # got Helvetica bug due to unrecognized 'thin' font style overwriting normal one.
 # print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
 # print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
-@_counter
+@_timer
 def register_fonts():
     """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
     folder. Also deletes the font cache, which may cause delays.
@@ -2253,31 +2263,27 @@ def register_fonts():
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""
     # Add proplot path to TTFLIST and rebuild cache
+    # NOTE: Delay font_manager import, because want to avoid rebuilding font
+    # cache, which means import must come after TTFPATH added to environ!
     _check_data()
     paths = _data_fonts + ':' + _data_user_fonts
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
     elif paths not in os.environ['TTFPATH']:
         os.environ['TTFPATH'] += (':' + paths)
-    mfonts._rebuild() # bottleneck but necessary!
+
+    # Load font manager and rebuild only if necessary!
+    # Font cache rebuild can be >50% of total import time, ~1s!!!
+    import matplotlib.font_manager as mfonts
+    files_loaded = {font.fname for font in mfonts.fontManager.ttflist}
+    files_ttfpath = {*mfonts.findSystemFonts(paths.split(':'))}
+    if not (files_ttfpath <= files_loaded):
+        mfonts._rebuild()
+
     # Populate font lists
     fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if not (_data_user_fonts in font.fname or _data_fonts in font.fname)})
     fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if (_data_user_fonts in font.fname or _data_fonts in font.fname)})
     fonts[:] = sorted((*fonts_system, *fonts_proplot))
-
-def clean_fonts():
-    """Remove fonts from ``mpl-data`` that were added by ProPlot."""
-    # TODO: Delete this when enough time has passed, no longer copy stuff to mpl-data
-    rm = []
-    data_matplotlib_fonts = os.path.join(get_data_path(), 'fonts', 'ttf')
-    fonts = {os.path.basename(font) for font in glob.glob(os.path.join(_data_fonts, '*'))}
-    fonts_mpl = sorted(glob.glob(os.path.join(data_matplotlib_fonts, '*.[ot]tf')))
-    for font_mpl in fonts_mpl:
-        if os.path.basename(font_mpl) in fonts:
-            rm.append(font_mpl)
-            os.remove(font_mpl)
-    print(f'Removed fonts {", ".join(os.path.basename(font) for font in rm)}.')
-    mfonts._rebuild()
 
 #-----------------------------------------------------------------------------#
 # Register stuff and define variables
@@ -2359,8 +2365,8 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     if not rgb:
         array = array[:2]
     fig, axs = subplots(
-        array=array, axwidth=axwidth, span=0, sharex=1, sharey=1,
-        aspect=aspect, subplotpad='1em',
+        array=array, axwidth=axwidth, span=False, share=1,
+        aspect=aspect, axpad='1em',
         colorbar='b', bstack=len(args), barray=[0,1,1,1,1,0],
         )
     labels = (
@@ -2486,8 +2492,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None):
     # Note we invert the x-y ordering for imshow
     from . import subplots
     fig, axs = subplots(
-        ncols=3, span=0, share=0, axwidth=2, bottom=0, left=0,
-        right=0, aspect=1, tight=True, subplotpad=0.05
+        ncols=3, share=0, axwidth=2, aspect=1, axpad=0.05
         )
     for ax,space in zip(axs,('hcl','hsl','hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
@@ -2533,10 +2538,10 @@ def show_colors(nbreak=17, minsat=0.2):
         if opencolors:
             group = ['opencolors']
         else:
-            group = [name for name in colors if name not in ('css','opencolors')]
-        color_dict = {}
+            group = [name for name in colordict if name not in ('css','opencolors')]
+        icolors = {}
         for name in group:
-            color_dict.update(colors[name]) # add category dictionary
+            icolors.update(colordict[name]) # add category dictionary
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
@@ -2558,7 +2563,7 @@ def show_colors(nbreak=17, minsat=0.2):
             swatch = 1
             colors_hcl = {
                 key: [c/s for c,s in zip(to_xyz(value, _color_names_filter_space), scale)]
-                for key,value in color_dict.items()
+                for key,value in icolors.items()
                 }
             # Separate into columns and roughly sort by brightness in these columns
             breakpoints = np.linspace(0,1,nbreak) # group in blocks of 20 hues
@@ -2571,10 +2576,11 @@ def show_colors(nbreak=17, minsat=0.2):
                 # Column for nth color
                 else:
                     b1, b2 = breakpoints[n-1], breakpoints[n]
-                    hue_test   = ((lambda x: b1 <= x<=b2) if b2 is breakpoints[-1]
-                                    else (lambda x: b1 <= x < b2))
-                    hue_colors = [(name,hcl) for name,hcl in colors_hcl.items() if
-                            hue_test(hcl[0]) and not sat_test(hcl[1])] # grays have separate category
+                    hue_test = ((lambda x: b1 <= x <= b2) if b2
+                        is breakpoints[-1] else (lambda x: b1 <= x < b2))
+                    hue_colors = [(name,hcl) for name,hcl
+                        in colors_hcl.items() if hue_test(hcl[0])
+                        and not sat_test(hcl[1])] # grays have separate category
                 # Get indices to build sorted list, then append sorted list
                 sorted_index = np.argsort([pair[1][2] for pair in hue_colors])
                 plot_names.append([hue_colors[i][0] for i in sorted_index])
@@ -2588,7 +2594,6 @@ def show_colors(nbreak=17, minsat=0.2):
                 plot_names[-1].append(name)
 
         # Create plot by iterating over columns
-        # Easy peasy. And put 40 colors in a column
         fig, ax = subplots(
             width=8*wscale*(ncols/4), height=5*(nrows/40),
             left=0, right=0, top=0, bottom=0, tight=False
@@ -2606,7 +2611,7 @@ def show_colors(nbreak=17, minsat=0.2):
                 xi_text = wsep*(col + 0.25*swatch + 0.03*swatch)
                 ax.text(xi_text, y, re.sub('^xkcd:', '', name),
                         fontsize=hsep*0.8, ha='left', va='center')
-                ax.hlines(y_line, xi_line, xf_line, color=color_dict[name], lw=hsep*0.6)
+                ax.hlines(y_line, xi_line, xf_line, color=icolors[name], lw=hsep*0.6)
         # Apply formatting
         ax.format(xlim=(0,X), ylim=(0,Y))
         ax.set_axis_off()
@@ -2666,7 +2671,7 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
     naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
     fig, axs = subplots(
         nrows=naxs, axwidth=length, axheight=width,
-        span=False, share=False, hspace=0.03, tightsubplot=False,
+        share=0, hspace=0.03,
         )
     iax = -1
     ntitles, nplots = 0, 0 # for deciding which axes to plot in
@@ -2689,7 +2694,8 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
                 ax.set_visible(False) # empty space
                 continue
             ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
-            ax.format(ylabel=name, ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
+            ax.format(ylabel=name,
+                      ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
                       xticks='none',  yticks='none', # no ticks
                       xloc='neither', yloc='neither', # no spines
                       title=(cat if imap == 0 else None))
@@ -2728,7 +2734,7 @@ def show_cycles(*args, axwidth=1.5):
     state = np.random.RandomState(528)
     fig, axs = subplots(
         ncols=3, nrows=nrows, aspect=1, axwidth=axwidth,
-        sharey=False, sharex=False, subplotpad=0.05
+        sharey=False, sharex=False, axpad=0.05
         )
     for i,(ax,(key,cycle)) in enumerate(zip(axs, icycles.items())):
         key = key.lower()
@@ -2757,7 +2763,7 @@ def show_fonts(fonts=None, size=12):
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ $\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ $\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ $\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     letters = 'the quick brown fox jumps over a lazy dog\nTHE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
     for weight in ('normal',):
-        f, axs = subplots(ncols=1, nrows=len(fonts), flush=True, axwidth=4.5, axheight=5.5*size/72)
+        f, axs = subplots(ncols=1, nrows=len(fonts), space=0, axwidth=4.5, axheight=5.5*size/72)
         axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
         axs[0].format(title='Fonts demo', titlefontsize=size, titleloc='l', titleweight='bold')
         for i,ax in enumerate(axs):

@@ -6,7 +6,6 @@ Map projection utilities
 .. automodsumm:: proplot.projs
    :variables-only:
    :toctree: api
-   :skip: rc
 
 **Functions**
 
@@ -19,7 +18,6 @@ Map projection utilities
 .. automodsumm:: proplot.projs
    :classes-only:
    :toctree: api
-   :skip: LambertAzimuthalEqualArea, AzimuthalEquidistant
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

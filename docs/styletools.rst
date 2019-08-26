@@ -6,21 +6,18 @@ Colormaps, cycles, colors, and fonts
 .. automodsumm:: proplot.styletools
    :classes-only:
    :toctree: api
-   :skip: Number, Integral
 
 **Functions**
 
 .. automodsumm:: proplot.styletools
    :functions-only:
    :toctree: api
-   :skip: get_data_path
 
 **Variables**
 
 .. automodsumm:: proplot.styletools
    :variables-only:
    :toctree: api
-   :skip: rcParams
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

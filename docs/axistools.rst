@@ -6,7 +6,6 @@ Axis locators, formatters, and scales
 .. automodsumm:: proplot.axistools
    :toctree: api
    :classes-only:
-   :skip: Number, Fraction
 
 **Functions**
 
@@ -19,7 +18,6 @@ Axis locators, formatters, and scales
 .. automodsumm:: proplot.axistools
    :toctree: api
    :variables-only:
-   :skip: rc
 
 .. Hacky bullshit to prevent header appearing in TOC
 .. raw:: html

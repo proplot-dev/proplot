@@ -12,10 +12,10 @@ Axis tick locations
 -------------------
 
 ProPlot lets you easily specify tick locations with
-`~proplot.axes.BaseAxes.format` (keyword args ``xlocator``,
-``ylocator``, ``xminorlocator``, and ``yminorlocator``, or their aliases
-``xticks``, ``yticks``, ``xminorticks``, and ``yminorticks``). Pass a
-number to tick every ``N`` data values, lookup a builtin matplotlib
+`~proplot.axes.Axes.format` (keyword args ``xlocator``, ``ylocator``,
+``xminorlocator``, and ``yminorlocator``, or their aliases ``xticks``,
+``yticks``, ``xminorticks``, and ``yminorticks``). Pass a number to tick
+every ``N`` data values, lookup a builtin matplotlib
 `~matplotlib.ticker` with a string key name, or pass a list of numbers
 to tick specific locations. I recommend using ProPlot’s
 `~proplot.utils.arange` function to generate lists of ticks – it’s
@@ -76,7 +76,7 @@ some data range*, as demonstrated below. See
 
 
 ProPlot also lets you easily change the axis formatter with
-`~proplot.axes.BaseAxes.format` (keyword args ``xformatter`` and
+`~proplot.axes.Axes.format` (keyword args ``xformatter`` and
 ``yformatter``, or their aliases ``xticklabels`` and ``yticklabels``).
 The builtin matplotlib formatters can be referenced by string name, and
 several new formatters have been introduced – for example, you can now
@@ -113,11 +113,10 @@ See `~proplot.axes.CartesianAxes.format` and
 New and old axis scales
 -----------------------
 
-The axis scale can now be changed with
-`~proplot.axes.BaseAxes.format`, and you can now use simpler keyword
-args to configure the ``'log'`` and ``'symlog'`` axis scales. See
-`~proplot.axes.CartesianAxes.format`, `~proplot.axistools.Scale`,
-`~proplot.axistools.LogScale` and
+The axis scale can now be changed with `~proplot.axes.Axes.format`,
+and you can now use simpler keyword args to configure the ``'log'`` and
+``'symlog'`` axis scales. See `~proplot.axes.CartesianAxes.format`,
+`~proplot.axistools.Scale`, `~proplot.axistools.LogScale` and
 `~proplot.axistools.SymmetricalLogScale` for details.
 
 ProPlot also adds several new axis scales. The ``'cutoff'`` scale is

@@ -4,12 +4,12 @@ This page documents the axes subclasses returned by
 `~proplot.subplots.subplots` and their various method wrappers. You should
 start with the documentation on the following methods.
 
-* `BaseAxes.format`
-* `BaseAxes.context`
+* `Axes.format`
+* `Axes.context`
 * `CartesianAxes.format`
 * `ProjectionAxes.format`
 
-`BaseAxes.format` and `BaseAxes.context` are both called by
+`Axes.format` and `Axes.context` are both called by
 `CartesianAxes.format` and `ProjectionAxes.format`. ``format`` is your
 **one-stop-shop for changing axes settings** like *x* and *y* axis limits,
 axis labels, tick locations, tick labels grid lines, axis scales, titles,
@@ -20,23 +20,12 @@ a-b-c labelling, adding geographic features, and much more.
    <h1>Developer notes</h1>
 
 Axes method wrappers are documented in the "functions" table. The wrappers are
-dynamically applied within the `~proplot.axes.BaseAxes.__getattribute__` methods
-on `~proplot.axes.BaseAxes` and its subclasses. But why doesn't ProPlot just
-use *decorators*? Two reasons.
-
-1. Brevity. For example, `~proplot.wrappers.cmap_wrapper` overrides *a dozen*
-   different methods. This lets ProPlot override these methods in *one* line,
-   instead of 50 lines. To see which methods are overriden, the user can simply
-   check the documentation.
-2. Documentation. If ProPlot wrapped every method, the sphinx `autodoc <http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_
-   documentation generator would inherit docstrings from the parent methods.
-   In other words, the plotting method docstrings would get duplicated on
-   my website from the matplotlib website, generally with a bunch of errors.
-   ProPlot could also override these methods with its own docstrings, but that
-   would mean when the user tries e.g. ``help(ax.contourf)``, they would see
-   some very brief docstring instead of the *comprehensive* matplotlib reference
-   they were probably looking for. ProPlot only add a handful of features to
-   these functions, but the native methods generally have way more options.
+dynamically applied within the `~proplot.axes.Axes.__getattribute__` methods
+on `~proplot.axes.Axes` and its subclasses. But why doesn't ProPlot just
+use decorators? *Brevity*. For example, `~proplot.wrappers.cmap_wrapper` overrides *a dozen*
+different methods. This lets ProPlot override these methods in *one* line,
+instead of 50 lines. To see which methods are overriden, the user can simply
+check the documentation.
 
 It should be noted that dynamically wrapping every time the user requests a
 method is slower than "decoration", which just wraps the method when the class
@@ -66,7 +55,7 @@ from .rctools import rc, _rc_names_nodots
 from . import utils, projs, axistools, wrappers
 from .utils import _notNone, units
 __all__ = [
-    'BaseAxes',
+    'Axes',
     'BasemapAxes',
     'CartesianAxes',
     'CartopyAxes',
@@ -125,42 +114,41 @@ except ModuleNotFoundError:
 #-----------------------------------------------------------------------------#
 # Generalized custom axes class
 #-----------------------------------------------------------------------------#
-class BaseAxes(maxes.Axes):
+class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
     name = 'base'
     """The registered projection name."""
     def __init__(self, *args, number=None,
-        sharex=None, sharey=None, spanx=None, spany=None,
-        sharex_level=0, sharey_level=0,
-        main_gridspec=None, stack_gridspec=None,
+        sharex=None, sharey=None, sharex_level=0, sharey_level=0,
+        spanx=None, spany=None, alignx=None, aligny=None,
         **kwargs):
         """
         Parameters
         ----------
         number : int
             The subplot number, used for a-b-c labelling (see
-            `~BaseAxes.format`).
+            `~Axes.format`).
+        sharex, sharey : `Axes`, optional
+            Axes to use for *x* and *y* axis sharing.
         sharex_level, sharey_level : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both
             axes. See `~proplot.subplots.subplots` for details.
-        sharex, sharey : `BaseAxes`, optional
-            Axes to use for *x* and *y* axis sharing.
         spanx, spany : bool, optional
             Boolean toggle for whether spanning labels are enabled for the
-            *x* axis, *y* axis, or both axes. See `~proplot.subplots.subplots`
-            for details.
-        main_gridspec, stack_gridspec
-            The 5x5 flexible gridspec used to store the subplot and its panels,
-            and the gridspec used to generated "stacked" panels. The latter is
-            only passed if this is a panel axes.
+            *x* and *y* axes. See `~proplot.subplots.subplots` for details.
+        alignx, aligny : bool, optional
+            Boolean toggle for whether aligned axis labels are enabled for the
+            *x* and *y* axes. See `~proplot.subplots.subplots` for details.
 
         See also
         --------
         `~proplot.subplots.subplots`, `CartesianAxes`, `ProjectionAxes`
         """
+        # Call parent
+        super().__init__(*args, **kwargs)
         # Properties
-        self.number = number # for abc numbering
+        self._number = number # for abc numbering
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {} # dictionary of title text objects and their locations
@@ -177,7 +165,6 @@ class BaseAxes(maxes.Axes):
         self._panel_parent = None
         self._inset_zoom = False
         self._inset_parent = None
-        self._inset_children = []
         self._alty_child = None
         self._altx_child = None
         self._alty_parent = None
@@ -188,15 +175,13 @@ class BaseAxes(maxes.Axes):
         self._auto_legend_kw = {}
         self._legends = [] # we permit multiple legends, must add to bbox manually
         self._filled = False # True when panels "filled" with colorbar/legend
-        self._main_gridspec = main_gridspec # 5x5 gridspec for axes and panels
-        self._stack_gridspec = stack_gridspec # gridspec for 'stacked' panels
-
-        # Call parent
-        super().__init__(*args, **kwargs)
-
         # Axis sharing, new text attributes, custom formatting
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
+        self._alignx = alignx
+        self._aligny = aligny
+        self._sharex_level = sharex_level
+        self._sharey_level = sharey_level
         self._sharex_setup(sharex, sharex_level)
         self._sharey_setup(sharey, sharey_level)
         width, height = self.figure.get_size_inches()
@@ -204,8 +189,10 @@ class BaseAxes(maxes.Axes):
         self.height = abs(self._position.height)*height
         coltransform = mtransforms.blended_transform_factory(self.transAxes, self.figure.transFigure)
         rowtransform = mtransforms.blended_transform_factory(self.figure.transFigure, self.transAxes)
-        self.collabel = self.text(0.5, 0.95, '', va='bottom', ha='center', transform=coltransform) # reasonable starting point
-        self.rowlabel = self.text(0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
+        self.leftlabel   = self.text(0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
+        self.rightlabel  = self.text(0.95, 0.5, '', va='center', ha='left', transform=rowtransform)
+        self.bottomlabel = self.text(0.5, 0.05, '', va='top', ha='center', transform=coltransform)
+        self.toplabel    = self.text(0.5, 0.95, '', va='bottom', ha='center', transform=coltransform) # reasonable starting point
         self.format(mode=1) # mode == 1 applies the rcExtraParams
 
     @wrappers._expand_methods_list
@@ -229,6 +216,7 @@ class BaseAxes(maxes.Axes):
             self.colorbar(handles, **self._auto_colorbar_kw[loc])
         for loc,handles in self._auto_legend.items():
             self.legend(handles, **self._auto_legend_kw[loc])
+
         # Reset props
         self._auto_legend = {}
         self._auto_colorbar = {}
@@ -252,6 +240,7 @@ class BaseAxes(maxes.Axes):
             'linewidth':  f'{prefix}.linewidth',
             'fontfamily': 'font.family',
             }, cache=cache)
+
         # Location string and position coordinates
         cache = True
         prefix = 'abc' if abc else 'title'
@@ -263,6 +252,7 @@ class BaseAxes(maxes.Axes):
             cache = False
         loc = _loc_translate.get(loc, loc)
         loc = _side_translate.get(loc, loc)
+
         # Above axes
         if loc in ('left','right','center'):
             kw = props(cache)
@@ -272,6 +262,7 @@ class BaseAxes(maxes.Axes):
                 obj = self.title
             else:
                 obj = getattr(self, '_' + loc + '_title')
+
         # Inside axes
         elif loc in self._titles_dict:
             kw = props(cache)
@@ -302,12 +293,13 @@ class BaseAxes(maxes.Axes):
         """Translates location string `loc`, returns this axes or a panel axes
         and the translated location string. If it is a panel axes, returned
         location is ``'fill'``. If the panel does not exist, it is drawn,
-        and extra keyword args are passed to `~BaseAxes.panel`."""
+        and extra keyword args are passed to `~Axes.panel`."""
         # Panel index
         idx = 0
         if np.iterable(loc) and not isinstance(loc, str) \
             and len(loc) == 2 and isinstance(loc[0], str):
             loc, idx = loc # e.g. ('r',2)
+
         # Try getting the panel, and translate location
         ax = self
         if isinstance(loc, str):
@@ -325,50 +317,13 @@ class BaseAxes(maxes.Axes):
             try:
                 ax = axs[idx]
             except IndexError:
-                raise ValueError(f'Stack index {idx} for panel "{loc}" is invalid. You must make room for it with e.g. ax.panels({loc}stack=2).')
+                raise ValueError(f'Stack index {idx} for panel {loc!r} is invalid. You must make room for it with e.g. ax.panels({loc}stack=2).')
             loc = 'fill'
         elif loc is True:
             loc = None
-        elif isinstance(loc, (str,Integral)):
+        elif isinstance(loc, (str, Integral)):
             loc = _loc_translate.get(loc, loc) # may still be invalid
         return ax, loc
-
-    def _iter_children(self):
-        """Iterates over children, *exluding* panels, *including* twin axes and
-        inset axes."""
-        # NOTE: Panels cannot be added as children, because Axes.get_tightbbox
-        # includes all children in call to get_default_bbox_extra_artists
-        # by get_tight_bbox! Then again adding panels as children would *also*
-        # automatically offset the title position!
-        axs = []
-        if not self:
-            return axs
-        if not self.get_visible():
-            return axs
-        for iax in (self, self._altx_child, self._alty_child,
-                    *self._inset_children):
-            if not iax:
-                continue
-            if not iax.get_visible():
-                continue
-            axs.append(iax)
-        return axs
-
-    def _iter_children_panels(self):
-        """Iterates over an axes and its children, including panels, twin
-        axes, and panel twin axes"""
-        axs = []
-        if not self:
-            return axs
-        if not self.get_visible():
-            return axs
-        iaxs = (self, *self.leftpanel, *self.bottompanel,
-                      *self.rightpanel, *self.toppanel)
-        for iax in iaxs:
-            if not iax:
-                continue
-            axs.extend(iax._iter_children())
-        return axs
 
     def _make_inset_locator(self, bounds, trans):
         """Helper function, copied from private matplotlib version."""
@@ -381,18 +336,19 @@ class BaseAxes(maxes.Axes):
         return inset_locator
 
     def _share_short_axis(self, share, side, level):
-        """When sharing main subplots, shares the short axes of their side panels."""
+        """When sharing main subplots, shares the short axes of their side
+        panels."""
         # TODO: Re-calculate share settings at draw time!
         if isinstance(self, PanelAxes):
             return
-        axis = 'x' if side[0] in 'lr' else 'y'
         paxs1 = getattr(self, side + 'panel') # calling this means, share properties on this axes with input 'share' axes
         paxs2 = getattr(share, side + 'panel')
-        if not all(pax and pax.get_visible() and not pax._filled for pax in paxs1) or \
-           not all(pax and pax.get_visible() and not pax._filled for pax in paxs2):
+        if not all(pax and not pax._filled for pax in paxs1) or not all(
+            pax and not pax._filled for pax in paxs2):
             return
         if len(paxs1) != len(paxs2):
             raise AttributeError('Sync error. Different number of stacked panels along axes on like column/row of figure.')
+        axis = 'x' if side[0] in 'lr' else 'y'
         for pax1,pax2 in zip(paxs1,paxs2):
             getattr(pax1, '_share' + axis + '_setup')(pax2, level)
 
@@ -402,11 +358,10 @@ class BaseAxes(maxes.Axes):
         # TODO: Re-calculate share settings at draw time!
         if isinstance(self, PanelAxes):
             return
-        axis = 'x' if side[0] in 'tb' else 'y'
         paxs = getattr(self, side + 'panel') # calling this means, share properties on this axes with input 'share' axes
-        if not all(pax and pax.get_visible() and not pax._filled for pax in paxs) or \
-           not all(pax._share for pax in paxs):
+        if not all(pax and not pax._filled and pax._share for pax in paxs):
             return
+        axis = 'x' if side[0] in 'tb' else 'y'
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share, level)
 
@@ -420,10 +375,10 @@ class BaseAxes(maxes.Axes):
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
         # Account for side panels
-        self._share_short_axis(sharex, 'left',   level)
-        self._share_short_axis(sharex, 'right',  level)
-        self._share_long_axis(sharex,  'bottom', level)
-        self._share_long_axis(sharex,  'top',    level)
+        self._share_short_axis(sharex, 'l', level)
+        self._share_short_axis(sharex, 'r', level)
+        self._share_long_axis(sharex,  'b', level)
+        self._share_long_axis(sharex,  't', level)
         # Builtin features
         self._sharex = sharex
         if level > 1:
@@ -449,10 +404,10 @@ class BaseAxes(maxes.Axes):
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
         # Account for side panels
-        self._share_short_axis(sharey, 'bottom', level)
-        self._share_short_axis(sharey, 'top',    level)
-        self._share_long_axis(sharey,  'left',   level)
-        self._share_long_axis(sharey,  'right',  level)
+        self._share_short_axis(sharey, 'b', level)
+        self._share_short_axis(sharey, 't', level)
+        self._share_long_axis(sharey,  'l', level)
+        self._share_long_axis(sharey,  'r', level)
         # Builtin features
         self._sharey = sharey
         if level > 1:
@@ -465,12 +420,12 @@ class BaseAxes(maxes.Axes):
                 t.set_visible(False)
 
     def _share_panels_setup(self):
-        """Sets up axis sharing for panels."""
+        """Sets up internal axis sharing for panels."""
         # Helper function
         # NOTE: The 'visible' and 'share' properties should always be the same
         # throughout each panel stack, but use all() to make sure.
         share = lambda paxs: (paxs and all(pax.get_visible() for pax in paxs)
-                              and all(pax._share for pax in paxs))
+                                   and all(pax._share for pax in paxs))
         # Top and bottom
         bottom = None
         if share(self.bottompanel):
@@ -492,20 +447,39 @@ class BaseAxes(maxes.Axes):
             for iax in self.rightpanel:
                 iax._sharey_setup(left, 3)
 
+    def _suplabel_offset(self):
+        """Re-assigns the column and row labels to panel axes, if they exist.
+        This is called by `~proplot.subplots.Figure._align_suplabel`."""
+        # Place column and row labels on panels instead of axes
+        for side in ('left','right','top','bottom'):
+            idx = (0 if side in ('left','top') else -1)
+            pax = getattr(self, side + 'panel')[idx]
+            if not pax:
+                continue
+            kw = {}
+            obj = getattr(self, side + 'label')
+            for key in ('color', 'fontproperties'): # TODO: add to this?
+                kw[key] = getattr(obj, 'get_' + key)()
+            pobj = getattr(pax, side + 'label')
+            pobj.update(kw)
+            text = obj.get_text()
+            if text:
+                obj.set_text('')
+                pobj.set_text(text)
+
     def _title_offset(self):
-        """Re-assigns title to the first upper panel if present. We cannot
+        """Re-assigns title to the first upper panel if present. This is
+        called by `~proplot.subplots.Figure._align_suplabel`. We cannot
         simply add upper panel as child axes, because then title will be offset
         but still belong to main axes, which messes up tight bounding box."""
-        # Put title above panel
-        taxs = [tax for tax in self.toppanel if tax and tax.get_visible()]
-        if not taxs or not self._title_above_panel:
+        # Place title above panel
+        tax = self.toppanel[0]
+        if not tax or not self._title_above_panel:
             tax = self
         else:
-            tax = taxs[0]
+            tax._title_pad = self._title_pad
             for loc,obj in self._titles_dict.items():
-                if not obj.get_text():
-                    continue
-                if loc not in ('left','center','right'):
+                if not obj.get_text() or loc not in ('left','center','right'):
                     continue
                 kw = {}
                 loc, tobj, _ = tax._get_title(loc=loc)
@@ -564,7 +538,7 @@ class BaseAxes(maxes.Axes):
         **kwargs
             Any of three options:
 
-            * A keyword arg for `BaseAxes.format`, `CartesianAxes.format`,
+            * A keyword arg for `Axes.format`, `CartesianAxes.format`,
               or `ProjectionAxes.format`.
             * A global "rc" keyword arg, like ``linewidth`` or ``color``.
             * A standard "rc" keyword arg **with the dots omitted**,
@@ -608,7 +582,8 @@ class BaseAxes(maxes.Axes):
         return rc.context(rc_kw, mode=mode), kw
 
     def format(self, *, title=None, top=None,
-        figtitle=None, suptitle=None, collabels=None, rowlabels=None,
+        figtitle=None, suptitle=None, rowlabels=None, collabels=None,
+        leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
         **kwargs,
         ):
         """
@@ -618,18 +593,14 @@ class BaseAxes(maxes.Axes):
 
         Note that the `abc`, `abcformat`, `abcloc`, and `titleloc` keyword
         arguments are actually rc configuration settings that are temporarily
-        changed by the call to `~BaseAxes.format`. They are documented here
-        because it is extremely common to change them with `~BaseAxes.format`.
+        changed by the call to `~Axes.format`. They are documented here
+        because it is extremely common to change them with `~Axes.format`.
         They also appear in the tables in the `~proplot.rctools` documention.
 
         Parameters
         ----------
         title : str, optional
             The axes title.
-        ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
-            Axes titles, with the first part of the name indicating location.
-            This lets you specify multiple "title" within a single axes. See
-            the `titleloc` keyword.
         abc : bool, optional
             Whether to apply "a-b-c" subplot labelling based on the
             ``number`` attribute. If ``number`` is >26, the labels will loop
@@ -660,25 +631,29 @@ class BaseAxes(maxes.Axes):
             =========================  ============================
 
         abcborder, titleborder : bool, optional
-            These are the ``rc['abc.border']`` and ``rc['title.border']``
-            settings. They indicate whether to draw a border around the
-            labels, which can help them stand out on top of artists plotted
-            inside the axes.
+            Whether to draw a white border around titles and a-b-c labels
+            positioned inside the axes. This can help them stand out on top
+            of artists plotted inside the axes. Defaults to
+            ``rc['abc.border']`` and ``rc['title.border']``
+        ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
+            Axes titles in particular positions. This lets you specify multiple
+            "titles" for each subplots. See the `abcloc` keyword.
         top : bool, optional
             Whether to try to put title and a-b-c label above the top subplot
             panel (if it exists), or to always put them on the main subplot.
             Defaults to ``True``.
         rowlabels, colllabels : list of str, optional
+            Aliases for `leftlabels`, `toplabels`.
+        leftlabels, toplabels, rightlabels, bottomlabels : list of str, optional
             The subplot row and column labels. If list, length must match
-            the number of subplot rows, columns.
+            the number of subplots on the left, top, right, or bottom edges
+            of the figure.
         figtitle, suptitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
             column of subplots, and automatically offset above figure titles.
-
-            This is more sophisticated than matplotlib's builtin "super title",
-            which is just centered between the figure edges and offset from
-            the top edge.
+            This is an improvement on matplotlib's "super" title, which just
+            centers the text between figure edges.
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -691,13 +666,13 @@ class BaseAxes(maxes.Axes):
             self._set_title_offset_trans(pad)
             self._title_pad = pad
 
-        # Super title and labels
+        # Super title
         # NOTE: These are actually *figure-wide* settings, but that line seems
         # to get blurred -- where we have shared axes, spanning labels, and
         # whatnot. May result in redundant assignments if formatting more than
         # one axes, but operations are fast so some redundancy is nbd.
         fig = self.figure
-        suptitle = figtitle or suptitle
+        suptitle = _notNone(figtitle, suptitle, None, names=('figtitle','suptitle'))
         kw = rc.fill({
             'fontsize':   'suptitle.fontsize',
             'weight':     'suptitle.weight',
@@ -706,22 +681,21 @@ class BaseAxes(maxes.Axes):
             })
         if suptitle or kw:
             fig._update_suptitle(suptitle, **kw)
-        kw = rc.fill({
-            'fontsize':   'rowlabel.fontsize',
-            'weight':     'rowlabel.weight',
-            'color':      'rowlabel.color',
-            'fontfamily': 'font.family'
-            })
-        if rowlabels or kw:
-            fig._update_suplabels(self, rowlabels, rows=True, **kw)
-        kw = rc.fill({
-            'fontsize':   'collabel.fontsize',
-            'weight':     'collabel.weight',
-            'color':      'collabel.color',
-            'fontfamily': 'font.family'
-            })
-        if collabels or kw:
-            fig._update_suplabels(self, collabels, rows=False, **kw)
+        # Labels
+        leftlabels = _notNone(rowlabels, leftlabels, None, names=('rowlabels','leftlabels'))
+        toplabels = _notNone(collabels, toplabels, None, names=('collabels','toplabels'))
+        for side,labels in zip(
+            ('left', 'right', 'top', 'bottom'),
+            (leftlabels, rightlabels, toplabels, bottomlabels),
+            ):
+            kw = rc.fill({
+                'fontsize':   side + 'label.fontsize',
+                'weight':     side + 'label.weight',
+                'color':      side + 'label.color',
+                'fontfamily': 'font.family'
+                })
+            if labels or kw:
+                fig._update_suplabels(self, side, labels, **kw)
 
         # A-b-c labels
         titles_dict = self._titles_dict
@@ -730,7 +704,7 @@ class BaseAxes(maxes.Axes):
             abcformat = rc['abc.format'] # changed, or running format for first time?
             if abcformat and self.number is not None:
                 if 'a' not in abcformat and 'A' not in abcformat:
-                    raise ValueError(f'Invalid abcformat "{abcformat}". Must include letter "a" or "A".')
+                    raise ValueError(f'Invalid abcformat {abcformat!r}. Must include letter "a" or "A".')
                 abcedges = abcformat.split('a' if 'a' in abcformat else 'A')
                 text = abcedges[0] + _abc(self.number-1) + abcedges[-1]
                 if 'A' in abcformat:
@@ -772,7 +746,7 @@ class BaseAxes(maxes.Axes):
         # Workflow 2, want this to come first so workflow 1 gets priority
         for ikey,ititle in kwargs.items():
             if not ikey[-5:] == 'title':
-                raise ValueError(f'format() got an unexpected keyword argument "{ikey}".')
+                raise ValueError(f'format() got an unexpected keyword argument {ikey!r}.')
             iloc, iobj, ikw = self._get_title(loc=ikey[:-5])
             if ititle is not None:
                 ikw['text'] = ititle
@@ -792,196 +766,18 @@ class BaseAxes(maxes.Axes):
         if kw:
             titles_dict[loc] = self._update_title(obj, **kw)
 
-    def colorbar(self, *args, loc=None, pad=None,
-        length=None, width=None, xspace=None, frame=None, frameon=None,
-        alpha=None, linewidth=None, edgecolor=None, facecolor=None,
-        panel_kw=None,
-        **kwargs):
-        """
-        Adds an *inset* colorbar, or calls the `PanelAxes.colorbar` method for
-        the panel at location `loc`. See `~proplot.wrappers.colorbar_wrapper`
-        for details.
+    def area(self, *args, **kwargs):
+        """Alias for `~matplotlib.axes.Axes.fill_between`, which is wrapped by
+        `~proplot.wrappers.fill_between_wrapper`."""
+        # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
+        # wrapper won't be applied and for some reason it messes up
+        # automodsumm, which tries to put the matplotlib docstring on website
+        return self.fill_between(*args, **kwargs)
 
-        Parameters
-        ----------
-        loc : str, optional
-            The colorbar location or panel location. The following location keys
-            are valid. Note that if a panel does not exist, it will be
-            generated on-the-fly.
-
-            ==================  ==========================================================
-            Location            Valid keys
-            ==================  ==========================================================
-            left panel          ``'l'``, ``'left'``
-            right panel         ``'r'``, ``'right'``
-            bottom panel        ``'b'``, ``'bottom'``
-            top panel           ``'t'``, ``'top'``
-            upper right inset   ``1``, ``'upper right'``, ``'ur'``
-            upper left inset    ``2``, ``'upper left'``, ``'ul'``
-            lower left inset    ``3``, ``'lower left'``, ``'ll'``
-            lower right inset   ``4``, ``'lower right'``, ``'lr'``
-            ==================  ==========================================================
-
-        pad : float or str, optional
-            Space between the axes edge and the colorbar.
-            If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`. Defaults to ``rc['colorbar.pad']``.
-        length : float or str, optional
-            The colorbar length.  If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.length']``.
-        width : float or str, optional
-            The colorbar width.  If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']`` for inset colorbars,
-            ``rc['subplots.cbarwidth']`` for panel colorbars.
-        xspace : float or str, optional
-            Space allocated for the bottom x-label of the colorbar.
-            If float, units are inches. If string, units are interpreted
-            by `~proplot.utils.units`. Defaults to ``rc['colorbar.xspace']``.
-        frame, frameon : bool, optional
-            Whether to draw a frame behind the inset colorbar, just like
-            `~matplotlib.axes.Axes.legend`. Defaults to ``rc['colorbar.frameon']``.
-        alpha, linewidth, edgecolor, facecolor : optional
-            Transparency, edge width, edge color, and face color for the frame.
-            Defaults to ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
-            ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``.
-        panel_kw : dict-like, optional
-            Dictionary of keyword arguments passed to
-            `~proplot.axes.BaseAxes.panel`, if you are generating an
-            on-the-fly panel.
-        **kwargs
-            Passed to `~proplot.wrappers.colorbar_wrapper`.
-        """
-        loc = _notNone(loc, rc['colorbar.loc'])
-        panel_kw = panel_kw or {}
-        panel_kw.setdefault('mode', 'colorbar')
-        if width is not None:
-            panel_kw.setdefault('width', width)
-        kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
-        ax, loc = self._inset_or_panel_loc(loc, **panel_kw)
-        if not isinstance(loc, str): # e.g. 2-tuple or ndarray
-            raise ValueError(f'Invalid colorbar location {repr(loc)}.')
-        if loc == 'fill':
-            return ax.colorbar(*args, **kwargs)
-        # Default props
-        extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
-        length = units(_notNone(length, rc['colorbar.length']))/self.width
-        width = units(_notNone(width, rc['colorbar.width']))/self.height
-        pad = units(_notNone(pad, rc['colorbar.axespad']))
-        xpad = pad/self.width
-        ypad = pad/self.height
-        kwargs.setdefault('extendsize', extend)
-        # Tick location handling
-        tickloc = kwargs.pop('tickloc', None)
-        ticklocation = kwargs.pop('ticklocation', None)
-        if any(loc is not None and loc!='bottom'
-            for loc in (tickloc,ticklocation)):
-            warnings.warn(f'Inset colorbars can only have ticks on the bottom.')
-        kwargs['ticklocation'] = 'bottom'
-        # Space for labels
-        if kwargs.get('label', ''):
-            xspace = 2.4*rc['font.size']/72 + rc['xtick.major.size']/72
-        else:
-            xspace = 1.2*rc['font.size']/72 + rc['xtick.major.size']/72
-        xspace /= self.height
-        # Get location in axes-relative coordinates
-        # Bounds are x0, y0, width, height in axes-relative coordinate to start
-        if loc == 'upper right':
-            bounds = (1-xpad-length, 1-ypad-width)
-            fbounds = (1-2*xpad-length, 1-2*ypad-width-xspace)
-        elif loc == 'upper left':
-            bounds = (xpad, 1-ypad-width)
-            fbounds = (0, 1-2*ypad-width-xspace)
-        elif loc == 'lower left':
-            bounds = (xpad, ypad+xspace)
-            fbounds = (0, 0)
-        elif loc == 'lower right':
-            bounds = (1-xpad-length, ypad+xspace)
-            fbounds = (1-2*xpad-length, 0)
-        else:
-            raise ValueError(f'Invalid colorbar location {repr(loc)}.')
-        bounds = (bounds[0], bounds[1], length, width)
-        fbounds = (fbounds[0], fbounds[1], 2*xpad+length, 2*ypad+width+xspace)
-
-        # Make axes
-        locator = self._make_inset_locator(bounds, self.transAxes)
-        bbox = locator(None, None)
-        ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
-        ax.set_axes_locator(locator)
-        self.add_child_axes(ax)
-
-        # Make colorbar
-        # WARNING: Inset colorbars are tiny! So use smart default locator
-        kwargs.setdefault('maxn', 5)
-        cb = wrappers.colorbar_wrapper(ax, *args, **kwargs)
-
-        # Make frame
-        # NOTE: We do not allow shadow effects or fancy edges effect.
-        # Also keep zorder same as with legend.
-        frameon = _notNone(frame, frameon, rc['colorbar.frameon'], names=('frame','frameon'))
-        if frameon:
-            # Make object
-            xmin, ymin, width, height = fbounds
-            patch = mpatches.Rectangle((xmin,ymin), width, height,
-                    snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
-            # Properties
-            alpha = _notNone(alpha, rc['colorbar.framealpha'])
-            linewidth = _notNone(linewidth, rc['axes.linewidth'])
-            edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
-            facecolor = _notNone(facecolor, rc['axes.facecolor'])
-            patch.update({'alpha':alpha, 'linewidth':linewidth, 'edgecolor':edgecolor, 'facecolor':facecolor})
-            self.add_artist(patch)
-        return cb
-
-    def legend(self, *args, loc=None, width=None, panel_kw=None, **kwargs):
-        """
-        Adds an *inset* legend, or calls the `PanelAxes.legend` method
-        for the panel location at `loc`. See `~matplotlib.axes.Axes.legend`
-        and `~proplot.wrappers.legend_wrapper` for details.
-
-        Parameters
-        ----------
-        loc : int or str, optional
-            The legend location or panel location. The following location keys
-            are valid. Note that if a panel does not exist, it will be
-            generated on-the-fly.
-
-            ==================  ==========================================================
-            Location            Valid keys
-            ==================  ==========================================================
-            left panel          ``'l'``, ``'left'``
-            right panel         ``'r'``, ``'right'``
-            bottom panel        ``'b'``, ``'bottom'``
-            top panel           ``'t'``, ``'top'``
-            "best" possible     ``0``, ``'best'``, ``'b'``, ``'i'``, ``'inset'``
-            upper right inset   ``1``, ``'upper right'``, ``'ur'``
-            upper left inset    ``2``, ``'upper left'``, ``'ul'``
-            lower left inset    ``3``, ``'lower left'``, ``'ll'``
-            lower right inset   ``4``, ``'lower right'``, ``'lr'``
-            center left inset   ``5``, ``'center left'``, ``'cl'``
-            center right inset  ``6``, ``'center right'``, ``'cr'``
-            lower center inset  ``7``, ``'lower center'``, ``'lc'``
-            upper center inset  ``8``, ``'upper center'``, ``'uc'``
-            center inset        ``9``, ``'center'``, ``'c'``
-            ==================  ==========================================================
-
-        width : float or str, optional
-            The panel width, if it does not already exist.
-            If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`. Defaults to ``rc['subplots.legwidth']``.
-
-        *args, **kwargs
-            Passed to `~matplotlib.axes.Axes.legend`.
-        """
-        panel_kw = panel_kw or {}
-        panel_kw.setdefault('mode', 'legend')
-        if width is not None:
-            panel_kw.setdefault('width', width)
-        ax, loc = self._inset_or_panel_loc(loc, **panel_kw)
-        if loc == 'fill':
-            return ax.legend(*args, **kwargs)
-        return wrappers.legend_wrapper(ax, *args, loc=loc, **kwargs)
+    def areax(self, *args, **kwargs):
+        """Alias for `~matplotlib.axes.Axes.fill_betweenx`, which is wrapped by
+        `~proplot.wrappers.fill_betweenx_wrapper`."""
+        return self.fill_betweenx(*args, **kwargs)
 
     def cmapline(self, *args, values=None,
         cmap=None, norm=None,
@@ -1070,18 +866,209 @@ class BaseAxes(maxes.Axes):
         hs.levels = levels # needed for other functions some
         return hs
 
+    def colorbar(self, *args, loc=None, pad=None,
+        length=None, width=None, xspace=None, frame=None, frameon=None,
+        alpha=None, linewidth=None, edgecolor=None, facecolor=None,
+        panel_kw=None,
+        **kwargs):
+        """
+        Adds an *inset* colorbar, or calls the `PanelAxes.colorbar` method for
+        the panel at location `loc`. See `~proplot.wrappers.colorbar_wrapper`
+        for details.
+
+        Parameters
+        ----------
+        loc : str, optional
+            The colorbar location or panel location. The following location keys
+            are valid. Note that if a panel does not exist, it will be
+            generated on-the-fly.
+
+            ==================  ==========================================================
+            Location            Valid keys
+            ==================  ==========================================================
+            left panel          ``'l'``, ``'left'``
+            right panel         ``'r'``, ``'right'``
+            bottom panel        ``'b'``, ``'bottom'``
+            top panel           ``'t'``, ``'top'``
+            upper right inset   ``1``, ``'upper right'``, ``'ur'``
+            upper left inset    ``2``, ``'upper left'``, ``'ul'``
+            lower left inset    ``3``, ``'lower left'``, ``'ll'``
+            lower right inset   ``4``, ``'lower right'``, ``'lr'``
+            ==================  ==========================================================
+
+        pad : float or str, optional
+            Space between the axes edge and the colorbar.
+            If float, units are inches. If string, units are interpreted by
+            `~proplot.utils.units`. Defaults to ``rc['colorbar.pad']``.
+        length : float or str, optional
+            The colorbar length.  If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. Defaults to
+            ``rc['colorbar.length']``.
+        width : float or str, optional
+            The colorbar width.  If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. Defaults to
+            ``rc['colorbar.width']`` for inset colorbars,
+            ``rc['subplots.cbarwidth']`` for panel colorbars.
+        xspace : float or str, optional
+            Space allocated for the bottom x-label of the colorbar.
+            If float, units are inches. If string, units are interpreted
+            by `~proplot.utils.units`. Defaults to ``rc['colorbar.xspace']``.
+        frame, frameon : bool, optional
+            Whether to draw a frame behind the inset colorbar, just like
+            `~matplotlib.axes.Axes.legend`. Defaults to ``rc['colorbar.frameon']``.
+        alpha, linewidth, edgecolor, facecolor : optional
+            Transparency, edge width, edge color, and face color for the frame.
+            Defaults to ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
+            ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``.
+        panel_kw : dict-like, optional
+            Dictionary of keyword arguments passed to
+            `~proplot.axes.Axes.panel`, if you are generating an
+            on-the-fly panel.
+        **kwargs
+            Passed to `~proplot.wrappers.colorbar_wrapper`.
+        """
+        loc = _notNone(loc, rc['colorbar.loc'])
+        panel_kw = panel_kw or {}
+        panel_kw.setdefault('mode', 'colorbar')
+        if width is not None:
+            panel_kw.setdefault('width', width)
+        kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
+        ax, loc = self._inset_or_panel_loc(loc, **panel_kw)
+        if not isinstance(loc, str): # e.g. 2-tuple or ndarray
+            raise ValueError(f'Invalid colorbar location {loc!r}.')
+        if loc == 'fill':
+            return ax.colorbar(*args, **kwargs)
+        # Default props
+        extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
+        length = units(_notNone(length, rc['colorbar.length']))/self.width
+        width = units(_notNone(width, rc['colorbar.width']))/self.height
+        pad = units(_notNone(pad, rc['colorbar.axespad']))
+        xpad = pad/self.width
+        ypad = pad/self.height
+        kwargs.setdefault('extendsize', extend)
+        # Tick location handling
+        tickloc = kwargs.pop('tickloc', None)
+        ticklocation = kwargs.pop('ticklocation', None)
+        if any(loc is not None and loc!='bottom'
+            for loc in (tickloc,ticklocation)):
+            warnings.warn(f'Inset colorbars can only have ticks on the bottom.')
+        kwargs['ticklocation'] = 'bottom'
+        # Space for labels
+        if kwargs.get('label', ''):
+            xspace = 2.4*rc['font.size']/72 + rc['xtick.major.size']/72
+        else:
+            xspace = 1.2*rc['font.size']/72 + rc['xtick.major.size']/72
+        xspace /= self.height
+        # Get location in axes-relative coordinates
+        # Bounds are x0, y0, width, height in axes-relative coordinate to start
+        if loc == 'upper right':
+            bounds = (1-xpad-length, 1-ypad-width)
+            fbounds = (1-2*xpad-length, 1-2*ypad-width-xspace)
+        elif loc == 'upper left':
+            bounds = (xpad, 1-ypad-width)
+            fbounds = (0, 1-2*ypad-width-xspace)
+        elif loc == 'lower left':
+            bounds = (xpad, ypad+xspace)
+            fbounds = (0, 0)
+        elif loc == 'lower right':
+            bounds = (1-xpad-length, ypad+xspace)
+            fbounds = (1-2*xpad-length, 0)
+        else:
+            raise ValueError(f'Invalid colorbar location {loc!r}.')
+        bounds = (bounds[0], bounds[1], length, width)
+        fbounds = (fbounds[0], fbounds[1], 2*xpad+length, 2*ypad+width+xspace)
+
+        # Make axes
+        locator = self._make_inset_locator(bounds, self.transAxes)
+        bbox = locator(None, None)
+        ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
+        ax.set_axes_locator(locator)
+        self.add_child_axes(ax)
+
+        # Make colorbar
+        # WARNING: Inset colorbars are tiny! So use smart default locator
+        kwargs.setdefault('maxn', 5)
+        cb = wrappers.colorbar_wrapper(ax, *args, **kwargs)
+
+        # Make frame
+        # NOTE: We do not allow shadow effects or fancy edges effect.
+        # Also keep zorder same as with legend.
+        frameon = _notNone(frame, frameon, rc['colorbar.frameon'], names=('frame','frameon'))
+        if frameon:
+            # Make object
+            xmin, ymin, width, height = fbounds
+            patch = mpatches.Rectangle((xmin,ymin), width, height,
+                    snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
+            # Properties
+            alpha = _notNone(alpha, rc['colorbar.framealpha'])
+            linewidth = _notNone(linewidth, rc['axes.linewidth'])
+            edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
+            facecolor = _notNone(facecolor, rc['axes.facecolor'])
+            patch.update({'alpha':alpha, 'linewidth':linewidth, 'edgecolor':edgecolor, 'facecolor':facecolor})
+            self.add_artist(patch)
+        return cb
+
+    def legend(self, *args, loc=None, width=None, panel_kw=None, **kwargs):
+        """
+        Adds an *inset* legend, or calls the `PanelAxes.legend` method
+        for the panel location at `loc`. See `~matplotlib.axes.Axes.legend`
+        and `~proplot.wrappers.legend_wrapper` for details.
+
+        Parameters
+        ----------
+        loc : int or str, optional
+            The legend location or panel location. The following location keys
+            are valid. Note that if a panel does not exist, it will be
+            generated on-the-fly.
+
+            ==================  ==========================================================
+            Location            Valid keys
+            ==================  ==========================================================
+            left panel          ``'l'``, ``'left'``
+            right panel         ``'r'``, ``'right'``
+            bottom panel        ``'b'``, ``'bottom'``
+            top panel           ``'t'``, ``'top'``
+            "best" possible     ``0``, ``'best'``, ``'b'``, ``'i'``, ``'inset'``
+            upper right inset   ``1``, ``'upper right'``, ``'ur'``
+            upper left inset    ``2``, ``'upper left'``, ``'ul'``
+            lower left inset    ``3``, ``'lower left'``, ``'ll'``
+            lower right inset   ``4``, ``'lower right'``, ``'lr'``
+            center left inset   ``5``, ``'center left'``, ``'cl'``
+            center right inset  ``6``, ``'center right'``, ``'cr'``
+            lower center inset  ``7``, ``'lower center'``, ``'lc'``
+            upper center inset  ``8``, ``'upper center'``, ``'uc'``
+            center inset        ``9``, ``'center'``, ``'c'``
+            ==================  ==========================================================
+
+        width : float or str, optional
+            The panel width, if it does not already exist.
+            If float, units are inches. If string, units are interpreted by
+            `~proplot.utils.units`. Defaults to ``rc['subplots.legwidth']``.
+
+        *args, **kwargs
+            Passed to `~matplotlib.axes.Axes.legend`.
+        """
+        panel_kw = panel_kw or {}
+        panel_kw.setdefault('mode', 'legend')
+        if width is not None:
+            panel_kw.setdefault('width', width)
+        ax, loc = self._inset_or_panel_loc(loc, **panel_kw)
+        if loc == 'fill':
+            return ax.legend(*args, **kwargs)
+        return wrappers.legend_wrapper(ax, *args, loc=loc, **kwargs)
+
     def draw(self, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
         self._draw_auto_legends_colorbars()
-        self._title_offset()
         super().draw(*args, **kwargs)
 
     def get_tightbbox(self, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
-        calculated."""
+        calculated, and stores the bounding box as an attribute."""
         self._draw_auto_legends_colorbars()
-        self._title_offset()
-        return super().get_tightbbox(*args, **kwargs)
+        bbox = super().get_tightbbox(*args, **kwargs)
+        self._tight_bbox = bbox
+        return bbox
 
     def heatmap(self, *args, **kwargs):
         """Calls `~matplotlib.axes.Axes.pcolormesh` and applies default formatting
@@ -1121,11 +1108,11 @@ class BaseAxes(maxes.Axes):
             elements in the parent axes. Defaults to ``5``.
         zoom : bool, optional
             Whether to draw lines indicating the inset zoom using
-            `~BaseAxes.indicate_inset_zoom`. The lines will automatically
+            `~Axes.indicate_inset_zoom`. The lines will automatically
             adjust whenever the parent axes or inset axes limits are changed.
             Defaults to ``True``.
         zoom_kw : dict, optional
-            Passed to `~BaseAxes.indicate_inset_zoom`.
+            Passed to `~Axes.indicate_inset_zoom`.
 
         Other parameters
         ----------------
@@ -1146,7 +1133,6 @@ class BaseAxes(maxes.Axes):
         # is called by ax.apply_aspect()
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
-        self._inset_children.append(ax)
         ax._inset_zoom = zoom
         ax._inset_parent = self
         # Zoom indicator (NOTE: Requires version >=3.0)
@@ -1157,10 +1143,11 @@ class BaseAxes(maxes.Axes):
 
     def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
         """
-        Called automatically when using `~BaseAxes.inset` with ``zoom=True``.
+        Called automatically when using `~Axes.inset` with ``zoom=True``.
         Like `~matplotlib.axes.Axes.indicate_inset_zoom`, but *refreshes* the
-        lines at draw-time. This method is called from the *inset* axes, not
-        the parent axes.
+        lines at draw-time.
+
+        This method is called from the *inset* axes, not the parent axes.
 
         Parameters
         ----------
@@ -1213,19 +1200,19 @@ class BaseAxes(maxes.Axes):
         """
         Adds a single `~proplot.axes.PanelAxes` or a stack of panels, and
         returns an `~proplot.subplots.axes_grid` of the panel stack. Also
-        saves the panel stack as the `~BaseAxes.leftpanel`,
-        `~BaseAxes.rightpanel`, `~BaseAxes.bottompanel`, or
-        `~BaseAxes.toppanel` attribute, with respective shorthands
-        `~BaseAxes.lpanel`, `~BaseAxes.rpanel`, `~BaseAxes.bpanel`, and
-        `~BaseAxes.tpanel`.
+        saves the panel stack as the `~Axes.leftpanel`,
+        `~Axes.rightpanel`, `~Axes.bottompanel`, or
+        `~Axes.toppanel` attribute, with respective shorthands
+        `~Axes.lpanel`, `~Axes.rpanel`, `~Axes.bpanel`, and
+        `~Axes.tpanel`.
 
-        Note that all `~BaseAxes.panel_axes` keyword args can be side-specific,
+        Note that all `~Axes.panel_axes` keyword args can be side-specific,
         e.g. `lwidth` instead of `width`. This is for compatibility with the
         `~proplot.subplots.subplots` API.
 
         Parameters
         ----------
-        ax : `~proplot.axes.BaseAxes`
+        ax : `~proplot.axes.Axes`
             The axes for which we are drawing a panel.
         width, lwidth, rwidth, bwidth, twidth : float or str or list thereof, optional
             The panel width. If float or str, widths are same for all panels
@@ -1263,16 +1250,17 @@ class BaseAxes(maxes.Axes):
         """
         return self.figure._add_panel(self, *args, **kwargs)
 
-    area = maxes.Axes.fill_between
-    """Alias for `~matplotlib.axes.Axes.fill_between`, which is wrapped by
-    `~proplot.wrappers.fill_between_wrapper`."""
-    areax = maxes.Axes.fill_betweenx
-    """Alias for `~matplotlib.axes.Axes.fill_betweenx`, which is wrapped by
-    `~proplot.wrappers.fill_betweenx_wrapper`."""
     panel = panel_axes
-    """Alias for `~BaseAxes.panel_axes`."""
+    """Alias for `~Axes.panel_axes`."""
     inset = inset_axes
-    """Alias for `~BaseAxes.inset_axes`."""
+    """Alias for `~Axes.inset_axes`."""
+
+    @property
+    def number(self):
+        """The axes number, controls a-b-c label order and order of
+        appearence in the `~proplot.subplots.axes_grid` returned by
+        `~proplot.subplots.subplots`."""
+        return self._number
 
     @property
     def leftpanel(self):
@@ -1292,16 +1280,47 @@ class BaseAxes(maxes.Axes):
         return self._bottompanel
 
     lpanel = leftpanel
-    """Alias for `~BaseAxes.leftpanel`."""
+    """Alias for `~Axes.leftpanel`."""
     rpanel = rightpanel
-    """Alias for `~BaseAxes.rightpanel`."""
+    """Alias for `~Axes.rightpanel`."""
     tpanel = toppanel
-    """Alias for `~BaseAxes.toppanel`."""
+    """Alias for `~Axes.toppanel`."""
     bpanel = bottompanel
-    """Alias for `~BaseAxes.bottompanel`."""
+    """Alias for `~Axes.bottompanel`."""
+
+    def _iter_panels(self, sides='lrbt'):
+        """Iterates over axes and child panel axes."""
+        axs = []
+        for iax in (self, *(iax for side in sides
+                    for iax in getattr(self, side + 'panel'))):
+            if not iax or not iax.get_visible():
+                continue
+            axs.append(iax)
+        return axs
+
+    def _iter_twins(self):
+        """Iterates over axes and twin axes."""
+        axs = []
+        for iax in (self, self._altx_child, self._alty_child):
+            if not iax or not iax.get_visible():
+                continue
+            axs.append(iax)
+        return axs
+
+    def _iter_twins_panels(self, sides='lrbt'):
+        """Axes tight bounding boxes include child axes. This iterates over
+        the axes and objects not counted as child axes -- namely panels,
+        twin axes, and panel twin axes."""
+        axs = []
+        for iax in (self, *(iax for side in sides
+                    for iax in getattr(self, side + 'panel'))):
+            if not iax or not iax.get_visible():
+                continue
+            axs.extend(iax._iter_twins())
+        return axs
 
 #-----------------------------------------------------------------------------#
-# BaseAxes subclasses
+# Axes subclasses
 #-----------------------------------------------------------------------------#
 def _rcloc_to_stringloc(xy, string): # figures out string location
     """Gets *location string* from the *boolean* rc settings, for a given
@@ -1335,14 +1354,14 @@ def _rcloc_to_stringloc(xy, string): # figures out string location
     else:
         raise ValueError(f'"xy" must equal "x" or "y".')
 
-class CartesianAxes(BaseAxes):
+class CartesianAxes(Axes):
     """
     Axes subclass for ordinary Cartesian axes. Adds several new methods and
     overrides existing ones.
 
     See also
     --------
-    `~proplot.subplots.subplots`, `BaseAxes`, `PanelAxes`
+    `~proplot.subplots.subplots`, `Axes`, `PanelAxes`
     """
     name = 'cartesian'
     """The registered projection name."""
@@ -1467,7 +1486,7 @@ class CartesianAxes(BaseAxes):
         xlim = self.get_xlim()
         xscale = self.get_xscale()
         if any(np.array(xlim) <= 0) and re.match('^(log|inverse)', xscale):
-            raise ValueError(f'Axis limits go negative, but "alternate units" axis uses {xscale} scale.')
+            raise ValueError(f'Axis limits go negative, but "alternate units" axis uses {xscale!r} scale.')
         # Transform axis limits with axis scale transform
         transform = child.xaxis._scale.get_transform()
         nlim = transform.inverted().transform(np.array(xlim))
@@ -1486,7 +1505,7 @@ class CartesianAxes(BaseAxes):
         ylim = self.get_ylim()
         yscale = self.get_yscale()
         if any(np.array(ylim) <= 0) and re.match('^(log|inverse)', yscale):
-            raise ValueError(f'Axis limits go negative, but "alternate units" axis uses {yscale} scale.')
+            raise ValueError(f'Axis limits go negative, but "alternate units" axis uses {yscale!r} scale.')
         transform = child.yaxis._scale.get_transform()
         nlim = transform.inverted().transform(np.array(ylim))
         if np.sign(np.diff(ylim)) != np.sign(np.diff(nlim)):
@@ -1494,6 +1513,7 @@ class CartesianAxes(BaseAxes):
         child.set_ylim(scale[0] + scale[1]*nlim)
 
     def format(self, *,
+        aspect=None,
         xloc=None, yloc=None,
         xspineloc=None, yspineloc=None,
         xtickloc=None, ytickloc=None, fixticks=False,
@@ -1526,12 +1546,16 @@ class CartesianAxes(BaseAxes):
         patch_kw=None,
         **kwargs):
         """
-        Calls `BaseAxes.format` and `BaseAxes.context`, formats the
+        Calls `Axes.format` and `Axes.context`, formats the
         *x* and *y* axis labels, tick locations, tick labels,
         axis scales, spine settings, and more.
 
         Parameters
         ----------
+        aspect : {'auto', 'equal'}, optional
+            The aspect ratio mode. If ``'auto'``, the aspect ratio is
+            determined from the *x* and *y* axis limits, and ProPlot adjusts
+            the subplot layout to remove excessive whitespace.
         xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`
@@ -1634,7 +1658,7 @@ class CartesianAxes(BaseAxes):
             can use this, for example, to set background hatching with
             ``patch_kw={'hatch':'xxx'}``.
         **kwargs
-            Passed to `BaseAxes.format` and `BaseAxes.context`.
+            Passed to `Axes.format` and `Axes.context`.
 
         Note
         ----
@@ -1755,22 +1779,6 @@ class CartesianAxes(BaseAxes):
                 (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
                 (xformatter_kw, yformatter_kw),
                 ):
-                # Axis label updates
-                # Redirect user request to the correct *shared* axes
-                kw = rc.fill({
-                    'color':      'axes.edgecolor',
-                    'fontsize':   'axes.labelsize',
-                    'weight':     'axes.labelweight',
-                    'fontfamily': 'font.family',
-                    })
-                if label is not None:
-                    kw['text'] = label
-                if color:
-                    kw['color'] = color
-                kw.update(label_kw)
-                if kw: # NOTE: initially keep spanning labels off
-                    self.figure._update_axislabels(axis, **kw)
-
                 # Axis scale
                 # WARNING: This relies on monkey patch of mscale.scale_factory
                 # that allows it to accept a custom scale class!
@@ -1825,7 +1833,7 @@ class CartesianAxes(BaseAxes):
                             try:
                                 spine.set_position(spineloc)
                             except ValueError:
-                                raise ValueError(f'Invalid {name} spine location "{spineloc}". Options are {", ".join((*sides, "both", "neither"))}.')
+                                raise ValueError(f'Invalid {name} spine location {spineloc!r}. Options are {", ".join((*sides, "both", "neither"))}.')
                     # Apply spine bounds
                     if bounds is not None and spine.get_visible():
                         spine.set_bounds(*bounds)
@@ -1895,7 +1903,7 @@ class CartesianAxes(BaseAxes):
                         if len(options) == 1:
                             labelloc = options[0]
                 elif labelloc not in sides:
-                    raise ValueError(f'Got labelloc "{labelloc}", valid options are {sides}.')
+                    raise ValueError(f'Got labelloc {labelloc!r}, valid options are {sides!r}.')
                 # Apply
                 axis.set_tick_params(which='both', **kw)
                 if labelloc is not None:
@@ -1941,6 +1949,23 @@ class CartesianAxes(BaseAxes):
                 # Margins
                 if margin is not None:
                     self.margins(**{name: margin})
+
+                # Axis label updates
+                # NOTE: This has to come after set_label_position, or ha or va
+                # overrides in label_kw are overwritten
+                kw = rc.fill({
+                    'color':      'axes.edgecolor',
+                    'fontsize':   'axes.labelsize',
+                    'weight':     'axes.labelweight',
+                    'fontfamily': 'font.family',
+                    })
+                if label is not None:
+                    kw['text'] = label
+                if color:
+                    kw['color'] = color
+                kw.update(label_kw)
+                if kw: # NOTE: initially keep spanning labels off
+                    self.figure._update_axislabels(axis, **kw)
 
                 # Major and minor locator
                 # WARNING: MultipleLocator fails sometimes, notably when doing
@@ -1988,6 +2013,8 @@ class CartesianAxes(BaseAxes):
                     locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
                     axis.set_minor_locator(locator)
             # Call parent
+            if aspect is not None:
+                self.set_aspect(aspect)
             super().format(**kwargs)
 
     def altx(self, *args, **kwargs):
@@ -1998,15 +2025,11 @@ class CartesianAxes(BaseAxes):
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
         if self._altx_child:
-            raise ValueError('No more than two twin axes!')
+            raise ValueError('No more than *two* twin axes!')
         if self._altx_parent:
             raise ValueError('This *is* a twin axes!')
-        try:
-            self.figure._locked = False
+        with self.figure._unlock():
             ax = self._make_twin_axes(sharey=self, projection=self.name)
-        except Exception as err:
-            self.figure._locked = True
-            raise err
         # Setup
         # Some things we enforce every time draw is invoked, others not
         ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
@@ -2023,15 +2046,11 @@ class CartesianAxes(BaseAxes):
         generates two *y*-axes with a shared ("twin") *x*-axis."""
         # Must reproduce twinx here because need to generate CartesianAxes
         if self._alty_child:
-            raise ValueError('No more than two twin axes!')
+            raise ValueError('No more than *two* twin axes!')
         if self._alty_parent:
             raise ValueError('This *is* a twin axes!')
-        try:
-            self.figure._locked = False
+        with self.figure._unlock():
             ax = self._make_twin_axes(sharex=self, projection=self.name)
-        except Exception as err:
-            self.figure._locked = True
-            raise err
         ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax
@@ -2068,7 +2087,7 @@ class CartesianAxes(BaseAxes):
             The axis label (highly recommended). A warning will be issued if
             this is not supplied.
         **kwargs
-            Passed to `BaseAxes.format`.
+            Passed to `Axes.format`.
         """
         # The axis scale is used to transform units on the left axis, linearly
         # spaced, to units on the right axis... so the right scale must scale
@@ -2079,7 +2098,7 @@ class CartesianAxes(BaseAxes):
         # title positioning and in get_children function.
         parent = self.get_xscale()
         if parent != 'linear':
-            warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
+            warnings.warn(f'Parent axis scale must be linear. Overriding current {parent!r} scale.')
             self.set_xscale('linear')
         ax = self.twiny()
         if xlabel is None:
@@ -2117,11 +2136,11 @@ class CartesianAxes(BaseAxes):
             The axis label (highly recommended). A warning will be issued if
             this is not supplied.
         **kwargs
-            Passed to `BaseAxes.format`.
+            Passed to `Axes.format`.
         """
         parent = self.get_yscale()
         if parent != 'linear':
-            warnings.warn(f'Parent axis scale must be linear. Overriding current "{parent}" scale.')
+            warnings.warn(f'Parent axis scale must be linear. Overriding current {parent!r} scale.')
             self.set_yscale('linear')
         ax = self.twinx()
         if ylabel is None:
@@ -2185,7 +2204,9 @@ class EmptyPanel(object):
         """Returns itself. This allows us to treat `EmptyPanel` like an
         `~proplot.subplots.axes_grid` of stacked panels."""
         # See: https://stackoverflow.com/a/26611639/4970632
-        if key not in (0,-1,(0,0),(-1,-1)):
+        if not isinstance(key, tuple):
+            key = (key,)
+        if any(ikey not in (0,-1,slice(None)) for ikey in key):
             raise IndexError
         return self
 
@@ -2204,24 +2225,25 @@ class PanelAxes(CartesianAxes):
     name = 'panel'
     """The registered projection name."""
     def __init__(self, *args,
-        side=None, share=False, flush=False,
-        visible=True, parent=None, **kwargs):
+        parent=None, side=None, share=False, gridspec=None,
+        **kwargs):
         """
         Parameters
         ----------
         side : {'left', 'right', 'bottom', 'top'}
             The side on which the panel is drawn.
+        parent : `~matplotlib.axes.Axes`, optional
+            The "parent" of the panel. Not relevant for "outer panel" axes.
         share : bool, optional
             Whether to share panel *x* and *y* axes with "parent" axes.
             Irrelevant for figure panels, and defaults to ``False``.
-        flush : bool, optional
-            Whether panel should always be "flush" against its parent
-            subplot or not.
-        visible : bool, optional
-            Whether to make the axes visible or not. This is uses to align
-            axes panels in the same row or column.
-        parent : `~matplotlib.axes.Axes`, optional
-            The "parent" of the panel. Not relevant for "outer panel" axes.
+        gridspec : optional
+            For stacks of panel axes, this is the
+            `~proplot.subplots.FlexibleGridSpecFromSubplotSpec` used to
+            specify the panel stack location.
+
+        Other parameters
+        ----------------
         *args, **kwargs
             Passed to the `CartesianAxes` initializer.
 
@@ -2233,18 +2255,15 @@ class PanelAxes(CartesianAxes):
         # Misc props
         # WARNING: Need to set flush property before calling super init!
         if side not in ('left', 'right', 'bottom', 'top'):
-            raise ValueError(f'Invalid panel side "{side}".')
+            raise ValueError(f'Invalid panel side {side!r}.')
         self._share = share
         self._side = side
-        self._flush = flush # should panel always be flush against subplot?
         self._parent = parent # used when declaring parent
         # Initialize
         super().__init__(*args, **kwargs)
         axis = (self.yaxis if side in ('left','right') else self.xaxis)
         getattr(axis, 'tick_' + side)() # sets tick and tick label positions intelligently
         axis.set_label_position(side)
-        if not visible:
-            self.set_visible(False)
 
     def legend(self, *args, fill=True, **kwargs):
         """"Fills the panel" with a legend by adding a centered legend and
@@ -2272,7 +2291,7 @@ class PanelAxes(CartesianAxes):
         # Apply legend location
         side = self._side
         if 'loc' in kwargs:
-            warnings.warn(f'Overriding input legend location "loc={repr(kwargs["loc"])}".')
+            warnings.warn(f'Overriding input legend location loc={kwargs["loc"]!r}.')
         if side == 'bottom':
             loc = 'upper center'
         elif side == 'right':
@@ -2282,7 +2301,7 @@ class PanelAxes(CartesianAxes):
         elif side == 'top':
             loc = 'lower center'
         else:
-            raise ValueError(f'Invalid panel side "{loc}".')
+            raise ValueError(f'Invalid panel side {loc!r}.')
         kwargs['loc'] = loc
         return wrappers.legend_wrapper(self, *args, **kwargs)
 
@@ -2290,7 +2309,7 @@ class PanelAxes(CartesianAxes):
         """"Fills the panel" with a colorbar by calling `~matplotlib.figure.Figure.colorbar`
         with ``cax=self``. To change the fractional extent of the colorbar that
         is filled, pass ``length=x``. To draw an inset colorbar with
-        `BaseAxes.colorbar`, use ``fill=False``. See `~matplotlib.figure.Figure.colorbar`
+        `Axes.colorbar`, use ``fill=False``. See `~matplotlib.figure.Figure.colorbar`
         and `~proplot.wrappers.colorbar_wrapper` for details."""
         # Inset 'legend-style' colorbar
         if not fill:
@@ -2304,7 +2323,6 @@ class PanelAxes(CartesianAxes):
         self.yaxis.set_visible(False)
         self.patch.set_alpha(0)
         # Draw colorbar with arbitrary length relative to full length of panel
-        fig = self.figure
         side = self._side
         subspec = self.get_subplotspec()
         if length != 1:
@@ -2323,12 +2341,8 @@ class PanelAxes(CartesianAxes):
                         )
                 subspec = gridspec[1]
         # Get properties
-        try:
-            self.figure._locked = False
-            ax = fig.add_subplot(subspec, projection=None)
-        except Exception as err:
-            self.figure._locked = True
-            raise err
+        with self.figure._unlock():
+            ax = self.figure.add_subplot(subspec, projection=None)
         if side in ('bottom','top'):
             outside, inside = 'bottom', 'top'
             if side == 'top':
@@ -2343,15 +2357,20 @@ class PanelAxes(CartesianAxes):
             orientation  = 'vertical'
         # For filled axes, call wrapper method directly
         self.add_child_axes(ax) # TODO: is this sufficient for tight bbox calcs?
+        orient = kwargs.get('orientation', None)
+        if orient is not None and orient != orientation:
+            warnings.warn(f'Overriding input orientation={orient!r}.')
+        ticklocation = kwargs.pop('tickloc', None) or ticklocation
+        ticklocation = kwargs.pop('ticklocation', None) or ticklocation
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         cbar = wrappers.colorbar_wrapper(ax, *args, **kwargs)
         return cbar
 
-class ProjectionAxes(BaseAxes):
+class ProjectionAxes(Axes):
     """Intermediate class, shared by `CartopyAxes` and
     `BasemapAxes`. Disables methods that are inappropriate for map
     projections and adds `ProjectionAxes.format`, so that arguments
-    passed to `~BaseAxes.format` are identical for `CartopyAxes`
+    passed to `Axes.format` are identical for `CartopyAxes`
     and `BasemapAxes`."""
     def __init__(self, *args, **kwargs): # just to disable docstring inheritence
         """
@@ -2366,7 +2385,7 @@ class ProjectionAxes(BaseAxes):
         """Disables the methods `_map_disabled_methods`, which are inappropriate
         for map projections."""
         if attr in wrappers._map_disabled_methods:
-            raise AttributeError(f'Invalid plotting function "{attr}" for map projection axes.')
+            raise AttributeError(f'Invalid plotting function {attr!r} for map projection axes.')
         return super().__getattribute__(attr, *args)
 
     def _projection_format_kwargs(self, *,
@@ -2575,7 +2594,7 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
             The azimuthal and radial label formatter settings. Passed to
             `~proplot.axistools.Formatter`.
         **kwargs
-            Passed to `BaseAxes.format` and `BaseAxes.context`
+            Passed to `Axes.format` and `Axes.context`
         """
         context, kwargs = self.context(**kwargs)
         with context:
@@ -2713,7 +2732,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
         *args, **kwargs
-            Passed to `BaseAxes.__init__`.
+            Passed to `Axes.__init__`.
 
         See also
         --------
@@ -2837,7 +2856,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                 projs.SouthPolarLambertAzimuthalEqualArea))
             if north or south:
                 if (lonlim is not None or latlim is not None):
-                    warnings.warn(f'"{proj}" extent is controlled by "boundinglat", ignoring lonlim={lonlim} and latlim={latlim}.')
+                    warnings.warn(f'{proj!r} extent is controlled by "boundinglat", ignoring lonlim={lonlim!r} and latlim={latlim!r}.')
                 if self._boundinglat is None:
                     if isinstance(self.projection, projs.NorthPolarGnomonic):
                         boundinglat = 30
@@ -2854,7 +2873,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                     self._boundinglat = boundinglat
             else:
                 if boundinglat is not None:
-                    warnings.warn(f'"{proj}" extent is controlled by "lonlim" and "latlim", ignoring boundinglat={boundinglat}.')
+                    warnings.warn(f'{proj!r} extent is controlled by "lonlim" and "latlim", ignoring boundinglat={boundinglat!r}.')
                 if lonlim is not None or latlim is not None:
                     lonlim = lonlim or [None, None]
                     latlim = latlim or [None, None]
@@ -3039,7 +3058,7 @@ class BasemapAxes(ProjectionAxes):
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
         **kwargs
-            Passed to `BaseAxes.__init__`.
+            Passed to `Axes.__init__`.
 
         See also
         --------
@@ -3256,11 +3275,11 @@ class BasemapAxes(ProjectionAxes):
                 setattr(self, '_' + name, feat)
 
             # Pass stuff to parent formatter, e.g. title and abc labeling
-            BaseAxes.format(self, **kwargs)
+            Axes.format(self, **kwargs)
 
 # Docstring setup
 _projection_format_docstring = """
-Calls `BaseAxes.format` and `BaseAxes.context`, formats the meridian
+Calls `Axes.format` and `Axes.context`, formats the meridian
 and parallel labels, longitude and latitude map limits, geographic
 features, and more.
 
@@ -3304,13 +3323,13 @@ patch_kw : dict-like, optional
     can use this, for example, to set background hatching with
     ``patch_kw={'hatch':'xxx'}``.
 **kwargs
-    Passed to `BaseAxes.format` and `BaseAxes.context`.
+    Passed to `Axes.format` and `Axes.context`.
 """
 CartopyAxes.format.__doc__ = _projection_format_docstring
 BasemapAxes.format.__doc__ = _projection_format_docstring
 
 # Register the projections
-mproj.register_projection(BaseAxes)
+mproj.register_projection(Axes)
 mproj.register_projection(PanelAxes)
 mproj.register_projection(PolarAxes)
 mproj.register_projection(CartesianAxes)

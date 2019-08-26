@@ -2,7 +2,7 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <!-- Created with matplotlib (https://matplotlib.org/) -->
-<svg height="1348.6pt" version="1.1" viewBox="0 0 400.826343 1348.6" width="400.826343pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg height="1339.8pt" version="1.1" viewBox="0 0 394.426343 1339.8" width="394.426343pt" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <style type="text/css">
 *{stroke-linecap:butt;stroke-linejoin:round;}
@@ -10,297 +10,25 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 1348.6 
-L 400.826343 1348.6 
-L 400.826343 0 
-L 0 0 
+   <path d="M 0 1339.8 
+L 395.72 1339.8 
+L 395.72 0.23125 
+L 0 0.23125 
 z
 " style="fill:#f2f2f2;"/>
   </g>
   <g id="axes_1">
    <g id="patch_2">
-    <path d="M 7.2 87.4 
-L 331.2 87.4 
-L 331.2 21.4 
-L 7.2 21.4 
+    <path d="M 4 81.8 
+L 328 81.8 
+L 328 15.8 
+L 4 15.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_1"/>
    <g id="matplotlib.axis_2"/>
    <g id="text_1">
-    <!-- Fonts demo -->
-    <defs>
-     <path d="M 6.90625 71.40625 
-L 6.90625 0 
-L 22.59375 0 
-L 22.59375 29.5 
-L 52.5 29.5 
-L 52.5 41.703125 
-L 22.59375 41.703125 
-L 22.59375 58.203125 
-L 57.09375 58.203125 
-L 57.09375 71.40625 
-z
-" id="HelveticaNeue-Bold-70"/>
-     <path d="M 18 25.796875 
-Q 18 28.90625 18.59375 31.90625 
-Q 19.203125 34.90625 20.640625 37.203125 
-Q 22.09375 39.5 24.5 40.953125 
-Q 26.90625 42.40625 30.5 42.40625 
-Q 34.09375 42.40625 36.546875 40.953125 
-Q 39 39.5 40.453125 37.203125 
-Q 41.90625 34.90625 42.5 31.90625 
-Q 43.09375 28.90625 43.09375 25.796875 
-Q 43.09375 22.703125 42.5 19.75 
-Q 41.90625 16.796875 40.453125 14.4375 
-Q 39 12.09375 36.546875 10.6875 
-Q 34.09375 9.296875 30.5 9.296875 
-Q 26.90625 9.296875 24.5 10.6875 
-Q 22.09375 12.09375 20.640625 14.4375 
-Q 19.203125 16.796875 18.59375 19.75 
-Q 18 22.703125 18 25.796875 
-z
-M 3.796875 25.796875 
-Q 3.796875 19.59375 5.6875 14.59375 
-Q 7.59375 9.59375 11.09375 6.046875 
-Q 14.59375 2.5 19.5 0.59375 
-Q 24.40625 -1.296875 30.5 -1.296875 
-Q 36.59375 -1.296875 41.546875 0.59375 
-Q 46.5 2.5 50 6.046875 
-Q 53.5 9.59375 55.390625 14.59375 
-Q 57.296875 19.59375 57.296875 25.796875 
-Q 57.296875 32 55.390625 37.046875 
-Q 53.5 42.09375 50 45.640625 
-Q 46.5 49.203125 41.546875 51.140625 
-Q 36.59375 53.09375 30.5 53.09375 
-Q 24.40625 53.09375 19.5 51.140625 
-Q 14.59375 49.203125 11.09375 45.640625 
-Q 7.59375 42.09375 5.6875 37.046875 
-Q 3.796875 32 3.796875 25.796875 
-z
-" id="HelveticaNeue-Bold-111"/>
-     <path d="M 5.40625 51.703125 
-L 5.40625 0 
-L 19.59375 0 
-L 19.59375 27.09375 
-Q 19.59375 35 22.1875 38.453125 
-Q 24.796875 41.90625 30.59375 41.90625 
-Q 35.703125 41.90625 37.703125 38.75 
-Q 39.703125 35.59375 39.703125 29.203125 
-L 39.703125 0 
-L 53.90625 0 
-L 53.90625 31.796875 
-Q 53.90625 36.59375 53.046875 40.546875 
-Q 52.203125 44.5 50.09375 47.25 
-Q 48 50 44.34375 51.546875 
-Q 40.703125 53.09375 35 53.09375 
-Q 30.5 53.09375 26.203125 51.046875 
-Q 21.90625 49 19.203125 44.5 
-L 18.90625 44.5 
-L 18.90625 51.703125 
-z
-" id="HelveticaNeue-Bold-110"/>
-     <path d="M 23.40625 51.703125 
-L 23.40625 67.203125 
-L 9.203125 67.203125 
-L 9.203125 51.703125 
-L 0.59375 51.703125 
-L 0.59375 42.203125 
-L 9.203125 42.203125 
-L 9.203125 11.703125 
-Q 9.203125 7.796875 10.5 5.390625 
-Q 11.796875 3 14.046875 1.703125 
-Q 16.296875 0.40625 19.25 -0.046875 
-Q 22.203125 -0.5 25.5 -0.5 
-Q 27.59375 -0.5 29.796875 -0.390625 
-Q 32 -0.296875 33.796875 0 
-L 33.796875 11 
-Q 32.796875 10.796875 31.6875 10.6875 
-Q 30.59375 10.59375 29.40625 10.59375 
-Q 25.796875 10.59375 24.59375 11.796875 
-Q 23.40625 13 23.40625 16.59375 
-L 23.40625 42.203125 
-L 33.796875 42.203125 
-L 33.796875 51.703125 
-z
-" id="HelveticaNeue-Bold-116"/>
-     <path d="M 16.40625 16.796875 
-L 2.90625 16.796875 
-Q 3.09375 11.59375 5.25 8.140625 
-Q 7.40625 4.703125 10.75 2.59375 
-Q 14.09375 0.5 18.390625 -0.390625 
-Q 22.703125 -1.296875 27.203125 -1.296875 
-Q 31.59375 -1.296875 35.84375 -0.4375 
-Q 40.09375 0.40625 43.390625 2.5 
-Q 46.703125 4.59375 48.75 8.046875 
-Q 50.796875 11.5 50.796875 16.59375 
-Q 50.796875 20.203125 49.390625 22.640625 
-Q 48 25.09375 45.703125 26.75 
-Q 43.40625 28.40625 40.453125 29.40625 
-Q 37.5 30.40625 34.40625 31.09375 
-Q 31.40625 31.796875 28.5 32.390625 
-Q 25.59375 33 23.34375 33.75 
-Q 21.09375 34.5 19.6875 35.703125 
-Q 18.296875 36.90625 18.296875 38.796875 
-Q 18.296875 40.40625 19.09375 41.34375 
-Q 19.90625 42.296875 21.046875 42.796875 
-Q 22.203125 43.296875 23.59375 43.4375 
-Q 25 43.59375 26.203125 43.59375 
-Q 30 43.59375 32.796875 42.140625 
-Q 35.59375 40.703125 35.90625 36.59375 
-L 49.40625 36.59375 
-Q 49 41.40625 46.953125 44.546875 
-Q 44.90625 47.703125 41.796875 49.59375 
-Q 38.703125 51.5 34.75 52.296875 
-Q 30.796875 53.09375 26.59375 53.09375 
-Q 22.40625 53.09375 18.40625 52.34375 
-Q 14.40625 51.59375 11.203125 49.75 
-Q 8 47.90625 6.046875 44.703125 
-Q 4.09375 41.5 4.09375 36.5 
-Q 4.09375 33.09375 5.5 30.75 
-Q 6.90625 28.40625 9.203125 26.84375 
-Q 11.5 25.296875 14.453125 24.34375 
-Q 17.40625 23.40625 20.5 22.703125 
-Q 28.09375 21.09375 32.34375 19.5 
-Q 36.59375 17.90625 36.59375 14.703125 
-Q 36.59375 12.796875 35.6875 11.546875 
-Q 34.796875 10.296875 33.4375 9.546875 
-Q 32.09375 8.796875 30.4375 8.4375 
-Q 28.796875 8.09375 27.296875 8.09375 
-Q 25.203125 8.09375 23.25 8.59375 
-Q 21.296875 9.09375 19.796875 10.140625 
-Q 18.296875 11.203125 17.34375 12.84375 
-Q 16.40625 14.5 16.40625 16.796875 
-z
-" id="HelveticaNeue-Bold-115"/>
-     <path id="HelveticaNeue-Bold-32"/>
-     <path d="M 42.09375 26 
-Q 42.09375 22.796875 41.5 19.796875 
-Q 40.90625 16.796875 39.5 14.4375 
-Q 38.09375 12.09375 35.75 10.6875 
-Q 33.40625 9.296875 29.90625 9.296875 
-Q 26.59375 9.296875 24.25 10.75 
-Q 21.90625 12.203125 20.34375 14.546875 
-Q 18.796875 16.90625 18.09375 19.90625 
-Q 17.40625 22.90625 17.40625 25.90625 
-Q 17.40625 29.09375 18.046875 32.046875 
-Q 18.703125 35 20.140625 37.296875 
-Q 21.59375 39.59375 24 41 
-Q 26.40625 42.40625 29.90625 42.40625 
-Q 33.40625 42.40625 35.703125 41 
-Q 38 39.59375 39.453125 37.34375 
-Q 40.90625 35.09375 41.5 32.140625 
-Q 42.09375 29.203125 42.09375 26 
-z
-M 42.296875 6.59375 
-L 42.296875 0 
-L 55.796875 0 
-L 55.796875 71.40625 
-L 41.59375 71.40625 
-L 41.59375 45.40625 
-L 41.40625 45.40625 
-Q 39 49.203125 34.84375 51.140625 
-Q 30.703125 53.09375 26.09375 53.09375 
-Q 20.40625 53.09375 16.09375 50.84375 
-Q 11.796875 48.59375 8.9375 44.890625 
-Q 6.09375 41.203125 4.640625 36.34375 
-Q 3.203125 31.5 3.203125 26.296875 
-Q 3.203125 20.90625 4.640625 15.90625 
-Q 6.09375 10.90625 8.9375 7.046875 
-Q 11.796875 3.203125 16.1875 0.953125 
-Q 20.59375 -1.296875 26.40625 -1.296875 
-Q 31.5 -1.296875 35.546875 0.546875 
-Q 39.59375 2.40625 42.09375 6.59375 
-z
-" id="HelveticaNeue-Bold-100"/>
-     <path d="M 40.203125 31.40625 
-L 17.09375 31.40625 
-Q 17.203125 32.90625 17.75 34.796875 
-Q 18.296875 36.703125 19.640625 38.390625 
-Q 21 40.09375 23.25 41.25 
-Q 25.5 42.40625 28.90625 42.40625 
-Q 34.09375 42.40625 36.640625 39.59375 
-Q 39.203125 36.796875 40.203125 31.40625 
-z
-M 17.09375 22.40625 
-L 54.40625 22.40625 
-Q 54.796875 28.40625 53.390625 33.90625 
-Q 52 39.40625 48.84375 43.703125 
-Q 45.703125 48 40.796875 50.546875 
-Q 35.90625 53.09375 29.296875 53.09375 
-Q 23.40625 53.09375 18.546875 51 
-Q 13.703125 48.90625 10.203125 45.25 
-Q 6.703125 41.59375 4.796875 36.59375 
-Q 2.90625 31.59375 2.90625 25.796875 
-Q 2.90625 19.796875 4.75 14.796875 
-Q 6.59375 9.796875 10 6.1875 
-Q 13.40625 2.59375 18.296875 0.640625 
-Q 23.203125 -1.296875 29.296875 -1.296875 
-Q 38.09375 -1.296875 44.296875 2.703125 
-Q 50.5 6.703125 53.5 16 
-L 41 16 
-Q 40.296875 13.59375 37.1875 11.4375 
-Q 34.09375 9.296875 29.796875 9.296875 
-Q 23.796875 9.296875 20.59375 12.390625 
-Q 17.40625 15.5 17.09375 22.40625 
-z
-" id="HelveticaNeue-Bold-101"/>
-     <path d="M 5.796875 51.703125 
-L 5.796875 0 
-L 20 0 
-L 20 30 
-Q 20 33.796875 21.09375 36.140625 
-Q 22.203125 38.5 23.75 39.75 
-Q 25.296875 41 26.9375 41.453125 
-Q 28.59375 41.90625 29.59375 41.90625 
-Q 33 41.90625 34.75 40.75 
-Q 36.5 39.59375 37.25 37.6875 
-Q 38 35.796875 38.09375 33.546875 
-Q 38.203125 31.296875 38.203125 29 
-L 38.203125 0 
-L 52.40625 0 
-L 52.40625 28.796875 
-Q 52.40625 31.203125 52.75 33.546875 
-Q 53.09375 35.90625 54.140625 37.75 
-Q 55.203125 39.59375 57.046875 40.75 
-Q 58.90625 41.90625 61.90625 41.90625 
-Q 64.90625 41.90625 66.65625 40.90625 
-Q 68.40625 39.90625 69.296875 38.203125 
-Q 70.203125 36.5 70.390625 34.203125 
-Q 70.59375 31.90625 70.59375 29.296875 
-L 70.59375 0 
-L 84.796875 0 
-L 84.796875 34.59375 
-Q 84.796875 39.59375 83.390625 43.140625 
-Q 82 46.703125 79.5 48.890625 
-Q 77 51.09375 73.5 52.09375 
-Q 70 53.09375 65.90625 53.09375 
-Q 60.5 53.09375 56.546875 50.5 
-Q 52.59375 47.90625 50.296875 44.5 
-Q 48.203125 49.296875 44.140625 51.1875 
-Q 40.09375 53.09375 35.203125 53.09375 
-Q 30.09375 53.09375 26.140625 50.890625 
-Q 22.203125 48.703125 19.40625 44.703125 
-L 19.203125 44.703125 
-L 19.203125 51.703125 
-z
-" id="HelveticaNeue-Bold-109"/>
-    </defs>
-    <g transform="translate(7.2 16.22875)scale(0.12 -0.12)">
-     <use xlink:href="#HelveticaNeue-Bold-70"/>
-     <use x="59.299988" xlink:href="#HelveticaNeue-Bold-111"/>
-     <use x="120.399979" xlink:href="#HelveticaNeue-Bold-110"/>
-     <use x="179.699966" xlink:href="#HelveticaNeue-Bold-116"/>
-     <use x="214.899963" xlink:href="#HelveticaNeue-Bold-115"/>
-     <use x="268.59996" xlink:href="#HelveticaNeue-Bold-32"/>
-     <use x="296.399948" xlink:href="#HelveticaNeue-Bold-100"/>
-     <use x="357.499939" xlink:href="#HelveticaNeue-Bold-101"/>
-     <use x="414.899933" xlink:href="#HelveticaNeue-Bold-109"/>
-     <use x="505.499924" xlink:href="#HelveticaNeue-Bold-111"/>
-    </g>
-   </g>
-   <g id="text_2">
     <!-- DejaVu Sans: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 19.671875 64.796875 
@@ -895,7 +623,7 @@ L 54.390625 54.6875
 z
 " id="DejaVuSans-103"/>
     </defs>
-    <g transform="translate(7.2 37.469875)scale(0.12 -0.12)">
+    <g transform="translate(4 31.869875)scale(0.12 -0.12)">
      <use xlink:href="#DejaVuSans-68"/>
      <use x="77.001953" xlink:href="#DejaVuSans-101"/>
      <use x="138.525391" xlink:href="#DejaVuSans-106"/>
@@ -1320,7 +1048,7 @@ Q 56.25 8.5 59.515625 10.40625
 z
 " id="DejaVuSans-71"/>
     </defs>
-    <g transform="translate(7.2 50.90725)scale(0.12 -0.12)">
+    <g transform="translate(4 45.30725)scale(0.12 -0.12)">
      <use xlink:href="#DejaVuSans-84"/>
      <use x="61.083984" xlink:href="#DejaVuSans-72"/>
      <use x="136.279297" xlink:href="#DejaVuSans-69"/>
@@ -1976,7 +1704,7 @@ Q 50.875 17.625 57.5625 17.625
 z
 " id="DejaVuSans-8733"/>
     </defs>
-    <g transform="translate(7.2 64.344625)scale(0.12 -0.12)">
+    <g transform="translate(4 58.744625)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#DejaVuSans-40"/>
      <use transform="translate(39.013672 0.015625)" xlink:href="#DejaVuSans-48"/>
      <use transform="translate(102.636719 0.015625)" xlink:href="#DejaVuSans-41"/>
@@ -2818,7 +2546,7 @@ Q 14.59375 74.21875 22.3125 74.21875
 z
 " id="DejaVuSans-37"/>
     </defs>
-    <g transform="translate(7.2 77.92825)scale(0.12 -0.12)">
+    <g transform="translate(4 72.32825)scale(0.12 -0.12)">
      <use transform="translate(0 0.234375)" xlink:href="#DejaVuSans-945"/>
      <use transform="translate(65.917969 0.234375)" xlink:href="#DejaVuSans-946"/>
      <use transform="translate(129.736328 0.234375)" xlink:href="#DejaVuSans-32"/>
@@ -2869,9 +2597,266 @@ z
      <use transform="translate(2608.789062 0.234375)" xlink:href="#DejaVuSans-37"/>
     </g>
    </g>
-   <g id="text_3">
+   <g id="text_2">
     <!-- Fonts demo -->
-    <g transform="translate(7.2 16.22875)scale(0.12 -0.12)">
+    <defs>
+     <path d="M 6.90625 71.40625 
+L 6.90625 0 
+L 22.59375 0 
+L 22.59375 29.5 
+L 52.5 29.5 
+L 52.5 41.703125 
+L 22.59375 41.703125 
+L 22.59375 58.203125 
+L 57.09375 58.203125 
+L 57.09375 71.40625 
+z
+" id="HelveticaNeue-Bold-70"/>
+     <path d="M 18 25.796875 
+Q 18 28.90625 18.59375 31.90625 
+Q 19.203125 34.90625 20.640625 37.203125 
+Q 22.09375 39.5 24.5 40.953125 
+Q 26.90625 42.40625 30.5 42.40625 
+Q 34.09375 42.40625 36.546875 40.953125 
+Q 39 39.5 40.453125 37.203125 
+Q 41.90625 34.90625 42.5 31.90625 
+Q 43.09375 28.90625 43.09375 25.796875 
+Q 43.09375 22.703125 42.5 19.75 
+Q 41.90625 16.796875 40.453125 14.4375 
+Q 39 12.09375 36.546875 10.6875 
+Q 34.09375 9.296875 30.5 9.296875 
+Q 26.90625 9.296875 24.5 10.6875 
+Q 22.09375 12.09375 20.640625 14.4375 
+Q 19.203125 16.796875 18.59375 19.75 
+Q 18 22.703125 18 25.796875 
+z
+M 3.796875 25.796875 
+Q 3.796875 19.59375 5.6875 14.59375 
+Q 7.59375 9.59375 11.09375 6.046875 
+Q 14.59375 2.5 19.5 0.59375 
+Q 24.40625 -1.296875 30.5 -1.296875 
+Q 36.59375 -1.296875 41.546875 0.59375 
+Q 46.5 2.5 50 6.046875 
+Q 53.5 9.59375 55.390625 14.59375 
+Q 57.296875 19.59375 57.296875 25.796875 
+Q 57.296875 32 55.390625 37.046875 
+Q 53.5 42.09375 50 45.640625 
+Q 46.5 49.203125 41.546875 51.140625 
+Q 36.59375 53.09375 30.5 53.09375 
+Q 24.40625 53.09375 19.5 51.140625 
+Q 14.59375 49.203125 11.09375 45.640625 
+Q 7.59375 42.09375 5.6875 37.046875 
+Q 3.796875 32 3.796875 25.796875 
+z
+" id="HelveticaNeue-Bold-111"/>
+     <path d="M 5.40625 51.703125 
+L 5.40625 0 
+L 19.59375 0 
+L 19.59375 27.09375 
+Q 19.59375 35 22.1875 38.453125 
+Q 24.796875 41.90625 30.59375 41.90625 
+Q 35.703125 41.90625 37.703125 38.75 
+Q 39.703125 35.59375 39.703125 29.203125 
+L 39.703125 0 
+L 53.90625 0 
+L 53.90625 31.796875 
+Q 53.90625 36.59375 53.046875 40.546875 
+Q 52.203125 44.5 50.09375 47.25 
+Q 48 50 44.34375 51.546875 
+Q 40.703125 53.09375 35 53.09375 
+Q 30.5 53.09375 26.203125 51.046875 
+Q 21.90625 49 19.203125 44.5 
+L 18.90625 44.5 
+L 18.90625 51.703125 
+z
+" id="HelveticaNeue-Bold-110"/>
+     <path d="M 23.40625 51.703125 
+L 23.40625 67.203125 
+L 9.203125 67.203125 
+L 9.203125 51.703125 
+L 0.59375 51.703125 
+L 0.59375 42.203125 
+L 9.203125 42.203125 
+L 9.203125 11.703125 
+Q 9.203125 7.796875 10.5 5.390625 
+Q 11.796875 3 14.046875 1.703125 
+Q 16.296875 0.40625 19.25 -0.046875 
+Q 22.203125 -0.5 25.5 -0.5 
+Q 27.59375 -0.5 29.796875 -0.390625 
+Q 32 -0.296875 33.796875 0 
+L 33.796875 11 
+Q 32.796875 10.796875 31.6875 10.6875 
+Q 30.59375 10.59375 29.40625 10.59375 
+Q 25.796875 10.59375 24.59375 11.796875 
+Q 23.40625 13 23.40625 16.59375 
+L 23.40625 42.203125 
+L 33.796875 42.203125 
+L 33.796875 51.703125 
+z
+" id="HelveticaNeue-Bold-116"/>
+     <path d="M 16.40625 16.796875 
+L 2.90625 16.796875 
+Q 3.09375 11.59375 5.25 8.140625 
+Q 7.40625 4.703125 10.75 2.59375 
+Q 14.09375 0.5 18.390625 -0.390625 
+Q 22.703125 -1.296875 27.203125 -1.296875 
+Q 31.59375 -1.296875 35.84375 -0.4375 
+Q 40.09375 0.40625 43.390625 2.5 
+Q 46.703125 4.59375 48.75 8.046875 
+Q 50.796875 11.5 50.796875 16.59375 
+Q 50.796875 20.203125 49.390625 22.640625 
+Q 48 25.09375 45.703125 26.75 
+Q 43.40625 28.40625 40.453125 29.40625 
+Q 37.5 30.40625 34.40625 31.09375 
+Q 31.40625 31.796875 28.5 32.390625 
+Q 25.59375 33 23.34375 33.75 
+Q 21.09375 34.5 19.6875 35.703125 
+Q 18.296875 36.90625 18.296875 38.796875 
+Q 18.296875 40.40625 19.09375 41.34375 
+Q 19.90625 42.296875 21.046875 42.796875 
+Q 22.203125 43.296875 23.59375 43.4375 
+Q 25 43.59375 26.203125 43.59375 
+Q 30 43.59375 32.796875 42.140625 
+Q 35.59375 40.703125 35.90625 36.59375 
+L 49.40625 36.59375 
+Q 49 41.40625 46.953125 44.546875 
+Q 44.90625 47.703125 41.796875 49.59375 
+Q 38.703125 51.5 34.75 52.296875 
+Q 30.796875 53.09375 26.59375 53.09375 
+Q 22.40625 53.09375 18.40625 52.34375 
+Q 14.40625 51.59375 11.203125 49.75 
+Q 8 47.90625 6.046875 44.703125 
+Q 4.09375 41.5 4.09375 36.5 
+Q 4.09375 33.09375 5.5 30.75 
+Q 6.90625 28.40625 9.203125 26.84375 
+Q 11.5 25.296875 14.453125 24.34375 
+Q 17.40625 23.40625 20.5 22.703125 
+Q 28.09375 21.09375 32.34375 19.5 
+Q 36.59375 17.90625 36.59375 14.703125 
+Q 36.59375 12.796875 35.6875 11.546875 
+Q 34.796875 10.296875 33.4375 9.546875 
+Q 32.09375 8.796875 30.4375 8.4375 
+Q 28.796875 8.09375 27.296875 8.09375 
+Q 25.203125 8.09375 23.25 8.59375 
+Q 21.296875 9.09375 19.796875 10.140625 
+Q 18.296875 11.203125 17.34375 12.84375 
+Q 16.40625 14.5 16.40625 16.796875 
+z
+" id="HelveticaNeue-Bold-115"/>
+     <path id="HelveticaNeue-Bold-32"/>
+     <path d="M 42.09375 26 
+Q 42.09375 22.796875 41.5 19.796875 
+Q 40.90625 16.796875 39.5 14.4375 
+Q 38.09375 12.09375 35.75 10.6875 
+Q 33.40625 9.296875 29.90625 9.296875 
+Q 26.59375 9.296875 24.25 10.75 
+Q 21.90625 12.203125 20.34375 14.546875 
+Q 18.796875 16.90625 18.09375 19.90625 
+Q 17.40625 22.90625 17.40625 25.90625 
+Q 17.40625 29.09375 18.046875 32.046875 
+Q 18.703125 35 20.140625 37.296875 
+Q 21.59375 39.59375 24 41 
+Q 26.40625 42.40625 29.90625 42.40625 
+Q 33.40625 42.40625 35.703125 41 
+Q 38 39.59375 39.453125 37.34375 
+Q 40.90625 35.09375 41.5 32.140625 
+Q 42.09375 29.203125 42.09375 26 
+z
+M 42.296875 6.59375 
+L 42.296875 0 
+L 55.796875 0 
+L 55.796875 71.40625 
+L 41.59375 71.40625 
+L 41.59375 45.40625 
+L 41.40625 45.40625 
+Q 39 49.203125 34.84375 51.140625 
+Q 30.703125 53.09375 26.09375 53.09375 
+Q 20.40625 53.09375 16.09375 50.84375 
+Q 11.796875 48.59375 8.9375 44.890625 
+Q 6.09375 41.203125 4.640625 36.34375 
+Q 3.203125 31.5 3.203125 26.296875 
+Q 3.203125 20.90625 4.640625 15.90625 
+Q 6.09375 10.90625 8.9375 7.046875 
+Q 11.796875 3.203125 16.1875 0.953125 
+Q 20.59375 -1.296875 26.40625 -1.296875 
+Q 31.5 -1.296875 35.546875 0.546875 
+Q 39.59375 2.40625 42.09375 6.59375 
+z
+" id="HelveticaNeue-Bold-100"/>
+     <path d="M 40.203125 31.40625 
+L 17.09375 31.40625 
+Q 17.203125 32.90625 17.75 34.796875 
+Q 18.296875 36.703125 19.640625 38.390625 
+Q 21 40.09375 23.25 41.25 
+Q 25.5 42.40625 28.90625 42.40625 
+Q 34.09375 42.40625 36.640625 39.59375 
+Q 39.203125 36.796875 40.203125 31.40625 
+z
+M 17.09375 22.40625 
+L 54.40625 22.40625 
+Q 54.796875 28.40625 53.390625 33.90625 
+Q 52 39.40625 48.84375 43.703125 
+Q 45.703125 48 40.796875 50.546875 
+Q 35.90625 53.09375 29.296875 53.09375 
+Q 23.40625 53.09375 18.546875 51 
+Q 13.703125 48.90625 10.203125 45.25 
+Q 6.703125 41.59375 4.796875 36.59375 
+Q 2.90625 31.59375 2.90625 25.796875 
+Q 2.90625 19.796875 4.75 14.796875 
+Q 6.59375 9.796875 10 6.1875 
+Q 13.40625 2.59375 18.296875 0.640625 
+Q 23.203125 -1.296875 29.296875 -1.296875 
+Q 38.09375 -1.296875 44.296875 2.703125 
+Q 50.5 6.703125 53.5 16 
+L 41 16 
+Q 40.296875 13.59375 37.1875 11.4375 
+Q 34.09375 9.296875 29.796875 9.296875 
+Q 23.796875 9.296875 20.59375 12.390625 
+Q 17.40625 15.5 17.09375 22.40625 
+z
+" id="HelveticaNeue-Bold-101"/>
+     <path d="M 5.796875 51.703125 
+L 5.796875 0 
+L 20 0 
+L 20 30 
+Q 20 33.796875 21.09375 36.140625 
+Q 22.203125 38.5 23.75 39.75 
+Q 25.296875 41 26.9375 41.453125 
+Q 28.59375 41.90625 29.59375 41.90625 
+Q 33 41.90625 34.75 40.75 
+Q 36.5 39.59375 37.25 37.6875 
+Q 38 35.796875 38.09375 33.546875 
+Q 38.203125 31.296875 38.203125 29 
+L 38.203125 0 
+L 52.40625 0 
+L 52.40625 28.796875 
+Q 52.40625 31.203125 52.75 33.546875 
+Q 53.09375 35.90625 54.140625 37.75 
+Q 55.203125 39.59375 57.046875 40.75 
+Q 58.90625 41.90625 61.90625 41.90625 
+Q 64.90625 41.90625 66.65625 40.90625 
+Q 68.40625 39.90625 69.296875 38.203125 
+Q 70.203125 36.5 70.390625 34.203125 
+Q 70.59375 31.90625 70.59375 29.296875 
+L 70.59375 0 
+L 84.796875 0 
+L 84.796875 34.59375 
+Q 84.796875 39.59375 83.390625 43.140625 
+Q 82 46.703125 79.5 48.890625 
+Q 77 51.09375 73.5 52.09375 
+Q 70 53.09375 65.90625 53.09375 
+Q 60.5 53.09375 56.546875 50.5 
+Q 52.59375 47.90625 50.296875 44.5 
+Q 48.203125 49.296875 44.140625 51.1875 
+Q 40.09375 53.09375 35.203125 53.09375 
+Q 30.09375 53.09375 26.140625 50.890625 
+Q 22.203125 48.703125 19.40625 44.703125 
+L 19.203125 44.703125 
+L 19.203125 51.703125 
+z
+" id="HelveticaNeue-Bold-109"/>
+    </defs>
+    <g transform="translate(4 12.8)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-Bold-70"/>
      <use x="59.299988" xlink:href="#HelveticaNeue-Bold-111"/>
      <use x="120.399979" xlink:href="#HelveticaNeue-Bold-110"/>
@@ -2887,16 +2872,16 @@ z
   </g>
   <g id="axes_2">
    <g id="patch_3">
-    <path d="M 7.2 153.4 
-L 331.2 153.4 
-L 331.2 87.4 
-L 7.2 87.4 
+    <path d="M 4 147.8 
+L 328 147.8 
+L 328 81.8 
+L 4 81.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_3"/>
    <g id="matplotlib.axis_4"/>
-   <g id="text_4">
+   <g id="text_3">
     <!-- Arial: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M -0.140625 0 
@@ -3493,7 +3478,7 @@ Q 12.25 36.234375 12.25 26.859375
 z
 " id="ArialMT-103"/>
     </defs>
-    <g transform="translate(7.2 103.934875)scale(0.12 -0.12)">
+    <g transform="translate(4 98.334875)scale(0.12 -0.12)">
      <use xlink:href="#ArialMT-65"/>
      <use x="66.699219" xlink:href="#ArialMT-114"/>
      <use x="100" xlink:href="#ArialMT-105"/>
@@ -4030,7 +4015,7 @@ L 62.25 28.078125
 z
 " id="ArialMT-71"/>
     </defs>
-    <g transform="translate(7.2 116.76775)scale(0.12 -0.12)">
+    <g transform="translate(4 111.16775)scale(0.12 -0.12)">
      <use xlink:href="#ArialMT-84"/>
      <use x="61.083984" xlink:href="#ArialMT-72"/>
      <use x="133.300781" xlink:href="#ArialMT-69"/>
@@ -4710,7 +4695,7 @@ Q 39 16.203125 40.40625 18.09375
 z
 " id="STIXGeneral-Regular-8733"/>
     </defs>
-    <g transform="translate(7.2 129.66475)scale(0.12 -0.12)">
+    <g transform="translate(4 124.06475)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#ArialMT-40"/>
      <use transform="translate(33.300781 0.203125)" xlink:href="#ArialMT-48"/>
      <use transform="translate(88.916016 0.203125)" xlink:href="#ArialMT-41"/>
@@ -5534,7 +5519,7 @@ Q 70.703125 29.15625 67.4375 29.15625
 z
 " id="ArialMT-37"/>
     </defs>
-    <g transform="translate(7.2 142.96075)scale(0.12 -0.12)">
+    <g transform="translate(4 137.36075)scale(0.12 -0.12)">
      <use transform="translate(0 0.265625)" xlink:href="#ArialMT-945"/>
      <use transform="translate(57.8125 0.265625)" xlink:href="#ArialMT-946"/>
      <use transform="translate(115.332031 0.265625)" xlink:href="#ArialMT-32"/>
@@ -5588,16 +5573,16 @@ z
   </g>
   <g id="axes_3">
    <g id="patch_4">
-    <path d="M 7.2 219.4 
-L 331.2 219.4 
-L 331.2 153.4 
-L 7.2 153.4 
+    <path d="M 4 213.8 
+L 328 213.8 
+L 328 147.8 
+L 4 147.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_5"/>
    <g id="matplotlib.axis_6"/>
-   <g id="text_5">
+   <g id="text_4">
     <!-- Avenir: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 18.90625 25.203125 
@@ -6363,7 +6348,7 @@ Q 10.40625 -19.40625 5.90625 -14.59375
 z
 " id="Avenir-Book-103"/>
     </defs>
-    <g transform="translate(7.2 167.768313)scale(0.12 -0.12)">
+    <g transform="translate(4 162.168313)scale(0.12 -0.12)">
      <use xlink:href="#Avenir-Book-65"/>
      <use x="68.584366" xlink:href="#Avenir-Book-118"/>
      <use x="116.784363" xlink:href="#Avenir-Book-101"/>
@@ -6936,7 +6921,7 @@ Q 62.5 67.90625 67.296875 63.09375
 z
 " id="Avenir-Book-71"/>
     </defs>
-    <g transform="translate(7.2 182.109438)scale(0.12 -0.12)">
+    <g transform="translate(4 176.509438)scale(0.12 -0.12)">
      <use xlink:href="#Avenir-Book-84"/>
      <use x="57.399994" xlink:href="#Avenir-Book-72"/>
      <use x="129.599976" xlink:href="#Avenir-Book-69"/>
@@ -7663,7 +7648,7 @@ L 17.09375 0
 z
 " id="Avenir-Book-57"/>
     </defs>
-    <g transform="translate(7.2 196.450563)scale(0.12 -0.12)">
+    <g transform="translate(4 190.850563)scale(0.12 -0.12)">
      <use transform="translate(0 0.40625)" xlink:href="#Avenir-Book-40"/>
      <use transform="translate(25.999985 0.40625)" xlink:href="#Avenir-Book-48"/>
      <use transform="translate(81.599976 0.40625)" xlink:href="#Avenir-Book-41"/>
@@ -8716,7 +8701,7 @@ Q 39 58.203125 39 54.5
 z
 " id="Avenir-Book-37"/>
     </defs>
-    <g transform="translate(7.2 210.791688)scale(0.12 -0.12)">
+    <g transform="translate(4 205.191688)scale(0.12 -0.12)">
      <use transform="translate(0 0.09375)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.09375)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.09375)" xlink:href="#Avenir-Book-32"/>
@@ -8770,16 +8755,16 @@ z
   </g>
   <g id="axes_4">
    <g id="patch_5">
-    <path d="M 7.2 285.4 
-L 331.2 285.4 
-L 331.2 219.4 
-L 7.2 219.4 
+    <path d="M 4 279.8 
+L 328 279.8 
+L 328 213.8 
+L 4 213.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_7"/>
    <g id="matplotlib.axis_8"/>
-   <g id="text_6">
+   <g id="text_5">
     <!-- Franklin Gothic Book: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 16.703125 0 
@@ -9373,7 +9358,7 @@ Q 19.1875 1.515625 15.328125 2
 z
 " id="FranklinGothic-Book-103"/>
     </defs>
-    <g transform="translate(7.2 237.248125)scale(0.12 -0.12)">
+    <g transform="translate(4 231.648125)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Book-70"/>
      <use x="50.734375" xlink:href="#FranklinGothic-Book-114"/>
      <use x="83.693359" xlink:href="#FranklinGothic-Book-97"/>
@@ -9794,7 +9779,7 @@ L 16.703125 59.671875
 z
 " id="FranklinGothic-Book-68"/>
     </defs>
-    <g transform="translate(7.2 249.163)scale(0.12 -0.12)">
+    <g transform="translate(4 243.563)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Book-84"/>
      <use x="48.535156" xlink:href="#FranklinGothic-Book-72"/>
      <use x="112.792969" xlink:href="#FranklinGothic-Book-69"/>
@@ -10332,7 +10317,7 @@ Q 21.578125 29.78125 27.828125 29.78125
 z
 " id="FranklinGothic-Book-57"/>
     </defs>
-    <g transform="translate(7.2 261.09775)scale(0.12 -0.12)">
+    <g transform="translate(4 255.49775)scale(0.12 -0.12)">
      <use transform="translate(0 0.9375)" xlink:href="#FranklinGothic-Book-40"/>
      <use transform="translate(29.345703 0.9375)" xlink:href="#FranklinGothic-Book-48"/>
      <use transform="translate(87.988281 0.9375)" xlink:href="#FranklinGothic-Book-41"/>
@@ -11099,7 +11084,7 @@ Q 46.046875 3.21875 54.78125 3.21875
 z
 " id="FranklinGothic-Book-37"/>
     </defs>
-    <g transform="translate(7.2 273.07375)scale(0.12 -0.12)">
+    <g transform="translate(4 267.47375)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#FranklinGothic-Book-945"/>
      <use transform="translate(58.251953 0.34375)" xlink:href="#FranklinGothic-Book-946"/>
      <use transform="translate(112.255859 0.34375)" xlink:href="#FranklinGothic-Book-32"/>
@@ -11153,16 +11138,16 @@ z
   </g>
   <g id="axes_5">
    <g id="patch_6">
-    <path d="M 7.2 351.4 
-L 331.2 351.4 
-L 331.2 285.4 
-L 7.2 285.4 
+    <path d="M 4 345.8 
+L 328 345.8 
+L 328 279.8 
+L 4 279.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_9"/>
    <g id="matplotlib.axis_10"/>
-   <g id="text_7">
+   <g id="text_6">
     <!-- Franklin Gothic Medium: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 19.671875 0 
@@ -11724,7 +11709,7 @@ Q 18.796875 1.46875 14.15625 2.6875
 z
 " id="FranklinGothic-Medium-103"/>
     </defs>
-    <g transform="translate(7.2 303.329125)scale(0.12 -0.12)">
+    <g transform="translate(4 297.729125)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Medium-70"/>
      <use x="50.734375" xlink:href="#FranklinGothic-Medium-114"/>
      <use x="83.888672" xlink:href="#FranklinGothic-Medium-97"/>
@@ -12165,7 +12150,7 @@ L 19.34375 57.171875
 z
 " id="FranklinGothic-Medium-68"/>
     </defs>
-    <g transform="translate(7.2 315.053875)scale(0.12 -0.12)">
+    <g transform="translate(4 309.453875)scale(0.12 -0.12)">
      <use xlink:href="#FranklinGothic-Medium-84"/>
      <use x="48.339844" xlink:href="#FranklinGothic-Medium-72"/>
      <use x="112.451172" xlink:href="#FranklinGothic-Medium-69"/>
@@ -12709,7 +12694,7 @@ Q 21.6875 33.59375 27.6875 33.59375
 z
 " id="FranklinGothic-Medium-57"/>
     </defs>
-    <g transform="translate(7.2 326.988625)scale(0.12 -0.12)">
+    <g transform="translate(4 321.388625)scale(0.12 -0.12)">
      <use transform="translate(0 0.984375)" xlink:href="#FranklinGothic-Medium-40"/>
      <use transform="translate(29.345703 0.984375)" xlink:href="#FranklinGothic-Medium-48"/>
      <use transform="translate(87.988281 0.984375)" xlink:href="#FranklinGothic-Medium-41"/>
@@ -13463,7 +13448,7 @@ Q 51.90625 6.5 58.453125 6.5
 z
 " id="FranklinGothic-Medium-37"/>
     </defs>
-    <g transform="translate(7.2 338.964625)scale(0.12 -0.12)">
+    <g transform="translate(4 333.364625)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#FranklinGothic-Medium-945"/>
      <use transform="translate(59.814453 0.34375)" xlink:href="#FranklinGothic-Medium-946"/>
      <use transform="translate(115.576172 0.34375)" xlink:href="#FranklinGothic-Medium-32"/>
@@ -13517,16 +13502,16 @@ z
   </g>
   <g id="axes_6">
    <g id="patch_7">
-    <path d="M 7.2 417.4 
-L 331.2 417.4 
-L 331.2 351.4 
-L 7.2 351.4 
+    <path d="M 4 411.8 
+L 328 411.8 
+L 328 345.8 
+L 4 345.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_11"/>
    <g id="matplotlib.axis_12"/>
-   <g id="text_8">
+   <g id="text_7">
     <!-- Frutiger: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 44 66.703125 
@@ -14218,7 +14203,7 @@ Q 31.34375 42 27.484375 42
 z
 " id="Frutiger-100"/>
     </defs>
-    <g transform="translate(7.2 368.048125)scale(0.12 -0.12)">
+    <g transform="translate(4 362.448125)scale(0.12 -0.12)">
      <use xlink:href="#Frutiger-70"/>
      <use x="48.193359" xlink:href="#Frutiger-114"/>
      <use x="84.179688" xlink:href="#Frutiger-117"/>
@@ -14815,7 +14800,7 @@ Q 51.171875 67.09375 59.421875 63.921875
 z
 " id="Frutiger-71"/>
     </defs>
-    <g transform="translate(7.2 380.949625)scale(0.12 -0.12)">
+    <g transform="translate(4 375.349625)scale(0.12 -0.12)">
      <use xlink:href="#Frutiger-84"/>
      <use x="52.880859" xlink:href="#Frutiger-72"/>
      <use x="121.386719" xlink:href="#Frutiger-69"/>
@@ -15427,7 +15412,7 @@ Q 29 60.203125 25.59375 60.203125
 z
 " id="Frutiger-57"/>
     </defs>
-    <g transform="translate(7.2 393.910375)scale(0.12 -0.12)">
+    <g transform="translate(4 388.310375)scale(0.12 -0.12)">
      <use transform="translate(0 0.984375)" xlink:href="#Frutiger-40"/>
      <use transform="translate(35.400391 0.984375)" xlink:href="#Frutiger-48"/>
      <use transform="translate(89.111328 0.984375)" xlink:href="#Frutiger-41"/>
@@ -15752,7 +15737,7 @@ L 58.59375 70.796875
 z
 " id="Frutiger-37"/>
     </defs>
-    <g transform="translate(7.2 406.800625)scale(0.12 -0.12)">
+    <g transform="translate(4 401.200625)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.203125)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.203125)" xlink:href="#Frutiger-32"/>
@@ -15806,16 +15791,16 @@ z
   </g>
   <g id="axes_7">
    <g id="patch_8">
-    <path d="M 7.2 483.4 
-L 331.2 483.4 
-L 331.2 417.4 
-L 7.2 417.4 
+    <path d="M 4 477.8 
+L 328 477.8 
+L 328 411.8 
+L 4 411.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_13"/>
    <g id="matplotlib.axis_14"/>
-   <g id="text_9">
+   <g id="text_8">
     <!-- Futura: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 46.6875 64.703125 
@@ -16320,7 +16305,7 @@ Q 42.390625 17.1875 42.390625 23.6875
 z
 " id="Futura-Medium-103"/>
     </defs>
-    <g transform="translate(7.2 431.398)scale(0.12 -0.12)">
+    <g transform="translate(4 425.798)scale(0.12 -0.12)">
      <use xlink:href="#Futura-Medium-70"/>
      <use x="50.814453" xlink:href="#Futura-Medium-117"/>
      <use x="105.306641" xlink:href="#Futura-Medium-116"/>
@@ -16767,7 +16752,7 @@ L 47.796875 28.5625
 z
 " id="Futura-Medium-71"/>
     </defs>
-    <g transform="translate(7.2 446.391625)scale(0.12 -0.12)">
+    <g transform="translate(4 440.791625)scale(0.12 -0.12)">
      <use xlink:href="#Futura-Medium-84"/>
      <use x="48.242188" xlink:href="#Futura-Medium-72"/>
      <use x="121.582031" xlink:href="#Futura-Medium-69"/>
@@ -17299,7 +17284,7 @@ Q 16.609375 58.015625 16.609375 52.296875
 z
 " id="Futura-Medium-57"/>
     </defs>
-    <g transform="translate(7.2 461.372125)scale(0.12 -0.12)">
+    <g transform="translate(4 455.772125)scale(0.12 -0.12)">
      <use transform="translate(0 0.359375)" xlink:href="#Futura-Medium-40"/>
      <use transform="translate(36.621094 0.359375)" xlink:href="#Futura-Medium-48"/>
      <use transform="translate(98.339844 0.359375)" xlink:href="#Futura-Medium-41"/>
@@ -17593,7 +17578,7 @@ Q 60.015625 21.046875 60.015625 17.140625
 z
 " id="Futura-Medium-37"/>
     </defs>
-    <g transform="translate(7.2 476.352625)scale(0.12 -0.12)">
+    <g transform="translate(4 470.752625)scale(0.12 -0.12)">
      <use transform="translate(0 0.75)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.75)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.75)" xlink:href="#Futura-Medium-32"/>
@@ -17647,16 +17632,16 @@ z
   </g>
   <g id="axes_8">
    <g id="patch_9">
-    <path d="M 7.2 549.4 
-L 331.2 549.4 
-L 331.2 483.4 
-L 7.2 483.4 
+    <path d="M 4 543.8 
+L 328 543.8 
+L 328 477.8 
+L 4 477.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_15"/>
    <g id="matplotlib.axis_16"/>
-   <g id="text_10">
+   <g id="text_9">
     <!-- Geneva: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 61.375 3.46875 
@@ -18300,7 +18285,7 @@ Q 44.671875 19.34375 44.671875 28.90625
 z
 " id="Geneva-103"/>
     </defs>
-    <g transform="translate(7.2 498.80425)scale(0.12 -0.12)">
+    <g transform="translate(4 493.20425)scale(0.12 -0.12)">
      <use xlink:href="#Geneva-71"/>
      <use x="67.431641" xlink:href="#Geneva-101"/>
      <use x="125" xlink:href="#Geneva-110"/>
@@ -18813,7 +18798,7 @@ L 17.046875 68.171875
 z
 " id="Geneva-68"/>
     </defs>
-    <g transform="translate(7.2 512.88325)scale(0.12 -0.12)">
+    <g transform="translate(4 507.28325)scale(0.12 -0.12)">
      <use xlink:href="#Geneva-84"/>
      <use x="64.013672" xlink:href="#Geneva-72"/>
      <use x="132.958984" xlink:href="#Geneva-69"/>
@@ -19481,7 +19466,7 @@ Q 34.8125 70.453125 30.5625 70.453125
 z
 " id="Geneva-57"/>
     </defs>
-    <g transform="translate(7.2 526.77475)scale(0.12 -0.12)">
+    <g transform="translate(4 521.17475)scale(0.12 -0.12)">
      <use transform="translate(0 0.671875)" xlink:href="#Geneva-40"/>
      <use transform="translate(44.677734 0.671875)" xlink:href="#Geneva-48"/>
      <use transform="translate(111.328125 0.671875)" xlink:href="#Geneva-41"/>
@@ -20591,7 +20576,7 @@ Q 61.71875 29.59375 61.71875 22.703125
 z
 " id="Geneva-37"/>
     </defs>
-    <g transform="translate(7.2 540.69325)scale(0.12 -0.12)">
+    <g transform="translate(4 535.09325)scale(0.12 -0.12)">
      <use transform="translate(0 0.96875)" xlink:href="#Geneva-945"/>
      <use transform="translate(73.828125 0.96875)" xlink:href="#Geneva-946"/>
      <use transform="translate(126.416016 0.96875)" xlink:href="#Geneva-32"/>
@@ -20645,16 +20630,16 @@ z
   </g>
   <g id="axes_9">
    <g id="patch_10">
-    <path d="M 7.2 615.4 
-L 331.2 615.4 
-L 331.2 549.4 
-L 7.2 549.4 
+    <path d="M 4 609.8 
+L 328 609.8 
+L 328 543.8 
+L 4 543.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_17"/>
    <g id="matplotlib.axis_18"/>
-   <g id="text_11">
+   <g id="text_10">
     <!-- Gill Sans: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 44.390625 33.59375 
@@ -21229,7 +21214,7 @@ Q 25.09375 -2.09375 18.609375 -2.09375
 z
 " id="GillSans-103"/>
     </defs>
-    <g transform="translate(7.2 565.824625)scale(0.12 -0.12)">
+    <g transform="translate(4 560.224625)scale(0.12 -0.12)">
      <use xlink:href="#GillSans-71"/>
      <use x="74.023438" xlink:href="#GillSans-105"/>
      <use x="95.947266" xlink:href="#GillSans-108"/>
@@ -21681,7 +21666,7 @@ Q 36.625 59.515625 29.59375 59.515625
 z
 " id="GillSans-68"/>
     </defs>
-    <g transform="translate(7.2 578.536375)scale(0.12 -0.12)">
+    <g transform="translate(4 572.936375)scale(0.12 -0.12)">
      <use xlink:href="#GillSans-84"/>
      <use x="60.400391" xlink:href="#GillSans-72"/>
      <use x="133.300781" xlink:href="#GillSans-69"/>
@@ -22213,7 +22198,7 @@ Q 30.171875 37.984375 35.40625 41.609375
 z
 " id="GillSans-57"/>
     </defs>
-    <g transform="translate(7.2 591.808375)scale(0.12 -0.12)">
+    <g transform="translate(4 586.208375)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#GillSans-40"/>
      <use transform="translate(32.324219 0.203125)" xlink:href="#GillSans-48"/>
      <use transform="translate(82.324219 0.203125)" xlink:href="#GillSans-41"/>
@@ -22450,7 +22435,7 @@ Q 20.90625 61.625 17.578125 61.625
 z
 " id="GillSans-37"/>
     </defs>
-    <g transform="translate(7.2 604.517875)scale(0.12 -0.12)">
+    <g transform="translate(4 598.917875)scale(0.12 -0.12)">
      <use transform="translate(0 0.8125)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.8125)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.8125)" xlink:href="#GillSans-32"/>
@@ -22504,16 +22489,16 @@ z
   </g>
   <g id="axes_10">
    <g id="patch_11">
-    <path d="M 7.2 681.4 
-L 331.2 681.4 
-L 331.2 615.4 
-L 7.2 615.4 
+    <path d="M 4 675.8 
+L 328 675.8 
+L 328 609.8 
+L 4 609.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_19"/>
    <g id="matplotlib.axis_20"/>
-   <g id="text_12">
+   <g id="text_11">
     <!-- Helvetica: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 7.859375 71.734375 
@@ -23102,7 +23087,7 @@ M 25.921875 53.5625
 z
 " id="Helvetica-103"/>
     </defs>
-    <g transform="translate(7.2 631.93)scale(0.12 -0.12)">
+    <g transform="translate(4 626.33)scale(0.12 -0.12)">
      <use xlink:href="#Helvetica-72"/>
      <use x="72.216797" xlink:href="#Helvetica-101"/>
      <use x="127.832031" xlink:href="#Helvetica-108"/>
@@ -23609,7 +23594,7 @@ M 37.015625 73.6875
 z
 " id="Helvetica-71"/>
     </defs>
-    <g transform="translate(7.2 644.91475)scale(0.12 -0.12)">
+    <g transform="translate(4 639.31475)scale(0.12 -0.12)">
      <use xlink:href="#Helvetica-84"/>
      <use x="61.083984" xlink:href="#Helvetica-72"/>
      <use x="133.300781" xlink:href="#Helvetica-69"/>
@@ -24181,7 +24166,7 @@ Q 19.34375 31.25 26.609375 31.25
 z
 " id="Helvetica-57"/>
     </defs>
-    <g transform="translate(7.2 657.928)scale(0.12 -0.12)">
+    <g transform="translate(4 652.328)scale(0.12 -0.12)">
      <use xlink:href="#Helvetica-40"/>
      <use transform="translate(33.300781 0)" xlink:href="#Helvetica-48"/>
      <use transform="translate(88.916016 0)" xlink:href="#Helvetica-41"/>
@@ -25062,7 +25047,7 @@ Q 63.96875 6.9375 68.171875 6.9375
 z
 " id="Helvetica-37"/>
     </defs>
-    <g transform="translate(7.2 670.96)scale(0.12 -0.12)">
+    <g transform="translate(4 665.36)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#Helvetica-945"/>
      <use transform="translate(61.083984 0.34375)" xlink:href="#Helvetica-946"/>
      <use transform="translate(122.167969 0.34375)" xlink:href="#Helvetica-32"/>
@@ -25116,16 +25101,16 @@ z
   </g>
   <g id="axes_11">
    <g id="patch_12">
-    <path d="M 7.2 747.4 
-L 331.2 747.4 
-L 331.2 681.4 
-L 7.2 681.4 
+    <path d="M 4 741.8 
+L 328 741.8 
+L 328 675.8 
+L 4 675.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_21"/>
    <g id="matplotlib.axis_22"/>
-   <g id="text_13">
+   <g id="text_12">
     <!-- Helvetica Neue: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 7.796875 71.40625 
@@ -25891,7 +25876,7 @@ Q 31.40625 6.90625 27.203125 6.90625
 z
 " id="HelveticaNeue-103"/>
     </defs>
-    <g transform="translate(7.2 697.906375)scale(0.12 -0.12)">
+    <g transform="translate(4 692.306375)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-72"/>
      <use x="72.199982" xlink:href="#HelveticaNeue-101"/>
      <use x="125.899979" xlink:href="#HelveticaNeue-108"/>
@@ -26476,7 +26461,7 @@ Q 57 3.296875 61.203125 8.90625
 z
 " id="HelveticaNeue-71"/>
     </defs>
-    <g transform="translate(7.2 710.697625)scale(0.12 -0.12)">
+    <g transform="translate(4 705.097625)scale(0.12 -0.12)">
      <use xlink:href="#HelveticaNeue-84"/>
      <use x="57.399994" xlink:href="#HelveticaNeue-72"/>
      <use x="129.599976" xlink:href="#HelveticaNeue-69"/>
@@ -27236,7 +27221,7 @@ Q 40.90625 50.5 40.90625 47.203125
 z
 " id="HelveticaNeue-57"/>
     </defs>
-    <g transform="translate(7.2 723.718)scale(0.12 -0.12)">
+    <g transform="translate(4 718.118)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#HelveticaNeue-40"/>
      <use transform="translate(25.899994 0.90625)" xlink:href="#HelveticaNeue-48"/>
      <use transform="translate(81.499985 0.90625)" xlink:href="#HelveticaNeue-41"/>
@@ -28353,7 +28338,7 @@ L 81.09375 72.203125
 z
 " id="HelveticaNeue-37"/>
     </defs>
-    <g transform="translate(7.2 736.918)scale(0.12 -0.12)">
+    <g transform="translate(4 731.318)scale(0.12 -0.12)">
      <use transform="translate(0 0.59375)" xlink:href="#HelveticaNeue-945"/>
      <use transform="translate(58.699997 0.59375)" xlink:href="#HelveticaNeue-946"/>
      <use transform="translate(115.099991 0.59375)" xlink:href="#HelveticaNeue-32"/>
@@ -28407,16 +28392,16 @@ z
   </g>
   <g id="axes_12">
    <g id="patch_13">
-    <path d="M 7.2 813.4 
-L 331.2 813.4 
-L 331.2 747.4 
-L 7.2 747.4 
+    <path d="M 4 807.8 
+L 328 807.8 
+L 328 741.8 
+L 4 741.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_23"/>
    <g id="matplotlib.axis_24"/>
-   <g id="text_14">
+   <g id="text_13">
     <!-- Lucida Grande: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 9.328125 0 
@@ -28898,7 +28883,7 @@ Q 36.28125 9.625 43.65625 18.359375
 z
 " id="LucidaGrande-103"/>
     </defs>
-    <g transform="translate(7.2 763.50925)scale(0.12 -0.12)">
+    <g transform="translate(4 757.90925)scale(0.12 -0.12)">
      <use xlink:href="#LucidaGrande-76"/>
      <use x="53.320312" xlink:href="#LucidaGrande-117"/>
      <use x="115.380859" xlink:href="#LucidaGrande-99"/>
@@ -29329,7 +29314,7 @@ L 19.578125 64.59375
 z
 " id="LucidaGrande-68"/>
     </defs>
-    <g transform="translate(7.2 777.065125)scale(0.12 -0.12)">
+    <g transform="translate(4 771.465125)scale(0.12 -0.12)">
      <use xlink:href="#LucidaGrande-84"/>
      <use x="63.232422" xlink:href="#LucidaGrande-72"/>
      <use x="136.71875" xlink:href="#LucidaGrande-69"/>
@@ -29878,7 +29863,7 @@ Q 17.234375 57.953125 17.234375 50.296875
 z
 " id="LucidaGrande-57"/>
     </defs>
-    <g transform="translate(7.2 790.480375)scale(0.12 -0.12)">
+    <g transform="translate(4 784.880375)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#LucidaGrande-40"/>
      <use transform="translate(32.519531 0.90625)" xlink:href="#LucidaGrande-48"/>
      <use transform="translate(95.751953 0.90625)" xlink:href="#LucidaGrande-41"/>
@@ -30785,7 +30770,7 @@ Q 47.125 4.828125 50.78125 4.828125
 z
 " id="LucidaGrande-37"/>
     </defs>
-    <g transform="translate(7.2 804.170125)scale(0.12 -0.12)">
+    <g transform="translate(4 798.570125)scale(0.12 -0.12)">
      <use transform="translate(0 0.671875)" xlink:href="#LucidaGrande-945"/>
      <use transform="translate(69.384766 0.671875)" xlink:href="#LucidaGrande-946"/>
      <use transform="translate(129.638672 0.671875)" xlink:href="#LucidaGrande-32"/>
@@ -30839,16 +30824,16 @@ z
   </g>
   <g id="axes_13">
    <g id="patch_14">
-    <path d="M 7.2 879.4 
-L 331.2 879.4 
-L 331.2 813.4 
-L 7.2 813.4 
+    <path d="M 4 873.8 
+L 328 873.8 
+L 328 807.8 
+L 4 807.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_25"/>
    <g id="matplotlib.axis_26"/>
-   <g id="text_15">
+   <g id="text_14">
     <!-- Myriad Pro: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 66 0 
@@ -31371,7 +31356,7 @@ C 39.796875 32.09375 39.90625 30.796875 39.90625 29.296875
 z
 " id="MyriadPro-Regular-103"/>
     </defs>
-    <g transform="translate(7.2 830.23)scale(0.12 -0.12)">
+    <g transform="translate(4 824.63)scale(0.12 -0.12)">
      <use xlink:href="#MyriadPro-Regular-77"/>
      <use x="80.399994" xlink:href="#MyriadPro-Regular-121"/>
      <use x="127.499985" xlink:href="#MyriadPro-Regular-114"/>
@@ -31786,7 +31771,7 @@ C 47.296875 -0.703125 55.09375 1.5 59 3
 z
 " id="MyriadPro-Regular-71"/>
     </defs>
-    <g transform="translate(7.2 843.094)scale(0.12 -0.12)">
+    <g transform="translate(4 837.494)scale(0.12 -0.12)">
      <use xlink:href="#MyriadPro-Regular-84"/>
      <use x="49.699997" xlink:href="#MyriadPro-Regular-72"/>
      <use x="114.899994" xlink:href="#MyriadPro-Regular-69"/>
@@ -32256,7 +32241,7 @@ C 12.796875 52.796875 18.09375 59.40625 25.5 59.40625
 z
 " id="MyriadPro-Regular-57"/>
     </defs>
-    <g transform="translate(7.2 855.693625)scale(0.12 -0.12)">
+    <g transform="translate(4 850.093625)scale(0.12 -0.12)">
      <use transform="translate(0 0.59375)" xlink:href="#MyriadPro-Regular-40"/>
      <use transform="translate(28.399994 0.59375)" xlink:href="#MyriadPro-Regular-48"/>
      <use transform="translate(79.699982 0.59375)" xlink:href="#MyriadPro-Regular-41"/>
@@ -32966,7 +32951,7 @@ C 52.296875 27.40625 55.296875 33.90625 60.703125 33.90625
 z
 " id="MyriadPro-Regular-37"/>
     </defs>
-    <g transform="translate(7.2 868.58125)scale(0.12 -0.12)">
+    <g transform="translate(4 862.98125)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#MyriadPro-Regular-945"/>
      <use transform="translate(55.099991 0.90625)" xlink:href="#MyriadPro-Regular-946"/>
      <use transform="translate(111.099976 0.90625)" xlink:href="#MyriadPro-Regular-32"/>
@@ -33020,16 +33005,16 @@ z
   </g>
   <g id="axes_14">
    <g id="patch_15">
-    <path d="M 7.2 945.4 
-L 331.2 945.4 
-L 331.2 879.4 
-L 7.2 879.4 
+    <path d="M 4 939.8 
+L 328 939.8 
+L 328 873.8 
+L 4 873.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_27"/>
    <g id="matplotlib.axis_28"/>
-   <g id="text_16">
+   <g id="text_15">
     <!-- Noto Sans: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 66.3125 0 
@@ -33691,7 +33676,7 @@ Q 44.28125 -8.6875 44.28125 -1.609375
 z
 " id="NotoSans-103"/>
     </defs>
-    <g transform="translate(7.2 893.492313)scale(0.12 -0.12)">
+    <g transform="translate(4 887.892313)scale(0.12 -0.12)">
      <use xlink:href="#NotoSans-78"/>
      <use x="75.976562" xlink:href="#NotoSans-111"/>
      <use x="136.474609" xlink:href="#NotoSans-116"/>
@@ -34144,7 +34129,7 @@ L 40.71875 29.6875
 z
 " id="NotoSans-71"/>
     </defs>
-    <g transform="translate(7.2 907.317813)scale(0.12 -0.12)">
+    <g transform="translate(4 901.717813)scale(0.12 -0.12)">
      <use xlink:href="#NotoSans-84"/>
      <use x="55.615234" xlink:href="#NotoSans-72"/>
      <use x="129.736328" xlink:href="#NotoSans-69"/>
@@ -34983,7 +34968,7 @@ Q 30.5625 64.890625 27 64.890625
 z
 " id="NotoSans-57"/>
     </defs>
-    <g transform="translate(7.2 923.161563)scale(0.12 -0.12)">
+    <g transform="translate(4 917.561563)scale(0.12 -0.12)">
      <use transform="translate(0 0.34375)" xlink:href="#NotoSans-40"/>
      <use transform="translate(35.351562 0.34375)" xlink:href="#NotoSans-48"/>
      <use transform="translate(90.429688 0.34375)" xlink:href="#NotoSans-41"/>
@@ -35971,7 +35956,7 @@ L 56.9375 62.203125
 z
 " id="NotoSans-37"/>
     </defs>
-    <g transform="translate(7.2 937.489563)scale(0.12 -0.12)">
+    <g transform="translate(4 931.889563)scale(0.12 -0.12)">
      <use transform="translate(0 0.390625)" xlink:href="#NotoSans-945"/>
      <use transform="translate(61.523438 0.390625)" xlink:href="#NotoSans-946"/>
      <use transform="translate(124.609375 0.390625)" xlink:href="#NotoSans-32"/>
@@ -36025,16 +36010,16 @@ z
   </g>
   <g id="axes_15">
    <g id="patch_16">
-    <path d="M 7.2 1011.4 
-L 331.2 1011.4 
-L 331.2 945.4 
-L 7.2 945.4 
+    <path d="M 4 1005.8 
+L 328 1005.8 
+L 328 939.8 
+L 4 939.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_29"/>
    <g id="matplotlib.axis_30"/>
-   <g id="text_17">
+   <g id="text_16">
     <!-- Open Sans: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 71.78125 35.796875 
@@ -36681,7 +36666,7 @@ Q 14.109375 42.4375 14.109375 36.375
 z
 " id="OpenSans-103"/>
     </defs>
-    <g transform="translate(7.2 960.607563)scale(0.12 -0.12)">
+    <g transform="translate(4 955.007563)scale(0.12 -0.12)">
      <use xlink:href="#OpenSans-79"/>
      <use x="77.880859" xlink:href="#OpenSans-112"/>
      <use x="139.160156" xlink:href="#OpenSans-101"/>
@@ -37121,7 +37106,7 @@ L 41.21875 29.984375
 z
 " id="OpenSans-71"/>
     </defs>
-    <g transform="translate(7.2 974.433063)scale(0.12 -0.12)">
+    <g transform="translate(4 968.833063)scale(0.12 -0.12)">
      <use xlink:href="#OpenSans-84"/>
      <use x="55.322266" xlink:href="#OpenSans-72"/>
      <use x="129.101562" xlink:href="#OpenSans-69"/>
@@ -37674,7 +37659,7 @@ Q 32.421875 65.484375 27.78125 65.484375
 z
 " id="OpenSans-57"/>
     </defs>
-    <g transform="translate(7.2 988.258563)scale(0.12 -0.12)">
+    <g transform="translate(4 982.658563)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#OpenSans-40"/>
      <use transform="translate(29.589844 0.015625)" xlink:href="#OpenSans-48"/>
      <use transform="translate(86.767578 0.015625)" xlink:href="#OpenSans-41"/>
@@ -38586,7 +38571,7 @@ L 57.421875 71.390625
 z
 " id="OpenSans-37"/>
     </defs>
-    <g transform="translate(7.2 1002.374313)scale(0.12 -0.12)">
+    <g transform="translate(4 996.774313)scale(0.12 -0.12)">
      <use transform="translate(0 0.90625)" xlink:href="#OpenSans-945"/>
      <use transform="translate(61.083984 0.90625)" xlink:href="#OpenSans-946"/>
      <use transform="translate(123.876953 0.90625)" xlink:href="#OpenSans-32"/>
@@ -38640,16 +38625,16 @@ z
   </g>
   <g id="axes_16">
    <g id="patch_17">
-    <path d="M 7.2 1077.4 
-L 331.2 1077.4 
-L 331.2 1011.4 
-L 7.2 1011.4 
+    <path d="M 4 1071.8 
+L 328 1071.8 
+L 328 1005.8 
+L 4 1005.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_31"/>
    <g id="matplotlib.axis_32"/>
-   <g id="text_18">
+   <g id="text_17">
     <!-- Optima: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 4.203125 34 
@@ -39822,7 +39807,7 @@ Q 5 26.5 5 32
 z
 " id="Optima-Regular-103"/>
     </defs>
-    <g transform="translate(7.2 1026.308313)scale(0.12 -0.12)">
+    <g transform="translate(4 1020.708313)scale(0.12 -0.12)">
      <use xlink:href="#Optima-Regular-79"/>
      <use x="83.299988" xlink:href="#Optima-Regular-112"/>
      <use x="138.899979" xlink:href="#Optima-Regular-116"/>
@@ -40886,7 +40871,7 @@ L 67.09375 56.296875
 z
 " id="Optima-Regular-71"/>
     </defs>
-    <g transform="translate(7.2 1040.353188)scale(0.12 -0.12)">
+    <g transform="translate(4 1034.753188)scale(0.12 -0.12)">
      <use xlink:href="#Optima-Regular-84"/>
      <use x="55.599991" xlink:href="#Optima-Regular-72"/>
      <use x="133.399979" xlink:href="#Optima-Regular-69"/>
@@ -41738,7 +41723,7 @@ Q 10.703125 4.296875 10.09375 5.40625
 z
 " id="Optima-Regular-57"/>
     </defs>
-    <g transform="translate(7.2 1054.362438)scale(0.12 -0.12)">
+    <g transform="translate(4 1048.762438)scale(0.12 -0.12)">
      <use transform="translate(0 0.703125)" xlink:href="#Optima-Regular-40"/>
      <use transform="translate(27.799988 0.703125)" xlink:href="#Optima-Regular-48"/>
      <use transform="translate(83.399979 0.703125)" xlink:href="#Optima-Regular-41"/>
@@ -42086,7 +42071,7 @@ Q 4.203125 47 4.203125 50.59375
 z
 " id="Optima-Regular-37"/>
     </defs>
-    <g transform="translate(7.2 1068.371688)scale(0.12 -0.12)">
+    <g transform="translate(4 1062.771688)scale(0.12 -0.12)">
      <use transform="translate(0 0.203125)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.203125)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.203125)" xlink:href="#Optima-Regular-32"/>
@@ -42140,16 +42125,16 @@ z
   </g>
   <g id="axes_17">
    <g id="patch_18">
-    <path d="M 7.2 1143.4 
-L 331.2 1143.4 
-L 331.2 1077.4 
-L 7.2 1077.4 
+    <path d="M 4 1137.8 
+L 328 1137.8 
+L 328 1071.8 
+L 4 1071.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_33"/>
    <g id="matplotlib.axis_34"/>
-   <g id="text_19">
+   <g id="text_18">
     <!-- Tahoma: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 24.359375 0 
@@ -42781,7 +42766,7 @@ L 8.109375 -8.734375
 z
 " id="Tahoma-103"/>
     </defs>
-    <g transform="translate(7.2 1093.606375)scale(0.12 -0.12)">
+    <g transform="translate(4 1088.006375)scale(0.12 -0.12)">
      <use xlink:href="#Tahoma-84"/>
      <use x="58.226562" xlink:href="#Tahoma-97"/>
      <use x="110.716797" xlink:href="#Tahoma-104"/>
@@ -43380,7 +43365,7 @@ Q 41.890625 -1.421875 37.796875 -1.421875
 z
 " id="Tahoma-71"/>
     </defs>
-    <g transform="translate(7.2 1107.026875)scale(0.12 -0.12)">
+    <g transform="translate(4 1101.426875)scale(0.12 -0.12)">
      <use xlink:href="#Tahoma-84"/>
      <use x="58.398438" xlink:href="#Tahoma-72"/>
      <use x="125.927734" xlink:href="#Tahoma-69"/>
@@ -44101,7 +44086,7 @@ Q 3.265625 42.625 3.265625 49.078125
 z
 " id="Tahoma-57"/>
     </defs>
-    <g transform="translate(7.2 1120.385875)scale(0.12 -0.12)">
+    <g transform="translate(4 1114.785875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Tahoma-40"/>
      <use transform="translate(38.28125 0.015625)" xlink:href="#Tahoma-48"/>
      <use transform="translate(92.871094 0.015625)" xlink:href="#Tahoma-41"/>
@@ -45125,7 +45110,7 @@ Q 83.9375 12.796875 83.9375 20.171875
 z
 " id="Tahoma-37"/>
     </defs>
-    <g transform="translate(7.2 1133.849875)scale(0.12 -0.12)">
+    <g transform="translate(4 1128.249875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Tahoma-945"/>
      <use transform="translate(55.46875 0.015625)" xlink:href="#Tahoma-946"/>
      <use transform="translate(110.986328 0.015625)" xlink:href="#Tahoma-32"/>
@@ -45179,16 +45164,16 @@ z
   </g>
   <g id="axes_18">
    <g id="patch_19">
-    <path d="M 7.2 1209.4 
-L 331.2 1209.4 
-L 331.2 1143.4 
-L 7.2 1143.4 
+    <path d="M 4 1203.8 
+L 328 1203.8 
+L 328 1137.8 
+L 4 1137.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_35"/>
    <g id="matplotlib.axis_36"/>
-   <g id="text_20">
+   <g id="text_19">
     <!-- Trebuchet MS: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 33.40625 62.75 
@@ -45782,7 +45767,7 @@ Q 28.859375 45.796875 24.359375 45.796875
 z
 " id="TrebuchetMS-103"/>
     </defs>
-    <g transform="translate(7.2 1159.745312)scale(0.12 -0.12)">
+    <g transform="translate(4 1154.145313)scale(0.12 -0.12)">
      <use xlink:href="#TrebuchetMS-84"/>
      <use x="57.884766" xlink:href="#TrebuchetMS-114"/>
      <use x="96.751953" xlink:href="#TrebuchetMS-101"/>
@@ -46195,7 +46180,7 @@ Q 49.859375 72.75 56.890625 66.546875
 z
 " id="TrebuchetMS-71"/>
     </defs>
-    <g transform="translate(7.2 1172.824938)scale(0.12 -0.12)">
+    <g transform="translate(4 1167.224938)scale(0.12 -0.12)">
      <use xlink:href="#TrebuchetMS-84"/>
      <use x="58.056641" xlink:href="#TrebuchetMS-72"/>
      <use x="123.486328" xlink:href="#TrebuchetMS-69"/>
@@ -46718,7 +46703,7 @@ Q 37.546875 35.109375 37.546875 49.21875
 z
 " id="TrebuchetMS-57"/>
     </defs>
-    <g transform="translate(7.2 1185.942812)scale(0.12 -0.12)">
+    <g transform="translate(4 1180.342813)scale(0.12 -0.12)">
      <use transform="translate(0 0.265625)" xlink:href="#TrebuchetMS-40"/>
      <use transform="translate(36.71875 0.265625)" xlink:href="#TrebuchetMS-48"/>
      <use transform="translate(89.160156 0.265625)" xlink:href="#TrebuchetMS-41"/>
@@ -47521,7 +47506,7 @@ Q 35.5 21.34375 35.5 16.015625
 z
 " id="TrebuchetMS-37"/>
     </defs>
-    <g transform="translate(7.2 1199.262812)scale(0.12 -0.12)">
+    <g transform="translate(4 1193.662813)scale(0.12 -0.12)">
      <use transform="translate(0 0.578125)" xlink:href="#TrebuchetMS-945"/>
      <use transform="translate(58.203125 0.578125)" xlink:href="#TrebuchetMS-946"/>
      <use transform="translate(114.599609 0.578125)" xlink:href="#TrebuchetMS-32"/>
@@ -47575,16 +47560,16 @@ z
   </g>
   <g id="axes_19">
    <g id="patch_20">
-    <path d="M 7.2 1275.4 
-L 331.2 1275.4 
-L 331.2 1209.4 
-L 7.2 1209.4 
+    <path d="M 4 1269.8 
+L 328 1269.8 
+L 328 1203.8 
+L 4 1203.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_37"/>
    <g id="matplotlib.axis_38"/>
-   <g id="text_21">
+   <g id="text_20">
     <!-- Univers: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 9.296875 72.203125 
@@ -48038,7 +48023,7 @@ C 37.40625 9.90625 34.203125 7.90625 28.703125 7.90625
 z
 " id="Univers-103"/>
     </defs>
-    <g transform="translate(7.2 1226.181625)scale(0.12 -0.12)">
+    <g transform="translate(4 1220.581625)scale(0.12 -0.12)">
      <use xlink:href="#Univers-85"/>
      <use x="77.799988" xlink:href="#Univers-110"/>
      <use x="138.899979" xlink:href="#Univers-105"/>
@@ -48454,7 +48439,7 @@ C 51.203125 65.5 56.59375 60.90625 57.703125 54.203125
 z
 " id="Univers-71"/>
     </defs>
-    <g transform="translate(7.2 1238.974375)scale(0.12 -0.12)">
+    <g transform="translate(4 1233.374375)scale(0.12 -0.12)">
      <use xlink:href="#Univers-84"/>
      <use x="61.099991" xlink:href="#Univers-72"/>
      <use x="133.299973" xlink:href="#Univers-69"/>
@@ -48846,7 +48831,7 @@ C 33.40625 63 39.90625 58 39.90625 48
 z
 " id="Univers-57"/>
     </defs>
-    <g transform="translate(7.2 1251.6715)scale(0.12 -0.12)">
+    <g transform="translate(4 1246.0715)scale(0.12 -0.12)">
      <use transform="translate(0 0.796875)" xlink:href="#Univers-40"/>
      <use transform="translate(33.299988 0.796875)" xlink:href="#Univers-48"/>
      <use transform="translate(88.899979 0.796875)" xlink:href="#Univers-41"/>
@@ -49049,7 +49034,7 @@ L 18.5 -3.90625
 z
 " id="Univers-37"/>
     </defs>
-    <g transform="translate(7.2 1264.787125)scale(0.12 -0.12)">
+    <g transform="translate(4 1259.187125)scale(0.12 -0.12)">
      <use transform="translate(0 0.40625)" xlink:href="#STIXNonUnicode-Regular-57750"/>
      <use transform="translate(53.699997 0.40625)" xlink:href="#STIXNonUnicode-Regular-57751"/>
      <use transform="translate(103.499985 0.40625)" xlink:href="#Univers-32"/>
@@ -49103,16 +49088,16 @@ z
   </g>
   <g id="axes_20">
    <g id="patch_21">
-    <path d="M 7.2 1341.4 
-L 331.2 1341.4 
-L 331.2 1275.4 
-L 7.2 1275.4 
+    <path d="M 4 1335.8 
+L 328 1335.8 
+L 328 1269.8 
+L 4 1269.8 
 z
 " style="fill:none;opacity:0;"/>
    </g>
    <g id="matplotlib.axis_39"/>
    <g id="matplotlib.axis_40"/>
-   <g id="text_22">
+   <g id="text_21">
     <!-- Verdana: the quick brown fox jumps over a lazy dog -->
     <defs>
      <path d="M 67.09375 72.703125 
@@ -49716,7 +49701,7 @@ Q 40.71875 12.40625 44.09375 14.984375
 z
 " id="Verdana-103"/>
     </defs>
-    <g transform="translate(7.2 1291.546375)scale(0.12 -0.12)">
+    <g transform="translate(4 1285.946375)scale(0.12 -0.12)">
      <use xlink:href="#Verdana-86"/>
      <use x="68.296875" xlink:href="#Verdana-101"/>
      <use x="127.867188" xlink:href="#Verdana-114"/>
@@ -50288,7 +50273,7 @@ L 70.40625 36.578125
 z
 " id="Verdana-71"/>
     </defs>
-    <g transform="translate(7.2 1304.966875)scale(0.12 -0.12)">
+    <g transform="translate(4 1299.366875)scale(0.12 -0.12)">
      <use xlink:href="#Verdana-84"/>
      <use x="61.621094" xlink:href="#Verdana-72"/>
      <use x="136.767578" xlink:href="#Verdana-69"/>
@@ -50961,7 +50946,7 @@ Q 47.125 41.265625 47.125 42.828125
 z
 " id="Verdana-57"/>
     </defs>
-    <g transform="translate(7.2 1318.325875)scale(0.12 -0.12)">
+    <g transform="translate(4 1312.725875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Verdana-40"/>
      <use transform="translate(45.410156 0.015625)" xlink:href="#Verdana-48"/>
      <use transform="translate(108.984375 0.015625)" xlink:href="#Verdana-41"/>
@@ -51934,7 +51919,7 @@ Q 91.65625 11.671875 91.65625 20.171875
 z
 " id="Verdana-37"/>
     </defs>
-    <g transform="translate(7.2 1331.789875)scale(0.12 -0.12)">
+    <g transform="translate(4 1326.189875)scale(0.12 -0.12)">
      <use transform="translate(0 0.015625)" xlink:href="#Verdana-945"/>
      <use transform="translate(62.304688 0.015625)" xlink:href="#Verdana-946"/>
      <use transform="translate(124.316406 0.015625)" xlink:href="#Verdana-32"/>
