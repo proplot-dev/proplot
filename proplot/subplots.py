@@ -828,10 +828,6 @@ class Figure(mfigure.Figure):
         width, height = figsize
         self.set_size_inches(figsize)
         gridspec.update(**gridspec_kw)
-        # Update axes width and height used for unit scaling
-        for ax in axs:
-            ax.width = abs(ax.get_position().width)*width
-            ax.height = abs(ax.get_position().height)*height
 
     @_counter
     def _add_panel(self, ax, side, order='C', mode='panel', **kwargs):
@@ -1447,7 +1443,8 @@ def _panels_kwargs(sides, kwargs, mode='panel', figure=False):
         kworig[side + 'sep'] = sep
         # Get default arg values
         width[width==None] = units(rc['subplots.' + (mode + 'width')])
-        space = _notNone(space, units(rc['subplots.' + ('panel' if share and not figure
+        space = _notNone(space, units(rc['subplots.' + ('panel' if share
+            and not figure
             else 'xlab' if side == 'b' else 'ylab' if side == 'l'
             else 'inner' if figure else 'panel') + 'space']))
         sep = np.array(sep) # make a copy

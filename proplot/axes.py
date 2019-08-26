@@ -184,9 +184,6 @@ class Axes(maxes.Axes):
         self._sharey_level = sharey_level
         self._sharex_setup(sharex, sharex_level)
         self._sharey_setup(sharey, sharey_level)
-        width, height = self.figure.get_size_inches()
-        self.width = abs(self._position.width)*width # position is in figure units
-        self.height = abs(self._position.height)*height
         coltransform = mtransforms.blended_transform_factory(self.transAxes, self.figure.transFigure)
         rowtransform = mtransforms.blended_transform_factory(self.figure.transFigure, self.transAxes)
         self.leftlabel   = self.text(0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
@@ -269,21 +266,22 @@ class Axes(maxes.Axes):
             obj = self._titles_dict[loc]
         else:
             kw = props(False)
+            width, height = self.get_size_inches()
             if loc in ('upper center','lower center'):
                 x, ha = 0.5, 'center'
             elif loc in ('upper left','lower left'):
-                xpad = rc.get('axes.titlepad')/(72*self.width)
+                xpad = rc.get('axes.titlepad')/(72*width)
                 x, ha = 1.5*xpad, 'left'
             elif loc in ('upper right','lower right'):
-                xpad = rc.get('axes.titlepad')/(72*self.width)
+                xpad = rc.get('axes.titlepad')/(72*width)
                 x, ha = 1 - 1.5*xpad, 'right'
             else:
                 raise ValueError(f'Invalid title or abc "loc" {loc}.')
             if loc in ('upper left','upper right','upper center'):
-                ypad = rc.get('axes.titlepad')/(72*self.height)
+                ypad = rc.get('axes.titlepad')/(72*height)
                 y, va = 1 - 1.5*ypad, 'top'
             elif loc in ('lower left','lower right','lower center'):
-                ypad = rc.get('axes.titlepad')/(72*self.height)
+                ypad = rc.get('axes.titlepad')/(72*height)
                 y, va = 1.5*ypad, 'bottom'
             obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
             obj.set_transform(self.transAxes)
@@ -939,12 +937,12 @@ class Axes(maxes.Axes):
         if loc == 'fill':
             return ax.colorbar(*args, **kwargs)
         # Default props
+        width, height = self.get_size_inches()
         extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
-        length = units(_notNone(length, rc['colorbar.length']))/self.width
-        width = units(_notNone(width, rc['colorbar.width']))/self.height
+        length = units(_notNone(length, rc['colorbar.length']))/width
+        width = units(_notNone(width, rc['colorbar.width']))/height
         pad = units(_notNone(pad, rc['colorbar.axespad']))
-        xpad = pad/self.width
-        ypad = pad/self.height
+        xpad, ypar = pad/width, pad/height
         kwargs.setdefault('extendsize', extend)
         # Tick location handling
         tickloc = kwargs.pop('tickloc', None)
@@ -1061,6 +1059,13 @@ class Axes(maxes.Axes):
         """Adds post-processing steps before axes is drawn."""
         self._draw_auto_legends_colorbars()
         super().draw(*args, **kwargs)
+
+    def get_size_inches(self):
+        """Returns the width and the height of the axes in inches."""
+        width, height = self.figure.get_size_inches()
+        width = width*abs(self.get_position().width)
+        height = height*abs(self.get_position().height)
+        return width, height
 
     def get_tightbbox(self, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
@@ -1403,9 +1408,9 @@ class CartesianAxes(Axes):
                 obj = wrappers._add_errorbars(self, obj)
             # Step 1) Parse input
             if attr in wrappers._2d_methods:
-                obj = wrappers._autoformat_2d_(self, obj)
+                obj = wrappers._autoformat_2d(self, obj)
             elif attr in wrappers._1d_methods:
-                obj = wrappers._autoformat_1d_(self, obj)
+                obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
                 obj = wrappers._plot_wrapper(self, obj)
@@ -2521,9 +2526,9 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 obj = wrappers._enforce_centers(self, obj)
             # Step 1) Parse args input
             if attr in wrappers._2d_methods:
-                obj = wrappers._autoformat_2d_(self, obj)
+                obj = wrappers._autoformat_2d(self, obj)
             elif attr in wrappers._1d_methods:
-                obj = wrappers._autoformat_1d_(self, obj)
+                obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
                 obj = wrappers._plot_wrapper(self, obj)
@@ -2795,9 +2800,9 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                 obj = wrappers._cartopy_crs(self, obj)
             # Step 1) Parse args input
             if attr in wrappers._2d_methods:
-                obj = wrappers._autoformat_2d_(self, obj)
+                obj = wrappers._autoformat_2d(self, obj)
             elif attr in wrappers._1d_methods:
-                obj = wrappers._autoformat_1d_(self, obj)
+                obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
                 obj = wrappers._plot_wrapper(self, obj)
@@ -3124,9 +3129,9 @@ class BasemapAxes(ProjectionAxes):
                 obj = wrappers._basemap_latlon(self, obj)
             # Step 1) Parse args input
             if attr in wrappers._2d_methods:
-                obj = wrappers._autoformat_2d_(self, obj)
+                obj = wrappers._autoformat_2d(self, obj)
             elif attr in wrappers._1d_methods:
-                obj = wrappers._autoformat_1d_(self, obj)
+                obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
                 obj = wrappers._plot_wrapper(self, obj)

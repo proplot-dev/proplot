@@ -21,6 +21,7 @@ import matplotlib.legend as mlegend
 from numbers import Number
 from .rctools import rc
 __all__ = [
+    'autoformat_1d', 'autoformat_2d',
     'add_errorbars', 'bar_wrapper', 'barh_wrapper',
     'basemap_gridfix', 'basemap_latlon', 'boxplot_wrapper',
     'cartopy_crs', 'cartopy_gridfix', 'cartopy_transform',
@@ -124,6 +125,8 @@ def _expand_methods_list(func):
     names, this is much cleaner."""
     doc = func.__doc__
     for name,methods in (
+        ('_1d_methods',            _1d_methods),
+        ('_2d_methods',            _2d_methods),
         ('_errorbar_methods',      _errorbar_methods),
         ('_centers_methods',       _centers_methods),
         ('_edges_methods',         _edges_methods),
@@ -198,10 +201,14 @@ def _auto_label(data, axis=None, units=True):
         label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
     return data, str(label).strip()
 
-def _autoformat_1d(self, func, *args, **kwargs):
-    """Accepts 1D DataArray or Series, or
-    2D DataArray or DataFrame, in which case list of lines or points
-    are drawn. Used by `plot_wrapper` and `scatter_wrapper`."""
+@_expand_methods_list
+def autoformat_1d(self, func, *args, **kwargs):
+    """Wraps `_1d_methods`, standardized acceptable input and optionally
+    modifies the x axis label, y axis label, title, and axis ticks
+    if the input is a `~xarray.DataArray`, `~pandas.DataFrame`, or
+    `~pandas.Series`. Permits 2D array input for all of these commands, in
+    which case the command is called with each column of data. Infers dependent
+    variable coordinates from the input array if none were provided."""
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
@@ -281,9 +288,12 @@ def _autoformat_1d(self, func, *args, **kwargs):
         ys = [_to_array(yi) for yi in ys] # store naked array
     return func(x, *ys, *args, **kwargs)
 
-def _autoformat_2d(self, func, *args, order='C', **kwargs):
-    """Gets 2D data. Accepts ndarray and DataArray. Used by `enforce_centers`
-    and `enforce_edges`, which are used for all 2D plot methods."""
+@_expand_methods_list
+def autoformat_2d(self, func, *args, order='C', **kwargs):
+    """Wraps `_2d_methods`, optionally modifies the x axis label, y axis
+    label, title, and axis ticks if the input is a `~xarray.DataArray`,
+    `~pandas.DataFrame`, or `~pandas.Series`. Infers dependent
+    variable coordinates from the input array if none were provided."""
     # Sanitize input
     name = func.__name__
     _load_objects()
@@ -1424,7 +1434,7 @@ def cycle_wrapper(self, func, *args,
     colorbar_kw = colorbar_kw or {}
     panel_kw = panel_kw or {}
     # Test input
-    # NOTE: Requires _autoformat_1d wrapper before reaching this. Also note that
+    # NOTE: Requires autoformat_1d wrapper before reaching this. Also note that
     # the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
@@ -2192,8 +2202,7 @@ def legend_wrapper(self,
 
     # Now draw legend(s)
     legs = []
-    width, height = self.figure.get_size_inches()
-    width, height = width*abs(self._position.width), height*abs(self._position.height)
+    width, height = self.get_size_inches()
     # Individual legend
     if not center:
         # Optionally change order
@@ -2345,7 +2354,7 @@ def colorbar_wrapper(self,
     title=None, label=None,
     grid=None, tickminor=None,
     tickloc=None, ticklocation=None,
-    locator=None, ticks=None, maxn=20, maxn_minor=100,
+    locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None, locator_kw=None, minorlocator_kw=None,
     formatter=None, ticklabels=None, formatter_kw=None,
     norm=None, norm_kw=None, # normalizer to use when passing colors/lines
@@ -2416,10 +2425,12 @@ def colorbar_wrapper(self,
         `~proplot.axistools.Locator` constructor.
     maxn : int, optional
         Used if `locator` is ``None``. Determines the maximum number of levels
-        that are ticked. Defaults to ``20``. The keyword name is meant to mimic
+        that are ticked. Default depends on the colorbar length relative
+        to the font size. The keyword name "maxn" is meant to mimic
         the `~matplotlib.ticker.MaxNLocator` class name.
     maxn_minor : int, optional
-        As with `maxn`, but for minor tick positions. Defaults to ``100``.
+        As with `maxn`, but for minor tick positions. Default depends
+        on the colorbar length.
     locator_kw : dict-like, optional
         The locator settings. Passed to `~proplot.axistools.Locator`.
     minorlocator, minorticks
@@ -2500,7 +2511,11 @@ def colorbar_wrapper(self,
             extend = mappable.extend or 'neither'
         else:
             extend = 'neither'
-    kwargs.update({'cax':self, 'use_gridspec':True, 'orientation':orientation, 'extend':extend, 'spacing':'uniform'})
+    kwargs.update({
+        'cax':self, 'use_gridspec':True,
+        'orientation':orientation,
+        'extend':extend,
+        'spacing':'uniform'})
     kwargs.setdefault('drawedges', grid)
 
     # Text property keyword args
@@ -2597,6 +2612,19 @@ def colorbar_wrapper(self,
             else:
                 locator = 'auto'
         elif not isinstance(locator, mticker.Locator): # i.e. was a 'values' or 'levels' attribute
+            # Get default maxn, try to allot 2em squares per label maybe?
+            # NOTE: Cannot use Axes.get_size_inches because this is a
+            # native matplotlib axes
+            width, height = self.figure.get_size_inches()
+            if orientation == 'horizontal':
+                length = width*abs(self.get_position().width)
+                fontsize = kw_ticklabels.get('size', rc.get('xtick.labelsize'))
+            else:
+                length = height*abs(self.get_position().height)
+                fontsize = kw_ticklabels.get('size', rc.get('ytick.labelsize'))
+            maxn = _notNone(maxn, int(length/(2*fontsize/72)))
+            maxn_minor = _notNone(maxn_minor, int(length/(0.5*fontsize/72)))
+            # Get locator
             if tickminor and minorlocator is None:
                 step = 1 + len(locator)//maxn_minor
                 minorlocator = locator[::step]
@@ -2797,8 +2825,8 @@ def _wrapper(driver):
     return decorator
 # Hidden wrappers
 # There is also _basemap_call and _no_recurse
-_autoformat_1d_ = _wrapper(_autoformat_1d)
-_autoformat_2d_ = _wrapper(_autoformat_2d)
+_autoformat_1d = _wrapper(autoformat_1d)
+_autoformat_2d = _wrapper(autoformat_2d)
 # Documented
 _add_errorbars         = _wrapper(add_errorbars)
 _enforce_centers       = _wrapper(enforce_centers)
