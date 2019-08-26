@@ -399,7 +399,8 @@ class FlexibleGridSpec(FlexibleGridSpecBase, mgridspec.GridSpec):
         self.set_width_ratios(wratios)
         self.set_height_ratios(hratios)
         # Validate args
-        kwargs.pop('ncols', None), kwargs.pop('nrows', None)
+        kwargs.pop('ncols', None)
+        kwargs.pop('nrows', None)
         self.left   = kwargs.pop('left', None)
         self.right  = kwargs.pop('right', None)
         self.bottom = kwargs.pop('bottom', None)
@@ -683,11 +684,11 @@ class Figure(mfigure.Figure):
         spaces, ratios = [], [] # update these
         wratios = np.array(gridspec.get_width_ratios()[::2])
         hratios = np.array(gridspec.get_height_ratios()[::2])
-        for (mode, nspaces, nacross, tight,
+        for (mode, nacross, tight,
             ialong, along, across,
             iratios, ispace,
             ispace_orig, isep_orig) in zip(
-            ('w','h'), (ncols-1,nrows-1), (nrows,ncols), (_xtight,_ytight),
+            ('w','h'), (nrows,ncols), (_xtight,_ytight),
             (_ixrange,_iyrange), (_xrange,_yrange), (_yrange,_xrange),
             (wratios,hratios), (wspace,hspace),
             (wspace_orig,hspace_orig), (wsep_orig,hsep_orig),
@@ -744,7 +745,8 @@ class Figure(mfigure.Figure):
                         if (any(ax1 in group1 for ax1 in axs1) or
                             any(ax2 in group2 for ax2 in axs2)):
                             newgroup = False
-                            group1.update(axs1), group2.update(axs2)
+                            group1.update(axs1)
+                            group2.update(axs2)
                             break
                     if newgroup:
                         groups.append([{*axs1}, {*axs2}]) # form new group
@@ -1904,7 +1906,9 @@ def subplots(array=None, ncols=1, nrows=1,
         reg = re.compile(f'^[{off}]({"|".join(names)})$')
         ikw = {key:value for key,value in kwargs.items() if not reg.match(key)}
         ikwout, ikworig = _panels_kwargs(sides, ikw, figure=True, mode=mode)
-        keys.update(ikw.keys()), kwout.update(ikwout), kworig.update(ikworig)
+        keys.update(ikw.keys())
+        kwout.update(ikwout)
+        kworig.update(ikworig)
     # Warning
     jkw = {key:value for key,value in kwargs.items() if key not in keys}
     if jkw:
