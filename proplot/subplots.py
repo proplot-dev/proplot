@@ -32,16 +32,21 @@ subclass `list` instead of `~numpy.ndarray`? Two reasons.
    subplot is drawn, a 1D `~numpy.ndarray` when a single row or column is drawn,
    and a 2D `~numpy.ndarray` when a multi-row, multi-column figure is drawn.
 """
+# NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
+# always included, so make it optional
 import os
 import re
 import numpy as np
 import functools
+import warnings
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
-import matplotlib.backends.backend_macosx as mbackend
-import warnings
+try:
+    import matplotlib.backends.backend_macosx as mbackend
+except ImportError:
+    mbackend = None
 from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
@@ -1187,7 +1192,8 @@ class Figure(mfigure.Figure):
         # canvas has no renderer, so cannot apply tight layout yet!
         self._align_adjust(renderer)
         canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer') and not isinstance(canvas, mbackend.FigureCanvasMac):
+        if hasattr(canvas, 'get_renderer') and (mbackend is None or
+            not isinstance(canvas, mbackend.FigureCanvasMac)):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
         return super().draw(renderer)
