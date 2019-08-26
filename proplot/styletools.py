@@ -2330,8 +2330,8 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     """
     Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
     luminance, HSL saturation, and HPL saturation channels, and optionally
-    the red, blue and green channels. Adapted from `this example <
-    https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
+    the red, blue and green channels. Adapted from
+    `this example <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
 
     Parameters
     ----------
