@@ -2124,7 +2124,8 @@ def legend_wrapper(self,
         kw_text['weight'] = fontweight
 
     # Automatically get labels and handles
-    # Also accept non-list input
+    # TODO: Use legend._parse_legend_args instead? This covers functionality
+    # just fine, _parse_legend_args seems overkill.
     if handles is None:
         if self._filled:
             raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
@@ -2344,8 +2345,10 @@ def legend_wrapper(self,
                 self.add_artist(shadow)
             # Add patch to list
             legs = (patch, *legs)
-    # Append attributes and return
-    self._legends.extend(legs)
+    # Append attributes and return, and set clip property!!! This is critical
+    # for tight bounding box calcs!
+    for leg in legs:
+        leg.set_clip_on(False)
     return legs[0] if len(legs) == 1 else (*legs,)
 
 def colorbar_wrapper(self,

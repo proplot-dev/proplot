@@ -605,11 +605,11 @@ class Figure(mfigure.Figure):
         """Aligns row labels, column labels, and super titles, and applies
         tight layout automatic spacing."""
         self._adjust_aspect()
-        self._align_axislabels(renderer, False)
+        self._align_axislabels(False)
         self._align_suplabels(renderer)
         if self._auto_layout:
             self._adjust_layout(renderer)
-        self._align_axislabels(renderer, True)
+        self._align_axislabels(True)
 
     def _adjust_aspect(self):
         """Adjust average aspect ratio used for gridspec calculations. This
@@ -948,7 +948,7 @@ class Figure(mfigure.Figure):
         spanax = axs[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,1]))//2]
         return pos, spanax
 
-    def _align_axislabels(self, renderer, b=True):
+    def _align_axislabels(self, b=True):
         """Aligns spanning *x* and *y* axis labels, accounting for figure
         margins and axes and figure panels."""
         # TODO: Ensure this is robust to complex panels and shared axes
@@ -1007,28 +1007,24 @@ class Figure(mfigure.Figure):
     def _align_suplabels(self, renderer):
         """Adjusts position of row and column labels, and aligns figure
         super title accounting for figure marins and axes and figure panels."""
-        # Offset labels and titles
-        suptitle = self._suptitle
-        suptitle_on = suptitle.get_text().strip()
-        width, height = self.get_size_inches()
-        for ax in self._main_axes:
-            ax._title_offset()
-            ax._suplabel_offset()
         # Offset using tight bounding boxes
+        # TODO: Super labels fail with popup backend!! Fix this
         # NOTE: Must use get_tightbbox so (1) this will work if tight layout
         # mode if off and (2) actually need *two* tight bounding boxes when
         # labels are present: 1 not including the labels, used to position
         # them, and 1 including the labels, used to determine figure borders
+        suptitle = self._suptitle
+        suptitle_on = suptitle.get_text().strip()
+        width, height = self.get_size_inches()
         for side in ('left','right','top','bottom'):
             # Geometry
             nrows, ncols = self._main_gridspec.get_visible_geometry()
             across = (_xrange if side in ('left','right') else _yrange)
             idx = (0 if side in ('left','top') else 1)
             edge = (2 if side in ('left','top') else ncols-3 if side == 'right' else nrows-3)
-            # Get axes and offset the label if possible
-            # Also get the label object
-            axs = [ax for ax in self._main_axes if across(ax)[idx] == edge]
-            axs = [getattr(ax, side + 'panel')[idx*-1] or ax for ax in axs]
+            # Get axes and offset the label to relevant panel
+            axs = [ax._reassign_suplabel(side) for ax in self._main_axes
+                   if across(ax)[idx] == edge]
             labels = [getattr(ax, side + 'label') for ax in axs]
             coords = [None]*len(axs)
             if side == 'top' and suptitle_on:
@@ -1699,11 +1695,11 @@ def subplots(array=None, ncols=1, nrows=1,
         between the main subplot grid and the figure panels.
     lwidth, rwidth, bwidth, twidth : optional
         See `~proplot.axes.Axes.panel_axes`, usage is identical.
+    lshare, rshare, bshare, tshare : optional
+        See `~proplot.axes.Axes.panel_axes`, usage is identical.
     lstack, rstack, bstack, tstack : optional
         See `~proplot.axes.Axes.panel_axes`, usage is identical.
     lsep, rsep, bsep, tsep : optional
-        See `~proplot.axes.Axes.panel_axes`, usage is identical.
-    lshare, rshare, bshare, tshare : optional
         See `~proplot.axes.Axes.panel_axes`, usage is identical.
 
     Other parameters

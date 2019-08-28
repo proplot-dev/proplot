@@ -173,7 +173,6 @@ class Axes(maxes.Axes):
         self._auto_legend = {}
         self._auto_colorbar_kw = {} # keyword args for auto colorbar()
         self._auto_legend_kw = {}
-        self._legends = [] # we permit multiple legends, must add to bbox manually
         self._filled = False # True when panels "filled" with colorbar/legend
         # Axis sharing, new text attributes, custom formatting
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
@@ -208,13 +207,10 @@ class Axes(maxes.Axes):
         """Generate automatic legends and colorbars. Wrapper funcs
         let user add handles to location lists with successive calls to
         make successive calls to plotting commands."""
-        # Draw legends and colorbars in requested locations
         for loc,handles in self._auto_colorbar.items():
             self.colorbar(handles, **self._auto_colorbar_kw[loc])
         for loc,handles in self._auto_legend.items():
             self.legend(handles, **self._auto_legend_kw[loc])
-
-        # Reset props
         self._auto_legend = {}
         self._auto_colorbar = {}
         self._auto_legend_kw = {}
@@ -392,6 +388,71 @@ class Axes(maxes.Axes):
             for t in self.xaxis.get_ticklabels():
                 t.set_visible(False)
 
+    def _reassign_suplabel(self, side):
+        """Re-assigns the column and row labels to panel axes, if they exist.
+        This is called by `~proplot.subplots.Figure._align_suplabel`."""
+        # Place column and row labels on panels instead of axes -- works when
+        # this is called on the main axes *or* on the relevant panel itself
+        # TODO: Mixed figure panels with super labels? How does that work?
+        if isinstance(self, PanelAxes) and self._side == side:
+            ax = self._parent
+        else:
+            ax = self
+        idx = (0 if side in ('left','top') else -1)
+        pax = getattr(ax, side + 'panel')[idx]
+        if not pax:
+            return ax
+        kw = {}
+        obj = getattr(ax, side + 'label')
+        for key in ('color', 'fontproperties'): # TODO: add to this?
+            kw[key] = getattr(obj, 'get_' + key)()
+        pobj = getattr(pax, side + 'label')
+        pobj.update(kw)
+        text = obj.get_text()
+        if text:
+            obj.set_text('')
+            pobj.set_text(text)
+        return pax
+
+    def _reassign_title(self):
+        """Re-assigns title to the first upper panel if present. We cannot
+        simply add upper panel as child axes, because then title will be offset
+        but still belong to main axes, which messes up tight bounding box."""
+        # Reassign title from main axes to top panel -- works when this is
+        # called on the main axes *or* on the top panel itself. This is
+        # critical for bounding box calcs; not always clear whether draw() and
+        # get_tightbbox() are called on the main axes or panel first
+        if isinstance(self, PanelAxes) and self._side == 'top':
+            ax, tax = self._parent, self
+        else:
+            ax, tax = self, self.toppanel[0]
+        if not tax or not self._title_above_panel:
+            tax = ax
+        else:
+            tax._title_pad = ax._title_pad
+            for loc,obj in ax._titles_dict.items():
+                if not obj.get_text() or loc not in ('left','center','right'):
+                    continue
+                kw = {}
+                loc, tobj, _ = tax._get_title(loc=loc)
+                for key in ('text', 'color', 'fontproperties'): # TODO: add to this?
+                    kw[key] = getattr(obj, 'get_' + key)()
+                tobj.update(kw)
+                tax._titles_dict[loc] = tobj
+                obj.set_text('')
+        # Push title above tick marks -- this is known matplotlib problem,
+        # but especially annoying with top panels!
+        # TODO: Make sure this is robust. Seems 'default' is returned usually
+        # when tick label sides is actually *both*.
+        pad = 0
+        pos = tax.xaxis.get_ticks_position()
+        labs = tax.xaxis.get_ticklabels()
+        if pos == 'default' or (pos == 'top' and not len(labs)) or (
+            pos == 'unknown' and getattr(tax, '_side', None) == 'top'
+            and not len(labs)):
+            pad = self.yaxis.get_tick_padding()
+        tax._set_title_offset_trans(self._title_pad + pad)
+
     def _sharey_setup(self, sharey, level):
         """Sets up shared axes. The input is the 'parent' axes, from which
         this one will draw its properties."""
@@ -444,60 +505,6 @@ class Axes(maxes.Axes):
             left = left or self
             for iax in self.rightpanel:
                 iax._sharey_setup(left, 3)
-
-    def _suplabel_offset(self):
-        """Re-assigns the column and row labels to panel axes, if they exist.
-        This is called by `~proplot.subplots.Figure._align_suplabel`."""
-        # Place column and row labels on panels instead of axes
-        for side in ('left','right','top','bottom'):
-            idx = (0 if side in ('left','top') else -1)
-            pax = getattr(self, side + 'panel')[idx]
-            if not pax:
-                continue
-            kw = {}
-            obj = getattr(self, side + 'label')
-            for key in ('color', 'fontproperties'): # TODO: add to this?
-                kw[key] = getattr(obj, 'get_' + key)()
-            pobj = getattr(pax, side + 'label')
-            pobj.update(kw)
-            text = obj.get_text()
-            if text:
-                obj.set_text('')
-                pobj.set_text(text)
-
-    def _title_offset(self):
-        """Re-assigns title to the first upper panel if present. This is
-        called by `~proplot.subplots.Figure._align_suplabel`. We cannot
-        simply add upper panel as child axes, because then title will be offset
-        but still belong to main axes, which messes up tight bounding box."""
-        # Place title above panel
-        tax = self.toppanel[0]
-        if not tax or not self._title_above_panel:
-            tax = self
-        else:
-            tax._title_pad = self._title_pad
-            for loc,obj in self._titles_dict.items():
-                if not obj.get_text() or loc not in ('left','center','right'):
-                    continue
-                kw = {}
-                loc, tobj, _ = tax._get_title(loc=loc)
-                for key in ('text', 'color', 'fontproperties'): # TODO: add to this?
-                    kw[key] = getattr(obj, 'get_' + key)()
-                tobj.update(kw)
-                tax._titles_dict[loc] = tobj
-                obj.set_text('')
-        # Push title above tick marks -- this is known matplotlib problem,
-        # but especially annoying with top panels!
-        # TODO: Make sure this is robust. Seems 'default' is returned usually
-        # when tick label sides is actually *both*.
-        pad = 0
-        pos = tax.xaxis.get_ticks_position()
-        labs = tax.xaxis.get_ticklabels()
-        if pos == 'default' or (pos == 'top' and not len(labs)) or (
-            pos == 'unknown' and getattr(tax, '_side', None) == 'top'
-            and not len(labs)):
-            pad = self.yaxis.get_tick_padding()
-        tax._set_title_offset_trans(self._title_pad + pad)
 
     def _update_title(self, obj, **kwargs):
         """Redraws title if updating with input keyword args failed."""
@@ -942,7 +949,7 @@ class Axes(maxes.Axes):
         length = units(_notNone(length, rc['colorbar.length']))/width
         width = units(_notNone(width, rc['colorbar.width']))/height
         pad = units(_notNone(pad, rc['colorbar.axespad']))
-        xpad, ypar = pad/width, pad/height
+        xpad, ypad = pad/width, pad/height
         kwargs.setdefault('extendsize', extend)
         # Tick location handling
         tickloc = kwargs.pop('tickloc', None)
@@ -1055,10 +1062,11 @@ class Axes(maxes.Axes):
             return ax.legend(*args, **kwargs)
         return wrappers.legend_wrapper(ax, *args, loc=loc, **kwargs)
 
-    def draw(self, *args, **kwargs):
+    def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
         self._draw_auto_legends_colorbars()
-        super().draw(*args, **kwargs)
+        self._reassign_title()
+        super().draw(renderer, *args, **kwargs)
 
     def get_size_inches(self):
         """Returns the width and the height of the axes in inches."""
@@ -1067,11 +1075,12 @@ class Axes(maxes.Axes):
         height = height*abs(self.get_position().height)
         return width, height
 
-    def get_tightbbox(self, *args, **kwargs):
+    def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated, and stores the bounding box as an attribute."""
         self._draw_auto_legends_colorbars()
-        bbox = super().get_tightbbox(*args, **kwargs)
+        self._reassign_title()
+        bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
         return bbox
 
@@ -2155,7 +2164,7 @@ class CartesianAxes(Axes):
         self._dualy_scale = (offset, scale)
         return ax
 
-    def draw(self, *args, **kwargs):
+    def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
@@ -2166,9 +2175,9 @@ class CartesianAxes(Axes):
         self._alty_overrides()
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
-        super().draw(*args, **kwargs)
+        super().draw(renderer, *args, **kwargs)
 
-    def get_tightbbox(self, *args, **kwargs):
+    def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated."""
         self._datex_rotate()
@@ -2176,7 +2185,7 @@ class CartesianAxes(Axes):
         self._dualy_lock()
         self._altx_overrides()
         self._alty_overrides()
-        return super().get_tightbbox(*args, **kwargs)
+        return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
         """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` and intelligently
