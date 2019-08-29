@@ -201,7 +201,6 @@ several of these maps merged into one, and the second is just one map.
     axs.format(xticks='none', yticks='none', suptitle='Monochromatic PerceptuallyUniformColormaps')
     for ax,title in zip(axs, ['Three monochromatic colormaps', 'One monochromatic colormap']):
         ax.format(title=title)
-    # Breakdowns
     f = plot.show_channels(cmap1, cmap2, axwidth=1.2, rgb=False)
 
 
@@ -282,7 +281,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2, colorbars='b', span=False)
+    f, axs = plot.subplots(ncols=2, axwidth=2, panels='b', span=False)
     data = np.random.rand(100,100).cumsum(axis=1)
     # Make colormap, save as "test1.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
@@ -480,7 +479,7 @@ details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, colorbars='b', share=0, axwidth=2.2, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, panels='b', share=0, axwidth=2.2, aspect=1.5)
     data = (20*np.random.rand(10,21)-10).cumsum(axis=0)
     # Example 1
     ax = axs[0]
@@ -598,7 +597,7 @@ by the `~proplot.styletools.ColorCacheDict` class.
     np.random.shuffle(idxs)
     for idx in idxs:
         h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=(cmap, idx),
-                    label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols':1}, panel_kw={'width':0.8})
+                    label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols':1})
     ax.colorbar(m, loc='ul', locator=0.2, label='colormap')
     ax.format(title='Drawing from the Solar colormap', grid=True)
     # Drawing from color cycle
@@ -607,15 +606,14 @@ by the `~proplot.styletools.ColorCacheDict` class.
     np.random.shuffle(idxs)
     for idx in idxs:
         h = ax.plot((np.random.rand(20)-0.4).cumsum(), lw=5, color=('qual1', idx),
-                    label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols':1}, panel_kw={'width':0.8})
+                    label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols':1})
     ax.format(title='Drawing from the ggplot color cycle')
     axs.format(xlocator='null', abc=True, abcloc='ur', abcformat='A.',
                suptitle='Getting individual colors from colormaps and cycles')
 
 
 
-
-.. image:: tutorial/tutorial_145_1.svg
+.. image:: tutorial/tutorial_145_0.svg
 
 
 Font selection

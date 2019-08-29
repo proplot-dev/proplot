@@ -76,6 +76,7 @@ labels.
 
 .. code:: ipython3
 
+    # ProPlot API
     import proplot as plot
     import numpy as np
     data = 2*(np.random.rand(100,5)-0.5).cumsum(axis=0)
@@ -299,7 +300,8 @@ and :ref:`On-the-fly axes panels`.
 
 
 
-.. image:: tutorial/tutorial_16_1.svg
+
+.. image:: tutorial/tutorial_16_2.svg
 
 
 .. code:: ipython3

@@ -1583,7 +1583,7 @@ def cycle_wrapper(self, func, *args,
     # Add colorbar and/or legend
     if colorbar:
         # Add handles
-        ax, loc = self._inset_or_panel_loc(colorbar, mode='colorbar', **panel_kw)
+        ax, loc = self._inset_or_panel_loc(colorbar, **panel_kw)
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar')
         if loc not in ax._auto_colorbar:
@@ -1598,7 +1598,7 @@ def cycle_wrapper(self, func, *args,
         ax._auto_colorbar_kw[loc].update(colorbar_kw)
     if legend:
         # Add handles
-        ax, loc = self._inset_or_panel_loc(legend, mode='legend', **panel_kw)
+        ax, loc = self._inset_or_panel_loc(legend, **panel_kw)
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.legend')
         if loc not in ax._auto_legend:
@@ -2009,7 +2009,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
 
     # Add colorbar
     if colorbar:
-        ax, loc = self._inset_or_panel_loc(colorbar, mode='colorbar', **panel_kw)
+        ax, loc = self._inset_or_panel_loc(colorbar, **panel_kw)
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar.')
         if 'label' not in colorbar_kw and self.figure._auto_format:

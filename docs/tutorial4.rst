@@ -5,21 +5,22 @@ It is common to need colorbars and legends along the outside edge of
 *individual axes* or on the inner edge of the *figure*. It is also
 common to need “panels” for plotting secondary 1-dimensional datasets or
 summary statistics next to a larger subplot. ProPlot satisfies both of
-these needs with the `~proplot.axes.PanelAxes` class.
+these needs with the `~proplot.axes.PanelAxes` class, which can be
+generated with the `~proplot.subplots.subplots` and
+`~proplot.axes.Axes.panel_axes` functions.
 
-`~proplot.axes.PanelAxes` are constructed with the
-`~proplot.subplots.subplots` and `~proplot.axes.Axes.panel_axes`
-functions, and have special `~proplot.axes.PanelAxes.colorbar` and
+`~proplot.axes.PanelAxes` have special
+`~proplot.axes.PanelAxes.colorbar` and
 `~proplot.axes.PanelAxes.legend` methods.
 `~proplot.axes.PanelAxes.colorbar` *fills* the panel with a colorbar –
 that is, the panel is used as the ``cax`` argument in the call to
-`~matplotlib.figure.Figure.colorbar`.
-`~proplot.axes.PanelAxes.legend` *fills* the panel with a legend –
-that is, a legend is drawn in the center, and the axes background and
-spines are hidden.
+`~matplotlib.figure.Figure.colorbar`, and its default width is
+changed. `~proplot.axes.PanelAxes.legend` *fills* the panel with a
+legend – that is, a legend is drawn in the center, and the axes
+background and spines are hidden.
 
-On-the-fly axes panels
-----------------------
+On-the-fly panels
+-----------------
 
 On-the-fly panels are a great way to draw colorbars and legends along
 the edges of axes. There are three ways to generate and *fill* an
@@ -84,14 +85,6 @@ each panel on-the-fly would be cumbersome. That’s why
 panel properties, use the ``axpanel_kw`` or ``axpanels_kw`` dictionary
 keyword args. See `~proplot.subplots.subplots` for details.
 
-If you intend to fill the bulk-generated panels with *colorbars*, you
-can use the ``axcolorbar``, ``axcolorbars``, ``axcolorbar_kw``, or
-``axcolorbars_kw`` keyword args instead of ``axpanel``, etc. The
-behavior is identical, except the *default* panel width is more
-appropriate for colorbars. Similarly, if you intend to fill the panels
-with *legends*, you should use the ``axlegend``, ``axlegends``,
-``axlegend_kw``, and ``axlegends_kw`` keyword args.
-
 The below examples demonstrate a few more panel features. To draw panels
 “flush” against the subplot, use the ``bflush``, ``tflush``, ``lflush``,
 and ``rflush`` keyword args. If you want to disable “axis sharing” with
@@ -155,7 +148,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, colorbar='br', barray=[1,2,2])
+    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2, panel='br', barray=[1,2,2])
     m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
     axs.format(suptitle='Figure panels demo', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
     f.bpanel[0].colorbar(m, label='label', ticks=0.5)
@@ -175,7 +168,7 @@ instance as the attributes ``bottompanel``, ``leftpanel``, and
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=4, axwidth=1.3, colorbar='b', barray=[1,1,2,2], share=0, wspace=0.3)
+    f, axs = plot.subplots(ncols=4, axwidth=1.3, panel='b', barray=[1,1,2,2], share=0, wspace=0.3)
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
     cycle = plot.colors('grays', 5)
@@ -220,7 +213,7 @@ the top.
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots(nrows=2, axwidth='4cm', share=0)
-    axs.panel_axes('l', mode='colorbar', stack=3) # subplots(..., axcolorbars='l') also works
+    axs.panel_axes('l', stack=3) # subplots(..., axpanels='l') also works
     axs.panel_axes('r', stack=2, space=0, sep=0, width=0.5) # subplots(..., axpanels='r') also works
     axs[0].format(title='Stacked panels demo', titleweight='bold')
     # Draw stuff in axes
@@ -296,19 +289,17 @@ various keyword args accepted by this wrapper.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(share=0, ncols=2, colorbar='b')
-    data = (np.random.rand(12,10)-0.45).cumsum(axis=0)
+    f, axs = plot.subplots(share=0, ncols=2, panel='b')
     ax = axs[0]
+    data = 1 + (np.random.rand(12,10)-0.45).cumsum(axis=0)
     cycle = plot.Cycle('algae')
     hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'14em', 'label':'numeric values'})
-    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='alt numeric values',
-                 ticks=2, edgecolor='gray7', linewidth=1)
+    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='alt numeric values', ticks=2)
     ax = axs[1]
     m = ax.contourf(data.T, extend='both', cmap='algae')
-    f.bpanel.colorbar(m, length=0.6,  label='figure colorbar', labelweight='bold',
-                tickloc='bottom', grid=True)
-    ax.colorbar(m, loc='ul', length=1.5, tickminor=True, minorticks=0.2, extendrect=True,
-                label='inset colorbar', labelcolor='orange9', labelweight='bold',
+    f.bpanel.colorbar(m, length=0.6,  label='flipped tick location', tickloc='top', grid=True)
+    ax.colorbar(m, loc='ul', length=1, ticks=0.5, tickminor=True, extendrect=True,
+                label='changing colors', labelcolor='gray7', labelweight='bold',
                 linewidth=1, edgecolor='gray7', ticklabelcolor='gray7', alpha=0.5)
     axs.format(suptitle='Colorbar formatting demo', xlabel='xlabel', ylabel='ylabel')
 
@@ -347,7 +338,7 @@ and modify legend text properties and handle properties. See
         h1 = axs[0].plot(data, lw=4, label=label, legend='ul',
                          legend_kw={'order':'F', 'title':'column major'}) # add to legend in upper left
         hs1.extend(h1)
-        h2 = axs[1].plot(data, lw=4, label=label, legend='r', cycle='floral', panel_kw={'width':0.5},
+        h2 = axs[1].plot(data, lw=4, label=label, legend='r', cycle='floral',
                          legend_kw={'ncols':1, 'frame':False, 'title':'no frame'}) # add to legend in right panel
         hs2.extend(h2)
     # Outer legends
@@ -361,7 +352,6 @@ and modify legend text properties and handle properties. See
 
 
 
-
-.. image:: tutorial/tutorial_100_1.svg
+.. image:: tutorial/tutorial_100_0.svg
 
 

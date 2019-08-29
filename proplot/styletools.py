@@ -2366,7 +2366,7 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     fig, axs = subplots(
         array=array, axwidth=axwidth, span=False, share=1,
         aspect=aspect, axpad='1em',
-        colorbar='b', bstack=len(args), barray=[0,1,1,1,1,0],
+        panel='b', bstack=len(args), barray=[0,1,1,1,1,0],
         )
     labels = (
         'Hue', 'Chroma', 'Luminance',
