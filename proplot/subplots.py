@@ -922,7 +922,7 @@ class Figure(mfigure.Figure):
         self._subplots_geometry()
 
     @_counter
-    def _add_panel(self, ax, side, order='C', **kwargs):
+    def _panel_axes(self, ax, side, order='C', **kwargs):
         """Hidden method that powers `~proplot.axes.panel_axes`. Makes more sense
         to define in subplots, because it does a bunch of alignment steps
         that rely on the figure instance."""
@@ -2037,7 +2037,7 @@ def subplots(array=None, ncols=1, nrows=1,
             reg = re.compile(f'^[{offsides}]({"|".join(names)})$')
             ikw = {key:value for key,value in panels_kw.items() if not reg.match(key)}
             keys.update(ikw.keys())
-            fig._add_panel(ax, s, order=order, **ikw)
+            fig._panel_axes(ax, s, order=order, **ikw)
         # Warning message
         jkw = {key:value for key,value in panels_kw.items() if key not in keys}
         if jkw:

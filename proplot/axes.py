@@ -1306,7 +1306,7 @@ class Axes(maxes.Axes):
         `~proplot.subplots.axes_grid` of `~proplot.axes.PanelAxes`
             The panel axes or stack of panel axes.
         """
-        return self.figure._add_panel(self, *args, **kwargs)
+        return self.figure._panel_axes(self, *args, **kwargs)
 
     panel = panel_axes
     """Alias for `~Axes.panel_axes`."""
