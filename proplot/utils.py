@@ -177,8 +177,6 @@ def units(value, numeric='in'):
     """
     # Loop through arbitrary list, or return None if input was None (this
     # is the exception).
-    if value is None:
-        return value
     if not np.iterable(value) or isinstance(value, str):
         singleton = True
         values = (value,)
@@ -226,7 +224,7 @@ def units(value, numeric='in'):
         raise ValueError(f'Invalid numeric unit {numeric}. Valid units are {", ".join(unit_dict.keys())}.')
     result = []
     for value in values:
-        if isinstance(value, Number):
+        if value is None or isinstance(value, Number):
             result.append(value)
             continue
         elif not isinstance(value, str):

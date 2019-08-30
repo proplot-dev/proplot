@@ -501,8 +501,7 @@ class Axes(maxes.Axes):
         if level > 0:
             self.xaxis.label.set_visible(False)
         if level > 2:
-            for t in self.xaxis.get_ticklabels():
-                t.set_visible(False)
+            self.xaxis.set_major_formatter(mticker.NullFormatter())
 
     def _sharey_setup(self, sharey, level):
         """Sets up shared axes. The input is the 'parent' axes, from which
@@ -527,8 +526,7 @@ class Axes(maxes.Axes):
         if level > 0:
             self.yaxis.label.set_visible(False)
         if level > 2:
-            for t in self.yaxis.get_ticklabels():
-                t.set_visible(False)
+            self.yaxis.set_major_formatter(mticker.NullFormatter())
 
     def _share_panels_setup(self):
         """Sets up axis sharing between main subplots and panels."""
@@ -1811,7 +1809,7 @@ class CartesianAxes(Axes):
                     ylabelloc = 'left'
 
             # Begin loop
-            for (name, axis,
+            for (xy, axis,
                 label, color, ticklen,
                 margin, bounds,
                 tickloc, spineloc,
@@ -1849,11 +1847,11 @@ class CartesianAxes(Axes):
                         ('log','logit','inverse','symlog')):
                         formatter = 'simple'
                     scale, args, kw = axistools.Scale(scale, **scale_kw)
-                    getattr(self, f'set_{name}scale')(scale, *args, **kw)
+                    getattr(self, f'set_{xy}scale')(scale, *args, **kw)
                 # Axis limits
                 # NOTE: 3.1+ has axis.set_inverted(), below is from source code
                 if lim is not None:
-                    getattr(self, f'set_{name}lim')(lim)
+                    getattr(self, f'set_{xy}lim')(lim)
                 if reverse:
                     lo, hi = axis.get_view_interval()
                     axis.set_view_interval(
@@ -1869,7 +1867,7 @@ class CartesianAxes(Axes):
                     })
                 if color is not None:
                     kw['color'] = color
-                sides = ('bottom','top') if name == 'x' else ('left','right')
+                sides = ('bottom','top') if xy == 'x' else ('left','right')
                 spines = [self.spines[s] for s in sides]
                 for spine,side in zip(spines,sides):
                     # Line properties
@@ -1895,7 +1893,7 @@ class CartesianAxes(Axes):
                             try:
                                 spine.set_position(spineloc)
                             except ValueError:
-                                raise ValueError(f'Invalid {name} spine location {spineloc!r}. Options are {", ".join((*sides, "both", "neither"))}.')
+                                raise ValueError(f'Invalid {xy} spine location {spineloc!r}. Options are {", ".join((*sides, "both", "neither"))}.')
                     # Apply spine bounds
                     if bounds is not None and spine.get_visible():
                         spine.set_bounds(*bounds)
@@ -1913,7 +1911,7 @@ class CartesianAxes(Axes):
                     }
                 for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
                     # Tick properties
-                    kw_ticks = rc.category(name + 'tick.' + which)
+                    kw_ticks = rc.category(xy + 'tick.' + which)
                     if kw_ticks is None:
                         kw_ticks = {}
                     else:
@@ -1976,7 +1974,7 @@ class CartesianAxes(Axes):
                 kw = rc.fill({
                     'labelcolor': 'tick.labelcolor', # new props
                     'labelsize': 'tick.labelsize',
-                    'color': name + 'tick.color',
+                    'color': xy + 'tick.color',
                     })
                 if color:
                     kw['color'] = color
@@ -1986,9 +1984,9 @@ class CartesianAxes(Axes):
                     kw['pad'] = 1 # ticklabels should be much closer
                 if ticklabeldir == 'in': # put tick labels inside the plot
                     tickdir = 'in'
-                    pad = (rc.get(name + 'tick.major.size')
-                           + rc.get(name + 'tick.major.pad')
-                           + rc.get(name + 'tick.labelsize'))
+                    pad = (rc.get(xy + 'tick.major.size')
+                           + rc.get(xy + 'tick.major.pad')
+                           + rc.get(xy + 'tick.labelsize'))
                     kw['pad'] = -pad
                 if tickdir is not None:
                     kw['direction'] = tickdir
@@ -2002,7 +2000,7 @@ class CartesianAxes(Axes):
                     })
                 if rotation is not None:
                     kw = {'rotation':rotation}
-                    if name == 'x':
+                    if xy == 'x':
                         self._datex_rotated = True
                         if rotation not in (0,90,-90):
                             kw['ha'] = ('right' if rotation > 0 else 'left')
@@ -2010,7 +2008,7 @@ class CartesianAxes(Axes):
                     t.update(kw)
                 # Margins
                 if margin is not None:
-                    self.margins(**{name: margin})
+                    self.margins(**{xy: margin})
 
                 # Axis label updates
                 # NOTE: This has to come after set_label_position, or ha or va
@@ -2043,8 +2041,13 @@ class CartesianAxes(Axes):
                     axis.set_minor_locator(axistools.Locator(tickminorlocator, **minorlocator_kw))
 
                 # Major and minor formatter
+                # NOTE: Only reliable way to disable ticks labels and then
+                # restore them is by messing with the formatter, *not* setting
+                # labelleft=False, labelright=False, etc. Check for this here
                 fixedformatfix = False
-                if formatter is not None or tickrange is not None:
+                if formatter is not None or tickrange is not None and not (
+                    isinstance(axis.get_major_formatter(), mticker.NullFormatter)
+                    and getattr(self, '_share' + xy)):
                     # Tick range
                     if tickrange is not None:
                         if formatter not in (None,'auto'):
@@ -2055,8 +2058,12 @@ class CartesianAxes(Axes):
                     if formatter in ('date','concise'):
                         locator = axis.get_major_locator()
                         formatter_kw.setdefault('locator', locator)
-                    formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
-                    axis.set_major_formatter(formatter)
+                    if (isinstance(axis.get_major_formatter(), mticker.NullFormatter)
+                        and getattr(self, '_share' + xy)):
+                        pass # this is a shared axis with disabled ticks
+                    else:
+                        formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
+                        axis.set_major_formatter(formatter)
                     if isinstance(formatter, mticker.FixedFormatter): # if locator is MultipleLocator, first tick gets cut off!
                         fixedformatfix = True
                 axis.set_minor_formatter(mticker.NullFormatter())
@@ -2069,7 +2076,7 @@ class CartesianAxes(Axes):
                 #   have tick_values method, so we just call them.
                 if fixticks or fixedformatfix or bounds is not None or axis.get_scale() == 'cutoff':
                     if bounds is None:
-                        bounds = getattr(self, f'get_{name}lim')()
+                        bounds = getattr(self, f'get_{xy}lim')()
                     locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                     axis.set_major_locator(locator)
                     locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
@@ -2327,57 +2334,6 @@ class PanelAxes(CartesianAxes):
         getattr(axis, 'tick_' + side)() # sets tick and tick label positions intelligently
         axis.set_label_position(side)
 
-    def _resize(self, width, mode):
-        """Modifies the panel width in case it is being "filled" by a
-        colorbar or legend. The input is the user input width (may be ``None``)
-        and the mode, one of ``'colorbar'`` or ``'legend'``."""
-        # Initial stuff
-        s = self._side[0]
-        wh = ('w' if s in 'lr' else 'h')
-        xy = ('x' if s in 'lr' else 'y')
-        ixy = ('y' if s in 'lr' else 'x')
-        subplots_orig_kw = self.figure._subplots_orig_kw
-        subplots_kw = self.figure._subplots_kw
-        istack, _ = self._range_gridspec(xy, False) # index in panel stack
-        irange = self._range_gridspec(xy, True)
-        jrange = self._range_gridspec(ixy, True)
-        iratio = irange[0]
-
-        # Set new widths, taking care to obey user input widths!
-        widths_orig = subplots_orig_kw[wh + 'widths']
-        iwidths_orig = widths_orig[iratio]
-        if iwidths_orig[istack] is None or width is not None:
-            iwidths_orig[istack] = units(width)
-        width = units(_notNone(iwidths_orig[istack], rc['subplots.' + mode + 'width']))
-
-        # Sync all gridspecs on the same side
-        for ax in self.figure._iter_axes():
-            if ax._range_gridspec(xy, True) != irange:
-                continue
-            gridspec = ax.get_subplotspec().get_gridspec()
-            ratios = getattr(gridspec, 'get_' + wh + 'ratios')()
-            ratios[2*istack] = width
-
-        # Update and apply
-        subplots_kw[wh + 'ratios'][iratio] = sum(ratios)
-        self.figure._subplots_geometry()
-
-        # Undo action of _sharex_setup and _sharey_setup
-        for ax in self.figure._iter_axes():
-            if (ax._range_gridspec(xy, True) != irange
-                or ax._range_gridspec(ixy, True) != jrange):
-                continue
-            for axis,parent,grouper in zip(
-                (ax.xaxis, ax.yaxis),
-                ('_sharex', '_sharey'),
-                (ax._shared_x_axes, ax._shared_y_axes)):
-                if getattr(ax, parent) is self:
-                    setattr(ax, parent, None)
-                    grouper.remove(self)
-                    axis.label.set_visible(True)
-                    for t in axis.get_ticklabels():
-                        t.set_visible(True)
-
     def legend(self, *args, fill=True, width=None, **kwargs):
         """"
         Fills the panel with a legend by adding a centered legend and
@@ -2404,7 +2360,7 @@ class PanelAxes(CartesianAxes):
         # Hide content
         # TODO: Make panel size dependent on legend width; currently
         # just use small number and let tight layout allocate space
-        self._resize(width, 'legend')
+        self.figure._panel_resize(self, width, 'legend')
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
@@ -2467,7 +2423,7 @@ class PanelAxes(CartesianAxes):
             return super().colorbar(*args, width=width, length=length, **kwargs)
         # Hide content and resize panel
         # NOTE: Do not run self.clear in case we want title above this
-        self._resize(width, 'colorbar')
+        self.figure._panel_resize(self, width, 'colorbar')
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
