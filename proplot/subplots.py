@@ -745,10 +745,8 @@ class Figure(mfigure.Figure):
         instance. If ``None``, renderer is inferred from
         `~matplotlib.figure.Figure.canvas.get_renderer`."""
         # Initial stuff
-        # NOTE: Critical that we also get tight bounding box
         axs = self._iter_axes()
-        for ax in self._iter_axes():
-            ax._draw_auto_legends_colorbars()
+        obox = self.bbox_inches # original bbox
         bbox = self.get_tightbbox(renderer)
         gridspec = self._main_gridspec
         subplots_kw = self._subplots_kw
@@ -759,7 +757,6 @@ class Figure(mfigure.Figure):
         # Tight box *around* figure
         # Get bounds from old bounding box
         pad = self._pad
-        obox = self.bbox_inches # original bbox
         l, b = bbox.xmin, bbox.ymin # left bottom margins
         r, t = obox.xmax - bbox.xmax, obox.ymax - bbox.ymax # top right margin *deltas*
         # Apply new bounds, permitting user overrides
