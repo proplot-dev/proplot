@@ -1770,6 +1770,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     labels_kw = labels_kw or {}
     colorbar_kw = colorbar_kw or {}
     panel_kw = panel_kw or {}
+    vmin = _notNone(vmin, norm_kw.pop('vmin', None))
+    vmax = _notNone(vmax, norm_kw.pop('vmax', None))
     # Parse args
     # Disable edgefix=True for certain keyword combos e.g. if user wants
     # white lines around their pcolor mesh.
