@@ -1674,11 +1674,13 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         levels are inferred using `~proplot.utils.edges`. This will override
         any `levels` input.
     vmin, vmax : float, optional
-        Used to determine level locations if `levels` is an integer and at
-        least one of `vmin` and `vmax` is provided. The levels will be
-        ``np.linspace(vmin, vmax, levels)``. If `vmin` was omitted but `vmax`
-        was provided, `vmin` is the data minimum. If `vmax` was omitted but
-        `vmin` was provided, `vmax` is the data maximum.
+        Used to determine level locations if `levels` is an integer. Actual
+        levels may not fall exactly on `vmin` and `vmax`, but the minimum
+        level will be no smaller than `vmin` and the maximum level will be
+        no larger than `vmax.
+
+        If `vmin` or `vmax` is not provided, the minimum and maximum data
+        values are used.
     locator : locator-spec, optional
         The locator used to determine level locations if `levels` or `values`
         is an integer and `vmin` and `vmax` were not provided. Passed to the
@@ -1861,54 +1863,56 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     # TODO: Add kernel density plot to hexbin!
     levels = _notNone(N, levels, rc['image.levels'], names=('N', 'levels'))
     if isinstance(levels, Number):
+        # Cannot infer counts a priori, so do nothing
         if name in ('hexbin',):
-            levels = None # cannot infer *counts*, so do nothing
+            levels = None
+        # Use the locator to determine levels
+        # Mostly copied from the hidden contour.ContourSet._autolev
         else:
-            # Set levels according to vmin and vmax
+            # Get the locator
             N = levels
-            if vmin is not None or vmax is not None:
-                vmin = _notNone(vmin, zmin)
-                vmax = _notNone(vmax, zmax)
-                levels = np.linspace(vmin, vmax, N)
-            # Use the locator to determine levels
-            # Mostly copied from the hidden contour.ContourSet._autolev
+            if locator is not None:
+                locator = axistools.Locator(locator, **locator_kw)
+            elif isinstance(norm, mcolors.LogNorm):
+                locator = mticker.LogLocator(**locator_kw)
             else:
-                # Get and apply the locator
-                if locator is not None:
-                    locator = axistools.Locator(locator, **locator_kw)
-                elif isinstance(norm, mcolors.LogNorm):
-                    locator = mticker.LogLocator(**locator_kw)
-                else:
-                    locator_kw = {**locator_kw}
-                    locator_kw.setdefault('symmetric', symmetric)
-                    locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
-                try:
-                    levels = locator.tick_values(zmin, zmax)
-                except RuntimeError:
-                    levels = np.linspace(zmin, zmax, N) # TODO: orig used N+1
-                # Trim excess levels the locator may have supplied.
-                if not locator_kw.get('symmetric', None):
-                    under, = np.where(levels < zmin)
-                    i0 = under[-1] if len(under) else 0
-                    over, = np.where(levels > zmax)
+                locator_kw = {**locator_kw}
+                locator_kw.setdefault('symmetric', symmetric)
+                locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
+            # Get locations
+            hardmin, hardmax = (vmin is not None), (vmax is not None)
+            vmin = _notNone(vmin, zmin)
+            vmax = _notNone(vmax, zmax)
+            try:
+                levels = locator.tick_values(vmin, vmax)
+            except RuntimeError:
+                levels = np.linspace(vmin, vmax, N) # TODO: orig used N+1
+            # Trim excess levels the locator may have supplied
+            if not locator_kw.get('symmetric', None):
+                i0, i1 = 0, len(levels) # defaults
+                under, = np.where(levels < vmin)
+                if len(under):
+                    i0 = under[-1]
+                    if hardmin or extend in ('min', 'both'):
+                        i0 += 1 # permit out-of-bounds data
+                over, = np.where(levels > vmax)
+                if len(over):
                     i1 = over[0] + 1 if len(over) else len(levels)
-                    if extend in ('min', 'both'):
-                        i0 += 1
-                    if extend in ('max', 'both'):
-                        i1 -= 1
-                    if i1 - i0 < 3:
-                        i0, i1 = 0, len(levels)
-                    levels = levels[i0:i1]
-                # Special consideration if not enough levels
-                nn = N//len(levels) # how many times more levels did we want than what we got?
-                if nn >= 2:
-                    olevels = norm(levels)
-                    nlevels = []
-                    for i in range(len(levels)-1):
-                        l1, l2 = olevels[i], olevels[i+1]
-                        nlevels.extend(np.linspace(l1, l2, nn+1)[:-1])
-                    nlevels.append(olevels[-1])
-                    levels = norm.inverse(nlevels)
+                    if hardmax or extend in ('max', 'both'):
+                        i1 -= 1 # permit out-of-bounds data
+                if i1 - i0 < 3:
+                    i0, i1 = 0, len(levels) # revert
+                levels = levels[i0:i1]
+            # Special consideration if not enough levels
+            nn = N//len(levels) # how many times more levels did we want than what we got?
+            if nn >= 2:
+                olevels = norm(levels)
+                nlevels = []
+                for i in range(len(levels)-1):
+                    l1, l2 = olevels[i], olevels[i+1]
+                    nlevels.extend(np.linspace(l1, l2, nn+1)[:-1])
+                nlevels.append(olevels[-1])
+                levels = norm.inverse(nlevels)
 
     # Norm settings
     # Generate BinNorm, and update child norm object with vmin and vmax from levels
