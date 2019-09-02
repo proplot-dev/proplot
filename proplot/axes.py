@@ -220,13 +220,13 @@ class Axes(maxes.Axes):
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
-        xy = ('x' if s in 'lr' else 'y')
+        x = ('x' if s in 'lr' else 'y')
         idx = (0 if s in 'lt' else 1) # which side of range to test
-        coord = self._range_gridspec(xy, True)[idx] # side for a particular axes
-        return [ax for ax in self.figure._main_axes
-                if ax._range_gridspec(xy, True)[idx] == coord]
+        coord = self._range_gridspec(x)[idx] # side for a particular axes
+        return [ax for ax in self.figure._axes_main
+                if ax._range_gridspec(x)[idx] == coord]
 
-    def _get_title(self, abc=False, loc=None):
+    def _get_title_props(self, abc=False, loc=None):
         """Returns standardized location name, position keyword arguments, and
         setting keyword arguments for the relevant title or a-b-c label at location
         `loc`."""
@@ -311,12 +311,13 @@ class Axes(maxes.Axes):
         if loc in ('left','right','top','bottom'):
             if isinstance(self, PanelAxes):
                 raise ValueError('Axes {self} is already a PanelAxes. Cannot add a panel to a panel.')
-            axs = getattr(self, loc + 'panel') # axes_grid of panels
-            if not axs:
-                axs = self.panel_axes(loc, **kwargs)
-            else:
-                if kwargs:
-                    warnings.warn(f'Ignoring panel keyword arg(s) {kwargs}. Panel already exists.')
+            axs = self.panel_axes(loc, **kwargs)
+            # axs = getattr(self, loc + 'panel') # axes_grid of panels
+            # if not axs:
+            #     axs = self.panel_axes(loc, **kwargs)
+            # else:
+            #     if kwargs:
+            #         warnings.warn(f'Ignoring panel keyword arg(s) {kwargs}. Panel already exists.')
             try:
                 ax = axs[idx]
             except IndexError:
@@ -338,37 +339,27 @@ class Axes(maxes.Axes):
             return bb
         return inset_locator
 
-    def _range_gridspec(self, mode, topmost):
+    def _range_gridspec(self, x):
         """Gets the column or row range for the axes. Use `topmost` to get
         properties for the main gridspec grid."""
         subplotspec = self.get_subplotspec()
-        if topmost:
-            subplotspec = subplotspec.get_topmost_subplotspec()
-        if mode == 'x':
-            _, _, _, _, col1, col2 = subplotspec.get_rows_columns()
-            return col1//2, col2//2 # corrects for 'space' gridspec locations
-        elif mode == 'y':
-            _, _, row1, row2, _, _ = subplotspec.get_rows_columns()
-            return row1//2, row2//2 # account for spaces
+        if x == 'x':
+            _, _, _, _, col1, col2 = subplotspec.get_active_rows_columns()
+            return col1, col2
         else:
-            raise ValueError(f'Invalid mode {mode!r}.')
+            _, _, row1, row2, _, _ = subplotspec.get_active_rows_columns()
+            return row1, row2
 
-    def _range_tightbbox(self, mode):
+    def _range_tightbbox(self, x):
         """Gets span of tight bounding box, including twin axes and panels
         which are not considered real children and so aren't ordinarily included in
         the tight bounding box calc. `~proplot.axes.Axes.get_tightbbox` caches
         tight bounding boxes when `~Figure.get_tightbbox` is called."""
         # TODO: Better resting for axes visibility
-        axs = self._iter_twins()
-        axs = [ax for ax in axs if ax._tight_bbox is not None]
-        if mode == 'x':
-            xs = np.array([(ax._tight_bbox.xmin, ax._tight_bbox.xmax) for ax in axs])
-            return xs[:,0].min(), xs[:,1].max()
-        elif mode == 'y':
-            ys = np.array([(ax._tight_bbox.ymin, ax._tight_bbox.ymax) for ax in axs])
-            return ys[:,0].min(), ys[:,1].max()
+        if x == 'x':
+            return self._tight_bbox.xmin, self._tight_bbox.xmax
         else:
-            raise ValueError(f'Invalid mode {mode!r}.')
+            return self._tight_bbox.ymin, self._tight_bbox.ymax
 
     def _reassign_suplabel(self, side):
         """Re-assigns the column and row labels to panel axes, if they exist.
@@ -417,7 +408,7 @@ class Axes(maxes.Axes):
                 if not obj.get_text() or loc not in ('left','center','right'):
                     continue
                 kw = {}
-                loc, tobj, _ = tax._get_title(loc=loc)
+                loc, tobj, _ = tax._get_title_props(loc=loc)
                 for key in ('text', 'color', 'fontproperties'): # TODO: add to this?
                     kw[key] = getattr(obj, 'get_' + key)()
                 tobj.update(kw)
@@ -769,7 +760,7 @@ class Axes(maxes.Axes):
             # Apply new settings
             # Also if a-b-c label was moved, remove previous one and update
             # text on new one, in case self._abc_text has not changed.
-            loc, obj, kw = self._get_title(abc=True)
+            loc, obj, kw = self._get_title_props(abc=True)
             iloc = self._abc_loc
             obj = self._update_title(obj, **kw)
             titles_dict[loc] = obj
@@ -793,7 +784,7 @@ class Axes(maxes.Axes):
         # NOTE: _update_title should never return new objects unless called
         # with *inner* titles... *outer* titles will just refresh, so we
         # don't need to re-assign the attributes or anything.
-        loc, obj, kw = self._get_title()
+        loc, obj, kw = self._get_title_props()
         if kw:
             for iloc,iobj in titles_dict.items():
                 if iloc is self._abc_loc:
@@ -803,7 +794,7 @@ class Axes(maxes.Axes):
         for ikey,ititle in kwargs.items():
             if not ikey[-5:] == 'title':
                 raise ValueError(f'format() got an unexpected keyword argument {ikey!r}.')
-            iloc, iobj, ikw = self._get_title(loc=ikey[:-5])
+            iloc, iobj, ikw = self._get_title_props(loc=ikey[:-5])
             if ititle is not None:
                 ikw['text'] = ititle
             if ikw:
@@ -1141,10 +1132,10 @@ class Axes(maxes.Axes):
         obj = self.pcolormesh(*args, **kwargs)
         xlocator, ylocator = None, None
         if hasattr(obj, '_coordinates'): # be careful in case private API changes! but this is only way to infer coordinates
-            xy = obj._coordinates
-            xy = (xy[1:,...] + xy[:-1,...])/2
-            xy = (xy[:,1:,:] + xy[:,:-1,:])/2
-            xlocator, ylocator = xy[0,:,0], xy[:,0,1]
+            coords = obj._coordinates
+            coords = (coords[1:,...] + coords[:-1,...])/2
+            coords = (coords[:,1:,:] + coords[:,:-1,:])/2
+            xlocator, ylocator = coords[0,:,0], coords[:,0,1]
         self.format(
             xgrid=False, ygrid=False, xtickminor=False, ytickminor=False,
             xlocator=xlocator, ylocator=ylocator,
@@ -1260,7 +1251,7 @@ class Axes(maxes.Axes):
         self._zoom = (rectpatch, connects)
         return (rectpatch, connects)
 
-    def panel_axes(self, *args, **kwargs):
+    def panel_axes(self, side, **kwargs):
         """
         Adds a single `~proplot.axes.PanelAxes` or a stack of panels, and
         returns an `~proplot.subplots.axes_grid` of the panel stack. Also
@@ -1284,9 +1275,9 @@ class Axes(maxes.Axes):
             the stack.  If float, units are inches. If string, units are
             interpreted by `~proplot.utils.units`.
         space, [lrbt]space : float or str or list thereof, optional
-            If passed, turns off `tightpanels`. Empty space between the main
-            subplot and the panel.  If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`.
+            Empty space between the main subplot and the panel.  If float,
+            units are inches. If string, units are interpreted by
+            `~proplot.utils.units`.
         share, [lrbt]space : bool, optional
             Whether to enable axis sharing between the *x* and *y* axes of the
             main subplot and the panel long axes for each panel in the stack.
@@ -1294,17 +1285,16 @@ class Axes(maxes.Axes):
             The number of optional "stacked" panels on the left, right, bottom,
             and top sides, respectively. Defaults to ``1``.
         sep, [lrbt]sep : float, str, or list thereof, optional
-            If passed, turns off `tightpanels`. The separation between stacked
-            panels. If float, units are inches.  If string, units are
-            interpreted by `~proplot.utils.units`. Ignored if the respecitve
-            `stack` keyword arg is None.
+            The separation between stacked panels. If float, units are inches.
+            If string, units are interpreted by `~proplot.utils.units`. Ignored
+            if the respecitve `stack` keyword arg is None.
 
         Returns
         -------
         `~proplot.subplots.axes_grid` of `~proplot.axes.PanelAxes`
             The panel axes or stack of panel axes.
         """
-        return self.figure._panel_axes(self, *args, **kwargs)
+        return self.figure._add_axes_panel(side, self, **kwargs)
 
     panel = panel_axes
     """Alias for `~Axes.panel_axes`."""
@@ -1356,36 +1346,13 @@ class Axes(maxes.Axes):
                 axs.append(ax)
         return axs
 
-    def _iter_twins(self):
-        """Iterates over axes and twin axes."""
-        axs = []
-        for iax in (self, self._altx_child, self._alty_child):
-            if not iax or not iax.get_visible():
-                continue
-            axs.append(iax)
-        return axs
-
-    def _iter_twins_panels(self, sides='lrbt'):
-        """Axes tight bounding boxes include child axes. This iterates over
-        the axes and objects not counted as child axes -- namely panels,
-        twin axes, and panel twin axes."""
-        axs = self._iter_twins()
-        if not ({*sides} <= {*'lrbt'}):
-            raise ValueError(f'Invalid sides {sides!r}.')
-        for s in sides:
-            for ax in getattr(self, s + 'panel'):
-                if not ax or not ax.get_visible():
-                    continue
-                axs.extend(ax._iter_twins())
-        return axs
-
 #-----------------------------------------------------------------------------#
 # Axes subclasses
 #-----------------------------------------------------------------------------#
-def _rcloc_to_stringloc(xy, string): # figures out string location
+def _rcloc_to_stringloc(x, string): # figures out string location
     """Gets *location string* from the *boolean* rc settings, for a given
     string prefix like ``'axes.spines'`` or ``'xtick'``."""
-    if xy == 'x':
+    if x == 'x':
         top = rc[f'{string}.top']
         bottom = rc[f'{string}.bottom']
         if top is None and bottom is None:
@@ -1398,7 +1365,7 @@ def _rcloc_to_stringloc(xy, string): # figures out string location
             return 'bottom'
         else:
             return 'neither'
-    elif xy == 'y':
+    elif x == 'y':
         left = rc[f'{string}.left']
         right = rc[f'{string}.right']
         if left is None and right is None:
@@ -1412,7 +1379,7 @@ def _rcloc_to_stringloc(xy, string): # figures out string location
         else:
             return 'neither'
     else:
-        raise ValueError(f'"xy" must equal "x" or "y".')
+        raise ValueError(f'"x" must equal "x" or "y".')
 
 class CartesianAxes(Axes):
     """
@@ -1499,6 +1466,8 @@ class CartesianAxes(Axes):
         elif self._altx_parent is not None: # this axes is the result of altx
             self.spines['bottom'].set_visible(False)
             self.spines['top'].set_visible(True)
+            self.spines['left'].set_visible(False)
+            self.spines['right'].set_visible(False)
             self.xaxis.tick_top()
             self.xaxis.set_label_position('top')
             self.yaxis.set_visible(False)
@@ -1514,6 +1483,8 @@ class CartesianAxes(Axes):
         elif self._alty_parent is not None:
             self.spines['left'].set_visible(False)
             self.spines['right'].set_visible(True)
+            self.spines['top'].set_visible(False)
+            self.spines['bottom'].set_visible(False)
             self.yaxis.tick_right()
             self.yaxis.set_label_position('right')
             self.xaxis.set_visible(False)
@@ -1809,7 +1780,7 @@ class CartesianAxes(Axes):
                     ylabelloc = 'left'
 
             # Begin loop
-            for (xy, axis,
+            for (x, axis,
                 label, color, ticklen,
                 margin, bounds,
                 tickloc, spineloc,
@@ -1847,11 +1818,11 @@ class CartesianAxes(Axes):
                         ('log','logit','inverse','symlog')):
                         formatter = 'simple'
                     scale, args, kw = axistools.Scale(scale, **scale_kw)
-                    getattr(self, f'set_{xy}scale')(scale, *args, **kw)
+                    getattr(self, f'set_{x}scale')(scale, *args, **kw)
                 # Axis limits
                 # NOTE: 3.1+ has axis.set_inverted(), below is from source code
                 if lim is not None:
-                    getattr(self, f'set_{xy}lim')(lim)
+                    getattr(self, f'set_{x}lim')(lim)
                 if reverse:
                     lo, hi = axis.get_view_interval()
                     axis.set_view_interval(
@@ -1867,7 +1838,7 @@ class CartesianAxes(Axes):
                     })
                 if color is not None:
                     kw['color'] = color
-                sides = ('bottom','top') if xy == 'x' else ('left','right')
+                sides = ('bottom','top') if x == 'x' else ('left','right')
                 spines = [self.spines[s] for s in sides]
                 for spine,side in zip(spines,sides):
                     # Line properties
@@ -1893,7 +1864,7 @@ class CartesianAxes(Axes):
                             try:
                                 spine.set_position(spineloc)
                             except ValueError:
-                                raise ValueError(f'Invalid {xy} spine location {spineloc!r}. Options are {", ".join((*sides, "both", "neither"))}.')
+                                raise ValueError(f'Invalid {x} spine location {spineloc!r}. Options are {", ".join((*sides, "both", "neither"))}.')
                     # Apply spine bounds
                     if bounds is not None and spine.get_visible():
                         spine.set_bounds(*bounds)
@@ -1911,7 +1882,7 @@ class CartesianAxes(Axes):
                     }
                 for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
                     # Tick properties
-                    kw_ticks = rc.category(xy + 'tick.' + which)
+                    kw_ticks = rc.category(x + 'tick.' + which)
                     if kw_ticks is None:
                         kw_ticks = {}
                     else:
@@ -1974,7 +1945,7 @@ class CartesianAxes(Axes):
                 kw = rc.fill({
                     'labelcolor': 'tick.labelcolor', # new props
                     'labelsize': 'tick.labelsize',
-                    'color': xy + 'tick.color',
+                    'color': x + 'tick.color',
                     })
                 if color:
                     kw['color'] = color
@@ -1984,9 +1955,9 @@ class CartesianAxes(Axes):
                     kw['pad'] = 1 # ticklabels should be much closer
                 if ticklabeldir == 'in': # put tick labels inside the plot
                     tickdir = 'in'
-                    pad = (rc.get(xy + 'tick.major.size')
-                           + rc.get(xy + 'tick.major.pad')
-                           + rc.get(xy + 'tick.labelsize'))
+                    pad = (rc.get(x + 'tick.major.size')
+                           + rc.get(x + 'tick.major.pad')
+                           + rc.get(x + 'tick.labelsize'))
                     kw['pad'] = -pad
                 if tickdir is not None:
                     kw['direction'] = tickdir
@@ -2000,7 +1971,7 @@ class CartesianAxes(Axes):
                     })
                 if rotation is not None:
                     kw = {'rotation':rotation}
-                    if xy == 'x':
+                    if x == 'x':
                         self._datex_rotated = True
                         if rotation not in (0,90,-90):
                             kw['ha'] = ('right' if rotation > 0 else 'left')
@@ -2008,7 +1979,7 @@ class CartesianAxes(Axes):
                     t.update(kw)
                 # Margins
                 if margin is not None:
-                    self.margins(**{xy: margin})
+                    self.margins(**{x: margin})
 
                 # Axis label updates
                 # NOTE: This has to come after set_label_position, or ha or va
@@ -2047,7 +2018,7 @@ class CartesianAxes(Axes):
                 fixedformatfix = False
                 if formatter is not None or tickrange is not None and not (
                     isinstance(axis.get_major_formatter(), mticker.NullFormatter)
-                    and getattr(self, '_share' + xy)):
+                    and getattr(self, '_share' + x)):
                     # Tick range
                     if tickrange is not None:
                         if formatter not in (None,'auto'):
@@ -2059,7 +2030,7 @@ class CartesianAxes(Axes):
                         locator = axis.get_major_locator()
                         formatter_kw.setdefault('locator', locator)
                     if (isinstance(axis.get_major_formatter(), mticker.NullFormatter)
-                        and getattr(self, '_share' + xy)):
+                        and getattr(self, '_share' + x)):
                         pass # this is a shared axis with disabled ticks
                     else:
                         formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
@@ -2076,7 +2047,7 @@ class CartesianAxes(Axes):
                 #   have tick_values method, so we just call them.
                 if fixticks or fixedformatfix or bounds is not None or axis.get_scale() == 'cutoff':
                     if bounds is None:
-                        bounds = getattr(self, f'get_{xy}lim')()
+                        bounds = getattr(self, f'get_{x}lim')()
                     locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                     axis.set_major_locator(locator)
                     locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
@@ -2099,14 +2070,13 @@ class CartesianAxes(Axes):
             raise ValueError('This *is* a twin axes!')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharey=self, projection=self.name)
-        # Setup
-        # Some things we enforce every time draw is invoked, others not
         ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
         ax._altx_parent = self
         self._altx_overrides()
         ax._altx_overrides()
+        self.add_child_axes(ax)
         return ax
 
     def alty(self):
@@ -2126,6 +2096,7 @@ class CartesianAxes(Axes):
         ax._alty_parent = self
         self._alty_overrides()
         ax._alty_overrides()
+        self.add_child_axes(ax)
         return ax
 
     def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
@@ -2358,9 +2329,6 @@ class PanelAxes(CartesianAxes):
         if not fill:
             return super().legend(*args, **kwargs)
         # Hide content
-        # TODO: Make panel size dependent on legend width; currently
-        # just use small number and let tight layout allocate space
-        self.figure._panel_resize(self, width, 'legend')
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
@@ -2391,7 +2359,13 @@ class PanelAxes(CartesianAxes):
         else:
             raise ValueError(f'Invalid panel side {loc!r}.')
         kwargs['loc'] = loc
-        return wrappers.legend_wrapper(self, *args, **kwargs)
+        leg = wrappers.legend_wrapper(self, *args, **kwargs)
+
+        # Resize panel and return
+        # TODO: Make panel size dependent on legend width, and remove
+        # legwidth from .proplotrc
+        self.figure._resize_panel(self, width, 'legend')
+        return leg
 
     def colorbar(self, *args, fill=True, width=None, length=None, **kwargs):
         """"
@@ -2423,7 +2397,6 @@ class PanelAxes(CartesianAxes):
             return super().colorbar(*args, width=width, length=length, **kwargs)
         # Hide content and resize panel
         # NOTE: Do not run self.clear in case we want title above this
-        self.figure._panel_resize(self, width, 'colorbar')
         for s in self.spines.values():
             s.set_visible(False)
         self.xaxis.set_visible(False)
@@ -2477,6 +2450,9 @@ class PanelAxes(CartesianAxes):
         ticklocation = kwargs.pop('ticklocation', None) or ticklocation
         kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
         cbar = wrappers.colorbar_wrapper(ax, *args, **kwargs)
+
+        # Resize panel and return
+        self.figure._resize_panel(self, width, 'colorbar')
         return cbar
 
 class ProjectionAxes(Axes):
@@ -2746,7 +2722,7 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 self.set_theta_direction(thetadir)
 
             # Iterate
-            for (xy, name, axis,
+            for (x, name, axis,
                 min_, max_,
                 locator, formatter,
                 locator_kw, formatter_kw,
@@ -2780,7 +2756,7 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 # Grid and grid label settings
                 # NOTE: Not sure if polar lines inherit tick or grid props
                 kw = rc.fill({
-                    'color': xy + 'tick.color',
+                    'color': x + 'tick.color',
                     'labelcolor': 'tick.labelcolor', # new props
                     'labelsize': 'tick.labelsize',
                     'grid_color': 'grid.color',
