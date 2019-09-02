@@ -767,112 +767,6 @@ class Figure(mfigure.Figure):
         self._gridspec_main = FlexibleGridSpec(self, **(gridspec_kw or {}))
         self.suptitle('') # add _suptitle attribute
 
-    def _add_figure_panels(self, side, mode='panel', **kwargs):
-        """Adds figure panels. Also modifies the panel attribute stored
-        on the figure to include these panels."""
-        # Interpret args
-        # NOTE: Axis sharing not implemented for figure panels, 99% of the
-        # time this is just used as construct for adding global colorbars and
-        # legends, really not worth implementing axis sharing
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        side = _side_translate[s]
-        kwargs, kworig = _panels_kwargs(s, kwargs, mode=mode, figure=True)
-        array = kwargs[s + 'array']
-        width = kwargs[s + 'width']
-        space = kwargs[s + 'space']
-        width_orig = kworig[s + 'width']
-        space_orig = kworig[s + 'space']
-
-        # Modify existing geometry, and verify validity of the array arg
-        # using boolean 1D arrays indicating where panels are present for
-        # the dimension *spanned* by the new panel
-        subplots_kw = self._subplots_kw
-        if s in 'lr':
-            panels = subplots_kw['wpanels']
-            nacross, nalong = subplots_kw['ncols'], subplots_kw['nrows']
-        else:
-            panels = subplots_kw['hpanels']
-            nacross, nalong = subplots_kw['nrows'], subplots_kw['ncols']
-        panels = np.array([bool(s) for s in panels])
-        idxs, = np.where(~panels)
-        if array is None:
-            array = [1]*len(idxs)
-        if not np.iterable(array) or len(array) != len(idxs):
-            raise ValueError(f'Need length-{len(idxs)} list of integers for "{s}array", got {s}array={array!r}.')
-        iratio = (0 if s in 'lt' else nacross)
-        gridspec = self._change_gridspec(side, iratio,
-                width, space, width_orig, space_orig,
-                figure=True,
-                )
-
-        # Pad array so it spans existing panel slots
-        # NOTE: Does not matter if have e.g. [1, 0, 0, 1, 2, 0, 0, 2], because
-        # panels are drawn based on minimum and maximum indices
-        array_new = np.zeros((nalong,))
-        array_new[idxs] = array
-
-        # Get keyword args and gridspec args
-        # Loop through unique numbers
-        paxs = []
-        for num in np.unique(array_new).flat:
-            # Get subplotspec and insert gridspec
-            if num == 0:
-                continue
-            idx, = np.where(array_new == num)
-            idx1 = slice(min(idx), max(idx)+1) # ignores axes panel slots
-            idx2 = -1*(s in 'br')
-            if s in 'bt':
-                idx1, idx2 = idx2, idx1
-            # Draw axes
-            with self._unlock():
-                ipax = self.add_subplot(gridspec[idx1,idx2],
-                    projection='panel',
-                    side=side, share=False,
-                    )
-            paxs += [ipax]
-
-        # Add to panel attributes
-        pgrid = getattr(self, '_' + side + 'panel')
-        # Create brand new axes_grid
-        if not pgrid:
-            order = self._order
-            if (s in 'tb' and order == 'C') or (s in 'lr' and order != 'C'):
-                n = 1
-            else:
-                n = len(paxs)
-            pgrid = axes_grid(paxs, n=n, order=order)
-            setattr(self, '_' + side + 'panel', pgrid)
-        # Modify existing axes_grid
-        else:
-            # Possible insertion modes
-            # The names are relevant for C-major order
-            order = pgrid._order
-            top    = (s == 't' and order == 'C') or (s == 'l' and order == 'F')
-            bottom = (s == 'b' and order == 'C') or (s == 'r' and order == 'F')
-            left   = (s == 'l' and order == 'C') or (s == 't' and order == 'F')
-            right  = (s == 'r' and order == 'C') or (s == 'b' and order == 'F')
-            # Insert into lists
-            # NOTE: Can get weird grids for weird geometry, e.g. 3 figure
-            # panels side-by-side on top of one figure panel
-            n = pgrid._n
-            for i,ax in enumerate(paxs):
-                if top:
-                    pgrid.insert(0, ax)
-                elif bottom:
-                    pgrid.append(ax)
-                elif left:
-                    pgrid.insert(i*n + i, ax) # plus i offsets after adding stuff
-                elif right:
-                    pgrid.insert((i + 1)*n - 1 + i, ax)
-            if left or right: # fastest-moving dim length increased by 1
-                n += 1
-            pgrid._n = n
-
-        # Return axes_grid of just the axes drawn in this round
-        return axes_grid(paxs) # no 2D indexing
-
     @_counter
     def _add_axes_panel(self, side, ax, order='C', mode='panel', **kwargs):
         """Hidden method that powers `~proplot.axes.panel_axes`."""
@@ -945,6 +839,109 @@ class Figure(mfigure.Figure):
 
         # Return axes grid of just this axes
         return axes_grid([pax])
+
+    def _add_figure_panels(self, side, mode='panel', **kwargs):
+        """Adds figure panels. Also modifies the panel attribute stored
+        on the figure to include these panels."""
+        # Interpret args
+        # TODO: Allow successive panels!
+        # NOTE: Axis sharing not implemented for figure panels, 99% of the
+        # time this is just used as construct for adding global colorbars and
+        # legends, really not worth implementing axis sharing
+        s = side[0]
+        if s not in 'lrbt':
+            raise ValueError(f'Invalid side {side!r}.')
+        side = _side_translate[s]
+        kwargs, kworig = _panels_kwargs(s, kwargs, mode=mode, figure=True)
+        array = kwargs[s + 'array']
+        width = kwargs[s + 'width']
+        space = kwargs[s + 'space']
+        width_orig = kworig[s + 'width']
+        space_orig = kworig[s + 'space']
+
+        # Modify existing geometry, and verify validity of the array arg
+        # using boolean 1D arrays indicating where panels are present for
+        # the dimension *spanned* by the new panel
+        subplots_kw = self._subplots_kw
+        if s in 'lr':
+            panels = subplots_kw['wpanels']
+            nacross, nalong = subplots_kw['ncols'], subplots_kw['nrows']
+        else:
+            panels = subplots_kw['hpanels']
+            nacross, nalong = subplots_kw['nrows'], subplots_kw['ncols']
+        panels = np.array([bool(s) for s in panels])
+        idxs, = np.where(~panels)
+        if array is None:
+            array = [1]*len(idxs)
+        if not np.iterable(array) or len(array) != len(idxs):
+            raise ValueError(f'Need length-{len(idxs)} list of integers for "{s}array", got {s}array={array!r}.')
+        iratio = (0 if s in 'lt' else nacross)
+        gridspec = self._change_gridspec(side, iratio,
+                width, space, width_orig, space_orig,
+                figure=True,
+                )
+
+        # Pad array so it spans existing panel slots
+        # NOTE: Does not matter if have e.g. [1, 0, 0, 1, 2, 0, 0, 2], because
+        # panels are drawn based on minimum and maximum indices
+        paxs = []
+        array_new = np.zeros((nalong,))
+        array_new[idxs] = array
+        # Get indices and draw axes
+        for num in np.unique(array_new).flat:
+            if num == 0:
+                continue
+            idx, = np.where(array_new == num)
+            idx1 = slice(min(idx), max(idx)+1) # ignores axes panel slots
+            idx2 = -1*(s in 'br')
+            if s in 'bt':
+                idx1, idx2 = idx2, idx1
+            with self._unlock():
+                ipax = self.add_subplot(gridspec[idx1,idx2],
+                    projection='panel',
+                    side=side, share=False,
+                    )
+            paxs += [ipax]
+
+        # Add to panel attributes
+        pgrid = getattr(self, '_' + side + 'panel')
+        # Create brand new axes_grid
+        if not pgrid:
+            order = self._order
+            if (s in 'tb' and order == 'C') or (s in 'lr' and order != 'C'):
+                n = 1
+            else:
+                n = len(paxs)
+            pgrid = axes_grid(paxs, n=n, order=order)
+            setattr(self, '_' + side + 'panel', pgrid)
+        # Modify existing axes_grid
+        else:
+            # Possible insertion modes
+            # The names are relevant for C-major order
+            order = pgrid._order
+            top    = (s == 't' and order == 'C') or (s == 'l' and order == 'F')
+            bottom = (s == 'b' and order == 'C') or (s == 'r' and order == 'F')
+            left   = (s == 'l' and order == 'C') or (s == 't' and order == 'F')
+            right  = (s == 'r' and order == 'C') or (s == 'b' and order == 'F')
+            # Insert into lists
+            # NOTE: Can get weird grids for weird geometry, e.g. 3 figure
+            # panels side-by-side on top of one figure panel
+            n = pgrid._n
+            for i,ax in enumerate(paxs):
+                if top:
+                    pgrid.insert(0, ax)
+                elif bottom:
+                    pgrid.append(ax)
+                elif left:
+                    pgrid.insert(i*n + i, ax) # plus i offsets after adding stuff
+                elif right:
+                    pgrid.insert((i + 1)*n - 1 + i, ax)
+            if left or right: # fastest-moving dim length increased by 1
+                n += 1
+            pgrid._n = n
+
+        # Return axes_grid of just the axes drawn in this round
+        return axes_grid(paxs) # no 2D indexing
 
     def _adjust_aspect(self):
         """Adjust average aspect ratio used for gridspec calculations. This
