@@ -34,9 +34,9 @@ __all__ = [
     ]
 
 # Xarray and pandas integration
-# These are 0.5s in load time! We just want to detect if input arrays already
-# belong to these types, which necessarily means user has already imported
-# module, so only load objects at that point!
+# These are 0.5s in load time! We just want to detect if *input arrays*
+# belong to these types, which necessarily means modules have already been
+# imported. So, delay these class definitions until user calls plot functions.
 ndarray = np.ndarray
 def _load_objects():
     global DataArray, DataFrame, Series, Index

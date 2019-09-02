@@ -1557,6 +1557,8 @@ class Figure(mfigure.Figure):
         # and cannot modify PDFPage or SVG renderer props inplace, so idea was
         # to override get_size_inches. But when get_size_inches is called, the
         # canvas has no renderer, so cannot apply tight layout yet!
+        for ax in self._iter_axes():
+            ax._draw_auto_legends_colorbars()
         self._adjust_aspect()
         self._align_axislabels(False)
         self._align_suplabels(renderer)
@@ -1588,6 +1590,8 @@ class Figure(mfigure.Figure):
         if hasattr(canvas, 'get_renderer'):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
+            for ax in self._iter_axes():
+                ax._draw_auto_legends_colorbars()
             self._adjust_aspect()
             self._align_axislabels(False)
             self._align_suplabels(renderer)

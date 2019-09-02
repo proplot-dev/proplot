@@ -293,7 +293,8 @@ class Axes(maxes.Axes):
             obj.set_transform(self.transAxes)
         return loc, obj, kw
 
-    def _inset_or_panel_loc(self, loc, **kwargs):
+    @staticmethod
+    def _inset_or_panel_loc(loc, **kwargs):
         """Translates location string `loc`, returns this axes or a panel axes
         and the translated location string. If it is a panel axes, returned
         location is ``'fill'``. If the panel does not exist, it is drawn,
@@ -305,25 +306,9 @@ class Axes(maxes.Axes):
             loc, idx = loc # e.g. ('r',2)
 
         # Try getting the panel, and translate location
-        ax = self
         if isinstance(loc, str):
             loc = _side_translate.get(loc, loc)
-        if loc in ('left','right','top','bottom'):
-            if isinstance(self, PanelAxes):
-                raise ValueError('Axes {self} is already a PanelAxes. Cannot add a panel to a panel.')
-            axs = self.panel_axes(loc, **kwargs)
-            # axs = getattr(self, loc + 'panel') # axes_grid of panels
-            # if not axs:
-            #     axs = self.panel_axes(loc, **kwargs)
-            # else:
-            #     if kwargs:
-            #         warnings.warn(f'Ignoring panel keyword arg(s) {kwargs}. Panel already exists.')
-            try:
-                ax = axs[idx]
-            except IndexError:
-                raise ValueError(f'Stack index {idx} for panel {loc!r} is invalid. You must make room for it with e.g. ax.panels({loc}stack=2).')
-            loc = 'fill'
-        elif loc is True:
+        if loc is True:
             loc = None
         elif isinstance(loc, (str, Integral)):
             loc = _loc_translate.get(loc, loc) # may still be invalid
@@ -914,29 +899,26 @@ class Axes(maxes.Axes):
         return hs
 
     def colorbar(self, *args, loc=None, pad=None,
-        length=None, width=None, xspace=None, frame=None, frameon=None,
+        length=None, width=None, space=None, frame=None, frameon=None,
         alpha=None, linewidth=None, edgecolor=None, facecolor=None,
-        panel_kw=None,
         **kwargs):
         """
-        Adds an *inset* colorbar, or calls the `PanelAxes.colorbar` method for
-        the panel at location `loc`. See `~proplot.wrappers.colorbar_wrapper`
-        for details.
+        Adds colorbar as an *inset* or along the outside edge of the axes.
+        See `~proplot.wrappers.colorbar_wrapper` for details.
 
         Parameters
         ----------
         loc : str, optional
-            The colorbar location or panel location. The following location keys
-            are valid. Note that if a panel does not exist, it will be
-            generated on-the-fly.
+            The colorbar location. Defaults to ``rc['colorbar.loc']``. The
+            following location keys are valid.
 
             ==================  ==========================================================
             Location            Valid keys
             ==================  ==========================================================
-            left panel          ``'l'``, ``'left'``
-            right panel         ``'r'``, ``'right'``
-            bottom panel        ``'b'``, ``'bottom'``
-            top panel           ``'t'``, ``'top'``
+            outer left          ``'l'``, ``'left'``
+            outer right         ``'r'``, ``'right'``
+            outer bottom        ``'b'``, ``'bottom'``
+            outer top           ``'t'``, ``'top'``
             upper right inset   ``1``, ``'upper right'``, ``'ur'``
             upper left inset    ``2``, ``'upper left'``, ``'ul'``
             lower left inset    ``3``, ``'lower left'``, ``'ll'``
@@ -944,9 +926,10 @@ class Axes(maxes.Axes):
             ==================  ==========================================================
 
         pad : float or str, optional
-            Space between the axes edge and the colorbar.
-            If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`. Defaults to ``rc['colorbar.pad']``.
+            The space between the axes edge and the colorbar. Ignored for
+            outer colorbars. If float, units are inches. If string, units
+            are interpreted by `~proplot.utils.units`. Defaults to
+            ``rc['colorbar.pad']``.
         length : float or str, optional
             The colorbar length.  If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`. Defaults to
@@ -956,10 +939,6 @@ class Axes(maxes.Axes):
             units are interpreted by `~proplot.utils.units`. Defaults to
             ``rc['colorbar.width']`` for inset colorbars,
             ``rc['subplots.cbarwidth']`` for panel colorbars.
-        xspace : float or str, optional
-            Space allocated for the bottom x-label of the colorbar.
-            If float, units are inches. If string, units are interpreted
-            by `~proplot.utils.units`. Defaults to ``rc['colorbar.xspace']``.
         frame, frameon : bool, optional
             Whether to draw a frame behind the inset colorbar, just like
             `~matplotlib.axes.Axes.legend`. Defaults to ``rc['colorbar.frameon']``.
@@ -967,93 +946,161 @@ class Axes(maxes.Axes):
             Transparency, edge width, edge color, and face color for the frame.
             Defaults to ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
             ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``.
-        panel_kw : dict-like, optional
-            Dictionary of keyword arguments passed to
-            `~proplot.axes.Axes.panel`, if you are generating an
-            on-the-fly panel.
+        width : float or str, optional
+            The width of the colorbar. If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. Defaults to
+            ``rc['colorbar.width']`` for inset colorbars and
+            ``rc['subplots.colorbarwidth']`` for colorbars outside the axes.
+        space : float or str, optional
+            The space between the colorbar and the main axes. Ignored for
+            non-inset colorbars. If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. By default, this
+            is adjusted automatically in the "tight layout" calculation.
         **kwargs
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
-        loc = _notNone(loc, rc['colorbar.loc'])
-        panel_kw = panel_kw or {}
-        if width is not None:
-            panel_kw.setdefault('width', width)
+        # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
-        ax, loc = self._inset_or_panel_loc(loc, **panel_kw)
+        loc = _notNone(loc, rc['colorbar.loc'])
+        loc = self._inset_or_panel_loc(loc, **panel_kw)
         if not isinstance(loc, str): # e.g. 2-tuple or ndarray
             raise ValueError(f'Invalid colorbar location {loc!r}.')
-        if loc == 'fill':
-            return ax.colorbar(*args, **kwargs)
-        # Default props
-        cbwidth, cblength = width, length
-        width, height = self.get_size_inches()
-        extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
-        cbwidth = units(_notNone(cbwidth, rc['colorbar.width']))/height
-        cblength = units(_notNone(cblength, rc['colorbar.length']))/width
-        pad = units(_notNone(pad, rc['colorbar.axespad']))
-        xpad, ypad = pad/width, pad/height
-        kwargs.setdefault('extendsize', extend)
-        # Tick location handling
-        tickloc = kwargs.pop('tickloc', None)
-        ticklocation = kwargs.pop('ticklocation', None)
-        if any(loc is not None and loc!='bottom'
-            for loc in (tickloc,ticklocation)):
-            warnings.warn(f'Inset colorbars can only have ticks on the bottom.')
-        kwargs['ticklocation'] = 'bottom'
-        # Space for labels
-        if kwargs.get('label', ''):
-            xspace = 2.4*rc['font.size']/72 + rc['xtick.major.size']/72
+
+        # Filled colorbar
+        if loc in ('left','right','top','bottom'):
+            # Generate the panel
+            ax = self.panel_axes(loc, width=width, space=space)
+
+            # Hide content and resize panel
+            # NOTE: Do not run self.clear in case we want title above this
+            for s in ax.spines.values():
+                s.set_visible(False)
+            ax.xaxis.set_visible(False)
+            ax.yaxis.set_visible(False)
+            ax.patch.set_alpha(0)
+            ax._filled = True
+
+            # Draw colorbar with arbitrary length relative to full length of panel
+            subspec = ax.get_subplotspec()
+            if length is not None and length != 1:
+                if length <= 0 or length >= 1:
+                    raise ValueError(f'Panel colorbar length must be between 0 and 1, got length={length!r}.')
+                if loc in ('bottom','top'):
+                    gridspec = mgridspec.GridSpecFromSubplotSpec(
+                            nrows=1, ncols=3, wspace=0,
+                            subplot_spec=subspec,
+                            width_ratios=((1-length)/2, length, (1-length)/2),
+                            )
+                    subspec = gridspec[1]
+                else:
+                    gridspec = mgridspec.GridSpecFromSubplotSpec(
+                            nrows=3, ncols=1, hspace=0,
+                            subplot_spec=subspec,
+                            height_ratios=((1-length)/2, length, (1-length)/2),
+                            )
+                    subspec = gridspec[1]
+
+            # Get properties
+            with ax.figure._unlock():
+                ax = ax.figure.add_subplot(subspec, projection=None)
+            if loc in ('bottom','top'):
+                outside, inside = 'bottom', 'top'
+                if side == 'top':
+                    outside, inside = inside, outside
+                ticklocation = outside
+                orientation  = 'horizontal'
+            else:
+                outside, inside = 'left', 'right'
+                if side == 'right':
+                    outside, inside = inside, outside
+                ticklocation = outside
+                orientation  = 'vertical'
+
+            # For filled axes, call wrapper method directly
+            ax.add_child_axes(ax)
+            orient = kwargs.get('orientation', None)
+            if orient is not None and orient != orientation:
+                warnings.warn(f'Overriding input orientation={orient!r}.')
+            ticklocation = kwargs.pop('tickloc', None) or ticklocation
+            ticklocation = kwargs.pop('ticklocation', None) or ticklocation
+            kwargs.update({'orientation':orientation, 'ticklocation':ticklocation})
+            return wrappers.colorbar_wrapper(ax, *args, **kwargs)
+
+        # Inset colorbar
         else:
-            xspace = 1.2*rc['font.size']/72 + rc['xtick.major.size']/72
-        xspace /= height
-        # Get location in axes-relative coordinates
-        # Bounds are x0, y0, width, height in axes-relative coordinate to start
-        if loc == 'upper right':
-            bounds = (1 - xpad - cblength, 1 - ypad - cbwidth)
-            fbounds = (1 - 2*xpad - cblength, 1 - 2*ypad - cbwidth - xspace)
-        elif loc == 'upper left':
-            bounds = (xpad, 1 - ypad - cbwidth)
-            fbounds = (0, 1 - 2*ypad - cbwidth - xspace)
-        elif loc == 'lower left':
-            bounds = (xpad, ypad+xspace)
-            fbounds = (0, 0)
-        elif loc == 'lower right':
-            bounds = (1 - xpad - cblength, ypad+xspace)
-            fbounds = (1 - 2*xpad - cblength, 0)
-        else:
-            raise ValueError(f'Invalid colorbar location {loc!r}.')
-        bounds = (bounds[0], bounds[1], cblength, cbwidth)
-        fbounds = (fbounds[0], fbounds[1], 2*xpad + cblength, 2*ypad + cbwidth + xspace)
+            # Default props
+            cbwidth, cblength = width, length
+            width, height = self.get_size_inches()
+            extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
+            cbwidth = units(_notNone(cbwidth, rc['colorbar.width']))/height
+            cblength = units(_notNone(cblength, rc['colorbar.length']))/width
+            pad = units(_notNone(pad, rc['colorbar.axespad']))
+            xpad, ypad = pad/width, pad/height
+            kwargs.setdefault('extendsize', extend)
 
-        # Make axes
-        locator = self._make_inset_locator(bounds, self.transAxes)
-        bbox = locator(None, None)
-        ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
-        ax.set_axes_locator(locator)
-        self.add_child_axes(ax)
+            # Tick location handling
+            tickloc = kwargs.pop('tickloc', None)
+            ticklocation = kwargs.pop('ticklocation', None)
+            if any(loc is not None and loc!='bottom'
+                for loc in (tickloc,ticklocation)):
+                warnings.warn(f'Inset colorbars can only have ticks on the bottom.')
+            kwargs['ticklocation'] = 'bottom'
 
-        # Make colorbar
-        # WARNING: Inset colorbars are tiny! So use smart default locator
-        kwargs.setdefault('maxn', 5)
-        cb = wrappers.colorbar_wrapper(ax, *args, **kwargs)
+            # Space for labels
+            if kwargs.get('label', ''):
+                xspace = 2.4*rc['font.size']/72 + rc['xtick.major.size']/72
+            else:
+                xspace = 1.2*rc['font.size']/72 + rc['xtick.major.size']/72
+            xspace /= height
 
-        # Make frame
-        # NOTE: We do not allow shadow effects or fancy edges effect.
-        # Also keep zorder same as with legend.
-        frameon = _notNone(frame, frameon, rc['colorbar.frameon'], names=('frame','frameon'))
-        if frameon:
-            # Make object
-            xmin, ymin, width, height = fbounds
-            patch = mpatches.Rectangle((xmin,ymin), width, height,
-                    snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
-            # Properties
-            alpha = _notNone(alpha, rc['colorbar.framealpha'])
-            linewidth = _notNone(linewidth, rc['axes.linewidth'])
-            edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
-            facecolor = _notNone(facecolor, rc['axes.facecolor'])
-            patch.update({'alpha':alpha, 'linewidth':linewidth, 'edgecolor':edgecolor, 'facecolor':facecolor})
-            self.add_artist(patch)
-        return cb
+            # Get location in axes-relative coordinates
+            # Bounds are x0, y0, width, height in axes-relative coordinate to start
+            if loc == 'upper right':
+                bounds = (1 - xpad - cblength, 1 - ypad - cbwidth)
+                fbounds = (1 - 2*xpad - cblength, 1 - 2*ypad - cbwidth - xspace)
+            elif loc == 'upper left':
+                bounds = (xpad, 1 - ypad - cbwidth)
+                fbounds = (0, 1 - 2*ypad - cbwidth - xspace)
+            elif loc == 'lower left':
+                bounds = (xpad, ypad + xspace)
+                fbounds = (0, 0)
+            elif loc == 'lower right':
+                bounds = (1 - xpad - cblength, ypad + xspace)
+                fbounds = (1 - 2*xpad - cblength, 0)
+            else:
+                raise ValueError(f'Invalid colorbar location {loc!r}.')
+            bounds = (bounds[0], bounds[1], cblength, cbwidth)
+            fbounds = (fbounds[0], fbounds[1], 2*xpad + cblength, 2*ypad + cbwidth + xspace)
+
+            # Make axes
+            locator = self._make_inset_locator(bounds, self.transAxes)
+            bbox = locator(None, None)
+            ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
+            ax.set_axes_locator(locator)
+            self.add_child_axes(ax)
+
+            # Make colorbar
+            # WARNING: Inset colorbars are tiny! So use smart default locator
+            kwargs.setdefault('maxn', 5)
+            cb = wrappers.colorbar_wrapper(ax, *args, **kwargs)
+
+            # Make frame
+            # NOTE: We do not allow shadow effects or fancy edges effect.
+            # Also keep zorder same as with legend.
+            frameon = _notNone(frame, frameon, rc['colorbar.frameon'], names=('frame','frameon'))
+            if frameon:
+                # Make object
+                xmin, ymin, width, height = fbounds
+                patch = mpatches.Rectangle((xmin,ymin), width, height,
+                        snap=True, zorder=4.5, transform=self.transAxes) # fontsize defined in if statement
+                # Properties
+                alpha = _notNone(alpha, rc['colorbar.framealpha'])
+                linewidth = _notNone(linewidth, rc['axes.linewidth'])
+                edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
+                facecolor = _notNone(facecolor, rc['axes.facecolor'])
+                patch.update({'alpha':alpha, 'linewidth':linewidth, 'edgecolor':edgecolor, 'facecolor':facecolor})
+                self.add_artist(patch)
+            return cb
 
     def legend(self, *args, loc=None, width=None, panel_kw=None, **kwargs):
         """
@@ -1098,14 +1145,14 @@ class Axes(maxes.Axes):
         panel_kw = panel_kw or {}
         if width is not None:
             panel_kw.setdefault('width', width)
-        ax, loc = self._inset_or_panel_loc(loc, **panel_kw)
-        if loc == 'fill':
-            return ax.legend(*args, **kwargs)
+        loc = self._inset_or_panel_loc(loc, **panel_kw)
+        # TODO: FIXME
+        if loc in ('left','right','top','bottom'):
+            return self.legend(*args, loc=loc, **kwargs)
         return wrappers.legend_wrapper(ax, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
-        self._draw_auto_legends_colorbars()
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
@@ -1119,7 +1166,6 @@ class Axes(maxes.Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated, and stores the bounding box as an attribute."""
-        self._draw_auto_legends_colorbars()
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
