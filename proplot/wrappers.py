@@ -615,7 +615,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     if len(args) > 3: # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if cmap is None:
-        lines = func(*args, **kwargs)
+        lines = func(*args, values=values, **kwargs)
     else:
         lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
     return lines
@@ -1512,6 +1512,7 @@ def cycle_wrapper(self, func, *args,
     objs = []
     ncols = 1
     label_leg = None # for colorbar or legend
+    print('hi!!!', values, labels)
     labels = _notNone(values, labels, label, None, names=('values', 'labels', 'label'))
     stacked = kwargs.pop('stacked', False)
     if name in ('pie','boxplot','violinplot'):
@@ -1584,35 +1585,35 @@ def cycle_wrapper(self, func, *args,
     if colorbar:
         # Add handles
         panel_kw.setdefault('mode', 'colorbar')
-        ax, loc = self._inset_or_panel_loc(colorbar, **panel_kw)
+        loc = self._loc_translate(colorbar, **panel_kw)
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar')
-        if loc not in ax._auto_colorbar:
-            ax._auto_colorbar[loc] = []
-            ax._auto_colorbar_kw[loc] = {}
-        ax._auto_colorbar[loc].extend(objs)
+        if loc not in self._auto_colorbar:
+            self._auto_colorbar[loc] = []
+            self._auto_colorbar_kw[loc] = {}
+        self._auto_colorbar[loc].extend(objs)
         # Add keywords
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
         if label_leg:
             colorbar_kw.setdefault('label', label_leg)
-        ax._auto_colorbar_kw[loc].update(colorbar_kw)
+        self._auto_colorbar_kw[loc].update(colorbar_kw)
     if legend:
         # Add handles
         panel_kw.setdefault('mode', 'legend')
-        ax, loc = self._inset_or_panel_loc(legend, **panel_kw)
+        loc = self._loc_translate(legend, **panel_kw)
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.legend')
-        if loc not in ax._auto_legend:
-            ax._auto_legend[loc] = []
-            ax._auto_legend_kw[loc] = {}
-        ax._auto_legend[loc].extend(objs)
+        if loc not in self._auto_legend:
+            self._auto_legend[loc] = []
+            self._auto_legend_kw[loc] = {}
+        self._auto_legend[loc].extend(objs)
         # Add keywords
         if loc != 'fill':
             legend_kw.setdefault('loc', loc)
         if label_leg:
             legend_kw.setdefault('label', label_leg)
-        ax._auto_legend_kw[loc].update(legend_kw)
+        self._auto_legend_kw[loc].update(legend_kw)
 
     # Return
     # WARNING: Make sure plot always returns tuple of objects, and bar always
@@ -2018,7 +2019,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     # Add colorbar
     if colorbar:
         panel_kw.setdefault('mode', 'colorbar')
-        ax, loc = self._inset_or_panel_loc(colorbar, **panel_kw)
+        loc = self._loc_translate(colorbar, **panel_kw)
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar.')
         if 'label' not in colorbar_kw and self.figure._auto_format:
@@ -2029,7 +2030,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
             colorbar_kw.setdefault('values', values)
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
-        ax.colorbar(obj, **colorbar_kw)
+        self.colorbar(obj, **colorbar_kw)
     return obj
 
 #------------------------------------------------------------------------------#

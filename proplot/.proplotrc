@@ -164,22 +164,22 @@ innerborders.linewidth: 0.6
 rivers.color:           k
 rivers.linewidth:       0.6
 # Colorbar settings
-colorbar.loc:         'lower right'
+colorbar.loc:         right
 colorbar.grid:        False
 colorbar.frameon:     True
 colorbar.framealpha:  0.8
-colorbar.extend:      0.15
-colorbar.extendinset: 1em
-colorbar.length:      8em
-colorbar.width:       1.2em
 colorbar.axespad:     0.5em
+colorbar.extend:      1.3em
+colorbar.extendinset: 1em
+colorbar.length:      1
+colorbar.lengthinset: 8em
+colorbar.width:       1.5em # 0.17 inches
+colorbar.widthinset:  1.2em
 # Subplot properties
 # Use font relative units for everything because this is common way user
 # might want to increase figure resolution
 subplots.axwidth:       18em  # 2 inches
 subplots.panelwidth:    4em   # 0.45 inches
-subplots.colorbarwidth: 1.5em # 0.17 inches
-subplots.legendwidth:   1.5em # 0.25 inches
 subplots.pad:           0.5em
 subplots.axpad:         1em
 subplots.panelpad:      0.5em

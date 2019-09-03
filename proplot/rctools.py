@@ -161,8 +161,10 @@ Key                       Description
 ``colorbar.grid``         Boolean, indicates whether to draw borders between each level of the colorbar.
 ``colorbar.frameon``      Boolean, indicates whether to draw a frame behind inset colorbars.
 ``colorbar.framealpha``   Opacity for inset colorbar frames.
-``colorbar.length``       Length of inset colorbars.
-``colorbar.width``        Width of inset colorbars.
+``colorbar.length``       Length of outer colorbars.
+``colorbar.lengthinset``  Length of inset colorbars.
+``colorbar.width``        Width of outer colorbars.
+``colorbar.widthinset``   Width of inset colorbars.
 ``colorbar.axespad``      Padding between axes edge and inset colorbars.
 ``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
 ``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
@@ -177,8 +179,6 @@ Key                         Description
 ==========================  ==================================================================
 ``subplots.axwidth``        Default width of each axes.
 ``subplots.panelwidth``     Width of side panels.
-``subplots.colorbarwidth``  Width of "colorbar" panels.
-``subplots.legendwidth``    Width of "legend" panels.
 ``subplots.pad``            Padding around figure edge.
 ``subplots.axpad``          Padding between adjacent subplots.
 ``subplots.panelpad``       Padding between subplots and panels, and between stacked panels.
@@ -292,9 +292,11 @@ _rc_names_custom = {
     'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonstep', 'geogrid.latstep',
     'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
     'subplots.pad', 'subplots.axpad', 'subplots.panelpad',
-    'subplots.legendwidth', 'subplots.colorbarwidth', 'subplots.ylabspace', 'subplots.xlabspace', 'subplots.innerspace', 'subplots.titlespace',
+    'subplots.ylabspace', 'subplots.xlabspace', 'subplots.innerspace', 'subplots.titlespace',
     'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace',
-    'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha', 'colorbar.length', 'colorbar.width', 'colorbar.loc', 'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
+    'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha',
+    'colorbar.loc', 'colorbar.length', 'colorbar.width', 'colorbar.lengthinset', 'colorbar.widthinset',
+    'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
     }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
