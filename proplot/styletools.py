@@ -481,13 +481,9 @@ def _get_channel(color, channel, space='hsl'):
     # Interpret string or RGB tuple
     offset = 0
     if isinstance(color, str):
-        regex = '([-+]\S*)$' # user can optionally offset from color; don't filter to just numbers, want to raise our own error if user messes up
-        match = re.search(regex, color)
+        match = re.search('([-+][0-9.]+)$', color)
         if match:
-            try:
-                offset = float(match.group(0))
-            except ValueError:
-                raise ValueError(f'Invalid channel identifier "{color}".')
+            offset = float(match.group(0))
             color = color[:match.start()]
     return offset + to_xyz(to_rgb(color), space)[channel]
 

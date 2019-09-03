@@ -2639,9 +2639,9 @@ def colorbar_wrapper(self,
             maxn_minor = _notNone(maxn_minor, int(length/(0.5*fontsize/72)))
             # Get locator
             if tickminor and minorlocator is None:
-                step = 1 + len(locator)//maxn_minor
+                step = 1 + len(locator) // max(1, maxn_minor)
                 minorlocator = locator[::step]
-            step = 1 + len(locator)//maxn
+            step = 1 + len(locator) // max(1, maxn)
             locator = locator[::step]
     # Locator object
     locator = axistools.Locator(locator, **locator_kw)

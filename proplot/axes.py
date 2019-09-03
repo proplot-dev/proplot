@@ -640,19 +640,19 @@ class Axes(maxes.Axes):
             main title. The following locations keys are valid. Defaults to
             ``rc['abc.loc']`` and ``rc['title.loc']``.
 
-            =========================  ============================
-            Location                   Valid keys
-            =========================  ============================
-            center, above axes         ``'center'``, ``'c'``
-            left, above axes           ``'left'``, ``'l'``
-            right, above axes          ``'right'``, ``'r'``
-            lower center, inside axes  ``'lower center``', ``'lc'``
-            upper center, inside axes  ``'upper center'``, ``'uc'``
-            upper right, inside axes   ``'upper right'``, ``'ur'``
-            upper left, inside axes    ``'upper left'``, ``'ul'``
-            lower left, inside axes    ``'lower left'``, ``'ll'``
-            lower right, inside axes   ``'lower right'``, ``'lr'``
-            =========================  ============================
+            ========================  ============================
+            Location                  Valid keys
+            ========================  ============================
+            center above axes         ``'center'``, ``'c'``
+            left above axes           ``'left'``, ``'l'``
+            right above axes          ``'right'``, ``'r'``
+            lower center inside axes  ``'lower center``', ``'lc'``
+            upper center inside axes  ``'upper center'``, ``'uc'``
+            upper right inside axes   ``'upper right'``, ``'ur'``
+            upper left inside axes    ``'upper left'``, ``'ul'``
+            lower left inside axes    ``'lower left'``, ``'ll'``
+            lower right inside axes   ``'lower right'``, ``'lr'``
+            ========================  ============================
 
         abcborder, titleborder : bool, optional
             Whether to draw a white border around titles and a-b-c labels
@@ -915,6 +915,7 @@ class Axes(maxes.Axes):
             outer right         ``'r'``, ``'right'``
             outer bottom        ``'b'``, ``'bottom'``
             outer top           ``'t'``, ``'top'``
+            default inset       ``0``, ``'i'``, ``'inset'``
             upper right inset   ``1``, ``'upper right'``, ``'ur'``
             upper left inset    ``2``, ``'upper left'``, ``'ul'``
             lower left inset    ``3``, ``'lower left'``, ``'ll'``
@@ -930,12 +931,19 @@ class Axes(maxes.Axes):
             The colorbar length. For outer colorbars, units are relative to
             the axes width or height. For inset colorbars, if float, units are
             inches; if string, units are interpreted by `~proplot.utils.units`.
-            Defaults to ``rc['colorbar.length']``.
+            Defaults to ``rc['colorbar.length']`` for outer colorbars,
+            ``rc['colorbar.lengthinset']`` for inset colorbars.
         width : float or str, optional
             The colorbar width. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']`` for inset colorbars,
-            ``rc['subplots.cbarwidth']`` for outer colorbars.
+            ``rc['colorbar.width']`` for outer colorbars,
+            ``rc['colorbar.widthinset']`` for inset colorbars.
+        space : float or str, optional
+            The space between the colorbar and the main axes for outer
+            colorbars. If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`. By default, this
+            is adjusted automatically in the "tight layout" calculation, or is
+            ``rc['subplots.panelspace']`` if "tight layout" is turned off.
         frame, frameon : bool, optional
             Whether to draw a frame around inset colorbars, just like
             `~matplotlib.axes.Axes.legend`.
@@ -946,18 +954,6 @@ class Axes(maxes.Axes):
             ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
             ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``,
             respectively.
-        width : float or str, optional
-            The width of the colorbar. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']`` for inset colorbars and
-            ``rc['subplots.colorbarwidth']`` for outer colorbars.
-        space : float or str, optional
-            The space between the colorbar and the main axes for outer
-            colorbars. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. By default, this
-            is adjusted automatically in the "tight layout" calculation,
-            or is ``rc['subplots.panelspace']`` if "tight layout" is turned
-            off.
         **kwargs
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
@@ -972,7 +968,7 @@ class Axes(maxes.Axes):
 
         # Generate panel
         if loc in ('left','right','top','bottom'):
-            ax = self.panel_axes(loc, width=width, space=space, mode='colorbar')
+            ax = self.panel_axes(loc, width=width, space=space, filled=True)
             return ax.colorbar(loc='_fill', *args, **kwargs)
 
         # Filled colorbar
@@ -1122,7 +1118,7 @@ class Axes(maxes.Axes):
             right panel         ``'r'``, ``'right'``
             bottom panel        ``'b'``, ``'bottom'``
             top panel           ``'t'``, ``'top'``
-            "best" possible     ``0``, ``'best'``, ``'inset'``, ``'i'``
+            "best" inset        ``0``, ``'best'``, ``'inset'``, ``'i'``
             upper right inset   ``1``, ``'upper right'``, ``'ur'``
             upper left inset    ``2``, ``'upper left'``, ``'ul'``
             lower left inset    ``3``, ``'lower left'``, ``'ll'``
@@ -1154,7 +1150,7 @@ class Axes(maxes.Axes):
 
         # Generate panel
         if loc in ('left','right','top','bottom'):
-            ax = self.panel_axes(loc, width=width, space=space, mode='legend')
+            ax = self.panel_axes(loc, width=width, space=space, filled=True)
             return ax.legend(*args, loc='_fill', **kwargs)
 
         # Fill
@@ -1358,7 +1354,7 @@ class Axes(maxes.Axes):
         `~proplot.axes.Axes`
             The panel axes.
         """
-        return self.figure._add_axes_panel(side, self, **kwargs)
+        return self.figure._add_axes_panel(self, side, **kwargs)
 
     panel = panel_axes
     """Alias for `~Axes.panel_axes`."""
