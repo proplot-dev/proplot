@@ -788,16 +788,28 @@ class Figure(mfigure.Figure):
 
         return pax
 
-    def _add_figure_panel(self, side, span=None, **kwargs):
+    def _add_figure_panel(self, side,
+        span=None, row=None, col=None, rows=None, cols=None,
+        **kwargs):
         """Adds figure panels. Also modifies the panel attribute stored
         on the figure to include these panels."""
-        # Interpret args
+        # Interpret args and enforce sensible keyword args
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         side = _side_translate[s]
         _, width, space, space_orig = _panels_kwargs(s,
                 filled=True, figure=True, **kwargs)
+        if s in 'lr':
+            for key,value in (('col',col),('cols',cols)):
+                if value is not None:
+                    raise ValueError(f'Invalid keyword arg {key!r} for figure panel on side {side!r}.')
+            span = _notNone(span, row, rows, None, names=('span', 'row', 'rows'))
+        else:
+            for key,value in (('row',row),('rows',rows)):
+                if value is not None:
+                    raise ValueError(f'Invalid keyword arg {key!r} for figure panel on side {side!r}.')
+            span = _notNone(span, col, cols, None, names=('span', 'col', 'cols'))
 
         # Get props
         subplots_kw = self._subplots_kw
@@ -1397,8 +1409,10 @@ class Figure(mfigure.Figure):
             top edge     ``'t'``, ``'top'``
             ===========  =====================
 
-        row, col, rows, cols : optional
-            Aliases for `span`.
+        row, rows : optional
+            Aliases for `span` for panels on the left or right side.
+        col, cols : optional
+            Aliases for `span` for panels on the top or bottom side.
         span : int or (int, int), optional
             Describes how the colorbar spans rows and columns of subplots.
             For example, ``fig.colorbar(loc='b', col=1)`` draws a colorbar
@@ -1426,10 +1440,9 @@ class Figure(mfigure.Figure):
             return kwargs.pop('ax').colorbar(*args,
                     space=space, width=width, **kwargs)
         else:
-            span = _notNone(span, row, col, rows, cols, None,
-                    names=('span', 'row', 'col', 'rows', 'cols'))
             ax = self._add_figure_panel(loc,
-                    space=space, width=width, span=span)
+                    space=space, width=width, span=span,
+                    row=row, col=col, rows=rows, cols=cols)
             return ax.colorbar(*args, loc='_fill', **kwargs)
 
     def legend(self, *args,
@@ -1455,8 +1468,10 @@ class Figure(mfigure.Figure):
             top edge     ``'t'``, ``'top'``
             ===========  =====================
 
-        row, col, rows, cols : optional
-            Aliases for `span`.
+        row, rows : optional
+            Aliases for `span` for panels on the left or right side.
+        col, cols : optional
+            Aliases for `span` for panels on the top or bottom side.
         span : int or (int, int), optional
             Describes how the legend spans rows and columns of subplots.
             For example, ``fig.legend(loc='b', col=1)`` draws a legend
@@ -1478,10 +1493,9 @@ class Figure(mfigure.Figure):
             return kwargs.pop('ax').legend(*args,
                     space=space, width=width, **kwargs)
         else:
-            span = _notNone(span, row, col, rows, cols, None,
-                    names=('span', 'row', 'col', 'rows', 'cols'))
             ax = self._add_figure_panel(loc,
-                    space=space, width=width, span=span)
+                    space=space, width=width, span=span,
+                    row=row, col=col, rows=rows, cols=cols)
             return ax.legend(*args, loc='_fill', **kwargs)
 
     @_counter
