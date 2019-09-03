@@ -1589,15 +1589,14 @@ def cycle_wrapper(self, func, *args,
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar')
         if loc not in self._auto_colorbar:
-            self._auto_colorbar[loc] = []
-            self._auto_colorbar_kw[loc] = {}
-        self._auto_colorbar[loc].extend(objs)
+            self._auto_colorbar[loc] = ([], {})
+        self._auto_colorbar[loc][0].extend(objs)
         # Add keywords
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
         if label_leg:
             colorbar_kw.setdefault('label', label_leg)
-        self._auto_colorbar_kw[loc].update(colorbar_kw)
+        self._auto_colorbar[loc][1].update(colorbar_kw)
     if legend:
         # Add handles
         panel_kw.setdefault('mode', 'legend')
@@ -1605,15 +1604,14 @@ def cycle_wrapper(self, func, *args,
         if not isinstance(loc, str):
             raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.legend')
         if loc not in self._auto_legend:
-            self._auto_legend[loc] = []
-            self._auto_legend_kw[loc] = {}
-        self._auto_legend[loc].extend(objs)
+            self._auto_legend[loc] = ([], {})
+        self._auto_legend[loc][0].extend(objs)
         # Add keywords
         if loc != 'fill':
             legend_kw.setdefault('loc', loc)
         if label_leg:
             legend_kw.setdefault('label', label_leg)
-        self._auto_legend_kw[loc].update(legend_kw)
+        self._auto_legend[loc][1].update(legend_kw)
 
     # Return
     # WARNING: Make sure plot always returns tuple of objects, and bar always
