@@ -186,7 +186,8 @@ class axes_grid(list):
             return objs
 
     def __getattr__(self, attr):
-        """If the attribute is *callable*, returns a dummy function that loops
+        """
+        If the attribute is *callable*, returns a dummy function that loops
         through each identically named method, calls them in succession, and
         returns a tuple of the results. This lets you call arbitrary methods
         on multiple axes at once! If the `axes_grid` has length ``1``,
