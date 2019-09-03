@@ -899,7 +899,6 @@ class Figure(mfigure.Figure):
                 self.set_size_inches(figsize)
                 self._gridspec_main.update(**gridspec_kw)
 
-    @_counter
     def _adjust_tight_layout(self, renderer):
         """Applies tight layout scaling that permits flexible figure
         dimensions and preserves panel widths and subplot aspect ratios.

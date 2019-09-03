@@ -163,12 +163,12 @@ class Axes(maxes.Axes):
         self._lpanels = []
         self._rpanels = []
         self._tight_bbox = None # bounding boxes are saved
-        self._zoom = None
         self._panel_side = None
         self._panel_parent = None
         self._panel_filled = False # True when panels "filled" with colorbar/legend
-        self._inset_zoom = False
         self._inset_parent = None
+        self._inset_zoom = False
+        self._inset_zoom_data = None
         self._alty_child = None
         self._altx_child = None
         self._alty_parent = None
@@ -1308,24 +1308,22 @@ class Axes(maxes.Axes):
         kwargs.update({'linewidth':linewidth, 'edgecolor':edgecolor, 'alpha':alpha})
         rectpatch, connects = parent.indicate_inset(rect, self, **kwargs)
         # Adopt properties from old one
-        if self._zoom:
-            rectpatch_old, connects_old = self._zoom
+        if self._inset_zoom_data:
+            rectpatch_old, connects_old = self._inset_zoom_data
             rectpatch.update_from(rectpatch_old)
             rectpatch_old.set_visible(False)
             for line,line_old in zip(connects,connects_old):
-                # Actually want to *preserve* whether line is visible! This
-                # is automatically determined!
                 visible = line.get_visible()
                 line.update_from(line_old)
                 line.set_visible(visible)
                 line_old.set_visible(False)
-        # By default linewidth is only applied to box
+        # Format zoom data
         else:
             for line in connects:
                 line.set_linewidth(linewidth)
                 line.set_color(edgecolor)
                 line.set_alpha(alpha)
-        self._zoom = (rectpatch, connects)
+        self._inset_zoom_data = (rectpatch, connects)
         return (rectpatch, connects)
 
     def panel_axes(self, side, **kwargs):
