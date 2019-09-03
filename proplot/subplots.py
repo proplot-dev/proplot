@@ -209,12 +209,8 @@ class axes_grid(list):
             def null_iterator(*args, **kwargs):
                 return None
             return null_iterator
-        # Panels
-        if all(isinstance(_, (axes_grid, axes.Axes))
-            for _ in attrs):
-            return axes_grid(attrs)
         # Objects
-        elif not any(callable(_) for _ in attrs):
+        if not any(callable(_) for _ in attrs):
             if len(self) == 1:
                 return attrs[0]
             else:
@@ -231,6 +227,8 @@ class axes_grid(list):
                     return ret[0]
                 elif all(res is None for res in ret):
                     return None
+                elif all(isinstance(res, axes.Axes) for res in ret):
+                    return axes_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
             return axes_grid_iterator
@@ -752,7 +750,7 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Invalid side {side!r}.')
         side = _side_translate[s]
         share, width, space, space_orig = _panels_kwargs(s,
-                kwargs, filled=filled, figure=False)
+                filled=filled, figure=False, **kwargs)
 
         # Get gridspec and subplotspec indices
         subplotspec = ax.get_subplotspec()
@@ -798,8 +796,8 @@ class Figure(mfigure.Figure):
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         side = _side_translate[s]
-        _, width, space, space_orig = _panels_kwargs(s, kwargs,
-                filled=True, figure=True)
+        _, width, space, space_orig = _panels_kwargs(s,
+                filled=True, figure=True, **kwargs)
 
         # Get props
         subplots_kw = self._subplots_kw
