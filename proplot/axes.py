@@ -173,10 +173,8 @@ class Axes(maxes.Axes):
         self._altx_child = None
         self._alty_parent = None
         self._altx_parent = None
-        self._auto_colorbar = {} # stores plot handles for auto colorbar
+        self._auto_colorbar = {} # stores handles and kwargs for auto colorbar
         self._auto_legend = {}
-        self._auto_colorbar_kw = {} # keyword args for auto colorbar()
-        self._auto_legend_kw = {}
         # Axis sharing, new text attributes, custom formatting
         self._spanx = spanx # boolean toggles, whether we want to span axes labels
         self._spany = spany
@@ -210,14 +208,12 @@ class Axes(maxes.Axes):
         """Generate automatic legends and colorbars. Wrapper funcs
         let user add handles to location lists with successive calls to
         make successive calls to plotting commands."""
-        for loc,handles in self._auto_colorbar.items():
-            self.colorbar(handles, **self._auto_colorbar_kw[loc])
-        for loc,handles in self._auto_legend.items():
-            self.legend(handles, **self._auto_legend_kw[loc])
+        for loc,(handles,kwargs) in self._auto_colorbar.items():
+            self.colorbar(handles, **kwargs)
+        for loc,(handles,kwargs) in self._auto_legend.items():
+            self.legend(handles, **kwargs)
         self._auto_legend = {}
         self._auto_colorbar = {}
-        self._auto_legend_kw = {}
-        self._auto_colorbar_kw = {}
 
     def _get_side_axes(self, side):
         """Returns groups of axes in row or column or the single group in the
