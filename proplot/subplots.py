@@ -198,9 +198,10 @@ class axes_grid(list):
         -------
 
         >>> import proplot as plot
-        ... f, axs = plot.subplots(nrows=2, ncols=2, axcolorbars='b')
-        ... axs.format(xticks=5) # calls "format" on all subplots in the list
-        ... axs.bpanel.colorbar(m) # calls "colorbar" on all panels in the axes_grid returned by "axs.bpanel"
+        ... f, axs = plot.subplots(nrows=2, ncols=2)
+        ... axs.format(...) # calls "format" on all subplots in the list
+        ... paxs = axs.panel_axes('r')
+        ... paxs.format(...) # calls "format" on all panels in the axes_grid returned by "axs.panel_axes"
 
         """
         attrs = (*(getattr(ax, attr) for ax in self),) # may raise error
