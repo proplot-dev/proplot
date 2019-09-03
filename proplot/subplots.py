@@ -35,7 +35,6 @@ subclass `list` instead of `~numpy.ndarray`? Two reasons.
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional
 import os
-import re
 import numpy as np
 import functools
 import warnings
@@ -43,7 +42,6 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
-import matplotlib.axes as maxes
 try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
@@ -212,7 +210,7 @@ class axes_grid(list):
                 return None
             return null_iterator
         # Panels
-        if all(isinstance(_, (axes_grid, axes.Axes, axes.EmptyPanel))
+        if all(isinstance(_, (axes_grid, axes.Axes))
             for _ in attrs):
             return axes_grid(attrs)
         # Objects
@@ -472,6 +470,30 @@ class FlexibleGridSpec(mgridspec.GridSpec):
 #-----------------------------------------------------------------------------#
 # Helper funcs
 #-----------------------------------------------------------------------------#
+def _panels_kwargs(side,
+    share=None, width=None, space=None,
+    mode='panel', figure=False):
+    """Converts global keywords like `space` and `width` to side-local
+    keywords like `lspace` and `lwidth`, and applies default settings."""
+    # Return values
+    s = side[0]
+    if s not in 'lrbt':
+        raise ValueError(f'Invalid panel spec {side!r}.')
+    space_orig = units(space)
+    if mode == 'panel':
+        default = rc['subplots.panelwidth']
+    elif mode == 'colorbar':
+        default = rc['colorbar.width']
+    else:
+        default = '1em'
+    share = _notNone(share, (mode == 'panel'))
+    width = units(_notNone(width, default))
+    space = _notNone(space, units(rc['subplots.' + ('panel' if share
+        and not figure
+        else 'xlab' if s == 'b' else 'ylab' if s == 'l'
+        else 'inner' if figure else 'panel') + 'space']))
+    return share, width, space, space_orig
+
 def _subplots_geometry(**kwargs):
     """Saves arguments passed to `subplots`, calculates gridspec settings and
     figure size necessary for requested geometry, and returns keyword args
@@ -610,66 +632,6 @@ def _subplots_geometry(**kwargs):
 
     return (width, height), gridspec_kw, kwargs
 
-def _panels_kwargs(side, kwargs, figure=False, mode='panel'):
-    """Converts global keywords like `space` and `width` to side-local
-    keywords like `lspace` and `lwidth`, and applies default settings."""
-    # Checks
-    # NOTE: The 'stack' keyword arg is now invalid, to add stacked panels
-    # simply call panel axes more than once or add colorbar more than once!
-    s = side[0]
-    if s not in 'lrbt':
-        raise ValueError(f'Invalid panel spec {side!r}.')
-    # Detect *unknown* keyword args, raise error if found!
-    regex = re.compile(f'^[tlrb]?({"array|" if figure else ""}share|space|width)$')
-    kwextra = {key:kwargs.pop(key) for key in (*kwargs,) if not regex.match(key)}
-    deprec1 = {key:value for key,value in kwextra.items() if key in (
-        'sep', 'lsep', 'rsep', 'bsep', 'tsep',
-        'stack', 'lstack', 'rstack', 'bstack', 'tstack',
-        )}
-    deprec2 = {key:value for key,value in kwextra.items() if key in (
-        'colorbar', 'colorbars', 'legend', 'legends',
-        'axcolorbar', 'axcolorbars', 'axlegend', 'axlegends',
-        'axcolorbar_kw', 'axcolorbars_kw', 'axlegend_kw', 'axlegends_kw',
-        )}
-    unknown = {key:value for key,value in kwextra.items()
-        if key not in deprec1 and key not in deprec2}
-    if deprec1:
-        raise ValueError(f'You used the following deprecated subplots() or panel_axes() keyword arg(s): {deprec1!r}. To draw "stacked" panels with the current API, simply call e.g. Axes.colorbar(loc="r") or Axes.panel("r") more than once, and multiple panels will be drawn on that side.')
-    if deprec2:
-        raise ValueError(f'You used the following deprecated subplots() keyword arg(s): {deprec2!r}. With the current API, you just use "panel", "panels", "axpanel", "axpanels", "axpanel_kw", and/or "axpanels_kw". If you "fill" a panel with a colorbar or legend, its width will be adjusted automatically.')
-    if unknown:
-        raise ValueError(f'Unknown subplots() or panel_axes() keyword arg(s): {unknown!r}.')
-
-    # Detect *ignored* panel keyword args, issue warning
-    s_off = ''.join({*'lrbt'} - {s})
-    regex = re.compile(f'^[{s_off}]({"array|" if figure else ""}share|width|space)$')
-    ikw = {key:value for key,value in kwargs.items() if regex.match(s_off)}
-    if ikw:
-        warnings.warn(f'Ignoring keyword arg(s): {ikw}. Active sides are: {sides!r}.')
-
-    # Try to use local first, global if no local found
-    def get(key):
-        return _notNone(kwargs.get(s + key, None), kwargs.get(key, None))
-    kwout, kworig = {}, {}
-    # Store originals, prevents automatic changes if user passed anything
-    share = _notNone(get('share'), (mode == 'panel'))
-    width = units(get('width'))
-    space = units(get('space'))
-    kworig[s + 'width'] = width
-    kworig[s + 'space'] = space
-    # Store values used in initial drawing
-    width = units(_notNone(width, rc['subplots.' + mode + 'width']))
-    space = _notNone(space, units(rc['subplots.' + ('panel' if share
-        and not figure
-        else 'xlab' if s == 'b' else 'ylab' if s == 'l'
-        else 'inner' if figure else 'panel') + 'space']))
-    kwout[s + 'share'] = share
-    kwout[s + 'width'] = width
-    kwout[s + 'space'] = space
-    if figure:
-        kwout[s + 'array'] = get('array')
-    return kwout, kworig
-
 #-----------------------------------------------------------------------------#
 # Figure class and helper classes
 #-----------------------------------------------------------------------------#
@@ -760,16 +722,19 @@ class Figure(mfigure.Figure):
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
         self._subplots_kw = subplots_kw
-        self._leftpanel   = axes.EmptyPanel()
-        self._bottompanel = axes.EmptyPanel()
-        self._rightpanel  = axes.EmptyPanel()
-        self._toppanel    = axes.EmptyPanel()
+        self._bpanels = []
+        self._tpanels = []
+        self._lpanels = []
+        self._rpanels = []
         self._gridspec_main = FlexibleGridSpec(self, **(gridspec_kw or {}))
         self.suptitle('') # add _suptitle attribute
 
     @_counter
     def _add_axes_panel(self, side, ax, order='C', mode='panel', **kwargs):
         """Hidden method that powers `~proplot.axes.panel_axes`."""
+        # Redirect to main axes, e.g. if want to draw outer colorbar or legend
+        # from data plotted in a panel or inset axes
+        ax = ax._panel_parent or ax
         # Interpret args
         # NOTE: Axis sharing not implemented for figure panels, 99% of the
         # time this is just used as construct for adding global colorbars and
@@ -778,12 +743,8 @@ class Figure(mfigure.Figure):
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         side = _side_translate[s]
-        kwargs, kworig = _panels_kwargs(s, kwargs, mode=mode, figure=False)
-        width = kwargs[s + 'width']
-        space = kwargs[s + 'space']
-        share = kwargs[s + 'share']
-        width_orig = kworig[s + 'width']
-        space_orig = kworig[s + 'space']
+        share, width, space, space_orig = _panels_kwargs(s,
+                kwargs, mode=mode, figure=False)
 
         # Modify existing geometry, find incies for new panel by placing it
         # to the outside of *existing* panels if possible
@@ -791,7 +752,7 @@ class Figure(mfigure.Figure):
         # width and space.
         subplotspec = ax.get_subplotspec()
         nrows, ncols, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
-        pgrid = getattr(ax, '_' + side + 'panel')
+        pgrid = getattr(ax, '_' + s + 'panels')
         offset = (len(pgrid)*bool(pgrid)) + 1
         if s in 'lr':
             idx1 = slice(row1, row2 + 1)
@@ -801,46 +762,37 @@ class Figure(mfigure.Figure):
             idx1 = (row1 - offset if s == 't' else row2 + offset)
             idx2 = slice(col1, col2 + 1)
             iratio = idx1
-        gridspec = self._change_gridspec(side, iratio,
-                width, space, width_orig, space_orig,
+        gridspec = self._insert_row_column(side, iratio,
+                width, space, space_orig, figure=False,
                 )
 
         # Get keyword args and gridspec args
         # Loop through unique numbers
         with self._unlock():
-            pax = self.add_subplot(gridspec[idx1,idx2],
-                projection='panel',
-                side=side, share=share,
-                )
+            pax = self.add_subplot(gridspec[idx1,idx2], projection='cartesian')
 
-        # Add to panel attributes
-        pgrid = getattr(ax, '_' + side + 'panel')
-        # Create from scratch
-        if not pgrid:
-            order = self._order
-            pgrid = axes_grid([pax], n=1, order=order)
-            setattr(ax, '_' + side + 'panel', pgrid)
-        # Modify existing grid
+        # Add to panel list
+        pgrid = getattr(ax, '_' + s + 'panels')
+        if s in 'lt':
+            pgrid.insert(0, pax)
         else:
-            n = pgrid._n
-            order = pgrid._order
-            if s in 'lt':
-                pgrid.insert(0, pax)
-            else:
-                pgrid.append(pax)
-            if (s in 'lr' and order == 'C') or (s in 'tb' and order == 'F'):
-                n += 1
-            pgrid._n = n
+            pgrid.append(pax)
 
         # Set up shared axes
+        pax._panel_side = side
+        pax._panel_share = share
+        pax._panel_parent = ax
         if share:
             ax._share_panels_setup()
         self._share_axes_setup(ax)
+        axis = (pax.yaxis if side in ('left','right') else pax.xaxis)
+        getattr(axis, 'tick_' + side)() # sets tick and tick label positions intelligently
+        axis.set_label_position(side)
 
         # Return axes grid of just this axes
-        return axes_grid([pax])
+        return pax
 
-    def _add_figure_panels(self, side, mode='panel', **kwargs):
+    def _add_figure_panel(self, side, mode='panel', array=None, **kwargs):
         """Adds figure panels. Also modifies the panel attribute stored
         on the figure to include these panels."""
         # Interpret args
@@ -852,12 +804,8 @@ class Figure(mfigure.Figure):
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         side = _side_translate[s]
-        kwargs, kworig = _panels_kwargs(s, kwargs, mode=mode, figure=True)
-        array = kwargs[s + 'array']
-        width = kwargs[s + 'width']
-        space = kwargs[s + 'space']
-        width_orig = kworig[s + 'width']
-        space_orig = kworig[s + 'space']
+        _, width, space, space_orig = _panels_kwargs(s,
+            kwargs, mode=mode, figure=True)
 
         # Modify existing geometry, and verify validity of the array arg
         # using boolean 1D arrays indicating where panels are present for
@@ -876,9 +824,8 @@ class Figure(mfigure.Figure):
         if not np.iterable(array) or len(array) != len(idxs):
             raise ValueError(f'Need length-{len(idxs)} list of integers for "{s}array", got {s}array={array!r}.')
         iratio = (0 if s in 'lt' else nacross)
-        gridspec = self._change_gridspec(side, iratio,
-                width, space, width_orig, space_orig,
-                figure=True,
+        gridspec = self._insert_row_column(side, iratio,
+                width, space, space_orig, figure=True,
                 )
 
         # Pad array so it spans existing panel slots
@@ -897,51 +844,25 @@ class Figure(mfigure.Figure):
             if s in 'bt':
                 idx1, idx2 = idx2, idx1
             with self._unlock():
-                ipax = self.add_subplot(gridspec[idx1,idx2],
-                    projection='panel',
-                    side=side, share=False,
-                    )
+                ipax = self.add_subplot(gridspec[idx1,idx2], projection='cartesian')
+            ipax._panel_side = side
+            ipax._panel_share = False
+            ipax._panel_parent = None
+            axis = (ipax.yaxis if side in ('left','right') else ipax.xaxis)
+            getattr(axis, 'tick_' + side)() # sets tick and tick label positions intelligently
+            axis.set_label_position(side)
             paxs += [ipax]
 
         # Add to panel attributes
-        pgrid = getattr(self, '_' + side + 'panel')
-        # Create brand new axes_grid
-        if not pgrid:
-            order = self._order
-            if (s in 'tb' and order == 'C') or (s in 'lr' and order != 'C'):
-                n = 1
-            else:
-                n = len(paxs)
-            pgrid = axes_grid(paxs, n=n, order=order)
-            setattr(self, '_' + side + 'panel', pgrid)
-        # Modify existing axes_grid
+        pgrid = getattr(self, '_' + s + 'panels')
+        if s in 'lt':
+            pgrid.insert(0, paxs[0])
         else:
-            # Possible insertion modes
-            # The names are relevant for C-major order
-            order = pgrid._order
-            top    = (s == 't' and order == 'C') or (s == 'l' and order == 'F')
-            bottom = (s == 'b' and order == 'C') or (s == 'r' and order == 'F')
-            left   = (s == 'l' and order == 'C') or (s == 't' and order == 'F')
-            right  = (s == 'r' and order == 'C') or (s == 'b' and order == 'F')
-            # Insert into lists
-            # NOTE: Can get weird grids for weird geometry, e.g. 3 figure
-            # panels side-by-side on top of one figure panel
-            n = pgrid._n
-            for i,ax in enumerate(paxs):
-                if top:
-                    pgrid.insert(0, ax)
-                elif bottom:
-                    pgrid.append(ax)
-                elif left:
-                    pgrid.insert(i*n + i, ax) # plus i offsets after adding stuff
-                elif right:
-                    pgrid.insert((i + 1)*n - 1 + i, ax)
-            if left or right: # fastest-moving dim length increased by 1
-                n += 1
-            pgrid._n = n
+            pgrid.append(paxs[0])
 
         # Return axes_grid of just the axes drawn in this round
-        return axes_grid(paxs) # no 2D indexing
+        # TODO: Draw one at a time!!!
+        return paxs[0]
 
     def _adjust_aspect(self):
         """Adjust average aspect ratio used for gridspec calculations. This
@@ -1218,13 +1139,13 @@ class Figure(mfigure.Figure):
                   'transform':self.transFigure}
             suptitle.update(kw)
 
-    def _change_gridspec(self, side, idx,
-        ratio, space, ratio_orig, space_orig,
+    def _insert_row_column(self, side, idx,
+        ratio, space, space_orig,
         figure=False):
-        """Helper function that "overwrites" the main figure gridspec, used
-        when successively adding panels. The `side` is the panel side,
-        the `idx` is the slot you want the panel to occupy, and the remaining
-        args are the panel widths and spacings."""
+        """Helper function that "overwrites" the main figure gridspec to make
+        room for a panel. The `side` is the panel side, the `idx` is the
+        slot you want the panel to occupy, and the remaining args are the
+        panel widths and spacings."""
         # Constants and stuff
         # Insert spaces to the left of right panels or to the right of
         # left panels. And note that since .insert() pushes everything in
@@ -1246,7 +1167,6 @@ class Figure(mfigure.Figure):
         panels = subplots_kw[w + 'panels']
         ratios = subplots_kw[w + 'ratios']
         spaces = subplots_kw[w + 'space']
-        ratios_orig = subplots_orig_kw[w + 'ratios']
         spaces_orig = subplots_orig_kw[w + 'space']
 
         # Slot already exists
@@ -1254,10 +1174,6 @@ class Figure(mfigure.Figure):
         # add them along entire side all at once
         exists = (not figure and idx < len(panels) and panels[idx] == s)
         if exists: # already exists!
-            # Modify existing width, defer to user input
-            if ratios_orig[idx] is None:
-                ratios_orig[idx] = units(ratio_orig)
-            ratios[idx] = _notNone(ratios_orig[idx], ratio)
             # Modify existing space
             if spaces_orig[idx_space] is None:
                 spaces_orig[idx_space] = units(space_orig)
@@ -1268,13 +1184,11 @@ class Figure(mfigure.Figure):
             idx += idx_offset
             idx_space += idx_offset
             subplots_kw[ncols] += 1
-            # Ratio array, space array, panel toggles
+            # Original space, ratio array, space array, panel toggles
+            spaces_orig.insert(idx_space, space_orig)
             spaces.insert(idx_space, space)
             ratios.insert(idx, ratio)
             panels.insert(idx, 'f' if figure else s)
-            # Original info
-            ratios_orig.insert(idx, ratio_orig)
-            spaces_orig.insert(idx_space, space_orig)
             # Reference ax location array
             ref = subplots_kw[x + 'ref']
             for i,val in enumerate(ref):
@@ -1366,57 +1280,6 @@ class Figure(mfigure.Figure):
         axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
         ord = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _,ax in sorted(zip(ord, axs)) if ax.get_visible()]
-
-    def _resize_panel(self, pax, width, mode='panel'):
-        """Modifies the panel width in case it is being "filled" by a
-        colorbar or legend. The input is the user input width (may be ``None``)
-        and the mode, one of ``'colorbar'`` or ``'legend'``."""
-        # Get index
-        subplotspec = pax.get_subplotspec()
-        *_, row, _, col, _ = subplotspec.get_active_rows_columns()
-        s = pax._side[0]
-        if s in 'lr':
-            x, y, w, idx = 'x', 'y', 'w', col
-        else:
-            x, y, w, idx = 'y', 'x', 'h', row
-
-        # Set new widths, taking care to obey user input widths!
-        subplots_kw = self._subplots_kw
-        subplots_orig_kw = self._subplots_orig_kw
-        ratios = subplots_kw[w + 'ratios']
-        ratios_orig = subplots_orig_kw[w + 'ratios']
-        if ratios_orig[idx] is None or width is not None:
-            ratios_orig[idx] = units(width)
-        width = units(_notNone(ratios_orig[idx], rc['subplots.' + mode + 'width']))
-        ratios[idx] = width
-
-        # Apply to panel
-        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self.set_size_inches(figsize)
-        self._gridspec_main.update(**gridspec_kw)
-
-        # Undo action of _sharex_setup and _sharey_setup
-        # NOTE: Largely copied from Figure._remove_ax, except we copy
-        # locators and formatters from parent to child.
-        irange = pax._range_gridspec(x)
-        jrange = pax._range_gridspec(y)
-        for ax in self._iter_axes():
-            if not (ax._range_gridspec(x) == irange
-                 or ax._range_gridspec(y) == jrange):
-                continue
-            for axis1,axis2,parent,grouper in zip(
-                (pax.xaxis, pax.yaxis),
-                (ax.xaxis, ax.yaxis),
-                ('_sharex', '_sharey'),
-                (ax._shared_x_axes, ax._shared_y_axes)):
-                if getattr(ax, parent) is not pax:
-                    continue
-                setattr(ax, parent, None)
-                grouper.remove(pax)
-                axis2.label.set_visible(True)
-                axis2.set_minor_locator(axis1.get_minor_locator())
-                axis2.set_major_locator(axis1.get_major_locator())
-                axis2.set_major_formatter(axis1.get_major_formatter())
 
     def _unlock(self):
         """Prevents warning message when adding subplots one-by-one, used
@@ -1513,26 +1376,64 @@ class Figure(mfigure.Figure):
         ax = super().add_subplot(*args, **kwargs)
         return ax
 
-    def colorbar(self, *args, loc='r', panel_kw=None, **kwargs):
-        """Draws a colorbar along the left, right, bottom, or top side
+    def colorbar(self, *args, loc='r', width=None, space=None, **kwargs):
+        """
+        Draws a colorbar along the left, right, bottom, or top side
         of the figure, centered between the leftmost and rightmost (or
-        topmost and bottommost) main axes."""
+        topmost and bottommost) main axes.
+
+        Parameters
+        ----------
+        panel : str, optional
+            Adds :ref:`Global figure panels` to the specified side.
+            String should contain any of the characters ``'l'`` (left), ``'r'``
+            (right), ``'b'`` (bottom), or ``'t'`` (top). For example, ``'br'``
+            will draw panels on the right and bottom sides of the figure.
+        panels : str, optional
+            As with `panel`, but the default behavior is to assign a panel
+            to *every* row or column of subplots. Individual panels can then
+            be accessed with e.g. ``fig.leftpanel[0]``, ``fig.leftpanel[1]``.
+        array : list of int, optional
+            Defines how figure panels span rows and columns of subplots.
+            Interpreted like `array` -- the integers specify panels that span
+            *arbitrary, contiguous* columns or rows of subplots.
+
+            For example, ``plot.suplots(ncols=3, panels='b', barray=[1, 2, 2])``
+            draws a panel on the bottom of the first column and spanning the bottom
+            of the right 2 columns, and ``barray=[0, 2, 2]`` only draws a panel
+            underneath the right 2 columns -- as with `array`, the ``0`` indicates
+            an empty space.
+        width : float or str, optional
+            As in `~proplot.axes.Axes.panel_axes`. Use e.g. `lwidth`, `rwidth`,
+            `bwidth`, and `twidth` to apply these settings to panels on different
+            sides.
+        space : float or str, optional
+            As in `~proplot.axes.Axes.panel_axes`, but controls space
+            between the main subplot grid and the figure panels.
+        *args, **kwargs
+            Passed to `~proplot.axes.Axes.colorbar`.
+        """
         if 'cax' in kwargs:
             return super().colorbar(*args, **kwargs)
         else:
-            panel_kw = panel_kw or {}
-            panel_kw.setdefault('mode', 'colorbar')
-            paxs = self._add_figure_panels(loc, **panel_kw)
-            return paxs.colorbar(*args, **kwargs)
+            ax = self._add_figure_panel(loc, space=space, width=width, array=None, mode='colorbar')
+            return ax.colorbar(*args, loc='_fill', **kwargs)
 
-    def legend(self, *args, loc='r', panel_kw=None, **kwargs):
-        """Draws a legend along the left, right, bottom, or top side of the
+    def legend(self, *args, loc='r', width=None, space=None, **kwargs):
+        """
+        Draws a legend along the left, right, bottom, or top side of the
         figure, centered between the leftmost and rightmost (or
-        topmost and bottommost) main axes."""
-        panel_kw = panel_kw or {}
-        panel_kw.setdefault('mode', 'legend')
-        paxs = self._add_figure_panels(loc, **panel_kw)
-        return paxs.legend(*args, **kwargs)
+        topmost and bottommost) main axes.
+
+        Parameters
+        ----------
+        loc, width, space
+            See `~Figure.colorbar`.
+        *args, **kwargs
+            Passed to `~proplot.axes.Axes.legend`.
+        """
+        ax = self._add_figure_panel(loc, space=space, width=width, array=None, mode='legend')
+        return ax.legend(*args, loc='_fill', **kwargs)
 
     @_counter
     def draw(self, renderer):
@@ -1606,44 +1507,18 @@ class Figure(mfigure.Figure):
     """Alias for `~Figure.savefig`, because calling ``fig.savefig``
     is sort of redundant."""
 
-    @property
-    def leftpanel(self):
-        """An `~proplot.subplots.axes_grid` of the left panel stack."""
-        return self._leftpanel
-    @property
-    def rightpanel(self):
-        """An `~proplot.subplots.axes_grid` of the right panel stack."""
-        return self._rightpanel
-    @property
-    def toppanel(self):
-        """An `~proplot.subplots.axes_grid` of the top panel stack."""
-        return self._toppanel
-    @property
-    def bottompanel(self):
-        """An `~proplot.subplots.axes_grid` of the bottom panel stack."""
-        return self._bottompanel
-
-    lpanel = leftpanel
-    """Alias for `~Figure.leftpanel`."""
-    rpanel = rightpanel
-    """Alias for `~Figure.rightpanel`."""
-    tpanel = toppanel
-    """Alias for `~Figure.toppanel`."""
-    bpanel = bottompanel
-    """Alias for `~Figure.bottompanel`."""
-
     def _iter_axes(self):
         """Iterates over all axes and panels in the figure belonging to the
         `~proplot.axes.Axes` class. Excludes inset and twin axes."""
         axs = []
-        for ax in (*self._axes_main, *self.leftpanel, *self.rightpanel,
-                   *self.bottompanel, *self.toppanel):
+        for ax in (*self._axes_main, *self._lpanels, *self._rpanels,
+                   *self._bpanels, *self._tpanels):
             if not ax or not ax.get_visible():
                 continue
             axs.append(ax)
         for ax in axs:
             for s in 'lrbt':
-                for iax in getattr(ax, s + 'panel'):
+                for iax in getattr(ax, '_' + s + 'panels'):
                     if not iax or not iax.get_visible():
                         continue
                     axs.append(iax)
@@ -1732,11 +1607,9 @@ def subplots(array=None, ncols=1, nrows=1,
     span=None, spanx=None, spany=None,
     align=None, alignx=None, aligny=None,
     share=None, sharex=None, sharey=None,
-    panel=None, panels=None, axpanel=None, axpanels=None,
-    axpanel_kw=None, axpanels_kw=None,
     basemap=False, proj=None, projection=None, proj_kw=None, projection_kw=None,
     autoformat=True,
-    **kwargs):
+    ):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
     axes or arbitrary grids of axes, any of which can be map projections,
@@ -1873,39 +1746,6 @@ def subplots(array=None, ncols=1, nrows=1,
         If boolean, applies to all subplots. If dictionary, values apply to
         specific subplots, as with `proj`.
 
-    panel : str, optional
-        Adds :ref:`Global figure panels` to the specified side.
-        String should contain any of the characters ``'l'`` (left), ``'r'``
-        (right), ``'b'`` (bottom), or ``'t'`` (top). For example, ``'br'``
-        will draw panels on the right and bottom sides of the figure.
-
-        Figure panels are saved as the `~Figure.leftpanel`,
-        `~Figure.rightpanel`, `~Figure.bottompanel`, or
-        `~Figure.toppanel` attributes, with respective shorthands
-        `~Figure.lpanel`, `~Figure.rpanel`, `~Figure.bpanel`, and
-        `~Figure.tpanel`.
-    panels : str, optional
-        As with `panel`, but the default behavior is to assign a panel
-        to *every* row or column of subplots. Individual panels can then
-        be accessed with e.g. ``fig.leftpanel[0]``, ``fig.leftpanel[1]``.
-    [lrbt]array : list of int, optional
-        Defines how figure panels span rows and columns of subplots.
-        Interpreted like `array` -- the integers specify panels that span
-        *arbitrary, contiguous* columns or rows of subplots.
-
-        For example, ``plot.suplots(ncols=3, panels='b', barray=[1, 2, 2])``
-        draws a panel on the bottom of the first column and spanning the bottom
-        of the right 2 columns, and ``barray=[0, 2, 2]`` only draws a panel
-        underneath the right 2 columns -- as with `array`, the ``0`` indicates
-        an empty space.
-    [lrbt]width, [lrbt]share, [lrbt]stack, [lrbt]sep
-        As in `~proplot.axes.Axes.panel_axes`. Use e.g. `lwidth`, `rwidth`,
-        `bwidth`, and `twidth` to apply these settings to panels on different
-        sides.
-    [lrtb]space : float or str, optional
-        As in `~proplot.axes.Axes.panel_axes`, but controls space
-        between the main subplot grid and the figure panels.
-
     Other parameters
     ----------------
     tight : bool, optional
@@ -1918,32 +1758,6 @@ def subplots(array=None, ncols=1, nrows=1,
     autoformat : bool, optional
         Whether to automatically format axes when special datasets are
         passed to plotting commands. See `Figure` for details.
-    axpanel, axpanels : str or dict-like, optional
-        Adds :ref:`Bulk axes panels` to subplots with
-        `~proplot.axes.Axes.panel_axes`. Both `axpanel` and `axpanels`
-        are acceptable. The argument is interpreted as follows.
-
-        * If string, panels are drawn on the same side for all subplots.
-          String should contain any of the characters ``'l'`` (left panel),
-          ``'r'`` (right panel), ``'t'`` (top panel), or ``'b'`` (bottom
-          panel). For example, ``'rt'`` will draw a right and top panel.
-        * If dict-like, panels can be drawn on different sides for
-          different subplots. For example, consider a 3-subplot figure.
-          With ``axpanels={2:'r', 3:'l'}``, subplot 1 will have no panel,
-          subplot 2 will have a panel on the right side, and subplot 3
-          will have a panel on the left side.
-
-    axpanel_kw, axpanels_kw : dict-like, optional
-        Keyword args passed to `~proplot.axes.Axes.panel_axes` for panels
-        listed in `axpanel` and `axpanels`. If dictionary of properties,
-        applies globally. If *dictionary of dictionary* of properties, applies
-        to specific subplots, as with `axpanels`.
-
-        For example, consider a 2-subplot figure with ``axpanels='l'``.
-        With ``axpanel_kw={'lwidth':1}``, both left panels will be 1 inch wide.
-        With ``axpanel_kw={1:{'lwidth':1}, 2:{'lwidth':0.5}}``, the left
-        subplot panel will be 1 inch wide and the right subplot panel will be
-        0.5 inches wide.
 
     Returns
     -------
@@ -2112,7 +1926,6 @@ def subplots(array=None, ncols=1, nrows=1,
     subplots_orig_kw = {
         'left':left, 'right':right, 'top':top, 'bottom':bottom,
         'wspace':wspace, 'hspace':hspace,
-        'wratios':wratios, 'hratios':hratios,
         }
 
     # Default border spaces
@@ -2170,42 +1983,6 @@ def subplots(array=None, ncols=1, nrows=1,
     # Set up shared axes and assign main axes
     fig._axes_main = axs
     fig._share_axes_setup()
-
-    # Draw figure panels
-    # First get default arrays
-    panel, panels = _notNone(panel, ''), _notNone(panels, '')
-    for ipanel,ispan in zip((panel,panels),(1,0)):
-        for s in ipanel:
-            nmax = (ncols if s in 'bt' else nrows)
-            value = ([1]*nmax if ispan else [*range(1,nmax+1)])
-            kwargs.setdefault(s + 'array', value)
-    for s in (panel + panels):
-        fig._add_figure_panels(s, **kwargs)
-
-    # Draw axes panel
-    # Input can be string e.g. 'rl' or dictionary e.g. {(1,2,3):'r', 4:'l'}
-    # NOTE: This *must* come after shared axes are set up! Otherwise tight
-    # layout scaling is wrong
-    axpanels    = _notNone(axpanel, axpanels, '', names=('axpanel','axpanels'))
-    axpanels_kw = _notNone(axpanel_kw, axpanels_kw, {}, names=('axpanel_kw', 'axpanels_kw'))
-    axpanels    = _axes_dict(naxs, axpanels, kw=False, default='')
-    axpanels_kw = _axes_dict(naxs, axpanels_kw, kw=True)
-    for idx in range(naxs):
-        ax = axs[idx]
-        num = idx + 1
-        keys = {*()}
-        sides, panels_kw = axpanels[num], axpanels_kw[num]
-        # Loop through sides
-        for s in sides:
-            offsides = ''.join({*'lrbt'} - {s})
-            reg = re.compile(f'^[{offsides}](share|space|width)$')
-            ikw = {key:value for key,value in panels_kw.items() if not reg.match(key)}
-            keys.update(ikw.keys())
-            fig._add_axes_panel(s, ax, order=order, **ikw)
-        # Warning message
-        jkw = {key:value for key,value in panels_kw.items() if key not in keys}
-        if jkw:
-            warnings.warn(f'Ignoring axpanels_kw keyword arg(s): {jkw}. Active sides are: axpanels={sides!r}.')
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
