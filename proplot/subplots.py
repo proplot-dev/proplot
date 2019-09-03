@@ -740,9 +740,6 @@ class Figure(mfigure.Figure):
     @_counter
     def _add_axes_panel(self, ax, side, filled=False, **kwargs):
         """Hidden method that powers `~proplot.axes.panel_axes`."""
-        # Redirect to main axes, e.g. if want to draw outer colorbar or legend
-        # from data plotted in a panel or inset axes
-        ax = ax._panel_parent or ax
         # Interpret args
         # NOTE: Axis sharing not implemented for figure panels, 99% of the
         # time this is just used as construct for adding global colorbars and
@@ -750,6 +747,7 @@ class Figure(mfigure.Figure):
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
+        ax = ax._panel_parent or ax # redirect to main axes
         side = _side_translate[s]
         share, width, space, space_orig = _panels_kwargs(s,
                 filled=filled, figure=False, **kwargs)
@@ -793,7 +791,7 @@ class Figure(mfigure.Figure):
     def _add_figure_panel(self, side, span=None, **kwargs):
         """Adds figure panels. Also modifies the panel attribute stored
         on the figure to include these panels."""
-        # Get default panel args
+        # Interpret args
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
@@ -809,6 +807,7 @@ class Figure(mfigure.Figure):
             panels, nacross = subplots_kw['wpanels'], subplots_kw['nrows']
         array = getattr(self, '_' + s + 'array')
         npanels, nalong = array.shape
+
         # Check span array
         span = _notNone(span, (1, nalong))
         if not np.iterable(span) or len(span)==1:
@@ -819,11 +818,10 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Invalid coordinates in span={span!r}. Coordinates must satisfy 1 <= c <= {nalong}.')
         start, stop = span[0] - 1, span[1] # zero-indexed
 
-        # See if there is room for panel on the figure
+        # See if there is room for panel in current figure panels
         # The 'array' is an array of boolean values, where each row corresponds
-        # to another figure panel, moving toward the outside, and
-        # We use add to panels toward the outside by appending rows to boolean
-        # arrays indicating which main axes rows and columns are occupied
+        # to another figure panel, moving toward the outside, and boolean
+        # True indicates the slot has been filled
         iratio = (-1 if s in 'lt' else nacross) # default vals
         for i in range(npanels):
             if not any(array[i,start:stop]):
@@ -839,8 +837,7 @@ class Figure(mfigure.Figure):
                     # npanels=2, i=1 --> iratio=nacross-1
                     iratio = nacross - (npanels - i)
                 break
-        # Add to array, since we are adding another panel
-        if iratio in (-1, nacross):
+        if iratio in (-1, nacross): # add to array
             iarray = np.zeros((1, nalong), dtype=bool)
             iarray[0,start:stop] = True
             array = np.concatenate((array, iarray), axis=0)
