@@ -1485,6 +1485,8 @@ def _journals(journal):
         'agu2': ('190mm', '115mm'),
         'agu3': ('95mm',  '230mm'),
         'agu4': ('190mm', '230mm'),
+        'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
+        'aaas2': '12cm', # AAAS 2 column
         }
     value = table.get(journal, None)
     if value is None:
@@ -1494,7 +1496,7 @@ def _journals(journal):
     width, height = None, None
     try:
         width, height = value
-    except TypeError:
+    except ValueError:
         width = value
     return width, height
 
