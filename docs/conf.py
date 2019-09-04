@@ -61,6 +61,11 @@ extensions = [
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
     ]
 
+extlinks = {
+    'issue': ('https://github.com/lukelbd/proplot/issues/%s', 'GH#'),
+    'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
+}
+
 # Do not run doctest tests, these are just to show syntax and expected
 # output may be graphical
 doctest_test_doctest_blocks = ''
