@@ -63,6 +63,24 @@ _side_translate = {
     't':'top',
     }
 
+# Dimensions of figures for common journals
+JOURNAL_SPECS = {
+    'pnas1': '8.7cm', # if 1 number specified, this is a tuple
+    'pnas2': '11.4cm',
+    'pnas3': '17.8cm',
+    'ams1': 3.2, # spec is in inches
+    'ams2': 4.5,
+    'ams3': 5.5,
+    'ams4': 6.5,
+    'agu1': ('95mm',  '115mm'),
+    'agu2': ('190mm', '115mm'),
+    'agu3': ('95mm',  '230mm'),
+    'agu4': ('190mm', '230mm'),
+    'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
+    'aaas2': '12cm', # AAAS 2 column
+    }
+
+
 #-----------------------------------------------------------------------------#
 # Miscellaneous stuff
 #-----------------------------------------------------------------------------#
@@ -1473,30 +1491,16 @@ class Figure(mfigure.Figure):
 #-----------------------------------------------------------------------------#
 def _journals(journal):
     """Journal sizes for figures."""
-    table = {
-        'pnas1': '8.7cm', # if 1 number specified, this is a tuple
-        'pnas2': '11.4cm',
-        'pnas3': '17.8cm',
-        'ams1': 3.2, # spec is in inches
-        'ams2': 4.5,
-        'ams3': 5.5,
-        'ams4': 6.5,
-        'agu1': ('95mm',  '115mm'),
-        'agu2': ('190mm', '115mm'),
-        'agu3': ('95mm',  '230mm'),
-        'agu4': ('190mm', '230mm'),
-        'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
-        'aaas2': '12cm', # AAAS 2 column
-        }
-    value = table.get(journal, None)
+    # Get dimensions for figure from common journals.
+    value = JOURNAL_SPECS.get(journal, None)
     if value is None:
         raise ValueError(f'Unknown journal figure size specifier {journal!r}. ' +
-                          'Current options are: ' + ', '.join(table.keys()))
+                          'Current options are: ' + ', '.join(JOURNAL_SPECS.keys()))
     # Return width, and optionally also the height
     width, height = None, None
     try:
         width, height = value
-    except ValueError:
+    except (TypeError, ValueError):
         width = value
     return width, height
 
