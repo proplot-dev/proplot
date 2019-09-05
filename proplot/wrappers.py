@@ -1513,7 +1513,6 @@ def cycle_wrapper(self, func, *args,
     objs = []
     ncols = 1
     label_leg = None # for colorbar or legend
-    print('hi!!!', values, labels)
     labels = _notNone(values, labels, label, None, names=('values', 'labels', 'label'))
     stacked = kwargs.pop('stacked', False)
     if name in ('pie','boxplot','violinplot'):
