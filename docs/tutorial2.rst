@@ -43,7 +43,7 @@ usually what you’ll want in this context. See
 
 
 
-.. image:: tutorial/tutorial_36_0.svg
+.. image:: tutorial/tutorial_48_0.svg
 
 
 Axis tick label formatting
@@ -72,7 +72,7 @@ some data range*, as demonstrated below. See
 
 
 
-.. image:: tutorial/tutorial_39_0.svg
+.. image:: tutorial/tutorial_51_0.svg
 
 
 ProPlot also lets you easily change the axis formatter with
@@ -107,7 +107,7 @@ See `~proplot.axes.CartesianAxes.format` and
 
 
 
-.. image:: tutorial/tutorial_41_0.svg
+.. image:: tutorial/tutorial_53_0.svg
 
 
 New and old axis scales
@@ -157,7 +157,7 @@ labeling spectral coordinates (this is more useful with the
 
 
 
-.. image:: tutorial/tutorial_44_1.svg
+.. image:: tutorial/tutorial_56_1.svg
 
 
 .. code:: ipython3
@@ -187,7 +187,7 @@ labeling spectral coordinates (this is more useful with the
 
 
 
-.. image:: tutorial/tutorial_45_0.svg
+.. image:: tutorial/tutorial_57_0.svg
 
 
 .. code:: ipython3
@@ -227,7 +227,7 @@ labeling spectral coordinates (this is more useful with the
 
 
 
-.. image:: tutorial/tutorial_46_0.svg
+.. image:: tutorial/tutorial_58_0.svg
 
 
 Datetime axis formatting
@@ -271,7 +271,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_49_0.svg
+.. image:: tutorial/tutorial_61_0.svg
 
 
 Dual unit axes
@@ -323,11 +323,11 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: tutorial/tutorial_52_1.svg
+.. image:: tutorial/tutorial_64_1.svg
 
 
 
-.. image:: tutorial/tutorial_52_2.svg
+.. image:: tutorial/tutorial_64_2.svg
 
 
 .. code:: ipython3
@@ -358,6 +358,94 @@ pass the name of any registered “axis scale” to the ``xscale`` or
 
 
 
-.. image:: tutorial/tutorial_53_1.svg
+.. image:: tutorial/tutorial_65_1.svg
+
+
+Panel axes
+----------
+
+It is common to need “panels” for plotting secondary 1-dimensional
+datasets or summary statistics along the sides of axes. With ProPlot,
+you can generate “panels” using the `~proplot.axes.Axes.panel` or
+`~proplot.axes.Axes.panel_axes` commands. The axes returned by panels
+are instances of `~proplot.axes.CartesianAxes`.
+
+To generate “stacked” panels, call `~proplot.axes.Axes.panel` or
+`~proplot.axes.Axes.panel_axes` more than once. To include panels when
+centering spanning axis labels and super titles, pass
+``includepanels=True`` to `~proplot.subplots.subplots`.
+
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(axwidth=1.2, nrows=2, ncols=2, share=0)
+    for ax,side in zip(axs,'tlbr'):
+        ax.panel_axes(side)
+    axs.format(title='Title', suptitle='Panel axes demo', collabels=['Column 1','Column 2'],
+               abcloc='ul', titleloc='uc', xlabel='xlabel', ylabel='ylabel', abc=True, top=False)
+    axs.format(xlim=(0,1), ylim=(0,1), ylocator=plot.arange(0.2,0.8,0.2), xlocator=plot.arange(0.2,0.8,0.2))
+
+
+
+.. image:: tutorial/tutorial_67_0.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    data = (np.random.rand(20,20)-0.1).cumsum(axis=1)
+    f, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0, panelpad=0.1, includepanels=True)
+    maxs = axs.panel('r', space=0)
+    saxs = axs.panel('r', space=0, share=False)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Panel axes demo')
+    for i,ax in enumerate(axs):
+        ax.format(title=f'Dataset {i+1}')
+    axs.contourf(data, cmap='glacial', levels=plot.arange(-1,11),
+                     colorbar='b', colorbar_kw={'label':'cbar'}, extend='both')
+    maxs.plot(data.mean(axis=1), np.arange(20), color='gray7')
+    maxs.format(title='Mean')
+    saxs.plot(data.std(axis=1), np.arange(20), color='gray7', ls='--')
+    saxs.format(title='Stdev')
+
+
+
+.. image:: tutorial/tutorial_68_0.svg
+
+
+Inset axes
+----------
+
+`Inset
+axes <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
+in ProPlot can be generated with the `~proplot.axes.Axes.inset` or
+`~proplot.axes.Axes.inset_axes` command. The generated axes are
+instances of `~proplot.axes.CartesianAxes`, and therefore can be
+modified with the `~proplot.axes.CartesianAxes.format` command.
+Passing ``zoom=True`` to `~proplot.axes.Axes.inset` draws a “zoom
+indication” with `~matplotlib.axes.Axes.indicate_inset_zoom`, and the
+“zoom indication” lines are *updated* when the axis limits of the parent
+axes change. To modify the “zoom indication” line properties, simply use
+the ``zoom_kw`` argument.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    N = 20
+    f, ax = plot.subplots()
+    x, y = np.arange(10), np.arange(10)
+    data = np.random.rand(10,10)
+    m = ax.pcolormesh(data, cmap='Grays', levels=N)
+    ax.colorbar(m, loc='b', label='label')
+    ax.format(xlabel='xlabel', ylabel='ylabel')
+    axi = ax.inset([5,5,4,4], transform='data', zoom=True, zoom_kw={'color':'red', 'lw':2})
+    axi.format(xlim=(2,4), ylim=(2,4), color='red', linewidth=1.5, ticklabelweight='bold')
+    axi.pcolormesh(data, cmap='Grays', levels=N)
+    ax.format(suptitle='Inet axes demo')
+
+
+
+.. image:: tutorial/tutorial_70_0.svg
 
 

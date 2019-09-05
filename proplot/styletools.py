@@ -322,8 +322,12 @@ class ColorCacheDict(dict):
                 pass
             else:
                 if isinstance(cmap, mcolors.ListedColormap):
+                    if not 0 <= rgb[1] < len(cmap.colors):
+                        raise ValueError(f'Color cycle sample for {rgb[0]!r} cycle must be between 0 and {len(cmap.colors)-1}, got {rgb[1]}.')
                     rgb = cmap.colors[rgb[1]] # draw color from the list of colors, using index
                 else:
+                    if not 0 <= rgb[1] <= 1:
+                        raise ValueError(f'Colormap sample for {rgb[0]!r} colormap must be between 0 and 1, got {rgb[1]}.')
                     rgb = cmap(rgb[1]) # interpolate color from colormap, using key in range 0-1
                 rgba = mcolors.to_rgba(rgb, alpha)
                 return rgba

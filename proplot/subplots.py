@@ -684,7 +684,7 @@ class Figure(mfigure.Figure):
     may be automatically scaled to preserve subplot aspect ratios."""
     def __init__(self,
         tight=None,
-        pad=None, axpad=None, panelpad=None,
+        pad=None, axpad=None, panelpad=None, includepanels=False,
         autoformat=True,
         ref=1, order='C', # documented in subplots but needed here
         subplots_kw=None, gridspec_kw=None, subplots_orig_kw=None,
@@ -707,6 +707,9 @@ class Figure(mfigure.Figure):
             Padding between subplots and axes panels, and between "stacked"
             panels. If float, units are inches. If string, units are
             interpreted by `~proplot.utils.units`.
+        includepanels : bool, optional
+            Whether to include panels when centering spanning *x* axis labels,
+            *y* axis labels, and figure "super titles". Defaults to ``False``.
         autoformat : bool, optional
             Whether to automatically format the axes when a `~pandas.Series`,
             `~pandas.DataFrame` or `~xarray.DataArray` is passed to a plotting
@@ -736,6 +739,7 @@ class Figure(mfigure.Figure):
         self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
+        self._include_panels = includepanels
         self._order = order # used for configuring panel axes_grids
         self._ref_num = ref
         self._axes_main = []
@@ -777,14 +781,20 @@ class Figure(mfigure.Figure):
         if s in 'lr':
             iratio = (col1 - offset if s == 'l' else col2 + offset)
             idx1 = slice(row1, row2 + 1)
-            idx2 = max(0, iratio)
+            idx2 = iratio
         else:
             iratio = (row1 - offset if s == 't' else row2 + offset)
-            idx1 = max(0, iratio)
+            idx1 = iratio
             idx2 = slice(col1, col2 + 1)
+        gridspec_prev = self._gridspec_main
         gridspec = self._insert_row_column(side, iratio,
             width, space, space_orig, figure=False,
             )
+        if gridspec is not gridspec_prev:
+            if s == 't':
+                idx1 += 1
+            elif s == 'l':
+                idx2 += 1
 
         # Draw and setup panel
         with self._unlock():
@@ -1242,6 +1252,8 @@ class Figure(mfigure.Figure):
             for ax in axs:
                 # Get old index
                 # NOTE: Endpoints are inclusive, not exclusive!
+                if not hasattr(ax, 'get_subplotspec'):
+                    continue
                 if s in 'lr':
                     inserts = (None, None, idx, idx)
                 else:
@@ -1274,7 +1286,10 @@ class Figure(mfigure.Figure):
         `x` can be ``'x'`` or ``'y'``."""
         # Get position in figure relative coordinates
         s = side[0]
-        x = ('x' if s in 'lr' else 'y')
+        x = ('y' if s in 'lr' else 'x')
+        extra = ('tb' if s in 'lr' else 'lr')
+        if self._include_panels:
+            axs = [iax for ax in axs for iax in ax._iter_panels(extra)]
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
         min_, max_ = ranges[:,0].min(), ranges[:,1].max()
         axlo = axs[np.where(ranges[:,0] == min_)[0][0]]
@@ -1287,6 +1302,7 @@ class Figure(mfigure.Figure):
             pos = (lobox.y1 + hibox.y0)/2 # 'lo' is actually on top, highest up in gridspec
         # Return axis suitable for spanning position
         spanax = axs[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,1]))//2]
+        spanax = spanax._panel_parent or spanax
         return pos, spanax
 
     def _get_align_axes(self, side):
@@ -1690,7 +1706,7 @@ def subplots(array=None, ncols=1, nrows=1,
     align=None, alignx=None, aligny=None,
     share=None, sharex=None, sharey=None,
     basemap=False, proj=None, projection=None, proj_kw=None, projection_kw=None,
-    autoformat=True,
+    autoformat=True, includepanels=False,
     ):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
@@ -1836,6 +1852,9 @@ def subplots(array=None, ncols=1, nrows=1,
     pad, axpad, panelpad : float or str, optional
         Padding for automatic tight layout adjustments. See `Figure` for
         details.
+    includepanels : bool, optional
+        Whether to include panels when calculating the position of certain
+        spanning labels. See `Figure` for details.
     autoformat : bool, optional
         Whether to automatically format axes when special datasets are
         passed to plotting commands. See `Figure` for details.
@@ -2039,6 +2058,7 @@ def subplots(array=None, ncols=1, nrows=1,
         )
     fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize, ref=ref,
         pad=pad, axpad=axpad, panelpad=panelpad, autoformat=autoformat,
+        includepanels=includepanels,
         subplots_orig_kw=subplots_orig_kw, subplots_kw=subplots_kw,
         gridspec_kw=gridspec_kw)
     gridspec = fig._gridspec_main
