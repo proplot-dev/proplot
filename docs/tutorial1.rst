@@ -183,52 +183,129 @@ is demonstrated in the below example.
 .. image:: tutorial/tutorial_10_0.svg
 
 
-The rc object
--------------
+Plotting commands
+-----------------
 
-A special object named `~proplot.rctools.rc`, belonging to the
-`~proplot.rctools.rc_configurator` class, is created whenever you
-import ProPlot. This object gives you advanced control over the look of
-your plots – it is your **one-stop shop for changing global settings**.
-`~proplot.rctools.rc` can be used to change matplotlib
-`rcParams <https://matplotlib.org/users/customizing.html>`__ settings,
-custom ProPlot :ref:`rcExtraParams` settings, and special
-:ref:`rcGlobals` meta-settings. See the `~proplot.rctools`
-documentation for more info.
+In ProPlot, axes plotting commands like
+`~matplotlib.axes.Axes.contourf`,
+`~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.plot`
+work just like they do in matplotlib, but with several new features.
+There are also a few new plotting commands, like
+`~proplot.axes.Axes.heatmap`, `~proplot.axes.Axes.area`, and
+`~proplot.axes.Axes.areax`. For details on these features, see
+:ref:`Plotting wrappers` and :ref:`Color usage`.
 
-To modify a setting for just one subplot, pass it to the
-`~proplot.axes.Axes.format` command. To reset everything to the
-default state, use `~proplot.rctools.rc_configurator.reset`. To
-temporarily modify global settings for a block of code, use
-`~proplot.rctools.rc_configurator.context`.
+.. code:: ipython3
+
+    import proplot as plot
+    f, axs = plot.subplots(axwidth=1.5, ncols=2, nrows=2, share=False)
+    cycle = plot.Cycle('blues', 5)
+    data = np.random.rand(10,10)
+    axs[0].plot(data, cycle=cycle, lw=3)
+    for i in range(5):
+        axs[1].scatter(data[:,i], data[:,5+i], s=50, cycle=cycle)
+    axs[2].pcolormesh(data, cmap='reds', colorbar='b')
+    axs[3].contourf(data, cmap='reds', colorbar='b')
+    axs.format(suptitle='Super title', title='Title')
+
+
+
+.. image:: tutorial/tutorial_12_0.svg
+
+
+Axes colorbars and legends
+--------------------------
+
+Drawing colorbars and legends is a much smoother experience with
+ProPlot. To draw a colorbar or legend along the outside of an axes, use
+the `~proplot.axes.Axes.colorbar` and `~proplot.axes.Axes.legend`
+``Axes`` methods with e.g. ``loc='right'``. If you do this multiple
+times, the colorbars and legends will be “stacked”. Room for colorbars
+and legends is allocated from the space between subplot rows and columns
+– it is no longer stolen from the axes.
+
+To plot data and draw a colorbar or legend in one go, pass e.g.
+``colorbar='right'`` to any method wrapped by
+`~proplot.wrappers.cmap_wrapper`, or e.g. ``colorbar='right'`` or
+``legend='right'`` to any method wrapped by
+`~proplot.wrappers.cycle_wrapper`. To draw an *inset* colorbar, use
+one of the *inset* locations, e.g. ``colorbar='upper right'`` or
+``colorbar='ur'``. Inset colorbars have optional rectangular
+backgrounds, just like inset legends.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
-    # A bunch of different ways to update settings
-    plot.rc.reset()
-    plot.rc.cycle = 'colorblind'
-    plot.rc.update({'fontname': 'DejaVu Sans'})
-    plot.rc['figure.facecolor'] = 'gray3'
-    plot.rc['axes.facecolor'] = 'gray5'
-    with plot.rc.context(linewidth=1.5): # above mods are persistent, context mod only applies to figure
-        f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
-    # Make plot
-    N, M = 100, 6
-    values = np.arange(1,M+1)
-    cycle = plot.Cycle('C0', 'C1', M, fade=80)
-    for i,ax in enumerate(axs):
-        data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
-        lines = ax.plot(data, linewidth=3, cycle=cycle) # see "Changing the color cycle" for details
-    axs.format(ytickloc='both', ycolor='blue7', 
-               xlabel='x label', ylabel='y label',
-               yticklabelloc='both',
-               suptitle='Applying new rc settings',
-               patch_kw={'hatch':'xxx', 'edgecolor':'w'})
-    ay = axs[-1].twinx()
-    ay.format(ycolor='r', linewidth=1.5, ylabel='secondary axis')
-    ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=3)
+    with plot.rc.context(abc=True):
+        f, axs = plot.subplots(ncols=2, share=0)
+    # Colorbars
+    ax = axs[0]
+    m = ax.heatmap(np.random.rand(10,10), colorbar='t', cmap='dusk')
+    ax.colorbar(m, loc='r')
+    ax.colorbar(m, loc='ll', label='colorbar label')
+    ax.format(title='Axes colorbars', suptitle='Axes colorbars and legends demo')
+    # Legends
+    ax = axs[1]
+    ax.format(title='Axes legends', titlepad='0em')
+    hs = ax.plot((np.random.rand(10,5)-0.5).cumsum(axis=0), lw=3, legend='t', cycle='sharp',
+            labels=list('abcde'), legend_kw={'ncols':5, 'frame':False})
+    ax.legend(hs, loc='r', ncols=1, frame=False)
+    ax.legend(hs, loc='ll', label='legend label')
+    axs.format(xlabel='xlabel', ylabel='ylabel')
+
+
+
+.. image:: tutorial/tutorial_14_0.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(nrows=2, share=0, axwidth='4cm', panelpad='1em')
+    axs.format(suptitle='Stacked colorbars demo')
+    N = 10
+    for j,ax in enumerate(axs):
+        ax.format(xlabel='data', xlocator=np.linspace(0, 0.8, 5), title=f'Subplot #{j+1}')
+        for i,(x0,y0,x1,y1,cmap,scale) in enumerate(((0,0.5,1,1,'grays',0.5), (0,0,0.5,0.5,'reds',1), (0.5,0,1,0.5,'blues',2))):
+            if j == 1 and i == 0:
+                continue
+            data = np.random.rand(N,N)*scale
+            x, y = np.linspace(x0, x1, 11), np.linspace(y0, y1, 11)
+            m = ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0,scale,11))
+            ax.colorbar(m, loc='l', label=f'dataset #{i+1}')
+
+
+
+.. image:: tutorial/tutorial_15_0.svg
+
+
+Figure colorbars and legends
+----------------------------
+
+To draw a colorbar or legend along the edge of a figure, use the
+`~proplot.subplots.Figure.colorbar` or
+`~proplot.subplots.Figure.legend` ``Figure`` methods. The colorbar or
+legend will be aligned between edges of the subplot grid, instead of the
+figure bounds.
+
+To draw a colorbar or legend beneath particular row(s) and column(s) of
+the subplot grid, use the ``row``, ``rows``, ``col``, or ``cols``
+keyword arguments. Pass an integer to draw the colorbar or legend beside
+a single row or column, or pass a tuple to draw it beside a range of
+rows or columns.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2)
+    m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
+    axs.format(suptitle='Figure colorbars and legends demo', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
+    f.colorbar(m, label='label', ticks=0.5, loc='b', col=1)
+    f.colorbar(m, label='label', ticks=0.2, loc='b', cols=(2,3))
+    f.colorbar(m, label='label', ticks=0.1, loc='r', length=0.7)
 
 
 
@@ -236,7 +313,107 @@ temporarily modify global settings for a block of code, use
 
 
 
-.. image:: tutorial/tutorial_12_1.svg
+.. image:: tutorial/tutorial_17_1.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(ncols=4, axwidth=1.3, share=0, wspace=0.3)
+    data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
+    m = axs[:2].contourf(data, cmap='grays', extend='both')
+    cycle = plot.colors('grays', 5)
+    hs = []
+    for abc,color in zip('ABCDEF',cycle):
+        h = axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')
+        hs.extend(h[0])
+    f.colorbar(m[0], length=0.8, label='label', loc='b', cols=(1,2))
+    f.legend(hs, ncols=5, label='label', frame=True, loc='b', cols=(3,4))
+    axs.format(suptitle='Figure colorbars and legends demo', abc=True, abcloc='ul', abcformat='A')
+    for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
+        ax.format(xlabel='xlabel', title=title)
+
+
+
+.. image:: tutorial/tutorial_18_0.svg
+
+
+New colorbar and legend features
+--------------------------------
+
+The `~proplot.subplots.Figure` and `~proplot.axes.Axes` ``colorbar``
+and ``legend`` methods are wrapped by
+`~proplot.wrappers.colorbar_wrapper` and
+`~proplot.wrappers.legend_wrapper`, which add several new features.
+
+`~proplot.wrappers.colorbar_wrapper` can draw colorbars from *lists of
+colors* or *lists of artists* by passing a list instead of a “mappable”
+object – a colormap is constructed from the corresponding colors
+on-the-fly. To change outline, divider, tick location, tick label, and
+colorbar label settings, just pass the appropriate keyword arg to
+`~proplot.wrappers.colorbar_wrapper`.
+
+`~proplot.wrappers.legend_wrapper` can draw legends with *centered
+legend rows*, either by passing ``center=True`` or by passing *list of
+lists* of plot handles. This is accomplished by stacking multiple
+single-row, horizontally centered legends, then manually adding an
+encompassing legend frame. You can also switch between row-major and
+column-major order for legend entries (the new default is row-major),
+and modify legend text properties and handle properties.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    f, axs = plot.subplots(share=0, ncols=2)
+    ax = axs[0]
+    data = 1 + (np.random.rand(12,10)-0.45).cumsum(axis=0)
+    cycle = plot.Cycle('algae')
+    hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'14em', 'label':'numeric values'})
+    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='alt numeric values', ticks=2)
+    ax = axs[1]
+    m = ax.contourf(data.T, extend='both', cmap='algae')
+    f.colorbar(m, length=0.6, loc='b', label='flipped tick location', tickloc='top', grid=True)
+    ax.colorbar(m, loc='ul', length=1, ticks=0.5, tickminor=True, extendrect=True,
+                label='changing colors', labelcolor='gray7', labelweight='bold',
+                linewidth=1, edgecolor='gray7', ticklabelcolor='gray7', alpha=0.5)
+    axs.format(suptitle='Colorbar formatting demo', xlabel='xlabel', ylabel='ylabel')
+
+
+
+.. image:: tutorial/tutorial_21_0.svg
+
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    plot.rc.cycle = 'contrast'
+    labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
+    f, axs = plot.subplots(ncols=2, span=False, share=1)
+    hs1, hs2 = [], []
+    # Plot lines and add to legends on-the-fly
+    for i,label in enumerate(labels):
+        data = (np.random.rand(20)-0.45).cumsum(axis=0)
+        h1 = axs[0].plot(data, lw=4, label=label, legend='ul',
+                         legend_kw={'order':'F', 'title':'column major'}) # add to legend in upper left
+        hs1.extend(h1)
+        h2 = axs[1].plot(data, lw=4, label=label, legend='r', cycle='floral',
+                         legend_kw={'ncols':1, 'frame':False, 'title':'no frame'}) # add to legend in right panel
+        hs2.extend(h2)
+    # Outer legends
+    ax = axs[0]
+    ax.legend(hs1, loc='b', ncols=3, linewidth=2, title='row major', order='C',
+              edgecolor='gray4', facecolor='gray2')
+    ax = axs[1]
+    ax.legend(hs2, loc='b', ncols=3, center=True, title='centered legend',
+             handlelength=1) # also works!
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Legend formatting demo')
+
+
+
+.. image:: tutorial/tutorial_22_0.svg
 
 
 Pandas and xarray integration
@@ -301,7 +478,7 @@ and :ref:`On-the-fly axes panels`.
 
 
 
-.. image:: tutorial/tutorial_16_2.svg
+.. image:: tutorial/tutorial_26_2.svg
 
 
 .. code:: ipython3
@@ -338,7 +515,7 @@ and :ref:`On-the-fly axes panels`.
 
 
 
-.. image:: tutorial/tutorial_18_0.svg
+.. image:: tutorial/tutorial_28_0.svg
 
 
 Automatic subplot spacing
@@ -383,11 +560,11 @@ instead.
 
 
 
-.. image:: tutorial/tutorial_21_0.svg
+.. image:: tutorial/tutorial_31_0.svg
 
 
 
-.. image:: tutorial/tutorial_21_1.svg
+.. image:: tutorial/tutorial_31_1.svg
 
 
 .. code:: ipython3
@@ -403,7 +580,7 @@ instead.
 
 
 
-.. image:: tutorial/tutorial_22_0.svg
+.. image:: tutorial/tutorial_32_0.svg
 
 
 .. code:: ipython3
@@ -421,7 +598,7 @@ instead.
 
 
 
-.. image:: tutorial/tutorial_23_0.svg
+.. image:: tutorial/tutorial_33_0.svg
 
 
 Axis sharing and spanning
@@ -454,19 +631,19 @@ example for details.
 
 
 
-.. image:: tutorial/tutorial_26_0.svg
+.. image:: tutorial/tutorial_36_0.svg
 
 
 
-.. image:: tutorial/tutorial_26_1.svg
+.. image:: tutorial/tutorial_36_1.svg
 
 
 
-.. image:: tutorial/tutorial_26_2.svg
+.. image:: tutorial/tutorial_36_2.svg
 
 
 
-.. image:: tutorial/tutorial_26_3.svg
+.. image:: tutorial/tutorial_36_3.svg
 
 
 .. code:: ipython3
@@ -484,11 +661,11 @@ example for details.
 
 
 
-.. image:: tutorial/tutorial_27_0.svg
+.. image:: tutorial/tutorial_37_0.svg
 
 
 
-.. image:: tutorial/tutorial_27_1.svg
+.. image:: tutorial/tutorial_37_1.svg
 
 
 A-b-c subplot labels
@@ -512,7 +689,7 @@ the ``abc.format`` `~proplot.rctools.rc` option. See
 
 
 
-.. image:: tutorial/tutorial_29_0.svg
+.. image:: tutorial/tutorial_39_0.svg
 
 
 Arbitrary physical units
@@ -535,6 +712,62 @@ millimeters, and pixels).
 
 
 
-.. image:: tutorial/tutorial_32_0.svg
+.. image:: tutorial/tutorial_42_0.svg
+
+
+The rc object
+-------------
+
+A special object named `~proplot.rctools.rc`, belonging to the
+`~proplot.rctools.rc_configurator` class, is created whenever you
+import ProPlot. This object gives you advanced control over the look of
+your plots – it is your **one-stop shop for changing global settings**.
+`~proplot.rctools.rc` can be used to change matplotlib
+`rcParams <https://matplotlib.org/users/customizing.html>`__ settings,
+custom ProPlot :ref:`rcExtraParams` settings, and special
+:ref:`rcGlobals` meta-settings. See the `~proplot.rctools`
+documentation for more info.
+
+To modify a setting for just one subplot, pass it to the
+`~proplot.axes.Axes.format` command. To reset everything to the
+default state, use `~proplot.rctools.rc_configurator.reset`. To
+temporarily modify global settings for a block of code, use
+`~proplot.rctools.rc_configurator.context`.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    # A bunch of different ways to update settings
+    plot.rc.reset()
+    plot.rc.cycle = 'colorblind'
+    plot.rc.update({'fontname': 'DejaVu Sans'})
+    plot.rc['figure.facecolor'] = 'gray3'
+    plot.rc['axes.facecolor'] = 'gray5'
+    with plot.rc.context(linewidth=1.5): # above mods are persistent, context mod only applies to figure
+        f, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
+    # Make plot
+    N, M = 100, 6
+    values = np.arange(1,M+1)
+    cycle = plot.Cycle('C0', 'C1', M, fade=80)
+    for i,ax in enumerate(axs):
+        data = np.cumsum(np.random.rand(N,M)-0.5, axis=0)
+        lines = ax.plot(data, linewidth=3, cycle=cycle) # see "Changing the color cycle" for details
+    axs.format(ytickloc='both', ycolor='blue7', 
+               xlabel='x label', ylabel='y label',
+               yticklabelloc='both',
+               suptitle='Applying new rc settings',
+               patch_kw={'hatch':'xxx', 'edgecolor':'w'})
+    ay = axs[-1].twinx()
+    ay.format(ycolor='r', linewidth=1.5, ylabel='secondary axis')
+    ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=3)
+
+
+
+
+
+
+
+.. image:: tutorial/tutorial_44_1.svg
 
 

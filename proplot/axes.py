@@ -1158,7 +1158,8 @@ class Axes(maxes.Axes):
             self._panel_filled = True
             # Try to make handles and stuff flush against the axes edge
             kwargs.setdefault('borderaxespad', 0)
-            if not kwargs.get('frameon', rc['legend.frameon']):
+            frameon = _notNone(kwargs.get('frame', None), kwargs.get('frameon', None), rc['legend.frameon'])
+            if not frameon:
                 kwargs.setdefault('borderpad', 0)
             # Apply legend location
             side = self._panel_side
@@ -1267,7 +1268,9 @@ class Axes(maxes.Axes):
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
-    def indicate_inset_zoom(self, alpha=None, linewidth=None, color=None, edgecolor=None, **kwargs):
+    def indicate_inset_zoom(self, alpha=None,
+        lw=None, linewidth=None,
+        color=None, edgecolor=None, **kwargs):
         """
         Called automatically when using `~Axes.inset` with ``zoom=True``.
         Like `~matplotlib.axes.Axes.indicate_inset_zoom`, but *refreshes* the
@@ -1279,11 +1282,9 @@ class Axes(maxes.Axes):
         ----------
         alpha : float, optional
             The transparency of the zoom box fill.
-        linewidth : float, optional
+        lw, linewidth : float, optional
             The width of the zoom lines and box outline in points.
-        color : color-spec, optional
-            The color of the zoom box fill.
-        edgecolor : color-spec, optional
+        color, edgecolor : color-spec, optional
             The color of the zoom lines and box outline.
         **kwargs
             Passed to `~matplotlib.axes.Axes.indicate_inset`.
@@ -1291,16 +1292,15 @@ class Axes(maxes.Axes):
         # Should be called from the inset axes
         parent = self._inset_parent
         alpha = alpha or 1.0
-        linewidth = linewidth or rc['axes.linewidth']
-        edgecolor = color or edgecolor or rc['axes.edgecolor']
+        linewidth = _notNone(lw, linewidth, rc['axes.linewidth'], names=('lw', 'linewidth'))
+        edgecolor = _notNone(color, edgecolor, rc['axes.edgecolor'], names=('color', 'edgecolor'))
         if not parent:
             raise ValueError(f'{self} is not an inset axes.')
-        xlim = self.get_xlim()
-        ylim = self.get_ylim()
+        xlim, ylim = self.get_xlim(), self.get_ylim()
         rect = (xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0])
-        # Call inset
-        kwargs.update({'linewidth':linewidth, 'edgecolor':edgecolor, 'alpha':alpha})
-        rectpatch, connects = parent.indicate_inset(rect, self, **kwargs)
+        # Call indicate_inset
+        rectpatch, connects = parent.indicate_inset(rect, self,
+            linewidth=linewidth, edgecolor=edgecolor, alpha=alpha, **kwargs)
         # Adopt properties from old one
         if self._inset_zoom_data:
             rectpatch_old, connects_old = self._inset_zoom_data
@@ -1309,6 +1309,7 @@ class Axes(maxes.Axes):
             for line,line_old in zip(connects,connects_old):
                 visible = line.get_visible()
                 line.update_from(line_old)
+                line.set_linewidth(line_old.get_linewidth())
                 line.set_visible(visible)
                 line_old.set_visible(False)
         # Format zoom data
