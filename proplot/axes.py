@@ -119,8 +119,6 @@ except ModuleNotFoundError:
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
-    name = 'base'
-    """The registered projection name."""
     def __init__(self, *args, number=None,
         sharex=None, sharey=None, sharex_level=0, sharey_level=0,
         spanx=None, spany=None, alignx=None, aligny=None,
@@ -2097,8 +2095,8 @@ class CartesianAxes(Axes):
         if self._altx_parent:
             raise ValueError('This *is* a twin axes!')
         with self.figure._unlock():
-            ax = self._make_twin_axes(sharey=self, projection=self.name)
-        ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
+            ax = self._make_twin_axes(sharey=self, projection='cartesian')
+        # ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
         ax._altx_parent = self
@@ -2117,8 +2115,8 @@ class CartesianAxes(Axes):
         if self._alty_parent:
             raise ValueError('This *is* a twin axes!')
         with self.figure._unlock():
-            ax = self._make_twin_axes(sharex=self, projection=self.name)
-        ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
+            ax = self._make_twin_axes(sharex=self, projection='cartesian')
+        # ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax
         ax._alty_parent = self
@@ -3216,7 +3214,7 @@ CartopyAxes.format.__doc__ = _projection_format_docstring
 BasemapAxes.format.__doc__ = _projection_format_docstring
 
 # Register the projections
-mproj.register_projection(Axes)
+# TODO: Remove BasemapAxes!!! Cartopy will support gridline labels soon.
 mproj.register_projection(PolarAxes)
 mproj.register_projection(CartesianAxes)
 mproj.register_projection(BasemapAxes)

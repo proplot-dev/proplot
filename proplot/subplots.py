@@ -237,6 +237,23 @@ class axes_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
+    # TODO! No more putting panels, legends, colorbars on the SubplotSpec,
+    # put them in the margin and increase default space
+    # def colorbar(self, loc=None):
+    #     """Draws a colorbar that spans axes in the selected range."""
+    #     for ax in self:
+    #         pass
+    #
+    # def legend(self, loc=None):
+    #     """Draws a legend that spans axes in the selected range."""
+    #     for ax in self:
+    #         pass
+    #
+    # def text(self, loc=None):
+    #     """Draws text that spans axes in the selected range."""
+    #     for ax in self:
+    #         pass
+
 #-----------------------------------------------------------------------------#
 # Gridspec classes
 #-----------------------------------------------------------------------------#
@@ -1307,15 +1324,15 @@ class Figure(mfigure.Figure):
             return
         # Update label on this axes
         axis.label.update(kwargs)
+        kwargs.pop('color', None)
 
         # Defer to parent (main) axes if possible, then get the axes
         # shared by that parent
         # TODO: Share panels in successive stacks, but share short axes
         # just like sharing long axes
         ax = axis.axes
-        sax = getattr(ax, '_share' + x, None)
-        while isinstance(ax, axes.PanelAxes) and sax is not None:
-            ax, sax = sax, getattr(sax, '_share' + x, None)
+        ax = ax._panel_parent or ax
+        ax = getattr(ax, '_share' + x) or ax
 
         # Apply to spanning axes and their panels
         axs = [ax]
@@ -1325,7 +1342,7 @@ class Figure(mfigure.Figure):
                 axs = ax._get_side_axes(s)
         for ax in axs:
             getattr(ax, x + 'axis').label.update(kwargs) # apply to main axes
-            pax = getattr(ax, '_share' + x, None)
+            pax = getattr(ax, '_share' + x)
             if pax is not None: # apply to panel?
                 getattr(pax, x + 'axis').label.update(kwargs)
 

@@ -1600,7 +1600,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='no_name', **k
 #-----------------------------------------------------------------------------#
 # Return arbitrary normalizer
 #-----------------------------------------------------------------------------#
-def Norm(norm, levels=None, values=None, **kwargs):
+def Norm(norm, levels=None, **kwargs):
     """
     Returns an arbitrary `~matplotlib.colors.Normalize` instance, used to
     interpret the `norm` and `norm_kw` arguments when passed to any plotting
