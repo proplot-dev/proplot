@@ -775,13 +775,13 @@ class Figure(mfigure.Figure):
         pgrid = getattr(ax, '_' + s + 'panels')
         offset = (len(pgrid)*bool(pgrid)) + 1
         if s in 'lr':
+            iratio = (col1 - offset if s == 'l' else col2 + offset)
             idx1 = slice(row1, row2 + 1)
-            idx2 = (col1 - offset if s == 'l' else col2 + offset)
-            iratio = idx2
+            idx2 = max(0, iratio)
         else:
-            idx1 = (row1 - offset if s == 't' else row2 + offset)
+            iratio = (row1 - offset if s == 't' else row2 + offset)
+            idx1 = max(0, iratio)
             idx2 = slice(col1, col2 + 1)
-            iratio = idx1
         gridspec = self._insert_row_column(side, iratio,
             width, space, space_orig, figure=False,
             )
@@ -995,7 +995,9 @@ class Figure(mfigure.Figure):
                     idx1, = np.where(filt & filt1)
                     idx2, = np.where(filt & filt2)
                     if idx1.size > 1 or idx2.size > 2:
-                        raise RuntimeError('This should never happen.')
+                        warnings.warn('This should never happen.')
+                        continue
+                        # raise RuntimeError('This should never happen.')
                     elif not idx1.size or not idx2.size:
                         continue
                     idx1, idx2 = idx1[0], idx2[0]

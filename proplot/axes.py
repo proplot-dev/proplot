@@ -1083,7 +1083,7 @@ class Axes(maxes.Axes):
                 warnings.warn(f'Orientation for inset colorbars must be horizontal, ignoring orient={orient!r}.')
             ticklocation = kwargs.pop('tickloc', None)
             ticklocation = kwargs.pop('ticklocation', None) or ticklocation
-            if any(loc is not None and ticklocation != 'bottom'):
+            if ticklocation is not None and ticklocation != 'bottom':
                 warnings.warn(f'Inset colorbars can only have ticks on the bottom.')
             kwargs.update({'orientation':'horizontal', 'ticklocation':'bottom'})
             kwargs.setdefault('maxn', 5)
