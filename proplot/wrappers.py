@@ -90,6 +90,7 @@ _disabled_methods = {
 _map_disabled_methods = (
     # These are obvious
     # TODO: Error bars? Will they work? Also bar and barh can be used w/ polar
+    'twinx', 'twiny',
     'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
     'hist', 'hist2d', 'boxplot', 'violinplot', 'step', 'stem',
     # Look into these
@@ -1629,7 +1630,7 @@ def cycle_wrapper(self, func, *args,
 @_expand_methods_list
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     extend='neither', norm=None, norm_kw=None,
-    N=None, levels=None, values=None, vmin=None, vmax=None,
+    N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
     locator=None, symmetric=False, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
     colorbar=False, colorbar_kw=None, panel_kw=None,
@@ -1659,7 +1660,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     extend : {'neither', 'min', 'max', 'both'}, optional
         Where to assign unique colors to out-of-bounds data and draw
         "extensions" (triangles, by default) on the colorbar.
-    N, levels : int or list of float, optional
+    levels, N : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
         `locator` is used to generate this many levels at "nice" intervals.
         Defaults to ``rc['image.levels']``.
@@ -1668,7 +1669,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
         accept the `levels` keyword arg. You can now discretize your
         colors in a ``pcolor`` plot just like with ``contourf``.
-    values : int or list of float, optional
+    values, centers : int or list of float, optional
         The number of level centers, or a list of level centers. If provided,
         levels are inferred using `~proplot.utils.edges`. This will override
         any `levels` input.
@@ -1771,14 +1772,16 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     labels_kw = labels_kw or {}
     colorbar_kw = colorbar_kw or {}
     panel_kw = panel_kw or {}
-    vmin = _notNone(vmin, norm_kw.pop('vmin', None))
-    vmax = _notNone(vmax, norm_kw.pop('vmax', None))
     # Parse args
     # Disable edgefix=True for certain keyword combos e.g. if user wants
     # white lines around their pcolor mesh.
     name = func.__name__
     if not args:
         return func(*args, **kwargs)
+    vmin = _notNone(vmin, norm_kw.pop('vmin', None), None, names=('vmin', 'norm_kw={"vmin":value}'))
+    vmax = _notNone(vmax, norm_kw.pop('vmax', None), None, names=('vmax', 'norm_kw={"vmax":value}'))
+    levels = _notNone(N, levels, norm_kw.pop('levels', None), rc['image.levels'], names=('N', 'levels', 'norm_kw={"levels":value}'))
+    values = _notNone(values, centers, None, names=('values', 'centers'))
     colors = _notNone(color, colors, edgecolor, edgecolors, None, names=('color', 'colors', 'edgecolor', 'edgecolors'))
     linewidths = _notNone(lw, linewidth, linewidths, None, names=('lw', 'linewidth', 'linewidths'))
     linestyles = _notNone(ls, linestyle, linestyles, None, names=('ls', 'linestyle', 'linestyles'))
@@ -1798,29 +1801,34 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     for key,val in (('levels',levels),('values',values)):
         if not np.iterable(val):
             continue
+        if 'contour' in name and 'contourf' not in name:
+            continue
         if len(val) < 2 or any(np.diff(val) <= 0):
             raise ValueError(f'{key!r} must be monotonically increasing and at least length 2, got {val}.')
 
     # Get level edges from level centers
-    # Make sure values are *averages* of encompassing levels, so that tick
-    # marks appear in the center of the colorbar level.
     if values is not None:
         if isinstance(values, Number):
             levels = values + 1
         elif np.iterable(values):
+            # Plotting command accepts a 'values' keyword arg
             if name in ('cmapline',):
                 kwargs['values'] = values
+            # Try to generate levels such that a LinearSegmentedNorm will
+            # place values ticks right at the center of each colorbar level
             if norm is None or norm in ('segments','segmented'):
                 levels = [values[0] - (values[1]-values[0])/2] # reasonable starting point
                 for i,val in enumerate(values):
                     levels.append(2*val - levels[-1])
                 if any(np.diff(levels) <= 0): # algorithm failed, default to this
                     levels = utils.edges(values)
+            # Generate levels by finding in-between points in the
+            # normalized numeric space
             else:
-                norm_tmp = styletools.Norm(norm, **norm_kw)
-                levels = norm_tmp.inverse(utils.edges(norm_tmp(values)))
+                inorm = styletools.Norm(norm, **norm_kw)
+                levels = inorm.inverse(utils.edges(inorm(values)))
         else:
-            raise ValueError('Unexpected values input {values!r}. Must be integer or list of numbers.')
+            raise ValueError(f'Unexpected input values={values!r}. Must be integer or list of numbers.')
 
     # Data limits used for normalizer
     Z = ma.masked_invalid(args[-1], copy=False)
@@ -1832,7 +1840,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
             zmin, zmax = 0, 1
 
     # Input colormap, for methods that accept a colormap and normalizer
-    if not name[-7:] == 'contour': # contour, tricontour, i.e. not a method where cmap is optional
+    if not ('contour' in name and 'contourf' not in name): # contour, tricontour, i.e. not a method where cmap is optional
         cmap = _notNone(cmap, rc['image.cmap'])
     if cmap is not None:
         # Get colormap object
@@ -1845,22 +1853,22 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
 
         # Get default normalizer
         # Only use LinearSegmentedNorm if necessary, because it is slow
-        if norm is None and name not in ('hexbin',):
-            if not np.iterable(levels):
-                norm = 'linear'
-            else:
-                diff = np.diff(levels)
-                eps = diff.mean()/1e3
-                if (np.abs(np.diff(diff)) >= eps).any():
-                    norm = 'segmented'
-                else:
+        if name not in ('hexbin',):
+            if norm is None:
+                if not np.iterable(levels) or len(levels) == 1:
                     norm = 'linear'
-        if norm is not None:
-            norm = styletools.Norm(norm, levels=levels, **norm_kw)
+                else:
+                    diff = np.diff(levels)
+                    eps = diff.mean()/1e3
+                    if (np.abs(np.diff(diff)) >= eps).any():
+                        norm = 'segmented'
+                        norm_kw.setdefault('levels', levels)
+                    else:
+                        norm = 'linear'
+            norm = styletools.Norm(norm, **norm_kw)
 
     # Get default levels
     # TODO: Add kernel density plot to hexbin!
-    levels = _notNone(N, levels, rc['image.levels'], names=('N', 'levels'))
     if isinstance(levels, Number):
         # Cannot infer counts a priori, so do nothing
         if name in ('hexbin',):
