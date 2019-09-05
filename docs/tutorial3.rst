@@ -56,11 +56,11 @@ the `cartopy.crs.Projection` classes, e.g. ``lon_0`` instead of
 
 
 
-.. image:: tutorial/tutorial_58_3.svg
+.. image:: tutorial/tutorial_75_3.svg
 
 
 
-.. image:: tutorial/tutorial_58_4.svg
+.. image:: tutorial/tutorial_75_4.svg
 
 
 Plotting geophysical data
@@ -111,11 +111,11 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
 
 
 
-.. image:: tutorial/tutorial_61_0.svg
+.. image:: tutorial/tutorial_78_0.svg
 
 
 
-.. image:: tutorial/tutorial_61_1.svg
+.. image:: tutorial/tutorial_78_1.svg
 
 
 Formatting projection axes
@@ -152,7 +152,7 @@ subplot titles, a-b-c labels, and figure titles as before.
 
 
 
-.. image:: tutorial/tutorial_64_0.svg
+.. image:: tutorial/tutorial_81_0.svg
 
 
 Zooming into projections
@@ -193,11 +193,11 @@ any of the ``boundinglat``, ``llcrnrlon``, ``llcrnrlat``, ``urcrnrlon``,
 
 
 
-.. image:: tutorial/tutorial_67_0.svg
+.. image:: tutorial/tutorial_84_0.svg
 
 
 
-.. image:: tutorial/tutorial_67_1.svg
+.. image:: tutorial/tutorial_84_1.svg
 
 
 Registered cartopy projections
@@ -234,7 +234,7 @@ Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
 
 
 
-.. image:: tutorial/tutorial_70_1.svg
+.. image:: tutorial/tutorial_87_1.svg
 
 
 Registered basemap projections
@@ -264,7 +264,7 @@ args to `~mpl_toolkits.basemap.Basemap` if you fail to specify them.
 
 
 
-.. image:: tutorial/tutorial_73_0.svg
+.. image:: tutorial/tutorial_90_0.svg
 
 
 Polar projections
@@ -300,6 +300,77 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
 
 
 
-.. image:: tutorial/tutorial_76_0.svg
+.. image:: tutorial/tutorial_93_0.svg
+
+
+It is common to need colorbars and legends along the outside edge of
+*individual axes* or on the inner edge of the *figure*. It is also
+common to need “panels” for plotting secondary 1-dimensional datasets or
+summary statistics next to a larger subplot. ProPlot satisfies both of
+these needs with the `~proplot.axes.PanelAxes` class, which can be
+generated with the `~proplot.subplots.subplots` and
+`~proplot.axes.Axes.panel_axes` functions.
+
+`~proplot.axes.PanelAxes` have special
+`~proplot.axes.PanelAxes.colorbar` and
+`~proplot.axes.PanelAxes.legend` methods.
+`~proplot.axes.PanelAxes.colorbar` *fills* the panel with a colorbar –
+that is, the panel is used as the ``cax`` argument in the call to
+`~matplotlib.figure.Figure.colorbar`, and its default width is
+changed. `~proplot.axes.PanelAxes.legend` *fills* the panel with a
+legend – that is, a legend is drawn in the center, and the axes
+background and spines are hidden.
+
+On-the-fly panels are a great way to draw colorbars and legends along
+the edges of axes. There are three ways to generate and *fill* an
+on-the-fly axes panel.
+
+1. Pass ``colorbar`` to any method wrapped by
+   `~proplot.wrappers.cmap_wrapper`, or pass ``colorbar`` or
+   ``legend`` to any method wrapped by
+   `~proplot.wrappers.cycle_wrapper`. The argument is the panel
+   location, e.g. ``colorbar='left'`` or ``colorbar='l'``. To specify
+   panel settings, use the ``panel_kw`` keyword arg.
+2. Pass ``loc`` to the `~proplot.axes.Axes.colorbar` or
+   `~proplot.axes.Axes.legend` ``Axes`` methods. Again, the argument
+   is the panel location, e.g. ``loc='left'`` or ``loc='l'``. This is
+   what approach #1 does internally. To specify panel settings, use the
+   ``panel_kw`` keyword arg.
+3. Directly call the `~proplot.axes.Axes.panel_axes` method, e.g.
+   ``pax = ax.panel('l', **kwargs)``, and then call the
+   `~proplot.axes.PanelAxes.colorbar` or
+   `~proplot.axes.PanelAxes.legend` ``PanelAxes`` methods on ``pax``.
+   This is what the approach #2 does internally.
+
+No matter the combination of axes panels in your subplot grid, the
+layout will stay aligned. To modify default panel settings, use the
+`~proplot.rctools.rc` object or create a custom ``.proplotrc`` file
+(see the `~proplot.rctools` documentation for details).
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    with plot.rc.context(abc=True):
+        f, axs = plot.subplots(ncols=2, tight=True, share=0)
+    ax = axs[0]
+    m = ax.heatmap(np.random.rand(10,10), colorbar='t', cmap='dusk')
+    ax.colorbar(m, loc='r')
+    ax.format(title='On-the-fly colorbars', suptitle='On-the-fly panels demo')
+    ax = axs[1]
+    ax.format(title='On-the-fly legends', titlepad='0em')
+    hs = ax.plot((np.random.rand(10,5)-0.5).cumsum(axis=0), lw=3, legend='t', cycle='sharp',
+            labels=list('abcde'), legend_kw={'ncols':5, 'frame':False})
+    ax.legend(hs, loc='r', ncols=1, frame=False)
+    # Calling the panel method
+    for ax in axs:
+        pax = ax.panel('b', share=True)
+        pax.plot(np.random.rand(10,4), cycle_kw={'linestyle':('-','--','-.',':')})
+        # ax.bpanel.plot(...) # also works!
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Super title')
+
+
+
+.. image:: tutorial/tutorial_96_0.svg
 
 
