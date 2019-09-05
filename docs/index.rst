@@ -96,7 +96,6 @@ To get started, check out the :ref:`Introduction`.
    tutorial3
    tutorial4
    tutorial5
-   tutorial6
 
 .. toctree::
    :hidden:

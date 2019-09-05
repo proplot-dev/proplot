@@ -529,8 +529,8 @@ between content in adjacent subplots, is automatically adjusted.
 ProPlot introduces a new tight layout algorithm that permits *variable
 figure dimensions* and *variable spacing* between subplot rows and
 columns (see `~proplot.subplots.FlexibleGridSpecBase`). This allows
-the algorithm to preserve *subplot aspect ratios, panel widths, and
-optionally, subplot physical dimensions*, all without producing extra
+the algorithm to preserve subplot aspect ratios, panel widths, and
+optionally, subplot physical dimensions, all without producing extra
 whitespace. The algorithm is also more robust to complex geometry. To
 turn it off, pass ``tight=False`` to `~proplot.subplots.subplots`. If
 you explicitly pass a spacing argument to
