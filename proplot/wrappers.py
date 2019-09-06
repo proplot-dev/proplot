@@ -1121,7 +1121,7 @@ def _basemap_call(self, func):
 @_expand_methods_list
 def cartopy_transform(self, func, *args, transform=None, **kwargs):
     """
-    Wraps `TRANSFORM_METHODS` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    Wraps `TRANSFORM_METHODS` for `~proplot.axes.CartopyAxes` axes.
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -1141,7 +1141,7 @@ def cartopy_transform(self, func, *args, transform=None, **kwargs):
 @_expand_methods_list
 def cartopy_crs(self, func, *args, crs=None, **kwargs):
     """
-    Wraps `CRS_METHODS` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    Wraps `CRS_METHODS` for `~proplot.axes.CartopyAxes` axes.
     As with `cartopy_transform`, but passes ``crs=cartopy.crs.PlateCarree()``
     as the default. Also fixes bug associated with tight bounding boxes and
     `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
@@ -1168,7 +1168,7 @@ def cartopy_crs(self, func, *args, crs=None, **kwargs):
 @_expand_methods_list
 def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
-    Wraps `LATLON_METHODS` for `~proplot.axes.BasemapProjectionAxes` axes.
+    Wraps `LATLON_METHODS` for `~proplot.axes.BasemapAxes` axes.
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude
@@ -1216,7 +1216,7 @@ def _gridfix_coordinates(lon, lat):
 @_expand_methods_list
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.CartopyAxes` axes.
 
     Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
     optionally make data coverage *global*. Passing ``globe=True`` does the
@@ -1256,7 +1256,7 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 @_expand_methods_list
 def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.BasemapProjectionAxes` axes.
+    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.BasemapAxes` axes.
 
     Makes 1D longitude vectors monotonic and cycles them to fit within the map
     edges (i.e. if the projection central longitude is 90 degrees, will permute
@@ -1398,8 +1398,7 @@ def cycle_wrapper(self, func, *args,
         `~proplot.axes.Axes.legend`.
     legend_kw : dict-like, optional
         Ignored if `legend` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.Axes` `~proplot.axes.Axes.legend` or
-        `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`.
+        to `~proplot.axes.Axes.legend`.
     colorbar : bool, int, or str, optional
         If not ``None``, this is a location specifying where to draw an *inset*
         or *panel* colorbar from the resulting handle(s). If ``True``, the
@@ -1407,8 +1406,7 @@ def cycle_wrapper(self, func, *args,
         `~proplot.axes.Axes.colorbar`.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
-        to the `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or
-        `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar` methods.
+        to `~proplot.axes.Axes.colorbar`.
     panel_kw : dict-like, optional
         Dictionary of keyword arguments passed to
         `~proplot.axes.Axes.panel`, if you are generating an
@@ -1421,7 +1419,7 @@ def cycle_wrapper(self, func, *args,
 
     See also
     --------
-    `~proplot.styletools.Cycle`
+    `~proplot.styletools.Cycle`, `~proplot.styletools.colors`
 
     Note
     ----
@@ -1724,8 +1722,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         `~proplot.axes.Axes.colorbar`.
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or
-        `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`.
+        to `~proplot.axes.Axes.colorbar`.
     panel_kw : dict-like, optional
         Dictionary of keyword arguments passed to
         `~proplot.axes.Axes.panel`, if you are generating an
@@ -2051,7 +2048,7 @@ def legend_wrapper(self,
     **kwargs):
     """
     Wraps `~matplotlib.axes.Axes` `~matplotlib.axes.Axes.legend` and
-    `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.legend`, adds some
+    `~proplot.subplots.Figure` `~proplot.subplots.Figure.legend`, adds some
     handy features.
 
     Parameters
@@ -2115,10 +2112,6 @@ def legend_wrapper(self,
     ----------------
     **kwargs
         Passed to `~matplotlib.axes.Axes.legend`.
-
-    See also
-    --------
-    `~proplot.axes.PanelAxes.legend`
     """
     # First get legend settings and interpret kwargs.
     if order not in ('F','C'):
@@ -2212,10 +2205,6 @@ def legend_wrapper(self,
         pairs = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs))] # to list of iterables
     if list_of_lists: # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
-    # Special case of PanelAxes with invisible frame, axes tight bounding
-    # box will include frame even though it is invisible!
-    if getattr(self, '_side', None) in ('top','bottom') and not frameon:
-        kwargs.setdefault('borderpad', 0)
 
     # Now draw legend(s)
     legs = []
@@ -2384,8 +2373,8 @@ def colorbar_wrapper(self,
     fixticks=False,
     **kwargs):
     """
-    Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and
-    `~proplot.axes.PanelAxes` `~proplot.axes.PanelAxes.colorbar`, adds some
+    Wraps `~matplotlib.axes.Axes` `~matplotlib.axes.Axes.colorbar` and
+    `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar`, adds some
     handy features.
 
     Parameters
@@ -2493,10 +2482,6 @@ def colorbar_wrapper(self,
     ----------------
     **kwargs
         Passed to `~matplotlib.figure.Figure.colorbar`.
-
-    See also
-    --------
-    `~proplot.axes.Axes.colorbar`, `~proplot.axes.PanelAxes.colorbar`
     """
     # Developer notes
     # * Colorbar axes must be of type `matplotlib.axes.Axes`,
