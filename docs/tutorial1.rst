@@ -287,8 +287,9 @@ Figure colorbars and legends
 To draw a colorbar or legend along the edge of a figure, use the
 `~proplot.subplots.Figure.colorbar` or
 `~proplot.subplots.Figure.legend` ``Figure`` methods. The colorbar or
-legend will be aligned between edges of the subplot grid, instead of the
-figure bounds.
+legend will be aligned between edges of the subplot grid. As with axes
+panels, drawing successive colorbars or legends along the same side will
+“stack” them.
 
 To draw a colorbar or legend beneath particular row(s) and column(s) of
 the subplot grid, use the ``row``, ``rows``, ``col``, or ``cols``
@@ -303,9 +304,10 @@ rows or columns.
     f, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.2)
     m = axs.pcolormesh(np.random.rand(20,20), cmap='grays', levels=np.linspace(0,1,11), extend='both')[0]
     axs.format(suptitle='Figure colorbars and legends demo', abc=True, abcloc='l', abcformat='a.', xlabel='xlabel', ylabel='ylabel')
-    f.colorbar(m, label='label', ticks=0.5, loc='b', col=1)
-    f.colorbar(m, label='label', ticks=0.2, loc='b', cols=(2,3))
-    f.colorbar(m, label='label', ticks=0.1, loc='r', length=0.7)
+    f.colorbar(m, label='column 1', ticks=0.5, loc='b', col=1)
+    f.colorbar(m, label='columns 2-3', ticks=0.2, loc='b', cols=(2,3))
+    f.colorbar(m, label='stacked colorbar', ticks=0.1, loc='b', minorticks=0.05) # this one is stacked
+    f.colorbar(m, label='colorbar with length <1', ticks=0.1, loc='r', length=0.7)
 
 
 
@@ -320,7 +322,7 @@ rows or columns.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=4, axwidth=1.3, share=0, wspace=0.3)
+    f, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.3, share=0, wspace=0.3, order='F')
     data = (np.random.rand(50,50)-0.1).cumsum(axis=0)
     m = axs[:2].contourf(data, cmap='grays', extend='both')
     cycle = plot.colors('grays', 5)
@@ -328,8 +330,10 @@ rows or columns.
     for abc,color in zip('ABCDEF',cycle):
         h = axs[2:].plot(np.random.rand(10), lw=3, color=color, label=f'line {abc}')
         hs.extend(h[0])
-    f.colorbar(m[0], length=0.8, label='label', loc='b', cols=(1,2))
-    f.legend(hs, ncols=5, label='label', frame=True, loc='b', cols=(3,4))
+    f.colorbar(m[0], length=0.8, label='colorbar label', loc='b', col=1)
+    f.colorbar(m[0], label='colorbar label', loc='l')
+    f.legend(hs, ncols=2, center=True, frame=False, loc='b', col=2)
+    f.legend(hs, ncols=1, label='legend label', frame=False, loc='r')
     axs.format(suptitle='Figure colorbars and legends demo', abc=True, abcloc='ul', abcformat='A')
     for ax,title in zip(axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']):
         ax.format(xlabel='xlabel', title=title)

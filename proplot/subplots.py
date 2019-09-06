@@ -63,7 +63,7 @@ SIDE_TRANSLATE = {
 
 # Dimensions of figures for common journals
 JOURNAL_SPECS = {
-    'pnas1': '8.7cm', # if 1 number specified, this is a tuple
+    'pnas1': '8.7cm',
     'pnas2': '11.4cm',
     'pnas3': '17.8cm',
     'ams1': 3.2, # spec is in inches
