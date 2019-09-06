@@ -196,7 +196,7 @@ class Axes(maxes.Axes):
         error messages, and applies the `~proplot.wrappers.text_wrapper`
         wrapper."""
         obj = object.__getattribute__(self, attr, *args)
-        for message,attrs in wrappers._disabled_methods.items():
+        for message,attrs in wrappers.DISABLED_METHODS.items():
             if attr in attrs:
                 raise AttributeError(message.format(attr))
         if attr == 'text':
@@ -1455,21 +1455,21 @@ class CartesianAxes(Axes):
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
             # Step 3) Color usage wrappers
-            if attr in wrappers._cmap_methods: # must come first!
+            if attr in wrappers.CMAP_METHODS: # must come first!
                 obj = wrappers._cmap_wrapper(self, obj)
-            elif attr in wrappers._cycle_methods:
+            elif attr in wrappers.CYCLE_METHODS:
                 obj = wrappers._cycle_wrapper(self, obj)
             # Step 2) Utilities
-            if attr in wrappers._centers_methods:
+            if attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._enforce_centers(self, obj)
-            elif attr in wrappers._edges_methods:
+            elif attr in wrappers.EDGES_METHODS:
                 obj = wrappers._enforce_edges(self, obj)
-            elif attr in wrappers._errorbar_methods:
+            elif attr in wrappers.ERRORBAR_METHODS:
                 obj = wrappers._add_errorbars(self, obj)
             # Step 1) Parse input
-            if attr in wrappers._2d_methods:
+            if attr in wrappers.D2_METHODS:
                 obj = wrappers._autoformat_2d(self, obj)
-            elif attr in wrappers._1d_methods:
+            elif attr in wrappers.D1_METHODS:
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
@@ -2281,7 +2281,7 @@ class ProjectionAxes(Axes):
     def __getattribute__(self, attr, *args):
         """Disables the methods `MAP_DISABLED_METHODS`, which are
         inappropriate for map projections."""
-        if attr in wrappers._map_disabled_methods:
+        if attr in wrappers.MAP_DISABLED_METHODS:
             raise AttributeError(f'Invalid plotting function {attr!r} for map projection axes.')
         return super().__getattribute__(attr, *args)
 
@@ -2404,22 +2404,22 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
             # Step 4) Color usage wrappers
-            if attr in wrappers._cmap_methods:
+            if attr in wrappers.CMAP_METHODS:
                 obj = wrappers._cmap_wrapper(self, obj)
-            elif attr in wrappers._cycle_methods:
+            elif attr in wrappers.CYCLE_METHODS:
                 obj = wrappers._cycle_wrapper(self, obj)
             # Step 3) Fix coordinate grid
-            if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
+            if attr in wrappers.EDGES_METHODS or attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._cartopy_gridfix(self, obj)
             # Step 2) Utilities
-            if attr in wrappers._edges_methods:
+            if attr in wrappers.EDGES_METHODS:
                 obj = wrappers._enforce_edges(self, obj)
-            elif attr in wrappers._centers_methods:
+            elif attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._enforce_centers(self, obj)
             # Step 1) Parse args input
-            if attr in wrappers._2d_methods:
+            if attr in wrappers.D2_METHODS:
                 obj = wrappers._autoformat_2d(self, obj)
-            elif attr in wrappers._1d_methods:
+            elif attr in wrappers.D1_METHODS:
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
@@ -2673,27 +2673,27 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
             # Step 5) Color usage wrappers
-            if attr in wrappers._cmap_methods:
+            if attr in wrappers.CMAP_METHODS:
                 obj = wrappers._cmap_wrapper(self, obj)
-            elif attr in wrappers._cycle_methods:
+            elif attr in wrappers.CYCLE_METHODS:
                 obj = wrappers._cycle_wrapper(self, obj)
             # Step 4) Fix coordinate grid
-            if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
+            if attr in wrappers.EDGES_METHODS or attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._cartopy_gridfix(self, obj)
             # Step 3) Utilities
-            if attr in wrappers._edges_methods:
+            if attr in wrappers.EDGES_METHODS:
                 obj = wrappers._enforce_edges(self, obj)
-            elif attr in wrappers._centers_methods:
+            elif attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._enforce_centers(self, obj)
             # Step 2) Better default keywords
-            if attr in wrappers._transform_methods:
+            if attr in wrappers.TRANSFORM_METHODS:
                 obj = wrappers._cartopy_transform(self, obj)
-            elif attr in wrappers._crs_methods:
+            elif attr in wrappers.CRS_METHODS:
                 obj = wrappers._cartopy_crs(self, obj)
             # Step 1) Parse args input
-            if attr in wrappers._2d_methods:
+            if attr in wrappers.D2_METHODS:
                 obj = wrappers._autoformat_2d(self, obj)
-            elif attr in wrappers._1d_methods:
+            elif attr in wrappers.D1_METHODS:
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
@@ -2999,30 +2999,30 @@ class BasemapAxes(ProjectionAxes):
         # instance accessible from axes instance! Can of worms and had bunch of
         # weird errors! Just pick the ones you think user will want to use.
         obj = super().__getattribute__(attr, *args)
-        if attr in wrappers._latlon_methods or attr in wrappers._edges_methods \
-                or attr in wrappers._centers_methods:
+        if attr in wrappers.LATLON_METHODS or attr in wrappers.EDGES_METHODS \
+                or attr in wrappers.CENTERS_METHODS:
             # Step 6) Call identically named Basemap object method
             obj = wrappers._basemap_call(self, obj)
             # Step 5) Color usage wrappers
-            if attr in wrappers._cmap_methods:
+            if attr in wrappers.CMAP_METHODS:
                 obj = wrappers._cmap_wrapper(self, obj)
-            elif attr in wrappers._cycle_methods:
+            elif attr in wrappers.CYCLE_METHODS:
                 obj = wrappers._cycle_wrapper(self, obj)
             # Step 4) Fix coordinate grid
-            if attr in wrappers._edges_methods or attr in wrappers._centers_methods:
+            if attr in wrappers.EDGES_METHODS or attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._basemap_gridfix(self, obj)
             # Step 3) Utilities
-            if attr in wrappers._edges_methods:
+            if attr in wrappers.EDGES_METHODS:
                 obj = wrappers._enforce_edges(self, obj)
-            elif attr in wrappers._centers_methods:
+            elif attr in wrappers.CENTERS_METHODS:
                 obj = wrappers._enforce_centers(self, obj)
             # Step 2) Better default keywords
-            if attr in wrappers._latlon_methods:
+            if attr in wrappers.LATLON_METHODS:
                 obj = wrappers._basemap_latlon(self, obj)
             # Step 1) Parse args input
-            if attr in wrappers._2d_methods:
+            if attr in wrappers.D2_METHODS:
                 obj = wrappers._autoformat_2d(self, obj)
-            elif attr in wrappers._1d_methods:
+            elif attr in wrappers.D1_METHODS:
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
