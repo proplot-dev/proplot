@@ -708,11 +708,14 @@ class Figure(mfigure.Figure):
             panels. If float, units are inches. If string, units are
             interpreted by `~proplot.utils.units`.
         includepanels : bool, optional
-            Whether to include panels when centering spanning *x* axis labels,
-            *y* axis labels, and figure "super titles". Defaults to ``False``.
+            Whether to include panels when centering *x* axis labels,
+            *y* axis labels, and figure "super titles" along the edge of the
+            subplot grid. Defaults to ``False``.
         autoformat : bool, optional
-            Whether to automatically format the axes when a `~pandas.Series`,
-            `~pandas.DataFrame` or `~xarray.DataArray` is passed to a plotting
+            Whether to automatically configure *x* axis labels, *y* axis
+            labels, axis formatters, axes titles, colorbar labels, and legend
+            labels when a `~pandas.Series`, `~pandas.DataFrame` or
+            `~xarray.DataArray` with relevant metadata is passed to a plotting
             command.
         gridspec_kw, subplots_kw, subplots_orig_kw
             Keywords used for initializing the main gridspec, for initializing
