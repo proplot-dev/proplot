@@ -43,26 +43,25 @@ __all__ = [
     ]
 
 # Data diretories
-_delim = re.compile('[,\s]+')
-_data_user = os.path.join(os.path.expanduser('~'), '.proplot')
-_data_user_cmaps = os.path.join(_data_user, 'cmaps')
-_data_user_cycles = os.path.join(_data_user, 'cycles')
-_data_user_fonts = os.path.join(_data_user, 'fonts') # user fonts
-_data_cmaps = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
-_data_cycles = os.path.join(os.path.dirname(__file__), 'cycles') # or parent, but that makes pip install distribution hard
-_data_colors = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
-_data_fonts = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
-if not os.path.isdir(_data_user):
-    os.mkdir(_data_user)
-if not os.path.isdir(_data_user_cmaps):
-    os.mkdir(_data_user_cmaps)
-if not os.path.isdir(_data_user_cycles):
-    os.mkdir(_data_user_cycles)
-if not os.path.isdir(_data_user_fonts):
-    os.mkdir(_data_user_fonts)
+DATA_USER = os.path.join(os.path.expanduser('~'), '.proplot')
+DATA_USER_CMAPS = os.path.join(DATA_USER, 'cmaps')
+DATA_USER_CYCLES = os.path.join(DATA_USER, 'cycles')
+DATA_USER_FONTS = os.path.join(DATA_USER, 'fonts') # user fonts
+DATA_CMAPS = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
+DATA_CYCLES = os.path.join(os.path.dirname(__file__), 'cycles') # or parent, but that makes pip install distribution hard
+DATA_COLORS = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
+DATA_FONTS = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
+if not os.path.isdir(DATA_USER):
+    os.mkdir(DATA_USER)
+if not os.path.isdir(DATA_USER_CMAPS):
+    os.mkdir(DATA_USER_CMAPS)
+if not os.path.isdir(DATA_USER_CYCLES):
+    os.mkdir(DATA_USER_CYCLES)
+if not os.path.isdir(DATA_USER_FONTS):
+    os.mkdir(DATA_USER_FONTS)
 
 # Colormap stuff
-_cmaps_categories = {
+CMAPS_CATEGORIES = {
     # User cmaps, placed here so it always appears on top
     'User': (),
     # Assorted origin, but these belong together
@@ -149,7 +148,7 @@ _cmaps_categories = {
         'seismic', 'terrain', 'nipy_spectral', # origin ambiguous
         ),
     }
-_cmaps_delete = (
+CMAPS_DELETE = (
     'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
     'spring', 'summer', 'autumn', 'winter', 'cool', 'wistia',
     'afmhot', 'gist_heat', 'copper',
@@ -158,7 +157,7 @@ _cmaps_delete = (
     'gnuplot', 'gnuplot2', 'cmrmap', 'hsv', 'hot', 'rainbow',
     'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
     )
-_cmaps_div_slices = {
+CMAPS_DIV_SLICES = {
     'piyg': (None, 2, None),
     'prgn': (None, 1, 2, None), # purple red green
     'brbg': (None, 2, 3, None), # brown blue green
@@ -172,13 +171,13 @@ _cmaps_div_slices = {
     'negpos': (None, 3, None),
     'drywet': (None, 3, None),
     } # slice args used to split up segments of names
-_cmaps_div_pairs = [
+CMAPS_DIV_PAIRS = [
     (name, ''.join(reversed([name[slice(*idxs[i:i+2])] for i in range(len(idxs)-1)])),)
-    for name,idxs in _cmaps_div_slices.items()
+    for name,idxs in CMAPS_DIV_SLICES.items()
     ] # tuple pairs of mirror image cmap names
 
 # Color cycle stuff
-_cycles_preset = {
+CYCLES_PRESET = {
     # Default matplotlib v2
     'default': ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
     # From stylesheets
@@ -196,35 +195,18 @@ _cycles_preset = {
     'Contrast': ["#2B4162", "#FA9F42", "#E0E0E2", "#A21817", "#0B6E4F"],
     'Floral': ["#23395B", "#D81E5B", "#FFFD98", "#B9E3C6", "#59C9A5"],
     }
-_cycles_delete = (
+CYCLES_DELETE = (
     'tab10', 'tab20', 'tab20b', 'tab20c',
     'paired', 'pastel1', 'pastel2', 'dark2',
     ) # unappealing cycles, and cycles that are just merged monochrome colormaps
-_cycles_rename = (
+CYCLES_RENAME = (
     ('Accent','Set1'),
     ) # rename existing cycles
 
-# Named color stuff
-_color_names_filter_space = 'hcl' # dist 'distinct-ness' of colors using this colorspace
-_color_names_filter_thresh = 0.10 # bigger number equals fewer colors
-_color_names_opencolors = (
-    'red', 'pink', 'grape', 'violet',
-    'indigo', 'blue', 'cyan', 'teal',
-    'green', 'lime', 'yellow', 'orange', 'gray'
-    )
-_color_names_shorthands = {
-    'b': 'blue', 'g': 'green', 'r': 'red', 'c': 'cyan',
-    'm': 'magenta', 'y': 'yellow', 'k': 'black', 'w': 'white'
-    }
-_color_names_bad = re.compile('(' + '|'.join((
-    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger', 'bile', 'diarrhea',
-    )) + ')') # filter these out, let's try to be professional here...
-_color_names_add = (
-    'charcoal', 'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua', 'tomato red', 'brick red', 'crimson',
-    'red orange', 'yellow orange', 'yellow green', 'blue green',
-    'blue violet', 'red violet',
-    ) # common names that should always be included
-_color_names_translate = tuple((re.compile(regex), sub) for regex,sub in (
+# Named color filter props
+FILTER_SPACE = 'hcl' # dist 'distinct-ness' of colors using this colorspace
+FILTER_THRESH = 0.10 # bigger number equals fewer colors
+FILTER_TRANSLATIONS = tuple((re.compile(regex), sub) for regex,sub in (
     ('/', ' '), ("'s", ''),
     ('grey', 'gray'),
     ('pinky', 'pink'),
@@ -243,9 +225,34 @@ _color_names_translate = tuple((re.compile(regex), sub) for regex,sub in (
     ('grayblue', 'gray blue'),
     ('lightblue', 'light blue')
     )) # prevent registering similar-sounding names
+FILTER_ADD = (
+    'charcoal', 'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua', 'tomato red', 'brick red', 'crimson',
+    'red orange', 'yellow orange', 'yellow green', 'blue green',
+    'blue violet', 'red violet',
+    ) # common names that should always be included
+FILTER_BAD = re.compile('(' + '|'.join((
+    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot', 'booger', 'bile', 'diarrhea',
+    )) + ')') # filter these out, let's try to be professional here...
+
+# Named color stuff
+OPEN_COLORS = (
+    'red', 'pink', 'grape', 'violet',
+    'indigo', 'blue', 'cyan', 'teal',
+    'green', 'lime', 'yellow', 'orange', 'gray'
+    )
+BASE_COLORS_FULL = {
+    'blue':    (0, 0, 1),
+    'green':   (0, 0.5, 0),
+    'red':     (1, 0, 0),
+    'cyan':    (0, 0.75, 0.75),
+    'magenta': (0.75, 0, 0.75),
+    'yellow':  (0.75, 0.75, 0),
+    'black':   (0, 0, 0),
+    'white':   (1, 1, 1),
+    }
 
 # Color math and color spaces
-_color_space_aliases = {
+CSPACE_ALIASES = {
     'rgb':   'rgb',
     'hsv':   'hsv',
     'hpl':   'hpl',
@@ -254,32 +261,26 @@ _color_space_aliases = {
     'hsluv': 'hsl',
     'hcl':   'hcl',
     }
-_color_space_channel_idxs = {
+CSPACE_IDXS = {
     'hue': 0,
     'chroma': 1,
     'saturation': 1,
     'luminance': 2,
     'alpha': 3,
     }
-_color_space_channel_scales = {
-    'rgb': (1,1,1),
-    'hcl': (360,100,100),
-    'hsl': (360,100,100),
-    'hpl': (360,100,100)
-    }
 
 # Check data
-_data_user_paths = {*()}
-_data_allowed_paths = {'cmaps', 'cycles', 'fonts'}
+DATA_USER_PATHS = {*()}
+DATA_ALLOWED_PATHS = {'cmaps', 'cycles', 'fonts'}
 def _check_data():
     """Checks the data folder and issues helpful warning message for new users.
     This is called inside every register function."""
-    global _data_user_paths
+    global DATA_USER_PATHS
     data_user = os.path.join(os.path.expanduser('~'), '.proplot')
     data_user_paths = {os.path.basename(path) for path in glob.glob(os.path.join(data_user, '*'))}
-    if data_user_paths != _data_user_paths and data_user_paths > _data_allowed_paths:
-        _data_user_paths = data_user_paths
-        warnings.warn(f'Found extra files {", ".join(data_user_paths - _data_allowed_paths)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
+    if data_user_paths != DATA_USER_PATHS and data_user_paths > DATA_ALLOWED_PATHS:
+        DATA_USER_PATHS = data_user_paths
+        warnings.warn(f'Found extra files {", ".join(data_user_paths - DATA_ALLOWED_PATHS)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
 
 #-----------------------------------------------------------------------------#
 # Classes
@@ -423,7 +424,7 @@ class CmapDict(dict):
             reverse = True
         if mirror and not super().__contains__(key): # search for mirrored key
             key_mirror = key
-            for mirror in _cmaps_div_pairs:
+            for mirror in CMAPS_DIV_PAIRS:
                 try:
                     idx = mirror.index(key)
                     key_mirror = mirror[1 - idx]
@@ -464,7 +465,7 @@ if not isinstance(mcm.cmap_d, CmapDict):
 #-----------------------------------------------------------------------------#
 def _get_space(space):
     """Verify requested colorspace is valid."""
-    space = _color_space_aliases.get(space.lower(), None)
+    space = CSPACE_ALIASES.get(space.lower(), None)
     if space is None:
         raise ValueError(f'Unknown colorspace "{space}".')
     return space
@@ -477,7 +478,7 @@ def _get_channel(color, channel, space='hsl'):
     # Interpret channel
     if callable(color) or isinstance(color, Number):
         return color
-    channel = _color_space_channel_idxs.get(channel, None)
+    channel = CSPACE_IDXS.get(channel, None)
     if channel is None:
         raise ValueError(f'Unknown channel {channel}.')
     if channel not in (0,1,2):
@@ -1180,13 +1181,13 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
         # Save listed colormap i.e. color cycle
         if isinstance(cmap, mcolors.ListedColormap):
             basename = f'{name}.hex'
-            filename = os.path.join(_data_user_cycles, basename)
+            filename = os.path.join(DATA_USER_CYCLES, basename)
             with open(filename, 'w') as f:
                 f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
         # Save segment data directly
         else:
             basename = f'{name}.json'
-            filename = os.path.join(_data_user_cmaps, basename)
+            filename = os.path.join(DATA_USER_CMAPS, basename)
             data = {}
             for key,value in cmap._segmentdata.items():
                 data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
@@ -1331,7 +1332,7 @@ def Cycle(*args, samples=None, name=None, save=False,
         # Save the cycle
         if save:
             basename = f'{name}.hex'
-            filename = os.path.join(_data_user_cycles, basename)
+            filename = os.path.join(DATA_USER_CYCLES, basename)
             with open(filename, 'w') as f:
                 f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
             print(f'Saved color cycle to "{basename}".')
@@ -1975,7 +1976,8 @@ def _read_cmap_cycle_data(filename):
         # Load
         # NOTE: This appears to be biggest import time bottleneck! Increases
         # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
-        data = [_delim.split(line.strip()) for line in open(filename).readlines()]
+        delim = re.compile('[,\s]+')
+        data = [delim.split(line.strip()) for line in open(filename).readlines()]
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
@@ -2067,7 +2069,7 @@ def register_cmaps():
     # Turn original matplotlib maps from ListedColormaps to LinearSegmentedColormaps
     # It makes zero sense to me that they are stored as ListedColormaps
     _check_data()
-    for name in _cmaps_categories['Matplotlib Originals']: # initialize as empty lists
+    for name in CMAPS_CATEGORIES['Matplotlib Originals']: # initialize as empty lists
         cmap = mcm.cmap_d._getitem(name, None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
@@ -2080,7 +2082,7 @@ def register_cmaps():
         mcm.cmap_d[name] = mcm.cmap_d[name].reversed(name=name) # make spectral go from 'cold' to 'hot'
 
     # Remove gross cmaps (strong-arm user into using the better ones)
-    for name in _cmaps_delete:
+    for name in CMAPS_DELETE:
         mcm.cmap_d.pop(name, None)
 
     # Fill initial user-accessible cmap list with the colormaps we will keep
@@ -2089,8 +2091,8 @@ def register_cmaps():
 
     # Add colormaps from ProPlot and user directories
     N = rcParams['image.lut'] # query this when register function is called
-    for filename in sorted(glob.glob(os.path.join(_data_cmaps, '*'))) + \
-            sorted(glob.glob(os.path.join(_data_user_cmaps, '*'))):
+    for filename in sorted(glob.glob(os.path.join(DATA_CMAPS, '*'))) + \
+            sorted(glob.glob(os.path.join(DATA_USER_CMAPS, '*'))):
         name, x, data = _read_cmap_cycle_data(filename)
         if name is None:
             continue
@@ -2124,9 +2126,9 @@ def register_cycles():
     cycles.clear()
 
     # Remove gross cycles, change the names of some others
-    for name in _cycles_delete:
+    for name in CYCLES_DELETE:
         mcm.cmap_d.pop(name, None)
-    for (name1,name2) in _cycles_rename:
+    for (name1,name2) in CYCLES_RENAME:
         cycle = mcm.cmap_d.pop(name1, None)
         if cycle:
             mcm.cmap_d[name2] = cycle
@@ -2134,8 +2136,8 @@ def register_cycles():
 
     # Read cycles from directories
     icycles = {}
-    for filename in sorted(glob.glob(os.path.join(_data_cycles, '*'))) + \
-            sorted(glob.glob(os.path.join(_data_user_cycles, '*'))):
+    for filename in sorted(glob.glob(os.path.join(DATA_CYCLES, '*'))) + \
+            sorted(glob.glob(os.path.join(DATA_USER_CYCLES, '*'))):
         name, _, data = _read_cmap_cycle_data(filename)
         if name is None:
             continue
@@ -2145,7 +2147,7 @@ def register_cycles():
         icycles[name] = data
 
     # Register cycles as ListedColormaps
-    for name,colors in {**_cycles_preset, **icycles}.items():
+    for name,colors in {**CYCLES_PRESET, **icycles}.items():
         cmap = mcolors.ListedColormap(colors, name=name)
         cmap.colors = [to_rgb(color) for color in cmap.colors] # sanitize
         mcm.cmap_d[name] = cmap
@@ -2165,10 +2167,11 @@ def register_colors(nmax=np.inf):
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
     # usage and will omit CSS4 colors from the demo table.
-    colordict.clear()
     scale = (360, 100, 100)
-    base = {**mcolors.BASE_COLORS} # make copy
-    base.update({_color_names_shorthands[key]:value for key,value in base.items()}) # full names
+    base = {}
+    colordict.clear()
+    base.update(mcolors.BASE_COLORS)
+    base.update(BASE_COLORS_FULL)
     mcolors.colorConverter.colors.clear() # clean out!
     mcolors.colorConverter.cache.clear() # clean out!
     for name,dict_ in (('base',base), ('css',mcolors.CSS4_COLORS)):
@@ -2176,7 +2179,7 @@ def register_colors(nmax=np.inf):
 
     # Load colors from file and get their HCL values
     names = ('opencolors', 'xkcd', 'crayola') # order is preference for identical color names from different groups
-    files = [os.path.join(_data_colors, f'{name}.txt') for name in names]
+    files = [os.path.join(DATA_COLORS, f'{name}.txt') for name in names]
     pairs = []
     seen = {*base} # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = np.empty((0,3))
@@ -2196,13 +2199,13 @@ def register_colors(nmax=np.inf):
         for name,color in data: # is list of name, color tuples
             if i >= nmax: # e.g. for xkcd colors
                 break
-            for regex,sub in _color_names_translate:
+            for regex,sub in FILTER_TRANSLATIONS:
                 name = regex.sub(sub, name)
-            if name in seen or _color_names_bad.search(name):
+            if name in seen or FILTER_BAD.search(name):
                 continue
             seen.add(name)
             pairs.append((category, name)) # save the category name pair
-            ihcls.append(to_xyz(color, space=_color_names_filter_space))
+            ihcls.append(to_xyz(color, space=FILTER_SPACE))
             dict_[name] = color # save the color
             i += 1
         _colordict_unfiltered[category] = dict_
@@ -2212,10 +2215,10 @@ def register_colors(nmax=np.inf):
     # WARNING: Unique axis argument requires numpy version >=1.13
     deleted = 0
     hcls = hcls/np.array(scale)
-    hcls = np.round(hcls/_color_names_filter_thresh).astype(np.int64)
+    hcls = np.round(hcls/FILTER_THRESH).astype(np.int64)
     _, idxs, _ = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
     for idx,(category,name) in enumerate(pairs):
-        if name not in _color_names_add and idx not in idxs:
+        if name not in FILTER_ADD and idx not in idxs:
             deleted += 1
         else:
             colordict[category][name] = _colordict_unfiltered[category][name]
@@ -2265,7 +2268,7 @@ def register_fonts():
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ!
     _check_data()
-    paths = _data_fonts + ':' + _data_user_fonts
+    paths = DATA_FONTS + ':' + DATA_USER_FONTS
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
     elif paths not in os.environ['TTFPATH']:
@@ -2280,8 +2283,8 @@ def register_fonts():
         mfonts._rebuild()
 
     # Populate font lists
-    fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if not (_data_user_fonts in font.fname or _data_fonts in font.fname)})
-    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if (_data_user_fonts in font.fname or _data_fonts in font.fname)})
+    fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if not (DATA_USER_FONTS in font.fname or DATA_FONTS in font.fname)})
+    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if (DATA_USER_FONTS in font.fname or DATA_FONTS in font.fname)})
     fonts[:] = sorted((*fonts_system, *fonts_proplot))
 
 #-----------------------------------------------------------------------------#
@@ -2547,8 +2550,8 @@ def show_colors(nbreak=17, minsat=0.2):
         if opencolors:
             wscale = 0.5
             swatch = 1.5
-            nrows, ncols = 10, len(_color_names_opencolors) # rows and columns
-            plot_names = [[name + str(i) for i in range(nrows)] for name in _color_names_opencolors]
+            nrows, ncols = 10, len(OPEN_COLORS) # rows and columns
+            plot_names = [[name + str(i) for i in range(nrows)] for name in OPEN_COLORS]
             nrows = nrows*2
             ncols = (ncols+1)//2
             plot_names = np.array(plot_names, order='C')
@@ -2561,7 +2564,7 @@ def show_colors(nbreak=17, minsat=0.2):
             wscale = 1
             swatch = 1
             colors_hcl = {
-                key: [c/s for c,s in zip(to_xyz(value, _color_names_filter_space), scale)]
+                key: [c/s for c,s in zip(to_xyz(value, FILTER_SPACE), scale)]
                 for key,value in icolors.items()
                 }
             # Separate into columns and roughly sort by brightness in these columns
@@ -2653,7 +2656,7 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
 
     # Get dictionary of registered colormaps and their categories
     imaps = [name.lower() for name in imaps]
-    cats = {cat:names for cat,names in _cmaps_categories.items()}
+    cats = {cat:names for cat,names in CMAPS_CATEGORIES.items()}
     cats_plot = {cat:[name for name in names if name.lower() in imaps] for cat,names in cats.items()}
     # Distinguish known from unknown (i.e. user) maps, add as a new category
     imaps_known = [name.lower() for cat,names in cats.items() for name in names if name.lower() in imaps]

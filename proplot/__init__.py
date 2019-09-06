@@ -36,36 +36,36 @@ if warnings.formatwarning is not _warning_proplot:
 # of other modules last, and loads styletools early so we can try to update
 # TTFPATH before the fontManager is loaded by other matplotlib modules
 from .utils import * # misc stuff, debug mode
-if _debug:
+if DEBUG:
     import time
     t = time.clock()
     t0 = t
 from .styletools import * # colors and fonts
-if _debug:
+if DEBUG:
     print(f'styletools: {time.clock() - t}')
     t = time.clock()
 from .rctools import * # custom configuration implementation
-if _debug:
+if DEBUG:
     print(f'rctools: {time.clock() - t}')
     t = time.clock()
 from .axistools import * # locators, normalizers, and formatters
-if _debug:
+if DEBUG:
     print(f'axistools: {time.clock() - t}')
     t = time.clock()
 from .wrappers import * # wrappers
-if _debug:
+if DEBUG:
     print(f'wrappers: {time.clock() - t}')
     t = time.clock()
 from .projs import * # projections and whatnot
-if _debug:
+if DEBUG:
     print(f'projs: {time.clock() - t}')
     t = time.clock()
 from .axes import * # axes classes
-if _debug:
+if DEBUG:
     print(f'axes: {time.clock() - t}')
     t = time.clock()
 from .subplots import * # subplots and figure class
-if _debug:
+if DEBUG:
     print(f'subplots: {time.clock() - t}')
     t = time.clock()
     print(f'total time: {time.clock() - t0}')

@@ -146,11 +146,11 @@ def Proj(name, basemap=False, **kwargs):
     # Basemap
     if basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
-        name = _basemap_cyl.get(name, name)
+        name = BASEMAP_TRANSLATE.get(name, name)
         kwproj = basemap_rc.get(name, {})
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
-        if name in _basemap_circles:
+        if name[:2] in ('np', 'sp'):
             kwproj.setdefault('round', True)
         if name == 'geos': # fix non-conda installed basemap issue: https://github.com/matplotlib/basemap/issues/361
             kwproj.setdefault('rsphere', (6378137.00,6356752.3142))
@@ -161,7 +161,7 @@ def Proj(name, basemap=False, **kwargs):
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is available
-        kwargs = {_crs_translate.get(key, key): value for key,value in kwargs.items()}
+        kwargs = {CARTOPY_CRS_TRANSLATE.get(key, key): value for key,value in kwargs.items()}
         crs = cartopy_projs.get(name, None)
         if name == 'geos': # fix common mistake
             kwargs.pop('central_latitude', None)
@@ -269,15 +269,19 @@ class SouthPolarGnomonic(Gnomonic):
         super().__init__(central_latitude=-90,
                 central_longitude=central_longitude, globe=globe)
 
-# Basemap stuff
-_basemap_circles = (
-    'npstere', 'spstere', 'nplaea',
-    'splaea', 'npaeqd', 'spaeqd',
-    )
-_basemap_cyl = { # aliases for 'cyl', that match PROJ4 name and common name
+# Hidden constants
+BASEMAP_TRANSLATE = {
     'eqc':     'cyl',
     'pcarree': 'cyl',
     }
+CARTOPY_CRS_TRANSLATE = { # add to this
+    'lat_0':   'central_latitude',
+    'lon_0':   'central_longitude',
+    'lat_min': 'min_latitude',
+    'lat_max': 'max_latitude',
+    }
+
+# Documented constants
 basemap_rc = { # note either llcrn/urcrnr args (all 4) can be specified, or width and height can be specified
     'eck4':    {'lon_0':0},
     'geos':    {'lon_0':0},
@@ -310,13 +314,6 @@ basemap_rc = { # note either llcrn/urcrnr args (all 4) can be specified, or widt
 `~mpl_toolkits.basemap` will raise an error if you don't provide them,
 so ProPlot imposes some sensible default behavior."""
 
-# Cartopy stuff
-_crs_translate = { # add to this
-    'lat_0':   'central_latitude',
-    'lon_0':   'central_longitude',
-    'lat_min': 'min_latitude',
-    'lat_max': 'max_latitude',
-    }
 cartopy_projs = {}
 """Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes."""
 if _cartopy_installed:
@@ -360,12 +357,12 @@ if _cartopy_installed:
             'merc':    'Mercator',
             'mill':    'Miller',
             'moll':    'Mollweide',
-            'npstere': 'NorthPolarStereo', # north/south pole stuff not in PROJ.4
+            'npstere': 'NorthPolarStereo', # np/sp stuff not in PROJ.4
             'nsper':   'NearsidePerspective',
             'ortho':   'Orthographic',
             'osgb':    'OSGB', # UK; not in basemap or PROJ.4
             'osni':    'OSNI', # Ireland; not in basemap or PROJ.4
-            'pcarree': 'PlateCarree', # common alt name
+            'pcarree': 'PlateCarree', # common alternate name
             'robin':   'Robinson',
             'rotpole': 'RotatedPole',
             'sinu':    'Sinusoidal',
@@ -381,4 +378,3 @@ if _cartopy_installed:
         cartopy_projs[_name] = _class
     if _unavail:
         warnings.warn(f'Cartopy projection(s) {", ".join(_unavail)} are unavailable. Consider updating to cartopy >= 0.17.0.')
-

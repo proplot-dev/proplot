@@ -192,7 +192,7 @@ Key                         Description
 # TODO: Add 'style' setting that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from . import utils
-from .utils import _counter, _timer, _debug
+from .utils import _counter, _timer, DEBUG
 import re
 import os
 import sys
@@ -201,11 +201,11 @@ import cycler
 import warnings
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-if _debug:
+if DEBUG:
     import time
     t = time.clock()
 import matplotlib.pyplot as plt
-if _debug:
+if DEBUG:
     print(f'pyplot: {time.clock() - t}')
 try:
     import IPython
@@ -222,15 +222,15 @@ _rcExtraParams = {}
 # Get default font
 # WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
 # failed to render/printed nonsense, but Helvetica was fine.
-_user_rc = os.path.join(os.path.expanduser("~"), '.proplotrc')
-_default_rc = os.path.join(os.path.dirname(__file__), '.proplotrc') # or parent, but that makes pip install distribution hard
-_default_font = 'Helvetica' if sys.platform == 'linux' else 'Helvetica Neue' # says 'darwin' on mac
-if not os.path.exists(_default_rc):
+USER_RC = os.path.join(os.path.expanduser("~"), '.proplotrc')
+DEFAULT_RC = os.path.join(os.path.dirname(__file__), '.proplotrc')
+DEFAULT_FONT = 'Helvetica' if sys.platform == 'linux' else 'Helvetica Neue'
+if not os.path.exists(DEFAULT_RC):
     raise ValueError('Default configuration file does not exist.')
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
-_rcGlobals_children = {
+RCGLOBALS_CHILDREN = {
     'abc':          [],
     'span':         [],
     'share':        [],
@@ -272,9 +272,9 @@ _rcGlobals_children = {
     }
 
 # Names of the new settings
-_rc_names = {*_rcParams.keys()}
-_rc_names_global = {*_rcGlobals_children.keys()}
-_rc_names_custom = {
+RC_NAMES = {*_rcParams.keys()}
+RC_NAMES_GLOBAL = {*RCGLOBALS_CHILDREN.keys()}
+RC_NAMES_CUSTOM = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
     'image.levels', 'image.edgefix',
@@ -300,28 +300,28 @@ _rc_names_custom = {
     }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-_rc_names_nodots = { # useful for passing these as kwargs
+RC_NAMES_NODOTS = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
-    (_rc_names_custom, _rc_names, _rc_names_global)
+    (RC_NAMES_CUSTOM, RC_NAMES, RC_NAMES_GLOBAL)
     for name in names
     }
 # Categories for returning dict of subcategory properties
-_rc_categories = {
-    *(re.sub('\.[^.]*$', '', name) for names in (_rc_names_custom, _rc_names) for name in names),
-    *(re.sub('\..*$', '', name) for names in (_rc_names_custom, _rc_names) for name in names)
+RC_CATEGORIES = {
+    *(re.sub('\.[^.]*$', '', name) for names in (RC_NAMES_CUSTOM, RC_NAMES) for name in names),
+    *(re.sub('\..*$', '', name) for names in (RC_NAMES_CUSTOM, RC_NAMES) for name in names)
     }
 
 # Unit conversion
 # See: https://matplotlib.org/users/customizing.html, all props matching
 # the below strings use the units 'points', and my special categories are inches!
-_regex = re.compile('^.*(width|space|size|pad|len|small|large)$') # len is for ticklen, space is for subplots props
+UNITS_REGEX = re.compile('^.*(width|space|size|pad|len|small|large)$') # len is for ticklen, space is for subplots props
 def _convert_units(key, value):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""
     # WARNING: Must keep colorbar and subplots units alive, so when user
     # requests em units, values change with respect to font size. The points
     # thing is a conveniene feature so not as important for them.
-    if isinstance(value,str) and _regex.match(key) \
+    if isinstance(value,str) and UNITS_REGEX.match(key) \
         and key.split('.')[0] not in ('colorbar','subplots'):
             value = utils.units(value, 'pt')
     return value
@@ -390,7 +390,7 @@ def _get_globals(key=None, value=None):
             kw_custom['gridminor.linewidth'] = gridwidth*ratio
         # Now update linked settings
         if key not in ('gridratio','tickratio','ticklenratio'):
-            for name in _rcGlobals_children[key]:
+            for name in RCGLOBALS_CHILDREN[key]:
                 val = _convert_units(key, value)
                 if name in _rcExtraParams:
                     kw_custom[name] = val
@@ -424,7 +424,7 @@ class rc_configurator(object):
         plt.style.use('default')
 
         # Load the defaults from file
-        for i,file in enumerate((_default_rc, _user_rc)):
+        for i,file in enumerate((DEFAULT_RC, USER_RC)):
             # Load
             if not os.path.exists(file):
                 continue
@@ -441,31 +441,31 @@ class rc_configurator(object):
             # Add keys to dictionaries
             gkeys, ckeys = {*()}, {*()}
             for key,value in data.items():
-                if key in _rc_names_global:
+                if key in RC_NAMES_GLOBAL:
                     _rcGlobals[key] = value
                     if i == 0:
                         gkeys.add(key)
-                elif key in _rc_names_custom:
+                elif key in RC_NAMES_CUSTOM:
                     value = _convert_units(key, value)
                     _rcExtraParams[key] = value
                     if i == 0:
                         ckeys.add(key)
-                elif key in _rc_names:
+                elif key in RC_NAMES:
                     value = _convert_units(key, value)
                     _rcParams[key] = value
                 else:
                     raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key {key!r}.')
             # Make sure we did not miss anything
             if i == 0:
-                if gkeys != _rc_names_global:
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid global keys {_rc_names_global - gkeys}.')
-                if ckeys != _rc_names_custom:
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {_rc_names_custom - ckeys}.')
+                if gkeys != RC_NAMES_GLOBAL:
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid global keys {RC_NAMES_GLOBAL - gkeys}.')
+                if ckeys != RC_NAMES_CUSTOM:
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {RC_NAMES_CUSTOM - ckeys}.')
 
         # Set default fontname and cycler
         _set_cycler(_rcGlobals['cycle'])
         if _rcGlobals.get('fontname', None) is None:
-            _rcGlobals['fontname'] = _default_font
+            _rcGlobals['fontname'] = DEFAULT_FONT
 
         # Apply *global settings* to children settings
         rc, rc_new = _get_globals()
@@ -495,7 +495,7 @@ class rc_configurator(object):
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
         if '.' not in key and key not in _rcGlobals:
-            key = _rc_names_nodots.get(key, key)
+            key = RC_NAMES_NODOTS.get(key, key)
 
         # Allow for special time-saving modes where we *ignore _rcParams*
         # or even *ignore _rcExtraParams*.
@@ -535,7 +535,7 @@ class rc_configurator(object):
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
         if '.' not in key and key not in _rcGlobals:
-            key = _rc_names_nodots.get(key, key)
+            key = RC_NAMES_NODOTS.get(key, key)
 
         # Special keys
         if key == 'title.pad':
@@ -611,13 +611,13 @@ class rc_configurator(object):
             _rcParams.update(rc)
             _rcExtraParams.update(rc_new)
         # Update normal settings
-        elif key in _rc_names_custom:
+        elif key in RC_NAMES_CUSTOM:
             value = _convert_units(key, value)
             cache[key] = value
             if context:
                 restore[key] = _rcExtraParams[key]
             _rcExtraParams[key] = value
-        elif key in _rc_names:
+        elif key in RC_NAMES:
             value = _convert_units(key, value)
             cache[key] = value
             if context:
@@ -793,8 +793,8 @@ class rc_configurator(object):
             set to ``0`` (see `~rc_configurator.context`).
         """
         # Check
-        if cat not in _rc_categories:
-            raise ValueError(f'RC category {cat} does not exist. Valid categories are {", ".join(_rc_categories)}.')
+        if cat not in RC_CATEGORIES:
+            raise ValueError(f'RC category {cat} does not exist. Valid categories are {", ".join(RC_CATEGORIES)}.')
         if not cache:
             mode = 0
         else:
