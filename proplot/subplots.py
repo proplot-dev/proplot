@@ -54,7 +54,7 @@ __all__ = [
     ]
 
 # Translation
-_side_translate = {
+SIDE_TRANSLATE = {
     'l':'left',
     'r':'right',
     'b':'bottom',
@@ -437,7 +437,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
         return self.get_width_ratios()[1::2]
 
     def get_active_height_ratios(self):
-        """Returns height ratios exlucding slots allocated for spaces."""
+        """Returns height ratios excluding slots allocated for spaces."""
         return self.get_height_ratios()[::2]
 
     def get_active_width_ratios(self):
@@ -769,7 +769,7 @@ class Figure(mfigure.Figure):
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         ax = ax._panel_parent or ax # redirect to main axes
-        side = _side_translate[s]
+        side = SIDE_TRANSLATE[s]
         share, width, space, space_orig = _panels_kwargs(s,
                 filled=filled, figure=False, **kwargs)
 
@@ -824,7 +824,7 @@ class Figure(mfigure.Figure):
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
-        side = _side_translate[s]
+        side = SIDE_TRANSLATE[s]
         _, width, space, space_orig = _panels_kwargs(s,
                 filled=True, figure=True, **kwargs)
         if s in 'lr':
@@ -1199,9 +1199,9 @@ class Figure(mfigure.Figure):
         idx_space = idx - 1*bool(s in 'br')
         idx_offset = 1*bool(s in 'tl')
         if s in 'lr':
-            x, w, ncols = 'x', 'w', 'ncols'
+            w, ncols = 'w', 'ncols'
         else:
-            x, w, ncols = 'y', 'h', 'nrows'
+            w, ncols = 'h', 'nrows'
 
         # Load arrays and test if we need to insert
         subplots_kw = self._subplots_kw

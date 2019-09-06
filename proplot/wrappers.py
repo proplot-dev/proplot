@@ -49,37 +49,37 @@ _load_objects()
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
 # TODO: 'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
-_errorbar_methods = ('plot', 'scatter', 'bar', 'violinplot'
+ERRORBAR_METHODS = ('plot', 'scatter', 'bar', 'violinplot'
     )
-_centers_methods = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs'
+CENTERS_METHODS = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs'
     )
-_edges_methods = ('pcolor', 'pcolormesh'
+EDGES_METHODS = ('pcolor', 'pcolormesh'
     )
-_1d_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
+D1_METHODS = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
     'pie', 'fill_between', 'fill_betweenx', 'step', 'stem', 'hexbin',
     )
-_2d_methods = (*_centers_methods, *_edges_methods
+D2_METHODS = (*CENTERS_METHODS, *EDGES_METHODS
     )
-_cycle_methods = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
+CYCLE_METHODS = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
     'pie', 'fill_between', 'fill_betweenx', 'step', 'stem',
     )
-_cmap_methods = ('contour', 'contourf', 'pcolor', 'pcolormesh',
+CMAP_METHODS = ('contour', 'contourf', 'pcolor', 'pcolormesh',
     'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
     'hexbin', 'matshow', 'imshow', 'spy', 'hist2d'
     )
-_crs_methods = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks'
+CRS_METHODS = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks'
     )
-_latlon_methods = ('plot', 'scatter', *_edges_methods, *_centers_methods
+LATLON_METHODS = ('plot', 'scatter', *EDGES_METHODS, *CENTERS_METHODS
     )
-_transform_methods = ('plot', 'scatter', 'tripcolor',
-    'tricontour', 'tricontourf', *_edges_methods, *_centers_methods
+TRANSFORM_METHODS = ('plot', 'scatter', 'tripcolor',
+    'tricontour', 'tricontourf', *EDGES_METHODS, *CENTERS_METHODS
     )
 
 # Disabled methods; keys are error messages
 # TODO: rigorous support for violin plots, bar, barh, streamline and quiver
 # TODO: 'table', 'eventplot', 'pie', 'xcorr', 'acorr', 'psd', 'csd',
 # 'magnitude_spectrum', 'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'
-_disabled_methods = {
+DISABLED_METHODS = {
     "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale').":
         ('semilogx', 'semilogy', 'loglog'),
     "Redundant function {} has been disabled. Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
@@ -87,7 +87,7 @@ _disabled_methods = {
     "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use the angle as your *x* coordinate and radius as your *y* coordinate.":
         ('polar',)
     }
-_map_disabled_methods = (
+MAP_DISABLED_METHODS = (
     # These are obvious
     # TODO: Error bars? Will they work? Also bar and barh can be used w/ polar
     'twinx', 'twiny',
@@ -100,7 +100,7 @@ _map_disabled_methods = (
     )
 
 # Keywords for styling cmap overridden plots
-_cmap_style_kwargs = {
+STYLE_ARGS_TRANSLATE = {
     'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
     'hexbin':     {'colors':'edgecolors', 'linewidths':'linewidths'},
     'tricontour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
@@ -126,19 +126,19 @@ def _expand_methods_list(func):
     names, this is much cleaner."""
     doc = func.__doc__
     for name,methods in (
-        ('_1d_methods',            _1d_methods),
-        ('_2d_methods',            _2d_methods),
-        ('_errorbar_methods',      _errorbar_methods),
-        ('_centers_methods',       _centers_methods),
-        ('_edges_methods',         _edges_methods),
-        ('_centers_edges_methods', (*_centers_methods, *_edges_methods)),
-        ('_latlon_methods',        _latlon_methods),
-        ('_crs_methods',           _crs_methods),
-        ('_transform_methods',     _transform_methods),
-        ('_cycle_methods',         _cycle_methods),
-        ('_cmap_methods',          _cmap_methods),
-        ('_disabled_methods',      (*(method for methods in _disabled_methods.values() for method in methods),)),
-        ('_map_disabled_methods',  _map_disabled_methods),
+        ('D1_METHODS',            D1_METHODS),
+        ('D2_METHODS',            D2_METHODS),
+        ('ERRORBAR_METHODS',      ERRORBAR_METHODS),
+        ('CENTERS_METHODS',       CENTERS_METHODS),
+        ('EDGES_METHODS',         EDGES_METHODS),
+        ('CENTERS_EDGES_METHODS', (*CENTERS_METHODS, *EDGES_METHODS)),
+        ('LATLON_METHODS',        LATLON_METHODS),
+        ('CRS_METHODS',           CRS_METHODS),
+        ('TRANSFORM_METHODS',     TRANSFORM_METHODS),
+        ('CYCLE_METHODS',         CYCLE_METHODS),
+        ('CMAP_METHODS',          CMAP_METHODS),
+        ('DISABLED_METHODS',      (*(method for methods in DISABLED_METHODS.values() for method in methods),)),
+        ('MAP_DISABLED_METHODS',  MAP_DISABLED_METHODS),
         ):
         if f'`{name}`' not in doc:
             continue
@@ -204,7 +204,7 @@ def _auto_label(data, axis=None, units=True):
 
 @_expand_methods_list
 def autoformat_1d(self, func, *args, **kwargs):
-    """Wraps `_1d_methods`, standardized acceptable input and optionally
+    """Wraps `D1_METHODS`, standardized acceptable input and optionally
     modifies the x axis label, y axis label, title, and axis ticks
     if the input is a `~xarray.DataArray`, `~pandas.DataFrame`, or
     `~pandas.Series`. Permits 2D array input for all of these commands, in
@@ -291,7 +291,7 @@ def autoformat_1d(self, func, *args, **kwargs):
 
 @_expand_methods_list
 def autoformat_2d(self, func, *args, order='C', **kwargs):
-    """Wraps `_2d_methods`, optionally modifies the x axis label, y axis
+    """Wraps `D2_METHODS`, optionally modifies the x axis label, y axis
     label, title, and axis ticks if the input is a `~xarray.DataArray`,
     `~pandas.DataFrame`, or `~pandas.Series`. Infers dependent
     variable coordinates from the input array if none were provided."""
@@ -384,7 +384,7 @@ def autoformat_2d(self, func, *args, order='C', **kwargs):
 #------------------------------------------------------------------------------
 @_expand_methods_list
 def enforce_centers(self, func, *args, order='C', **kwargs):
-    """Wraps 2D plotting functions that take coordinate *centers* (`_centers_methods`),
+    """Wraps 2D plotting functions that take coordinate *centers* (`CENTERS_METHODS`),
     calculates centers if graticule *edges* were provided."""
     # Checks whether sizes match up, checks whether graticule was input
     x, y, *Zs = args
@@ -412,7 +412,7 @@ def enforce_centers(self, func, *args, order='C', **kwargs):
 
 @_expand_methods_list
 def enforce_edges(self, func, *args, order='C', **kwargs):
-    """Wraps 2D plotting functions that take graticule *edges* (`_edges_methods`),
+    """Wraps 2D plotting functions that take graticule *edges* (`EDGES_METHODS`),
     calculates edges if coordinate *centers* were provided."""
     # Checks that sizes match up, checks whether graticule was input
     x, y, *Zs = args
@@ -470,7 +470,7 @@ def add_errorbars(self, func, *args,
     boxzorder=3, barzorder=3,
     **kwargs):
     """
-    Wraps `_errorbar_methods`, adds support for drawing error bars. Includes
+    Wraps `ERRORBAR_METHODS`, adds support for drawing error bars. Includes
     options for interpreting columns of data as ranges, representing the mean
     or median of each column with lines, points, or bars, and drawing error
     bars representing percentile ranges or standard deviation multiples for
@@ -670,6 +670,7 @@ def scatter_wrapper(self, func, *args,
     nargs = len(args)
     if len(args) > 4:
         raise ValueError(f'Expected 1-4 positional args, got {nargs}.')
+    args = list(args)
     if len(args) == 4:
         c = args.pop(1)
     if len(args) == 3:
@@ -1120,7 +1121,7 @@ def _basemap_call(self, func):
 @_expand_methods_list
 def cartopy_transform(self, func, *args, transform=None, **kwargs):
     """
-    Wraps `_transform_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    Wraps `TRANSFORM_METHODS` for `~proplot.axes.ProjectionAxesCartopy` axes.
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -1140,7 +1141,7 @@ def cartopy_transform(self, func, *args, transform=None, **kwargs):
 @_expand_methods_list
 def cartopy_crs(self, func, *args, crs=None, **kwargs):
     """
-    Wraps `_crs_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    Wraps `CRS_METHODS` for `~proplot.axes.ProjectionAxesCartopy` axes.
     As with `cartopy_transform`, but passes ``crs=cartopy.crs.PlateCarree()``
     as the default. Also fixes bug associated with tight bounding boxes and
     `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
@@ -1167,7 +1168,7 @@ def cartopy_crs(self, func, *args, crs=None, **kwargs):
 @_expand_methods_list
 def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
-    Wraps `_latlon_methods` for `~proplot.axes.BasemapProjectionAxes` axes.
+    Wraps `LATLON_METHODS` for `~proplot.axes.BasemapProjectionAxes` axes.
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude
@@ -1215,7 +1216,7 @@ def _gridfix_coordinates(lon, lat):
 @_expand_methods_list
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `_centers_edges_methods` for `~proplot.axes.ProjectionAxesCartopy` axes.
+    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.ProjectionAxesCartopy` axes.
 
     Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
     optionally make data coverage *global*. Passing ``globe=True`` does the
@@ -1255,7 +1256,7 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
 @_expand_methods_list
 def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `_centers_edges_methods` for `~proplot.axes.BasemapProjectionAxes` axes.
+    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.BasemapProjectionAxes` axes.
 
     Makes 1D longitude vectors monotonic and cycles them to fit within the map
     edges (i.e. if the projection central longitude is 90 degrees, will permute
@@ -1367,7 +1368,7 @@ def cycle_wrapper(self, func, *args,
     panel_kw=None,
     **kwargs):
     """
-    Wraps methods that use the property cycler (`_cycle_methods`),
+    Wraps methods that use the property cycler (`CYCLE_METHODS`),
     adds features for controlling colors in the property cycler and drawing
     legends or colorbars in one go. Critically, this wrapper also **standardizes
     acceptable input** -- these methods now all accept 2D arrays holding columns
@@ -1638,7 +1639,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     color=None, colors=None, edgecolor=None, edgecolors=None,
     **kwargs):
     """
-    Wraps methods that take a ``cmap`` argument (`_cmap_methods`),
+    Wraps methods that take a ``cmap`` argument (`CMAP_METHODS`),
     adds several new keyword args and features.
     Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
     discrete color levels (see notes).
@@ -1784,7 +1785,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     colors = _notNone(color, colors, edgecolor, edgecolors, None, names=('color', 'colors', 'edgecolor', 'edgecolors'))
     linewidths = _notNone(lw, linewidth, linewidths, None, names=('lw', 'linewidth', 'linewidths'))
     linestyles = _notNone(ls, linestyle, linestyles, None, names=('ls', 'linestyle', 'linestyles'))
-    style_kw = _cmap_style_kwargs.get(name, {})
+    style_kw = STYLE_ARGS_TRANSLATE.get(name, {})
     edgefix = _notNone(edgefix, rc['image.edgefix'])
     for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
         if value is None:

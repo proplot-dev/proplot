@@ -14,7 +14,7 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units', '_debug']
+__all__ = ['arange', 'edges', 'units', 'DEBUG']
 
 # Important private helper func
 def _notNone(*args, names=None):
@@ -44,14 +44,14 @@ def _notNone(*args, names=None):
         return first
 
 # Debug decorators
-_debug = False # debug mode, used for profiling and activating timer decorators
+DEBUG = False # debug mode, used for profiling and activating timer decorators
 def _logger(func):
     """A decorator that logs the activity of the script (it actually just prints it,
     but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
-        if _debug:
+        if DEBUG:
             print(f'{func.__name__} called with: {args} {kwargs}')
         return res
     return decorator
@@ -61,10 +61,10 @@ def _timer(func):
     See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if _debug:
+        if DEBUG:
             t = time.clock()
         res = func(*args, **kwargs)
-        if _debug:
+        if DEBUG:
             print(f'{func.__name__}() time: {time.clock()-t}s')
         return res
     return decorator
@@ -74,10 +74,10 @@ def _counter(func):
     has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if _debug:
+        if DEBUG:
             t = time.clock()
         res = func(*args, **kwargs)
-        if _debug:
+        if DEBUG:
             decorator.time += (time.clock() - t)
             decorator.count += 1
             print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')

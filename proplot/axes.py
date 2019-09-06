@@ -51,7 +51,7 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-from .rctools import rc, _rc_names_nodots
+from .rctools import rc, RC_NAMES_NODOTS
 from . import utils, projs, axistools, wrappers
 from .utils import _notNone, units
 __all__ = [
@@ -63,13 +63,13 @@ __all__ = [
     ]
 
 # Translator for inset colorbars and legends
-_side_translate = {
+SIDE_TRANSLATE = {
     'l':'left',
     'r':'right',
     'b':'bottom',
     't':'top',
     }
-_loc_translate = {
+LOC_TRANSLATE = {
     None:None,
     'l':'left',
     'r':'right',
@@ -99,13 +99,13 @@ _loc_translate = {
     }
 
 # Helper function
-_abc_string = 'abcdefghijklmnopqrstuvwxyz'
+ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
 def _abc(i):
     """Function for a-b-c labeling, returns a...z...aa...zz...aaa...zzz."""
     if i < 26:
-        return _abc_string[i]
+        return ABC_STRING[i]
     else:
-        return _abc(i - 26) + _abc_string[i % 26] # sexy sexy recursion
+        return _abc(i - 26) + ABC_STRING[i % 26] # sexy sexy recursion
 
 # Import mapping toolbox
 try:
@@ -192,8 +192,9 @@ class Axes(maxes.Axes):
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):
-        """Applies the `~proplot.wrappers.text_wrapper` wrapper and disables
-        the redundant methods `_disabled_methods`."""
+        """Disables the redundant methods `DISABLED_METHODS` with useful
+        error messages, and applies the `~proplot.wrappers.text_wrapper`
+        wrapper."""
         obj = object.__getattribute__(self, attr, *args)
         for message,attrs in wrappers._disabled_methods.items():
             if attr in attrs:
@@ -254,7 +255,7 @@ class Axes(maxes.Axes):
             cache = False
 
         # Above axes
-        loc = _loc_translate.get(loc, loc)
+        loc = LOC_TRANSLATE.get(loc, loc)
         if loc in ('top','bottom'):
             raise ValueError(f'Invalid title location {loc!r}.')
         elif loc in ('left','right','center'):
@@ -298,7 +299,7 @@ class Axes(maxes.Axes):
         if loc is True:
             loc = None
         elif isinstance(loc, (str, Integral)):
-            loc = _loc_translate.get(loc, loc) # may still be invalid
+            loc = LOC_TRANSLATE.get(loc, loc) # may still be invalid
         return loc
 
     def _make_inset_locator(self, bounds, trans):
@@ -340,7 +341,7 @@ class Axes(maxes.Axes):
         # this is called on the main axes *or* on the relevant panel itself
         # TODO: Mixed figure panels with super labels? How does that work?
         s = side[0]
-        side = _side_translate[s]
+        side = SIDE_TRANSLATE[s]
         if s == self._panel_side:
             ax = self._panel_parent
         else:
@@ -588,7 +589,7 @@ class Axes(maxes.Axes):
         kw = {} # for format
         rc_kw = rc_kw or {}
         for key,value in kwargs.items():
-            key_fixed = _rc_names_nodots.get(key, None)
+            key_fixed = RC_NAMES_NODOTS.get(key, None)
             if key_fixed is None:
                 kw[key] = value
             else:
@@ -800,6 +801,11 @@ class Axes(maxes.Axes):
         """Alias for `~matplotlib.axes.Axes.fill_betweenx`, which is wrapped by
         `~proplot.wrappers.fill_betweenx_wrapper`."""
         return self.fill_betweenx(*args, **kwargs)
+
+    def boxes(self, *args, **kwargs):
+        """Alias for `~matplotlib.axes.Axes.boxplot`, which is wrapped by
+        `~proplot.wrappers.boxplot_wrapper`."""
+        return self.boxplot(*args, **kwargs)
 
     def cmapline(self, *args, values=None,
         cmap=None, norm=None,
@@ -1348,6 +1354,11 @@ class Axes(maxes.Axes):
             The panel axes.
         """
         return self.figure._add_axes_panel(self, side, **kwargs)
+
+    def violins(self, *args, **kwargs):
+        """Alias for `~matplotlib.axes.Axes.violinplot`, which is wrapped by
+        `~proplot.wrappers.violinplot_wrapper`."""
+        return self.violinplot(*args, **kwargs)
 
     panel = panel_axes
     """Alias for `~Axes.panel_axes`."""
@@ -2268,8 +2279,8 @@ class ProjectionAxes(Axes):
 
     @wrappers._expand_methods_list
     def __getattribute__(self, attr, *args):
-        """Disables the methods `_map_disabled_methods`, which are inappropriate
-        for map projections."""
+        """Disables the methods `MAP_DISABLED_METHODS`, which are
+        inappropriate for map projections."""
         if attr in wrappers._map_disabled_methods:
             raise AttributeError(f'Invalid plotting function {attr!r} for map projection axes.')
         return super().__getattribute__(attr, *args)
