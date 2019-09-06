@@ -517,8 +517,7 @@ def _subplots_geometry(**kwargs):
     necessary to reconstruct and modify this configuration. Note that
     `wspace`, `hspace`, `left`, `right`, `top`, and `bottom` always have fixed
     physical units, then we scale figure width, figure height, and width
-    and height ratios to accommodate requested geometry. And panel widths and
-    heights are also fixed."""
+    and height ratios to accommodate spaces."""
     # Dimensions and geometry
     nrows, ncols       = kwargs['nrows'], kwargs['ncols']
     aspect, xref, yref = kwargs['aspect'], kwargs['xref'], kwargs['yref']
@@ -529,11 +528,12 @@ def _subplots_geometry(**kwargs):
     wratios, hratios = kwargs['wratios'], kwargs['hratios']
     left, bottom     = kwargs['left'], kwargs['bottom']
     right, top       = kwargs['right'], kwargs['top']
-    # Panel string toggles
+    # Panel string toggles, lists containing empty strings '' (indicating a
+    # main axes), or one of 'l', 'r', 'b', 't' (indicating axes panels) or
+    # 'f' (indicating figure panels)
     wpanels, hpanels = kwargs['wpanels'], kwargs['hpanels']
 
     # Checks, important now that we modify gridspec geometry
-    # TODO: Helper func? Nah, no big deal
     if len(hratios) != nrows:
         raise ValueError(f'Expected {nrows} width ratios for {nrows} rows, got {len(hratios)}.')
     if len(wratios) != ncols:
@@ -548,7 +548,6 @@ def _subplots_geometry(**kwargs):
         raise ValueError(f'Expected {ncols} wpanel toggles for {ncols} columns, got {len(wpanels)}.')
 
     # Get indices corresponding to main axes or main axes space slots
-    # TODO: Shouldn't panel space be included in these calculations?
     idxs_ratios, idxs_space = [], []
     for panels in (hpanels,wpanels):
         # Ratio indices
@@ -564,23 +563,24 @@ def _subplots_geometry(**kwargs):
             space_idxs.append(idx + offset - 1)
         idxs_space.append(space_idxs)
     # Separate the panel and axes ratios
-    haxes = [hratios[idx] for idx in idxs_ratios[0]]
-    waxes = [wratios[idx] for idx in idxs_ratios[1]]
-    hpanels = [ratio for idx,ratio in enumerate(hratios) if idx not in idxs_ratios[0]]
-    wpanels = [ratio for idx,ratio in enumerate(wratios) if idx not in idxs_ratios[1]]
-    haxes_space = [hspace[idx] for idx in idxs_space[0]]
-    waxes_space = [wspace[idx] for idx in idxs_space[1]]
+    hratios_main = [hratios[idx] for idx in idxs_ratios[0]]
+    wratios_main = [wratios[idx] for idx in idxs_ratios[1]]
+    hratios_panels = [ratio for idx,ratio in enumerate(hratios) if idx not in idxs_ratios[0]]
+    wratios_panels = [ratio for idx,ratio in enumerate(wratios) if idx not in idxs_ratios[1]]
+    hspace_main = [hspace[idx] for idx in idxs_space[0]]
+    wspace_main = [wspace[idx] for idx in idxs_space[1]]
     # Reduced geometry
-    nrows_ax = len(haxes)
-    ncols_ax = len(waxes)
+    nrows_main = len(hratios_main)
+    ncols_main = len(wratios_main)
 
     # Get reference properties, account for panel slots in space and ratios
+    # TODO: Shouldn't panel space be included in these calculations?
     (x1, x2), (y1, y2) = xref, yref
     dx, dy = x2 - x1 + 1, y2 - y1 + 1
-    rwspace = sum(waxes_space[x1:x2])
-    rhspace = sum(haxes_space[y1:y2])
-    rwratio = (ncols_ax*sum(waxes[x1:x2+1]))/(dx*sum(waxes))
-    rhratio = (nrows_ax*sum(haxes[y1:y2+1]))/(dy*sum(haxes))
+    rwspace = sum(wspace_main[x1:x2])
+    rhspace = sum(hspace_main[y1:y2])
+    rwratio = (ncols_main*sum(wratios_main[x1:x2+1]))/(dx*sum(wratios_main))
+    rhratio = (nrows_main*sum(hratios_main[y1:y2+1]))/(dy*sum(hratios_main))
     if rwratio == 0 or rhratio == 0:
         raise RuntimeError(f'Something went wrong, got wratio={rwratio!r} and hratio={rhratio!r} for reference axes.')
     if np.iterable(aspect): 
@@ -596,31 +596,31 @@ def _subplots_geometry(**kwargs):
             axwidth = units(rc['subplots.axwidth'])
         if axheight is not None:
             auto_width = True
-            axheight_all = (nrows_ax*(axheight - rhspace))/(dy*rhratio)
-            height = axheight_all + top + bottom + sum(hspace) + sum(hpanels)
+            axheight_all = (nrows_main*(axheight - rhspace))/(dy*rhratio)
+            height = axheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
         if axwidth is not None:
             auto_height = True
-            axwidth_all = (ncols_ax*(axwidth - rwspace))/(dx*rwratio)
-            width = axwidth_all + left + right + sum(wspace) + sum(wpanels)
+            axwidth_all = (ncols_main*(axwidth - rwspace))/(dx*rwratio)
+            width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
         if axwidth is not None and axheight is not None:
             auto_width = auto_height = False
     else:
         if height is not None:
-            axheight_all = height - top - bottom - sum(hspace) - sum(hpanels)
-            axheight = (axheight_all*dy*rhratio)/nrows_ax + rhspace
+            axheight_all = height - top - bottom - sum(hspace) - sum(hratios_panels)
+            axheight = (axheight_all*dy*rhratio)/nrows_main + rhspace
         if width is not None:
-            axwidth_all = width - left - right - sum(wspace) - sum(wpanels)
-            axwidth = (axwidth_all*dx*rwratio)/ncols_ax + rwspace
+            axwidth_all = width - left - right - sum(wspace) - sum(wratios_panels)
+            axwidth = (axwidth_all*dx*rwratio)/ncols_main + rwspace
 
     # Automatically figure dim that was not specified above
     if auto_height:
         axheight = axwidth/aspect
-        axheight_all = (nrows_ax*(axheight - rhspace))/(dy*rhratio)
-        height = axheight_all + top + bottom + sum(hspace) + sum(hpanels)
+        axheight_all = (nrows_main*(axheight - rhspace))/(dy*rhratio)
+        height = axheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
     elif auto_width:
         axwidth = axheight*aspect
-        axwidth_all = (ncols_ax*(axwidth - rwspace))/(dx*rwratio)
-        width = axwidth_all + left + right + sum(wspace) + sum(wpanels)
+        axwidth_all = (ncols_main*(axwidth - rwspace))/(dx*rwratio)
+        width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
     if axwidth_all < 0:
         raise ValueError(f"Not enough room for axes (would have width {axwidth_all}). Try using tight=False, increasing figure width, or decreasing 'left', 'right', or 'wspace' spaces.")
     if axheight_all < 0:
@@ -628,11 +628,11 @@ def _subplots_geometry(**kwargs):
 
     # Reconstruct the ratios array with physical units for subplot slots
     # The panel slots are unchanged because panels have fixed widths
-    waxes = axwidth_all*np.array(waxes)/sum(waxes)
-    haxes = axheight_all*np.array(haxes)/sum(haxes)
-    for idx,ratio in zip(idxs_ratios[0],haxes):
+    wratios_main = axwidth_all*np.array(wratios_main)/sum(wratios_main)
+    hratios_main = axheight_all*np.array(hratios_main)/sum(hratios_main)
+    for idx,ratio in zip(idxs_ratios[0],hratios_main):
         hratios[idx] = ratio
-    for idx,ratio in zip(idxs_ratios[1],waxes):
+    for idx,ratio in zip(idxs_ratios[1],wratios_main):
         wratios[idx] = ratio
 
     # Convert margins to figure-relative coordinates
