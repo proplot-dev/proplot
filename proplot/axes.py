@@ -19,13 +19,16 @@ a-b-c labelling, adding geographic features, and much more.
 
    <h1>Developer notes</h1>
 
-Axes method wrappers are documented in the "functions" table. The wrappers are
-dynamically applied within the `~proplot.axes.Axes.__getattribute__` methods
-on `~proplot.axes.Axes` and its subclasses. But why doesn't ProPlot just
-use decorators? *Brevity*. For example, `~proplot.wrappers.cmap_wrapper`
-overrides *a dozen* different methods. This lets ProPlot override these
-methods in *one* line, instead of 50 lines. To see which methods are overriden,
-the user can simply check the documentation.
+Instead of implementing axes method wrappers with decorators, the wrappers
+are dynamically applied within `~proplot.axes.Axes.__getattribute__`
+on `~proplot.axes.Axes` and its subclasses.
+
+ProPlot does not use decorators for the sake of *brevity*. For example, since
+`~proplot.wrappers.cmap_wrapper` overrides 13 different methods, implementing
+the wrapper with decorators would require 50 lines of code, while the
+`~proplot.axes.Axes.__getattribute__` implementation requires just 2 lines.
+This approach might be "hacky" but I have not seen any significant drawbacks
+so far.
 
 It should be noted that dynamically wrapping every time the user requests a
 method is slower than "decoration", which just wraps the method when the class
