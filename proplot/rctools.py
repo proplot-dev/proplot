@@ -40,8 +40,8 @@ Key               Description
 ================  ====================================================================================================================================================================================================================
 ``nbsetup``       Whether to run `setup` on import. Can only be changed from the ``~/.proplotrc`` file.
 ``format``        The inline backend figure format, one of ``retina``, ``png``, ``jpeg``, ``pdf``, or ``svg``. Can only be changed from the ``~/.proplotrc`` file.
-``autosave``      If non-empty and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__. Can only be changed from the ``~/.proplotrc`` file.
-``autoreload``    If non-empty and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__. Can only be changed from the ``~/.proplotrc`` file.
+``autosave``      If not empty or ``0`` and ``nbsetup`` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__. Can only be changed from the ``~/.proplotrc`` file.
+``autoreload``    If not empty or ``0`` and ``nbsetup`` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__. Can only be changed from the ``~/.proplotrc`` file.
 ``abc``           Boolean, indicates whether to draw a-b-c labels by default.
 ``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``.
