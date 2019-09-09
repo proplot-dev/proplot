@@ -64,38 +64,38 @@ __all__ = [
 
 # Translator for inset colorbars and legends
 SIDE_TRANSLATE = {
-    'l':'left',
-    'r':'right',
-    'b':'bottom',
-    't':'top',
+    'l': 'left',
+    'r': 'right',
+    'b': 'bottom',
+    't': 'top',
     }
 LOC_TRANSLATE = {
-    None:None,
-    'l':'left',
-    'r':'right',
-    'b':'bottom',
-    't':'top',
-    'c':'center',
-    'i':'best',
-    'inset':'best',
-    0:'best',
-    1:'upper right',
-    2:'upper left',
-    3:'lower left',
-    4:'lower right',
-    5:'center left',
-    6:'center right',
-    7:'lower center',
-    8:'upper center',
-    9:'center',
-    'ur':'upper right',
-    'ul':'upper left',
-    'll':'lower left',
-    'lr':'lower right',
-    'cr':'center right',
-    'cl':'center left',
-    'uc':'upper center',
-    'lc':'lower center',
+    None:    None,
+    'inset': 'best',
+    'i':     'best',
+    0:       'best',
+    1:       'upper right',
+    2:       'upper left',
+    3:       'lower left',
+    4:       'lower right',
+    5:       'center left',
+    6:       'center right',
+    7:       'lower center',
+    8:       'upper center',
+    9:       'center',
+    'l':     'left',
+    'r':     'right',
+    'b':     'bottom',
+    't':     'top',
+    'c':     'center',
+    'ur':    'upper right',
+    'ul':    'upper left',
+    'll':    'lower left',
+    'lr':    'lower right',
+    'cr':    'center right',
+    'cl':    'center left',
+    'uc':    'upper center',
+    'lc':    'lower center',
     }
 
 # Helper function
@@ -371,7 +371,7 @@ class Axes(maxes.Axes):
         # called on the main axes *or* on the top panel itself. This is
         # critical for bounding box calcs; not always clear whether draw() and
         # get_tightbbox() are called on the main axes or panel first
-        if self._panel_side == 'top':
+        if self._panel_side == 'top' and self._panel_parent:
             ax, taxs = self._panel_parent, [self]
         else:
             ax, taxs = self, self._tpanels
