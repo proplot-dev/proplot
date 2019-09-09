@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-The starting point for creating custom ProPlot figures and axes.
-The `subplots` function is all you'll need to directly use here.
-It returns a `Figure` instance and an `axes_grid` container of
-`~proplot.axes.Axes` axes, whose positions are controlled by the
-`FlexibleGridSpec` class.
+The `subplots` function is your starting point for creating custom
+ProPlot figures and axes. It returns a `Figure` instance and an
+`axes_grid` container of `~proplot.axes.Axes` axes, whose positions are
+controlled by the `FlexibleGridSpec` class.
 
 .. raw:: html
 
@@ -42,6 +41,7 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+from types import Integral
 try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
@@ -55,10 +55,10 @@ __all__ = [
 
 # Translation
 SIDE_TRANSLATE = {
-    'l':'left',
-    'r':'right',
-    'b':'bottom',
-    't':'top',
+    'l': 'left',
+    'r': 'right',
+    'b': 'bottom',
+    't': 'top',
     }
 
 # Dimensions of figures for common journals
@@ -77,7 +77,6 @@ JOURNAL_SPECS = {
     'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
     'aaas2': '12cm', # AAAS 2 column
     }
-
 
 #-----------------------------------------------------------------------------#
 # Miscellaneous stuff
@@ -1434,12 +1433,78 @@ class Figure(mfigure.Figure):
             for child in iaxs:
                 child._sharey_setup(parent, parent._sharey_level)
 
-    def add_subplot(self, *args, **kwargs):
-        """Issues warning for new users that try to call
-        `~matplotlib.figure.Figure.add_subplot` manually."""
-        if self._locked:
-            warnings.warn('Using "fig.add_subplot()" with ProPlot figures may result in unexpected behavior. Please use "proplot.subplots()" instead.')
-        ax = super().add_subplot(*args, **kwargs)
+    def add_subplot(self, *args,
+        proj=None, projection=None, basemap=False,
+        **kwargs):
+        """
+        Adds subplot using the existing figure gridspec.
+
+        Parameters
+        ----------
+        *args
+            If `~matplotlib.gridspec.SubplotSpec` instance, must be a child
+            of the main subplot gridspec!
+
+            If a 3-digit integer or a tuple indicating (nrows, ncols, index),
+            the geometry must match the geometry of the input gridspec!
+        proj, projection : str, optional
+            The registered matplotlib projection name, or a basemap or cartopy
+            map projection name. For valid map projection names, see the
+            :ref:`Table of projections`.
+        """
+        # TODO: Consider permitting add_subplot?
+        # Copied from matplotlib add_subplot
+        if not len(args):
+            args = (1, 1, 1)
+        if len(args) == 1 and isinstance(args[0], Integral):
+            if not 100 <= args[0] <= 999:
+                raise ValueError(f'Integer subplot specification must be a three-digit number, not {args[0]!r}.')
+            args = tuple(map(int, str(args[0])))
+        # Copied from SubplotBase __init__ and modified to enforce restrictions
+        gridspec = self._gridspec_main
+        subplotspec = None
+        if len(args) == 1:
+            if isinstance(args[0], SubplotSpec):
+                subplotspec = args[0]
+            else:
+                try:
+                    s = str(int(args[0]))
+                    rows, cols, num = map(int, s)
+                except ValueError:
+                    raise ValueError(f'Single argument to subplot must be a 3-digit integer, not {args[0]!r}.')
+        elif len(args) == 3:
+            rows, cols, num = args
+        else:
+            raise ValueError(f'Illegal argument(s) to add_subplot: {args}')
+        if subplotspec is None:
+            rows = int(rows)
+            cols = int(cols)
+            if isinstance(num, tuple) and len(num) == 2:
+                num = [int(n) for n in num]
+            else:
+                if num < 1 or num > rows*cols:
+                    raise ValueError(f'num must be 1 <= num <= {rows*cols}, not {num}')
+        if (rows, cols) != gridspec.get_active_geometry():
+            raise ValueError(f'Input arguments {args!r} conflict with existing gridspec geometry of {rows} rows, {cols} columns.')
+        if not isinstance(num, tuple):
+            num = (num, num)
+        subplotspec = gridspec[(num[0] - 1):num[1]]
+
+        # The default is CartesianAxes
+        proj = _notNone(proj, projection, 'cartesian', names=('proj','projection'))
+        # Builtin matplotlib polar axes, just use my overridden version
+        if name == 'polar':
+            proj = 'polar2'
+        # Custom Basemap and Cartopy axes
+        # TODO: Have Proj return all unused keyword args, with a
+        # map_projection = obj entry, and maybe hide the Proj constructor as
+        # an argument processing utility?
+        elif proj != 'cartesian':
+            kwargs = projs.Proj(name, basemap=basemap, **kwargs)
+            proj = 'basemap' if basemap else 'cartopy'
+
+        # Initialize
+        ax = super().add_subplot(subplotspec, projection=proj, **kwargs)
         return ax
 
     def colorbar(self, *args,
@@ -1821,7 +1886,9 @@ def subplots(array=None, ncols=1, nrows=1,
         for the *x* axis, *y* axis, or both axes. Only has an effect when
         `spanx`, `spany`, or `span` are ``False``.
     proj, projection : str or dict-like, optional
-        The map projection name. The argument is interpreted as follows.
+        The registered matplotlib projection name, or a basemap or cartopy
+        map projection name. For valid map projection names, see the
+        :ref:`Table of projections`. Argument is interpreted as follows.
 
         * If string, this projection is used for all subplots. For valid
           names, see the :ref:`Table of projections`.
