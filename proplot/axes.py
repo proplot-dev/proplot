@@ -976,7 +976,7 @@ class Axes(maxes.Axes):
         # Generate panel
         if loc in ('left','right','top','bottom'):
             ax = self.panel_axes(loc, width=width, space=space, filled=True)
-            return ax.colorbar(loc='_fill', *args, **kwargs)
+            return ax.colorbar(loc='_fill', *args, length=length, **kwargs)
 
         # Filled colorbar
         if loc == '_fill':

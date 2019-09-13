@@ -350,9 +350,8 @@ rows or columns.
 New colorbar and legend features
 --------------------------------
 
-The `~proplot.subplots.Figure` and `~proplot.axes.Axes` ``colorbar``
-and ``legend`` methods are wrapped by
-`~proplot.wrappers.colorbar_wrapper` and
+The `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar and
+legend methods are wrapped by `~proplot.wrappers.colorbar_wrapper` and
 `~proplot.wrappers.legend_wrapper`, which add several new features.
 
 `~proplot.wrappers.colorbar_wrapper` can draw colorbars from *lists of
@@ -378,12 +377,12 @@ and modify legend text properties and handle properties.
     ax = axs[0]
     data = 1 + (np.random.rand(12,10)-0.45).cumsum(axis=0)
     cycle = plot.Cycle('algae')
-    hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'14em', 'label':'numeric values'})
-    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='alt numeric values', ticks=2)
+    hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'8em', 'label':'numeric values'})
+    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='changed values', length=0.7, ticks=2)
     ax = axs[1]
     m = ax.contourf(data.T, extend='both', cmap='algae')
-    f.colorbar(m, length=0.6, loc='b', label='flipped tick location', tickloc='top', grid=True)
-    ax.colorbar(m, loc='ul', length=1, ticks=0.5, tickminor=True, extendrect=True,
+    f.colorbar(m, length=1, loc='r', label='flipped tick location', tickloc='left', grid=True)
+    ax.colorbar(m, loc='ul', length=1, tickminor=True, extendrect=True,
                 label='changing colors', labelcolor='gray7', labelweight='bold',
                 linewidth=1, edgecolor='gray7', ticklabelcolor='gray7', alpha=0.5)
     axs.format(suptitle='Colorbar formatting demo', xlabel='xlabel', ylabel='ylabel')
