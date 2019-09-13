@@ -1642,7 +1642,7 @@ class CartesianAxes(Axes):
         xtickminor=True, ytickminor=True,
         xticklabeldir=None, yticklabeldir=None,
         xtickrange=None, ytickrange=None,
-        xreverse=False, yreverse=False,
+        xreverse=None, yreverse=None,
         xlabel=None, ylabel=None,
         xlim=None, ylim=None,
         xscale=None, yscale=None,
@@ -1686,8 +1686,11 @@ class CartesianAxes(Axes):
             The *x* and *y* axis data limits. Applied with
             `~matplotlib.axes.Axes.set_xlim` and `~matplotlib.axes.Axes.set_ylim`.
         xreverse, yreverse : bool, optional
-            Puts the *x* and *y* axis in reverse, i.e. going from positive to
-            negative numbers.
+            Sets whether the *x* and *y* axis are oriented in the "reverse"
+            direction. The "normal" direction is increasing to the right for
+            the *x* axis and to the top for the *y* axis. The "reverse"
+            direction is increasing to the left for the *x* axis and to the
+            bottom for the *y* axis.
         xscale, yscale : axis scale spec, optional
             The *x* and *y* axis scales. Passed to the `~proplot.axistools.Scale`
             constructor. For example, ``xscale='log'`` applies logarithmic
