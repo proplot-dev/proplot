@@ -110,9 +110,8 @@ The `~proplot.subplots.axes_grid` container returned by
 `~proplot.subplots.subplots` lets you call *any command* on multiple
 axes at once. It supports both 2D indexing (e.g. ``axs[1,2]``) and 1D
 indexing (e.g. ``axs[2]``; note this is row-major by default). Further,
-slicing an `~proplot.subplots.axes_grid` (e.g. ``axs[:,0]``) returns
-another `~proplot.subplots.axes_grid`. In the below example,
-`~proplot.subplots.axes_grid` is used to call
+slicing an axes grid (e.g. ``axs[:,0]``) returns another axes grid. In
+the below example, `~proplot.subplots.axes_grid` is used to call
 :ref:`The format command` on several axes at once.
 
 .. code:: ipython3
@@ -227,14 +226,18 @@ times, the colorbars and legends will be “stacked”. Room for colorbars
 and legends is allocated from the space between subplot rows and columns
 – it is no longer stolen from the axes.
 
-To plot data and draw a colorbar or legend in one go, pass e.g.
-``colorbar='right'`` to any method wrapped by
-`~proplot.wrappers.cmap_wrapper`, or e.g. ``colorbar='right'`` or
-``legend='right'`` to any method wrapped by
-`~proplot.wrappers.cycle_wrapper`. To draw an *inset* colorbar, use
-one of the *inset* locations, e.g. ``colorbar='upper right'`` or
-``colorbar='ur'``. Inset colorbars have optional rectangular
-backgrounds, just like inset legends.
+To plot data and draw a colorbar in one go, pass an *outer* location,
+e.g. ``colorbar='r'`` to methods that accept a ``cmap`` argument (see
+`~proplot.wrappers.cmap_wrapper`). To draw a legend or colorbar-legend
+in one go, pass an *outer* location, e.g. ``legend='r'`` or
+``colorbar='r'``, to methods that accept a ``cycle`` argument (see
+`~proplot.wrappers.cycle_wrapper`). For more on plotting wrappers, see
+:ref:`Plotting wrappers`.
+
+To draw an *inset* colorbar, pass an *inset* location, e.g.
+``colorbar='upper right'`` or ``colorbar='ur'``, to methods that accept
+a ``cmap`` or ``cycle`` argument. Inset colorbars have optional
+rectangular backgrounds, just like inset legends.
 
 .. code:: ipython3
 
@@ -441,8 +444,7 @@ installed.
 
 This feature is showcased below for 1-dimensional and 2-dimensional
 datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
-`~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-and :ref:`On-the-fly axes panels`.
+:ref:`Axes colorbars and legends`.
 
 .. code:: ipython3
 

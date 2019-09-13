@@ -43,7 +43,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_149_0.svg
+.. image:: tutorial/tutorial_145_0.svg
 
 
 .. code:: ipython3
@@ -63,7 +63,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_150_0.svg
+.. image:: tutorial/tutorial_146_0.svg
 
 
 If you pass unevenly spaced ``levels``, the
@@ -88,7 +88,7 @@ passed to the `~proplot.styletools.Norm` constructor.
 
 
 
-.. image:: tutorial/tutorial_152_0.svg
+.. image:: tutorial/tutorial_148_0.svg
 
 
 Finally, there is a new `~proplot.styletools.MidpointNorm` class that
@@ -115,7 +115,7 @@ constructor.
 
 
 
-.. image:: tutorial/tutorial_154_0.svg
+.. image:: tutorial/tutorial_150_0.svg
 
 
 Heatmaps and labels
@@ -171,11 +171,11 @@ arg and the ``precision`` keyword arg. See
 
 
 
-.. image:: tutorial/tutorial_157_0.svg
+.. image:: tutorial/tutorial_153_0.svg
 
 
 
-.. image:: tutorial/tutorial_157_1.svg
+.. image:: tutorial/tutorial_153_1.svg
 
 
 Easy error bars
@@ -225,7 +225,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: tutorial/tutorial_160_0.svg
+.. image:: tutorial/tutorial_156_0.svg
 
 
 Area plots
@@ -272,7 +272,7 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: tutorial/tutorial_163_0.svg
+.. image:: tutorial/tutorial_159_0.svg
 
 
 Bar plots
@@ -306,7 +306,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: tutorial/tutorial_166_0.svg
+.. image:: tutorial/tutorial_162_0.svg
 
 
 Box plots
@@ -340,7 +340,7 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_169_1.svg
+.. image:: tutorial/tutorial_165_1.svg
 
 
 Parametric plots
@@ -382,7 +382,7 @@ point on the line. See `~proplot.axes.Axes.cmapline` for details.
 
 
 
-.. image:: tutorial/tutorial_172_1.svg
+.. image:: tutorial/tutorial_168_1.svg
 
 
 Misc plot enhancements
@@ -428,4 +428,4 @@ Stay tuned!
 
 
 
-.. image:: tutorial/tutorial_175_0.svg
+.. image:: tutorial/tutorial_171_0.svg

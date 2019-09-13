@@ -1,10 +1,10 @@
 Color usage
 ===========
 
-ProPlot isn’t just an alternative to `~matplotlib.pyplot`. It also
-adds some neat features to help you use colors effectively in your
-figures, and integrates palettes from several online data visualization
-tools.
+ProPlot also adds several features to help you use colors effectively in
+your figures. This section documents the colormaps and cycles registered
+after importing ProPlot, explains how to make and modify colormaps and
+cycles, and shows how to apply them to your plots.
 
 First things first, ProPlot makes a distinction between *colormaps* and
 *color cycles*.
@@ -28,12 +28,6 @@ First things first, ProPlot makes a distinction between *colormaps* and
    cycler <https://matplotlib.org/3.1.0/tutorials/intermediate/color_cycle.html>`__.
    *Colormaps* can also be cut up and used as color cycles (see
    :ref:`Making your own color cycles`).
-
-This section documents the colormaps and cycles registered after
-importing ProPlot, explains how to make custom colormaps and cycles, and
-shows how to apply them to your plots using axes methods wrapped by
-`~proplot.wrappers.cmap_wrapper` or
-`~proplot.wrappers.cycle_wrapper`.
 
 Registered colormaps
 --------------------
@@ -80,7 +74,7 @@ See `~proplot.styletools.CmapDict` for more info.
 
 
 
-.. image:: tutorial/tutorial_101_0.svg
+.. image:: tutorial/tutorial_97_0.svg
 
 
 Perceptually uniform colormaps
@@ -124,7 +118,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_104_0.svg
+.. image:: tutorial/tutorial_100_0.svg
 
 
 .. code:: ipython3
@@ -134,7 +128,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_105_0.svg
+.. image:: tutorial/tutorial_101_0.svg
 
 
 .. code:: ipython3
@@ -144,7 +138,7 @@ represent “impossible” colors.
 
 
 
-.. image:: tutorial/tutorial_106_0.svg
+.. image:: tutorial/tutorial_102_0.svg
 
 
 To see how any colormap varies with respect to each channel, use the
@@ -164,7 +158,7 @@ linear in the HPL scaling of the chroma channel (bottom right).
 
 
 
-.. image:: tutorial/tutorial_108_0.svg
+.. image:: tutorial/tutorial_104_0.svg
 
 
 Making your own colormaps
@@ -205,11 +199,11 @@ several of these maps merged into one, and the second is just one map.
 
 
 
-.. image:: tutorial/tutorial_112_0.svg
+.. image:: tutorial/tutorial_108_0.svg
 
 
 
-.. image:: tutorial/tutorial_112_1.svg
+.. image:: tutorial/tutorial_108_1.svg
 
 
 To generate `~proplot.styletools.PerceptuallyUniformColormap` maps,
@@ -257,11 +251,11 @@ value by the number ``N``, as shown below.
 
 
 
-.. image:: tutorial/tutorial_114_0.svg
+.. image:: tutorial/tutorial_110_0.svg
 
 
 
-.. image:: tutorial/tutorial_114_1.svg
+.. image:: tutorial/tutorial_110_1.svg
 
 
 Merging and modifying colormaps
@@ -298,7 +292,7 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 
 
-.. image:: tutorial/tutorial_117_1.svg
+.. image:: tutorial/tutorial_113_1.svg
 
 
 To modify a diverging colormap by cutting out some central colors, pass
@@ -345,11 +339,11 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: tutorial/tutorial_119_0.svg
+.. image:: tutorial/tutorial_115_0.svg
 
 
 
-.. image:: tutorial/tutorial_119_1.svg
+.. image:: tutorial/tutorial_115_1.svg
 
 
 You can also change the “gamma” of any
@@ -381,11 +375,11 @@ emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: tutorial/tutorial_121_0.svg
+.. image:: tutorial/tutorial_117_0.svg
 
 
 
-.. image:: tutorial/tutorial_121_1.svg
+.. image:: tutorial/tutorial_117_1.svg
 
 
 Adding online colormaps
@@ -422,7 +416,7 @@ differences between colormaps and color cycles.
 
 
 
-.. image:: tutorial/tutorial_126_0.svg
+.. image:: tutorial/tutorial_122_0.svg
 
 
 Making your own color cycles
@@ -463,7 +457,7 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 
 
-.. image:: tutorial/tutorial_129_0.svg
+.. image:: tutorial/tutorial_125_0.svg
 
 
 Colormaps or combinations thereof can be used as sources for making
@@ -495,7 +489,7 @@ details.
 
 
 
-.. image:: tutorial/tutorial_131_0.svg
+.. image:: tutorial/tutorial_127_0.svg
 
 
 `~proplot.styletools.Cycle` can also generate cyclers that change
@@ -517,7 +511,7 @@ simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 
 
-.. image:: tutorial/tutorial_133_0.svg
+.. image:: tutorial/tutorial_129_0.svg
 
 
 Adding online color cycles
@@ -566,11 +560,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: tutorial/tutorial_138_0.svg
+.. image:: tutorial/tutorial_134_0.svg
 
 
 
-.. image:: tutorial/tutorial_138_1.svg
+.. image:: tutorial/tutorial_134_1.svg
 
 
 Individual color sampling
@@ -613,7 +607,7 @@ by the `~proplot.styletools.ColorCacheDict` class.
 
 
 
-.. image:: tutorial/tutorial_141_0.svg
+.. image:: tutorial/tutorial_137_0.svg
 
 
 Font selection
@@ -642,6 +636,6 @@ modify your ``~/.proplotrc``. See the `~proplot.styletools` and
 
 
 
-.. image:: tutorial/tutorial_144_0.svg
+.. image:: tutorial/tutorial_140_0.svg
 
 
