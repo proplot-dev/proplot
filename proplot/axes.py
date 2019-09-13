@@ -511,12 +511,14 @@ class Axes(maxes.Axes):
     def _share_long_axis(self, share, side, level):
         """Share the "long" axes of panels along a main subplot with the
         axis from an external subplot."""
+        # NOTE: We do not check _panel_share because that only controls
+        # sharing with main subplot, not other subplots
         if share is None or self._panel_side:
             return
         s = side[0]
         axis = 'x' if s in 'tb' else 'y'
         paxs = getattr(self, '_' + s + 'panels') # calling this means, share properties on this axes with input 'share' axes
-        paxs = [pax for pax in paxs if not pax._panel_filled and pax._panel_share]
+        paxs = [pax for pax in paxs if not pax._panel_filled]
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share, level)
 
@@ -1582,7 +1584,7 @@ class CartesianAxes(Axes):
             nlim = nlim[::-1]
         child.set_ylim(scale[0] + scale[1]*nlim)
 
-    def _share_labels(self):
+    def _hide_labels(self):
         """Function called at drawtime that enforces "shared" axis and
         tick labels. If this is not called at drawtime, "shared" labels can
         be inadvertantly turned off e.g. when the axis scale is changed."""
@@ -1596,8 +1598,6 @@ class CartesianAxes(Axes):
                     axis.label.set_visible(False)
                 if level > 2:
                     axis.set_major_formatter(mticker.NullFormatter())
-                    for label in axis.get_majorticklabels():
-                        label.set_visible(False)
             # Enforce no minor ticks labels
             # TODO: Document this?
             if not isinstance(axis.get_minor_formatter(), mticker.NullFormatter):
@@ -2282,7 +2282,7 @@ class CartesianAxes(Axes):
         """Adds post-processing steps before axes is drawn."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
-        self._share_labels()
+        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
@@ -2295,7 +2295,7 @@ class CartesianAxes(Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated."""
-        self._share_labels()
+        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
