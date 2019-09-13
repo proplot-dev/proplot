@@ -11,7 +11,6 @@ from numbers import Number
 from fractions import Fraction
 import numpy as np
 import numpy.ma as ma
-import warnings
 import matplotlib.dates as mdates
 import matplotlib.projections as mproj
 import matplotlib.ticker as mticker

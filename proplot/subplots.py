@@ -156,7 +156,7 @@ class axes_grid(list):
         self.shape = (len(self)//n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
-        return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
+        return 'axes_grid(' + super().__repr__() + ')'
 
     def __setitem__(self, key, value):
         """Pseudo immutability, raises error."""
@@ -287,10 +287,8 @@ class axes_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
-    # TODO: No more putting panels, legends, colorbars on the SubplotSpec.
-    # Put them in the margin, increase default space, and lock them to
-    # subplot bounds with locators, borrowing from axes_grid1 toolkit
-    # TODO: Consider adding Github issue, would be major API change.
+    # TODO! No more putting panels, legends, colorbars on the SubplotSpec,
+    # put them in the margin and increase default space
     # def colorbar(self, loc=None):
     #     """Draws a colorbar that spans axes in the selected range."""
     #     for ax in self:
@@ -853,9 +851,7 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._unlock():
-            pax = self.add_subplot(gridspec[idx1,idx2],
-                    sharex=ax._sharex_level, sharey=ax._sharey_level,
-                    projection='cartesian')
+            pax = self.add_subplot(gridspec[idx1,idx2], projection='cartesian')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -863,7 +859,9 @@ class Figure(mfigure.Figure):
 
         # Axis sharing and axis setup only for non-legend or colorbar axes
         if not filled:
-            ax._share_setup()
+            if share:
+                ax._share_panels_setup()
+            self._share_axes_setup(ax)
             axis = (pax.yaxis if side in ('left','right') else pax.xaxis)
             getattr(axis, 'tick_' + side)() # sets tick and tick label positions intelligently
             axis.set_label_position(side)
@@ -1448,6 +1446,25 @@ class Figure(mfigure.Figure):
             self._suptitle.set_text(title)
         if kwargs:
             self._suptitle.update(kwargs)
+
+    def _share_axes_setup(self, ref=None):
+        """Applies axis sharing to groups of axes that share the same
+        horizontal or vertical extent."""
+        axs = [ref] if ref is not None else self._axes_main
+        # Share x axes
+        ranges = {tuple(ax._range_gridspec('x')) for ax in axs}
+        for irange in ranges:
+            iaxs = [ax for ax in axs if tuple(ax._range_gridspec('x')) == irange]
+            parent = iaxs.pop(np.argmax([iax._range_gridspec('y')[1] for iax in iaxs]))
+            for child in iaxs:
+                child._sharex_setup(parent, parent._sharex_level)
+        # Share y axes
+        ranges = {tuple(ax._range_gridspec('y')) for ax in axs}
+        for irange in ranges:
+            iaxs = [ax for ax in axs if tuple(ax._range_gridspec('y')) == irange]
+            parent = iaxs.pop(np.argmin([iax._range_gridspec('x')[0] for iax in iaxs]))
+            for child in iaxs:
+                child._sharey_setup(parent, parent._sharey_level)
 
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
@@ -2102,9 +2119,12 @@ def subplots(array=None, ncols=1, nrows=1,
         with fig._unlock():
             axs[idx] = fig.add_subplot(subplotspec, number=num,
                 spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-                sharex=sharex, sharey=sharey,
-                main=True,
+                sharex_level=sharex, sharey_level=sharey,
                 **axes_kw[num])
+
+    # Set up shared axes and assign main axes
+    fig._axes_main = axs
+    fig._share_axes_setup()
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
