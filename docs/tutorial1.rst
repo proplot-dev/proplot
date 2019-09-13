@@ -135,13 +135,11 @@ The format command
 ------------------
 
 The special `~matplotlib.axes.Axes` instances returned by
-`~proplot.subplots.subplots` add several new methods and wrap several
-old ones (see :ref:`Plotting wrappers`). But the most important method
-you need to know is ``format``, described in detail in the
-`~proplot.axes.Axes`, `~proplot.axes.CartesianAxes`, and
-`~proplot.axes.ProjectionAxes` documentation. This is your
-one-stop-shop for changing axes settings. Keyword args passed to
-``format`` are interpreted as follows.
+`~proplot.subplots.subplots` have a new ``format`` command, described
+in detail in the `~proplot.axes.Axes`,
+`~proplot.axes.CartesianAxes`, and `~proplot.axes.ProjectionAxes`
+documentation. This is your one-stop-shop for changing axes settings.
+Keyword args passed to ``format`` are interpreted as follows.
 
 1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
    setting will be applied to the axes using
