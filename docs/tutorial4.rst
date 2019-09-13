@@ -15,7 +15,7 @@ First things first, ProPlot makes a distinction between *colormaps* and
    This is implemented in matplotlib with the
    `~matplotlib.colors.LinearSegmentedColormap` class, and also with
    the special ProPlot
-   `~proplot.styletools.PerceptuallyUniformColormap` subclass (see
+   `~proplot.styletools.PerceptuallyUniformColormap` class (see
    :ref:`Making your own colormaps`).
 -  A *color cycle* is a palette composed of a *jumbled set* of distinct
    colors. Interpolation between these colors does not make sense. Color

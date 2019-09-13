@@ -4,24 +4,27 @@ Introduction
 The subplots command
 --------------------
 
-Matplotlib has `two
-APIs <https://matplotlib.org/api/api_overview.html>`__ – the “pyplot”
-API (which is MATLAB-like), and the “object-oriented” API (which is more
-“pythonic”). This package is not meant to be a pyplot replacement – its
-features are invoked with the “object-oriented” API. The below example
-compares the 3 APIs.
+The `~proplot.subplots.subplots` command is your starting point for
+creating ProPlot figures, meant to replace the *pyplot* command of the
+same name. It returns a special `~proplot.subplots.Figure` instance
+and an `~proplot.subplots.axes_grid` of special `~proplot.axes.Axes`
+instances.
 
-`~proplot.subplots.subplots` is your gateway to all of ProPlot’s
-features. It returns a `~proplot.subplots.Figure` subclass and an
-`~proplot.subplots.axes_grid` of `~proplot.axes.CartesianAxes` or
-`~proplot.axes.ProjectionAxes` subclasses. You can use it without
-arguments to generate a single-axes subplot, with ``ncols`` and
-``nrows`` to set up simple grids of subplots, or with a 2D array of
-integers to set up complex grids of subplots. Just think of this array
-as a “picture” of your figure, where each unique number corresponds to a
-unique axes, and the number order determines the order the subplots
-appear in the `~proplot.subplots.axes_grid` and the order of a-b-c
-labels.
+Just like with pyplot, you can use `~proplot.subplots.subplots`
+without arguments to generate a single-axes subplot or with ``ncols`` or
+``nrows`` to set up simple grids of subplots. But unlike pyplot, you can
+set up complex subplot grids by passing a 2D array of integers to
+`~proplot.subplots.subplots`. Just think of this array as a “picture”
+of your figure, where each unique number corresponds to a unique axes,
+and the number order determines the order the subplots appear in the
+`~proplot.subplots.axes_grid`.
+
+Note that ProPlot should be used with the more “pythonic”
+`object-oriented
+API <https://matplotlib.org/api/api_overview.html#the-object-oriented-api>`__
+rather than the MATLAB-like `pyplot
+API <https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__.
+These APIs are compared in the below examples.
 
 .. code:: ipython3
 
@@ -104,13 +107,13 @@ The axes grid container
 -----------------------
 
 The `~proplot.subplots.axes_grid` container returned by
-`~proplot.subplots.subplots` lets you call *any axes method* on
-multiple axes at once. It supports 1D and 2D indexing (e.g. ``axs[2]``
-or ``axs[1,2]``), and slicing it returns an
-`~proplot.subplots.axes_grid` of the selection. 1D indexing is
-row-major by default, but this can be changed with the ``order`` keyword
-arg. In the below example, `~proplot.subplots.axes_grid` is used to
-call ``format`` on several axes at once.
+`~proplot.subplots.subplots` lets you call *any command* on multiple
+axes at once. It supports both 2D indexing (e.g. ``axs[1,2]``) and 1D
+indexing (e.g. ``axs[2]``; note this is row-major by default). Further,
+slicing an `~proplot.subplots.axes_grid` (e.g. ``axs[:,0]``) returns
+another `~proplot.subplots.axes_grid`. In the below example,
+`~proplot.subplots.axes_grid` is used to call
+:ref:`The format command` on several axes at once.
 
 .. code:: ipython3
 
@@ -132,7 +135,7 @@ call ``format`` on several axes at once.
 The format command
 ------------------
 
-The `~matplotlib.axes.Axes` subclasses returned by
+The special `~matplotlib.axes.Axes` instances returned by
 `~proplot.subplots.subplots` add several new methods and wrap several
 old ones (see :ref:`Plotting wrappers`). But the most important method
 you need to know is ``format``, described in detail in the

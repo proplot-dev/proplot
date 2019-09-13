@@ -271,7 +271,7 @@ Polar projections
 -----------------
 
 Matplotlib polar axes are also integrated with ProPlot, thanks to the
-`~proplot.axes.PolarAxes` subclass. The
+`~proplot.axes.PolarAxes` class. The
 `~proplot.axes.PolarAxes.format` command permits all sorts of polar
 axes-specific modifications, including making sector plots, annular
 plots, and changing the positive azimuthal direction. To draw polar
