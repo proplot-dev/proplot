@@ -2621,12 +2621,14 @@ def colorbar_wrapper(self,
             # native matplotlib axes
             width, height = self.figure.get_size_inches()
             if orientation == 'horizontal':
+                scale = 3 # em squares alotted for labels
                 length = width*abs(self.get_position().width)
                 fontsize = kw_ticklabels.get('size', rc.get('xtick.labelsize'))
             else:
+                scale = 1
                 length = height*abs(self.get_position().height)
                 fontsize = kw_ticklabels.get('size', rc.get('ytick.labelsize'))
-            maxn = _notNone(maxn, int(length/(2*fontsize/72)))
+            maxn = _notNone(maxn, int(length/(scale*fontsize/72)))
             maxn_minor = _notNone(maxn_minor, int(length/(0.5*fontsize/72)))
             # Get locator
             if tickminor and minorlocator is None:

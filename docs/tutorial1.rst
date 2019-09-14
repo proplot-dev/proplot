@@ -4,24 +4,27 @@ Introduction
 The subplots command
 --------------------
 
-Matplotlib has `two
-APIs <https://matplotlib.org/api/api_overview.html>`__ – the “pyplot”
-API (which is MATLAB-like), and the “object-oriented” API (which is more
-“pythonic”). This package is not meant to be a pyplot replacement – its
-features are invoked with the “object-oriented” API. The below example
-compares the 3 APIs.
+The `~proplot.subplots.subplots` command is your starting point for
+creating ProPlot figures, meant to replace the *pyplot* command of the
+same name. It returns a special `~proplot.subplots.Figure` instance
+and an `~proplot.subplots.axes_grid` of special `~proplot.axes.Axes`
+instances.
 
-`~proplot.subplots.subplots` is your gateway to all of ProPlot’s
-features. It returns a `~proplot.subplots.Figure` subclass and an
-`~proplot.subplots.axes_grid` of `~proplot.axes.CartesianAxes` or
-`~proplot.axes.ProjectionAxes` subclasses. You can use it without
-arguments to generate a single-axes subplot, with ``ncols`` and
-``nrows`` to set up simple grids of subplots, or with a 2D array of
-integers to set up complex grids of subplots. Just think of this array
-as a “picture” of your figure, where each unique number corresponds to a
-unique axes, and the number order determines the order the subplots
-appear in the `~proplot.subplots.axes_grid` and the order of a-b-c
-labels.
+Just like with pyplot, you can use `~proplot.subplots.subplots`
+without arguments to generate a single-axes subplot or with ``ncols`` or
+``nrows`` to set up simple grids of subplots. But unlike pyplot, you can
+set up complex subplot grids by passing a 2D array of integers to
+`~proplot.subplots.subplots`. Just think of this array as a “picture”
+of your figure, where each unique number corresponds to a unique axes,
+and the number order determines the order the subplots appear in the
+`~proplot.subplots.axes_grid`.
+
+Note that ProPlot should be used with the more “pythonic”
+`object-oriented
+API <https://matplotlib.org/api/api_overview.html#the-object-oriented-api>`__
+rather than the MATLAB-like `pyplot
+API <https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__.
+These APIs are compared in the below examples.
 
 .. code:: ipython3
 
@@ -104,13 +107,12 @@ The axes grid container
 -----------------------
 
 The `~proplot.subplots.axes_grid` container returned by
-`~proplot.subplots.subplots` lets you call *any axes method* on
-multiple axes at once. It supports 1D and 2D indexing (e.g. ``axs[2]``
-or ``axs[1,2]``), and slicing it returns an
-`~proplot.subplots.axes_grid` of the selection. 1D indexing is
-row-major by default, but this can be changed with the ``order`` keyword
-arg. In the below example, `~proplot.subplots.axes_grid` is used to
-call ``format`` on several axes at once.
+`~proplot.subplots.subplots` lets you call *any command* on multiple
+axes at once. It supports both 2D indexing (e.g. ``axs[1,2]``) and 1D
+indexing (e.g. ``axs[2]``; note this is row-major by default). Further,
+slicing an axes grid (e.g. ``axs[:,0]``) returns another axes grid. In
+the below example, `~proplot.subplots.axes_grid` is used to call
+:ref:`The format command` on several axes at once.
 
 .. code:: ipython3
 
@@ -132,14 +134,12 @@ call ``format`` on several axes at once.
 The format command
 ------------------
 
-The `~matplotlib.axes.Axes` subclasses returned by
-`~proplot.subplots.subplots` add several new methods and wrap several
-old ones (see :ref:`Plotting wrappers`). But the most important method
-you need to know is ``format``, described in detail in the
-`~proplot.axes.Axes`, `~proplot.axes.CartesianAxes`, and
-`~proplot.axes.ProjectionAxes` documentation. This is your
-one-stop-shop for changing axes settings. Keyword args passed to
-``format`` are interpreted as follows.
+The special `~matplotlib.axes.Axes` instances returned by
+`~proplot.subplots.subplots` have a new ``format`` command, described
+in detail in the `~proplot.axes.Axes`,
+`~proplot.axes.CartesianAxes`, and `~proplot.axes.ProjectionAxes`
+documentation. This is your one-stop-shop for changing axes settings.
+Keyword args passed to ``format`` are interpreted as follows.
 
 1. Any keyword arg matching the name of a ProPlot or matplotlib “rc”
    setting will be applied to the axes using
@@ -224,14 +224,18 @@ times, the colorbars and legends will be “stacked”. Room for colorbars
 and legends is allocated from the space between subplot rows and columns
 – it is no longer stolen from the axes.
 
-To plot data and draw a colorbar or legend in one go, pass e.g.
-``colorbar='right'`` to any method wrapped by
-`~proplot.wrappers.cmap_wrapper`, or e.g. ``colorbar='right'`` or
-``legend='right'`` to any method wrapped by
-`~proplot.wrappers.cycle_wrapper`. To draw an *inset* colorbar, use
-one of the *inset* locations, e.g. ``colorbar='upper right'`` or
-``colorbar='ur'``. Inset colorbars have optional rectangular
-backgrounds, just like inset legends.
+To plot data and draw a colorbar in one go, pass an *outer* location,
+e.g. ``colorbar='r'`` to methods that accept a ``cmap`` argument (see
+`~proplot.wrappers.cmap_wrapper`). To draw a legend or colorbar-legend
+in one go, pass an *outer* location, e.g. ``legend='r'`` or
+``colorbar='r'``, to methods that accept a ``cycle`` argument (see
+`~proplot.wrappers.cycle_wrapper`). For more on plotting wrappers, see
+:ref:`Plotting wrappers`.
+
+To draw an *inset* colorbar, pass an *inset* location, e.g.
+``colorbar='upper right'`` or ``colorbar='ur'``, to methods that accept
+a ``cmap`` or ``cycle`` argument. Inset colorbars have optional
+rectangular backgrounds, just like inset legends.
 
 .. code:: ipython3
 
@@ -346,9 +350,8 @@ rows or columns.
 New colorbar and legend features
 --------------------------------
 
-The `~proplot.subplots.Figure` and `~proplot.axes.Axes` ``colorbar``
-and ``legend`` methods are wrapped by
-`~proplot.wrappers.colorbar_wrapper` and
+The `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar and
+legend methods are wrapped by `~proplot.wrappers.colorbar_wrapper` and
 `~proplot.wrappers.legend_wrapper`, which add several new features.
 
 `~proplot.wrappers.colorbar_wrapper` can draw colorbars from *lists of
@@ -374,12 +377,12 @@ and modify legend text properties and handle properties.
     ax = axs[0]
     data = 1 + (np.random.rand(12,10)-0.45).cumsum(axis=0)
     cycle = plot.Cycle('algae')
-    hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'14em', 'label':'numeric values'})
-    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='alt numeric values', ticks=2)
+    hs = ax.plot(data, lw=4, cycle=cycle, colorbar='lr', colorbar_kw={'length':'8em', 'label':'numeric values'})
+    ax.colorbar(hs, loc='t', values=np.linspace(0.5,9.5,10)*2, label='changed values', length=0.7, ticks=2)
     ax = axs[1]
     m = ax.contourf(data.T, extend='both', cmap='algae')
-    f.colorbar(m, length=0.6, loc='b', label='flipped tick location', tickloc='top', grid=True)
-    ax.colorbar(m, loc='ul', length=1, ticks=0.5, tickminor=True, extendrect=True,
+    f.colorbar(m, length=1, loc='r', label='flipped tick location', tickloc='left', grid=True)
+    ax.colorbar(m, loc='ul', length=1, tickminor=True, extendrect=True,
                 label='changing colors', labelcolor='gray7', labelweight='bold',
                 linewidth=1, edgecolor='gray7', ticklabelcolor='gray7', alpha=0.5)
     axs.format(suptitle='Colorbar formatting demo', xlabel='xlabel', ylabel='ylabel')
@@ -438,8 +441,7 @@ installed.
 
 This feature is showcased below for 1-dimensional and 2-dimensional
 datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
-`~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
-and :ref:`On-the-fly axes panels`.
+:ref:`Axes colorbars and legends`.
 
 .. code:: ipython3
 

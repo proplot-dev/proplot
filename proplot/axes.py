@@ -19,13 +19,16 @@ a-b-c labelling, adding geographic features, and much more.
 
    <h1>Developer notes</h1>
 
-Axes method wrappers are documented in the "functions" table. The wrappers are
-dynamically applied within the `~proplot.axes.Axes.__getattribute__` methods
-on `~proplot.axes.Axes` and its subclasses. But why doesn't ProPlot just
-use decorators? *Brevity*. For example, `~proplot.wrappers.cmap_wrapper`
-overrides *a dozen* different methods. This lets ProPlot override these
-methods in *one* line, instead of 50 lines. To see which methods are overriden,
-the user can simply check the documentation.
+Instead of implementing axes method wrappers with decorators, the wrappers
+are dynamically applied within `~proplot.axes.Axes.__getattribute__`
+on `~proplot.axes.Axes` and its subclasses.
+
+ProPlot does not use decorators for the sake of *brevity*. For example, since
+`~proplot.wrappers.cmap_wrapper` overrides 13 different methods, implementing
+the wrapper with decorators would require 50 lines of code, while the
+`~proplot.axes.Axes.__getattribute__` implementation requires just 2 lines.
+This approach might be "hacky" but I have not seen any significant drawbacks
+so far.
 
 It should be noted that dynamically wrapping every time the user requests a
 method is slower than "decoration", which just wraps the method when the class
@@ -41,7 +44,7 @@ anyway, `Premature Optimization is the Root of All Evil
 import re
 import numpy as np
 import warnings
-from numbers import Number, Integral
+from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
@@ -120,8 +123,9 @@ class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
     def __init__(self, *args, number=None,
-        sharex=None, sharey=None, sharex_level=0, sharey_level=0,
+        sharex=0, sharey=0,
         spanx=None, spany=None, alignx=None, aligny=None,
+        main=False,
         **kwargs):
         """
         Parameters
@@ -129,9 +133,7 @@ class Axes(maxes.Axes):
         number : int
             The subplot number, used for a-b-c labelling (see
             `~Axes.format`).
-        sharex, sharey : `Axes`, optional
-            Axes to use for *x* and *y* axis sharing.
-        sharex_level, sharey_level : {3, 2, 1, 0}, optional
+        sharex, sharey : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both
             axes. See `~proplot.subplots.subplots` for details.
         spanx, spany : bool, optional
@@ -140,6 +142,9 @@ class Axes(maxes.Axes):
         alignx, aligny : bool, optional
             Boolean toggle for whether aligned axis labels are enabled for the
             *x* and *y* axes. See `~proplot.subplots.subplots` for details.
+        main : bool, optional
+            Used internally, indicates whether this is a "main axes" rather
+            than a twin, panel, or inset axes.
 
         See also
         --------
@@ -162,6 +167,7 @@ class Axes(maxes.Axes):
         self._rpanels = []
         self._tight_bbox = None # bounding boxes are saved
         self._panel_side = None
+        self._panel_share = False # True when panels "filled" with colorbar/legend
         self._panel_parent = None
         self._panel_filled = False # True when panels "filled" with colorbar/legend
         self._inset_parent = None
@@ -173,21 +179,24 @@ class Axes(maxes.Axes):
         self._altx_parent = None
         self._auto_colorbar = {} # stores handles and kwargs for auto colorbar
         self._auto_legend = {}
-        # Axis sharing, new text attributes, custom formatting
-        self._spanx = spanx # boolean toggles, whether we want to span axes labels
-        self._spany = spany
-        self._alignx = alignx
-        self._aligny = aligny
-        self._sharex_level = sharex_level
-        self._sharey_level = sharey_level
-        self._sharex_setup(sharex, sharex_level)
-        self._sharey_setup(sharey, sharey_level)
+        # Text labels
+        # TODO: Add text labels as panels instead of as axes children?
         coltransform = mtransforms.blended_transform_factory(self.transAxes, self.figure.transFigure)
         rowtransform = mtransforms.blended_transform_factory(self.figure.transFigure, self.transAxes)
         self._llabel   = self.text(0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
         self._rlabel  = self.text(0.95, 0.5, '', va='center', ha='left', transform=rowtransform)
         self._blabel = self.text(0.5, 0.05, '', va='top', ha='center', transform=coltransform)
         self._tlabel    = self.text(0.5, 0.95, '', va='bottom', ha='center', transform=coltransform) # reasonable starting point
+        # Shared and spanning axes
+        if main:
+            self.figure._axes_main.append(self)
+        self._spanx = spanx # boolean toggles, whether we want to span axes labels
+        self._spany = spany
+        self._alignx = alignx
+        self._aligny = aligny
+        self._sharex_level = sharex
+        self._sharey_level = sharey
+        self._share_setup()
         self.format(mode=1) # mode == 1 applies the rcExtraParams
 
     @wrappers._expand_methods_list
@@ -215,16 +224,37 @@ class Axes(maxes.Axes):
         self._auto_colorbar = {}
 
     def _get_side_axes(self, side):
-        """Returns groups of axes in row or column or the single group in the
-        same row or column as this axes."""
+        """Returns axes whose left, right, top, or bottom side abutts
+        against the same row or column as this axes."""
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         x = ('x' if s in 'lr' else 'y')
         idx = (0 if s in 'lt' else 1) # which side of range to test
         coord = self._range_gridspec(x)[idx] # side for a particular axes
-        return [ax for ax in self.figure._axes_main
+        axs = [ax for ax in self.figure._axes_main
                 if ax._range_gridspec(x)[idx] == coord]
+        if not axs:
+            return [self]
+        else:
+            return axs
+
+    def _get_extent_axes(self, x):
+        """Returns axes whose horizontal or vertical extent in the main
+        gridspec matches the horizontal or vertical extend of this axes.
+        Also sorts the list so the leftmost or bottommost axes is at the
+        start of the list."""
+        y = ('y' if x == 'x' else 'x')
+        idx = (0 if x == 'x' else 1)
+        argfunc = (np.argmax if x == 'x' else np.argmin)
+        irange = self._range_gridspec(x)
+        axs = [ax for ax in self.figure._axes_main
+                if ax._range_gridspec(x) == irange]
+        if not axs:
+            return [self]
+        else:
+            pax = axs.pop(argfunc([ax._range_gridspec(y)[idx] for ax in axs]))
+            return [pax, *axs]
 
     def _get_title_props(self, abc=False, loc=None):
         """Returns standardized location name, position keyword arguments, and
@@ -405,119 +435,92 @@ class Axes(maxes.Axes):
             pad = tax.xaxis.get_tick_padding()
         tax._set_title_offset_trans(self._title_pad + pad)
 
-    def _share_short_axis(self, share, side, level):
-        """When sharing main subplots, shares the short axes of their side
-        panels."""
-        # TODO: Re-calculate share settings at draw time!
-        if self._panel_side: # not None
-            return
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        paxs1 = getattr(self, '_' + s + 'panels') # calling this means, share properties on this axes with input 'share' axes
-        paxs2 = getattr(share, '_' + s + 'panels')
-        if (not all(not pax._panel_filled for pax in paxs1)
-            or not all(not pax._panel_filled for pax in paxs2)):
-            return
-        if len(paxs1) != len(paxs2):
-            raise AttributeError('Sync error. Different number of stacked panels along axes on like column/row of figure.')
-        axis = 'x' if s in 'lr' else 'y'
-        for pax1,pax2 in zip(paxs1,paxs2):
-            getattr(pax1, '_share' + axis + '_setup')(pax2, level)
-
-    def _share_long_axis(self, share, side, level):
-        """When sharing main subplots, shares the long axes of their side panels,
-        assuming long axis sharing is enabled for that panel."""
-        # TODO: Re-calculate share settings at draw time!
-        if self._panel_side:
-            return
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        paxs = getattr(self, '_' + s + 'panels') # calling this means, share properties on this axes with input 'share' axes
-        if not all(not pax._panel_filled and pax._panel_share for pax in paxs):
-            return
-        axis = 'x' if s in 'tb' else 'y'
-        for pax in paxs:
-            getattr(pax, '_share' + axis + '_setup')(share, level)
-
     def _sharex_setup(self, sharex, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
-        if sharex is None or sharex is self:
-            return
-        if isinstance(self, ProjectionAxes) or isinstance(sharex, ProjectionAxes):
-            return
+        """Sets up panel axis sharing."""
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
-        # Account for side panels
+        self._sharex_level = max(self._sharex_level, level) # enforce, e.g. if doing panel sharing
         self._share_short_axis(sharex, 'l', level)
         self._share_short_axis(sharex, 'r', level)
         self._share_long_axis(sharex,  'b', level)
         self._share_long_axis(sharex,  't', level)
-        # Builtin features
-        if level > 0:
-            self._sharex = sharex
-        if level > 1:
-            self._shared_x_axes.join(self, sharex)
-        # "Shared" axis and tick labels
-        # TODO: Why does this work?! Is only called on initialization, but
-        # shouldn't this be overridden when user changes e.g. the formatter,
-        # since the tick label objects themselves will also change? Maybe
-        # new tick labels inherit properties from old tick labels.
-        if level > 0:
-            self.xaxis.label.set_visible(False)
-        if level > 2:
-            self.xaxis.set_major_formatter(mticker.NullFormatter())
 
     def _sharey_setup(self, sharey, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
-        if sharey is None or sharey is self:
-            return
-        if isinstance(self, ProjectionAxes) or isinstance(sharey, ProjectionAxes):
-            return
+        """Sets up panel axis sharing."""
         if level not in range(4):
             raise ValueError('Level can be 1 (do not share limits, just hide axis labels), 2 (share limits, but do not hide tick labels), or 3 (share limits and hide tick labels).')
-        # Account for side panels
+        self._sharey_level = max(self._sharey_level, level)
         self._share_short_axis(sharey, 'b', level)
         self._share_short_axis(sharey, 't', level)
         self._share_long_axis(sharey,  'l', level)
         self._share_long_axis(sharey,  'r', level)
-        # Builtin features
-        if level > 0:
-            self._sharey = sharey
-        if level > 1:
-            self._shared_y_axes.join(self, sharey)
-        # "Shared" axis and tick labels
-        if level > 0:
-            self.yaxis.label.set_visible(False)
-        if level > 2:
-            self.yaxis.set_major_formatter(mticker.NullFormatter())
 
-    def _share_panels_setup(self):
-        """Sets up axis sharing between main subplots and panels."""
-        share = lambda paxs: (paxs and all(pax._panel_share for pax in paxs))
+    def _share_setup(self):
+        """Applies axis sharing for axes that share the same horizontal or
+        vertical extent, and for their panels."""
+        # Panel axes sharing, between main subplot and its panels
         # Top and bottom
-        bottom = None
-        if share(self._bpanels):
-            bottom = self._bpanels[-1]
-            for iax in (self, *self._bpanels[:-1]):
-                iax._sharex_setup(bottom, 3) # parent is *bottom-most* panel
-        if share(self._tpanels):
-            bottom = bottom or self
-            for iax in self._tpanels:
+        shared = lambda paxs: [pax for pax in paxs if not pax._panel_filled and pax._panel_share]
+        if not self._panel_side: # this is a main axes
+            bottom = self
+            paxs = shared(self._bpanels)
+            if paxs:
+                bottom = paxs[-1]
+                for iax in (self, *paxs[:-1]):
+                    iax._sharex_setup(bottom, 3) # parent is *bottom-most* panel
+            paxs = shared(self._tpanels)
+            for iax in paxs:
                 iax._sharex_setup(bottom, 3)
-        # Left and right
-        left = None
-        if share(self._lpanels):
-            left = self._lpanels[0]
-            for iax in (*self._lpanels[1:], self):
-                iax._sharey_setup(left, 3) # parent is *bottom-most* panel
-        if share(self._rpanels):
-            left = left or self
-            for iax in self._rpanels:
+            # Left and right
+            left = self
+            paxs = shared(self._lpanels)
+            if paxs:
+                left = paxs[0]
+                for iax in (*paxs[1:], self):
+                    iax._sharey_setup(left, 3) # parent is *bottom-most* panel
+            paxs = shared(self._rpanels)
+            for iax in paxs:
                 iax._sharey_setup(left, 3)
+
+        # Main axes, sometimes overrides panel axes sharing
+        # TODO: This can get very repetitive, but probably minimal impact
+        # on performance?
+        # Share x axes
+        parent, *children = self._get_extent_axes('x')
+        for child in children:
+            child._sharex_setup(parent, parent._sharex_level)
+        # Share y axes
+        parent, *children = self._get_extent_axes('y')
+        for child in children:
+            child._sharey_setup(parent, parent._sharey_level)
+
+    def _share_short_axis(self, share, side, level):
+        """Share the "short" axes of panels along a main subplot with panels
+        along an external subplot."""
+        if share is None or self._panel_side: # not None
+            return
+        s = side[0]
+        axis = 'x' if s in 'lr' else 'y'
+        caxs = getattr(self, '_' + s + 'panels') # calling this means, share properties on this axes with input 'share' axes
+        paxs = getattr(share, '_' + s + 'panels')
+        caxs = [pax for pax in caxs if not pax._panel_filled]
+        paxs = [pax for pax in paxs if not pax._panel_filled]
+        for cax,pax in zip(caxs,paxs): # may be uneven
+            getattr(cax, '_share' + axis + '_setup')(pax, level)
+
+    def _share_long_axis(self, share, side, level):
+        """Share the "long" axes of panels along a main subplot with the
+        axis from an external subplot."""
+        # NOTE: We do not check _panel_share because that only controls
+        # sharing with main subplot, not other subplots
+        if share is None or self._panel_side:
+            return
+        s = side[0]
+        axis = 'x' if s in 'tb' else 'y'
+        paxs = getattr(self, '_' + s + 'panels') # calling this means, share properties on this axes with input 'share' axes
+        paxs = [pax for pax in paxs if not pax._panel_filled]
+        for pax in paxs:
+            getattr(pax, '_share' + axis + '_setup')(share, level)
 
     def _update_title(self, obj, **kwargs):
         """Redraws title if updating with input keyword args failed."""
@@ -542,7 +545,7 @@ class Axes(maxes.Axes):
         y = _notNone(kwargs.pop('y', y), pos[1])
         return self.text(x, y, text, **kwextra)
 
-    def context(self, *, mode=2, rc_kw=None, **kwargs):
+    def context(self, *, mode=2, rc_kw=None, rc_ignore=None, **kwargs):
         """
         For internal use. Sets up temporary `~proplot.rctools.rc` settings by
         returning the result of `~proplot.rctools.rc_configurator.context`.
@@ -553,6 +556,9 @@ class Axes(maxes.Axes):
             A dictionary containing "rc" configuration settings that will
             be applied to this axes. Temporarily updates the
             `~proplot.rctools.rc` object. See `~proplot.rctools` for details.
+        rc_ignore : list of str, optional
+            Keyword names that might be "rc" configuration settings but
+            should be ignored.
         **kwargs
             Any of three options:
 
@@ -588,9 +594,10 @@ class Axes(maxes.Axes):
         # TODO: Support for 'small', 'large', etc. font
         kw = {} # for format
         rc_kw = rc_kw or {}
+        rc_ignore = rc_ignore or ()
         for key,value in kwargs.items():
             key_fixed = RC_NAMES_NODOTS.get(key, None)
-            if key_fixed is None:
+            if key_fixed is None or key in rc_ignore:
                 kw[key] = value
             else:
                 rc_kw[key_fixed] = value
@@ -969,7 +976,7 @@ class Axes(maxes.Axes):
         # Generate panel
         if loc in ('left','right','top','bottom'):
             ax = self.panel_axes(loc, width=width, space=space, filled=True)
-            return ax.colorbar(loc='_fill', *args, **kwargs)
+            return ax.colorbar(loc='_fill', *args, length=length, **kwargs)
 
         # Filled colorbar
         if loc == '_fill':
@@ -1581,6 +1588,51 @@ class CartesianAxes(Axes):
             nlim = nlim[::-1]
         child.set_ylim(scale[0] + scale[1]*nlim)
 
+    def _hide_labels(self):
+        """Function called at drawtime that enforces "shared" axis and
+        tick labels. If this is not called at drawtime, "shared" labels can
+        be inadvertantly turned off e.g. when the axis scale is changed."""
+        for x in 'xy':
+            # "Shared" axis and tick labels
+            axis = getattr(self, x + 'axis')
+            share = getattr(self, '_share' + x)
+            if share is not None:
+                level = getattr(self, '_share' + x + '_level')
+                if level > 0:
+                    axis.label.set_visible(False)
+                if level > 2:
+                    axis.set_major_formatter(mticker.NullFormatter())
+            # Enforce no minor ticks labels
+            # TODO: Document this?
+            if not isinstance(axis.get_minor_formatter(), mticker.NullFormatter):
+                axis.set_minor_formatter(mticker.NullFormatter())
+
+    def _sharex_setup(self, sharex, level):
+        """Sets up shared axes. The input is the 'parent' axes, from which
+        this one will draw its properties."""
+        # Call Axes method
+        super()._sharex_setup(sharex, level) # sets up panels
+        if sharex in (None,self) or not isinstance(sharex, CartesianAxes):
+            return
+        # Builtin sharing features
+        if level > 0:
+            self._sharex = sharex
+        if level > 1 and sharex not in self._shared_x_axes:
+            self._shared_x_axes.join(self, sharex)
+
+    def _sharey_setup(self, sharey, level):
+        """Sets up shared axes. The input is the 'parent' axes, from which
+        this one will draw its properties."""
+        # Call Axes method
+        super()._sharey_setup(sharey, level)
+        if sharey in (None,self) or not isinstance(sharey, CartesianAxes):
+            return
+        # Builtin features
+        if level > 0:
+            self._sharey = sharey
+        if level > 1 and sharey not in self._shared_y_axes:
+            self._shared_y_axes.join(self, sharey)
+
     def format(self, *,
         aspect=None,
         xloc=None, yloc=None,
@@ -1594,7 +1646,7 @@ class CartesianAxes(Axes):
         xtickminor=True, ytickminor=True,
         xticklabeldir=None, yticklabeldir=None,
         xtickrange=None, ytickrange=None,
-        xreverse=False, yreverse=False,
+        xreverse=None, yreverse=None,
         xlabel=None, ylabel=None,
         xlim=None, ylim=None,
         xscale=None, yscale=None,
@@ -1638,8 +1690,11 @@ class CartesianAxes(Axes):
             The *x* and *y* axis data limits. Applied with
             `~matplotlib.axes.Axes.set_xlim` and `~matplotlib.axes.Axes.set_ylim`.
         xreverse, yreverse : bool, optional
-            Puts the *x* and *y* axis in reverse, i.e. going from positive to
-            negative numbers.
+            Sets whether the *x* and *y* axis are oriented in the "reverse"
+            direction. The "normal" direction is increasing to the right for
+            the *x* axis and to the top for the *y* axis. The "reverse"
+            direction is increasing to the left for the *x* axis and to the
+            bottom for the *y* axis.
         xscale, yscale : axis scale spec, optional
             The *x* and *y* axis scales. Passed to the `~proplot.axistools.Scale`
             constructor. For example, ``xscale='log'`` applies logarithmic
@@ -1848,23 +1903,28 @@ class CartesianAxes(Axes):
                 (xlocator_kw, ylocator_kw), (xminorlocator_kw, yminorlocator_kw),
                 (xformatter_kw, yformatter_kw),
                 ):
+                # Axis limits
+                # NOTE: 3.1+ has axis.set_inverted(), below is from source code
+                if lim is not None:
+                    getattr(self, 'set_' + x + 'lim')(lim)
+                if reverse is not None:
+                    lo, hi = axis.get_view_interval()
+                    if reverse:
+                        lim = (max(lo, hi), min(lo, hi))
+                    else:
+                        lim = (min(lo, hi), max(lo, hi))
+                    axis.set_view_interval(*lim, ignore=True)
                 # Axis scale
                 # WARNING: This relies on monkey patch of mscale.scale_factory
                 # that allows it to accept a custom scale class!
+                # WARNING: Changing axis scale also changes default locators
+                # and formatters, so do it first
                 if scale is not None:
                     if (formatter is None and getattr(scale,'name',scale) in
                         ('log','logit','inverse','symlog')):
                         formatter = 'simple'
                     scale, args, kw = axistools.Scale(scale, **scale_kw)
-                    getattr(self, f'set_{x}scale')(scale, *args, **kw)
-                # Axis limits
-                # NOTE: 3.1+ has axis.set_inverted(), below is from source code
-                if lim is not None:
-                    getattr(self, f'set_{x}lim')(lim)
-                if reverse:
-                    lo, hi = axis.get_view_interval()
-                    axis.set_view_interval(
-                        max(lo, hi), min(lo, hi), ignore=True)
+                    getattr(self, 'set_' + x + 'scale')(scale, *args, **kw)
                 # Is this a date axis?
                 # NOTE: Make sure to get this *after* lims set!
                 date = isinstance(axis.converter, mdates.DateConverter)
@@ -1962,7 +2022,7 @@ class CartesianAxes(Axes):
                 # Will override to make sure only appear where ticks are
                 ticklabellocs = translate.get(ticklabelloc, (ticklabelloc,))
                 if ticklabellocs is not None:
-                    kw.update({f'label{side}': (side in ticklabellocs) for side in sides})
+                    kw.update({'label' + side: (side in ticklabellocs) for side in sides})
                 kw.update({'label' + side: False for side in sides
                     if (side not in spines or (ticklocs is not None and side not in ticklocs))}) # override
                 # The axis label side
@@ -2049,12 +2109,12 @@ class CartesianAxes(Axes):
                 elif tickminorlocator is not None:
                     axis.set_minor_locator(axistools.Locator(tickminorlocator, **minorlocator_kw))
 
-                # Major and minor formatter
+                # Major formatter
                 # NOTE: Only reliable way to disable ticks labels and then
                 # restore them is by messing with the formatter, *not* setting
-                # labelleft=False, labelright=False, etc. Check for this here
+                # labelleft=False, labelright=False, etc.
                 fixedformatfix = False
-                if formatter is not None or tickrange is not None and not (
+                if (formatter is not None or tickrange is not None) and not (
                     isinstance(axis.get_major_formatter(), mticker.NullFormatter)
                     and getattr(self, '_share' + x)):
                     # Tick range
@@ -2064,32 +2124,29 @@ class CartesianAxes(Axes):
                         formatter = 'auto'
                         formatter_kw.setdefault('tickrange', tickrange)
                     # Set the formatter
+                    # Note some formatters require 'locator' as keyword arg
                     if formatter in ('date','concise'):
                         locator = axis.get_major_locator()
                         formatter_kw.setdefault('locator', locator)
-                    if (isinstance(axis.get_major_formatter(), mticker.NullFormatter)
-                        and getattr(self, '_share' + x)):
-                        pass # this is a shared axis with disabled ticks
-                    else:
-                        formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
-                        axis.set_major_formatter(formatter)
-                    if isinstance(formatter, mticker.FixedFormatter): # if locator is MultipleLocator, first tick gets cut off!
+                    formatter = axistools.Formatter(formatter, date=date, **formatter_kw)
+                    axis.set_major_formatter(formatter)
+                    if isinstance(formatter, mticker.FixedFormatter):
                         fixedformatfix = True
-                axis.set_minor_formatter(mticker.NullFormatter())
 
-                # Ensure no out-of-bounds ticks! Even set_smart_bounds()
-                # fails sometimes.
+                # Ensure no out-of-bounds ticks! Even set_smart_bounds() fails
+                # sometimes.
                 # * Using set_bounds also failed, and fancy method overrides did
                 #   not work, so instead just turn locators into fixed version
                 # * Most locators take no arguments in __call__, and some do not
                 #   have tick_values method, so we just call them.
                 if fixticks or fixedformatfix or bounds is not None or axis.get_scale() == 'cutoff':
                     if bounds is None:
-                        bounds = getattr(self, f'get_{x}lim')()
+                        bounds = getattr(self, 'get_' + x + 'lim')()
                     locator = axistools.Locator([x for x in axis.get_major_locator()() if bounds[0] <= x <= bounds[1]])
                     axis.set_major_locator(locator)
                     locator = axistools.Locator([x for x in axis.get_minor_locator()() if bounds[0] <= x <= bounds[1]])
                     axis.set_minor_locator(locator)
+
             # Call parent
             if aspect is not None:
                 self.set_aspect(aspect)
@@ -2232,6 +2289,7 @@ class CartesianAxes(Axes):
         """Adds post-processing steps before axes is drawn."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
+        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
@@ -2244,6 +2302,7 @@ class CartesianAxes(Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated."""
+        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
@@ -2275,6 +2334,16 @@ class ProjectionAxes(Axes):
         --------
         `~proplot.subplots.subplots`, `CartopyAxes`, `BasemapAxes`
         """
+        # Store props that let us dynamically and incrementally modify
+        # line locations and settings like with Cartesian axes
+        self._boundinglat = None
+        self._latmax = None
+        self._latlines = None
+        self._lonlines = None
+        self._lonlines_values = None
+        self._latlines_values = None
+        self._lonlines_labels = None
+        self._latlines_labels = None
         super().__init__(*args, **kwargs)
 
     @wrappers._expand_methods_list
@@ -2285,29 +2354,42 @@ class ProjectionAxes(Axes):
             raise AttributeError(f'Invalid plotting function {attr!r} for map projection axes.')
         return super().__getattribute__(attr, *args)
 
+    def _hide_labels(self):
+        """Hides meridian and parallel labels for simple "rectangular"
+        projections."""
+        # TODO: Write this!
+
+    def draw(self, renderer=None, *args, **kwargs):
+        """Adds post-processing steps before axes is drawn."""
+        self._hide_labels()
+        super().draw(renderer, *args, **kwargs)
+
+    def get_tightbbox(self, renderer, *args, **kwargs):
+        """Adds post-processing steps before tight bounding box is
+        calculated."""
+        self._hide_labels()
+        return super().get_tightbbox(renderer, *args, **kwargs)
+
     def _projection_format_kwargs(self, *,
+        lonlim=None, latlim=None, boundinglat=None, grid=None,
+        lonlines=None, lonlocator=None,
+        latlines=None, latlocator=None, latmax=None,
         labels=None, latlabels=None, lonlabels=None,
-        lonlim=None, latlim=None, latmax=None, grid=None,
-        lonlocator=None, lonlines=None,
-        latlocator=None, latlines=None,
-        boundinglat=None,
         **kwargs,
         ):
         # Parse alternative keyword args
-        latmax = _notNone(latmax, rc['geogrid.latmax'])
         lonlines = _notNone(lonlines, lonlocator, rc['geogrid.lonstep'], names=('lonlines', 'lonlocator'))
         latlines = _notNone(latlines, latlocator, rc['geogrid.latstep'], names=('latlines', 'latlocator'))
-        if lonlabels is not None or latlabels is not None:
-            labels = True
-        else:
-            labels = _notNone(labels, rc['geogrid.labels'])
-        if (lonlines is not None or latlines is not None or
-                latmax is not None or labels):
-            grid = True
-        else:
-            grid = _notNone(grid, rc['geogrid'])
+        latmax = _notNone(latmax, rc['geogrid.latmax'])
+        labels = _notNone(labels, rc['geogrid.labels'])
+        grid = _notNone(grid, rc['geogrid'])
+        if labels:
+            lonlabels = _notNone(lonlabels, 1)
+            latlabels = _notNone(latlabels, 1)
 
         # Longitude gridlines, draw relative to projection prime meridian
+        # NOTE: Always generate gridlines array at least on first format call
+        # because rc setting will be not None
         if isinstance(self, CartopyAxes):
             lon_0 = self.projection.proj4_params.get('lon_0', 0)
         else:
@@ -2317,49 +2399,42 @@ class ProjectionAxes(Axes):
             if not np.iterable(lonlines):
                 lonlines = utils.arange(lon_0 - 180, lon_0 + 180, lonlines)
             lonlines = [*lonlines]
-        # Latitudes gridlines, draw from -latmax to latmax, but if result would
-        # be asymmetrical across equator, do not use
+
+        # Latitudes gridlines, draw from -latmax to latmax unless result would
+        # be asymmetrical across equator
+        # NOTE: Basemap axes redraw *meridians* if they detect latmax was
+        # explicitly changed, so important not to overwrite 'latmax' variable
+        # with default value! Just need it for this calculation, then when
+        # drawparallels is called will use self._latmax
         if latlines is not None or latmax is not None:
             # Fill defaults
             if latlines is None:
                 latlines = _notNone(self._latlines_values, rc.get('geogrid.latstep'))
-            if latmax is None:
-                latmax = _notNone(self._latmax, rc.get('geogrid.latmax'))
+            ilatmax = _notNone(latmax, self._latmax, rc.get('geogrid.latmax'))
             # Get tick locations
             if not np.iterable(latlines):
-                if (latmax % latlines) == (-latmax % latlines):
-                    latlines = utils.arange(-latmax, latmax, latlines)
+                if (ilatmax % latlines) == (-ilatmax % latlines):
+                    latlines = utils.arange(-ilatmax, ilatmax, latlines)
                 else:
-                    latlines = utils.arange(0, latmax, latlines)
-                    if latlines[-1] != latmax:
-                        latlines = np.concatenate((latlines, [latmax]))
+                    latlines = utils.arange(0, ilatmax, latlines)
+                    if latlines[-1] != ilatmax:
+                        latlines = np.concatenate((latlines, [ilatmax]))
                     latlines = np.concatenate((-latlines[::-1], latlines[1:]))
             latlines = [*latlines]
-        # Add attributes
-        if latmax is not None:
-            self._latmax = latmax
-        if latlines is not None:
-            self._latlines_values = latlines
-        if lonlines is not None:
-            self._lonlines_values = lonlines
 
         # Length-4 boolean arrays of whether and where to toggle labels
         # Format is [left, right, bottom, top]
-        if lonlabels or latlabels:
-            labels = True # toggle them at all?
-        lonarray, latarray = [], [] # destination
+        lonarray, latarray = [], []
         for labs,array in zip((lonlabels,latlabels), (lonarray,latarray)):
-            if labs is False:
-                return [0]*4
             if labs is None:
-                labs = 1
+                continue # leave empty
             if isinstance(labs, str):
                 string = labs
                 labs = [0]*4
                 for idx,char in zip([0,1,2,3],'lrbt'):
                     if char in string:
                         labs[idx] = 1
-            if isinstance(labs, Number): # e.g. *boolean*
+            elif not np.iterable(labs):
                 labs = np.atleast_1d(labs)
             if len(labs) == 1:
                 labs = [*labs, 0] # default is to label bottom/left
@@ -2371,8 +2446,33 @@ class ProjectionAxes(Axes):
             elif len(labs) != 4:
                 raise ValueError(f'Invalid lon/lat label spec: {labs}.')
             array[:] = labs
-        return (grid, latmax, lonlim, latlim, boundinglat,
-                lonlines, latlines, labels, lonarray, latarray, kwargs)
+        lonarray = lonarray or None # None so use default locations
+        latarray = latarray or None
+
+        # Add attributes for redrawing lines
+        if latmax is not None:
+            self._latmax = latmax
+        if latlines is not None:
+            self._latlines_values = latlines
+        if lonlines is not None:
+            self._lonlines_values = lonlines
+        if latarray is not None:
+            self._latlines_labels = latarray
+        if lonarray is not None:
+            self._lonlines_labels = lonarray
+
+        # Grid toggling, must come after everything else in case e.g.
+        # rc.geogrid is False but user passed grid=True so we need to
+        # recover the *default* lonlines and latlines values
+        if grid is not None:
+            if not grid:
+                lonlines = latlines = []
+            else:
+                lonlines = self._lonlines_values
+                latlines = self._latlines_values
+
+        return (latmax, lonlim, latlim, boundinglat,
+                lonlines, latlines, lonarray, latarray, kwargs)
 
 class PolarAxes(ProjectionAxes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjectionAxes` with
@@ -2530,12 +2630,12 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 self.set_theta_direction(thetadir)
 
             # Iterate
-            for (x, name, axis,
+            for (x, r, axis,
                 min_, max_,
                 locator, formatter,
                 locator_kw, formatter_kw,
                 ) in zip(
-                ('x','y'), ('theta', 'r'), (self.xaxis, self.yaxis),
+                ('x','y'), ('theta','r'), (self.xaxis, self.yaxis),
                 (thetamin, rmin), (thetamax, rmax),
                 (thetalocator, rlocator), (thetaformatter, rformatter),
                 (thetalocator_kw, rlocator_kw), (thetaformatter_kw, rformatter_kw),
@@ -2543,20 +2643,20 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 # Axis limits
                 # Try to use public API where possible
                 if min_ is not None:
-                    getattr(self, 'set_' + name + 'min')(min_)
+                    getattr(self, 'set_' + r + 'min')(min_)
                 else:
-                    min_ = getattr(self, 'get_' + name + 'min')()
+                    min_ = getattr(self, 'get_' + r + 'min')()
                 if max_ is not None:
-                    getattr(self, 'set_' + name + 'max')(max_)
+                    getattr(self, 'set_' + r + 'max')(max_)
                 else:
-                    max_ = getattr(self, 'get_' + name + 'max')()
+                    max_ = getattr(self, 'get_' + r + 'max')()
 
                 # Spine settings
                 kw = rc.fill({
                     'linewidth': 'axes.linewidth',
                     'color': 'axes.edgecolor',
                     })
-                sides = ('inner','polar') if name == 'r' else ('start','end')
+                sides = ('inner','polar') if r == 'r' else ('start','end')
                 spines = [self.spines[s] for s in sides]
                 for spine,side in zip(spines,sides):
                     spine.update(kw)
@@ -2585,13 +2685,13 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                 # NOTE: Must convert theta locator input to radians, then back
                 # to degrees.
                 if locator is not None:
-                    if name == 'theta' and (
+                    if r == 'theta' and (
                         not isinstance(locator, (str,mticker.Locator))):
                         locator = np.deg2rad(locator) # real axis limts are rad
                     locator = axistools.Locator(locator, **locator_kw)
                     locator.set_axis(axis) # this is what set_locator does
                     grids = np.array(locator())
-                    if name == 'r':
+                    if r == 'r':
                         grids = grids[(grids >= min_) & (grids <= max_)]
                         self.set_rgrids(grids)
                     else:
@@ -2647,10 +2747,6 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         self.background_patch = None
         self._gridliners = [] # populated in first format call
         self._done_img_factory = False
-        self._boundinglat = None # set in first format call
-        self._latmax = None # used for format memory
-        self._lonlines_values = None
-        self._latlines_values = None
         super().__init__(*args, map_projection=map_projection, **kwargs)
         # Zero ticks so gridlines are not offset
         for axis in (self.xaxis, self.yaxis):
@@ -2730,12 +2826,14 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             gl.ylabels_left   = False
             gl.ylabels_right  = False
 
-        # Format
-        context, kwargs = self.context(**kwargs)
+        # Context block
+        context, kwargs = self.context(rc_ignore=('grid',), **kwargs)
         with context:
-            (grid, _, lonlim, latlim, boundinglat,
-                lonlocator, latlocator, labels, lonlabels, latlabels,
+            # Parse keyword args
+            (_, lonlim, latlim, boundinglat,
+                lonlines, latlines, lonarray, latarray,
                 kwargs) = self._projection_format_kwargs(**kwargs)
+
             # Projection extent
             # NOTE: They may add this as part of set_xlim and set_ylim in the
             # near future; see: https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638
@@ -2792,52 +2890,47 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             # Draw gridlines, manage them with one custom gridliner generated
             # by ProPlot, user may want to use griliner API directly
             gl = self._gridliners[0]
-            if grid:
-                # Collection props, see GoeAxes.gridlines() source code
-                kw = rc.fill({
-                    'alpha':     'geogrid.alpha',
-                    'color':     'geogrid.color',
-                    'linewidth': 'geogrid.linewidth',
-                    'linestyle': 'geogrid.linestyle',
-                    }) # cached changes
-                gl.collection_kwargs.update(kw)
-                # Grid locations
-                # TODO: Check eps
-                eps = 1e-10
-                if lonlocator is not None:
+            # Collection props, see GoeAxes.gridlines() source code
+            kw = rc.fill({
+                'alpha':     'geogrid.alpha',
+                'color':     'geogrid.color',
+                'linewidth': 'geogrid.linewidth',
+                'linestyle': 'geogrid.linestyle',
+                }) # cached changes
+            gl.collection_kwargs.update(kw)
+            # Grid locations
+            # TODO: Check eps
+            eps = 1e-10
+            if lonlines is not None:
+                if len(lonlines) == 0:
+                    gl.xlines = False
+                else:
                     gl.xlines = True
-                    gl.xlocator = mticker.FixedLocator(lonlocator)
-                if latlocator is not None:
+                    gl.xlocator = mticker.FixedLocator(lonlines)
+            if latlines is not None:
+                if len(latlines) == 0:
+                    gl.ylines = False
+                else:
                     gl.ylines = True
-                    if latlocator[0] == -90:
-                        latlocator[0] += eps
-                    if latlocator[-1] == 90:
-                        latlocator[-1] -= eps
-                    gl.ylocator = mticker.FixedLocator(latlocator)
-                if labels and not isinstance(self.projection, (ccrs.Mercator,
-                                                           ccrs.PlateCarree)):
+                    if latlines[0] == -90:
+                        latlines[0] += eps
+                    if latlines[-1] == 90:
+                        latlines[-1] -= eps
+                    gl.ylocator = mticker.FixedLocator(latlines)
+            # Grid label toggling
+            if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
+                if latarray is not None and any(latarray):
                     warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
-                    labels = False
-                # Grid label toggling
-                if labels:
-                    gl.ylabels_left   = latlabels[0]
-                    gl.ylabels_right  = latlabels[1]
-                    gl.xlabels_bottom = lonlabels[2]
-                    gl.xlabels_top    = lonlabels[3]
-                # Turn off gridlabels
-                elif labels is not None:
-                    gl.ylabels_left   = False
-                    gl.ylabels_right  = False
-                    gl.xlabels_bottom = False
-                    gl.xlabels_top    = False
-            # Turn off gridlines
-            elif grid is not None:
-                gl.xlines = False
-                gl.ylines = False
-                gl.ylabels_left   = False
-                gl.ylabels_right  = False
-                gl.xlabels_bottom = False
-                gl.xlabels_top    = False
+                    latarray = [0]*4
+                if lonarray is not None and any(lonarray):
+                    warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
+                    lonarray = [0]*4
+            if latarray is not None:
+                gl.ylabels_left   = latarray[0]
+                gl.ylabels_right  = latarray[1]
+            if lonarray is not None:
+                gl.xlabels_bottom = lonarray[2]
+                gl.xlabels_top    = lonarray[3]
 
             # Geographic features
             # WARNING: Seems cartopy features can't be updated!
@@ -2977,11 +3070,6 @@ class BasemapAxes(ProjectionAxes):
         self.boundary = None
         self._hasrecurred = False # use this so we can override plotting methods
         self._mapboundarydrawn = None
-        self._latmax = None
-        self._latlines = None
-        self._lonlines = None
-        self._lonlines_values = None
-        self._latlines_values = None
         super().__init__(*args, **kwargs)
 
     def __getattribute__(self, attr, *args):
@@ -3038,15 +3126,17 @@ class BasemapAxes(ProjectionAxes):
         return obj
 
     def format(self, *, patch_kw=None, **kwargs):
-        # Docstring added at bottom
-        context, kwargs = self.context(**kwargs)
+        # Context block
+        context, kwargs = self.context(rc_ignore=('grid',), **kwargs)
         with context:
-            (grid, latmax, lonlim, latlim, boundinglat,
-                lonlocator, latlocator, labels, lonlabels, latlabels,
+            # Parse keyword args
+            (latmax, lonlim, latlim, boundinglat,
+                lonlines, latlines, lonarray, latarray,
                 kwargs) = self._projection_format_kwargs(**kwargs)
             if (lonlim is not None or latlim is not None or
                 boundinglat is not None):
                 warnings.warn('Got lonlim={lonlim}, latlim={latlim}, boundinglat={boundinglat}, but you cannot "zoom into" a basemap projection after creating it. Pass a proj_kw dictionary in your call to subplots, with any of the following basemap keywords: boundinglat, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, llcrnrx, llcrnry, urcrnrx, urcrnry, width, or height.')
+
             # Map boundary
             # * First have to *manually replace* the old boundary by just
             #   deleting the original one
@@ -3055,15 +3145,15 @@ class BasemapAxes(ProjectionAxes):
             #   edges/fill color disappear
             # * For now will enforce that map plots *always* have background
             #   whereas axes plots can have transparent background
+            kw_edge = rc.fill({
+                'linewidth': 'geoaxes.linewidth',
+                'edgecolor': 'geoaxes.edgecolor'
+                })
             kw_face = rc.fill({
                 'facecolor': 'geoaxes.facecolor'
                 })
             patch_kw = patch_kw or {}
             kw_face.update(patch_kw)
-            kw_edge = rc.fill({
-                'linewidth': 'geoaxes.linewidth',
-                'edgecolor': 'geoaxes.edgecolor'
-                })
             self.axesPatch = self.patch # bugfix or something
             if self.projection.projection in self._proj_non_rectangular:
                 self.patch.set_alpha(0) # make patch invisible
@@ -3083,68 +3173,61 @@ class BasemapAxes(ProjectionAxes):
             # Longitude/latitude lines
             # Make sure to turn off clipping by invisible axes boundary; otherwise
             # get these weird flat edges where map boundaries, parallel/meridian markers come up to the axes bbox
-            if grid:
-                lkw = rc.fill({
-                    'alpha':     'geogrid.alpha',
-                    'color':     'geogrid.color',
-                    'linewidth': 'geogrid.linewidth',
-                    'linestyle': 'geogrid.linestyle',
-                    }, cache=False)
-                tkw = rc.fill({
-                    'color':    'geogrid.color',
-                    'fontsize': 'geogrid.labelsize',
-                    }, cache=False)
-                # Change from left/right/bottom/top to left/right/top/bottom
-                if labels:
-                    lonlabels[2:] = lonlabels[2:][::-1]
-                else:
-                    lonlabels = 4*[0]
-                if labels:
-                    latlabels[2:] = latlabels[2:][::-1]
-                else:
-                    latlabels = 4*[0]
-                # Turn off old ones
-                # NOTE: Need to redraw both lon and lat lines if one changed,
-                # because latmax affects their extent!
-                if (latlocator is not None or lonlocator is not None
-                    or latmax is not None or labels):
-                    if self._lonlines:
-                        for pi in self._lonlines.values():
-                            for obj in [i for j in pi for i in j]: # magic
-                                obj.set_visible(False)
-                    if self._latlines:
-                        for pi in self._latlines.values():
-                            for obj in [i for j in pi for i in j]: # magic
-                                obj.set_visible(False)
-                    if latmax is None:
-                        latmax = self._latmax
-                    if latlocator is None:
-                        latlocator = self._latlines_values
-                    if lonlocator is None:
-                        lonlocator = self._lonlines_values
-                # Draw new ones
-                if lonlocator is not None:
-                    p = self.projection.drawmeridians(lonlocator,
-                        latmax=latmax, labels=lonlabels, ax=self)
-                    for pi in p.values():
+            lkw = rc.fill({
+                'alpha':     'geogrid.alpha',
+                'color':     'geogrid.color',
+                'linewidth': 'geogrid.linewidth',
+                'linestyle': 'geogrid.linestyle',
+                }, cache=False)
+            tkw = rc.fill({
+                'color':    'geogrid.color',
+                'fontsize': 'geogrid.labelsize',
+                }, cache=False)
+            # Change from left/right/bottom/top to left/right/top/bottom
+            if lonarray is not None:
+                lonarray[2:] = lonarray[2:][::-1]
+            if latarray is not None:
+                latarray[2:] = latarray[2:][::-1]
+
+            # Parallel lines
+            if latlines is not None or latmax is not None or latarray is not None:
+                if self._latlines:
+                    for pi in self._latlines.values():
                         for obj in [i for j in pi for i in j]: # magic
-                            if isinstance(obj, mtext.Text):
-                                obj.update(tkw)
-                            else:
-                                obj.update(lkw)
-                    self._lonlines = p
-                if latlocator is not None:
-                    p = self.projection.drawparallels(latlocator,
-                        latmax=latmax, labels=latlabels, ax=self)
-                    for pi in p.values(): # returns dict, where each one is tuple
-                        # Tried passing clip_on to the below, but it does nothing; must set
-                        # for lines created after the fact
+                            obj.set_visible(False)
+                ilatmax = _notNone(latmax, self._latmax)
+                latlines = _notNone(latlines, self._latlines_values)
+                latarray = _notNone(latarray, self._latlines_labels, [0]*4)
+                p = self.projection.drawparallels(latlines,
+                    latmax=ilatmax, labels=latarray, ax=self)
+                for pi in p.values(): # returns dict, where each one is tuple
+                    # Tried passing clip_on to the below, but it does nothing; must set
+                    # for lines created after the fact
+                    for obj in [i for j in pi for i in j]:
+                        if isinstance(obj, mtext.Text):
+                            obj.update(tkw)
+                        else:
+                            obj.update(lkw)
+                self._latlines = p
+
+            # Meridian lines
+            if lonlines is not None or latmax is not None or lonarray is not None:
+                if self._lonlines:
+                    for pi in self._lonlines.values():
                         for obj in [i for j in pi for i in j]: # magic
-                            if isinstance(obj, mtext.Text):
-                                obj.update(tkw)
-                            else:
-                                obj.update(lkw)
-                    self._latlines = p
+                            obj.set_visible(False)
+                ilatmax = _notNone(latmax, self._latmax)
+                lonlines = _notNone(lonlines, self._lonlines_values)
+                lonarray = _notNone(lonarray, self._lonlines_labels, [0]*4)
+                p = self.projection.drawmeridians(lonlines,
+                    latmax=ilatmax, labels=lonarray, ax=self)
+                for pi in p.values():
+                    for obj in [i for j in pi for i in j]:
+                        if isinstance(obj, mtext.Text):
+                            obj.update(tkw)
+                        else:
+                            obj.update(lkw)
+                self._lonlines = p
 
             # Geography
             # TODO: Allow setting the zorder.
@@ -3183,7 +3266,7 @@ features, and more.
 Parameters
 ----------
 labels : bool, optional
-    Whether to draw longitude and latitude labels. Defaults to
+    Toggles meridian and parallel gridline labels on and off. Defaults to
     ``rc['geogrid.labels']``.
 lonlabels, latlabels
     Whether to label longitudes and latitudes, and on which sides
@@ -3205,16 +3288,17 @@ boundinglat : float, optional
     The edge latitude for the circle bounding North Pole and
     South Pole-centered projections. For cartopy axes only.
 grid : bool, optional
-    Whether to add meridian and parallel gridlines.
-latmax : float, optional
-    The maximum absolute latitude for meridian gridlines. Defaults
-    to ``rc['geogrid.latmax']``.
+    Toggles meridian and parallel gridlines on and off. Defaults to
+    ``rc['geogrid']``.
 lonlines, latlines : float or list of float, optional
     If float, indicates the *spacing* of meridian and parallel gridlines.
     Otherwise, must be a list of floats indicating specific meridian and
     parallel gridlines to draw.
 lonlocator, latlocator : optional
     Aliases for `lonlines`, `latlines`.
+latmax : float, optional
+    The maximum absolute latitude for meridian gridlines. Defaults
+    to ``rc['geogrid.latmax']``.
 patch_kw : dict-like, optional
     Keyword arguments used to update the background patch object. You
     can use this, for example, to set background hatching with

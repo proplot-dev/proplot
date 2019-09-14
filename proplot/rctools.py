@@ -655,6 +655,8 @@ class rc_configurator(object):
     def __enter__(self):
         """Apply settings from configurator cache."""
         self._cache_orig = rc._cache.copy()
+        self._cache_restore = {} # shouldn't be necessary but just in case
+        self._cache = {}
         for key,value in self._context.items():
             self[key] = value # applies globally linked and individual settings
 

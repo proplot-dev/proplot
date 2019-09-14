@@ -9,27 +9,59 @@ controlled by the `FlexibleGridSpec` class.
 
    <h1>Developer notes</h1>
 
-Matplotlib's `~matplotlib.pyplot.subplots` returns a numpy `~numpy.ndarray`
-of axes. ProPlot's `subplots` returns an `axes_grid` of axes, which is a `list`
-subclass invented to implement some new features. But why does `axes_grid`
-subclass `list` instead of `~numpy.ndarray`? Two reasons.
+Matplotlib permits arbitrarily many gridspecs per figure, and
+encourages serial calls to `~matplotlib.figure.Figure.add_subplot`. By
+contrast, ProPlot permits only *one* `~matplotlib.gridspec.GridSpec` per
+figure, and forces the user to construct axes and figures with `subplots`. On
+the whole, matplotlib's approach is fairly cumbersome, but necessary owing to
+certain design limitations. The following describes how ProPlot addresses
+these limitations.
 
-1. ProPlot's `subplots` function is meant to work with *arbitrary* arangements of
-   subplots that may span *multiple* rows and columns -- i.e. the subplots don't
-   necessarily fit cleanly as entries in a 2D matrix. `axes_grid` is really a 1D
-   list, but permits 2D indexing *just in case* the user *happened* to draw a
-   clean 2D matrix of subplots. 1D indexing of `axes_grid` (e.g.  ``axs[0]``)
-   always returns a single axes, while 1D indexing of a 2D `~numpy.ndarray` of
-   axes would just return a row of axes.
+* Matplotlib's `~matplotlib.gridspec.GridSpec` can only implement *uniform*
+  spacing between rows and columns of subplots. This seems to be the main
+  reason the `~matplotlib.gridspec.GridSpecFromSubplotSpec` class was
+  invented. To get variable spacing, users have to build their own nested
+  `~matplotlib.gridspec.GridSpec` objects and manually pass
+  `~matplotlib.gridspec.SubplotSpec` objects to
+  `~matplotlib.figure.Figure.add_subplot`.
 
-2. Further, since `~axes_grid.__getattr__` iterates through each axes in the
-   container and returns a *single item* if the container is *singleton*, it
-   doesn't really matter whether the `~proplot.subplots.subplots` return value is
-   an axes or a singleton `axes_grid` of axes. This allows ProPlot to *always*
-   return an `axes_grid` when `~proplot.subplots.subplots` is called. Matplotlib's
-   `~matplotlib.pyplot.subplots`, by contrast, returns a single axes when one
-   subplot is drawn, a 1D `~numpy.ndarray` when a single row or column is drawn,
-   and a 2D `~numpy.ndarray` when a multi-row, multi-column figure is drawn.
+  ProPlot's `FlexibleGridSpec` class permits *variable* spacing between
+  rows and columns of subplots. This largely eliminates the need for
+  `~matplotlib.gridspec.GridSpecFromSubplotSpec`, and prevents users
+  from having to pass their own `~matplotlib.gridspec.SubplotSpec` objects
+  to `~matplotlib.figure.Figure.add_subplot`.
+
+* Matplotlib's `~matplotlib.pyplot.subplots` can only draw simple 2D
+  arrangements of subplots. To make complex arrangements, the user must
+  generate their own `~matplotlib.gridspec.SubplotSpec` instances, or serially
+  pass 3-digit integers or 3 positional arguments
+  `~matplotlib.figure.Figure.add_subplot`. And to simplify this workflow, the
+  gridspec geometry must be allowed to vary. For example, to draw a simple
+  grid with two subplots on the top and one subplot on the bottom, the user
+  can serially pass ``221``, ``222``, and ``212`` to
+  `~matplotlib.figure.Figure.add_subplot`. But if the gridspec geometry
+  was required to remain the same, instead of ``212``, the user would have to
+  use ``2, 2, (3,4)``, which is much more cumbersome. So, the figure
+  must support multiple gridspec geometries -- i.e. it must support multiple
+  gridspecs!
+
+  With ProPlot, users can build complex subplot grids using the ``array``
+  `subplots` argument. This means that serial calls to
+  `~matplotlib.figure.Figure.add_subplot` are no longer necessary, and we can
+  use just *one* gridspec for the whole figure without imposing any new
+  limitations. Among other things, this simplifies the "tight layout"
+  algorithm.
+
+
+Also note that ProPlot's `subplots` returns an `axes_grid` of axes, while
+matplotlib's `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`,
+a 1D `~numpy.ndarray`, or the axes itself. `axes_grid` was invented in
+part because `subplots` can draw arbitrarily complex arrangements of
+subplots, not just simple grids. `axes_grid` is a `list` subclass supporting
+1D indexing (e.g. ``axs[0]``), but permits 2D indexing (e.g. ``axs[1,0]``)
+*just in case* the user *happened* to draw a clean 2D matrix of subplots.
+The `~axes_grid.__getattr__` override also means it no longer matters
+whether you are calling a method on an axes or a singleton `axes_grid` of axes.
 """
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional
@@ -55,10 +87,10 @@ __all__ = [
 
 # Translation
 SIDE_TRANSLATE = {
-    'l': 'left',
-    'r': 'right',
-    'b': 'bottom',
-    't': 'top',
+    'l':'left',
+    'r':'right',
+    'b':'bottom',
+    't':'top',
     }
 
 # Dimensions of figures for common journals
@@ -77,6 +109,7 @@ JOURNAL_SPECS = {
     'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
     'aaas2': '12cm', # AAAS 2 column
     }
+
 
 #-----------------------------------------------------------------------------#
 # Miscellaneous stuff
@@ -123,7 +156,7 @@ class axes_grid(list):
         self.shape = (len(self)//n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
-        return 'axes_grid(' + super().__repr__() + ')'
+        return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
         """Pseudo immutability, raises error."""
@@ -254,8 +287,10 @@ class axes_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
-    # TODO! No more putting panels, legends, colorbars on the SubplotSpec,
-    # put them in the margin and increase default space
+    # TODO: No more putting panels, legends, colorbars on the SubplotSpec.
+    # Put them in the margin, increase default space, and lock them to
+    # subplot bounds with locators, borrowing from axes_grid1 toolkit
+    # TODO: Consider adding Github issue, would be major API change.
     # def colorbar(self, loc=None):
     #     """Draws a colorbar that spans axes in the selected range."""
     #     for ax in self:
@@ -818,7 +853,9 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._unlock():
-            pax = self.add_subplot(gridspec[idx1,idx2], projection='cartesian')
+            pax = self.add_subplot(gridspec[idx1,idx2],
+                    sharex=ax._sharex_level, sharey=ax._sharey_level,
+                    projection='cartesian')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -826,9 +863,7 @@ class Figure(mfigure.Figure):
 
         # Axis sharing and axis setup only for non-legend or colorbar axes
         if not filled:
-            if share:
-                ax._share_panels_setup()
-            self._share_axes_setup(ax)
+            ax._share_setup()
             axis = (pax.yaxis if side in ('left','right') else pax.xaxis)
             getattr(axis, 'tick_' + side)() # sets tick and tick label positions intelligently
             axis.set_label_position(side)
@@ -1414,25 +1449,6 @@ class Figure(mfigure.Figure):
         if kwargs:
             self._suptitle.update(kwargs)
 
-    def _share_axes_setup(self, ref=None):
-        """Applies axis sharing to groups of axes that share the same
-        horizontal or vertical extent."""
-        axs = [ref] if ref is not None else self._axes_main
-        # Share x axes
-        ranges = {tuple(ax._range_gridspec('x')) for ax in axs}
-        for irange in ranges:
-            iaxs = [ax for ax in axs if tuple(ax._range_gridspec('x')) == irange]
-            parent = iaxs.pop(np.argmax([iax._range_gridspec('y')[1] for iax in iaxs]))
-            for child in iaxs:
-                child._sharex_setup(parent, parent._sharex_level)
-        # Share y axes
-        ranges = {tuple(ax._range_gridspec('y')) for ax in axs}
-        for irange in ranges:
-            iaxs = [ax for ax in axs if tuple(ax._range_gridspec('y')) == irange]
-            parent = iaxs.pop(np.argmin([iax._range_gridspec('x')[0] for iax in iaxs]))
-            for child in iaxs:
-                child._sharey_setup(parent, parent._sharey_level)
-
     def add_subplot(self, *args,
         proj=None, projection=None, basemap=False,
         **kwargs):
@@ -1464,7 +1480,7 @@ class Figure(mfigure.Figure):
         gridspec = self._gridspec_main
         subplotspec = None
         if len(args) == 1:
-            if isinstance(args[0], SubplotSpec):
+            if isinstance(args[0], mgridspec.SubplotSpec):
                 subplotspec = args[0]
             else:
                 try:
@@ -1493,14 +1509,14 @@ class Figure(mfigure.Figure):
         # The default is CartesianAxes
         proj = _notNone(proj, projection, 'cartesian', names=('proj','projection'))
         # Builtin matplotlib polar axes, just use my overridden version
-        if name == 'polar':
+        if proj == 'polar':
             proj = 'polar2'
         # Custom Basemap and Cartopy axes
         # TODO: Have Proj return all unused keyword args, with a
         # map_projection = obj entry, and maybe hide the Proj constructor as
         # an argument processing utility?
         elif proj != 'cartesian':
-            kwargs = projs.Proj(name, basemap=basemap, **kwargs)
+            kwargs = projs.Proj(proj, basemap=basemap, **kwargs)
             proj = 'basemap' if basemap else 'cartopy'
 
         # Initialize
@@ -2154,12 +2170,9 @@ def subplots(array=None, ncols=1, nrows=1,
         with fig._unlock():
             axs[idx] = fig.add_subplot(subplotspec, number=num,
                 spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-                sharex_level=sharex, sharey_level=sharey,
+                sharex=sharex, sharey=sharey,
+                main=True,
                 **axes_kw[num])
-
-    # Set up shared axes and assign main axes
-    fig._axes_main = axs
-    fig._share_axes_setup()
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
