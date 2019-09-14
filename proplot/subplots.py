@@ -73,7 +73,7 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
-from types import Integral
+from numbers import Integral
 try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
