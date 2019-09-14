@@ -12,7 +12,7 @@ share:        3
 align:        False
 span:         True
 tight:        True
-fontname:     # if empty, default is Helvetica
+fontname:     'Helvetica Neue'
 cmap:         fire
 lut:          256
 cycle:        colorblind

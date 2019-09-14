@@ -47,7 +47,7 @@ Key               Description
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``.
 ``align``         Whether to align axis labels during draw; see `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
 ``span``          Boolean, toggles spanning axis labels.
-``fontname``      Name of font used for all text in the figure. The default is ``Helvetica`` for Linux and ``Helvetica Neue`` for Windows/Mac. See `~proplot.fonttools` for details.
+``fontname``      Name of font used for all text in the figure. The default is Helvetica Neue. See `~proplot.fonttools` for details.
 ``cmap``          The default colormap.
 ``lut``           The number of colors to put in the colormap lookup table.
 ``cycle``         The default color cycle name, used e.g. for lines.
@@ -224,7 +224,6 @@ _rcExtraParams = {}
 # failed to render/printed nonsense, but Helvetica was fine.
 USER_RC = os.path.join(os.path.expanduser("~"), '.proplotrc')
 DEFAULT_RC = os.path.join(os.path.dirname(__file__), '.proplotrc')
-DEFAULT_FONT = 'Helvetica' if sys.platform == 'linux' else 'Helvetica Neue'
 if not os.path.exists(DEFAULT_RC):
     raise ValueError('Default configuration file does not exist.')
 
@@ -462,12 +461,8 @@ class rc_configurator(object):
                 if ckeys != RC_NAMES_CUSTOM:
                     raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {RC_NAMES_CUSTOM - ckeys}.')
 
-        # Set default fontname and cycler
-        _set_cycler(_rcGlobals['cycle'])
-        if _rcGlobals.get('fontname', None) is None:
-            _rcGlobals['fontname'] = DEFAULT_FONT
-
         # Apply *global settings* to children settings
+        _set_cycler(_rcGlobals['cycle'])
         rc, rc_new = _get_globals()
         for key,value in rc.items():
             _rcParams[key] = value
