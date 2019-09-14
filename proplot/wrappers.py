@@ -87,17 +87,6 @@ DISABLED_METHODS = {
     "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use the angle as your *x* coordinate and radius as your *y* coordinate.":
         ('polar',)
     }
-MAP_DISABLED_METHODS = (
-    # These are obvious
-    # TODO: Error bars? Will they work? Also bar and barh can be used w/ polar
-    'twinx', 'twiny',
-    'matshow', 'imshow', 'spy', # don't disable 'bar' or 'barh', can be used in polar plots
-    'hist', 'hist2d', 'boxplot', 'violinplot', 'step', 'stem',
-    # Look into these
-    'stackplot', 'table', 'eventplot', 'pie',
-    'xcorr', 'acorr', 'psd', 'csd', 'cohere', 'specgram',
-    'magnitude_spectrum', 'angle_spectrum', 'phase_spectrum',
-    )
 
 # Keywords for styling cmap overridden plots
 STYLE_ARGS_TRANSLATE = {
@@ -138,7 +127,6 @@ def _expand_methods_list(func):
         ('CYCLE_METHODS',         CYCLE_METHODS),
         ('CMAP_METHODS',          CMAP_METHODS),
         ('DISABLED_METHODS',      (*(method for methods in DISABLED_METHODS.values() for method in methods),)),
-        ('MAP_DISABLED_METHODS',  MAP_DISABLED_METHODS),
         ):
         if f'`{name}`' not in doc:
             continue
@@ -1067,8 +1055,10 @@ def text_wrapper(self, func,
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
     kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
+
     # Call function
-    obj = func(x, y, text, transform=transform, **kwargs)
+    obj = func(self, x, y, text, transform=transform, **kwargs)
+
     # Draw border around text
     if border:
         linewidth = lw or linewidth
@@ -2822,35 +2812,49 @@ def colorbar_wrapper(self,
 # Construct *actual* wrappers. Above functions are just for documentation.
 #------------------------------------------------------------------------------#
 # Helper func
-def _wrapper(driver):
+def _decorator_generator(driver):
     def decorator(self, func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return driver(self, func, *args, **kwargs)
         return wrapper
     return decorator
+
+# Decorator generator
+# We document the wrapper functions and their call signatures!
+# TODO: No more auto decorators
+def _decorator_generator_new(driver):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            return driver(self, func, *args, **kwargs)
+        wrapper.__doc__ = None
+        return wrapper
+    return decorator
+
 # Hidden wrappers
 # There is also _basemap_call and _no_recurse
-_autoformat_1d = _wrapper(autoformat_1d)
-_autoformat_2d = _wrapper(autoformat_2d)
+_autoformat_1d = _decorator_generator(autoformat_1d)
+_autoformat_2d = _decorator_generator(autoformat_2d)
 # Documented
-_add_errorbars         = _wrapper(add_errorbars)
-_enforce_centers       = _wrapper(enforce_centers)
-_enforce_edges         = _wrapper(enforce_edges)
-_basemap_gridfix       = _wrapper(basemap_gridfix)
-_basemap_latlon        = _wrapper(basemap_latlon)
-_cartopy_gridfix       = _wrapper(cartopy_gridfix)
-_cartopy_transform     = _wrapper(cartopy_transform)
-_cartopy_crs           = _wrapper(cartopy_crs)
-_cmap_wrapper          = _wrapper(cmap_wrapper)
-_cycle_wrapper         = _wrapper(cycle_wrapper)
-_bar_wrapper           = _wrapper(bar_wrapper)
-_hist_wrapper          = _wrapper(hist_wrapper)
-_barh_wrapper          = _wrapper(barh_wrapper)
-_plot_wrapper          = _wrapper(plot_wrapper)
-_scatter_wrapper       = _wrapper(scatter_wrapper)
-_boxplot_wrapper       = _wrapper(boxplot_wrapper)
-_violinplot_wrapper    = _wrapper(violinplot_wrapper)
-_fill_between_wrapper  = _wrapper(fill_between_wrapper)
-_fill_betweenx_wrapper = _wrapper(fill_betweenx_wrapper)
-_text_wrapper          = _wrapper(text_wrapper)
+_add_errorbars         = _decorator_generator(add_errorbars)
+_enforce_centers       = _decorator_generator(enforce_centers)
+_enforce_edges         = _decorator_generator(enforce_edges)
+_basemap_gridfix       = _decorator_generator(basemap_gridfix)
+_basemap_latlon        = _decorator_generator(basemap_latlon)
+_cartopy_gridfix       = _decorator_generator(cartopy_gridfix)
+_cartopy_transform     = _decorator_generator(cartopy_transform)
+_cartopy_crs           = _decorator_generator(cartopy_crs)
+_cmap_wrapper          = _decorator_generator(cmap_wrapper)
+_cycle_wrapper         = _decorator_generator(cycle_wrapper)
+_bar_wrapper           = _decorator_generator(bar_wrapper)
+_hist_wrapper          = _decorator_generator(hist_wrapper)
+_barh_wrapper          = _decorator_generator(barh_wrapper)
+_plot_wrapper          = _decorator_generator(plot_wrapper)
+_scatter_wrapper       = _decorator_generator(scatter_wrapper)
+_boxplot_wrapper       = _decorator_generator(boxplot_wrapper)
+_violinplot_wrapper    = _decorator_generator(violinplot_wrapper)
+_fill_between_wrapper  = _decorator_generator(fill_between_wrapper)
+_fill_betweenx_wrapper = _decorator_generator(fill_betweenx_wrapper)
+# New version
+_text_wrapper          = _decorator_generator_new(text_wrapper)

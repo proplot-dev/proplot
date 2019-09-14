@@ -14,36 +14,11 @@ start with the documentation on the following methods.
 **one-stop-shop for changing axes settings** like *x* and *y* axis limits,
 axis labels, tick locations, tick labels grid lines, axis scales, titles,
 a-b-c labelling, adding geographic features, and much more.
-
-.. raw:: html
-
-   <h1>Developer notes</h1>
-
-Instead of implementing axes method wrappers with decorators, the wrappers
-are dynamically applied within `~proplot.axes.Axes.__getattribute__`
-on `~proplot.axes.Axes` and its subclasses.
-
-ProPlot does not use decorators for the sake of *brevity*. For example, since
-`~proplot.wrappers.cmap_wrapper` overrides 13 different methods, implementing
-the wrapper with decorators would require 50 lines of code, while the
-`~proplot.axes.Axes.__getattribute__` implementation requires just 2 lines.
-This approach might be "hacky" but I have not seen any significant drawbacks
-so far.
-
-It should be noted that dynamically wrapping every time the user requests a
-method is slower than "decoration", which just wraps the method when the class
-is declared. But this was not found to significantly affect performance. And
-anyway, `Premature Optimization is the Root of All Evil
-<http://wiki.c2.com/?PrematureOptimization>`__.
 """
-# WARNING: Wanted to bulk wrap methods using __new__ on a *metaclass*, since
-# this would just wrap method *once* and not every single time user accesses
-# object. More elegant, but __new__ *does not receive inherited methods* (that
-# comes later down the line), so we can't wrap them. Anyway overriding
-# __getattribute__ is fine, and premature optimiztaion is root of all evil!
 import re
 import numpy as np
 import warnings
+import functools
 from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
@@ -57,6 +32,11 @@ import matplotlib.collections as mcollections
 from .rctools import rc, RC_NAMES_NODOTS
 from . import utils, projs, axistools, wrappers
 from .utils import _notNone, units
+try:
+    from cartopy.mpl.geoaxes import GeoAxes
+except ModuleNotFoundError:
+    GeoAxes = object
+
 __all__ = [
     'Axes',
     'BasemapAxes',
@@ -110,15 +90,24 @@ def _abc(i):
     else:
         return _abc(i - 26) + ABC_STRING[i % 26] # sexy sexy recursion
 
-# Import mapping toolbox
-try:
-    from cartopy.mpl.geoaxes import GeoAxes
-except ModuleNotFoundError:
-    GeoAxes = object
+# Wrapper generator
+def _disable_decorator(msg):
+    """Generates decorators that disable methods. Also sets __doc__ to None so
+    that ProPlot fork of automodapi doesn't add these methods to the website
+    documentation. Users can still call help(ax.method) because python looks
+    for superclass method docstrings if a docstring is empty."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            raise RuntimeError(msg)
+        wrapper.__doc__ = None
+        return wrapper
+    return decorator
 
 #-----------------------------------------------------------------------------#
 # Generalized custom axes class
 #-----------------------------------------------------------------------------#
+_disabled_log_err = RuntimeError('Redundant function has been disabled. Control axis scale with e.g. ax.format(xscale="log", yscale="log").')
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
@@ -198,19 +187,6 @@ class Axes(maxes.Axes):
         self._sharey_level = sharey
         self._share_setup()
         self.format(mode=1) # mode == 1 applies the rcExtraParams
-
-    @wrappers._expand_methods_list
-    def __getattribute__(self, attr, *args):
-        """Disables the redundant methods `DISABLED_METHODS` with useful
-        error messages, and applies the `~proplot.wrappers.text_wrapper`
-        wrapper."""
-        obj = object.__getattribute__(self, attr, *args)
-        for message,attrs in wrappers.DISABLED_METHODS.items():
-            if attr in attrs:
-                raise AttributeError(message.format(attr))
-        if attr == 'text':
-            obj = wrappers._text_wrapper(self, obj)
-        return obj
 
     def _draw_auto_legends_colorbars(self):
         """Generate automatic legends and colorbars. Wrapper funcs
@@ -776,7 +752,7 @@ class Axes(maxes.Axes):
         # Workflow 2, want this to come first so workflow 1 gets priority
         for ikey,ititle in kwargs.items():
             if not ikey[-5:] == 'title':
-                raise ValueError(f'format() got an unexpected keyword argument {ikey!r}.')
+                raise TypeError(f'format() got an unexpected keyword argument {ikey!r}.')
             iloc, iobj, ikw = self._get_title_props(loc=ikey[:-5])
             if ititle is not None:
                 ikw['text'] = ititle
@@ -1192,6 +1168,7 @@ class Axes(maxes.Axes):
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
+        self._hide_labels() # hide axis labels or meridian parallel labels
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
@@ -1205,6 +1182,7 @@ class Axes(maxes.Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated, and stores the bounding box as an attribute."""
+        self._hide_labels()
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
@@ -1390,6 +1368,17 @@ class Axes(maxes.Axes):
                     continue
                 axs.append(ax)
         return axs
+
+    # Ordinary wrappers
+    text = wrappers._text_wrapper(maxes.Axes.text)
+
+    # Disabled methods
+    _disable = _disable_decorator('Redundant method has been disabled. Instead, use ax.plot() and set logarithmic axis scales with ax.format(xscale="log", yscale="log").')
+    loglog   = _disable(maxes.Axes.loglog)
+    semilogx = _disable(maxes.Axes.semilogx)
+    semilogy = _disable(maxes.Axes.semilogy)
+    _disable  = _disable_decorator('Redundant method has been disabled. Instead, pass np.datetime64 or datetime.datetime data to ax.plot(), and datetime axes will be enabled automatically.')
+    plot_date = _disable(maxes.Axes.plot_date)
 
 #-----------------------------------------------------------------------------#
 # Axes subclasses
@@ -2289,7 +2278,6 @@ class CartesianAxes(Axes):
         """Adds post-processing steps before axes is drawn."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
-        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
@@ -2302,7 +2290,6 @@ class CartesianAxes(Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated."""
-        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
@@ -2346,29 +2333,10 @@ class ProjectionAxes(Axes):
         self._latlines_labels = None
         super().__init__(*args, **kwargs)
 
-    @wrappers._expand_methods_list
-    def __getattribute__(self, attr, *args):
-        """Disables the methods `MAP_DISABLED_METHODS`, which are
-        inappropriate for map projections."""
-        if attr in wrappers.MAP_DISABLED_METHODS:
-            raise AttributeError(f'Invalid plotting function {attr!r} for map projection axes.')
-        return super().__getattribute__(attr, *args)
-
     def _hide_labels(self):
         """Hides meridian and parallel labels for simple "rectangular"
         projections."""
         # TODO: Write this!
-
-    def draw(self, renderer=None, *args, **kwargs):
-        """Adds post-processing steps before axes is drawn."""
-        self._hide_labels()
-        super().draw(renderer, *args, **kwargs)
-
-    def get_tightbbox(self, renderer, *args, **kwargs):
-        """Adds post-processing steps before tight bounding box is
-        calculated."""
-        self._hide_labels()
-        return super().get_tightbbox(renderer, *args, **kwargs)
 
     def _projection_format_kwargs(self, *,
         lonlim=None, latlim=None, boundinglat=None, grid=None,
@@ -2473,6 +2441,33 @@ class ProjectionAxes(Axes):
 
         return (latmax, lonlim, latlim, boundinglat,
                 lonlines, latlines, lonarray, latarray, kwargs)
+
+    # Disabled methods suitable only for cartesian axes
+    _disable = _disable_decorator('Invalid plotting method for map projection or polar axes.')
+    twinx              = _disable(Axes.twinx)
+    twiny              = _disable(Axes.twiny)
+    matshow            = _disable(Axes.matshow)
+    imshow             = _disable(Axes.imshow)
+    spy                = _disable(Axes.spy)
+    hist               = _disable(Axes.hist)
+    hist2d             = _disable(Axes.hist2d)
+    boxplot            = _disable(Axes.boxplot)
+    violinplot         = _disable(Axes.violinplot)
+    step               = _disable(Axes.step)
+    stem               = _disable(Axes.stem)
+    stackplot          = _disable(Axes.stackplot)
+    table              = _disable(Axes.table)
+    eventplot          = _disable(Axes.eventplot)
+    pie                = _disable(Axes.pie)
+    xcorr              = _disable(Axes.xcorr)
+    acorr              = _disable(Axes.acorr)
+    psd                = _disable(Axes.psd)
+    csd                = _disable(Axes.csd)
+    cohere             = _disable(Axes.cohere)
+    specgram           = _disable(Axes.specgram)
+    angle_spectrum     = _disable(Axes.angle_spectrum)
+    phase_spectrum     = _disable(Axes.phase_spectrum)
+    magnitude_spectrum = _disable(Axes.magnitude_spectrum)
 
 class PolarAxes(ProjectionAxes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjectionAxes` with
@@ -3000,7 +2995,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             super().format(**kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Draw gridliner objects to tight bounding box algorithm will
+        """Draw gridliner objects so tight bounding box algorithm will
         incorporate gridliner labels."""
         # Matplotlib approaches this problem in the same way, by duplicating
         # post-processing steps in both Axes.draw and Axes.get_tightbbox
