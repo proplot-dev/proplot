@@ -53,8 +53,8 @@ extensions = [
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.autosummary',
+    'sphinx_automodapi.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    'sphinxcontrib.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
     # 'IPython.sphinxext.ipython_console_highlighting',
     # 'matplotlib.sphinxext.only_directives', # deprecated, see: https://github.com/statsmodels/statsmodels/issues/5291
