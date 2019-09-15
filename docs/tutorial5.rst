@@ -191,9 +191,10 @@ Heatmap plots
 
 The new `~proplot.axes.Axes.heatmap` command calls
 `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
-is suitable for heatmaps: no gridlines, no minor ticks, and major ticks
-at the center of each box. Among other things, this is useful for
-displaying autocorrelation matrices, as shown in the below example.
+is suitable for heatmaps – that is, no gridlines, no minor ticks, and
+major ticks at the center of each box. Among other things, this is
+useful for displaying autocorrelation matrices, as shown in the below
+example.
 
 .. code:: ipython3
 
