@@ -1380,14 +1380,6 @@ class Axes(maxes.Axes):
                 axs.append(ax)
         return axs
 
-    # Disabled methods
-    _disable  = _disable_decorator('Redundant plotting method {!r} has been disabled. Instead, use ax.plot() and set logarithmic axis scales with ax.format(xscale="log", yscale="log").')
-    loglog    = _disable(maxes.Axes.loglog)
-    semilogx  = _disable(maxes.Axes.semilogx)
-    semilogy  = _disable(maxes.Axes.semilogy)
-    _disable  = _disable_decorator('Redundant plotting method {!r} has been disabled. Instead, pass np.datetime64 or datetime.datetime data to ax.plot(), and datetime axes will be enabled automatically.')
-    plot_date = _disable(maxes.Axes.plot_date)
-
     # Wrapped by special functions
     # Also support redirecting to Basemap methods
     text = _text_wrapper(

@@ -2705,7 +2705,9 @@ def _redirect(func):
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
             return func(self, *args, **kwargs)
-    return functools.wraps(func)(wrapper)
+    wrapper = functools.wraps(func)(wrapper)
+    wrapper.__doc__ = None
+    return wrapper
 
 # Basemap recursion fix decorator
 def _no_recurse(func):
