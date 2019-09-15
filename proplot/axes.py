@@ -108,10 +108,10 @@ def _disable_decorator(msg):
     for superclass method docstrings if a docstring is empty."""
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
+        def _wrapper(self, *args, **kwargs):
             raise RuntimeError(msg.format(func.__name__))
-        wrapper.__doc__ = None
-        return wrapper
+        _wrapper.__doc__ = None
+        return _wrapper
     return decorator
 
 #-----------------------------------------------------------------------------#

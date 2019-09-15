@@ -2691,7 +2691,7 @@ def _redirect(func):
     """Docorator that calls the basemap version of the function of the
     same name. This must be applied as innermost decorator, which means it must
     be applied on the base axes class, not the basemap axes."""
-    def wrapper(self, *args, **kwargs):
+    def _wrapper(self, *args, **kwargs):
         nonlocal func
         projection = getattr(self, 'name', '')
         if isinstance(func, str):
@@ -2705,9 +2705,9 @@ def _redirect(func):
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
             return func(self, *args, **kwargs)
-    wrapper = functools.wraps(func)(wrapper)
-    wrapper.__doc__ = None
-    return wrapper
+    _wrapper = functools.wraps(func)(_wrapper)
+    _wrapper.__doc__ = None
+    return _wrapper
 
 # Basemap recursion fix decorator
 def _norecurse(func):
@@ -2716,7 +2716,7 @@ def _norecurse(func):
     name = func.__name__
     func._hasrecurred = False
     @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def _wrapper(self, *args, **kwargs):
         if func._hasrecurred:
             # Return the *original* version of the matplotlib method
             func._hasrecurred = False
@@ -2727,7 +2727,7 @@ def _norecurse(func):
             result = func(self, *args, **kwargs)
         func._hasrecurred = False # cleanup, in case recursion never occurred
         return result
-    return wrapper
+    return _wrapper
 
 # Fancy decorator generator
 def _wrapper_decorator(driver):
@@ -2741,9 +2741,9 @@ def _wrapper_decorator(driver):
     def decorator(func):
         # Define wrapper
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
+        def _wrapper(self, *args, **kwargs):
             return driver(self, func, *args, **kwargs)
-        wrapper.__doc__ = None
+        _wrapper.__doc__ = None
 
         # List wrapped methods in the driver function docstring
         # Prevents us from having to both explicitly apply decorators in
@@ -2762,7 +2762,7 @@ def _wrapper_decorator(driver):
                     + ','*min(1, len(methods)-2) # Oxford comma bitches
                     + ' and ' + methods[-1])
                 driver.__doc__ = docstring % {'methods': string}
-        return wrapper
+        return _wrapper
     return decorator
 
 # Auto generated decorators. Each wrapper internally calls
