@@ -258,8 +258,8 @@ value by the number ``N``, as shown below.
 .. image:: tutorial/tutorial_110_1.svg
 
 
-Merging and modifying colormaps
--------------------------------
+Merging colormaps
+-----------------
 
 `~proplot.styletools.Colormap` also lets you merge arbitrary colormaps
 and modify existing colormaps. To merge colormaps, simply pass multiple
@@ -275,16 +275,16 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, axwidth=2, panels='b', span=False)
+    f, axs = plot.subplots(ncols=2, axwidth=2, span=False)
     data = np.random.rand(100,100).cumsum(axis=1)
     # Make colormap, save as "test1.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', name='test1', save=True)
     m = axs[0].contourf(data, cmap=cmap, levels=100)
-    f.bpanel[0].colorbar(m, locator='none')
+    f.colorbar(m, loc='b', col=1, locator='none')
     # Make colormap, save as "test2.json"
     cmap = plot.Colormap('Green1_r', 'Orange5', 'Blue1_r', 'Blue6', ratios=(1,3,5,10), name='test2', save=True)
     m = axs[1].contourf(data, cmap=cmap, levels=100)
-    f.bpanel[1].colorbar(m, locator='none')
+    f.colorbar(m, loc='b', col=2, locator='none')
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Merging existing colormaps')
     for ax,title in zip(axs, ['Evenly spaced', 'Matching SciVisColor example']):
         ax.format(title=title)
@@ -294,6 +294,9 @@ example <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-
 
 .. image:: tutorial/tutorial_113_1.svg
 
+
+Modifying colormaps
+-------------------
 
 To modify a diverging colormap by cutting out some central colors, pass
 the ``cut`` keyword arg to `~proplot.styletools.Colormap`. This is
@@ -339,11 +342,11 @@ distinct, so that levels don’t blur together.
 
 
 
-.. image:: tutorial/tutorial_115_0.svg
+.. image:: tutorial/tutorial_116_0.svg
 
 
 
-.. image:: tutorial/tutorial_115_1.svg
+.. image:: tutorial/tutorial_116_1.svg
 
 
 You can also change the “gamma” of any
@@ -365,7 +368,7 @@ emphasizes low luminance, high saturation colors. See
     cmaps = []
     for ax,gamma in zip(axs,(0.8, 1.0, 1.4)):
         cmap = plot.Colormap(name, gamma=gamma)
-        cmap.name = f'gamma={gamma}'
+        cmap.name = f'{gamma}'
         cmaps.append(cmap)
         m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
         ax.colorbar(m, loc='r', locator='none')
@@ -375,11 +378,11 @@ emphasizes low luminance, high saturation colors. See
 
 
 
-.. image:: tutorial/tutorial_117_0.svg
+.. image:: tutorial/tutorial_118_0.svg
 
 
 
-.. image:: tutorial/tutorial_117_1.svg
+.. image:: tutorial/tutorial_118_1.svg
 
 
 Adding online colormaps
@@ -416,7 +419,7 @@ differences between colormaps and color cycles.
 
 
 
-.. image:: tutorial/tutorial_122_0.svg
+.. image:: tutorial/tutorial_123_0.svg
 
 
 Making your own color cycles
@@ -457,7 +460,7 @@ the global property cycler, use the ``plot.rc.cycle`` setting (see the
 
 
 
-.. image:: tutorial/tutorial_125_0.svg
+.. image:: tutorial/tutorial_126_0.svg
 
 
 Colormaps or combinations thereof can be used as sources for making
@@ -473,23 +476,23 @@ details.
 
     import proplot as plot
     import numpy as np
-    f, axs = plot.subplots(ncols=2, panels='b', share=0, axwidth=2.2, aspect=1.5)
+    f, axs = plot.subplots(ncols=2, share=0, axwidth=2, aspect=1.2)
     data = (20*np.random.rand(10,21)-10).cumsum(axis=0)
     # Example 1
     ax = axs[0]
     lines = ax.plot(data[:,:5], cycle='purples', cycle_kw={'left':0.3}, lw=5)
-    f.bpanel[0].colorbar(lines, values=np.arange(0,len(lines)), label='clabel')
+    f.colorbar(lines, loc='b', col=1, values=np.arange(0,len(lines)), label='clabel')
     ax.format(title='Simple cycle')
     # Example 2
     ax = axs[1]
     cycle = plot.Cycle('blues', 'reds', 'oranges', 21, left=[0.1]*3)
     lines = ax.plot(data, cycle=cycle, lw=5)
-    f.bpanel[1].colorbar(lines, values=np.arange(0,len(lines)), locator=2, label='clabel')
+    f.colorbar(lines, loc='b', col=2, values=np.arange(0,len(lines)), locator=2, label='clabel')
     ax.format(title='Complex cycle', suptitle='Color cycles from colormaps demo')
 
 
 
-.. image:: tutorial/tutorial_127_0.svg
+.. image:: tutorial/tutorial_128_0.svg
 
 
 `~proplot.styletools.Cycle` can also generate cyclers that change
@@ -511,7 +514,7 @@ simply use ``plot.rc['axes.prop_cycle'] = cycle``.
 
 
 
-.. image:: tutorial/tutorial_129_0.svg
+.. image:: tutorial/tutorial_130_0.svg
 
 
 Adding online color cycles
@@ -560,11 +563,11 @@ were also cleaned up – for example, “reddish” and “reddy” are changed 
 
 
 
-.. image:: tutorial/tutorial_134_0.svg
+.. image:: tutorial/tutorial_135_0.svg
 
 
 
-.. image:: tutorial/tutorial_134_1.svg
+.. image:: tutorial/tutorial_135_1.svg
 
 
 Individual color sampling
@@ -607,7 +610,7 @@ by the `~proplot.styletools.ColorCacheDict` class.
 
 
 
-.. image:: tutorial/tutorial_137_0.svg
+.. image:: tutorial/tutorial_138_0.svg
 
 
 Font selection
@@ -636,6 +639,6 @@ modify your ``~/.proplotrc``. See the `~proplot.styletools` and
 
 
 
-.. image:: tutorial/tutorial_140_0.svg
+.. image:: tutorial/tutorial_141_0.svg
 
 

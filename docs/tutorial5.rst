@@ -8,14 +8,35 @@ plotting commands exactly as you always have. This section documents
 these wrapper functions. For details, see the `~proplot.axes`
 documentation.
 
-You should also see :ref:`Making your own colormaps` and
-:ref:`Making your own color cycles`, which explain how
-`~proplot.wrappers.cmap_wrapper` and
-`~proplot.wrappers.cycle_wrapper` can be used to create and apply new
-colormaps and property cyclers on-the-fly.
+Standardized input
+------------------
 
-Normalizers and levels
-----------------------
+The `~proplot.wrappers.standardize_1d` and
+`~proplot.wrappers.standardize_2d` functions are used to standardize
+the input of a bunch of different plotting functions.
+`~proplot.wrappers.standardize_1d` allows you to optionally omit *x*
+coordinates (in which case they are inferred from the *y* coordinates)
+or pass 2D *y* coordinate arrays (in which case the plotting method is
+called with each column of the array).
+`~proplot.wrappers.standardize_2d` allows you to optionally omit *x*
+and *y* coordinates (in which case they are inffered from the data
+array), guesses graticule edges for ``pcolor`` and ``pcolormesh`` plots,
+and optionally enforces global data coverage when plotting in
+:ref:`Projection axes`. See the documentation for details.
+
+Colormaps and color cycles
+--------------------------
+
+The new `~proplot.wrappers.cmap_wrapper` and
+`~proplot.wrappers.cycle_wrapper` can be used to create and apply new
+colormaps and property cyclers on-the-fly. See
+:ref:`Making your own colormaps` and
+:ref:`Making your own color cycles` for details.
+`~proplot.wrappers.cmap_wrapper` also implements several other useful
+features, documented over the next three sections.
+
+Colormap levels
+---------------
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.styletools.BinNorm` “meta-normalizer” as the data normalizer
@@ -43,7 +64,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_145_0.svg
+.. image:: tutorial/tutorial_149_0.svg
 
 
 .. code:: ipython3
@@ -63,8 +84,11 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: tutorial/tutorial_146_0.svg
+.. image:: tutorial/tutorial_150_0.svg
 
+
+Colormap normalizers
+--------------------
 
 If you pass unevenly spaced ``levels``, the
 `~proplot.styletools.LinearSegmentedNorm` normalizer is applied by
@@ -88,7 +112,7 @@ passed to the `~proplot.styletools.Norm` constructor.
 
 
 
-.. image:: tutorial/tutorial_148_0.svg
+.. image:: tutorial/tutorial_153_0.svg
 
 
 Finally, there is a new `~proplot.styletools.MidpointNorm` class that
@@ -115,10 +139,10 @@ constructor.
 
 
 
-.. image:: tutorial/tutorial_150_0.svg
+.. image:: tutorial/tutorial_155_0.svg
 
 
-Heatmaps and labels
+Labels and heatmaps
 -------------------
 
 The new `~proplot.axes.Axes.heatmap` command calls
@@ -171,14 +195,14 @@ arg and the ``precision`` keyword arg. See
 
 
 
-.. image:: tutorial/tutorial_153_0.svg
+.. image:: tutorial/tutorial_158_0.svg
 
 
 
-.. image:: tutorial/tutorial_153_1.svg
+.. image:: tutorial/tutorial_158_1.svg
 
 
-Easy error bars
+Fast error bars
 ---------------
 
 Thanks to the `~proplot.wrappers.add_errorbars` wrapper, you can now
@@ -225,24 +249,54 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: tutorial/tutorial_156_0.svg
+.. image:: tutorial/tutorial_161_0.svg
 
 
-Area plots
-----------
+Bar plots and area plots
+------------------------
 
-Make area plots with the convenient aliases `~proplot.axes.Axes.area`
-and `~proplot.axes.Axes.areax`. These point to the
-`~matplotlib.axes.Axes.fill_between` and
-`~matplotlib.axes.Axes.fill_betweenx` methods, which are wrapped with
-`~proplot.wrappers.fill_between_wrapper` and
+`~proplot.wrappers.bar_wrapper` and
+`~proplot.wrappers.cycle_wrapper` make it easier to generate useful
+bar plots. You can now pass 2D arrays to `~matplotlib.axes.Axes.bar`
+or `~matplotlib.axes.Axes.barh`, and columns of data will be *grouped*
+or *stacked* together. And if *x* coordinates are not provided, default
+coordinates are applied, just like with `~matplotlib.axes.Axes.plot`.
+See `~proplot.wrappers.bar_wrapper` for details.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
+    plot.rc.titleloc = 'uc'
+    plot.rc.margin = 0.05
+    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, share=0, hratios=(3,2))
+    data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
+    data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
+    ax = axs[0]
+    obj = ax.bar(data, cycle='Reds', colorbar='ul', edgecolor='red9', colorbar_kw={'frameon':False})
+    ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side', suptitle='Bar plot wrapper demo')
+    ax = axs[1]
+    obj = ax.barh(data.iloc[::-1,:], cycle='Blues', legend='ur', edgecolor='blue9', stacked=True)
+    ax.format(title='Stacked')
+    axs.format(grid=False)
+
+
+
+.. image:: tutorial/tutorial_164_0.svg
+
+
+To make area plots, use the convenient ``fill_between`` aliases
+`~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax`. These are
+wrapped with `~proplot.wrappers.fill_between_wrapper` and
 `~proplot.wrappers.fill_betweenx_wrapper`.
 
-The wrappers enable “stacking” successive columns of a 2D input array
-like in `pandas`. They also add a new “``negpos``” keyword for
-creating area plots that change color when the fill boundaries cross
-each other. The most common use case for this is highlighting negative
-and positive area underneath a line, as shown below.
+The ``fill_between`` wrappers enable “stacking” successive columns of a
+2D input array like in `pandas`. They also add a new “``negpos``”
+keyword for creating area plots that change color when the fill
+boundaries cross each other. The most common use case for this is
+highlighting negative and positive area underneath a line, as shown
+below.
 
 .. code:: ipython3
 
@@ -272,45 +326,11 @@ and positive area underneath a line, as shown below.
 
 
 
-.. image:: tutorial/tutorial_159_0.svg
+.. image:: tutorial/tutorial_166_0.svg
 
 
-Bar plots
----------
-
-`~proplot.wrappers.bar_wrapper` and
-`~proplot.wrappers.cycle_wrapper` make it easier to generate useful
-bar plots. You can now pass 2D arrays to `~matplotlib.axes.Axes.bar`
-or `~matplotlib.axes.Axes.barh`, and columns of data will be grouped
-or stacked together. And if *x* coordinates are not provided, default
-coordinates are applied, just like with `~matplotlib.axes.Axes.plot`.
-See `~proplot.wrappers.bar_wrapper` for details.
-
-.. code:: ipython3
-
-    import proplot as plot
-    import numpy as np
-    import pandas as pd
-    plot.rc.titleloc = 'uc'
-    plot.rc.margin = 0.05
-    f, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, share=0, hratios=(3,2))
-    data = np.random.rand(5,5).cumsum(axis=0).cumsum(axis=1)[:,::-1]
-    data = pd.DataFrame(data, columns=pd.Index(np.arange(1,6), name='column'), index=pd.Index(['a','b','c','d','e'], name='row idx'))
-    ax = axs[0]
-    obj = ax.bar(data, cycle='Reds', colorbar='ul', edgecolor='red9', colorbar_kw={'frameon':False})
-    ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side', suptitle='Bar plot wrapper demo')
-    ax = axs[1]
-    obj = ax.barh(data.iloc[::-1,:], cycle='Blues', legend='ur', edgecolor='blue9', stacked=True)
-    ax.format(title='Stacked')
-    axs.format(grid=False)
-
-
-
-.. image:: tutorial/tutorial_162_0.svg
-
-
-Box plots
----------
+Box plots and violin plots
+--------------------------
 
 `~matplotlib.axes.Axes.boxplot` and
 `~matplotlib.axes.Axes.violinplot` are now wrapped with
@@ -340,7 +360,7 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_165_1.svg
+.. image:: tutorial/tutorial_169_1.svg
 
 
 Parametric plots
@@ -382,11 +402,11 @@ point on the line. See `~proplot.axes.Axes.cmapline` for details.
 
 
 
-.. image:: tutorial/tutorial_168_1.svg
+.. image:: tutorial/tutorial_172_1.svg
 
 
-Misc plot enhancements
-----------------------
+Misc enhancements
+-----------------
 
 Thanks to `~proplot.wrappers.scatter_wrapper` and
 `~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
@@ -416,7 +436,7 @@ Stay tuned!
     data = pd.DataFrame(data, columns=pd.Index(['a','b','c','d'], name='label'))
     # Scatter demo
     ax = axs[0]
-    ax.format(title='New prop cycle properties', suptitle='Scatter plot demo')
+    ax.format(title='Extra prop cycle properties', suptitle='Scatter plot demo')
     obj = ax.scatter(x, data, legend='ul', cycle='warm', legend_kw={'ncols':2},
                     cycle_kw={'marker':['x','o','x','o'], 'markersize':[5,10,20,30]})
     ax = axs[1]
@@ -428,4 +448,4 @@ Stay tuned!
 
 
 
-.. image:: tutorial/tutorial_171_0.svg
+.. image:: tutorial/tutorial_175_0.svg

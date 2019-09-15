@@ -56,11 +56,11 @@ the `cartopy.crs.Projection` classes, e.g. ``lon_0`` instead of
 
 
 
-.. image:: tutorial/tutorial_75_3.svg
-
-
-
 .. image:: tutorial/tutorial_75_4.svg
+
+
+
+.. image:: tutorial/tutorial_75_5.svg
 
 
 Plotting geophysical data
@@ -77,10 +77,9 @@ pass ``latlon=True`` to the plotting command – ProPlot makes this the
 default. For both basemap and cartopy projections, you can also pass
 ``globe=True`` to 2D plotting commands to ensure global data coverage.
 
-These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
-`~proplot.wrappers.cartopy_transform`,
-`~proplot.wrappers.basemap_gridfix`, and
-`~proplot.wrappers.basemap_latlon` wrappers.
+These features are powered by the `~proplot.wrappers.standardize_2d`,
+`~proplot.wrappers.default_transform`, and
+`~proplot.wrappers.default_latlon` wrappers.
 
 .. code:: ipython3
 
@@ -91,19 +90,14 @@ These features are powered by the `~proplot.wrappers.cartopy_gridfix`,
     y = plot.arange(-60,60+1,30)
     data = np.random.rand(len(y), len(x))
     for globe in (False,True):
-        f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2.5, colorbars='b',
-                               proj='hammer', proj_kw={'lon_0':0}, basemap={(1,3):False, (2,4):True})
-        for ax,p,pcolor,basemap in zip(axs,range(4),[1,1,0,0],[0,1,0,1]):
-            m = None
+        f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2.5,
+            proj='hammer', basemap={(1,3):False, (2,4):True})
+        for i,(ax,pcolor,basemap) in enumerate(zip(axs,[1,1,0,0],[0,1,0,1])):
             cmap = ('sunset', 'sunrise')[basemap]
-            levels = [0, .3, .5, .7, .9, 1]
-            levels = np.linspace(0,1,11)
-            if pcolor:
-                m = ax.pcolor(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-            if not pcolor:
-                m = ax.contourf(x, y, data, levels=levels, cmap=cmap, extend='neither', globe=globe)
-            if p<2:
-                c = f.bpanel[p].colorbar(m, label='values', tickminor=False)
+            cmd = (ax.contourf, ax.pcolor)[pcolor]
+            m = cmd(x, y, data, cmap=cmap, globe=globe, extend='both')
+            if i<2:
+                f.colorbar(m, loc='b', span=i+1, label='values', tickminor=False, extendsize='2em')
         axs.format(suptitle=f'Plotting data {("with" if globe else "without")} global coverage',
                    collabels=['Cartopy example', 'Basemap example'],
                    rowlabels=['Pcolor', 'Contourf'], labels=False,
