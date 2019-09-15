@@ -4,9 +4,8 @@ Plotting wrappers
 New features have been added to various matplotlib plotting commands
 thanks to a set of wrapper functions. These features are a strict
 *superset* of the existing matplotlib API – if you want, you can use
-plotting commands exactly as you always have. This section documents
-these wrapper functions. For details, see the `~proplot.axes`
-documentation.
+plotting commands exactly as you always have. For details, see the
+`~proplot.axes` documentation.
 
 Standardized input
 ------------------
