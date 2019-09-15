@@ -72,11 +72,6 @@ These APIs are compared in the below examples.
     axs[0].format(xticks=20, xtickminor=False)
     axs.format(suptitle='ProPlot API', title='Title', xlabel='x axis', ylabel='y axis')
 
-
-
-.. image:: tutorial/tutorial_5_0.svg
-
-
 .. code:: ipython3
 
     # ProPlot API
@@ -186,19 +181,20 @@ is demonstrated in the below example.
 Plotting commands
 -----------------
 
-In ProPlot, axes plotting commands like
-`~matplotlib.axes.Axes.contourf`,
-`~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.plot`
-work just like they do in matplotlib, but with several new features.
-There are also a few new plotting commands, like
-`~proplot.axes.Axes.heatmap`, `~proplot.axes.Axes.area`, and
-`~proplot.axes.Axes.areax`. For details on these features, see
-:ref:`Plotting wrappers` and :ref:`Color usage`.
+In ProPlot, axes plotting commands like `~matplotlib.axes.Axes.plot`,
+`~matplotlib.axes.Axes.contourf`, and
+`~matplotlib.axes.Axes.pcolormesh` work just like they do in
+matplotlib – but with several added features. These features are a
+strict *superset* of the existing matplotlib API. There are also a few
+new plotting commands, like `~proplot.axes.Axes.heatmap`,
+`~proplot.axes.Axes.area`, and `~proplot.axes.Axes.areax`. For
+details on these features, see :ref:`Plotting wrappers` and
+:ref:`Color usage`.
 
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=1.5, ncols=2, nrows=2, share=False)
+    f, axs = plot.subplots(axwidth=1.7, ncols=2, nrows=2, share=False)
     cycle = plot.Cycle('blues', 5)
     data = np.random.rand(10,10)
     axs[0].plot(data, cycle=cycle, lw=3)
@@ -483,8 +479,7 @@ datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
 
 
 
-
-.. image:: tutorial/tutorial_26_2.svg
+.. image:: tutorial/tutorial_26_1.svg
 
 
 .. code:: ipython3
@@ -502,8 +497,8 @@ datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
         }, name='u', attrs={'long_name':'zonal wind', 'units':'m/s'})
     # DataFrame
     data = np.random.rand(20,20)
-    df = pd.DataFrame(data.cumsum(axis=0).cumsum(axis=1), index=[*ascii_lowercase[:20]])
-    df.name = 'funky data'
+    df = pd.DataFrame(data.cumsum(axis=0).cumsum(axis=1), index=[*'JFMAMJJASONDJFMAMJJA'])
+    df.name = 'temporal data'
     df.index.name = 'index'
     df.columns.name = 'time (days)'
 
@@ -592,12 +587,13 @@ instead.
 .. code:: ipython3
 
     import proplot as plot
-    f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0, axpanels='lrbt', axpanels_kw={'bstack':1, 'share':False})
+    f, axs = plot.subplots(axwidth=1.2, ncols=2, share=0)
+    kw = {'share':False}
     axs[0].format(ylim=(0,1e-3), title='reference axes', titleweight='bold', titleloc='uc', titlecolor='red9')
-    axs[0].lpanel.format(ytickloc='right', yticklabelloc='right')
-    axs[0].rpanel.format(ylabel='ylabel', ytickloc='right', yticklabelloc='right')
-    axs[0].bpanel.format(xlabel='xlabel')
-    axs[1].rpanel.format(ylim=(0, 0.01), ylabel='ylabel')
+    axs[0].panel('l', **kw).format(ytickloc='right', yticklabelloc='right')
+    axs[0].panel('r', **kw).format(ylabel='ylabel', ytickloc='right', yticklabelloc='right')
+    axs[0].panel('b', **kw).format(xlabel='xlabel')
+    axs[1].panel('r', **kw).format(ylim=(0, 0.01), ylabel='ylabel')
     axs[1].format(ylabel='ylabel\nylabel\nylabel', xlabel='xlabel\nxlabel\nxlabel',
                   title='Title', top=False, collabels=['Column 1', 'Column 2'],
                   suptitle='Tight layout with axes panels')
@@ -767,6 +763,7 @@ temporarily modify global settings for a block of code, use
     ay = axs[-1].twinx()
     ay.format(ycolor='r', linewidth=1.5, ylabel='secondary axis')
     ay.plot((np.random.rand(100)-0.2).cumsum(), color='r', lw=3)
+    plot.rc.reset() # reset persistent mods at head of cell
 
 
 
