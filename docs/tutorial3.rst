@@ -119,7 +119,7 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
                     ax.plot(ix, iy, color='k', lw=0, marker='o')
         axs.format(suptitle=titles[globe],
                    collabels=['Cartopy example', 'Basemap example'],
-                   rowlabels=['Pcolor', 'Contourf'], latlabels='r', lonlabels='b', lonlines=90,
+                   rowlabels=['Contourf', 'Pcolor'], latlabels='r', lonlabels='b', lonlines=90,
                    abc=True, abcformat='a)', abcloc='ul', abcborder=False)
 
 

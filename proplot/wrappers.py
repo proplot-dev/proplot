@@ -271,8 +271,7 @@ def standardize_1d(self, func, *args, **kwargs):
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         for y in ys:
             # Ensure data is monotonic and falls within map bounds
-            ix, iy = _standardize_latlon(x, y)
-            ix, iy = _enforce_bounds(ix, iy, xmin=xmin, xmax=xmax)
+            ix, iy = _enforce_bounds(*_standardize_latlon(x, y), xmin, xmax)
             iys.append(iy)
         x, ys = ix, iys
 
@@ -324,7 +323,7 @@ def _standardize_latlon(x, y):
         x[filter_] += 360
     return x, y
 
-def _enforce_bounds(x, y, xmin=None, xmax=None):
+def _enforce_bounds(x, y, xmin, xmax):
     """Ensures data for basemap plots is restricted between the minimum and
     maximum longitude of the projection. Input is the ``x`` and ``y``
     coordinates. The ``y`` coordinates are rolled along the rightmost axis."""
@@ -507,8 +506,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Cartopy projection axes
     if (getattr(self, 'name', '') == 'cartopy' and
         isinstance(kwargs.get('transform', None), PlateCarree)):
-        iZs = []
         x, y = _standardize_latlon(x, y)
+        ix, iZs = x, []
         for Z in Zs:
             if globe and x.ndim == 1 and y.ndim == 1:
                 # Fix holes over poles by *interpolating* there
@@ -517,20 +516,20 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 # Fix seams by ensuring circular coverage. Unlike basemap,
                 # cartopy can plot across map edges.
                 if (x[0] % 360) != ((x[-1] + 360) % 360):
-                    x = ma.concatenate((x, [x[0] + 360]))
+                    ix = ma.concatenate((x, [x[0] + 360]))
                     Z = ma.concatenate((Z, Z[:,:1]), axis=1)
             iZs.append(Z)
-        Zs = iZs
+        x, Zs = ix, iZs
 
     # Basemap projection axes
     elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
         # Fix grid
+        xmin, xmax = self.projection.lonmin, self.projection.lonmax
         x, y = _standardize_latlon(x, y)
         ix, iZs = x, []
-        xmin, xmax = self.projection.lonmin, self.projection.lonmax
         for Z in Zs:
             # Ensure data is within map bounds
-            ix, Z = _enforce_bounds(x, Z, xmin=xmin, xmax=xmax)
+            ix, Z = _enforce_bounds(x, Z, xmin, xmax)
 
             # Globe coverage fixes
             if globe and ix.ndim == 1 and y.ndim == 1:
