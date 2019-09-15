@@ -140,7 +140,7 @@ class axes_grid(list):
         Parameters
         ----------
         objs : list-like
-            Any 1D iterable of objects.
+            1D iterable of `~proplot.axes.Axes` instances.
         n : int, optional
             The length of the fastest-moving dimension, i.e. the number of
             columns when `order` is ``'C'``, and the number of rows when `order`
@@ -150,6 +150,8 @@ class axes_grid(list):
             column-major (Fortran-style) order, respectively. Used to treat
             lists as pseudo-2D arrays.
         """
+        if not all(isinstance(obj, axes.Axes) for obj in objs):
+            raise ValueError(f'Axes grid must be filled with Axes instances, got {objs!r}.')
         self._n = n
         self._order = order
         super().__init__(objs)
@@ -229,6 +231,7 @@ class axes_grid(list):
                 objs = objs[0]
         else:
             raise IndexError
+
         # Return
         if axlist:
             return axes_grid(objs)
@@ -255,24 +258,23 @@ class axes_grid(list):
         ... paxs.format(...) # calls "format" on all panels in the axes_grid returned by "axs.panel_axes"
 
         """
-        attrs = (*(getattr(ax, attr) for ax in self),) # may raise error
-        # Empty
-        if not attrs:
-            def null_iterator(*args, **kwargs):
-                return None
-            return null_iterator
+        if not self:
+            raise AttributeError(f'Invalid attribute {attr!r}, axes grid {self!r} is empty.')
+        objs = (*(getattr(ax, attr) for ax in self),) # may raise error
+
         # Objects
-        if not any(callable(_) for _ in attrs):
+        if not any(callable(_) for _ in objs):
             if len(self) == 1:
-                return attrs[0]
+                return objs[0]
             else:
-                return attrs
+                return objs
         # Methods
-        elif all(callable(_) for _ in attrs):
-            @functools.wraps(attrs[0])
+        # NOTE: Must manually copy docstring because help() cannot inherit it
+        elif all(callable(_) for _ in objs):
+            @functools.wraps(objs[0])
             def _iterator(*args, **kwargs):
                 ret = []
-                for func in attrs:
+                for func in objs:
                     ret.append(func(*args, **kwargs))
                 ret = (*ret,)
                 if len(self) == 1:
@@ -283,7 +285,13 @@ class axes_grid(list):
                     return axes_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
+            try:
+                orig = getattr(super(axes.Axes, self[0]), attr)
+                _iterator.__doc__ = orig.__doc__
+            except AttributeError:
+                pass
             return _iterator
+
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
