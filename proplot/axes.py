@@ -3277,7 +3277,6 @@ class BasemapAxes(ProjectionAxes):
     fillcontinents   = _redirect('fillcontinents')
     etopo            = _redirect('etopo')
     is_land          = _redirect('is_land')
-    makegrid         = _redirect('makegrid')
     nightshade       = _redirect('nightshade')
     readshapefile    = _redirect('readshapefile')
     shadedrelief     = _redirect('shadedrelief')
