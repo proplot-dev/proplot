@@ -2,7 +2,6 @@
 """
 Imported by `~proplot.axes`, declares wrappers for various plotting functions.
 """
-import re
 import sys
 import numpy as np
 import numpy.ma as ma
@@ -10,6 +9,7 @@ import functools
 import warnings
 from . import utils, styletools, axistools
 from .utils import _notNone
+import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -27,24 +27,37 @@ __all__ = [
     'cartopy_crs', 'cartopy_gridfix', 'cartopy_transform',
     'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
     'enforce_centers', 'enforce_edges',
-    'fill_between_wrapper', 'fill_betweenx_wrapper',
-    'hist_wrapper',
+    'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
     'legend_wrapper', 'plot_wrapper', 'scatter_wrapper', 'text_wrapper',
     'violinplot_wrapper',
     ]
 
 # Xarray and pandas integration
-# These are 0.5s in load time! We just want to detect if *input arrays*
-# belong to these types, which necessarily means modules have already been
-# imported. So, delay these class definitions until user calls plot functions.
 ndarray = np.ndarray
 def _load_objects():
+    """Delay loading expensive modules. We just want to detect if *input
+    arrays* belong to these types -- and if this is the case, it means the
+    module has already been imported! So, we only try loading these classes
+    within autoformat calls. This saves >~500ms of import time."""
     global DataArray, DataFrame, Series, Index
     DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
     DataFrame = getattr(sys.modules.get('pandas', None), 'DataFrame', ndarray)
     Series = getattr(sys.modules.get('pandas', None), 'Series', ndarray)
     Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
 _load_objects()
+
+# Decorator
+# TODO: Consider scrapping wrapper documentation altogether and figure out
+# how to append to matplotlib documentation!
+def _unexpected_usage(driver):
+    """Decorates wrappers and issues helpful warning to confused users."""
+    @functools.wraps(driver)
+    def wrapper(*args, **kwargs):
+        if (len(args) < 2 or not isinstance(args[0], maxes.Axes)
+            or not callable(args[1])):
+            raise RuntimeError(f'Function {driver.__name__} is a *wrapper* applied to axes methods. It is only public so that you can read the documentation, and is not intended to be called by users!')
+        return driver(*args, **kwargs)
+    return wrapper
 
 # Methods for wrapping
 # TODO: 'quiver', 'streamplot' for cmap?
@@ -85,42 +98,6 @@ STYLE_ARGS_TRANSLATE = {
     'tripcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     'pcolormesh': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     }
-
-#------------------------------------------------------------------------------#
-# For documentation
-#------------------------------------------------------------------------------#
-def _sphinx_name(name):
-    """Gets sphinx name."""
-    if name in ('cmapline','heatmap','area','areax'):
-        return f'`~proplot.axes.Axes.{name}`'
-    else:
-        return f'`~matplotlib.axes.Axes.{name}`'
-
-def _expand_methods_list(func):
-    """Fills `_method_list` with a list of methods that link to matplotlib
-    documentation. Previously had documented public tuples storing the method
-    names, this is much cleaner."""
-    doc = func.__doc__
-    for name,methods in (
-        ('D1_METHODS',            D1_METHODS),
-        ('D2_METHODS',            D2_METHODS),
-        ('ERRORBAR_METHODS',      ERRORBAR_METHODS),
-        ('CENTERS_METHODS',       CENTERS_METHODS),
-        ('EDGES_METHODS',         EDGES_METHODS),
-        ('CENTERS_EDGES_METHODS', (*CENTERS_METHODS, *EDGES_METHODS)),
-        ('LATLON_METHODS',        LATLON_METHODS),
-        ('CRS_METHODS',           CRS_METHODS),
-        ('TRANSFORM_METHODS',     TRANSFORM_METHODS),
-        ('CYCLE_METHODS',         CYCLE_METHODS),
-        ('CMAP_METHODS',          CMAP_METHODS),
-        ):
-        if f'`{name}`' not in doc:
-            continue
-        doc = re.sub(f'`{name}`',
-            ', '.join(_sphinx_name(method) for method in methods[:-1])
-            + ','*min((len(methods)-2, 1)) + f' and {_sphinx_name(methods[-1])}', doc)
-    func.__doc__ = doc
-    return func
 
 #------------------------------------------------------------------------------#
 # Standardized inputs and automatic formatting
@@ -176,9 +153,9 @@ def _auto_label(data, axis=None, units=True):
         label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
     return data, str(label).strip()
 
-@_expand_methods_list
+@_unexpected_usage
 def autoformat_1d(self, func, *args, **kwargs):
-    """Wraps `D1_METHODS`, standardized acceptable input and optionally
+    """Wraps %(methods)s, standardizes acceptable input and optionally
     modifies the x axis label, y axis label, title, and axis ticks
     if the input is a `~xarray.DataArray`, `~pandas.DataFrame`, or
     `~pandas.Series`. Permits 2D array input for all of these commands, in
@@ -189,7 +166,7 @@ def autoformat_1d(self, func, *args, **kwargs):
     name = func.__name__
     _load_objects()
     if not args:
-        return func(*args, **kwargs)
+        return func(self, *args, **kwargs)
     elif len(args) == 1:
         x = None
         y, *args = args
@@ -261,19 +238,20 @@ def autoformat_1d(self, func, *args, **kwargs):
         x = xi
     if name in ('boxplot','violinplot'):
         ys = [_to_array(yi) for yi in ys] # store naked array
-    return func(x, *ys, *args, **kwargs)
+    return func(self, x, *ys, *args, **kwargs)
 
-@_expand_methods_list
+@_unexpected_usage
 def autoformat_2d(self, func, *args, order='C', **kwargs):
-    """Wraps `D2_METHODS`, optionally modifies the x axis label, y axis
-    label, title, and axis ticks if the input is a `~xarray.DataArray`,
-    `~pandas.DataFrame`, or `~pandas.Series`. Infers dependent
-    variable coordinates from the input array if none were provided."""
+    """Wraps %(methods)s, standardizes acceptable input and optionally modifies
+    the x axis label, y axis label, title, and axis ticks if the input is a
+    `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series`. Infers
+    dependent variable coordinates from the input array if none were
+    provided."""
     # Sanitize input
     name = func.__name__
     _load_objects()
     if not args:
-        return func(*args, **kwargs)
+        return func(self, *args, **kwargs)
     elif len(args) > 4:
         raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
     x, y = None, None
@@ -351,15 +329,15 @@ def autoformat_2d(self, func, *args, order='C', **kwargs):
         x = xi
     if yi is not None:
         y = yi
-    return func(x, y, *Zs, **kwargs)
+    return func(self, x, y, *Zs, **kwargs)
 
 #------------------------------------------------------------------------------
 # 2D plot wrappers
 #------------------------------------------------------------------------------
-@_expand_methods_list
+@_unexpected_usage
 def enforce_centers(self, func, *args, order='C', **kwargs):
-    """Wraps 2D plotting functions that take coordinate *centers* (`CENTERS_METHODS`),
-    calculates centers if graticule *edges* were provided."""
+    """Wraps 2D plotting functions that take coordinate *centers*, i.e.
+    %(methods)s. Calculates centers if graticule *edges* were provided."""
     # Checks whether sizes match up, checks whether graticule was input
     x, y, *Zs = args
     xlen, ylen = x.shape[-1], y.shape[0]
@@ -381,13 +359,13 @@ def enforce_centers(self, func, *args, order='C', **kwargs):
         Zs = (Z.T for Z in Zs)
     elif order != 'C':
         raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
-    result = func(x, y, *Zs, **kwargs)
+    result = func(self, x, y, *Zs, **kwargs)
     return result
 
-@_expand_methods_list
+@_unexpected_usage
 def enforce_edges(self, func, *args, order='C', **kwargs):
-    """Wraps 2D plotting functions that take graticule *edges* (`EDGES_METHODS`),
-    calculates edges if coordinate *centers* were provided."""
+    """Wraps 2D plotting functions that take graticule *edges*, i.e.
+    %(methods)s. Calculates edges if coordinate *centers* were provided."""
     # Checks that sizes match up, checks whether graticule was input
     x, y, *Zs = args
     xlen, ylen = x.shape[-1], y.shape[0]
@@ -409,7 +387,7 @@ def enforce_edges(self, func, *args, order='C', **kwargs):
         Zs = (Z.T for Z in Zs)
     elif order != 'C':
         raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
-    result = func(x, y, *Zs, **kwargs)
+    result = func(self, x, y, *Zs, **kwargs)
     return result
 
 #------------------------------------------------------------------------------#
@@ -432,7 +410,7 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     err[0,:] *= -1 # array now represents error bar sizes
     return err
 
-@_expand_methods_list
+@_unexpected_usage
 def add_errorbars(self, func, *args,
     medians=False, means=False,
     boxes=None, bars=None,
@@ -444,7 +422,7 @@ def add_errorbars(self, func, *args,
     boxzorder=3, barzorder=3,
     **kwargs):
     """
-    Wraps `ERRORBAR_METHODS`, adds support for drawing error bars. Includes
+    Wraps %(methods)s, adds support for drawing error bars. Includes
     options for interpreting columns of data as ranges, representing the mean
     or median of each column with lines, points, or bars, and drawing error
     bars representing percentile ranges or standard deviation multiples for
@@ -535,7 +513,7 @@ def add_errorbars(self, func, *args,
         xy = (x, y) # full data
     else:
         xy = (x, iy) # just the stats
-    obj = func(*xy, *args, **kwargs)
+    obj = func(self, *xy, *args, **kwargs)
     if not boxes and not bars:
         return obj
     # Account for horizontal bar plots
@@ -573,16 +551,18 @@ def add_errorbars(self, func, *args,
             'markeredgecolor':barcolor, 'markeredgewidth':barlw})
     return obj
 
+@_unexpected_usage
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.plot`, calls `~proplot.axes.Axes.cmapline`
-    if ``cmap`` is passed by the user.
+    Wraps %(methods)s, draws a "colormap line" if the ``cmap`` argument was passed.
+    "Colormap lines" change color as a function of the parametric coordinate
+    ``values`` using the input colormap ``cmap``.
 
     Parameters
     ----------
-    *args
+    *args : (y,), (x,y), or (x,y,fmt)
         Passed to `~matplotlib.axes.Axes.plot`.
-    cmap, values
+    cmap, values : optional
         Passed to `~proplot.axes.Axes.cmapline`.
     **kwargs
         `~matplotlib.lines.Line2D` properties.
@@ -590,11 +570,12 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     if len(args) > 3: # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if cmap is None:
-        lines = func(*args, values=values, **kwargs)
+        lines = func(self, *args, values=values, **kwargs)
     else:
         lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
     return lines
 
+@_unexpected_usage
 def scatter_wrapper(self, func, *args,
     s=None, size=None, markersize=None,
     c=None, color=None, markercolor=None,
@@ -670,12 +651,12 @@ def scatter_wrapper(self, func, *args,
             smax = smax_true
         s = smin + (smax - smin)*(np.array(s) - smin_true)/(smax_true - smin_true)
     # Call function
-    return func(*args, c=c, s=s,
+    return func(self, *args, c=c, s=s,
         cmap=cmap, vmin=vmin, vmax=vmax,
         norm=norm, linewidths=lw, edgecolors=ec,
         **kwargs)
 
-def _fill_between_parse(func, *args,
+def _fill_between_apply(self, func, *args,
     negcolor='blue', poscolor='red', negpos=False,
     **kwargs):
     """Parse args and call function."""
@@ -697,7 +678,7 @@ def _fill_between_parse(func, *args,
     if len(args) != 3:
         raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
     if not negpos:
-        obj = func(*args, **kwargs)
+        obj = func(self, *args, **kwargs)
         return obj
     # Get zero points
     objs = []
@@ -711,10 +692,11 @@ def _fill_between_parse(func, *args,
         kw = {**kwargs}
         kw.setdefault('color', negcolor if i == 0 else poscolor)
         where = (y2 < y1) if i == 0 else (y2 >= y1)
-        obj = func(*args, where=where, **kw)
+        obj = func(self, *args, where=where, **kw)
         objs.append(obj)
     return (*objs,)
 
+@_unexpected_usage
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
     Wraps `~matplotlib.axes.Axes.fill_between`, also accessible via the
@@ -744,34 +726,36 @@ def fill_between_wrapper(self, func, *args, **kwargs):
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_between`.
     """
-    return _fill_between_parse(func, *args, **kwargs)
+    return _fill_between_apply(self, func, *args, **kwargs)
 
+@_unexpected_usage
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
-    """Wraps `~matplotlib.axes.Axes.fill_betweenx`, also accessible via the
-    `~proplot.axes.Axes.areax` alias. Usage is same as
-    `fill_between_wrapper`."""
-    return _fill_between_parse(func, *args, **kwargs)
+    """Wraps %(methods)s, also accessible via the `~proplot.axes.Axes.areax`
+    alias. Usage is same as `fill_between_wrapper`."""
+    return _fill_between_apply(self, func, *args, **kwargs)
 
+@_unexpected_usage
 def hist_wrapper(self, func, x, bins=None, **kwargs):
-    """Wraps `~matplotlib.axes.Axes.hist`, enforces that all arguments after
-    `bins` are keyword-only and sets the default patch linewidth to ``0``."""
+    """Wraps %(methods)s, enforces that all arguments after `bins` are
+    keyword-only and sets the default patch linewidth to ``0``."""
     kwargs.setdefault('linewidth', 0)
-    return func(x, bins=bins, **kwargs)
+    return func(self, x, bins=bins, **kwargs)
 
+@_unexpected_usage
 def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, **kwargs):
-    """Wraps `~matplotlib.axes.Axes.barh`, usage is same as `bar_wrapper`."""
+    """Wraps %(methods)s, usage is same as `bar`."""
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(f'barh() requires at least 1 positional argument, got 0.')
     return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
+@_unexpected_usage
 def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
     vert=None, orientation='vertical', stacked=False,
     lw=None, linewidth=0.7, edgecolor='k',
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh`, applies
-    sensible defaults.
+    Wraps %(methods)s, permits bar stacking and bar grouping.
 
     Parameters
     ----------
@@ -791,16 +775,18 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     lw, linewidth : float, optional
         The edge width for the bar patches.
     """
-    # Barh converts y-- > bottom, left-- > x, width-- > height, height-- > width. Convert
-    # back to (x, bottom, width, height) so we can pass stuff through cycle_wrapper
-    # NOTE: You *must* do juggling of barh keyword order --> bar keyword order -->
-    # barh keyword order, because horizontal hist passes arguments to bar directly
-    # and will not use a 'barh' method with overridden argument order!
+    # Barh converts y-->bottom, left-->x, width-->height, height-->width.
+    # Convert back to (x, bottom, width, height) so we can pass stuff through
+    # cycle_wrapper.
+    # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
+    # --> barh keyword order, because horizontal hist passes arguments to bar
+    # directly and will not use a 'barh' method with overridden argument order!
     if vert is not None:
         orientation = ('vertical' if vert else 'horizontal')
     if orientation == 'horizontal':
         x, bottom = bottom, x
         width, height = height, width
+
     # Parse args
     # TODO: Stacked feature is implemented in `cycle_wrapper`, but makes more
     # sense do document here; figure out way to move it here?
@@ -811,15 +797,17 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         raise ValueError(f'bar() requires at least 1 positional argument, got 0.')
     elif height is None:
         x, height = None, x
+
     # Call func
     # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
-    return func(x, height, width=width, bottom=bottom,
+    return func(self, x, height, width=width, bottom=bottom,
         linewidth=lw, edgecolor=edgecolor,
         stacked=stacked, orientation=orientation,
         **kwargs)
 
+@_unexpected_usage
 def boxplot_wrapper(self, func, *args,
     color='k', fill=True, fillcolor=None, fillalpha=0.7,
     lw=None, linewidth=0.7, orientation=None,
@@ -832,7 +820,7 @@ def boxplot_wrapper(self, func, *args,
     fliercolor=None, flierlw=None,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.boxplot`, adds convenient keyword args.
+    Wraps %(methods)s, adds convenient keyword args.
     Fills the objects with a cycle color by default.
 
     Parameters
@@ -870,9 +858,10 @@ def boxplot_wrapper(self, func, *args,
             kwargs['vert'] = False
         elif orientation != 'vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got {orientation!r}.')
-    obj = func(*args, **kwargs)
+    obj = func(self, *args, **kwargs)
     if not args:
         return obj
+
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
@@ -909,11 +898,12 @@ def boxplot_wrapper(self, func, *args,
                     artist.set_markersize(markersize)
     return obj
 
+@_unexpected_usage
 def violinplot_wrapper(self, func, *args,
     lw=None, linewidth=0.7, fillcolor=None, edgecolor='k', fillalpha=0.7, orientation=None,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.violinplot`, adds convenient keyword args.
+    Wraps %(methods)s, adds convenient keyword args.
     Makes the style shown in right plot of `this matplotlib example
     <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
     the default. It is also no longer possible to show minima and maxima with
@@ -945,6 +935,7 @@ def violinplot_wrapper(self, func, *args,
             kwargs['vert'] = False
         elif orientation != 'vertical':
             raise ValueError('Orientation must be "horizontal" or "vertical", got {orientation!r}.')
+
     # Sanitize input
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     if kwargs.pop('showextrema', None):
@@ -954,9 +945,12 @@ def violinplot_wrapper(self, func, *args,
     if 'showmedians' in kwargs:
         kwargs.setdefault('medians', kwargs.pop('showmedians'))
     kwargs.setdefault('capsize', 0)
-    obj = func(*args, showmeans=False, showmedians=False, showextrema=False, edgecolor=edgecolor, lw=lw, **kwargs)
+    obj = func(self, *args,
+        showmeans=False, showmedians=False, showextrema=False,
+        edgecolor=edgecolor, lw=lw, **kwargs)
     if not args:
         return obj
+
     # Modify body settings
     for artist in obj['bodies']:
         artist.set_alpha(fillalpha)
@@ -982,14 +976,15 @@ def _get_transform(self, transform):
     else:
         raise ValueError(f'Unknown transform {transform!r}.')
 
+@_unexpected_usage
 def text_wrapper(self, func,
     x=0, y=0, text='', transform='data',
     family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.text`, enables specifying `tranform` with
-    a string name and adds feature for drawing borders around text.
+    Wraps %(methods)s, and enables specifying `tranform` with a string name and
+    adds feature for drawing borders around text.
 
     Parameters
     ----------
@@ -1061,43 +1056,10 @@ def text_wrapper(self, func,
 #------------------------------------------------------------------------------#
 # Geographic wrappers
 #------------------------------------------------------------------------------#
-# First basemap recursion fix
-# Normally we *cannot* modify the underlying *axes* pcolormesh etc. because this
-# this will cause basemap's self.projection.pcolormesh etc. to use *custom* version and
-# cause suite of weird errors. Prevent this recursion with the below decorator.
-def _no_recurse(self, func):
-    """Decorator to prevent recursion in certain method overrides.
-    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        name = getattr(func, '__name__')
-        if self._hasrecurred:
-            # Return the *original* version of the matplotlib method (i.e.
-            # the one we have not wrapped by overriding the __getattribute__
-            # method). We reach this block e.g. when pcolormesh calls pcolor
-            # or when basemap.Basemap tries to call something.
-            self._hasrecurred = False
-            result = object.__getattribute__(self, name)(*args, **kwargs)
-        else:
-            # Return the version we have wrapped
-            self._hasrecurred = True
-            result = func(*args, **kwargs)
-        self._hasrecurred = False # cleanup, in case recursion never occurred
-        return result
-    return wrapper
-
-def _basemap_call(self, func):
-    """Docorator that calls the basemap version of the function of the same name."""
-    name = func.__name__
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return self.projection.__getattribute__(name)(ax=self, *args, **kwargs)
-    return wrapper
-
-@_expand_methods_list
+@_unexpected_usage
 def cartopy_transform(self, func, *args, transform=None, **kwargs):
     """
-    Wraps `TRANSFORM_METHODS` for `~proplot.axes.CartopyAxes` axes.
+    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -1105,19 +1067,18 @@ def cartopy_transform(self, func, *args, transform=None, **kwargs):
     ``transform=cartopy.crs.PlateCarree()`` is the default.
     """
     # Apply default transform
+    # TODO: Do some cartopy methods reset backgroundpatch or outlinepatch?
+    # Deleted comment reported this issue
     if transform is None:
         import cartopy.crs as ccrs
         transform = ccrs.PlateCarree()
-    result = func(*args, transform=transform, **kwargs)
-    # Re-enforce settings because some plot functions seem to reset the
-    # outlinepatch or backgroundpatch (TODO: double check this)
-    self.format()
+    result = func(self, *args, transform=transform, **kwargs)
     return result
 
-@_expand_methods_list
+@_unexpected_usage
 def cartopy_crs(self, func, *args, crs=None, **kwargs):
     """
-    Wraps `CRS_METHODS` for `~proplot.axes.CartopyAxes` axes.
+    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
     As with `cartopy_transform`, but passes ``crs=cartopy.crs.PlateCarree()``
     as the default. Also fixes bug associated with tight bounding boxes and
     `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
@@ -1128,11 +1089,11 @@ def cartopy_crs(self, func, *args, crs=None, **kwargs):
         import cartopy.crs as ccrs
         crs = ccrs.PlateCarree()
     try:
-        result = func(*args, crs=crs, **kwargs)
+        result = func(self, *args, crs=crs, **kwargs)
     except TypeError as err: # duplicate keyword args, i.e. crs is positional
         if not args:
             raise err
-        result = func(*args[:-1], crs=args[-1], **kwargs)
+        result = func(self, *args[:-1], crs=args[-1], **kwargs)
     # Fix extent, so axes tight bounding box gets correct box!
     # From this issue: https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
     if name == 'set_extent':
@@ -1141,16 +1102,16 @@ def cartopy_crs(self, func, *args, crs=None, **kwargs):
         self.background_patch._path = clipped_path
     return result
 
-@_expand_methods_list
+@_unexpected_usage
 def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
-    Wraps `LATLON_METHODS` for `~proplot.axes.BasemapAxes` axes.
+    Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
 
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude
     instead of map projection units. Now, ``latlon=True`` is the default.
     """
-    return func(*args, latlon=latlon, **kwargs)
+    return func(self, *args, latlon=latlon, **kwargs)
 
 def _gridfix_poles(lat, Z):
     """Adds data points on the poles as the average of highest latitude data."""
@@ -1189,10 +1150,10 @@ def _gridfix_coordinates(lon, lat):
         lon[filter_] += 360
     return lon, lat
 
-@_expand_methods_list
+@_unexpected_usage
 def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.CartopyAxes` axes.
+    Wrap %(methods)s for `~proplot.axes.CartopyAxes`.
 
     Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
     optionally make data coverage *global*. Passing ``globe=True`` does the
@@ -1207,7 +1168,7 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     # Bail if using map coordinates
     import cartopy.crs as ccrs
     if not isinstance(kwargs.get('transform', None), ccrs.PlateCarree):
-        return func(lon, lat, *Zs, **kwargs)
+        return func(self, lon, lat, *Zs, **kwargs)
     # Fix grid
     lon, lat = _gridfix_coordinates(lon, lat)
     if not globe or lon.ndim != 1 or lat.ndim != 1:
@@ -1227,12 +1188,12 @@ def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
             Zss.append(Z)
 
     # Call function
-    return func(lon, lat, *Zss, **kwargs)
+    return func(self, lon, lat, *Zss, **kwargs)
 
-@_expand_methods_list
+@_unexpected_usage
 def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
-    Wraps `CENTERS_EDGES_METHODS` for `~proplot.axes.BasemapAxes` axes.
+    Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
 
     Makes 1D longitude vectors monotonic and cycles them to fit within the map
     edges (i.e. if the projection central longitude is 90 degrees, will permute
@@ -1249,7 +1210,7 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
     """
     # Bail if using map coordinates
     if not kwargs.get('latlon', None):
-        return func(lon, lat, *Zs, **kwargs)
+        return func(self, lon, lat, *Zs, **kwargs)
     # Fix grid
     lon, lat = _gridfix_coordinates(lon, lat)
     lonmin, lonmax = self.projection.lonmin, self.projection.lonmax
@@ -1329,12 +1290,12 @@ def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
         lon, lat = np.meshgrid(lon, lat)
     x, y = self.projection(lon, lat)
     kwargs['latlon'] = False
-    return func(x, y, *Zss, **kwargs)
+    return func(self, x, y, *Zss, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
-@_expand_methods_list
+@_unexpected_usage
 def cycle_wrapper(self, func, *args,
     cycle=None, cycle_kw=None,
     markers=None, linestyles=None,
@@ -1344,13 +1305,15 @@ def cycle_wrapper(self, func, *args,
     panel_kw=None,
     **kwargs):
     """
-    Wraps methods that use the property cycler (`CYCLE_METHODS`),
+    Wraps methods that use the property cycler (%(methods)s),
     adds features for controlling colors in the property cycler and drawing
-    legends or colorbars in one go. Critically, this wrapper also **standardizes
-    acceptable input** -- these methods now all accept 2D arrays holding columns
-    of data, and *x*-coordinates are always optional. Note this alters the
-    behavior of `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`,
-    which now compile statistics on *columns* of data instead of *rows*.
+    legends or colorbars in one go.
+
+    This wrapper also *standardizes acceptable input* -- these methods now all
+    accept 2D arrays holding columns of data, and *x*-coordinates are always
+    optional. Note this alters the behavior of `~matplotlib.axes.Axes.boxplot`
+    and `~matplotlib.axes.Axes.violinplot`, which now compile statistics on
+    *columns* of data instead of *rows*.
 
     Parameters
     ----------
@@ -1414,7 +1377,7 @@ def cycle_wrapper(self, func, *args,
     # the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
-        return func(*args, **kwargs)
+        return func(self, *args, **kwargs)
     barh = (name == 'bar' and kwargs.get('orientation', None) == 'horizontal')
     x, y, *args = args
     if len(args) >= 1 and 'fill_between' in name:
@@ -1551,7 +1514,7 @@ def cycle_wrapper(self, func, *args,
             xy = (*iys,)
         else: # has x-coordinates, and maybe more than one y
             xy = (ix, *iys)
-        obj = func(*xy, *args, **kw)
+        obj = func(self, *xy, *args, **kw)
         if isinstance(obj, (list,tuple)) and len(obj) == 1: # plot always returns list or tuple
             obj = obj[0]
         objs.append(obj)
@@ -1601,7 +1564,7 @@ def cycle_wrapper(self, func, *args,
     else:
         return objs[0] if is1d else (*objs,) # sensible default behavior
 
-@_expand_methods_list
+@_unexpected_usage
 def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     extend='neither', norm=None, norm_kw=None,
     N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
@@ -1613,7 +1576,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     color=None, colors=None, edgecolor=None, edgecolors=None,
     **kwargs):
     """
-    Wraps methods that take a ``cmap`` argument (`CMAP_METHODS`),
+    Wraps methods that take a ``cmap`` argument (%(methods)s),
     adds several new keyword args and features.
     Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
     discrete color levels (see notes).
@@ -1750,7 +1713,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     # white lines around their pcolor mesh.
     name = func.__name__
     if not args:
-        return func(*args, **kwargs)
+        return func(self, *args, **kwargs)
     vmin = _notNone(vmin, norm_kw.pop('vmin', None), None, names=('vmin', 'norm_kw={"vmin":value}'))
     vmax = _notNone(vmax, norm_kw.pop('vmax', None), None, names=('vmax', 'norm_kw={"vmax":value}'))
     levels = _notNone(N, levels, norm_kw.pop('levels', None), rc['image.levels'], names=('N', 'levels', 'norm_kw={"levels":value}'))
@@ -1910,7 +1873,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     # Call function
     if 'contour' in name: # contour, contourf, tricontour, tricontourf
         kwargs.update({'levels': levels, 'extend': extend})
-    obj = func(*args, **kwargs)
+    obj = func(self, *args, **kwargs)
     obj.extend = extend # for colorbar to determine 'extend' property
     if values is not None:
         obj.values = values # preferred tick locations
@@ -2015,6 +1978,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
 #------------------------------------------------------------------------------#
 # Legends and colorbars
 #------------------------------------------------------------------------------#
+@_unexpected_usage
 def legend_wrapper(self,
     handles=None, labels=None, ncol=None, ncols=None,
     center=None, order='C', loc=None, label=None, title=None,
@@ -2073,7 +2037,7 @@ def legend_wrapper(self,
 
     label, title : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
-        with `colorbar_wrapper`.
+        with `colorbar`.
     fontsize, fontweight, fontcolor : optional
         The font size, weight, and color for legend text.
     color, lw, linewidth, marker, linestyle, dashes, markersize : property-spec, optional
@@ -2332,6 +2296,7 @@ def legend_wrapper(self,
         leg.set_clip_on(False)
     return legs[0] if len(legs) == 1 else (*legs,)
 
+@_unexpected_usage
 def colorbar_wrapper(self,
     mappable, values=None,
     extend=None, extendsize=None,
@@ -2398,7 +2363,7 @@ def colorbar_wrapper(self,
         Where to draw tick marks on the colorbar.
     label, title : str, optional
         The colorbar label. The `title` keyword is also accepted for
-        consistency with `legend_wrapper`.
+        consistency with `legend`.
     grid : bool, optional
         Whether to draw "gridlines" between each level of the colorbar.
         Defaults to ``rc['colorbar.grid']``.
@@ -2795,52 +2760,96 @@ def colorbar_wrapper(self,
     return cb
 
 #------------------------------------------------------------------------------#
-# Construct *actual* wrappers. Above functions are just for documentation.
+# Create decorators from wrapper functions
 #------------------------------------------------------------------------------#
-# Helper func
-def _decorator_generator(driver):
-    def decorator(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return driver(self, func, *args, **kwargs)
-        return wrapper
-    return decorator
+# Basemap object caller decorator
+def _basemap_call(func):
+    """Docorator that calls the basemap version of the function of the same name."""
+    name = func.__name__
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        return getattr(self.projection, name)(ax=self, *args, **kwargs)
+    return wrapper
 
-# Decorator generator
-# We document the wrapper functions and their call signatures!
-# TODO: No more auto decorators
-def _decorator_generator_new(driver):
+# Basemap recursion fix decorator
+def _basemap_no_recurse(func):
+    """Decorator to prevent recursion in certain method overrides.
+    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
+    name = func.__name__
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self._hasrecurred:
+            # Return the *original* version of the matplotlib method. We reach
+            # this block e.g. when pcolormesh calls pcolor or when
+            # basemap.Basemap tries to call something.
+            self._hasrecurred = False
+            result = getattr(self, name)(*args, **kwargs)
+        else:
+            # Return the version we have wrapped
+            self._hasrecurred = True
+            result = func(self, *args, **kwargs)
+        self._hasrecurred = False # cleanup, in case recursion never occurred
+        return result
+    return wrapper
+
+# Fancy decorator generator
+def _wrapper_decorator(driver):
+    """Generates generic wrapper decorators and dynamically modifies docstring
+    to list the methods wrapped by this function. Also sets __doc__ to None so
+    that ProPlot fork of automodapi doesn't add these methods to the website
+    documentation. Users can still call help(ax.method) because python looks
+    for superclass method docstrings if a docstring is empty."""
+    driver._docstring_orig = driver.__doc__ or ''
+    driver._methods_wrapped = []
     def decorator(func):
+        # Define wrapper
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             return driver(self, func, *args, **kwargs)
         wrapper.__doc__ = None
+
+        # List wrapped methods in the driver function docstring
+        # Prevents us from having to both explicitly apply decorators in
+        # axes.py and explicitly list functions *again* in this file
+        docstring = driver._docstring_orig
+        if docstring and '{}' in docstring:
+            name = func.__name__
+            if name in ('cmapline','heatmap','area','areax'):
+                name = f'`~proplot.axes.Axes.{name}`'
+            else:
+                name = f'`~matplotlib.axes.Axes.{name}`'
+            methods = driver._methods_wrapped
+            if name not in methods:
+                methods.append(name)
+                string = (', '.join(methods[:-1])
+                    + ','*min(1, len(methods)-2) # Oxford comma bitches
+                    + ' and ' + methods[-1])
+                driver.__doc__ = docstring % {'method': string}
         return wrapper
     return decorator
 
-# Hidden wrappers
-# There is also _basemap_call and _no_recurse
-_autoformat_1d = _decorator_generator(autoformat_1d)
-_autoformat_2d = _decorator_generator(autoformat_2d)
-# Documented
-_add_errorbars         = _decorator_generator(add_errorbars)
-_enforce_centers       = _decorator_generator(enforce_centers)
-_enforce_edges         = _decorator_generator(enforce_edges)
-_basemap_gridfix       = _decorator_generator(basemap_gridfix)
-_basemap_latlon        = _decorator_generator(basemap_latlon)
-_cartopy_gridfix       = _decorator_generator(cartopy_gridfix)
-_cartopy_transform     = _decorator_generator(cartopy_transform)
-_cartopy_crs           = _decorator_generator(cartopy_crs)
-_cmap_wrapper          = _decorator_generator(cmap_wrapper)
-_cycle_wrapper         = _decorator_generator(cycle_wrapper)
-_bar_wrapper           = _decorator_generator(bar_wrapper)
-_hist_wrapper          = _decorator_generator(hist_wrapper)
-_barh_wrapper          = _decorator_generator(barh_wrapper)
-_plot_wrapper          = _decorator_generator(plot_wrapper)
-_scatter_wrapper       = _decorator_generator(scatter_wrapper)
-_boxplot_wrapper       = _decorator_generator(boxplot_wrapper)
-_violinplot_wrapper    = _decorator_generator(violinplot_wrapper)
-_fill_between_wrapper  = _decorator_generator(fill_between_wrapper)
-_fill_betweenx_wrapper = _decorator_generator(fill_betweenx_wrapper)
-# New version
-_text_wrapper          = _decorator_generator_new(text_wrapper)
+# Auto generated decorators. Each wrapper internally calls
+# func(self, ...) somewhere.
+_bar               = _wrapper_decorator(bar_wrapper)
+_hist              = _wrapper_decorator(hist_wrapper)
+_barh              = _wrapper_decorator(barh_wrapper)
+_plot              = _wrapper_decorator(plot_wrapper)
+_scatter           = _wrapper_decorator(scatter_wrapper)
+_boxplot           = _wrapper_decorator(boxplot_wrapper)
+_violinplot        = _wrapper_decorator(violinplot_wrapper)
+_fill_between      = _wrapper_decorator(fill_between_wrapper)
+_fill_betweenx     = _wrapper_decorator(fill_betweenx_wrapper)
+_text              = _wrapper_decorator(text_wrapper)
+_autoformat_1d     = _wrapper_decorator(autoformat_1d)
+_autoformat_2d     = _wrapper_decorator(autoformat_2d)
+_add_errorbars     = _wrapper_decorator(add_errorbars)
+_enforce_centers   = _wrapper_decorator(enforce_centers)
+_enforce_edges     = _wrapper_decorator(enforce_edges)
+_basemap_gridfix   = _wrapper_decorator(basemap_gridfix)
+_basemap_latlon    = _wrapper_decorator(basemap_latlon)
+_cartopy_gridfix   = _wrapper_decorator(cartopy_gridfix)
+_cartopy_transform = _wrapper_decorator(cartopy_transform)
+_cartopy_crs       = _wrapper_decorator(cartopy_crs)
+_cmap_wrapper      = _wrapper_decorator(cmap_wrapper)
+_cycle_wrapper     = _wrapper_decorator(cycle_wrapper)
+

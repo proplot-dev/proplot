@@ -776,7 +776,7 @@ class Axes(maxes.Axes):
 
     def area(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.fill_between`, which is wrapped by
-        `~proplot.wrappers.fill_between_wrapper`."""
+        `~proplot.wrappers.fill_between`."""
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
         # wrapper won't be applied and for some reason it messes up
         # automodsumm, which tries to put the matplotlib docstring on website
@@ -784,22 +784,24 @@ class Axes(maxes.Axes):
 
     def areax(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.fill_betweenx`, which is wrapped by
-        `~proplot.wrappers.fill_betweenx_wrapper`."""
+        `~proplot.wrappers.fill_betweenx`."""
         return self.fill_betweenx(*args, **kwargs)
 
     def boxes(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.boxplot`, which is wrapped by
-        `~proplot.wrappers.boxplot_wrapper`."""
+        `~proplot.wrappers.boxplot`."""
         return self.boxplot(*args, **kwargs)
 
     def cmapline(self, *args, values=None,
         cmap=None, norm=None,
         interp=0, **kwargs):
         """
-        Invoked by `~proplot.wrappers.plot_wrapper` when you pass the `cmap`
-        keyword argument to `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
-        i.e. a line whose color changes as a function of some parametric coordinate
-        `values`. This is actually a collection of lines, added as a
+        Invoked when you pass the `cmap` keyword argument to
+        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
+        i.e. a line whose color changes as a function of the parametric
+        coordinate ``values``. using the input colormap ``cmap``.
+
+        This is actually a collection of lines, added as a
         `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
         <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
 
@@ -885,7 +887,7 @@ class Axes(maxes.Axes):
         **kwargs):
         """
         Adds colorbar as an *inset* or along the outside edge of the axes.
-        See `~proplot.wrappers.colorbar_wrapper` for details.
+        See `~proplot.wrappers.colorbar` for details.
 
         Parameters
         ----------
@@ -940,7 +942,7 @@ class Axes(maxes.Axes):
             ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``,
             respectively.
         **kwargs
-            Passed to `~proplot.wrappers.colorbar_wrapper`.
+            Passed to `~proplot.wrappers.colorbar`.
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
@@ -1081,13 +1083,13 @@ class Axes(maxes.Axes):
             kwargs.setdefault('extendsize', extend)
 
         # Generate colorbar
-        return wrappers.colorbar_wrapper(ax, *args, **kwargs)
+        return wrappers.colorbar(ax, *args, **kwargs)
 
     def legend(self, *args, loc=None, width=None, space=None, **kwargs):
         """
         Adds an *inset* legend or *outer* legend along the edge of the axes.
         See `~matplotlib.axes.Axes.legend` and
-        `~proplot.wrappers.legend_wrapper` for details.
+        `~proplot.wrappers.legend` for details.
 
         Parameters
         ----------
@@ -1166,7 +1168,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid panel side {side!r}.')
 
         # Draw legend
-        return wrappers.legend_wrapper(self, *args, loc=loc, **kwargs)
+        return wrappers.legend(self, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
@@ -1344,7 +1346,7 @@ class Axes(maxes.Axes):
 
     def violins(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.violinplot`, which is wrapped by
-        `~proplot.wrappers.violinplot_wrapper`."""
+        `~proplot.wrappers.violinplot`."""
         return self.violinplot(*args, **kwargs)
 
     panel = panel_axes
@@ -1372,7 +1374,7 @@ class Axes(maxes.Axes):
         return axs
 
     # Ordinary wrappers
-    text = wrappers._text_wrapper(maxes.Axes.text)
+    text = wrappers._text(maxes.Axes.text)
 
     # Disabled methods
     _disable = _disable_decorator('Redundant plotting method {!r} has been disabled. Instead, use ax.plot() and set logarithmic axis scales with ax.format(xscale="log", yscale="log").')
@@ -1445,10 +1447,10 @@ class CartesianAxes(Axes):
         """Applies the `~proplot.wrappers.cmap_wrapper`,
         `~proplot.wrappers.cycle_wrapper`, `~proplot.wrappers.add_errorbars`,
         `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
-        `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
-        `~proplot.wrappers.bar_wrapper`, `~proplot.wrappers.barh_wrapper`,
-        `~proplot.wrappers.boxplot_wrapper`, `~proplot.wrappers.violinplot_wrapper`,
-        `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
+        `~proplot.wrappers.plot`, `~proplot.wrappers.scatter`,
+        `~proplot.wrappers.bar`, `~proplot.wrappers.barh`,
+        `~proplot.wrappers.boxplot`, `~proplot.wrappers.violinplot`,
+        `~proplot.wrappers.fill_between`, and `~proplot.wrappers.fill_betweenx`
         wrappers."""
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
@@ -1471,23 +1473,23 @@ class CartesianAxes(Axes):
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
-                obj = wrappers._plot_wrapper(self, obj)
+                obj = wrappers._plot(self, obj)
             elif attr == 'scatter':
-                obj = wrappers._scatter_wrapper(self, obj)
+                obj = wrappers._scatter(self, obj)
             elif attr == 'boxplot':
-                obj = wrappers._boxplot_wrapper(self, obj)
+                obj = wrappers._boxplot(self, obj)
             elif attr == 'violinplot':
-                obj = wrappers._violinplot_wrapper(self, obj)
+                obj = wrappers._violinplot(self, obj)
             elif attr == 'bar':
-                obj = wrappers._bar_wrapper(self, obj)
+                obj = wrappers._bar(self, obj)
             elif attr == 'barh': # skips cycle wrapper and calls bar method
-                obj = wrappers._barh_wrapper(self, obj)
+                obj = wrappers._barh(self, obj)
             elif attr == 'hist': # skips cycle wrapper and calls bar method
-                obj = wrappers._hist_wrapper(self, obj)
+                obj = wrappers._hist(self, obj)
             elif attr == 'fill_between':
-                obj = wrappers._fill_between_wrapper(self, obj)
+                obj = wrappers._fill_between(self, obj)
             elif attr == 'fill_betweenx':
-                obj = wrappers._fill_betweenx_wrapper(self, obj)
+                obj = wrappers._fill_betweenx(self, obj)
         return obj
 
     def _altx_overrides(self):
@@ -2335,9 +2337,9 @@ class PolarAxes(Axes, mproj.PolarAxes):
         """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
         `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
         `~proplot.wrappers.cartopy_gridfix`, `~proplot.wrappers.cartopy_transform`,
-        `~proplot.wrappers.cartopy_crs`, `~proplot.wrappers.plot_wrapper`,
-        `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
-        and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
+        `~proplot.wrappers.cartopy_crs`, `~proplot.wrappers.plot`,
+        `~proplot.wrappers.scatter`, `~proplot.wrappers.fill_between`,
+        and `~proplot.wrappers.fill_betweenx` wrappers."""
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
             # Step 4) Color usage wrappers
@@ -2360,13 +2362,13 @@ class PolarAxes(Axes, mproj.PolarAxes):
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
-                obj = wrappers._plot_wrapper(self, obj)
+                obj = wrappers._plot(self, obj)
             elif attr == 'scatter':
-                obj = wrappers._scatter_wrapper(self, obj)
+                obj = wrappers._scatter(self, obj)
             elif attr == 'fill_between':
-                obj = wrappers._fill_between_wrapper(self, obj)
+                obj = wrappers._fill_between(self, obj)
             elif attr == 'fill_betweenx':
-                obj = wrappers._fill_betweenx_wrapper(self, obj)
+                obj = wrappers._fill_betweenx(self, obj)
         return obj
 
     def format(self, *args,
@@ -2544,6 +2546,33 @@ class PolarAxes(Axes, mproj.PolarAxes):
 
             # Parent method
             super().format(*args, **kwargs)
+
+    # Disabled methods suitable only for cartesian axes
+    _disable = _disable_decorator('Invalid plotting method {!r} for polar axes.')
+    twinx              = _disable(Axes.twinx)
+    twiny              = _disable(Axes.twiny)
+    matshow            = _disable(Axes.matshow)
+    imshow             = _disable(Axes.imshow)
+    spy                = _disable(Axes.spy)
+    hist               = _disable(Axes.hist)
+    hist2d             = _disable(Axes.hist2d)
+    boxplot            = _disable(Axes.boxplot)
+    violinplot         = _disable(Axes.violinplot)
+    step               = _disable(Axes.step)
+    stem               = _disable(Axes.stem)
+    stackplot          = _disable(Axes.stackplot)
+    table              = _disable(Axes.table)
+    eventplot          = _disable(Axes.eventplot)
+    pie                = _disable(Axes.pie)
+    xcorr              = _disable(Axes.xcorr)
+    acorr              = _disable(Axes.acorr)
+    psd                = _disable(Axes.psd)
+    csd                = _disable(Axes.csd)
+    cohere             = _disable(Axes.cohere)
+    specgram           = _disable(Axes.specgram)
+    angle_spectrum     = _disable(Axes.angle_spectrum)
+    phase_spectrum     = _disable(Axes.phase_spectrum)
+    magnitude_spectrum = _disable(Axes.magnitude_spectrum)
 
 class ProjectionAxes(Axes):
     """Intermediate class, shared by `CartopyAxes` and
@@ -2728,6 +2757,8 @@ class ProjectionAxes(Axes):
 
     # Disabled methods suitable only for cartesian axes
     _disable = _disable_decorator('Invalid plotting method {!r} for map projection axes.')
+    bar                = _disable(Axes.bar)
+    barh               = _disable(Axes.barh)
     twinx              = _disable(Axes.twinx)
     twiny              = _disable(Axes.twiny)
     matshow            = _disable(Axes.matshow)
@@ -2808,9 +2839,9 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
         `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
         `~proplot.wrappers.cartopy_gridfix`, `~proplot.wrappers.cartopy_transform`,
-        `~proplot.wrappers.cartopy_crs`, `~proplot.wrappers.plot_wrapper`,
-        `~proplot.wrappers.scatter_wrapper`, `~proplot.wrappers.fill_between_wrapper`,
-        and `~proplot.wrappers.fill_betweenx_wrapper` wrappers."""
+        `~proplot.wrappers.cartopy_crs`, `~proplot.wrappers.plot`,
+        `~proplot.wrappers.scatter`, `~proplot.wrappers.fill_between`,
+        and `~proplot.wrappers.fill_betweenx` wrappers."""
         obj = super().__getattribute__(attr, *args)
         if callable(obj):
             # Step 5) Color usage wrappers
@@ -2838,13 +2869,13 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
-                obj = wrappers._plot_wrapper(self, obj)
+                obj = wrappers._plot(self, obj)
             elif attr == 'scatter':
-                obj = wrappers._scatter_wrapper(self, obj)
+                obj = wrappers._scatter(self, obj)
             elif attr == 'fill_between':
-                obj = wrappers._fill_between_wrapper(self, obj)
+                obj = wrappers._fill_between(self, obj)
             elif attr == 'fill_betweenx':
-                obj = wrappers._fill_betweenx_wrapper(self, obj)
+                obj = wrappers._fill_betweenx(self, obj)
         return obj
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
@@ -3112,10 +3143,10 @@ class BasemapAxes(ProjectionAxes):
         """Applies the `~proplot.wrappers.cmap_wrapper`, `~proplot.wrappers.cycle_wrapper`,
         `~proplot.wrappers.enforce_centers`, `~proplot.wrappers.enforce_edges`,
         `~proplot.wrappers.basemap_gridfix`, `~proplot.wrappers.basemap_latlon`,
-        `~proplot.wrappers.plot_wrapper`, `~proplot.wrappers.scatter_wrapper`,
-        `~proplot.wrappers.fill_between_wrapper`, and `~proplot.wrappers.fill_betweenx_wrapper`
+        `~proplot.wrappers.plot`, `~proplot.wrappers.scatter`,
+        `~proplot.wrappers.fill_between`, and `~proplot.wrappers.fill_betweenx`
         wrappers. Also wraps all plotting methods with the hidden ``_basemap_call``
-        and ``_no_recurse`` wrappers. Respectively, these call methods on
+        and ``_basemap_no_recurse`` wrappers. Respectively, these call methods on
         the `~mpl_toolkits.basemap.Basemap` instance and prevent recursion
         issues arising from internal `~mpl_toolkits.basemap` calls to the
         axes methods."""
@@ -3150,15 +3181,15 @@ class BasemapAxes(ProjectionAxes):
                 obj = wrappers._autoformat_1d(self, obj)
             # Step 0) Special wrappers
             if attr == 'plot':
-                obj = wrappers._plot_wrapper(self, obj)
+                obj = wrappers._plot(self, obj)
             elif attr == 'scatter':
-                obj = wrappers._scatter_wrapper(self, obj)
+                obj = wrappers._scatter(self, obj)
             elif attr == 'fill_between':
-                obj = wrappers._fill_between_wrapper(self, obj)
+                obj = wrappers._fill_between(self, obj)
             elif attr == 'fill_betweenx':
-                obj = wrappers._fill_betweenx_wrapper(self, obj)
+                obj = wrappers._fill_betweenx(self, obj)
             # Recursion fix at top level
-            obj = wrappers._no_recurse(self, obj)
+            obj = wrappers._basemap_no_recurse(self, obj)
         return obj
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
