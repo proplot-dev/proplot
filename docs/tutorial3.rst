@@ -80,13 +80,13 @@ Plotting geophysical data
 -------------------------
 
 The below demonstrates how to plot geophysical data with ProPlot. For
-cartopy projections, ``transform=crs.PlateCarree()`` is now the default
-behavior for all plotting methods. For basemap projections, you now call
-plotting methods on the axes instead of the
-`~mpl_toolkits.basemap.Basemap` instance, and ``latlon=True`` is the
-default behavior for all plotting methods. For both basemap and cartopy
-projections, you can also pass ``globe=True`` to 2D plotting commands to
-ensure global data coverage.
+`~proplot.axes.CartopyAxes` plotting methods,
+``transform=crs.PlateCarree()`` is now the default behavior. For
+`~proplot.axes.BasemapAxes` plotting methods, ``latlon=True`` is now
+the default behavior, and methods are called on the *axes* instead of
+the `~mpl_toolkits.basemap.Basemap` instance. For both basemap and
+cartopy projections, you can also pass ``globe=True`` to 2D plotting
+commands to ensure global data coverage.
 
 These features are powered by the `~proplot.wrappers.standardize_2d`,
 `~proplot.wrappers.default_transform`, and
