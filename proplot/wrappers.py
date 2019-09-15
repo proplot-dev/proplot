@@ -9,7 +9,6 @@ import functools
 import warnings
 from . import utils, styletools, axistools
 from .utils import _notNone
-import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -20,15 +19,18 @@ import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 from numbers import Number
 from .rctools import rc
+try:
+    from cartopy.crs import PlateCarree
+except ModuleNotFoundError:
+    PlateCarree = object
 __all__ = [
-    'autoformat_1d', 'autoformat_2d',
     'add_errorbars', 'bar_wrapper', 'barh_wrapper',
-    'basemap_gridfix', 'basemap_latlon', 'boxplot_wrapper',
-    'cartopy_crs', 'cartopy_gridfix', 'cartopy_transform',
+    'basemap_latlon', 'boxplot_wrapper',
+    'cartopy_crs', 'cartopy_transform',
     'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
-    'enforce_centers', 'enforce_edges',
     'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
-    'legend_wrapper', 'plot_wrapper', 'scatter_wrapper', 'text_wrapper',
+    'legend_wrapper', 'plot_wrapper', 'scatter_wrapper',
+    'standardize_1d', 'standardize_2d', 'text_wrapper',
     'violinplot_wrapper',
     ]
 
@@ -87,8 +89,66 @@ STYLE_ARGS_TRANSLATE = {
     }
 
 #------------------------------------------------------------------------------#
-# Standardized inputs and automatic formatting
-# NOTE: These do not have to be used explicitly, they are called by wrappers
+# Alter default behavior
+#------------------------------------------------------------------------------#
+def basemap_latlon(self, func, *args, latlon=True, **kwargs):
+    """
+    Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
+
+    With the default `~mpl_toolkits.basemap` API, you need to pass
+    ``latlon=True`` if your data coordinates are longitude and latitude
+    instead of map projection coordinates. Now, this is the default.
+    """
+    return func(self, *args, latlon=latlon, **kwargs)
+
+def cartopy_transform(self, func, *args, transform=None, **kwargs):
+    """
+    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
+
+    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
+    ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
+    longitude and latitude instead of map projection coordinates. Now,
+    this is the default.
+    """
+    # Apply default transform
+    # TODO: Do some cartopy methods reset backgroundpatch or outlinepatch?
+    # Deleted comment reported this issue
+    if transform is None:
+        transform = PlateCarree()
+    result = func(self, *args, transform=transform, **kwargs)
+    return result
+
+def cartopy_crs(self, func, *args, crs=None, **kwargs):
+    """
+    Wraps %(methods)s for `~proplot.axes.CartopyAxes` and fixes a
+    `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with tight
+    bounding boxes.
+
+    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
+    ``crs=cartopy.crs.PlateCarree()`` if your data coordinates are
+    longitude and latitude instead of map projection coordinates. Now,
+    this is the default.
+    """
+    # Apply default crs
+    name = func.__name__
+    if crs is None:
+        crs = PlateCarree()
+    try:
+        result = func(self, *args, crs=crs, **kwargs)
+    except TypeError as err: # duplicate keyword args, i.e. crs is positional
+        if not args:
+            raise err
+        result = func(self, *args[:-1], crs=args[-1], **kwargs)
+    # Fix extent, so axes tight bounding box gets correct box!
+    # From this issue: https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
+    if name == 'set_extent':
+        clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
+        self.outline_patch._path = clipped_path
+        self.background_patch._path = clipped_path
+    return result
+
+#------------------------------------------------------------------------------#
+# 1D dataset standardization and automatic formatting
 #------------------------------------------------------------------------------#
 def _to_iloc(data):
     """Get indexible attribute of array, so we can perform axis wise operations."""
@@ -140,13 +200,23 @@ def _auto_label(data, axis=None, units=True):
         label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
     return data, str(label).strip()
 
-def autoformat_1d(self, func, *args, **kwargs):
-    """Wraps %(methods)s, standardizes acceptable input and optionally
+def standardize_1d(self, func, *args, **kwargs):
+    """
+    Wraps %(methods)s, standardizes acceptable positional args and optionally
     modifies the x axis label, y axis label, title, and axis ticks
-    if the input is a `~xarray.DataArray`, `~pandas.DataFrame`, or
-    `~pandas.Series`. Permits 2D array input for all of these commands, in
-    which case the command is called with each column of data. Infers dependent
-    variable coordinates from the input array if none were provided."""
+    if a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is
+    passed.
+
+    Positional args are standardized as follows.
+
+    * If a 2D array is passed, the corresponding plot command is called for
+      each column of data (except for ``boxplot`` and ``violinplot``, in which
+      case each column is interpreted as a distribution).
+    * If *x* and *y* or *latitude* and *longitude* coordinates were not
+      provided, and a `~pandas.DataFrame` or `~xarray.DataArray`, we
+      try to infer them from the metadata. Otherwise,
+      ``np.arange(0, data.shape[0])`` is used.
+   """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
@@ -226,12 +296,75 @@ def autoformat_1d(self, func, *args, **kwargs):
         ys = [_to_array(yi) for yi in ys] # store naked array
     return func(self, x, *ys, *args, **kwargs)
 
-def autoformat_2d(self, func, *args, order='C', **kwargs):
-    """Wraps %(methods)s, standardizes acceptable input and optionally modifies
-    the x axis label, y axis label, title, and axis ticks if the input is a
-    `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series`. Infers
-    dependent variable coordinates from the input array if none were
-    provided."""
+#-----------------------------------------------------------------------------#
+# 2D dataset standardization and automatic formatting
+#-----------------------------------------------------------------------------#
+def _fix_poles(y, Z):
+    """Adds data points on the poles as the average of highest latitude data."""
+    # Get means
+    with np.errstate(all='ignore'):
+        p1 = Z[0,:].mean() # pole 1, make sure is not 0D DataArray!
+        p2 = Z[-1,:].mean() # pole 2
+    if hasattr(p1, 'item'):
+        p1 = np.asscalar(p1) # happens with DataArrays
+    if hasattr(p2, 'item'):
+        p2 = np.asscalar(p2)
+    # Concatenate
+    ps = (-90,90) if (y[0] < y[-1]) else (90,-90)
+    Z1 = np.repeat(p1, Z.shape[1])[None,:]
+    Z2 = np.repeat(p2, Z.shape[1])[None,:]
+    y = ma.concatenate((ps[:1], y, ps[1:]))
+    Z = ma.concatenate((Z1, Z, Z2), axis=0)
+    return y, Z
+
+def _fix_latlon(x, y):
+    """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
+    contents can be modified. Ignores 2D coordinate arrays."""
+    # Sanitization and bail if 2D
+    if x.ndim == 1:
+        x = ma.array(x)
+    if y.ndim == 1:
+        y = ma.array(y)
+    if x.ndim != 1 or all(x < x[0]): # skip monotonic backwards data
+        return x, y
+    # Enforce monotonic longitudes
+    lon1 = x[0]
+    while True:
+        filter_ = (x < lon1)
+        if filter_.sum() == 0:
+            break
+        x[filter_] += 360
+    return x, y
+
+def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
+    """
+    Wraps %(methods)s, standardizes acceptable positional args and optionally
+    modifies the x axis label, y axis label, title, and axis ticks if the
+    a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is passed.
+
+    Positional args are standardized as follows.
+
+    * If *x* and *y* or *latitude* and *longitude* coordinates were not
+      provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
+      try to infer them from the metadata. Otherwise, ``np.arange(0, data.shape[0])``
+      and ``np.arange(0, data.shape[1])`` are used.
+    * For ``pcolor`` and ``pcolormesh``, coordinate *edges* are calculated
+      if *centers* were provided. For all other methods, coordinate *centers*
+      are calculated if *edges* were provided.
+
+    For `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes`, the
+    `globe` keyword arg is added, suitable for plotting datasets with global
+    coverage. Passing ``globe=True`` does the following.
+
+    1. "Interpolates" input data to the North and South poles.
+    2. Makes meridional coverage "circular", i.e. the last longitude coordinate
+       equals the first longitude coordinate plus 360\N{DEGREE SIGN}.
+
+    For `~proplot.axes.BasemapAxes`, 1D longitude vectors are also cycled to
+    fit within the map edges. For example, if the projection central longitude
+    is 90\N{DEGREE SIGN}, the data is shifted so that it spans
+    -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
+    """
     # Sanitize input
     name = func.__name__
     _load_objects()
@@ -301,6 +434,10 @@ def autoformat_2d(self, func, *args, order='C', **kwargs):
                     kw[key] = label
                 if len(xy) > 1 and all(isinstance(xy, Number) for xy in xy[:2]) and xy[1] < xy[0]:
                     kw[key[0] + 'reverse'] = True
+    if xi is not None:
+        x = xi
+    if yi is not None:
+        y = yi
     # Handle figure titles
     if self.figure._auto_format:
         _, title = _auto_label(Zs[0], units=False)
@@ -309,73 +446,162 @@ def autoformat_2d(self, func, *args, order='C', **kwargs):
         if kw:
             self.format(**kw)
 
-    # Get edges
-    if xi is not None:
-        x = xi
-    if yi is not None:
-        y = yi
+    # Enforce edges
+    if name in ('pcolor', 'pcolormesh'):
+        # Get centers or raise error. If 2D, don't raise error, but don't fix
+        # either, because matplotlib pcolor just trims last column and row.
+        xlen, ylen = x.shape[-1], y.shape[0]
+        for Z in Zs:
+            if Z.ndim != 2:
+                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+            elif Z.shape[1] == xlen and Z.shape[0] == ylen:
+                if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
+                    x = utils.edges(x)
+                    y = utils.edges(y)
+            elif Z.shape[1] != xlen-1 or Z.shape[0] != ylen-1:
+                raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
+        # Optionally re-order
+        # TODO: Double check this
+        if order == 'F':
+            x, y = x.T, y.T # in case they are 2-dimensional
+            Zs = (Z.T for Z in Zs)
+        elif order != 'C':
+            raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
+
+    # Enforce centers
+    else:
+        # Get centers given edges. If 2D, don't raise error, let matplotlib
+        # raise error down the line.
+        xlen, ylen = x.shape[-1], y.shape[0]
+        for Z in Zs:
+            if Z.ndim != 2:
+                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+            elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1 and x.ndim == 1 and y.ndim == 1:
+                if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
+                    x = (x[1:] + x[:-1])/2
+                    y = (y[1:] + y[:-1])/2
+            elif Z.shape[1] != xlen or Z.shape[0] != ylen:
+                raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
+        # Optionally re-order
+        # TODO: Double check this
+        if order == 'F':
+            x, y = x.T, y.T # in case they are 2-dimensional
+            Zs = (Z.T for Z in Zs)
+        elif order != 'C':
+            raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
+
+    # Cartopy projection axes
+    if (getattr(self, 'name', '') == 'cartopy' and
+        isinstance(kwargs.get('transform', None), PlateCarree)):
+        iZs = []
+        x, y = _fix_latlon(x, y)
+        if not globe or x.ndim != 1 or y.ndim != 1:
+            iZs, Zs = Zs, []
+        for Z in Zs:
+            # Fix holes over poles by *interpolating* there
+            y, Z = _fix_poles(y, Z)
+            # Fix seams by ensuring circular coverage. Unlike basemap,
+            # cartopy can plot across map edges.
+            if (x[0] % 360) != ((x[-1] + 360) % 360):
+                x = ma.concatenate((x, [x[0] + 360]))
+                Z = ma.concatenate((Z, Z[:,:1]), axis=1)
+            Zs.append(Z)
+
+    # Basemap projection axes
+    elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+        # Fix grid
+        iZs = []
+        x, y = _fix_latlon(x, y)
+        lonmin, lonmax = self.projection.lonmin, self.projection.lonmax
+        if x.ndim != 1 or y.ndim != 1:
+            iZs, Zs = Zs, [] # leave them alone
+        for Z in Zs:
+            # Special basemap fixes
+            # Roll, accounting for whether ends are identical
+            roll = -np.argmin(x)
+            if x[0] == x[-1]:
+                x = np.roll(x[:-1], roll)
+                x = ma.append(x, x[0] + 360)
+            else:
+                x = np.roll(x, roll)
+            Z = np.roll(Z, roll, axis=1)
+            # Roll in same direction if some points on right-edge extend
+            # more than 360 above min longitude; *they* should be on left side
+            lonroll = np.where(x > lonmin + 360)[0] # tuple of ids
+            if lonroll.size: # non-empty
+                roll = x.size - lonroll.min() # e.g. if 10 lons, lonmax id is 9, we want to roll once
+                x = np.roll(x, roll)
+                Z = np.roll(Z, roll, axis=1)
+                x[:roll] -= 360 # make monotonic
+            # Set NaN where data not in range lonmin, lonmax. Must be done
+            # for regional smaller projections or get weird side-effects due
+            # to having valid data way outside of the map boundaries
+            Z = Z.copy()
+            if x.size-1 == Z.shape[1]: # test western/eastern grid cell edges
+                Z[:,(x[1:] < lonmin) | (x[:-1] > lonmax)] = np.nan
+            elif x.size == Z.shape[1]: # test the centers and pad by one for safety
+                where = np.where((x < lonmin) | (x > lonmax))[0]
+                Z[:,where[1:-1]] = np.nan
+
+            # Skip next part of global coverage turned off
+            if not globe:
+                iZs.append(Z)
+                continue
+
+            # Fix holes over poles by interpolating there (equivalent to
+            # simple mean of highest/lowest latitude points)
+            y, Z = _fix_poles(y, Z)
+            # Fix seams at map boundary; 3 scenarios here:
+            # Have edges (e.g. for pcolor), and they fit perfectly against
+            # basemap seams. Does not augment size.
+            if x[0] == lonmin and x.size-1 == Z.shape[1]:
+                pass # do nothing
+            # Have edges (e.g. for pcolor), and the projection edge is
+            # in-between grid cell boundaries. Augments size by 1.
+            elif x.size-1 == Z.shape[1]: # just add grid cell
+                x = ma.append(lonmin, x)
+                x[-1] = lonmin + 360
+                Z = ma.concatenate((Z[:,-1:], Z), axis=1)
+            # Have centers (e.g. for contourf), and we need to interpolate to
+            # the left/right edges of the map boundary. Augments size by 2.
+            elif x.size == Z.shape[1]:
+                x = np.array([x[-1], x[0] + 360]) # x
+                if x[0] != x[1]:
+                    Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                    xq = lonmin + 360
+                    Zq = (Zq[:,:1]*(x[1]-xq) + Zq[:,1:]*(xq-x[0]))/(x[1]-x[0])
+                    Z = ma.concatenate((Zq, Z, Zq), axis=1)
+                    x = ma.append(ma.append(lonmin, x), lonmin + 360)
+            else:
+                raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
+            iZs.append(Z)
+        Zs = iZs
+
+        # Convert to projection coordinates
+        if x.ndim == 1 and y.ndim == 1:
+            x, y = np.meshgrid(x, y)
+        x, y = self.projection(x, y)
+        kwargs['latlon'] = False
+
+    # Finally return result
     return func(self, x, y, *Zs, **kwargs)
 
-#------------------------------------------------------------------------------
-# 2D plot wrappers
-#------------------------------------------------------------------------------
-def enforce_centers(self, func, *args, order='C', **kwargs):
-    """Wraps 2D plotting functions that take coordinate *centers*, i.e.
-    %(methods)s. Calculates centers if graticule *edges* were provided."""
-    # Checks whether sizes match up, checks whether graticule was input
-    x, y, *Zs = args
-    xlen, ylen = x.shape[-1], y.shape[0]
-    for Z in Zs:
-        if Z.ndim != 2:
-            raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-        elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1 and x.ndim == 1 and y.ndim == 1:
-            # Get centers given edges. Matplotlib may raise error if you pass
-            # 2D mesh of edges.
-            if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
-                x = (x[1:] + x[:-1])/2
-                y = (y[1:] + y[:-1])/2
-        elif Z.shape[1] != xlen or Z.shape[0] != ylen:
-            raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
-    # Optionally re-order
-    # TODO: Double check this
-    if order == 'F':
-        x, y = x.T, y.T # in case they are 2-dimensional
-        Zs = (Z.T for Z in Zs)
-    elif order != 'C':
-        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
-    result = func(self, x, y, *Zs, **kwargs)
-    return result
-
-def enforce_edges(self, func, *args, order='C', **kwargs):
-    """Wraps 2D plotting functions that take graticule *edges*, i.e.
-    %(methods)s. Calculates edges if coordinate *centers* were provided."""
-    # Checks that sizes match up, checks whether graticule was input
-    x, y, *Zs = args
-    xlen, ylen = x.shape[-1], y.shape[0]
-    for Z in Zs:
-        if Z.ndim != 2:
-            raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-        elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-            # If 2D, don't raise error, but don't fix either, because
-            # matplotlib pcolor just trims last column and row
-            if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
-                x = utils.edges(x)
-                y = utils.edges(y)
-        elif Z.shape[1] != xlen-1 or Z.shape[0] != ylen-1:
-            raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
-    # Optionally re-order
-    # TODO: Double check this
-    if order == 'F':
-        x, y = x.T, y.T # in case they are 2-dimensional
-        Zs = (Z.T for Z in Zs)
-    elif order != 'C':
-        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
-    result = func(self, x, y, *Zs, **kwargs)
-    return result
-
 #------------------------------------------------------------------------------#
-# 1D plot wrappers
+# Special plot wrappers
 #------------------------------------------------------------------------------#
+def _get_transform(self, transform):
+    """Translates user input transform. Also used in an axes method."""
+    if isinstance(transform, mtransforms.Transform):
+        return transform
+    elif transform == 'figure':
+        return self.figure.transFigure
+    elif transform == 'axes':
+        return self.transAxes
+    elif transform == 'data':
+        return self.transData
+    else:
+        raise ValueError(f'Unknown transform {transform!r}.')
+
 def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     """Returns values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args."""
@@ -933,22 +1159,6 @@ def violinplot_wrapper(self, func, *args,
             artist.set_facecolor(fillcolor)
     return obj
 
-#------------------------------------------------------------------------------#
-# Text wrapper
-#------------------------------------------------------------------------------#
-def _get_transform(self, transform):
-    """Translates user input transform."""
-    if isinstance(transform, mtransforms.Transform):
-        return transform
-    elif transform == 'figure':
-        return self.figure.transFigure
-    elif transform == 'axes':
-        return self.transAxes
-    elif transform == 'data':
-        return self.transData
-    else:
-        raise ValueError(f'Unknown transform {transform!r}.')
-
 def text_wrapper(self, func,
     x=0, y=0, text='', transform='data',
     family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
@@ -1024,240 +1234,6 @@ def text_wrapper(self, func,
             'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
             })
     return obj
-
-#------------------------------------------------------------------------------#
-# Geographic wrappers
-#------------------------------------------------------------------------------#
-def cartopy_transform(self, func, *args, transform=None, **kwargs):
-    """
-    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
-
-    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
-    ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
-    longitude and latitude instead of map projection units. Now,
-    ``transform=cartopy.crs.PlateCarree()`` is the default.
-    """
-    # Apply default transform
-    # TODO: Do some cartopy methods reset backgroundpatch or outlinepatch?
-    # Deleted comment reported this issue
-    if transform is None:
-        import cartopy.crs as ccrs
-        transform = ccrs.PlateCarree()
-    result = func(self, *args, transform=transform, **kwargs)
-    return result
-
-def cartopy_crs(self, func, *args, crs=None, **kwargs):
-    """
-    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
-    As with `cartopy_transform`, but passes ``crs=cartopy.crs.PlateCarree()``
-    as the default. Also fixes bug associated with tight bounding boxes and
-    `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
-    """
-    # Simple
-    name = func.__name__
-    if crs is None:
-        import cartopy.crs as ccrs
-        crs = ccrs.PlateCarree()
-    try:
-        result = func(self, *args, crs=crs, **kwargs)
-    except TypeError as err: # duplicate keyword args, i.e. crs is positional
-        if not args:
-            raise err
-        result = func(self, *args[:-1], crs=args[-1], **kwargs)
-    # Fix extent, so axes tight bounding box gets correct box!
-    # From this issue: https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
-    if name == 'set_extent':
-        clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
-        self.outline_patch._path = clipped_path
-        self.background_patch._path = clipped_path
-    return result
-
-def basemap_latlon(self, func, *args, latlon=True, **kwargs):
-    """
-    Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
-
-    With the default `~mpl_toolkits.basemap` API, you need to pass
-    ``latlon=True`` if your data coordinates are longitude and latitude
-    instead of map projection units. Now, ``latlon=True`` is the default.
-    """
-    return func(self, *args, latlon=latlon, **kwargs)
-
-def _gridfix_poles(lat, Z):
-    """Adds data points on the poles as the average of highest latitude data."""
-    # Get means
-    with np.errstate(all='ignore'):
-        p1 = Z[0,:].mean() # pole 1, make sure is not 0D DataArray!
-        p2 = Z[-1,:].mean() # pole 2
-    if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1) # happens with DataArrays
-    if hasattr(p2, 'item'):
-        p2 = np.asscalar(p2)
-    # Concatenate
-    ps = (-90,90) if (lat[0] < lat[-1]) else (90,-90)
-    Z1 = np.repeat(p1, Z.shape[1])[None,:]
-    Z2 = np.repeat(p2, Z.shape[1])[None,:]
-    lat = ma.concatenate((ps[:1], lat, ps[1:]))
-    Z = ma.concatenate((Z1, Z, Z2), axis=0)
-    return lat, Z
-
-def _gridfix_coordinates(lon, lat):
-    """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
-    contents can be modified. Ignores 2D coordinate arrays."""
-    # Sanitization and bail if 2D
-    if lon.ndim == 1:
-        lon = ma.array(lon)
-    if lat.ndim == 1:
-        lat = ma.array(lat)
-    if lon.ndim != 1 or all(lon < lon[0]): # skip monotonic backwards data
-        return lon, lat
-    # Enforce monotonic longitudes
-    lon1 = lon[0]
-    while True:
-        filter_ = (lon < lon1)
-        if filter_.sum() == 0:
-            break
-        lon[filter_] += 360
-    return lon, lat
-
-def cartopy_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
-    """
-    Wrap %(methods)s for `~proplot.axes.CartopyAxes`.
-
-    Makes 1D longitude vectors monotonic and adds the `globe` keyword arg to
-    optionally make data coverage *global*. Passing ``globe=True`` does the
-    following:
-
-    1. Makes longitudinal coverage *circular* (i.e. the last longitude coordinate
-       equals the first longitude coordinate plus 360 degrees).
-    2. Interpolates data to the North and South poles.
-
-    If latitude and longitude arrays are 2D, `globe` is set to ``False``.
-    """
-    # Bail if using map coordinates
-    import cartopy.crs as ccrs
-    if not isinstance(kwargs.get('transform', None), ccrs.PlateCarree):
-        return func(self, lon, lat, *Zs, **kwargs)
-    # Fix grid
-    lon, lat = _gridfix_coordinates(lon, lat)
-    if not globe or lon.ndim != 1 or lat.ndim != 1:
-        Zss = Zs
-    else:
-        Zss = []
-        for Z in Zs:
-            # 1) Fix holes over poles by *interpolating* there (equivalent to
-            # simple mean of highest/lowest latitude points)
-            lat, Z = _gridfix_poles(lat, Z)
-            # 2) Fix seams at map boundary by ensuring circular coverage. Unlike
-            # basemap, cartopy can plot objects across map edges.
-            if (lon[0] % 360) != ((lon[-1] + 360) % 360):
-                lon = ma.concatenate((lon, [lon[0] + 360])) # make longitudes circular
-                Z = ma.concatenate((Z, Z[:,:1]), axis=1) # make data circular
-            # Append
-            Zss.append(Z)
-
-    # Call function
-    return func(self, lon, lat, *Zss, **kwargs)
-
-def basemap_gridfix(self, func, lon, lat, *Zs, globe=False, **kwargs):
-    """
-    Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
-
-    Makes 1D longitude vectors monotonic and cycles them to fit within the map
-    edges (i.e. if the projection central longitude is 90 degrees, will permute
-    data to span from -90 degrees to 270 degrees longitude).
-
-    Also adds the `globe` keyword arg to optionally make data coverage *global*.
-    Passing ``globe=True`` does the following:
-
-    1. Makes longitudinal coverage *circular* (i.e. the last longitude coordinate
-       equals the first longitude coordinate plus 360 degrees).
-    2. Interpolates data to the North and South poles.
-
-    If latitude and longitude arrays are 2D, `globe` is set to ``False``.
-    """
-    # Bail if using map coordinates
-    if not kwargs.get('latlon', None):
-        return func(self, lon, lat, *Zs, **kwargs)
-    # Fix grid
-    lon, lat = _gridfix_coordinates(lon, lat)
-    lonmin, lonmax = self.projection.lonmin, self.projection.lonmax
-    if lon.ndim != 1 or lat.ndim != 1:
-        Zss = Zs
-    else:
-        Zss = []
-        for Z in Zs:
-            # 1) Roll, accounting for whether ends are identical
-            roll = -np.argmin(lon) # returns idx of *first* occurrence of minimum
-            if lon[0] == lon[-1]:
-                lon = np.roll(lon[:-1], roll)
-                lon = ma.append(lon, lon[0] + 360)
-            else:
-                lon = np.roll(lon, roll)
-            Z = np.roll(Z, roll, axis=1)
-            # 2) Roll in same direction some more, if some points on right-edge
-            # extend more than 360 above the minimum longitude; *they* should be the
-            # ones on west/left-hand-side of map
-            lonroll = np.where(lon > lonmin + 360)[0] # tuple of ids
-            if lonroll.size: # non-empty
-                roll = lon.size - lonroll.min() # e.g. if 10 lons, lonmax id is 9, we want to roll once
-                lon = np.roll(lon, roll)
-                Z = np.roll(Z, roll, axis=1)
-                lon[:roll] -= 360 # make monotonic
-            # 3) Set NaN where data not in range lonmin, lonmax
-            # This needs to be done for some regional smaller projections or otherwise
-            # might get weird side-effects due to having valid data way outside of the
-            # map boundaries -- e.g. strange polygons inside an NaN region
-            Z = Z.copy()
-            if lon.size-1 == Z.shape[1]: # test western/eastern grid cell edges
-                Z[:,(lon[1:] < lonmin) | (lon[:-1] > lonmax)] = np.nan
-            elif lon.size == Z.shape[1]: # test the centers and pad by one for safety
-                where = np.where((lon < lonmin) | (lon > lonmax))[0]
-                Z[:,where[1:-1]] = np.nan
-            # Global coverage
-            if not globe:
-                Zss.append(Z)
-                continue
-            # 4) Fix holes over poles by interpolating there (equivalent to
-            # simple mean of highest/lowest latitude points)
-            lat, Z = _gridfix_poles(lat, Z)
-            # 5) Fix seams at map boundary; 3 scenarios here:
-            # (a) Have edges (e.g. for pcolor), and they fit perfectly against
-            # basemap seams. Does not augment size.
-            if lon[0] == lonmin and lon.size-1 == Z.shape[1]: # borders fit perfectly
-                pass # do nothing
-            # (b) Have edges (e.g. for pcolor), and the projection edge is
-            # in-between grid cell boundaries. Augments size by 1.
-            elif lon.size-1 == Z.shape[1]: # no interpolation necessary; just make a new grid cell
-                lon = ma.append(lonmin, lon)
-                lon[-1] = lonmin + 360 # we've added a new tiny cell to the end
-                Z = ma.concatenate((Z[:,-1:], Z), axis=1) # don't use pad; it messes up masked arrays
-            # (c) Have centers (e.g. for contourf), and we need to interpolate to the
-            # left/right edges of the map boundary. Augments size by 2.
-            elif lon.size == Z.shape[1]:
-                x = np.array([lon[-1], lon[0] + 360]) # x
-                if x[0] != x[1]:
-                    Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-                    xq = lonmin + 360
-                    Zq = (Zq[:,:1]*(x[1]-xq) + Zq[:,1:]*(xq-x[0]))/(x[1]-x[0]) # simple linear interp formula
-                    Z = ma.concatenate((Zq, Z, Zq), axis=1)
-                    lon = ma.append(ma.append(lonmin, lon), lonmin + 360)
-            else:
-                raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
-            # Add
-            Zss.append(Z)
-
-    # Prevent error where old boundary, drawn on a different axes, remains
-    # on the Basemap instance, which means it is not in self.patches, which
-    # means Basemap tries to draw it again so it can clip the *contours* by the
-    # resulting path, which raises error because you can't draw on Artist on multiple axes
-    self.projection._mapboundarydrawn = self.boundary # stored the axes-specific boundary here
-
-    # Convert to projection coordinates and call function
-    if lon.ndim == 1 and lat.ndim == 1:
-        lon, lat = np.meshgrid(lon, lat)
-    x, y = self.projection(lon, lat)
-    kwargs['latlon'] = False
-    return func(self, x, y, *Zss, **kwargs)
 
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
@@ -1339,7 +1315,7 @@ def cycle_wrapper(self, func, *args,
     colorbar_kw = colorbar_kw or {}
     panel_kw = panel_kw or {}
     # Test input
-    # NOTE: Requires autoformat_1d wrapper before reaching this. Also note that
+    # NOTE: Requires standardize_1d wrapper before reaching this. Also note that
     # the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
@@ -2726,6 +2702,7 @@ def colorbar_wrapper(self,
 # Create decorators from wrapper functions
 #------------------------------------------------------------------------------#
 # Basemap object caller decorator
+# WARNING: To
 def _basemap_call(func):
     """Docorator that calls the basemap version of the function of the same name."""
     name = func.__name__
@@ -2803,14 +2780,10 @@ _violinplot        = _wrapper_decorator(violinplot_wrapper)
 _fill_between      = _wrapper_decorator(fill_between_wrapper)
 _fill_betweenx     = _wrapper_decorator(fill_betweenx_wrapper)
 _text              = _wrapper_decorator(text_wrapper)
-_autoformat_1d     = _wrapper_decorator(autoformat_1d)
-_autoformat_2d     = _wrapper_decorator(autoformat_2d)
+_standardize_1d     = _wrapper_decorator(standardize_1d)
+_standardize_2d     = _wrapper_decorator(standardize_2d)
 _add_errorbars     = _wrapper_decorator(add_errorbars)
-_enforce_centers   = _wrapper_decorator(enforce_centers)
-_enforce_edges     = _wrapper_decorator(enforce_edges)
-_basemap_gridfix   = _wrapper_decorator(basemap_gridfix)
 _basemap_latlon    = _wrapper_decorator(basemap_latlon)
-_cartopy_gridfix   = _wrapper_decorator(cartopy_gridfix)
 _cartopy_transform = _wrapper_decorator(cartopy_transform)
 _cartopy_crs       = _wrapper_decorator(cartopy_crs)
 _cmap_wrapper      = _wrapper_decorator(cmap_wrapper)
