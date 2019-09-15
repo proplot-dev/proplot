@@ -1727,6 +1727,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
                         norm_kw.setdefault('levels', levels)
                     else:
                         norm = 'linear'
+            elif norm in ('segments', 'segmented'):
+                norm_kw.setdefault('levels', levels)
             norm = styletools.Norm(norm, **norm_kw)
 
     # Get default levels
