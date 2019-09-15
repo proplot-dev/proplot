@@ -146,7 +146,7 @@ class Axes(maxes.Axes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `CartesianAxes`, `ProjectionAxes`
+        `CartesianAxes`, `PolarAxes`, `ProjectionAxes`
         """
         # Call parent
         super().__init__(*args, **kwargs)
@@ -1513,14 +1513,15 @@ class CartesianAxes(Axes):
     """
     Axes subclass for ordinary Cartesian axes. Adds several new methods and
     overrides existing ones.
-
-    See also
-    --------
-    `~proplot.subplots.subplots`, `Axes`
     """
     name = 'cartesian'
     """The registered projection name."""
     def __init__(self, *args, **kwargs):
+        """
+        See also
+        --------
+        `~proplot.subplots.subplots`
+        """
         # Impose default formatter
         super().__init__(*args, **kwargs)
         formatter = axistools.Formatter('default')
