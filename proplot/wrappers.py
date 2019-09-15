@@ -488,7 +488,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         # Fix grid
         iZs = []
         x, y = _fix_latlon(x, y)
-        lonmin, lonmax = self.projection.lonmin, self.projection.lonmax
+        xmin, xmax = self.projection.lonmin, self.projection.lonmax
         if x.ndim != 1 or y.ndim != 1:
             iZs, Zs = Zs, [] # leave them alone
         for Z in Zs:
@@ -503,53 +503,50 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             Z = np.roll(Z, roll, axis=1)
             # Roll in same direction if some points on right-edge extend
             # more than 360 above min longitude; *they* should be on left side
-            lonroll = np.where(x > lonmin + 360)[0] # tuple of ids
+            lonroll = np.where(x > xmin + 360)[0] # tuple of ids
             if lonroll.size: # non-empty
-                roll = x.size - lonroll.min() # e.g. if 10 lons, lonmax id is 9, we want to roll once
+                roll = x.size - lonroll.min() # e.g. if 10 lons, xmax id is 9, we want to roll once
                 x = np.roll(x, roll)
                 Z = np.roll(Z, roll, axis=1)
                 x[:roll] -= 360 # make monotonic
-            # Set NaN where data not in range lonmin, lonmax. Must be done
+            # Set NaN where data not in range xmin, xmax. Must be done
             # for regional smaller projections or get weird side-effects due
             # to having valid data way outside of the map boundaries
             Z = Z.copy()
             if x.size-1 == Z.shape[1]: # test western/eastern grid cell edges
-                Z[:,(x[1:] < lonmin) | (x[:-1] > lonmax)] = np.nan
+                Z[:,(x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
             elif x.size == Z.shape[1]: # test the centers and pad by one for safety
-                where = np.where((x < lonmin) | (x > lonmax))[0]
+                where = np.where((x < xmin) | (x > xmax))[0]
                 Z[:,where[1:-1]] = np.nan
 
-            # Skip next part of global coverage turned off
-            if not globe:
-                iZs.append(Z)
-                continue
-
-            # Fix holes over poles by interpolating there (equivalent to
-            # simple mean of highest/lowest latitude points)
-            y, Z = _fix_poles(y, Z)
-            # Fix seams at map boundary; 3 scenarios here:
-            # Have edges (e.g. for pcolor), and they fit perfectly against
-            # basemap seams. Does not augment size.
-            if x[0] == lonmin and x.size-1 == Z.shape[1]:
-                pass # do nothing
-            # Have edges (e.g. for pcolor), and the projection edge is
-            # in-between grid cell boundaries. Augments size by 1.
-            elif x.size-1 == Z.shape[1]: # just add grid cell
-                x = ma.append(lonmin, x)
-                x[-1] = lonmin + 360
-                Z = ma.concatenate((Z[:,-1:], Z), axis=1)
-            # Have centers (e.g. for contourf), and we need to interpolate to
-            # the left/right edges of the map boundary. Augments size by 2.
-            elif x.size == Z.shape[1]:
-                x = np.array([x[-1], x[0] + 360]) # x
-                if x[0] != x[1]:
-                    Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
-                    xq = lonmin + 360
-                    Zq = (Zq[:,:1]*(x[1]-xq) + Zq[:,1:]*(xq-x[0]))/(x[1]-x[0])
-                    Z = ma.concatenate((Zq, Z, Zq), axis=1)
-                    x = ma.append(ma.append(lonmin, x), lonmin + 360)
-            else:
-                raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
+            # Globe coverage fixes
+            if globe:
+                # Fix holes over poles by interpolating there (equivalent to
+                # simple mean of highest/lowest latitude points)
+                y, Z = _fix_poles(y, Z)
+                # Fix seams at map boundary; 3 scenarios here:
+                # Have edges (e.g. for pcolor), and they fit perfectly against
+                # basemap seams. Does not augment size.
+                if x[0] == xmin and x.size-1 == Z.shape[1]:
+                    pass # do nothing
+                # Have edges (e.g. for pcolor), and the projection edge is
+                # in-between grid cell boundaries. Augments size by 1.
+                elif x.size-1 == Z.shape[1]: # just add grid cell
+                    x = ma.append(xmin, x)
+                    x[-1] = xmin + 360
+                    Z = ma.concatenate((Z[:,-1:], Z), axis=1)
+                # Have centers (e.g. for contourf), and we need to interpolate
+                # to left/right edges of the map boundary. Augments size by 2.
+                elif x.size == Z.shape[1]:
+                    xi = np.array([x[-1], x[0] + 360]) # x
+                    if xi[0] != xi[1]:
+                        Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                        xq = xmin + 360
+                        Zq = (Zq[:,:1]*(xi[1]-xq) + Zq[:,1:]*(xq-xi[0]))/(xi[1]-xi[0])
+                        Z = ma.concatenate((Zq, Z, Zq), axis=1)
+                        x = ma.concatenate(([xmin], x, [xmin + 360]))
+                else:
+                    raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
             iZs.append(Z)
         Zs = iZs
 
