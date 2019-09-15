@@ -887,7 +887,7 @@ class Axes(maxes.Axes):
         **kwargs):
         """
         Adds colorbar as an *inset* or along the outside edge of the axes.
-        See `~proplot.wrappers.colorbar` for details.
+        See `~proplot.wrappers.colorbar_wrapper` for details.
 
         Parameters
         ----------
@@ -942,7 +942,7 @@ class Axes(maxes.Axes):
             ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``,
             respectively.
         **kwargs
-            Passed to `~proplot.wrappers.colorbar`.
+            Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
@@ -1083,13 +1083,13 @@ class Axes(maxes.Axes):
             kwargs.setdefault('extendsize', extend)
 
         # Generate colorbar
-        return wrappers.colorbar(ax, *args, **kwargs)
+        return wrappers.colorbar_wrapper(ax, *args, **kwargs)
 
     def legend(self, *args, loc=None, width=None, space=None, **kwargs):
         """
         Adds an *inset* legend or *outer* legend along the edge of the axes.
         See `~matplotlib.axes.Axes.legend` and
-        `~proplot.wrappers.legend` for details.
+        `~proplot.wrappers.legend_wrapper` for details.
 
         Parameters
         ----------
@@ -1129,7 +1129,7 @@ class Axes(maxes.Axes):
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~matplotlib.axes.Axes.legend`.
+            Passed to `~proplot.wrappers.legend_wrapper`.
         """
         loc = self._loc_translate(loc, width=width, space=space)
         if isinstance(loc, np.ndarray):
@@ -1168,7 +1168,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid panel side {side!r}.')
 
         # Draw legend
-        return wrappers.legend(self, *args, loc=loc, **kwargs)
+        return wrappers.legend_wrapper(self, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
