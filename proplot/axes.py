@@ -149,6 +149,7 @@ class Axes(maxes.Axes):
         `~proplot.subplots.subplots`, `CartesianAxes`, `ProjectionAxes`
         """
         # Call parent
+        print('calling Axes!')
         super().__init__(*args, **kwargs)
         # Properties
         self._number = number # for abc numbering
@@ -2790,17 +2791,16 @@ class ProjectionAxes(Axes):
 # Cartopy takes advantage of documented feature where any class with method
 # named _as_mpl_axes can be passed as 'projection' object.
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
-# class CartopyAxes(ProjectionAxes, GeoAxes):
 class CartopyAxes(ProjectionAxes, GeoAxes):
     """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
-    projections. Initializes the `cartopy.crs.Projection` instance. Also
-    allows for *partial* coverage of azimuthal projections by zooming into
-    the full projection, then drawing a circle boundary around some latitude
-    away from the center (this is surprisingly difficult to do)."""
+    projections. Initializes the `cartopy.crs.Projection` instance, enforces
+    `global extent <https://stackoverflow.com/a/48956844/4970632>`__ for most
+    projections by default, and draws `circular boundaries <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
+    around polar azimuthal, stereographic, and Gnomic projections bounded at
+    the equator by default."""
     name = 'cartopy'
     """The registered projection name."""
     _n_points = 100 # number of points for drawing circle map boundary
-    _proj_circles = ('laea', 'aeqd', 'stere', 'gnom')
     def __init__(self, *args, map_projection=None, **kwargs):
         """
         Parameters
@@ -2814,31 +2814,30 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         --------
         `~proplot.subplots.subplots`, `~proplot.proj`
         """
-        # GeoAxes initialization steps are run manually
-        # If _hold is set False or None, cartopy will call cla() on axes,
-        # which wipes out row and column labels, so we do not use it
+        # GeoAxes initialization. Note that critical attributes like
+        # outline_patch needed by _format_apply are added before it is called.
         import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection>.')
-        self.img_factories = []
-        self.outline_patch = None
-        self.background_patch = None
-        self._gridliners = [] # populated in first format call
-        self._map_projection = map_projection # attribute used with GeoAxes
-        self._done_img_factory = False
         super().__init__(*args, map_projection=map_projection, **kwargs)
 
         # Zero out ticks so gridlines are not offset
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
 
-        # Default bounds and extent, always use circle for some projs
-        proj = self.projection.proj4_params['proj']
-        if proj in self._proj_circles:
-            self.set_boundary(projs.Circle(self._n_points),
-                              transform=self.transAxes)
+        # Set extent and boundary extent for projections
+        # The default bounding latitude is set in _format_apply
+        # NOTE: set_global does not mess up non-global projections like OSNI
+        if isinstance(self.projection, (
+            ccrs.NorthPolarStereo, ccrs.SouthPolarStereo,
+            projs.NorthPolarGnomonic, projs.SouthPolarGnomonic,
+            projs.NorthPolarAzimuthalEquidistant,
+            projs.NorthPolarLambertAzimuthalEqualArea,
+            projs.SouthPolarAzimuthalEquidistant,
+            projs.SouthPolarLambertAzimuthalEqualArea)):
+            self.set_boundary(projs.Circle(100), transform=self.transAxes)
         else:
-            self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
+            self.set_global()
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray):
