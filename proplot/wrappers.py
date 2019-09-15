@@ -2705,7 +2705,7 @@ def _redirect(func):
             if projection != 'basemap':
                 raise RuntimeError(f'Invalid function string {name!r} for basemap projection.')
             func = getattr(self.projection, name)
-            return func(ax=self, *args, **kwargs)
+            return func(*args, ax=self, **kwargs)
         elif projection == 'basemap':
             name = func.__name__
             return getattr(self.projection, name)(*args, ax=self, **kwargs)

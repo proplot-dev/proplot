@@ -1427,29 +1427,32 @@ class Axes(maxes.Axes):
     # Wrapped by cmap wrapper and standardized
     # Also support redirecting to Basemap methods
     hexbin = _standardize_1d(_cmap_wrapper(
-        maxes.Axes.hexbin
+        _redirect(maxes.Axes.hexbin)
         ))
-    contour = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.contour
-        )))
-    contourf = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.contourf
-        )))
-    pcolor = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.pcolor
-        )))
-    pcolormesh = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.pcolormesh
-        )))
-    quiver = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.quiver
-        )))
-    streamplot = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.streamplot
-        )))
-    barbs = _standardize_2d(_cmap_wrapper(_redirect(
-        maxes.Axes.barbs
-        )))
+    contour = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.contour)
+        ))
+    contourf = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.contourf)
+        ))
+    pcolor = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.pcolor)
+        ))
+    pcolormesh = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.pcolormesh)
+        ))
+    quiver = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.quiver)
+        ))
+    streamplot = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.streamplot)
+        ))
+    barbs = _standardize_2d(_cmap_wrapper(
+        _redirect(maxes.Axes.barbs)
+        ))
+    imshow = _cmap_wrapper(
+        _redirect(maxes.Axes.imshow)
+        )
 
     # Wrapped only by cmap wrapper
     tripcolor = _cmap_wrapper(
@@ -1469,9 +1472,6 @@ class Axes(maxes.Axes):
         )
     matshow = _cmap_wrapper(
         maxes.Axes.matshow
-        )
-    imshow = _cmap_wrapper(
-        maxes.Axes.imshow
         )
 
 #-----------------------------------------------------------------------------#
@@ -3245,41 +3245,41 @@ class BasemapAxes(ProjectionAxes):
     barbs      = _norecurse(_default_latlon(Axes.barbs))
     pcolor     = _norecurse(_default_latlon(Axes.pcolor))
     pcolormesh = _norecurse(_default_latlon(Axes.pcolormesh))
-    hexbin     = _norecurse(_default_latlon(Axes.hexbin))
-    imshow     = _norecurse(_default_latlon(Axes.imshow))
+    hexbin     = _norecurse(Axes.hexbin) # no latlon arg
+    imshow     = _norecurse(Axes.imshow) # no latlon arg
 
     # Make common basemap methods accessible from here
     # TODO: This is awful. When cartopy releases meridian and parallel labels
     # we are dropping basemap support like it's hot.
-    # arcgisimage      = _redirect('arcgisimage')
-    # bluemarble       = _redirect('bluemarble')
-    # drawcoastlines   = _redirect('drawcoastlines')
-    # drawcounties     = _redirect('drawcounties')
-    # drawcountries    = _redirect('drawcountries')
-    # drawgreatcircle  = _redirect('drawgreatcircle')
-    # drawlsmask       = _redirect('drawlsmask')
-    # drawmapboundary  = _redirect('drawmapboundary')
-    # drawmapscale     = _redirect('drawmapscale')
-    # drawmeridians    = _redirect('drawmeridians')
-    # drawparallels    = _redirect('drawparallels')
-    # drawrivers       = _redirect('drawrivers')
-    # drawstates       = _redirect('drawstates')
-    # etopo            = _redirect('etopo')
-    # fillcontinents   = _redirect('fillcontinents')
-    # gcpoints         = _redirect('gcpoints')
-    # is_land          = _redirect('is_land')
-    # makegrid         = _redirect('makegrid')
-    # nightshade       = _redirect('nightshade')
-    # readshapefile    = _redirect('readshapefile')
-    # rotate_vector    = _redirect('rotate_vector')
-    # shadedrelief     = _redirect('shadedrelief')
-    # tissot           = _redirect('tissot')
-    # transform_scalar = _redirect('transform_scalar')
-    # transform_vector = _redirect('transform_vector')
-    # warpimage        = _redirect('warpimage')
-    # wmsimage         = _redirect('wmsimage')
-    # interp           = _redirect('interp')
-    # maskoceans       = _redirect('maskoceans')
+    arcgisimage      = _redirect('arcgisimage')
+    bluemarble       = _redirect('bluemarble')
+    drawcoastlines   = _redirect('drawcoastlines')
+    drawcounties     = _redirect('drawcounties')
+    drawcountries    = _redirect('drawcountries')
+    drawgreatcircle  = _redirect('drawgreatcircle')
+    drawlsmask       = _redirect('drawlsmask')
+    drawmapboundary  = _redirect('drawmapboundary')
+    drawmapscale     = _redirect('drawmapscale')
+    drawmeridians    = _redirect('drawmeridians')
+    drawparallels    = _redirect('drawparallels')
+    drawrivers       = _redirect('drawrivers')
+    drawstates       = _redirect('drawstates')
+    etopo            = _redirect('etopo')
+    fillcontinents   = _redirect('fillcontinents')
+    gcpoints         = _redirect('gcpoints')
+    is_land          = _redirect('is_land')
+    makegrid         = _redirect('makegrid')
+    nightshade       = _redirect('nightshade')
+    readshapefile    = _redirect('readshapefile')
+    rotate_vector    = _redirect('rotate_vector')
+    shadedrelief     = _redirect('shadedrelief')
+    tissot           = _redirect('tissot')
+    transform_scalar = _redirect('transform_scalar')
+    transform_vector = _redirect('transform_vector')
+    warpimage        = _redirect('warpimage')
+    wmsimage         = _redirect('wmsimage')
+    interp           = _redirect('interp')
+    maskoceans       = _redirect('maskoceans')
 
 # Register the projections
 mproj.register_projection(PolarAxes)
