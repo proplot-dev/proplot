@@ -9,6 +9,7 @@ import functools
 import warnings
 from . import utils, styletools, axistools
 from .utils import _notNone
+import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -479,7 +480,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             if (x[0] % 360) != ((x[-1] + 360) % 360):
                 x = ma.concatenate((x, [x[0] + 360]))
                 Z = ma.concatenate((Z, Z[:,:1]), axis=1)
-            Zs.append(Z)
+            iZs.append(Z)
+        Zs = iZs
 
     # Basemap projection axes
     elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
@@ -1285,8 +1287,8 @@ def cycle_wrapper(self, func, *args,
     --------
     `~proplot.styletools.Cycle`, `~proplot.styletools.colors`
 
-    Note
-    ----
+    Notes
+    -----
     See the `matplotlib source
     <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
     The `set_prop_cycle` command modifies underlying
@@ -1565,7 +1567,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
         or `~matplotlib.axes.Axes.pcolormesh`, whether to add labels to the
         center of grid boxes. In the latter case, the text will be black
-        when the luminance of the underlying grid box color is >50%, and
+        when the luminance of the underlying grid box color is >50%%, and
         white otherwise (see the `~proplot.styletools` documentation).
     labels_kw : dict-like, optional
         Ignored if `labels` is ``False``. Extra keyword args for the labels.
@@ -1607,8 +1609,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
-    Note
-    ----
+    Notes
+    -----
     The `~proplot.styletools.BinNorm` normalizer, used with all colormap
     plots, makes sure that your "levels" always span the full range of colors
     in the colormap, whether you are extending max, min, neither, or both. By
@@ -1616,11 +1618,12 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     cut off the most intense colors (reserved for coloring "out of bounds"
     data), even though they are not being used.
 
-    This could also be done by limiting the number of colors in the colormap lookup
-    table by selecting a smaller ``N`` (see `~matplotlib.colors.LinearSegmentedColormap`).
-    But I prefer the approach of always building colormaps with hi-res lookup
-    tables, and leaving the job of normalizing data values to colormap locations
-    to the `~matplotlib.colors.Normalize` object.
+    This could also be done by limiting the number of colors in the colormap
+    lookup table by selecting a smaller ``N`` (see
+    `~matplotlib.colors.LinearSegmentedColormap`).  But I prefer the approach
+    of always building colormaps with hi-res lookup tables, and leaving the job
+    of normalizing data values to colormap locations to the
+    `~matplotlib.colors.Normalize` object.
 
     See also
     --------
@@ -2699,7 +2702,7 @@ def _redirect(func):
             if projection != 'basemap':
                 raise RuntimeError(f'Invalid function string {name!r} for basemap projection.')
             func = getattr(self.projection, name)
-            return func(*args, ax=self, **kwargs)
+            return func(ax=self, *args, **kwargs)
         elif projection == 'basemap':
             name = func.__name__
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
@@ -2710,23 +2713,22 @@ def _redirect(func):
     return wrapper
 
 # Basemap recursion fix decorator
-def _no_recurse(func):
-    """Decorator to prevent recursion in certain method overrides.
+def _norecurse(func):
+    """Decorator to prevent recursion in basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
     name = func.__name__
+    func._hasrecurred = False
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self._hasrecurred:
-            # Return the *original* version of the matplotlib method. We reach
-            # this block e.g. when pcolormesh calls pcolor or when
-            # basemap.Basemap tries to call something.
-            self._hasrecurred = False
-            result = getattr(self, name)(*args, **kwargs)
+        if func._hasrecurred:
+            # Return the *original* version of the matplotlib method
+            func._hasrecurred = False
+            result = getattr(maxes.Axes, name)(self, *args, **kwargs)
         else:
             # Return the version we have wrapped
-            self._hasrecurred = True
+            func._hasrecurred = True
             result = func(self, *args, **kwargs)
-        self._hasrecurred = False # cleanup, in case recursion never occurred
+        func._hasrecurred = False # cleanup, in case recursion never occurred
         return result
     return wrapper
 
@@ -2750,9 +2752,9 @@ def _wrapper_decorator(driver):
         # Prevents us from having to both explicitly apply decorators in
         # axes.py and explicitly list functions *again* in this file
         docstring = driver._docstring_orig
-        if docstring and '{}' in docstring:
+        if '%(methods)s' in docstring:
             name = func.__name__
-            if name in ('cmapline','heatmap','area','areax'):
+            if name in ('cmapline', 'heatmap', 'area', 'areax'):
                 name = f'`~proplot.axes.Axes.{name}`'
             else:
                 name = f'`~matplotlib.axes.Axes.{name}`'
@@ -2762,7 +2764,7 @@ def _wrapper_decorator(driver):
                 string = (', '.join(methods[:-1])
                     + ','*min(1, len(methods)-2) # Oxford comma bitches
                     + ' and ' + methods[-1])
-                driver.__doc__ = docstring % {'method': string}
+                driver.__doc__ = docstring % {'methods': string}
         return wrapper
     return decorator
 
