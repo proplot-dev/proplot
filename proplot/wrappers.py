@@ -75,19 +75,6 @@ TRANSFORM_METHODS = ('plot', 'scatter', 'tripcolor',
     'tricontour', 'tricontourf', *EDGES_METHODS, *CENTERS_METHODS
     )
 
-# Disabled methods; keys are error messages
-# TODO: rigorous support for violin plots, bar, barh, streamline and quiver
-# TODO: 'table', 'eventplot', 'pie', 'xcorr', 'acorr', 'psd', 'csd',
-# 'magnitude_spectrum', 'angle_spectrum', 'phase_spectrum', 'cohere', 'specgram'
-DISABLED_METHODS = {
-    "Redundant function {} has been disabled. Control axis scale with format(xscale='scale', yscale='scale').":
-        ('semilogx', 'semilogy', 'loglog'),
-    "Redundant function {} has been disabled. Date formatters will be used automatically when x/y coordinates are python datetime or numpy datetime64.":
-        ('plot_date',),
-    "Redundant function {} has been disabled. Use proj='polar' in subplots() call, then use the angle as your *x* coordinate and radius as your *y* coordinate.":
-        ('polar',)
-    }
-
 # Keywords for styling cmap overridden plots
 STYLE_ARGS_TRANSLATE = {
     'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
@@ -126,7 +113,6 @@ def _expand_methods_list(func):
         ('TRANSFORM_METHODS',     TRANSFORM_METHODS),
         ('CYCLE_METHODS',         CYCLE_METHODS),
         ('CMAP_METHODS',          CMAP_METHODS),
-        ('DISABLED_METHODS',      (*(method for methods in DISABLED_METHODS.values() for method in methods),)),
         ):
         if f'`{name}`' not in doc:
             continue
