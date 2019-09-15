@@ -15,11 +15,11 @@ need to have cartopy or basemap installed. It is powered by the
 `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
 `~matplotlib.axes.Axes` class, and adds a
 `~proplot.axes.ProjectionAxes.format` command.
-`~proplot.axes.BasemapAxes` redirects the ``plot``, ``scatter``,
-``contour``, ``contourf``, ``pcolor``, ``pcolormesh``, ``quiver``,
-``streamplot``, and ``barb`` methods to identically named methods on the
-`~mpl_toolkits.basemap.Basemap` instance, and provides access to
-`~mpl_toolkits.basemap.Basemap` geographic plotting commands like
+`~proplot.axes.BasemapAxes` redirects the plot, scatter, contour,
+contourf, pcolor, pcolormesh, quiver, streamplot, and barb methods to
+identically named methods on the `~mpl_toolkits.basemap.Basemap`
+instance, and provides access to `~mpl_toolkits.basemap.Basemap`
+geographic plotting commands like
 `~mpl_toolkits.basemap.Basemap.fillcontinents` via the
 `~proplot.axes.ProjectionAxes.format` command.
 
