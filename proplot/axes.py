@@ -2819,7 +2819,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         # which wipes out row and column labels, so we do not use it
         import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection > .')
+            raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection>.')
         self.img_factories = []
         self.outline_patch = None
         self.background_patch = None
@@ -2827,16 +2827,18 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         self._map_projection = map_projection # attribute used with GeoAxes
         self._done_img_factory = False
         super().__init__(*args, map_projection=map_projection, **kwargs)
-        # Zero ticks so gridlines are not offset
+
+        # Zero out ticks so gridlines are not offset
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
-        # Default bounds and extent, and always user circle for some projs
+
+        # Default bounds and extent, always use circle for some projs
         proj = self.projection.proj4_params['proj']
-        if proj not in self._proj_circles:
-            self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
-        else:
+        if proj in self._proj_circles:
             self.set_boundary(projs.Circle(self._n_points),
                               transform=self.transAxes)
+        else:
+            self.set_global() # see: https://stackoverflow.com/a/48956844/4970632
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray):
@@ -3044,9 +3046,16 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         self._gridliners = []
         return super().get_tightbbox(renderer, *args, **kwargs)
 
-    # Property
+    # Document projection property
     @property
-    def projection
+    def projection(self):
+        """The `~cartopy.crs.Projection` coordinate reference system
+        instance."""
+        return self._map_projection
+
+    @projection.setter
+    def projection(self, map_projection):
+        self._map_projection = map_projection
 
     # Wrapped methods
     plot        = _default_transform(Axes.plot)
@@ -3240,6 +3249,17 @@ class BasemapAxes(ProjectionAxes):
             else:
                 feat.update(kw)
             setattr(self, '_' + name, feat)
+
+    # Document projection property
+    @property
+    def projection(self):
+        """The `~mpl_toolkits.basemap.Basemap` instance associated with
+        this axes."""
+        return self._map_projection
+
+    @projection.setter
+    def projection(self, map_projection):
+        self._map_projection = map_projection
 
     # Wrapped methods
     plot       = _norecurse(_default_latlon(Axes.plot))
