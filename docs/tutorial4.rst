@@ -166,13 +166,13 @@ Making your own colormaps
 
 You can make new colormaps with ProPlot’s on-the-fly colormap generator
 `~proplot.styletools.Colormap`. Every command that accepts a ``cmap``
-argument (see `~proplot.wrappers.cmap_wrapper`) is passed to
+argument (see `~proplot.wrappers.cmap_changer`) is passed to
 `~proplot.styletools.Colormap`, and `~proplot.styletools.Colormap`
 keyword args can be specified with ``cmap_kw``. If you want to save your
 own colormap into the ``~/.proplot/cmaps`` folder, simply use
 ``save=True``. Colormaps in this folder are loaded every time you import
 ProPlot. See `~proplot.styletools.Colormap` and
-`~proplot.wrappers.cmap_wrapper` for details.
+`~proplot.wrappers.cmap_changer` for details.
 
 To build monochromatic
 `~proplot.styletools.PerceptuallyUniformColormap` maps from arbitrary
@@ -429,7 +429,7 @@ You can make new color cycles with ProPlot’s on-the-fly property cycler
 generator `~proplot.styletools.Cycle`. ProPlot lets you specify a
 property cycle by passing ``cycle`` to plotting commands like
 `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
-(see `~proplot.wrappers.cycle_wrapper`), which is passed to
+(see `~proplot.wrappers.cycle_changer`), which is passed to
 `~proplot.styletools.Cycle`, and `~proplot.styletools.Cycle` keyword
 args can be specified with ``cycle_kw``. If you want to save your own
 color cycle into the ``~/.proplot/cycles`` folder, simply pass

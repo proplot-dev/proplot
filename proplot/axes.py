@@ -35,8 +35,8 @@ from .rctools import rc, RC_NAMES_NODOTS
 from .wrappers import (
     _get_transform, _norecurse, _redirect,
     _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
-    _default_crs, _default_latlon, _default_transform, _cmap_wrapper,
-    _cycle_wrapper, _fill_between_wrapper, _fill_betweenx_wrapper,
+    _default_crs, _default_latlon, _default_transform, _cmap_changer,
+    _cycle_changer, _fill_between_wrapper, _fill_betweenx_wrapper,
     _hist_wrapper, _plot_wrapper, _scatter_wrapper,
     _standardize_1d, _standardize_2d,
     _text_wrapper, _violinplot_wrapper,
@@ -800,7 +800,7 @@ class Axes(maxes.Axes):
         return self.boxplot(*args, **kwargs)
 
     @_standardize_1d
-    @_cmap_wrapper
+    @_cmap_changer
     def cmapline(self, *args, values=None,
         cmap=None, norm=None,
         interp=0, **kwargs):
@@ -1385,92 +1385,92 @@ class Axes(maxes.Axes):
     text = _text_wrapper(
         maxes.Axes.text
         )
-    plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_wrapper(
+    plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
         _redirect(maxes.Axes.plot)
         ))))
-    scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_wrapper(
+    scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
         _redirect(maxes.Axes.scatter)
         ))))
-    bar = _bar_wrapper(_standardize_1d(_add_errorbars(_cycle_wrapper(
+    bar = _bar_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
         maxes.Axes.bar
         ))))
     barh = _barh_wrapper(
         maxes.Axes.barh
         ) # calls self.bar
-    hist = _hist_wrapper(_standardize_1d(_cycle_wrapper(
+    hist = _hist_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.hist
         )))
-    boxplot = _boxplot_wrapper(_standardize_1d(_cycle_wrapper(
+    boxplot = _boxplot_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.boxplot
         )))
-    violinplot = _violinplot_wrapper(_standardize_1d(_add_errorbars(_cycle_wrapper(
+    violinplot = _violinplot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
         maxes.Axes.violinplot
         ))))
-    fill_between  = _fill_between_wrapper(_standardize_1d(_cycle_wrapper(
+    fill_between  = _fill_between_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.fill_between
         )))
-    fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_wrapper(
+    fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.fill_betweenx
         )))
 
     # Wrapped by cycle wrapper and standardized
-    pie = _standardize_1d(_cycle_wrapper(
+    pie = _standardize_1d(_cycle_changer(
         maxes.Axes.pie
         ))
-    stem = _standardize_1d(_cycle_wrapper(
+    stem = _standardize_1d(_cycle_changer(
         maxes.Axes.stem
         ))
-    step = _standardize_1d(_cycle_wrapper(
+    step = _standardize_1d(_cycle_changer(
         maxes.Axes.step
         ))
 
     # Wrapped by cmap wrapper and standardized
     # Also support redirecting to Basemap methods
-    hexbin = _standardize_1d(_cmap_wrapper(
+    hexbin = _standardize_1d(_cmap_changer(
         _redirect(maxes.Axes.hexbin)
         ))
-    contour = _standardize_2d(_cmap_wrapper(
+    contour = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.contour)
         ))
-    contourf = _standardize_2d(_cmap_wrapper(
+    contourf = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.contourf)
         ))
-    pcolor = _standardize_2d(_cmap_wrapper(
+    pcolor = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.pcolor)
         ))
-    pcolormesh = _standardize_2d(_cmap_wrapper(
+    pcolormesh = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.pcolormesh)
         ))
-    quiver = _standardize_2d(_cmap_wrapper(
+    quiver = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.quiver)
         ))
-    streamplot = _standardize_2d(_cmap_wrapper(
+    streamplot = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.streamplot)
         ))
-    barbs = _standardize_2d(_cmap_wrapper(
+    barbs = _standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.barbs)
         ))
-    imshow = _cmap_wrapper(
+    imshow = _cmap_changer(
         _redirect(maxes.Axes.imshow)
         )
 
     # Wrapped only by cmap wrapper
-    tripcolor = _cmap_wrapper(
+    tripcolor = _cmap_changer(
         maxes.Axes.tripcolor
         )
-    tricontour = _cmap_wrapper(
+    tricontour = _cmap_changer(
         maxes.Axes.tricontour
         )
-    tricontourf = _cmap_wrapper(
+    tricontourf = _cmap_changer(
         maxes.Axes.tricontourf
         )
-    hist2d = _cmap_wrapper(
+    hist2d = _cmap_changer(
         maxes.Axes.hist2d
         )
-    spy = _cmap_wrapper(
+    spy = _cmap_changer(
         maxes.Axes.spy
         )
-    matshow = _cmap_wrapper(
+    matshow = _cmap_changer(
         maxes.Axes.matshow
         )
 

@@ -27,7 +27,9 @@ except ModuleNotFoundError:
 __all__ = [
     'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper',
     'default_crs', 'default_latlon', 'default_transform',
-    'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
+    'cmap_changer',
+    'cycle_changer',
+    'colorbar_wrapper',
     'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
     'legend_wrapper', 'plot_wrapper', 'scatter_wrapper',
     'standardize_1d', 'standardize_2d', 'text_wrapper',
@@ -276,7 +278,7 @@ def standardize_1d(self, func, *args, **kwargs):
         x, ys = ix, iys
 
     # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
-    # cycle_wrapper is also applied so it can strip 'x' input.
+    # cycle_changer is also applied so it can strip 'x' input.
     return func(self, x, *ys, *args, **kwargs)
 
 #-----------------------------------------------------------------------------#
@@ -960,7 +962,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     """
     # Barh converts y-->bottom, left-->x, width-->height, height-->width.
     # Convert back to (x, bottom, width, height) so we can pass stuff through
-    # cycle_wrapper.
+    # cycle_changer.
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
@@ -971,7 +973,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         width, height = height, width
 
     # Parse args
-    # TODO: Stacked feature is implemented in `cycle_wrapper`, but makes more
+    # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
     if left is not None:
         warnings.warn(f'The "left" keyword with bar() is deprecated. Use "x" instead.')
@@ -982,7 +984,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         x, height = None, x
 
     # Call func
-    # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
+    # TODO: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     return func(self, x, height, width=width, bottom=bottom,
@@ -1233,7 +1235,7 @@ def text_wrapper(self, func,
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
-def cycle_wrapper(self, func, *args,
+def cycle_changer(self, func, *args,
     cycle=None, cycle_kw=None,
     markers=None, linestyles=None,
     label=None, labels=None, values=None,
@@ -1500,7 +1502,7 @@ def cycle_wrapper(self, func, *args,
     else:
         return objs[0] if is1d else (*objs,) # sensible default behavior
 
-def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
+def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     extend='neither', norm=None, norm_kw=None,
     N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
     locator=None, symmetric=False, locator_kw=None,
@@ -2484,7 +2486,7 @@ def colorbar_wrapper(self,
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis. If values were provided as keyword arg,
     # this is colorbar from lines/colors, and we label *all* values by default.
-    # TODO: Handle more of the log locator stuff here instead of cmap_wrapper?
+    # TODO: Handle more of the log locator stuff here instead of cmap_changer?
     if tick_all and locator is None:
         locator = values
         tickminor = False
@@ -2785,8 +2787,8 @@ _default_latlon        = _wrapper_decorator(default_latlon)
 _boxplot_wrapper       = _wrapper_decorator(boxplot_wrapper)
 _default_crs           = _wrapper_decorator(default_crs)
 _default_transform     = _wrapper_decorator(default_transform)
-_cmap_wrapper          = _wrapper_decorator(cmap_wrapper)
-_cycle_wrapper         = _wrapper_decorator(cycle_wrapper)
+_cmap_changer          = _wrapper_decorator(cmap_changer)
+_cycle_changer         = _wrapper_decorator(cycle_changer)
 _fill_between_wrapper  = _wrapper_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
 _hist_wrapper          = _wrapper_decorator(hist_wrapper)
