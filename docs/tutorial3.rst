@@ -69,27 +69,24 @@ the `cartopy.crs.Projection` classes, e.g. ``lon_0`` instead of
 
 
 
-
-.. image:: tutorial/tutorial_75_4.svg
-
+.. image:: tutorial/tutorial_75_2.svg
 
 
-.. image:: tutorial/tutorial_75_5.svg
+
+.. image:: tutorial/tutorial_75_3.svg
 
 
 Plotting geophysical data
 -------------------------
 
 The below demonstrates how to plot geophysical data with ProPlot. For
-cartopy projections, you no longer need to pass
-``transform=crs.PlateCarree()`` to the plotting method (as I found
-myself doing 99% of the time) – ProPlot makes this the default. And
-basemap usage is considerably simplified with ProPlot. You can simply
-call the axes method instead of calling the method on the
-`~mpl_toolkits.basemap.Basemap` instance, and you no longer need to
-pass ``latlon=True`` to the plotting command – ProPlot makes this the
-default. For both basemap and cartopy projections, you can also pass
-``globe=True`` to 2D plotting commands to ensure global data coverage.
+cartopy projections, ``transform=crs.PlateCarree()`` is now the default
+behavior for all plotting methods. For basemap projections, you now call
+plotting methods on the axes instead of the
+`~mpl_toolkits.basemap.Basemap` instance, and ``latlon=True`` is the
+default behavior for all plotting methods. For both basemap and cartopy
+projections, you can also pass ``globe=True`` to 2D plotting commands to
+ensure global data coverage.
 
 These features are powered by the `~proplot.wrappers.standardize_2d`,
 `~proplot.wrappers.default_transform`, and
@@ -100,30 +97,39 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
     import proplot as plot
     import numpy as np
     offset = -40
-    x = plot.arange(0+offset, 360+offset-1, 60)
+    x = plot.arange(offset, 360 + offset-1, 60)
     y = plot.arange(-60,60+1,30)
     data = np.random.rand(len(y), len(x))
+    titles = ('Geophysical data demo', 'Global coverage demo')
     for globe in (False,True):
         f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2.5,
-            proj='hammer', basemap={(1,3):False, (2,4):True})
-        for i,(ax,pcolor,basemap) in enumerate(zip(axs,[1,1,0,0],[0,1,0,1])):
-            cmap = ('sunset', 'sunrise')[basemap]
-            cmd = (ax.contourf, ax.pcolor)[pcolor]
-            m = cmd(x, y, data, cmap=cmap, globe=globe, extend='both')
-            if i<2:
-                f.colorbar(m, loc='b', span=i+1, label='values', tickminor=False, extendsize='2em')
-        axs.format(suptitle=f'Plotting data {("with" if globe else "without")} global coverage',
+            proj='kav7', basemap={(1,3):False, (2,4):True})
+        for i,ax in enumerate(axs):
+            cmap = ('sunset', 'sunrise')[i % 2]
+            kw = {'cmap':cmap, 'globe':globe, 'extend':'both'}
+            if i < 2:
+                m = ax.contourf(x, y, data, **kw)
+                f.colorbar(m, loc='b', span=i+1, label='values', tickminor=False, extendsize='1.7em')
+            else:
+                ax.pcolor(x, y, data, **kw)
+            if not globe:
+                ix = offset + np.linspace(0, 360, 20)
+                for cmd in (np.sin,np.cos):
+                    iy = cmd(ix*np.pi/180)*60
+                    ax.plot(ix, iy, color='k', lw=0, marker='o')
+        axs.format(suptitle=titles[globe],
                    collabels=['Cartopy example', 'Basemap example'],
-                   rowlabels=['Pcolor', 'Contourf'], labels=False,
+                   rowlabels=['Pcolor', 'Contourf'], latlabels='r', lonlabels='b', lonlines=90,
                    abc=True, abcformat='a)', abcloc='ul', abcborder=False)
 
 
 
-.. image:: tutorial/tutorial_78_0.svg
-
-
 
 .. image:: tutorial/tutorial_78_1.svg
+
+
+
+.. image:: tutorial/tutorial_78_2.svg
 
 
 Formatting projection axes

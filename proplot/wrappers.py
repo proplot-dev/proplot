@@ -258,13 +258,26 @@ def standardize_1d(self, func, *args, **kwargs):
         # Appply
         if kw:
             self.format(**kw)
-    # Return result, maybe modify arguments
-    # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
-    # cycle_wrapper is also applied so it can strip 'x' input.
+
+    # Standardize args
     if xi is not None:
         x = xi
     if name in ('boxplot','violinplot'):
         ys = [_to_array(yi) for yi in ys] # store naked array
+
+    # Basemap shift x coordiantes without shifting y, we fix this!
+    if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+        ix, iys = x, []
+        xmin, xmax = self.projection.lonmin, self.projection.lonmax
+        for y in ys:
+            # Ensure data is monotonic and falls within map bounds
+            ix, iy = _standardize_latlon(x, y)
+            ix, iy = _enforce_bounds(ix, iy, xmin=xmin, xmax=xmax)
+            iys.append(iy)
+        x, ys = ix, iys
+
+    # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
+    # cycle_wrapper is also applied so it can strip 'x' input.
     return func(self, x, *ys, *args, **kwargs)
 
 #-----------------------------------------------------------------------------#
@@ -274,7 +287,7 @@ def standardize_1d(self, func, *args, **kwargs):
 # own wrappers? Because grid fixes must come *after* automatic formatting,
 # which means we'd have to apply these wrappers separately on CartesianAxes,
 # BasemapAxes, CartopyAxes, and PolarAxes. Would be super redundant.
-def _fix_poles(y, Z):
+def _interp_poles(y, Z):
     """Adds data points on the poles as the average of highest latitude data."""
     # Get means
     with np.errstate(all='ignore'):
@@ -292,7 +305,7 @@ def _fix_poles(y, Z):
     Z = ma.concatenate((Z1, Z, Z2), axis=0)
     return y, Z
 
-def _fix_latlon(x, y):
+def _standardize_latlon(x, y):
     """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
     contents can be modified. Ignores 2D coordinate arrays."""
     # Sanitization and bail if 2D
@@ -309,6 +322,32 @@ def _fix_latlon(x, y):
         if filter_.sum() == 0:
             break
         x[filter_] += 360
+    return x, y
+
+def _enforce_bounds(x, y, xmin=None, xmax=None):
+    """Ensures data for basemap plots is restricted between the minimum and
+    maximum longitude of the projection. Input is the ``x`` and ``y``
+    coordinates. The ``y`` coordinates are rolled along the rightmost axis."""
+    if x.ndim != 1:
+        return x, y
+    # Roll in same direction if some points on right-edge extend
+    # more than 360 above min longitude; *they* should be on left side
+    lonroll = np.where(x > xmin + 360)[0] # tuple of ids
+    if lonroll.size: # non-empty
+        roll = x.size - lonroll.min() # e.g. if 10 lons, xmax id is 9, we want to roll once
+        x = np.roll(x, roll)
+        y = np.roll(y, roll, axis=-1)
+        x[:roll] -= 360 # make monotonic
+
+    # Set NaN where data not in range xmin, xmax. Must be done
+    # for regional smaller projections or get weird side-effects due
+    # to having valid data way outside of the map boundaries
+    y = y.copy()
+    if x.size-1 == y.shape[-1]: # test western/eastern grid cell edges
+        y[..., (x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
+    elif x.size == y.shape[-1]: # test the centers and pad by one for safety
+        where = np.where((x < xmin) | (x > xmax))[0]
+        y[..., where[1:-1]] = np.nan
     return x, y
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
@@ -469,86 +508,61 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     if (getattr(self, 'name', '') == 'cartopy' and
         isinstance(kwargs.get('transform', None), PlateCarree)):
         iZs = []
-        x, y = _fix_latlon(x, y)
-        if not globe or x.ndim != 1 or y.ndim != 1:
-            iZs, Zs = Zs, []
+        x, y = _standardize_latlon(x, y)
         for Z in Zs:
-            # Fix holes over poles by *interpolating* there
-            y, Z = _fix_poles(y, Z)
-            # Fix seams by ensuring circular coverage. Unlike basemap,
-            # cartopy can plot across map edges.
-            if (x[0] % 360) != ((x[-1] + 360) % 360):
-                x = ma.concatenate((x, [x[0] + 360]))
-                Z = ma.concatenate((Z, Z[:,:1]), axis=1)
+            if globe and x.ndim == 1 and y.ndim == 1:
+                # Fix holes over poles by *interpolating* there
+                y, Z = _interp_poles(y, Z)
+
+                # Fix seams by ensuring circular coverage. Unlike basemap,
+                # cartopy can plot across map edges.
+                if (x[0] % 360) != ((x[-1] + 360) % 360):
+                    x = ma.concatenate((x, [x[0] + 360]))
+                    Z = ma.concatenate((Z, Z[:,:1]), axis=1)
             iZs.append(Z)
         Zs = iZs
 
     # Basemap projection axes
     elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
         # Fix grid
-        iZs = []
-        x, y = _fix_latlon(x, y)
+        x, y = _standardize_latlon(x, y)
+        ix, iZs = x, []
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
-        if x.ndim != 1 or y.ndim != 1:
-            iZs, Zs = Zs, [] # leave them alone
         for Z in Zs:
-            # Special basemap fixes
-            # Roll, accounting for whether ends are identical
-            roll = -np.argmin(x)
-            if x[0] == x[-1]:
-                x = np.roll(x[:-1], roll)
-                x = ma.append(x, x[0] + 360)
-            else:
-                x = np.roll(x, roll)
-            Z = np.roll(Z, roll, axis=1)
-            # Roll in same direction if some points on right-edge extend
-            # more than 360 above min longitude; *they* should be on left side
-            lonroll = np.where(x > xmin + 360)[0] # tuple of ids
-            if lonroll.size: # non-empty
-                roll = x.size - lonroll.min() # e.g. if 10 lons, xmax id is 9, we want to roll once
-                x = np.roll(x, roll)
-                Z = np.roll(Z, roll, axis=1)
-                x[:roll] -= 360 # make monotonic
-            # Set NaN where data not in range xmin, xmax. Must be done
-            # for regional smaller projections or get weird side-effects due
-            # to having valid data way outside of the map boundaries
-            Z = Z.copy()
-            if x.size-1 == Z.shape[1]: # test western/eastern grid cell edges
-                Z[:,(x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
-            elif x.size == Z.shape[1]: # test the centers and pad by one for safety
-                where = np.where((x < xmin) | (x > xmax))[0]
-                Z[:,where[1:-1]] = np.nan
+            # Ensure data is within map bounds
+            ix, Z = _enforce_bounds(x, Z, xmin=xmin, xmax=xmax)
 
             # Globe coverage fixes
-            if globe:
+            if globe and ix.ndim == 1 and y.ndim == 1:
                 # Fix holes over poles by interpolating there (equivalent to
                 # simple mean of highest/lowest latitude points)
-                y, Z = _fix_poles(y, Z)
+                y, Z = _interp_poles(y, Z)
+
                 # Fix seams at map boundary; 3 scenarios here:
                 # Have edges (e.g. for pcolor), and they fit perfectly against
                 # basemap seams. Does not augment size.
-                if x[0] == xmin and x.size-1 == Z.shape[1]:
+                if ix[0] == xmin and ix.size-1 == Z.shape[1]:
                     pass # do nothing
                 # Have edges (e.g. for pcolor), and the projection edge is
                 # in-between grid cell boundaries. Augments size by 1.
-                elif x.size-1 == Z.shape[1]: # just add grid cell
-                    x = ma.append(xmin, x)
-                    x[-1] = xmin + 360
+                elif ix.size-1 == Z.shape[1]: # just add grid cell
+                    ix = ma.append(xmin, ix)
+                    ix[-1] = xmin + 360
                     Z = ma.concatenate((Z[:,-1:], Z), axis=1)
                 # Have centers (e.g. for contourf), and we need to interpolate
                 # to left/right edges of the map boundary. Augments size by 2.
-                elif x.size == Z.shape[1]:
-                    xi = np.array([x[-1], x[0] + 360]) # x
+                elif ix.size == Z.shape[1]:
+                    xi = np.array([ix[-1], ix[0] + 360]) # x
                     if xi[0] != xi[1]:
                         Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
                         xq = xmin + 360
                         Zq = (Zq[:,:1]*(xi[1]-xq) + Zq[:,1:]*(xq-xi[0]))/(xi[1]-xi[0])
+                        ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
-                        x = ma.concatenate(([xmin], x, [xmin + 360]))
                 else:
                     raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
             iZs.append(Z)
-        Zs = iZs
+        x, Zs = ix, iZs
 
         # Convert to projection coordinates
         if x.ndim == 1 and y.ndim == 1:
