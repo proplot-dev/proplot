@@ -106,12 +106,11 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
             proj='kav7', basemap={(1,3):False, (2,4):True})
         for i,ax in enumerate(axs):
             cmap = ('sunset', 'sunrise')[i % 2]
-            kw = {'cmap':cmap, 'globe':globe, 'extend':'both'}
             if i < 2:
-                m = ax.contourf(x, y, data, **kw)
+                m = ax.contourf(x, y, data, cmap=cmap, globe=globe, extend='both')
                 f.colorbar(m, loc='b', span=i+1, label='values', tickminor=False, extendsize='1.7em')
             else:
-                ax.pcolor(x, y, data, **kw)
+                ax.pcolor(x, y, data, cmap=cmap, globe=globe, extend='both')
             if not globe:
                 ix = offset + np.linspace(0, 360, 20)
                 for cmd in (np.sin,np.cos):
