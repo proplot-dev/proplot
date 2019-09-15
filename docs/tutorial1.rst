@@ -272,7 +272,7 @@ rectangular backgrounds, just like inset legends.
             if j == 1 and i == 0:
                 continue
             data = np.random.rand(N,N)*scale
-            x, y = np.linspace(x0, x1, 11), np.linspace(y0, y1, 11)
+            x, y = np.linspace(x0, x1, N + 1), np.linspace(y0, y1, N + 1)
             m = ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0,scale,11))
             ax.colorbar(m, loc='l', label=f'dataset #{i+1}')
 

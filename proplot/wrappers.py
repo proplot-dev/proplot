@@ -382,9 +382,9 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     x, y = _atleast_array(x), _atleast_array(y)
     if x.ndim != y.ndim:
         raise ValueError(f'x coordinates are {x.ndim}-dimensional, but y coordinates are {y.ndim}-dimensional.')
-    for name,array in zip(('x','y'), (x,y)):
+    for s,array in zip(('x','y'), (x,y)):
         if array.ndim not in (1,2):
-            raise ValueError(f'{name} coordinates are {array.ndim}-dimensional, but must be 1 or 2-dimensional.')
+            raise ValueError(f'{s} coordinates are {array.ndim}-dimensional, but must be 1 or 2-dimensional.')
 
     # Auto formatting
     kw = {}
