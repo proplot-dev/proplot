@@ -1480,8 +1480,6 @@ def cycle_wrapper(self, func, *args,
     # WARNING: Make sure plot always returns tuple of objects, and bar always
     # returns singleton unless we have bulk drawn bar plots! Other matplotlib
     # methods call these internally!
-    if name in ('hist',):
-        objs = tuple(obj[-1] for obj in objs) # just the patch objects
     if name == 'plot':
         return (*objs,) # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):

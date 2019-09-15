@@ -13,27 +13,30 @@ Standardized input
 
 The `~proplot.wrappers.standardize_1d` and
 `~proplot.wrappers.standardize_2d` functions are used to standardize
-the input of a bunch of different plotting functions.
+the input of a bunch of different plotting functions. See the
+documentation for details.
+
 `~proplot.wrappers.standardize_1d` allows you to optionally omit *x*
 coordinates (in which case they are inferred from the *y* coordinates)
 or pass 2D *y* coordinate arrays (in which case the plotting method is
 called with each column of the array).
+
 `~proplot.wrappers.standardize_2d` allows you to optionally omit *x*
 and *y* coordinates (in which case they are inffered from the data
 array), guesses graticule edges for ``pcolor`` and ``pcolormesh`` plots,
 and optionally enforces global data coverage when plotting in
-:ref:`Projection axes`. See the documentation for details.
+:ref:`Projection axes`.
 
 Colormaps and color cycles
 --------------------------
 
-The new `~proplot.wrappers.cmap_wrapper` and
-`~proplot.wrappers.cycle_wrapper` can be used to create and apply new
-colormaps and property cyclers on-the-fly. See
+The `~proplot.wrappers.cmap_wrapper` and
+`~proplot.wrappers.cycle_wrapper` wrappers can be used to create and
+apply new colormaps and property cyclers on-the-fly. See
 :ref:`Making your own colormaps` and
 :ref:`Making your own color cycles` for details.
 `~proplot.wrappers.cmap_wrapper` also implements several other useful
-features, documented over the next three sections.
+features, documented in the next three sections.
 
 Colormap levels
 ---------------

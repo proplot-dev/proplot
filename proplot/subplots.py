@@ -270,7 +270,7 @@ class axes_grid(list):
         # Methods
         elif all(callable(_) for _ in attrs):
             @functools.wraps(attrs[0])
-            def axes_grid_iterator(*args, **kwargs):
+            def _iterator(*args, **kwargs):
                 ret = []
                 for func in attrs:
                     ret.append(func(*args, **kwargs))
@@ -283,7 +283,7 @@ class axes_grid(list):
                     return axes_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
-            return axes_grid_iterator
+            return _iterator
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
