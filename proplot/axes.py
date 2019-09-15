@@ -2650,6 +2650,11 @@ class ProjectionAxes(Axes):
                `~mpl_toolkits.basemap.Basemap.drawmeridians` and
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
 
+        land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
+            Toggles various geographic features. These are actually ``rc``
+            settings passed to `~proplot.axes.Axes.context`. The style can
+            be modified by passing additional ``rc`` settings, e.g.
+            ``landcolor='green'``. See `~proplot.rctools` for details.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
