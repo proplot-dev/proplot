@@ -323,6 +323,11 @@ class Axes(maxes.Axes):
             obj.set_transform(self.transAxes)
         return loc, obj, kw
 
+    def _hide_labels(self):
+        """Defaults as a no-op. Implemented only for cartesian axes and
+        rectangular projection axes."""
+        pass
+
     @staticmethod
     def _loc_translate(loc, **kwargs):
         """Translates location string `loc` into a standardized form."""
@@ -2320,7 +2325,7 @@ class CartesianAxes(Axes):
         sharing. Returns a `CartesianAxes` instance."""
         return self.altx()
 
-class PolarAxes(ProjectionAxes, mproj.PolarAxes):
+class PolarAxes(Axes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjectionAxes` with
     `~matplotlib.projections.polar.PolarAxes`."""
     name = 'polar2'
@@ -2552,7 +2557,7 @@ class PolarAxes(ProjectionAxes, mproj.PolarAxes):
                     axis.set_major_formatter(formatter)
 
             # Parent method
-            Axes.format(self, *args, **kwargs)
+            super().format(*args, **kwargs)
 
 class ProjectionAxes(Axes):
     """Intermediate class, shared by `CartopyAxes` and
