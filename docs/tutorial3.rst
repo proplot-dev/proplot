@@ -24,9 +24,10 @@ geographic plotting commands like
 `~proplot.axes.ProjectionAxes.format` command.
 
 ProPlot recommends that you use cartopy integration. The basemap
-developers plan to halt active development after 2020, since cartopy is
-integrated more closely with the matplotlib API and has more room for
-growth. For now, cartopy is `missing several
+developers plan to `halt active development after
+2020 <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__,
+since cartopy is integrated more closely with the matplotlib API and has
+more room for growth. For now, cartopy is `missing several
 features <https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__
 offered by basemap – namely, flexible meridian and parallel gridline
 labels, drawing physical map scales, and convenience features for adding
