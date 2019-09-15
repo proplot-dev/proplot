@@ -26,8 +26,8 @@ array), guesses graticule edges for ``pcolor`` and ``pcolormesh`` plots,
 and optionally enforces global data coverage when plotting in
 :ref:`Projection axes`.
 
-Colormaps and color cycles
---------------------------
+Colormaps and cycles
+--------------------
 
 The `~proplot.wrappers.cmap_wrapper` and
 `~proplot.wrappers.cycle_wrapper` wrappers can be used to create and
@@ -37,8 +37,8 @@ apply new colormaps and property cyclers on-the-fly. See
 `~proplot.wrappers.cmap_wrapper` also implements several other useful
 features, documented in the next three sections.
 
-Colormap levels
----------------
+Standardized levels
+-------------------
 
 `~proplot.wrappers.cmap_wrapper` assigns the
 `~proplot.styletools.BinNorm` “meta-normalizer” as the data normalizer
@@ -89,8 +89,8 @@ of colorbars for “cyclic” colormaps are distinct.
 .. image:: tutorial/tutorial_150_0.svg
 
 
-Colormap normalizers
---------------------
+New normalizers
+---------------
 
 If you pass unevenly spaced ``levels``, the
 `~proplot.styletools.LinearSegmentedNorm` normalizer is applied by
@@ -144,24 +144,17 @@ constructor.
 .. image:: tutorial/tutorial_155_0.svg
 
 
-Labels and heatmaps
--------------------
+Labeled contours and boxes
+--------------------------
 
-The new `~proplot.axes.Axes.heatmap` command calls
-`~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
-is suitable for heatmaps: no gridlines, no minor ticks, and major ticks
-at the center of each box. Among other things, this is useful for
-displaying autocorrelation matrices (see below).
-
-You can also add labels to `~matplotlib.axes.Axes.pcolor`,
-`~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`,
-`~matplotlib.axes.Axes.contour`, and
-`~matplotlib.axes.Axes.contourf` plots, thanks to
-`~proplot.wrappers.cmap_wrapper`. Just pass the ``labels=True``
-keyword argument, and ProPlot will draw contour labels with
+Thanks to `~proplot.wrappers.cmap_wrapper`, you can now add labels to
+`~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
+`~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`,
+and `~matplotlib.axes.Axes.contourf` plots by simply passing
+``labels=True``. ProPlot draws contour labels with
 `~matplotlib.axes.Axes.clabel` or grid box labels with
-`~matplotlib.axes.Axes.text`. Label colors are automatically chosen
-based on the luminance of the underlying box or contour color. The label
+`~matplotlib.axes.Axes.text`. Label colors are automatically chosen b
+ased on the luminance of the underlying box or contour color. The label
 text objects can be changed with the ``labels_kw`` dictionary keyword
 arg and the ``precision`` keyword arg. See
 `~proplot.wrappers.cmap_wrapper` for details.
@@ -172,18 +165,41 @@ arg and the ``precision`` keyword arg. See
     import pandas as pd
     import numpy as np
     # Heatmap with labels
-    f, axs = plot.subplots(ncols=2, axwidth=2, span=False, share=1)
+    f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], axwidth=2, share=1, span=False)
     data = np.random.rand(6,6)
     data = pd.DataFrame(data, index=pd.Index(['a','b','c','d','e','f']))
-    axs.format(suptitle='Labels demo')
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Labels demo')
     ax = axs[0]
     m = ax.heatmap(data, cmap='rocket', labels=True, precision=2, labels_kw={'weight':'bold'})
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Heatmap plot with labels')
+    ax.format(title='Heatmap plot with labels')
     # Filled contours with labels
     ax = axs[1]
     m = ax.contourf(data.cumsum(axis=0), labels=True, cmap='rocket', labels_kw={'weight':'bold'})
-    ax.format(xlabel='xlabel', ylabel='ylabel', title='Contourf plot with labels')
-    # Cross-correlation matrix
+    ax.format(title='Filled contour plot with labels')
+    # Simple contour plot
+    ax = axs[2]
+    ax.contour(data.cumsum(axis=1) - 2, color='gray8', labels=True, rotate=0, lw=2, labels_kw={'weight':'bold'})
+    ax.format(title='Contour plot with labels')
+
+
+
+.. image:: tutorial/tutorial_158_0.svg
+
+
+Heatmap plots
+-------------
+
+The new `~proplot.axes.Axes.heatmap` command calls
+`~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
+is suitable for heatmaps: no gridlines, no minor ticks, and major ticks
+at the center of each box. Among other things, this is useful for
+displaying autocorrelation matrices, as shown in the below example.
+
+.. code:: ipython3
+
+    import proplot as plot
+    import numpy as np
+    import pandas as pd
     f, ax = plot.subplots(axwidth=3)
     data = np.random.normal(size=(10,10)).cumsum(axis=0)
     data = (data - data.mean(axis=0)) / data.std(axis=0)
@@ -192,16 +208,12 @@ arg and the ``precision`` keyword arg. See
     data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
     m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100,
               labels=True, labels_kw={'size':7, 'weight':'bold'})
-    ax.format(title='Cross-correlation matrix', alpha=0, linewidth=0,
+    ax.format(suptitle='Heatmap demo', alpha=0, linewidth=0,
               xloc='top', yloc='right', yreverse=True)
 
 
 
-.. image:: tutorial/tutorial_158_0.svg
-
-
-
-.. image:: tutorial/tutorial_158_1.svg
+.. image:: tutorial/tutorial_161_0.svg
 
 
 Fast error bars
@@ -251,7 +263,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: tutorial/tutorial_161_0.svg
+.. image:: tutorial/tutorial_164_0.svg
 
 
 Bar plots and area plots
@@ -285,7 +297,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: tutorial/tutorial_164_0.svg
+.. image:: tutorial/tutorial_167_0.svg
 
 
 To make area plots, use the convenient ``fill_between`` aliases
@@ -328,7 +340,7 @@ below.
 
 
 
-.. image:: tutorial/tutorial_166_0.svg
+.. image:: tutorial/tutorial_169_0.svg
 
 
 Box plots and violin plots
@@ -362,7 +374,7 @@ automatic axis labeling.
 
 
 
-.. image:: tutorial/tutorial_169_1.svg
+.. image:: tutorial/tutorial_172_1.svg
 
 
 Parametric plots
@@ -404,7 +416,7 @@ point on the line. See `~proplot.axes.Axes.cmapline` for details.
 
 
 
-.. image:: tutorial/tutorial_172_1.svg
+.. image:: tutorial/tutorial_175_1.svg
 
 
 Misc enhancements
@@ -450,4 +462,4 @@ Stay tuned!
 
 
 
-.. image:: tutorial/tutorial_175_0.svg
+.. image:: tutorial/tutorial_178_0.svg
