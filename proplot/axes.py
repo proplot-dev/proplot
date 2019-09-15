@@ -663,8 +663,8 @@ class Axes(maxes.Axes):
             This is an improvement on matplotlib's "super" title, which just
             centers the text between figure edges.
 
-        Notes
-        -----
+        Note
+        ----
         The `abc`, `abcformat`, `abcloc`, and `titleloc` keyword arguments
         are actually rc configuration settings that are temporarily
         changed by the call to `~Axes.context`. They are documented here
@@ -1820,8 +1820,7 @@ class CartesianAxes(Axes):
 
         Note
         ----
-        If you plot something with a `numpy`
-        `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
+        If you plot something with a `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
         `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
         `datetime.time`, or `datetime.datetime` array as the *x* or *y*-axis
         coordinate, the axis ticks and tick labels will be automatically
