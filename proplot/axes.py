@@ -2820,11 +2820,11 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection > .')
-        self.projection = map_projection # attribute used with GeoAxes
         self.img_factories = []
         self.outline_patch = None
         self.background_patch = None
         self._gridliners = [] # populated in first format call
+        self._map_projection = map_projection # attribute used with GeoAxes
         self._done_img_factory = False
         super().__init__(*args, map_projection=map_projection, **kwargs)
         # Zero ticks so gridlines are not offset
@@ -3044,6 +3044,10 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         self._gridliners = []
         return super().get_tightbbox(renderer, *args, **kwargs)
 
+    # Property
+    @property
+    def projection
+
     # Wrapped methods
     plot        = _default_transform(Axes.plot)
     scatter     = _default_transform(Axes.scatter)
@@ -3093,21 +3097,23 @@ class BasemapAxes(ProjectionAxes):
         `~proplot.subplots.subplots`, `~proplot.proj`
         """
         # Map boundary notes
-        # * Must set boundary before-hand, otherwise the set_axes_limits method called
-        #   by mcontourf/mpcolormesh/etc draws two mapboundary Patch objects called "limb1" and
-        #   "limb2" automatically: one for fill and the other for the edges
-        # * Then, since the patch object in _mapboundarydrawn is only the fill-version, calling
-        #   drawmapboundary again will replace only *that one*, but the original visible edges
-        #   are still drawn -- so e.g. you can't change the color
-        # * If you instead call drawmapboundary right away, _mapboundarydrawn will contain
-        #   both the edges and the fill; so calling it again will replace *both*
+        # * Must set boundary before-hand, otherwise the set_axes_limits method
+        #   called by mcontourf/mpcolormesh/etc draws two mapboundary Patch
+        #   objects called "limb1" and "limb2" automatically: one for fill and
+        #   the other for the edges
+        # * Then, since the patch object in _mapboundarydrawn is only the
+        #   fill-version, calling drawmapboundary again will replace only *that
+        #   one*, but the original visible edges are still drawn -- so e.g. you
+        #   can't change the color
+        # * If you instead call drawmapboundary right away, _mapboundarydrawn
+        #   will contain both the edges and the fill; so calling it again will
+        #   replace *both*
         import mpl_toolkits.basemap as mbasemap # verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
             raise ValueError('You must initialize BasemapAxes with map_projection=(basemap.Basemap instance).')
-        self.projection = map_projection
-        self.boundary = None
-        self._hasrecurred = False # use this so we can override plotting methods
-        self._mapboundarydrawn = None
+        self._map_projection = map_projection
+        self._map_boundary = None
+        self._has_recurred = False # use this so we can override plotting methods
         super().__init__(*args, **kwargs)
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
@@ -3143,9 +3149,9 @@ class BasemapAxes(ProjectionAxes):
             else:
                 p = self.projection._mapboundarydrawn
             p.update({**kw_face, **kw_edge})
-            p.set_rasterized(False) # not sure about this; might be rasterized
-            p.set_clip_on(False) # so edges of *line* denoting boundary aren't cut off
-            self.boundary = p # not sure why this one
+            p.set_rasterized(False)
+            p.set_clip_on(False) # so edges denoting boundary aren't cut off
+            self._map_boundary = p
         else:
             self.patch.update({**kw_face, 'edgecolor':'none'})
             for spine in self.spines.values():
@@ -3247,35 +3253,6 @@ class BasemapAxes(ProjectionAxes):
     pcolormesh = _norecurse(_default_latlon(Axes.pcolormesh))
     hexbin     = _norecurse(Axes.hexbin) # no latlon arg
     imshow     = _norecurse(Axes.imshow) # no latlon arg
-
-    # Make common basemap methods accessible from here
-    # TODO: This is awful. When cartopy releases meridian and parallel labels
-    # we are dropping basemap support like it's hot.
-    arcgisimage      = _redirect('arcgisimage')
-    bluemarble       = _redirect('bluemarble')
-    drawcoastlines   = _redirect('drawcoastlines')
-    drawcounties     = _redirect('drawcounties')
-    drawcountries    = _redirect('drawcountries')
-    drawgreatcircle  = _redirect('drawgreatcircle')
-    drawlsmask       = _redirect('drawlsmask')
-    drawmapboundary  = _redirect('drawmapboundary')
-    drawmapscale     = _redirect('drawmapscale')
-    drawmeridians    = _redirect('drawmeridians')
-    drawparallels    = _redirect('drawparallels')
-    drawrivers       = _redirect('drawrivers')
-    drawstates       = _redirect('drawstates')
-    etopo            = _redirect('etopo')
-    fillcontinents   = _redirect('fillcontinents')
-    gcpoints         = _redirect('gcpoints')
-    is_land          = _redirect('is_land')
-    nightshade       = _redirect('nightshade')
-    readshapefile    = _redirect('readshapefile')
-    shadedrelief     = _redirect('shadedrelief')
-    tissot           = _redirect('tissot')
-    warpimage        = _redirect('warpimage')
-    wmsimage         = _redirect('wmsimage')
-    interp           = _redirect('interp')
-    maskoceans       = _redirect('maskoceans')
 
 # Register the projections
 mproj.register_projection(PolarAxes)

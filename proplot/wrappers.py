@@ -2697,21 +2697,13 @@ def _redirect(func):
     """Docorator that calls the basemap version of the function of the
     same name. This must be applied as innermost decorator, which means it must
     be applied on the base axes class, not the basemap axes."""
+    name = func.__name__
+    @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
-        nonlocal func
-        projection = getattr(self, 'name', '')
-        if isinstance(func, str):
-            name = func
-            if projection != 'basemap':
-                raise RuntimeError(f'Invalid function string {name!r} for basemap projection.')
-            func = getattr(self.projection, name)
-            return func(*args, ax=self, **kwargs)
-        elif projection == 'basemap':
-            name = func.__name__
+        if getattr(self, 'name', '') == 'basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
             return func(self, *args, **kwargs)
-    _wrapper = functools.wraps(func)(_wrapper)
     _wrapper.__doc__ = None
     return _wrapper
 
@@ -2720,18 +2712,18 @@ def _norecurse(func):
     """Decorator to prevent recursion in basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
     name = func.__name__
-    func._hasrecurred = False
+    func._has_recurred = False
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
-        if func._hasrecurred:
+        if func._has_recurred:
             # Return the *original* version of the matplotlib method
-            func._hasrecurred = False
+            func._has_recurred = False
             result = getattr(maxes.Axes, name)(self, *args, **kwargs)
         else:
             # Return the version we have wrapped
-            func._hasrecurred = True
+            func._has_recurred = True
             result = func(self, *args, **kwargs)
-        func._hasrecurred = False # cleanup, in case recursion never occurred
+        func._has_recurred = False # cleanup, in case recursion never occurred
         return result
     return _wrapper
 

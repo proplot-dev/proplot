@@ -6,19 +6,32 @@ projection <https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo
 and the `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and
 `basemap <https://matplotlib.org/basemap/index.html>`__ packages. This
 feature is optional – if you don’t care about map projections, you don’t
-need to have cartopy or basemap installed. Map projection axes generated
-by `~proplot.subplots.subplots` belong to the
-`~proplot.axes.ProjectionAxes` class, the parent class to
+need to have cartopy or basemap installed. It is powered by the
 `~proplot.axes.PolarAxes`, `~proplot.axes.CartopyAxes`, and
-`~proplot.axes.BasemapAxes`.
+`~proplot.axes.BasemapAxes` classes, which are generated when you pass
+``proj='name'`` to `~proplot.subplots.subplots`.
 
-Note that in 2020, active development for basemap will stop. Its users
-are encouraged to switch to cartopy, which is integrated more closely
-with the matplotlib API and has more room for growth. However for the
-time being, basemap has one major advantage: meridian and parallel
-labeling. With cartopy, gridline labels are only possible with
-equirectangular and Mercator projections. With basemap, labels are
-possible with all projections.
+`~proplot.axes.CartopyAxes` simply joins the cartopy
+`~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
+`~matplotlib.axes.Axes` class, and adds a
+`~proplot.axes.ProjectionAxes.format` command.
+`~proplot.axes.BasemapAxes` redirects the ``plot``, ``scatter``,
+``contour``, ``contourf``, ``pcolor``, ``pcolormesh``, ``quiver``,
+``streamplot``, and ``barb`` methods to identically named methods on the
+`~mpl_toolkits.basemap.Basemap` instance, and provides access to
+`~mpl_toolkits.basemap.Basemap` geographic plotting commands like
+`~mpl_toolkits.basemap.Basemap.fillcontinents` via the
+`~proplot.axes.ProjectionAxes.format` command.
+
+ProPlot recommends that you use cartopy integration. The basemap
+developers plan to halt active development after 2020, since cartopy is
+integrated more closely with the matplotlib API and has more room for
+growth. For now, cartopy is `missing several
+features <https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__
+offered by basemap – namely, flexible meridian and parallel gridline
+labels, drawing physical map scales, and convenience features for adding
+background images like the “blue marble”. But once these are added to
+cartopy, ProPlot support for basemap may be removed.
 
 Choosing map projections
 ------------------------
