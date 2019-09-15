@@ -178,7 +178,7 @@ arg and the ``precision`` keyword arg. See
     ax.format(title='Filled contour plot with labels')
     # Simple contour plot
     ax = axs[2]
-    ax.contour(data.cumsum(axis=1) - 2, color='gray8', labels=True, rotate=0, lw=2, labels_kw={'weight':'bold'})
+    ax.contour(data.cumsum(axis=1) - 2, color='gray8', labels=True, lw=2, labels_kw={'weight':'bold'})
     ax.format(title='Contour plot with labels')
 
 
