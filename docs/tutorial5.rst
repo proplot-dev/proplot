@@ -193,24 +193,22 @@ The new `~proplot.axes.Axes.heatmap` command calls
 `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that
 is suitable for heatmaps – that is, no gridlines, no minor ticks, and
 major ticks at the center of each box. Among other things, this is
-useful for displaying autocorrelation matrices, as shown in the below
-example.
+useful for displaying covariance matrices. See the below example.
 
 .. code:: ipython3
 
     import proplot as plot
     import numpy as np
     import pandas as pd
-    f, ax = plot.subplots(axwidth=3)
+    f, ax = plot.subplots(axwidth=4)
     data = np.random.normal(size=(10,10)).cumsum(axis=0)
     data = (data - data.mean(axis=0)) / data.std(axis=0)
     data = (data.T @ data) / data.shape[0]
     data[np.tril_indices(data.shape[0], -1)] = np.nan # empty boxes
     data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
-    m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100,
-              labels=True, labels_kw={'size':7, 'weight':'bold'})
-    ax.format(suptitle='Heatmap demo', alpha=0, linewidth=0,
-              xloc='top', yloc='right', yreverse=True)
+    m = ax.heatmap(data, cmap='ColdHot', vmin=-1, vmax=1, N=100, labels=True, labels_kw={'weight':'bold'})
+    ax.format(suptitle='Heatmap demo', title='Pseudo covariance matrix', alpha=0, linewidth=0,
+              xloc='top', yloc='right', yreverse=True, ticklabelweight='bold')
 
 
 
