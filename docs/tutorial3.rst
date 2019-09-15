@@ -283,7 +283,7 @@ axes, just pass e.g. ``proj='polar'`` or ``proj={1:'polar'}`` to
     import proplot as plot
     import numpy as np
     f, axs = plot.subplots([[1,1,2,2],[0,3,3,0]], proj='polar')
-    axs.format(suptitle='Polar axes demo', collabelweight='normal')
+    axs.format(suptitle='Polar axes demo')
     N = 200
     x = np.linspace(0, 2*np.pi, N)
     y = 100*(np.random.rand(N,5)-0.3).cumsum(axis=0)/N
