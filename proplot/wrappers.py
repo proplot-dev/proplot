@@ -2458,17 +2458,22 @@ def colorbar_wrapper(self,
                     values = np.linspace(0, 1, cmap.N)
 
     # Build new ad hoc mappable object from handles
+    # NOTE: Need to use wrapped contourf but this might be native matplotlib
+    # axes. Call on self.axes, which is child if child axes, self otherwise.
     if cmap is not None:
         if np.iterable(mappable) and len(values) != len(mappable):
             raise ValueError(f'Passed {len(values)} values, but only {len(mappable)} objects or colors.')
-        mappable = _cmap_wrapper(self, self.contourf)([[0,0],[0,0]],
-            cmap=cmap, extend='neither', values=np.array(values),
-            norm=norm, norm_kw=norm_kw) # workaround
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            mappable = self.axes.contourf([0,0], [0,0],
+                ma.array([[0,0],[0,0]], mask=True),
+                cmap=cmap, extend='neither', values=np.array(values),
+                norm=norm, norm_kw=norm_kw) # workaround
 
-    # Try to get tick locations from *levels* or from *values* rather than random
-    # points along the axis. If values were provided as keyword arg, this is a
-    # colorbar from lines or colors, and we label *all* values by default.
-    # TODO: Handle more of the log locator stuff here, instead of in cmap_wrapper?
+    # Try to get tick locations from *levels* or from *values* rather than
+    # random points along the axis. If values were provided as keyword arg,
+    # this is colorbar from lines/colors, and we label *all* values by default.
+    # TODO: Handle more of the log locator stuff here instead of cmap_wrapper?
     if tick_all and locator is None:
         locator = values
         tickminor = False
@@ -2503,6 +2508,7 @@ def colorbar_wrapper(self,
                 minorlocator = locator[::step]
             step = 1 + len(locator) // max(1, maxn)
             locator = locator[::step]
+
     # Locator object
     locator = axistools.Locator(locator, **locator_kw)
     # Minor ticks
