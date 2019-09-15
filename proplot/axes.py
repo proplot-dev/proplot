@@ -2606,6 +2606,9 @@ class ProjectionAxes(Axes):
         lonlines=None, lonlocator=None,
         latlines=None, latlocator=None, latmax=None,
         labels=None, latlabels=None, lonlabels=None,
+        etopo=None, bluemarble=None,
+        mapscale=None, mapscale_kw=None,
+        tissot=None, tissot_kw=None,
         patch_kw=None, **kwargs,
         ):
         """
@@ -2649,6 +2652,13 @@ class ProjectionAxes(Axes):
                `~mpl_toolkits.basemap.Basemap.drawmeridians` and
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
 
+        bluemarble, etopo : optional
+            For basemap axes only. Draws the blue marble image or topography
+            data.
+        mapscale, mapscale_kw : optional
+            For basemap axes only. Draws a map scale.
+        tissot, tissot_kw : optional
+            For basemap axes only. Draws Tissot indicatrixes.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
@@ -3264,18 +3274,14 @@ class BasemapAxes(ProjectionAxes):
     drawparallels    = _redirect('drawparallels')
     drawrivers       = _redirect('drawrivers')
     drawstates       = _redirect('drawstates')
-    etopo            = _redirect('etopo')
     fillcontinents   = _redirect('fillcontinents')
-    gcpoints         = _redirect('gcpoints')
+    etopo            = _redirect('etopo')
     is_land          = _redirect('is_land')
     makegrid         = _redirect('makegrid')
     nightshade       = _redirect('nightshade')
     readshapefile    = _redirect('readshapefile')
-    rotate_vector    = _redirect('rotate_vector')
     shadedrelief     = _redirect('shadedrelief')
     tissot           = _redirect('tissot')
-    transform_scalar = _redirect('transform_scalar')
-    transform_vector = _redirect('transform_vector')
     warpimage        = _redirect('warpimage')
     wmsimage         = _redirect('wmsimage')
     interp           = _redirect('interp')
