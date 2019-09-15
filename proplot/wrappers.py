@@ -24,9 +24,8 @@ try:
 except ModuleNotFoundError:
     PlateCarree = object
 __all__ = [
-    'add_errorbars', 'bar_wrapper', 'barh_wrapper',
-    'basemap_latlon', 'boxplot_wrapper',
-    'cartopy_crs', 'cartopy_transform',
+    'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper',
+    'default_crs', 'default_latlon', 'default_transform',
     'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
     'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
     'legend_wrapper', 'plot_wrapper', 'scatter_wrapper',
@@ -48,35 +47,6 @@ def _load_objects():
     Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
 _load_objects()
 
-# Methods for wrapping
-# TODO: 'quiver', 'streamplot' for cmap?
-# TODO: 'hlines', 'vlines', 'axhline', 'axvline', 'axhspan', 'axvspan',
-ERRORBAR_METHODS = ('plot', 'scatter', 'bar', 'violinplot'
-    )
-CENTERS_METHODS = ('contour', 'contourf', 'quiver', 'streamplot', 'barbs'
-    )
-EDGES_METHODS = ('pcolor', 'pcolormesh'
-    )
-D1_METHODS = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
-    'pie', 'fill_between', 'fill_betweenx', 'step', 'stem', 'hexbin',
-    )
-D2_METHODS = (*CENTERS_METHODS, *EDGES_METHODS
-    )
-CYCLE_METHODS = ('plot', 'scatter', 'bar', 'hist', 'boxplot', 'violinplot',
-    'pie', 'fill_between', 'fill_betweenx', 'step', 'stem',
-    )
-CMAP_METHODS = ('contour', 'contourf', 'pcolor', 'pcolormesh',
-    'tripcolor', 'tricontour', 'tricontourf', 'cmapline',
-    'hexbin', 'matshow', 'imshow', 'spy', 'hist2d'
-    )
-CRS_METHODS = ('get_extent', 'set_extent', 'set_xticks', 'set_yticks'
-    )
-LATLON_METHODS = ('plot', 'scatter', *EDGES_METHODS, *CENTERS_METHODS
-    )
-TRANSFORM_METHODS = ('plot', 'scatter', 'tripcolor',
-    'tricontour', 'tricontourf', *EDGES_METHODS, *CENTERS_METHODS
-    )
-
 # Keywords for styling cmap overridden plots
 STYLE_ARGS_TRANSLATE = {
     'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
@@ -91,7 +61,7 @@ STYLE_ARGS_TRANSLATE = {
 #------------------------------------------------------------------------------#
 # Alter default behavior
 #------------------------------------------------------------------------------#
-def basemap_latlon(self, func, *args, latlon=True, **kwargs):
+def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
 
@@ -101,7 +71,7 @@ def basemap_latlon(self, func, *args, latlon=True, **kwargs):
     """
     return func(self, *args, latlon=latlon, **kwargs)
 
-def cartopy_transform(self, func, *args, transform=None, **kwargs):
+def default_transform(self, func, *args, transform=None, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
 
@@ -118,7 +88,7 @@ def cartopy_transform(self, func, *args, transform=None, **kwargs):
     result = func(self, *args, transform=transform, **kwargs)
     return result
 
-def cartopy_crs(self, func, *args, crs=None, **kwargs):
+def default_crs(self, func, *args, crs=None, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.CartopyAxes` and fixes a
     `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with tight
@@ -299,6 +269,10 @@ def standardize_1d(self, func, *args, **kwargs):
 #-----------------------------------------------------------------------------#
 # 2D dataset standardization and automatic formatting
 #-----------------------------------------------------------------------------#
+# NOTE: Why are projection grid fixes in standardize_2d, and not in their
+# own wrappers? Because grid fixes must come *after* automatic formatting,
+# which means we'd have to apply these wrappers separately on CartesianAxes,
+# BasemapAxes, CartopyAxes, and PolarAxes. Would be super redundant.
 def _fix_poles(y, Z):
     """Adds data points on the poles as the average of highest latitude data."""
     # Get means
@@ -587,21 +561,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     return func(self, x, y, *Zs, **kwargs)
 
 #------------------------------------------------------------------------------#
-# Special plot wrappers
+# Add errorbars during function call
 #------------------------------------------------------------------------------#
-def _get_transform(self, transform):
-    """Translates user input transform. Also used in an axes method."""
-    if isinstance(transform, mtransforms.Transform):
-        return transform
-    elif transform == 'figure':
-        return self.figure.transFigure
-    elif transform == 'axes':
-        return self.transAxes
-    elif transform == 'data':
-        return self.transData
-    else:
-        raise ValueError(f'Unknown transform {transform!r}.')
-
 def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     """Returns values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args."""
@@ -689,11 +650,8 @@ def add_errorbars(self, func, *args,
     edgecolor : float, optional
         If passed, this is used for the default `barcolor` and `boxcolor`.
     """
-    # Optionally supply function with medians and means
-    # TODO: Also add support for error bars in *x* direction!
     name = func.__name__
     x, y, *args = args
-    iy = y
     # Sensible defaults
     if boxdata is not None:
         bars = _notNone(bars, True)
@@ -702,7 +660,9 @@ def add_errorbars(self, func, *args,
     if boxdata is not None or bardata is not None:
         bars = _notNone(bars, False) # e.g. if boxdata passed but bardata not passed, use bars=False
         boxes = _notNone(boxes, False)
+
     # Get means or medians for plotting
+    iy = y
     if (means or medians):
         bars = _notNone(bars, True)
         boxes = _notNone(boxes, True)
@@ -712,7 +672,8 @@ def add_errorbars(self, func, *args,
             iy = np.mean(y, axis=0)
         elif medians:
             iy = np.percentile(y, 50, axis=0)
-    # Call function
+
+    # Call function, accounting for different signatures of plot and violinplot
     get = kwargs.pop if name == 'violinplot' else kwargs.get
     lw = _notNone(get('lw', None), get('linewidth', None), 0.7)
     get = kwargs.pop if name != 'bar' else kwargs.get
@@ -724,6 +685,7 @@ def add_errorbars(self, func, *args,
     obj = func(self, *xy, *args, **kwargs)
     if not boxes and not bars:
         return obj
+
     # Account for horizontal bar plots
     if 'vert' in kwargs:
         orientation = 'vertical' if kwargs['vert'] else 'horizontal'
@@ -735,12 +697,14 @@ def add_errorbars(self, func, *args,
     else:
         axis = 'y' # yerr
         xy = (x,iy)
-    # Defaults
+
+    # Defaults settings
     barlw = _notNone(barlw, lw)
     boxlw = _notNone(boxlw, 4*barlw)
     capsize = _notNone(capsize, 3)
     barcolor = _notNone(barcolor, edgecolor)
     boxcolor = _notNone(boxcolor, edgecolor)
+
     # Draw boxes and bars
     if boxes:
         default = (-1,1) if barstd else (25,75)
@@ -759,6 +723,9 @@ def add_errorbars(self, func, *args,
             'markeredgecolor':barcolor, 'markeredgewidth':barlw})
     return obj
 
+#-----------------------------------------------------------------------------#
+# Method-specific wrappers
+#-----------------------------------------------------------------------------#
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
     Wraps %(methods)s, draws a "colormap line" if the ``cmap`` argument was passed.
@@ -836,6 +803,7 @@ def scatter_wrapper(self, func, *args,
         c = args.pop(1)
     if len(args) == 3:
         s = args.pop(0)
+
     # Format cmap and norm
     cmap_kw = cmap_kw or {}
     norm_kw = norm_kw or {}
@@ -843,11 +811,13 @@ def scatter_wrapper(self, func, *args,
         cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
     if norm is not None:
         norm = styletools.Norm(norm, N=None, **norm_kw)
+
     # Apply some aliases for keyword arguments
     c = _notNone(c, color, markercolor, None, names=('c', 'color', 'markercolor'))
     s = _notNone(s, size, markersize, None, names=('s', 'size', 'markersize'))
     lw = _notNone(lw, linewidth, linewidths, markeredgewidth, markeredgewidths, None, names=('lw', 'linewidth', 'linewidths', 'markeredgewidth', 'markeredgewidths'))
     ec = _notNone(edgecolor, edgecolors, markeredgecolor, markeredgecolors, None, names=('edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'))
+
     # Scale s array
     if np.iterable(s):
         smin_true, smax_true = min(s), max(s)
@@ -856,7 +826,6 @@ def scatter_wrapper(self, func, *args,
         if smax is None:
             smax = smax_true
         s = smin + (smax - smin)*(np.array(s) - smin_true)/(smax_true - smin_true)
-    # Call function
     return func(self, *args, c=c, s=s,
         cmap=cmap, vmin=vmin, vmax=vmax,
         norm=norm, linewidths=lw, edgecolors=ec,
@@ -867,13 +836,13 @@ def _fill_between_apply(self, func, *args,
     **kwargs):
     """Parse args and call function."""
     # Allow common keyword usage
-    xy = 'y' if 'x' in func.__name__ else 'y'
-    yx = 'x' if xy == 'y' else 'y'
-    if xy in kwargs:
-        args = (kwargs.pop(xy), *args)
-    for yx in (yx + '1', yx + '2'):
-        if yx in kwargs:
-            args = (*args, kwargs.pop(yx))
+    x = 'y' if 'x' in func.__name__ else 'y'
+    y = 'x' if x == 'y' else 'y'
+    if x in kwargs:
+        args = (kwargs.pop(x), *args)
+    for y in (y + '1', y + '2'):
+        if y in kwargs:
+            args = (*args, kwargs.pop(y))
     if len(args) == 1:
         args = (np.arange(len(args[0])), *args)
     if len(args) == 2:
@@ -886,6 +855,7 @@ def _fill_between_apply(self, func, *args,
     if not negpos:
         obj = func(self, *args, **kwargs)
         return obj
+
     # Get zero points
     objs = []
     kwargs.setdefault('interpolate', True)
@@ -1159,9 +1129,22 @@ def violinplot_wrapper(self, func, *args,
             artist.set_facecolor(fillcolor)
     return obj
 
+def _get_transform(self, transform):
+    """Translates user input transform. Also used in an axes method."""
+    if isinstance(transform, mtransforms.Transform):
+        return transform
+    elif transform == 'figure':
+        return self.figure.transFigure
+    elif transform == 'axes':
+        return self.transAxes
+    elif transform == 'data':
+        return self.transData
+    else:
+        raise ValueError(f'Unknown transform {transform!r}.')
+
 def text_wrapper(self, func,
     x=0, y=0, text='', transform='data',
-    family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
+    fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
     **kwargs):
     """
@@ -1183,7 +1166,7 @@ def text_wrapper(self, func,
     size, fontsize : float or str, optional
         The font size. If float, units are inches. If string, units are
         interpreted by `~proplot.utils.units`.
-    fontname, family, fontfamily : str, optional
+    fontname, fontfamily : str, optional
         Aliases for the ``fontfamily`` `~matplotlib.text.Text` property.
     border : bool, optional
         Whether to draw border around text.
@@ -1205,8 +1188,10 @@ def text_wrapper(self, func,
         transform = self.transData
     else:
         transform = _get_transform(self, transform)
-    # Font name strings
-    fontname = _notNone(fontfamily, family, fontname, None, names=('fontfamily', 'family', 'fontname'))
+
+    # More flexible keyword args and more helpful warning if invalid font
+    # is specified
+    fontname = _notNone(fontfamily, fontname, None, names=('fontfamily', 'fontname'))
     if fontname is not None:
         if not isinstance(fontname, str) and np.iterable(fontname) and len(fontname) == 1:
             fontname = fontname[0]
@@ -1218,11 +1203,9 @@ def text_wrapper(self, func,
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
     kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
-
-    # Call function
     obj = func(self, x, y, text, transform=transform, **kwargs)
 
-    # Draw border around text
+    # Optionally draw border around text
     if border:
         linewidth = lw or linewidth
         facecolor, bgcolor = kwargs['color'], bordercolor
@@ -1314,6 +1297,7 @@ def cycle_wrapper(self, func, *args,
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
     panel_kw = panel_kw or {}
+
     # Test input
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note that
     # the 'x' coordinates are sometimes ignored below.
@@ -1395,7 +1379,7 @@ def cycle_wrapper(self, func, *args,
     label_leg = None # for colorbar or legend
     labels = _notNone(values, labels, label, None, names=('values', 'labels', 'label'))
     stacked = kwargs.pop('stacked', False)
-    if name in ('pie','boxplot','violinplot'):
+    if name in ('pie', 'boxplot', 'violinplot'):
         if labels is not None:
             kwargs['labels'] = labels
     else:
@@ -1649,6 +1633,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     labels_kw = labels_kw or {}
     colorbar_kw = colorbar_kw or {}
     panel_kw = panel_kw or {}
+
     # Parse args
     # Disable edgefix=True for certain keyword combos e.g. if user wants
     # white lines around their pcolor mesh.
@@ -2702,17 +2687,28 @@ def colorbar_wrapper(self,
 # Create decorators from wrapper functions
 #------------------------------------------------------------------------------#
 # Basemap object caller decorator
-# WARNING: To
-def _basemap_call(func):
-    """Docorator that calls the basemap version of the function of the same name."""
-    name = func.__name__
-    @functools.wraps(func)
+def _redirect(func):
+    """Docorator that calls the basemap version of the function of the
+    same name. This must be applied as innermost decorator, which means it must
+    be applied on the base axes class, not the basemap axes."""
     def wrapper(self, *args, **kwargs):
-        return getattr(self.projection, name)(ax=self, *args, **kwargs)
-    return wrapper
+        nonlocal func
+        projection = getattr(self, 'name', '')
+        if isinstance(func, str):
+            name = func
+            if projection != 'basemap':
+                raise RuntimeError(f'Invalid function string {name!r} for basemap projection.')
+            func = getattr(self.projection, name)
+            return func(*args, ax=self, **kwargs)
+        elif projection == 'basemap':
+            name = func.__name__
+            return getattr(self.projection, name)(*args, ax=self, **kwargs)
+        else:
+            return func(self, *args, **kwargs)
+    return functools.wraps(func)(wrapper)
 
 # Basemap recursion fix decorator
-def _basemap_no_recurse(func):
+def _no_recurse(func):
     """Decorator to prevent recursion in certain method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
     name = func.__name__
@@ -2770,22 +2766,22 @@ def _wrapper_decorator(driver):
 
 # Auto generated decorators. Each wrapper internally calls
 # func(self, ...) somewhere.
-_bar               = _wrapper_decorator(bar_wrapper)
-_hist              = _wrapper_decorator(hist_wrapper)
-_barh              = _wrapper_decorator(barh_wrapper)
-_plot              = _wrapper_decorator(plot_wrapper)
-_scatter           = _wrapper_decorator(scatter_wrapper)
-_boxplot           = _wrapper_decorator(boxplot_wrapper)
-_violinplot        = _wrapper_decorator(violinplot_wrapper)
-_fill_between      = _wrapper_decorator(fill_between_wrapper)
-_fill_betweenx     = _wrapper_decorator(fill_betweenx_wrapper)
-_text              = _wrapper_decorator(text_wrapper)
-_standardize_1d     = _wrapper_decorator(standardize_1d)
-_standardize_2d     = _wrapper_decorator(standardize_2d)
-_add_errorbars     = _wrapper_decorator(add_errorbars)
-_basemap_latlon    = _wrapper_decorator(basemap_latlon)
-_cartopy_transform = _wrapper_decorator(cartopy_transform)
-_cartopy_crs       = _wrapper_decorator(cartopy_crs)
-_cmap_wrapper      = _wrapper_decorator(cmap_wrapper)
-_cycle_wrapper     = _wrapper_decorator(cycle_wrapper)
+_add_errorbars         = _wrapper_decorator(add_errorbars)
+_bar_wrapper           = _wrapper_decorator(bar_wrapper)
+_barh_wrapper          = _wrapper_decorator(barh_wrapper)
+_default_latlon        = _wrapper_decorator(default_latlon)
+_boxplot_wrapper       = _wrapper_decorator(boxplot_wrapper)
+_default_crs           = _wrapper_decorator(default_crs)
+_default_transform     = _wrapper_decorator(default_transform)
+_cmap_wrapper          = _wrapper_decorator(cmap_wrapper)
+_cycle_wrapper         = _wrapper_decorator(cycle_wrapper)
+_fill_between_wrapper  = _wrapper_decorator(fill_between_wrapper)
+_fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
+_hist_wrapper          = _wrapper_decorator(hist_wrapper)
+_plot_wrapper          = _wrapper_decorator(plot_wrapper)
+_scatter_wrapper       = _wrapper_decorator(scatter_wrapper)
+_standardize_1d        = _wrapper_decorator(standardize_1d)
+_standardize_2d        = _wrapper_decorator(standardize_2d)
+_text_wrapper          = _wrapper_decorator(text_wrapper)
+_violinplot_wrapper    = _wrapper_decorator(violinplot_wrapper)
 
