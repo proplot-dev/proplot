@@ -14,7 +14,7 @@ def rc_role_generator(show_default):
             return [], []
         levels = relsource[1].count('/') # distance to 'docs' folder
         refuri = ('../' * levels + f'en/latest/rctools.html?highlight={text}#'
-            + ('rcExtraParams' if '.' in text else 'rcGlobals'))
+            + ('rcextraparams' if '.' in text else 'rcglobals'))
 
         ref = nodes.reference(rawtext, rendered, refuri=refuri)
         node_list = [nodes.literal('', '', ref)]
