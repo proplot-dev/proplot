@@ -611,7 +611,7 @@ class Axes(maxes.Axes):
             Whether to apply "a-b-c" subplot labelling based on the
             ``number`` attribute. If ``number`` is >26, the labels will loop
             around to a, ..., z, aa, ..., zz, aaa, ..., zzz, ... God help you
-            if you ever need that many labels. Defaults to ``rc['abc']``.
+            if you ever need that many labels. Defaults to :rc:`abc`.
         abcformat : str, optional
             It is a string containing the character ``a`` or ``A``, specifying
             the format of a-b-c labels.  ``'a'`` is the default, but e.g.
