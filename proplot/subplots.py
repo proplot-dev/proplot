@@ -766,7 +766,7 @@ class Figure(mfigure.Figure):
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
             panels. Units are interpreted by `~proplot.utils.units`.Default is
-            :rc:`subplots.panelpad`. 
+            :rc:`subplots.panelpad`.
         includepanels : bool, optional
             Whether to include panels when centering *x* axis labels,
             *y* axis labels, and figure "super titles" along the edge of the
