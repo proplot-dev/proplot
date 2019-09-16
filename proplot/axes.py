@@ -251,7 +251,7 @@ class Axes(maxes.Axes):
         # lines ax.format(titleweight='bold') then ax.format(title='text'),
         # don't want to override custom setting with rc default setting.
         props = lambda cache: rc.fill({
-            'fontsize':   f'{prefix}.fontsize',
+            'fontsize':   f'{prefix}.size',
             'weight':     f'{prefix}.weight',
             'color':      f'{prefix}.color',
             'border':     f'{prefix}.border',
@@ -690,7 +690,7 @@ class Axes(maxes.Axes):
         fig = self.figure
         suptitle = _notNone(figtitle, suptitle, None, names=('figtitle','suptitle'))
         kw = rc.fill({
-            'fontsize':   'suptitle.fontsize',
+            'fontsize':   'suptitle.size',
             'weight':     'suptitle.weight',
             'color':      'suptitle.color',
             'fontfamily': 'font.family'
@@ -707,7 +707,7 @@ class Axes(maxes.Axes):
             (llabels, rlabels, tlabels, blabels),
             ):
             kw = rc.fill({
-                'fontsize':   side + 'label.fontsize',
+                'fontsize':   side + 'label.size',
                 'weight':     side + 'label.weight',
                 'color':      side + 'label.color',
                 'fontfamily': 'font.family'
