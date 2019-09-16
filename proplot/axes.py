@@ -920,17 +920,12 @@ class Axes(maxes.Axes):
 
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
-            colorbars only.
-
-            If float, units are inches. If string, units
+            colorbars only. If float, units are inches. If string, units
             are interpreted by `~proplot.utils.units`. Defaults to
             ``rc['colorbar.pad']``.
         length : float or str, optional
-            The colorbar length.
-
-            For outer colorbars, units are relative to the axes width or
-            height. Defaults to ``rc['colorbar.length']``.
-
+            The colorbar length. For outer colorbars, units are relative to the
+            axes width or height. Defaults to ``rc['colorbar.length']``.
             For inset colorbars, if float, units are inches; if string, units
             are interpreted by `~proplot.utils.units`. Defaults to
             ``rc['colorbar.insetlength']``.
