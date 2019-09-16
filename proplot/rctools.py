@@ -272,8 +272,8 @@ RCGLOBALS_CHILDREN = {
 
 # Names of the new settings
 RC_NAMES = {*_rcParams.keys()}
-RC_NAMES_GLOBAL = {*RCGLOBALS_CHILDREN.keys()}
-RC_NAMES_CUSTOM = {
+RC_GLOBALNAMES = {*RCGLOBALS_CHILDREN.keys()}
+RC_CUSTOMNAMES = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
     'image.levels', 'image.edgefix',
@@ -299,15 +299,15 @@ RC_NAMES_CUSTOM = {
     }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-RC_NAMES_NODOTS = { # useful for passing these as kwargs
+RC_NODOTSNAMES = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
-    (RC_NAMES_CUSTOM, RC_NAMES, RC_NAMES_GLOBAL)
+    (RC_CUSTOMNAMES, RC_NAMES, RC_GLOBALNAMES)
     for name in names
     }
 # Categories for returning dict of subcategory properties
 RC_CATEGORIES = {
-    *(re.sub('\.[^.]*$', '', name) for names in (RC_NAMES_CUSTOM, RC_NAMES) for name in names),
-    *(re.sub('\..*$', '', name) for names in (RC_NAMES_CUSTOM, RC_NAMES) for name in names)
+    *(re.sub('\.[^.]*$', '', name) for names in (RC_CUSTOMNAMES, RC_NAMES) for name in names),
+    *(re.sub('\..*$', '', name) for names in (RC_CUSTOMNAMES, RC_NAMES) for name in names)
     }
 
 # Unit conversion
@@ -409,6 +409,9 @@ class rc_configurator(object):
         return type(_rcParams).__str__(_rcGlobals) # just show globals
     def __repr__(self):
         return type(_rcParams).__repr__(_rcGlobals)
+    def __contains__(self, key):
+        return (key in RC_GLOBALNAMES or key in RC_CUSTOMNAMES or key in
+            RC_NAMES or key in RC_NODOTSNAMES) # query biggest lists last
 
     @_counter # about 0.05s
     def __init__(self):
@@ -440,11 +443,11 @@ class rc_configurator(object):
             # Add keys to dictionaries
             gkeys, ckeys = {*()}, {*()}
             for key,value in data.items():
-                if key in RC_NAMES_GLOBAL:
+                if key in RC_GLOBALNAMES:
                     _rcGlobals[key] = value
                     if i == 0:
                         gkeys.add(key)
-                elif key in RC_NAMES_CUSTOM:
+                elif key in RC_CUSTOMNAMES:
                     value = _convert_units(key, value)
                     _rcExtraParams[key] = value
                     if i == 0:
@@ -456,10 +459,10 @@ class rc_configurator(object):
                     raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key {key!r}.')
             # Make sure we did not miss anything
             if i == 0:
-                if gkeys != RC_NAMES_GLOBAL:
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid global keys {RC_NAMES_GLOBAL - gkeys}.')
-                if ckeys != RC_NAMES_CUSTOM:
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {RC_NAMES_CUSTOM - ckeys}.')
+                if gkeys != RC_GLOBALNAMES:
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid global keys {RC_GLOBALNAMES - gkeys}.')
+                if ckeys != RC_CUSTOMNAMES:
+                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {RC_CUSTOMNAMES - ckeys}.')
 
         # Apply *global settings* to children settings
         _set_cycler(_rcGlobals['cycle'])
@@ -490,7 +493,7 @@ class rc_configurator(object):
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
         if '.' not in key and key not in _rcGlobals:
-            key = RC_NAMES_NODOTS.get(key, key)
+            key = RC_NODOTSNAMES.get(key, key)
 
         # Allow for special time-saving modes where we *ignore _rcParams*
         # or even *ignore _rcExtraParams*.
@@ -530,7 +533,7 @@ class rc_configurator(object):
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
         if '.' not in key and key not in _rcGlobals:
-            key = RC_NAMES_NODOTS.get(key, key)
+            key = RC_NODOTSNAMES.get(key, key)
 
         # Special keys
         if key == 'title.pad':
@@ -606,7 +609,7 @@ class rc_configurator(object):
             _rcParams.update(rc)
             _rcExtraParams.update(rc_new)
         # Update normal settings
-        elif key in RC_NAMES_CUSTOM:
+        elif key in RC_CUSTOMNAMES:
             value = _convert_units(key, value)
             cache[key] = value
             if context:
