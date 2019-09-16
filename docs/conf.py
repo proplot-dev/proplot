@@ -42,22 +42,21 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'nbsphinx',
-    'sphinx.ext.autodoc', # include documentation from docstrings
-    'sphinx.ext.doctest', # >>> examples
-    'sphinx.ext.autosectionlabel', # use :ref:`Heading` for any heading
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autosummary', # autosummary directive
-    'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
-    'sphinx_automodapi.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
+    # 'nbsphinx', # TODO: add this! might require custom fork
+    'sphinx.ext.autodoc',           # include documentation from docstrings
+    'sphinx.ext.doctest',           # >>> examples
+    'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
+    'sphinx.ext.intersphinx',       # external links
+    'sphinx.ext.mathjax',           # LaTeX style math
+    'sphinx.ext.viewcode',          # view code links
+    'sphinx.ext.autosummary',       # autosummary directive
+    'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
+    'sphinx_automodapi.automodapi', # my fork of the astropy extension
+    'sphinxext.custom_roles',       # local extension
     # 'IPython.sphinxext.ipython_console_highlighting',
+    # 'IPython.sphinxext.ipython_directive',  # for ipython highlighting
     # 'matplotlib.sphinxext.only_directives', # deprecated, see: https://github.com/statsmodels/statsmodels/issues/5291
-    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
+    # 'matplotlib.sphinxext.plot_directive',  # see: https://matplotlib.org/sampledoc/extensions.html
     ]
 
 extlinks = {

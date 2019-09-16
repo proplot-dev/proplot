@@ -881,10 +881,9 @@ def CutoffScaleFactory(scale, lower, upper=None):
 #-----------------------------------------------------------------------------#
 class MercatorLatitudeScale(mscale.ScaleBase):
     r"""
-    Scales axis as with latitudes in the `Mercator projection
-    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Inspired by
-    :cite:`barnes_rossby_2011`, and adapted from `this matplotlib example
-    <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
+    Scales axis as with latitude in the `Mercator projection
+    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
+    example <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
 
     The scale function is as follows.
 
