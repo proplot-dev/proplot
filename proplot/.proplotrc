@@ -170,11 +170,11 @@ colorbar.frameon:     True
 colorbar.framealpha:  0.8
 colorbar.axespad:     0.5em
 colorbar.extend:      1.3em
-colorbar.extendinset: 1em
+colorbar.insetextend: 1em
 colorbar.length:      1
-colorbar.lengthinset: 8em
+colorbar.insetlength: 8em
 colorbar.width:       1.5em # 0.17 inches
-colorbar.widthinset:  1.2em
+colorbar.insetwidth:  1.2em
 # Subplot properties
 # Use font relative units for everything because this is common way user
 # might want to increase figure resolution

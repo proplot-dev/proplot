@@ -754,7 +754,8 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         tight : bool, optional
-            Toggles automatic tight layout adjustments.
+            Toggles automatic tight layout adjustments. Defaults to
+            ``rc['tight']``.
         pad : float or str, optional
             Padding around edge of figure. Defaults to ``rc['subplots.pad']``.
             If float, units are inches. If string, units are interpreted by
@@ -1878,9 +1879,13 @@ def subplots(array=None, ncols=1, nrows=1,
     Other parameters
     ----------------
     tight : bool, optional
-        Toggles automatic tight layout adjustments for all spacings that you
-        did not specify manually. For example, with ``left=0.1``, the right,
-        top, bottom, and inner spaces will be determined automatically.
+        Toggles automatic tight layout adjustments. Defaults to
+        ``rc['tight']``.
+
+        If you manually specify a spacing, it will be used
+        to override the tight layout spacing -- for example, with ``left=0.1``,
+        the left margin is set to 0.1 inches wide, while the remaining margin
+        widths are calculated automatically.
     pad, axpad, panelpad : float or str, optional
         Padding for automatic tight layout adjustments. See `Figure` for
         details.

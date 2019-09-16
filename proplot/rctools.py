@@ -162,12 +162,12 @@ Key                       Description
 ``colorbar.frameon``      Boolean, indicates whether to draw a frame behind inset colorbars.
 ``colorbar.framealpha``   Opacity for inset colorbar frames.
 ``colorbar.length``       Length of outer colorbars.
-``colorbar.lengthinset``  Length of inset colorbars.
+``colorbar.insetlength``  Length of inset colorbars.
 ``colorbar.width``        Width of outer colorbars.
-``colorbar.widthinset``   Width of inset colorbars.
+``colorbar.insetwidth``   Width of inset colorbars.
 ``colorbar.axespad``      Padding between axes edge and inset colorbars.
 ``colorbar.extend``       Length of rectangular or triangular "extensions" for panel colorbars.
-``colorbar.extendinset``  Length of rectangular or triangular "extensions" for inset colorbars.
+``colorbar.insetextend``  Length of rectangular or triangular "extensions" for inset colorbars.
 ========================  =================================================================================
 
 The ``subplots`` category controls default layout settings for the
@@ -294,8 +294,8 @@ RC_NAMES_CUSTOM = {
     'subplots.ylabspace', 'subplots.xlabspace', 'subplots.innerspace', 'subplots.titlespace',
     'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace',
     'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha',
-    'colorbar.loc', 'colorbar.length', 'colorbar.width', 'colorbar.lengthinset', 'colorbar.widthinset',
-    'colorbar.extend', 'colorbar.extendinset', 'colorbar.axespad',
+    'colorbar.loc', 'colorbar.length', 'colorbar.width', 'colorbar.insetlength', 'colorbar.insetwidth',
+    'colorbar.extend', 'colorbar.insetextend', 'colorbar.axespad',
     }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.

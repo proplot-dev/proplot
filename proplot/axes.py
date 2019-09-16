@@ -919,27 +919,33 @@ class Axes(maxes.Axes):
             ==================  ==========================================================
 
         pad : float or str, optional
-            The space between the axes edge and the colorbar. Ignored for
-            outer colorbars. If float, units are inches. If string, units
+            The space between the axes edge and the colorbar. For inset
+            colorbars only.
+
+            If float, units are inches. If string, units
             are interpreted by `~proplot.utils.units`. Defaults to
             ``rc['colorbar.pad']``.
         length : float or str, optional
-            The colorbar length. For outer colorbars, units are relative to
-            the axes width or height. For inset colorbars, if float, units are
-            inches; if string, units are interpreted by `~proplot.utils.units`.
-            Defaults to ``rc['colorbar.length']`` for outer colorbars,
-            ``rc['colorbar.lengthinset']`` for inset colorbars.
+            The colorbar length.
+
+            For outer colorbars, units are relative to the axes width or
+            height. Defaults to ``rc['colorbar.length']``.
+
+            For inset colorbars, if float, units are inches; if string, units
+            are interpreted by `~proplot.utils.units`. Defaults to
+            ``rc['colorbar.insetlength']``.
         width : float or str, optional
             The colorbar width. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']`` for outer colorbars,
-            ``rc['colorbar.widthinset']`` for inset colorbars.
+            ``rc['colorbar.width']`` or ``rc['colorbar.insetwidth']``.
         space : float or str, optional
-            The space between the colorbar and the main axes for outer
-            colorbars. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. By default, this
-            is adjusted automatically in the "tight layout" calculation, or is
-            ``rc['subplots.panelspace']`` if "tight layout" is turned off.
+            The space between the colorbar and the main axes. For outer
+            colorbars only. If float, units are inches. If string,
+            units are interpreted by `~proplot.utils.units`.
+
+            By default, this is adjusted automatically in the "tight layout"
+            calculation, or is ``rc['subplots.panelspace']`` if "tight layout"
+            is turned off.
         frame, frameon : bool, optional
             Whether to draw a frame around inset colorbars, just like
             `~matplotlib.axes.Axes.legend`.
@@ -1028,9 +1034,9 @@ class Axes(maxes.Axes):
             # Default props
             cbwidth, cblength = width, length
             width, height = self.get_size_inches()
-            extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.extendinset']))
-            cbwidth = units(_notNone(cbwidth, rc['colorbar.widthinset']))/height
-            cblength = units(_notNone(cblength, rc['colorbar.lengthinset']))/width
+            extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.insetextend']))
+            cbwidth = units(_notNone(cbwidth, rc['colorbar.insetwidth']))/height
+            cblength = units(_notNone(cblength, rc['colorbar.insetlength']))/width
             pad = units(_notNone(pad, rc['colorbar.axespad']))
             xpad, ypad = pad/width, pad/height
             # Get location in axes-relative coordinates
