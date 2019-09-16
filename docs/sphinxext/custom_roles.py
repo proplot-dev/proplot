@@ -9,7 +9,7 @@ def rcparam_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     source = inliner.document.attributes['source'].replace(sep, '/')
     relsource = source.split('/docs/', 1)[1]
     levels = relsource.count('/') # distance to 'docs' folder
-    refuri = ('../' * levels) + 'rctools.html?highlight=' + text
+    refuri = ('../' * levels) + 'en/latest/rctools.html?highlight=' + text
 
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     node_list = [nodes.literal('', '', ref)]
