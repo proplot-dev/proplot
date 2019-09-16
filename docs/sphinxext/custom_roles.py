@@ -12,10 +12,11 @@ def rc_role_generator(show_default):
         relsource = source.split('/docs/', 1)
         if len(relsource) == 1:
             return [], []
-        cat = text.split('.')[0] # show category because there are issues highlighting dots
         levels = relsource[1].count('/') # distance to 'docs' folder
         refuri = ('../' * levels +
-            f'en/latest/rctools.html?highlight={cat}#proplotrc-file')
+            f'en/latest/rctools.html?highlight={text}#proplotrc-file/')
+        # note trailing slash is critical for URLs with dots!
+        # see: https://stackoverflow.com/a/38800236/4970632
 
         ref = nodes.reference(rawtext, rendered, refuri=refuri)
         node_list = [nodes.literal('', '', ref)]
