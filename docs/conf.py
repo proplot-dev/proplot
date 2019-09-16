@@ -81,7 +81,6 @@ autosummary_generate = True
 # them in the automodapi:: directive
 automodapi_toctreedirnm = 'api' # create much better URL for the page
 automodsumm_inherited_members = False
-automodsumm_inherited_members = False
 
 # Logo
 html_logo = '_static/logo.png'

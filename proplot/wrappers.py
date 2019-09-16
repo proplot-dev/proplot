@@ -1551,7 +1551,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         Used to determine level locations if `levels` is an integer. Actual
         levels may not fall exactly on `vmin` and `vmax`, but the minimum
         level will be no smaller than `vmin` and the maximum level will be
-        no larger than `vmax.
+        no larger than `vmax`.
 
         If `vmin` or `vmax` is not provided, the minimum and maximum data
         values are used.
