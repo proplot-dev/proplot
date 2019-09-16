@@ -611,15 +611,15 @@ class Axes(maxes.Axes):
             Whether to apply "a-b-c" subplot labelling based on the
             ``number`` attribute. If ``number`` is >26, the labels will loop
             around to a, ..., z, aa, ..., zz, aaa, ..., zzz, ... God help you
-            if you ever need that many labels. Defaults to :rc:`abc`.
+            if you ever need that many labels. Default is :rc:`abc`.
         abcformat : str, optional
             It is a string containing the character ``a`` or ``A``, specifying
             the format of a-b-c labels.  ``'a'`` is the default, but e.g.
-            ``'a.'``, ``'a)'``, or ``'A'`` might be desirable. Defaults to
+            ``'a.'``, ``'a)'``, or ``'A'`` might be desirable. Default is
             :rc:`abc.format`.
         abcloc, titleloc : str, optional
             They are strings indicating the location for the a-b-c label and
-            main title. The following locations keys are valid. Defaults to
+            main title. The following locations keys are valid. Default is
             :rc:`abc.loc` and :rc:`title.loc`.
 
             ========================  ============================
@@ -639,7 +639,7 @@ class Axes(maxes.Axes):
         abcborder, titleborder : bool, optional
             Whether to draw a white border around titles and a-b-c labels
             positioned inside the axes. This can help them stand out on top
-            of artists plotted inside the axes. Defaults to
+            of artists plotted inside the axes. Default is
             :rc:`abc.border` and :rc:`title.border`
         ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
             Axes titles in particular positions. This lets you specify multiple
@@ -647,7 +647,7 @@ class Axes(maxes.Axes):
         top : bool, optional
             Whether to try to put title and a-b-c label above the top subplot
             panel (if it exists), or to always put them on the main subplot.
-            Defaults to ``True``.
+            Default is ``True``.
         rowlabels, colllabels : list of str, optional
             Aliases for `leftlabels`, `toplabels`.
         llabels, tlabels, rlabels, blabels : list of str, optional
@@ -901,7 +901,7 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         loc : str, optional
-            The colorbar location. Defaults to :rc:`colorbar.loc`. The
+            The colorbar location. Default is :rc:`colorbar.loc`. The
             following location keys are valid.
 
             ==================  ==========================================================
@@ -921,17 +921,17 @@ class Axes(maxes.Axes):
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
             colorbars only. If float, units are inches. If string, units
-            are interpreted by `~proplot.utils.units`. Defaults to
+            are interpreted by `~proplot.utils.units`. Default is
             :rc:`colorbar.pad`.
         length : float or str, optional
             The colorbar length. For outer colorbars, units are relative to the
-            axes width or height. Defaults to :rc:`colorbar.length`.
+            axes width or height. Default is :rc:`colorbar.length`.
             For inset colorbars, if float, units are inches; if string, units
-            are interpreted by `~proplot.utils.units`. Defaults to
+            are interpreted by `~proplot.utils.units`. Default is
             :rc:`colorbar.insetlength`.
         width : float or str, optional
             The colorbar width. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Defaults to
+            units are interpreted by `~proplot.utils.units`. Default is
             :rc:`colorbar.width` or :rc:`colorbar.insetwidth`.
         space : float or str, optional
             The space between the colorbar and the main axes. For outer
@@ -944,10 +944,10 @@ class Axes(maxes.Axes):
         frame, frameon : bool, optional
             Whether to draw a frame around inset colorbars, just like
             `~matplotlib.axes.Axes.legend`.
-            Defaults to :rc:`colorbar.frameon`.
+            Default is :rc:`colorbar.frameon`.
         alpha, linewidth, edgecolor, facecolor : optional
             Transparency, edge width, edge color, and face color for the frame
-            around the inset colorbar. Defaults to
+            around the inset colorbar. Default is
             :rc:`colorbar.framealpha`, :rc:`axes.linewidth`,
             :rc:`axes.edgecolor`, and :rc:`axes.facecolor`,
             respectively.
@@ -1232,16 +1232,16 @@ class Axes(maxes.Axes):
             The transform used to interpret `bounds`. Can be a
             `~matplotlib.transforms.Transform` object or a string representing the
             `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-            or `~matplotlib.figure.Figure.transFigure` transforms. Defaults to
+            or `~matplotlib.figure.Figure.transFigure` transforms. Default is
             ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
         zorder : float, optional
             The zorder of the axes, should be greater than the zorder of
-            elements in the parent axes. Defaults to ``5``.
+            elements in the parent axes. Default is ``5``.
         zoom : bool, optional
             Whether to draw lines indicating the inset zoom using
             `~Axes.indicate_inset_zoom`. The lines will automatically
             adjust whenever the parent axes or inset axes limits are changed.
-            Defaults to ``True``.
+            Default is ``True``.
         zoom_kw : dict, optional
             Passed to `~Axes.indicate_inset_zoom`.
 
@@ -1335,7 +1335,7 @@ class Axes(maxes.Axes):
             The axes for which we are drawing a panel.
         width : float or str or list thereof, optional
             The panel width. If float, units are inches. If string, units are
-            interpreted by `~proplot.utils.units`. Defaults to
+            interpreted by `~proplot.utils.units`. Default is
             :rc:`subplots.panelwidth`.
         space : float or str or list thereof, optional
             Empty space between the main subplot and the panel. If float,
@@ -1783,7 +1783,7 @@ class CartesianAxes(Axes):
             The *x* and *y* axis formatter settings. Passed to
             `~proplot.axistools.Formatter`.
         xrotation, yrotation : float, optional
-            The rotation for *x* and *y* axis tick labels. Defaults to ``0``
+            The rotation for *x* and *y* axis tick labels. Default is ``0``
             for normal axes, :rc:`axes.formatter.timerotation` for time *x* axes.
         xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks
@@ -1801,7 +1801,7 @@ class CartesianAxes(Axes):
             will prevent the spines from meeting at the origin.
         xcolor, ycolor : color-spec, optional
             Color for the *x* and *y* axis spines, ticks, tick labels, and axis
-            labels. Defaults to :rc:`color`. Use e.g. ``ax.format(color='red')``
+            labels. Default is :rc:`color`. Use e.g. ``ax.format(color='red')``
             to set for both axes.
         xticklen, yticklen : float or str, optional
             Tick lengths for the *x* and *y* axis. If float, units are points.
@@ -1811,7 +1811,7 @@ class CartesianAxes(Axes):
             set for both axes.
         fixticks : bool, optional
             Whether to always transform the tick locators to a
-            `~matplotlib.ticker.FixedLocator` instance. Defaults to ``False``.
+            `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
             If your axis ticks are doing weird things (for example, ticks
             drawn outside of the axis spine), try setting this to ``True``.
         patch_kw : dict-like, optional
@@ -2239,17 +2239,17 @@ class CartesianAxes(Axes):
         ----------
         scale : float, optional
             The constant multiple applied after scaling data with `transform`.
-            Defaults to ``1``.
+            Default is ``1``.
             For example, if your *x*-axis is meters and you
             want kilometers on the other side, use ``scale=1e-3``.
         offset : float, optional
             The constant offset added after multipyling by `scale`.
-            Defaults to ``0``.
+            Default is ``0``.
             For example, if your *x*-axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
         xscale : str, optional
             The registered scale name used to transform data to the alternate
-            units.  Defaults to ``'linear'``.
+            units.  Default is ``'linear'``.
             For example, if your *x*-axis is wavenumber and you want wavelength
             on the opposite side, use ``xscale='inverse'``. If your *x*-axis
             is height and you want pressure on the opposite side, use
@@ -2288,17 +2288,17 @@ class CartesianAxes(Axes):
         ----------
         scale : float, optional
             The constant multiple applied after scaling data with `transform`.
-            Defaults to ``1``.
+            Default is ``1``.
             For example, if your *y*-axis is meters and you
             want kilometers on the other side, use ``scale=1e-3``.
         offset : float, optional
             The constant offset added after multipyling by `scale`.
-            Defaults to ``0``.
+            Default is ``0``.
             For example, if your *y*-axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
         yscale : str, optional
             The registered scale name used to transform data to the alternate
-            units.  Defaults to ``'linear'``.
+            units.  Default is ``'linear'``.
             For example, if your *y*-axis is wavenumber and you want wavelength
             on the opposite side, use ``yscale='inverse'``. If your *y*-axis
             is height and you want pressure on the opposite side, use
@@ -2400,7 +2400,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
             The zero azimuth location.
         thetadir : {-1, 1, 'clockwise', 'anticlockwise', 'counterclockwise'}, optional
             The positive azimuth direction. Clockwise corresponds to ``-1``
-            and anticlockwise corresponds to ``-1``. Defaults to ``-1``.
+            and anticlockwise corresponds to ``-1``. Default is ``-1``.
         thetamin, thetamax : float, optional
             The lower and upper azimuthal bounds in degrees. If
             ``thetamax != thetamin + 360``, this produces a sector plot.
@@ -2624,7 +2624,7 @@ class ProjectionAxes(Axes):
             The edge latitude for the circle bounding North Pole and
             South Pole-centered projections. For cartopy axes only.
         grid : bool, optional
-            Toggles meridian and parallel gridlines on and off. Defaults to
+            Toggles meridian and parallel gridlines on and off. Default is
             :rc:`geogrid`.
         lonlines, latlines : float or list of float, optional
             If float, indicates the *spacing* of meridian and parallel gridlines.
@@ -2636,7 +2636,7 @@ class ProjectionAxes(Axes):
             The maximum absolute latitude for meridian gridlines. Defaults
             to :rc:`geogrid.latmax`.
         labels : bool, optional
-            Toggles meridian and parallel gridline labels on and off. Defaults to
+            Toggles meridian and parallel gridline labels on and off. Default is
             :rc:`geogrid.labels`.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides

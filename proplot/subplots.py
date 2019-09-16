@@ -754,14 +754,14 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         tight : bool, optional
-            Toggles automatic tight layout adjustments. Defaults to
+            Toggles automatic tight layout adjustments. Default is
             :rc:`tight`.
         pad : float or str, optional
-            Padding around edge of figure. Defaults to :rc:`subplots.pad`.
+            Padding around edge of figure. Default is :rc:`subplots.pad`.
             If float, units are inches. If string, units are interpreted by
             `~proplot.utils.units`.
         axpad : float or str, optional
-            Padding between subplots in adjacent columns and rows. Defaults to
+            Padding between subplots in adjacent columns and rows. Default is
             :rc:`subplots.axpad`. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`.
         panelpad : float or str, optional
@@ -771,7 +771,7 @@ class Figure(mfigure.Figure):
         includepanels : bool, optional
             Whether to include panels when centering *x* axis labels,
             *y* axis labels, and figure "super titles" along the edge of the
-            subplot grid. Defaults to ``False``.
+            subplot grid. Default is ``False``.
         autoformat : bool, optional
             Whether to automatically configure *x* axis labels, *y* axis
             labels, axis formatters, axes titles, colorbar labels, and legend
@@ -1509,7 +1509,7 @@ class Figure(mfigure.Figure):
             :rc:`subplots.panelspace` if "tight layout" is turned off.
         width : float or str, optional
             The colorbar width. If float, units are inches. If string, units
-            are interpreted by `~proplot.utils.units`. Defaults to
+            are interpreted by `~proplot.utils.units`. Default is
             :rc:`colorbar.width`.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.colorbar`.
@@ -1787,7 +1787,7 @@ def subplots(array=None, ncols=1, nrows=1,
     axwidth, axheight : float or str, optional
         Sets the average width, height of your axes. If float, units are
         inches. If string, units are interpreted by `~proplot.utils.units`.
-        Defaults to :rc:`subplots.axwidth`.
+        Default is :rc:`subplots.axwidth`.
 
         These arguments are convenient where you don't care about the figure
         dimensions and just want your axes to have enough "room".
@@ -1873,14 +1873,14 @@ def subplots(array=None, ncols=1, nrows=1,
         in the right subplot is centered on the international dateline.
     basemap : bool or dict-like, optional
         Whether to use `~mpl_toolkits.basemap.Basemap` or
-        `~cartopy.crs.Projection` for map projections. Defaults to ``False``.
+        `~cartopy.crs.Projection` for map projections. Default is ``False``.
         If boolean, applies to all subplots. If dictionary, values apply to
         specific subplots, as with `proj`.
 
     Other parameters
     ----------------
     tight : bool, optional
-        Toggles automatic tight layout adjustments. Defaults to
+        Toggles automatic tight layout adjustments. Default is
         :rc:`tight`.
 
         If you manually specify a spacing, it will be used
