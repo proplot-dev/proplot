@@ -178,13 +178,13 @@ colorbar.insetwidth:  1.2em
 # Subplot properties
 # Use font relative units for everything because this is common way user
 # might want to increase figure resolution
-subplots.axwidth:       18em  # 2 inches
-subplots.panelwidth:    4em   # 0.45 inches
-subplots.pad:           0.5em
-subplots.axpad:         1em
-subplots.panelpad:      0.5em
-subplots.panelspace:    1em
-subplots.innerspace:    1.5em
-subplots.ylabspace:     5.5em
-subplots.xlabspace:     4em
-subplots.titlespace:    2em
+subplots.axwidth:    18em  # 2 inches
+subplots.panelwidth: 4em   # 0.45 inches
+subplots.pad:        0.5em
+subplots.axpad:      1em
+subplots.panelpad:   0.5em
+subplots.panelspace: 1em
+subplots.innerspace: 1.5em
+subplots.ylabspace:  5.5em
+subplots.xlabspace:  4em
+subplots.titlespace: 2em

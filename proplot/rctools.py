@@ -44,9 +44,9 @@ Key               Description
 ``autoreload``    If not empty or ``0`` and :rcraw:`nbsetup` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__. Can only be changed from the ``~/.proplotrc`` file.
 ``abc``           Boolean, indicates whether to draw a-b-c labels by default.
 ``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
-``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``.
-``align``         Whether to align axis labels during draw; see `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
-``span``          Boolean, toggles spanning axis labels.
+``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.subplots.subplots` for details.
+``align``         Whether to align axis labels during draw. See `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
+``span``          Boolean, toggles spanning axis labels. See `~proplot.subplots.subplots` for details.
 ``fontname``      Name of font used for all text in the figure. The default is Helvetica Neue. See `~proplot.fonttools` for details.
 ``cmap``          The default colormap.
 ``lut``           The number of colors to put in the colormap lookup table.
