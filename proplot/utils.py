@@ -173,7 +173,7 @@ def units(value, numeric='in'):
 
     numeric : str, optional
         The assumed unit for numeric arguments, and the output unit. Default
-        is ``'in'``.
+        is **inches**, i.e. ``'in'``.
     """
     # Loop through arbitrary list, or return None if input was None (this
     # is the exception).

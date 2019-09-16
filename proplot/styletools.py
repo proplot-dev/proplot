@@ -2635,11 +2635,11 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
     N : int, optional
         The number of levels in each colorbar.
     length : float or str, optional
-        The length of each colorbar. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        The length of each colorbar. Units are interpreted by
+        `~proplot.utils.units`.
     width : float or str, optional
-        The width of each colorbar. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        The width of each colorbar. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------
@@ -2717,8 +2717,7 @@ def show_cycles(*args, axwidth=1.5):
         Positional arguments are cycle names or objects. Default is
         all of the registered colormaps.
     axwidth : str or float, optional
-        Average width of each subplot. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        Average width of each subplot. Units are interpreted by `~proplot.utils.units`.
 
     Returns
     -------

@@ -920,27 +920,21 @@ class Axes(maxes.Axes):
 
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
-            colorbars only. If float, units are inches. If string, units
-            are interpreted by `~proplot.utils.units`. Default is
-            :rc:`colorbar.axespad`.
+            colorbars only. Units are interpreted by `~proplot.utils.units`.
+            Default is :rc:`colorbar.axespad`.
         length : float or str, optional
             The colorbar length. For outer colorbars, units are relative to the
-            axes width or height. Default is :rc:`colorbar.length`.
-            For inset colorbars, if float, units are inches; if string, units
-            are interpreted by `~proplot.utils.units`. Default is
-            :rc:`colorbar.insetlength`.
+            axes width or height. Default is :rc:`colorbar.length`. For inset
+            colorbars, units are interpreted by `~proplot.utils.units`. Default
+            is :rc:`colorbar.insetlength`.
         width : float or str, optional
-            The colorbar width. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`. Default is
-            :rc:`colorbar.width` or :rc:`colorbar.insetwidth`.
+            The colorbar width. Units are interpreted by `~proplot.utils.units`.
+            Default is :rc:`colorbar.width` or :rc:`colorbar.insetwidth`.
         space : float or str, optional
             The space between the colorbar and the main axes. For outer
-            colorbars only. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`.
-
-            By default, this is adjusted automatically in the "tight layout"
-            calculation, or is :rc:`subplots.panelspace` if "tight layout"
-            is turned off.
+            colorbars only. Units are interpreted by `~proplot.utils.units`.
+            When :rcraw:`tight` is ``True``, this is adjusted automatically.
+            Otherwise, defaut is :rc:`subplots.panelspace`.
         frame, frameon : bool, optional
             Whether to draw a frame around inset colorbars, just like
             `~matplotlib.axes.Axes.legend`.
@@ -1127,13 +1121,14 @@ class Axes(maxes.Axes):
             ==================  =======================================
 
         width : float or str, optional
-            The space allocated for the outer legends. This does nothing
-            if "tight layout" is turned on. If float, units are inches. If
-            string, units are interpreted by `~proplot.utils.units`.
+            The space allocated for outer legends. This does nothing
+            if :rcraw:`tight` is ``True``. Units are interpreted by
+            `~proplot.utils.units`.
         space : float or str, optional
             The space between the axes and the legend for outer legends.
-            If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`.
+            Units are interpreted by `~proplot.utils.units`.
+            When :rcraw:`tight` is ``True``, this is adjusted automatically.
+            Otherwise, defaut is :rc:`subplots.panelspace`.
 
         Other parameters
         ----------------
@@ -1334,13 +1329,12 @@ class Axes(maxes.Axes):
         ax : `~proplot.axes.Axes`
             The axes for which we are drawing a panel.
         width : float or str or list thereof, optional
-            The panel width. If float, units are inches. If string, units are
-            interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.panelwidth`.
+            The panel width. Units are interpreted by `~proplot.utils.units`.
+            Default is :rc:`subplots.panelwidth`.
         space : float or str or list thereof, optional
-            Empty space between the main subplot and the panel. If float,
-            units are inches. If string, units are interpreted by
-            `~proplot.utils.units`.
+            Empty space between the main subplot and the panel.
+            When :rcraw:`tight` is ``True``, this is adjusted automatically.
+            Otherwise, defaut is :rc:`subplots.panelspace`.
         share : bool, optional
             Whether to enable axis sharing between the *x* and *y* axes of the
             main subplot and the panel long axes for each panel in the stack.
@@ -1805,9 +1799,11 @@ class CartesianAxes(Axes):
             labels. Default is :rc:`color`. Use e.g. ``ax.format(color='red')``
             to set for both axes.
         xticklen, yticklen : float or str, optional
-            Tick lengths for the *x* and *y* axis. If float, units are points.
-            If string, units are interpreted by `~proplot.utils.units`. Default
-            is :rc:`ticklen`. Minor tick lengths are scaled according
+            Tick lengths for the *x* and *y* axis. Units are interpreted by
+            `~proplot.utils.units`, with "points" as the numeric unit. Default
+            is :rc:`ticklen`.
+
+            Minor tick lengths are scaled according
             to :rc:`ticklenratio`. Use e.g. ``ax.format(ticklen=1)`` to
             set for both axes.
         fixticks : bool, optional

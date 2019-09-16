@@ -643,7 +643,7 @@ def _subplots_geometry(**kwargs):
     rhratio = (nrows_main*sum(hratios_main[y1:y2+1]))/(dy*sum(hratios_main))
     if rwratio == 0 or rhratio == 0:
         raise RuntimeError(f'Something went wrong, got wratio={rwratio!r} and hratio={rhratio!r} for reference axes.')
-    if np.iterable(aspect): 
+    if np.iterable(aspect):
         aspect = aspect[0]/aspect[1]
 
     # Determine figure and axes dims from input in width or height dimenion.
@@ -738,7 +738,7 @@ class _hidelabels(object):
 
 class Figure(mfigure.Figure):
     """The `~matplotlib.figure.Figure` class returned by `subplots`. At
-    draw-time, an improved "tight layout" adjustment is applied, and
+    draw-time, an improved tight layout algorithm is employed, and
     the space around the figure edge, between subplots, and between
     panels is changed to accommodate subplot content. Figure dimensions
     may be automatically scaled to preserve subplot aspect ratios."""
@@ -757,17 +757,16 @@ class Figure(mfigure.Figure):
             Toggles automatic tight layout adjustments. Default is
             :rc:`tight`.
         pad : float or str, optional
-            Padding around edge of figure. Default is :rc:`subplots.pad`.
-            If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`.
+            Padding around edge of figure. Units are interpreted by
+            `~proplot.utils.units`. Default is :rc:`subplots.pad`.
         axpad : float or str, optional
-            Padding between subplots in adjacent columns and rows. Default is
-            :rc:`subplots.axpad`. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`.
+            Padding between subplots in adjacent columns and rows. Units are
+            interpreted by `~proplot.utils.units`. Default is
+            :rc:`subplots.axpad`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
-            panels. If float, units are inches. If string, units are
-            interpreted by `~proplot.utils.units`.
+            panels. Units are interpreted by `~proplot.utils.units`.Default is
+            :rc:`subplots.panelpad`. 
         includepanels : bool, optional
             Whether to include panels when centering *x* axis labels,
             *y* axis labels, and figure "super titles" along the edge of the
@@ -1502,15 +1501,13 @@ class Figure(mfigure.Figure):
             all rows and columns.
         space : float or str, optional
             The space between the main subplot grid and the colorbar, or the
-            space between successively stacked colorbars. If float, units
-            are inches. If string, units are interpreted by
-            `~proplot.utils.units`. By default, this is adjusted automatically
-            in the "tight layout" calculation, or is
-            :rc:`subplots.panelspace` if "tight layout" is turned off.
+            space between successively stacked colorbars. Units are interpreted
+            by `~proplot.utils.units`. By default, this is determined by
+            the "tight layout" algorithm, or is :rc:`subplots.panelspace`
+            if "tight layout" is off.
         width : float or str, optional
-            The colorbar width. If float, units are inches. If string, units
-            are interpreted by `~proplot.utils.units`. Default is
-            :rc:`colorbar.width`.
+            The colorbar width. Units are interpreted by
+            `~proplot.utils.units`. Default is :rc:`colorbar.width`.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.colorbar`.
         """
@@ -1561,8 +1558,7 @@ class Figure(mfigure.Figure):
             all rows and columns.
         space : float or str, optional
             The space between the main subplot grid and the legend, or the
-            space between successively stacked colorbars. If float, units
-            are inches. If string, units are interpreted by
+            space between successively stacked colorbars. Units are interpreted by
             `~proplot.utils.units`. By default, this is adjusted automatically
             in the "tight layout" calculation, or is
             :rc:`subplots.panelspace` if "tight layout" is turned off.
@@ -1773,8 +1769,8 @@ def subplots(array=None, ncols=1, nrows=1,
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     width, height : float or str, optional
-        The figure width and height. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        The figure width and height. Units are interpreted by
+        `~proplot.utils.units`.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
         to control the figure width (and height, if specified). Valid names
@@ -1785,9 +1781,8 @@ def subplots(array=None, ncols=1, nrows=1,
         keyword args are applied to this axes, and aspect ratio is conserved
         for this axes in tight layout adjustment.
     axwidth, axheight : float or str, optional
-        Sets the average width, height of your axes. If float, units are
-        inches. If string, units are interpreted by `~proplot.utils.units`.
-        Default is :rc:`subplots.axwidth`.
+        Sets the average width, height of your axes. Units are interpreted by
+        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
 
         These arguments are convenient where you don't care about the figure
         dimensions and just want your axes to have enough "room".
@@ -1807,13 +1802,16 @@ def subplots(array=None, ncols=1, nrows=1,
         Passed to `FlexibleGridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
         or string, expanded into lists of length ``ncols-1`` (for `wspace`)
-        or length ``nrows-1`` (for `hspace`). For each element of the list,
-        if float, units are inches, and if string, units are interpreted by
-        `~proplot.utils.units`.
+        or length ``nrows-1`` (for `hspace`).
+
+        Units are interpreted by `~proplot.utils.units` for each element of
+        the list. By default, these are determined by the "tight
+        layout" algorithm.
     left, right, top, bottom : float or str, optional
         Passed to `FlexibleGridSpec`, denote the width of padding between the
-        subplots and the figure edge. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        subplots and the figure edge. Units are interpreted by
+        `~proplot.utils.units`. By default, these are determined by the
+        "tight layout" algorithm.
 
     sharex, sharey, share : {3, 2, 1, 0}, optional
         The "axis sharing level" for the *x* axis, *y* axis, or both axes.
