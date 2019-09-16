@@ -692,7 +692,7 @@ class rc_configurator(object):
         mode : {0,1,2}, optional
             The `~rc_configurator.__getitem__` mode.
             Dictates the behavior of the `rc` object within a ``with...as``
-            block when settings are requested with e.g. ``rc['setting']``. If
+            block when settings are requested with e.g. :rc:`setting`. If
             you are using `~rc_configurator.context` manually, the `mode` is
             automatically set to ``0`` -- other input is ignored. Internally,
             ProPlot uses all of the three available modes.
@@ -874,11 +874,11 @@ See the `~proplot.rctools` documentation for details."""
 @_timer
 def nb_setup():
     """
-    Sets up your iPython workspace, called on import if ``rc['nbsetup']`` is
-    ``True`` (the default). For all iPython sessions, passes ``rc['autoreload']``
+    Sets up your iPython workspace, called on import if :rc:`nbsetup` is
+    ``True`` (the default). For all iPython sessions, passes :rc:`autoreload`
     to the useful `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     extension. For iPython *notebook* sessions, results in higher-quality inline figures
-    and passes ``rc['autosave']`` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    and passes :rc:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     extension.
 
     See the `~proplot.rctools` documentation for details.
