@@ -146,7 +146,7 @@ class Axes(maxes.Axes):
 
         See also
         --------
-        `CartesianAxes`, `PolarAxes`, `ProjectionAxes`
+        `~matplotlib.axes.Axes`, `CartesianAxes`, `PolarAxes`, `ProjectionAxes`
         """
         # Call parent
         super().__init__(*args, **kwargs)
@@ -613,12 +613,12 @@ class Axes(maxes.Axes):
             around to a, ..., z, aa, ..., zz, aaa, ..., zzz, ... Default is
             :rc:`abc`.
         abcformat : str, optional
-            It is a string containing the character ``a`` or ``A``, specifying
-            the format of a-b-c labels.  ``'a'`` is the default, but e.g.
-            ``'a.'``, ``'a)'``, or ``'A'`` might be desirable. Default is
+            String denoting the format of a-b-c labels containing the character
+            ``a`` or ``A``. ``'a'`` is the default, but e.g. ``'a.'``,
+            ``'a)'``, or ``'A'`` might also be desirable. Default is
             :rc:`abc.format`.
         abcloc, titleloc : str, optional
-            They are strings indicating the location for the a-b-c label and
+            Strings indicating the location for the a-b-c label and
             main title. The following locations keys are valid. Defaults are
             :rc:`abc.loc` and :rc:`title.loc`.
 
@@ -907,15 +907,15 @@ class Axes(maxes.Axes):
             ==================  ==========================================================
             Location            Valid keys
             ==================  ==========================================================
-            outer left          ``'l'``, ``'left'``
-            outer right         ``'r'``, ``'right'``
-            outer bottom        ``'b'``, ``'bottom'``
-            outer top           ``'t'``, ``'top'``
-            default inset       ``0``, ``'i'``, ``'inset'``
-            upper right inset   ``1``, ``'upper right'``, ``'ur'``
-            upper left inset    ``2``, ``'upper left'``, ``'ul'``
-            lower left inset    ``3``, ``'lower left'``, ``'ll'``
-            lower right inset   ``4``, ``'lower right'``, ``'lr'``
+            outer left          ``'left'``, ``'l'``
+            outer right         ``'right'``, ``'r'``
+            outer bottom        ``'bottom'``, ``'b'``
+            outer top           ``'top'``, ``'t'``
+            default inset       ``'inset'``, ``'i'``, ``0``
+            upper right inset   ``'upper right'``, ``'ur'``, ``1``
+            upper left inset    ``'upper left'``, ``'ul'``, ``2``
+            lower left inset    ``'lower left'``, ``'ll'``, ``3``
+            lower right inset   ``'lower right'``, ``'lr'``, ``4``
             ==================  ==========================================================
 
         pad : float or str, optional
@@ -1104,20 +1104,20 @@ class Axes(maxes.Axes):
             ==================  =======================================
             Location            Valid keys
             ==================  =======================================
-            left panel          ``'l'``, ``'left'``
-            right panel         ``'r'``, ``'right'``
-            bottom panel        ``'b'``, ``'bottom'``
-            top panel           ``'t'``, ``'top'``
-            "best" inset        ``0``, ``'best'``, ``'inset'``, ``'i'``
-            upper right inset   ``1``, ``'upper right'``, ``'ur'``
-            upper left inset    ``2``, ``'upper left'``, ``'ul'``
-            lower left inset    ``3``, ``'lower left'``, ``'ll'``
-            lower right inset   ``4``, ``'lower right'``, ``'lr'``
-            center left inset   ``5``, ``'center left'``, ``'cl'``
-            center right inset  ``6``, ``'center right'``, ``'cr'``
-            lower center inset  ``7``, ``'lower center'``, ``'lc'``
-            upper center inset  ``8``, ``'upper center'``, ``'uc'``
-            center inset        ``9``, ``'center'``, ``'c'``
+            left panel          ``'left'``, ``'l'``
+            right panel         ``'right'``, ``'r'``
+            bottom panel        ``'bottom'``, ``'b'``
+            top panel           ``'top'``, ``'t'``
+            "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
+            upper right inset   ``'upper right'``, ``'ur'``, ``1``
+            upper left inset    ``'upper left'``, ``'ul'``, ``2``
+            lower left inset    ``'lower left'``, ``'ll'``, ``3``
+            lower right inset   ``'lower right'``, ``'lr'``, ``4``
+            center left inset   ``'center left'``, ``'cl'``, ``5``
+            center right inset  ``'center right'``, ``'cr'``, ``6``
+            lower center inset  ``'lower center'``, ``'lc'``, ``7``
+            upper center inset  ``'upper center'``, ``'uc'``, ``8``
+            center inset        ``'center'``, ``'c'``, ``9``
             ==================  =======================================
 
         width : float or str, optional
