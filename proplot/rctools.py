@@ -99,7 +99,7 @@ a property is empty, the corresponding property from ``grid`` is used.
 Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
 `~proplot.axes.ProjectionAxes` settings. These are used when the boolean
-toggle for the corresponding :ref:`rcGlobals` setting is turned on.
+toggles for the corresponding :ref:`rcGlobals` settings are turned on.
 
 ===================================================================  =========================================================================================================================================================================================================================================================
 Key(s)                                                               Description
