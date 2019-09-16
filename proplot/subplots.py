@@ -1816,8 +1816,8 @@ def subplots(array=None, ncols=1, nrows=1,
         units are interpreted by `~proplot.utils.units`.
 
     sharex, sharey, share : {3, 2, 1, 0}, optional
-        The "axis sharing level" for the *x* axis, *y* axis, or both
-        axes. This can considerably redundancy in your figure.
+        The "axis sharing level" for the *x* axis, *y* axis, or both axes.
+        Default is ``3``. This can considerably redundancy in your figure.
         Options are as follows:
 
         0. No axis sharing. Also sets the default `spanx` and `spany` values
