@@ -8,13 +8,13 @@ def rcparam_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     rendered = nodes.Text(f"rc['{text}']")
     source = inliner.document.attributes['source'].replace(sep, '/')
     relsource = source.split('/docs/', 1)[1]
-    levels = relsource.count('/') - 1 # distance to 'docs' folder
-    refuri = ('../' * levels + '_build/html/rctools.html?highlight={text}')
+    levels = relsource.count('/') # distance to 'docs' folder
+    refuri = ('../' * levels) + 'rctools.html?highlight=' + text
 
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     node_list = [nodes.literal('', '', ref)]
     if text in rc:
-        node_list.append(nodes.Text(f' (default: {rcParamsDefault[text]!r})'))
+        node_list.append(nodes.Text(f' = {rc[text]!r}'))
     return node_list, []
 
 

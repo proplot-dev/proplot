@@ -755,14 +755,14 @@ class Figure(mfigure.Figure):
         ----------
         tight : bool, optional
             Toggles automatic tight layout adjustments. Defaults to
-            ``rc['tight']``.
+            :rc:`tight`.
         pad : float or str, optional
-            Padding around edge of figure. Defaults to ``rc['subplots.pad']``.
+            Padding around edge of figure. Defaults to :rc:`subplots.pad`.
             If float, units are inches. If string, units are interpreted by
             `~proplot.utils.units`.
         axpad : float or str, optional
             Padding between subplots in adjacent columns and rows. Defaults to
-            ``rc['subplots.axpad']``. If float, units are inches. If string,
+            :rc:`subplots.axpad`. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
@@ -1506,11 +1506,11 @@ class Figure(mfigure.Figure):
             are inches. If string, units are interpreted by
             `~proplot.utils.units`. By default, this is adjusted automatically
             in the "tight layout" calculation, or is
-            ``rc['subplots.panelspace']`` if "tight layout" is turned off.
+            :rc:`subplots.panelspace` if "tight layout" is turned off.
         width : float or str, optional
             The colorbar width. If float, units are inches. If string, units
             are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']``.
+            :rc:`colorbar.width`.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.colorbar`.
         """
@@ -1565,7 +1565,7 @@ class Figure(mfigure.Figure):
             are inches. If string, units are interpreted by
             `~proplot.utils.units`. By default, this is adjusted automatically
             in the "tight layout" calculation, or is
-            ``rc['subplots.panelspace']`` if "tight layout" is turned off.
+            :rc:`subplots.panelspace` if "tight layout" is turned off.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.legend`.
         """
@@ -1787,6 +1787,7 @@ def subplots(array=None, ncols=1, nrows=1,
     axwidth, axheight : float or str, optional
         Sets the average width, height of your axes. If float, units are
         inches. If string, units are interpreted by `~proplot.utils.units`.
+        Defaults to :rc:`subplots.axwidth`.
 
         These arguments are convenient where you don't care about the figure
         dimensions and just want your axes to have enough "room".
@@ -1880,7 +1881,7 @@ def subplots(array=None, ncols=1, nrows=1,
     ----------------
     tight : bool, optional
         Toggles automatic tight layout adjustments. Defaults to
-        ``rc['tight']``.
+        :rc:`tight`.
 
         If you manually specify a spacing, it will be used
         to override the tight layout spacing -- for example, with ``left=0.1``,

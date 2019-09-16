@@ -545,7 +545,7 @@ class Axes(maxes.Axes):
         rc_kw : dict, optional
             A dictionary containing "rc" configuration settings that will
             be applied to this axes. Temporarily updates the
-            `~proplot.rctools.rc` object. See `~proplot.rctools` for details.
+            `~proplot.rctools.rc` object.
         **kwargs
             Any of three options:
 
@@ -616,11 +616,11 @@ class Axes(maxes.Axes):
             It is a string containing the character ``a`` or ``A``, specifying
             the format of a-b-c labels.  ``'a'`` is the default, but e.g.
             ``'a.'``, ``'a)'``, or ``'A'`` might be desirable. Defaults to
-            ``rc['abc.format']``.
+            :rc:`abc.format`.
         abcloc, titleloc : str, optional
             They are strings indicating the location for the a-b-c label and
             main title. The following locations keys are valid. Defaults to
-            ``rc['abc.loc']`` and ``rc['title.loc']``.
+            :rc:`abc.loc` and :rc:`title.loc`.
 
             ========================  ============================
             Location                  Valid keys
@@ -640,7 +640,7 @@ class Axes(maxes.Axes):
             Whether to draw a white border around titles and a-b-c labels
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults to
-            ``rc['abc.border']`` and ``rc['title.border']``
+            :rc:`abc.border` and :rc:`title.border`
         ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
             Axes titles in particular positions. This lets you specify multiple
             "titles" for each subplots. See the `abcloc` keyword.
@@ -901,7 +901,7 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         loc : str, optional
-            The colorbar location. Defaults to ``rc['colorbar.loc']``. The
+            The colorbar location. Defaults to :rc:`colorbar.loc`. The
             following location keys are valid.
 
             ==================  ==========================================================
@@ -922,34 +922,34 @@ class Axes(maxes.Axes):
             The space between the axes edge and the colorbar. For inset
             colorbars only. If float, units are inches. If string, units
             are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.pad']``.
+            :rc:`colorbar.pad`.
         length : float or str, optional
             The colorbar length. For outer colorbars, units are relative to the
-            axes width or height. Defaults to ``rc['colorbar.length']``.
+            axes width or height. Defaults to :rc:`colorbar.length`.
             For inset colorbars, if float, units are inches; if string, units
             are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.insetlength']``.
+            :rc:`colorbar.insetlength`.
         width : float or str, optional
             The colorbar width. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']`` or ``rc['colorbar.insetwidth']``.
+            :rc:`colorbar.width` or :rc:`colorbar.insetwidth`.
         space : float or str, optional
             The space between the colorbar and the main axes. For outer
             colorbars only. If float, units are inches. If string,
             units are interpreted by `~proplot.utils.units`.
 
             By default, this is adjusted automatically in the "tight layout"
-            calculation, or is ``rc['subplots.panelspace']`` if "tight layout"
+            calculation, or is :rc:`subplots.panelspace` if "tight layout"
             is turned off.
         frame, frameon : bool, optional
             Whether to draw a frame around inset colorbars, just like
             `~matplotlib.axes.Axes.legend`.
-            Defaults to ``rc['colorbar.frameon']``.
+            Defaults to :rc:`colorbar.frameon`.
         alpha, linewidth, edgecolor, facecolor : optional
             Transparency, edge width, edge color, and face color for the frame
             around the inset colorbar. Defaults to
-            ``rc['colorbar.framealpha']``, ``rc['axes.linewidth']``,
-            ``rc['axes.edgecolor']``, and ``rc['axes.facecolor']``,
+            :rc:`colorbar.framealpha`, :rc:`axes.linewidth`,
+            :rc:`axes.edgecolor`, and :rc:`axes.facecolor`,
             respectively.
         **kwargs
             Passed to `~proplot.wrappers.colorbar_wrapper`.
@@ -1335,7 +1335,8 @@ class Axes(maxes.Axes):
             The axes for which we are drawing a panel.
         width : float or str or list thereof, optional
             The panel width. If float, units are inches. If string, units are
-            interpreted by `~proplot.utils.units`.
+            interpreted by `~proplot.utils.units`. Defaults to
+            :rc:`subplots.panelwidth`.
         space : float or str or list thereof, optional
             Empty space between the main subplot and the panel. If float,
             units are inches. If string, units are interpreted by
@@ -1783,7 +1784,7 @@ class CartesianAxes(Axes):
             `~proplot.axistools.Formatter`.
         xrotation, yrotation : float, optional
             The rotation for *x* and *y* axis tick labels. Defaults to ``0``
-            for normal axes, ``rc['axes.formatter.timerotation']`` for time *x* axes.
+            for normal axes, :rc:`axes.formatter.timerotation` for time *x* axes.
         xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks
             are labelled. For example, the tick range ``(-1,1)`` with
@@ -1800,13 +1801,13 @@ class CartesianAxes(Axes):
             will prevent the spines from meeting at the origin.
         xcolor, ycolor : color-spec, optional
             Color for the *x* and *y* axis spines, ticks, tick labels, and axis
-            labels. Defaults to ``rc['color']``. Use e.g. ``ax.format(color='red')``
+            labels. Defaults to :rc:`color`. Use e.g. ``ax.format(color='red')``
             to set for both axes.
         xticklen, yticklen : float or str, optional
             Tick lengths for the *x* and *y* axis. If float, units are points.
             If string, units are interpreted by `~proplot.utils.units`. Defaults
-            to ``rc['ticklen']``. Minor tick lengths are scaled according
-            to ``rc['ticklenratio']``. Use e.g. ``ax.format(ticklen=1)`` to
+            to :rc:`ticklen`. Minor tick lengths are scaled according
+            to :rc:`ticklenratio`. Use e.g. ``ax.format(ticklen=1)`` to
             set for both axes.
         fixticks : bool, optional
             Whether to always transform the tick locators to a
@@ -2624,7 +2625,7 @@ class ProjectionAxes(Axes):
             South Pole-centered projections. For cartopy axes only.
         grid : bool, optional
             Toggles meridian and parallel gridlines on and off. Defaults to
-            ``rc['geogrid']``.
+            :rc:`geogrid`.
         lonlines, latlines : float or list of float, optional
             If float, indicates the *spacing* of meridian and parallel gridlines.
             Otherwise, must be a list of floats indicating specific meridian and
@@ -2633,10 +2634,10 @@ class ProjectionAxes(Axes):
             Aliases for `lonlines`, `latlines`.
         latmax : float, optional
             The maximum absolute latitude for meridian gridlines. Defaults
-            to ``rc['geogrid.latmax']``.
+            to :rc:`geogrid.latmax`.
         labels : bool, optional
             Toggles meridian and parallel gridline labels on and off. Defaults to
-            ``rc['geogrid.labels']``.
+            :rc:`geogrid.labels`.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides
             of the map. There are four different options:
@@ -2651,10 +2652,11 @@ class ProjectionAxes(Axes):
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
 
         land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
-            Toggles various geographic features. These are actually ``rc``
+            Toggles various geographic features. These are actually
+            the :rc:`land`, :rc:`ocean`, :rc:`coast`, :rc:`rivers`,
+            :rc:`lakes`, :rc:`borders`, and :rc:`innerborders`
             settings passed to `~proplot.axes.Axes.context`. The style can
-            be modified by passing additional ``rc`` settings, e.g.
-            ``landcolor='green'``. See `~proplot.rctools` for details.
+            be modified by passing additional settings, e.g. :rc:`landcolor`.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with

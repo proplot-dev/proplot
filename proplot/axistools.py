@@ -377,7 +377,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         ----------
         zerotrim : bool, optional
             Whether to trim trailing zeros.
-            Defaults to ``rc['axes.formatter.zerotrim']``.
+            Defaults to :rc:`axes.formatter.zerotrim`.
         precision : float, optional
             The maximum number of digits after the decimal point.
         tickrange : (float, float), optional
@@ -779,7 +779,7 @@ def CutoffScaleFactory(scale, lower, upper=None):
     Todo
     ----
     Create method for drawing those diagonal "cutoff" strokes with whitespace
-    between.  See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
+    between. See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
     multi-axis solution and for this class-based solution. Note the space
     between 1-9 in Paul's answer is because actual cutoffs were 0.1 away
     (and tick locs are 0.2 apart).
@@ -899,8 +899,6 @@ class MercatorLatitudeScale(mscale.ScaleBase):
 
     Also uses a user-defined threshold :math:`\in (-90, 90)`, above and
     below which nothing will be plotted.
-
-    .. bibliography:: ../refs.bib
     """
     name = 'mercator'
     """Registered scale name."""

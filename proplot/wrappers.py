@@ -1537,7 +1537,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     levels, N : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
         `locator` is used to generate this many levels at "nice" intervals.
-        Defaults to ``rc['image.levels']``.
+        Defaults to :rc:`image.levels`.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
@@ -1571,7 +1571,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         and `white-lines-between-pcolor-rectangles
         <https://stackoverflow.com/q/27092991/4970632>`__
         issues. This slows down figure rendering by a bit. Defaults to
-        ``rc['image.edgefix']``.
+        :rc:`image.edgefix`.
     labels : bool, optional
         For `~matplotlib.axes.Axes.contour`, whether to add contour labels
         with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
@@ -2293,7 +2293,8 @@ def colorbar_wrapper(self,
     extendsize : float or str, optional
         The length of the colorbar "extensions" in *physical units*.
         If float, units are inches. If string, units are interpreted
-        by `~proplot.utils.units`. Defaults to ``rc['colorbar.extend']``.
+        by `~proplot.utils.units`. Defaults to :rc:`colorbar.insetextend`
+        for inset colorbars and :rc:`colorbar.extend` for outer colorbars.
 
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
@@ -2305,7 +2306,7 @@ def colorbar_wrapper(self,
         consistency with `legend`.
     grid : bool, optional
         Whether to draw "gridlines" between each level of the colorbar.
-        Defaults to ``rc['colorbar.grid']``.
+        Defaults to :rc:`colorbar.grid`.
     tickminor : bool, optional
         Whether to put minor ticks on the colorbar. Defaults to ``False``.
     locator, ticks : locator spec, optional

@@ -47,6 +47,7 @@ extensions = [
     'sphinx.ext.doctest',           # >>> examples
     'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
     'sphinx.ext.intersphinx',       # external links
+    'sphinx.ext.todo',              # Todo headers and todo:: directives
     'sphinx.ext.mathjax',           # LaTeX style math
     'sphinx.ext.viewcode',          # view code links
     'sphinx.ext.autosummary',       # autosummary directive
