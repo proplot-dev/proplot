@@ -18,7 +18,8 @@ def rc_role_generator(show_default):
         ref = nodes.reference(rawtext, rendered, refuri=refuri)
         node_list = [nodes.literal('', '', ref)]
         if show_default and text in rc:
-            node_list.append(nodes.Text(f' = {rc[text]!r}'))
+            node_list.append(nodes.Text(' = '))
+            node_list.append(nodes.literal('', '', nodes.Text(repr(rc[text]))))
         return node_list, []
     return rc_role
 
