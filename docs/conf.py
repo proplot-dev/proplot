@@ -11,12 +11,14 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-
 import os
 import sys
+
+# Sphinx-automodapi requires proplot on path
+sys.path.insert(0, os.path.abspath('..'))
+# Then add path for local sphinxext extensions
+# Not sure when abspath is required
+sys.path.append(os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
@@ -41,17 +43,15 @@ release = ''
 # ones.
 extensions = [
     # 'nbsphinx',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
+    'sphinx.ext.autodoc', # include documentation from docstrings
+    'sphinx.ext.doctest', # >>> examples
+    'sphinx.ext.autosectionlabel', # use :ref:`Heading` for any heading
     'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
+    'sphinx.ext.autosummary', # autosummary directive
     'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
-    'sphinx.ext.autosectionlabel',
-    'sphinx.ext.autosummary',
     'sphinx_automodapi.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
     # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
