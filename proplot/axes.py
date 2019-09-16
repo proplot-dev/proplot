@@ -904,9 +904,9 @@ class Axes(maxes.Axes):
             The colorbar location. Default is :rc:`colorbar.loc`. The
             following location keys are valid.
 
-            ==================  ==========================================================
+            ==================  ==================================
             Location            Valid keys
-            ==================  ==========================================================
+            ==================  ==================================
             outer left          ``'left'``, ``'l'``
             outer right         ``'right'``, ``'r'``
             outer bottom        ``'bottom'``, ``'b'``
@@ -916,7 +916,7 @@ class Axes(maxes.Axes):
             upper left inset    ``'upper left'``, ``'ul'``, ``2``
             lower left inset    ``'lower left'``, ``'ll'``, ``3``
             lower right inset   ``'lower right'``, ``'lr'``, ``4``
-            ==================  ==========================================================
+            ==================  ==================================
 
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
