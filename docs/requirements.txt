@@ -2,7 +2,7 @@
 # WARNING: Pip install hangs onto older commits unless __version__ is changed
 # since otherwise setup.py will not think it is necessary to rebuild
 lxml>=4.0.0
-git+https://github.com/lukelbd/sphinx-automodapi@7a3d381
+git+https://github.com/lukelbd/sphinx-automodapi@v0.4.proplot-mods
 sphinxcontrib-bibtex>=0.4
 numpy>=1.14
 ipython>=7.0.0
