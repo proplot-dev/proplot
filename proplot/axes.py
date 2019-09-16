@@ -1520,7 +1520,7 @@ class CartesianAxes(Axes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`
+        `~proplot.subplots.subplots`, `Axes`
         """
         # Impose default formatter
         super().__init__(*args, **kwargs)
@@ -2187,7 +2187,7 @@ class CartesianAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, *args, **kwargs):
-        """Alias (and more intuitive name) for `~CartesianAxes.twiny`.
+        """Alias and more intuitive name for `~CartesianAxes.twiny`.
         The matplotlib `~matplotlib.axes.Axes.twiny` function
         generates two *x*-axes with a shared ("twin") *y*-axis."""
         # Cannot wrap twiny() because we want to use CartesianAxes, not
@@ -2209,7 +2209,7 @@ class CartesianAxes(Axes):
         return ax
 
     def alty(self):
-        """Alias (and more intuitive name) for `~CartesianAxes.twinx`.
+        """Alias and more intuitive name for `~CartesianAxes.twinx`.
         The matplotlib `~matplotlib.axes.Axes.twinx` function
         generates two *y*-axes with a shared ("twin") *x*-axis."""
         # Must reproduce twinx here because need to generate CartesianAxes
@@ -2363,7 +2363,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`
+        `~proplot.subplots.subplots`, `Axes`
         """
         # Set tick length to zero so azimuthal labels are not too offset
         # Change default radial axis formatter but keep default theta one
@@ -2587,7 +2587,7 @@ class ProjectionAxes(Axes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `CartopyAxes`, `BasemapAxes`
+        `~proplot.subplots.subplots`, `Axes`, `CartopyAxes`, `BasemapAxes`
         """
         # Store props that let us dynamically and incrementally modify
         # line locations and settings like with Cartesian axes
@@ -2816,7 +2816,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `~proplot.projs`
+        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs`
         """
         # GeoAxes initialization. Note that critical attributes like
         # outline_patch needed by _format_apply are added before it is called.
@@ -3105,7 +3105,7 @@ class BasemapAxes(ProjectionAxes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `~proplot.projs`
+        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs`
         """
         # Map boundary notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method
