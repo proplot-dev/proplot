@@ -874,9 +874,9 @@ See the `~proplot.rctools` documentation for details."""
 @_timer
 def nb_setup():
     """
-    Sets up your iPython workspace, called on import if :rc:`nbsetup` is
-    ``True`` (the default). For all iPython sessions, passes :rc:`autoreload`
-    to the useful `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    Sets up your iPython workspace, called on import if :rc:`nbsetup`. For all
+    iPython sessions, passes :rc:`autoreload` to the useful
+    `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     extension. For iPython *notebook* sessions, results in higher-quality inline figures
     and passes :rc:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     extension.

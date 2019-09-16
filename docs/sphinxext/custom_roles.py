@@ -5,10 +5,13 @@ from proplot import rc
 # Adapted from matplotlib
 # TODO: Understand what the hell is going on here
 def rcparam_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    rendered = nodes.Text(f"rc['{text}']")
+    rctext = (f"rc['{text}']" if '.' in text else f'rc.{text}')
+    rendered = nodes.Text(rctext)
     source = inliner.document.attributes['source'].replace(sep, '/')
-    relsource = source.split('/docs/', 1)[1]
-    levels = relsource.count('/') # distance to 'docs' folder
+    relsource = source.split('/docs/', 1)
+    if len(relsource) == 1:
+        return [], []
+    levels = relsource[1].count('/') # distance to 'docs' folder
     refuri = ('../' * levels) + 'en/latest/rctools.html?highlight=' + text
 
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
