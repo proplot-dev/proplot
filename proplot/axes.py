@@ -619,7 +619,7 @@ class Axes(maxes.Axes):
             :rc:`abc.format`.
         abcloc, titleloc : str, optional
             They are strings indicating the location for the a-b-c label and
-            main title. The following locations keys are valid. Default is
+            main title. The following locations keys are valid. Defaults are
             :rc:`abc.loc` and :rc:`title.loc`.
 
             ========================  ============================
@@ -639,7 +639,7 @@ class Axes(maxes.Axes):
         abcborder, titleborder : bool, optional
             Whether to draw a white border around titles and a-b-c labels
             positioned inside the axes. This can help them stand out on top
-            of artists plotted inside the axes. Default is
+            of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
         ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
             Axes titles in particular positions. This lets you specify multiple
@@ -1784,7 +1784,8 @@ class CartesianAxes(Axes):
             `~proplot.axistools.Formatter`.
         xrotation, yrotation : float, optional
             The rotation for *x* and *y* axis tick labels. Default is ``0``
-            for normal axes, :rc:`axes.formatter.timerotation` for time *x* axes.
+            for normal axes, :rc:`axes.formatter.timerotation` for time
+            *x* axes.
         xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks
             are labelled. For example, the tick range ``(-1,1)`` with
@@ -1805,8 +1806,8 @@ class CartesianAxes(Axes):
             to set for both axes.
         xticklen, yticklen : float or str, optional
             Tick lengths for the *x* and *y* axis. If float, units are points.
-            If string, units are interpreted by `~proplot.utils.units`. Defaults
-            to :rc:`ticklen`. Minor tick lengths are scaled according
+            If string, units are interpreted by `~proplot.utils.units`. Default
+            is :rc:`ticklen`. Minor tick lengths are scaled according
             to :rc:`ticklenratio`. Use e.g. ``ax.format(ticklen=1)`` to
             set for both axes.
         fixticks : bool, optional
@@ -2633,8 +2634,8 @@ class ProjectionAxes(Axes):
         lonlocator, latlocator : optional
             Aliases for `lonlines`, `latlines`.
         latmax : float, optional
-            The maximum absolute latitude for meridian gridlines. Defaults
-            to :rc:`geogrid.latmax`.
+            The maximum absolute latitude for meridian gridlines. Default is
+            :rc:`geogrid.latmax`.
         labels : bool, optional
             Toggles meridian and parallel gridline labels on and off. Default is
             :rc:`geogrid.labels`.
@@ -2653,10 +2654,10 @@ class ProjectionAxes(Axes):
 
         land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
             Toggles various geographic features. These are actually
-            the :rc:`land`, :rc:`ocean`, :rc:`coast`, :rc:`rivers`,
-            :rc:`lakes`, :rc:`borders`, and :rc:`innerborders`
+            the :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
+            :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
             settings passed to `~proplot.axes.Axes.context`. The style can
-            be modified by passing additional settings, e.g. :rc:`landcolor`.
+            be modified by passing additional settings, e.g. :rcraw:`landcolor`.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with

@@ -616,8 +616,8 @@ def add_errorbars(self, func, *args,
     *args
         The input data.
     bars : bool, optional
-        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Defaults
-        to ``True`` when `means` is ``True``, `medians` is ``True``, or
+        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Default
+        is ``True`` when `means` is ``True``, `medians` is ``True``, or
         `bardata` is not ``None``.
     boxes : bool, optional
         Toggles *thick* boxplot-like error bars with a marker inside

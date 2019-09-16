@@ -12,7 +12,7 @@ following three categories.
 3. ProPlot :ref:`rcGlobals` settings. These have no dots (see below). They are **simple,
    short** names used to change multiple matplotlib and ProPlot settings at once,
    as shorthands for settings with longer names, or for special options. For example,
-   ``ticklen`` changes the tick length for the *x* and *y* axes in one go.
+   :rcraw:`ticklen` changes the tick length for the *x* and *y* axes in one go.
 
 You can change settings with the `~proplot.rctools.rc` object as follows.
 
@@ -28,7 +28,7 @@ To temporarily change settings on a particular axes, use either of the following
 
 In all of these examples, if the setting name ``name`` contains
 any dots, you can simply **omit the dots**. For example, to change the
-:ref:`rcExtraParams` property ``title.loc``, use ``plot.rc.titleloc = value``,
+:rcraw:`title.loc` property, use ``plot.rc.titleloc = value``,
 ``plot.rc.update(titleloc=value)``, or ``ax.format(titleloc=value)``.
 
 #########
@@ -692,7 +692,7 @@ class rc_configurator(object):
         mode : {0,1,2}, optional
             The `~rc_configurator.__getitem__` mode.
             Dictates the behavior of the `rc` object within a ``with...as``
-            block when settings are requested with e.g. :rc:`setting`. If
+            block when settings are requested with e.g. :rcraw:`setting`. If
             you are using `~rc_configurator.context` manually, the `mode` is
             automatically set to ``0`` -- other input is ignored. Internally,
             ProPlot uses all of the three available modes.
@@ -874,11 +874,11 @@ See the `~proplot.rctools` documentation for details."""
 @_timer
 def nb_setup():
     """
-    Sets up your iPython workspace, called on import if :rc:`nbsetup`. For all
-    iPython sessions, passes :rc:`autoreload` to the useful
+    Sets up your iPython workspace, called on import if :rcraw:`nbsetup` is
+    ``True``. For all iPython sessions, passes :rcraw:`autoreload` to the useful
     `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     extension. For iPython *notebook* sessions, results in higher-quality inline figures
-    and passes :rc:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    and passes :rcraw:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     extension.
 
     See the `~proplot.rctools` documentation for details.
