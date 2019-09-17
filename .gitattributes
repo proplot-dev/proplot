@@ -1,5 +1,6 @@
-# Notebook stuff, use filter to modify file when it is staged, use
-# the diff to modify files before comparing in git diff
+# Strips notebook output for diffs and when staging files
+# Download with 'pip install nbstripout'
+# See: https://github.com/kynan/nbstripout
 *.ipynb filter=nbstripout
 *.ipynb diff=ipynb
 
