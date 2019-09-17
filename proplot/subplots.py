@@ -161,7 +161,7 @@ class axes_grid(list):
         return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
-        """Pseudo immutability, raises error."""
+        """Pseudo immutability. Raises LookupError."""
         raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):

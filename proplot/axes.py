@@ -19,6 +19,7 @@ import re
 import numpy as np
 import warnings
 import functools
+from matplotlib import docstring
 from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
