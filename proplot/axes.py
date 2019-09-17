@@ -17,6 +17,7 @@ a-b-c labelling, adding geographic features, and much more.
 """
 import re
 import numpy as np
+import inspect
 import warnings
 import functools
 from matplotlib import docstring
@@ -91,6 +92,57 @@ LOC_TRANSLATE = {
     'uc':    'upper center',
     'lc':    'lower center',
     }
+
+# Concatenates docstrings and obfuscates call signature
+# NOTE: Originally had idea to use numpydoc.docscrape.NumpyDocString to
+# interpolate docstrings but *enormous* number of assupmtions would go into
+# this. And simple is better than complex.
+def _concatenate_axes_docstrings(func):
+    """Concatenates docstrings from a matplotlib axes method with a ProPlot
+    axes method. Requires that proplot documentation has no other parameters,
+    notes, or examples sections."""
+    if rc.get('docstring.hardcopy'): # True when running sphinx
+        return func
+    # Get matplotlib axes func
+    # If current func has no docstring just blindly copy matplotlib one
+    name = func.__name__
+    orig = getattr(maxes.Axes, name)
+    odoc = inspect.getdoc(orig)
+    if not odoc: # should never happen
+        return func
+    fdoc = inspect.getdoc(func) # also dedents
+    if not fdoc:
+        func.__doc__ = odoc
+        return func
+
+    # Obfuscate signature by converting to *args **kwargs. Note this does
+    # not change behavior of function! Copy parameters from a dummy function
+    # because I'm too lazy to figure out inspect.Parameters API
+    # See: https://stackoverflow.com/a/33112180/4970632
+    def _dummy(*args, **kwargs):
+        pass
+    dsig = inspect.signature(_dummy)
+    fsig = inspect.signature(func)
+    func.__signature__ = (
+        fsig.replace(parameters=tuple(dsig.parameters.values())))
+
+    # Concatenate docstrings
+    # Make sure different sections are very visible
+    doc = f"""
+==========================={"="*len(name)}
+proplot.Axes.{name} documentation
+==========================={"="*len(name)}
+{fdoc}
+
+==================================={"="*len(name)}
+matplotlib.axes.Axes.{name} documentation
+==================================={"="*len(name)}
+{odoc}
+"""
+    func.__doc__ = doc
+
+    # Return
+    return func
 
 # Helper function
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'

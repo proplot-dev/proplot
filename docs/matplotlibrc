@@ -1,0 +1,3 @@
+backend            : Agg
+savefig.dpi        : 80   # figure dots per inch
+docstring.hardcopy : True # set this when you want to generate hardcopy docstring

@@ -7,6 +7,7 @@ import numpy as np
 import numpy.ma as ma
 import functools
 import warnings
+from matplotlib import docstring
 from . import utils, styletools, axistools
 from .utils import _notNone
 import matplotlib.axes as maxes

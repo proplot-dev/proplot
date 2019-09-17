@@ -78,6 +78,7 @@ try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
     mbackend = None
+from matplotlib import docstring
 from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
@@ -109,6 +110,28 @@ JOURNAL_SPECS = {
     'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
     'aaas2': '12cm', # AAAS 2 column
     }
+# Table that goes in the subplots docstring
+# Must be indented one space as this is embedded in parameter description
+journal_doc = """
+    ===========  ====================  ==========================================================================================================================================================
+    Key          Size description      Organization
+    ===========  ====================  ==========================================================================================================================================================
+    ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+    ``'pnas2'``  2-column              ”
+    ``'pnas3'``  landscape page        ”
+    ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    ``'ams2'``   small 2-column        ”
+    ``'ams3'``   medium 2-column       ”
+    ``'ams4'``   full 2-column         ”
+    ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+    ``'agu2'``   2-column              ”
+    ``'agu3'``   full height 1-column  ”
+    ``'agu4'``   full height 2-column  ”
+    ``'aaas1'``  1-column              `American Association for the Advancement of Science <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__
+    ``'aaas2'``  2-column              ”
+    ===========  ====================  ==========================================================================================================================================================
+"""
+docstring.interpd.update(journal_doc=journal_doc)
 
 
 #-----------------------------------------------------------------------------#
@@ -1721,6 +1744,7 @@ def _axes_dict(naxs, value, kw=False, default=None):
         raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i) for i in sorted(kwargs.keys()))}.')
     return kwargs
 
+@docstring.dedent_interpd
 def subplots(array=None, ncols=1, nrows=1,
     ref=1, order='C',
     aspect=1, figsize=None,
@@ -1738,19 +1762,15 @@ def subplots(array=None, ncols=1, nrows=1,
     autoformat=True, includepanels=False,
     ):
     """
-    Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
-    axes or arbitrary grids of axes, any of which can be map projections,
-    and optional "panels" along axes or figure edges.
-
-    The parameters are sorted into the following rough sections: subplot grid
-    specifications, figure and subplot sizes, axis sharing,
-    figure panels, axes panels, and map projections.
+    Analogous to `matplotlib.pyplot.subplots`. Creates a figure with an
+    arbitrary layout of axes belong to arbitrary projections, and accepts
+    various `Figure` and `FlexibleGridSpec` parameters.
 
     Parameters
     ----------
     ncols, nrows : int, optional
-        Number of columns, rows. Ignored if `array` is not ``None``.
-        Use these arguments for simpler subplot grids.
+        Number of columns, rows in the subplot layout. Ignored if `array` is
+        passed. Default is ``1``.
     order : {'C', 'F'}, optional
         Whether subplots are numbered in column-major (``'C'``) or row-major
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
@@ -1774,8 +1794,8 @@ def subplots(array=None, ncols=1, nrows=1,
     journal : str, optional
         String name corresponding to an academic journal standard that is used
         to control the figure width (and height, if specified). Valid names
-        are described in a table below.
-
+        are as follows.
+        %(journal_doc)s
     ref : int, optional
         The reference axes number. The `axwidth`, `axheight`, and `aspect`
         keyword args are applied to this axes, and aspect ratio is conserved
@@ -1901,26 +1921,6 @@ def subplots(array=None, ncols=1, nrows=1,
         The figure instance.
     axs : `axes_grid`
         A special list of axes instances. See `axes_grid`.
-
-
-    Current options for the `journal` keyword argument are as follows.
-    If you'd like to add additional standards, feel free to submit a pull request
-
-    ===========  ====================  ==========================================================================================================================================================
-    Key          Size description      Organization
-    ===========  ====================  ==========================================================================================================================================================
-    ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-    ``'pnas2'``  2-column              ”
-    ``'pnas3'``  landscape page        ”
-    ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-    ``'ams2'``   small 2-column        ”
-    ``'ams3'``   medium 2-column       ”
-    ``'ams4'``   full 2-column         ”
-    ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-    ``'agu2'``   2-column              ”
-    ``'agu3'``   full height 1-column  ”
-    ``'agu4'``   full height 2-column  ”
-    ===========  ====================  ==========================================================================================================================================================
     """
     rc._getitem_mode = 0 # ensure still zero; might be non-zero if had error in 'with context' block
     # Build array

@@ -13,6 +13,7 @@
 
 import os
 import sys
+import matplotlib # loads local matplotlibrc which sets up docstring settings
 
 # Sphinx-automodapi requires proplot on path
 sys.path.insert(0, os.path.abspath('..'))
