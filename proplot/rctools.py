@@ -35,9 +35,9 @@ any dots, you can simply **omit the dots**. For example, to change the
 rcGlobals
 #########
 
-================  ====================================================================================================================================================================================================================
+================  ====================================================================================================================================================================================================================================
 Key               Description
-================  ====================================================================================================================================================================================================================
+================  ====================================================================================================================================================================================================================================
 ``nbsetup``       Whether to run `nb_setup` on import. Can only be changed from the ``~/.proplotrc`` file.
 ``format``        The inline backend figure format, one of ``retina``, ``png``, ``jpeg``, ``pdf``, or ``svg``. Can only be changed from the ``~/.proplotrc`` file.
 ``autosave``      If not empty or ``0`` and :rcraw:`nbsetup` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__. Can only be changed from the ``~/.proplotrc`` file.
@@ -51,7 +51,7 @@ Key               Description
 ``cmap``          The default colormap.
 ``lut``           The number of colors to put in the colormap lookup table.
 ``cycle``         The default color cycle name, used e.g. for lines.
-``rgbcycle``      Whether to register cycles names as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
+``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``color``         The color of axis spines, tick marks, tick labels, and labels.
 ``alpha``         The opacity of the background axes patch.
 ``facecolor``     The color of the background axes patch.
@@ -76,7 +76,7 @@ Key               Description
 ``borders``       Boolean, toggles country border lines on and off.
 ``innerborders``  Boolean, toggles internal border lines on and off, e.g. for states and provinces.
 ``rivers``        Boolean, toggles river lines on and off.
-================  ====================================================================================================================================================================================================================
+================  ====================================================================================================================================================================================================================================
 
 #############
 rcExtraParams

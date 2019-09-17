@@ -5,4 +5,4 @@ lxml>=4.0.0
 numpy>=1.14
 ipython>=7.0.0
 matplotlib>=3.0
-git+https://github.com/lukelbd/sphinx-automodapi@v0.5.proplot-mods
+git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods
