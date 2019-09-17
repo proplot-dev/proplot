@@ -2717,6 +2717,7 @@ def _redirect(func):
     name = func.__name__
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
+        """"""
         if getattr(self, 'name', '') == 'basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
@@ -2732,6 +2733,7 @@ def _norecurse(func):
     func._has_recurred = False
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
+        """"""
         if func._has_recurred:
             # Return the *original* version of the matplotlib method
             func._has_recurred = False
@@ -2754,6 +2756,7 @@ def _wrapper_decorator(driver):
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
     def decorator(func):
+        """"""
         # Define wrapper
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):

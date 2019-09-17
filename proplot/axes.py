@@ -101,8 +101,6 @@ def _concatenate_axes_docstrings(func):
     """Concatenates docstrings from a matplotlib axes method with a ProPlot
     axes method. Requires that proplot documentation has no other parameters,
     notes, or examples sections."""
-    if rc.get('docstring.hardcopy'): # True when running sphinx
-        return func
     # Get matplotlib axes func
     # If current func has no docstring just blindly copy matplotlib one
     name = func.__name__
@@ -110,9 +108,14 @@ def _concatenate_axes_docstrings(func):
     odoc = inspect.getdoc(orig)
     if not odoc: # should never happen
         return func
-    fdoc = inspect.getdoc(func) # also dedents
-    if not fdoc:
-        func.__doc__ = odoc
+
+    # Prepend summary and potentially bail
+    # TODO: Does this break anything on sphinx website?
+    fdoc = inspect.getdoc(func) or '' # also dedents
+    summary = odoc[:re.search('\.( | *\n|\Z)', odoc).start() + 1]
+    fdoc = f'{summary}\n\n{fdoc}'
+    if rc.get('docstring.hardcopy'): # True when running sphinx
+        func.__doc__ = fdoc
         return func
 
     # Obfuscate signature by converting to *args **kwargs. Note this does
@@ -126,7 +129,7 @@ def _concatenate_axes_docstrings(func):
     func.__signature__ = (
         fsig.replace(parameters=tuple(dsig.parameters.values())))
 
-    # Concatenate docstrings
+    # Concatenate docstrings and copy summary
     # Make sure different sections are very visible
     doc = f"""
 ==========================={"="*len(name)}
