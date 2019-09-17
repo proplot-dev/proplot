@@ -612,11 +612,11 @@ class Axes(maxes.Axes):
             ``number`` attribute. If ``number`` is >26, the labels will loop
             around to a, ..., z, aa, ..., zz, aaa, ..., zzz, ... Default is
             :rc:`abc`.
-        abcformat : str, optional
+        abcstyle : str, optional
             String denoting the format of a-b-c labels containing the character
             ``a`` or ``A``. ``'a'`` is the default, but e.g. ``'a.'``,
             ``'a)'``, or ``'A'`` might also be desirable. Default is
-            :rc:`abc.format`.
+            :rc:`abc.style`.
         abcloc, titleloc : str, optional
             Strings indicating the location for the a-b-c label and
             main title. The following locations keys are valid. Defaults are
@@ -665,7 +665,7 @@ class Axes(maxes.Axes):
 
         Note
         ----
-        The `abc`, `abcformat`, `abcloc`, and `titleloc` keyword arguments
+        The `abc`, `abcstyle`, `abcloc`, and `titleloc` keyword arguments
         are actually rc configuration settings that are temporarily
         changed by the call to `~Axes.context`. They are documented here
         because it is extremely common to change them with `~Axes.format`.
@@ -719,13 +719,17 @@ class Axes(maxes.Axes):
         titles_dict = self._titles_dict
         if not self._panel_side:
             # Location and text
-            abcformat = rc['abc.format'] # changed, or running format for first time?
-            if abcformat and self.number is not None:
-                if 'a' not in abcformat and 'A' not in abcformat:
-                    raise ValueError(f'Invalid abcformat {abcformat!r}. Must include letter "a" or "A".')
-                abcedges = abcformat.split('a' if 'a' in abcformat else 'A')
+            abcstyle = rc['abc.style'] # changed or running format first time?
+            if 'abcformat' in kwargs: # super sophisticated deprecation system
+                abcstyle = kwargs.pop('abcformat')
+                warnings.warn(f'rc setting "abcformat" is deprecated. Please use "abcstyle".')
+            if abcstyle and self.number is not None:
+                if not isinstance(abcstyle, str) or (abcstyle.count('a') != 1
+                    and abcstyle.count('A') != 1):
+                    raise ValueError(f'Invalid abcstyle {abcstyle!r}. Must include letter "a" or "A".')
+                abcedges = abcstyle.split('a' if 'a' in abcstyle else 'A')
                 text = abcedges[0] + _abc(self.number-1) + abcedges[-1]
-                if 'A' in abcformat:
+                if 'A' in abcstyle:
                     text = text.upper()
                 self._abc_text = text
             # Apply new settings

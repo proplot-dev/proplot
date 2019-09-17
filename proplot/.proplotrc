@@ -95,7 +95,7 @@ mathtext.default:        regular
 abc.loc:            l # left side above the axes
 title.loc:          c # centered above the axes
 title.pad:          3.0 # copy
-abc.format:         a
+abc.style:          a
 abc.size:           # filled by 'large'
 abc.color:          k
 abc.weight:         bold
