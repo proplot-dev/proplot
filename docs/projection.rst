@@ -21,10 +21,10 @@ Polar projections
 To draw polar axes, pass e.g. ``proj='polar'`` to
 `~proplot.subplots.subplots`. This generates a
 `~proplot.axes.PolarAxes` instance. Its
-`~proplot.axes.PolarAxes.format` command permits all sorts of
-polar-specific modifications, including making sector plots, annular
-plots, and changing the positive azimuthal direction. A demonstration is
-below.
+`~proplot.axes.PolarAxes.format` command permits polar-specific
+modifications like changing the central radius, the zero azimuth
+location, the radial and azimuthal limits, and the positive azimuthal
+direction. A demonstration is below.
 
 .. code:: ipython3
 
