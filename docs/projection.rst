@@ -21,10 +21,10 @@ Polar projections
 To draw polar axes, pass e.g. ``proj='polar'`` to
 `~proplot.subplots.subplots`. This generates a
 `~proplot.axes.PolarAxes` instance. Its
-`~proplot.axes.PolarAxes.format` command permits all sorts of
-polar-specific modifications, including making sector plots, annular
-plots, and changing the positive azimuthal direction. A demonstration is
-below.
+`~proplot.axes.PolarAxes.format` command permits polar-specific
+modifications like changing the central radius, the zero azimuth
+location, the radial and azimuthal limits, and the positive azimuthal
+direction. A demonstration is below.
 
 .. code:: ipython3
 
@@ -131,15 +131,15 @@ cartopy, ProPlot support for basemap may be removed.
 Registered cartopy projections
 ------------------------------
 
-Below is an illustration of the available `cartopy` projections. See
-the :ref:`Table of projections` for details. ProPlot adds to cartopy
-the previously unavailable Aitoff, Hammer, Winkel Tripel, and Kavrisky
-VII projections (i.e. ``'aitoff'``, ``'hammer'``, ``'wintri'``, and
-``'kav7'``), as well as North Polar and South Polar versions of the
-Stereographic, Azimuthal Equidistant, Lambert Azimuthal Equal-Area, and
-Gnomic projections (i.e. ``'npstere'``, ``'spstere'``, ``'npaeqd'``,
-``'spaeqd'``, ``'nplaea'``, ``'splaea'``, ``'npgnom'``, and
-``'spgnom'``).
+The available `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
+projections are plotted below. See the :ref:`Table of projections` for
+details. ProPlot adds to cartopy the previously unavailable Aitoff,
+Hammer, Winkel Tripel, and Kavrisky VII projections (i.e. ``'aitoff'``,
+``'hammer'``, ``'wintri'``, and ``'kav7'``), as well as North Polar and
+South Polar versions of the Stereographic, Azimuthal Equidistant,
+Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
+``'npstere'``, ``'spstere'``, ``'npaeqd'``, ``'spaeqd'``, ``'nplaea'``,
+``'splaea'``, ``'npgnom'``, and ``'spgnom'``).
 
 .. code:: ipython3
 
@@ -164,10 +164,12 @@ Gnomic projections (i.e. ``'npstere'``, ``'spstere'``, ``'npaeqd'``,
 Registered basemap projections
 ------------------------------
 
-Below is an illustration of the available `~mpl_toolkits.basemap`
-projections. See the :ref:`Table of projections` for details. Basemap
-projection bounds are usually rectangles, while cartopy bounds are more
-flexible.
+The available `basemap <https://matplotlib.org/basemap/index.html>`__
+projections are plotted below. See the :ref:`Table of projections` for
+details. Basemap projection bounds are usually rectangles, while cartopy
+bounds are more flexible. Basemap used to have many more projections
+than cartopy, but the ProPlot additions to cartopy have made the matchup
+more even.
 
 .. code:: ipython3
 
@@ -225,10 +227,9 @@ any of the ``boundinglat``, ``llcrnrlon``, ``llcrnrlat``, ``urcrnrlon``,
     axs[1].format(title='Basemap example')
     # Example from basemap website
     f, axs = plot.subplots(ncols=2, axwidth=2, proj='lcc', basemap={1:False,2:True},
-                 proj_kw={1:{'lon_0':0, 'lat_0':0},
-                          2:{'lon_0':-100, 'lat_0':45, 'width':8e6, 'height':8e6}})
+                 proj_kw={1:{'lon_0':0}, 2:{'lon_0':-100, 'lat_0':45, 'width':8e6, 'height':8e6}})
     axs.format(suptitle='Zooming into specific regions', land=True)
-    axs[0].format(title='Cartopy example', land=True, lonlim=(-20,50), latlim=(-30,30))
+    axs[0].format(title='Cartopy example', land=True, lonlim=(-20,50), latlim=(30,70))
     axs[1].format(title='Basemap example', land=True)
 
 
@@ -302,13 +303,15 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
 Formatting projection axes
 --------------------------
 
-`~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` have
-``format`` methods with identical usage. ``format`` can be used to draw
-gridlines, add gridline labels, set gridline label locations, modify the
-projection bounding box, and add and stylize geographic features, like
-land masses, coastlines, and international borders. These methods also
-call ``format`` on `~proplot.axes.Axes`, and so can be used for
-subplot titles, a-b-c labels, and figure titles as before.
+`~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both
+derive from `~proplot.axes.ProjectionAxes`, which provides a
+`~proplot.axes.ProjectionAxes.format` method.
+`~proplot.axes.ProjectionAxes.format` can be used to draw gridlines,
+add gridline labels, set gridline label locations, modify the projection
+bounding box, and add and stylize geographic features, like land masses,
+coastlines, and international borders. These methods also call
+``format`` on `~proplot.axes.Axes`, and so can be used for subplot
+titles, a-b-c labels, and figure titles as before.
 
 .. code:: ipython3
 
