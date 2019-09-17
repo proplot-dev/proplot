@@ -303,13 +303,15 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
 Formatting projection axes
 --------------------------
 
-`~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` have
-``format`` methods with identical usage. ``format`` can be used to draw
-gridlines, add gridline labels, set gridline label locations, modify the
-projection bounding box, and add and stylize geographic features, like
-land masses, coastlines, and international borders. These methods also
-call ``format`` on `~proplot.axes.Axes`, and so can be used for
-subplot titles, a-b-c labels, and figure titles as before.
+`~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both
+derive from `~proplot.axes.ProjectionAxes`, which provides a
+`~proplot.axes.ProjectionAxes.format` method.
+`~proplot.axes.ProjectionAxes.format` can be used to draw gridlines,
+add gridline labels, set gridline label locations, modify the projection
+bounding box, and add and stylize geographic features, like land masses,
+coastlines, and international borders. These methods also call
+``format`` on `~proplot.axes.Axes`, and so can be used for subplot
+titles, a-b-c labels, and figure titles as before.
 
 .. code:: ipython3
 
