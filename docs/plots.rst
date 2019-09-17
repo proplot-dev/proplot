@@ -1,6 +1,6 @@
 
-Plotting improvements
-=====================
+Plotting features
+=================
 
 ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
 methods thanks to a set of wrapper functions. These features are a
@@ -89,7 +89,7 @@ datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
 
 
 
-.. image:: plotting/plotting_6_2.svg
+.. image:: plots/plots_6_2.svg
 
 
 .. code:: ipython3
@@ -126,7 +126,7 @@ datasets. For more on the ``colorbar`` and ``legend`` keyword args, see
 
 
 
-.. image:: plotting/plotting_8_0.svg
+.. image:: plots/plots_8_0.svg
 
 
 Colorbar and legend features
@@ -171,7 +171,7 @@ and modify legend text properties and handle properties.
 
 
 
-.. image:: plotting/plotting_11_0.svg
+.. image:: plots/plots_11_0.svg
 
 
 .. code:: ipython3
@@ -202,7 +202,7 @@ and modify legend text properties and handle properties.
 
 
 
-.. image:: plotting/plotting_12_0.svg
+.. image:: plots/plots_12_0.svg
 
 
 Colormaps and color cycles
@@ -247,7 +247,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: plotting/plotting_17_0.svg
+.. image:: plots/plots_17_0.svg
 
 
 .. code:: ipython3
@@ -267,7 +267,7 @@ of colorbars for “cyclic” colormaps are distinct.
 
 
 
-.. image:: plotting/plotting_18_0.svg
+.. image:: plots/plots_18_0.svg
 
 
 Colormap normalizers
@@ -295,7 +295,7 @@ passed to the `~proplot.styletools.Norm` constructor.
 
 
 
-.. image:: plotting/plotting_21_0.svg
+.. image:: plots/plots_21_0.svg
 
 
 Finally, there is a new `~proplot.styletools.MidpointNorm` class that
@@ -322,7 +322,7 @@ constructor.
 
 
 
-.. image:: plotting/plotting_23_0.svg
+.. image:: plots/plots_23_0.svg
 
 
 Contour and pcolor labels
@@ -364,7 +364,7 @@ arg and the ``precision`` keyword arg. See
 
 
 
-.. image:: plotting/plotting_26_0.svg
+.. image:: plots/plots_26_0.svg
 
 
 Heatmap plots
@@ -393,7 +393,7 @@ useful for displaying covariance matrices. See the below example.
 
 
 
-.. image:: plotting/plotting_29_0.svg
+.. image:: plots/plots_29_0.svg
 
 
 Simple error bars
@@ -443,7 +443,7 @@ keyword args. See `~proplot.wrappers.add_errorbars` for details.
 
 
 
-.. image:: plotting/plotting_32_0.svg
+.. image:: plots/plots_32_0.svg
 
 
 Bar plots and area plots
@@ -477,7 +477,7 @@ See `~proplot.wrappers.bar_wrapper` for details.
 
 
 
-.. image:: plotting/plotting_35_0.svg
+.. image:: plots/plots_35_0.svg
 
 
 To make area plots, use the convenient ``fill_between`` aliases
@@ -520,7 +520,7 @@ below.
 
 
 
-.. image:: plotting/plotting_37_0.svg
+.. image:: plots/plots_37_0.svg
 
 
 Box plots and violin plots
@@ -554,7 +554,7 @@ automatic axis labeling.
 
 
 
-.. image:: plotting/plotting_40_1.svg
+.. image:: plots/plots_40_1.svg
 
 
 Parametric plots
@@ -596,7 +596,7 @@ point on the line. See `~proplot.axes.Axes.cmapline` for details.
 
 
 
-.. image:: plotting/plotting_43_1.svg
+.. image:: plots/plots_43_1.svg
 
 
 Misc enhancements
@@ -642,5 +642,5 @@ Stay tuned!
 
 
 
-.. image:: plotting/plotting_46_0.svg
+.. image:: plots/plots_46_0.svg
 

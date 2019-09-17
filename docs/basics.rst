@@ -1,6 +1,6 @@
 
-The basics
-==========
+Introduction
+============
 
 The subplots command
 --------------------
