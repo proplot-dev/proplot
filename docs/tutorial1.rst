@@ -1,5 +1,5 @@
-Introduction
-============
+Overview
+========
 
 The subplots command
 --------------------
