@@ -130,7 +130,7 @@ The axes grid container
 
 Instead of an `~numpy.ndarray` of axes, `~proplot.subplots.subplots`
 returns a special `~proplot.subplots.axes_grid` container. This
-container **behaves just like a python list**, but lets you call any
+container behaves **just like a python list**, but lets you call any
 command on multiple axes at once. It supports both 2D indexing (e.g.
 ``axs[0,1]``) and 1D indexing (e.g. ``axs[2]``), and is row-major by
 default. Further, slicing an axes grid (e.g. ``axs[:,0]``) returns
