@@ -97,7 +97,7 @@ To get started, check out the :ref:`Introduction`.
    cartesian
    projection
    colors
-   plotting
+   plots
 
 .. toctree::
    :hidden:
