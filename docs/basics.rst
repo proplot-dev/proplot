@@ -488,7 +488,7 @@ example for details.
 .. image:: basics/basics_25_1.svg
 
 
-Thr rc configurator
+The rc configurator
 -------------------
 
 A special object named `~proplot.rctools.rc`, belonging to the
