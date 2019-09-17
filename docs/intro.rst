@@ -74,7 +74,7 @@ following sections.
 
 
 
-.. image:: basics/basics_4_0.svg
+.. image:: intro/intro_4_0.svg
 
 
 Layout and numbering
@@ -114,15 +114,15 @@ Note that the “a-b-c” label position and style can be changed with
 
 
 
-.. image:: basics/basics_6_0.svg
+.. image:: intro/intro_6_0.svg
 
 
 
-.. image:: basics/basics_6_1.svg
+.. image:: intro/intro_6_1.svg
 
 
 
-.. image:: basics/basics_6_2.svg
+.. image:: intro/intro_6_2.svg
 
 
 The axes grid container
@@ -151,7 +151,7 @@ is used to call :ref:`The format command` on several axes at once.
 
 
 
-.. image:: basics/basics_8_0.svg
+.. image:: intro/intro_8_0.svg
 
 
 The format command
@@ -200,7 +200,7 @@ needed for drawing highly customized plots.
 
 
 
-.. image:: basics/basics_10_0.svg
+.. image:: intro/intro_10_0.svg
 
 
 Axes colorbars and legends
@@ -250,7 +250,7 @@ rectangular backgrounds, just like inset legends.
 
 
 
-.. image:: basics/basics_12_0.svg
+.. image:: intro/intro_12_0.svg
 
 
 .. code:: ipython3
@@ -272,7 +272,7 @@ rectangular backgrounds, just like inset legends.
 
 
 
-.. image:: basics/basics_13_0.svg
+.. image:: intro/intro_13_0.svg
 
 
 Figure colorbars and legends
@@ -309,7 +309,7 @@ rows or columns.
 
 
 
-.. image:: basics/basics_15_1.svg
+.. image:: intro/intro_15_1.svg
 
 
 .. code:: ipython3
@@ -334,7 +334,7 @@ rows or columns.
 
 
 
-.. image:: basics/basics_16_0.svg
+.. image:: intro/intro_16_0.svg
 
 
 Automatic subplot spacing
@@ -379,11 +379,11 @@ instead.
 
 
 
-.. image:: basics/basics_19_0.svg
+.. image:: intro/intro_19_0.svg
 
 
 
-.. image:: basics/basics_19_1.svg
+.. image:: intro/intro_19_1.svg
 
 
 .. code:: ipython3
@@ -399,7 +399,7 @@ instead.
 
 
 
-.. image:: basics/basics_20_0.svg
+.. image:: intro/intro_20_0.svg
 
 
 .. code:: ipython3
@@ -418,7 +418,7 @@ instead.
 
 
 
-.. image:: basics/basics_21_0.svg
+.. image:: intro/intro_21_0.svg
 
 
 Axis sharing and spanning
@@ -451,19 +451,19 @@ example for details.
 
 
 
-.. image:: basics/basics_24_0.svg
+.. image:: intro/intro_24_0.svg
 
 
 
-.. image:: basics/basics_24_1.svg
+.. image:: intro/intro_24_1.svg
 
 
 
-.. image:: basics/basics_24_2.svg
+.. image:: intro/intro_24_2.svg
 
 
 
-.. image:: basics/basics_24_3.svg
+.. image:: intro/intro_24_3.svg
 
 
 .. code:: ipython3
@@ -481,11 +481,11 @@ example for details.
 
 
 
-.. image:: basics/basics_25_0.svg
+.. image:: intro/intro_25_0.svg
 
 
 
-.. image:: basics/basics_25_1.svg
+.. image:: intro/intro_25_1.svg
 
 
 The rc configurator
@@ -537,7 +537,7 @@ temporarily modify global settings for a block of code, use
 
 
 
-.. image:: basics/basics_27_0.svg
+.. image:: intro/intro_27_0.svg
 
 
 Arbitrary physical units
@@ -560,5 +560,5 @@ millimeters, and pixels).
 
 
 
-.. image:: basics/basics_30_0.svg
+.. image:: intro/intro_30_0.svg
 

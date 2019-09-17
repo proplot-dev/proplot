@@ -93,7 +93,7 @@ To get started, check out the :ref:`Introduction`.
    :maxdepth: 4
    :caption: Overview
 
-   basics
+   intro
    cartesian
    projection
    colors
