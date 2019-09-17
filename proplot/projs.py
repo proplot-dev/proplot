@@ -15,11 +15,13 @@ Lambert Azimuthal Equal Area projections, just like in `~mpl_toolkits.basemap`.
 ####################
 Table of projections
 ####################
-The following is a table of registered projections, their full names (with a
-link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
-if it exists), and whether they are available in the cartopy and basemap packages.
-Note both basemap and cartopy use `PROJ.4` as their backends. The ``(added)``
-parenthetical indicates a cartopy projection that has been added by ProPlot.
+The following is a table of registered projections names, their full names
+(with links to the relevant `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
+), and whether they are available in the cartopy and basemap packages.
+The projection names are identical for both the cartopy and basemap
+backends. Like basemap, we use the `PROJ.4` shorthands. "``(added)``"
+indicates a projection that ProPlot has "added to cartopy" using the native
+cartopy API.
 
 ====================================  ===========================================================================================  =========  =======
 Key                                   Name                                                                                         Cartopy    Basemap
