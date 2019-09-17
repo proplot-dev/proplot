@@ -84,6 +84,8 @@ Here are some highlights of the remaining features:
 
 To get started, check out the :ref:`Introduction`.
 
+.. :hidden: means do not put a table of links right here but include links in sidebar
+
 .. _MIT: LICENSE.txt
 
 .. toctree::

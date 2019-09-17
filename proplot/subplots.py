@@ -140,7 +140,7 @@ class axes_grid(list):
         Parameters
         ----------
         objs : list-like
-            Any 1D iterable of objects.
+            1D iterable of `~proplot.axes.Axes` instances.
         n : int, optional
             The length of the fastest-moving dimension, i.e. the number of
             columns when `order` is ``'C'``, and the number of rows when `order`
@@ -150,6 +150,8 @@ class axes_grid(list):
             column-major (Fortran-style) order, respectively. Used to treat
             lists as pseudo-2D arrays.
         """
+        if not all(isinstance(obj, axes.Axes) for obj in objs):
+            raise ValueError(f'Axes grid must be filled with Axes instances, got {objs!r}.')
         self._n = n
         self._order = order
         super().__init__(objs)
@@ -229,6 +231,7 @@ class axes_grid(list):
                 objs = objs[0]
         else:
             raise IndexError
+
         # Return
         if axlist:
             return axes_grid(objs)
@@ -255,24 +258,23 @@ class axes_grid(list):
         ... paxs.format(...) # calls "format" on all panels in the axes_grid returned by "axs.panel_axes"
 
         """
-        attrs = (*(getattr(ax, attr) for ax in self),) # may raise error
-        # Empty
-        if not attrs:
-            def null_iterator(*args, **kwargs):
-                return None
-            return null_iterator
+        if not self:
+            raise AttributeError(f'Invalid attribute {attr!r}, axes grid {self!r} is empty.')
+        objs = (*(getattr(ax, attr) for ax in self),) # may raise error
+
         # Objects
-        if not any(callable(_) for _ in attrs):
+        if not any(callable(_) for _ in objs):
             if len(self) == 1:
-                return attrs[0]
+                return objs[0]
             else:
-                return attrs
+                return objs
         # Methods
-        elif all(callable(_) for _ in attrs):
-            @functools.wraps(attrs[0])
+        # NOTE: Must manually copy docstring because help() cannot inherit it
+        elif all(callable(_) for _ in objs):
+            @functools.wraps(objs[0])
             def _iterator(*args, **kwargs):
                 ret = []
-                for func in attrs:
+                for func in objs:
                     ret.append(func(*args, **kwargs))
                 ret = (*ret,)
                 if len(self) == 1:
@@ -283,7 +285,13 @@ class axes_grid(list):
                     return axes_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
+            try:
+                orig = getattr(super(axes.Axes, self[0]), attr)
+                _iterator.__doc__ = orig.__doc__
+            except AttributeError:
+                pass
             return _iterator
+
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
@@ -635,7 +643,7 @@ def _subplots_geometry(**kwargs):
     rhratio = (nrows_main*sum(hratios_main[y1:y2+1]))/(dy*sum(hratios_main))
     if rwratio == 0 or rhratio == 0:
         raise RuntimeError(f'Something went wrong, got wratio={rwratio!r} and hratio={rhratio!r} for reference axes.')
-    if np.iterable(aspect): 
+    if np.iterable(aspect):
         aspect = aspect[0]/aspect[1]
 
     # Determine figure and axes dims from input in width or height dimenion.
@@ -730,7 +738,7 @@ class _hidelabels(object):
 
 class Figure(mfigure.Figure):
     """The `~matplotlib.figure.Figure` class returned by `subplots`. At
-    draw-time, an improved "tight layout" adjustment is applied, and
+    draw-time, an improved tight layout algorithm is employed, and
     the space around the figure edge, between subplots, and between
     panels is changed to accommodate subplot content. Figure dimensions
     may be automatically scaled to preserve subplot aspect ratios."""
@@ -746,23 +754,23 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         tight : bool, optional
-            Toggles automatic tight layout adjustments.
+            Toggles automatic tight layout adjustments. Default is
+            :rc:`tight`.
         pad : float or str, optional
-            Padding around edge of figure. Defaults to ``rc['subplots.pad']``.
-            If float, units are inches. If string, units are interpreted by
-            `~proplot.utils.units`.
+            Padding around edge of figure. Units are interpreted by
+            `~proplot.utils.units`. Default is :rc:`subplots.pad`.
         axpad : float or str, optional
-            Padding between subplots in adjacent columns and rows. Defaults to
-            ``rc['subplots.axpad']``. If float, units are inches. If string,
-            units are interpreted by `~proplot.utils.units`.
+            Padding between subplots in adjacent columns and rows. Units are
+            interpreted by `~proplot.utils.units`. Default is
+            :rc:`subplots.axpad`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
-            panels. If float, units are inches. If string, units are
-            interpreted by `~proplot.utils.units`.
+            panels. Units are interpreted by `~proplot.utils.units`.Default is
+            :rc:`subplots.panelpad`.
         includepanels : bool, optional
             Whether to include panels when centering *x* axis labels,
             *y* axis labels, and figure "super titles" along the edge of the
-            subplot grid. Defaults to ``False``.
+            subplot grid. Default is ``False``.
         autoformat : bool, optional
             Whether to automatically configure *x* axis labels, *y* axis
             labels, axis formatters, axes titles, colorbar labels, and legend
@@ -1493,15 +1501,13 @@ class Figure(mfigure.Figure):
             all rows and columns.
         space : float or str, optional
             The space between the main subplot grid and the colorbar, or the
-            space between successively stacked colorbars. If float, units
-            are inches. If string, units are interpreted by
-            `~proplot.utils.units`. By default, this is adjusted automatically
-            in the "tight layout" calculation, or is
-            ``rc['subplots.panelspace']`` if "tight layout" is turned off.
+            space between successively stacked colorbars. Units are interpreted
+            by `~proplot.utils.units`. By default, this is determined by
+            the "tight layout" algorithm, or is :rc:`subplots.panelspace`
+            if "tight layout" is off.
         width : float or str, optional
-            The colorbar width. If float, units are inches. If string, units
-            are interpreted by `~proplot.utils.units`. Defaults to
-            ``rc['colorbar.width']``.
+            The colorbar width. Units are interpreted by
+            `~proplot.utils.units`. Default is :rc:`colorbar.width`.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.colorbar`.
         """
@@ -1552,11 +1558,10 @@ class Figure(mfigure.Figure):
             all rows and columns.
         space : float or str, optional
             The space between the main subplot grid and the legend, or the
-            space between successively stacked colorbars. If float, units
-            are inches. If string, units are interpreted by
+            space between successively stacked colorbars. Units are interpreted by
             `~proplot.utils.units`. By default, this is adjusted automatically
             in the "tight layout" calculation, or is
-            ``rc['subplots.panelspace']`` if "tight layout" is turned off.
+            :rc:`subplots.panelspace` if "tight layout" is turned off.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.legend`.
         """
@@ -1764,8 +1769,8 @@ def subplots(array=None, ncols=1, nrows=1,
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     width, height : float or str, optional
-        The figure width and height. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        The figure width and height. Units are interpreted by
+        `~proplot.utils.units`.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
         to control the figure width (and height, if specified). Valid names
@@ -1776,8 +1781,8 @@ def subplots(array=None, ncols=1, nrows=1,
         keyword args are applied to this axes, and aspect ratio is conserved
         for this axes in tight layout adjustment.
     axwidth, axheight : float or str, optional
-        Sets the average width, height of your axes. If float, units are
-        inches. If string, units are interpreted by `~proplot.utils.units`.
+        Sets the average width, height of your axes. Units are interpreted by
+        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
 
         These arguments are convenient where you don't care about the figure
         dimensions and just want your axes to have enough "room".
@@ -1797,17 +1802,20 @@ def subplots(array=None, ncols=1, nrows=1,
         Passed to `FlexibleGridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
         or string, expanded into lists of length ``ncols-1`` (for `wspace`)
-        or length ``nrows-1`` (for `hspace`). For each element of the list,
-        if float, units are inches, and if string, units are interpreted by
-        `~proplot.utils.units`.
+        or length ``nrows-1`` (for `hspace`).
+
+        Units are interpreted by `~proplot.utils.units` for each element of
+        the list. By default, these are determined by the "tight
+        layout" algorithm.
     left, right, top, bottom : float or str, optional
         Passed to `FlexibleGridSpec`, denote the width of padding between the
-        subplots and the figure edge. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        subplots and the figure edge. Units are interpreted by
+        `~proplot.utils.units`. By default, these are determined by the
+        "tight layout" algorithm.
 
     sharex, sharey, share : {3, 2, 1, 0}, optional
-        The "axis sharing level" for the *x* axis, *y* axis, or both
-        axes. This can considerably redundancy in your figure.
+        The "axis sharing level" for the *x* axis, *y* axis, or both axes.
+        Default is ``3``. This can considerably redundancy in your figure.
         Options are as follows:
 
         0. No axis sharing. Also sets the default `spanx` and `spany` values
@@ -1863,16 +1871,20 @@ def subplots(array=None, ncols=1, nrows=1,
         in the right subplot is centered on the international dateline.
     basemap : bool or dict-like, optional
         Whether to use `~mpl_toolkits.basemap.Basemap` or
-        `~cartopy.crs.Projection` for map projections. Defaults to ``False``.
+        `~cartopy.crs.Projection` for map projections. Default is ``False``.
         If boolean, applies to all subplots. If dictionary, values apply to
         specific subplots, as with `proj`.
 
     Other parameters
     ----------------
     tight : bool, optional
-        Toggles automatic tight layout adjustments for all spacings that you
-        did not specify manually. For example, with ``left=0.1``, the right,
-        top, bottom, and inner spaces will be determined automatically.
+        Toggles automatic tight layout adjustments. Default is
+        :rc:`tight`.
+
+        If you manually specify a spacing, it will be used
+        to override the tight layout spacing -- for example, with ``left=0.1``,
+        the left margin is set to 0.1 inches wide, while the remaining margin
+        widths are calculated automatically.
     pad, axpad, panelpad : float or str, optional
         Padding for automatic tight layout adjustments. See `Figure` for
         details.

@@ -314,8 +314,8 @@ def Scale(scale, *args, **kwargs):
 
 def InvertedScaleFactory(scale, name=None):
     """Returns name of newly registered *inverted* version of the
-    `~matplotlib.scale.ScaleBase` specified by ``scale``. The scale name
-    defaults to ``'{scale}_inverted'``."""
+    `~matplotlib.scale.ScaleBase` specified by ``scale``. The default
+    scale name is ``'{scale}_inverted'``."""
     if not isinstance(scale, str):
         raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
     if scale in scales:
@@ -377,7 +377,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         ----------
         zerotrim : bool, optional
             Whether to trim trailing zeros.
-            Defaults to ``rc['axes.formatter.zerotrim']``.
+            Default is :rc:`axes.formatter.zerotrim`.
         precision : float, optional
             The maximum number of digits after the decimal point.
         tickrange : (float, float), optional
@@ -478,9 +478,9 @@ def FracFormatter(symbol='', number=1):
     Parameters
     ----------
     symbol : str
-        The symbol, e.g. ``r'$\pi$'``. Defaults to ``''``.
+        The symbol, e.g. ``r'$\pi$'``. Default is ``''``.
     number : float
-        The value, e.g. `numpy.pi`. Defaults to ``1``.
+        The value, e.g. `numpy.pi`. Default is ``1``.
     """
     def f(x, pos): # must accept location argument
         frac = Fraction(x/number).limit_denominator()
@@ -532,7 +532,7 @@ class LogScale(mscale.LogScale):
         Parameters
         ----------
         base : float, optional
-            The base of the logarithm. Defaults to ``10``.
+            The base of the logarithm. Default is ``10``.
         nonpos : {'mask', 'clip'}, optional
             Non-positive values in *x* or *y* can be masked as
             invalid, or clipped to a very small positive number.
@@ -558,7 +558,7 @@ class SymmetricalLogScale(mscale.SymmetricalLogScale):
         Parameters
         ----------
         base : float, optional
-            The base of the logarithm. Defaults to ``10``.
+            The base of the logarithm. Default is ``10``.
         linthresh : float, optional
             Defines the range ``(-linthresh, linthresh)``, within which the plot is
             linear.  This avoids having the plot go to infinity around zero. Defaults
@@ -597,7 +597,7 @@ def PowerScaleFactory(power, inverse=False, name=None):
         If ``True``, the "forward" direction performs
         the inverse operation :math:`x^{1/c}`.
     name : str, optional
-        The registered scale name. Defaults to ``'polynomial_{power}'``.
+        The registered scale name. Default is ``'polynomial_{power}'``.
     """
     name_ = _notNone(name, f'polynomial_{power:.1e}')
     class PowerScale(mscale.ScaleBase):
@@ -687,7 +687,7 @@ def ExpScaleFactory(base, exp, scale=1, inverse=False, name=None):
         If ``True``, the "forward" direction performs
         the inverse operation :math:`(\log(x) - \log(C))/(b\log(a))`.
     name : str, optional
-        The registered scale name. Defaults to ``'power_{base}_{exp}_{scale}'``.
+        The registered scale name. Default is ``'power_{base}_{exp}_{scale}'``.
     """
     name_ = _notNone(name, f'exp_{base:.1e}_{scale:.1e}_{exp:.1e}')
     class ExpScale(mscale.ScaleBase):
@@ -779,7 +779,7 @@ def CutoffScaleFactory(scale, lower, upper=None):
     Todo
     ----
     Create method for drawing those diagonal "cutoff" strokes with whitespace
-    between.  See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
+    between. See `this post <https://stackoverflow.com/a/5669301/4970632>`_ for
     multi-axis solution and for this class-based solution. Note the space
     between 1-9 in Paul's answer is because actual cutoffs were 0.1 away
     (and tick locs are 0.2 apart).
@@ -881,10 +881,9 @@ def CutoffScaleFactory(scale, lower, upper=None):
 #-----------------------------------------------------------------------------#
 class MercatorLatitudeScale(mscale.ScaleBase):
     r"""
-    Scales axis as with latitudes in the `Mercator projection
-    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Inspired by
-    :cite:`barnes_rossby_2011`, and adapted from `this matplotlib example
-    <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
+    Scales axis as with latitude in the `Mercator projection
+    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
+    example <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
 
     The scale function is as follows.
 
@@ -900,8 +899,6 @@ class MercatorLatitudeScale(mscale.ScaleBase):
 
     Also uses a user-defined threshold :math:`\in (-90, 90)`, above and
     below which nothing will be plotted.
-
-    .. bibliography:: ../refs.bib
     """
     name = 'mercator'
     """Registered scale name."""

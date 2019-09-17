@@ -1,9 +1,8 @@
 # Install shinx extensions
-# NOTE: The automodapi module imports module, so the website 'build' process
-# has same requirements as module itself! The version choices are somewhat random.
-git+https://github.com/lukelbd/sphinx-automodapi@proplot-mods
-sphinxcontrib-bibtex>=0.4
-matplotlib>=3.0
-ipython>=7.0.0
-numpy>=1.14
+# WARNING: Pip install hangs onto older commits unless __version__ is changed
+# since otherwise setup.py will not think it is necessary to rebuild
 lxml>=4.0.0
+numpy>=1.14
+ipython>=7.0.0
+matplotlib>=3.0
+git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods

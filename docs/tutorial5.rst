@@ -29,18 +29,18 @@ and optionally enforces global data coverage when plotting in
 Colormaps and cycles
 --------------------
 
-The `~proplot.wrappers.cmap_wrapper` and
-`~proplot.wrappers.cycle_wrapper` wrappers can be used to create and
+The `~proplot.wrappers.cmap_changer` and
+`~proplot.wrappers.cycle_changer` wrappers can be used to create and
 apply new colormaps and property cyclers on-the-fly. See
 :ref:`Making your own colormaps` and
 :ref:`Making your own color cycles` for details.
-`~proplot.wrappers.cmap_wrapper` also implements several other useful
+`~proplot.wrappers.cmap_changer` also implements several other useful
 features, documented in the next three sections.
 
 Standardized levels
 -------------------
 
-`~proplot.wrappers.cmap_wrapper` assigns the
+`~proplot.wrappers.cmap_changer` assigns the
 `~proplot.styletools.BinNorm` “meta-normalizer” as the data normalizer
 for all plotting commands involving colormaps. This permits discrete
 ``levels`` even for commands like `~matplotlib.axes.Axes.pcolor` and
@@ -97,7 +97,7 @@ If you pass unevenly spaced ``levels``, the
 default. This results in even color gradations across *indices* of the
 level list, no matter their spacing. To use an arbitrary colormap
 normalizer, just pass ``norm`` and optionally ``norm_kw`` to a command
-wrapped by `~proplot.wrappers.cmap_wrapper`. These arguments are
+wrapped by `~proplot.wrappers.cmap_changer`. These arguments are
 passed to the `~proplot.styletools.Norm` constructor.
 
 .. code:: ipython3
@@ -121,7 +121,7 @@ Finally, there is a new `~proplot.styletools.MidpointNorm` class that
 warps your colormap so that its midpoint lies on some central data
 value, no matter the minimum and maximum colormap colors. Again, to use
 an arbitrary colormap normalizer, just pass ``norm`` and optionally
-``norm_kw`` to a command wrapped by `~proplot.wrappers.cmap_wrapper`.
+``norm_kw`` to a command wrapped by `~proplot.wrappers.cmap_changer`.
 These arguments are passed to the `~proplot.styletools.Norm`
 constructor.
 
@@ -147,7 +147,7 @@ constructor.
 Labeled contours and boxes
 --------------------------
 
-Thanks to `~proplot.wrappers.cmap_wrapper`, you can now add labels to
+Thanks to `~proplot.wrappers.cmap_changer`, you can now add labels to
 `~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
 `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`,
 and `~matplotlib.axes.Axes.contourf` plots by simply passing
@@ -157,7 +157,7 @@ and `~matplotlib.axes.Axes.contourf` plots by simply passing
 ased on the luminance of the underlying box or contour color. The label
 text objects can be changed with the ``labels_kw`` dictionary keyword
 arg and the ``precision`` keyword arg. See
-`~proplot.wrappers.cmap_wrapper` for details.
+`~proplot.wrappers.cmap_changer` for details.
 
 .. code:: ipython3
 
@@ -269,7 +269,7 @@ Bar plots and area plots
 ------------------------
 
 `~proplot.wrappers.bar_wrapper` and
-`~proplot.wrappers.cycle_wrapper` make it easier to generate useful
+`~proplot.wrappers.cycle_changer` make it easier to generate useful
 bar plots. You can now pass 2D arrays to `~matplotlib.axes.Axes.bar`
 or `~matplotlib.axes.Axes.barh`, and columns of data will be *grouped*
 or *stacked* together. And if *x* coordinates are not provided, default
@@ -349,7 +349,7 @@ Box plots and violin plots
 `~matplotlib.axes.Axes.violinplot` are now wrapped with
 `~proplot.wrappers.boxplot_wrapper`,
 `~proplot.wrappers.violinplot_wrapper`, and
-`~proplot.wrappers.cycle_wrapper`, making it much easier to plot
+`~proplot.wrappers.cycle_changer`, making it much easier to plot
 distributions of data with aesthetically pleasing default settings and
 automatic axis labeling.
 
@@ -422,7 +422,7 @@ Misc enhancements
 -----------------
 
 Thanks to `~proplot.wrappers.scatter_wrapper` and
-`~proplot.wrappers.cycle_wrapper`, `~matplotlib.axes.Axes.scatter`
+`~proplot.wrappers.cycle_changer`, `~matplotlib.axes.Axes.scatter`
 now accepts 2D arrays, just like `~matplotlib.axes.Axes.plot`, and
 successive calls to `~matplotlib.axes.Axes.scatter` can apply property
 cycle keys other than ``color`` – for example, ``marker`` and

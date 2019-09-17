@@ -27,7 +27,9 @@ except ModuleNotFoundError:
 __all__ = [
     'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper',
     'default_crs', 'default_latlon', 'default_transform',
-    'cmap_wrapper', 'colorbar_wrapper', 'cycle_wrapper',
+    'cmap_changer',
+    'cycle_changer',
+    'colorbar_wrapper',
     'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
     'legend_wrapper', 'plot_wrapper', 'scatter_wrapper',
     'standardize_1d', 'standardize_2d', 'text_wrapper',
@@ -258,13 +260,25 @@ def standardize_1d(self, func, *args, **kwargs):
         # Appply
         if kw:
             self.format(**kw)
-    # Return result, maybe modify arguments
-    # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
-    # cycle_wrapper is also applied so it can strip 'x' input.
+
+    # Standardize args
     if xi is not None:
         x = xi
     if name in ('boxplot','violinplot'):
         ys = [_to_array(yi) for yi in ys] # store naked array
+
+    # Basemap shift x coordiantes without shifting y, we fix this!
+    if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+        ix, iys = x, []
+        xmin, xmax = self.projection.lonmin, self.projection.lonmax
+        for y in ys:
+            # Ensure data is monotonic and falls within map bounds
+            ix, iy = _enforce_bounds(*_standardize_latlon(x, y), xmin, xmax)
+            iys.append(iy)
+        x, ys = ix, iys
+
+    # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
+    # cycle_changer is also applied so it can strip 'x' input.
     return func(self, x, *ys, *args, **kwargs)
 
 #-----------------------------------------------------------------------------#
@@ -274,7 +288,7 @@ def standardize_1d(self, func, *args, **kwargs):
 # own wrappers? Because grid fixes must come *after* automatic formatting,
 # which means we'd have to apply these wrappers separately on CartesianAxes,
 # BasemapAxes, CartopyAxes, and PolarAxes. Would be super redundant.
-def _fix_poles(y, Z):
+def _interp_poles(y, Z):
     """Adds data points on the poles as the average of highest latitude data."""
     # Get means
     with np.errstate(all='ignore'):
@@ -292,7 +306,7 @@ def _fix_poles(y, Z):
     Z = ma.concatenate((Z1, Z, Z2), axis=0)
     return y, Z
 
-def _fix_latlon(x, y):
+def _standardize_latlon(x, y):
     """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
     contents can be modified. Ignores 2D coordinate arrays."""
     # Sanitization and bail if 2D
@@ -309,6 +323,32 @@ def _fix_latlon(x, y):
         if filter_.sum() == 0:
             break
         x[filter_] += 360
+    return x, y
+
+def _enforce_bounds(x, y, xmin, xmax):
+    """Ensures data for basemap plots is restricted between the minimum and
+    maximum longitude of the projection. Input is the ``x`` and ``y``
+    coordinates. The ``y`` coordinates are rolled along the rightmost axis."""
+    if x.ndim != 1:
+        return x, y
+    # Roll in same direction if some points on right-edge extend
+    # more than 360 above min longitude; *they* should be on left side
+    lonroll = np.where(x > xmin + 360)[0] # tuple of ids
+    if lonroll.size: # non-empty
+        roll = x.size - lonroll.min() # e.g. if 10 lons, xmax id is 9, we want to roll once
+        x = np.roll(x, roll)
+        y = np.roll(y, roll, axis=-1)
+        x[:roll] -= 360 # make monotonic
+
+    # Set NaN where data not in range xmin, xmax. Must be done
+    # for regional smaller projections or get weird side-effects due
+    # to having valid data way outside of the map boundaries
+    y = y.copy()
+    if x.size-1 == y.shape[-1]: # test western/eastern grid cell edges
+        y[..., (x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
+    elif x.size == y.shape[-1]: # test the centers and pad by one for safety
+        where = np.where((x < xmin) | (x > xmax))[0]
+        y[..., where[1:-1]] = np.nan
     return x, y
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
@@ -468,87 +508,62 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Cartopy projection axes
     if (getattr(self, 'name', '') == 'cartopy' and
         isinstance(kwargs.get('transform', None), PlateCarree)):
-        iZs = []
-        x, y = _fix_latlon(x, y)
-        if not globe or x.ndim != 1 or y.ndim != 1:
-            iZs, Zs = Zs, []
+        x, y = _standardize_latlon(x, y)
+        ix, iZs = x, []
         for Z in Zs:
-            # Fix holes over poles by *interpolating* there
-            y, Z = _fix_poles(y, Z)
-            # Fix seams by ensuring circular coverage. Unlike basemap,
-            # cartopy can plot across map edges.
-            if (x[0] % 360) != ((x[-1] + 360) % 360):
-                x = ma.concatenate((x, [x[0] + 360]))
-                Z = ma.concatenate((Z, Z[:,:1]), axis=1)
+            if globe and x.ndim == 1 and y.ndim == 1:
+                # Fix holes over poles by *interpolating* there
+                y, Z = _interp_poles(y, Z)
+
+                # Fix seams by ensuring circular coverage. Unlike basemap,
+                # cartopy can plot across map edges.
+                if (x[0] % 360) != ((x[-1] + 360) % 360):
+                    ix = ma.concatenate((x, [x[0] + 360]))
+                    Z = ma.concatenate((Z, Z[:,:1]), axis=1)
             iZs.append(Z)
-        Zs = iZs
+        x, Zs = ix, iZs
 
     # Basemap projection axes
     elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
         # Fix grid
-        iZs = []
-        x, y = _fix_latlon(x, y)
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
-        if x.ndim != 1 or y.ndim != 1:
-            iZs, Zs = Zs, [] # leave them alone
+        x, y = _standardize_latlon(x, y)
+        ix, iZs = x, []
         for Z in Zs:
-            # Special basemap fixes
-            # Roll, accounting for whether ends are identical
-            roll = -np.argmin(x)
-            if x[0] == x[-1]:
-                x = np.roll(x[:-1], roll)
-                x = ma.append(x, x[0] + 360)
-            else:
-                x = np.roll(x, roll)
-            Z = np.roll(Z, roll, axis=1)
-            # Roll in same direction if some points on right-edge extend
-            # more than 360 above min longitude; *they* should be on left side
-            lonroll = np.where(x > xmin + 360)[0] # tuple of ids
-            if lonroll.size: # non-empty
-                roll = x.size - lonroll.min() # e.g. if 10 lons, xmax id is 9, we want to roll once
-                x = np.roll(x, roll)
-                Z = np.roll(Z, roll, axis=1)
-                x[:roll] -= 360 # make monotonic
-            # Set NaN where data not in range xmin, xmax. Must be done
-            # for regional smaller projections or get weird side-effects due
-            # to having valid data way outside of the map boundaries
-            Z = Z.copy()
-            if x.size-1 == Z.shape[1]: # test western/eastern grid cell edges
-                Z[:,(x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
-            elif x.size == Z.shape[1]: # test the centers and pad by one for safety
-                where = np.where((x < xmin) | (x > xmax))[0]
-                Z[:,where[1:-1]] = np.nan
+            # Ensure data is within map bounds
+            ix, Z = _enforce_bounds(x, Z, xmin, xmax)
 
             # Globe coverage fixes
-            if globe:
+            if globe and ix.ndim == 1 and y.ndim == 1:
                 # Fix holes over poles by interpolating there (equivalent to
                 # simple mean of highest/lowest latitude points)
-                y, Z = _fix_poles(y, Z)
+                y, Z = _interp_poles(y, Z)
+
                 # Fix seams at map boundary; 3 scenarios here:
                 # Have edges (e.g. for pcolor), and they fit perfectly against
                 # basemap seams. Does not augment size.
-                if x[0] == xmin and x.size-1 == Z.shape[1]:
+                if ix[0] == xmin and ix.size-1 == Z.shape[1]:
                     pass # do nothing
                 # Have edges (e.g. for pcolor), and the projection edge is
                 # in-between grid cell boundaries. Augments size by 1.
-                elif x.size-1 == Z.shape[1]: # just add grid cell
-                    x = ma.append(xmin, x)
-                    x[-1] = xmin + 360
+                elif ix.size-1 == Z.shape[1]: # just add grid cell
+                    ix = ma.append(xmin, ix)
+                    ix[-1] = xmin + 360
                     Z = ma.concatenate((Z[:,-1:], Z), axis=1)
                 # Have centers (e.g. for contourf), and we need to interpolate
                 # to left/right edges of the map boundary. Augments size by 2.
-                elif x.size == Z.shape[1]:
-                    xi = np.array([x[-1], x[0] + 360]) # x
+                elif ix.size == Z.shape[1]:
+                    xi = np.array([ix[-1], ix[0] + 360]) # x
                     if xi[0] != xi[1]:
                         Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
                         xq = xmin + 360
                         Zq = (Zq[:,:1]*(xi[1]-xq) + Zq[:,1:]*(xq-xi[0]))/(xi[1]-xi[0])
+                        ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
-                        x = ma.concatenate(([xmin], x, [xmin + 360]))
                 else:
                     raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
             iZs.append(Z)
-        Zs = iZs
+        x, Zs = ix, iZs
 
         # Convert to projection coordinates
         if x.ndim == 1 and y.ndim == 1:
@@ -601,12 +616,12 @@ def add_errorbars(self, func, *args,
     *args
         The input data.
     bars : bool, optional
-        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Defaults
-        to ``True`` when `means` is ``True``, `medians` is ``True``, or
+        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Default
+        is ``True`` when `means` is ``True``, `medians` is ``True``, or
         `bardata` is not ``None``.
     boxes : bool, optional
         Toggles *thick* boxplot-like error bars with a marker inside
-        representing the mean or median. Defaults to ``True`` when `means` is
+        representing the mean or median. Default is ``True`` when `means` is
         ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
     means : bool, optional
         Whether to plot the means of each column in the input data.
@@ -618,7 +633,7 @@ def add_errorbars(self, func, *args,
         upper bounds. Columns correspond to points in the dataset.
     barstd, boxstd : bool, optional
         Whether `barrange` and `boxrange` refer to multiples of the standard
-        deviation, or percentile ranges. Defaults to ``False``.
+        deviation, or percentile ranges. Default is ``False``.
     barrange : (float, float), optional
         Percentile ranges or standard deviation multiples for drawing thin
         error bars. The defaults are ``(-3,3)`` (i.e. +/-3 standard deviations)
@@ -630,16 +645,16 @@ def add_errorbars(self, func, *args,
         when `boxstd` is ``True``, and ``(25,75)`` (i.e. the middle 50th
         percentile) when `boxstd` is ``False``.
     barcolor, boxcolor : color-spec, optional
-        Colors for the thick and thin error bars. Defaults to ``'k'``.
+        Colors for the thick and thin error bars. Default is ``'k'``.
     barlw, boxlw : float, optional
-        Line widths for the thin and thick error bars, in points. `barlw`
-        defaults to ``0.7`` and `boxlw` defaults to ``4*barlw``.
+        Line widths for the thin and thick error bars, in points. Default
+        `barlw` is ``0.7`` and default `boxlw` is ``4*barlw``.
     boxmarker : bool, optional
         Whether to draw a small marker in the middle of the box denoting
         the mean or median position. Ignored if `boxes` is ``False``.
-        Defaults to ``True``.
+        Default is ``True``.
     boxmarkercolor : color-spec, optional
-        Color for the `boxmarker` marker. Defaults to ``'w'``.
+        Color for the `boxmarker` marker. Default is ``'w'``.
     capsize : float, optional
         The cap size for thin error bars, in points.
     barzorder, boxzorder : float, optional
@@ -766,7 +781,7 @@ def scatter_wrapper(self, func, *args,
         Aliases for the marker size.
     smin, smax : float, optional
         Used to scale the `s` array. These are the minimum and maximum marker
-        sizes. Defaults to the minimum and maximum of the `s` array.
+        sizes. Defaults are the minimum and maximum of the `s` array.
     c, color, markercolor : color-spec or list thereof, or array, optional
         Aliases for the marker fill color. If just an array of values, the
         colors will be generated by passing the values through the `norm`
@@ -779,7 +794,7 @@ def scatter_wrapper(self, func, *args,
     vmin, vmax : float, optional
         Used to generate a `norm` for scaling the `c` array. These are the
         values corresponding to the leftmost and rightmost colors in the
-        colormap. Defaults to the minimum and maximum values of the `c` array.
+        colormap. Defaults are the minimum and maximum values of the `c` array.
     norm : normalizer spec, optional
         The colormap normalizer, passed to the `~proplot.styletools.Norm`
         constructor.
@@ -947,7 +962,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
     """
     # Barh converts y-->bottom, left-->x, width-->height, height-->width.
     # Convert back to (x, bottom, width, height) so we can pass stuff through
-    # cycle_wrapper.
+    # cycle_changer.
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
@@ -958,7 +973,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         width, height = height, width
 
     # Parse args
-    # TODO: Stacked feature is implemented in `cycle_wrapper`, but makes more
+    # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
     if left is not None:
         warnings.warn(f'The "left" keyword with bar() is deprecated. Use "x" instead.')
@@ -969,7 +984,7 @@ def bar_wrapper(self, func, x=None, height=None, width=0.8, bottom=None, *, left
         x, height = None, x
 
     # Call func
-    # TODO: This *must* also be wrapped by cycle_wrapper, which ultimately
+    # TODO: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean this up.
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     return func(self, x, height, width=width, bottom=bottom,
@@ -1001,9 +1016,9 @@ def boxplot_wrapper(self, func, *args,
     fill : bool, optional
         Whether to fill the box with a color.
     fillcolor : color-spec, optional
-        The fill color for the boxes. Defaults to the next color cycler color.
+        The fill color for the boxes. Default is the next color cycler color.
     fillalpha : float, optional
-        The opacity of the boxes. Defaults to ``1``.
+        The opacity of the boxes. Default is ``1``.
     lw, linewidth : float, optional
         The linewidth of all objects.
     orientation : {None, 'horizontal', 'vertical'}, optional
@@ -1082,13 +1097,13 @@ def violinplot_wrapper(self, func, *args,
     *args : 1D or 2D ndarray
         The data array.
     lw, linewidth : float, optional
-        The linewidth of the line objects. Defaults to ``1``.
+        The linewidth of the line objects. Default is ``1``.
     edgecolor : color-spec, optional
-        The edge color for the violin patches. Defaults to ``'k'``.
+        The edge color for the violin patches. Default is ``'k'``.
     fillcolor : color-spec, optional
-        The violin plot fill color. Defaults to the next color cycler color.
+        The violin plot fill color. Default is the next color cycler color.
     fillalpha : float, optional
-        The opacity of the violins. Defaults to ``1``.
+        The opacity of the violins. Default is ``1``.
     orientation : {None, 'horizontal', 'vertical'}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
     boxrange, barrange : (float, float), optional
@@ -1160,7 +1175,7 @@ def text_wrapper(self, func,
         The transform used to interpret `x` and `y`. Can be a
         `~matplotlib.transforms.Transform` object or a string representing the
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-        or `~matplotlib.figure.Figure.transFigure` transforms. Defaults to
+        or `~matplotlib.figure.Figure.transFigure` transforms. Default is
         ``'data'``, i.e. the text is positioned in data coordinates.
     size, fontsize : float or str, optional
         The font size. If float, units are inches. If string, units are
@@ -1170,7 +1185,7 @@ def text_wrapper(self, func,
     border : bool, optional
         Whether to draw border around text.
     bordercolor : color-spec, optional
-        The color of the border. Defaults to ``'w'``.
+        The color of the border. Default is ``'w'``.
     invert : bool, optional
         If ``False``, ``'color'`` is used for the text and ``bordercolor``
         for the border. If ``True``, this is inverted.
@@ -1220,7 +1235,7 @@ def text_wrapper(self, func,
 #------------------------------------------------------------------------------#
 # Colormaps and color cycles
 #------------------------------------------------------------------------------#
-def cycle_wrapper(self, func, *args,
+def cycle_changer(self, func, *args,
     cycle=None, cycle_kw=None,
     markers=None, linestyles=None,
     label=None, labels=None, values=None,
@@ -1487,7 +1502,7 @@ def cycle_wrapper(self, func, *args,
     else:
         return objs[0] if is1d else (*objs,) # sensible default behavior
 
-def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
+def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     extend='neither', norm=None, norm_kw=None,
     N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
     locator=None, symmetric=False, locator_kw=None,
@@ -1522,7 +1537,7 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
     levels, N : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
         `locator` is used to generate this many levels at "nice" intervals.
-        Defaults to ``rc['image.levels']``.
+        Default is :rc:`image.levels`.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
@@ -1536,14 +1551,14 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         Used to determine level locations if `levels` is an integer. Actual
         levels may not fall exactly on `vmin` and `vmax`, but the minimum
         level will be no smaller than `vmin` and the maximum level will be
-        no larger than `vmax.
+        no larger than `vmax`.
 
         If `vmin` or `vmax` is not provided, the minimum and maximum data
         values are used.
     locator : locator-spec, optional
         The locator used to determine level locations if `levels` or `values`
         is an integer and `vmin` and `vmax` were not provided. Passed to the
-        `~proplot.axistools.Locator` constructor. Defaults to
+        `~proplot.axistools.Locator` constructor. Default is
         `~matplotlib.ticker.MaxNLocator` with ``levels`` or ``values+1``
         integer levels.
     locator_kw : dict-like, optional
@@ -1555,8 +1570,8 @@ def cmap_wrapper(self, func, *args, cmap=None, cmap_kw=None,
         <https://stackoverflow.com/q/8263769/4970632>`__
         and `white-lines-between-pcolor-rectangles
         <https://stackoverflow.com/q/27092991/4970632>`__
-        issues. This slows down figure rendering by a bit. Defaults to
-        ``rc['image.edgefix']``.
+        issues. This slows down figure rendering by a bit. Default is
+        :rc:`image.edgefix`.
     labels : bool, optional
         For `~matplotlib.axes.Axes.contour`, whether to add contour labels
         with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
@@ -1933,15 +1948,15 @@ def legend_wrapper(self,
     order : {'C', 'F'}, optional
         Whether legend handles are drawn in row-major (``'C'``) or column-major
         (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
-        ``'F'`` was the original matplotlib default. Defaults to ``'C'``.
+        ``'F'`` was the original matplotlib default. Default is ``'C'``.
     center : bool, optional
         Whether to center each legend row individually. If ``True``, we
         actually draw successive single-row legends stacked on top of each
         other.
 
-        If ``None``, we infer this setting from `handles`. Defaults to ``True``
+        If ``None``, we infer this setting from `handles`. Default is ``True``
         if `handles` is a list of lists; each sublist is used as a *row*
-        in the legend. Otherwise, defaults to ``False``.
+        in the legend. Otherwise, default is ``False``.
     loc : int or str, optional
         The legend location. The following location keys are valid.
 
@@ -2278,7 +2293,8 @@ def colorbar_wrapper(self,
     extendsize : float or str, optional
         The length of the colorbar "extensions" in *physical units*.
         If float, units are inches. If string, units are interpreted
-        by `~proplot.utils.units`. Defaults to ``rc['colorbar.extend']``.
+        by `~proplot.utils.units`. Default is :rc:`colorbar.insetextend`
+        for inset colorbars and :rc:`colorbar.extend` for outer colorbars.
 
         This is handy if you have multiple colorbars in one figure.
         With the matplotlib API, it is really hard to get triangle
@@ -2290,9 +2306,9 @@ def colorbar_wrapper(self,
         consistency with `legend`.
     grid : bool, optional
         Whether to draw "gridlines" between each level of the colorbar.
-        Defaults to ``rc['colorbar.grid']``.
+        Default is :rc:`colorbar.grid`.
     tickminor : bool, optional
-        Whether to put minor ticks on the colorbar. Defaults to ``False``.
+        Whether to put minor ticks on the colorbar. Default is ``False``.
     locator, ticks : locator spec, optional
         Used to determine the colorbar tick mark positions. Passed to the
         `~proplot.axistools.Locator` constructor.
@@ -2333,7 +2349,7 @@ def colorbar_wrapper(self,
     fixticks : bool, optional
         For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
         colorbar minor and major ticks can appear misaligned. When `fixticks`
-        is ``True``, this misalignment is fixed. Defaults to ``False``.
+        is ``True``, this misalignment is fixed. Default is ``False``.
 
         This will give incorrect positions when the colormap index does not
         appear to vary "linearly" from left-to-right across the colorbar (for
@@ -2471,7 +2487,7 @@ def colorbar_wrapper(self,
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis. If values were provided as keyword arg,
     # this is colorbar from lines/colors, and we label *all* values by default.
-    # TODO: Handle more of the log locator stuff here instead of cmap_wrapper?
+    # TODO: Handle more of the log locator stuff here instead of cmap_changer?
     if tick_all and locator is None:
         locator = values
         tickminor = False
@@ -2772,8 +2788,8 @@ _default_latlon        = _wrapper_decorator(default_latlon)
 _boxplot_wrapper       = _wrapper_decorator(boxplot_wrapper)
 _default_crs           = _wrapper_decorator(default_crs)
 _default_transform     = _wrapper_decorator(default_transform)
-_cmap_wrapper          = _wrapper_decorator(cmap_wrapper)
-_cycle_wrapper         = _wrapper_decorator(cycle_wrapper)
+_cmap_changer          = _wrapper_decorator(cmap_changer)
+_cycle_changer         = _wrapper_decorator(cycle_changer)
 _fill_between_wrapper  = _wrapper_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
 _hist_wrapper          = _wrapper_decorator(hist_wrapper)

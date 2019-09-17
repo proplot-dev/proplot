@@ -11,13 +11,14 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-
 import os
 import sys
+
+# Sphinx-automodapi requires proplot on path
 sys.path.insert(0, os.path.abspath('..'))
+# Then add path for local sphinxext extensions
+# Not sure when abspath is required
+sys.path.append(os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
@@ -41,24 +42,22 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'nbsphinx',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon', # for NumPy style docstrings, instead of reStructred Text
-    'sphinx.ext.autosectionlabel',
-    'sphinx.ext.autosummary',
-    'sphinx_automodapi.automodapi', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    'sphinxcontrib.bibtex', # see: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html
-    # 'IPython.sphinxext.ipython_directive', # for ipython highlighting
+    # 'nbsphinx', # TODO: add this! might require custom fork
+    'sphinx.ext.autodoc',           # include documentation from docstrings
+    'sphinx.ext.doctest',           # >>> examples
+    'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
+    'sphinx.ext.intersphinx',       # external links
+    'sphinx.ext.todo',              # Todo headers and todo:: directives
+    'sphinx.ext.mathjax',           # LaTeX style math
+    'sphinx.ext.viewcode',          # view code links
+    'sphinx.ext.autosummary',       # autosummary directive
+    'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
+    'sphinx_automodapi.automodapi', # my fork of the astropy extension
+    'sphinxext.custom_roles',       # local extension
     # 'IPython.sphinxext.ipython_console_highlighting',
+    # 'IPython.sphinxext.ipython_directive',  # for ipython highlighting
     # 'matplotlib.sphinxext.only_directives', # deprecated, see: https://github.com/statsmodels/statsmodels/issues/5291
-    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html
+    # 'matplotlib.sphinxext.plot_directive',  # see: https://matplotlib.org/sampledoc/extensions.html
     ]
 
 extlinks = {
@@ -80,7 +79,6 @@ autosummary_generate = True
 # them automatically. Just be careful, if you use from x import *, to exclude
 # them in the automodapi:: directive
 automodapi_toctreedirnm = 'api' # create much better URL for the page
-automodsumm_inherited_members = False
 automodsumm_inherited_members = False
 
 # Logo

@@ -222,10 +222,10 @@ and legends is allocated from the space between subplot rows and columns
 
 To plot data and draw a colorbar in one go, pass an *outer* location,
 e.g. ``colorbar='r'`` to methods that accept a ``cmap`` argument (see
-`~proplot.wrappers.cmap_wrapper`). To draw a legend or colorbar-legend
+`~proplot.wrappers.cmap_changer`). To draw a legend or colorbar-legend
 in one go, pass an *outer* location, e.g. ``legend='r'`` or
 ``colorbar='r'``, to methods that accept a ``cycle`` argument (see
-`~proplot.wrappers.cycle_wrapper`). For more on plotting wrappers, see
+`~proplot.wrappers.cycle_changer`). For more on plotting wrappers, see
 :ref:`Plotting wrappers`.
 
 To draw an *inset* colorbar, pass an *inset* location, e.g.

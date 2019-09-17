@@ -92,38 +92,38 @@ mathtext.default:        regular
 # rcExtraParams defaults
 #-----------------------
 # Extra label settings
-abc.loc:              l # left side above the axes
-title.loc:            c # centered above the axes
-title.pad:            3.0 # copy
-abc.format:           a
-abc.fontsize:         # filled by 'large'
-abc.color:            k
-abc.weight:           bold
-abc.border:           True
-abc.linewidth:        1.5
-tick.labelsize:       # filled by 'small'
-tick.labelcolor:      # filled by 'color'
-tick.labelweight:     normal
-title.fontsize:       # filled by 'large'
-title.color:          k
-title.weight:         normal
-title.border:         True
-title.linewidth:      1.5
-suptitle.fontsize:    # filled by 'large'
-suptitle.color:       k
-suptitle.weight:      bold
-leftlabel.fontsize:   # filled by 'large'
-leftlabel.weight:     bold
-leftlabel.color:      k
-toplabel.fontsize:    # filled by 'large'
-toplabel.weight:      bold
-toplabel.color:       k
-rightlabel.fontsize:  # filled by 'large'
-rightlabel.weight:    bold
-rightlabel.color:     k
-bottomlabel.fontsize: # filled by 'large'
-bottomlabel.weight:   bold
-bottomlabel.color:    k
+abc.loc:            l # left side above the axes
+title.loc:          c # centered above the axes
+title.pad:          3.0 # copy
+abc.format:         a
+abc.size:           # filled by 'large'
+abc.color:          k
+abc.weight:         bold
+abc.border:         True
+abc.linewidth:      1.5
+tick.labelsize:     # filled by 'small'
+tick.labelcolor:    # filled by 'color'
+tick.labelweight:   normal
+title.size:         # filled by 'large'
+title.color:        k
+title.weight:       normal
+title.border:       True
+title.linewidth:    1.5
+suptitle.size:      # filled by 'large'
+suptitle.color:     k
+suptitle.weight:    bold
+leftlabel.size:     # filled by 'large'
+leftlabel.weight:   bold
+leftlabel.color:    k
+toplabel.size:      # filled by 'large'
+toplabel.weight:    bold
+toplabel.color:     k
+rightlabel.size:    # filled by 'large'
+rightlabel.weight:  bold
+rightlabel.color:   k
+bottomlabel.size:   # filled by 'large'
+bottomlabel.weight: bold
+bottomlabel.color:  k
 # Extra image settings
 image.edgefix: True
 image.levels: 11
@@ -170,21 +170,21 @@ colorbar.frameon:     True
 colorbar.framealpha:  0.8
 colorbar.axespad:     0.5em
 colorbar.extend:      1.3em
-colorbar.extendinset: 1em
+colorbar.insetextend: 1em
 colorbar.length:      1
-colorbar.lengthinset: 8em
+colorbar.insetlength: 8em
 colorbar.width:       1.5em # 0.17 inches
-colorbar.widthinset:  1.2em
+colorbar.insetwidth:  1.2em
 # Subplot properties
 # Use font relative units for everything because this is common way user
 # might want to increase figure resolution
-subplots.axwidth:       18em  # 2 inches
-subplots.panelwidth:    4em   # 0.45 inches
-subplots.pad:           0.5em
-subplots.axpad:         1em
-subplots.panelpad:      0.5em
-subplots.panelspace:    1em
-subplots.innerspace:    1.5em
-subplots.ylabspace:     5.5em
-subplots.xlabspace:     4em
-subplots.titlespace:    2em
+subplots.axwidth:    18em  # 2 inches
+subplots.panelwidth: 4em   # 0.45 inches
+subplots.pad:        0.5em
+subplots.axpad:      1em
+subplots.panelpad:   0.5em
+subplots.panelspace: 1em
+subplots.innerspace: 1.5em
+subplots.ylabspace:  5.5em
+subplots.xlabspace:  4em
+subplots.titlespace: 2em
