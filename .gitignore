@@ -9,6 +9,7 @@ dist
 *.egg-info
 
 # Builds made during testing
+docs/api
 docs/_build
 
 # Deleted

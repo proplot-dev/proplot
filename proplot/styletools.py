@@ -987,12 +987,12 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
         a `~matplotlib.colors.LinearSegmentedColormap` is generated with
         `~matplotlib.colors.LinearSegmentedColormap.from_list`. If
         ``'listed'``, the `~matplotlib.colors.ListedColormap` is generated.
-        Defaults to ``'perceptual'`` when calling `Colormap` directly, and
+        Default is ``'perceptual'`` when calling `Colormap` directly, and
         ``'listed'`` when `Colormap` is called by `Cycle`.
     perceptual : bool, optional
     fade : float, optional
         The maximum luminosity used when generating `monochrome_cmap` colormaps.
-        Defaults to ``100`` when calling `Colormap` directly, and ``90`` when
+        Default is ``100`` when calling `Colormap` directly, and ``90`` when
         `Colormap` is called by `Cycle` (this prevents having pure white in
         the color cycle).
 
@@ -1001,7 +1001,7 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
     cycle : str or list of color-spec, optional
         The registered cycle name or a list of colors used to interpret cycle
         color strings like ``'C0'`` and ``'C2'`` when generating
-        `monochrome_cmap` colormaps. Defaults to colors from the currently
+        `monochrome_cmap` colormaps. Default is colors from the currently
         active property cycler.
 
         For example, ``plot.Colormap('C0', 'C1', 'C2', cycle='538')``
@@ -1582,7 +1582,7 @@ def monochrome_cmap(color, fade, reverse=False, space='hsl', name='no_name', **k
     space : {'hcl', 'hsl', 'hpl'}, optional
         Colorspace in which the luminance is varied.
     name : str, optional
-        Colormap name. Defaults to ``'no_name'``.
+        Colormap name. Default is ``'no_name'``.
 
     Other parameters
     ----------------
@@ -1711,7 +1711,7 @@ class BinNorm(mcolors.BoundaryNorm):
         step : float, optional
             The intensity of the transition to out-of-bounds color, as a
             faction of the *average* step between in-bounds colors.
-            Defaults to ``1``.
+            Default is ``1``.
         extend : {'neither', 'both', 'min', 'max'}, optional
             Which direction colors will be extended. No matter the `extend`
             option, `BinNorm` ensures colors always extend through the
@@ -2338,13 +2338,13 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are colormap names or objects. Defaults to
-        ``rc['image.cmap']``.
+        Positional arguments are colormap names or objects. Default is
+        :rc:`image.cmap`.
     N : int, optional
         The number of markers to draw for each colormap.
     rgb : bool, optional
         Whether to also show the red, blue, and green channels in the bottom
-        row. Defaults to ``True``.
+        row. Default is ``True``.
     minhue : float, optional
         The minimum hue. This lets you rotate the hue plot cyclically.
     width : int, optional
@@ -2369,7 +2369,6 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     fig, axs = subplots(
         array=array, axwidth=axwidth, span=False, share=1,
         aspect=aspect, axpad='1em',
-        panel='b', bstack=len(args), barray=[0,1,1,1,1,0],
         )
     labels = (
         'Hue', 'Chroma', 'Luminance',
@@ -2430,8 +2429,10 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
         suptitle=f'{suptitle} by channel', ylim=None, ytickminor=False,
         )
     # Colorbar on the bottom
-    for i,cmap in enumerate(cmaps):
-        fig.bpanel[i].colorbar(cmap, locator='null', label=cmap.name, labelweight='bold')
+    for cmap in cmaps:
+        fig.colorbar(cmap,
+            loc='b', span=(2,5),
+            locator='null', label=cmap.name, labelweight='bold')
     return fig
 
 def show_colorspaces(luminance=None, saturation=None, hue=None):
@@ -2443,7 +2444,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None):
     ----------
     luminance : float, optional
         If passed, chroma-saturation cross-sections are drawn for this luminance.
-        Must be between ``0` and ``100``. Defaults to ``50``.
+        Must be between ``0` and ``100``. Default is ``50``.
     saturation : float, optional
         If passed, luminance-hue cross-sections are drawn for this saturation.
         Must be between ``0` and ``100``.
@@ -2629,16 +2630,16 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are colormap names or objects. Defaults to
+        Positional arguments are colormap names or objects. Default is
         all of the registered colormaps.
     N : int, optional
         The number of levels in each colorbar.
     length : float or str, optional
-        The length of each colorbar. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        The length of each colorbar. Units are interpreted by
+        `~proplot.utils.units`.
     width : float or str, optional
-        The width of each colorbar. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        The width of each colorbar. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------
@@ -2713,11 +2714,10 @@ def show_cycles(*args, axwidth=1.5):
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are cycle names or objects. Defaults to
+        Positional arguments are cycle names or objects. Default is
         all of the registered colormaps.
     axwidth : str or float, optional
-        Average width of each subplot. If float, units are inches. If string,
-        units are interpreted by `~proplot.utils.units`.
+        Average width of each subplot. Units are interpreted by `~proplot.utils.units`.
 
     Returns
     -------

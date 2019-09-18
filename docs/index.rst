@@ -19,7 +19,7 @@ on PyPi (but it's coming soon!). For the time being, you may install directly fr
 
    pip install git+https://github.com/lukelbd/proplot.git
 
-To upgrade to the latest version, run ``pip uninstall proplot``, then re-install -- ``pip install --upgrade`` doesn't always work with packages downloaded from Github.
+To upgrade to the latest version, run ``pip uninstall proplot``, then re-install.
 
 The dependencies are `matplotlib <https://matplotlib.org/>`__ and `numpy <http://www.numpy.org/>`__.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and/or `basemap <https://matplotlib.org/basemap/index.html>`__.
 
@@ -84,18 +84,20 @@ Here are some highlights of the remaining features:
 
 To get started, check out the :ref:`Introduction`.
 
+.. :hidden: means do not put a table of links right here but include links in sidebar
+
 .. _MIT: LICENSE.txt
 
 .. toctree::
    :hidden:
    :maxdepth: 4
-   :caption: Tutorial
+   :caption: Overview
 
-   tutorial1
-   tutorial2
-   tutorial3
-   tutorial4
-   tutorial5
+   intro
+   cartesian
+   projection
+   colors
+   plots
 
 .. toctree::
    :hidden:
