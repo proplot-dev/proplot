@@ -1475,6 +1475,12 @@ class Figure(mfigure.Figure):
             The registered matplotlib projection name, or a basemap or cartopy
             map projection name. For valid map projection names, see the
             :ref:`Table of projections`.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `~matplotlib.figure.Figure.add_subplot`. Also passed
+            to `~proplot.proj.Proj` if this is a cartopy or basemap projection.
         """
         # TODO: Consider permitting add_subplot?
         # Copied from matplotlib add_subplot
@@ -2042,23 +2048,6 @@ def subplots(array=None, ncols=1, nrows=1,
     proj    = _axes_dict(naxs, proj, kw=False, default='cartesian')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
-    for num,name in proj.items():
-        # The default is CartesianAxes
-        if name is None or name == 'cartesian':
-            axes_kw[num]['projection'] = 'cartesian'
-        # Builtin matplotlib polar axes, just use my overridden version
-        elif name == 'polar':
-            axes_kw[num]['projection'] = 'polar2'
-            if num == ref:
-                aspect = 1
-        # Custom Basemap and Cartopy axes
-        else:
-            package = 'basemap' if basemap[num] else 'cartopy'
-            obj, iaspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
-            if num == ref:
-                aspect = iaspect
-            axes_kw[num].update({'projection':package, 'map_projection':obj})
 
     #-------------------------------------------------------------------------#
     # Figure architecture
@@ -2180,9 +2169,8 @@ def subplots(array=None, ncols=1, nrows=1,
         with fig._unlock():
             axs[idx] = fig.add_subplot(subplotspec, number=num,
                 spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-                sharex=sharex, sharey=sharey,
-                main=True,
-                **axes_kw[num])
+                sharex=sharex, sharey=sharey, main=True,
+                proj=proj[num], basemap=basemap[num], **proj_kw[num])
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
