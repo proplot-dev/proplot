@@ -74,6 +74,8 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+from numbers import Integral
+from matplotlib.gridspec import SubplotSpec
 try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
@@ -1459,6 +1461,7 @@ class Figure(mfigure.Figure):
 
     def add_subplot(self, *args,
         proj=None, projection=None, basemap=False,
+        proj_kw=None, projection_kw=None,
         **kwargs):
         """
         Adds subplot using the existing figure gridspec.
@@ -1521,16 +1524,20 @@ class Figure(mfigure.Figure):
         subplotspec = gridspec[(num[0] - 1):num[1]]
 
         # The default is CartesianAxes
-        proj = _notNone(proj, projection, 'cartesian', names=('proj','projection'))
+        proj = _notNone(proj, projection, 'cartesian', names=('proj', 'projection'))
+        proj_kw = _notNone(proj_kw, projection_kw, {}, names=('proj_kw', 'projection_kw'))
         # Builtin matplotlib polar axes, just use my overridden version
-        if name == 'polar':
+        if proj == 'polar':
             proj = 'polar2'
         # Custom Basemap and Cartopy axes
         # TODO: Have Proj return all unused keyword args, with a
         # map_projection = obj entry, and maybe hide the Proj constructor as
         # an argument processing utility?
         elif proj != 'cartesian':
-            kwargs = projs.Proj(name, basemap=basemap, **kwargs)
+            map_projection = projs.Proj(proj, basemap=basemap, **proj_kw)
+            if 'map_projection' in kwargs:
+                warnings.warn(f'Ignoring input "map_projection" {kwargs["map_projection"]!r}.')
+            kwargs['map_projection'] = map_projection
             proj = 'basemap' if basemap else 'cartopy'
 
         # Initialize

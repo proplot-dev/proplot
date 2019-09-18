@@ -158,8 +158,6 @@ def Proj(name, basemap=False, **kwargs):
             kwproj.setdefault('rsphere', (6378137.00,6356752.3142))
         reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
-        aspect = (proj.urcrnrx - proj.llcrnrx) / \
-                 (proj.urcrnry - proj.llcrnry)
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is available
@@ -172,9 +170,7 @@ def Proj(name, basemap=False, **kwargs):
         if crs is None:
             raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
         proj = crs(**kwargs)
-        aspect = (np.diff(proj.x_limits) / \
-                  np.diff(proj.y_limits))[0]
-    return proj, aspect
+    return proj
 
 # Various pseudo-rectangular projections
 # Inspired by source code for Mollweide implementation
