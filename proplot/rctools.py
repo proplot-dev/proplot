@@ -2,7 +2,7 @@
 """
 A special object named `~proplot.rctools.rc`, belonging to the
 `~proplot.rctools.rc_configurator` class, is created on import.
-This is your **one-stop shop for changing global settings** belonging to any of the
+This is your **one-stop shop for changing default settings** belonging to any of the
 following three categories.
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
@@ -104,7 +104,7 @@ toggles for the corresponding :ref:`rcGlobals` settings are turned on.
 ===================================================================  =========================================================================================================================================================================================================================================================
 Key(s)                                                               Description
 ===================================================================  =========================================================================================================================================================================================================================================================
-``abc.format``                                                       a-b-c label format. For options, see `~proplot.axes.Axes.format`.
+``abc.style``                                                        a-b-c label style. For options, see `~proplot.axes.Axes.format`.
 ``abc.loc``                                                          a-b-c label position. For options, see `~proplot.axes.Axes.format`.
 ``abc.border``                                                       Boolean, indicates whether to draw a white border around a-b-c labels inside an axes.
 ``abc.linewidth``                                                    Width of the white border around a-b-c labels.
@@ -251,7 +251,7 @@ RC_CUSTOMNAMES = {
     'geoaxes.linewidth', 'geoaxes.facecolor', 'geoaxes.edgecolor',
     'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
     'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
-    'abc.size', 'abc.weight', 'abc.color', 'abc.loc', 'abc.format', 'abc.border', 'abc.linewidth',
+    'abc.size', 'abc.weight', 'abc.color', 'abc.loc', 'abc.style', 'abc.border', 'abc.linewidth',
     'title.loc', 'title.pad', 'title.color', 'title.border', 'title.linewidth', 'title.weight', 'title.size',
     'suptitle.size', 'suptitle.weight', 'suptitle.color',
     'leftlabel.size', 'leftlabel.weight', 'leftlabel.color',

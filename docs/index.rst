@@ -91,13 +91,13 @@ To get started, check out the :ref:`Introduction`.
 .. toctree::
    :hidden:
    :maxdepth: 4
-   :caption: Tutorial
+   :caption: Overview
 
-   tutorial1
-   tutorial2
-   tutorial3
-   tutorial4
-   tutorial5
+   intro
+   cartesian
+   projection
+   colors
+   plots
 
 .. toctree::
    :hidden:
