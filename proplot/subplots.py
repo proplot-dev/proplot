@@ -1457,12 +1457,78 @@ class Figure(mfigure.Figure):
         if kwargs:
             self._suptitle.update(kwargs)
 
-    def add_subplot(self, *args, **kwargs):
-        """Issues warning for new users that try to call
-        `~matplotlib.figure.Figure.add_subplot` manually."""
-        if self._locked:
-            warnings.warn('Using "fig.add_subplot()" with ProPlot figures may result in unexpected behavior. Please use "proplot.subplots()" instead.')
-        ax = super().add_subplot(*args, **kwargs)
+    def add_subplot(self, *args,
+        proj=None, projection=None, basemap=False,
+        **kwargs):
+        """
+        Adds subplot using the existing figure gridspec.
+
+        Parameters
+        ----------
+        *args
+            If `~matplotlib.gridspec.SubplotSpec` instance, must be a child
+            of the main subplot gridspec!
+
+            If a 3-digit integer or a tuple indicating (nrows, ncols, index),
+            the geometry must match the geometry of the input gridspec!
+        proj, projection : str, optional
+            The registered matplotlib projection name, or a basemap or cartopy
+            map projection name. For valid map projection names, see the
+            :ref:`Table of projections`.
+        """
+        # TODO: Consider permitting add_subplot?
+        # Copied from matplotlib add_subplot
+        if not len(args):
+            args = (1, 1, 1)
+        if len(args) == 1 and isinstance(args[0], Integral):
+            if not 100 <= args[0] <= 999:
+                raise ValueError(f'Integer subplot specification must be a three-digit number, not {args[0]!r}.')
+            args = tuple(map(int, str(args[0])))
+        # Copied from SubplotBase __init__ and modified to enforce restrictions
+        gridspec = self._gridspec_main
+        subplotspec = None
+        if len(args) == 1:
+            if isinstance(args[0], SubplotSpec):
+                subplotspec = args[0]
+            else:
+                try:
+                    s = str(int(args[0]))
+                    rows, cols, num = map(int, s)
+                except ValueError:
+                    raise ValueError(f'Single argument to subplot must be a 3-digit integer, not {args[0]!r}.')
+        elif len(args) == 3:
+            rows, cols, num = args
+        else:
+            raise ValueError(f'Illegal argument(s) to add_subplot: {args}')
+        if subplotspec is None:
+            rows = int(rows)
+            cols = int(cols)
+            if isinstance(num, tuple) and len(num) == 2:
+                num = [int(n) for n in num]
+            else:
+                if num < 1 or num > rows*cols:
+                    raise ValueError(f'num must be 1 <= num <= {rows*cols}, not {num}')
+        if (rows, cols) != gridspec.get_active_geometry():
+            raise ValueError(f'Input arguments {args!r} conflict with existing gridspec geometry of {rows} rows, {cols} columns.')
+        if not isinstance(num, tuple):
+            num = (num, num)
+        subplotspec = gridspec[(num[0] - 1):num[1]]
+
+        # The default is CartesianAxes
+        proj = _notNone(proj, projection, 'cartesian', names=('proj','projection'))
+        # Builtin matplotlib polar axes, just use my overridden version
+        if name == 'polar':
+            proj = 'polar2'
+        # Custom Basemap and Cartopy axes
+        # TODO: Have Proj return all unused keyword args, with a
+        # map_projection = obj entry, and maybe hide the Proj constructor as
+        # an argument processing utility?
+        elif proj != 'cartesian':
+            kwargs = projs.Proj(name, basemap=basemap, **kwargs)
+            proj = 'basemap' if basemap else 'cartopy'
+
+        # Initialize
+        ax = super().add_subplot(subplotspec, projection=proj, **kwargs)
         return ax
 
     def colorbar(self, *args,
