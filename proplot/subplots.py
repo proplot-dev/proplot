@@ -1748,14 +1748,6 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Parameters
     ----------
-    ncols, nrows : int, optional
-        Number of columns, rows. Ignored if `array` is not ``None``.
-        Use these arguments for simpler subplot grids.
-    order : {'C', 'F'}, optional
-        Whether subplots are numbered in column-major (``'C'``) or row-major
-        (``'F'``) order. Analogous to `numpy.array` ordering. This controls
-        the order axes appear in the `axs` list, and the order of subplot
-        a-b-c labeling (see `~proplot.axes.Axes.format`).
     array : array-like of int, optional
         2-dimensional array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
@@ -1766,6 +1758,14 @@ def subplots(array=None, ncols=1, nrows=1,
         ``0`` indicates an empty space. For example, ``[[1, 1, 1], [2, 0, 3]]``
         creates one long subplot in the top row with two subplots in the bottom
         row separated by a space.
+    ncols, nrows : int, optional
+        Number of columns, rows. Ignored if `array` is not ``None``.
+        Use these arguments for simpler subplot grids.
+    order : {'C', 'F'}, optional
+        Whether subplots are numbered in column-major (``'C'``) or row-major
+        (``'F'``) order. Analogous to `numpy.array` ordering. This controls
+        the order axes appear in the `axs` list, and the order of subplot
+        a-b-c labeling (see `~proplot.axes.Axes.format`).
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     width, height : float or str, optional
