@@ -802,7 +802,8 @@ def CutoffScaleFactory(scale, lower, upper=None):
         def get_transform(self):
             return self._transform
         def set_default_locators_and_formatters(self, axis):
-            axis.set_smart_bounds(True) # may prevent ticks from extending off sides
+            # TODO: add example to bug list, smart bounds screws up ticking!
+            # axis.set_smart_bounds(True) # may prevent ticks from extending off sides
             axis.set_major_formatter(Formatter('default'))
             axis.set_minor_formatter(Formatter('null'))
 

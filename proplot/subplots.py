@@ -565,7 +565,7 @@ def _panels_kwargs(side,
         default = rc['subplots.panelwidth']
     share = _notNone(share, (not filled))
     width = units(_notNone(width, default))
-    space = _notNone(space, units(rc['subplots.' + ('panel' if share
+    space = _notNone(units(space), units(rc['subplots.' + ('panel' if share
         and not figure
         else 'xlab' if s == 'b' else 'ylab' if s == 'l'
         else 'inner' if figure else 'panel') + 'space']))
