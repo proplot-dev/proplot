@@ -1436,11 +1436,15 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         *args
-            If `~matplotlib.gridspec.SubplotSpec` instance, must be a child
-            of the main subplot gridspec!
+            There are three options here. See the matplotlib
+            `~matplotlib.figure.add_subplot` documentation for details.
 
-            If a 3-digit integer or a tuple indicating (nrows, ncols, index),
-            the geometry must match the geometry of the input gridspec!
+            * A `~matplotlib.gridspec.SubplotSpec` instance. Must be a child of
+              the "main" gridspec.
+            * A 3-digit integer, e.g. ``121``. Geometry must be equivalent to
+              or divide the "main" gridspec geometry.
+            * A tuple indicating (nrows, ncols, index). Geometry must be
+              equivalent to or divide the "main" gridspec geometry.
         proj, projection : str, optional
             The registered matplotlib projection name, or a basemap or cartopy
             map projection name. For valid map projection names, see the
