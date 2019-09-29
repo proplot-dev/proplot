@@ -31,7 +31,7 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-import matplotlib.path_effects as mpatheffects
+import matplotlib.patheffects as mpatheffects
 from . import utils, projs, axistools, styletools
 from .utils import _notNone, units
 from .rctools import rc, RC_NODOTSNAMES
@@ -877,7 +877,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        %(standardize_1d)s
+        %(standardize_1d_args)s
         x, height, width, bottom : float or list of float, optional
             The dimensions of the bars. If the *x* coordinates are not provided,
             they are set to ``np.arange(0, len(height))``.
@@ -893,8 +893,9 @@ class Axes(maxes.Axes):
             The edge color for the bar patches.
         lw, linewidth : float, optional
             The edge width for the bar patches.
-        %(cycle_params)s
-        %(errorbar_params)s
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
 
         Other parameters
         ----------------
@@ -968,7 +969,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        %(standardize_1d)s
+        %(standardize_1d_args)s
         color : color-spec, optional
             The color of all objects.
         fill : bool, optional
@@ -991,7 +992,8 @@ class Axes(maxes.Axes):
         boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
             The line width of various boxplot components. These are shorthands so you
             don't have to pass e.g. a ``boxprops`` dictionary.
-        %(cycle_params)s
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
 
         Other parameters
         ----------------
@@ -1151,6 +1153,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
+        %(colorbar_args)s
         loc : str, optional
             The colorbar location. Default is :rc:`colorbar.loc`. The
             following location keys are valid.
@@ -1196,9 +1199,7 @@ class Axes(maxes.Axes):
             :rc:`colorbar.framealpha`, :rc:`axes.linewidth`,
             :rc:`axes.edgecolor`, and :rc:`axes.facecolor`,
             respectively.
-        %(colorbar_params)s
-        Other parameters
-        ----------------
+        %(colorbar_kwargs)s
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
@@ -1399,7 +1400,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        %(standardize_1d)s
+        %(standardize_1d_args)s
             If `y1` and `y2` are provided, their shapes must be identical, and
             we fill between respective columns of these arrays.
         stacked : bool, optional
@@ -1416,7 +1417,8 @@ class Axes(maxes.Axes):
         where : ndarray, optional
             Boolean ndarray mask for points you want to shade. See
             `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
-        %(cycle_params)s
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
 
         Other parameters
         ----------------
@@ -1474,8 +1476,8 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        %(cycle_params)s
-        %(errorbars_kw)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
         """
         kwargs.setdefault('linewidth', 0)
         hist = _standardize_1d(_cycle_changer(
@@ -1598,6 +1600,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
+        %(legend_args)s
         loc : int or str, optional
             The legend location or panel location. The following location keys
             are valid. Note that if a panel does not exist, it will be
@@ -1631,6 +1634,7 @@ class Axes(maxes.Axes):
             Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
             Otherwise, defaut is :rc:`subplots.panelspace`.
+        %(legend_kwargs)s
 
         Other parameters
         ----------------
@@ -1710,15 +1714,16 @@ class Axes(maxes.Axes):
         """
         Draws a "colormap line" if the ``cmap`` argument was passed. Colormap
         lines change color as a function of the parametric coordinate
-        ``values``. %(errorbars_summary)s
+        ``values``.
 
         Parameters
         ----------
-        %(standardize_1d)s
+        %(standardize_1d_args)s
         cmap, values : optional
             Passed to `~proplot.axes.Axes.cmapline`.
-        %(cycle_params)s
-        %(errorbars_kw)s
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
 
         Other parameters
         ----------------
@@ -1751,7 +1756,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        %(standardize_1d)s
+        %(standardize_1d_args)s
         s, size, markersize : float or list of float, optional
             Aliases for the marker size.
         smin, smax : float, optional
@@ -1779,8 +1784,9 @@ class Axes(maxes.Axes):
             Aliases for the marker edge width.
         edgecolors, markeredgecolor, markeredgecolors : color-spec or list thereof, optional
             Aliases for the marker edge color.
-        %(cycle_params)s
-        %(errorbars_kw)s
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
 
         Other parameters
         ----------------
@@ -1918,7 +1924,7 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        %(standardize_1d)s
+        %(standardize_1d_args)s
         lw, linewidth : float, optional
             The linewidth of the line objects. Default is ``1``.
         edgecolor : color-spec, optional
@@ -1932,8 +1938,9 @@ class Axes(maxes.Axes):
         boxrange, barrange : (float, float), optional
             Percentile ranges for the thick and thin central bars. The defaults
             are ``(25, 75)`` and ``(5, 95)``, respectively.
-        %(cycle_params)s
-        %(errorbars_kw)s
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
 
         Other parameters
         ----------------
