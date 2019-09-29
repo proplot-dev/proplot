@@ -16,33 +16,6 @@ except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 __all__ = ['arange', 'edges', 'units', 'DEBUG']
 
-# Important private helper func
-def _notNone(*args, names=None):
-    """Returns the first non-``None`` value, used with keyword arg aliases and
-    for setting default values. Ugly name but clear purpose. Pass the `names`
-    keyword arg to issue warning if multiple args were passed. Must be list
-    of non-empty strings."""
-    if names is None:
-        for arg in args:
-            if arg is not None:
-                return arg
-        return arg # last one
-    else:
-        ret = {}
-        first = None
-        if len(names) != len(args) - 1:
-            raise ValueError(f'Need {len(args)+1} names for {len(args)} args, but got {len(names)} names.')
-        names = [*names, '']
-        for name,arg in zip(names,args):
-            if arg is not None:
-                if first is None:
-                    first = arg
-                if name:
-                    ret[name] = arg
-        if len(ret)>1:
-            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {ret}')
-        return first
-
 # Debug decorators
 DEBUG = False # debug mode, used for profiling and activating timer decorators
 def _logger(func):
@@ -85,6 +58,33 @@ def _counter(func):
     decorator.time = 0
     decorator.count = 0 # initialize
     return decorator
+
+# Important private helper func
+def _notNone(*args, names=None):
+    """Returns the first non-``None`` value, used with keyword arg aliases and
+    for setting default values. Ugly name but clear purpose. Pass the `names`
+    keyword arg to issue warning if multiple args were passed. Must be list
+    of non-empty strings."""
+    if names is None:
+        for arg in args:
+            if arg is not None:
+                return arg
+        return arg # last one
+    else:
+        first = None
+        kwargs = {}
+        if len(names) != len(args) - 1:
+            raise ValueError(f'Need {len(args)+1} names for {len(args)} args, but got {len(names)} names.')
+        names = [*names, '']
+        for name,arg in zip(names,args):
+            if arg is not None:
+                if first is None:
+                    first = arg
+                if name:
+                    kwargs[name] = arg
+        if len(kwargs)>1:
+            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {kwargs}')
+        return first
 
 # Accessible for user
 def arange(min_, *args):

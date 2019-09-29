@@ -35,7 +35,8 @@ if warnings.formatwarning is not _warning_proplot:
 # WARNING: Import order is meaningful! Loads modules that are dependencies
 # of other modules last, and loads styletools early so we can try to update
 # TTFPATH before the fontManager is loaded by other matplotlib modules
-from .utils import * # misc stuff, debug mode
+from .utils import DEBUG
+from .utils import *
 if DEBUG:
     import time
     t = time.clock()
