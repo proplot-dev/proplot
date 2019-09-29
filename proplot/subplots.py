@@ -3,66 +3,32 @@
 The starting point for creating custom ProPlot figures and axes.
 The `subplots` function is all you'll need to directly use here.
 It returns a `Figure` instance and an `axes_grid` container of
-`~proplot.axes.Axes` axes, whose positions are controlled by the
-`FlexibleGridSpec` class.
+`~proplot.axes.Axes` axes, whose positions are controlled by the new
+`GridSpec` class.
 
 .. raw:: html
 
    <h1>Developer notes</h1>
 
-Matplotlib permits arbitrarily many gridspecs per figure, and
-encourages serial calls to `~matplotlib.figure.Figure.add_subplot`. By
-contrast, ProPlot permits only *one* `~matplotlib.gridspec.GridSpec` per
-figure, and forces the user to construct axes and figures with `subplots`. On
-the whole, matplotlib's approach is fairly cumbersome, but necessary owing to
-certain design limitations. The following describes how ProPlot addresses
-these limitations.
+While matplotlib permits arbitrarily many gridspecs per figure, ProPlot
+permits only *one*. When `subplots` is used, this is trivial to enforce. When
+`~Figure.add_subplot` is used, the figure geometry is "locked" after the
+first call -- although `~Figure.add_subplot` calls that divide into the
+existing geometry are also acceptable (for example, two square subplots above
+a longer rectangle subplots with the integers ``221``, ``222``, and ``212``).
+This choice is not a major imposition on the user, and *considerably*
+simplifies gridspec adjustments, e.g. the "tight layout" adjustments.
 
-* Matplotlib's `~matplotlib.gridspec.GridSpec` can only implement *uniform*
-  spacing between rows and columns of subplots. This seems to be the main
-  reason the `~matplotlib.gridspec.GridSpecFromSubplotSpec` class was
-  invented. To get variable spacing, users have to build their own nested
-  `~matplotlib.gridspec.GridSpec` objects and manually pass
-  `~matplotlib.gridspec.SubplotSpec` objects to
-  `~matplotlib.figure.Figure.add_subplot`.
-
-  ProPlot's `FlexibleGridSpec` class permits *variable* spacing between
-  rows and columns of subplots. This largely eliminates the need for
-  `~matplotlib.gridspec.GridSpecFromSubplotSpec`, and prevents users
-  from having to pass their own `~matplotlib.gridspec.SubplotSpec` objects
-  to `~matplotlib.figure.Figure.add_subplot`.
-
-* Matplotlib's `~matplotlib.pyplot.subplots` can only draw simple 2D
-  arrangements of subplots. To make complex arrangements, the user must
-  generate their own `~matplotlib.gridspec.SubplotSpec` instances, or serially
-  pass 3-digit integers or 3 positional arguments
-  `~matplotlib.figure.Figure.add_subplot`. And to simplify this workflow, the
-  gridspec geometry must be allowed to vary. For example, to draw a simple
-  grid with two subplots on the top and one subplot on the bottom, the user
-  can serially pass ``221``, ``222``, and ``212`` to
-  `~matplotlib.figure.Figure.add_subplot`. But if the gridspec geometry
-  was required to remain the same, instead of ``212``, the user would have to
-  use ``2, 2, (3,4)``, which is much more cumbersome. So, the figure
-  must support multiple gridspec geometries -- i.e. it must support multiple
-  gridspecs!
-
-  With ProPlot, users can build complex subplot grids using the ``array``
-  `subplots` argument. This means that serial calls to
-  `~matplotlib.figure.Figure.add_subplot` are no longer necessary, and we can
-  use just *one* gridspec for the whole figure without imposing any new
-  limitations. Among other things, this simplifies the "tight layout"
-  algorithm.
-
-
-Also note that ProPlot's `subplots` returns an `axes_grid` of axes, while
-matplotlib's `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`,
-a 1D `~numpy.ndarray`, or the axes itself. `axes_grid` was invented in
-part because `subplots` can draw arbitrarily complex arrangements of
-subplots, not just simple grids. `axes_grid` is a `list` subclass supporting
-1D indexing (e.g. ``axs[0]``), but permits 2D indexing (e.g. ``axs[1,0]``)
-*just in case* the user *happened* to draw a clean 2D matrix of subplots.
-The `~axes_grid.__getattr__` override also means it no longer matters
-whether you are calling a method on an axes or a singleton `axes_grid` of axes.
+While matplotlib's `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`,
+a 1D `~numpy.ndarray`, or the axes itself, ProPlot's `subplots` returns an
+`axes_grid` of axes, meant to unify these three possible return values.
+`axes_grid` is a `list` subclass supporting 1D indexing (e.g. ``axs[0]``), but
+permits 2D indexing (e.g. ``axs[1,0]``) *just in case* the user *happened*
+to draw a clean 2D matrix of subplots. The `~axes_grid.__getattr__` override
+also means it no longer matters whether you are calling a method on an axes
+or a singleton `axes_grid` of axes. Finally, `axes_grid` lets `subplots`
+support complex arrangements of subplots -- just use 1D indexing when they
+don't look like a 2D matrix.
 """
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional
@@ -84,7 +50,7 @@ from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
 __all__ = [
-    'axes_grid', 'close', 'show', 'subplots', 'Figure', 'FlexibleGridSpec',
+    'axes_grid', 'close', 'show', 'subplots', 'Figure', 'GridSpec',
     ]
 
 # Translation
@@ -346,7 +312,7 @@ class FlexibleSubplotSpec(mgridspec.SubplotSpec):
             col2 = col1
         return nrows//2, ncols//2, row1//2, row2//2, col1//2, col2//2
 
-class FlexibleGridSpec(mgridspec.GridSpec):
+class GridSpec(mgridspec.GridSpec):
     """
     `~matplotlib.gridspec.GridSpec` generalization that allows for grids with
     *variable spacing* between successive rows and columns of axes.
@@ -371,7 +337,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
             The vertical and horizontal spacing between rows and columns of
             subplots, respectively. In `~proplot.subplots.subplots`, ``wspace``
             and ``hspace`` are in physical units. When calling
-            `FlexibleGridSpec` directly, values are scaled relative to
+            `GridSpec` directly, values are scaled relative to
             the average subplot height or width.
 
             If float, the spacing is identical between all rows and columns. If
@@ -446,7 +412,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
         hspace=None, wspace=None, # spacing between axes
         height_ratios=None, width_ratios=None,
         **kwargs):
-        """For keyword arg usage, see `FlexibleGridSpec`."""
+        """For keyword arg usage, see `GridSpec`."""
         # Parse flexible input
         nrows, ncols = self.get_active_geometry()
         hratios = np.atleast_1d(_notNone(height_ratios, 1))
@@ -508,7 +474,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
 
     def get_active_geometry(self):
         """Returns the number of active rows and columns, i.e. the rows and
-        columns that aren't skipped by `~FlexibleGridSpec.__getitem__`."""
+        columns that aren't skipped by `~GridSpec.__getitem__`."""
         return self._nrows_active, self._ncols_active
 
     def update(self, **kwargs):
@@ -814,7 +780,7 @@ class Figure(mfigure.Figure):
         self._tpanels = []
         self._lpanels = []
         self._rpanels = []
-        gridspec = FlexibleGridSpec(self, **(gridspec_kw or {}))
+        gridspec = GridSpec(self, **(gridspec_kw or {}))
         nrows, ncols = gridspec.get_active_geometry()
         self._barray = np.empty((0, ncols), dtype=bool)
         self._tarray = np.empty((0, ncols), dtype=bool)
@@ -1308,7 +1274,7 @@ class Figure(mfigure.Figure):
             gridspec.update(**gridspec_kw)
         else:
             # New gridspec
-            gridspec = FlexibleGridSpec(self, **gridspec_kw)
+            gridspec = GridSpec(self, **gridspec_kw)
             self._gridspec_main = gridspec
             # Reassign subplotspecs to all axes and update positions
             # May seem inefficient but it literally just assigns a hidden,
@@ -1873,12 +1839,12 @@ def subplots(array=None, ncols=1, nrows=1,
     hratios, wratios
         Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
-        Passed to `FlexibleGridSpec`. The width
+        Passed to `GridSpec`. The width
         and height ratios for the subplot grid. Length of `width_ratios`
         must match the number of rows, and length of `height_ratios` must
         match the number of columns.
     wspace, hspace, space : float or str or list thereof, optional
-        Passed to `FlexibleGridSpec`, denotes the
+        Passed to `GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
         or string, expanded into lists of length ``ncols-1`` (for `wspace`)
         or length ``nrows-1`` (for `hspace`).
@@ -1887,9 +1853,9 @@ def subplots(array=None, ncols=1, nrows=1,
         the list. By default, these are determined by the "tight
         layout" algorithm.
     left, right, top, bottom : float or str, optional
-        Passed to `FlexibleGridSpec`, denote the width of padding between the
+        Passed to `GridSpec`. Denotes the width of padding between the
         subplots and the figure edge. Units are interpreted by
-        `~proplot.utils.units`. By default, these are determined by the
+        `~proplot.utils.units`. By default, padding is determined by the
         "tight layout" algorithm.
 
     sharex, sharey, share : {3, 2, 1, 0}, optional
