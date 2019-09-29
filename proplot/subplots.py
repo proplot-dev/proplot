@@ -41,6 +41,7 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from numbers import Integral
+from matplotlib import docstring
 from matplotlib.gridspec import SubplotSpec
 try:
     import matplotlib.backends.backend_macosx as mbackend
@@ -50,7 +51,7 @@ from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
 __all__ = [
-    'axes_grid', 'close', 'show', 'subplots', 'Figure', 'GridSpec',
+    'axes_grid', 'close', 'figure', 'show', 'subplots', 'Figure', 'GridSpec',
     ]
 
 # Translation
@@ -704,56 +705,57 @@ class _hidelabels(object):
         for label in self._labels:
             label.set_visible(True)
 
+# TODO: obfuscate Figure call signature like with axes methods?
+figure_kwargs = """
+tight : bool, optional
+    Toggles automatic tight layout adjustments. Default is
+    :rc:`tight`.
+pad : float or str, optional
+    Padding around edge of figure. Units are interpreted by
+    `~proplot.utils.units`. Default is :rc:`subplots.pad`.
+axpad : float or str, optional
+    Padding between subplots in adjacent columns and rows. Units are
+    interpreted by `~proplot.utils.units`. Default is
+    :rc:`subplots.axpad`.
+panelpad : float or str, optional
+    Padding between subplots and axes panels, and between "stacked"
+    panels. Units are interpreted by `~proplot.utils.units`.Default is
+    :rc:`subplots.panelpad`.
+includepanels : bool, optional
+    Whether to include panels when centering *x* axis labels,
+    *y* axis labels, and figure "super titles" along the edge of the
+    subplot grid. Default is ``False``.
+autoformat : bool, optional
+    Whether to automatically configure *x* axis labels, *y* axis
+    labels, axis formatters, axes titles, colorbar labels, and legend
+    labels when a `~pandas.Series`, `~pandas.DataFrame` or
+    `~xarray.DataArray` with relevant metadata is passed to a plotting
+    command.
+"""
+docstring.interpd.update(figure_kwargs=figure_kwargs.strip())
+
 class Figure(mfigure.Figure):
     """The `~matplotlib.figure.Figure` class returned by `subplots`. At
     draw-time, an improved tight layout algorithm is employed, and
     the space around the figure edge, between subplots, and between
     panels is changed to accommodate subplot content. Figure dimensions
     may be automatically scaled to preserve subplot aspect ratios."""
+    @docstring.dedent_interpd
     def __init__(self,
         tight=None,
         pad=None, axpad=None, panelpad=None, includepanels=False,
-        autoformat=True,
-        ref=1, order='C', # documented in subplots but needed here
+        autoformat=True, ref_num=1, # ref_num should never change
         subplots_kw=None, gridspec_kw=None, subplots_orig_kw=None,
         tight_layout=None, constrained_layout=None,
         **kwargs):
         """
         Parameters
         ----------
-        tight : bool, optional
-            Toggles automatic tight layout adjustments. Default is
-            :rc:`tight`.
-        pad : float or str, optional
-            Padding around edge of figure. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`subplots.pad`.
-        axpad : float or str, optional
-            Padding between subplots in adjacent columns and rows. Units are
-            interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.axpad`.
-        panelpad : float or str, optional
-            Padding between subplots and axes panels, and between "stacked"
-            panels. Units are interpreted by `~proplot.utils.units`.Default is
-            :rc:`subplots.panelpad`.
-        includepanels : bool, optional
-            Whether to include panels when centering *x* axis labels,
-            *y* axis labels, and figure "super titles" along the edge of the
-            subplot grid. Default is ``False``.
-        autoformat : bool, optional
-            Whether to automatically configure *x* axis labels, *y* axis
-            labels, axis formatters, axes titles, colorbar labels, and legend
-            labels when a `~pandas.Series`, `~pandas.DataFrame` or
-            `~xarray.DataArray` with relevant metadata is passed to a plotting
-            command.
+        %(figure_kwargs)s
         gridspec_kw, subplots_kw, subplots_orig_kw
             Keywords used for initializing the main gridspec, for initializing
             the figure, and original spacing keyword args used for initializing
             the figure that override tight layout spacing.
-
-        Other parameters
-        ----------------
-        ref, order
-            Documented in `subplots`.
         tight_layout, constrained_layout
             Ignored, because ProPlot uses its own tight layout algorithm.
         **kwargs
@@ -771,7 +773,6 @@ class Figure(mfigure.Figure):
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
-        self._order = order # used for configuring panel axes_grids
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
@@ -1709,7 +1710,7 @@ class Figure(mfigure.Figure):
         return axs
 
 #-----------------------------------------------------------------------------#
-# Primary plotting function, used to create figure/axes
+# Primary functions used to create figures and axes
 #-----------------------------------------------------------------------------#
 def _journals(journal):
     """Journal sizes for figures."""
@@ -1766,6 +1767,26 @@ def _axes_dict(naxs, value, kw=False, default=None):
         raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i) for i in sorted(kwargs.keys()))}.')
     return kwargs
 
+# TODO: Figure out how to save subplots keyword args!
+@docstring.dedent_interpd
+def figure(**kwargs):
+    """
+    Analogous to `matplotlib.pyplot.figure`, creates an empty figure meant
+    to be filled with axes using `Figure.add_subplot`.
+
+    Parameters
+    ----------
+    %(figure_kwargs)s
+    **kwargs
+        Passed to `~matplotlib.figure.Figure`.
+    """
+    # TODO: Repair subplots-dependent behavior! Permit serial args!
+    kwargs['gridspec_kw'] = None
+    kwargs['subplots_kw'] = None
+    kwargs['subplots_orig_kw'] = None
+    return plt.figure(FigureClass=Figure, **kwargs)
+
+@docstring.dedent_interpd
 def subplots(array=None, ncols=1, nrows=1,
     ref=1, order='C',
     aspect=1, figsize=None,
@@ -1922,23 +1943,7 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Other parameters
     ----------------
-    tight : bool, optional
-        Toggles automatic tight layout adjustments. Default is
-        :rc:`tight`.
-
-        If you manually specify a spacing, it will be used
-        to override the tight layout spacing -- for example, with ``left=0.1``,
-        the left margin is set to 0.1 inches wide, while the remaining margin
-        widths are calculated automatically.
-    pad, axpad, panelpad : float or str, optional
-        Padding for automatic tight layout adjustments. See `Figure` for
-        details.
-    includepanels : bool, optional
-        Whether to include panels when calculating the position of certain
-        spanning labels. See `Figure` for details.
-    autoformat : bool, optional
-        Whether to automatically format axes when special datasets are
-        passed to plotting commands. See `Figure` for details.
+    %(figure_kwargs)s
 
     Returns
     -------
@@ -2120,7 +2125,8 @@ def subplots(array=None, ncols=1, nrows=1,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
         wpanels=['']*ncols, hpanels=['']*nrows,
         )
-    fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize, ref=ref,
+    fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize,
+        ref_num=ref,
         pad=pad, axpad=axpad, panelpad=panelpad, autoformat=autoformat,
         includepanels=includepanels,
         subplots_orig_kw=subplots_orig_kw, subplots_kw=subplots_kw,
