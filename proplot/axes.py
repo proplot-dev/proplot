@@ -29,6 +29,7 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
+from matplotlib import docstring
 from . import utils, projs, axistools
 from .utils import _notNone, units
 from .rctools import rc, RC_NODOTSNAMES
@@ -976,6 +977,7 @@ class Axes(maxes.Axes):
             self.yaxis.set_visible(False)
             self.patch.set_alpha(0)
             self._panel_filled = True
+
             # Draw colorbar with arbitrary length relative to full length of panel
             side = self._panel_side
             length = _notNone(length, rc['colorbar.length'])
@@ -996,11 +998,11 @@ class Axes(maxes.Axes):
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subplotspec = gridspec[1]
-            with self.figure._unlock():
-                ax = self.figure.add_subplot(subplotspec, projection=None)
+            ax = self.figure.add_subplot(subplotspec, projection=None)
             if ax is self:
                 raise ValueError(f'Uh oh.')
             self.add_child_axes(ax)
+
             # Location
             if side in ('bottom','top'):
                 outside, inside = 'bottom', 'top'
@@ -1014,6 +1016,7 @@ class Axes(maxes.Axes):
                     outside, inside = inside, outside
                 ticklocation = outside
                 orientation  = 'vertical'
+
             # Keyword args and add as child axes
             orient = kwargs.get('orientation', None)
             if orient is not None and orient != orientation:
@@ -1032,6 +1035,7 @@ class Axes(maxes.Axes):
             cblength = units(_notNone(cblength, rc['colorbar.insetlength']))/width
             pad = units(_notNone(pad, rc['colorbar.axespad']))
             xpad, ypad = pad/width, pad/height
+
             # Get location in axes-relative coordinates
             # Bounds are x0, y0, width, height in axes-relative coordinate to start
             if kwargs.get('label', ''):
@@ -1055,6 +1059,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid colorbar location {loc!r}.')
             bounds = (bounds[0], bounds[1], cblength, cbwidth)
             fbounds = (fbounds[0], fbounds[1], 2*xpad + cblength, 2*ypad + cbwidth + xspace)
+
             # Make frame
             # NOTE: We do not allow shadow effects or fancy edges effect.
             # Also keep zorder same as with legend.
@@ -1072,12 +1077,14 @@ class Axes(maxes.Axes):
                 patch.update({'alpha':alpha, 'linewidth':linewidth,
                               'edgecolor':edgecolor, 'facecolor':facecolor})
                 self.add_artist(patch)
+
             # Make axes
             locator = self._make_inset_locator(bounds, self.transAxes)
             bbox = locator(None, None)
             ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
             ax.set_axes_locator(locator)
             self.add_child_axes(ax)
+
             # Default keyword args
             orient = kwargs.pop('orientation', None)
             if orient is not None and orient != 'horizontal':
@@ -1477,9 +1484,25 @@ class Axes(maxes.Axes):
 #-----------------------------------------------------------------------------#
 # Axes subclasses
 #-----------------------------------------------------------------------------#
+twinx_descrip = """
+Permits only two "twins" at a time; locks *x*-axis limits and scales; places
+the original *y*-axis on the left and "twin" *y*-axis on the right; makes the
+original right spine invisible and the "twin" left, bottom, and top spines
+invisible; and adjusts tick, tick label, and axis label positions accordingly.
+"""
+twiny_descrip = """
+Permits only two "twins" at a time; locks *y*-axis limits and scales; places
+the original *x*-axis on the bottom and "twin" *x*-axis on the top; makes the
+original top spine invisible and the "twin" bottom, left, and right spines
+invisible; and adjusts tick, tick label, and axis label positions accordingly.
+"""
+docstring.interpd.update(twinx_descrip=twinx_descrip.strip())
+docstring.interpd.update(twiny_descrip=twiny_descrip.strip())
+
 def _rcloc_to_stringloc(x, string): # figures out string location
-    """Gets *location string* from the *boolean* rc settings, for a given
-    string prefix like ``'axes.spines'`` or ``'xtick'``."""
+    """Gets *location string* from the *boolean* "left", "right", "top", and
+    "bottom" rc settings, e.g. :rc:`axes.spines.left` or :rc:`ytick.left`.
+    Might be ``None`` if settings are unchanged."""
     if x == 'x':
         top = rc[f'{string}.top']
         bottom = rc[f'{string}.bottom']
@@ -1493,7 +1516,7 @@ def _rcloc_to_stringloc(x, string): # figures out string location
             return 'bottom'
         else:
             return 'neither'
-    elif x == 'y':
+    else:
         left = rc[f'{string}.left']
         right = rc[f'{string}.right']
         if left is None and right is None:
@@ -1506,8 +1529,6 @@ def _rcloc_to_stringloc(x, string): # figures out string location
             return 'right'
         else:
             return 'neither'
-    else:
-        raise ValueError(f'"x" must equal "x" or "y".')
 
 class CartesianAxes(Axes):
     """
@@ -2189,10 +2210,13 @@ class CartesianAxes(Axes):
                 self.set_aspect(aspect)
             super().format(**kwargs)
 
+    @docstring.dedent_interpd
     def altx(self, *args, **kwargs):
         """Alias and more intuitive name for `~CartesianAxes.twiny`.
         The matplotlib `~matplotlib.axes.Axes.twiny` function
-        generates two *x*-axes with a shared ("twin") *y*-axis."""
+        generates two *x*-axes with a shared ("twin") *y*-axis.
+
+        %(twiny_descrip)s"""
         # Cannot wrap twiny() because we want to use CartesianAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
@@ -2200,9 +2224,8 @@ class CartesianAxes(Axes):
             raise ValueError('No more than *two* twin axes!')
         if self._altx_parent:
             raise ValueError('This *is* a twin axes!')
-        with self.figure._unlock():
-            ax = self._make_twin_axes(sharey=self, projection='cartesian')
-        # ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
+        ax = self._make_twin_axes(sharey=self, projection='cartesian')
+        ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
         ax._altx_parent = self
@@ -2211,18 +2234,20 @@ class CartesianAxes(Axes):
         self.add_child_axes(ax)
         return ax
 
+    @docstring.dedent_interpd
     def alty(self):
         """Alias and more intuitive name for `~CartesianAxes.twinx`.
         The matplotlib `~matplotlib.axes.Axes.twinx` function
-        generates two *y*-axes with a shared ("twin") *x*-axis."""
+        generates two *y*-axes with a shared ("twin") *x*-axis.
+
+        %(twinx_descrip)s"""
         # Must reproduce twinx here because need to generate CartesianAxes
         if self._alty_child:
             raise ValueError('No more than *two* twin axes!')
         if self._alty_parent:
             raise ValueError('This *is* a twin axes!')
-        with self.figure._unlock():
-            ax = self._make_twin_axes(sharex=self, projection='cartesian')
-        # ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
+        ax = self._make_twin_axes(sharex=self, projection='cartesian')
+        ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax
         ax._alty_parent = self
@@ -2345,16 +2370,16 @@ class CartesianAxes(Axes):
         self._alty_overrides()
         return super().get_tightbbox(renderer, *args, **kwargs)
 
+    @docstring.dedent_interpd
     def twinx(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` and intelligently
-        handles axis ticks, gridlines, axis tick labels, axis labels, and axis
-        sharing. Returns a `CartesianAxes` instance."""
+        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` with stricter
+        settings. %(twinx_descrip)s"""
         return self.alty()
 
+    @docstring.dedent_interpd
     def twiny(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny` and intelligently
-        handles axis ticks, gridlines, axis tick labels, axis labels, and axis
-        sharing. Returns a `CartesianAxes` instance."""
+        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny` with stricter
+        settings. %(twiny_descrip)s"""
         return self.altx()
 
 class PolarAxes(Axes, mproj.PolarAxes):

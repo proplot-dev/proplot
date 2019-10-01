@@ -127,10 +127,11 @@ def Proj(name, basemap=False, **kwargs):
         The projection name. For a table of valid names, see the
         `~proplot.projs` documentation.
     basemap : bool, optional
-        Whether to use the basemap or cartopy package. Default is ``False``.
+        Whether to use the basemap or cartopy package. Default is
+        ``False``.
     **kwargs
-        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-        initializers.
+        Passed to the `~mpl_toolkits.basemap.Basemap` or
+        cartopy `~cartopy.crs.Projection` class.
 
     Returns
     -------
