@@ -309,11 +309,6 @@ class Axes(maxes.Axes):
             obj.set_transform(self.transAxes)
         return loc, obj, kw
 
-    def _hide_labels(self):
-        """Defaults as a no-op. Implemented only for cartesian axes."""
-        # TODO: Implement for rectangular projection axes!
-        pass
-
     @staticmethod
     def _loc_translate(loc, **kwargs):
         """Translates location string `loc` into a standardized form."""
@@ -1187,7 +1182,6 @@ class Axes(maxes.Axes):
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
-        self._hide_labels()
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
@@ -1201,7 +1195,6 @@ class Axes(maxes.Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated, and stores the bounding box as an attribute."""
-        self._hide_labels()
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
@@ -2363,6 +2356,7 @@ class CartesianAxes(Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated."""
+        self._hide_labels()
         self._datex_rotate()
         self._dualx_lock()
         self._dualy_lock()
@@ -3058,6 +3052,11 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             'linewidth': 'geoaxes.linewidth'
             })
         self.outline_patch.update(kw_edge)
+
+    def _hide_labels(self):
+        """No-op for now. In future will hide meridian and parallel labels
+        for rectangular projections."""
+        pass
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Draw gridliner objects so tight bounding box algorithm will
