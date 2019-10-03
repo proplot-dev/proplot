@@ -1111,8 +1111,8 @@ class Figure(mfigure.Figure):
                 continue
             for x,axis in zip('xy', (ax.xaxis, ax.yaxis)):
                 s = axis.get_label_position()[0] # top or bottom, left or right
-                span = getattr(ax, '_span' + x)
-                align = getattr(ax, '_align' + x)
+                span = getattr(ax, '_span' + x + '_on')
+                align = getattr(ax, '_align' + x + '_on')
                 if s not in 'bl' or axis in tracker:
                     continue
                 axs = ax._get_side_axes(s)
@@ -1393,15 +1393,13 @@ class Figure(mfigure.Figure):
 
         # Defer to parent (main) axes if possible, then get the axes
         # shared by that parent
-        # TODO: Share panels in successive stacks, but share short axes
-        # just like sharing long axes
         ax = axis.axes
         ax = ax._panel_parent or ax
         ax = getattr(ax, '_share' + x) or ax
 
         # Apply to spanning axes and their panels
         axs = [ax]
-        if getattr(ax, '_span' + x):
+        if getattr(ax, '_span' + x + '_on'):
             s = axis.get_label_position()[0]
             if s in 'lb':
                 axs = ax._get_side_axes(s)

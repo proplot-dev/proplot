@@ -189,10 +189,10 @@ class Axes(maxes.Axes):
         # Shared and spanning axes
         if main:
             self.figure._axes_main.append(self)
-        self._spanx = spanx # boolean toggles, whether we want to span axes labels
-        self._spany = spany
-        self._alignx = alignx
-        self._aligny = aligny
+        self._spanx_on = spanx
+        self._spany_on = spany
+        self._alignx_on = alignx
+        self._aligny_on = aligny
         self._sharex_level = sharex
         self._sharey_level = sharey
         self._share_setup()
@@ -1478,16 +1478,28 @@ class Axes(maxes.Axes):
 # Axes subclasses
 #-----------------------------------------------------------------------------#
 twinx_descrip = """
-Permits only two "twins" at a time; locks *x*-axis limits and scales; places
-the original *y*-axis on the left and "twin" *y*-axis on the right; makes the
-original right spine invisible and the "twin" left, bottom, and top spines
-invisible; and adjusts tick, tick label, and axis label positions accordingly.
+Enforces the following settings.
+
+* Places the old *y* axis on the left and the new *y* axis
+  on the right.
+* Makes the old right spine invisible and the new left, bottom,
+  and top spines invisible.
+* Adjusts the *y* axis tick, tick label, and axis label positions
+  according to the visible spine position.
+* Locks the old and new *x* axis limits and scales.
+* Makes the new *x* axis labels invisible.
 """
 twiny_descrip = """
-Permits only two "twins" at a time; locks *y*-axis limits and scales; places
-the original *x*-axis on the bottom and "twin" *x*-axis on the top; makes the
-original top spine invisible and the "twin" bottom, left, and right spines
-invisible; and adjusts tick, tick label, and axis label positions accordingly.
+Enforces the following settings.
+
+* Places the old *x* axis on the bottom and the new *x* axis
+  on the top.
+* Makes the old top spine invisible and the new bottom, left,
+  and right spines invisible.
+* Adjusts the *x* axis tick, tick label, and axis label positions
+  according to the visible spine position.
+* Locks the old and new *y* axis limits and scales.
+* Makes all old *y* axis labels invisible.
 """
 docstring.interpd.update(twinx_descrip=twinx_descrip.strip())
 docstring.interpd.update(twiny_descrip=twiny_descrip.strip())
@@ -1553,6 +1565,7 @@ class CartesianAxes(Axes):
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None: # altx was called on this axes
+            self._shared_y_axes.join(self, self._altx_child)
             self.spines['top'].set_visible(False)
             self.spines['bottom'].set_visible(True)
             self.xaxis.tick_bottom()
@@ -1570,6 +1583,7 @@ class CartesianAxes(Axes):
     def _alty_overrides(self):
         """Applies alternate *y* axis overrides."""
         if self._alty_child is not None:
+            self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
             self.spines['left'].set_visible(True)
             self.yaxis.tick_left()
@@ -1601,7 +1615,7 @@ class CartesianAxes(Axes):
         self._datex_rotated = True # do not need to apply more than once
 
     def _dualx_lock(self):
-        """Locks child "dual" x-axis limits to the parent."""
+        """Locks child "dual" *x* axis limits to the parent."""
         # Why did I copy and paste the dualx/dualy code you ask? Copy
         # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
         scale = self._dualx_scale
@@ -1622,7 +1636,7 @@ class CartesianAxes(Axes):
         child.set_xlim(scale[0] + scale[1]*nlim)
 
     def _dualy_lock(self):
-        """Locks child "dual" y-axis limits to the parent."""
+        """Locks child "dual" *y* axis limits to the parent."""
         scale = self._dualy_scale
         if scale is None:
             return
@@ -1653,8 +1667,7 @@ class CartesianAxes(Axes):
                     axis.set_major_formatter(mticker.NullFormatter())
             # Enforce no minor ticks labels
             # TODO: Document this?
-            if not isinstance(axis.get_minor_formatter(), mticker.NullFormatter):
-                axis.set_minor_formatter(mticker.NullFormatter())
+            axis.set_minor_formatter(mticker.NullFormatter())
 
     def _sharex_setup(self, sharex, level):
         """Sets up shared axes. The input is the 'parent' axes, from which
@@ -1840,7 +1853,7 @@ class CartesianAxes(Axes):
         ----
         If you plot something with a `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
         `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
-        `datetime.time`, or `datetime.datetime` array as the *x* or *y*-axis
+        `datetime.time`, or `datetime.datetime` array as the *x* or *y* axis
         coordinate, the axis ticks and tick labels will be automatically
         formatted as dates.
 
@@ -2207,7 +2220,7 @@ class CartesianAxes(Axes):
     def altx(self, *args, **kwargs):
         """Alias and more intuitive name for `~CartesianAxes.twiny`.
         The matplotlib `~matplotlib.axes.Axes.twiny` function
-        generates two *x*-axes with a shared ("twin") *y*-axis.
+        generates two *x* axes with a shared ("twin") *y* axis.
 
         %(twiny_descrip)s"""
         # Cannot wrap twiny() because we want to use CartesianAxes, not
@@ -2231,7 +2244,7 @@ class CartesianAxes(Axes):
     def alty(self):
         """Alias and more intuitive name for `~CartesianAxes.twinx`.
         The matplotlib `~matplotlib.axes.Axes.twinx` function
-        generates two *y*-axes with a shared ("twin") *x*-axis.
+        generates two *y* axes with a shared ("twin") *x* axis.
 
         %(twinx_descrip)s"""
         # Must reproduce twinx here because need to generate CartesianAxes
@@ -2251,7 +2264,7 @@ class CartesianAxes(Axes):
 
     def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
         """
-        Makes a secondary *x*-axis for denoting equivalent *x*
+        Makes a secondary *x* axis for denoting equivalent *x*
         coordinates in *alternate units*. Returns nothing.
 
         Parameters
@@ -2259,18 +2272,18 @@ class CartesianAxes(Axes):
         scale : float, optional
             The constant multiple applied after scaling data with `transform`.
             Default is ``1``.
-            For example, if your *x*-axis is meters and you
+            For example, if your *x* axis is meters and you
             want kilometers on the other side, use ``scale=1e-3``.
         offset : float, optional
             The constant offset added after multipyling by `scale`.
             Default is ``0``.
-            For example, if your *x*-axis is Kelvin and you want degrees
+            For example, if your *x* axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
         xscale : str, optional
             The registered scale name used to transform data to the alternate
             units.  Default is ``'linear'``.
-            For example, if your *x*-axis is wavenumber and you want wavelength
-            on the opposite side, use ``xscale='inverse'``. If your *x*-axis
+            For example, if your *x* axis is wavenumber and you want wavelength
+            on the opposite side, use ``xscale='inverse'``. If your *x* axis
             is height and you want pressure on the opposite side, use
             ``xscale='pressure'``. For the opposite, use ``xscale='height'``.
         xlabel : str, optional
@@ -2300,7 +2313,7 @@ class CartesianAxes(Axes):
 
     def dualy(self, offset=0, scale=1, yscale='linear', ylabel=None, **kwargs):
         """
-        Makes a secondary *y*-axis for denoting equivalent *y*
+        Makes a secondary *y* axis for denoting equivalent *y*
         coordinates in *alternate units*. Returns nothing.
 
         Parameters
@@ -2308,18 +2321,18 @@ class CartesianAxes(Axes):
         scale : float, optional
             The constant multiple applied after scaling data with `transform`.
             Default is ``1``.
-            For example, if your *y*-axis is meters and you
+            For example, if your *y* axis is meters and you
             want kilometers on the other side, use ``scale=1e-3``.
         offset : float, optional
             The constant offset added after multipyling by `scale`.
             Default is ``0``.
-            For example, if your *y*-axis is Kelvin and you want degrees
+            For example, if your *y* axis is Kelvin and you want degrees
             Celsius on the opposite side, use ``offset=-273.15``.
         yscale : str, optional
             The registered scale name used to transform data to the alternate
             units.  Default is ``'linear'``.
-            For example, if your *y*-axis is wavenumber and you want wavelength
-            on the opposite side, use ``yscale='inverse'``. If your *y*-axis
+            For example, if your *y* axis is wavenumber and you want wavelength
+            on the opposite side, use ``yscale='inverse'``. If your *y* axis
             is height and you want pressure on the opposite side, use
             ``yscale='pressure'``. For the opposite, use ``xscale='height'``.
         ylabel : str, optional
@@ -2366,14 +2379,16 @@ class CartesianAxes(Axes):
 
     @docstring.dedent_interpd
     def twinx(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` with stricter
-        settings. %(twinx_descrip)s"""
+        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx`.
+
+        %(twinx_descrip)s"""
         return self.alty()
 
     @docstring.dedent_interpd
     def twiny(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny` with stricter
-        settings. %(twiny_descrip)s"""
+        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny`.
+
+        %(twiny_descrip)s"""
         return self.altx()
 
 class PolarAxes(Axes, mproj.PolarAxes):
