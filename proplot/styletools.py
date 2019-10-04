@@ -958,9 +958,10 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
         one argument is passed, the resulting colormaps are merged. Arguments
         are interpreted as follows.
 
-        * If `~matplotlib.colors.LinearSegmentedColormap`, nothing more is done.
+        * If `~matplotlib.colors.LinearSegmentedColormap`, nothing more
+          is done.
         * If string colormap name, that `~matplotlib.colors.LinearSegmentedColormap`
-          is looked up and used.
+          is looked up and used. See `cmaps`.
         * If RGB tuple or color string, a `PerceptuallyUniformColormap` is
           generated with `monochrome_cmap`. If the string ends in ``'_r'``,
           the monochrome map will be *reversed*, i.e. will go from dark to light
@@ -989,7 +990,6 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
         ``'listed'``, the `~matplotlib.colors.ListedColormap` is generated.
         Default is ``'perceptual'`` when calling `Colormap` directly, and
         ``'listed'`` when `Colormap` is called by `Cycle`.
-    perceptual : bool, optional
     fade : float, optional
         The maximum luminosity used when generating `monochrome_cmap` colormaps.
         Default is ``100`` when calling `Colormap` directly, and ``90`` when
@@ -1201,7 +1201,8 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
 
 def Cycle(*args, samples=None, name=None, save=False,
     marker=None, alpha=None, dashes=None, linestyle=None, linewidth=None,
-    markersize=None, markeredgewidth=None, markeredgecolor=None, markerfacecolor=None,
+    markersize=None, markeredgewidth=None,
+    markeredgecolor=None, markerfacecolor=None,
     **kwargs):
     """
     Function for generating and merging `~cycler.Cycler` instances in a variety of ways;
@@ -1220,12 +1221,14 @@ def Cycle(*args, samples=None, name=None, save=False,
         object. If more than one argument is passed, the resulting cycles are
         merged. Arguments are interpreted as follows.
 
-        * If `~cycler.Cycler`, nothing more is done.
-        * If list of RGB tuples or color strings, these colors are used.
+        * If `~cycler.Cycler`, nothing more
+          is done.
+        * If list of RGB tuples or color strings, these
+          colors are used.
         * If `~matplotlib.colors.ListedColormap`, colors from the ``colors``
           attribute are used.
         * If string color cycle name, that `~matplotlib.colors.ListedColormap`
-          is looked up and its ``colors`` attribute is used.
+          is looked up and its ``colors`` attribute is used. See `cycles`.
         * Otherwise, the argument is passed to `Colormap`, and colors
           from the resulting `~matplotlib.colors.LinearSegmentedColormap`
           are used. See the `samples` argument.
