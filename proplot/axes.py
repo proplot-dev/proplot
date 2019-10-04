@@ -1511,26 +1511,25 @@ Enforces the following settings.
 docstring.interpd.update(twinx_descrip=twinx_descrip.strip())
 docstring.interpd.update(twiny_descrip=twiny_descrip.strip())
 
-def _check_dualxy_scales(lim, scale, nscale):
-    """Checks scales of axes."""
-
 def _parse_dualxy_args(axis, transform, transform_kw, scale, scale_kw, kwargs):
     """Interprets the dualx and dualy transform and keyword arguments."""
-    # Parse transform, construct scale and forward transform
+    # Interpret scale and also apply to *this* axes!
     x = axis.axis_name
+    if scale is not None:
+        scale = axistools.Scale(scale, **scale_kw) # no function scale needed
+        getattr(axis.axes, 'set_' + x + 'scale')(scale)
+    # Parse transform, construct function scale and forward transform
     scale_kw = scale_kw or {}
     transform_kw = transform_kw or {}
     if callable(transform):
         # Not necessary to scale data
         func = transform # forward-func
-        scale = axistools.Scale(scale or 'linear', **scale_kw) # no function scale needed
         if transform_kw:
             warnings.warn(f'Ignoring transform_kw arguments: {transform_kw}')
     elif np.iterable(transform) and len(transform) == 2 and all(map(callable, transform)):
         # Forward func is identity transform, we rely on scale
         func = (lambda x: x)
-        scale = axistools.Scale(scale or 'linear', **scale_kw)
-        scale = axistools.Scale('function', transform[::-1], scale)
+        kwargs['scale'] = axistools.Scale('function', transform[::-1], scale)
         if transform_kw:
             warnings.warn(f'Ignoring transform_kw arguments: {transform_kw}')
     else:
@@ -1538,9 +1537,7 @@ def _parse_dualxy_args(axis, transform, transform_kw, scale, scale_kw, kwargs):
         func = (lambda x: x)
         transform = axistools.Scale(transform, **transform_kw).get_transform()
         transform = (transform.transform, transform.inverted().transform)
-        scale = axistools.Scale(scale or 'linear', **scale_kw)
-        scale = axistools.Scale('function', transform[::-1], scale)
-    kwargs['scale'] = scale
+        kwargs['scale'] = axistools.Scale('function', transform[::-1], scale)
     # Parse keyword arguments
     kwargs_bad = {}
     for key in (*kwargs.keys(),):
@@ -1554,7 +1551,7 @@ def _parse_dualxy_args(axis, transform, transform_kw, scale, scale_kw, kwargs):
             kwargs_bad[key] = value
         if kwargs_bad:
             raise TypeError(f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}')
-    return scale, kwargs
+    return func, kwargs
 
 def _rcloc_to_stringloc(x, string): # figures out string location
     """Gets *location string* from the *boolean* "left", "right", "top", and
