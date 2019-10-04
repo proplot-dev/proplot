@@ -21,7 +21,8 @@ __all__ = [
     'formatters', 'locators', 'scales',
     'Formatter', 'Locator', 'Scale',
     'AutoFormatter', 'CutoffScaleFactory', 'ExpScaleFactory',
-    'FracFormatter', 'InverseScale', 'InvertedScaleFactory',
+    'FracFormatter', 'FuncScale',
+    'InverseScale', 'InvertedScaleFactory',
     'LogScale',
     'MercatorLatitudeScale', 'PowerScaleFactory', 'SimpleFormatter',
     'SineLatitudeScale',
@@ -554,6 +555,75 @@ class SymmetricalLogScale(mscale.SymmetricalLogScale):
         super().__init__(axis, **kwargs)
 
 #-----------------------------------------------------------------------------#
+# Scales from functions and other scales
+#-----------------------------------------------------------------------------#
+def InvertedScaleFactory(scale, name=None):
+    """Returns name of newly registered *inverted* version of the
+    `~matplotlib.scale.ScaleBase` specified by ``scale``. The default
+    scale name is ``'{scale}_inverted'``."""
+    if not isinstance(scale, str):
+        raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
+    if scale in scales:
+        scale = scales[scale]
+    else:
+        raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
+    name_ = name or f'{scale.name}_inverted' # name of inverted version
+    class InvertedScale(scale):
+        name = name_
+        def get_transform(self):
+            return super().get_transform().inverted() # that's all we need!
+    mscale.register_scale(InvertedScale)
+    return InvertedScale
+
+class FuncScale(mscale.ScaleBase):
+    """Arbitrary scale with user-supplied forward and inverse functions and
+    arbitrary additional transform applied thereafter. Input is a tuple
+    of functions and, optionally, a `~matplotlib.transforms.Transform` or
+    `~matplotlib.scale.ScaleBase` instance."""
+    name = 'function'
+    def __init__(self, axis, functions, scale=None):
+        forward, inverse = functions
+        transform = _FuncTransform(forward, inverse)
+        if scale is not None:
+            if isinstance(scale, mtransforms.Transform):
+                transform = transform + scale
+            elif isinstance(scale, mscale.ScaleBase):
+                transform = transform + scale.get_transform()
+            else:
+                raise ValueError(f'scale {scale!r} must be a Transform or ScaleBase instance, not {type(scale)!r}.')
+        self._transform = transform
+    def get_transform(self):
+        return self._transform
+    def set_default_locators_and_formatters(self, axis):
+        axis.set_major_locator(AutoLocator())
+        axis.set_major_formatter(ScalarFormatter())
+        axis.set_minor_formatter(NullFormatter())
+        # update the minor locator for x and y axis based on rcParams
+        if (axis.axis_name == 'x' and rcParams['xtick.minor.visible']
+            or axis.axis_name == 'y' and rcParams['ytick.minor.visible']):
+            axis.set_minor_locator(AutoMinorLocator())
+        else:
+            axis.set_minor_locator(NullLocator())
+
+class _FuncTransform(mtransforms.Transform):
+    """Arbitrary forward and inverse transform."""
+    input_dims = 1
+    output_dims = 1
+    is_separable = True
+    has_inverse = True
+    def __init__(self, forward, inverse):
+        super().__init__()
+        if callable(forward) and callable(inverse):
+            self._forward = forward
+            self._inverse = inverse
+        else:
+            raise ValueError('arguments to FuncTransform must be functions')
+    def transform_non_affine(self, values):
+        return self._forward(values)
+    def inverted(self):
+        return FuncTransform(self._inverse, self._forward)
+
+#-----------------------------------------------------------------------------#
 # Power axis scale
 #-----------------------------------------------------------------------------#
 def PowerScaleFactory(power, inverse=False, name=None):
@@ -1059,24 +1129,6 @@ class _InverseTransform(mtransforms.Transform):
     def inverted(self):
         return _InverseTransform(self.minpos)
 
-def InvertedScaleFactory(scale, name=None):
-    """Returns name of newly registered *inverted* version of the
-    `~matplotlib.scale.ScaleBase` specified by ``scale``. The default
-    scale name is ``'{scale}_inverted'``."""
-    if not isinstance(scale, str):
-        raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
-    if scale in scales:
-        scale = scales[scale]
-    else:
-        raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
-    name_ = name or f'{scale.name}_inverted' # name of inverted version
-    class InvertedScale(scale):
-        name = name_
-        def get_transform(self):
-            return super().get_transform().inverted() # that's all we need!
-    mscale.register_scale(InvertedScale)
-    return InvertedScale
-
 #-----------------------------------------------------------------------------#
 # Declare dictionaries
 # Includes some custom classes, so has to go at end
@@ -1146,6 +1198,7 @@ if mscale.scale_factory is not _scale_factory:
 
 # Custom scales and overrides
 mscale.register_scale(LogScale)
+mscale.register_scale(FuncScale)
 mscale.register_scale(SymmetricalLogScale)
 mscale.register_scale(InverseScale)
 mscale.register_scale(SineLatitudeScale)

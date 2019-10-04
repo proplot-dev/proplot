@@ -1478,7 +1478,7 @@ class Axes(maxes.Axes):
 # Axes subclasses
 #-----------------------------------------------------------------------------#
 dualxy_kwargs = (
-    'scale', 'label', 'locator', 'formatter', 'ticks', 'ticklabels',
+    'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
     'bounds', 'margin', 'color'
@@ -1511,28 +1511,35 @@ Enforces the following settings.
 docstring.interpd.update(twinx_descrip=twinx_descrip.strip())
 docstring.interpd.update(twiny_descrip=twiny_descrip.strip())
 
-def _parse_dualxy_args(x, transform, transform_kw, kwargs):
+def _check_dualxy_scales(lim, scale, nscale):
+    """Checks scales of axes."""
+
+def _parse_dualxy_args(axis, transform, transform_kw, scale, scale_kw, kwargs):
     """Interprets the dualx and dualy transform and keyword arguments."""
     # Parse transform, construct scale and forward transform
     x = axis.axis_name
+    scale_kw = scale_kw or {}
     transform_kw = transform_kw or {}
     if callable(transform):
         # Not necessary to scale data
         func = transform # forward-func
-        scale = 'linear'
+        scale = axistools.Scale(scale or 'linear', **scale_kw) # no function scale needed
         if transform_kw:
             warnings.warn(f'Ignoring transform_kw arguments: {transform_kw}')
     elif np.iterable(transform) and len(transform) == 2 and all(map(callable, transform)):
         # Forward func is identity transform, we rely on scale
         func = (lambda x: x)
-        scale = axistools.Scale('function', transform[::-1])
+        scale = axistools.Scale(scale or 'linear', **scale_kw)
+        scale = axistools.Scale('function', transform[::-1], scale)
         if transform_kw:
             warnings.warn(f'Ignoring transform_kw arguments: {transform_kw}')
     else:
         # Forward func is identity transform, we rely on scale
         func = (lambda x: x)
-        scale = axistools.Scale(transform, **transform_kw)
-        scale = axistools.InvertedScaleFactory(scale)
+        transform = axistools.Scale(transform, **transform_kw).get_transform()
+        transform = (transform.transform, transform.inverted().transform)
+        scale = axistools.Scale(scale or 'linear', **scale_kw)
+        scale = axistools.Scale('function', transform[::-1], scale)
     kwargs['scale'] = scale
     # Parse keyword arguments
     kwargs_bad = {}
@@ -1691,6 +1698,7 @@ class CartesianAxes(Axes):
         if func is None:
             return
         scale = self.get_yscale()
+        _check_dualxy_scales(self.get_yscale(), scale, lim)
         if scale != 'linear':
             warnings.warn(f'Parent y axis scale must be linear. Overriding current {scale!r} scale.')
             self.set_yscale('linear')
@@ -2319,7 +2327,9 @@ class CartesianAxes(Axes):
         self.add_child_axes(ax)
         return ax
 
-    def dualx(self, transform, transform_kw=None, **kwargs):
+    def dualx(self,
+        transform, transform_kw=None, scale=None, scale_kw=None,
+        **kwargs):
         f"""
         Makes a secondary *x* axis for denoting equivalent *x*
         coordinates in *alternate units*.
@@ -2342,6 +2352,17 @@ class CartesianAxes(Axes):
                function, use ``ax.dualx(('exp', 10))`` or
                ``ax.dualx(plot.Scale('exp', 10))``.
 
+        transform_kw : dict-like, optional
+            Passed to `~proplot.axistools.Scale`, used to generate the
+            transform `transform` if option 3 was used.
+        scale : scale-spec, optional
+            The axis scale to be applied *on top* of the `transform`
+            transform. Generally, you will only want to use this with options
+            1 and 2, for example if you want meters on one side, kilometers
+            on the other side, but logarithmic scaling for both.
+        scale_kw : dict-like, optional
+            Passed to `~proplot.axistools.Scale`, used to generate the scale
+            `scale`.
         {", ".join(dualxy_kwargs)} : optional
             Prepended with ``'x'`` and passed to `Axes.format`.
         """
@@ -2354,13 +2375,15 @@ class CartesianAxes(Axes):
         # transformation, not the backwards one), and does not invent a new
         # class with a bunch of complicated setters.
         ax = self.twiny()
-        func, kwargs = _parse_dualxy_args('x', transform, transform_kw, kwargs)
+        func, kwargs = _parse_dualxy_args(ax.xaxis, transform, transform_kw, scale, scale_kw, kwargs)
         self._dualx_func = func
         self._dualx_overrides()
         ax.format(**kwargs)
         return ax
 
-    def dualy(self, transform, transform_kw=None, **kwargs):
+    def dualy(self,
+        transform, transform_kw=None, scale=None, scale_kw=None,
+        **kwargs):
         f"""
         Makes a secondary *y* axis for denoting equivalent *y*
         coordinates in *alternate units*.
@@ -2383,11 +2406,22 @@ class CartesianAxes(Axes):
                function, use ``ax.dualy(('exp', 10))`` or
                ``ax.dualy(plot.Scale('exp', 10))``.
 
+        transform_kw : dict-like, optional
+            Passed to `~proplot.axistools.Scale`, used to generate the
+            transform `transform` if option 3 was used.
+        scale : scale-spec, optional
+            The axis scale to be applied *on top* of the `transform`
+            transform. Generally, you will only want to use this with options
+            1 and 2, for example if you want meters on one side, kilometers
+            on the other side, but logarithmic scaling for both.
+        scale_kw : dict-like, optional
+            Passed to `~proplot.axistools.Scale`, used to generate the scale
+            `scale`.
         {", ".join(dualxy_kwargs)} : optional
             Prepended with ``'y'`` and passed to `Axes.format`.
         """
         ax = self.twinx()
-        func, kwargs = _parse_dualxy_args('x', transform, transform_kw, kwargs)
+        func, kwargs = _parse_dualxy_args(ax.yaxis, transform, transform_kw, scale, scale_kw, kwargs)
         self._dualy_func = func
         self._dualy_overrides()
         ax.format(**kwargs)
