@@ -993,7 +993,8 @@ class Axes(maxes.Axes):
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subplotspec = gridspec[1]
-            ax = self.figure.add_subplot(subplotspec, projection=None)
+            with self.figure._unlock():
+                ax = self.figure.add_subplot(subplotspec, projection=None)
             if ax is self:
                 raise ValueError(f'Uh oh.')
             self.add_child_axes(ax)
@@ -2293,7 +2294,8 @@ class CartesianAxes(Axes):
             raise RuntimeError('No more than *two* twin axes!')
         if self._altx_parent:
             raise RuntimeError('This *is* a twin axes!')
-        ax = self._make_twin_axes(sharey=self, projection='cartesian')
+        with self.figure._unlock():
+            ax = self._make_twin_axes(sharey=self, projection='cartesian')
         ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
@@ -2314,7 +2316,8 @@ class CartesianAxes(Axes):
             raise RuntimeError('No more than *two* twin axes!')
         if self._alty_parent:
             raise RuntimeError('This *is* a twin axes!')
-        ax = self._make_twin_axes(sharex=self, projection='cartesian')
+        with self.figure._unlock():
+            ax = self._make_twin_axes(sharex=self, projection='cartesian')
         ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax

@@ -714,6 +714,16 @@ def _subplots_geometry(**kwargs):
 #-----------------------------------------------------------------------------#
 # Figure class and helper classes
 #-----------------------------------------------------------------------------#
+class _unlocker(object):
+    """Suppresses warning message when adding subplots, and cleanly resets
+    lock setting if exception raised."""
+    def __init__(self, fig):
+        self._fig = fig
+    def __enter__(self):
+        self._fig._locked = False
+    def __exit__(self, *args):
+        self._fig._locked = True
+
 class _hidelabels(object):
     """Hides objects temporarily so they are ignored by the tight bounding box
     algorithm."""
@@ -850,9 +860,10 @@ class Figure(mfigure.Figure):
                 idx2 += 1
 
         # Draw and setup panel
-        pax = self.add_subplot(gridspec[idx1,idx2],
-            sharex=ax._sharex_level, sharey=ax._sharey_level,
-            projection='cartesian')
+        with self._unlock():
+            pax = self.add_subplot(gridspec[idx1,idx2],
+                sharex=ax._sharex_level, sharey=ax._sharey_level,
+                projection='cartesian')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -949,8 +960,9 @@ class Figure(mfigure.Figure):
             )
 
         # Draw and setup panel
-        pax = self.add_subplot(gridspec[idx1,idx2],
-            projection='cartesian')
+        with self._unlock():
+            pax = self.add_subplot(gridspec[idx1,idx2],
+                projection='cartesian')
         getattr(self, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = False
@@ -1378,6 +1390,11 @@ class Figure(mfigure.Figure):
         axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
         ord = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _,ax in sorted(zip(ord, axs)) if ax.get_visible()]
+
+    def _unlock(self):
+        """Prevents warning message when adding subplots one-by-one, used
+        internally."""
+        return _unlocker(self)
 
     def _update_axislabels(self, axis=None, **kwargs):
         """Applies axis labels to the relevant shared axis. If spanning
@@ -2089,10 +2106,11 @@ def subplots(array=None, ncols=1, nrows=1,
         y0, y1 = yrange[idx,0], yrange[idx,1]
         # Draw subplot
         subplotspec = gridspec[y0:y1+1, x0:x1+1]
-        axs[idx] = fig.add_subplot(subplotspec, number=num,
-            spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-            sharex=sharex, sharey=sharey, main=True,
-            proj=proj[num], basemap=basemap[num], **proj_kw[num])
+        with fig._unlock():
+            axs[idx] = fig.add_subplot(subplotspec, number=num,
+                spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
+                sharex=sharex, sharey=sharey, main=True,
+                proj=proj[num], basemap=basemap[num], **proj_kw[num])
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
