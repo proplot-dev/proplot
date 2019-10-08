@@ -214,6 +214,8 @@ class Axes(maxes.Axes):
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
+        if not hasattr(self, 'get_subplotspec'):
+            return [self]
         x = ('x' if s in 'lr' else 'y')
         idx = (0 if s in 'lt' else 1) # which side of range to test
         coord = self._range_gridspec(x)[idx] # side for a particular axes
@@ -229,6 +231,8 @@ class Axes(maxes.Axes):
         gridspec matches the horizontal or vertical extend of this axes.
         Also sorts the list so the leftmost or bottommost axes is at the
         start of the list."""
+        if not hasattr(self, 'get_subplotspec'):
+            return [self]
         y = ('y' if x == 'x' else 'x')
         idx = (0 if x == 'x' else 1)
         argfunc = (np.argmax if x == 'x' else np.argmin)
@@ -328,8 +332,7 @@ class Axes(maxes.Axes):
         return inset_locator
 
     def _range_gridspec(self, x):
-        """Gets the column or row range for the axes. Use `topmost` to get
-        properties for the main gridspec grid."""
+        """Gets the column or row range for the axes."""
         subplotspec = self.get_subplotspec()
         if x == 'x':
             _, _, _, _, col1, col2 = subplotspec.get_active_rows_columns()
