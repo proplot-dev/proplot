@@ -2109,8 +2109,9 @@ def subplots(array=None, ncols=1, nrows=1,
         with fig._unlock():
             axs[idx] = fig.add_subplot(subplotspec, number=num,
                 spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-                sharex=sharex, sharey=sharey, main=True,
-                proj=proj[num], basemap=basemap[num], **proj_kw[num])
+                sharex=sharex, sharey=sharey,
+                main=True,
+                **axes_kw[num])
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
