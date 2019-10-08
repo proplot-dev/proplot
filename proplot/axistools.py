@@ -579,7 +579,7 @@ class FuncScale(mscale.ScaleBase):
     `~matplotlib.scale.ScaleBase` instance."""
     name = 'function'
     """The registered scale name."""
-    def __init__(self, axis, functions, scale=None):
+    def __init__(self, axis, functions, transform=None):
         """
         Parameters
         ----------
@@ -587,18 +587,18 @@ class FuncScale(mscale.ScaleBase):
             The axis, required for compatibility reasons.
         functions : (function, function)
             Length-2 tuple of forward and inverse functions.
-        scale : `~matplotlib.scale.ScaleBase`, optional
-            The axis scale used to transform values before applying the
-            input functions.
+        transform : `~matplotlib.transforms.Transform`, optional
+            Optional transform applied after the forward function
+            and before the inverse function.
         """
         forward, inverse = functions
-        transform = FuncTransform(forward, inverse)
-        if scale is not None:
-            if isinstance(scale, mscale.ScaleBase):
-                transform = scale.get_transform() + transform
+        trans = FuncTransform(forward, inverse)
+        if transform is not None:
+            if isinstance(transform, mtransforms.Transform):
+                trans = trans + transform
             else:
-                raise ValueError(f'scale {scale!r} must be a ScaleBase instance, not {type(scale)!r}.')
-        self._transform = transform
+                raise ValueError(f'transform {transform!r} must be a Transform instance, not {type(transform)!r}.')
+        self._transform = trans
     def get_transform(self):
         return self._transform
     def set_default_locators_and_formatters(self, axis):

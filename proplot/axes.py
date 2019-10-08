@@ -15,7 +15,6 @@ start with the documentation on the following methods.
 axis labels, tick locations, tick labels grid lines, axis scales, titles,
 a-b-c labelling, adding geographic features, and much more.
 """
-import re
 import numpy as np
 import warnings
 import functools
@@ -1484,61 +1483,80 @@ dualxy_kwargs = (
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
     'bounds', 'margin', 'color'
     )
+dualxy_descrip = """
+Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
+coordinates in *alternate units*.
 
-twinx_descrip = """
+Parameters
+----------
+forward : function, optional
+    Function used to transform units from the original axis to the
+    secondary axis. Should take 1 value and perform a *forward
+    linear transformation*. For example, to convert Kelvin to Celsius,
+    use ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers to
+    meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
+inverse : function, optional
+    Function used to transform units from the secondary axis back to
+    the original axis. If `forward` was a non-linear function, you
+    *must* provide this, or the transformation will be incorrect!
+
+    For example, to apply the square, use
+    ``ax.dual%(x)s(lambda x: x**2, lambda x: x**0.5)``.
+scale : scale-spec, optional
+    The axis scale from which forward and inverse transformations
+    are inferred. Passed to `~proplot.axistools.Scale`.
+
+    For example, to apply the inverse, use ``ax.dual%(x)s('inverse')``;
+    To apply the base-10 exponential function, use
+    ``ax.dual%(x)s(('exp', 10, 1, 10))`` or ``ax.dual%(x)s(plot.Scale('exp', 10))``.
+scale_kw : dict-like, optional
+    Ignored if `scale` is ``None``. Passed to
+    `~proplot.axistools.Scale`.
+%(args)s : optional
+    Prepended with ``'y'`` and passed to `Axes.format`.
+"""
+
+_extra_descrip = """
 Enforces the following settings.
 
-* Places the old *y* axis on the left and the new *y* axis
-  on the right.
-* Makes the old right spine invisible and the new left, bottom,
-  and top spines invisible.
-* Adjusts the *y* axis tick, tick label, and axis label positions
-  according to the visible spine position.
-* Locks the old and new *x* axis limits and scales.
-* Makes the new *x* axis labels invisible.
+* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
+  on the %(x2)s.
+* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
+  and %(y2)s spines invisible.
+* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
+  according to the visible spine positions.
+* Locks the old and new *%(y)s* axis limits and scales, and makes the new
+  %(y)s axis labels invisible.
 """
-twiny_descrip = """
-Enforces the following settings.
+altxy_descrip = """
+Alias and more intuitive name for `~CartesianAxes.twin%(y)s`.
+The matplotlib `~matplotlib.axes.Axes.twiny` function
+generates two *x* axes with a shared ("twin") *y* axis.
+""" + _extra_descrip
+twinxy_descrip = """
+Mimics matplotlib's `~matplotlib.axes.Axes.twin%(y)s`.
+""" + _extra_descrip
 
-* Places the old *x* axis on the bottom and the new *x* axis
-  on the top.
-* Makes the old top spine invisible and the new bottom, left,
-  and right spines invisible.
-* Adjusts the *x* axis tick, tick label, and axis label positions
-  according to the visible spine position.
-* Locks the old and new *y* axis limits and scales.
-* Makes all old *y* axis labels invisible.
-"""
-docstring.interpd.update(twinx_descrip=twinx_descrip.strip())
-docstring.interpd.update(twiny_descrip=twiny_descrip.strip())
-
-def _parse_dualxy_args(axis, transform, transform_kw, scale, scale_kw, kwargs):
+def _parse_dualxy_args(x, forward, inverse, scale, scale_kw, kwargs):
     """Interprets the dualx and dualy transform and keyword arguments."""
-    # Interpret scale and also apply to *this* axes!
-    x = axis.axis_name
-    if scale is not None:
-        scale = axistools.Scale(scale, **scale_kw) # no function scale needed
-        getattr(axis.axes, 'set_' + x + 'scale')(scale)
-    # Parse transform, construct function scale and forward transform
+    # Transform using input functions
+    # TODO: Also support transforms? Probably not -- transforms are a huge
+    # group that include ND and non-invertable transformations, but transforms
+    # used for axis scales are subset of invertible 1D functions
     scale_kw = scale_kw or {}
-    transform_kw = transform_kw or {}
-    if callable(transform):
-        # Not necessary to scale data
-        func = transform # forward-func
-        if transform_kw:
-            warnings.warn(f'Ignoring transform_kw arguments: {transform_kw}')
-    elif np.iterable(transform) and len(transform) == 2 and all(map(callable, transform)):
-        # Forward func is identity transform, we rely on scale
-        func = (lambda x: x)
-        kwargs['scale'] = axistools.Scale('function', transform[::-1], scale)
-        if transform_kw:
-            warnings.warn(f'Ignoring transform_kw arguments: {transform_kw}')
+    if scale or scale_kw:
+        if forward or inverse:
+            warnings.warn(f'Ignoring functions forward={forward!r} and inverse={inverse!r}.')
+        forward = axistools.Scale(scale or 'linear', **scale_kw).get_transform()
+        funcs = (forward.transform, forward.inverted().transform)
     else:
-        # Forward func is identity transform, we rely on scale
-        func = (lambda x: x)
-        transform = axistools.Scale(transform, **transform_kw).get_transform()
-        transform = (transform.transform, transform.inverted().transform)
-        kwargs['scale'] = axistools.Scale('function', transform[::-1], scale)
+        forward = forward or (lambda x: x)
+        inverse = inverse or (lambda x: x)
+        if not callable(forward):
+            raise ValueError(f'Forward transformation must be a callable function, got {forward!r}.')
+        if not callable(inverse):
+            raise ValueError(f'Inverse transformation must be a callable function, got {inverse!r}.')
+        funcs = (forward, inverse)
     # Parse keyword arguments
     kwargs_bad = {}
     for key in (*kwargs.keys(),):
@@ -1552,12 +1570,13 @@ def _parse_dualxy_args(axis, transform, transform_kw, scale, scale_kw, kwargs):
             kwargs_bad[key] = value
         if kwargs_bad:
             raise TypeError(f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}')
-    return func, kwargs
+    return funcs, kwargs
 
 def _rcloc_to_stringloc(x, string): # figures out string location
     """Gets *location string* from the *boolean* "left", "right", "top", and
     "bottom" rc settings, e.g. :rc:`axes.spines.left` or :rc:`ytick.left`.
     Might be ``None`` if settings are unchanged."""
+    # For x axes
     if x == 'x':
         top = rc[f'{string}.top']
         bottom = rc[f'{string}.bottom']
@@ -1571,6 +1590,7 @@ def _rcloc_to_stringloc(x, string): # figures out string location
             return 'bottom'
         else:
             return 'neither'
+    # For y axes
     else:
         left = rc[f'{string}.left']
         right = rc[f'{string}.right']
@@ -1607,8 +1627,8 @@ class CartesianAxes(Axes):
         self.yaxis.isDefault_majfmt = True
         # Custom attributes
         self._datex_rotated = False # whether to automatically apply rotation to datetime labels during post processing
-        self._dualy_func = None # for scaling units on opposite side of ax
-        self._dualx_func = None
+        self._dualy_funcs = None # for scaling units on opposite side of ax
+        self._dualx_funcs = None
 
     def _altx_overrides(self):
         """Applies alternate *x* axis overrides."""
@@ -1668,48 +1688,37 @@ class CartesianAxes(Axes):
         """Locks child "dual" *x* axis limits to the parent."""
         # Why did I copy and paste the dualx/dualy code you ask? Copy
         # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
-        func = self._dualx_func
-        if func is None:
+        funcs = self._dualx_funcs
+        if funcs is None:
             return
-        # First perform some checks
-        scale = self.get_xscale()
-        if scale != 'linear':
-            warnings.warn(f'Parent x axis scale must be linear. Overriding current {scale!r} scale.')
-            self.set_xscale('linear')
+        # Build the FuncScale
         child = self._altx_child
-        scale = child.get_xscale()
-        lim = self.get_xlim()
-        if any(np.array(lim) <= 0) and re.match('^(log|inverse)', scale):
-            raise RuntimeError(f'x axis limits go negative, but "alternate units" axis uses {scale!r} scale.')
-        # Transform axis limits with axis scale transform
-        transform = child.xaxis._scale.get_transform()
-        nlim = transform.inverted().transform(np.array(lim))
+        transform = self.xaxis._scale.get_transform()
+        scale = axistools.Scale('function', funcs[::-1], transform)
+        child.set_xscale(scale)
+        # Transform axis limits
         # If the transform flipped the limits, when we set axis limits, it
         # will get flipped again! So reverse the flip
+        lim = self.get_xlim()
+        nlim = map(funcs[0], np.array(lim))
         if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
-        child.set_xlim(*map(func, nlim))
+        child.set_xlim(nlim)
 
     def _dualy_overrides(self):
         """Locks child "dual" *y* axis limits to the parent."""
-        func = self._dualy_func
-        if func is None:
+        funcs = self._dualy_funcs
+        if funcs is None:
             return
-        scale = self.get_yscale()
-        _check_dualxy_scales(self.get_yscale(), scale, lim)
-        if scale != 'linear':
-            warnings.warn(f'Parent y axis scale must be linear. Overriding current {scale!r} scale.')
-            self.set_yscale('linear')
         child = self._alty_child
-        scale = child.get_yscale()
+        transform = self.yaxis._scale.get_transform()
+        scale = axistools.Scale('function', funcs[::-1], transform)
+        child.set_yscale(scale)
         lim = self.get_ylim()
-        if any(np.array(lim) <= 0) and re.match('^(log|inverse)', scale):
-            raise RuntimeError(f'y axis limits go negative, but "alternate units" axis uses {scale!r} scale.')
-        transform = child.yaxis._scale.get_transform()
-        nlim = transform.inverted().transform(np.array(lim))
+        nlim = map(funcs[0], np.array(lim))
         if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
-        child.set_ylim(*map(func, nlim))
+        child.set_ylim(nlim)
 
     def _hide_labels(self):
         """Function called at drawtime that enforces "shared" axis and
@@ -2280,13 +2289,7 @@ class CartesianAxes(Axes):
                 self.set_aspect(aspect)
             super().format(**kwargs)
 
-    @docstring.dedent_interpd
     def altx(self, *args, **kwargs):
-        """Alias and more intuitive name for `~CartesianAxes.twiny`.
-        The matplotlib `~matplotlib.axes.Axes.twiny` function
-        generates two *x* axes with a shared ("twin") *y* axis.
-
-        %(twiny_descrip)s"""
         # Cannot wrap twiny() because we want to use CartesianAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
@@ -2304,14 +2307,12 @@ class CartesianAxes(Axes):
         ax._altx_overrides()
         self.add_child_axes(ax)
         return ax
+    altx.__doc__ = altxy_descrip % {
+        'x':'x', 'x1':'bottom', 'x2':'top',
+        'y':'y', 'y1':'left', 'y2':'right',
+        }
 
-    @docstring.dedent_interpd
     def alty(self):
-        """Alias and more intuitive name for `~CartesianAxes.twinx`.
-        The matplotlib `~matplotlib.axes.Axes.twinx` function
-        generates two *y* axes with a shared ("twin") *x* axis.
-
-        %(twinx_descrip)s"""
         if self._alty_child:
             raise RuntimeError('No more than *two* twin axes!')
         if self._alty_parent:
@@ -2326,46 +2327,14 @@ class CartesianAxes(Axes):
         ax._alty_overrides()
         self.add_child_axes(ax)
         return ax
+    alty.__doc__ = altxy_descrip % {
+        'x':'y', 'x1':'left', 'x2':'right',
+        'y':'x', 'y1':'bottom', 'y2':'top',
+        }
 
     def dualx(self,
-        transform, transform_kw=None, scale=None, scale_kw=None,
+        forward=None, inverse=None, *, scale=None, scale_kw=None,
         **kwargs):
-        f"""
-        Makes a secondary *x* axis for denoting equivalent *x*
-        coordinates in *alternate units*.
-
-        Parameters
-        ----------
-        transform : function or (function, function) or scale-spec, optional
-            Method used to transform units from the original axis to the
-            secondary axis. There are three options here.
-
-            1. A function that takes 1 value and performs a *forward linear
-               transformation*. For example, to convert Kelvin to Celsius,
-               use ``ax.dualx(lambda x: x - 273.15)``.
-            2. A tuple of two functions that take 1 value and perform *forward
-               and inverse transformations*. For example, to apply the square,
-               use ``ax.dualx((lambda x: x**2, lambda x: x**0.5))``.
-            3. Otherwise, `transform` and `transform_kw` are passed to
-               `~proplot.axistools.Scale`. For example, to apply the inverse,
-               use ``ax.dualx('inverse')``. To apply the base-10 exponential
-               function, use ``ax.dualx(('exp', 10))`` or
-               ``ax.dualx(plot.Scale('exp', 10))``.
-
-        transform_kw : dict-like, optional
-            Passed to `~proplot.axistools.Scale`, used to generate the
-            transform `transform` if option 3 was used.
-        scale : scale-spec, optional
-            The axis scale to be applied *on top* of the `transform`
-            transform. Generally, you will only want to use this with options
-            1 and 2, for example if you want meters on one side, kilometers
-            on the other side, but logarithmic scaling for both.
-        scale_kw : dict-like, optional
-            Passed to `~proplot.axistools.Scale`, used to generate the scale
-            `scale`.
-        {", ".join(dualxy_kwargs)} : optional
-            Prepended with ``'x'`` and passed to `Axes.format`.
-        """
         # The axis scale is used to transform units on the left axis, linearly
         # spaced, to units on the right axis... so the right scale must scale
         # its data with the *inverse* of this transform. We do this below.
@@ -2375,57 +2344,29 @@ class CartesianAxes(Axes):
         # transformation, not the backwards one), and does not invent a new
         # class with a bunch of complicated setters.
         ax = self.twiny()
-        func, kwargs = _parse_dualxy_args(ax.xaxis, transform, transform_kw, scale, scale_kw, kwargs)
-        self._dualx_func = func
+        funcs, kwargs = _parse_dualxy_args('x',
+            forward, inverse, scale, scale_kw, kwargs)
+        self._dualx_funcs = funcs
         self._dualx_overrides()
         ax.format(**kwargs)
         return ax
+    dualx.__doc__ = dualxy_descrip % {
+        'x':'x', 'args':', '.join(dualxy_kwargs)
+        }
 
     def dualy(self,
-        transform, transform_kw=None, scale=None, scale_kw=None,
+        forward=None, inverse=None, *, scale=None, scale_kw=None,
         **kwargs):
-        f"""
-        Makes a secondary *y* axis for denoting equivalent *y*
-        coordinates in *alternate units*.
-
-        Parameters
-        ----------
-        transform : function or (function, function) or scale-spec, optional
-            Method used to transform units from the original axis to the
-            secondary axis. There are three options here.
-
-            1. A function that takes 1 value and performs a *forward linear
-               transformation*. For example, to convert Kelvin to Celsius,
-               use ``ax.dualy(lambda x: x - 273.15)``.
-            2. A tuple of two functions that take 1 value and perform *forward
-               and inverse transformations*. For example, to apply the square,
-               use ``ax.dualy((lambda x: x**2, lambda x: x**0.5))``.
-            3. Otherwise, `transform` and `transform_kw` are passed to
-               `~proplot.axistools.Scale`. For example, to apply the inverse,
-               use ``ax.dualy('inverse')``. To apply the base-10 exponential
-               function, use ``ax.dualy(('exp', 10))`` or
-               ``ax.dualy(plot.Scale('exp', 10))``.
-
-        transform_kw : dict-like, optional
-            Passed to `~proplot.axistools.Scale`, used to generate the
-            transform `transform` if option 3 was used.
-        scale : scale-spec, optional
-            The axis scale to be applied *on top* of the `transform`
-            transform. Generally, you will only want to use this with options
-            1 and 2, for example if you want meters on one side, kilometers
-            on the other side, but logarithmic scaling for both.
-        scale_kw : dict-like, optional
-            Passed to `~proplot.axistools.Scale`, used to generate the scale
-            `scale`.
-        {", ".join(dualxy_kwargs)} : optional
-            Prepended with ``'y'`` and passed to `Axes.format`.
-        """
         ax = self.twinx()
-        func, kwargs = _parse_dualxy_args(ax.yaxis, transform, transform_kw, scale, scale_kw, kwargs)
-        self._dualy_func = func
+        funcs, kwargs = _parse_dualxy_args('y',
+            forward, inverse, scale, scale_kw, kwargs)
+        self._dualy_funcs = funcs
         self._dualy_overrides()
         ax.format(**kwargs)
         return ax
+    dualy.__doc__ = dualxy_descrip % {
+        'x':'y', 'args':', '.join(dualxy_kwargs)
+        }
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
@@ -2456,17 +2397,19 @@ class CartesianAxes(Axes):
 
     @docstring.dedent_interpd
     def twinx(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx`.
-
-        %(twinx_descrip)s"""
         return self.alty()
+    twinx.__doc__ = twinxy_descrip % {
+        'x':'y', 'x1':'left', 'x2':'right',
+        'y':'x', 'y1':'bottom', 'y2':'top',
+        }
 
     @docstring.dedent_interpd
     def twiny(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny`.
-
-        %(twiny_descrip)s"""
         return self.altx()
+    twiny.__doc__ = twinxy_descrip % {
+        'x':'x', 'x1':'bottom', 'x2':'top',
+        'y':'y', 'y1':'left', 'y2':'right',
+        }
 
 class PolarAxes(Axes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjectionAxes` with
