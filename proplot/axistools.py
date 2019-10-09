@@ -880,10 +880,10 @@ class CutoffTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
     def __init__(self, scale, lower, upper=None):
+        super().__init__()
         self._scale = scale
         self._lower = lower
         self._upper = upper
-        super().__init__()
     def transform(self, a):
         a = np.array(a) # very numpy array
         aa = a.copy()
@@ -918,8 +918,11 @@ class InvertedCutoffTransform(mtransforms.Transform):
     output_dims = 1
     has_inverse = True
     is_separable = True
-    def __init__(self):
+    def __init__(self, scale, lower, upper=None):
         super().__init__()
+        self._scale = scale
+        self._lower = lower
+        self._upper = upper
     def transform(self, a):
         a = np.array(a)
         aa = a.copy()

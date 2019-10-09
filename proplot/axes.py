@@ -1484,7 +1484,7 @@ dualxy_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color'
+    'bounds', 'margin', 'color', 'grid', 'gridminor', 'gridcolor',
     )
 dualxy_descrip = """
 Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
@@ -1703,7 +1703,7 @@ class CartesianAxes(Axes):
         # If the transform flipped the limits, when we set axis limits, it
         # will get flipped again! So reverse the flip
         lim = self.get_xlim()
-        nlim = map(funcs[0], np.array(lim))
+        nlim = list(map(funcs[0], np.array(lim)))
         if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
         child.set_xlim(nlim)
@@ -1718,7 +1718,7 @@ class CartesianAxes(Axes):
         scale = axistools.Scale('function', funcs[::-1], transform)
         child.set_yscale(scale)
         lim = self.get_ylim()
-        nlim = map(funcs[0], np.array(lim))
+        nlim = list(map(funcs[0], np.array(lim)))
         if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
         child.set_ylim(nlim)
