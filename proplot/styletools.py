@@ -1975,7 +1975,7 @@ def _read_cmap_cycle_data(filename):
         # NOTE: This appears to be biggest import time bottleneck! Increases
         # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
         delim = re.compile('[,\s]+')
-        data = [delim.split(line.strip()) for line in open(filename).readlines()]
+        data = [delim.split(line.strip()) for line in open(filename).readlines() if line.strip()]
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
