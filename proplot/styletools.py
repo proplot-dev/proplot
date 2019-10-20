@@ -62,8 +62,6 @@ if not os.path.isdir(DATA_USER_FONTS):
 
 # Colormap stuff
 CMAPS_CATEGORIES = {
-    # User cmaps, placed here so it always appears on top
-    'User': (),
     # Assorted origin, but these belong together
     'Grayscale': (
         'Grays', 'Mono', 'GrayCycle',
@@ -2621,7 +2619,7 @@ def show_colors(nbreak=17, minsat=0.2):
         figs.append(fig)
     return figs
 
-def show_cmaps(*args, N=256, length=4.0, width=0.2):
+def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
     """
     Visualizes all registered colormaps, or the list of colormap names if
     positional arguments are passed. Adapted from `this example
@@ -2640,6 +2638,9 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
     width : float or str, optional
         The width of each colorbar. Units are interpreted by
         `~proplot.utils.units`.
+    unknown : str, optional
+        Category name for colormaps that are unknown to ProPlot. The
+        default is ``'User'``.
 
     Returns
     -------
@@ -2661,9 +2662,9 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
     cats_plot = {cat:[name for name in names if name.lower() in imaps] for cat,names in cats.items()}
     # Distinguish known from unknown (i.e. user) maps, add as a new category
     imaps_known = [name.lower() for cat,names in cats.items() for name in names if name.lower() in imaps]
-    imaps_user = [name for name in imaps if name not in imaps_known]
-    cats_plot['User'] = imaps_user
-    # Remove categories with no known maps
+    imaps_unknown = [name for name in imaps if name not in imaps_known]
+    # Remove categories with no known maps and put user at start
+    cats_plot = {unknown:imaps_unknown, **cats_plot}
     cats_plot = {cat:maps for cat,maps in cats_plot.items() if maps}
 
     # Array for producing visualization with imshow
@@ -2671,7 +2672,7 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2):
     a = np.vstack((a,a))
     # Figure
     from . import subplots
-    naxs = len(imaps_known) + len(imaps_user) + len(cats_plot)
+    naxs = len(imaps_known) + len(imaps_unknown) + len(cats_plot)
     fig, axs = subplots(
         nrows=naxs, axwidth=length, axheight=width,
         share=0, hspace=0.03,
