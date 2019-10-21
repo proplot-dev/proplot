@@ -190,13 +190,34 @@ from matplotlib import rcParams as _rcParams
 _rcGlobals = {}
 _rcExtraParams = {}
 
-# Get default font
-# WARNING: Had issues with Helvetica Neue on Linux, weirdly some characters
-# failed to render/printed nonsense, but Helvetica was fine.
-USER_RC = os.path.join(os.path.expanduser("~"), '.proplotrc')
-DEFAULT_RC = os.path.join(os.path.dirname(__file__), '.proplotrc')
-if not os.path.exists(DEFAULT_RC):
-    raise ValueError('Default configuration file does not exist.')
+# Configuration files
+def _get_rc():
+    """Walks successive parent directories searching for ".proplotrc" and
+    "proplotrc" files."""
+    # Local configuration
+    rc = []
+    idir = os.getcwd()
+    while idir: # not empty string
+        for tail in ('.proplotrc', 'proplotrc'):
+            irc = os.path.join(idir, tail)
+            if os.path.exists(irc):
+                rc.append(irc)
+        ndir, _ = os.path.split(idir)
+        if ndir == idir:
+            break
+        idir = ndir
+    rc = rc[::-1] # sort from decreasing to increasing importantce
+    # Home configuration
+    irc = os.path.join(os.path.expanduser('~'), '.proplotrc')
+    if os.path.exists(irc) and irc not in rc:
+        rc.insert(0, irc)
+    # Global configuration
+    irc = os.path.join(os.path.dirname(__file__), '.proplotrc')
+    if not os.path.exists(irc):
+        raise ValueError('Default configuration file does not exist.')
+    elif irc not in rc:
+        rc.insert(0, irc)
+    return rc
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
@@ -397,7 +418,7 @@ class rc_configurator(object):
         plt.style.use('default')
 
         # Load the defaults from file
-        for i,file in enumerate((DEFAULT_RC, USER_RC)):
+        for i,file in enumerate(_get_rc()):
             # Load
             if not os.path.exists(file):
                 continue
