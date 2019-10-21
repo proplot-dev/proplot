@@ -1975,7 +1975,7 @@ def _read_cmap_cycle_data(filename):
         # NOTE: This appears to be biggest import time bottleneck! Increases
         # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
         delim = re.compile('[,\s]+')
-        data = [delim.split(line.strip()) for line in open(filename).readlines() if line.strip()]
+        data = [delim.split(line.strip()) for line in open(filename).readlines()]
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
@@ -2325,7 +2325,7 @@ normalizers = {
 #-----------------------------------------------------------------------------#
 # Demos
 #-----------------------------------------------------------------------------#
-def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
+def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
     aspect=1, axwidth=1.7):
     """
     Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
@@ -2343,6 +2343,9 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     rgb : bool, optional
         Whether to also show the red, blue, and green channels in the bottom
         row. Default is ``True``.
+    scalings : bool, optional
+        Whether to show the HSL and HPL scalings of the chroma channel
+        alongside raw chroma.
     minhue : float, optional
         The minimum hue. This lets you rotate the hue plot cyclically.
     width : int, optional
@@ -2361,17 +2364,17 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
     from . import subplots
     if not args:
         args = (rcParams['image.cmap'],)
-    array = [[1,1,2,2,3,3],[0,4,4,5,5,0],[6,6,7,7,8,8]]
-    if not rgb:
-        array = array[:2]
+    array = [[1,1,2,2,3,3]]
+    labels = ('Hue', 'Chroma', 'Luminance')
+    if scalings:
+        array += [[0,4,4,5,5,0]]
+        labels += ('HSL saturation', 'HPL saturation')
+    if rgb:
+        array += [np.array([4,4,5,5,6,6]) + 2*int(scalings)]
+        labels += ('Red', 'Blue', 'Green')
     fig, axs = subplots(
         array=array, axwidth=axwidth, span=False, share=1,
         aspect=aspect, axpad='1em',
-        )
-    labels = (
-        'Hue', 'Chroma', 'Luminance',
-        'HSL saturation', 'HPL saturation',
-        'Red', 'Blue', 'Green'
         )
     # Iterate through colormaps
     mc, ms, mp = 0, 0, 0
@@ -2384,13 +2387,18 @@ def show_channels(*args, N=100, rgb=True, minhue=0, width=100,
         # Get clipped RGB table
         x = np.linspace(0, 1, N)
         lut = cmap._lut[:-3,:3].copy()
-        rgb = lut.T # 3 by N
-        hcl = np.array([to_xyz(color, space='hcl') for color in lut]).T # 3 by N
-        hsl = [to_xyz(color, space='hsl')[1] for color in lut]
-        hpl = [to_xyz(color, space='hpl')[1] for color in lut]
+        rgb_data = lut.T # 3 by N
+        hcl_data = np.array([to_xyz(color, space='hcl') for color in lut]).T # 3 by N
+        hsl_data = [to_xyz(color, space='hsl')[1] for color in lut]
+        hpl_data = [to_xyz(color, space='hpl')[1] for color in lut]
         # Plot channels
         # If rgb is False, the zip will just truncate the other iterables
-        for ax,y,label in zip(axs,(*hcl,hsl,hpl,*rgb),labels):
+        data = (*hcl_data,)
+        if scalings:
+            data += (hsl_data, hpl_data)
+        if rgb:
+            data += (*rgb_data,)
+        for ax,y,label in zip(axs,data,labels):
             ylim, ylocator = None, None
             if label in ('Red','Blue','Green'):
                 ylim = (0,1)
