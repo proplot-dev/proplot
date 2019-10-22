@@ -191,7 +191,7 @@ _rcGlobals = {}
 _rcExtraParams = {}
 
 # Configuration files
-def _get_rc():
+def _get_rc_files():
     """Walks successive parent directories searching for ".proplotrc" and
     "proplotrc" files."""
     # Local configuration
@@ -208,9 +208,10 @@ def _get_rc():
         idir = ndir
     rc = rc[::-1] # sort from decreasing to increasing importantce
     # Home configuration
-    irc = os.path.join(os.path.expanduser('~'), '.proplotrc')
-    if os.path.exists(irc) and irc not in rc:
-        rc.insert(0, irc)
+    for tail in ('.proplotrc', 'proplotrc'):
+        irc = os.path.join(os.path.expanduser('~'), tail)
+        if os.path.exists(irc) and irc not in rc:
+            rc.insert(0, irc)
     # Global configuration
     irc = os.path.join(os.path.dirname(__file__), '.proplotrc')
     if not os.path.exists(irc):
@@ -418,7 +419,7 @@ class rc_configurator(object):
         plt.style.use('default')
 
         # Load the defaults from file
-        for i,file in enumerate(_get_rc()):
+        for i,file in enumerate(_get_rc_files()):
             # Load
             if not os.path.exists(file):
                 continue

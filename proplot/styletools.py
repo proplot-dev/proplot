@@ -43,6 +43,60 @@ __all__ = [
     ]
 
 # Data diretories
+def _get_rc_folders(sub):
+    """Walks successive parent directories searching for ".proplot" and
+    "proplot" folders containing the requested subfolder."""
+    # Local configuration
+    rc = []
+    idir = os.getcwd()
+    while idir: # not empty string
+        for tail in ('.proplot', 'proplot'):
+            irc = os.path.join(idir, tail, sub)
+            if os.path.isdir(irc):
+                rc.append(irc)
+        ndir, _ = os.path.split(idir)
+        if ndir == idir:
+            break
+        idir = ndir
+    rc = rc[::-1] # sort from decreasing to increasing importantce
+    # Home configuration
+    for tail in ('.proplot', 'proplot'):
+        irc = os.path.join(os.path.expanduser('~'), tail, sub)
+        if os.path.isdir(irc) and irc not in rc:
+            rc.insert(0, irc)
+    # Global configuration
+    irc = os.path.join(os.path.dirname(__file__), sub)
+    if not os.path.exists(irc):
+        raise ValueError('Default configuration file does not exist.')
+    elif irc not in rc:
+        rc.insert(0, irc)
+    return rc
+
+def _save_cmap(name, cmap):
+    """Saves colormap in the ".proplot" folder in user directory."""
+    # Save listed colormap i.e. color cycle
+    irc = os.path.join(os.path.expanduser('~'), '.proplot')
+    if isinstance(cmap, mcolors.ListedColormap):
+        basename = f'{name}.hex'
+        filename = os.path.join(DATA_USER_CYCLES, basename)
+        with open(filename, 'w') as f:
+            f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
+        print(f'Saved color cycle to "{basename}".')
+    # Save segment data directly
+    else:
+        basename = f'{name}.json'
+        filename = os.path.join(DATA_USER_CMAPS, basename)
+        data = {}
+        for key,value in cmap._segmentdata.items():
+            data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
+        for key in ('space','gamma1','gamma2'):
+            if hasattr(cmap, '_' + key):
+                data[key] = getattr(cmap, '_' + key)
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=4)
+        print(f'Saved colormap to "{basename}".')
+
+
 DATA_USER = os.path.join(os.path.expanduser('~'), '.proplot')
 DATA_USER_CMAPS = os.path.join(DATA_USER, 'cmaps')
 DATA_USER_CYCLES = os.path.join(DATA_USER, 'cycles')
@@ -281,22 +335,21 @@ def _check_data():
         warnings.warn(f'Found extra files {", ".join(data_user_paths - DATA_ALLOWED_PATHS)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
 
 #-----------------------------------------------------------------------------#
-# Classes
+# Helper classes
 #-----------------------------------------------------------------------------#
-# Flexible color names class
-# * Matplotlib 'color' arguments are passed to to_rgba, which tries
-#   to read directly from cache and if that fails, tries to sanitize input.
-#   The sanitization raises error when encounters (colormap, idx) tuple. So
-#   we need to override the *cache* instead of color dictionary itself!
-# * Builtin to_rgb tries to get cached colors as dict[name, alpha],
-#   resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
-#   to differentiate this from (cmapname, index) usage! Must do try except lookup
-#   into colormap dictionary every time. Don't want to do this for actual
-#   color dict for sake of speed, so we only wrap *cache* lookup. Also we try
-#   to avoid cmap lookup attempt whenever possible with if statement.
 class ColorCacheDict(dict):
     """Special dictionary that lets user draw single color tuples from
     arbitrary colormaps or color cycles."""
+    # * Matplotlib 'color' arguments are passed to to_rgba, which tries
+    #   to read directly from cache and if that fails, tries to sanitize input.
+    #   The sanitization raises error when encounters (colormap, idx) tuple. So
+    #   we need to override the *cache* instead of color dictionary itself!
+    # * Builtin to_rgb tries to get cached colors as dict[name, alpha],
+    #   resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
+    #   to differentiate this from (cmapname, index) usage! Must do try except lookup
+    #   into colormap dictionary every time. Don't want to do this for actual
+    #   color dict for sake of speed, so we only wrap *cache* lookup. Also we try
+    #   to avoid cmap lookup attempt whenever possible with if statement.
     def __getitem__(self, key):
         """
         Either samples the color from a colormap or color cycle,
@@ -457,6 +510,44 @@ class CmapDict(dict):
 # Apply subclass
 if not isinstance(mcm.cmap_d, CmapDict):
     mcm.cmap_d = CmapDict(mcm.cmap_d)
+
+# New base colormap and cycler classes
+class ColormapBase(mcolors.Colormap):
+    """Base colormap class that adds a "save" method."""
+    def save(self, folder=None):
+        """
+        Saves the colormap or color cycle to a folder.
+
+        Parameters
+        ----------
+        folder : str, optional
+            The subfolder where the cycle will be saved. Default is
+            ``~/.proplotrc/cmaps``
+        """
+
+class CyclerBase(cycler.Cycler):
+    """Base property cycler class that adds a "save" method for saving
+    lists of colors and adds a "name" attribute."""
+    def __init__(self, name, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        name : str
+            The cycler name.
+        *args, **kwargs
+            Passed to `~cycler.Cycler`.
+        """
+        self.name = name
+        super().__init__(*args, **kwargs)
+
+    def save(self, folder=None):
+        """
+        Parameters
+        ----------
+        folder : str, optional
+            The subfolder where the cycle will be saved. Default is
+            ``~/.proplotrc/cycles``.
+        """
 
 #-----------------------------------------------------------------------------#
 # Color manipulation functions
@@ -987,7 +1078,6 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
         ``'listed'``, the `~matplotlib.colors.ListedColormap` is generated.
         Default is ``'perceptual'`` when calling `Colormap` directly, and
         ``'listed'`` when `Colormap` is called by `Cycle`.
-    perceptual : bool, optional
     fade : float, optional
         The maximum luminosity used when generating `monochrome_cmap` colormaps.
         Default is ``100`` when calling `Colormap` directly, and ``90`` when
@@ -1172,29 +1262,10 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
     if not cmap._isinit:
         cmap._init()
 
-    # Register the colormap
+    # Register and save the colormap
     mcm.cmap_d[name] = cmap
-    # Optionally save colormap to disk
     if save:
-        # Save listed colormap i.e. color cycle
-        if isinstance(cmap, mcolors.ListedColormap):
-            basename = f'{name}.hex'
-            filename = os.path.join(DATA_USER_CYCLES, basename)
-            with open(filename, 'w') as f:
-                f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
-        # Save segment data directly
-        else:
-            basename = f'{name}.json'
-            filename = os.path.join(DATA_USER_CMAPS, basename)
-            data = {}
-            for key,value in cmap._segmentdata.items():
-                data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
-            for key in ('space','gamma1','gamma2'):
-                if hasattr(cmap, '_' + key):
-                    data[key] = getattr(cmap, '_' + key)
-            with open(filename, 'w') as file:
-                json.dump(data, file, indent=4)
-        print(f'Saved colormap to "{basename}".')
+        _save_cmap(name, cmap)
     return cmap
 
 def Cycle(*args, samples=None, name=None, save=False,
@@ -1287,11 +1358,11 @@ def Cycle(*args, samples=None, name=None, save=False,
     if not args:
         props['color'] = ['k'] # ensures property cycler is non empty
         if kwargs:
-            warnings.warn(f'Ignoring keyword args {kwargs}.')
+            warnings.warn(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         # Merge cycler objects
         if kwargs:
-            warnings.warn(f'Ignoring keyword args {kwargs}.')
+            warnings.warn(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
         if len(args) == 1:
             return args[0]
         else:
@@ -1322,18 +1393,13 @@ def Cycle(*args, samples=None, name=None, save=False,
                 raise ValueError(f'Invalid samples "{samples}".')
             N = len(samples)
             colors = cmap(samples)
-        # Register the colormap
+        # Register and save the colormap
         name = name or 'no_name'
         cmap = mcolors.ListedColormap(colors, name=name, N=N)
         cmap.colors = [tuple(color) if not isinstance(color,str) else color for color in cmap.colors] # sanitize
         mcm.cmap_d[name] = cmap
-        # Save the cycle
         if save:
-            basename = f'{name}.hex'
-            filename = os.path.join(DATA_USER_CYCLES, basename)
-            with open(filename, 'w') as f:
-                f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
-            print(f'Saved color cycle to "{basename}".')
+            _save_cmap(name, cmap)
         # Add to property dict
         nprops = max(nprops, len(colors))
         props['color'] = cmap.colors # save the tupled version!
