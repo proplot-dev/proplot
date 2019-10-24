@@ -163,7 +163,7 @@ Key(s)                                                               Description
 # TODO: Add 'style' setting that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from . import utils
-from .utils import _counter, _timer, DEBUG
+from .utils import _counter, _timer, get_configpaths, DEBUG
 import re
 import os
 import sys
@@ -189,36 +189,6 @@ __all__ = ['rc', 'rc_configurator', 'nb_setup']
 from matplotlib import rcParams as _rcParams
 _rcGlobals = {}
 _rcExtraParams = {}
-
-# Configuration files
-def _get_rc_files():
-    """Walks successive parent directories searching for ".proplotrc" and
-    "proplotrc" files."""
-    # Local configuration
-    rc = []
-    idir = os.getcwd()
-    while idir: # not empty string
-        for tail in ('.proplotrc', 'proplotrc'):
-            irc = os.path.join(idir, tail)
-            if os.path.exists(irc):
-                rc.append(irc)
-        ndir, _ = os.path.split(idir)
-        if ndir == idir:
-            break
-        idir = ndir
-    rc = rc[::-1] # sort from decreasing to increasing importantce
-    # Home configuration
-    for tail in ('.proplotrc', 'proplotrc'):
-        irc = os.path.join(os.path.expanduser('~'), tail)
-        if os.path.exists(irc) and irc not in rc:
-            rc.insert(0, irc)
-    # Global configuration
-    irc = os.path.join(os.path.dirname(__file__), '.proplotrc')
-    if not os.path.exists(irc):
-        raise ValueError('Default configuration file does not exist.')
-    elif irc not in rc:
-        rc.insert(0, irc)
-    return rc
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
@@ -419,7 +389,7 @@ class rc_configurator(object):
         plt.style.use('default')
 
         # Load the defaults from file
-        for i,file in enumerate(_get_rc_files()):
+        for i,file in enumerate(get_configpaths('proplotrc')):
             # Load
             if not os.path.exists(file):
                 continue
