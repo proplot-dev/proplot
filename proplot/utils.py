@@ -159,17 +159,17 @@ def edges(array, axis=-1):
     array = np.swapaxes(array, axis, -1)
     return array
 
-def _check_path(dir, *args):
+def _check_path(folder, *args):
     """Returns configuration directory and checks for unexpected extra files
     inside the directory. Issues helpful warning for new users."""
-    dir = os.path.join(dir, '.proplot')
-    paths = {os.path.basename(path) for path in glob.glob(os.path.join(dir, '*'))}
+    folder = os.path.join(folder, '.proplot')
+    paths = {os.path.basename(path) for path in glob.glob(os.path.join(folder, '*'))}
     paths_allowed = {'proplotrc', 'cmaps', 'colors', 'cycles', 'fonts'}
     if not paths <= paths_allowed:
         warnings.warn(f'Found extra files {", ".join(paths - paths_allowed)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/colors, .proplot/cycles, or .proplot/fonts subfolders.')
-    return os.path.join(dir, *args)
+    return os.path.join(folder, *args)
 
-def get_configpaths(sub=None, *, local=True):
+def get_configpaths(path=None, *, local=True):
     """
     Returns ProPlot configuration file and folder paths, or the paths of
     root configuration directories.
@@ -189,13 +189,13 @@ def get_configpaths(sub=None, *, local=True):
         List of paths.
     """
     # Checks
-    if not sub:
+    if not path:
         args = ()
-    elif sub in ('proplotrc', 'cmaps', 'colors', 'cycles', 'fonts'):
-        args = (sub,)
+    elif path in ('proplotrc', 'cmaps', 'colors', 'cycles', 'fonts'):
+        args = (path,)
     else:
-        raise ValueError(f'Invalid configuration location {sub!r}. Options are "proplotrc", "cmaps", "cycles", and "fonts".')
-    if sub == 'proplotrc' and os.path.exists(os.path.join(os.path.expanduser('~'), '.proplotrc')):
+        raise ValueError(f'Invalid configuration location {path!r}. Options are "proplotrc", "cmaps", "cycles", and "fonts".')
+    if path == 'proplotrc' and os.path.exists(os.path.join(os.path.expanduser('~'), '.proplotrc')):
         warnings.warn(f'Configuration file location is now "~/.proplot/proplotrc" to match matplotlib convention. Please move "~/.proplotrc" to "~/.proplot/proplotrc".')
     # Get paths
     paths = []
