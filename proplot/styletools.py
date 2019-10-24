@@ -26,7 +26,7 @@ import matplotlib.cm as mcm
 import matplotlib as mpl
 import warnings
 from . import colormath
-from .utils import _notNone, _timer
+from .utils import _notNone, _timer, get_configpaths
 rcParams = mpl.rcParams
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorCacheDict',
@@ -42,50 +42,20 @@ __all__ = [
     'to_rgb', 'to_xyz',
     ]
 
-# Data diretories
-def _get_rc_folders(sub):
-    """Walks successive parent directories searching for ".proplot" and
-    "proplot" folders containing the requested subfolder."""
-    # Local configuration
-    rc = []
-    idir = os.getcwd()
-    while idir: # not empty string
-        for tail in ('.proplot', 'proplot'):
-            irc = os.path.join(idir, tail, sub)
-            if os.path.isdir(irc):
-                rc.append(irc)
-        ndir, _ = os.path.split(idir)
-        if ndir == idir:
-            break
-        idir = ndir
-    rc = rc[::-1] # sort from decreasing to increasing importantce
-    # Home configuration
-    for tail in ('.proplot', 'proplot'):
-        irc = os.path.join(os.path.expanduser('~'), tail, sub)
-        if os.path.isdir(irc) and irc not in rc:
-            rc.insert(0, irc)
-    # Global configuration
-    irc = os.path.join(os.path.dirname(__file__), sub)
-    if not os.path.exists(irc):
-        raise ValueError('Default configuration file does not exist.')
-    elif irc not in rc:
-        rc.insert(0, irc)
-    return rc
-
 def _save_cmap(name, cmap):
     """Saves colormap in the ".proplot" folder in user directory."""
     # Save listed colormap i.e. color cycle
-    irc = os.path.join(os.path.expanduser('~'), '.proplot')
+    folder = os.path.join(os.path.expanduser('~'), '.proplot')
     if isinstance(cmap, mcolors.ListedColormap):
         basename = f'{name}.hex'
-        filename = os.path.join(DATA_USER_CYCLES, basename)
+        filename = os.path.join(folder, 'cycles', basename)
         with open(filename, 'w') as f:
             f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
         print(f'Saved color cycle to "{basename}".')
     # Save segment data directly
     else:
         basename = f'{name}.json'
-        filename = os.path.join(DATA_USER_CMAPS, basename)
+        filename = os.path.join(folder, 'cmaps', basename)
         data = {}
         for key,value in cmap._segmentdata.items():
             data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
@@ -95,24 +65,6 @@ def _save_cmap(name, cmap):
         with open(filename, 'w') as file:
             json.dump(data, file, indent=4)
         print(f'Saved colormap to "{basename}".')
-
-
-DATA_USER = os.path.join(os.path.expanduser('~'), '.proplot')
-DATA_USER_CMAPS = os.path.join(DATA_USER, 'cmaps')
-DATA_USER_CYCLES = os.path.join(DATA_USER, 'cycles')
-DATA_USER_FONTS = os.path.join(DATA_USER, 'fonts') # user fonts
-DATA_CMAPS = os.path.join(os.path.dirname(__file__), 'cmaps') # or parent, but that makes pip install distribution hard
-DATA_CYCLES = os.path.join(os.path.dirname(__file__), 'cycles') # or parent, but that makes pip install distribution hard
-DATA_COLORS = os.path.join(os.path.dirname(__file__), 'colors') # or parent, but that makes pip install distribution hard
-DATA_FONTS = os.path.join(os.path.dirname(__file__), 'fonts') # proplot fonts
-if not os.path.isdir(DATA_USER):
-    os.mkdir(DATA_USER)
-if not os.path.isdir(DATA_USER_CMAPS):
-    os.mkdir(DATA_USER_CMAPS)
-if not os.path.isdir(DATA_USER_CYCLES):
-    os.mkdir(DATA_USER_CYCLES)
-if not os.path.isdir(DATA_USER_FONTS):
-    os.mkdir(DATA_USER_FONTS)
 
 # Colormap stuff
 CMAPS_CATEGORIES = {
@@ -321,86 +273,46 @@ CSPACE_IDXS = {
     'alpha': 3,
     }
 
-# Check data
-DATA_USER_PATHS = {*()}
-DATA_ALLOWED_PATHS = {'cmaps', 'cycles', 'fonts'}
-def _check_data():
-    """Checks the data folder and issues helpful warning message for new users.
-    This is called inside every register function."""
-    global DATA_USER_PATHS
-    data_user = os.path.join(os.path.expanduser('~'), '.proplot')
-    data_user_paths = {os.path.basename(path) for path in glob.glob(os.path.join(data_user, '*'))}
-    if data_user_paths != DATA_USER_PATHS and data_user_paths > DATA_ALLOWED_PATHS:
-        DATA_USER_PATHS = data_user_paths
-        warnings.warn(f'Found extra files {", ".join(data_user_paths - DATA_ALLOWED_PATHS)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/cycles, or .proplot/fonts subfolders.')
-
 #-----------------------------------------------------------------------------#
 # Helper classes
 #-----------------------------------------------------------------------------#
-class ColorCacheDict(dict):
-    """Special dictionary that lets user draw single color tuples from
-    arbitrary colormaps or color cycles."""
-    # * Matplotlib 'color' arguments are passed to to_rgba, which tries
-    #   to read directly from cache and if that fails, tries to sanitize input.
-    #   The sanitization raises error when encounters (colormap, idx) tuple. So
-    #   we need to override the *cache* instead of color dictionary itself!
-    # * Builtin to_rgb tries to get cached colors as dict[name, alpha],
-    #   resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
-    #   to differentiate this from (cmapname, index) usage! Must do try except lookup
-    #   into colormap dictionary every time. Don't want to do this for actual
-    #   color dict for sake of speed, so we only wrap *cache* lookup. Also we try
-    #   to avoid cmap lookup attempt whenever possible with if statement.
-    def __getitem__(self, key):
+class BaseColormap(mcolors.Colormap):
+    """Base colormap class that adds a "save" method."""
+    def save(self, folder=None):
         """
-        Either samples the color from a colormap or color cycle,
-        or calls the parent getitem to look up the color name.
+        Saves the colormap or color cycle to a folder.
 
-        For a **smooth colormap**, usage is e.g.
-        ``color=('Blues', 0.8)`` -- the number should be between 0 and 1, and
-        indicates where to draw the color from the smooth colormap. For a
-        "listed" colormap, i.e. a **color cycle**, usage is e.g.
-        ``color=('colorblind', 2)``. The number indicates the index in the
-        list of discrete colors.
-
-        These examples work with any matplotlib command that accepts
-        a ``color`` keyword arg.
+        Parameters
+        ----------
+        folder : str, optional
+            The subfolder where the cycle will be saved. Default is
+            ``~/.proplotrc/cmaps``
         """
-        # Pull out alpha and draw color from cmap
-        rgb, alpha = key
-        if not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2 and isinstance(rgb[1], Number) and isinstance(rgb[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
-            try:
-                cmap = mcm.cmap_d[rgb[0]]
-            except (TypeError, KeyError):
-                pass
-            else:
-                if isinstance(cmap, mcolors.ListedColormap):
-                    if not 0 <= rgb[1] < len(cmap.colors):
-                        raise ValueError(f'Color cycle sample for {rgb[0]!r} cycle must be between 0 and {len(cmap.colors)-1}, got {rgb[1]}.')
-                    rgb = cmap.colors[rgb[1]] # draw color from the list of colors, using index
-                else:
-                    if not 0 <= rgb[1] <= 1:
-                        raise ValueError(f'Colormap sample for {rgb[0]!r} colormap must be between 0 and 1, got {rgb[1]}.')
-                    rgb = cmap(rgb[1]) # interpolate color from colormap, using key in range 0-1
-                rgba = mcolors.to_rgba(rgb, alpha)
-                return rgba
-        return super().__getitem__((rgb, alpha))
 
-class _ColorMappingOverride(mcolors._ColorMapping):
-    def __init__(self, mapping):
-        """Wraps the cache."""
-        super().__init__(mapping)
-        self.cache = ColorCacheDict({})
+class BaseCycle(cycler.Cycler):
+    """Base property cycler class that adds a "save" method for saving
+    lists of colors and adds a "name" attribute."""
+    def __init__(self, name, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        name : str
+            The cycler name.
+        *args, **kwargs
+            Passed to `~cycler.Cycler`.
+        """
+        self.name = name
+        super().__init__(*args, **kwargs)
 
-# Apply subclass
-# Modify colorConverter and use that everywhere in ProPlot, so only have to
-# reference private API in these three lines.
-if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
-    _map = _ColorMappingOverride(mcolors._colors_full_map)
-    mcolors._colors_full_map = _map
-    mcolors.colorConverter.cache = _map.cache # re-instantiate
-    mcolors.colorConverter.colors = _map # re-instantiate
+    def save(self, folder=None):
+        """
+        Parameters
+        ----------
+        folder : str, optional
+            The subfolder where the cycle will be saved. Default is
+            ``~/.proplotrc/cycles``.
+        """
 
-# Flexible colormap identification
 class CmapDict(dict):
     def __init__(self, kwargs):
         """
@@ -507,47 +419,68 @@ class CmapDict(dict):
         for key,value in kwargs.items():
             self[key] = value
 
-# Apply subclass
+class _ColorMappingOverride(mcolors._ColorMapping):
+    """Mapping whose cache attribute is a `ColorCacheDict` dictionary."""
+    def __init__(self, mapping):
+        super().__init__(mapping)
+        self.cache = ColorCacheDict({})
+
+class ColorCacheDict(dict):
+    """Dictionary that lets users draw single color tuples from
+    arbitrary colormaps or color cycles."""
+    def __getitem__(self, key):
+        """
+        Either samples the color from a colormap or color cycle,
+        or calls the parent getitem to look up the color name.
+
+        For a **smooth colormap**, usage is e.g.
+        ``color=('Blues', 0.8)`` -- the number should be between 0 and 1, and
+        indicates where to draw the color from the smooth colormap. For a
+        "listed" colormap, i.e. a **color cycle**, usage is e.g.
+        ``color=('colorblind', 2)``. The number indicates the index in the
+        list of discrete colors.
+
+        These examples work with any matplotlib command that accepts
+        a ``color`` keyword arg.
+        """
+        # Notes
+        # * Matplotlib 'color' arguments are passed to to_rgba, which tries
+        #   to read directly from cache and if that fails, tries to sanitize input.
+        #   The sanitization raises error when encounters (colormap, idx) tuple. So
+        #   we need to override the *cache* instead of color dictionary itself!
+        # * Builtin to_rgb tries to get cached colors as dict[name, alpha],
+        #   resulting in key as (colorname, alpha) or ((R,G,B), alpha) tuple. Impossible
+        #   to differentiate this from (cmapname, index) usage! Must do try except lookup
+        #   into colormap dictionary every time. Don't want to do this for actual
+        #   color dict for sake of speed, so we only wrap *cache* lookup. Also we try
+        #   to avoid cmap lookup attempt whenever possible with if statement.
+        rgb, alpha = key
+        if not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2 and isinstance(rgb[1], Number) and isinstance(rgb[0], str): # i.e. is not None; this is *very common*, so avoids lots of unnecessary lookups!
+            try:
+                cmap = mcm.cmap_d[rgb[0]]
+            except (TypeError, KeyError):
+                pass
+            else:
+                if isinstance(cmap, mcolors.ListedColormap):
+                    if not 0 <= rgb[1] < len(cmap.colors):
+                        raise ValueError(f'Color cycle sample for {rgb[0]!r} cycle must be between 0 and {len(cmap.colors)-1}, got {rgb[1]}.')
+                    rgb = cmap.colors[rgb[1]] # draw color from the list of colors, using index
+                else:
+                    if not 0 <= rgb[1] <= 1:
+                        raise ValueError(f'Colormap sample for {rgb[0]!r} colormap must be between 0 and 1, got {rgb[1]}.')
+                    rgb = cmap(rgb[1]) # interpolate color from colormap, using key in range 0-1
+                rgba = mcolors.to_rgba(rgb, alpha)
+                return rgba
+        return super().__getitem__((rgb, alpha))
+
+# Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
     mcm.cmap_d = CmapDict(mcm.cmap_d)
-
-# New base colormap and cycler classes
-class ColormapBase(mcolors.Colormap):
-    """Base colormap class that adds a "save" method."""
-    def save(self, folder=None):
-        """
-        Saves the colormap or color cycle to a folder.
-
-        Parameters
-        ----------
-        folder : str, optional
-            The subfolder where the cycle will be saved. Default is
-            ``~/.proplotrc/cmaps``
-        """
-
-class CyclerBase(cycler.Cycler):
-    """Base property cycler class that adds a "save" method for saving
-    lists of colors and adds a "name" attribute."""
-    def __init__(self, name, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        name : str
-            The cycler name.
-        *args, **kwargs
-            Passed to `~cycler.Cycler`.
-        """
-        self.name = name
-        super().__init__(*args, **kwargs)
-
-    def save(self, folder=None):
-        """
-        Parameters
-        ----------
-        folder : str, optional
-            The subfolder where the cycle will be saved. Default is
-            ``~/.proplotrc/cycles``.
-        """
+if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
+    _map = _ColorMappingOverride(mcolors._colors_full_map)
+    mcolors._colors_full_map = _map
+    mcolors.colorConverter.cache = _map.cache # re-instantiate
+    mcolors.colorConverter.colors = _map # re-instantiate
 
 #-----------------------------------------------------------------------------#
 # Color manipulation functions
@@ -2132,7 +2065,6 @@ def register_cmaps():
     """
     # Turn original matplotlib maps from ListedColormaps to LinearSegmentedColormaps
     # It makes zero sense to me that they are stored as ListedColormaps
-    _check_data()
     for name in CMAPS_CATEGORIES['Matplotlib Originals']: # initialize as empty lists
         cmap = mcm.cmap_d._getitem(name, None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
@@ -2155,18 +2087,18 @@ def register_cmaps():
 
     # Add colormaps from ProPlot and user directories
     N = rcParams['image.lut'] # query this when register function is called
-    for filename in sorted(glob.glob(os.path.join(DATA_CMAPS, '*'))) + \
-            sorted(glob.glob(os.path.join(DATA_USER_CMAPS, '*'))):
-        name, x, data = _read_cmap_cycle_data(filename)
-        if name is None:
-            continue
-        if isinstance(data, mcolors.LinearSegmentedColormap):
-            cmap = data
-        else:
-            data = [(x,color) for x,color in zip(x,data)]
-            cmap = mcolors.LinearSegmentedColormap.from_list(name, data, N=N)
-        mcm.cmap_d[name] = cmap
-        cmaps.append(name)
+    for path in get_configpaths('cmaps'):
+        for filename in sorted(glob.glob(os.path.join(path, '*'))):
+            name, x, data = _read_cmap_cycle_data(filename)
+            if name is None:
+                continue
+            if isinstance(data, mcolors.LinearSegmentedColormap):
+                cmap = data
+            else:
+                data = [(x,color) for x,color in zip(x,data)]
+                cmap = mcolors.LinearSegmentedColormap.from_list(name, data, N=N)
+            mcm.cmap_d[name] = cmap
+            cmaps.append(name)
     # Add cyclic attribute
     for name,cmap in mcm.cmap_d.items():
         cmap._cyclic = (name.lower() in ('twilight', 'twilight_shifted', 'phase', 'graycycle')) # add hidden attribute used by BinNorm
@@ -2186,7 +2118,6 @@ def register_cycles():
     For valid file formats, see `register_cmaps`.
     """
     # Empty out user-accessible cycle list
-    _check_data()
     cycles.clear()
 
     # Remove gross cycles, change the names of some others
@@ -2200,15 +2131,15 @@ def register_cycles():
 
     # Read cycles from directories
     icycles = {}
-    for filename in sorted(glob.glob(os.path.join(DATA_CYCLES, '*'))) + \
-            sorted(glob.glob(os.path.join(DATA_USER_CYCLES, '*'))):
-        name, _, data = _read_cmap_cycle_data(filename)
-        if name is None:
-            continue
-        if isinstance(data, mcolors.LinearSegmentedColormap):
-            warnings.warn(f'Failed to load {filename} as color cycle.')
-            continue
-        icycles[name] = data
+    for path in get_configpaths('cycles'):
+        for filename in sorted(glob.glob(os.path.join(path, '*'))):
+            name, _, data = _read_cmap_cycle_data(filename)
+            if name is None:
+                continue
+            if isinstance(data, mcolors.LinearSegmentedColormap):
+                warnings.warn(f'Failed to load {filename} as color cycle.')
+                continue
+            icycles[name] = data
 
     # Register cycles as ListedColormaps
     for name,colors in {**CYCLES_PRESET, **icycles}.items():
@@ -2242,38 +2173,38 @@ def register_colors(nmax=np.inf):
         colordict.update({name:dict_})
 
     # Load colors from file and get their HCL values
-    names = ('opencolors', 'xkcd', 'crayola') # order is preference for identical color names from different groups
-    files = [os.path.join(DATA_COLORS, f'{name}.txt') for name in names]
-    pairs = []
+    # TODO: Cleanup!
     seen = {*base} # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = np.empty((0,3))
-    for file in files:
-        category, _ = os.path.splitext(os.path.basename(file))
-        data = np.genfromtxt(file, delimiter='\t', dtype=str, comments='%', usecols=(0,1)).tolist()
-        # Immediately add all opencolors
-        if category == 'opencolors':
-            dict_ = {name:color for name,color in data}
-            colordict.update({'opencolors':dict_})
-            continue
-        # Other color dictionaries are filtered, and their names are sanitized
-        i = 0
-        dict_ = {}
-        ihcls = []
-        colordict[category] = {} # just initialize this one
-        for name,color in data: # is list of name, color tuples
-            if i >= nmax: # e.g. for xkcd colors
-                break
-            for regex,sub in FILTER_TRANSLATIONS:
-                name = regex.sub(sub, name)
-            if name in seen or FILTER_BAD.search(name):
+    pairs = []
+    for dir in get_configpaths('colors'):
+        for file in sorted(glob.glob(os.path.join(dir, '*.txt')))[::-1]: # prefer xkcd
+            cat, _ = os.path.splitext(os.path.basename(file))
+            data = np.genfromtxt(file, dtype=str, comments='%', usecols=(0,1)).tolist()
+            # Immediately add all open colors
+            if cat == 'open':
+                dict_ = {name:color for name,color in data}
+                colordict.update({'open': dict_})
                 continue
-            seen.add(name)
-            pairs.append((category, name)) # save the category name pair
-            ihcls.append(to_xyz(color, space=FILTER_SPACE))
-            dict_[name] = color # save the color
-            i += 1
-        _colordict_unfiltered[category] = dict_
-        hcls = np.concatenate((hcls, ihcls), axis=0)
+            # Other color dictionaries are filtered, and their names are sanitized
+            i = 0
+            dict_ = {}
+            ihcls = []
+            colordict[cat] = {} # just initialize this one
+            for name,color in data: # is list of name, color tuples
+                if i >= nmax: # e.g. for xkcd colors
+                    break
+                for regex,sub in FILTER_TRANSLATIONS:
+                    name = regex.sub(sub, name)
+                if name in seen or FILTER_BAD.search(name):
+                    continue
+                seen.add(name)
+                pairs.append((cat, name)) # save the category name pair
+                ihcls.append(to_xyz(color, space=FILTER_SPACE))
+                dict_[name] = color # save the color
+                i += 1
+            _colordict_unfiltered[cat] = dict_
+            hcls = np.concatenate((hcls, ihcls), axis=0)
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
@@ -2281,11 +2212,11 @@ def register_colors(nmax=np.inf):
     hcls = hcls/np.array(scale)
     hcls = np.round(hcls/FILTER_THRESH).astype(np.int64)
     _, idxs, _ = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
-    for idx,(category,name) in enumerate(pairs):
+    for idx,(cat,name) in enumerate(pairs):
         if name not in FILTER_ADD and idx not in idxs:
             deleted += 1
         else:
-            colordict[category][name] = _colordict_unfiltered[category][name]
+            colordict[cat][name] = _colordict_unfiltered[cat][name]
     # Add to colors mapping
     for _,kw in colordict.items():
         mcolors.colorConverter.colors.update(kw)
@@ -2331,8 +2262,7 @@ def register_fonts():
     # Add proplot path to TTFLIST and rebuild cache
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ!
-    _check_data()
-    paths = DATA_FONTS + ':' + DATA_USER_FONTS
+    paths = ':'.join(get_configpaths('fonts'))
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
     elif paths not in os.environ['TTFPATH']:
@@ -2347,8 +2277,13 @@ def register_fonts():
         mfonts._rebuild()
 
     # Populate font lists
-    fonts_system[:] = sorted({font.name for font in mfonts.fontManager.ttflist if not (DATA_USER_FONTS in font.fname or DATA_FONTS in font.fname)})
-    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist if (DATA_USER_FONTS in font.fname or DATA_FONTS in font.fname)})
+    fonts_system[:] = sorted({
+        font.name for font in mfonts.fontManager.ttflist
+        if not any(path in font.fname for path in paths.split(':'))
+        })
+    fonts_proplot[:] =  sorted({font.name for font in mfonts.fontManager.ttflist
+        if any(path in font.fname for path in paths.split(':'))
+        })
     fonts[:] = sorted((*fonts_system, *fonts_proplot))
 
 #-----------------------------------------------------------------------------#
@@ -2608,19 +2543,19 @@ def show_colors(nbreak=17, minsat=0.2):
     # components of that map
     figs = []
     from . import subplots
-    for opencolors in (True,False):
+    for open_colors in (True, False):
         scale = (360, 100, 100)
-        if opencolors:
+        if open_colors:
             group = ['opencolors']
         else:
-            group = [name for name in colordict if name not in ('css','opencolors')]
+            group = [name for name in colordict if name not in ('css', 'opencolors')]
         icolors = {}
         for name in group:
             icolors.update(colordict[name]) # add category dictionary
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
-        if opencolors:
+        if open_colors:
             wscale = 0.5
             swatch = 1.5
             nrows, ncols = 10, len(OPEN_COLORS) # rows and columns

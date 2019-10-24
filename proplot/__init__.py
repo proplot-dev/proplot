@@ -31,6 +31,19 @@ def _warning_proplot(message, category, filename, lineno, line=None):
 if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
 
+# Initialize customization folders and files
+import os
+_rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
+if not os.path.isdir(_rc_folder):
+    os.mkdir(_rc_folder)
+for _rc_sub in ('cmaps', 'cycles', 'fonts'):
+    _rc_sub = os.path.join(_rc_folder, _rc_sub)
+    if not os.path.isdir(_rc_sub):
+        os.mkdir(_rc_sub)
+_rc_file = os.path.join(_rc_folder, 'proplotrc')
+if not os.path.isfile(_rc_file):
+    open(_rc_file, 'x').close() # create new file and close it
+
 # Import stuff
 # WARNING: Import order is meaningful! Loads modules that are dependencies
 # of other modules last, and loads styletools early so we can try to update
