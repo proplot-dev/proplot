@@ -2177,8 +2177,8 @@ def register_colors(nmax=np.inf):
     seen = {*base} # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = np.empty((0,3))
     pairs = []
-    for dir in get_configpaths('colors'):
-        for file in sorted(glob.glob(os.path.join(dir, '*.txt')))[::-1]: # prefer xkcd
+    for path in get_configpaths('colors'):
+        for file in sorted(glob.glob(os.path.join(path, '*.txt')))[::-1]: # prefer xkcd
             cat, _ = os.path.splitext(os.path.basename(file))
             data = np.genfromtxt(file, dtype=str, comments='%', usecols=(0,1)).tolist()
             # Immediately add all open colors
