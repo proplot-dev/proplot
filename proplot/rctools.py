@@ -159,6 +159,19 @@ Key(s)                                                               Description
 ``title.color``, ``title.size``, ``title.weight``                    Font color, size, and weight for subplot titles.
 ``toplabel.color``, ``toplabel.size``, ``toplabel.weight``           Font color, size, and weight for column labels on the top of the figure.
 ===================================================================  =========================================================================================================================================================================================================================================================
+
+##############
+proplotrc file
+##############
+
+You can edit the default global settings by modifying the
+``~/.proplot/proplotrc`` file.  As an example, the default ``proplotrc`` file
+is shown below. It roughly matches the syntax used in ``matplotlibrc`` files,
+although we strictly adhere to `YAML <https://en.wikipedia.org/wiki/YAML>`__.
+
+.. include:: ../proplot/.proplotrc
+   :literal:
+
 """
 # TODO: Add 'style' setting that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
