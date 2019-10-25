@@ -3072,10 +3072,10 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             GeoAxes.text
             )
         plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
-            _redirect(GeoAxes.plot)
+            _default_transform(GeoAxes.plot)
             ))))
         scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
-            _redirect(GeoAxes.scatter)
+            _default_transform(GeoAxes.scatter)
             ))))
         fill_between  = _fill_between_wrapper(_standardize_1d(_cycle_changer(
             GeoAxes.fill_between
@@ -3087,36 +3087,36 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         # Wrapped by cmap wrapper and standardized
         # Also support redirecting to Basemap methods
         contour = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.contour)
+            _default_transform(GeoAxes.contour)
             ))
         contourf = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.contourf)
+            _default_transform(GeoAxes.contourf)
             ))
         pcolor = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.pcolor)
+            _default_transform(GeoAxes.pcolor)
             ))
         pcolormesh = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.pcolormesh)
+            _default_transform(GeoAxes.pcolormesh)
             ))
         quiver = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.quiver)
+            _default_transform(GeoAxes.quiver)
             ))
         streamplot = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.streamplot)
+            _default_transform(GeoAxes.streamplot)
             ))
         barbs = _standardize_2d(_cmap_changer(
-            _redirect(GeoAxes.barbs)
+            _default_transform(GeoAxes.barbs)
             ))
 
         # Wrapped only by cmap wrapper
         tripcolor = _cmap_changer(
-            GeoAxes.tripcolor
+            _default_transform(GeoAxes.tripcolor)
             )
         tricontour = _cmap_changer(
-            GeoAxes.tricontour
+            _default_transform(GeoAxes.tricontour)
             )
         tricontourf = _cmap_changer(
-            GeoAxes.tricontourf
+            _default_transform(GeoAxes.tricontourf)
             )
 
         # Special GeoAxes commands
