@@ -193,44 +193,44 @@ _rcExtraParams = {}
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 RCGLOBALS_CHILDREN = {
-    'abc':          [],
-    'span':         [],
-    'share':        [],
-    'align':        [],
-    'tight':        [],
-    'fontname':     ['font.family'],
-    'cmap':         ['image.cmap'],
-    'lut':          ['image.lut'],
-    'cycle':        [],
-    'rgbcycle':     [],
-    'alpha':        ['axes.alpha'], # this is a custom setting
-    'facecolor':    ['axes.facecolor', 'geoaxes.facecolor'],
-    'color':        ['axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'], # change the 'color' of an axes
-    'small':        ['font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'], # the 'small' fonts
-    'large':        ['abc.size', 'figure.titlesize', 'axes.titlesize', 'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size', 'rightlabel.size', 'bottomlabel.size'], # the 'large' fonts
-    'linewidth':    ['axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'],
-    'margin':       ['axes.xmargin', 'axes.ymargin'],
-    'grid':         ['axes.grid'],
-    'gridminor':    ['axes.gridminor'],
-    'geogrid':      ['axes.geogrid'],
-    'ticklen' :     ['xtick.major.size', 'ytick.major.size'],
-    'tickdir':      ['xtick.direction',  'ytick.direction'],
-    'tickpad':      ['xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'],
-    'tickratio':    [],
-    'ticklenratio': [],
-    'gridratio':    [],
-    'reso':         [],
-    'land':         [],
-    'ocean':        [],
-    'lakes':        [],
-    'coast':        [],
-    'borders':      [],
-    'innerborders': [],
-    'rivers':       [],
-    'nbsetup':      [],
-    'format':       [],
-    'autosave':     [],
-    'autoreload':   [],
+    'abc':          (),
+    'span':         (),
+    'share':        (),
+    'align':        (),
+    'tight':        (),
+    'fontname':     ('font.family',),
+    'cmap':         ('image.cmap',),
+    'lut':          ('image.lut',),
+    'cycle':        (),
+    'rgbcycle':     (),
+    'alpha':        ('axes.alpha',), # this is a custom setting
+    'facecolor':    ('axes.facecolor', 'geoaxes.facecolor'),
+    'color':        ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'), # change the 'color' of an axes
+    'small':        ('font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'), # the 'small' fonts
+    'large':        ('abc.size', 'figure.titlesize', 'axes.titlesize', 'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size', 'rightlabel.size', 'bottomlabel.size'), # the 'large' fonts
+    'linewidth':    ('axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'),
+    'margin':       ('axes.xmargin', 'axes.ymargin'),
+    'grid':         ('axes.grid',),
+    'gridminor':    ('axes.gridminor',),
+    'geogrid':      ('axes.geogrid',),
+    'ticklen' :     ('xtick.major.size', 'ytick.major.size'),
+    'tickdir':      ('xtick.direction',  'ytick.direction'),
+    'tickpad':      ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
+    'tickratio':    (),
+    'ticklenratio': (),
+    'gridratio':    (),
+    'reso':         (),
+    'land':         (),
+    'ocean':        (),
+    'lakes':        (),
+    'coast':        (),
+    'borders':      (),
+    'innerborders': (),
+    'rivers':       (),
+    'nbsetup':      (),
+    'format':       (),
+    'autosave':     (),
+    'autoreload':   (),
     }
 
 # Names of the new settings
@@ -397,7 +397,7 @@ class rc_configurator(object):
                 try:
                     data = yaml.safe_load(f)
                 except yaml.YAMLError as err:
-                    print('Error: Invalid .proplotrc file.')
+                    print('{file!r} has invalid YAML syntax.')
                     raise err
             # Special duplicate keys
             val = data.get('title.pad', None)
@@ -419,13 +419,13 @@ class rc_configurator(object):
                     value = _convert_units(key, value)
                     _rcParams[key] = value
                 else:
-                    raise RuntimeError(('Default', 'User')[i] + f' .proplotrc file has invalid key {key!r}.')
+                    raise RuntimeError(f'{file!r} has invalid key {key!r}.')
             # Make sure we did not miss anything
             if i == 0:
                 if gkeys != RC_GLOBALNAMES:
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid global keys {RC_GLOBALNAMES - gkeys}.')
+                    raise RuntimeError(f'{file!r} has incomplete or invalid global keys {RC_GLOBALNAMES - gkeys}.')
                 if ckeys != RC_CUSTOMNAMES:
-                    raise RuntimeError(f'Default .proplotrc file has incomplete or invalid custom keys {RC_CUSTOMNAMES - ckeys}.')
+                    raise RuntimeError(f'{file!r} has incomplete or invalid custom keys {RC_CUSTOMNAMES - ckeys}.')
 
         # Apply *global settings* to children settings
         _set_cycler(_rcGlobals['cycle'])

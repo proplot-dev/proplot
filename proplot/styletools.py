@@ -42,30 +42,6 @@ __all__ = [
     'to_rgb', 'to_xyz',
     ]
 
-def _save_cmap(name, cmap):
-    """Saves colormap in the ".proplot" folder in user directory."""
-    # Save listed colormap i.e. color cycle
-    folder = os.path.join(os.path.expanduser('~'), '.proplot')
-    if isinstance(cmap, mcolors.ListedColormap):
-        basename = f'{name}.hex'
-        filename = os.path.join(folder, 'cycles', basename)
-        with open(filename, 'w') as f:
-            f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
-        print(f'Saved color cycle to "{basename}".')
-    # Save segment data directly
-    else:
-        basename = f'{name}.json'
-        filename = os.path.join(folder, 'cmaps', basename)
-        data = {}
-        for key,value in cmap._segmentdata.items():
-            data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
-        for key in ('space','gamma1','gamma2'):
-            if hasattr(cmap, '_' + key):
-                data[key] = getattr(cmap, '_' + key)
-        with open(filename, 'w') as file:
-            json.dump(data, file, indent=4)
-        print(f'Saved colormap to "{basename}".')
-
 # Colormap stuff
 CMAPS_CATEGORIES = {
     # Assorted origin, but these belong together
@@ -276,22 +252,62 @@ CSPACE_IDXS = {
 #-----------------------------------------------------------------------------#
 # Helper classes
 #-----------------------------------------------------------------------------#
-class BaseColormap(mcolors.Colormap):
-    """Base colormap class that adds a "save" method."""
+class _Colormap(mcolors.Colormap):
+    """Hidden shared base class."""
     def save(self, folder=None):
+        """Saves the colormap or cycler."""
+        # Save listed colormap i.e. color cycle
+        folder = os.path.join(os.path.expanduser('~'), '.proplot')
+        if isinstance(cmap, mcolors.ListedColormap):
+        # Save segment data directly
+        else:
+
+
+class LinearSegmentedColormap(_Colormap):
+    """New base class for all matplotlib colormaps."""
+    def save(self, *args, **kwargs):
         """
-        Saves the colormap or color cycle to a folder.
+        Saves the colormap to a folder.
 
         Parameters
         ----------
         folder : str, optional
             The subfolder where the cycle will be saved. Default is
-            ``~/.proplotrc/cmaps``
+            ``~/.proplot/cmaps``
         """
+        basename = f'{self.name}.json'
+        filename = os.path.join(folder, 'cmaps', basename)
+        data = {}
+        for key,value in cmap._segmentdata.items():
+            data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
+        for key in ('space','gamma1','gamma2'):
+            if hasattr(cmap, '_' + key):
+                data[key] = getattr(cmap, '_' + key)
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=4)
+        print(f'Saved colormap to {basename!r}.')
 
-class BaseCycle(cycler.Cycler):
+class ListedColormap(_Colormap):
+    """New base class for all matplotlib color cycles."""
+    def save(self, folder=None):
+        """
+        Saves the color cycle to a folder.
+
+        Parameters
+        ----------
+        folder : str, optional
+            The subfolder where the cycle will be saved. Default is
+            ``~/.proplot/cycles``.
+        """
+        basename = f'{self.name}.hex'
+        filename = os.path.join(folder, 'cycles', basename)
+        with open(filename, 'w') as f:
+            f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
+        print(f'Saved color cycle to {basename!r}.')
+
+class Cycler(cycler.Cycler):
     """Base property cycler class that adds a "save" method for saving
-    lists of colors and adds a "name" attribute."""
+    lists of colors and a "name" attribute."""
     def __init__(self, name, *args, **kwargs):
         """
         Parameters
@@ -312,6 +328,13 @@ class BaseCycle(cycler.Cycler):
             The subfolder where the cycle will be saved. Default is
             ``~/.proplotrc/cycles``.
         """
+        basename = f'{self.name}.hex'
+        for key,value in cycle.by_key().items():
+            if by_key[key] != {*value}:
+        filename = os.path.join(folder, 'cycles', basename)
+        with open(filename, 'w') as f:
+            f.write(','.join(mcolors.to_hex(color) for color in cmap.colors))
+        print(f'Saved color cycle to {basename!r}.')
 
 class CmapDict(dict):
     def __init__(self, kwargs):
@@ -340,46 +363,34 @@ class CmapDict(dict):
     def __getitem__(self, key):
         """Sanitizes key name then queries the dictionary."""
         key = self._sanitize_key(key, mirror=True)
-        return self._getitem(key)
+        reverse = (key[-2:] == '_r')
+        if reverse:
+            key = key[:-2]
+        value = super().__getitem__(key) # may raise keyerror
+        if reverse:
+            if hasattr(value, 'reversed'):
+                value = value.reversed()
+            else:
+                raise KeyError(f'Item {value!r} does not have reversed() method.')
+        return value
 
     def __setitem__(self, key, item):
         """Sanitizes key name then assigns to the dictionary."""
-        if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key}. Must be string.')
         key = self._sanitize_key(key, mirror=False)
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """Use sanitized key name for `'in'`."""
+        """Sanitized key name for `'in'`."""
         try: # by default __contains__ uses object.__getitem__ and ignores overrides
             self.__getitem__(item)
             return True
         except KeyError:
             return False
 
-    def _getitem(self, key, *args):
-        """Gets value but skips key sanitization."""
-        reverse = False
-        if key[-2:] == '_r':
-            key, reverse = key[:-2], True
-        try:
-            value = super().__getitem__(key) # may raise keyerror
-        except KeyError as err:
-            if len(args) == 1:
-                return args[0]
-            else:
-                raise err
-        if reverse:
-            try:
-                value = value.reversed()
-            except AttributeError:
-                raise KeyError(f'Dictionary value in {key} must have reversed() method.')
-        return value
-
     def _sanitize_key(self, key, mirror=True):
         """Sanitizes key name."""
         if not isinstance(key, str):
-            raise ValueError(f'Invalid key {key}. Must be string.')
+            raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
         reverse = False
         if key[-2:] == '_r':
@@ -1962,7 +1973,7 @@ def _read_cmap_cycle_data(filename):
             cmap = mcolors.LinearSegmentedColormap(name, data, N=N)
         else:
             kw = {}
-            for key in ('space','gamma1','gamma2'):
+            for key in ('space', 'gamma1', 'gamma2'):
                 kw[key] = data.pop(key, None)
             cmap = PerceptuallyUniformColormap(name, data, N=N, **kw)
         if name[-2:] == '_r':
@@ -2066,7 +2077,7 @@ def register_cmaps():
     # Turn original matplotlib maps from ListedColormaps to LinearSegmentedColormaps
     # It makes zero sense to me that they are stored as ListedColormaps
     for name in CMAPS_CATEGORIES['Matplotlib Originals']: # initialize as empty lists
-        cmap = mcm.cmap_d._getitem(name, None)
+        cmap = mcm.cmap_d.get(name, None)
         if cmap and isinstance(cmap, mcolors.ListedColormap):
             mcm.cmap_d[name] = mcolors.LinearSegmentedColormap.from_list(name, cmap.colors)
 
@@ -2180,7 +2191,10 @@ def register_colors(nmax=np.inf):
     for path in get_configpaths('colors'):
         for file in sorted(glob.glob(os.path.join(path, '*.txt')))[::-1]: # prefer xkcd
             cat, _ = os.path.splitext(os.path.basename(file))
-            data = np.genfromtxt(file, dtype=str, comments='%', usecols=(0,1)).tolist()
+            with open(file, 'r') as f:
+                data = [tuple(item.strip() for item in line.split(':')) for line in f.readlines() if line.strip()]
+            if not all(len(pair) == 2 for pair in data):
+                raise RuntimeError(f'Invalid color names file {file!r}. Every line must be formatted as "name: color".')
             # Immediately add all open colors
             if cat == 'open':
                 dict_ = {name:color for name,color in data}
