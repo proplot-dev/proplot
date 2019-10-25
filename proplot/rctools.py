@@ -9,10 +9,7 @@ following three categories.
    settings. These have the format ``x.y`` or ``x.y.z``.
 2. ProPlot :ref:`rcExtraParams` settings. These also have the format ``x.y``
    (see below).
-3. ProPlot :ref:`rcGlobals` settings. These have no dots (see below). They are **simple,
-   short** names used to change multiple matplotlib and ProPlot settings at once,
-   as shorthands for settings with longer names, or for special options. For example,
-   :rcraw:`ticklen` changes the tick length for the *x* and *y* axes in one go.
+3. ProPlot :ref:`rcGlobals` settings. These have no dots (see below).
 
 You can change settings with the `~proplot.rctools.rc` object as follows.
 
@@ -34,6 +31,11 @@ any dots, you can simply **omit the dots**. For example, to change the
 #########
 rcGlobals
 #########
+
+These are **simple, short** names used to change multiple matplotlib and
+ProPlot settings at once, as shorthands for settings with longer names, or
+for special options. For example, :rcraw:`ticklen` changes the tick length for
+the *x* and *y* axes in one go.
 
 ================  ====================================================================================================================================================================================================================================
 Key               Description
@@ -159,6 +161,24 @@ Key(s)                                                               Description
 ``title.color``, ``title.size``, ``title.weight``                    Font color, size, and weight for subplot titles.
 ``toplabel.color``, ``toplabel.size``, ``toplabel.weight``           Font color, size, and weight for column labels on the top of the figure.
 ===================================================================  =========================================================================================================================================================================================================================================================
+
+##############
+proplotrc file
+##############
+
+You can modify the default settings by editing the
+``~/.proplot/proplotrc`` file. Or to modify settings for a particular project,
+create a ``.proplot/proplotrc`` file in the same directory as your ipython
+notebook, or some arbitrary parent directory.
+
+As an example, the default ``proplotrc`` file
+is shown below. The syntax is roughly the same as that used for
+``matplotlibrc`` files, although ``proplotrc`` strictly adheres to
+`YAML <https://en.wikipedia.org/wiki/YAML>`__.
+
+.. include:: ../proplot/.proplotrc
+   :literal:
+
 """
 # TODO: Add 'style' setting that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
