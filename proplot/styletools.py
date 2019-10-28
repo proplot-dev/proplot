@@ -2216,17 +2216,15 @@ class MidpointNorm(mcolors.Normalize):
 #-----------------------------------------------------------------------------#
 def _get_data_paths(dirname):
     """Returns configuration file paths."""
-    # Global configuration
-    paths = []
-    ipath = os.path.join(os.path.dirname(__file__), dirname)
-    if not os.path.exists(ipath):
-        raise ValueError(f'Default {dirname!r} location {ipath!r} does not exist.')
-    elif ipath not in paths:
-        paths.append(ipath)
     # Home configuration
+    paths = []
     ipath = os.path.join(os.path.expanduser('~'), '.proplot', dirname)
     if os.path.exists(ipath) and ipath not in paths:
-        paths.append(ipath)
+        paths.insert(0, ipath)
+    # Global configuration
+    ipath = os.path.join(os.path.dirname(__file__), dirname)
+    if ipath not in paths:
+        paths.insert(0, ipath)
     return paths
 
 def _read_cmap_cycle_data(filename):

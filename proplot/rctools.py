@@ -352,9 +352,7 @@ def _get_config_paths():
         paths.insert(0, ipath)
     # Global configuration
     ipath = os.path.join(os.path.dirname(__file__), '.proplotrc')
-    if not os.path.exists(ipath):
-        raise ValueError(f'Default configuration location {ipath!r} does not exist.')
-    elif ipath not in paths:
+    if ipath not in paths:
         paths.insert(0, ipath)
     return paths
 
@@ -447,6 +445,8 @@ class rc_configurator(object):
                     print('{file!r} has invalid YAML syntax.')
                     raise err
             # Special duplicate keys
+            if data is None:
+                continue
             val = data.get('title.pad', None)
             if val is not None:
                 data['axes.titlepad'] = val
