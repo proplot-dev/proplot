@@ -159,69 +159,6 @@ def edges(array, axis=-1):
     array = np.swapaxes(array, axis, -1)
     return array
 
-def _check_path(folder, *args):
-    """Returns configuration directory and checks for unexpected extra files
-    inside the directory. Issues helpful warning for new users."""
-    folder = os.path.join(folder, '.proplot')
-    paths = {os.path.basename(path) for path in glob.glob(os.path.join(folder, '*'))}
-    paths_allowed = {'proplotrc', 'cmaps', 'colors', 'cycles', 'fonts'}
-    if not paths <= paths_allowed:
-        warnings.warn(f'Found extra files {", ".join(paths - paths_allowed)} in the ~/.proplot folder. Files must be placed in the .proplot/cmaps, .proplot/colors, .proplot/cycles, or .proplot/fonts subfolders.')
-    return os.path.join(folder, *args)
-
-def get_configpaths(path=None, *, local=True):
-    """
-    Returns ProPlot configuration file and folder paths, or the paths of
-    root configuration directories.
-
-    Parameters
-    ----------
-    sub : {None, 'proplotrc', 'cmaps', 'cycles', 'fonts'}, optional
-        The subfolder or file name. If empty, this function just returns
-        the root configuration directories.
-    local : bool, optional
-        Whether to look for local configuration folders in current directory
-        and parent directories.
-
-    Returns
-    -------
-    paths : list
-        List of paths.
-    """
-    # Checks
-    if not path:
-        args = ()
-    elif path in ('proplotrc', 'cmaps', 'colors', 'cycles', 'fonts'):
-        args = (path,)
-    else:
-        raise ValueError(f'Invalid configuration location {path!r}. Options are "proplotrc", "cmaps", "cycles", and "fonts".')
-    if path == 'proplotrc' and os.path.exists(os.path.join(os.path.expanduser('~'), '.proplotrc')):
-        warnings.warn(f'Configuration file location is now "~/.proplot/proplotrc" to match matplotlib convention. Please move "~/.proplotrc" to "~/.proplot/proplotrc".')
-    # Get paths
-    paths = []
-    if local:
-        idir = os.getcwd()
-        while idir: # not empty string
-            ipath = _check_path(idir, *args)
-            if os.path.exists(ipath):
-                paths.append(ipath)
-            ndir, _ = os.path.split(idir)
-            if ndir == idir:
-                break
-            idir = ndir
-        paths = paths[::-1] # sort from decreasing to increasing importantce
-    # Home configuration
-    ipath = _check_path(os.path.expanduser('~'), *args)
-    if os.path.exists(ipath) and ipath not in paths:
-        paths.insert(0, ipath)
-    # Global configuration
-    ipath = _check_path(os.path.dirname(__file__), *args)
-    if not os.path.exists(ipath):
-        raise ValueError(f'Default configuration location {ipath!r} does not exist.')
-    elif ipath not in paths:
-        paths.insert(0, ipath)
-    return paths
-
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
