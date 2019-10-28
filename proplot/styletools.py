@@ -678,63 +678,32 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             Number of points in the colormap lookup table.
             Default is :rc:`image.lut` times ``len(args)``.
         """
-        if not all(type(cmap) in (LinearSegmentedColormap,
-            mcolors.LinearSegmentedColormap) for cmap in args):
+        # Bail out
+        types = {type(cmap) for cmap in args}
+        if len(types) != 1:
+            raise ValueError(f'Mixed colormap types {types}. Maps must all be LinearSegmentedColormap or PerceptuallyUniformColormap.')
+        if not all(isinstance(cmap, LinearSegmentedColormap) for cmap in args):
             raise ValueError(f'All colormaps must be instances of `~matplotlib.colors.ListedColormap`.')
+        if len(args) == 1:
+            return args[0]
         if name is None:
             name = '_'.join(cmap.name for cmap in args)
         N = N or len(args) * rcParams['image.lut']
 
-        # Bail out
-        if len(args) == 1:
-            return args[0]
-        types = {type(cmap) for cmap in args}
-        if len(types) != 1:
-            raise ValueError(f'Mixed colormap types {types}. Maps must all be LinearSegmentedColormap or PerceptuallyUniformColormap.')
-        type_ = types.pop()
-
-        # For listed colormap, just combine the colors
-        if all(isinstance(cmap, mcolors.ListedColormap) for cmap in args):
-            colors = [color for cmap in args for color in cmap.colors]
-            return ListedColormap(colors, name=name, N=len(colors))
-
-        # Tricker for smooth maps
-        kwargs = {}
-        segmentdata = {}
+        # Combine the segmentdata, and use the y1/y2 slots at merge points so
+        # we never interpolate between end colors of different colormaps
+        # WARNING: If just reference a global 'funcs' list from inside the
+        # 'data' function, end up with grayscale colormap because each 'data'
+        # function reads 'funcs' as from the final channel in 'keys'. Must
+        # embed 'funcs' into each definition using a keyword argument.
+        x0 = np.concatenate([[0], np.cumsum(ratios)]) # coordinates for edges
+        xw = x0[1:] - x0[:-1] # widths between edges
         ratios = ratios or 1
         if isinstance(ratios, Number):
             ratios = [1]*len(args)
         ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
-        x0 = np.concatenate([[0], np.cumsum(ratios)]) # coordinates for edges
-        xw = x0[1:] - x0[:-1] # widths between edges
-
-        # PerceptuallyUniformColormaps checks
-        if type_ is PerceptuallyUniformColormap:
-            # Colorspace
-            spaces = {cmap._space for cmap in args}
-            if len(spaces) > 1:
-                raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
-            kwargs['space'] = spaces.pop()
-            # Gamma handling
-            gammas = {0:'saturation', 1:'luminance'}
-            for i,key in enumerate(('gamma1', 'gamma2')):
-                if key not in kwargs:
-                    kwargs[key] = []
-                for cmap in args:
-                    gamma = getattr(cmap, '_' + key)
-                    if not np.iterable(gamma):
-                        gamma = [gamma]*(len(cmap._segmentdata[gammas[i]])-1) # length is *number* of rows in segmentdata
-                    kwargs[key].extend([*gamma])
-
-        # Combine the segmentdata, and use the y1/y2 slots at merge points so
-        # we never interpolate between end colors of different colormaps
-        keys = {key for cmap in args for key in cmap._segmentdata.keys()}
-        for key in keys:
-            # Combine xyy data
-            # WARNING: If just reference a global 'funcs' list from inside the
-            # 'data' function, end up with grayscale colormap because each 'data'
-            # function reads 'funcs' as from the final channel in 'keys'. Must
-            # embed 'funcs' into each definition using a keyword argument.
+        segmentdata = {}
+        for key in args[0]._segmentdata.keys():
             callable_ = [callable(cmap._segmentdata[key]) for cmap in args]
             if all(callable_): # expand range from x-to-w to 0-1
                 funcs = [cmap._segmentdata[key] for cmap in args]
@@ -759,7 +728,23 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             else:
                 raise ValueError('Mixed callable and non-callable colormap values.')
             segmentdata[key] = data
-        return type_(name, segmentdata, N=N, **kwargs)
+
+        # PerceptuallyUniformColormaps checks
+        kwargs = {}
+        if types.pop() is PerceptuallyUniformColormap:
+            spaces = {cmap._space for cmap in args}
+            if len(spaces) > 1:
+                raise ValueError(f'Cannot merge colormaps in the different HSL spaces {repr(spaces)}.')
+            gammas = {0:'saturation', 1:'luminance'}
+            for i,key in enumerate(('gamma1', 'gamma2')):
+                if key not in kwargs:
+                    kwargs[key] = []
+                for cmap in args:
+                    gamma = getattr(cmap, '_' + key)
+                    if not np.iterable(gamma):
+                        gamma = [gamma]*(len(cmap._segmentdata[gammas[i]])-1) # length is *number* of rows in segmentdata
+                    kwargs[key].extend([*gamma])
+        return args[0].copy(name=name, segmentdata=segmentdata, N=N, **kwargs)
 
     @staticmethod
     def from_list(name, colors, *args, **kwargs):
@@ -779,6 +764,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             If list of (float, color-spec) tuples, the float values are used
             as positions for each segment. Using this method, the colormap
             range can be divided unevenly.
+        *args, **kwargs
+            Passed to `LinearSegmentedColormap`.
         """
         if not np.iterable(colors):
             raise ValueError('colors must be iterable')
@@ -968,7 +955,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 class ListedColormap(mcolors.ListedColormap, _Colormap):
     """New base class for all qualititave colormaps."""
     @staticmethod
-    def from_cmaps(*args, name=None):
+    def from_cmaps(*args, name=None, N=None):
         """
         Concatenates arbitrary colormaps into one colormap.
 
@@ -979,15 +966,16 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         name : str, optional
             The colormap name. Default is
             ``'_'.join(cmap.name for cmap in args)``.
+        N : int, optional
+            The number of colors.
         """
         # For listed colormap, just combine the colors
-        if not all(type(cmap) in (ListedColormap, mcolors.ListedColormap)
-            for cmap in args):
+        if not all(isinstance(cmap, mcolors.ListedColormap) for cmap in args):
             raise ValueError(f'All colormaps must be instances of `~matplotlib.colors.ListedColormap`.')
         if name is None:
             name = '_'.join(cmap.name for cmap in args)
         colors = [color for cmap in args for color in cmap.colors]
-        return ListedColormap(colors, name, len(colors))
+        return ListedColormap(colors, name, N or len(colors))
 
     def save(self, path=None):
         """
@@ -1196,7 +1184,9 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             cyclic=cyclic)
 
     @staticmethod
-    def from_hsl(name, hue=0, saturation=100, luminance=(100, 20), alpha=None, ratios=None, reverse=False, **kwargs):
+    def from_hsl(name,
+        hue=0, saturation=100, luminance=(100, 20), alpha=None,
+        ratios=None, reverse=False, **kwargs):
         """
         Makes a `~PerceptuallyUniformColormap` by specifying the hue,
         saturation, and luminance transitions individually.
@@ -1232,10 +1222,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         reverse : bool, optional
             Whether to reverse the final colormap.
 
-        Returns
-        -------
-        `PerceptuallyUniformColormap`
-            The colormap.
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `PerceptuallyUniformColormap`.
         """
         # Build dictionary, easy peasy
         cdict = {}
@@ -1261,6 +1251,11 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             transition, smaller numbers indicate a faster transition.
         reverse : bool, optional
             Whether to reverse the result.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `PerceptuallyUniformColormap`.
         """
         # Translate colors
         # TODO: Allow alpha
@@ -1281,7 +1276,9 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
     @staticmethod
-    def from_color(color, fade=100, reverse=False, space='hsl', name='no_name', **kwargs):
+    def from_color(color,
+        fade=100, reverse=False, space='hsl', name='no_name',
+        **kwargs):
         """
         Returns a monochromatic "sequential" colormap that blends from white
         or near-white to the input color.
@@ -1308,7 +1305,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `PerceptuallyUniformColormap.from_hsl` static method.
+            Passed to `PerceptuallyUniformColormap.from_hsl`.
         """
         # Get colorspace and channel values
         h, s, l = to_xyz(to_rgb(color), space)
@@ -1563,65 +1560,44 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
         Default is ``'perceptual'`` when calling `Colormap` directly, and
         ``'listed'`` when `Colormap` is called by `Cycle`.
     fade : float, optional
-        The maximum luminosity used when generating `monochrome_cmap` colormaps.
-        Default is ``100`` when calling `Colormap` directly, and ``90`` when
-        `Colormap` is called by `Cycle` (this prevents having pure white in
-        the color cycle).
+        The maximum luminosity used when generating colormaps with
+        `PerceptuallyUniformColormap.from_color`. Default is ``100`` when
+        calling `Colormap` directly, and ``90`` when `Colormap` is called by
+        `Cycle` (this prevents having pure white in the color cycle).
 
         For example, ``plot.Colormap('blue', fade=80)`` generates a blue
         colormap that fades to a pale blue with 80% luminance.
     cycle : str or list of color-spec, optional
         The registered cycle name or a list of colors used to interpret cycle
-        color strings like ``'C0'`` and ``'C2'`` when generating
-        `monochrome_cmap` colormaps. Default is colors from the currently
-        active property cycler.
+        color strings like ``'C0'`` and ``'C2'`` when generating colormaps
+        with `PerceptuallyUniformColormap.from_color`. Default is colors
+        from the currently active property cycler.
 
         For example, ``plot.Colormap('C0', 'C1', 'C2', cycle='538')``
         generates a colormap using colors from the ``'538'`` color cycle.
     shift : float, optional
-        Passed to `LinearSegmentedColormap.shifted`,
-        `PerceptuallyUniformColormap.shifted`,
-        or `ListedColormap.shifted`.
-
-
-        For `~matplotlib.colors.LinearSegmentedColormap` maps, this
-        rotates the colors by `shift` degrees out of 360 degrees. This is
-        mainly useful for "cyclic" colormaps. For example, ``shift=180``
-        moves the edge colors to the center of the colormap.
-
-        For `~matplotlib.colors.ListedColormap` maps, this rotates
-        the color list by `shift` places. For example, ``shift=2`` moves the
-        start of the color cycle two places to the right.
-    left, right, center : float or list of float, optional
-        For `~matplotlib.colors.ListedColormap` maps, this slices
-        the color list using ``cmap.colors = cmap.colors[left:right]``.
-        For example, ``left=1`` with ``right=None`` deletes the first color.
+        Passed to `LinearSegmentedColormap.shifted` or
+        `ListedColormap.shifted`.
+    left, right, cut : float or list of float, optional
+        Passed to `LinearSegmentedColormap.sliced` or
+        `ListedColormap.sliced`.
 
         If float, these apply to the final, *merged* colormap. If list of float,
         these apply to *each* individual colormap before the colormaps are
-        merged. There is no difference if ``len(args) == 1``.
-    cut : float, optional
-        For `~matplotlib.colors.LinearSegmentedColormap` maps, this
-        cuts out colors in the *center* of the colormap. This is useful
-        if you want to have a sharper cutoff between "negative" and "positive"
-        values in a diverging colormap. For example, ``cut=0.1`` cuts out
-        the middle 10% of the colormap.
+        merged. There is no difference when ``len(args) == 1``.
     reverse : bool or list of bool, optional
-        Optionally reverses the colormap(s).
+        Reverses the colormap(s) with `LinearSegmentedColormap.reversed` or
+        `ListedColormap.reversed`.
 
         If bool, this applies to the final, *merged* colormap. If list of bool,
         these apply to *each* individual colormap before the colormaps are
         merged. There is no difference if ``len(args) == 1``.
     ratios : list of float, optional
-        Indicates the ratios used to *merge* the colormaps. Length must
-        equal ``len(args)``. For example, if `args` contains
-        ``['blues', 'reds']`` and `ratios` is ``[2, 1]``, this generates a
-        colormap with two-thirds blue colors on the left and one-third red
-        colors on the right.
+        Passed to `LinearSegmentedColormap.from_cmaps` or
+        `ListedColormap.from_cmaps`.
     gamma1, gamma2, gamma : float, optional
-        Gamma-scaling for the saturation, luminance, and both channels
-        for perceptualy uniform colormaps. See the
-        `PerceptuallyUniformColormap` documentation.
+        Passed to `LinearSegmentedColormap.set_gamma` or
+        `PerceptuallyUniformColormap.set_gamma`.
     save : bool, optional
         Whether to call the colormap save method.
         See `LinearSegmentedColormap.save` and `ListedColormap.save`.
@@ -1634,7 +1610,7 @@ def Colormap(*args, name=None, cyclic=None, listmode='perceptual',
     **kwargs
         Passed to the colormap constructor method, e.g.
         `~matplotlib.LinearSegmentedColormap.from_list` or
-        `monochrome_cmap`.
+        `~PerceptuallyUniformColormap.from_color`.
 
     Returns
     -------
