@@ -2,8 +2,8 @@
 """
 A special object named `~proplot.rctools.rc`, belonging to the
 `~proplot.rctools.rc_configurator` class, is created on import.
-This is your **one-stop shop for changing default settings** belonging to any of the
-following three categories.
+This is your one-stop shop for changing default settings belonging to any of
+the following three categories.
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
    settings. These have the format ``x.y`` or ``x.y.z``.
@@ -18,7 +18,8 @@ You can change settings with the `~proplot.rctools.rc` object as follows.
 * ``plot.rc.update(name1=value1, name2=value2)``
 * ``plot.rc.update({'name1':value1, 'name2':value2})``
 
-To temporarily change settings on a particular axes, use either of the following.
+To temporarily change settings on a particular axes, use either of the
+following.
 
 * ``ax.format(name=value)``
 * ``ax.format(rc_kw={'name':value})``
