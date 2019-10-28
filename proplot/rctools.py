@@ -7,7 +7,7 @@ the following three categories.
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
    settings. These have the format ``x.y`` or ``x.y.z``.
-2. ProPlot :ref:`rcExtra` settings. These also have the format ``x.y``
+2. ProPlot :ref:`rcCustom` settings. These also have the format ``x.y``
    (see below).
 3. ProPlot :ref:`rcShort` settings. These have no dots (see below).
 
@@ -82,7 +82,7 @@ Key               Description
 ================  ====================================================================================================================================================================================================================================
 
 #############
-rcExtra
+rcCustom
 #############
 The ``subplots`` category controls the default layout for figures
 and axes. The ``abc``, ``title``, and ``tick`` categories control
@@ -209,21 +209,14 @@ __all__ = ['rc', 'rc_configurator', 'nb_setup']
 # Initialize
 from matplotlib import rcParams as rcParams
 rcShort = {}
-rcExtra = {}
+rcCustom = {}
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
-RCGLOBALS_CHILDREN = {
-    'abc':          (),
-    'span':         (),
-    'share':        (),
-    'align':        (),
-    'tight':        (),
+RC_CHILDREN = {
     'fontname':     ('font.family',),
     'cmap':         ('image.cmap',),
     'lut':          ('image.lut',),
-    'cycle':        (),
-    'rgbcycle':     (),
     'alpha':        ('axes.alpha',), # this is a custom setting
     'facecolor':    ('axes.facecolor', 'geoaxes.facecolor'),
     'color':        ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'), # change the 'color' of an axes
@@ -237,26 +230,18 @@ RCGLOBALS_CHILDREN = {
     'ticklen' :     ('xtick.major.size', 'ytick.major.size'),
     'tickdir':      ('xtick.direction',  'ytick.direction'),
     'tickpad':      ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
-    'tickratio':    (),
-    'ticklenratio': (),
-    'gridratio':    (),
-    'reso':         (),
-    'land':         (),
-    'ocean':        (),
-    'lakes':        (),
-    'coast':        (),
-    'borders':      (),
-    'innerborders': (),
-    'rivers':       (),
-    'nbsetup':      (),
-    'format':       (),
-    'autosave':     (),
-    'autoreload':   (),
     }
 
 # Names of the new settings
-RC_NAMES = {*rcParams.keys()}
-RC_GLOBALNAMES = {*RCGLOBALS_CHILDREN.keys()}
+RC_PARAMNAMES = {*rcParams.keys()}
+RC_SHORTNAMES = {
+    'abc', 'span', 'share', 'align', 'tight', 'fontname', 'cmap', 'lut',
+    'cycle', 'rgbcycle', 'alpha', 'facecolor', 'color', 'small', 'large',
+    'linewidth', 'margin', 'grid', 'gridminor', 'geogrid',
+    'ticklen' , 'tickdir', 'tickpad', 'tickratio', 'ticklenratio', 'gridratio',
+    'reso', 'land', 'ocean', 'lakes', 'coast', 'borders', 'innerborders', 'rivers',
+    'nbsetup', 'format', 'autosave', 'autoreload'
+    }
 RC_CUSTOMNAMES = {
     'axes.formatter.zerotrim', 'axes.formatter.timerotation',
     'axes.gridminor', 'axes.geogrid', 'axes.alpha',
@@ -285,28 +270,27 @@ RC_CUSTOMNAMES = {
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
 RC_NODOTSNAMES = { # useful for passing these as kwargs
     name.replace('.', ''):name for names in
-    (RC_CUSTOMNAMES, RC_NAMES, RC_GLOBALNAMES)
+    (RC_CUSTOMNAMES, RC_PARAMNAMES, RC_SHORTNAMES)
     for name in names
     }
 # Categories for returning dict of subcategory properties
 RC_CATEGORIES = {
-    *(re.sub('\.[^.]*$', '', name) for names in (RC_CUSTOMNAMES, RC_NAMES) for name in names),
-    *(re.sub('\..*$', '', name) for names in (RC_CUSTOMNAMES, RC_NAMES) for name in names)
+    *(re.sub('\.[^.]*$', '', name) for names in (RC_CUSTOMNAMES, RC_PARAMNAMES) for name in names),
+    *(re.sub('\..*$', '', name) for names in (RC_CUSTOMNAMES, RC_PARAMNAMES) for name in names)
     }
 
 # Unit conversion
 # See: https://matplotlib.org/users/customizing.html, all props matching
 # the below strings use the units 'points', and my special categories are inches!
-UNITS_REGEX = re.compile('^.*(width|space|size|pad|len|small|large)$') # len is for ticklen, space is for subplots props
 def _convert_units(key, value):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""
     # WARNING: Must keep colorbar and subplots units alive, so when user
     # requests em units, values change with respect to font size. The points
     # thing is a conveniene feature so not as important for them.
-    if isinstance(value,str) and UNITS_REGEX.match(key) \
-        and key.split('.')[0] not in ('colorbar','subplots'):
-            value = utils.units(value, 'pt')
+    if (isinstance(value,str) and key.split('.')[0] not in ('colorbar','subplots')
+        and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
+        value = utils.units(value, 'pt')
     return value
 
 def _set_cycler(name):
@@ -314,7 +298,7 @@ def _set_cycler(name):
     # Draw from dictionary
     try:
         colors = mcm.cmap_d[name].colors
-    except Exception:
+    except (KeyError, AttributeError):
         cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
         raise ValueError(f'Invalid cycle name {name!r}. Options are: {", ".join(cycles)}')
     # Apply color name definitions
@@ -356,9 +340,9 @@ def _get_config_paths():
         paths.insert(0, ipath)
     return paths
 
-def _get_globals(key=None, value=None):
+def _get_synced_params(key=None, value=None):
     """Returns dictionaries for updating "child" properties in
-    `rcParams` and `rcExtra` with global property."""
+    `rcParams` and `rcCustom` with global property."""
     kw = {} # builtin properties that global setting applies to
     kw_custom = {} # custom properties that global setting applies to
     if key is not None and value is not None:
@@ -396,17 +380,17 @@ def _get_globals(key=None, value=None):
                 ratio = value
             kw_custom['gridminor.linewidth'] = gridwidth*ratio
         # Now update linked settings
-        if key not in ('gridratio','tickratio','ticklenratio'):
-            for name in RCGLOBALS_CHILDREN[key]:
-                val = _convert_units(key, value)
-                if name in rcExtra:
-                    kw_custom[name] = val
-                else:
-                    kw[name] = val
-            if key == 'linewidth' and val == 0:
-                ikw, ikw_custom = _get_globals('ticklen', 0)
-                kw.update(ikw)
-                kw_custom.update(ikw_custom)
+        val = None
+        for name in RC_CHILDREN.get(key, ()):
+            val = _convert_units(key, value)
+            if name in rcCustom:
+                kw_custom[name] = val
+            else:
+                kw[name] = val
+        if key == 'linewidth' and val == 0:
+            ikw, ikw_custom = _get_synced_params('ticklen', 0)
+            kw.update(ikw)
+            kw_custom.update(ikw_custom)
     return kw, kw_custom
 
 class rc_configurator(object):
@@ -418,14 +402,14 @@ class rc_configurator(object):
     def __repr__(self):
         return type(rcParams).__repr__(rcShort)
     def __contains__(self, key):
-        return (key in RC_GLOBALNAMES or key in RC_CUSTOMNAMES or key in
-            RC_NAMES or key in RC_NODOTSNAMES) # query biggest lists last
+        return (key in RC_SHORTNAMES or key in RC_CUSTOMNAMES or key in
+            RC_PARAMNAMES or key in RC_NODOTSNAMES) # query biggest lists last
 
     @_counter # about 0.05s
     def __init__(self):
         """Magical abstract class for managing matplotlib `rcParams
         <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
-        :ref:`rcExtra` settings, and :ref:`rcShort` "global" settings.
+        :ref:`rcCustom` settings, and :ref:`rcShort` "global" settings.
         When initialized, this loads defaults settings plus any user overrides
         in the ``~/.proplotrc`` file. See the `~proplot.rctools` documentation
         for details."""
@@ -447,40 +431,38 @@ class rc_configurator(object):
             # Special duplicate keys
             if data is None:
                 continue
-            val = data.get('title.pad', None)
-            if val is not None:
-                data['axes.titlepad'] = val
             # Add keys to dictionaries
             gkeys, ckeys = {*()}, {*()}
             for key,value in data.items():
-                if key in RC_GLOBALNAMES:
+                if key in RC_SHORTNAMES:
                     rcShort[key] = value
                     if i == 0:
                         gkeys.add(key)
                 elif key in RC_CUSTOMNAMES:
                     value = _convert_units(key, value)
-                    rcExtra[key] = value
+                    rcCustom[key] = value
                     if i == 0:
                         ckeys.add(key)
-                elif key in RC_NAMES:
+                elif key in RC_PARAMNAMES:
                     value = _convert_units(key, value)
                     rcParams[key] = value
                 else:
                     raise RuntimeError(f'{file!r} has invalid key {key!r}.')
             # Make sure we did not miss anything
             if i == 0:
-                if gkeys != RC_GLOBALNAMES:
-                    raise RuntimeError(f'{file!r} has incomplete or invalid global keys {RC_GLOBALNAMES - gkeys}.')
+                if gkeys != RC_SHORTNAMES:
+                    raise RuntimeError(f'{file!r} has incomplete or invalid global keys {RC_SHORTNAMES - gkeys}.')
                 if ckeys != RC_CUSTOMNAMES:
                     raise RuntimeError(f'{file!r} has incomplete or invalid custom keys {RC_CUSTOMNAMES - ckeys}.')
 
         # Apply *global settings* to children settings
+        rcParams['axes.titlepad'] = rcCustom['title.pad']
         _set_cycler(rcShort['cycle'])
-        rc, rc_new = _get_globals()
+        rc, rc_new = _get_synced_params()
         for key,value in rc.items():
             rcParams[key] = value
         for key,value in rc_new.items():
-            rcExtra[key] = value
+            rcCustom[key] = value
 
         # Caching stuff
         self._init = True
@@ -492,13 +474,13 @@ class rc_configurator(object):
 
     def __getitem__(self, key):
         """Returns `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcExtra`, and :ref:`rcShort` settings. If we are in a
+        :ref:`rcCustom`, and :ref:`rcShort` settings. If we are in a
         `~rc_configurator.context` block, may return ``None`` if the setting
         is not cached (i.e. if it was not changed by the user)."""
         # Can get a whole bunch of different things
         # Get full dictionary e.g. for rc[None]
         if not key:
-            return {**rcParams, **rcExtra}
+            return {**rcParams, **rcCustom}
 
         # Standardize
         # NOTE: If key is invalid, raise error down the line.
@@ -506,12 +488,12 @@ class rc_configurator(object):
             key = RC_NODOTSNAMES.get(key, key)
 
         # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcExtra*.
+        # or even *ignore rcCustom*.
         mode = self._getitem_mode
         if mode == 0:
-            kws = (self._cache, rcShort, rcExtra, rcParams)
+            kws = (self._cache, rcShort, rcCustom, rcParams)
         elif mode == 1:
-            kws = (self._cache, rcShort, rcExtra) # custom only!
+            kws = (self._cache, rcShort, rcCustom) # custom only!
         elif mode == 2:
             kws = (self._cache,) # changed only!
         else:
@@ -532,7 +514,7 @@ class rc_configurator(object):
 
     def __setitem__(self, key, value):
         """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcExtra`, and :ref:`rcShort` settings."""
+        :ref:`rcCustom`, and :ref:`rcShort` settings."""
         # Check whether we are in context block
         # NOTE: Do not add key to cache until we are sure it is a valid key
         cache = self._cache
@@ -610,22 +592,22 @@ class rc_configurator(object):
                 restore[key] = rcShort[key]
             rcShort[key] = value
             # Update children of setting
-            rc, rc_new = _get_globals(key, value)
+            rc, rc_new = _get_synced_params(key, value)
             cache.update(rc)
             cache.update(rc_new)
             if context:
                 restore.update({key:rcParams[key] for key in rc})
-                restore.update({key:rcExtra[key] for key in rc_new})
+                restore.update({key:rcCustom[key] for key in rc_new})
             rcParams.update(rc)
-            rcExtra.update(rc_new)
+            rcCustom.update(rc_new)
         # Update normal settings
         elif key in RC_CUSTOMNAMES:
             value = _convert_units(key, value)
             cache[key] = value
             if context:
-                restore[key] = rcExtra[key]
-            rcExtra[key] = value
-        elif key in RC_NAMES:
+                restore[key] = rcCustom[key]
+            rcCustom[key] = value
+        elif key in RC_PARAMNAMES:
             value = _convert_units(key, value)
             cache[key] = value
             if context:
@@ -708,10 +690,10 @@ class rc_configurator(object):
             ProPlot uses all of the three available modes.
 
             0. All settings (`rcParams <https://matplotlib.org/users/customizing.html>`__,
-               :ref:`rcExtra`, and :ref:`rcShort`) are returned, whether
+               :ref:`rcCustom`, and :ref:`rcShort`) are returned, whether
                or not `~rc_configurator.context` has changed them.
             1. Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
-               return ``None``. :ref:`rcExtra` and :ref:`rcShort` are
+               return ``None``. :ref:`rcCustom` and :ref:`rcShort` are
                returned whether or not `~rc_configurator.context` has changed them.
                This is used in the `~proplot.axes.Axes.__init__` call to
                `~proplot.axes.Axes.format`. When a setting lookup returns
@@ -811,11 +793,11 @@ class rc_configurator(object):
             mode = self._getitem_mode
 
         # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcExtra*.
+        # or even *ignore rcCustom*.
         if mode == 0:
-            kws = (self._cache, rcShort, rcExtra, rcParams)
+            kws = (self._cache, rcShort, rcCustom, rcParams)
         elif mode == 1:
-            kws = (self._cache, rcShort, rcExtra)
+            kws = (self._cache, rcShort, rcCustom)
         elif mode == 2:
             kws = (self._cache, rcShort)
         else:
