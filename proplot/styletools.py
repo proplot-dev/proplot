@@ -653,7 +653,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if name is None:
             name = self.name + '_copy'
         if segmentdata is None:
-            gamma = self._segmentdata
+            segmentdata = self._segmentdata
         if gamma is None:
             gamma = self._gamma
         if cyclic is None:
@@ -846,7 +846,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             gamma = getattr(self, '_' + key, None)
             if gamma:
                 kwargs[key] = np.atleast_1d(gamma)[::-1]
-        return self.from_cmap(self, name=name, segmentdata=data_r, **kwargs)
+        return self.from_cmap(self, name, segmentdata, **kwargs)
 
     def shifted(self, shift=None, name=None):
         """
@@ -879,7 +879,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             array[:,0] -= array[:,0].min()
             array[:,0] /= array[:,0].max()
             data[key] = array
-        return self.from_cmap(self, name=name, segmentdata=data)
+        return self.from_cmap(self, name, segmentdata)
 
     def sliced(self, left=None, right=None, *, cut=None, name=None):
         """
@@ -950,7 +950,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if np.iterable(gamma):
                 gamma = gamma[l-1:r+1]
             kwargs[key] = gamma
-        return self.from_cmap(self, name=name, segmentdata=data, **kwargs)
+        return self.from_cmap(self, name, segmentdata, **kwargs)
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
     """New base class for all qualititave colormaps."""
@@ -1168,7 +1168,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         if name is None:
             name = self.name + '_copy'
         if segmentdata is None:
-            gamma = self._segmentdata
+            segmentdata = self._segmentdata
         if space is None:
             space = self._space
         if clip is None:
