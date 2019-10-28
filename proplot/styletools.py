@@ -561,8 +561,7 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
 #-----------------------------------------------------------------------------#
 class _Colormap():
     """Mixin class used to add some helper methods."""
-    @staticmethod
-    def _get_data(ext):
+    def _get_data(self, ext):
         """
         Returns a string containing the colormap colors for saving.
 
