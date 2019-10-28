@@ -562,7 +562,7 @@ def make_mapping_array(N, data, gamma=1.0, reverse=False):
 class _Colormap():
     """Mixin class used to add some helper methods."""
     @staticmethod
-    def _get_data(ext, colors):
+    def _get_data(ext):
         """
         Returns a string containing the colormap colors for saving.
 
@@ -573,6 +573,12 @@ class _Colormap():
         colors : list of color-spec
             The colors.
         """
+        # Get lookup table colors and filter out bad ones
+        if not self._isinit:
+            self._init()
+        colors = [color for i,color in enumerate(self._lut)
+            if i not in (self._i_under, self._i_over, self._i_bad)]
+        # Save data
         if ext == 'hex':
             data = ', '.join(mcolors.to_hex(color) for color in colors)
         elif ext in ('txt', 'rgb', 'rgba', 'xrgb', 'xrgba'):
@@ -628,12 +634,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def _resample(self, N):
         """Returns a resampled copy of the colormap."""
-        return self.copy(N=N)
+        return self.from_cmap(self, N=N)
 
-    def copy(self, name=None, segmentdata=None, N=None,
+    @staticmethod
+    def from_cmap(self, name=None, segmentdata=None, N=None,
         gamma=None, cyclic=None):
         """
-        Returns a copy of the colormap, with relevant properties saved
+        Returns a new colormap, with relevant properties copied from this one
         if they were not provided as keyword arguments.
 
         Parameters
@@ -744,7 +751,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     if not np.iterable(gamma):
                         gamma = [gamma]*(len(cmap._segmentdata[gammas[i]])-1) # length is *number* of rows in segmentdata
                     kwargs[key].extend([*gamma])
-        return args[0].copy(name=name, segmentdata=segmentdata, N=N, **kwargs)
+        return args[0].new(name=name, segmentdata=segmentdata, N=N, **kwargs)
 
     @staticmethod
     def from_list(name, colors, *args, **kwargs):
@@ -797,10 +804,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'json')
-        _, ext = os.path.splitext(filename)
-
         # Save channel segment data in json file
-        if ext == '.json':
+        _, ext = os.path.splitext(filename)
+        if ext[1:] == 'json':
             data = {}
             for key,value in self._segmentdata.items():
                 data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
@@ -809,12 +815,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
-
         # Save lookup table colors
         else:
-            if not self._isinit:
-                self._init()
-            data = self._get_data(ext[1:], self._lut)
+            data = self._get_data(ext[1:])
             with open(filename, 'w') as f:
                 f.write(data)
         print(f'Saved colormap to {os.path.basename(filename)!r}.')
@@ -844,7 +847,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             gamma = getattr(self, '_' + key, None)
             if gamma:
                 kwargs[key] = np.atleast_1d(gamma)[::-1]
-        return self.copy(name=name, segmentdata=data_r, **kwargs)
+        return self.from_cmap(self, name=name, segmentdata=data_r, **kwargs)
 
     def shifted(self, shift=None, name=None):
         """
@@ -864,11 +867,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if name is None:
             name = self.name + '_shifted'
         data = self._segmentdata.copy()
-        for key,orig in self._segmentdata.items():
+        for key,array in self._segmentdata.items():
             # Drop an end color
-            orig = np.array(orig)
-            orig = orig[1:,:]
-            array = orig.copy()
+            array = np.array(array, copy=True)[1:,:]
             array[:,0] -= shift/360
             array[:,0] %= 1
             # Add end color back in
@@ -879,7 +880,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             array[:,0] -= array[:,0].min()
             array[:,0] /= array[:,0].max()
             data[key] = array
-        return self.copy(name=name, segmentdata=data)
+        return self.from_cmap(self, name=name, segmentdata=data)
 
     def sliced(self, left=None, right=None, *, cut=None, name=None):
         """
@@ -950,7 +951,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if np.iterable(gamma):
                 gamma = gamma[l-1:r+1]
             kwargs[key] = gamma
-        return self.copy(name=name, segmentdata=data, **kwargs)
+        return self.from_cmap(self, name=name, segmentdata=data, **kwargs)
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
     """New base class for all qualititave colormaps."""
@@ -991,8 +992,9 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'hex')
+        # Save lookup table colors
         _, ext = os.path.splitext(filename)
-        data = self._get_data(ext[1:], self.colors)
+        data = self._get_data(ext[1:])
         with open(filename, 'w') as f:
             f.write(data)
         print(f'Saved color cycle to {os.path.basename(filename)!r}.')
@@ -1147,12 +1149,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
     def _resample(self, N):
         """Returns a new colormap with *N* entries."""
-        return self.copy(N=N)
+        return self.from_cmap(self, N=N)
 
-    def copy(self, name=None, segmentdata=None, N=None, space=None,
+    @staticmethod
+    def from_cmap(self, name=None, segmentdata=None, N=None, space=None,
         clip=None, gamma=None, gamma1=None, gamma2=None, cyclic=None):
         """
-        Returns a copy of the colormap, with relevant properties saved
+        Returns a new colormap, with relevant properties copied from this one
         if they were not provided as keyword arguments.
 
         Parameters
@@ -1182,6 +1185,51 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         return PerceptuallyUniformColormap(name, segmentdata, N,
             space=space, clip=clip, gamma1=gamma1, gamma2=gamma2,
             cyclic=cyclic)
+
+    @staticmethod
+    def from_color(color,
+        fade=100, reverse=False, space='hsl', name='no_name',
+        **kwargs):
+        """
+        Returns a monochromatic "sequential" colormap that blends from white
+        or near-white to the input color.
+
+        Parameters
+        ----------
+        color : color-spec
+            Color RGB tuple, hex string, or named color string.
+        fade : float or color-spec, optional
+            If float, this is the luminance channel strength on the left-hand
+            side of the colormap (default is ``100``), and the saturation
+            channel is held constant throughout the colormap.
+
+            If RGB tuple, hex string, or named color string, the luminance and
+            saturation (but *not* the hue) from this color are used for the
+            left-hand side of the colormap.
+        reverse : bool, optional
+            Whether to reverse the colormap.
+        space : {'hcl', 'hsl', 'hpl'}, optional
+            Colorspace in which the luminance is varied.
+        name : str, optional
+            Colormap name. Default is ``'no_name'``.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `PerceptuallyUniformColormap.from_hsl`.
+        """
+        # Get colorspace and channel values
+        h, s, l = to_xyz(to_rgb(color), space)
+        if isinstance(fade, Number):
+            fs, fl = s, fade
+        else:
+            _, fs, fl = to_xyz(to_rgb(fade), space)
+        # Build colormap
+        if reverse:
+            s, l = (s,fs), (l,fl) # from color to faded
+        else:
+            s, l = (fs,s), (fl,l) # from faded to color
+        return PerceptuallyUniformColormap.from_hsl(name, h, s, l, space=space, **kwargs)
 
     @staticmethod
     def from_hsl(name,
@@ -1274,51 +1322,6 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         for key,channel in zip(keys,channels):
             cdict[key] = _make_segmentdata_array(channel, ratios, reverse, **kwargs)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
-
-    @staticmethod
-    def from_color(color,
-        fade=100, reverse=False, space='hsl', name='no_name',
-        **kwargs):
-        """
-        Returns a monochromatic "sequential" colormap that blends from white
-        or near-white to the input color.
-
-        Parameters
-        ----------
-        color : color-spec
-            Color RGB tuple, hex string, or named color string.
-        fade : float or color-spec, optional
-            If float, this is the luminance channel strength on the left-hand
-            side of the colormap (default is ``100``), and the saturation
-            channel is held constant throughout the colormap.
-
-            If RGB tuple, hex string, or named color string, the luminance and
-            saturation (but *not* the hue) from this color are used for the
-            left-hand side of the colormap.
-        reverse : bool, optional
-            Whether to reverse the colormap.
-        space : {'hcl', 'hsl', 'hpl'}, optional
-            Colorspace in which the luminance is varied.
-        name : str, optional
-            Colormap name. Default is ``'no_name'``.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `PerceptuallyUniformColormap.from_hsl`.
-        """
-        # Get colorspace and channel values
-        h, s, l = to_xyz(to_rgb(color), space)
-        if isinstance(fade, Number):
-            fs, fl = s, fade
-        else:
-            _, fs, fl = to_xyz(to_rgb(fade), space)
-        # Build colormap
-        if reverse:
-            s, l = (s,fs), (l,fl) # from color to faded
-        else:
-            s, l = (fs,s), (fl,l) # from faded to color
-        return PerceptuallyUniformColormap.from_hsl(name, h, s, l, space=space, **kwargs)
 
     @docstring.dedent_interpd
     def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
