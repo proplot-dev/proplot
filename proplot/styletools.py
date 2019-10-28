@@ -7,7 +7,7 @@ tools for creating new colormaps and color cycles. Defines helpful new
 Adds tools for visualizing colorspaces, colormaps, color names, and color
 cycles.
 
-See the :ref:`Color usage` section of "Getting Started" for details.
+See the :ref:`Color usage` section for details.
 """
 # Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
 # register functions, turns out worst is colormap one at 0.1 seconds. Just happens
@@ -27,7 +27,7 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 import warnings
 from . import colormath
-from .utils import _notNone, _timer, get_configpaths
+from .utils import _notNone, _timer
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorCacheDict',
     'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
@@ -2212,8 +2212,23 @@ class MidpointNorm(mcolors.Normalize):
         return ma.array(xq, mask=mask)
 
 #-----------------------------------------------------------------------------#
-# Register data
+# Load data
 #-----------------------------------------------------------------------------#
+def _get_data_paths(dirname):
+    """Returns configuration file paths."""
+    # Global configuration
+    paths = []
+    ipath = os.path.join(os.path.dirname(__file__), dirname)
+    if not os.path.exists(ipath):
+        raise ValueError(f'Default {dirname!r} location {ipath!r} does not exist.')
+    elif ipath not in paths:
+        paths.append(ipath)
+    # Home configuration
+    ipath = os.path.join(os.path.expanduser('~'), '.proplot', dirname)
+    if os.path.exists(ipath) and ipath not in paths:
+        paths.append(ipath)
+    return paths
+
 def _read_cmap_cycle_data(filename):
     """
     Helper function that reads generalized colormap and color cycle files.
@@ -2368,7 +2383,7 @@ def register_cmaps():
 
     # Add colormaps from ProPlot and user directories
     N = rcParams['image.lut'] # query this when register function is called
-    for path in get_configpaths('cmaps'):
+    for path in _get_data_paths('cmaps'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
             name, x, data = _read_cmap_cycle_data(filename)
             if name is None:
@@ -2412,7 +2427,7 @@ def register_cycles():
 
     # Read cycles from directories
     icycles = {}
-    for path in get_configpaths('cycles'):
+    for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
             name, _, data = _read_cmap_cycle_data(filename)
             if name is None:
@@ -2458,7 +2473,7 @@ def register_colors(nmax=np.inf):
     seen = {*base} # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = np.empty((0,3))
     pairs = []
-    for path in get_configpaths('colors'):
+    for path in _get_data_paths('colors'):
         for file in sorted(glob.glob(os.path.join(path, '*.txt')))[::-1]: # prefer xkcd
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
@@ -2505,36 +2520,6 @@ def register_colors(nmax=np.inf):
     for _,kw in colordict.items():
         mcolors.colorConverter.colors.update(kw)
 
-#-----------------------------------------------------------------------------#
-# Font stuff
-#-----------------------------------------------------------------------------#
-# Helvetica: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
-# Valid styles: https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc.
-# Classic fonts: https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406
-# For downloading fonts: https://www.cufonfonts.com
-# Notes on getting ttf files on Mac
-# * Location in /System/Library/Font, /Library/Fonts, or ~/Library/Fonts
-# * To break down .dfont files, use fondu (homebrew download).
-#   To break down .ttc files, use dfontsplitter (https://peter.upfold.org.uk/projects/dfontsplitter)
-#   To break down .bdf files made by fondu, use mkttf (https://github.com/Tblue/mkttf; requires FontForge and PoTrace)
-# * Install new fonts with "brew cask install font- < name-of-font > " after using
-#   "brew tap caskroom/fonts" to initialize; appear in ~/Library/Fonts; see https://github.com/Homebrew/homebrew-cask-fonts
-# * The .otf files work in addition to .ttf files. You can verify this by
-#   looking at plot.fonts_files_os -- it includes .otf files.
-# Notes on default files packaged in font directory:
-# * Location will be something like:
-#   /lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf
-# * 'STIX' fonts allow different LaTeX-like math modes e.g. blackboard bold
-#   and caligraphy; see: https://matplotlib.org/gallery/text_labels_and_annotations/stix_fonts_demo.html
-# * The 'cm'-prefix fonts seem to provide additional mathematical symbols
-#   like integrals, and italized math-mode fonts.
-# * We also have 'pdfcorefonts' in this directory, but I think since these
-#   are afm matplotlib cannot use them? Don't know.
-# WARNING: Check out ttflist whenever adding new ttf files! For example, realized
-# could dump all of the Gotham-Name.ttf files instead of GothamName files, and
-# got Helvetica bug due to unrecognized 'thin' font style overwriting normal one.
-# print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
-# print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
 @_timer
 def register_fonts():
     """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
@@ -2546,7 +2531,34 @@ def register_fonts():
     # Add proplot path to TTFLIST and rebuild cache
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ!
-    paths = ':'.join(get_configpaths('fonts'))
+    # Helvetica: https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/
+    # Valid styles: https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc.
+    # Classic fonts: https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406
+    # For downloading fonts: https://www.cufonfonts.com
+    # Notes on getting ttf files on Mac
+    # * Location in /System/Library/Font, /Library/Fonts, or ~/Library/Fonts
+    # * To break down .dfont files, use fondu (homebrew download).
+    #   To break down .ttc files, use dfontsplitter (https://peter.upfold.org.uk/projects/dfontsplitter)
+    #   To break down .bdf files made by fondu, use mkttf (https://github.com/Tblue/mkttf; requires FontForge and PoTrace)
+    # * Install new fonts with "brew cask install font- < name-of-font > " after using
+    #   "brew tap caskroom/fonts" to initialize; appear in ~/Library/Fonts; see https://github.com/Homebrew/homebrew-cask-fonts
+    # * The .otf files work in addition to .ttf files. You can verify this by
+    #   looking at plot.fonts_files_os -- it includes .otf files.
+    # Notes on default files packaged in font directory:
+    # * Location will be something like:
+    #   /lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf
+    # * 'STIX' fonts allow different LaTeX-like math modes e.g. blackboard bold
+    #   and caligraphy; see: https://matplotlib.org/gallery/text_labels_and_annotations/stix_fonts_demo.html
+    # * The 'cm'-prefix fonts seem to provide additional mathematical symbols
+    #   like integrals, and italized math-mode fonts.
+    # * We also have 'pdfcorefonts' in this directory, but I think since these
+    #   are afm matplotlib cannot use them? Don't know.
+    # WARNING: Check out ttflist whenever adding new ttf files! For example, realized
+    # could dump all of the Gotham-Name.ttf files instead of GothamName files, and
+    # got Helvetica bug due to unrecognized 'thin' font style overwriting normal one.
+    # print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
+    # print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')
+    paths = ':'.join(_get_data_paths('fonts'))
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
     elif paths not in os.environ['TTFPATH']:
@@ -3068,40 +3080,3 @@ def show_fonts(fonts=None, size=12):
                     fontsize=size, weight=weight, ha='left', va='center')
     return f
 
-#-----------------------------------------------------------------------------#
-# Deleted colormaps and colormap categories
-#-----------------------------------------------------------------------------#
-# TODO: add examples of how to reconstruct e.g. 'tab20c' on-the-fly
-# TODO: add examples of how to reconstruct Wave, Insert, Highlight, and Outlier
-# Fabio Crameri
-# See: http://www.fabiocrameri.ch/colourmaps.php
-# 'Fabio Crameri Sequential': [
-#     'Acton', 'Buda', 'Lajolla',
-#     'Bamako', 'Nuuk', 'Davos', 'Oslo', 'Devon', 'Tokyo',
-#     'Batlow', 'Turku', 'Bilbao', 'Lapaz',
-#     ],
-# 'Fabio Crameri Diverging': [
-#     'Roma', 'Broc', 'Cork',  'Vik', 'Oleron',
-#     ],
-# Kenneth Moreland
-# See: http://soliton.vm.bytemark.co.uk/pub/cpt-city/km/index.html
-# Soft coolwarm from: https://www.kennethmoreland.com/color-advice/
-# 'Kenneth Moreland': [
-#     'CoolWarm', 'MutedCoolWarm', 'SoftCoolWarm',
-#     'BlueTan', 'PurpleOrange', 'CyanMauve', 'BlueYellow', 'GreenRed',
-#     ],
-# 'Kenneth Moreland Sequential': [
-#     'BlackBody', 'Kindlmann', 'ExtendedKindlmann',
-#     ],
-# Elevation and bathymetry
-# 'Geographic': [
-#     'Bath1', # from XKCD; see: http://soliton.vm.bytemark.co.uk/pub/cpt-city/xkcd/tn/xkcd-bath.png.index.html
-#     'Bath2', # from Tom Patterson; see: http://soliton.vm.bytemark.co.uk/pub/cpt-city/tp/index.html
-#     'Bath3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/ibcso/tn/ibcso-bath.png.index.html
-#     'Bath4', # ^^ same
-#     'Geography4-1', # mostly ocean
-#     'Geography5-4', # range must be -4000 to 5000
-#     'Geography1', # from ???
-#     'Geography2', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/ngdc/tn/ETOPO1.png.index.html
-#     'Geography3', # from: http://soliton.vm.bytemark.co.uk/pub/cpt-city/mby/tn/mby.png.index.html
-#     ],

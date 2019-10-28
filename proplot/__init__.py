@@ -36,13 +36,20 @@ import os
 _rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
 if not os.path.isdir(_rc_folder):
     os.mkdir(_rc_folder)
-for _rc_sub in ('cmaps', 'cycles', 'fonts'):
+for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     _rc_sub = os.path.join(_rc_folder, _rc_sub)
     if not os.path.isdir(_rc_sub):
         os.mkdir(_rc_sub)
-_rc_file = os.path.join(_rc_folder, 'proplotrc')
+_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
 if not os.path.isfile(_rc_file):
-    open(_rc_file, 'x').close() # create new file and close it
+    with open(_rc_file, 'x') as f:
+        f.write(f"""
+#----------------------------------------------------------
+# Default settings
+# See https://proplot.readthedocs.io/en/latest/rctools.html
+# The default settings are shown commented out below
+#----------------------------------------------------------
+""")
 
 # Import stuff
 # WARNING: Import order is meaningful! Loads modules that are dependencies
