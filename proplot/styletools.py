@@ -808,7 +808,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             data = {}
             for key,value in self._segmentdata.items():
                 data[key] = np.array(value).astype(float).tolist() # from np.float to builtin float, and to list of lists
-            if type(self) is PerceptuallyUniformColormap:
+            if isinstance(self, PerceptuallyUniformColormap):
                 for key in ('space', 'gamma1', 'gamma2'):
                     data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as file:
