@@ -822,9 +822,9 @@ def scatter_wrapper(self, func, *args,
     cmap_kw = cmap_kw or {}
     norm_kw = norm_kw or {}
     if cmap is not None:
-        cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
+        cmap = styletools.Colormap(cmap, **cmap_kw)
     if norm is not None:
-        norm = styletools.Norm(norm, N=None, **norm_kw)
+        norm = styletools.Norm(norm, **norm_kw)
 
     # Apply some aliases for keyword arguments
     c = _notNone(c, color, markercolor, None, names=('c', 'color', 'markercolor'))
@@ -1719,8 +1719,8 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         cmap = _notNone(cmap, rc['image.cmap'])
     if cmap is not None:
         # Get colormap object
-        cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
-        cyclic = cmap._cyclic
+        cmap = styletools.Colormap(cmap, **cmap_kw)
+        cyclic = getattr(cmap, '_cyclic', False)
         if cyclic and extend != 'neither':
             warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend={extend!r}.')
             extend = 'neither'
