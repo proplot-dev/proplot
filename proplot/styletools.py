@@ -698,13 +698,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # 'data' function, end up with grayscale colormap because each 'data'
         # function reads 'funcs' as from the final channel in 'keys'. Must
         # embed 'funcs' into each definition using a keyword argument.
-        x0 = np.concatenate([[0], np.cumsum(ratios)]) # coordinates for edges
-        xw = x0[1:] - x0[:-1] # widths between edges
+        segmentdata = {}
         ratios = ratios or 1
         if isinstance(ratios, Number):
             ratios = [1]*len(cmaps)
         ratios = np.array(ratios)/np.sum(ratios) # so if 4 cmaps, will be 1/4
-        segmentdata = {}
+        x0 = np.concatenate([[0], np.cumsum(ratios)]) # coordinates for edges
+        xw = x0[1:] - x0[:-1] # widths between edges
         for key in self._segmentdata.keys():
             # Handle segment data
             callable_ = [callable(cmap._segmentdata[key]) for cmap in cmaps]
@@ -746,7 +746,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 if not np.iterable(igamma):
                     igamma = (len(cmap._segmentdata[key]) - 1) * [igamma]
                 gamma.extend(igamma)
-            kwargs[key] = gamma
+            kwargs[ikey] = gamma
 
         # Return copy
         return self.copy(name=name, segmentdata=segmentdata, **kwargs)
@@ -912,21 +912,22 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             Passed to `LinearSegmentedColormap.copy`
             or `PerceptuallyUniformColormap.copy`.
         """
-        if left is None and right is None:
-            return self
-        if name is None:
-            name = self.name + '_sliced'
-        left = _notNone(left, 0)
-        right = _notNone(right, 1)
-
         # Cut out central colors
         if cut is not None and cut > 0:
             lcenter, rcenter = 0.5 - cut/2, 0.5 + cut/2
             lcmap = self.sliced(left, lcenter)
             rcmap = self.sliced(rcenter, right)
-            return self.concatenate(lcmap, rcmap, name=name)
+            return lcmap.concatenate(rcmap, name=name)
+
+        # Bail out
+        if left is None and right is None:
+            return self
+        if name is None:
+            name = self.name + '_sliced'
 
         # Resample the segmentdata arrays
+        left = _notNone(left, 0)
+        right = _notNone(right, 1)
         segmentdata = {}
         for key,xyy in self._segmentdata.items():
             # Get coordinates
@@ -1205,9 +1206,11 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             space = self._space
         if clip is None:
             clip = self._clip
-        if gamma is None and gamma1 is None:
+        if gamma is not None:
+            gamma1 = gamma2 = gamma
+        if gamma1 is None:
             gamma1 = self._gamma1
-        if gamma is None and gamma2 is None:
+        if gamma2 is None:
             gamma2 = self._gamma2
         if cyclic is None:
             cyclic = self._cyclic
@@ -1218,7 +1221,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             cyclic=cyclic)
 
     @staticmethod
-    def from_color(name, color, fade=100, space='hsl', **kwargs):
+    def from_color(name, color, fade=None, space='hsl', **kwargs):
         """
         Returns a monochromatic "sequential" colormap that blends from white
         or near-white to the input color.
@@ -1246,6 +1249,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             Passed to `PerceptuallyUniformColormap.from_hsl`.
         """
         h, s, l = to_xyz(to_rgb(color), space)
+        if fade is None:
+            fade = 100
         if isinstance(fade, Number):
             fs, fl = s, fade
         else:
@@ -1629,7 +1634,7 @@ def Colormap(*args, name=None, listmode='perceptual',
     if listmode not in ('listed', 'linear', 'perceptual'):
         raise ValueError(f'Invalid listmode={listmode!r}. Options are "listed", "linear", and "perceptual".')
     cmaps = []
-    name_tmp = '_no_name' # name required, but we only care about name of final merged map
+    tmp = '_no_name' # name required, but we only care about name of final merged map
     for i,cmap in enumerate(args):
         if isinstance(cmap,str):
             try:
@@ -1645,16 +1650,16 @@ def Colormap(*args, name=None, listmode='perceptual',
             pass
         # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
         elif isinstance(cmap, dict):
-            cmap = PerceptuallyUniformColormap.from_hsl(name_tmp, **cmap)
+            cmap = PerceptuallyUniformColormap.from_hsl(tmp, **cmap)
         # List of color tuples or color strings, i.e. iterable of iterables
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
             cmap = [to_rgb(color, cycle=cycle) for color in cmap] # transform C0, C1, etc. to actual names
             if listmode == 'listed':
-                cmap = ListedColormap(cmap, name_tmp)
+                cmap = ListedColormap(cmap, tmp)
             elif listmode == 'linear':
-                cmap = LinearSegmentedColormap.from_list(name_tmp, cmap)
+                cmap = LinearSegmentedColormap.from_list(tmp, cmap)
             else:
-                cmap = PerceptuallyUniformColormap.from_list(name_tmp, cmap)
+                cmap = PerceptuallyUniformColormap.from_list(tmp, cmap)
         # Monochrome colormap from input color
         else:
             if isinstance(cmap, str) and cmap[-2:] == '_r':
@@ -1667,7 +1672,7 @@ def Colormap(*args, name=None, listmode='perceptual',
                     msg += (f'\nValid cmap and cycle names: {", ".join(sorted(mcm.cmap_d))}.'
                             f'\nValid color names: {", ".join(sorted(mcolors.colorConverter.colors.keys()))}.')
                 raise ValueError(msg)
-            cmap = PerceptuallyUniformColormap.from_color(name_tmp, color, fade)
+            cmap = PerceptuallyUniformColormap.from_color(tmp, color, fade)
         # Transform colormap by clipping colors or reversing
         if ileft is not None or iright is not None:
             cmap = cmap.sliced(ileft, iright)
@@ -1678,9 +1683,9 @@ def Colormap(*args, name=None, listmode='perceptual',
     # Now merge the result of this arbitrary user input
     # Since we are merging cmaps, potentially *many* color transitions; use big number by default
     if len(cmaps) > 1: # more than one map?
-        cmaps[0].concatenate(*cmaps[1:], **kwargs)
+        cmap = cmaps[0].concatenate(*cmaps[1:], **kwargs)
     elif kwargs: # modify any props?
-        cmaps[0].copy(**kwargs)
+        cmap = cmaps[0].copy(**kwargs)
 
     # Cut the edges or center
     left = None if np.iterable(left) else left
@@ -2661,8 +2666,11 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
     mc, ms, mp = 0, 0, 0
     cmaps = []
     for cmap in args:
-        # Get colormap
+        # Get colormap and avoid registering new names
+        name = cmap if isinstance(cmap, str) else getattr(cmap, 'name', None)
         cmap = Colormap(cmap, N=N) # arbitrary cmap argument
+        if name is not None:
+            cmap.name = name
         cmap._init()
         cmaps.append(cmap)
         # Get clipped RGB table
@@ -2826,9 +2834,9 @@ def show_colors(nbreak=17, minsat=0.2):
     for open_colors in (True, False):
         scale = (360, 100, 100)
         if open_colors:
-            group = ['opencolors']
+            group = ['open']
         else:
-            group = [name for name in colordict if name not in ('css', 'opencolors')]
+            group = [name for name in colordict if name not in ('css', 'open')]
         icolors = {}
         for name in group:
             icolors.update(colordict[name]) # add category dictionary
@@ -3041,7 +3049,8 @@ def show_cycles(*args, axwidth=1.5):
             ax.tick_params(axis=axis,
                     which='both', labelbottom=False, labelleft=False,
                     bottom=False, top=False, left=False, right=False)
-    axs[i+1:].set_visible(False)
+    if axs[i+1:]:
+        axs[i+1:].set_visible(False)
     return fig
 
 def show_fonts(fonts=None, size=12):
@@ -3056,7 +3065,7 @@ def show_fonts(fonts=None, size=12):
     for weight in ('normal',):
         f, axs = subplots(ncols=1, nrows=len(fonts), space=0, axwidth=4.5, axheight=5.5*size/72)
         axs.format(xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0)
-        axs[0].format(title='Fonts demo', titlefontsize=size, titleloc='l', titleweight='bold')
+        axs[0].format(title='Fonts demo', titlesize=size, titleloc='l', titleweight='bold')
         for i,ax in enumerate(axs):
             font = fonts[i]
             ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}', fontfamily=font,
