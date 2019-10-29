@@ -3,8 +3,6 @@
 Simple tools used in various places across this package.
 """
 import re
-import os
-import glob
 import time
 import numpy as np
 import functools
