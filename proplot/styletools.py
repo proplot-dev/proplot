@@ -561,7 +561,7 @@ class _Colormap():
 
         Parameters
         ----------
-        ext : {'txt', 'rgb', 'xrgb', 'rgba', 'xrgba'}
+        ext : {'hex', 'txt', 'rgb', 'rgba'}
             The filename extension.
         colors : list of color-spec
             The colors.
@@ -570,19 +570,15 @@ class _Colormap():
         if not self._isinit:
             self._init()
         colors = self._lut[:-3,:]
-        # Save data
+        # Get data string
         if ext == 'hex':
             data = ', '.join(mcolors.to_hex(color) for color in colors)
-        elif ext in ('txt', 'rgb', 'rgba', 'xrgb', 'xrgba'):
-            if ext in ('txt', 'rgb', 'xrgb'):
-                data = [mcolors.to_rgb(color) for color in colors]
-            else:
-                data = [mcolors.to_rgba(color) for color in colors]
-            if ext in ('xrgb', 'xrgba'):
-                data = [(i/(len(data) - 1), *color) for i,color in enumerate(data)]
+        elif ext in ('txt', 'rgb', 'rgba'):
+            rgb = mcolors.to_rgba if ext == 'rgba' else mcolors.to_rgb
+            data = [rgb(color) for color in colors]
             data = '\n'.join(','.join(str(num) for num in line) for line in data)
         else:
-            raise ValueError(f'Invalid extension {ext!r}.')
+            raise ValueError(f'Invalid extension {ext!r}. Options are "hex", "txt", "rgb", or "rgba".')
         return data
 
     def _parse_path(self, path, dirname='.', ext=''):
@@ -596,22 +592,27 @@ class _Colormap():
         ext : str, optional
             The default extension.
         """
-        if not path:
-            path = dirname
         path = os.path.expanduser(path)
-        if os.path.isdir(path):
-            path = os.path.join(path, self.name)
-        else:
-            dirname, basename = os.path.split(path)
-            if not dirname:
-                dirname = '.'
-            path = os.path.join(dirname, basename)
+        if not path or os.path.isdir(path):
+            path = os.path.join(path or dirname, self.name) # default name
+        dirname, basename = os.path.split(path) # default to current directory
+        path = os.path.join(dirname or '.', basename)
         if not os.path.splitext(path)[-1]:
-            path = path + '.' + ext
+            path = path + '.' + ext # default file extension
         return path
 
 class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
-    """New base class for all colormaps."""
+    """New base class for all `~matplotlib.colors.LinearSegmentedColormap`s."""
+    def __str__(self):
+        return self.__repr__()
+    def __repr__(self):
+        string = f" 'name': {self.name!r},\n"
+        if hasattr(self, '_space'):
+            string += f" 'space': {self._space!r},\n"
+        for key,data in self._segmentdata.items():
+            string += f' {key!r}: {data[0][2]:.3f} ... {data[-1][1]:.3f},\n'
+        return type(self).__name__ + '({\n' + string.strip('\n,') + '\n})'
+
     @docstring.dedent_interpd
     def __init__(self, *args, cyclic=False, **kwargs):
         """
@@ -790,15 +791,23 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def save(self, path=None):
         """
-        Saves the colormap to a folder.
+        Saves the colormap data to a file.
 
         Parameters
         ----------
         path : str, optional
-            The save directory and/or filename. The default location is
-            ``~/.proplot/cmaps``, and the default filename is ``name.json``,
-            where ``name`` is the registered colormap name. Valid extensions
-            are ``json`` or ``hex``.
+            The output filename. If not provided, the colormap
+            is saved under ``'~/.proplot/cmaps/' + self.name + '.json'``.
+            Valid extensions are described in the below table.
+
+            =====================  ==================================================================================================================
+            Extension              Description
+            =====================  ==================================================================================================================
+            ``.json`` (default)    JSON database of the channel segment data.
+            ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
+            ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+            ``.rgba``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+            =====================  ==================================================================================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'json')
@@ -965,7 +974,15 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return self.copy(name, segmentdata, **kwargs)
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
-    """New base class for all qualititave colormaps."""
+    """New base class for all `~matplotlib.colors.ListedColormap`s."""
+    def __str__(self):
+        return self.__repr__()
+    def __repr__(self):
+        return ("ListedColormap({\n"
+            f" 'name': {self.name!r},\n"
+            f" 'colors': {self.colors!r},\n"
+            "})")
+
     def copy(self, colors=None, name=None, N=None):
         """
         Creates copy of the colormap.
@@ -1013,15 +1030,22 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def save(self, path=None):
         """
-        Saves the color cycle to a folder.
+        Saves the colormap data to a file.
 
         Parameters
         ----------
         path : str, optional
-            The save directory and/or filename. The default location is
-            ``~/.proplot/cmaps``, and the default filename is ``name.hex``,
-            where ``name`` is the registered colormap name. The only valid
-            extension is ``hex``.
+            The output filename. If not provided, the colormap
+            is saved under ``'~/.proplot/cmaps/' + self.name + '.hex'``.
+            Valid extensions are described in the below table.
+
+            =====================  ==================================================================================================================
+            Extension              Description
+            =====================  ==================================================================================================================
+            ``.hex`` (default)     List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
+            ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+            ``.rgba``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+            =====================  ==================================================================================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'hex')
@@ -1364,17 +1388,19 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
 class CmapDict(dict):
     """
-    Flexible, case-insensitive colormap identification. Replaces the
-    `matplotlib.cm.cmap_d` dictionary that stores registered colormaps.
+    Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
+    colormap directory. Does the following:
 
-    Behaves like a dictionary, with three new features:
-
-    1. Names are case insensitive: ``'Blues'``, ``'blues'``, and ``'bLuEs'``
-       are all valid names for the "Blues" colormap.
-    2. "Reversed" colormaps are not stored directly: Requesting e.g.
+    1. Converts all matplotlib `~matplotlib.colors.ListedColormap`s
+       to ProPlot `ListedColormap`s, and converts all matplotlib
+       `~matplotlib.colors.LinearSegmentedColormap`s
+       to ProPlot `LinearSegmentedColormap`s.
+    2. Makes colormap names case insensitive. ``'Blues'``, ``'blues'``, and
+       ``'bLuEs'`` are all valid names for the "Blues" colormap.
+    3. Does not store "reversed" colormaps. Requesting e.g.
        ``'Blues_r'`` will just look up ``'Blues'``, then return the result
        of the `~matplotlib.colors.Colormap.reversed` method.
-    3. Diverging colormap names can be referenced by their "inverse" name.
+    4. Permits specifying diverging colormaps by their "inverted" name.
        For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
        ``'BuYlRd'`` and ``'RdYlBu_r'``.
     """
@@ -2333,7 +2359,7 @@ def register_cmaps():
     filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
     Use `show_cmaps` to generate a table of the registered colormaps
 
-    Valid file formats are described in the below table.
+    Valid extensions are described in the below table.
 
     =====================  =============================================================================================================================================================================================================
     Extension              Description
