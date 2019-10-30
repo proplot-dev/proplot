@@ -592,7 +592,8 @@ class _Colormap():
         ext : str, optional
             The default extension.
         """
-        path = os.path.expanduser(path)
+        path = os.path.expanduser(path or '')
+        dirname = os.path.expanduser(dirname or '')
         if not path or os.path.isdir(path):
             path = os.path.join(path or dirname, self.name) # default name
         dirname, basename = os.path.split(path) # default to current directory
@@ -610,8 +611,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if hasattr(self, '_space'):
             string += f" 'space': {self._space!r},\n"
         for key,data in self._segmentdata.items():
-            string += f' {key!r}: {data[0][2]:.3f} ... {data[-1][1]:.3f},\n'
-        return type(self).__name__ + '({\n' + string.strip('\n,') + '\n})'
+            string += f' {key!r}: [{data[0][2]:.3f}, ..., {data[-1][1]:.3f}],\n'
+        return type(self).__name__ + '({\n' + string + '})'
 
     @docstring.dedent_interpd
     def __init__(self, *args, cyclic=False, **kwargs):
@@ -827,7 +828,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             data = self._get_data(ext[1:])
             with open(filename, 'w') as f:
                 f.write(data)
-        print(f'Saved colormap to {os.path.basename(filename)!r}.')
+        print(f'Saved colormap to {filename!r}.')
 
     def reversed(self, name=None, **kwargs):
         """
@@ -980,7 +981,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
     def __repr__(self):
         return ("ListedColormap({\n"
             f" 'name': {self.name!r},\n"
-            f" 'colors': {self.colors!r},\n"
+            f" 'colors': {[mcolors.to_hex(color) for color in self.colors]},\n"
             "})")
 
     def copy(self, colors=None, name=None, N=None):
@@ -1054,7 +1055,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         data = self._get_data(ext[1:])
         with open(filename, 'w') as f:
             f.write(data)
-        print(f'Saved color cycle to {os.path.basename(filename)!r}.')
+        print(f'Saved colormap to {filename!r}.')
 
     def shifted(self, shift=None, name=None):
         """
