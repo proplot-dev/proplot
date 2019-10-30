@@ -804,14 +804,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             is the colormap name. Valid extensions are described in
             the below table.
 
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
             Extension              Description
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
             ``.json`` (default)    JSON database of the channel segment data.
-            ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
-            ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-            ``.rgba``              As with ``.rgb``, but with a trailing opacity (or "alpha") column.
-            =====================  ==================================================================================================================
+            ``.hex``               Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``     3-column table of comma-delimited RGB values.
+            ``.rgba``              As with ``.rgb``, but with an opacity (or "alpha") column.
+            =====================  ==========================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'json')
@@ -1044,13 +1044,13 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             is the colormap name. Valid extensions are described in
             the below table.
 
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
             Extension              Description
-            =====================  ==================================================================================================================
-            ``.hex`` (default)     List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
-            ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-            ``.rgba``              As with ``.rgb``, but with a trailing opacity (or "alpha") column.
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
+            ``.hex`` (default)     Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``     3-column table of comma-delimited RGB values.
+            ``.rgba``              As with ``.rgb``, but with an opacity (or "alpha") column.
+            =====================  ==========================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'hex')
