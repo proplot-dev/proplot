@@ -79,7 +79,7 @@ def Locator(locator, *args, **kwargs):
         ``'multiple'``          `~matplotlib.ticker.MultipleLocator`        Ticks every ``N`` step away from zero
         ``'fixed'``             `~matplotlib.ticker.FixedLocator`           Ticks at these exact locations
         ``'index'``             `~matplotlib.ticker.IndexLocator`           Ticks on the non-negative integers
-        ``'symmetric'``         `~matplotlib.ticker.SymmetricalLogLocator`  Ticks for symmetrical log-scale axes
+        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`  Ticks for symmetrical log-scale axes
         ``'logit'``             `~matplotlib.ticker.LogitLocator`           Ticks for logit-scale axes
         ``'year'``              `~matplotlib.dates.YearLocator`             Ticks every ``N`` years
         ``'month'``             `~matplotlib.dates.MonthLocator`            Ticks every ``N`` months
@@ -534,6 +534,17 @@ class LogScale(mscale.LogScale):
             'base', 'nonpos', 'subs')
         super().__init__(axis, **kwargs)
 
+    def set_default_locators_and_formatters(self, axis):
+        """
+        Set the default locators and formatters.
+        """
+        axis.set_major_locator(Locator('log',
+            base=self.base))
+        axis.set_minor_locator(Locator('log',
+            base=self.base, subs=self.subs))
+        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
+        axis.set_minor_formatter(Formatter('null'))
+
 class SymmetricalLogScale(mscale.SymmetricalLogScale):
     """
     As with `~matplotlib.scale.SymmetricLogScale`, but fixes the inexplicable
@@ -568,6 +579,17 @@ class SymmetricalLogScale(mscale.SymmetricalLogScale):
         kwargs = _parse_logscale_args(kwargs,
             'base', 'linthresh', 'linscale', 'subs')
         super().__init__(axis, **kwargs)
+
+    def set_default_locators_and_formatters(self, axis):
+        """
+        Set the default locators and formatters.
+        """
+        axis.set_major_locator(Locator('symlog',
+            transform=self.get_transform())) # note locator gets base and linthresh from transform
+        axis.set_minor_locator(Locator('symlog',
+            transform=self.get_transform(), subs=self.subs))
+        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
+        axis.set_minor_formatter(Formatter('null'))
 
 #-----------------------------------------------------------------------------#
 # Scales from functions
@@ -1190,7 +1212,7 @@ locators = {
     'multiple':    mticker.MultipleLocator,
     'fixed':       mticker.FixedLocator,
     'index':       mticker.IndexLocator,
-    'symmetric':   mticker.SymmetricalLogLocator,
+    'symlog':      mticker.SymmetricalLogLocator,
     'logit':       mticker.LogitLocator,
     'minor':       mticker.AutoMinorLocator,
     'date':        mdates.AutoDateLocator,
