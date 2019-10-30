@@ -585,13 +585,17 @@ class FuncScale(mscale.ScaleBase):
         ----------
         axis : `~matplotlib.axis.Axis`
             The axis, required for compatibility reasons.
-        functions : (function, function)
-            Length-2 tuple of forward and inverse functions.
+        functions : (function, function) or `~matplotlib.scale.ScaleBase`
+            Length-2 tuple of forward and inverse functions, or another
+            `~matplotlib.scale.ScaleBase` from which the functions are drawn.
         transform : `~matplotlib.transforms.Transform`, optional
-            Optional transform applied after the forward function
+            Additional transform applied after the forward function
             and before the inverse function.
         """
-        forward, inverse = functions
+        if np.iterable(functions) and len(functions) == 2 and all(callable(ifunction) for ifunction in functions):
+            forward, inverse = functions
+        else:
+            raise ValueError(f'This scale needs length-2 list of forward and inverse functions, not {functions!r}.')
         trans = FuncTransform(forward, inverse)
         if transform is not None:
             if isinstance(transform, mtransforms.Transform):
@@ -602,14 +606,11 @@ class FuncScale(mscale.ScaleBase):
     def get_transform(self):
         return self._transform
     def set_default_locators_and_formatters(self, axis):
-        axis.set_major_locator(mticker.AutoLocator())
-        axis.set_major_formatter(mticker.ScalarFormatter())
-        axis.set_minor_formatter(mticker.NullFormatter())
-        # update the minor locator for x and y axis based on rcParams
-        if rc.get('xtick.minor.visible') or rc.get('ytick.minor.visible'):
-            axis.set_minor_locator(mticker.AutoMinorLocator())
-        else:
-            axis.set_minor_locator(mticker.NullLocator())
+        minor = 'minor' if rc.get('xtick.minor.visible') or rc.get('ytick.minor.visible') else 'null'
+        axis.set_major_locator(Locator('auto'))
+        axis.set_minor_locator(Locator(minor))
+        axis.set_major_formatter(Formatter('default'))
+        axis.set_minor_formatter(Formatter('null'))
 
 class FuncTransform(mtransforms.Transform):
     # Arbitrary forward and inverse transform
@@ -1145,8 +1146,8 @@ class InverseScale(mscale.ScaleBase):
         # TODO: Fix minor locator issue
         # NOTE: Log formatter can ignore certain major ticks! Why is that?
         axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-        axis.set_major_locator(mticker.LogLocator(base=10, subs=(1, 2, 5)))
-        axis.set_minor_locator(mticker.LogLocator(base=10, subs='auto'))
+        axis.set_major_locator(Locator('log', base=10, subs=(1, 2, 5)))
+        axis.set_minor_locator(Locator('log', base=10, subs='auto'))
         axis.set_major_formatter(Formatter('default')) # use 'log' instead?
         axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
 

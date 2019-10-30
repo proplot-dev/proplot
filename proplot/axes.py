@@ -1553,20 +1553,24 @@ Enforces the following settings.
 
 def _parse_dualxy_args(x, transform, transform_kw, kwargs):
     """Interprets the dualx and dualy transform and various keyword
-    arguments."""
+    arguments. Returns a list of forward transform, inverse transform, and
+    overrides for default locators and formatters."""
     # Transform using input functions
     # TODO: Also support transforms? Probably not -- transforms are a huge
     # group that include ND and non-invertable transformations, but transforms
     # used for axis scales are subset of invertible 1D functions
+    defaults = None
     transform_kw = transform_kw or {}
     if isinstance(transform, (str, mscale.ScaleBase)) or transform_kw:
         transform = transform or 'linear'
-        transform = axistools.Scale(transform, **transform_kw).get_transform()
-        funcs = (transform.transform, transform.inverted().transform)
+        scale = axistools.Scale(transform, **transform_kw)
+        defaults = scale.set_default_locators_and_formatters
+        transform = scale.get_transform()
+        funcs = (transform.transform, transform.inverted().transform, defaults)
     elif np.iterable(transform) and len(transform) == 2 and all(callable(itransform) for itransform in transform):
-        funcs = transform
+        funcs = (*transform, None)
     elif callable(transform):
-        funcs = (transform, (lambda x: x))
+        funcs = (transform, lambda x: x, None)
     else:
         raise ValueError(f'Invalid transform {transform!r}. Must be function, tuple of two functions, or scale name.')
     # Parse keyword arguments
@@ -1696,7 +1700,7 @@ class CartesianAxes(Axes):
             label.update(kw)
         self._datex_rotated = True # do not need to apply more than once
 
-    def _dualx_overrides(self):
+    def _dualx_overrides(self, locators_formatters=False):
         """Locks child "dual" *x* axis limits to the parent."""
         # Why did I copy and paste the dualx/dualy code you ask? Copy
         # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
@@ -1704,10 +1708,22 @@ class CartesianAxes(Axes):
         if funcs is None:
             return
         # Build the FuncScale
-        child = self._altx_child
+        # Sometimes we do *not* want to apply default locator and formatter
+        # overrides, in case user has manually changed them! Also, sometimes
+        # we want to borrow method that sets default from the scale from which
+        # forward and inverse funcs were drawn, instead of from FuncScale.
         transform = self.xaxis._scale.get_transform()
-        scale = axistools.Scale('function', funcs[::-1], transform)
-        child.set_xscale(scale)
+        child = self._altx_child
+        scale = axistools.Scale('function', funcs[1::-1], transform)
+        if locators_formatters:
+            if funcs[2] is not None:
+                funcs[2](child.xaxis)
+            else:
+                scale.set_default_locators_and_formatters(child.xaxis)
+        child.xaxis._scale = scale
+        child._update_transScale()
+        child.stale = True
+        child.autoscale_view(scaley=False)
         # Transform axis limits
         # If the transform flipped the limits, when we set axis limits, it
         # will get flipped again! So reverse the flip
@@ -1717,15 +1733,23 @@ class CartesianAxes(Axes):
             nlim = nlim[::-1]
         child.set_xlim(nlim)
 
-    def _dualy_overrides(self):
+    def _dualy_overrides(self, locators_formatters=False):
         """Locks child "dual" *y* axis limits to the parent."""
         funcs = self._dualy_funcs
         if funcs is None:
             return
-        child = self._alty_child
         transform = self.yaxis._scale.get_transform()
-        scale = axistools.Scale('function', funcs[::-1], transform)
-        child.set_yscale(scale)
+        child = self._alty_child
+        scale = axistools.Scale('function', funcs[1::-1], transform)
+        if locators_formatters:
+            if funcs[2] is not None:
+                funcs[2](child.yaxis)
+            else:
+                scale.set_default_locators_and_formatters(child.yaxis)
+        child.yaxis._scale = scale
+        child._update_transScale()
+        child.stale = True
+        child.autoscale_view(scalex=False)
         lim = self.get_ylim()
         nlim = list(map(funcs[0], np.array(lim)))
         if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
@@ -2346,17 +2370,19 @@ class CartesianAxes(Axes):
         # transformation, not the backwards one), and does not invent a new
         # class with a bunch of complicated setters.
         ax = self.twiny()
-        funcs, kwargs = _parse_dualxy_args('x', transform, transform_kw, kwargs)
+        funcs, kwargs = _parse_dualxy_args('x',
+                transform, transform_kw, kwargs)
         self._dualx_funcs = funcs
-        self._dualx_overrides()
+        self._dualx_overrides(True)
         ax.format(**kwargs)
         return ax
 
     def dualy(self, transform, transform_kw=None, **kwargs):
         ax = self.twinx()
-        funcs, kwargs = _parse_dualxy_args('y', transform, transform_kw, kwargs)
+        funcs, kwargs = _parse_dualxy_args('y',
+                transform, transform_kw, kwargs)
         self._dualy_funcs = funcs
-        self._dualy_overrides()
+        self._dualy_overrides(True)
         ax.format(**kwargs)
         return ax
 
