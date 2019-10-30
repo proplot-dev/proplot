@@ -887,7 +887,8 @@ class Axes(maxes.Axes):
 
         # Add collection, with some custom attributes
         self.add_collection(hs)
-        self.autoscale_view() # data limits not updated otherwise
+        if self.get_autoscale_on() and self.ignore_existing_data_limits:
+            self.autoscale_view() # data limits not updated otherwise
         hs.values = values
         hs.levels = levels # needed for other functions some
         return hs
@@ -1389,10 +1390,10 @@ class Axes(maxes.Axes):
         maxes.Axes.text
         )
     plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
-        _redirect(maxes.Axes.plot)
+        maxes.Axes.plot
         ))))
     scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
-        _redirect(maxes.Axes.scatter)
+        maxes.Axes.scatter
         ))))
     bar = _bar_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
         maxes.Axes.bar
@@ -1430,31 +1431,31 @@ class Axes(maxes.Axes):
     # Wrapped by cmap wrapper and standardized
     # Also support redirecting to Basemap methods
     hexbin = _standardize_1d(_cmap_changer(
-        _redirect(maxes.Axes.hexbin)
+        maxes.Axes.hexbin
         ))
     contour = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.contour)
+        maxes.Axes.contour
         ))
     contourf = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.contourf)
+        maxes.Axes.contourf
         ))
     pcolor = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.pcolor)
+        maxes.Axes.pcolor
         ))
     pcolormesh = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.pcolormesh)
+        maxes.Axes.pcolormesh
         ))
     quiver = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.quiver)
+        maxes.Axes.quiver
         ))
     streamplot = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.streamplot)
+        maxes.Axes.streamplot
         ))
     barbs = _standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.barbs)
+        maxes.Axes.barbs
         ))
     imshow = _cmap_changer(
-        _redirect(maxes.Axes.imshow)
+        maxes.Axes.imshow
         )
 
     # Wrapped only by cmap wrapper
@@ -3127,19 +3128,61 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         self._map_projection = map_projection
 
     # Wrapped methods
-    plot        = _default_transform(Axes.plot)
-    scatter     = _default_transform(Axes.scatter)
-    contour     = _default_transform(Axes.contour)
-    contourf    = _default_transform(Axes.contourf)
-    quiver      = _default_transform(Axes.quiver)
-    streamplot  = _default_transform(Axes.streamplot)
-    barbs       = _default_transform(Axes.barbs)
-    pcolor      = _default_transform(Axes.pcolor)
-    pcolormesh  = _default_transform(Axes.pcolormesh)
-    tripcolor   = _default_transform(Axes.tripcolor)
-    tricontour  = _default_transform(Axes.tricontour)
-    tricontourf = _default_transform(Axes.tricontourf)
+    # TODO: Remove this duplication of Axes! Can do this when we implement
+    # all wrappers as decorators.
     if GeoAxes is not object:
+        text = _text_wrapper(
+            GeoAxes.text
+            )
+        plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+            _default_transform(GeoAxes.plot)
+            ))))
+        scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+            _default_transform(GeoAxes.scatter)
+            ))))
+        fill_between  = _fill_between_wrapper(_standardize_1d(_cycle_changer(
+            GeoAxes.fill_between
+            )))
+        fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
+            GeoAxes.fill_betweenx
+            )))
+
+        # Wrapped by cmap wrapper and standardized
+        # Also support redirecting to Basemap methods
+        contour = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.contour)
+            ))
+        contourf = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.contourf)
+            ))
+        pcolor = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.pcolor)
+            ))
+        pcolormesh = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.pcolormesh)
+            ))
+        quiver = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.quiver)
+            ))
+        streamplot = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.streamplot)
+            ))
+        barbs = _standardize_2d(_cmap_changer(
+            _default_transform(GeoAxes.barbs)
+            ))
+
+        # Wrapped only by cmap wrapper
+        tripcolor = _cmap_changer(
+            _default_transform(GeoAxes.tripcolor)
+            )
+        tricontour = _cmap_changer(
+            _default_transform(GeoAxes.tricontour)
+            )
+        tricontourf = _cmap_changer(
+            _default_transform(GeoAxes.tricontourf)
+            )
+
+        # Special GeoAxes commands
         get_extent = _default_crs(GeoAxes.get_extent)
         set_extent = _default_crs(GeoAxes.set_extent)
         set_xticks = _default_crs(GeoAxes.set_xticks)
@@ -3331,17 +3374,39 @@ class BasemapAxes(ProjectionAxes):
         self._map_projection = map_projection
 
     # Wrapped methods
-    plot       = _norecurse(_default_latlon(Axes.plot))
-    scatter    = _norecurse(_default_latlon(Axes.scatter))
-    contour    = _norecurse(_default_latlon(Axes.contour))
-    contourf   = _norecurse(_default_latlon(Axes.contourf))
-    quiver     = _norecurse(_default_latlon(Axes.quiver))
-    streamplot = _norecurse(_default_latlon(Axes.streamplot))
-    barbs      = _norecurse(_default_latlon(Axes.barbs))
-    pcolor     = _norecurse(_default_latlon(Axes.pcolor))
-    pcolormesh = _norecurse(_default_latlon(Axes.pcolormesh))
-    hexbin     = _norecurse(Axes.hexbin) # no latlon arg
-    imshow     = _norecurse(Axes.imshow) # no latlon arg
+    plot = _norecurse(_default_latlon(_plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+        _redirect(maxes.Axes.plot)
+        ))))))
+    scatter = _norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+        _redirect(maxes.Axes.scatter)
+        ))))))
+    contour = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.contour)
+        ))))
+    contourf = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.contourf)
+        ))))
+    pcolor = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.pcolor)
+        ))))
+    pcolormesh = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.pcolormesh)
+        ))))
+    quiver = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.quiver)
+        ))))
+    streamplot = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.streamplot)
+        ))))
+    barbs = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _redirect(maxes.Axes.barbs)
+        ))))
+    hexbin = _norecurse(_standardize_1d(_cmap_changer(
+        _redirect(maxes.Axes.hexbin)
+        )))
+    imshow = _norecurse(_cmap_changer(
+        _redirect(maxes.Axes.imshow)
+        ))
 
 # Register the projections
 mproj.register_projection(PolarAxes)

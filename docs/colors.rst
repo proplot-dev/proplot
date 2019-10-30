@@ -4,8 +4,8 @@ Color usage
 
 ProPlot also adds several features to help you use colors effectively in
 your figures. This section documents the colormaps and cycles registered
-after importing ProPlot, explains how to make and modify colormaps and
-cycles, and shows how to apply them to your plots.
+after import, explains how to make and modify colormaps and cycles, and
+shows how to apply them to your plots.
 
 First things first, ProPlot makes a distinction between *colormaps* and
 *color cycles*.
@@ -30,8 +30,8 @@ First things first, ProPlot makes a distinction between *colormaps* and
    *Colormaps* can also be cut up and used as color cycles (see
    :ref:`Making your own color cycles`).
 
-Registered colormaps
---------------------
+Included colormaps
+------------------
 
 On import, ProPlot registers a few sample
 `~proplot.styletools.PerceptuallyUniformColormap` colormaps (see
@@ -169,11 +169,12 @@ You can make new colormaps with ProPlot’s on-the-fly colormap generator
 `~proplot.styletools.Colormap`. Every command that accepts a ``cmap``
 argument (see `~proplot.wrappers.cmap_changer`) is passed to
 `~proplot.styletools.Colormap`, and `~proplot.styletools.Colormap`
-keyword args can be specified with ``cmap_kw``. If you want to save your
-own colormap into the ``~/.proplot/cmaps`` folder, simply use
-``save=True``. Colormaps in this folder are loaded every time you import
-ProPlot. See `~proplot.styletools.Colormap` and
-`~proplot.wrappers.cmap_changer` for details.
+keyword args can be specified with ``cmap_kw``. To save your colormap
+and use it everytime ProPlot is imported, simply use ``save=True``. To
+save the colormap data to an arbitrary file, use the
+`~proplot.styletools.LinearSegmentedColormap.save` method. See
+`~proplot.styletools.Colormap` and `~proplot.wrappers.cmap_changer`
+for details.
 
 To build monochromatic
 `~proplot.styletools.PerceptuallyUniformColormap` maps from arbitrary
@@ -367,9 +368,8 @@ emphasizes low luminance, high saturation colors. See
     f, axs = plot.subplots(ncols=3, axwidth=1.5, aspect=1)
     data = np.random.rand(10,10).cumsum(axis=1)
     cmaps = []
-    for ax,gamma in zip(axs,(0.8, 1.0, 1.4)):
-        cmap = plot.Colormap(name, gamma=gamma)
-        cmap.name = f'{gamma}'
+    for ax,gamma in zip(axs,(0.7, 1.0, 1.4)):
+        cmap = plot.Colormap(name, name=f'g{gamma}', gamma=gamma)
         cmaps.append(cmap)
         m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
         ax.colorbar(m, loc='r', locator='none')
@@ -403,8 +403,8 @@ data to a file in your ``~/.proplot/cmaps`` folder, then call
 is the file extension. See `~proplot.styletools.register_cmaps` for
 valid file extensions.
 
-Registered color cycles
------------------------
+Included color cycles
+---------------------
 
 Use `~proplot.styletools.show_cycles` to generate a table of the color
 cycles registered by default and loaded from your ``~/.proplot/cycles``
@@ -534,8 +534,8 @@ data to a file in your ``~/.proplot/cycles`` folder, then call
 the file extension. See `~proplot.styletools.register_cmaps` for valid
 file extensions.
 
-Registered color names
-----------------------
+Included color names
+--------------------
 
 ProPlot defines new color names from the `XKCD “color
 survey” <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__,

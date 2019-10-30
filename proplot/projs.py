@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Introduces the generalized `~mpl_toolkits.basemap.Basemap`
-and `cartopy.crs.Projection` projection instantiator "`Proj`".
-Also "registers" cartopy projections by their `PROJ.4 aliases
+and `cartopy.crs.Projection` instantiator "`Proj`", which
+"registers" cartopy projections by their `PROJ.4 aliases
 <https://proj4.org/operations/projections/index.html>`_ like in
 `~mpl_toolkits.basemap`.
 
