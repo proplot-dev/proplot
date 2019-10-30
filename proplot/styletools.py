@@ -605,7 +605,8 @@ class _Colormap():
         return path
 
 class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
-    """New base class for all `~matplotlib.colors.LinearSegmentedColormap`s."""
+    """New base class for all `~matplotlib.colors.LinearSegmentedColormap`
+    maps."""
     def __str__(self):
         return self.__repr__()
     def __repr__(self):
@@ -978,7 +979,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return self.copy(name, segmentdata, **kwargs)
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
-    """New base class for all `~matplotlib.colors.ListedColormap`s."""
+    """New base class for all `~matplotlib.colors.ListedColormap`
+    maps."""
     def __str__(self):
         return self.__repr__()
     def __repr__(self):
@@ -1396,10 +1398,10 @@ class CmapDict(dict):
     Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
     colormap directory. Does the following:
 
-    1. Converts all matplotlib `~matplotlib.colors.ListedColormap`s
-       to ProPlot `ListedColormap`s, and converts all matplotlib
-       `~matplotlib.colors.LinearSegmentedColormap`s
-       to ProPlot `LinearSegmentedColormap`s.
+    1. Converts all matplotlib `~matplotlib.colors.ListedColormap` maps
+       to ProPlot `ListedColormap` maps, and converts all matplotlib
+       `~matplotlib.colors.LinearSegmentedColormap` maps
+       to ProPlot `LinearSegmentedColormap` maps.
     2. Makes colormap names case insensitive. ``'Blues'``, ``'blues'``, and
        ``'bLuEs'`` are all valid names for the "Blues" colormap.
     3. Does not store "reversed" colormaps. Requesting e.g.
