@@ -157,7 +157,6 @@ def edges(array, axis=-1):
     array = np.swapaxes(array, axis, -1)
     return array
 
-# Units
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
