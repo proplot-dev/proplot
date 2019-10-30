@@ -889,7 +889,8 @@ class Axes(maxes.Axes):
 
         # Add collection, with some custom attributes
         self.add_collection(hs)
-        self.autoscale_view() # data limits not updated otherwise
+        if self.get_autoscale_on() and self.ignore_existing_data_limits:
+            self.autoscale_view() # data limits not updated otherwise
         hs.values = values
         hs.levels = levels # needed for other functions some
         return hs
