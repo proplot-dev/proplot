@@ -1398,10 +1398,10 @@ class CmapDict(dict):
     Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
     colormap directory. Does the following:
 
-    1. Converts all matplotlib `~matplotlib.colors.ListedColormap` maps
-       to ProPlot `ListedColormap` maps, and converts all matplotlib
-       `~matplotlib.colors.LinearSegmentedColormap` maps
-       to ProPlot `LinearSegmentedColormap` maps.
+    1. Converts all matplotlib `~matplotlib.colors.ListedColormap`\ s
+       to ProPlot `ListedColormap`\ s, and converts all matplotlib
+       `~matplotlib.colors.LinearSegmentedColormap`\ s
+       to ProPlot `LinearSegmentedColormap`\ s.
     2. Makes colormap names case insensitive. ``'Blues'``, ``'blues'``, and
        ``'bLuEs'`` are all valid names for the "Blues" colormap.
     3. Does not store "reversed" colormaps. Requesting e.g.
@@ -1784,11 +1784,11 @@ def Cycle(*args, samples=None, name=None,
         If the last positional argument is numeric, it is used for the `samples`
         keyword argument.
     samples : float or list of float, optional
-        For `~matplotlib.colors.ListedColormap` maps, this is the number of
+        For `~matplotlib.colors.ListedColormap`\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
 
-        For `~matplotlib.colors.LinearSegmentedColormap` maps, this is either
+        For `~matplotlib.colors.LinearSegmentedColormap`\ s, this is either
         a list of sample coordinates used to draw colors from the map, or an
         integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
