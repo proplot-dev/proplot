@@ -57,39 +57,20 @@ if not os.path.isfile(_rc_file):
 # WARNING: Import order is meaningful! Loads modules that are dependencies
 # of other modules last, and loads styletools early so we can try to update
 # TTFPATH before the fontManager is loaded by other matplotlib modules
-from .utils import DEBUG
-from .utils import *
-if DEBUG:
-    import time
-    t = time.clock()
-    t0 = t
-from .styletools import * # colors and fonts
-if DEBUG:
-    print(f'styletools: {time.clock() - t}')
-    t = time.clock()
-from .rctools import * # custom configuration implementation
-if DEBUG:
-    print(f'rctools: {time.clock() - t}')
-    t = time.clock()
-from .axistools import * # locators, normalizers, and formatters
-if DEBUG:
-    print(f'axistools: {time.clock() - t}')
-    t = time.clock()
-from .wrappers import * # wrappers
-if DEBUG:
-    print(f'wrappers: {time.clock() - t}')
-    t = time.clock()
-from .projs import * # projections and whatnot
-if DEBUG:
-    print(f'projs: {time.clock() - t}')
-    t = time.clock()
-from .axes import * # axes classes
-if DEBUG:
-    print(f'axes: {time.clock() - t}')
-    t = time.clock()
-from .subplots import * # subplots and figure class
-if DEBUG:
-    print(f'subplots: {time.clock() - t}')
-    t = time.clock()
-    print(f'total time: {time.clock() - t0}')
-
+from .utils import _benchmark
+with _benchmark('total time'):
+    from .utils import *
+    with _benchmark('styletools'): # colors and fonts
+        from .styletools import *
+    with _benchmark('rctools'): # custom configuration implementation
+        from .rctools import *
+    with _benchmark('axistools'): # locators, normalizers, and formatters
+        from .axistools import *
+    with _benchmark('wrappers'): # wrappers
+        from .wrappers import *
+    with _benchmark('projs'): # map projections and tools
+        from .projs import *
+    with _benchmark('axes'): # axes classes
+        from .axes import *
+    with _benchmark('subplots'): # subplots and figure class
+        from .subplots import *
